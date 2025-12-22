@@ -1,6 +1,6 @@
 {
   "name": "kanbanboardfe",
-  "homepage": "https://danythomas-infobahn.github.io/kanbanBoardFE/",
+  "homepage": "https://infobahn-martech.github.io/kanbanBoardFE/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
