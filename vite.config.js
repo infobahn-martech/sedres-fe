@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: command === "build" ? "/kanbanBoardFE/" : "/",  // build vs dev
+  base: command === "build" ? "/sedres-fe/" : "/",  // build vs dev
   build: {
     outDir: "docs",
   },
