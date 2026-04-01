@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+.cache
+public/*.png
+public/*.jpg
+public/*.jpeg
+vendor
+composer.phar
+storage
