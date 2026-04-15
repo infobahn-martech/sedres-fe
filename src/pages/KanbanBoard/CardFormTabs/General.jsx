@@ -23,6 +23,12 @@ import {
   mapBargeTypesToOptions,
   mergeOptionIfMissing,
 } from "../../../helpers/callFileFormOptions";
+import {
+  isAppointmentEmailFileValid,
+  getAppointmentEmailValidationMessage,
+  parseAppointmentEmailFile,
+  applyAppointmentEmailAutofill,
+} from "../../../helpers/appointmentEmailAutofill";
 
 // Job statuses in order with icons and descriptions (4 statuses)
 const JOB_STATUSES = [
@@ -1111,6 +1117,8 @@ function General({ card, formValues, handleChange, onSave, isAddMode = false, is
   const [entityFieldValues, setEntityFieldValues] = useState({});
   const [entityFieldsLoading, setEntityFieldsLoading] = useState(false);
   const [entityFieldsError, setEntityFieldsError] = useState("");
+  const [appointmentEmailParsing, setAppointmentEmailParsing] = useState(false);
+  const [appointmentEmailAutofillError, setAppointmentEmailAutofillError] = useState("");
 
   // Initialize dummy document when not in add mode
   useEffect(() => {
@@ -1246,13 +1254,43 @@ function General({ card, formValues, handleChange, onSave, isAddMode = false, is
     return "";
   };
 
-  // Handle document upload
-  const handleDocumentAdd = (file) => {
-    setAppointmentDocuments([...appointmentDocuments, file]);
+  const handleDocumentRemove = (index) => {
+    setAppointmentDocuments((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleDocumentRemove = (index) => {
-    setAppointmentDocuments(appointmentDocuments.filter((_, i) => i !== index));
+  const handleAppointmentEmailDocumentAdd = async (file) => {
+    if (!isAppointmentEmailFileValid(file)) {
+      setAppointmentEmailAutofillError(getAppointmentEmailValidationMessage(file?.name));
+      return;
+    }
+
+    setAppointmentEmailAutofillError("");
+    setAppointmentDocuments((prev) => [...prev, file]);
+    setAppointmentEmailParsing(true);
+
+    try {
+      const { mappedValues, warnings = [] } = await parseAppointmentEmailFile(file);
+      const existingDailyReportEmail = Array.isArray(getFieldValue("dailyReportEmail"))
+        ? getFieldValue("dailyReportEmail")
+        : [];
+
+      applyAppointmentEmailAutofill({
+        mappedValues,
+        handleChange,
+        existingDailyReportEmail,
+      });
+
+      if (warnings.length > 0) {
+        setAppointmentEmailAutofillError(warnings.join(" "));
+      }
+    } catch (error) {
+      console.error("[General] appointment email parse failed", error);
+      setAppointmentEmailAutofillError(
+        error?.message || "Unable to parse appointment email file. Please review and fill details manually."
+      );
+    } finally {
+      setAppointmentEmailParsing(false);
+    }
   };
 
   const normalizeEntityEmailOptions = useCallback((payload) => {
@@ -2138,11 +2176,21 @@ function General({ card, formValues, handleChange, onSave, isAddMode = false, is
                           <FormField label="Appointment Email">
                             <DocumentUpload
                               attachments={appointmentDocuments}
-                              onAdd={handleDocumentAdd}
+                              onAdd={handleAppointmentEmailDocumentAdd}
                               onRemove={handleDocumentRemove}
                               cardColor={accentColor}
-                              disabled={isDisabled}
+                              disabled={isDisabled || appointmentEmailParsing}
                             />
+                            {appointmentEmailParsing && (
+                              <div style={{ marginTop: "8px", color: "#3e5cb6", fontSize: "12px" }}>
+                                Parsing appointment email...
+                              </div>
+                            )}
+                            {!!appointmentEmailAutofillError && (
+                              <div style={{ marginTop: "8px", color: "#dc3545", fontSize: "12px" }}>
+                                {appointmentEmailAutofillError}
+                              </div>
+                            )}
                           </FormField>
                           <FormField label="Appointment Received">
                             <div className="cf-input date-time-row">
