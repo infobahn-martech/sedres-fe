@@ -198,6 +198,8 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const [expandedConvertOrders, setExpandedConvertOrders] = useState({ 1: true });
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
+  const [landingPage, setLandingPage] = useState(1);
+  const LANDING_LIMIT = 5;
   const dropdownButtonRefs = useRef({});
 
   // Form state
@@ -1722,7 +1724,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
           </thead>
           <tbody>
             {notesList.length > 0 ? (
-              notesList.map((note) => (
+              notesList.slice((landingPage - 1) * LANDING_LIMIT, landingPage * LANDING_LIMIT).map((note) => (
                 <tr key={note.id}>
                   <td>
                     <div className="material-table-cell">{note.landingNoteNo || ""}</div>
@@ -1991,6 +1993,23 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
             )}
           </tbody>
         </table>
+        {notesList.length > 0 && (() => {
+          const totalPages = Math.ceil(notesList.length / LANDING_LIMIT);
+          const start = (landingPage - 1) * LANDING_LIMIT + 1;
+          const end = Math.min(landingPage * LANDING_LIMIT, notesList.length);
+          return (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 4px 4px", fontSize: "13px", color: "#555" }}>
+              <span>Showing {start} to {end} of {notesList.length} entries</span>
+              <div style={{ display: "flex", gap: "4px" }}>
+                <button onClick={() => setLandingPage(p => Math.max(1, p - 1))} disabled={landingPage === 1} style={{ padding: "4px 10px", border: "1px solid #dee2e6", borderRadius: "4px", background: landingPage === 1 ? "#f8f9fa" : "#fff", color: landingPage === 1 ? "#aaa" : "#00368c", cursor: landingPage === 1 ? "default" : "pointer" }}>&lt;</button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <button key={p} onClick={() => setLandingPage(p)} style={{ padding: "4px 10px", border: "1px solid #dee2e6", borderRadius: "4px", background: landingPage === p ? "#00368c" : "#fff", color: landingPage === p ? "#fff" : "#00368c", cursor: "pointer", fontWeight: landingPage === p ? 600 : 400 }}>{p}</button>
+                ))}
+                <button onClick={() => setLandingPage(p => Math.min(totalPages, p + 1))} disabled={landingPage === totalPages} style={{ padding: "4px 10px", border: "1px solid #dee2e6", borderRadius: "4px", background: landingPage === totalPages ? "#f8f9fa" : "#fff", color: landingPage === totalPages ? "#aaa" : "#00368c", cursor: landingPage === totalPages ? "default" : "pointer" }}>&gt;</button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       <CustomModal
