@@ -29,7 +29,7 @@ const MaterialType = () => {
             page: params.page,
             limit: params.limit,
             sortBy: params.sortBy,
-            sortOrder: params.sortOrder === 1 ? "ASC" : "DESC", // change if your API expects 1/-1
+            sortOrder: params.sortOrder,
         }),
         [params]
     );

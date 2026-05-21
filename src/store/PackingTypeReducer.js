@@ -34,7 +34,7 @@ const usePackingTypeReducer = create((set) => ({
             const { data } = await packingTypeService.getPackingTypes({ params });
             set({
                 packingTypes: data?.data ?? [],
-                totalCount: data?.pagination?.total ?? 0,
+                totalCount: data?.pagination?.total ?? data?.total ?? 0,
                 isLoadingGet: false,
             });
         } catch (err) {

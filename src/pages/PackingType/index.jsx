@@ -36,7 +36,7 @@ const PackingType = () => {
             page: params.page,
             limit: params.limit,
             sortBy: params.sortBy,
-            sortOrder: params.sortOrder === 1 ? "ASC" : "DESC",
+            sortOrder: params.sortOrder,
         }),
         [params]
     );

@@ -33,7 +33,7 @@ const useMaterialTypeReducer = create((set) => ({
             const { data } = await materialTypeService.getMaterialTypes({ params });
             set({
                 materialTypes: data?.data ?? [],
-                totalCount: data?.pagination?.total ?? 0,
+                totalCount: data?.pagination?.total ?? data?.total ?? 0,
                 isLoadingGet: false,
             });
         } catch (err) {
