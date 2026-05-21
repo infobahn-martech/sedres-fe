@@ -8,36 +8,31 @@ import { RenderAction } from "./RenderCells";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import { DateFormat } from "../ActivityLog/RenderCells";
 
-// ✅ CHANGE THIS IMPORT PATH based on your project structure
 import useDriverVehicleMappingReducer from "../../store/DriverVehicleReducer";
-// ex: "../../stores/DriverVehicleMappingReducer"
 
 const DriverVehicleMapping = () => {
-    // ✅ Store / API
     const {
         getDriverVehicleMappingData,
         driverVehicleMappingData,
         isLoading,
+        isBeingUpdated,
         totalDriverVehicleMappingCount,
         deleteDriverVehicleMapping,
     } = useDriverVehicleMappingReducer((state) => state);
 
-    // ✅ Table params (API params)
     const [params, setParams] = useState({
         page: 1,
         searchTerm: "",
         limit: 10,
         sortBy: "driver_name",
-        sortOrder: 1, // 1 = ASC, -1 = DESC
+        sortOrder: 1,
     });
 
-    // ✅ Modals
     const [showDriverVehicleMappingModal, setShowDriverVehicleMappingModal] =
-        useState(false); // boolean OR row object
+        useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedRow, setSelectedRow] = useState(null);
 
-    // ✅ Fetch list whenever params change
     useEffect(() => {
         getDriverVehicleMappingData?.({
             search: params.searchTerm || "",
@@ -55,7 +50,6 @@ const DriverVehicleMapping = () => {
         getDriverVehicleMappingData,
     ]);
 
-    // ✅ Debounced search
     const debouncedSearch = useMemo(
         () =>
             debounce((value) => {
@@ -67,11 +61,6 @@ const DriverVehicleMapping = () => {
     useEffect(() => {
         return () => debouncedSearch.cancel();
     }, [debouncedSearch]);
-
-    // ✅ Support common API response shapes:
-    // A) { data: [...], total: number }
-    // B) { data: { data: [...], total: number } }
-
 
     const cols = [
         {
@@ -135,18 +124,18 @@ const DriverVehicleMapping = () => {
         });
     };
 
-    const handleDelete = async () => {
-        if (!selectedRow?._id) return;
+    const handleDelete = () => {
+        const id = selectedRow?.driver_vehicle_id ?? selectedRow?._id;
+        if (!id) return;
 
-        // ✅ adjust payload if backend expects different key
-        const payload = { driver_vehicle_mapping_id: selectedRow._id };
-
-        // If your deleteData expects just id: await deleteData(selectedRow._id);
-        await deleteDriverVehicleMapping?.(payload);
-
-        setShowDeleteModal(false);
-        setSelectedRow(null);
-        refreshList();
+        deleteDriverVehicleMapping?.({
+            driverVehicleMapping_id: id,
+            cb: () => {
+                setShowDeleteModal(false);
+                setSelectedRow(null);
+                refreshList();
+            },
+        });
     };
 
     return (
@@ -165,7 +154,7 @@ const DriverVehicleMapping = () => {
                 </div>
 
                 <CustomTable
-                    loading={isLoading}
+                    isLoading={isLoading}
                     pagination={{ currentPage: params.page, limit: params.limit }}
                     tableClasses="px-start"
                     columns={cols}
@@ -189,7 +178,7 @@ const DriverVehicleMapping = () => {
 
                 {!!showDriverVehicleMappingModal && (
                     <DriverVehicleMappingModal
-                        showModal={showDriverVehicleMappingModal} // boolean OR row object
+                        showModal={showDriverVehicleMappingModal}
                         closeModal={() => setShowDriverVehicleMappingModal(false)}
                         onSuccess={() => {
                             setShowDriverVehicleMappingModal(false);
@@ -206,8 +195,8 @@ const DriverVehicleMapping = () => {
                             setSelectedRow(null);
                         }}
                         onConfirm={handleDelete}
-                        isLoading={isLoading}
-                        deleteText="Are you sure you want to delete this driver vehicle mapping?"
+                        isLoading={isBeingUpdated}
+                        deleteText={`Are you sure you want to delete this driver vehicle mapping${selectedRow?.driver_name ? ` ${selectedRow.driver_name}` : ""}?`}
                     />
                 )}
             </div>
