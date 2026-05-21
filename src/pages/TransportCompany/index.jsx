@@ -15,6 +15,7 @@ const TransportCompany = () => {
         getTransportCompanyData,
         transportCompanyData,
         isLoading,
+        isBeingUpdated,
         totalTransportCompanyCount,
         deleteTransportCompany,
     } = useTransportCompanyReducer((state) => state);
@@ -119,15 +120,18 @@ const TransportCompany = () => {
         });
     };
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         const id = selectedRow?.transport_company_id ?? selectedRow?._id;
         if (!id) return;
 
-        await deleteTransportCompany?.({ transport_company_id: id });
-
-        setShowDeleteModal(false);
-        setSelectedRow(null);
-        refreshList();
+        deleteTransportCompany?.({
+            transport_company_id: id,
+            cb: () => {
+                setShowDeleteModal(false);
+                setSelectedRow(null);
+                refreshList();
+            },
+        });
     };
 
     return (
@@ -187,8 +191,8 @@ const TransportCompany = () => {
                             setSelectedRow(null);
                         }}
                         onConfirm={handleDelete}
-                        isLoading={isLoading}
-                        deleteText="Are you sure you want to delete this transport company?"
+                        isLoading={isBeingUpdated}
+                        deleteText={`Are you sure you want to delete this transport company${selectedRow?.transport_company ? ` ${selectedRow.transport_company}` : ""}?`}
                     />
                 )}
             </div>
