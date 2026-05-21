@@ -196,7 +196,7 @@ const DriverVehicleMapping = () => {
                         }}
                         onConfirm={handleDelete}
                         isLoading={isBeingUpdated}
-                        deleteText={`Are you sure you want to delete this driver vehicle mapping${selectedRow?.driver_name ? ` ${selectedRow.driver_name}` : ""}?`}
+                        deleteText={`Are you sure you want to delete ${selectedRow?.driver_name ?? "this driver"}'s vehicle mapping with ${selectedRow?.vehicle_type ?? "this vehicle"}?`}
                     />
                 )}
             </div>
