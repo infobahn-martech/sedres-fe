@@ -4,8 +4,6 @@ import CustomTable from "../../components/customTable";
 import { PackingTypeModal } from "./Modals/AddEditPackingType";
 import { RenderAction } from "./RenderCells";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
-
-// ✅ Change this import based on your project store name
 import usePackingTypeReducer from "../../store/PackingTypeReducer";
 
 const PackingType = () => {
@@ -36,7 +34,7 @@ const PackingType = () => {
             page: params.page,
             limit: params.limit,
             sortBy: params.sortBy,
-            sortOrder: params.sortOrder === 1 ? "ASC" : "DESC",
+            sortOrder: params.sortOrder,
         }),
         [params]
     );
@@ -47,7 +45,6 @@ const PackingType = () => {
 
     const list = Array.isArray(packingTypes) ? packingTypes : [];
 
-    // 👉 Columns (API: package_type_id, package_type, created_date)
     const cols = [
         {
             name: "Packing Type",
@@ -72,9 +69,7 @@ const PackingType = () => {
             contentClass: "table-content",
             thclass: "tb-head",
             width: "100",
-            onEditClick: (row) => {
-                setShowPackingTypeModal(row); // pass row to modal for edit
-            },
+            onEditClick: (row) => setShowPackingTypeModal(row),
             onDeleteClick: (row) => {
                 setSelectedRow(row);
                 setShowDeleteModal(true);
@@ -83,15 +78,16 @@ const PackingType = () => {
         },
     ];
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         if (!selectedRow?.package_type_id) return;
-
-        await deletePackingType(selectedRow.package_type_id);
-
-        setShowDeleteModal(false);
-        setSelectedRow(null);
-
-        getPackingTypes(apiParams);
+        deletePackingType({
+            id: selectedRow.package_type_id,
+            cb: () => {
+                setShowDeleteModal(false);
+                setSelectedRow(null);
+                getPackingTypes(apiParams);
+            },
+        });
     };
 
     return (
@@ -111,7 +107,6 @@ const PackingType = () => {
                     </div>
 
                     <CustomTable
-                        Sl
                         isLoading={isLoadingGet}
                         pagination={{ currentPage: params.page, limit: params.limit }}
                         tableClasses="px-start"
@@ -150,7 +145,7 @@ const PackingType = () => {
                             }}
                             onConfirm={handleDelete}
                             isLoading={isLoadingDelete}
-                            deleteText="Are you sure you want to delete this packing type?"
+                            deleteText={`Are you sure you want to delete packing type ${selectedRow?.package_type ?? ""}?`}
                         />
                     )}
                 </div>

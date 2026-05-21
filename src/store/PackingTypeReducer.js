@@ -62,13 +62,14 @@ const usePackingTypeReducer = create((set) => ({
             error(err?.response?.data?.message ?? err.message);
         }
     },
-    deletePackingType: async (package_type_id) => {
+    deletePackingType: async ({ id, cb } = {}) => {
         try {
             set({ isLoadingDelete: true });
-            const { data } = await packingTypeService.deletePackingType(package_type_id);
+            const { data } = await packingTypeService.deletePackingType(id);
             set({ successMessage: data?.message, isLoadingDelete: false });
             const { success } = useAlertReducer.getState();
             success(data?.message ?? 'Packing type deleted successfully');
+            cb?.();
         } catch (err) {
             const { error } = useAlertReducer.getState();
             set({
