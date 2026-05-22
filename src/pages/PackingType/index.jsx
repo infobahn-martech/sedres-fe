@@ -81,7 +81,7 @@ const PackingType = () => {
     const handleDelete = () => {
         if (!selectedRow?.package_type_id) return;
         deletePackingType({
-            id: selectedRow.package_type_id,
+            id: selectedRow?.package_type_id,
             cb: () => {
                 setShowDeleteModal(false);
                 setSelectedRow(null);
