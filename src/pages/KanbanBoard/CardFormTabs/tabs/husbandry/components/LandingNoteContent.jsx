@@ -1713,7 +1713,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         <table className="table table-striped material-table sub-note-table" style={{ "--card-color": "#e2e6ff", tableLayout: "fixed" }}>
           <thead style={{ position: "sticky", top: 0, zIndex: 1, backgroundColor: "#fff" }}>
             <tr>
-              <th>Order No</th>
+              <th>Landing Note No</th>
               <th>Date</th>
               <th>PO/DO</th>
               <th>Landing Proof</th>
