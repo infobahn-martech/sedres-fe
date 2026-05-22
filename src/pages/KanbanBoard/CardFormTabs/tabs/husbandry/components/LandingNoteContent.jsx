@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import Pagination from "./Common/Pagination";
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
@@ -1995,23 +1996,12 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
           </tbody>
         </table>
         </div>
-        {notesList.length > 0 && (() => {
-          const totalPages = Math.ceil(notesList.length / LANDING_LIMIT);
-          const start = (landingPage - 1) * LANDING_LIMIT + 1;
-          const end = Math.min(landingPage * LANDING_LIMIT, notesList.length);
-          return (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 4px 4px", fontSize: "13px", color: "#555" }}>
-              <span>Showing {start} to {end} of {notesList.length} entries</span>
-              <div style={{ display: "flex", gap: "4px" }}>
-                <button onClick={() => setLandingPage(p => Math.max(1, p - 1))} disabled={landingPage === 1} style={{ padding: "4px 10px", border: "1px solid #dee2e6", borderRadius: "4px", background: landingPage === 1 ? "#f8f9fa" : "#fff", color: landingPage === 1 ? "#aaa" : "#00368c", cursor: landingPage === 1 ? "default" : "pointer" }}>&lt;</button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                  <button key={p} onClick={() => setLandingPage(p)} style={{ padding: "4px 10px", border: "1px solid #dee2e6", borderRadius: "4px", background: landingPage === p ? "#00368c" : "#fff", color: landingPage === p ? "#fff" : "#00368c", cursor: "pointer", fontWeight: landingPage === p ? 600 : 400 }}>{p}</button>
-                ))}
-                <button onClick={() => setLandingPage(p => Math.min(totalPages, p + 1))} disabled={landingPage === totalPages} style={{ padding: "4px 10px", border: "1px solid #dee2e6", borderRadius: "4px", background: landingPage === totalPages ? "#f8f9fa" : "#fff", color: landingPage === totalPages ? "#aaa" : "#00368c", cursor: landingPage === totalPages ? "default" : "pointer" }}>&gt;</button>
-              </div>
-            </div>
-          );
-        })()}
+        <Pagination
+          currentPage={landingPage}
+          totalItems={notesList.length}
+          limit={LANDING_LIMIT}
+          onPageChange={setLandingPage}
+        />
       </div>
 
       <CustomModal
