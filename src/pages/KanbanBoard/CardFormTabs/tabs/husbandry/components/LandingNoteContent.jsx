@@ -4,13 +4,22 @@ import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import CustomModal from "../../../../../../components/CustomModal";
+import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 import { FormField, FormInput, FormSelect, ReactQuillEditor } from "./Husbandry.components";
+import DateTimePickerField from "../../../components/DateTimePickerField";
 import MaterialTablePagination from "./MaterialTablePagination";
 import editIcon from "../../../../../../assets/images/edit.svg";
 import deleteIcon from "../../../../../../assets/images/delete.svg";
 import eyeIcon from "../../../../../../assets/images/eye.svg";
 import useLandingNoteReducer from "../../../../../../store/LandingNoteReducer";
 
+// Extracts a positive numeric string ID from a plain value, numeric, or nested object ({ id: ... })
+const toIdStr = (v) => {
+  if (v == null) return "";
+  if (typeof v === "object") return v.id != null && Number(v.id) > 0 ? String(v.id) : "";
+  const n = Number(v);
+  return n > 0 ? String(n) : "";
+};
 
 // AttachmentsList Component (from Operation.jsx)
 const AttachmentsList = ({ attachments = [], onAdd, onRemove, cardColor, isDragging, onDragEnter, onDragLeave, onDragOver, onDrop, fileInputRef, onFileInputChange }) => {
@@ -82,23 +91,34 @@ const AttachmentsList = ({ attachments = [], onAdd, onRemove, cardColor, isDragg
 };
 
 
+
 const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const {
     getAllLandingNotes,
+    getLandingNoteById,
+    updateLandingNote,
+    deleteLandingNote,
+    convertLandingNote,
     landingNotes,
     landingTotal,
     isLoadingList,
+    isLoadingUpdate,
+    isLoadingDelete,
+    isLoadingConvert,
   } = useLandingNoteReducer((state) => state);
 
   const [showModal, setShowModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingNote, setDeletingNote] = useState(null);
   const [notesList, setNotesList] = useState([]);
   const [editingNote, setEditingNote] = useState(null);
   const [convertingNote, setConvertingNote] = useState(null);
   const [viewingNote, setViewingNote] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [existingDocuments, setExistingDocuments] = useState([]);
   const fileInputRef = useRef(null);
   const [isDraggingDocuments, setIsDraggingDocuments] = useState(false);
   const documentsFileInputRef = useRef(null);
@@ -109,15 +129,16 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const LANDING_LIMIT = 10;
   const dropdownButtonRefs = useRef({});
 
-  // Form state
+  // Edit form state
   const [formData, setFormData] = useState({
-    landingNoteNo: "",
-    date: "",
-    poDo: "",
-    landingProof: [],
-    quantity: "",
-    packageType: "",
-    description: "",
+    landing_date: "",
+    inbound_id: "",
+    warehouse_id: "",
+    received_from: "",
+    location: "",
+    signature: "",
+    remarks: "",
+    items: [],
   });
 
   useEffect(() => {
@@ -126,103 +147,147 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });
   }, [formValues?.call_id, formValues?.callId, formValues?.card_call_id, landingPage]);
 
+  const emptyFormData = {
+    landing_date: "",
+    inbound_id: "",
+    warehouse_id: "",
+    received_from: "",
+    location: "",
+    signature: "",
+    remarks: "",
+    items: [],
+  };
+
+  const buildEditItem = (item = {}) => ({
+    inbound_item_id: item.inbound_item_id ?? item.landing_note_item_id ?? item.id ?? "",
+    _order_no: item.order_no || "",
+    _po_no: item.po_no || "",
+    _package_type: item.package_type || "",
+    _description: item.description || "",
+    quantity: item.quantity != null ? String(item.quantity) : "",
+    slot_no_id: toIdStr(item.slot_no_id) || toIdStr(item.slot_no) || toIdStr(item.slot),
+    reason_id: toIdStr(item.reason_id) || toIdStr(item.reason),
+    dispatch_date: item.dispatch_date ? item.dispatch_date.split(" ")[0] : "",
+    transportation_required: item.transportation_required ? 1 : 0,
+    transportation: {
+      vehicle_type_id: item.transportation?.vehicle_type_id || "",
+      from_location_id: item.transportation?.from_location_id || "",
+      pickup_location: item.transportation?.pickup_location || "",
+      to_location_id: item.transportation?.to_location_id || "",
+      driver_id: item.transportation?.driver_id || "",
+    },
+  });
+
+  const buildFormFromNote = (note) => ({
+    landing_date: note.landing_date ? note.landing_date.split(" ")[0] : "",
+    inbound_id: note.inbound_id ? String(note.inbound_id) : "",
+    warehouse_id: note.warehouse_id ? String(note.warehouse_id) : "",
+    received_from: note.received_from || "",
+    location: note.location || "",
+    signature: note.signature || "",
+    remarks: note.remarks || "",
+    items: Array.isArray(note.items) ? note.items.map(buildEditItem) : [],
+  });
+
+  const populateFormFromNote = (note) => {
+    setFormData(buildFormFromNote(note));
+    const doc = note.document ?? (Array.isArray(note.documents) ? note.documents[0] : null);
+    setExistingDocuments((prev) => (doc ? [doc] : prev));
+    setSelectedFiles([]);
+  };
+
   const handleOpenModal = (note = null) => {
     if (note) {
       setEditingNote(note);
-      setFormData({
-        landingNoteNo: note.landingNoteNo || "",
-        date: note.date || "",
-        poDo: note.poDo || "",
-        landingProof: note.landingProof || [],
-        quantity: note.quantity || "",
-        packageType: note.packageType || "",
-        description: note.description || "",
-      });
-      setSelectedFiles(note.landingProof || []);
+      // Pre-fill immediately from list data; detail fetch will re-populate below
+      setFormData(buildFormFromNote(note));
+      setExistingDocuments(note.document ? [note.document] : []);
+      setSelectedFiles([]);
     } else {
       setEditingNote(null);
-      setFormData({
-        landingNoteNo: "",
-        date: "",
-        poDo: "",
-        landingProof: [],
-        quantity: "",
-        packageType: "",
-        description: "",
-      });
+      setFormData(emptyFormData);
+      setExistingDocuments([]);
       setSelectedFiles([]);
     }
     setShowModal(true);
   };
 
+  // Two-phase: fetch full detail after modal opens for edit
+  useEffect(() => {
+    if (!editingNote || !showModal) return;
+    const id = editingNote.landing_note_id ?? editingNote.id;
+    if (!id) return;
+    getLandingNoteById({ id, cb: (detail) => { if (detail) populateFormFromNote(detail); } });
+  }, [editingNote?.landing_note_id, showModal]);
+
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingNote(null);
-    setFormData({
-      landingNoteNo: "",
-      date: "",
-      poDo: "",
-      landingProof: [],
-      quantity: "",
-      packageType: "",
-      description: "",
-    });
+    setFormData(emptyFormData);
+    setExistingDocuments([]);
     setSelectedFiles([]);
   };
 
   const handleFormChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditItemChange = (index, field, value) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: value,
+      items: prev.items.map((item, i) => i === index ? { ...item, [field]: value } : item),
+    }));
+  };
+
+  const handleEditTransportationChange = (index, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.map((item, i) =>
+        i === index ? { ...item, transportation: { ...item.transportation, [field]: value } } : item
+      ),
     }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
+    if (!editingNote) return;
 
-    if (editingNote) {
-      // Update existing note
-      const updatedList = notesList.map(note =>
-        note.id === editingNote.id
-          ? {
-            ...note,
-            landingNoteNo: formData.landingNoteNo || note.landingNoteNo,
-            date: formData.date,
-            poDo: formData.poDo,
-            landingProof: selectedFiles,
-            quantity: formData.quantity,
-            packageType: formData.packageType,
-            description: formData.description,
-          }
-          : note
-      );
-      setNotesList(updatedList);
+    const id = editingNote.landing_note_id ?? editingNote.id;
+    const fd = new FormData();
+    if (formData.landing_date) fd.append("landing_date", formData.landing_date);
+    if (formData.inbound_id) fd.append("inbound_id", formData.inbound_id);
+    if (formData.warehouse_id) fd.append("warehouse_id", formData.warehouse_id);
+    if (formData.received_from) fd.append("received_from", formData.received_from);
+    if (formData.location) fd.append("location", formData.location);
+    if (formData.signature) fd.append("signature", formData.signature);
+    if (formData.remarks) fd.append("remarks", formData.remarks);
+    if (selectedFiles[0]) fd.append("file", selectedFiles[0]);
 
-      // Update formValues
-      const syntheticEvent = { target: { value: updatedList } };
-      handleChange("landingNoteList")(syntheticEvent);
-    } else {
-      // Create new note
-      const newNote = {
-        id: notesList.length > 0 ? Math.max(...notesList.map(m => m.id)) + 1 : 1,
-        landingNoteNo: formData.landingNoteNo || `LN-${String(notesList.length + 1).padStart(5, '0')}`,
-        date: formData.date,
-        poDo: formData.poDo,
-        landingProof: selectedFiles,
-        quantity: formData.quantity,
-        packageType: formData.packageType,
-        description: formData.description,
-      };
+    formData.items.forEach((item, i) => {
+      fd.append(`items[${i}][inbound_item_id]`, item.inbound_item_id);
+      fd.append(`items[${i}][quantity]`, item.quantity);
+      if (item.slot_no_id) fd.append(`items[${i}][slot_no_id]`, item.slot_no_id);
+      if (item.reason_id) fd.append(`items[${i}][reason_id]`, item.reason_id);
+      if (item.dispatch_date) fd.append(`items[${i}][dispatch_date]`, item.dispatch_date);
+      fd.append(`items[${i}][transportation_required]`, item.transportation_required ? 1 : 0);
+      if (item.transportation_required) {
+        fd.append(`items[${i}][transportation][vehicle_type_id]`, item.transportation.vehicle_type_id || "");
+        fd.append(`items[${i}][transportation][from_location_id]`, item.transportation.from_location_id || "");
+        fd.append(`items[${i}][transportation][pickup_location]`, item.transportation.pickup_location || "");
+        fd.append(`items[${i}][transportation][to_location_id]`, item.transportation.to_location_id || "");
+        fd.append(`items[${i}][transportation][driver_id]`, item.transportation.driver_id || "");
+      }
+    });
 
-      const updatedList = [...notesList, newNote];
-      setNotesList(updatedList);
-
-      // Update formValues
-      const syntheticEvent = { target: { value: updatedList } };
-      handleChange("landingNoteList")(syntheticEvent);
-    }
-
-    handleCloseModal();
+    updateLandingNote({
+      landingNoteId: id,
+      data: fd,
+      cb: () => {
+        handleCloseModal();
+        getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });
+      },
+    });
   };
 
   // File upload handlers
@@ -290,209 +355,122 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     { value: "Container", label: "Container" },
   ];
 
-  const handleDelete = (noteId) => {
-    if (window.confirm("Are you sure you want to delete this landing note?")) {
-      const updatedList = notesList.filter(note => note.id !== noteId);
-      setNotesList(updatedList);
-
-      // Update formValues
-      const syntheticEvent = { target: { value: updatedList } };
-      handleChange("landingNoteList")(syntheticEvent);
-    }
+  const handleDelete = (note) => {
+    setDeletingNote(note);
+    setShowDeleteModal(true);
   };
 
-  // Form state for Convert to Dispatch modal
-  const [convertFormData, setConvertFormData] = useState({
-    date: "",
-    warehouse: "",
-    signature: "",
-    deliveryLocation: "",
-    deliverTo: "",
-    documents: [],
-    remarks: "",
-    orders: [{
-      id: 1,
-      orderNo: "",
-      poDo: "",
-      quantity: "",
-      packageType: "",
-      description: "",
-      transportation: false,
-      typeOfVehicle: "",
-      fromLocation: "",
-      pickUpFrom: "",
-      toLocation: "",
-      driverName: "",
-      isPackingRequired: false,
-      repackingPallets: "",
-      repackingRolls: ""
-    }],
+  const handleConfirmDelete = () => {
+    if (!deletingNote) return;
+    const landingNoteId = deletingNote.landing_note_id ?? deletingNote.id;
+    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
+    const pageAfterDelete = landingNotes.length <= 1 && landingPage > 1 ? landingPage - 1 : landingPage;
+    deleteLandingNote({
+      landingNoteId,
+      cb: () => {
+        setShowDeleteModal(false);
+        setDeletingNote(null);
+        if (pageAfterDelete !== landingPage) setLandingPage(pageAfterDelete);
+        getAllLandingNotes({ call_id: callId, page: pageAfterDelete, limit: LANDING_LIMIT });
+      },
+    });
+  };
+
+  const slotOptions = [
+    { value: "1", label: "Slot 1" },
+    { value: "2", label: "Slot 2" },
+    { value: "3", label: "Slot 3" },
+    { value: "4", label: "Slot 4" },
+    { value: "5", label: "Slot 5" },
+    { value: "6", label: "Slot 6" },
+  ];
+
+  const reasonOptions = [
+    { value: "1", label: "Scrap" },
+    { value: "2", label: "Wrong supply" },
+    { value: "3", label: "Safe storage" },
+    { value: "4", label: "Service" },
+    { value: "5", label: "Transit" },
+  ];
+
+  const buildEmptyConvertItem = (item = {}) => ({
+    landing_note_item_id: item.landing_note_item_id ?? item.item_id ?? item.id ?? "",
+    _order_no: item.order_no || item.inbound_order_no || "",
+    _po_no: item.po_no || item.purchase_order_no || "",
+    _package_type: item.package_type || "",
+    _description: item.description || "",
+    quantity: item.quantity != null ? String(item.quantity) : "",
+    slot: toIdStr(item.slot_no_id) || toIdStr(item.slot_no) || toIdStr(item.slot),
+    reason: toIdStr(item.reason_id) || toIdStr(item.reason),
+    packing_required: item.packing_required ? 1 : 0,
+    repacking_pallets: item.repacking_pallets ? String(item.repacking_pallets) : "",
+    repacking_rolls: item.repacking_rolls ? String(item.repacking_rolls) : "",
+    transportation_required: item.transportation_required ? 1 : 0,
+    transportation: {
+      vehicle_type_id: item.transportation?.vehicle_type_id ? String(item.transportation.vehicle_type_id) : "",
+      from_location_id: item.transportation?.from_location_id ? String(item.transportation.from_location_id) : "",
+      pickup_location: item.transportation?.pickup_location || "",
+      to_location_id: item.transportation?.to_location_id ? String(item.transportation.to_location_id) : "",
+      driver_id: item.transportation?.driver_id ? String(item.transportation.driver_id) : "",
+      remarks: item.transportation?.remarks || "",
+    },
   });
 
-  // Dummy options for dropdowns
-  const warehouseOptions = [
-    { value: "warehouse1", label: "Warehouse 1" },
-    { value: "warehouse2", label: "Warehouse 2" },
-    { value: "warehouse3", label: "Warehouse 3" },
-    { value: "warehouse4", label: "Warehouse 4" },
-  ];
+  const emptyConvertForm = {
+    dispatch_date: "",
+    dispatch_time: "",
+    warehouse_id: "",
+    signature: "",
+    delivery_location: "",
+    delivered_to: "",
+    remarks: "",
+    documents: [],
+    items: [],
+  };
 
-  const locationOptions = [
-    { value: "Rastanura", label: "Rastanura" },
-    { value: "Dammam", label: "Dammam" },
-    { value: "Al Jubail", label: "Al Jubail" },
-    { value: "Al Khafji", label: "Al Khafji" },
-    { value: "As Safaniya", label: "As Safaniya" },
-  ];
-
-  const vehicleTypeOptions = [
-    { value: "Car", label: "Car" },
-    { value: "Truck", label: "Truck" },
-    { value: "Van", label: "Van" },
-    { value: "Bus", label: "Bus" },
-    { value: "Motorcycle", label: "Motorcycle" },
-  ];
-
-  const driverNameOptions = [
-    { value: "ABDUL", label: "ABDUL" },
-    { value: "AHMED", label: "AHMED" },
-    { value: "MOHAMMED", label: "MOHAMMED" },
-    { value: "ALI", label: "ALI" },
-    { value: "HASSAN", label: "HASSAN" },
-  ];
+  const [convertFormData, setConvertFormData] = useState(emptyConvertForm);
 
   const handleConvertToDispatch = (note) => {
     handleCloseDropdown();
     setConvertingNote(note);
-    // Pre-fill form with note data
+    const items = Array.isArray(note.items) && note.items.length > 0
+      ? note.items.map(buildEmptyConvertItem)
+      : [buildEmptyConvertItem()];
     setConvertFormData({
-      date: note.date || "",
-      warehouse: "",
-      signature: "",
-      deliveryLocation: "",
-      deliverTo: "",
-      documents: [],
-      remarks: "",
-      orders: [{
-        id: 1,
-        orderNo: note.landingNoteNo || "",
-        poDo: note.poDo || "",
-        quantity: note.quantity || "",
-        packageType: note.packageType || "",
-        description: note.description || "",
-        transportation: false,
-        typeOfVehicle: "",
-        fromLocation: "",
-        pickUpFrom: "",
-        toLocation: "",
-        driverName: "",
-        isPackingRequired: false,
-        repackingPallets: "",
-        repackingRolls: ""
-      }],
+      ...emptyConvertForm,
+      warehouse_id: note.warehouse_id ? String(note.warehouse_id) : "",
+      signature: note.signature || "",
+      delivery_location: note.location || "",
+      delivered_to: note.received_from || "",
+      remarks: note.remarks || "",
+      items,
     });
-    setExpandedConvertOrders({ 1: true });
     setShowConvertModal(true);
   };
 
   const handleCloseConvertModal = () => {
     setShowConvertModal(false);
     setConvertingNote(null);
-    setConvertFormData({
-      date: "",
-      warehouse: "",
-      signature: "",
-      deliveryLocation: "",
-      deliverTo: "",
-      documents: [],
-      remarks: "",
-      orders: [{
-        id: 1,
-        orderNo: "",
-        poDo: "",
-        quantity: "",
-        packageType: "",
-        description: "",
-        transportation: false,
-        typeOfVehicle: "",
-        fromLocation: "",
-        pickUpFrom: "",
-        toLocation: "",
-        driverName: "",
-        isPackingRequired: false,
-        repackingPallets: "",
-        repackingRolls: ""
-      }],
-    });
+    setConvertFormData(emptyConvertForm);
   };
 
   const handleConvertFormChange = (field, value) => {
+    setConvertFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleConvertItemChange = (index, field, value) => {
     setConvertFormData((prev) => ({
       ...prev,
-      [field]: value,
+      items: prev.items.map((item, i) => i === index ? { ...item, [field]: value } : item),
     }));
   };
 
-  const handleConvertOrderChange = (orderId, field, value) => {
+  const handleConvertTransportationChange = (index, field, value) => {
     setConvertFormData((prev) => ({
       ...prev,
-      orders: prev.orders.map((order) =>
-        order.id === orderId ? { ...order, [field]: value } : order
+      items: prev.items.map((item, i) =>
+        i === index ? { ...item, transportation: { ...item.transportation, [field]: value } } : item
       ),
-    }));
-  };
-
-  const handleAddNewConvertOrder = () => {
-    const newOrderId = convertFormData.orders.length > 0
-      ? Math.max(...convertFormData.orders.map((o) => o.id)) + 1
-      : 1;
-    setConvertFormData((prev) => ({
-      ...prev,
-      orders: [
-        ...prev.orders,
-        {
-          id: newOrderId,
-          orderNo: "",
-          poDo: "",
-          quantity: "",
-          packageType: "",
-          description: "",
-          transportation: false,
-          typeOfVehicle: "",
-          fromLocation: "",
-          pickUpFrom: "",
-          toLocation: "",
-          driverName: "",
-          isPackingRequired: false,
-          repackingPallets: "",
-          repackingRolls: ""
-        },
-      ],
-    }));
-    setExpandedConvertOrders((prev) => ({
-      ...prev,
-      [newOrderId]: true,
-    }));
-  };
-
-  const handleRemoveConvertOrder = (orderId) => {
-    if (convertFormData.orders.length > 1) {
-      setConvertFormData((prev) => ({
-        ...prev,
-        orders: prev.orders.filter((order) => order.id !== orderId),
-      }));
-      setExpandedConvertOrders((prev) => {
-        const newExpanded = { ...prev };
-        delete newExpanded[orderId];
-        return newExpanded;
-      });
-    }
-  };
-
-  const toggleConvertOrderExpand = (orderId) => {
-    setExpandedConvertOrders((prev) => ({
-      ...prev,
-      [orderId]: !prev[orderId],
     }));
   };
 
@@ -568,9 +546,48 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
 
   const handleConvertSubmit = (e) => {
     e.preventDefault();
-    console.log("Convert to Dispatch form submitted:", convertFormData);
-    // Here you can implement the logic to save/convert the note to dispatch note
-    handleCloseConvertModal();
+    const landingNoteId = convertingNote?.landing_note_id ?? convertingNote?.id;
+    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
+
+    const fd = new FormData();
+    fd.append("landing_note_id", landingNoteId);
+    if (convertFormData.warehouse_id) fd.append("warehouse_id", convertFormData.warehouse_id);
+    const dateVal = [convertFormData.dispatch_date, convertFormData.dispatch_time].filter(Boolean).join(" ");
+    if (dateVal) fd.append("dispatch_date", dateVal);
+    if (convertFormData.signature) fd.append("signature", convertFormData.signature);
+    if (convertFormData.delivery_location) fd.append("delivery_location", convertFormData.delivery_location);
+    if (convertFormData.delivered_to) fd.append("delivered_to", convertFormData.delivered_to);
+    if (convertFormData.remarks) fd.append("remarks", convertFormData.remarks);
+    if (convertFormData.documents?.[0]?.file) fd.append("file", convertFormData.documents[0].file);
+
+    convertFormData.items.forEach((item, i) => {
+      fd.append(`items[${i}][landing_note_item_id]`, item.landing_note_item_id);
+      fd.append(`items[${i}][quantity]`, item.quantity);
+      if (item.slot) fd.append(`items[${i}][slot]`, item.slot);
+      if (item.reason) fd.append(`items[${i}][reason]`, item.reason);
+      fd.append(`items[${i}][packing_required]`, item.packing_required ? 1 : 0);
+      if (item.packing_required) {
+        fd.append(`items[${i}][repacking_pallets]`, parseInt(item.repacking_pallets) || 0);
+        fd.append(`items[${i}][repacking_rolls]`, parseInt(item.repacking_rolls) || 0);
+      }
+      fd.append(`items[${i}][transportation_required]`, item.transportation_required ? 1 : 0);
+      if (item.transportation_required) {
+        fd.append(`items[${i}][transportation][vehicle_type_id]`, item.transportation.vehicle_type_id || "");
+        fd.append(`items[${i}][transportation][from_location_id]`, item.transportation.from_location_id || "");
+        fd.append(`items[${i}][transportation][pickup_location]`, item.transportation.pickup_location || "");
+        fd.append(`items[${i}][transportation][to_location_id]`, item.transportation.to_location_id || "");
+        fd.append(`items[${i}][transportation][driver_id]`, item.transportation.driver_id || "");
+        fd.append(`items[${i}][transportation][remarks]`, item.transportation.remarks || "");
+      }
+    });
+
+    convertLandingNote({
+      data: fd,
+      cb: () => {
+        handleCloseConvertModal();
+        getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });
+      },
+    });
   };
 
   const handleToggleDropdown = (noteId, e) => {
@@ -756,43 +773,131 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     <div className="modal-body">
       <div className="lead-form">
         <form id="landingNoteForm" onSubmit={handleSubmit}>
-          <div className="permInputs row mb-lg-3">
-            <div className="col-12 mb-3">
-              <FormField label="Landing Note No">
-                <FormInput
-                  type="text"
-                  value={formData.landingNoteNo}
-                  onChange={(e) => handleFormChange("landingNoteNo", e.target.value)}
-                  placeholder="Enter landing note number..."
-                />
-              </FormField>
-            </div>
 
-            <div className="col-12 mb-3">
-              <FormField label="Date">
-                <div className="cf-input">
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => handleFormChange("date", e.target.value)}
-                    placeholder="Select date"
-                  />
+          {/* Basic Details */}
+          <div style={{ marginBottom: "28px", paddingBottom: "24px", borderBottom: "1px solid #e2e2ea" }}>
+            <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#00368c", marginBottom: "16px" }}>Basic Details</h3>
+            <div className="row">
+              <div className="col-md-6 mb-3">
+                <FormField label="Landing Date">
+                  <div className="cf-input">
+                    <input
+                      type="date"
+                      value={formData.landing_date}
+                      onChange={(e) => handleFormChange("landing_date", e.target.value)}
+                    />
+                  </div>
+                </FormField>
+              </div>
+              <div className="col-md-6 mb-3">
+                <FormField label="Warehouse ID">
+                  <FormInput type="number" value={formData.warehouse_id} onChange={(e) => handleFormChange("warehouse_id", e.target.value)} placeholder="Enter warehouse ID..." />
+                </FormField>
+              </div>
+              <div className="col-md-6 mb-3">
+                <FormField label="Received From">
+                  <FormInput type="text" value={formData.received_from} onChange={(e) => handleFormChange("received_from", e.target.value)} placeholder="Enter received from..." />
+                </FormField>
+              </div>
+              <div className="col-md-6 mb-3">
+                <FormField label="Location">
+                  <FormInput type="text" value={formData.location} onChange={(e) => handleFormChange("location", e.target.value)} placeholder="Enter location..." />
+                </FormField>
+              </div>
+              <div className="col-md-6 mb-3">
+                <FormField label="Signature">
+                  <FormInput type="text" value={formData.signature} onChange={(e) => handleFormChange("signature", e.target.value)} placeholder="Enter signature..." />
+                </FormField>
+              </div>
+            </div>
+          </div>
+
+          {/* Order Items */}
+          {formData.items.length > 0 && (
+            <div style={{ marginBottom: "28px", paddingBottom: "24px", borderBottom: "1px solid #e2e2ea" }}>
+              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#00368c", marginBottom: "16px" }}>Order Items</h3>
+              {formData.items.map((item, i) => (
+                <div key={i} style={{ border: "1px solid #e2e2ea", borderRadius: "8px", padding: "16px", marginBottom: "16px", backgroundColor: "#fafafa" }}>
+                  <p style={{ fontSize: "13px", fontWeight: "700", color: "#00368c", marginBottom: "12px" }}>Item {i + 1}</p>
+
+                  {/* Read-only info from inbound order */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "10px", marginBottom: "16px", padding: "12px", backgroundColor: "#ececec", borderRadius: "6px" }}>
+                    {item._order_no && <div><div style={{ fontSize: "11px", fontWeight: "600", color: "#888", textTransform: "uppercase", marginBottom: "2px" }}>Order No</div><div style={{ fontSize: "13px", color: "#1a1a1a" }}>{item._order_no}</div></div>}
+                    {item._po_no && <div><div style={{ fontSize: "11px", fontWeight: "600", color: "#888", textTransform: "uppercase", marginBottom: "2px" }}>PO No</div><div style={{ fontSize: "13px", color: "#1a1a1a" }}>{item._po_no}</div></div>}
+                    {item._package_type && <div><div style={{ fontSize: "11px", fontWeight: "600", color: "#888", textTransform: "uppercase", marginBottom: "2px" }}>Package Type</div><div style={{ fontSize: "13px", color: "#1a1a1a" }}>{item._package_type}</div></div>}
+                    <div><div style={{ fontSize: "11px", fontWeight: "600", color: "#888", textTransform: "uppercase", marginBottom: "2px" }}>Description</div><div style={{ fontSize: "13px", color: item._description ? "#1a1a1a" : "#aaa" }}>{item._description || "-"}</div></div>
+                  </div>
+
+                  <div className="row">
+                    <div className="col-md-4 mb-3">
+                      <FormField label="Quantity">
+                        <FormInput type="number" value={item.quantity} onChange={(e) => handleEditItemChange(i, "quantity", e.target.value)} placeholder="Quantity..." />
+                      </FormField>
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <FormField label="Slot No">
+                        <FormSelect value={item.slot_no_id} onChange={(e) => handleEditItemChange(i, "slot_no_id", e.target.value)} options={slotOptions} placeholder="Select slot..." />
+                      </FormField>
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <FormField label="Reason">
+                        <FormSelect value={item.reason_id} onChange={(e) => handleEditItemChange(i, "reason_id", e.target.value)} options={reasonOptions} placeholder="Select reason..." />
+                      </FormField>
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <FormField label="Dispatch Date">
+                        <div className="cf-input">
+                          <input type="date" value={item.dispatch_date} onChange={(e) => handleEditItemChange(i, "dispatch_date", e.target.value)} />
+                        </div>
+                      </FormField>
+                    </div>
+
+                    {/* Transportation */}
+                    <div className="col-12 mb-2">
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                        <input type="checkbox" checked={!!item.transportation_required} onChange={(e) => handleEditItemChange(i, "transportation_required", e.target.checked ? 1 : 0)} style={{ width: "16px", height: "16px", cursor: "pointer" }} />
+                        <span style={{ fontSize: "14px", fontWeight: "600", color: "#1a1a1a" }}>Transportation Required</span>
+                      </label>
+                    </div>
+                    {!!item.transportation_required && (
+                      <>
+                        <div className="col-md-6 mb-3">
+                          <FormField label="Vehicle Type ID">
+                            <FormInput type="number" value={item.transportation.vehicle_type_id} onChange={(e) => handleEditTransportationChange(i, "vehicle_type_id", e.target.value)} placeholder="Vehicle Type ID..." />
+                          </FormField>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <FormField label="From Location ID">
+                            <FormInput type="number" value={item.transportation.from_location_id} onChange={(e) => handleEditTransportationChange(i, "from_location_id", e.target.value)} placeholder="From Location ID..." />
+                          </FormField>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <FormField label="Pickup Location">
+                            <FormInput type="text" value={item.transportation.pickup_location} onChange={(e) => handleEditTransportationChange(i, "pickup_location", e.target.value)} placeholder="Pickup location..." />
+                          </FormField>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <FormField label="To Location ID">
+                            <FormInput type="number" value={item.transportation.to_location_id} onChange={(e) => handleEditTransportationChange(i, "to_location_id", e.target.value)} placeholder="To Location ID..." />
+                          </FormField>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <FormField label="Driver ID">
+                            <FormInput type="number" value={item.transportation.driver_id} onChange={(e) => handleEditTransportationChange(i, "driver_id", e.target.value)} placeholder="Driver ID..." />
+                          </FormField>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </FormField>
+              ))}
             </div>
+          )}
 
-            <div className="col-12 mb-3">
-              <FormField label="PO/DO">
-                <FormInput
-                  type="text"
-                  value={formData.poDo}
-                  onChange={(e) => handleFormChange("poDo", e.target.value)}
-                  placeholder="Enter PO/DO number..."
-                />
-              </FormField>
-            </div>
-
-            <div className="col-12 mb-3">
+          {/* Landing Proof & Remarks */}
+          <div>
+            <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#00368c", marginBottom: "16px" }}>Landing Proof & Remarks</h3>
+            <div className="mb-3">
               <FormField label="Landing Proof">
                 <div className="document-upload-wrapper">
                   <div
@@ -804,25 +909,32 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                     onClick={handleBrowseClick}
                     style={{ "--card-color": cardColor || "#00368c" }}
                   >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      id="landingProofDocuments"
-                      multiple
-                      onChange={handleFileChange}
-                      className="file-input-hidden"
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    />
+                    <input ref={fileInputRef} type="file" id="landingProofDocuments" multiple onChange={handleFileChange} className="file-input-hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
                     <div className="upload-zone-content">
                       <div className="upload-icon-wrapper"></div>
                       <div className="upload-text-content">
-                        <p className="upload-main-text">
-                          Drag and drop your files here, or{" "}
-                          <span className="upload-link">click to browse</span>
-                        </p>
+                        <p className="upload-main-text">Drag and drop your files here, or <span className="upload-link">click to browse</span></p>
                       </div>
                     </div>
                   </div>
+                  {existingDocuments.length > 0 && selectedFiles.length === 0 && (
+                    <div className="document-file-preview-list" style={{ marginTop: "8px" }}>
+                      <p style={{ fontSize: "12px", color: "#888", margin: "0 0 6px 0", fontWeight: "600" }}>Current file:</p>
+                      {existingDocuments.map((doc, index) => (
+                        <div key={index} className="document-file-preview-item">
+                          <div className="document-file-preview-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </div>
+                          <div className="document-file-preview-info">
+                            <span className="document-file-preview-name">{doc.file_name || doc.name || "Document"}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {selectedFiles.length > 0 && (
                     <div className="document-file-preview-list">
                       {selectedFiles.map((file, index) => (
@@ -836,17 +948,10 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                           <div className="document-file-preview-info">
                             <span className="document-file-preview-name">{file.name}</span>
                             <span className="document-file-preview-size">
-                              {file.size < 1024 * 1024
-                                ? `${(file.size / 1024).toFixed(1)} KB`
-                                : `${(file.size / 1024 / 1024).toFixed(2)} MB`}
+                              {file.size < 1024 * 1024 ? `${(file.size / 1024).toFixed(1)} KB` : `${(file.size / 1024 / 1024).toFixed(2)} MB`}
                             </span>
                           </div>
-                          <button
-                            className="document-file-preview-remove"
-                            onClick={(e) => { e.stopPropagation(); handleRemoveFile(index); }}
-                            type="button"
-                            title="Remove file"
-                          >
+                          <button className="document-file-preview-remove" onClick={(e) => { e.stopPropagation(); handleRemoveFile(index); }} type="button" title="Remove file">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
@@ -858,40 +963,13 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                 </div>
               </FormField>
             </div>
-
-            <div className="col-12 mb-3">
-              <FormField label="Quantity">
-                <FormInput
-                  type="number"
-                  value={formData.quantity}
-                  onChange={(e) => handleFormChange("quantity", e.target.value)}
-                  placeholder="Enter quantity..."
-                />
-              </FormField>
-            </div>
-
-            <div className="col-12 mb-3">
-              <FormField label="Package Type">
-                <FormSelect
-                  value={formData.packageType}
-                  onChange={(e) => handleFormChange("packageType", e.target.value)}
-                  options={packageTypeOptions}
-                  placeholder="Select package type..."
-                />
-              </FormField>
-            </div>
-
-            <div className="col-12 mb-3">
-              <FormField label="Description">
-                <FormInput
-                  type="text"
-                  value={formData.description}
-                  onChange={(e) => handleFormChange("description", e.target.value)}
-                  placeholder="Enter description..."
-                />
+            <div className="card-description-wrapper">
+              <FormField label="Remarks">
+                <ReactQuillEditor value={formData.remarks || ""} onChange={(e) => handleFormChange("remarks", e.target.value)} placeholder="Enter remarks..." name="remarks" />
               </FormField>
             </div>
           </div>
+
         </form>
       </div>
     </div>
@@ -910,9 +988,13 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         type="submit"
         form="landingNoteForm"
         className="btn btn-primary"
-        style={{ backgroundColor: "#00368c" }}
+        disabled={isLoadingUpdate}
+        style={{ backgroundColor: "#00368c", display: "flex", alignItems: "center", gap: "8px" }}
       >
-        {editingNote ? "Update Note" : "Add Note"}
+        {isLoadingUpdate && (
+          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+        )}
+        {isLoadingUpdate ? "Saving..." : (editingNote ? "Update Note" : "Add Note")}
       </button>
     </div>
   );
@@ -925,449 +1007,184 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   );
 
   const renderConvertBody = () => {
-    const packageTypeOptions = [
-      { value: "Box", label: "Box" },
-      { value: "Pallet", label: "Pallet" },
-      { value: "Crate", label: "Crate" },
-      { value: "Bag", label: "Bag" },
-      { value: "Container", label: "Container" },
-      { value: "Loose", label: "Loose" },
-    ];
-
     return (
       <div className="modal-body">
         <div className="lead-form">
           <form id="convertToDispatchForm" onSubmit={handleConvertSubmit}>
-            {/* Basic Details Section */}
-            <div style={{ marginBottom: "32px", paddingBottom: "24px", borderBottom: "1px solid #e2e2ea" }}>
-              <h3 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "20px", color: "#1a1a1a" }}>
-                Basic Details
-              </h3>
-              <div className="row mb-lg-3">
+
+            {/* Landing note reference (read-only) */}
+            {convertingNote && (
+              <div style={{ marginBottom: "20px", padding: "12px 16px", backgroundColor: "#eef2ff", borderRadius: "8px", display: "flex", gap: "32px" }}>
+                <div>
+                  <div style={{ fontSize: "11px", fontWeight: "600", color: "#888", textTransform: "uppercase", marginBottom: "2px" }}>Landing Note No</div>
+                  <div style={{ fontSize: "14px", fontWeight: "600", color: "#00368c" }}>{convertingNote.landing_note_no || convertingNote.landingNoteNo || "-"}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "11px", fontWeight: "600", color: "#888", textTransform: "uppercase", marginBottom: "2px" }}>Dispatch Note No</div>
+                  <div style={{ fontSize: "14px", color: "#666" }}>Auto-generated by system</div>
+                </div>
+              </div>
+            )}
+
+            {/* Basic Details */}
+            <div style={{ marginBottom: "28px", paddingBottom: "24px", borderBottom: "1px solid #e2e2ea" }}>
+              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#00368c", marginBottom: "16px" }}>Basic Details</h3>
+              <div className="row">
                 <div className="col-md-6 mb-3">
-                  <FormField label="Date">
-                    <div className="cf-select cf-date-input">
-                      <input
-                        type="date"
-                        value={convertFormData.date}
-                        onChange={(e) => handleConvertFormChange("date", e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                          width: "100%",
-                          border: "none",
-                          outline: "none",
-                          background: "transparent",
-                          fontSize: "14px",
-                          color: "#1a1a1a",
-                          fontFamily: "inherit",
-                          padding: 0,
-                          flex: 1,
-                          cursor: "pointer",
-                        }}
-                      />
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        style={{
-                          flexShrink: 0,
-                          marginLeft: "8px",
-                          color: "#666",
-                          pointerEvents: "none",
-                          position: "relative",
-                          zIndex: 1,
-                        }}
-                      >
-                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
-                        <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                    </div>
+                  <FormField label="Dispatch Date & Time">
+                    <DateTimePickerField
+                      dateValue={convertFormData.dispatch_date}
+                      timeValue={convertFormData.dispatch_time}
+                      onDateTimeChange={(v) => setConvertFormData((prev) => ({ ...prev, dispatch_date: v.date, dispatch_time: v.time }))}
+                      placeholder="YYYY-MM-DD HH:mm"
+                    />
                   </FormField>
                 </div>
-
                 <div className="col-md-6 mb-3">
-                  <FormField label="Warehouse">
-                    <FormSelect
-                      value={convertFormData.warehouse}
-                      onChange={(e) => handleConvertFormChange("warehouse", e.target.value)}
-                      options={warehouseOptions}
-                      placeholder="Select warehouse"
+                  <FormField label="Warehouse ID">
+                    <FormInput
+                      type="number"
+                      value={convertFormData.warehouse_id}
+                      onChange={(e) => handleConvertFormChange("warehouse_id", e.target.value)}
+                      placeholder="Enter warehouse ID..."
                     />
                   </FormField>
                 </div>
               </div>
-
-              {/* Dispatch Details Section */}
-              <div style={{ marginTop: "24px", paddingTop: "24px", borderTop: "1px solid #e2e2ea" }}>
-                <h3 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "20px", color: "#1a1a1a" }}>
-                  Dispatch Details
-                </h3>
-                <div className="row mb-lg-3">
-                  <div className="col-md-4 mb-3">
-                    <FormField label="Signature">
-                      <FormInput
-                        type="text"
-                        value={convertFormData.signature}
-                        onChange={(e) => handleConvertFormChange("signature", e.target.value)}
-                        placeholder="Enter signature..."
-                      />
-                    </FormField>
-                  </div>
-
-                  <div className="col-md-4 mb-3">
-                    <FormField label="Delivery Location">
-                      <FormInput
-                        type="text"
-                        value={convertFormData.deliveryLocation}
-                        onChange={(e) => handleConvertFormChange("deliveryLocation", e.target.value)}
-                        placeholder="Enter delivery location..."
-                      />
-                    </FormField>
-                  </div>
-
-                  <div className="col-md-4 mb-3">
-                    <FormField label="Deliver to (Person Name)">
-                      <FormInput
-                        type="text"
-                        value={convertFormData.deliverTo}
-                        onChange={(e) => handleConvertFormChange("deliverTo", e.target.value)}
-                        placeholder="Enter person name..."
-                      />
-                    </FormField>
-                  </div>
-                </div>
-              </div>
             </div>
 
-            {/* Order Details Section */}
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                <h3 style={{ fontSize: "18px", fontWeight: "600", margin: 0, color: "#1a1a1a" }}>
-                  Order Details
-                </h3>
-                <button
-                  type="button"
-                  onClick={handleAddNewConvertOrder}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "10px 20px",
-                    backgroundColor: "#00368c",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    transition: "all 0.2s ease",
-                    boxShadow: "0 2px 4px rgba(0, 54, 140, 0.2)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#002d6b";
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                    e.currentTarget.style.boxShadow = "0 4px 8px rgba(0, 54, 140, 0.3)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "#00368c";
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 2px 4px rgba(0, 54, 140, 0.2)";
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                  Add New Order
-                </button>
-              </div>
+            {/* Order Details (items from landing note) */}
+            <div style={{ marginBottom: "28px" }}>
+              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#00368c", marginBottom: "16px" }}>Order Details</h3>
+              {convertFormData.items.map((item, i) => (
+                <div key={i} style={{ border: "1px solid #e2e2ea", borderRadius: "8px", padding: "16px", marginBottom: "16px", backgroundColor: "#fafafa" }}>
+                  <p style={{ fontSize: "13px", fontWeight: "700", color: "#00368c", marginBottom: "12px" }}>Item {i + 1}</p>
 
-              {convertFormData.orders.map((order, index) => (
-                <div
-                  key={order.id}
-                  style={{
-                    marginBottom: "16px",
-                    border: "1px solid #e2e2ea",
-                    borderRadius: "8px",
-                    overflow: "hidden",
-                    backgroundColor: "#f8f9fa",
-                    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "#00368c";
-                    e.currentTarget.style.boxShadow = "0 2px 6px rgba(0, 54, 140, 0.1)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "#e2e2ea";
-                    e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
-                  }}
-                >
-                  <div
-                    onClick={() => toggleConvertOrderExpand(order.id)}
-                    style={{
-                      padding: "16px 20px",
-                      backgroundColor: "#f8f9fa",
-                      cursor: "pointer",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      transition: "background-color 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f0f1f5";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f8f9fa";
-                    }}
-                  >
-                    <span style={{ fontSize: "15px", fontWeight: "600", color: "#1a1a1a" }}>
-                      Order {index + 1}
-                    </span>
-                    <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                      {convertFormData.orders.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveConvertOrder(order.id);
-                          }}
-                          style={{
-                            padding: "6px 12px",
-                            backgroundColor: "#dc3545",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            fontWeight: "500",
-                            transition: "all 0.2s ease",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#c82333";
-                            e.currentTarget.style.transform = "translateY(-1px)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "#dc3545";
-                            e.currentTarget.style.transform = "translateY(0)";
-                          }}
-                        >
-                          Remove
-                        </button>
-                      )}
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        style={{
-                          transform: expandedConvertOrders[order.id] ? "rotate(180deg)" : "rotate(0deg)",
-                          transition: "transform 0.3s ease",
-                          color: "#666",
-                        }}
-                      >
-                        <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
+                  {/* Read-only info from landing note */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: "10px", marginBottom: "16px", padding: "12px", backgroundColor: "#ececec", borderRadius: "6px" }}>
+                    <div><div style={{ fontSize: "11px", fontWeight: "600", color: "#888", textTransform: "uppercase", marginBottom: "2px" }}>Order No</div><div style={{ fontSize: "13px", color: item._order_no ? "#1a1a1a" : "#aaa" }}>{item._order_no || "-"}</div></div>
+                    <div><div style={{ fontSize: "11px", fontWeight: "600", color: "#888", textTransform: "uppercase", marginBottom: "2px" }}>PO No</div><div style={{ fontSize: "13px", color: item._po_no ? "#1a1a1a" : "#aaa" }}>{item._po_no || "-"}</div></div>
+                    <div><div style={{ fontSize: "11px", fontWeight: "600", color: "#888", textTransform: "uppercase", marginBottom: "2px" }}>Package Type</div><div style={{ fontSize: "13px", color: item._package_type ? "#1a1a1a" : "#aaa" }}>{item._package_type || "-"}</div></div>
+                    <div><div style={{ fontSize: "11px", fontWeight: "600", color: "#888", textTransform: "uppercase", marginBottom: "2px" }}>Description</div><div style={{ fontSize: "13px", color: item._description ? "#1a1a1a" : "#aaa" }}>{item._description || "-"}</div></div>
                   </div>
 
-                  {expandedConvertOrders[order.id] && (
-                    <div style={{ padding: "24px", backgroundColor: "white" }}>
-                      <div className="row mb-lg-3">
-                        <div className="col-md-6 mb-3">
-                          <FormField label="Order No">
-                            <FormInput
-                              type="text"
-                              value={order.orderNo}
-                              onChange={(e) => handleConvertOrderChange(order.id, "orderNo", e.target.value)}
-                              placeholder="Enter order number..."
-                            />
-                          </FormField>
-                        </div>
-
-                        <div className="col-md-6 mb-3">
-                          <FormField label="PO/DO">
-                            <FormInput
-                              type="text"
-                              value={order.poDo}
-                              onChange={(e) => handleConvertOrderChange(order.id, "poDo", e.target.value)}
-                              placeholder="Enter PO/DO number..."
-                            />
-                          </FormField>
-                        </div>
-
-                        <div className="col-md-6 mb-3">
-                          <FormField label="Description">
-                            <FormInput
-                              type="text"
-                              value={order.description}
-                              onChange={(e) => handleConvertOrderChange(order.id, "description", e.target.value)}
-                              placeholder="Enter description..."
-                            />
-                          </FormField>
-                        </div>
-
-                        <div className="col-md-6 mb-3">
-                          <FormField label="Package Type">
-                            <FormSelect
-                              value={order.packageType}
-                              onChange={(e) => handleConvertOrderChange(order.id, "packageType", e.target.value)}
-                              options={packageTypeOptions}
-                              placeholder="Select package type..."
-                            />
-                          </FormField>
-                        </div>
-
-                        <div className="col-md-6 mb-3">
-                          <FormField label="Quantity">
-                            <FormInput
-                              type="number"
-                              value={order.quantity}
-                              onChange={(e) => handleConvertOrderChange(order.id, "quantity", e.target.value)}
-                              placeholder="Enter quantity..."
-                            />
-                          </FormField>
-                        </div>
-                      </div>
-
-                      {/* Transportation Section */}
-                      <div style={{ marginTop: "24px", paddingTop: "24px", borderTop: "1px solid #e2e2ea" }}>
-                        <div style={{ marginBottom: "16px" }}>
-                          <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-                            <input
-                              type="checkbox"
-                              checked={order.transportation || false}
-                              onChange={(e) => handleConvertOrderChange(order.id, "transportation", e.target.checked)}
-                              style={{ cursor: "pointer", width: "18px", height: "18px" }}
-                            />
-                            <span style={{ fontSize: "15px", fontWeight: "600", color: "#1a1a1a" }}>Transportation</span>
-                          </label>
-                        </div>
-
-                        {order.transportation && (
-                          <div className="row mb-lg-3">
-                            <div className="col-md-6 mb-3">
-                              <FormField label="Type of Vehicle">
-                                <FormSelect
-                                  value={order.typeOfVehicle}
-                                  onChange={(e) => handleConvertOrderChange(order.id, "typeOfVehicle", e.target.value)}
-                                  options={vehicleTypeOptions}
-                                  placeholder="Select type of vehicle..."
-                                />
-                              </FormField>
-                            </div>
-
-                            <div className="col-md-6 mb-3">
-                              <FormField label="From Location">
-                                <FormSelect
-                                  value={order.fromLocation}
-                                  onChange={(e) => handleConvertOrderChange(order.id, "fromLocation", e.target.value)}
-                                  options={locationOptions}
-                                  placeholder="Select from location..."
-                                />
-                              </FormField>
-                            </div>
-
-                            <div className="col-md-6 mb-3">
-                              <FormField label="Pick-Up From">
-                                <FormInput
-                                  type="text"
-                                  value={order.pickUpFrom}
-                                  onChange={(e) => handleConvertOrderChange(order.id, "pickUpFrom", e.target.value)}
-                                  placeholder="Enter pick-up location..."
-                                />
-                              </FormField>
-                            </div>
-
-                            <div className="col-md-6 mb-3">
-                              <FormField label="To Location">
-                                <FormSelect
-                                  value={order.toLocation}
-                                  onChange={(e) => handleConvertOrderChange(order.id, "toLocation", e.target.value)}
-                                  options={locationOptions}
-                                  placeholder="Select to location..."
-                                />
-                              </FormField>
-                            </div>
-
-                            <div className="col-md-6 mb-3">
-                              <FormField label="Driver Name">
-                                <FormSelect
-                                  value={order.driverName}
-                                  onChange={(e) => handleConvertOrderChange(order.id, "driverName", e.target.value)}
-                                  options={driverNameOptions}
-                                  placeholder="Select driver name..."
-                                />
-                              </FormField>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Is Packing Required, Repacking Pallets, Repacking Rolls - After Transportation */}
-                        <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #e2e2ea" }}>
-                          <div style={{ marginBottom: "16px" }}>
-                            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-                              <input
-                                type="checkbox"
-                                checked={order.isPackingRequired || false}
-                                onChange={(e) => handleConvertOrderChange(order.id, "isPackingRequired", e.target.checked)}
-                                style={{ cursor: "pointer", width: "18px", height: "18px" }}
-                              />
-                              <span style={{ fontSize: "15px", fontWeight: "600", color: "#1a1a1a" }}>Is Packing Required?</span>
-                            </label>
-                          </div>
-
-                          {order.isPackingRequired && (
-                            <div className="row mb-lg-3">
-                              <div className="col-md-6 mb-3">
-                                <FormField label="Repacking Pallets">
-                                  <FormInput
-                                    type="text"
-                                    value={order.repackingPallets}
-                                    onChange={(e) => handleConvertOrderChange(order.id, "repackingPallets", e.target.value)}
-                                    placeholder="Enter repacking pallets..."
-                                  />
-                                </FormField>
-                              </div>
-
-                              <div className="col-md-6 mb-3">
-                                <FormField label="Repacking Rolls">
-                                  <FormInput
-                                    type="text"
-                                    value={order.repackingRolls}
-                                    onChange={(e) => handleConvertOrderChange(order.id, "repackingRolls", e.target.value)}
-                                    placeholder="Enter repacking rolls..."
-                                  />
-                                </FormField>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                  {/* Editable fields */}
+                  <div className="row">
+                    <div className="col-md-4 mb-3">
+                      <FormField label="Quantity">
+                        <FormInput type="number" value={item.quantity} onChange={(e) => handleConvertItemChange(i, "quantity", e.target.value)} placeholder="Quantity..." />
+                      </FormField>
                     </div>
-                  )}
+                    <div className="col-md-4 mb-3">
+                      <FormField label="Slot">
+                        <FormSelect value={item.slot} onChange={(e) => handleConvertItemChange(i, "slot", e.target.value)} options={slotOptions} placeholder="Select slot..." />
+                      </FormField>
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <FormField label="Reason">
+                        <FormSelect value={item.reason} onChange={(e) => handleConvertItemChange(i, "reason", e.target.value)} options={reasonOptions} placeholder="Select reason..." />
+                      </FormField>
+                    </div>
+
+                    {/* Packing */}
+                    <div className="col-12 mb-2">
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                        <input type="checkbox" checked={!!item.packing_required} onChange={(e) => handleConvertItemChange(i, "packing_required", e.target.checked ? 1 : 0)} style={{ width: "16px", height: "16px", cursor: "pointer" }} />
+                        <span style={{ fontSize: "14px", fontWeight: "600", color: "#1a1a1a" }}>Packing Required</span>
+                      </label>
+                    </div>
+                    {!!item.packing_required && (
+                      <>
+                        <div className="col-md-6 mb-3">
+                          <FormField label="Repacking Pallets">
+                            <FormInput type="number" value={item.repacking_pallets} onChange={(e) => handleConvertItemChange(i, "repacking_pallets", e.target.value)} placeholder="Integer..." />
+                          </FormField>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <FormField label="Repacking Rolls">
+                            <FormInput type="number" value={item.repacking_rolls} onChange={(e) => handleConvertItemChange(i, "repacking_rolls", e.target.value)} placeholder="Integer..." />
+                          </FormField>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Transportation */}
+                    <div className="col-12 mb-2">
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                        <input type="checkbox" checked={!!item.transportation_required} onChange={(e) => handleConvertItemChange(i, "transportation_required", e.target.checked ? 1 : 0)} style={{ width: "16px", height: "16px", cursor: "pointer" }} />
+                        <span style={{ fontSize: "14px", fontWeight: "600", color: "#1a1a1a" }}>Transportation Required</span>
+                      </label>
+                    </div>
+                    {!!item.transportation_required && (
+                      <>
+                        <div className="col-md-6 mb-3">
+                          <FormField label="Vehicle Type ID">
+                            <FormInput type="number" value={item.transportation.vehicle_type_id} onChange={(e) => handleConvertTransportationChange(i, "vehicle_type_id", e.target.value)} placeholder="Vehicle Type ID..." />
+                          </FormField>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <FormField label="From Location ID">
+                            <FormInput type="number" value={item.transportation.from_location_id} onChange={(e) => handleConvertTransportationChange(i, "from_location_id", e.target.value)} placeholder="From Location ID..." />
+                          </FormField>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <FormField label="Pickup Location">
+                            <FormInput type="text" value={item.transportation.pickup_location} onChange={(e) => handleConvertTransportationChange(i, "pickup_location", e.target.value)} placeholder="Pickup location..." />
+                          </FormField>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <FormField label="To Location ID">
+                            <FormInput type="number" value={item.transportation.to_location_id} onChange={(e) => handleConvertTransportationChange(i, "to_location_id", e.target.value)} placeholder="To Location ID..." />
+                          </FormField>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <FormField label="Driver ID">
+                            <FormInput type="number" value={item.transportation.driver_id} onChange={(e) => handleConvertTransportationChange(i, "driver_id", e.target.value)} placeholder="Driver ID..." />
+                          </FormField>
+                        </div>
+                        <div className="col-md-6 mb-3">
+                          <FormField label="Transportation Remarks">
+                            <FormInput type="text" value={item.transportation.remarks} onChange={(e) => handleConvertTransportationChange(i, "remarks", e.target.value)} placeholder="Remarks..." />
+                          </FormField>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
 
-            {/* Documents & Remarks Section - Outside Order Details */}
-            <div style={{ marginTop: "32px", paddingTop: "24px", borderTop: "2px solid #e2e2ea" }}>
-              <h3 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "20px", color: "#1a1a1a" }}>
-                Documents & Remarks
-              </h3>
+            {/* Dispatch Details (below order details as per spec) */}
+            <div style={{ marginBottom: "28px", paddingBottom: "24px", borderBottom: "1px solid #e2e2ea" }}>
+              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#00368c", marginBottom: "16px" }}>Dispatch Details</h3>
+              <div className="row">
+                <div className="col-md-4 mb-3">
+                  <FormField label="Signature">
+                    <FormInput type="text" value={convertFormData.signature} onChange={(e) => handleConvertFormChange("signature", e.target.value)} placeholder="Enter signature..." />
+                  </FormField>
+                </div>
+                <div className="col-md-4 mb-3">
+                  <FormField label="Delivery Location">
+                    <FormInput type="text" value={convertFormData.delivery_location} onChange={(e) => handleConvertFormChange("delivery_location", e.target.value)} placeholder="Enter delivery location..." />
+                  </FormField>
+                </div>
+                <div className="col-md-4 mb-3">
+                  <FormField label="Delivered To">
+                    <FormInput type="text" value={convertFormData.delivered_to} onChange={(e) => handleConvertFormChange("delivered_to", e.target.value)} placeholder="Enter person name..." />
+                  </FormField>
+                </div>
+              </div>
+            </div>
 
-              {/* Document Upload - Full Width */}
-              <div className="mb-lg-3 mb-sm-0" style={{ marginBottom: "24px" }}>
+            {/* Documents & Remarks */}
+            <div>
+              <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#00368c", marginBottom: "16px" }}>Documents & Remarks</h3>
+              <div className="mb-3">
                 <FormField label="Document Upload">
                   <div style={{ marginTop: "8px" }}>
                     <AttachmentsList
                       attachments={convertFormData.documents || []}
-                      onAdd={() => { }}
+                      onAdd={() => {}}
                       onRemove={handleDocumentsRemove}
                       cardColor={cardColor}
                       isDragging={isDraggingDocuments}
@@ -1381,21 +1198,18 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                   </div>
                 </FormField>
               </div>
-
-              {/* Remarks - Full Width, Below Document Upload */}
-              <div className="mb-lg-3 mb-sm-0">
-                <div className="card-description-wrapper">
-                  <FormField label="Remarks">
-                    <ReactQuillEditor
-                      value={convertFormData.remarks || ""}
-                      onChange={(e) => handleConvertFormChange("remarks", e.target.value)}
-                      placeholder="Enter remarks..."
-                      name="remarks"
-                    />
-                  </FormField>
-                </div>
+              <div className="card-description-wrapper">
+                <FormField label="Remarks">
+                  <ReactQuillEditor
+                    value={convertFormData.remarks || ""}
+                    onChange={(e) => handleConvertFormChange("remarks", e.target.value)}
+                    placeholder="Enter remarks..."
+                    name="remarks"
+                  />
+                </FormField>
               </div>
             </div>
+
           </form>
         </div>
       </div>
@@ -1423,18 +1237,26 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
       <button
         type="submit"
         form="convertToDispatchForm"
+        disabled={isLoadingConvert}
         style={{
           padding: "10px 20px",
           backgroundColor: "#00368c",
           color: "white",
           border: "none",
           borderRadius: "6px",
-          cursor: "pointer",
+          cursor: isLoadingConvert ? "not-allowed" : "pointer",
           fontSize: "14px",
           fontWeight: "500",
+          opacity: isLoadingConvert ? 0.7 : 1,
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
         }}
       >
-        Convert
+        {isLoadingConvert && (
+          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+        )}
+        {isLoadingConvert ? "Converting..." : "Convert"}
       </button>
     </div>
   );
@@ -1792,7 +1614,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                               type="button"
                               onClick={() => {
                                 handleCloseDropdown();
-                                handleDelete(note.id);
+                                handleDelete(note);
                               }}
                               style={{
                                 width: "100%",
@@ -1872,6 +1694,14 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         body={renderViewBody()}
         footer={renderViewFooter()}
         dialgName="modal-dialog modal-dialog-centered"
+      />
+
+      <DeleteConfirmationModal
+        show={showDeleteModal}
+        onCancel={() => { setShowDeleteModal(false); setDeletingNote(null); }}
+        onConfirm={handleConfirmDelete}
+        isLoading={isLoadingDelete}
+        deleteText="Are you sure you want to delete this landing note?"
       />
     </div>
   );
