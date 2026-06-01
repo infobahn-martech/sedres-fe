@@ -116,7 +116,7 @@ const AttachmentsList = ({ attachments = [], onAdd, onRemove, cardColor, isDragg
 
 
 const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
-  const { updateLandingNote, getLandingNoteById, getAllLandingNotes, isLoadingUpdate } = useLandingNoteReducer((state) => state);
+  const { updateLandingNote, getLandingNoteById, getAllLandingNotes, landingNotes, landingTotal, isLoadingList, isLoadingUpdate } = useLandingNoteReducer((state) => state);
 
   const [showModal, setShowModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
@@ -149,40 +149,29 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     description: "",
   });
 
-  // Initialize with dummy data on mount if empty
   useEffect(() => {
-    const notes = formValues.landingNoteList || [];
-    if (notes.length === 0) {
-      const dummyData = generateDummyLandingNotes();
-      const syntheticEvent = { target: { value: dummyData } };
-      handleChange("landingNoteList")(syntheticEvent);
-      setNotesList(dummyData);
-    } else {
-      setNotesList(notes);
+    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
+    if (callId) {
+      getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });
     }
-  }, [formValues.landingNoteList, handleChange]);
-
-  // Update local list when formValues change
-  useEffect(() => {
-    if (formValues.landingNoteList) {
-      setNotesList(formValues.landingNoteList);
-    }
-  }, [formValues.landingNoteList]);
+  }, [formValues?.call_id, formValues?.callId, formValues?.card_call_id, landingPage]);
 
   const handleOpenModal = (note = null) => {
     if (note) {
       setEditingNote(note);
+      const dateStr = (note.landing_date || note.date || "").split(" ")[0] || "";
+      const timeStr = (note.landing_date || note.date || "").split(" ")[1] || note.time || "";
       setFormData({
-        landingNoteNo: note.landingNoteNo || "",
-        date: note.date || "",
-        time: note.time || "",
-        poDo: note.poDo || "",
-        landingProof: note.landingProof || [],
-        quantity: note.quantity || "",
-        packageType: note.packageType || "",
-        description: note.description || "",
+        landingNoteNo: note.landing_note_no || note.landingNoteNo || "",
+        date: dateStr,
+        time: timeStr,
+        poDo: note.po_no || note.poDo || "",
+        landingProof: [],
+        quantity: note.quantity ? String(note.quantity) : "",
+        packageType: String(note.package_type_id || note.packageType || ""),
+        description: note.remarks || note.description || "",
       });
-      setSelectedFiles(note.landingProof || []);
+      setSelectedFiles([]);
     } else {
       setEditingNote(null);
       setFormData({
@@ -1628,15 +1617,17 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
             </tr>
           </thead>
           <tbody>
-            {notesList.length > 0 ? (
-              notesList.slice((landingPage - 1) * LANDING_LIMIT, landingPage * LANDING_LIMIT).map((note) => (
-                <tr key={note.id}>
+            {isLoadingList ? (
+              <tr><td colSpan="10" style={{ textAlign: "center", padding: "20px" }}>Loading...</td></tr>
+            ) : landingNotes.length > 0 ? (
+              landingNotes.map((note) => (
+                <tr key={note.landing_note_id || note.id}>
                   <td>
-                    <div className="material-table-cell">{note.landingNoteNo || ""}</div>
+                    <div className="material-table-cell">{note.landing_note_no || note.landingNoteNo || ""}</div>
                   </td>
                   <td>
                     <div className="material-table-cell">
-                      {formatDate(note.date)}
+                      {formatDate(note.landing_date || note.date)}
                     </div>
                   </td>
                   <td>
@@ -1901,7 +1892,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         </div>
         <MaterialTablePagination
           page={landingPage}
-          total={notesList.length}
+          total={landingTotal}
           limit={LANDING_LIMIT}
           onPageChange={setLandingPage}
         />
