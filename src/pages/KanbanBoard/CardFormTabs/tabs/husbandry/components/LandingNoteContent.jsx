@@ -249,6 +249,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const [showModal, setShowModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [convertFormErrors, setConvertFormErrors] = useState({});
+  const [isLoadingConvertDetail, setIsLoadingConvertDetail] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [notesList, setNotesList] = useState([]);
   const [editingNote, setEditingNote] = useState(null);
@@ -503,9 +504,11 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
 
     const landingNoteId = note?.landing_note_id ?? note?.id;
     if (landingNoteId != null && getLandingNoteById) {
+      setIsLoadingConvertDetail(true);
       getLandingNoteById({
         id: landingNoteId,
         cb: (detail) => {
+          setIsLoadingConvertDetail(false);
           if (!detail) return;
           const normalizedDetail = mapLandingNoteForDisplay(detail);
           const detailOrders = buildDispatchConvertOrders(normalizedDetail);
@@ -527,6 +530,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     setShowConvertModal(false);
     setConvertingNote(null);
     setConvertFormErrors({});
+    setIsLoadingConvertDetail(false);
     setConvertFormData({
       dispatch_date: "",
       dispatch_time: "",
@@ -1346,20 +1350,20 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
       <button
         type="submit"
         form="convertToDispatchForm"
-        disabled={isLoadingConvert}
+        disabled={isLoadingConvert || isLoadingConvertDetail}
         style={{
           padding: "10px 20px",
           backgroundColor: "#00368c",
           color: "white",
           border: "none",
           borderRadius: "6px",
-          cursor: isLoadingConvert ? "not-allowed" : "pointer",
+          cursor: (isLoadingConvert || isLoadingConvertDetail) ? "not-allowed" : "pointer",
           fontSize: "14px",
           fontWeight: "500",
-          opacity: isLoadingConvert ? 0.7 : 1,
+          opacity: (isLoadingConvert || isLoadingConvertDetail) ? 0.7 : 1,
         }}
       >
-        {isLoadingConvert ? "Converting..." : "Convert"}
+        {isLoadingConvert ? "Converting..." : isLoadingConvertDetail ? "Loading..." : "Convert"}
       </button>
     </div>
   );
