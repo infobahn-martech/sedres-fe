@@ -217,6 +217,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     e.preventDefault();
 
     if (editingNote) {
+      if (!formData.date) return;
       const landingNoteId = editingNote.landing_note_id ?? editingNote.id;
       const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
       const landingDate = formData.date + (formData.time ? ` ${formData.time}` : "");
@@ -965,6 +966,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         type="button"
         className="btn btn-secondary"
         onClick={handleCloseModal}
+        disabled={isLoadingUpdate}
       >
         Cancel
       </button>
