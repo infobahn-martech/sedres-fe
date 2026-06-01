@@ -498,7 +498,6 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   const validateForm = () => {
     const errors = {};
     if (!formData.date) errors.date = "Date is required";
-    else if (!formData.time) errors.date = "Time is required";
     if (!formData.warehouse) errors.warehouse = "Warehouse is required";
     formData.orders.forEach((order, idx) => {
       if (!order.poDo) errors[`o${idx}_poDo`] = "PO/DO is required";
