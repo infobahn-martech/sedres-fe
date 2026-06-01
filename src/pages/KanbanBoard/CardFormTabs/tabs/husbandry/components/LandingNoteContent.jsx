@@ -15,39 +15,6 @@ import logisticsWarehouseService from "../../../../../../services/logisticsWareh
 import vehicleService from "../../../../../../services/vehicleService";
 import driverService from "../../../../../../services/driverService";
 
-// Generate dummy landing note data
-const generateDummyLandingNotes = () => {
-  const packageTypes = ["Box", "Pallet", "Crate", "Bag", "Container"];
-  const descriptions = [
-    "Spare parts for vessel maintenance",
-    "Safety equipment and supplies",
-    "Food and beverage items",
-    "Technical equipment",
-    "Cleaning supplies",
-    "Medical supplies",
-    "Office supplies",
-    "Tools and hardware"
-  ];
-
-  const dummyNotes = [];
-  for (let i = 1; i <= 10; i++) {
-    const noteDate = new Date();
-    noteDate.setDate(noteDate.getDate() - Math.floor(Math.random() * 30));
-
-    dummyNotes.push({
-      id: i,
-      landingNoteNo: `LN-${String(i).padStart(5, '0')}`,
-      date: noteDate.toISOString().split('T')[0],
-      poDo: `PO-${String(i).padStart(4, '0')}`,
-      landingProof: [],
-      quantity: Math.floor(Math.random() * 100) + 1,
-      packageType: packageTypes[Math.floor(Math.random() * packageTypes.length)],
-      description: descriptions[Math.floor(Math.random() * descriptions.length)],
-    });
-  }
-  return dummyNotes;
-};
-
 // AttachmentsList Component (from Operation.jsx)
 const AttachmentsList = ({ attachments = [], onAdd, onRemove, cardColor, isDragging, onDragEnter, onDragLeave, onDragOver, onDrop, fileInputRef, onFileInputChange }) => {
   return (
@@ -118,8 +85,120 @@ const AttachmentsList = ({ attachments = [], onAdd, onRemove, cardColor, isDragg
 };
 
 
+const getLandingNoteItemId = (item) => (
+  item?.landing_note_item_id
+  ?? item?.landingNoteItemId
+  ?? item?.item_id
+  ?? item?.id
+  ?? null
+);
+
+const toNonNegativeIntegerString = (value) => {
+  if (value == null || value === "") return "";
+  const number = Number(value);
+  return Number.isInteger(number) && number >= 0 ? String(number) : "";
+};
+
+const isTruthyFlag = (value) => value === true || Number(value) === 1 || String(value).toLowerCase() === "true";
+
+const normalizeSlotValue = (value) => {
+  if (value == null || value === "") return "";
+  const raw = String(value).trim();
+  if (/^slot\s+[1-6]$/i.test(raw)) return raw.replace(/^slot\s+/i, "Slot ");
+  if (/^[1-6]$/.test(raw)) return `Slot ${raw}`;
+  return raw;
+};
+
+const getTransportation = (item) => item?.transportation || item?.transport || null;
+
+const emptyConvertItem = () => ({
+  id: 1,
+  landing_note_item_id: null,
+  orderNo: "",
+  poDo: "",
+  quantity: "",
+  packageType: "",
+  description: "",
+  slot: "",
+  reason: "",
+  packing_required: false,
+  repacking_pallets: "",
+  repacking_rolls: "",
+  transportation_required: false,
+  typeOfVehicle: "",
+  fromLocation: "",
+  pickUpFrom: "",
+  toLocation: "",
+  driverName: "",
+  transportRemarks: "",
+});
+
+const mapLandingNoteForDisplay = (note) => {
+  const items = Array.isArray(note?.items) ? note.items : [];
+  const firstItem = items[0] || {};
+  return {
+    ...note,
+    id: note?.landing_note_id ?? note?.id,
+    landingNoteNo: note?.landing_note_no ?? note?.landingNoteNo ?? "",
+    date: note?.landing_date ?? note?.date ?? "",
+    poDo: firstItem?.po_no ?? note?.po_no ?? note?.poDo ?? "",
+    landingProof: note?.landing_proof ?? note?.landingProof ?? note?.documents ?? [],
+    quantity: firstItem?.quantity ?? note?.quantity ?? "",
+    packageType: firstItem?.package_type ?? firstItem?.package_type_id ?? note?.packageType ?? "",
+    description: firstItem?.description ?? note?.description ?? "",
+    items,
+  };
+};
+
+const buildDispatchConvertOrders = (note) => {
+  const apiItems = Array.isArray(note?.items) ? note.items : [];
+  if (!apiItems.length) {
+    return [{
+      ...emptyConvertItem(),
+      orderNo: note?.landingNoteNo || note?.landing_note_no || "",
+      poDo: note?.poDo || note?.po_no || "",
+      quantity: note?.quantity ? String(note.quantity) : "",
+    }];
+  }
+
+  return apiItems.map((item, idx) => {
+    const repackingPallets = toNonNegativeIntegerString(item.repacking_pallets ?? item.repacking?.pallets);
+    const repackingRolls = toNonNegativeIntegerString(item.repacking_rolls ?? item.repacking?.rolls);
+    const transportation = getTransportation(item);
+    return {
+      id: idx + 1,
+      landing_note_item_id: getLandingNoteItemId(item),
+      orderNo: item.order_no || note?.landingNoteNo || note?.landing_note_no || "",
+      poDo: item.po_no || note?.poDo || "",
+      quantity: item.quantity ? String(item.quantity) : "",
+      packageType: String(item.package_type_id || ""),
+      description: item.description || "",
+      slot: normalizeSlotValue(item.slot ?? item.slot_no ?? item.slot_no_id),
+      reason: item.reason ?? item.reason_name ?? "",
+      packing_required: isTruthyFlag(item.packing_required) || repackingPallets !== "" || repackingRolls !== "",
+      repacking_pallets: repackingPallets,
+      repacking_rolls: repackingRolls,
+      transportation_required: isTruthyFlag(item.transportation_required) || Boolean(transportation),
+      typeOfVehicle: transportation ? String(transportation.vehicle_type_id || "") : "",
+      fromLocation: transportation ? String(transportation.from_location_id || "") : "",
+      pickUpFrom: transportation?.pickup_location || "",
+      toLocation: transportation ? String(transportation.to_location_id || "") : "",
+      driverName: transportation ? String(transportation.driver_id || "") : "",
+      transportRemarks: transportation?.remarks || "",
+    };
+  });
+};
+
 const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
-  const { convertLandingNote, isLoadingConvert } = useLandingNoteReducer((state) => state);
+  const {
+    convertLandingNote,
+    getAllLandingNotes,
+    getLandingNoteById,
+    landingNotes,
+    landingTotal,
+    isLoadingList,
+    isLoadingConvert,
+  } = useLandingNoteReducer((state) => state);
 
   const [warehouseOptions, setWarehouseOptions] = useState([]);
   const [vehicleOptions, setVehicleOptions] = useState([]);
@@ -151,12 +230,12 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   }, []);
 
   const slotOptions = [
-    { value: "1", label: "Slot 1" },
-    { value: "2", label: "Slot 2" },
-    { value: "3", label: "Slot 3" },
-    { value: "4", label: "Slot 4" },
-    { value: "5", label: "Slot 5" },
-    { value: "6", label: "Slot 6" },
+    { value: "Slot 1", label: "Slot 1" },
+    { value: "Slot 2", label: "Slot 2" },
+    { value: "Slot 3", label: "Slot 3" },
+    { value: "Slot 4", label: "Slot 4" },
+    { value: "Slot 5", label: "Slot 5" },
+    { value: "Slot 6", label: "Slot 6" },
   ];
 
   const reasonOptions = [
@@ -198,25 +277,19 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     description: "",
   });
 
-  // Initialize with dummy data on mount if empty
   useEffect(() => {
-    const notes = formValues.landingNoteList || [];
-    if (notes.length === 0) {
-      const dummyData = generateDummyLandingNotes();
-      const syntheticEvent = { target: { value: dummyData } };
-      handleChange("landingNoteList")(syntheticEvent);
-      setNotesList(dummyData);
-    } else {
-      setNotesList(notes);
-    }
-  }, [formValues.landingNoteList, handleChange]);
+    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
+    if (!callId) return;
+    getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });
+  }, [formValues?.call_id, formValues?.callId, formValues?.card_call_id, landingPage]);
 
-  // Update local list when formValues change
   useEffect(() => {
-    if (formValues.landingNoteList) {
-      setNotesList(formValues.landingNoteList);
+    if (Array.isArray(landingNotes) && landingNotes.length > 0) {
+      setNotesList(landingNotes.map(mapLandingNoteForDisplay));
+      return;
     }
-  }, [formValues.landingNoteList]);
+    setNotesList(Array.isArray(formValues.landingNoteList) ? formValues.landingNoteList : []);
+  }, [landingNotes, formValues.landingNoteList]);
 
   const handleOpenModal = (note = null) => {
     if (note) {
@@ -393,28 +466,6 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     }
   };
 
-  const emptyConvertItem = () => ({
-    id: 1,
-    landing_note_item_id: null,
-    orderNo: "",
-    poDo: "",
-    quantity: "",
-    packageType: "",
-    description: "",
-    slot: "",
-    reason: "",
-    packing_required: false,
-    repacking_pallets: "",
-    repacking_rolls: "",
-    transportation_required: false,
-    typeOfVehicle: "",
-    fromLocation: "",
-    pickUpFrom: "",
-    toLocation: "",
-    driverName: "",
-    transportRemarks: "",
-  });
-
   // Form state for Convert to Dispatch modal
   const [convertFormData, setConvertFormData] = useState({
     dispatch_date: "",
@@ -432,36 +483,14 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const handleConvertToDispatch = (note) => {
     handleCloseDropdown();
     setConvertingNote(note);
-    const apiItems = Array.isArray(note.items) ? note.items : [];
-    const orders = apiItems.length > 0
-      ? apiItems.map((item, idx) => ({
-          id: idx + 1,
-          landing_note_item_id: item.landing_note_item_id ?? item.id ?? null,
-          orderNo: item.order_no || note.landingNoteNo || "",
-          poDo: item.po_no || note.poDo || "",
-          quantity: item.quantity ? String(item.quantity) : "",
-          packageType: String(item.package_type_id || ""),
-          description: item.description || "",
-          slot: "",
-          reason: "",
-          packing_required: false,
-          repacking_pallets: "",
-          repacking_rolls: "",
-          transportation_required: false,
-          typeOfVehicle: "",
-          fromLocation: "",
-          pickUpFrom: "",
-          toLocation: "",
-          driverName: "",
-          transportRemarks: "",
-        }))
-      : [{ ...emptyConvertItem(), orderNo: note.landingNoteNo || "", poDo: note.poDo || "", quantity: note.quantity ? String(note.quantity) : "" }];
+    const orders = buildDispatchConvertOrders(note);
+    const warehouseId = note?.warehouse_id ?? note?.warehouse ?? "";
     const exp = {};
     orders.forEach((o) => { exp[o.id] = true; });
     setConvertFormData({
       dispatch_date: "",
       dispatch_time: "",
-      warehouse_id: "",
+      warehouse_id: warehouseId ? String(warehouseId) : "",
       signature: "",
       delivery_location: "",
       delivered_to: "",
@@ -471,6 +500,27 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     });
     setExpandedConvertOrders(exp);
     setShowConvertModal(true);
+
+    const landingNoteId = note?.landing_note_id ?? note?.id;
+    if (landingNoteId != null && getLandingNoteById) {
+      getLandingNoteById({
+        id: landingNoteId,
+        cb: (detail) => {
+          if (!detail) return;
+          const normalizedDetail = mapLandingNoteForDisplay(detail);
+          const detailOrders = buildDispatchConvertOrders(normalizedDetail);
+          const detailExp = {};
+          detailOrders.forEach((o) => { detailExp[o.id] = true; });
+          setConvertingNote(normalizedDetail);
+          setConvertFormData((prev) => ({
+            ...prev,
+            warehouse_id: String(normalizedDetail.warehouse_id ?? normalizedDetail.warehouse ?? prev.warehouse_id ?? ""),
+            orders: detailOrders,
+          }));
+          setExpandedConvertOrders(detailExp);
+        },
+      });
+    }
   };
 
   const handleCloseConvertModal = () => {
@@ -504,6 +554,12 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         order.id === orderId ? { ...order, [field]: value } : order
       ),
     }));
+  };
+
+  const handleNonNegativeIntegerChange = (orderId, field, value) => {
+    if (value === "" || /^\d+$/.test(value)) {
+      handleConvertOrderChange(orderId, field, value);
+    }
   };
 
   const handleAddNewConvertOrder = () => {
@@ -641,8 +697,10 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     fd.append("remarks", convertFormData.remarks || "");
     if (convertFormData.documents?.length > 0) fd.append("file", convertFormData.documents[0].file ?? convertFormData.documents[0]);
     const items = convertFormData.orders.map((order) => {
+      const landingNoteItemId = order.landing_note_item_id || null;
       const item = {
-        landing_note_item_id: order.landing_note_item_id || null,
+        id: landingNoteItemId,
+        landing_note_item_id: landingNoteItemId,
         quantity: Number(order.quantity) || 0,
         slot: order.slot || "",
         reason: order.reason || "",
@@ -666,7 +724,10 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     fd.append("items", JSON.stringify(items));
     convertLandingNote({
       data: fd,
-      cb: () => { handleCloseConvertModal(); },
+      cb: () => {
+        handleCloseConvertModal();
+        if (callId) getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });
+      },
     });
   };
 
@@ -1121,7 +1182,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                       </div>
                       <div className="col-md-4">
                         <FormField label="Quantity *">
-                          <FormInput type="number" value={order.quantity} onChange={(e) => { handleConvertOrderChange(order.id, "quantity", e.target.value); setConvertFormErrors((p) => { const n = { ...p }; delete n[`co${index}_quantity`]; return n; }); }} placeholder="Quantity..." className={convertFormErrors[`co${index}_quantity`] ? "is-invalid" : ""} />
+                          <FormInput type="text" inputMode="numeric" value={order.quantity} onChange={(e) => { const val = e.target.value; if (val === "" || /^\d+$/.test(val)) { handleConvertOrderChange(order.id, "quantity", val); setConvertFormErrors((p) => { const n = { ...p }; delete n[`co${index}_quantity`]; return n; }); } }} placeholder="Quantity..." className={convertFormErrors[`co${index}_quantity`] ? "is-invalid" : ""} />
                           {convertFormErrors[`co${index}_quantity`] && <span style={{ color: "#dc3545", fontSize: "12px" }}>{convertFormErrors[`co${index}_quantity`]}</span>}
                         </FormField>
                       </div>
@@ -1157,13 +1218,27 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                         {order.packing_required && (
                           <div className="row g-2">
                             <div className="col-md-4">
-                              <FormField label="Repacking Pallets (integer)">
-                                <FormInput type="number" value={order.repacking_pallets} onChange={(e) => handleConvertOrderChange(order.id, "repacking_pallets", e.target.value)} placeholder="0" />
+                              <FormField label="Repacking Pallets">
+                                <FormInput
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  value={order.repacking_pallets}
+                                  onChange={(e) => handleNonNegativeIntegerChange(order.id, "repacking_pallets", e.target.value)}
+                                  placeholder="0"
+                                />
                               </FormField>
                             </div>
                             <div className="col-md-4">
-                              <FormField label="Repacking Rolls (integer)">
-                                <FormInput type="number" value={order.repacking_rolls} onChange={(e) => handleConvertOrderChange(order.id, "repacking_rolls", e.target.value)} placeholder="0" />
+                              <FormField label="Repacking Rolls">
+                                <FormInput
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  value={order.repacking_rolls}
+                                  onChange={(e) => handleNonNegativeIntegerChange(order.id, "repacking_rolls", e.target.value)}
+                                  placeholder="0"
+                                />
                               </FormField>
                             </div>
                           </div>
@@ -1409,8 +1484,12 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
             </tr>
           </thead>
           <tbody>
-            {notesList.length > 0 ? (
-              notesList.slice((landingPage - 1) * LANDING_LIMIT, landingPage * LANDING_LIMIT).map((note) => (
+            {isLoadingList ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center", padding: "20px", color: "#666" }}>Loading...</td>
+              </tr>
+            ) : notesList.length > 0 ? (
+              notesList.map((note) => (
                 <tr key={note.id}>
                   <td>
                     <div className="material-table-cell">{note.landingNoteNo || ""}</div>
@@ -1682,7 +1761,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         </div>
         <MaterialTablePagination
           page={landingPage}
-          total={notesList.length}
+          total={landingTotal || notesList.length}
           limit={LANDING_LIMIT}
           onPageChange={setLandingPage}
         />
@@ -1704,7 +1783,8 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         header={renderConvertHeader()}
         body={renderConvertBody()}
         footer={renderConvertFooter()}
-        dialgName="modal-dialog modal-dialog-centered"
+        dialgName="modal-dialog modal-dialog-centered modal-dialog-scrollable"
+        createModal
       />
 
       <CustomModal
