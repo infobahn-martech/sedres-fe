@@ -582,9 +582,10 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
 
       const inboundId = Number(editingOrder.inbound_id);
       const updatePayload = {
+        inbound_id: inboundId,
         call_id: callId,
         warehouse_id: Number(formData.warehouse) || 0,
-        inbound_date: buildApiDateTime(formData.date, formData.time),
+        inbound_date: formData.date || "",
         remarks: formData.remarks || "",
         items: updateItems,
       };
