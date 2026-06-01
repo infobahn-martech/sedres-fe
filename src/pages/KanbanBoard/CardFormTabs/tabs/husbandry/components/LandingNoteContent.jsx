@@ -361,19 +361,13 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
 
   const confirmDelete = () => {
     if (!deletingNote) return;
-
+    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
     deleteLandingNote({
       landingNoteId: deletingNote.id,
       cb: () => {
-        const updatedList = notesList.filter(note => note.id !== deletingNote.id);
-        setNotesList(updatedList);
-
-        // Update formValues
-        const syntheticEvent = { target: { value: updatedList } };
-        handleChange("landingNoteList")(syntheticEvent);
-
         setShowDeleteModal(false);
         setDeletingNote(null);
+        getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });
       }
     });
   };
