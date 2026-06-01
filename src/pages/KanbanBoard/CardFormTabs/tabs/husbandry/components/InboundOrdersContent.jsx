@@ -3,9 +3,11 @@ import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import CustomModal from "../../../../../../components/CustomModal";
 import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
-import { FormField, FormInput, FormSelect, FormTextarea, ReactQuillEditor } from "./Husbandry.components";
+import { FormField, FormInput, FormSelect, FormTextarea } from "./Husbandry.components";
 import DateTimePickerField from "../../../components/DateTimePickerField";
 import editIcon from "../../../../../../assets/images/edit.svg";
 import deleteIcon from "../../../../../../assets/images/delete.svg";
@@ -144,6 +146,54 @@ const AttachmentsList = ({ attachments = [], onAdd, onRemove, cardColor, isDragg
   );
 };
 
+// ReactQuillEditor Component (from Operation.jsx)
+const ReactQuillEditor = ({ value, onChange, placeholder, name = "remarks", className = "" }) => {
+  const quillRef = useRef(null);
+
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ color: [] }, { background: [] }],
+      ["link", "image"],
+      ["clean"],
+    ],
+  };
+
+  const formats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "bullet",
+    "color",
+    "background",
+    "link",
+    "image",
+  ];
+
+  const handleChange = (content) => {
+    const syntheticEvent = { target: { value: content, name: name } };
+    onChange(syntheticEvent);
+  };
+
+  return (
+    <div className={`react-quill-wrapper ${className}`}>
+      <ReactQuill
+        ref={quillRef}
+        theme="snow"
+        value={value || ""}
+        onChange={handleChange}
+        modules={modules}
+        formats={formats}
+        placeholder={placeholder || "Enter remarks..."}
+      />
+    </div>
+  );
+};
 
 const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   const {
@@ -1199,11 +1249,11 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   const formatDate = (dateString, separateTime) => formatDisplayDateTime(dateString, separateTime);
 
   const slotNoOptions = [
-    { value: "1", label: "Slot 1" },
-    { value: "2", label: "Slot 2" },
-    { value: "3", label: "Slot 3" },
-    { value: "4", label: "Slot 4" },
-    { value: "5", label: "Slot 5" },
+    { value: "Slot 1", label: "Slot 1" },
+    { value: "Slot 2", label: "Slot 2" },
+    { value: "Slot 3", label: "Slot 3" },
+    { value: "Slot 4", label: "Slot 4" },
+    { value: "Slot 5", label: "Slot 5" },
   ];
 
   const reasonOptions = [
