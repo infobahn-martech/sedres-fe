@@ -161,15 +161,16 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
       setEditingNote(note);
       const dateStr = (note.landing_date || note.date || "").split(" ")[0] || "";
       const timeStr = (note.landing_date || note.date || "").split(" ")[1] || note.time || "";
+      const firstItem = Array.isArray(note.items) && note.items.length > 0 ? note.items[0] : {};
       setFormData({
         landingNoteNo: note.landing_note_no || note.landingNoteNo || "",
         date: dateStr,
         time: timeStr,
-        poDo: note.po_no || note.poDo || "",
+        poDo: firstItem.po_no || note.po_no || note.poDo || "",
         landingProof: [],
-        quantity: note.quantity ? String(note.quantity) : "",
-        packageType: String(note.package_type_id || note.packageType || ""),
-        description: note.remarks || note.description || "",
+        quantity: firstItem.quantity != null ? String(firstItem.quantity) : (note.quantity ? String(note.quantity) : ""),
+        packageType: String(firstItem.package_type_id || note.package_type_id || note.packageType || ""),
+        description: note.remarks || firstItem.description || note.description || "",
       });
       setSelectedFiles([]);
     } else {
@@ -824,7 +825,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
             </div>
 
             <div className="col-12 mb-3">
-              <FormField label="Date">
+              <FormField label="Date *">
                 <DateTimePickerField
                   dateValue={formData.date}
                   timeValue={formData.time}
@@ -919,9 +920,13 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
             <div className="col-12 mb-3">
               <FormField label="Quantity">
                 <FormInput
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={formData.quantity}
-                  onChange={(e) => handleFormChange("quantity", e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "" || /^\d+$/.test(val)) handleFormChange("quantity", val);
+                  }}
                   placeholder="Enter quantity..."
                 />
               </FormField>
@@ -1620,24 +1625,32 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
             {isLoadingList ? (
               <tr><td colSpan="10" style={{ textAlign: "center", padding: "20px" }}>Loading...</td></tr>
             ) : landingNotes.length > 0 ? (
-              landingNotes.map((note) => (
-                <tr key={note.landing_note_id || note.id}>
+              landingNotes.map((rawNote) => {
+                const firstItem = Array.isArray(rawNote.items) && rawNote.items.length > 0 ? rawNote.items[0] : {};
+                const noteId = rawNote.landing_note_id || rawNote.id;
+                const poDo = firstItem.po_no || rawNote.po_no || rawNote.poDo || "";
+                const landingProof = rawNote.landing_proof || rawNote.landingProof || [];
+                const quantity = firstItem.quantity ?? rawNote.quantity ?? "";
+                const packageType = firstItem.package_type || rawNote.package_type || rawNote.packageType || "";
+                const description = firstItem.description || rawNote.description || "";
+                return (
+                <tr key={noteId}>
                   <td>
-                    <div className="material-table-cell">{note.landing_note_no || note.landingNoteNo || ""}</div>
+                    <div className="material-table-cell">{rawNote.landing_note_no || rawNote.landingNoteNo || ""}</div>
                   </td>
                   <td>
                     <div className="material-table-cell">
-                      {formatDate(note.landing_date || note.date)}
+                      {formatDate(rawNote.landing_date || rawNote.date)}
                     </div>
                   </td>
                   <td>
-                    <div className="material-table-cell">{note.poDo || ""}</div>
+                    <div className="material-table-cell">{poDo}</div>
                   </td>
                   <td>
                     <div className="material-table-cell">
-                      {note.landingProof && note.landingProof.length > 0 ? (
+                      {landingProof.length > 0 ? (
                         <span style={{ color: "#00368c", cursor: "pointer" }}>
-                          {note.landingProof.length} file(s)
+                          {landingProof.length} file(s)
                         </span>
                       ) : (
                         <span style={{ color: "#999" }}>No files</span>
@@ -1645,40 +1658,40 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                     </div>
                   </td>
                   <td>
-                    <div className="material-table-cell">{note.quantity || ""}</div>
+                    <div className="material-table-cell">{quantity}</div>
                   </td>
                   <td>
-                    <div className="material-table-cell">{note.packageType || ""}</div>
+                    <div className="material-table-cell">{packageType}</div>
                   </td>
                   <td>
                     <div className="material-table-cell">
-                      {note.description && note.description.length > 13 ? (
+                      {description && description.length > 13 ? (
                         <>
                           <Tooltip
-                            id={`description-tooltip-${note.id}`}
+                            id={`description-tooltip-${noteId}`}
                             place="right"
-                            content={note.description}
+                            content={description}
                             className="material-table-tooltip"
                           />
                           <span
-                            data-tooltip-id={`description-tooltip-${note.id}`}
+                            data-tooltip-id={`description-tooltip-${noteId}`}
                             style={{ cursor: "help" }}
                           >
-                            {note.description.substring(0, 13)}...
+                            {description.substring(0, 13)}...
                           </span>
                         </>
                       ) : (
-                        <span>{note.description || ""}</span>
+                        <span>{description}</span>
                       )}
                     </div>
                   </td>
                   <td style={{ position: "relative", whiteSpace: "nowrap", overflow: "visible" }}>
                     <div className="material-table-cell" style={{ position: "relative", overflow: "visible", display: "flex", alignItems: "center", gap: "8px", justifyContent: "flex-start", flexWrap: "nowrap" }}>
-                      <Tooltip id={`view-note-${note.id}`} place="left" content="View" />
+                      <Tooltip id={`view-note-${noteId}`} place="left" content="View" />
                       <button
                         type="button"
-                        onClick={() => handleViewNote(note)}
-                        data-tooltip-id={`view-note-${note.id}`}
+                        onClick={() => handleViewNote(rawNote)}
+                        data-tooltip-id={`view-note-${noteId}`}
                         style={{
                           padding: "6px 8px",
                           backgroundColor: "transparent",
@@ -1701,11 +1714,11 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                       >
                         <img src={eyeIcon} alt="view" style={{ width: "18px", height: "18px" }} />
                       </button>
-                      <Tooltip id={`print-note-${note.id}`} place="left" content="Print" />
+                      <Tooltip id={`print-note-${noteId}`} place="left" content="Print" />
                       <button
                         type="button"
-                        onClick={() => handlePrintNote(note)}
-                        data-tooltip-id={`print-note-${note.id}`}
+                        onClick={() => handlePrintNote(rawNote)}
+                        data-tooltip-id={`print-note-${noteId}`}
                         style={{
                           padding: "6px 8px",
                           backgroundColor: "transparent",
@@ -1733,11 +1746,11 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                           <path d="M18 9H6V14H18V9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </button>
-                      <Tooltip id={`convert-note-${note.id}`} place="left" content=" Convert" />
+                      <Tooltip id={`convert-note-${noteId}`} place="left" content=" Convert" />
                       <button
                         type="button"
-                        onClick={() => handleConvertToDispatch(note)}
-                        data-tooltip-id={`convert-note-${note.id}`}
+                        onClick={() => handleConvertToDispatch(rawNote)}
+                        data-tooltip-id={`convert-note-${noteId}`}
                         style={{
                           padding: "6px 8px",
                           backgroundColor: "transparent",
@@ -1766,12 +1779,12 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                           <path d="M19 9H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                       </button>
-                      <div className="action-dropdown-wrapper" style={{ position: "relative", display: "inline-block", zIndex: openDropdownId === note.id ? 9999 : "auto", flexShrink: 0 }}>
-                        <Tooltip id={`more-actions-${note.id}`} place="left" content="More actions" />
+                      <div className="action-dropdown-wrapper" style={{ position: "relative", display: "inline-block", zIndex: openDropdownId === noteId ? 9999 : "auto", flexShrink: 0 }}>
+                        <Tooltip id={`more-actions-${noteId}`} place="left" content="More actions" />
                         <button
                           type="button"
-                          onClick={(e) => handleToggleDropdown(note.id, e)}
-                          data-tooltip-id={`more-actions-${note.id}`}
+                          onClick={(e) => handleToggleDropdown(noteId, e)}
+                          data-tooltip-id={`more-actions-${noteId}`}
                           style={{
                             padding: "6px 8px",
                             backgroundColor: "transparent",
@@ -1796,7 +1809,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                             <circle cx="12" cy="18" r="1.5" fill="currentColor" />
                           </svg>
                         </button>
-                        {openDropdownId === note.id && createPortal(
+                        {openDropdownId === noteId && createPortal(
                           <div
                             data-dropdown-menu
                             style={{
@@ -1816,7 +1829,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                               type="button"
                               onClick={() => {
                                 handleCloseDropdown();
-                                handleOpenModal(note);
+                                handleOpenModal(rawNote);
                               }}
                               style={{
                                 width: "100%",
@@ -1846,7 +1859,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                               type="button"
                               onClick={() => {
                                 handleCloseDropdown();
-                                handleDelete(note.id);
+                                handleDelete(noteId);
                               }}
                               style={{
                                 width: "100%",
@@ -1879,7 +1892,8 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                     </div>
                   </td>
                 </tr>
-              ))
+                );
+              })
             ) : (
               <tr>
                 <td colSpan="8" style={{ textAlign: "center", padding: "20px" }}>
