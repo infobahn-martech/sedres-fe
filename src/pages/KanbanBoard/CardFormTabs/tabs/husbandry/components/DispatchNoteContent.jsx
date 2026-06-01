@@ -134,7 +134,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
           signature: detail.signature || "",
           delivery_location: detail.delivery_location || "",
           delivered_to: detail.delivered_to || "",
-          remarks: detail.remarks || "",
+          remarks: detail.remarks ? detail.remarks.replace(/<[^>]*>/g, "") : "",
           items: Array.isArray(detail.items) ? detail.items.map(buildEditItem) : [],
         });
       },
