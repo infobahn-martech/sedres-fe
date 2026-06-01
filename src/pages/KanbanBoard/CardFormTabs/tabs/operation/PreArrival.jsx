@@ -128,9 +128,26 @@ const CompactFileUploadRow = ({
           <span className="compact-file-upload-title" title={displayLabel}>
             {displayLabel}
           </span>
-          {statusLabel ? (
-            <span className={`document-row-status-chip ${statusClass}`}>{statusLabel}</span>
-          ) : null}
+
+          <div className="compact-file-upload-right">
+            {statusLabel ? (
+              <span className={`document-row-status-chip ${statusClass}`}>
+                {statusLabel}
+              </span>
+            ) : null}
+
+            {!isNotUploaded && (
+              <button
+                type="button"
+                className="document-row-icon-btn"
+                onClick={() => openAttachmentPreview(files[0])}
+                title="Preview"
+                disabled={!canPreview}
+              >
+                <IconEye />
+              </button>
+            )}
+          </div>
         </div>
         {/* {showUploadedFileName ? (
           <div className="compact-file-upload-filename" title={secondaryFileName}>
@@ -143,19 +160,6 @@ const CompactFileUploadRow = ({
           </div>
         ) : null}
       </div>
-      {!isNotUploaded && (
-        <div className="document-row-actions compact-file-upload-actions">
-          <button
-            type="button"
-            className="document-row-icon-btn"
-            onClick={() => openAttachmentPreview(files[0])}
-            title="Preview"
-            disabled={!canPreview}
-          >
-            <IconEye />
-          </button>
-        </div>
-      )}
     </div>
   );
 };

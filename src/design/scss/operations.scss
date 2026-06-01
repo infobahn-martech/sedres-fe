@@ -2383,27 +2383,35 @@ $send-report-optional: #80868b;
   }
 
   .compact-file-upload-row {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     min-height: 62px;
   }
 
   .compact-file-upload-label {
-    flex: 1 1 auto;
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     gap: 3px;
-    min-width: 0;
-    width: 100%;
   }
 
   .compact-file-upload-label-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 12px;
     width: 100%;
-    min-width: 0;
+  }
+
+  .compact-file-upload-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
   }
 
   .compact-file-upload-title {
@@ -2439,13 +2447,13 @@ $send-report-optional: #80868b;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-left: auto;
     padding: 2px 8px;
     border-radius: 999px;
     font-size: 10px;
     font-weight: 600;
     line-height: 1.2;
     border: 1px solid transparent;
+    white-space: nowrap;
   }
 
   .document-row-status-chip--not-uploaded {
@@ -2486,15 +2494,6 @@ $send-report-optional: #80868b;
     font-size: 12px;
     color: #3c4043;
     line-height: 1.4;
-  }
-
-  .compact-file-upload-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    justify-content: flex-end;
-    width: 78px;
-    flex: 0 0 78px;
   }
 
   .operation-compact-upload-zone {
@@ -2691,12 +2690,12 @@ $send-report-optional: #80868b;
   }
 
   .document-row-icon-btn {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     width: 34px;
     height: 34px;
-    padding: 0;
+    padding: 6px;
     border: 1px solid #dadce0;
     border-radius: 8px;
     background: #fff;
