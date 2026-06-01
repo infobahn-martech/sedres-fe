@@ -189,16 +189,20 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   // Update local list when landingNotes from reducer change
   useEffect(() => {
     if (landingNotes) {
-      setNotesList(landingNotes.map(note => ({
-        id: note.landing_note_id || note.id,
-        landingNoteNo: note.landing_note_no || note.landingNoteNo || "",
-        date: note.landing_date || note.date || "",
-        poDo: note.po_no || note.po_do || note.poDo || "",
-        landingProof: note.attachments || note.landing_proof || note.landingProof || [],
-        quantity: note.quantity || note.qty || "",
-        packageType: note.package_type || note.package_type_name || note.packageType || "",
-        description: note.description || "",
-      })));
+      setNotesList(landingNotes.map(note => {
+        const firstItem = Array.isArray(note.items) && note.items.length > 0 ? note.items[0] : {};
+        return {
+          id: note.landing_note_id || note.id,
+          landingNoteNo: note.landing_note_no || note.landingNoteNo || "",
+          date: note.landing_date || note.date || "",
+          poDo: firstItem.po_no || note.po_no || note.po_do || note.poDo || "",
+          landingProof: note.landing_proof || note.attachments || note.landingProof || [],
+          quantity: firstItem.quantity ?? note.quantity ?? note.qty ?? "",
+          packageType: firstItem.package_type || firstItem.package_type_id || note.package_type || note.packageType || "",
+          description: firstItem.description || note.description || "",
+          items: note.items || [],
+        };
+      }));
     }
   }, [landingNotes]);
 
