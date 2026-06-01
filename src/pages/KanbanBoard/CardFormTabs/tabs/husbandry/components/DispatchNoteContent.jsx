@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import CustomModal from "../../../../../../components/CustomModal";
+import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 import { FormField, FormInput, FormSelect } from "./Husbandry.components";
 import MaterialTablePagination from "./MaterialTablePagination";
 import editIcon from "../../../../../../assets/images/edit.svg";
@@ -46,9 +47,11 @@ const generateDummyDispatchNotes = () => {
 const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [notesList, setNotesList] = useState([]);
   const [editingNote, setEditingNote] = useState(null);
   const [viewingNote, setViewingNote] = useState(null);
+  const [deletingNote, setDeletingNote] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef(null);
@@ -188,15 +191,21 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
     handleCloseModal();
   };
 
-  const handleDelete = (noteId) => {
-    if (window.confirm("Are you sure you want to delete this dispatch note?")) {
-      const updatedList = notesList.filter(note => note.id !== noteId);
-      setNotesList(updatedList);
+  const handleDelete = (note) => {
+    setDeletingNote(note);
+    setShowDeleteModal(true);
+  };
 
-      // Update formValues
-      const syntheticEvent = { target: { value: updatedList } };
-      handleChange("dispatchNoteList")(syntheticEvent);
-    }
+  const confirmDelete = () => {
+    if (!deletingNote) return;
+    const updatedList = notesList.filter(note => note.id !== deletingNote.id);
+    setNotesList(updatedList);
+
+    // Update formValues
+    const syntheticEvent = { target: { value: updatedList } };
+    handleChange("dispatchNoteList")(syntheticEvent);
+    setShowDeleteModal(false);
+    setDeletingNote(null);
   };
 
   const handleToggleDropdown = (noteId, e) => {
@@ -986,6 +995,18 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
         footer={renderViewFooter()}
         dialgName="modal-dialog modal-dialog-centered"
       />
+
+      {!!showDeleteModal && (
+        <DeleteConfirmationModal
+          show={showDeleteModal}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setDeletingNote(null);
+          }}
+          onConfirm={confirmDelete}
+          deleteText={`Are you sure you want to delete this dispatch note${deletingNote?.orderNo ? ` ${deletingNote.orderNo}` : ""}?`}
+        />
+      )}
     </div>
   );
 };

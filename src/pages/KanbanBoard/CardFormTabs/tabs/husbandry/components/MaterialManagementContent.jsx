@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
 import CustomModal from "../../../../../../components/CustomModal";
+import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 import { FormField, FormInput, FormSelect } from "./Husbandry.components";
 import LocationAutocomplete from "./LocationAutocomplete";
 
@@ -34,7 +35,9 @@ const generateDummyMaterials = () => {
 
 const MaterialManagementContent = ({ formValues, handleChange, cardColor }) => {
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [materialsList, setMaterialsList] = useState([]);
+  const [deletingMaterial, setDeletingMaterial] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef(null);
@@ -190,10 +193,18 @@ const MaterialManagementContent = ({ formValues, handleChange, cardColor }) => {
   };
 
   const handleDeleteMaterial = (id) => {
-    const updatedList = materialsList.filter((m) => m.id !== id);
+    setDeletingMaterial(materialsList.find(m => m.id === id));
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (!deletingMaterial) return;
+    const updatedList = materialsList.filter((m) => m.id !== deletingMaterial.id);
     setMaterialsList(updatedList);
     const syntheticEvent = { target: { value: updatedList } };
     handleChange("materialManagementList")(syntheticEvent);
+    setShowDeleteModal(false);
+    setDeletingMaterial(null);
   };
 
   const formatDateTime = (dateTimeString) => {
@@ -597,6 +608,18 @@ const MaterialManagementContent = ({ formValues, handleChange, cardColor }) => {
         body={renderBody()}
         footer={renderFooter()}
       />
+
+      {!!showDeleteModal && (
+        <DeleteConfirmationModal
+          show={showDeleteModal}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setDeletingMaterial(null);
+          }}
+          onConfirm={confirmDelete}
+          deleteText={`Are you sure you want to delete this material${deletingMaterial?.materialType ? ` (${deletingMaterial.materialType})` : ""}?`}
+        />
+      )}
     </div>
   );
 };
