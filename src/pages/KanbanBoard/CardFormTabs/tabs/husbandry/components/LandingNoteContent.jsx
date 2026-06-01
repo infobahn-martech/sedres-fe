@@ -10,6 +10,7 @@ import editIcon from "../../../../../../assets/images/edit.svg";
 import deleteIcon from "../../../../../../assets/images/delete.svg";
 import eyeIcon from "../../../../../../assets/images/eye.svg";
 import useLandingNoteReducer from "../../../../../../store/LandingNoteReducer";
+import DateTimePickerField from "../../../components/DateTimePickerField";
 
 // Generate dummy landing note data
 const generateDummyLandingNotes = () => {
@@ -140,6 +141,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const [formData, setFormData] = useState({
     landingNoteNo: "",
     date: "",
+    time: "",
     poDo: "",
     landingProof: [],
     quantity: "",
@@ -173,6 +175,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
       setFormData({
         landingNoteNo: note.landingNoteNo || "",
         date: note.date || "",
+        time: note.time || "",
         poDo: note.poDo || "",
         landingProof: note.landingProof || [],
         quantity: note.quantity || "",
@@ -185,6 +188,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
       setFormData({
         landingNoteNo: "",
         date: "",
+        time: "",
         poDo: "",
         landingProof: [],
         quantity: "",
@@ -202,6 +206,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     setFormData({
       landingNoteNo: "",
       date: "",
+      time: "",
       poDo: "",
       landingProof: [],
       quantity: "",
@@ -805,14 +810,16 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
 
             <div className="col-12 mb-3">
               <FormField label="Date">
-                <div className="cf-input">
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => handleFormChange("date", e.target.value)}
-                    placeholder="Select date"
-                  />
-                </div>
+                <DateTimePickerField
+                  dateValue={formData.date}
+                  timeValue={formData.time}
+                  onDateTimeChange={(nextValues) => {
+                    setFormData((prev) => ({ ...prev, date: nextValues.date, time: nextValues.time }));
+                  }}
+                  dateFieldName="date"
+                  timeFieldName="time"
+                  placeholder="YYYY-MM-DD hh:mm"
+                />
               </FormField>
             </div>
 
