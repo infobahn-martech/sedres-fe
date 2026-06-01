@@ -159,8 +159,11 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const handleOpenModal = (note = null) => {
     if (note) {
       setEditingNote(note);
-      const dateStr = (note.landing_date || note.date || "").split(" ")[0] || "";
-      const timeStr = (note.landing_date || note.date || "").split(" ")[1] || note.time || "";
+      const rawDateTime = note.landing_date || note.date || "";
+      const dateStr = rawDateTime.split(/[ T]/)[0] || "";
+      const timeStr = rawDateTime.includes("T")
+        ? (rawDateTime.split("T")[1] || "").substring(0, 5)
+        : rawDateTime.split(" ")[1] || note.time || "";
       const firstItem = Array.isArray(note.items) && note.items.length > 0 ? note.items[0] : {};
       setFormData({
         landingNoteNo: note.landing_note_no || note.landingNoteNo || "",
