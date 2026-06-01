@@ -3,10 +3,8 @@ import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
 import CustomModal from "../../../../../../components/CustomModal";
-import { FormField, FormInput, FormSelect } from "./Husbandry.components";
+import { FormField, FormInput, FormSelect, ReactQuillEditor } from "./Husbandry.components";
 import MaterialTablePagination from "./MaterialTablePagination";
 import editIcon from "../../../../../../assets/images/edit.svg";
 import deleteIcon from "../../../../../../assets/images/delete.svg";
@@ -114,58 +112,11 @@ const AttachmentsList = ({ attachments = [], onAdd, onRemove, cardColor, isDragg
   );
 };
 
-// ReactQuillEditor Component (from Operation.jsx)
-const ReactQuillEditor = ({ value, onChange, placeholder, name = "remarks", className = "" }) => {
-  const quillRef = useRef(null);
-
-  const modules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ list: "ordered" }, { list: "bullet" }],
-      [{ color: [] }, { background: [] }],
-      ["link", "image"],
-      ["clean"],
-    ],
-  };
-
-  const formats = [
-    "header",
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-    "list",
-    "bullet",
-    "color",
-    "background",
-    "link",
-    "image",
-  ];
-
-  const handleChange = (content) => {
-    const syntheticEvent = { target: { value: content, name: name } };
-    onChange(syntheticEvent);
-  };
-
-  return (
-    <div className={`react-quill-wrapper ${className}`}>
-      <ReactQuill
-        ref={quillRef}
-        theme="snow"
-        value={value || ""}
-        onChange={handleChange}
-        modules={modules}
-        formats={formats}
-        placeholder={placeholder || "Enter remarks..."}
-      />
-    </div>
-  );
-};
 
 const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const [showModal, setShowModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
+  const [convertFormErrors, setConvertFormErrors] = useState({});
   const [showViewModal, setShowViewModal] = useState(false);
   const [notesList, setNotesList] = useState([]);
   const [editingNote, setEditingNote] = useState(null);
@@ -486,6 +437,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const handleCloseConvertModal = () => {
     setShowConvertModal(false);
     setConvertingNote(null);
+    setConvertFormErrors({});
     setConvertFormData({
       date: "",
       warehouse: "",
@@ -654,10 +606,19 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     }));
   };
 
+  const validateConvertForm = () => {
+    const errors = {};
+    if (!convertFormData.date) errors.date = "Date is required";
+    if (!convertFormData.warehouse) errors.warehouse = "Warehouse is required";
+    if (!convertFormData.deliveryLocation) errors.deliveryLocation = "Delivery location is required";
+    if (!convertFormData.deliverTo) errors.deliverTo = "Deliver to is required";
+    setConvertFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleConvertSubmit = (e) => {
     e.preventDefault();
-    console.log("Convert to Dispatch form submitted:", convertFormData);
-    // Here you can implement the logic to save/convert the note to dispatch note
+    if (!validateConvertForm()) return;
     handleCloseConvertModal();
   };
 
@@ -1033,58 +994,30 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
               </h3>
               <div className="row mb-lg-3">
                 <div className="col-md-6 mb-3">
-                  <FormField label="Date">
-                    <div className="cf-select cf-date-input">
+                  <FormField label="Date *">
+                    <div className="cf-select cf-date-input" style={convertFormErrors.date ? { borderColor: "#dc3545" } : {}}>
                       <input
                         type="date"
                         value={convertFormData.date}
-                        onChange={(e) => handleConvertFormChange("date", e.target.value)}
+                        onChange={(e) => { handleConvertFormChange("date", e.target.value); setConvertFormErrors((p) => { const n = { ...p }; delete n.date; return n; }); }}
                         onClick={(e) => e.stopPropagation()}
-                        style={{
-                          width: "100%",
-                          border: "none",
-                          outline: "none",
-                          background: "transparent",
-                          fontSize: "14px",
-                          color: "#1a1a1a",
-                          fontFamily: "inherit",
-                          padding: 0,
-                          flex: 1,
-                          cursor: "pointer",
-                        }}
+                        style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: "14px", color: "#1a1a1a", fontFamily: "inherit", padding: 0, flex: 1, cursor: "pointer" }}
                       />
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        style={{
-                          flexShrink: 0,
-                          marginLeft: "8px",
-                          color: "#666",
-                          pointerEvents: "none",
-                          position: "relative",
-                          zIndex: 1,
-                        }}
-                      >
-                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
-                        <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
                     </div>
+                    {convertFormErrors.date && <span style={{ color: "#dc3545", fontSize: "12px" }}>{convertFormErrors.date}</span>}
                   </FormField>
                 </div>
 
                 <div className="col-md-6 mb-3">
-                  <FormField label="Warehouse">
+                  <FormField label="Warehouse *">
                     <FormSelect
                       value={convertFormData.warehouse}
-                      onChange={(e) => handleConvertFormChange("warehouse", e.target.value)}
+                      onChange={(e) => { handleConvertFormChange("warehouse", e.target.value); setConvertFormErrors((p) => { const n = { ...p }; delete n.warehouse; return n; }); }}
                       options={warehouseOptions}
                       placeholder="Select warehouse"
+                      className={convertFormErrors.warehouse ? "is-invalid" : ""}
                     />
+                    {convertFormErrors.warehouse && <span style={{ color: "#dc3545", fontSize: "12px" }}>{convertFormErrors.warehouse}</span>}
                   </FormField>
                 </div>
               </div>
@@ -1107,25 +1040,29 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                   </div>
 
                   <div className="col-md-4 mb-3">
-                    <FormField label="Delivery Location">
+                    <FormField label="Delivery Location *">
                       <FormInput
                         type="text"
                         value={convertFormData.deliveryLocation}
-                        onChange={(e) => handleConvertFormChange("deliveryLocation", e.target.value)}
+                        onChange={(e) => { handleConvertFormChange("deliveryLocation", e.target.value); setConvertFormErrors((p) => { const n = { ...p }; delete n.deliveryLocation; return n; }); }}
                         placeholder="Enter delivery location..."
+                        className={convertFormErrors.deliveryLocation ? "is-invalid" : ""}
                       />
                     </FormField>
+                    {convertFormErrors.deliveryLocation && <span style={{ color: "#dc3545", fontSize: "12px" }}>{convertFormErrors.deliveryLocation}</span>}
                   </div>
 
                   <div className="col-md-4 mb-3">
-                    <FormField label="Deliver to (Person Name)">
+                    <FormField label="Deliver to (Person Name) *">
                       <FormInput
                         type="text"
                         value={convertFormData.deliverTo}
-                        onChange={(e) => handleConvertFormChange("deliverTo", e.target.value)}
+                        onChange={(e) => { handleConvertFormChange("deliverTo", e.target.value); setConvertFormErrors((p) => { const n = { ...p }; delete n.deliverTo; return n; }); }}
                         placeholder="Enter person name..."
+                        className={convertFormErrors.deliverTo ? "is-invalid" : ""}
                       />
                     </FormField>
+                    {convertFormErrors.deliverTo && <span style={{ color: "#dc3545", fontSize: "12px" }}>{convertFormErrors.deliverTo}</span>}
                   </div>
                 </div>
               </div>
