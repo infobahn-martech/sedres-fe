@@ -148,6 +148,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     packageType: "",
     description: "",
   });
+  const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
     const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
@@ -206,6 +207,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
       packageType: "",
       description: "",
     });
+    setFormErrors({});
     setSelectedFiles([]);
   };
 
@@ -220,7 +222,11 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     e.preventDefault();
 
     if (editingNote) {
-      if (!formData.date) return;
+      if (!formData.date) {
+        setFormErrors({ date: "Date is required" });
+        return;
+      }
+      setFormErrors({});
       const landingNoteId = editingNote.landing_note_id ?? editingNote.id;
       const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
       const landingDate = formData.date + (formData.time ? ` ${formData.time}` : "");
@@ -835,11 +841,13 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                   timeValue={formData.time}
                   onDateTimeChange={(nextValues) => {
                     setFormData((prev) => ({ ...prev, date: nextValues.date, time: nextValues.time }));
+                    if (nextValues.date) setFormErrors((prev) => { const e = { ...prev }; delete e.date; return e; });
                   }}
                   dateFieldName="date"
                   timeFieldName="time"
                   placeholder="YYYY-MM-DD hh:mm"
                 />
+                {formErrors.date && <span style={{ color: "#dc3545", fontSize: "12px" }}>{formErrors.date}</span>}
               </FormField>
             </div>
 
