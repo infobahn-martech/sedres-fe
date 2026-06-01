@@ -3,10 +3,8 @@ import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
 import CustomModal from "../../../../../../components/CustomModal";
-import { FormField, FormInput, FormSelect } from "./Husbandry.components";
+import { FormField, FormInput, FormSelect, ReactQuillEditor } from "./Husbandry.components";
 import MaterialTablePagination from "./MaterialTablePagination";
 import editIcon from "../../../../../../assets/images/edit.svg";
 import deleteIcon from "../../../../../../assets/images/delete.svg";
@@ -115,54 +113,6 @@ const AttachmentsList = ({ attachments = [], onAdd, onRemove, cardColor, isDragg
   );
 };
 
-// ReactQuillEditor Component (from Operation.jsx)
-const ReactQuillEditor = ({ value, onChange, placeholder, name = "remarks", className = "" }) => {
-  const quillRef = useRef(null);
-
-  const modules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ list: "ordered" }, { list: "bullet" }],
-      [{ color: [] }, { background: [] }],
-      ["link", "image"],
-      ["clean"],
-    ],
-  };
-
-  const formats = [
-    "header",
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-    "list",
-    "bullet",
-    "color",
-    "background",
-    "link",
-    "image",
-  ];
-
-  const handleChange = (content) => {
-    const syntheticEvent = { target: { value: content, name: name } };
-    onChange(syntheticEvent);
-  };
-
-  return (
-    <div className={`react-quill-wrapper ${className}`}>
-      <ReactQuill
-        ref={quillRef}
-        theme="snow"
-        value={value || ""}
-        onChange={handleChange}
-        modules={modules}
-        formats={formats}
-        placeholder={placeholder || "Enter remarks..."}
-      />
-    </div>
-  );
-};
 
 const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const { updateLandingNote, getLandingNoteById, isLoadingUpdate } = useLandingNoteReducer((state) => state);
