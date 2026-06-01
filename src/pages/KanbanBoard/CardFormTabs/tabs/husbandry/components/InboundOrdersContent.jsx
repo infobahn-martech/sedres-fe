@@ -585,7 +585,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         inbound_id: inboundId,
         call_id: callId,
         warehouse_id: Number(formData.warehouse) || 0,
-        inbound_date: formData.date || "",
+        inbound_date: buildApiDateTime(formData.date, formData.time),
         remarks: formData.remarks || "",
         items: updateItems,
       };
