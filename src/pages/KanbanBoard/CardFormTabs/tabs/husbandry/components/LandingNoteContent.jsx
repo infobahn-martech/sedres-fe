@@ -116,7 +116,7 @@ const AttachmentsList = ({ attachments = [], onAdd, onRemove, cardColor, isDragg
 
 
 const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
-  const { updateLandingNote, getLandingNoteById, isLoadingUpdate } = useLandingNoteReducer((state) => state);
+  const { updateLandingNote, getLandingNoteById, getAllLandingNotes, isLoadingUpdate } = useLandingNoteReducer((state) => state);
 
   const [showModal, setShowModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
@@ -228,17 +228,43 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
 
     if (editingNote) {
       const landingNoteId = editingNote.landing_note_id ?? editingNote.id;
+      const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
+      const landingDate = formData.date + (formData.time ? ` ${formData.time}` : "");
       const fd = new FormData();
-      fd.append("landing_date", formData.date || "");
-      fd.append("po_no", formData.poDo || "");
-      fd.append("quantity", formData.quantity || "");
-      fd.append("package_type_id", formData.packageType || "");
-      fd.append("description", formData.description || "");
+      fd.append("landing_date", landingDate);
+      if (editingNote.inbound_id) fd.append("inbound_id", editingNote.inbound_id);
+      if (editingNote.warehouse_id) fd.append("warehouse_id", editingNote.warehouse_id);
+      fd.append("received_from", editingNote.received_from || "");
+      fd.append("location", editingNote.location || "");
+      fd.append("signature", editingNote.signature || "");
+      fd.append("remarks", formData.description || "");
       if (selectedFiles.length > 0) fd.append("file", selectedFiles[0].file ?? selectedFiles[0]);
+      const apiItems = Array.isArray(editingNote.items) ? editingNote.items : [];
+      if (apiItems.length > 0) {
+        const items = apiItems.map((item) => ({
+          inbound_item_id: item.inbound_item_id || null,
+          quantity: Number(item.quantity) || 0,
+          transportation_required: item.transportation_required ? 1 : 0,
+          transportation: item.transportation ? {
+            vehicle_type_id: item.transportation.vehicle_type_id || 0,
+            from_location_id: item.transportation.from_location_id || 0,
+            pickup_location: item.transportation.pickup_location || "",
+            to_location_id: item.transportation.to_location_id || 0,
+            driver_id: item.transportation.driver_id || 0,
+          } : null,
+          slot_no_id: item.slot_no_id || 0,
+          reason_id: item.reason_id || 0,
+          dispatch_date: item.dispatch_date || "",
+        }));
+        fd.append("items", JSON.stringify(items));
+      }
       updateLandingNote({
         landingNoteId,
         data: fd,
-        cb: () => { handleCloseModal(); },
+        cb: () => {
+          handleCloseModal();
+          getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });
+        },
       });
       return;
     } else {
@@ -952,9 +978,10 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         type="submit"
         form="landingNoteForm"
         className="btn btn-primary"
-        style={{ backgroundColor: "#00368c" }}
+        disabled={isLoadingUpdate}
+        style={{ backgroundColor: "#00368c", opacity: isLoadingUpdate ? 0.7 : 1, cursor: isLoadingUpdate ? "not-allowed" : "pointer" }}
       >
-        {editingNote ? "Update Note" : "Add Note"}
+        {isLoadingUpdate ? "Updating..." : (editingNote ? "Update Note" : "Add Note")}
       </button>
     </div>
   );
