@@ -11,6 +11,7 @@ import MaterialTablePagination from "./MaterialTablePagination";
 import editIcon from "../../../../../../assets/images/edit.svg";
 import deleteIcon from "../../../../../../assets/images/delete.svg";
 import eyeIcon from "../../../../../../assets/images/eye.svg";
+import useLandingNoteReducer from "../../../../../../store/LandingNoteReducer";
 
 // Generate dummy landing note data
 const generateDummyLandingNotes = () => {
@@ -164,6 +165,8 @@ const ReactQuillEditor = ({ value, onChange, placeholder, name = "remarks", clas
 };
 
 const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
+  const { updateLandingNote, getLandingNoteById, isLoadingUpdate } = useLandingNoteReducer((state) => state);
+
   const [showModal, setShowModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -269,26 +272,20 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     e.preventDefault();
 
     if (editingNote) {
-      // Update existing note
-      const updatedList = notesList.map(note =>
-        note.id === editingNote.id
-          ? {
-            ...note,
-            landingNoteNo: formData.landingNoteNo || note.landingNoteNo,
-            date: formData.date,
-            poDo: formData.poDo,
-            landingProof: selectedFiles,
-            quantity: formData.quantity,
-            packageType: formData.packageType,
-            description: formData.description,
-          }
-          : note
-      );
-      setNotesList(updatedList);
-
-      // Update formValues
-      const syntheticEvent = { target: { value: updatedList } };
-      handleChange("landingNoteList")(syntheticEvent);
+      const landingNoteId = editingNote.landing_note_id ?? editingNote.id;
+      const fd = new FormData();
+      fd.append("landing_date", formData.date || "");
+      fd.append("po_no", formData.poDo || "");
+      fd.append("quantity", formData.quantity || "");
+      fd.append("package_type_id", formData.packageType || "");
+      fd.append("description", formData.description || "");
+      if (selectedFiles.length > 0) fd.append("file", selectedFiles[0].file ?? selectedFiles[0]);
+      updateLandingNote({
+        landingNoteId,
+        data: fd,
+        cb: () => { handleCloseModal(); },
+      });
+      return;
     } else {
       // Create new note
       const newNote = {
