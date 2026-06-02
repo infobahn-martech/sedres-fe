@@ -10,7 +10,22 @@ import editIcon from "../../../../../../assets/images/edit.svg";
 import deleteIcon from "../../../../../../assets/images/delete.svg";
 import eyeIcon from "../../../../../../assets/images/eye.svg";
 import useLandingNoteReducer from "../../../../../../store/LandingNoteReducer";
+import packingTypeService from "../../../../../../services/packingTypeService";
 import DateTimePickerField from "../../../components/DateTimePickerField";
+
+const extractListFromApi = (body) => {
+  if (body == null) return [];
+  if (Array.isArray(body)) return body;
+  if (Array.isArray(body.data)) return body.data;
+  return [];
+};
+
+const mergeOptionForValue = (options, value) => {
+  if (value == null || value === "") return options;
+  const s = String(value);
+  if (options.some((o) => o.value === s)) return options;
+  return [...options, { value: s, label: s }];
+};
 
 // Generate dummy landing note data
 const generateDummyLandingNotes = () => {
@@ -136,6 +151,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const [landingPage, setLandingPage] = useState(1);
   const LANDING_LIMIT = 10;
   const dropdownButtonRefs = useRef({});
+  const [packageTypeOptions, setPackageTypeOptions] = useState([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -149,6 +165,20 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     description: "",
   });
   const [formErrors, setFormErrors] = useState({});
+
+  useEffect(() => {
+    let cancelled = false;
+    packingTypeService.getPackingTypes().then((res) => {
+      if (cancelled) return;
+      const rows = extractListFromApi(res?.data);
+      setPackageTypeOptions(
+        rows
+          .map((r) => ({ value: String(r.package_type_id ?? ""), label: String(r.package_type ?? "") }))
+          .filter((o) => o.value && o.label)
+      );
+    }).catch((err) => { console.error("packingType fetch failed:", err); });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
@@ -347,14 +377,6 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
       day: "numeric",
     });
   };
-
-  const packageTypeOptions = [
-    { value: "Box", label: "Box" },
-    { value: "Pallet", label: "Pallet" },
-    { value: "Crate", label: "Crate" },
-    { value: "Bag", label: "Bag" },
-    { value: "Container", label: "Container" },
-  ];
 
   const handleDelete = (noteId) => {
     if (window.confirm("Are you sure you want to delete this landing note?")) {
@@ -949,7 +971,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                 <FormSelect
                   value={formData.packageType}
                   onChange={(e) => handleFormChange("packageType", e.target.value)}
-                  options={packageTypeOptions}
+                  options={mergeOptionForValue(packageTypeOptions, formData.packageType)}
                   placeholder="Select package type..."
                 />
               </FormField>

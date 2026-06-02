@@ -191,7 +191,7 @@ const ReactQuillEditor = ({ value, onChange, placeholder, name = "remarks", clas
 };
 
 const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
-  const { saveLandingNote, isLoadingSave: isLoadingSaveLandingNote } = useLandingNoteReducer((state) => state);
+  const { saveLandingNote, getAllLandingNotes, isLoadingSave: isLoadingSaveLandingNote } = useLandingNoteReducer((state) => state);
 
   const {
     saveInboundOrder,
@@ -1138,7 +1138,11 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     });
     saveLandingNote({
       data: payload,
-      cb: handleCloseConvertModal,
+      cb: () => {
+        handleCloseConvertModal();
+        getAllInbound({ call_id: callId, page: inboundPage, limit: INBOUND_LIMIT });
+        getAllLandingNotes({ call_id: callId, page: 1, limit: 10 });
+      },
     });
   };
 
