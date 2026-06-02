@@ -1,12 +1,17 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import userService from "../../../../../../services/userService";
+import groService from "../../../../../../services/groService";
 import { PRE_ARRIVAL_GRO_ROLE_ID } from "../../../../CardFormTabs/tabs/operation/operationConstants";
-import { getGroSupervisorStaticDocuments } from "./groSupervisorStaticDocuments";
 import {
   getGroSupervisorTasksForCard,
   createEmptyTaskAssignment,
 } from "./groSupervisorStaticTasks";
+import {
+  mapGroSupervisorDocuments,
+  parseDocumentsByTaskResponse,
+  resolveGroSupervisorTaskId,
+} from "./groSupervisorDocuments";
 import GROSupervisorTabs from "./GROSupervisorTabs";
 import GROSupervisorAssignTask from "./GROSupervisorAssignTask";
 import GROSupervisorDocumentLibrary from "./GROSupervisorDocumentLibrary";
@@ -36,9 +41,12 @@ const parseUsersByRoleResponse = (res) => {
 
 function GROSupervisorCardView({ card }) {
   const tasks = useMemo(() => getGroSupervisorTasksForCard(card), [card]);
-  const staticDocuments = useMemo(() => getGroSupervisorStaticDocuments(), []);
+  const taskId = useMemo(() => resolveGroSupervisorTaskId(card), [card]);
 
   const [activeTab, setActiveTab] = useState(SUPERVISOR_TABS.assign);
+  const [documents, setDocuments] = useState([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [documentsLoadError, setDocumentsLoadError] = useState(null);
   const [assignments, setAssignments] = useState(() => {
     const initial = {};
     getGroSupervisorTasksForCard(card).forEach((t) => {
@@ -86,6 +94,41 @@ function GROSupervisorCardView({ card }) {
     }));
   }, []);
 
+  useEffect(() => {
+    if (activeTab !== SUPERVISOR_TABS.documents) return undefined;
+
+    if (!taskId) {
+      setDocuments([]);
+      setDocumentsLoadError("Unable to load documents: missing task id.");
+      setDocumentsLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setDocumentsLoading(true);
+    setDocumentsLoadError(null);
+
+    groService
+      .getDocumentsByTask(taskId)
+      .then((res) => {
+        if (cancelled) return;
+        const apiDocuments = parseDocumentsByTaskResponse(res);
+        setDocuments(mapGroSupervisorDocuments(apiDocuments));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setDocuments([]);
+        setDocumentsLoadError("Failed to load documents.");
+      })
+      .finally(() => {
+        if (!cancelled) setDocumentsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, taskId]);
+
   return (
     <div className="gro-card-view gro-supervisor-card-view">
       <div className="gro-supervisor-layout">
@@ -100,7 +143,12 @@ function GROSupervisorCardView({ card }) {
               usersLoading={usersLoading}
             />
           ) : (
-            <GROSupervisorDocumentLibrary documents={staticDocuments} hideHeading />
+            <GROSupervisorDocumentLibrary
+              documents={documents}
+              hideHeading
+              isLoading={documentsLoading}
+              emptyMessage={documentsLoadError}
+            />
           )}
         </div>
       </div>

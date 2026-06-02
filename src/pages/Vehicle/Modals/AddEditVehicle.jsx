@@ -6,6 +6,7 @@ import useVehicleReducer from "../../../store/VehicleReducer";
 import "../../../design/scss/prospect-modal.scss";
 import "../../../design/scss/modal-designs.scss";
 import "../../../design/scss/form-designs.scss";
+import "../../../design/scss/master-modal-form.scss";
 
 const VEHICLE_PURPOSE_OPTIONS = [
     { value: "crew_transport", label: "Crew Transport" },
@@ -125,6 +126,10 @@ export function VehicleModal({ showModal, closeModal, onSuccess }) {
                                         placeholder="Select Vehicle Purpose"
                                         searchPlaceholder="Search vehicle purpose..."
                                         hasError={Boolean(errors.vehicle_purpose)}
+                                        menuPortalTarget={
+                                            typeof document !== "undefined" ? document.body : null
+                                        }
+                                        menuPosition="fixed"
                                     />
                                 )}
                             />
@@ -184,7 +189,7 @@ export function VehicleModal({ showModal, closeModal, onSuccess }) {
 
     return (
         <CustomModal
-            className="fade role-modal-sm modal show"
+            className="role-modal-sm master-modal-form"
             dialgName="modal-dialog modal-dialog-centered"
             show={!!showModal}
             closeModal={() => closeModal(null)}

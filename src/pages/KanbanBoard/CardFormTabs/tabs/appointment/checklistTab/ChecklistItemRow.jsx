@@ -286,7 +286,7 @@ const ChecklistItemRow = ({
     const additions = picked.map((file, i) => createLocalChecklistFileEntry(file, `${batchKey}_${i}`));
     const next = [...uploadedFiles, ...additions];
     setUploadedFiles(next);
-    pushChange({ uploadedFiles: next });
+    pushChange({ uploadedFiles: next, checked: true });
   };
 
   const handleRemoveFileEntry = (entry) => {

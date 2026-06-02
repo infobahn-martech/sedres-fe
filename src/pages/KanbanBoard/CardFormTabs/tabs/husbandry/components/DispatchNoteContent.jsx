@@ -9,6 +9,7 @@ import MaterialTablePagination from "./MaterialTablePagination";
 import editIcon from "../../../../../../assets/images/edit.svg";
 import deleteIcon from "../../../../../../assets/images/delete.svg";
 import eyeIcon from "../../../../../../assets/images/eye.svg";
+import useDispatchNoteReducer from "../../../../../../store/DispatchNoteReducer";
 
 // Generate dummy dispatch note data
 const generateDummyDispatchNotes = () => {
@@ -44,6 +45,8 @@ const generateDummyDispatchNotes = () => {
 };
 
 const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
+  const { getAllDispatchNotes, getDispatchNoteById, dispatchNotes, dispatchTotal, isLoadingList } = useDispatchNoteReducer((state) => state);
+
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [notesList, setNotesList] = useState([]);
@@ -69,25 +72,32 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
     description: "",
   });
 
-  // Initialize with dummy data on mount if empty
   useEffect(() => {
-    const notes = formValues.dispatchNoteList || [];
-    if (notes.length === 0) {
-      const dummyData = generateDummyDispatchNotes();
-      const syntheticEvent = { target: { value: dummyData } };
-      handleChange("dispatchNoteList")(syntheticEvent);
-      setNotesList(dummyData);
-    } else {
-      setNotesList(notes);
+    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
+    if (callId) {
+      getAllDispatchNotes({ call_id: callId, page: dispatchPage, limit: DISPATCH_LIMIT });
     }
-  }, [formValues.dispatchNoteList, handleChange]);
+  }, [formValues?.call_id, formValues?.callId, formValues?.card_call_id, dispatchPage]);
 
-  // Update local list when formValues change
   useEffect(() => {
-    if (formValues.dispatchNoteList) {
-      setNotesList(formValues.dispatchNoteList);
+    if (Array.isArray(dispatchNotes)) {
+      setNotesList(dispatchNotes.map((note) => {
+        const firstItem = Array.isArray(note.items) && note.items.length > 0 ? note.items[0] : {};
+        return {
+          ...note,
+          id: note.dispatch_note_id || note.id,
+          orderNo: note.dispatch_note_no || note.orderNo || "",
+          date: note.dispatch_date || note.date || "",
+          poDo: firstItem.po_no || note.po_no || note.poDo || "",
+          deliveryProof: note.document ? [note.document] : (note.documents || []),
+          quantity: firstItem.quantity ?? note.quantity ?? "",
+          packageType: firstItem.package_type || note.package_type || note.packageType || "",
+          description: firstItem.description || note.description || "",
+          items: note.items || [],
+        };
+      }));
     }
-  }, [formValues.dispatchNoteList]);
+  }, [dispatchNotes]);
 
   const handleOpenModal = (note = null) => {
     if (note) {
@@ -728,8 +738,10 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
             </tr>
           </thead>
           <tbody>
-            {notesList.length > 0 ? (
-              notesList.slice((dispatchPage - 1) * DISPATCH_LIMIT, dispatchPage * DISPATCH_LIMIT).map((note) => (
+            {isLoadingList ? (
+              <tr><td colSpan="8" style={{ textAlign: "center", padding: "20px" }}>Loading...</td></tr>
+            ) : notesList.length > 0 ? (
+              notesList.map((note) => (
                 <tr key={note.id}>
                   <td>
                     <div className="material-table-cell">{note.orderNo || ""}</div>
@@ -962,7 +974,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
         </div>
         <MaterialTablePagination
           page={dispatchPage}
-          total={notesList.length}
+          total={dispatchTotal}
           limit={DISPATCH_LIMIT}
           onPageChange={setDispatchPage}
         />

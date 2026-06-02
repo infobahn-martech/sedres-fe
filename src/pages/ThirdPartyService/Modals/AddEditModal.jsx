@@ -5,6 +5,7 @@ import useThirdPartyServiceReducer from "../../../store/ThirdPartyReducer";
 import "../../../design/scss/prospect-modal.scss";
 import "../../../design/scss/modal-designs.scss";
 import "../../../design/scss/form-designs.scss";
+import "../../../design/scss/master-modal-form.scss";
 
 export function AddEditThirdPartyServiceModal({ showModal, closeModal, onSuccess }) {
     const { addThirdPartyService, updateThirdPartyService, isBeingUpdated } = useThirdPartyServiceReducer(
@@ -99,21 +100,16 @@ export function AddEditThirdPartyServiceModal({ showModal, closeModal, onSuccess
                     </div>
 
                     <div className="mb-lg-3 mb-sm-0">
-                        <div className="permInputs row">
-                            <div className="col-12">
-                                <div className="form-floating desig-inp">
-                                    <textarea
-                                        className={`form-control ${errors.description ? "is-invalid" : ""}`}
-                                        placeholder="Description"
-                                        style={{ minHeight: "80px" }}
-                                        {...register("description")}
-                                    />
-                                    <label>Description</label>
-                                    {errors.description && (
-                                        <span className="error text-danger">{errors.description.message}</span>
-                                    )}
-                                </div>
-                            </div>
+                        <div className="form-floating desig-inp">
+                            <textarea
+                                className={`form-control ${errors.description ? "is-invalid" : ""}`}
+                                placeholder="Description"
+                                {...register("description")}
+                            />
+                            <label>Description</label>
+                            {errors.description && (
+                                <span className="error text-danger">{errors.description.message}</span>
+                            )}
                         </div>
                     </div>
                 </form>
@@ -134,7 +130,7 @@ export function AddEditThirdPartyServiceModal({ showModal, closeModal, onSuccess
 
     return (
         <CustomModal
-            className="role-modal-sm"
+            className="role-modal-sm master-modal-form"
             dialgName="modal-dialog modal-dialog-centered"
             show={!!showModal}
             closeModal={() => closeModal(null)}

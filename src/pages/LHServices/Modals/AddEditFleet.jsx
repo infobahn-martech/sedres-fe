@@ -5,6 +5,7 @@ import useLaunchHireServiceReducer from "../../../store/LaunchHireServiceReducer
 import "../../../design/scss/prospect-modal.scss";
 import "../../../design/scss/modal-designs.scss";
 import "../../../design/scss/form-designs.scss";
+import "../../../design/scss/master-modal-form.scss";
 
 export function FleetModal({ showModal, closeModal, onSuccess }) {
     const {
@@ -117,7 +118,6 @@ export function FleetModal({ showModal, closeModal, onSuccess }) {
                             <textarea
                                 className="form-control"
                                 placeholder="Description"
-                                style={{ height: "120px" }}
                                 {...register("description")}
                             />
                             <label>Description</label>
@@ -151,7 +151,7 @@ export function FleetModal({ showModal, closeModal, onSuccess }) {
 
     return (
         <CustomModal
-            className="status-modal-sm"
+            className="role-modal-sm master-modal-form"
             dialgName="modal-dialog modal-dialog-centered"
             show={!!showModal}
             closeModal={() => closeModal(null)}

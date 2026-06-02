@@ -6,7 +6,6 @@ import { buildPreArrivalReportBody } from "../../services/sendReportBodyBuilder"
 import {
   DEFAULT_PRE_ARRIVAL_DOCUMENT_HANDLING,
   collectPreArrivalProcessAttachments,
-  mergeChecklistItemsIntoDocumentHandling,
 } from "./preArrivalDocumentHandling";
 import preArrivalService from "../../../../../services/preArrivalService";
 import appointmentAcceptanceService from "../../../../../services/appointmentAcceptanceService";
@@ -36,8 +35,8 @@ import { extractReportTemplateFields } from "./operationReportTemplate";
 import { ensureHtmlForQuill, resolveReportBodyHtml } from "./operationReportMessageHtml";
 import {
   applyPreArrivalGetDetailToForm,
+  buildDocumentHandlingFromPreArrivalDetail,
   findTaskDocumentGroupByRole,
-  mergePreArrivalDetailDocuments,
 } from "./preArrivalDetailApply";
 
 const IconEye = () => (
@@ -77,7 +76,7 @@ const CompactFileUploadRow = ({
 }) => {
   const hasFiles = (files || []).length > 0;
   const displayLabel = String(label || "").trim() || "Document";
-  // Missing status from get_documents_by_role: treat as Not uploaded for UI actions when no files,
+  // Missing status from get_prearrival_detail: treat as Not uploaded for UI actions when no files,
   // or as Uploaded when local/attached files exist (preview). Never use Number(null) — that is 0.
   const statusIsEmpty =
     status === null ||
@@ -318,7 +317,6 @@ function PreArrival({
   const coordinatesFetchGenRef = useRef(0);
   const pendingCoordinateIdRef = useRef(null);
   const preArrivalDocumentsDetailRef = useRef({ taskDocuments: [], stageDocuments: [] });
-  const checklistFetchKeyRef = useRef("");
 
   const callId = useMemo(
     () => String(card?.call_id ?? card?.callId ?? formValues?.call_id ?? formValues?.callId ?? card?.id ?? "").trim(),
@@ -378,7 +376,6 @@ function PreArrival({
   useEffect(() => {
     pendingCoordinateIdRef.current = null;
     preArrivalDocumentsDetailRef.current = { taskDocuments: [], stageDocuments: [] };
-    checklistFetchKeyRef.current = "";
     emailPreviewFromDetailRef.current = false;
     setPreArrivalDetailAssigneeHints({ gro: null, customClearance: null });
     setPreArrivalDetailDocSkip({
@@ -389,135 +386,18 @@ function PreArrival({
     });
   }, [callId]);
 
-  const checklistRequestIds = useMemo(() => {
-    const resolvedPortId = Number(
-      resolveFormId(portId, formValues?.port_id, formValues?.portId, card?.port_id, card?.portId)
-    );
-    const resolvedCallTypeId = Number(
-      resolveFormId(
-        callTypeId,
-        formValues?.call_type_id,
-        formValues?.typeOfCall,
-        formValues?.callTypeId,
-        card?.call_type_id,
-        card?.typeOfCall
-      )
-    );
-    const resolvedVesselTypeId = Number(
-      resolveFormId(
-        vesselTypeId,
-        formValues?.vesselType,
-        formValues?.vessel_type_id,
-        card?.vessel_type_id
-      )
-    );
-    if (
-      !Number.isFinite(resolvedPortId) ||
-      resolvedPortId <= 0 ||
-      !Number.isFinite(resolvedCallTypeId) ||
-      resolvedCallTypeId <= 0 ||
-      !Number.isFinite(resolvedVesselTypeId) ||
-      resolvedVesselTypeId <= 0
-    ) {
-      return null;
-    }
-    return {
-      port_id: resolvedPortId,
-      call_type_id: resolvedCallTypeId,
-      vessel_type_id: resolvedVesselTypeId,
-      key: `${resolvedPortId}|${resolvedCallTypeId}|${resolvedVesselTypeId}`,
-    };
-  }, [
-    portId,
-    callTypeId,
-    vesselTypeId,
-    formValues?.port_id,
-    formValues?.portId,
-    formValues?.call_type_id,
-    formValues?.typeOfCall,
-    formValues?.callTypeId,
-    formValues?.vesselType,
-    formValues?.vessel_type_id,
-    card?.port_id,
-    card?.portId,
-    card?.call_type_id,
-    card?.typeOfCall,
-    card?.vessel_type_id,
-  ]);
-
-  const documentHandlingRowsKey = useMemo(() => {
-    const dh = formValues.preArrivalDocumentHandling;
-    const roleGroupKey = (dh?.roleGroups || [])
-      .map((g) => `${g.role_id}:${(g.items || []).map((r) => r.id).join(",")}`)
-      .join("|");
-    return `${formValues.assignedGro || ""}|${formValues.assignedCustom || ""}|${roleGroupKey}`;
-  }, [
-    formValues.preArrivalDocumentHandling,
-    formValues.assignedGro,
-    formValues.assignedCustom,
-  ]);
-
   const applyDetailDocuments = useCallback(() => {
     const { taskDocuments, stageDocuments } = preArrivalDocumentsDetailRef.current;
-    if (!taskDocuments?.length && !stageDocuments?.length) return;
     const dhCurrent = formValuesRef.current?.preArrivalDocumentHandling;
-    const nextDh = mergePreArrivalDetailDocuments(
-      dhCurrent,
+    const nextDh = buildDocumentHandlingFromPreArrivalDetail(
       taskDocuments || [],
-      stageDocuments || []
+      stageDocuments || [],
+      dhCurrent
     );
-    if (!nextDh) return;
     if (JSON.stringify(nextDh) !== JSON.stringify(dhCurrent)) {
       handleChange("preArrivalDocumentHandling")({ target: { value: nextDh } });
     }
   }, [handleChange]);
-
-  useEffect(() => {
-    if (isViewOnly || !checklistRequestIds) return;
-
-    const requestKey = checklistRequestIds.key;
-    if (checklistFetchKeyRef.current === requestKey) return;
-
-    const ac = new AbortController();
-    let cancelled = false;
-
-    const loadChecklistDocuments = async () => {
-      try {
-        const res = await preArrivalService.getChecklistItemsByRole({
-          port_id: checklistRequestIds.port_id,
-          call_type_id: checklistRequestIds.call_type_id,
-          vessel_type_id: checklistRequestIds.vessel_type_id,
-        });
-        if (ac.signal.aborted || cancelled) return;
-
-        const body = res?.data ?? res;
-        const status = body?.status;
-        if (typeof status === "string" && status.toLowerCase() === "error") return;
-
-        const apiRoleGroups = body?.data ?? [];
-        const dhCurrent = formValuesRef.current?.preArrivalDocumentHandling;
-        const nextDh = mergeChecklistItemsIntoDocumentHandling(dhCurrent, apiRoleGroups);
-        if (JSON.stringify(nextDh) === JSON.stringify(dhCurrent)) {
-          checklistFetchKeyRef.current = requestKey;
-          return;
-        }
-
-        handleChange("preArrivalDocumentHandling")({ target: { value: nextDh } });
-        checklistFetchKeyRef.current = requestKey;
-      } catch (error) {
-        if (!ac.signal.aborted && !cancelled) {
-          console.error("[Operation] pre_arrival/get_checklist_items_by_role failed", error);
-        }
-      }
-    };
-
-    loadChecklistDocuments();
-
-    return () => {
-      cancelled = true;
-      ac.abort();
-    };
-  }, [checklistRequestIds, isViewOnly, handleChange]);
 
   const fetchPreArrivalDetail = useCallback(
     async (abortSignal) => {
@@ -612,11 +492,6 @@ function PreArrival({
     fetchPreArrivalDetail(ac.signal);
     return () => ac.abort();
   }, [callId, isViewOnly, eventFieldsApplyKey, fetchPreArrivalDetail]);
-
-  useEffect(() => {
-    if (isViewOnly) return;
-    applyDetailDocuments();
-  }, [documentHandlingRowsKey, isViewOnly, applyDetailDocuments]);
 
   useEffect(() => {
     const needId = pendingCoordinateIdRef.current;

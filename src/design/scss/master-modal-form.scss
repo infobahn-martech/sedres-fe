@@ -1,0 +1,113 @@
+body .role-modal-sm.master-modal-form .modal-dialog {
+  max-width: 600px !important;
+}
+
+.role-modal-sm.master-modal-form .lead-form {
+  .phone-wrapper,
+  .form-floating.desig-inp {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .form-floating.desig-inp > .form-control {
+    width: 100%;
+    font-size: 13px;
+    line-height: 1.25;
+    box-sizing: border-box;
+  }
+
+  .form-floating.desig-inp > .form-control:not(textarea) {
+    min-height: 50px;
+    height: 50px;
+  }
+
+  .form-floating.desig-inp > textarea.form-control {
+    min-height: 50px;
+    height: 50px;
+    resize: none;
+  }
+
+  .form-floating.desig-inp.master-modal-form__textarea-tall > textarea.form-control {
+    min-height: 80px;
+    height: auto;
+    resize: vertical;
+  }
+
+  .form-floating.desig-inp > label {
+    font-size: 13px;
+  }
+
+  .phone-wrapper .phone-label {
+    font-size: 13px;
+    color: #35475e;
+  }
+
+  .phone-wrapper .premium-select.cf-searchable-select,
+  .phone-wrapper .hospital-service-multi-select.react-select-container {
+    display: block;
+    width: 100% !important;
+    max-width: 100%;
+    padding: 0 !important;
+    margin: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .phone-wrapper .premium-select.cf-searchable-select .cf-multi-select-email-input,
+  .phone-wrapper .hospital-service-multi-select .react-select__control {
+    width: 100%;
+    min-height: 50px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    border: 1px solid #e2e2ea;
+    background: #fff;
+    box-shadow: none;
+    font-size: 13px;
+  }
+
+  .phone-wrapper .premium-select.cf-searchable-select .cf-multi-select-email-input {
+    height: 50px;
+  }
+
+  .phone-wrapper .premium-select .cf-multi-select-placeholder,
+  .phone-wrapper .premium-select .cf-multi-select-selected-value,
+  .phone-wrapper .hospital-service-multi-select .react-select__placeholder,
+  .phone-wrapper .hospital-service-multi-select .react-select__input-container,
+  .phone-wrapper .hospital-service-multi-select .react-select__single-value {
+    font-size: 13px;
+    line-height: 1.25;
+    font-weight: 400;
+  }
+
+  .phone-wrapper .premium-select.cf-searchable-select .cf-multi-select-email-input:hover,
+  .phone-wrapper .hospital-service-multi-select .react-select__control:hover {
+    border-color: #cfd4dc;
+  }
+
+  .phone-wrapper .premium-select.cf-searchable-select .cf-multi-select-email-input:focus-within,
+  .phone-wrapper .hospital-service-multi-select .react-select__control--is-focused {
+    border-color: #b8c0cc;
+    box-shadow: none;
+  }
+
+  .phone-wrapper .hospital-service-multi-select .react-select__multi-value {
+    background-color: #00368c;
+    border-radius: 6px;
+  }
+
+  .phone-wrapper .hospital-service-multi-select .react-select__multi-value__label {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .phone-wrapper .hospital-service-multi-select .react-select__multi-value__remove {
+    color: #fff;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+  }
+}

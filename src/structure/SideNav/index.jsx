@@ -433,28 +433,28 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
         { menu: 'Stage Time Mappings', to: '/stage-time-mappings', hasPermission: true },
       ],
     },
-    {
-      menu: 'Document Management',
-      isDefaultMenu: true,
-      icon: materialIcon, // Material-specific icon
-      hasPermission: true,
-      isOpen: false,
-      subMenus: [
-        { menu: 'Document Management', to: '/document-management', hasPermission: true },
-        { menu: 'Document Checklist', to: '/document-checklist', hasPermission: true },
-      ],
-    },
-    {
-      menu: 'Task Management',
-      isDefaultMenu: true,
-      icon: materialIcon, // Material-specific icon
-      hasPermission: true,
-      isOpen: false,
-      subMenus: [
-        { menu: 'Task Management', to: '/task-management', hasPermission: true },
-        { menu: 'Task Checklist', to: '/task-checklist', hasPermission: true },
-      ],
-    },
+    // {
+    //   menu: 'Document Management',
+    //   isDefaultMenu: true,
+    //   icon: materialIcon, // Material-specific icon
+    //   hasPermission: true,
+    //   isOpen: false,
+    //   subMenus: [
+    //     { menu: 'Document Management', to: '/document-management', hasPermission: true },
+    //     { menu: 'Document Checklist', to: '/document-checklist', hasPermission: true },
+    //   ],
+    // },
+    // {
+    //   menu: 'Task Management',
+    //   isDefaultMenu: true,
+    //   icon: materialIcon, // Material-specific icon
+    //   hasPermission: true,
+    //   isOpen: false,
+    //   subMenus: [
+    //     { menu: 'Task Management', to: '/task-management', hasPermission: true },
+    //     { menu: 'Task Checklist', to: '/task-checklist', hasPermission: true },
+    //   ],
+    // },
     // ✅ Finance
     {
       menu: 'Entity Management',
@@ -493,6 +493,8 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
       subMenus: [
         { menu: 'Vessel Types', to: '/vessel-types', hasPermission: true },
         { menu: 'Barge Types', to: '/barge-types', hasPermission: true },
+        { menu: 'Task Management', to: '/task-management', hasPermission: true },
+        { menu: 'Task Roles', to: '/task-roles', hasPermission: true },
         { menu: 'Checklist', to: '/check-list', hasPermission: true },
       ],
       icon: workerIcon, // Two stylized human figures

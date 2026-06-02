@@ -97,13 +97,47 @@ export const enrichGroDocWithRowKey = (doc, index) => ({
         : `fb-${index}`,
 });
 
-/** GET task_card/get_gro_custom_docs — documents live on first group: response.data.data[0].documents */
-export const parseGroDocumentsResponse = (res) => {
-  const body = res?.data;
-  const group = Array.isArray(body?.data) ? body.data[0] : body?.data;
-  const docs = Array.isArray(group?.documents) ? group.documents : [];
-  return docs;
+/** Resolve task id for GET task_card/get_documents_by_task/{task_id}. */
+export const resolveGroTaskId = (card, selectedTask = null) => {
+  const candidates = [
+    selectedTask?.task_id,
+    selectedTask?.taskId,
+    card?.taskId,
+    card?.task_id,
+    card?.raw?.task_id,
+  ];
+  for (const value of candidates) {
+    if (value == null || String(value).trim() === "") continue;
+    return String(value).trim();
+  }
+  return null;
 };
+
+/** GET task_card/get_documents_by_task — payload: response.data.data.documents */
+export const parseDocumentsByTaskResponse = (res) => {
+  const payload = res?.data?.data ?? res?.data ?? {};
+  const docs = payload?.documents;
+  return Array.isArray(docs) ? docs : [];
+};
+
+export const parseDocumentsByTaskMeta = (res) => {
+  const payload = res?.data?.data ?? res?.data ?? {};
+  return {
+    taskId: payload?.task_id != null ? String(payload.task_id) : null,
+    taskName: payload?.task_name != null ? String(payload.task_name).trim() : "",
+  };
+};
+
+/** Normalize task document rows from get_documents_by_task for GRO document lists. */
+export const normalizeGroApiDocuments = (apiDocuments) =>
+  (apiDocuments || []).map((doc) => ({
+    ...doc,
+    is_uploaded: Boolean(doc.is_uploaded ?? (doc.file_url || doc.file_name)),
+    file_name: doc.file_name || null,
+    file_url: doc.file_url || null,
+    status: Number(doc.status ?? 0),
+    uploaded_by: doc.uploaded_by ?? doc.uploaded_by_user ?? null,
+  }));
 
 export const groApiErrorMessage = (err, fallback) =>
   err?.response?.data?.message ?? err?.response?.data?.error ?? err?.message ?? fallback;

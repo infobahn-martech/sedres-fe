@@ -17,7 +17,6 @@ import packingTypeService from "../../../../../../services/packingTypeService";
 import useInboundOrderReducer from "../../../../../../store/InboundOrderReducer";
 import inboundOrderService from "../../../../../../services/inboundOrderService";
 import vehicleService from "../../../../../../services/vehicleService";
-import driverService from "../../../../../../services/driverService";
 import {
   splitApiDateTimeParts,
   buildApiDateTime,
@@ -284,6 +283,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   });
 
   const [warehouseLocationOptions, setWarehouseLocationOptions] = useState([]);
+  const [transportLocationOptions, setTransportLocationOptions] = useState([]);
   const [packageTypeOptions, setPackageTypeOptions] = useState([]);
   const [materialVehicleOptions, setMaterialVehicleOptions] = useState([]);
   const [materialDriverOptions, setMaterialDriverOptions] = useState([]);
@@ -292,16 +292,26 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     let cancelled = false;
     const loadReferenceData = async () => {
       try {
-        const [whRes, pkgRes, vehRes, drvRes] = await Promise.all([
+        const [whRes, pkgRes, vehRes, drvRes, trLocRes] = await Promise.all([
           logisticsWarehouseService.getWarehouseLocations(),
           packingTypeService.getPackingTypes(),
-          vehicleService.getAllTransportVehicles(),
-          driverService.getAllDrivers(),
+          vehicleService.getMaterialVehicles(),
+          vehicleService.getMaterialDrivers(),
+          inboundOrderService.getMaterialTransportLocations(),
         ]);
         if (cancelled) return;
         const whRows = extractListFromApi(whRes?.data);
         setWarehouseLocationOptions(
           whRows
+            .map((r) => ({
+              value: String(r.location_id ?? ""),
+              label: String(r.location ?? ""),
+            }))
+            .filter((o) => o.value && o.label)
+        );
+        const trLocRows = extractListFromApi(trLocRes?.data);
+        setTransportLocationOptions(
+          trLocRows
             .map((r) => ({
               value: String(r.location_id ?? ""),
               label: String(r.location ?? ""),
@@ -361,7 +371,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
           quantity: item.quantity || "",
           packageType: String(item.package_type_id || ""),
           description: item.description || "",
-          transportation: item.transportation_required === 1,
+          transportation: Number(item.transportation_required) === 1,
           typeOfVehicle: item.transportation ? String(item.transportation.vehicle_type_id || "") : "",
           fromLocation: item.transportation ? String(item.transportation.from_location_id || "") : "",
           pickUpFrom: item.transportation ? item.transportation.pickup_location || "" : "",
@@ -508,7 +518,6 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   const validateForm = () => {
     const errors = {};
     if (!formData.date) errors.date = "Date is required";
-    else if (!formData.time) errors.date = "Time is required";
     if (!formData.warehouse) errors.warehouse = "Warehouse is required";
     formData.orders.forEach((order, idx) => {
       if (!order.poDo) errors[`o${idx}_poDo`] = "PO/DO is required";
@@ -1235,7 +1244,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
 
   const renderHeader = () => (
     <>
-      <h1 className="modal-title">{editingOrder ? "Edit Inbound Order" : "Add Inbound Order"}</h1>
+      <h1 className="modal-title">{"Add Inbound Order"}</h1>
     </>
   );
 
@@ -1285,16 +1294,6 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                 {formErrors.warehouse && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{formErrors.warehouse}</span>}
               </div>
 
-              <div className="col-md-12 mb-2">
-                <FormField label="Remarks">
-                  <FormTextarea
-                    value={formData.remarks}
-                    onChange={(e) => handleFormChange("remarks", e.target.value)}
-                    placeholder="Enter remarks..."
-                    rows={3}
-                  />
-                </FormField>
-              </div>
             </div>
           </div>
 
@@ -1465,17 +1464,6 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                   <div style={{ padding: "16px", backgroundColor: "white", borderRadius: "0 0 8px 8px" }}>
                     <div className="row g-2 mb-1">
                       <div className="col-lg-4 col-md-6">
-                        <FormField label="Order No">
-                          <FormInput
-                            type="text"
-                            value={order.orderNo}
-                            onChange={(e) => handleOrderChange(order.id, "orderNo", e.target.value)}
-                            placeholder="Enter order number..."
-                          />
-                        </FormField>
-                      </div>
-
-                      <div className="col-lg-4 col-md-6">
                         <FormField label="PO/DO *">
                           <FormInput
                             type="text"
@@ -1571,7 +1559,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                                   handleOrderChange(order.id, "fromLocation", e.target.value);
                                   if (formErrors[`o${index}_fromLocation`]) setFormErrors((prev) => { const e = { ...prev }; delete e[`o${index}_fromLocation`]; return e; });
                                 }}
-                                options={mergeOptionForValue(warehouseLocationOptions, order.fromLocation)}
+                                options={mergeOptionForValue(transportLocationOptions, order.fromLocation)}
                                 placeholder="Select from location..."
                               />
                             </FormField>
@@ -1597,7 +1585,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                                   handleOrderChange(order.id, "toLocation", e.target.value);
                                   if (formErrors[`o${index}_toLocation`]) setFormErrors((prev) => { const e = { ...prev }; delete e[`o${index}_toLocation`]; return e; });
                                 }}
-                                options={mergeOptionForValue(warehouseLocationOptions, order.toLocation)}
+                                options={mergeOptionForValue(transportLocationOptions, order.toLocation)}
                                 placeholder="Select to location..."
                               />
                             </FormField>
@@ -1652,6 +1640,20 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                 )}
               </div>
             ))}
+          </div>
+
+          {/* Remarks - after order details */}
+          <div className="row g-2 mt-2">
+            <div className="col-md-12">
+              <FormField label="Remarks">
+                <FormTextarea
+                  value={formData.remarks}
+                  onChange={(e) => handleFormChange("remarks", e.target.value)}
+                  placeholder="Enter remarks..."
+                  rows={3}
+                />
+              </FormField>
+            </div>
           </div>
         </form>
       </div>
@@ -2024,7 +2026,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                               <FormSelect
                                 value={order.fromLocation}
                                 onChange={(e) => handleConvertOrderChange(order.id, "fromLocation", e.target.value)}
-                                options={mergeOptionForValue(warehouseLocationOptions, order.fromLocation)}
+                                options={mergeOptionForValue(transportLocationOptions, order.fromLocation)}
                                 placeholder="Select from location..."
                               />
                             </FormField>
@@ -2046,7 +2048,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                               <FormSelect
                                 value={order.toLocation}
                                 onChange={(e) => handleConvertOrderChange(order.id, "toLocation", e.target.value)}
-                                options={mergeOptionForValue(warehouseLocationOptions, order.toLocation)}
+                                options={mergeOptionForValue(transportLocationOptions, order.toLocation)}
                                 placeholder="Select to location..."
                               />
                             </FormField>
@@ -2275,7 +2277,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                       <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{item.description}</div>
                     </div>
                   )}
-                  {item.transportation_required === 1 && item.transportation && (
+                  {Number(item.transportation_required) === 1 && item.transportation && (
                     <div style={{ borderTop: "1px dashed #ccc", paddingTop: "12px", marginTop: "8px" }}>
                       <div style={{ fontWeight: "600", color: "#555", marginBottom: "10px", fontSize: "13px" }}>Transportation</div>
                       <div className="view-row" style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>

@@ -1,10 +1,11 @@
 import Gateway from "../gateway/gateway";
+import taskCardService from "./groService/taskCardService";
 
 export const getCallDetailById = (callId) =>
   Gateway.get(`call_file/get_call_detail_by_id/${encodeURIComponent(String(callId))}`);
 
-export const getGroCustomDocs = (callId) =>
-  Gateway.get(`task_card/get_gro_custom_docs/${encodeURIComponent(String(callId))}`);
+export const getDocumentsByTask = (taskId) =>
+  Gateway.get(`task_card/get_documents_by_task/${encodeURIComponent(String(taskId))}`);
 
 export const verifyGroDocs = (payload) => Gateway.post("task_card/verify_docs", payload);
 
@@ -20,12 +21,13 @@ export const uploadCgPass = (formData) => Gateway.post("crew_pass/upload_cg_pass
 
 const groService = {
   getCallDetailById,
-  getGroCustomDocs,
+  getDocumentsByTask,
   verifyGroDocs,
   saveArrivalDocument,
   getPassRequests,
   uploadZawilPass,
   uploadCgPass,
+  assignTask: taskCardService.assignTask,
 };
 
 export default groService;

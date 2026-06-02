@@ -702,7 +702,7 @@ function Checklist({
     lines.push(...buildChecklistReportLines(checklistBlocks.map((b) => ({ typeName: b.typeName, tree: b.tree })), itemsData));
     onOpenReportPreview({
       tabName: "Check List",
-      formSectionLabel: "Checklist Information",
+      formSectionLabel: "image.png",
       getBody: () => lines.join("\n"),
       getAttachments: () => [],
     });

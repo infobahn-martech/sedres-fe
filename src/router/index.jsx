@@ -87,7 +87,7 @@ import StageTimeMappings from "../pages/StageTimeMapping";
 import DocumentManagement from "../pages/DocumentManagement";
 import DocumentChecklist from "../pages/DocumentChecklist";
 import TaskManagement from "../pages/TaskManagement";
-import TaskChecklist from "../pages/TaskChecklist";
+import TaskRoles from "../pages/TaskChecklist";
 // 🔥 Set true to bypass auth temporarily
 const TEST_MODE = false;
 
@@ -322,7 +322,7 @@ const router = createHashRouter([
                   { path: "/document-management", element: <RouteGuard><DocumentManagement /></RouteGuard> },
                   { path: "/document-checklist", element: <RouteGuard><DocumentChecklist /></RouteGuard> },
                   { path: "/task-management", element: <RouteGuard><TaskManagement /></RouteGuard> },
-                  { path: "/task-checklist", element: <RouteGuard><TaskChecklist /></RouteGuard> },
+                  { path: "/task-roles", element: <RouteGuard><TaskRoles /></RouteGuard> },
                 ],
               },
             ],
