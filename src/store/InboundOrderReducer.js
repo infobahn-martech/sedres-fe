@@ -8,6 +8,10 @@ const useInboundOrderReducer = create((set) => ({
     isLoadingView: false,
     isBeingUpdated: false,
     isLoadingDelete: false,
+    isLoadingUpdateLandingNote: false,
+    isLoadingLandingNoteList: false,
+    landingNotes: [],
+    landingNoteTotal: 0,
     inboundOrders: [],
     inboundTotal: 0,
     inboundDetail: null,
@@ -86,6 +90,37 @@ const useInboundOrderReducer = create((set) => ({
     },
 
     clearInboundDetail: () => set({ inboundDetail: null }),
+
+    getAllLandingNotes: async (params) => {
+        try {
+            set({ isLoadingLandingNoteList: true });
+            const { data } = await inboundOrderService.getAllLandingNotes(params);
+            set({
+                landingNotes: data?.data ?? [],
+                landingNoteTotal: data?.pagination?.total ?? 0,
+                isLoadingLandingNoteList: false,
+            });
+        } catch (err) {
+            const { error } = useAlertReducer.getState();
+            set({ isLoadingLandingNoteList: false, landingNotes: [], landingNoteTotal: 0 });
+            error(err?.response?.data?.message ?? err.message);
+        }
+    },
+
+    updateLandingNote: async ({ landingNoteId, data, cb }) => {
+        try {
+            set({ isLoadingUpdateLandingNote: true });
+            const { data: resData } = await inboundOrderService.updateLandingNote(landingNoteId, data);
+            set({ isLoadingUpdateLandingNote: false });
+            const { success } = useAlertReducer.getState();
+            success(resData?.message ?? 'Landing note updated successfully');
+            cb?.();
+        } catch (err) {
+            const { error } = useAlertReducer.getState();
+            set({ isLoadingUpdateLandingNote: false });
+            error(err?.response?.data?.message ?? err.message);
+        }
+    },
 }));
 
 export default useInboundOrderReducer;

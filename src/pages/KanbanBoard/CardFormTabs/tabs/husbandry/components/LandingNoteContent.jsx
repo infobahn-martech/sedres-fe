@@ -11,6 +11,7 @@ import MaterialTablePagination from "./MaterialTablePagination";
 import editIcon from "../../../../../../assets/images/edit.svg";
 import deleteIcon from "../../../../../../assets/images/delete.svg";
 import eyeIcon from "../../../../../../assets/images/eye.svg";
+import useInboundOrderReducer from "../../../../../../store/InboundOrderReducer";
 
 // Generate dummy landing note data
 const generateDummyLandingNotes = () => {
@@ -164,6 +165,14 @@ const ReactQuillEditor = ({ value, onChange, placeholder, name = "remarks", clas
 };
 
 const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
+  const {
+    updateLandingNote,
+    isLoadingUpdateLandingNote,
+    getAllLandingNotes,
+    landingNotes,
+    isLoadingLandingNoteList,
+  } = useInboundOrderReducer((state) => state);
+
   const [showModal, setShowModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -194,25 +203,16 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     description: "",
   });
 
-  // Initialize with dummy data on mount if empty
-  useEffect(() => {
-    const notes = formValues.landingNoteList || [];
-    if (notes.length === 0) {
-      const dummyData = generateDummyLandingNotes();
-      const syntheticEvent = { target: { value: dummyData } };
-      handleChange("landingNoteList")(syntheticEvent);
-      setNotesList(dummyData);
-    } else {
-      setNotesList(notes);
-    }
-  }, [formValues.landingNoteList, handleChange]);
+  const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
 
-  // Update local list when formValues change
   useEffect(() => {
-    if (formValues.landingNoteList) {
-      setNotesList(formValues.landingNoteList);
-    }
-  }, [formValues.landingNoteList]);
+    if (!callId) return;
+    getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });
+  }, [callId, landingPage]);
+
+  useEffect(() => {
+    setNotesList(landingNotes);
+  }, [landingNotes]);
 
   const handleOpenModal = (note = null) => {
     if (note) {
@@ -269,26 +269,36 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     e.preventDefault();
 
     if (editingNote) {
-      // Update existing note
-      const updatedList = notesList.map(note =>
-        note.id === editingNote.id
-          ? {
-            ...note,
-            landingNoteNo: formData.landingNoteNo || note.landingNoteNo,
-            date: formData.date,
-            poDo: formData.poDo,
-            landingProof: selectedFiles,
-            quantity: formData.quantity,
-            packageType: formData.packageType,
-            description: formData.description,
-          }
-          : note
-      );
-      setNotesList(updatedList);
+      const payload = new FormData();
+      payload.append("landing_date", formData.date);
+      payload.append("inbound_id", editingNote.inbound_id || "");
+      payload.append("warehouse_id", formData.warehouse_id || "");
+      payload.append("received_from", formData.received_from || "");
+      payload.append("location", formData.location || "");
+      payload.append("signature", formData.signature || "");
+      payload.append("remarks", formData.remarks || "");
+      selectedFiles.forEach((file) => {
+        if (file instanceof File) {
+          payload.append("file", file);
+        }
+      });
+      if (editingNote.items && editingNote.items.length > 0) {
+        editingNote.items.forEach((item, index) => {
+          payload.append(`items[${index}][inbound_item_id]`, item.inbound_item_id || "");
+          payload.append(`items[${index}][quantity]`, item.quantity || "");
+          payload.append(`items[${index}][transportation_required]`, item.transportation_required || 0);
+        });
+      }
 
-      // Update formValues
-      const syntheticEvent = { target: { value: updatedList } };
-      handleChange("landingNoteList")(syntheticEvent);
+      updateLandingNote({
+        landingNoteId: editingNote.id,
+        data: payload,
+        cb: () => {
+          handleCloseModal();
+          getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });
+        },
+      });
+      return;
     } else {
       // Create new note
       const newNote = {
@@ -998,9 +1008,10 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         type="submit"
         form="landingNoteForm"
         className="btn btn-primary"
-        style={{ backgroundColor: "#00368c" }}
+        style={{ backgroundColor: "#00368c", opacity: isLoadingUpdateLandingNote ? 0.7 : 1, cursor: isLoadingUpdateLandingNote ? "not-allowed" : "pointer" }}
+        disabled={isLoadingUpdateLandingNote}
       >
-        {editingNote ? "Update Note" : "Add Note"}
+        {editingNote ? (isLoadingUpdateLandingNote ? "Updating..." : "Update Note") : "Add Note"}
       </button>
     </div>
   );
