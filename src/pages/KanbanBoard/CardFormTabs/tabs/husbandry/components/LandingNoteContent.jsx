@@ -12,6 +12,7 @@ import editIcon from "../../../../../../assets/images/edit.svg";
 import deleteIcon from "../../../../../../assets/images/delete.svg";
 import eyeIcon from "../../../../../../assets/images/eye.svg";
 import useInboundOrderReducer from "../../../../../../store/InboundOrderReducer";
+import DateTimePickerField from "../../../components/DateTimePickerField";
 
 // Generate dummy landing note data
 const generateDummyLandingNotes = () => {
@@ -196,6 +197,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const [formData, setFormData] = useState({
     landingNoteNo: "",
     date: "",
+    time: "",
     poDo: "",
     landingProof: [],
     quantity: "",
@@ -220,6 +222,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
       setFormData({
         landingNoteNo: note.landingNoteNo || "",
         date: note.date || "",
+        time: note.time || "",
         poDo: note.poDo || "",
         landingProof: note.landingProof || [],
         quantity: note.quantity || "",
@@ -232,6 +235,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
       setFormData({
         landingNoteNo: "",
         date: "",
+        time: "",
         poDo: "",
         landingProof: [],
         quantity: "",
@@ -249,6 +253,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     setFormData({
       landingNoteNo: "",
       date: "",
+      time: "",
       poDo: "",
       landingProof: [],
       quantity: "",
@@ -402,6 +407,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   // Form state for Convert to Dispatch modal
   const [convertFormData, setConvertFormData] = useState({
     date: "",
+    time: "",
     warehouse: "",
     signature: "",
     deliveryLocation: "",
@@ -465,6 +471,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     // Pre-fill form with note data
     setConvertFormData({
       date: note.date || "",
+      time: note.time || "",
       warehouse: "",
       signature: "",
       deliveryLocation: "",
@@ -498,6 +505,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     setConvertingNote(null);
     setConvertFormData({
       date: "",
+      time: "",
       warehouse: "",
       signature: "",
       deliveryLocation: "",
@@ -868,14 +876,16 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
 
             <div className="col-12 mb-3">
               <FormField label="Date">
-                <div className="cf-input">
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => handleFormChange("date", e.target.value)}
-                    placeholder="Select date"
-                  />
-                </div>
+                <DateTimePickerField
+                  dateValue={formData.date}
+                  timeValue={formData.time}
+                  onDateTimeChange={(nextValues) =>
+                    setFormData((prev) => ({ ...prev, date: nextValues.date, time: nextValues.time }))
+                  }
+                  dateFieldName="date"
+                  timeFieldName="time"
+                  placeholder="YYYY-MM-DD hh:mm"
+                />
               </FormField>
             </div>
 
@@ -1045,46 +1055,16 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
               <div className="row mb-lg-3">
                 <div className="col-md-6 mb-3">
                   <FormField label="Date">
-                    <div className="cf-select cf-date-input">
-                      <input
-                        type="date"
-                        value={convertFormData.date}
-                        onChange={(e) => handleConvertFormChange("date", e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                          width: "100%",
-                          border: "none",
-                          outline: "none",
-                          background: "transparent",
-                          fontSize: "14px",
-                          color: "#1a1a1a",
-                          fontFamily: "inherit",
-                          padding: 0,
-                          flex: 1,
-                          cursor: "pointer",
-                        }}
-                      />
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        style={{
-                          flexShrink: 0,
-                          marginLeft: "8px",
-                          color: "#666",
-                          pointerEvents: "none",
-                          position: "relative",
-                          zIndex: 1,
-                        }}
-                      >
-                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
-                        <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                    </div>
+                    <DateTimePickerField
+                      dateValue={convertFormData.date}
+                      timeValue={convertFormData.time}
+                      onDateTimeChange={(nextValues) =>
+                        setConvertFormData((prev) => ({ ...prev, date: nextValues.date, time: nextValues.time }))
+                      }
+                      dateFieldName="date"
+                      timeFieldName="time"
+                      placeholder="YYYY-MM-DD hh:mm"
+                    />
                   </FormField>
                 </div>
 
