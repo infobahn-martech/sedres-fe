@@ -31,6 +31,110 @@ const extractListFromApi = (body) => {
   return [];
 };
 
+const resolveTransportationObject = (item) => {
+  if (!item) return null;
+  return (
+    item.transportation ||
+    item.transport ||
+    item.transportation_details ||
+    item.transportationDetails ||
+    item.transport_details ||
+    item.transportDetails ||
+    item.transportation_detail ||
+    item.transportationDetail ||
+    item.transportation_data ||
+    item.transportationData ||
+    null
+  );
+};
+
+const mergeInboundItemsPreferMissing = (primaryOrder, fallbackOrder) => {
+  // If `primaryOrder.items` exists, fill missing transportation driver fields from `fallbackOrder.items`.
+  const pItems = Array.isArray(primaryOrder?.items) ? primaryOrder.items : [];
+  const fItems = Array.isArray(fallbackOrder?.items) ? fallbackOrder.items : [];
+  if (pItems.length === 0 || fItems.length === 0) return primaryOrder;
+
+  const byKey = new Map();
+  fItems.forEach((it) => {
+    const key = String(it?.inbound_item_id || it?.inboundItemId || it?.order_no || it?.orderNo || "");
+    if (key) byKey.set(key, it);
+  });
+
+  const mergedItems = pItems.map((it) => {
+    const key = String(it?.inbound_item_id || it?.inboundItemId || it?.order_no || it?.orderNo || "");
+    const fb = key ? byKey.get(key) : null;
+    if (!fb) return it;
+
+    const t = resolveTransportationObject(it);
+    const ft = resolveTransportationObject(fb);
+    if (!t || !ft) return it;
+
+    const hasDriver =
+      t.driver_id != null ||
+      t.driver_name != null ||
+      t.driverName != null ||
+      (t.driver && (t.driver.driver_id != null || t.driver.driver_name != null || t.driver.name != null));
+    const fbDriver =
+      ft.driver_id != null ||
+      ft.driver_name != null ||
+      ft.driverName != null ||
+      (ft.driver && (ft.driver.driver_id != null || ft.driver.driver_name != null || ft.driver.name != null));
+
+    if (hasDriver || !fbDriver) return it;
+
+    // only copy driver-related fields
+    const patched = {
+      ...t,
+      driver_id: ft.driver_id ?? t.driver_id,
+      driver_name: ft.driver_name ?? t.driver_name,
+      driverName: ft.driverName ?? t.driverName,
+      driver: ft.driver ?? t.driver,
+      transport_driver_id: ft.transport_driver_id ?? t.transport_driver_id,
+      material_driver_id: ft.material_driver_id ?? t.material_driver_id,
+      inhouse_driver_id: ft.inhouse_driver_id ?? t.inhouse_driver_id,
+      inhouse_driver_name: ft.inhouse_driver_name ?? t.inhouse_driver_name,
+      third_party_driver_name: ft.third_party_driver_name ?? t.third_party_driver_name,
+    };
+
+    if (it.transportation) return { ...it, transportation: patched };
+    if (it.transport) return { ...it, transport: patched };
+    if (it.transportation_details) return { ...it, transportation_details: patched };
+    if (it.transportationDetails) return { ...it, transportationDetails: patched };
+    if (it.transport_details) return { ...it, transport_details: patched };
+    if (it.transportDetails) return { ...it, transportDetails: patched };
+    return { ...it, transportation: patched };
+  });
+
+  return { ...primaryOrder, items: mergedItems };
+};
+
+const resolveIdLike = (val) => {
+  if (val == null) return "";
+  if (typeof val === "string" || typeof val === "number") return String(val);
+  if (typeof val === "object") {
+    if (val.id != null) return String(val.id);
+    if (val.value != null) return String(val.value);
+    if (val.location_id != null) return String(val.location_id);
+    if (val.vehicle_type_id != null) return String(val.vehicle_type_id);
+    if (val.driver_id != null) return String(val.driver_id);
+  }
+  return "";
+};
+
+const findOptionValueByLabel = (options, label) => {
+  if (!label) return "";
+  const s = String(label).trim().toLowerCase();
+  if (!s) return "";
+  const norm = (x) => String(x ?? "").trim().toLowerCase();
+  const opts = options || [];
+  // exact match
+  let hit = opts.find((o) => norm(o?.label) === s);
+  if (hit?.value) return String(hit.value);
+  // contains match (handles "Dammam" vs "Dammam Port")
+  hit = opts.find((o) => norm(o?.label).includes(s) || s.includes(norm(o?.label)));
+  return hit?.value ? String(hit.value) : "";
+};
+
 const mergeOptionForValue = (options, value) => {
   if (value == null || value === "") return options;
   const s = String(value);
@@ -235,6 +339,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     remarks: "",
     orders: [{
       id: 1,
+      inbound_item_id: null,
       orderNo: "",
       poDo: "",
       quantity: "",
@@ -249,7 +354,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       slotNo: "",
       reason: "",
       dispatchDate: "",
-          dispatchTime: ""
+      dispatchTime: ""
     }], // Order Details array
   });
 
@@ -362,21 +467,131 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   }, [formValues?.call_id, formValues?.callId, formValues?.card_call_id, inboundPage]);
 
   const populateFormFromOrder = (order) => {
-    const apiItems = Array.isArray(order.items) ? order.items : [];
+    const apiItemsCandidate =
+      order?.items ??
+      order?.inbound_items ??
+      order?.inboundItems ??
+      order?.inbound_order_items ??
+      order?.inboundOrderItems ??
+      [];
+    const apiItems = extractListFromApi(apiItemsCandidate);
     const orderItems = apiItems.length > 0
       ? apiItems.map((item, idx) => ({
+          ...(item?.transportation && typeof item.transportation === "object" ? {} : {}),
           id: item.inbound_item_id || idx + 1,
           orderNo: item.order_no || "",
           poDo: item.po_no || "",
           quantity: item.quantity || "",
           packageType: String(item.package_type_id || ""),
           description: item.description || "",
-          transportation: Number(item.transportation_required) === 1,
-          typeOfVehicle: item.transportation ? String(item.transportation.vehicle_type_id || "") : "",
-          fromLocation: item.transportation ? String(item.transportation.from_location_id || "") : "",
-          pickUpFrom: item.transportation ? item.transportation.pickup_location || "" : "",
-          toLocation: item.transportation ? String(item.transportation.to_location_id || "") : "",
-          driverName: item.transportation ? String(item.transportation.driver_id || "") : "",
+          inbound_item_id: item.inbound_item_id || null,
+          transportation: (() => {
+            const trans = resolveTransportationObject(item);
+            return (
+              Number(item.transportation_required) === 1 ||
+              Number(item.transportationRequired) === 1 ||
+              Boolean(trans)
+            );
+          })(),
+          typeOfVehicle: (() => {
+            const t = resolveTransportationObject(item);
+            return (
+              resolveIdLike(t?.vehicle_type_id) ||
+              resolveIdLike(t?.vehicle_type?.vehicle_type_id) ||
+              resolveIdLike(t?.vehicle_type?.id) ||
+              resolveIdLike(item.vehicle_type_id) ||
+              // if API returns only name, keep it visible
+              (t?.vehicle_type_name ? String(t.vehicle_type_name) : "")
+            );
+          })(),
+          typeOfVehicleName: (() => {
+            const t = resolveTransportationObject(item);
+            return (
+              t?.vehicle_type_name ||
+              t?.vehicle_type?.vehicle_name ||
+              t?.vehicle_type?.name ||
+              ""
+            );
+          })(),
+          fromLocation: (() => {
+            const t = resolveTransportationObject(item);
+            return (
+              resolveIdLike(t?.from_location_id) ||
+              resolveIdLike(t?.from_location?.location_id) ||
+              resolveIdLike(t?.from_location?.id) ||
+              resolveIdLike(item.from_location_id) ||
+              (t?.from_location_name ? String(t.from_location_name) : "")
+            );
+          })(),
+          fromLocationName: (() => {
+            const t = resolveTransportationObject(item);
+            return (
+              t?.from_location_name ||
+              t?.from_location?.location ||
+              t?.from_location?.name ||
+              ""
+            );
+          })(),
+          pickUpFrom: (() => {
+            const t = resolveTransportationObject(item);
+            return t?.pickup_location || item.pickup_location || "";
+          })(),
+          toLocation: (() => {
+            const t = resolveTransportationObject(item);
+            return (
+              resolveIdLike(t?.to_location_id) ||
+              resolveIdLike(t?.to_location?.location_id) ||
+              resolveIdLike(t?.to_location?.id) ||
+              resolveIdLike(item.to_location_id) ||
+              (t?.to_location_name ? String(t.to_location_name) : "")
+            );
+          })(),
+          toLocationName: (() => {
+            const t = resolveTransportationObject(item);
+            return (
+              t?.to_location_name ||
+              t?.to_location?.location ||
+              t?.to_location?.name ||
+              ""
+            );
+          })(),
+          driverName: (() => {
+            const t = resolveTransportationObject(item);
+            return (
+              resolveIdLike(t?.driver_id) ||
+              resolveIdLike(t?.transport_driver_id) ||
+              resolveIdLike(t?.transportDriverId) ||
+              resolveIdLike(t?.material_driver_id) ||
+              resolveIdLike(t?.materialDriverId) ||
+              resolveIdLike(t?.inhouse_driver_id) ||
+              resolveIdLike(t?.inhouseDriverId) ||
+              resolveIdLike(t?.driver?.driver_id) ||
+              resolveIdLike(t?.driver?.id) ||
+              resolveIdLike(item.driver_id) ||
+              resolveIdLike(item.transport_driver_id) ||
+              resolveIdLike(item.transportDriverId) ||
+              resolveIdLike(item.material_driver_id) ||
+              resolveIdLike(item.materialDriverId) ||
+              resolveIdLike(item.inhouse_driver_id) ||
+              resolveIdLike(item.inhouseDriverId) ||
+              resolveIdLike(item.driverName) ||
+              // if API returns only name, keep it visible
+              (t?.driver_name ? String(t.driver_name) : "") ||
+              (t?.driverName ? String(t.driverName) : "") ||
+              (t?.driver?.driver_name ? String(t.driver.driver_name) : "") ||
+              (t?.driver?.name ? String(t.driver.name) : "") ||
+              (t?.inhouse_driver_name ? String(t.inhouse_driver_name) : "") ||
+              (t?.inhouseDriverName ? String(t.inhouseDriverName) : "") ||
+              (t?.third_party_driver_name ? String(t.third_party_driver_name) : "") ||
+              (t?.thirdPartyDriverName ? String(t.thirdPartyDriverName) : "") ||
+              (t?.driver ? String(t.driver) : "") ||
+              (item?.driver_name ? String(item.driver_name) : "") ||
+              (item?.driver?.driver_name ? String(item.driver.driver_name) : "") ||
+              (item?.driver?.name ? String(item.driver.name) : "") ||
+              (item?.inhouse_driver_name ? String(item.inhouse_driver_name) : "") ||
+              (item?.third_party_driver_name ? String(item.third_party_driver_name) : "")
+            );
+          })(),
           slotNo: "",
           reason: "",
           dispatchDate: "",
@@ -384,6 +599,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         }))
       : [{
           id: 1,
+          inbound_item_id: null,
           orderNo: "",
           poDo: "",
           quantity: "",
@@ -421,21 +637,71 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     setExpandedOrders(expandedState);
   };
 
+  // backfill select values when API provides only names (no ids)
+  useEffect(() => {
+    if (
+      (materialVehicleOptions?.length || 0) === 0 &&
+      (transportLocationOptions?.length || 0) === 0 &&
+      (materialDriverOptions?.length || 0) === 0
+    ) {
+      return;
+    }
+    setFormData((prev) => {
+      if (!prev?.orders?.length) return prev;
+      let changed = false;
+      const nextOrders = prev.orders.map((o) => {
+        if (!o?.transportation) return o;
+        let next = o;
+
+        if (!next.typeOfVehicle && next.typeOfVehicleName) {
+          const v = findOptionValueByLabel(materialVehicleOptions, next.typeOfVehicleName);
+          if (v) {
+            next = { ...next, typeOfVehicle: v };
+            changed = true;
+          }
+        }
+        if (!next.fromLocation && next.fromLocationName) {
+          const v = findOptionValueByLabel(transportLocationOptions, next.fromLocationName);
+          if (v) {
+            next = { ...next, fromLocation: v };
+            changed = true;
+          }
+        }
+        if (!next.toLocation && next.toLocationName) {
+          const v = findOptionValueByLabel(transportLocationOptions, next.toLocationName);
+          if (v) {
+            next = { ...next, toLocation: v };
+            changed = true;
+          }
+        }
+        return next;
+      });
+      if (!changed) return prev;
+      return { ...prev, orders: nextOrders };
+    });
+  }, [materialVehicleOptions, transportLocationOptions, materialDriverOptions]);
+
   const handleOpenModal = (order = null) => {
     if (order) {
       setEditingOrder(order);
-      populateFormFromOrder(order);
-      setShowModal(true);
-
       const inboundId = order.inbound_id ?? order.id;
       if (inboundId != null && inboundId !== "") {
-        inboundOrderService
-          .getInboundById(inboundId)
-          .then(({ data }) => {
-            const detail = data?.data;
-            if (detail) populateFormFromOrder(detail);
-          })
-          .catch(() => {});
+        inboundOrderService.getInboundById(inboundId).then((res) => {
+          const body = res?.data;
+          let detail = body?.data ?? body?.result ?? body ?? null;
+          if (detail?.data && (detail.data?.items || detail.data?.inbound_items || Array.isArray(detail.data))) {
+            detail = detail.data;
+          }
+          const merged = detail ? mergeInboundItemsPreferMissing(detail, order) : null;
+          populateFormFromOrder(merged ?? detail ?? order);
+          setShowModal(true);
+        }).catch(() => {
+          populateFormFromOrder(order);
+          setShowModal(true);
+        });
+      } else {
+        populateFormFromOrder(order);
+        setShowModal(true);
       }
       return;
     }
@@ -448,6 +714,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       remarks: "",
       orders: [{
         id: 1,
+        inbound_item_id: null,
         orderNo: "",
         poDo: "",
         quantity: "",
@@ -462,7 +729,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         slotNo: "",
         reason: "",
         dispatchDate: "",
-          dispatchTime: "",
+        dispatchTime: "",
       }],
     });
     setExpandedOrders({ 1: true });
@@ -473,6 +740,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     setShowModal(false);
     setEditingOrder(null);
     setFormErrors({});
+    clearInboundDetail();
     setFormData({
       date: "",
       time: "",
@@ -480,6 +748,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       remarks: "",
       orders: [{
         id: 1,
+        inbound_item_id: null,
         orderNo: "",
         poDo: "",
         quantity: "",
@@ -494,7 +763,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         slotNo: "",
         reason: "",
         dispatchDate: "",
-          dispatchTime: ""
+        dispatchTime: ""
       }],
     });
   };
@@ -555,6 +824,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         ...prev.orders,
         {
           id: newOrderId,
+          inbound_item_id: null,
           orderNo: "",
           poDo: "",
           quantity: "",
@@ -605,9 +875,36 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
+    const callId = Number(
+      formValues?.call_id ||
+      formValues?.callId ||
+      formValues?.card_call_id ||
+      editingOrder?.call_id ||
+      editingOrder?.callId ||
+      0
+    );
 
     const items = formData.orders.map((order) => {
+      const vehicleId =
+        Number(order.typeOfVehicle) ||
+        Number(findOptionValueByLabel(materialVehicleOptions, order.typeOfVehicle)) ||
+        Number(findOptionValueByLabel(materialVehicleOptions, order.typeOfVehicleName)) ||
+        0;
+      const fromLocId =
+        Number(order.fromLocation) ||
+        Number(findOptionValueByLabel(transportLocationOptions, order.fromLocation)) ||
+        Number(findOptionValueByLabel(transportLocationOptions, order.fromLocationName)) ||
+        0;
+      const toLocId =
+        Number(order.toLocation) ||
+        Number(findOptionValueByLabel(transportLocationOptions, order.toLocation)) ||
+        Number(findOptionValueByLabel(transportLocationOptions, order.toLocationName)) ||
+        0;
+      const driverId =
+        Number(order.driverName) ||
+        Number(findOptionValueByLabel(materialDriverOptions, order.driverName)) ||
+        0;
+
       const item = {
         po_no: order.poDo,
         quantity: Number(order.quantity) || 0,
@@ -615,30 +912,36 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         description: order.description || "",
         transportation_required: order.transportation ? 1 : 0,
       };
+      if (editingOrder && order.inbound_item_id) {
+        item.inbound_item_id = order.inbound_item_id;
+      }
       if (order.transportation) {
         item.transportation = {
-          vehicle_type_id: Number(order.typeOfVehicle) || 0,
-          from_location_id: Number(order.fromLocation) || 0,
+          vehicle_type_id: vehicleId,
+          from_location_id: fromLocId,
           pickup_location: order.pickUpFrom || "",
-          to_location_id: Number(order.toLocation) || 0,
-          driver_id: Number(order.driverName) || 0,
+          to_location_id: toLocId,
+          driver_id: driverId,
         };
       }
       return item;
     });
 
+    const editingInboundId = editingOrder?.inbound_id ?? editingOrder?.id ?? null;
+
     const payload = {
       call_id: callId,
-      warehouse_id: Number(formData.warehouse) || 0,
+      warehouse_id: Number(formData.warehouse || editingOrder?.warehouse_id || editingOrder?.warehouse) || 0,
       inbound_date: buildApiDateTime(formData.date, formData.time),
       inbound_time: (formData.time || "").slice(0, 5),
       remarks: formData.remarks || "",
       items,
     };
 
-    if (editingOrder?.inbound_id) {
+    if (editingInboundId) {
+      payload.inbound_id = editingInboundId;
       updateInboundOrder({
-        inboundId: editingOrder.inbound_id,
+        inboundId: editingInboundId,
         data: payload,
         cb: () => {
           handleCloseModal();
@@ -664,6 +967,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       remarks: "",
       orders: [{
         id: 1,
+        inbound_item_id: null,
         orderNo: "",
         poDo: "",
         quantity: "",
@@ -678,7 +982,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         slotNo: "",
         reason: "",
         dispatchDate: "",
-          dispatchTime: ""
+        dispatchTime: ""
       }],
     });
     setExpandedOrders({ 1: true });
@@ -936,6 +1240,9 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   const buildConvertOrders = (items) => {
     if (!Array.isArray(items) || items.length === 0) return null;
     return items.map((item, idx) => ({
+      ...(item?.transportation && typeof item.transportation === "object"
+        ? {}
+        : {}),
       id: idx + 1,
       inbound_item_id: item.inbound_item_id ? Number(item.inbound_item_id) : null,
       orderNo: item.order_no || "",
@@ -943,13 +1250,59 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       quantity: item.quantity ? String(item.quantity) : "",
       packageType: String(item.package_type_id || ""),
       description: item.description || "",
-      transportation: Number(item.transportation_required) === 1,
-      transportation_id: item.transportation?.transportation_id ? Number(item.transportation.transportation_id) : null,
-      typeOfVehicle: item.transportation ? String(item.transportation.vehicle_type_id || "") : "",
-      fromLocation: item.transportation ? String(item.transportation.from_location_id || "") : "",
-      pickUpFrom: item.transportation?.pickup_location || "",
-      toLocation: item.transportation ? String(item.transportation.to_location_id || "") : "",
-      driverName: item.transportation ? String(item.transportation.driver_id || "") : "",
+      transportation: (() => {
+        const trans = resolveTransportationObject(item);
+        return (
+          Number(item.transportation_required) === 1 ||
+          Number(item.transportationRequired) === 1 ||
+          Boolean(trans)
+        );
+      })(),
+      transportation_id: (
+        resolveTransportationObject(item)
+      )?.transportation_id
+        ? Number(resolveTransportationObject(item).transportation_id)
+        : null,
+      typeOfVehicle: (() => {
+        const t = resolveTransportationObject(item);
+        return (
+          resolveIdLike(t?.vehicle_type_id) ||
+          resolveIdLike(t?.vehicle_type?.vehicle_type_id) ||
+          resolveIdLike(t?.vehicle_type?.id) ||
+          ""
+        );
+      })(),
+      fromLocation: (() => {
+        const t = resolveTransportationObject(item);
+        return (
+          resolveIdLike(t?.from_location_id) ||
+          resolveIdLike(t?.from_location?.location_id) ||
+          resolveIdLike(t?.from_location?.id) ||
+          ""
+        );
+      })(),
+      pickUpFrom: (() => {
+        const t = resolveTransportationObject(item);
+        return t?.pickup_location || "";
+      })(),
+      toLocation: (() => {
+        const t = resolveTransportationObject(item);
+        return (
+          resolveIdLike(t?.to_location_id) ||
+          resolveIdLike(t?.to_location?.location_id) ||
+          resolveIdLike(t?.to_location?.id) ||
+          ""
+        );
+      })(),
+      driverName: (() => {
+        const t = resolveTransportationObject(item);
+        return (
+          resolveIdLike(t?.driver_id) ||
+          resolveIdLike(t?.driver?.driver_id) ||
+          resolveIdLike(t?.driver?.id) ||
+          ""
+        );
+      })(),
       slotNo: "",
       reason: "",
       dispatchDate: "",
@@ -1199,21 +1552,43 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     fd.append("signature", convertFormData.signature || "");
     fd.append("remarks", convertFormData.remarks || "");
     if (convertFormData.documents?.length > 0) fd.append("file", convertFormData.documents[0].file ?? convertFormData.documents[0]);
-    const items = convertFormData.orders.map((order) => ({
-      inbound_item_id: order.inbound_item_id || null,
-      quantity: Number(order.quantity) || 0,
-      slot_no_id: Number(order.slotNo) || 0,
-      reason_id: Number(order.reason) || 0,
-      dispatch_date: order.dispatchDate ? (order.dispatchDate + (order.dispatchTime ? ` ${order.dispatchTime}` : "")) : "",
-      transportation_required: order.transportation ? 1 : 0,
-      transportation: order.transportation ? {
-        vehicle_type_id: Number(order.typeOfVehicle) || 0,
-        from_location_id: Number(order.fromLocation) || 0,
-        pickup_location: order.pickUpFrom || "",
-        to_location_id: Number(order.toLocation) || 0,
-        driver_id: Number(order.driverName) || 0,
-      } : null,
-    }));
+    const items = convertFormData.orders.map((order) => {
+      const vehicleId =
+        Number(order.typeOfVehicle) ||
+        Number(findOptionValueByLabel(materialVehicleOptions, order.typeOfVehicle)) ||
+        Number(findOptionValueByLabel(materialVehicleOptions, order.typeOfVehicleName)) ||
+        0;
+      const fromLocId =
+        Number(order.fromLocation) ||
+        Number(findOptionValueByLabel(transportLocationOptions, order.fromLocation)) ||
+        Number(findOptionValueByLabel(transportLocationOptions, order.fromLocationName)) ||
+        0;
+      const toLocId =
+        Number(order.toLocation) ||
+        Number(findOptionValueByLabel(transportLocationOptions, order.toLocation)) ||
+        Number(findOptionValueByLabel(transportLocationOptions, order.toLocationName)) ||
+        0;
+      const driverId =
+        Number(order.driverName) ||
+        Number(findOptionValueByLabel(materialDriverOptions, order.driverName)) ||
+        0;
+
+      return ({
+        inbound_item_id: order.inbound_item_id || null,
+        quantity: Number(order.quantity) || 0,
+        slot_no_id: Number(order.slotNo) || 0,
+        reason_id: Number(order.reason) || 0,
+        dispatch_date: order.dispatchDate ? (order.dispatchDate + (order.dispatchTime ? ` ${order.dispatchTime}` : "")) : "",
+        transportation_required: order.transportation ? 1 : 0,
+        transportation: order.transportation ? {
+          vehicle_type_id: vehicleId,
+          from_location_id: fromLocId,
+          pickup_location: order.pickUpFrom || "",
+          to_location_id: toLocId,
+          driver_id: driverId,
+        } : null,
+      });
+    });
     fd.append("items", JSON.stringify(items));
     convertInboundToLandingNote({
       data: fd,
@@ -1244,7 +1619,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
 
   const renderHeader = () => (
     <>
-      <h1 className="modal-title">{"Add Inbound Order"}</h1>
+      <h1 className="modal-title">{editingOrder ? "Edit Inbound Order" : "Add Inbound Order"}</h1>
     </>
   );
 
@@ -2277,14 +2652,27 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                       <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{item.description}</div>
                     </div>
                   )}
-                  {Number(item.transportation_required) === 1 && item.transportation && (
+                  {(Number(item.transportation_required) === 1 || item.transportation || item.transport) && (
                     <div style={{ borderTop: "1px dashed #ccc", paddingTop: "12px", marginTop: "8px" }}>
                       <div style={{ fontWeight: "600", color: "#555", marginBottom: "10px", fontSize: "13px" }}>Transportation</div>
                       <div className="view-row" style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
-                        <div className="view-item" style={{ flex: "1", minWidth: "140px" }}>
-                          <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Pick-Up From</div>
-                          <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{item.transportation.pickup_location || "-"}</div>
-                        </div>
+                        {(() => {
+                          const trans = item.transportation || item.transport || {};
+                          const vehicleLabel = materialVehicleOptions.find(o => o.value === String(trans.vehicle_type_id || item.vehicle_type_id || ""))?.label || trans.vehicle_type_id || item.vehicle_type_id || "";
+                          const fromLabel = transportLocationOptions.find(o => o.value === String(trans.from_location_id || item.from_location_id || ""))?.label || trans.from_location_id || item.from_location_id || "";
+                          const toLabel = transportLocationOptions.find(o => o.value === String(trans.to_location_id || item.to_location_id || ""))?.label || trans.to_location_id || item.to_location_id || "";
+                          const driverLabel = materialDriverOptions.find(o => o.value === String(trans.driver_id || item.driver_id || ""))?.label || trans.driver_id || item.driver_id || "";
+                          const pickup = trans.pickup_location || item.pickup_location || "";
+                          return (
+                            <>
+                              {vehicleLabel ? <div className="view-item" style={{ flex: "1", minWidth: "140px" }}><div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Vehicle</div><div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{vehicleLabel}</div></div> : null}
+                              {fromLabel ? <div className="view-item" style={{ flex: "1", minWidth: "140px" }}><div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>From</div><div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{fromLabel}</div></div> : null}
+                              {pickup ? <div className="view-item" style={{ flex: "1", minWidth: "140px" }}><div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Pick-Up From</div><div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{pickup}</div></div> : null}
+                              {toLabel ? <div className="view-item" style={{ flex: "1", minWidth: "140px" }}><div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>To</div><div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{toLabel}</div></div> : null}
+                              {driverLabel ? <div className="view-item" style={{ flex: "1", minWidth: "140px" }}><div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Driver</div><div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{driverLabel}</div></div> : null}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   )}

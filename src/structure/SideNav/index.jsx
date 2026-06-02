@@ -184,7 +184,6 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
   );
   const workflowOptionsForModal = useMemo(() => {
     return (sidebarWorkflows || [])
-      .filter((workflow) => workflow?.role_id === null)
       .map((workflow) => ({
         id: workflow?.workflow_id ?? workflow?.id,
         name: workflow?.workflow_name ?? workflow?.name ?? workflow?.title ?? 'Workflow',
@@ -747,9 +746,6 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
   }
 
   if (isKanbanBoard && !isVendorPortal) {
-    console.log('raw workflows:', sidebarWorkflows);
-    console.log('modal workflows:', workflowOptionsForModal);
-
     const handleIconClick = (item) => {
       if (restrictedNav) {
         if (item.label === 'Workspaces') {
