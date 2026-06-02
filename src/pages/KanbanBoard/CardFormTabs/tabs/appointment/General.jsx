@@ -1306,6 +1306,35 @@ const resolveEditablePreviewFieldValue = (isTouched, editedValue, ...fallbackVal
   return firstNonEmptyString(editedValue, ...fallbackValues);
 };
 
+/** Shared Cc resolution for preview display and submit payload. */
+const resolveAppointmentAcceptanceCcEmails = ({
+  isTouched = false,
+  editedValue,
+  previewFromApiCc,
+  dailyReportEmailOptions = [],
+  billingInstructionEmailOptions = [],
+  dailyValues = [],
+  billingValues = [],
+  forSubmit = false,
+}) => {
+  const fallbackCcValue = getPreviewRecipients({
+    dailyReportEmailOptions,
+    billingInstructionEmailOptions,
+    dailyValues,
+    billingValues,
+  });
+  const resolved = resolveEditablePreviewFieldValue(
+    isTouched,
+    editedValue,
+    previewFromApiCc,
+    fallbackCcValue
+  );
+  if (forSubmit) {
+    return !resolved || resolved === "—" ? "" : String(resolved).trim();
+  }
+  return resolved;
+};
+
 const normalizeEmailFieldValue = (value) => {
   if (Array.isArray(value)) {
     return value
@@ -1470,24 +1499,21 @@ const EmailPreviewPanel = ({
     previewFromApi.to,
     fallbackToValue
   );
-  const fallbackCcValue = getPreviewRecipients({
-    dailyReportEmailOptions,
-    billingInstructionEmailOptions,
-    dailyValues: getFieldValue("dailyReportEmail"),
-    billingValues: getFieldValue("billingInstructionEmails"),
-  });
   const subjectFallback = getPreviewSubject({
     cardTitle: formValues?.cardTitle || "",
     typeOfCall: getOptionLabel(callTypeOptions, getFieldValue("typeOfCall")) || getFieldValue("typeOfCall"),
     vesselName: getOptionLabel(vesselNameOptions, getFieldValue("vesselName")) || getFieldValue("vesselName"),
     port: getOptionLabel(portSelectOptions, getFieldValue("port")) || getFieldValue("port"),
   });
-  const ccValue = resolveEditablePreviewFieldValue(
-    touchedFields?.cc_emails,
-    editableFields?.cc_emails,
-    previewFromApi.cc,
-    fallbackCcValue
-  );
+  const ccValue = resolveAppointmentAcceptanceCcEmails({
+    isTouched: touchedFields?.cc_emails,
+    editedValue: editableFields?.cc_emails,
+    previewFromApiCc: previewFromApi.cc,
+    dailyReportEmailOptions,
+    billingInstructionEmailOptions,
+    dailyValues: getFieldValue("dailyReportEmail"),
+    billingValues: getFieldValue("billingInstructionEmails"),
+  });
   const subjectValue = touchedFields?.subject
     ? (editableFields?.subject ?? "")
     : resolveEditablePreviewFieldValue(false, editableFields?.subject, previewFromApi.subject, subjectFallback) ||
@@ -2279,19 +2305,70 @@ function General({
       firstNonEmptyString(previewMessageText) ||
       firstNonEmptyString(emailPreviewData?.messageHtml) ||
       "";
-    const appointmentAcceptanceFallback = {
-      body: emailPreviewBody,
-      cc_emails: firstNonEmptyString(editablePreviewFields.cc_emails),
-      from_email: firstNonEmptyString(editablePreviewFields.from_email),
-      subject: firstNonEmptyString(editablePreviewFields.subject),
-      to_email: firstNonEmptyString(editablePreviewFields.to_email),
-    };
-    const appointmentAcceptanceForSubmit =
+    const ownerLabel = getOptionLabel(ownerOptions, getFieldValue("owner"));
+    const fallbackFromValue = ownerLabel ? `${ownerLabel} <noreply@sedres.com>` : "operations@shipping.com";
+    const resolvedFromEmail = touchedPreviewFields.from_email
+      ? (editablePreviewFields.from_email ?? "")
+      : firstNonEmptyString(
+          editablePreviewFields.from_email,
+          emailPreviewData?.from,
+          fallbackFromValue,
+          "operations@shipping.com"
+        );
+    const resolvedToEmailRaw = resolveEditablePreviewFieldValue(
+      touchedPreviewFields.to_email,
+      editablePreviewFields.to_email,
+      emailPreviewData?.to,
+      normalizePreviewValue(getFieldValue("serviceRequestorEmail")) || "—"
+    );
+    const resolvedToEmail =
+      !resolvedToEmailRaw || resolvedToEmailRaw === "—" ? "" : String(resolvedToEmailRaw).trim();
+    const subjectFallback = getPreviewSubject({
+      cardTitle: formValues?.cardTitle || "",
+      typeOfCall:
+        getOptionLabel(callTypeOptions, getFieldValue("typeOfCall")) || getFieldValue("typeOfCall"),
+      vesselName:
+        getOptionLabel(vesselNameOptions, getFieldValue("vesselName")) || getFieldValue("vesselName"),
+      port: getOptionLabel(portSelectOptions, getFieldValue("port")) || getFieldValue("port"),
+    });
+    const resolvedSubject = touchedPreviewFields.subject
+      ? (editablePreviewFields.subject ?? "")
+      : firstNonEmptyString(
+          editablePreviewFields.subject,
+          emailPreviewData?.subject,
+          subjectFallback,
+          "Appointment Update"
+        );
+    const dailyValues = getFieldValue("dailyReportEmail");
+    const billingValues = getFieldValue("billingInstructionEmails");
+    const finalCcEmails = resolveAppointmentAcceptanceCcEmails({
+      isTouched: touchedPreviewFields.cc_emails,
+      editedValue: editablePreviewFields.cc_emails,
+      previewFromApiCc: emailPreviewData?.cc,
+      dailyReportEmailOptions,
+      billingInstructionEmailOptions,
+      dailyValues: Array.isArray(dailyValues) ? dailyValues : [],
+      billingValues: Array.isArray(billingValues) ? billingValues : [],
+      forSubmit: true,
+    });
+    const apiAppointmentBase =
       appointmentAcceptanceFromApi && typeof appointmentAcceptanceFromApi === "object"
         ? appointmentAcceptanceFromApi
-        : appointmentAcceptanceFallback;
-    console.log("EMAIL PREVIEW BODY", previewMessageText);
-    console.log("APPOINTMENT ACCEPTANCE PAYLOAD", appointmentAcceptanceForSubmit);
+        : {};
+    const resolvedBody = firstNonEmptyString(
+      isPreviewMessageDirty ? emailPreviewBody : "",
+      apiAppointmentBase.body,
+      emailPreviewBody
+    );
+    const appointmentAcceptanceForSubmit = {
+      ...apiAppointmentBase,
+      subject: resolvedSubject,
+      body: resolvedBody,
+      to_email: resolvedToEmail,
+      from_email: resolvedFromEmail,
+      cc_emails: finalCcEmails,
+    };
+    console.log("FINAL appointment_acceptance", appointmentAcceptanceForSubmit);
     const formPayload = {
       ...formValues,
       swimlane_id: swimlaneId,
@@ -2340,10 +2417,8 @@ function General({
         appointmentFiles: appointmentDocuments,
         dailyReportEmailOptions,
         billingInstructionEmailOptions,
-        appointmentAcceptanceFromApi:
-          appointmentAcceptanceFromApi && typeof appointmentAcceptanceFromApi === "object"
-            ? appointmentAcceptanceFromApi
-            : undefined,
+        preserveAppointmentBody:
+          !isPreviewMessageDirty && Boolean(firstNonEmptyString(apiAppointmentBase.body)),
       });
       console.log("FINAL FORM DATA");
       for (const pair of formData.entries()) {

@@ -441,12 +441,12 @@ const GROCardView = forwardRef(function GROCardView({ card, mode = "gro", userRo
   const refreshGroDocuments = useCallback(async () => {
     if (!taskId) return;
     try {
-      const docsRes = await groService.getDocumentsByTask(taskId);
+      const docsRes = await groService.getDocumentsByTask(taskId, callId);
       applyTaskDocuments(parseDocumentsByTaskResponse(docsRes));
     } catch {
       setDocuments([]);
     }
-  }, [taskId, applyTaskDocuments]);
+  }, [taskId, callId, applyTaskDocuments]);
 
   useEffect(() => {
     if (callId == null || callId === "") {
@@ -475,7 +475,7 @@ const GROCardView = forwardRef(function GROCardView({ card, mode = "gro", userRo
           return;
         }
 
-        const docsRes = await groService.getDocumentsByTask(taskId);
+        const docsRes = await groService.getDocumentsByTask(taskId, callId);
         if (cancelled) return;
         applyTaskDocuments(parseDocumentsByTaskResponse(docsRes));
       } catch (err) {

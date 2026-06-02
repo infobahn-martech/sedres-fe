@@ -31,13 +31,19 @@ const SearchableSelect = ({
   noResultsText = "No results found",
   menuPortalTarget = null,
   menuPosition = "absolute",
+  menuPlacement = "auto",
   menuShouldBlockScroll = false,
   menuClassName = "",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
-  const [portalMenuBox, setPortalMenuBox] = useState({ top: 0, left: 0, width: 0, maxHeight: 220 });
+  const [portalMenuBox, setPortalMenuBox] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    maxHeight: 320,
+  });
   const rootRef = useRef(null);
   const triggerRef = useRef(null);
   const menuPortalRef = useRef(null);
@@ -90,16 +96,23 @@ const SearchableSelect = ({
     const r = el.getBoundingClientRect();
     const gap = 6;
     const viewportPad = 8;
-    const maxMenu = 220;
+    const maxMenu = 320;
+    const spaceAbove = r.top - gap - viewportPad;
     const spaceBelow = window.innerHeight - r.bottom - gap - viewportPad;
-    const maxHeight = Math.min(maxMenu, Math.max(80, spaceBelow));
+    const placeTop =
+      menuPlacement === "top" ||
+      (menuPlacement === "auto" && spaceBelow < 180 && spaceAbove > spaceBelow);
+    const availableSpace = placeTop ? spaceAbove : spaceBelow;
+    const maxHeight = Math.min(maxMenu, Math.max(80, availableSpace));
+    const top = placeTop ? Math.max(viewportPad, r.top - gap - maxHeight) : r.bottom + gap;
+
     setPortalMenuBox({
-      top: r.bottom + gap,
+      top,
       left: r.left,
       width: r.width,
       maxHeight,
     });
-  }, [isOpen, useMenuPortal]);
+  }, [isOpen, useMenuPortal, menuPlacement]);
 
   useLayoutEffect(() => {
     if (!isOpen || !useMenuPortal) return;
@@ -332,6 +345,7 @@ SearchableSelect.propTypes = {
   noResultsText: PropTypes.string,
   menuPortalTarget: PropTypes.any,
   menuPosition: PropTypes.oneOf(["absolute", "fixed"]),
+  menuPlacement: PropTypes.oneOf(["auto", "top", "bottom"]),
   menuShouldBlockScroll: PropTypes.bool,
   menuClassName: PropTypes.string,
 };

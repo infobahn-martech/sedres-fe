@@ -3853,20 +3853,27 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
 .checklist-modal-xl-wide .modal-dialog {
   max-width: 1500px;
   width: 95vw;
+  max-height: 95vh;
   margin-left: auto;
   margin-right: auto;
 }
 
 .checklist-modal-xl-wide .modal-content {
   border-radius: 16px;
-  overflow: visible;
+  max-height: 95vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .checklist-modal-xl-wide .modal-body {
   padding: 20px 24px;
-  max-height: 75vh;
-  overflow-y: auto;
-  overflow-x: visible;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(95vh - 150px);
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  padding-bottom: 24px;
   scrollbar-width: thin;
   scrollbar-color: #00358a #e6eef8;
 
@@ -3978,6 +3985,17 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   justify-content: flex-end;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
+  background: #fff;
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+}
+
+.checklist-modal-xl-wide .modal-header {
+  flex-shrink: 0;
+  background: #fff;
+  z-index: 20;
 }
 
 .checklist-modal-xl-wide .sections-wrapper,
@@ -4008,6 +4026,31 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   grid-template-columns: 170px 1fr 140px 90px;
   gap: 12px;
   align-items: center;
+}
+
+/* Keep top PremiumSelect dropdowns fully visible inside checklist modal. */
+.checklist-modal-xl-wide,
+.checklist-modal-xl-wide .lead-form,
+.checklist-modal-xl-wide .checklist-top-fields-grid,
+.checklist-modal-xl-wide .checklist-top-field-item,
+.checklist-modal-xl-wide .phone-wrapper {
+  overflow: visible !important;
+}
+
+.checklist-modal-xl-wide .premium-select .cf-multi-select-dropdown,
+.checklist-modal-xl-wide .cf-searchable-select .cf-multi-select-dropdown,
+.checklist-modal-xl-wide .premium-select-menu,
+.checklist-modal-xl-wide .select-dropdown,
+.checklist-modal-xl-wide .dropdown-menu {
+  max-height: 320px !important;
+  overflow-y: auto !important;
+  z-index: 99999 !important;
+}
+
+.checklist-modal-xl-wide .premium-select .cf-multi-select-dropdown .cf-multi-select-option,
+.checklist-modal-xl-wide .premium-select-menu-list,
+.checklist-modal-xl-wide .select-options {
+  max-height: none;
 }
 
 .cl-footer {

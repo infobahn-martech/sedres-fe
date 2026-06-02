@@ -2328,6 +2328,37 @@ $send-report-optional: #80868b;
     padding: 4px 0;
   }
 
+  .document-task-group {
+    background: #fff;
+
+    &+.document-task-group {
+      border-top: 1px solid #e8eaed;
+    }
+
+    .document-row {
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+  }
+
+  .document-task-group__title {
+    margin: 0;
+    padding: 9px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #475569;
+    background: #f8fafc;
+    border-top: 1px solid #eef2f7;
+    border-bottom: 1px solid #eef2f7;
+    // text-transform: uppercase;
+    line-height: 1.3;
+  }
+
+  .document-task-group__title+.document-row {
+    border-top: none;
+  }
+
   .document-row {
     display: flex;
     flex-wrap: wrap;
@@ -2412,12 +2443,12 @@ $send-report-optional: #80868b;
     gap: 10px;
     flex-shrink: 0;
 
-    .document-row-icon-btn ~ .document-row-icon-btn {
+    .document-row-icon-btn~.document-row-icon-btn {
       display: none;
     }
   }
 
-  .compact-file-upload-row > .document-row-actions {
+  .compact-file-upload-row>.document-row-actions {
     display: none;
   }
 
@@ -3238,7 +3269,7 @@ $send-report-optional: #80868b;
   .form-field {
     margin-bottom: 14px;
 
-    > label {
+    >label {
       display: block;
       margin-bottom: 7px;
     }
@@ -3463,7 +3494,7 @@ $send-report-optional: #80868b;
     .cf-field {
       margin-bottom: 14px;
 
-      > label {
+      >label {
         display: block;
         margin-bottom: 7px;
       }
@@ -3566,8 +3597,8 @@ $send-report-optional: #80868b;
     row-gap: 24px;
     align-items: start;
 
-    > .general-info-left,
-    > .general-info-right {
+    >.general-info-left,
+    >.general-info-right {
       min-width: 0;
       box-sizing: border-box;
     }
@@ -3632,8 +3663,8 @@ $send-report-optional: #80868b;
     row-gap: 24px;
     align-items: start;
 
-    > .general-info-left,
-    > .general-info-right {
+    >.general-info-left,
+    >.general-info-right {
       min-width: 0;
       box-sizing: border-box;
     }
@@ -6786,37 +6817,80 @@ body .material-management-modal .files-list::-webkit-scrollbar-thumb:hover {
 
 /* 7-column Inbound Orders table */
 .inbound-table.material-table th:nth-child(1),
-.inbound-table.material-table td:nth-child(1) { width: 13%; }
+.inbound-table.material-table td:nth-child(1) {
+  width: 13%;
+}
+
 .inbound-table.material-table th:nth-child(2),
-.inbound-table.material-table td:nth-child(2) { width: 12%; }
+.inbound-table.material-table td:nth-child(2) {
+  width: 12%;
+}
+
 .inbound-table.material-table th:nth-child(3),
-.inbound-table.material-table td:nth-child(3) { width: 11%; }
+.inbound-table.material-table td:nth-child(3) {
+  width: 11%;
+}
+
 .inbound-table.material-table th:nth-child(4),
-.inbound-table.material-table td:nth-child(4) { width: 10%; }
+.inbound-table.material-table td:nth-child(4) {
+  width: 10%;
+}
+
 .inbound-table.material-table th:nth-child(5),
-.inbound-table.material-table td:nth-child(5) { width: 13%; }
+.inbound-table.material-table td:nth-child(5) {
+  width: 13%;
+}
+
 .inbound-table.material-table th:nth-child(6),
-.inbound-table.material-table td:nth-child(6) { width: 22%; }
+.inbound-table.material-table td:nth-child(6) {
+  width: 22%;
+}
+
 .inbound-table.material-table th:nth-child(7),
-.inbound-table.material-table td:nth-child(7) { width: 19%; }
+.inbound-table.material-table td:nth-child(7) {
+  width: 19%;
+}
 
 /* 8-column sub-tab tables (Landing Note, Dispatch Note) */
 .sub-note-table.material-table th:nth-child(1),
-.sub-note-table.material-table td:nth-child(1) { width: 12%; }
+.sub-note-table.material-table td:nth-child(1) {
+  width: 12%;
+}
+
 .sub-note-table.material-table th:nth-child(2),
-.sub-note-table.material-table td:nth-child(2) { width: 11%; }
+.sub-note-table.material-table td:nth-child(2) {
+  width: 11%;
+}
+
 .sub-note-table.material-table th:nth-child(3),
-.sub-note-table.material-table td:nth-child(3) { width: 10%; }
+.sub-note-table.material-table td:nth-child(3) {
+  width: 10%;
+}
+
 .sub-note-table.material-table th:nth-child(4),
-.sub-note-table.material-table td:nth-child(4) { width: 10%; }
+.sub-note-table.material-table td:nth-child(4) {
+  width: 10%;
+}
+
 .sub-note-table.material-table th:nth-child(5),
-.sub-note-table.material-table td:nth-child(5) { width: 9%; }
+.sub-note-table.material-table td:nth-child(5) {
+  width: 9%;
+}
+
 .sub-note-table.material-table th:nth-child(6),
-.sub-note-table.material-table td:nth-child(6) { width: 11%; }
+.sub-note-table.material-table td:nth-child(6) {
+  width: 11%;
+}
+
 .sub-note-table.material-table th:nth-child(7),
-.sub-note-table.material-table td:nth-child(7) { width: 18%; }
+.sub-note-table.material-table td:nth-child(7) {
+  width: 18%;
+}
+
 .sub-note-table.material-table th:nth-child(8),
-.sub-note-table.material-table td:nth-child(8) { width: 19%; }
+.sub-note-table.material-table td:nth-child(8) {
+  width: 19%;
+}
 
 .material-table-actions {
   display: flex;

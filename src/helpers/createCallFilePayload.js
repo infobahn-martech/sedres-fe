@@ -81,7 +81,7 @@ function resolveSelectionsToNumericReferenceIds(val, ...optionLists) {
  *   appointmentFiles?: File[],
  *   dailyReportEmailOptions?: Array<{ value?: unknown, label?: string }>,
  *   billingInstructionEmailOptions?: Array<{ value?: unknown, label?: string }>,
- *   appointmentAcceptanceFromApi?: object,
+ *   preserveAppointmentBody?: boolean,
  * }} options
  */
 export function buildCreateCallFileFormData(formPayload, options = {}) {
@@ -90,7 +90,7 @@ export function buildCreateCallFileFormData(formPayload, options = {}) {
     appointmentFiles = [],
     dailyReportEmailOptions = [],
     billingInstructionEmailOptions = [],
-    appointmentAcceptanceFromApi,
+    preserveAppointmentBody = false,
   } = options;
   const fd = new FormData();
 
@@ -162,30 +162,27 @@ export function buildCreateCallFileFormData(formPayload, options = {}) {
     .filter(Boolean);
   fd.append("time_objects", JSON.stringify(timeObjects));
 
-  if (
-    appointmentAcceptanceFromApi &&
-    typeof appointmentAcceptanceFromApi === "object"
-  ) {
-    fd.append("appointment_acceptance", JSON.stringify(appointmentAcceptanceFromApi));
-  } else {
-    const appointmentAcceptanceRaw =
-      fv.appointment_acceptance && typeof fv.appointment_acceptance === "object"
-        ? fv.appointment_acceptance
-        : {};
-    const originalBody = String(appointmentAcceptanceRaw.body ?? "");
-    const sanitizedBody = sanitizeAppointmentEmailBody(originalBody);
+  const appointmentAcceptanceRaw =
+    fv.appointment_acceptance && typeof fv.appointment_acceptance === "object"
+      ? fv.appointment_acceptance
+      : {};
+  const originalBody = String(appointmentAcceptanceRaw.body ?? "");
+  const sanitizedBody = preserveAppointmentBody
+    ? originalBody
+    : sanitizeAppointmentEmailBody(originalBody);
+  if (!preserveAppointmentBody) {
     console.log("Original email body length:", originalBody.length);
     console.log("Sanitized email body length:", sanitizedBody.length);
     console.log("Removed base64 image:", originalBody.length !== sanitizedBody.length);
-    const appointmentAcceptance = {
-      body: str(sanitizedBody),
-      cc_emails: str(appointmentAcceptanceRaw.cc_emails),
-      from_email: str(appointmentAcceptanceRaw.from_email),
-      subject: str(appointmentAcceptanceRaw.subject),
-      to_email: str(appointmentAcceptanceRaw.to_email),
-    };
-    fd.append("appointment_acceptance", JSON.stringify(appointmentAcceptance));
   }
+  const appointmentAcceptance = {
+    body: str(sanitizedBody),
+    cc_emails: str(appointmentAcceptanceRaw.cc_emails),
+    from_email: str(appointmentAcceptanceRaw.from_email),
+    subject: str(appointmentAcceptanceRaw.subject),
+    to_email: str(appointmentAcceptanceRaw.to_email),
+  };
+  fd.append("appointment_acceptance", JSON.stringify(appointmentAcceptance));
 
   return fd;
 }

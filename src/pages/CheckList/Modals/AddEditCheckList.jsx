@@ -477,14 +477,6 @@ function normalizeVesselBargeFormFields(data) {
   return { vesselType: "", bargeType: "" };
 }
 
-function validateVesselOrBargeExclusive(_value, formValues) {
-  const hasV = formValues.vesselType !== "" && formValues.vesselType != null;
-  const hasB = formValues.bargeType !== "" && formValues.bargeType != null;
-  if (!hasV && !hasB) return "Select either Vessel Type or Barge Type";
-  if (hasV && hasB) return "Select only one of Vessel Type or Barge Type";
-  return true;
-}
-
 function createSectionItemPayload() {
   return {
     item_name: "",
@@ -872,7 +864,6 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
     reset,
     setValue,
     getValues,
-    trigger,
     formState: { errors }
   } = useForm({
     defaultValues: EMPTY_DEFAULTS
@@ -1027,9 +1018,7 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                   <input
                     className="form-control checklist-compact-input"
                     placeholder="Item name"
-                    {...register(`sections.${sectionIndex}.items.${itemIndex}.item_name`, {
-                      required: "Item name is required"
-                    })}
+                    {...register(`sections.${sectionIndex}.items.${itemIndex}.item_name`)}
                   />
                   <ChecklistItemRoleSelect
                     control={control}
@@ -1166,9 +1155,7 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                   <input
                     className="form-control checklist-compact-input"
                     placeholder="Item name"
-                    {...register(`sections.${sectionIndex}.sub_sections.${subSectionIndex}.items.${itemIndex}.item_name`, {
-                      required: "Item name is required"
-                    })}
+                    {...register(`sections.${sectionIndex}.sub_sections.${subSectionIndex}.items.${itemIndex}.item_name`)}
                   />
                   <ChecklistItemRoleSelect
                     control={control}
@@ -1381,11 +1368,9 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                   className="form-control section-header-input"
                   placeholder="Sub Section Title"
                   style={{ borderColor: "#e2e6ff", fontSize: "14px" }}
-                  {...register(`sections.${sectionIndex}.sub_sections.${subSectionIndex}.title`, {
-                    required: "Sub section title is required"
-                  })}
+                  {...register(`sections.${sectionIndex}.sub_sections.${subSectionIndex}.title`)}
                 />
-                <label style={{ fontSize: "13px", color: "#666" }}>Sub Section Title <span className="text-danger">*</span></label>
+                <label style={{ fontSize: "13px", color: "#666" }}>Sub Section Title</label>
               </div>
               <div className="form-floating section-header-floating">
                 <input
@@ -1394,11 +1379,10 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                   placeholder="Sort Order"
                   style={{ borderColor: "#e2e6ff", fontSize: "14px" }}
                   {...register(`sections.${sectionIndex}.sub_sections.${subSectionIndex}.sort_order`, {
-                    required: "Sort order is required",
                     valueAsNumber: true
                   })}
                 />
-                <label style={{ fontSize: "13px", color: "#666" }}>Sort Order <span className="text-danger">*</span></label>
+                <label style={{ fontSize: "13px", color: "#666" }}>Sort Order</label>
               </div>
               <button
                 type="button"
@@ -1427,8 +1411,6 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
   };
 
   const renderBody = () => {
-    const vesselBargeFieldError = errors.vesselType || errors.bargeType;
-
     return (
       <div className="modal-body">
         <div className="lead-form">
@@ -1478,79 +1460,6 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                   )}
                 </div>
               </div>
-
-              <div className="checklist-top-field-item">
-                <div className="phone-wrapper">
-                  <label className="phone-label">Vessel Type</label>
-                  <Controller
-                    name="vesselType"
-                    control={control}
-                    rules={{ validate: validateVesselOrBargeExclusive }}
-                    render={({ field }) => (
-                      <PremiumSelect
-                        value={field.value != null ? String(field.value) : ""}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          field.onChange(v);
-                          if (v !== "") {
-                            setValue("bargeType", "", { shouldValidate: true });
-                          }
-                          trigger(["vesselType", "bargeType"]);
-                        }}
-                        options={(vesselTypes ?? []).map((type) => {
-                          const value = type.vessel_type_id ?? type._id ?? type.vessel_type ?? type.name;
-                          const label = type.vessel_type ?? type.name ?? value;
-                          return { value: String(value ?? ""), label: String(label ?? "") };
-                        })}
-                        placeholder="Select Vessel Type"
-                        searchPlaceholder="Search vessel type..."
-                        disabled={isLoadingVesselTypes}
-                        hasError={Boolean(vesselBargeFieldError)}
-                      />
-                    )}
-                  />
-                  {vesselBargeFieldError && (
-                    <span className="error text-danger">{vesselBargeFieldError.message}</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="checklist-top-field-item">
-                <div className="phone-wrapper">
-                  <label className="phone-label">Barge Type</label>
-                  <Controller
-                    name="bargeType"
-                    control={control}
-                    rules={{ validate: validateVesselOrBargeExclusive }}
-                    render={({ field }) => (
-                      <PremiumSelect
-                        value={field.value != null ? String(field.value) : ""}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          field.onChange(v);
-                          if (v !== "") {
-                            setValue("vesselType", "", { shouldValidate: true });
-                          }
-                          trigger(["vesselType", "bargeType"]);
-                        }}
-                        options={(bargeTypes ?? []).map((type) => {
-                          const value = type.barge_type_id ?? type._id ?? type.barge_type ?? type.name;
-                          const label = type.barge_type ?? type.name ?? value;
-                          return { value: String(value ?? ""), label: String(label ?? "") };
-                        })}
-                        placeholder="Select Barge Type"
-                        searchPlaceholder="Search barge type..."
-                        disabled={isLoadingBargeTypes}
-                        hasError={Boolean(vesselBargeFieldError)}
-                      />
-                    )}
-                  />
-                  {vesselBargeFieldError && (
-                    <span className="error text-danger">{vesselBargeFieldError.message}</span>
-                  )}
-                </div>
-              </div>
-
               <div className="checklist-top-field-item">
                 <div className="phone-wrapper">
                   <label className="phone-label">
@@ -1584,6 +1493,68 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                   )}
                 </div>
               </div>
+
+              <div className="checklist-top-field-item">
+                <div className="phone-wrapper">
+                  <label className="phone-label">Vessel Type</label>
+                  <Controller
+                    name="vesselType"
+                    control={control}
+                    render={({ field }) => (
+                      <PremiumSelect
+                        value={field.value != null ? String(field.value) : ""}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          field.onChange(v);
+                          if (v !== "") {
+                            setValue("bargeType", "");
+                          }
+                        }}
+                        options={(vesselTypes ?? []).map((type) => {
+                          const value = type.vessel_type_id ?? type._id ?? type.vessel_type ?? type.name;
+                          const label = type.vessel_type ?? type.name ?? value;
+                          return { value: String(value ?? ""), label: String(label ?? "") };
+                        })}
+                        placeholder="Select Vessel Type"
+                        searchPlaceholder="Search vessel type..."
+                        disabled={isLoadingVesselTypes}
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="checklist-top-field-item">
+                <div className="phone-wrapper">
+                  <label className="phone-label">Barge Type</label>
+                  <Controller
+                    name="bargeType"
+                    control={control}
+                    render={({ field }) => (
+                      <PremiumSelect
+                        value={field.value != null ? String(field.value) : ""}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          field.onChange(v);
+                          if (v !== "") {
+                            setValue("vesselType", "");
+                          }
+                        }}
+                        options={(bargeTypes ?? []).map((type) => {
+                          const value = type.barge_type_id ?? type._id ?? type.barge_type ?? type.name;
+                          const label = type.barge_type ?? type.name ?? value;
+                          return { value: String(value ?? ""), label: String(label ?? "") };
+                        })}
+                        placeholder="Select Barge Type"
+                        searchPlaceholder="Search barge type..."
+                        disabled={isLoadingBargeTypes}
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+
+
             </div>
 
 
@@ -1698,11 +1669,9 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                         className="form-control section-header-input"
                         placeholder="Section Title"
                         style={{ borderColor: "#e2e6ff" }}
-                        {...register(`sections.${sectionIndex}.title`, {
-                          required: "Section title is required"
-                        })}
+                        {...register(`sections.${sectionIndex}.title`)}
                       />
-                      <label style={{ color: "#666" }}>Section Title <span className="text-danger">*</span></label>
+                      <label style={{ color: "#666" }}>Section Title</label>
                     </div>
                     <div className="form-floating section-header-floating">
                       <input
@@ -1711,11 +1680,10 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                         placeholder="Sort Order"
                         style={{ borderColor: "#e2e6ff" }}
                         {...register(`sections.${sectionIndex}.sort_order`, {
-                          required: "Sort order is required",
                           valueAsNumber: true
                         })}
                       />
-                      <label style={{ color: "#666" }}>Sort Order <span className="text-danger">*</span></label>
+                      <label style={{ color: "#666" }}>Sort Order</label>
                     </div>
                     <button
                       type="button"

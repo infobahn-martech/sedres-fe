@@ -2,8 +2,8 @@ import PropTypes from "prop-types";
 import SearchableSelect, { deriveSearchPlaceholder } from "./SearchableSelect";
 import "./PremiumSelect.scss";
 
-/** Default z-index above Bootstrap modal stacking (~1055–1060). */
-export const PREMIUM_SELECT_MODAL_Z_INDEX = 11000;
+/** Keep dropdown above modal + sticky footer/header layers. */
+export const PREMIUM_SELECT_MODAL_Z_INDEX = 999999;
 
 /**
  * Thin wrapper around SearchableSelect for master/admin modals — consistent
@@ -21,12 +21,18 @@ export default function PremiumSelect({
   menuZIndex = PREMIUM_SELECT_MODAL_Z_INDEX,
   noResultsText,
   menuPortalTarget,
-  menuPosition = "absolute",
+  menuPosition = "fixed",
+  menuPlacement = "auto",
   menuShouldBlockScroll = false,
   menuClassName,
   ...rest
 }) {
   const mergedClass = ["premium-select", className].filter(Boolean).join(" ");
+  const resolvedMenuPortalTarget =
+    menuPortalTarget === undefined
+      ? (typeof document !== "undefined" ? document.body : null)
+      : menuPortalTarget;
+
   return (
     <SearchableSelect
       value={value}
@@ -39,8 +45,9 @@ export default function PremiumSelect({
       className={mergedClass}
       menuZIndex={menuZIndex}
       noResultsText={noResultsText}
-      menuPortalTarget={menuPortalTarget}
+      menuPortalTarget={resolvedMenuPortalTarget}
       menuPosition={menuPosition}
+      menuPlacement={menuPlacement}
       menuShouldBlockScroll={menuShouldBlockScroll}
       menuClassName={menuClassName}
       {...rest}
@@ -61,6 +68,7 @@ PremiumSelect.propTypes = {
   noResultsText: PropTypes.string,
   menuPortalTarget: PropTypes.any,
   menuPosition: PropTypes.oneOf(["absolute", "fixed"]),
+  menuPlacement: PropTypes.oneOf(["auto", "top", "bottom"]),
   menuShouldBlockScroll: PropTypes.bool,
   menuClassName: PropTypes.string,
 };

@@ -4,8 +4,14 @@ import taskCardService from "./groService/taskCardService";
 export const getCallDetailById = (callId) =>
   Gateway.get(`call_file/get_call_detail_by_id/${encodeURIComponent(String(callId))}`);
 
-export const getDocumentsByTask = (taskId) =>
-  Gateway.get(`task_card/get_documents_by_task/${encodeURIComponent(String(taskId))}`);
+export const getDocumentsByTask = (taskId, callId) => {
+  const taskSegment = encodeURIComponent(String(taskId));
+  if (callId == null || String(callId).trim() === "") {
+    return Gateway.get(`task_card/get_documents_by_task/${taskSegment}`);
+  }
+  const callSegment = encodeURIComponent(String(callId));
+  return Gateway.get(`task_card/get_documents_by_task/${taskSegment}/${callSegment}`);
+};
 
 export const verifyGroDocs = (payload) => Gateway.post("task_card/verify_docs", payload);
 

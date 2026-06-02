@@ -205,6 +205,34 @@ function PreArrivalDocumentHandlingSection({ formValues }) {
   const dh = formValues.preArrivalDocumentHandling || DEFAULT_PRE_ARRIVAL_DOCUMENT_HANDLING;
   const stageFiles = Array.isArray(dh.stageFiles) ? dh.stageFiles : [];
   const roleGroups = Array.isArray(dh.roleGroups) ? dh.roleGroups : [];
+  const groupDocumentsByTask = (items = []) => {
+    const docs = Array.isArray(items) ? items : [];
+    const groups = [];
+    const byKey = new Map();
+
+    docs.forEach((doc, index) => {
+      const taskName = String(doc?.task_name || "").trim();
+      const taskId = doc?.task_id ?? "";
+      const key = taskName
+        ? `${String(taskId).trim() || "no-task-id"}::${taskName.toLowerCase()}`
+        : "__untagged__";
+
+      if (!byKey.has(key)) {
+        byKey.set(key, {
+          key,
+          title: taskName || "Documents",
+          hasTaskLabel: Boolean(taskName),
+          firstIndex: index,
+          items: [],
+        });
+        groups.push(byKey.get(key));
+      }
+
+      byKey.get(key).items.push(doc);
+    });
+
+    return groups.sort((a, b) => a.firstIndex - b.firstIndex);
+  };
 
   return (
     <div className="document-handling-section">
@@ -234,16 +262,27 @@ function PreArrivalDocumentHandlingSection({ formValues }) {
       {roleGroups.map((group) => {
         const title = String(group?.role_name || "Documents").trim();
         const cardTitle = /documents?$/i.test(title) ? title : `${title} documents`;
+        const taskGroups = groupDocumentsByTask(group?.items || []);
         return (
           <DocumentGroupCard key={`role-${group?.role_id ?? title}`} title={cardTitle}>
-            {(group?.items || []).map((doc) => (
-              <CompactFileUploadRow
-                key={`${group?.role_id ?? title}-${doc.id}`}
-                label={doc.document_name || doc.name}
-                files={doc.files || []}
-                status={doc.status}
-                remarks={doc.remarks}
-              />
+            {taskGroups.map((taskGroup) => (
+              <div
+                key={`${group?.role_id ?? title}-${taskGroup.key}`}
+                className="document-task-group"
+              >
+                {taskGroup.hasTaskLabel ? (
+                  <h5 className="document-task-group__title">{taskGroup.title}</h5>
+                ) : null}
+                {taskGroup.items.map((doc) => (
+                  <CompactFileUploadRow
+                    key={`${group?.role_id ?? title}-${taskGroup.key}-${doc.id}`}
+                    label={doc.document_name || doc.name}
+                    files={doc.files || []}
+                    status={doc.status}
+                    remarks={doc.remarks}
+                  />
+                ))}
+              </div>
             ))}
           </DocumentGroupCard>
         );
