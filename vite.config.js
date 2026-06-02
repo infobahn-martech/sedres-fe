@@ -7,13 +7,4 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
-  server: {
-    proxy: {
-      '/sedres/api': {
-        target: 'https://onlinebareed.com',
-        changeOrigin: true,
-        secure: true,
-      },
-    },
-  },
 });
