@@ -1493,18 +1493,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                         {formErrors[`o${index}_quantity`] && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{formErrors[`o${index}_quantity`]}</span>}
                       </div>
 
-                      <div className="col-lg-6 col-md-12">
-                        <FormField label="Description">
-                          <FormInput
-                            type="text"
-                            value={order.description}
-                            onChange={(e) => handleOrderChange(order.id, "description", e.target.value)}
-                            placeholder="Enter description..."
-                          />
-                        </FormField>
-                      </div>
-
-                      <div className="col-lg-6 col-md-12">
+                      <div className="col-lg-4 col-md-6">
                         <FormField label="Package Type *">
                           <FormSelect
                             value={order.packageType}
@@ -1517,6 +1506,17 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                           />
                         </FormField>
                         {formErrors[`o${index}_packageType`] && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{formErrors[`o${index}_packageType`]}</span>}
+                      </div>
+
+                      <div className="col-lg-12 col-md-12">
+                        <FormField label="Description">
+                          <FormInput
+                            type="text"
+                            value={order.description}
+                            onChange={(e) => handleOrderChange(order.id, "description", e.target.value)}
+                            placeholder="Enter description..."
+                          />
+                        </FormField>
                       </div>
                     </div>
 
