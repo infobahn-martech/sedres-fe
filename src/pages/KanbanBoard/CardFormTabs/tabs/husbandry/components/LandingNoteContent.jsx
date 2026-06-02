@@ -171,6 +171,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     isLoadingUpdateLandingNote,
     getAllLandingNotes,
     landingNotes,
+    landingNoteTotal,
     isLoadingLandingNoteList,
   } = useInboundOrderReducer((state) => state);
 
@@ -205,12 +206,11 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     description: "",
   });
 
-  const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
-
   useEffect(() => {
+    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
     if (!callId) return;
     getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });
-  }, [callId, landingPage]);
+  }, [formValues?.call_id, formValues?.callId, formValues?.card_call_id, landingPage]);
 
   useEffect(() => {
     setNotesList(landingNotes);
@@ -295,6 +295,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         });
       }
 
+      const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
       updateLandingNote({
         landingNoteId: editingNote.id,
         data: payload,
@@ -1638,25 +1639,39 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
             </tr>
           </thead>
           <tbody>
-            {notesList.length > 0 ? (
-              notesList.slice((landingPage - 1) * LANDING_LIMIT, landingPage * LANDING_LIMIT).map((note) => (
-                <tr key={note.id}>
+            {isLoadingLandingNoteList ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center", padding: "20px", color: "#666" }}>Loading...</td>
+              </tr>
+            ) : notesList.length > 0 ? (
+              notesList.slice((landingPage - 1) * LANDING_LIMIT, landingPage * LANDING_LIMIT).map((note) => {
+                const rowKey = note.landing_note_id ?? note.id ?? Math.random();
+                const firstItem = Array.isArray(note.items) ? note.items[0] : null;
+                const noteNo = note.landing_note_no || note.landingNoteNo || "";
+                const noteDate = note.landing_date || note.date || "";
+                const poDo = firstItem?.po_no || note.poDo || "";
+                const quantity = firstItem?.quantity ?? note.quantity ?? "";
+                const packageType = firstItem?.package_type || note.packageType || "";
+                const description = firstItem?.description || note.description || "";
+                const files = note.files || note.landing_proof || note.landingProof || [];
+                return (
+                <tr key={rowKey}>
                   <td>
-                    <div className="material-table-cell">{note.landingNoteNo || ""}</div>
+                    <div className="material-table-cell">{noteNo}</div>
                   </td>
                   <td>
                     <div className="material-table-cell">
-                      {formatDate(note.date)}
+                      {formatDate(noteDate)}
                     </div>
                   </td>
                   <td>
-                    <div className="material-table-cell">{note.poDo || ""}</div>
+                    <div className="material-table-cell">{poDo}</div>
                   </td>
                   <td>
                     <div className="material-table-cell">
-                      {note.landingProof && note.landingProof.length > 0 ? (
+                      {files.length > 0 ? (
                         <span style={{ color: "#00368c", cursor: "pointer" }}>
-                          {note.landingProof.length} file(s)
+                          {files.length} file(s)
                         </span>
                       ) : (
                         <span style={{ color: "#999" }}>No files</span>
@@ -1664,30 +1679,30 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                     </div>
                   </td>
                   <td>
-                    <div className="material-table-cell">{note.quantity || ""}</div>
+                    <div className="material-table-cell">{quantity}</div>
                   </td>
                   <td>
-                    <div className="material-table-cell">{note.packageType || ""}</div>
+                    <div className="material-table-cell">{packageType}</div>
                   </td>
                   <td>
                     <div className="material-table-cell">
-                      {note.description && note.description.length > 13 ? (
+                      {description && description.length > 13 ? (
                         <>
                           <Tooltip
-                            id={`description-tooltip-${note.id}`}
+                            id={`description-tooltip-${rowKey}`}
                             place="right"
-                            content={note.description}
+                            content={description}
                             className="material-table-tooltip"
                           />
                           <span
-                            data-tooltip-id={`description-tooltip-${note.id}`}
+                            data-tooltip-id={`description-tooltip-${rowKey}`}
                             style={{ cursor: "help" }}
                           >
-                            {note.description.substring(0, 13)}...
+                            {description.substring(0, 13)}...
                           </span>
                         </>
                       ) : (
-                        <span>{note.description || ""}</span>
+                        <span>{description}</span>
                       )}
                     </div>
                   </td>
@@ -1898,7 +1913,8 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                     </div>
                   </td>
                 </tr>
-              ))
+              );
+              })
             ) : (
               <tr>
                 <td colSpan="8" style={{ textAlign: "center", padding: "20px" }}>
@@ -1911,7 +1927,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         </div>
         <MaterialTablePagination
           page={landingPage}
-          total={notesList.length}
+          total={landingNoteTotal}
           limit={LANDING_LIMIT}
           onPageChange={setLandingPage}
         />
