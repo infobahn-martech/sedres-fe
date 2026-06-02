@@ -8,6 +8,7 @@ const useInboundOrderReducer = create((set) => ({
     isLoadingView: false,
     isBeingUpdated: false,
     isLoadingDelete: false,
+    isBeingConverted: false,
     isLoadingUpdateLandingNote: false,
     isLoadingLandingNoteList: false,
     landingNotes: [],
@@ -86,6 +87,21 @@ const useInboundOrderReducer = create((set) => ({
             const { error } = useAlertReducer.getState();
             set({ isLoadingDelete: false });
             error(err?.response?.data?.message ?? err.message);
+        }
+    },
+
+    convertInboundToLandingNote: async ({ data, cb }) => {
+        try {
+            set({ isBeingConverted: true });
+            const { data: resData } = await inboundOrderService.convertInboundToLandingNote(data);
+            set({ isBeingConverted: false });
+            const { success } = useAlertReducer.getState();
+            success(resData?.message ?? 'Inbound converted to landing note successfully');
+            cb?.();
+        } catch (err) {
+            const { error } = useAlertReducer.getState();
+            set({ isBeingConverted: false });
+            error(err?.response?.data?.message ?? 'Failed to convert inbound to landing note');
         }
     },
 

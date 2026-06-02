@@ -17,7 +17,6 @@ import packingTypeService from "../../../../../../services/packingTypeService";
 import useInboundOrderReducer from "../../../../../../store/InboundOrderReducer";
 import inboundOrderService from "../../../../../../services/inboundOrderService";
 import vehicleService from "../../../../../../services/vehicleService";
-import driverService from "../../../../../../services/driverService";
 import {
   splitApiDateTimeParts,
   buildApiDateTime,
@@ -194,6 +193,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     saveInboundOrder,
     updateInboundOrder,
     deleteInboundOrder,
+    convertInboundToLandingNote,
     getAllInbound,
     getInboundById,
     clearInboundDetail,
@@ -204,11 +204,13 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     isLoadingSave: isSubmitting,
     isBeingUpdated,
     isLoadingDelete,
+    isBeingConverted,
     inboundDetail: viewingOrder,
   } = useInboundOrderReducer((state) => state);
 
   const [showModal, setShowModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
+  const [convertFormErrors, setConvertFormErrors] = useState({});
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
   const [convertingOrder, setConvertingOrder] = useState(null);
@@ -246,13 +248,15 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       driverName: "",
       slotNo: "",
       reason: "",
-      dispatchDate: ""
+      dispatchDate: "",
+          dispatchTime: ""
     }], // Order Details array
   });
 
   // Form state for Convert to Landing modal
   const [convertFormData, setConvertFormData] = useState({
     date: "",
+    time: "",
     warehouse: "",
     receivedFrom: "",
     location: "",
@@ -273,11 +277,13 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       driverName: "",
       slotNo: "",
       reason: "",
-      dispatchDate: ""
+      dispatchDate: "",
+          dispatchTime: ""
     }],
   });
 
   const [warehouseLocationOptions, setWarehouseLocationOptions] = useState([]);
+  const [transportLocationOptions, setTransportLocationOptions] = useState([]);
   const [packageTypeOptions, setPackageTypeOptions] = useState([]);
   const [materialVehicleOptions, setMaterialVehicleOptions] = useState([]);
   const [materialDriverOptions, setMaterialDriverOptions] = useState([]);
@@ -286,16 +292,26 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     let cancelled = false;
     const loadReferenceData = async () => {
       try {
-        const [whRes, pkgRes, vehRes, drvRes] = await Promise.all([
+        const [whRes, pkgRes, vehRes, drvRes, trLocRes] = await Promise.all([
           logisticsWarehouseService.getWarehouseLocations(),
           packingTypeService.getPackingTypes(),
-          vehicleService.getAllTransportVehicles(),
-          driverService.getAllDrivers(),
+          vehicleService.getMaterialVehicles(),
+          vehicleService.getMaterialDrivers(),
+          inboundOrderService.getMaterialTransportLocations(),
         ]);
         if (cancelled) return;
         const whRows = extractListFromApi(whRes?.data);
         setWarehouseLocationOptions(
           whRows
+            .map((r) => ({
+              value: String(r.location_id ?? ""),
+              label: String(r.location ?? ""),
+            }))
+            .filter((o) => o.value && o.label)
+        );
+        const trLocRows = extractListFromApi(trLocRes?.data);
+        setTransportLocationOptions(
+          trLocRows
             .map((r) => ({
               value: String(r.location_id ?? ""),
               label: String(r.location ?? ""),
@@ -355,7 +371,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
           quantity: item.quantity || "",
           packageType: String(item.package_type_id || ""),
           description: item.description || "",
-          transportation: item.transportation_required === 1,
+          transportation: Number(item.transportation_required) === 1,
           typeOfVehicle: item.transportation ? String(item.transportation.vehicle_type_id || "") : "",
           fromLocation: item.transportation ? String(item.transportation.from_location_id || "") : "",
           pickUpFrom: item.transportation ? item.transportation.pickup_location || "" : "",
@@ -364,6 +380,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
           slotNo: "",
           reason: "",
           dispatchDate: "",
+          dispatchTime: "",
         }))
       : [{
           id: 1,
@@ -381,6 +398,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
           slotNo: "",
           reason: "",
           dispatchDate: "",
+          dispatchTime: "",
         }];
 
     const { date: editDate, time: editTime } = splitApiDateTimeParts(
@@ -444,6 +462,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         slotNo: "",
         reason: "",
         dispatchDate: "",
+          dispatchTime: "",
       }],
     });
     setExpandedOrders({ 1: true });
@@ -474,7 +493,8 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         driverName: "",
         slotNo: "",
         reason: "",
-        dispatchDate: ""
+        dispatchDate: "",
+          dispatchTime: ""
       }],
     });
   };
@@ -548,7 +568,8 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
           driverName: "",
           slotNo: "",
           reason: "",
-          dispatchDate: ""
+          dispatchDate: "",
+          dispatchTime: ""
         },
       ],
     }));
@@ -656,7 +677,8 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         driverName: "",
         slotNo: "",
         reason: "",
-        dispatchDate: ""
+        dispatchDate: "",
+          dispatchTime: ""
       }],
     });
     setExpandedOrders({ 1: true });
@@ -911,44 +933,77 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     }, 250);
   };
 
+  const buildConvertOrders = (items) => {
+    if (!Array.isArray(items) || items.length === 0) return null;
+    return items.map((item, idx) => ({
+      id: idx + 1,
+      inbound_item_id: item.inbound_item_id ? Number(item.inbound_item_id) : null,
+      orderNo: item.order_no || "",
+      poDo: item.po_no || "",
+      quantity: item.quantity ? String(item.quantity) : "",
+      packageType: String(item.package_type_id || ""),
+      description: item.description || "",
+      transportation: Number(item.transportation_required) === 1,
+      transportation_id: item.transportation?.transportation_id ? Number(item.transportation.transportation_id) : null,
+      typeOfVehicle: item.transportation ? String(item.transportation.vehicle_type_id || "") : "",
+      fromLocation: item.transportation ? String(item.transportation.from_location_id || "") : "",
+      pickUpFrom: item.transportation?.pickup_location || "",
+      toLocation: item.transportation ? String(item.transportation.to_location_id || "") : "",
+      driverName: item.transportation ? String(item.transportation.driver_id || "") : "",
+      slotNo: "",
+      reason: "",
+      dispatchDate: "",
+          dispatchTime: "",
+    }));
+  };
+
   const handleConvertToLanding = (order) => {
     handleCloseDropdown();
     setConvertingOrder(order);
-    // Pre-fill form with order data
     setConvertFormData({
-      date: order.date || "",
-      warehouse: order.warehouse || "",
+      date: "",
+      time: "",
+      warehouse: String(order.warehouse_id || ""),
       receivedFrom: "",
       location: "",
       documents: [],
       remarks: "",
-      orders: [{
-        id: 1,
-        orderNo: order.orderNo || "",
-        poDo: order.poDo || "",
-        quantity: order.quantity || "",
-        packageType: order.packageType || "",
-        description: order.description || "",
-        transportation: order.transportation || false,
-        typeOfVehicle: order.typeOfVehicle || "",
-        fromLocation: order.fromLocation || "",
-        pickUpFrom: order.pickUpFrom || "",
-        toLocation: order.toLocation || "",
-        driverName: order.driverName || "",
-        slotNo: order.slotNo || "",
-        reason: order.reason || "",
-        dispatchDate: order.dispatchDate || ""
-      }],
+      orders: [{ id: 1, inbound_item_id: null, orderNo: "", poDo: "", quantity: "", packageType: "", description: "", transportation: false, typeOfVehicle: "", fromLocation: "", pickUpFrom: "", toLocation: "", driverName: "", slotNo: "", reason: "", dispatchDate: "",
+          dispatchTime: "" }],
     });
     setExpandedConvertOrders({ 1: true });
     setShowConvertModal(true);
+
+    const inboundId = order.inbound_id ?? order.id;
+    if (inboundId != null) {
+      inboundOrderService.getInboundById(inboundId)
+        .then(({ data }) => {
+          const detail = data?.data;
+          if (!detail) return;
+          const orders = buildConvertOrders(detail.items);
+          if (orders) {
+            const exp = {};
+            orders.forEach((o) => { exp[o.id] = true; });
+            setConvertingOrder(detail);
+            setConvertFormData((prev) => ({
+              ...prev,
+              warehouse: String(detail.warehouse_id || prev.warehouse),
+              orders,
+            }));
+            setExpandedConvertOrders(exp);
+          }
+        })
+        .catch(() => {});
+    }
   };
 
   const handleCloseConvertModal = () => {
     setShowConvertModal(false);
     setConvertingOrder(null);
+    setConvertFormErrors({});
     setConvertFormData({
       date: "",
+      time: "",
       warehouse: "",
       receivedFrom: "",
       location: "",
@@ -969,7 +1024,8 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         driverName: "",
         slotNo: "",
         reason: "",
-        dispatchDate: ""
+        dispatchDate: "",
+          dispatchTime: ""
       }],
     });
   };
@@ -1013,7 +1069,8 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
           driverName: "",
           slotNo: "",
           reason: "",
-          dispatchDate: ""
+          dispatchDate: "",
+          dispatchTime: ""
         },
       ],
     }));
@@ -1114,11 +1171,57 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     }));
   };
 
+  const validateConvertForm = () => {
+    const errors = {};
+    if (!convertFormData.date) errors.date = "Date is required";
+    if (!convertFormData.receivedFrom) errors.receivedFrom = "Received From is required";
+    if (!convertFormData.location) errors.location = "Location is required";
+    convertFormData.orders.forEach((order, idx) => {
+      if (!order.quantity) errors[`co${idx}_quantity`] = "Quantity is required";
+    });
+    setConvertFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleConvertSubmit = (e) => {
     e.preventDefault();
-    console.log("Convert to Landing form submitted:", convertFormData);
-    // Here you can implement the logic to save/convert the order to landing note
-    handleCloseConvertModal();
+    if (!validateConvertForm()) return;
+    const inboundId = convertingOrder?.inbound_id ?? convertingOrder?.id;
+    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
+    const landingDate = convertFormData.date + (convertFormData.time ? ` ${convertFormData.time}` : "");
+    const fd = new FormData();
+    fd.append("inbound_id", inboundId);
+    fd.append("call_id", callId);
+    fd.append("warehouse_id", convertFormData.warehouse || "");
+    fd.append("landing_date", landingDate);
+    fd.append("received_from", convertFormData.receivedFrom || "");
+    fd.append("location", convertFormData.location || "");
+    fd.append("signature", convertFormData.signature || "");
+    fd.append("remarks", convertFormData.remarks || "");
+    if (convertFormData.documents?.length > 0) fd.append("file", convertFormData.documents[0].file ?? convertFormData.documents[0]);
+    const items = convertFormData.orders.map((order) => ({
+      inbound_item_id: order.inbound_item_id || null,
+      quantity: Number(order.quantity) || 0,
+      slot_no_id: Number(order.slotNo) || 0,
+      reason_id: Number(order.reason) || 0,
+      dispatch_date: order.dispatchDate ? (order.dispatchDate + (order.dispatchTime ? ` ${order.dispatchTime}` : "")) : "",
+      transportation_required: order.transportation ? 1 : 0,
+      transportation: order.transportation ? {
+        vehicle_type_id: Number(order.typeOfVehicle) || 0,
+        from_location_id: Number(order.fromLocation) || 0,
+        pickup_location: order.pickUpFrom || "",
+        to_location_id: Number(order.toLocation) || 0,
+        driver_id: Number(order.driverName) || 0,
+      } : null,
+    }));
+    fd.append("items", JSON.stringify(items));
+    convertInboundToLandingNote({
+      data: fd,
+      cb: () => {
+        handleCloseConvertModal();
+        getAllInbound({ call_id: callId, page: inboundPage, limit: INBOUND_LIMIT });
+      },
+    });
   };
 
 
@@ -1141,7 +1244,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
 
   const renderHeader = () => (
     <>
-      <h1 className="modal-title">{editingOrder ? "Edit Inbound Order" : "Add Inbound Order"}</h1>
+      <h1 className="modal-title">{"Add Inbound Order"}</h1>
     </>
   );
 
@@ -1191,16 +1294,6 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                 {formErrors.warehouse && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{formErrors.warehouse}</span>}
               </div>
 
-              <div className="col-md-12 mb-2">
-                <FormField label="Remarks">
-                  <FormTextarea
-                    value={formData.remarks}
-                    onChange={(e) => handleFormChange("remarks", e.target.value)}
-                    placeholder="Enter remarks..."
-                    rows={3}
-                  />
-                </FormField>
-              </div>
             </div>
           </div>
 
@@ -1371,17 +1464,6 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                   <div style={{ padding: "16px", backgroundColor: "white", borderRadius: "0 0 8px 8px" }}>
                     <div className="row g-2 mb-1">
                       <div className="col-lg-4 col-md-6">
-                        <FormField label="Order No">
-                          <FormInput
-                            type="text"
-                            value={order.orderNo}
-                            onChange={(e) => handleOrderChange(order.id, "orderNo", e.target.value)}
-                            placeholder="Enter order number..."
-                          />
-                        </FormField>
-                      </div>
-
-                      <div className="col-lg-4 col-md-6">
                         <FormField label="PO/DO *">
                           <FormInput
                             type="text"
@@ -1477,7 +1559,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                                   handleOrderChange(order.id, "fromLocation", e.target.value);
                                   if (formErrors[`o${index}_fromLocation`]) setFormErrors((prev) => { const e = { ...prev }; delete e[`o${index}_fromLocation`]; return e; });
                                 }}
-                                options={mergeOptionForValue(warehouseLocationOptions, order.fromLocation)}
+                                options={mergeOptionForValue(transportLocationOptions, order.fromLocation)}
                                 placeholder="Select from location..."
                               />
                             </FormField>
@@ -1503,7 +1585,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                                   handleOrderChange(order.id, "toLocation", e.target.value);
                                   if (formErrors[`o${index}_toLocation`]) setFormErrors((prev) => { const e = { ...prev }; delete e[`o${index}_toLocation`]; return e; });
                                 }}
-                                options={mergeOptionForValue(warehouseLocationOptions, order.toLocation)}
+                                options={mergeOptionForValue(transportLocationOptions, order.toLocation)}
                                 placeholder="Select to location..."
                               />
                             </FormField>
@@ -1558,6 +1640,20 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                 )}
               </div>
             ))}
+          </div>
+
+          {/* Remarks - after order details */}
+          <div className="row g-2 mt-2">
+            <div className="col-md-12">
+              <FormField label="Remarks">
+                <FormTextarea
+                  value={formData.remarks}
+                  onChange={(e) => handleFormChange("remarks", e.target.value)}
+                  placeholder="Enter remarks..."
+                  rows={3}
+                />
+              </FormField>
+            </div>
           </div>
         </form>
       </div>
@@ -1633,57 +1729,30 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       <div className="lead-form">
         <form id="convertToLandingForm" onSubmit={handleConvertSubmit}>
           {/* Basic Details Section */}
-          <div style={{ marginBottom: "20px", paddingBottom: "16px", borderBottom: "1px solid #e2e2ea" }}>
-            <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "14px", color: "#1a1a1a" }}>
+          <div style={{ marginBottom: "32px", paddingBottom: "24px", borderBottom: "1px solid #e2e2ea" }}>
+            <h3 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "20px", color: "#1a1a1a" }}>
               Basic Details
             </h3>
-            <div className="row g-2 mb-2">
-              <div className="col-md-6 mb-2">
-                <FormField label="Date">
-                  <div className="cf-select cf-date-input">
-                    <input
-                      type="date"
-                      value={convertFormData.date}
-                      onChange={(e) => handleConvertFormChange("date", e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      style={{
-                        width: "100%",
-                        border: "none",
-                        outline: "none",
-                        background: "transparent",
-                        fontSize: "14px",
-                        color: "#1a1a1a",
-                        fontFamily: "inherit",
-                        padding: 0,
-                        flex: 1,
-                        cursor: "pointer",
-                      }}
-                    />
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      style={{
-                        flexShrink: 0,
-                        marginLeft: "8px",
-                        color: "#666",
-                        pointerEvents: "none",
-                        position: "relative",
-                        zIndex: 1,
-                      }}
-                    >
-                      <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
-                      <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  </div>
+            <div className="row mb-lg-3">
+              <div className="col-md-6 mb-3">
+                <FormField label="Date *">
+                  <DateTimePickerField
+                    dateValue={convertFormData.date}
+                    timeValue={convertFormData.time}
+                    onDateTimeChange={(nextValues) => {
+                      setConvertFormData((prev) => ({ ...prev, date: nextValues.date, time: nextValues.time }));
+                      if (convertFormErrors.date) setConvertFormErrors((p) => { const n = { ...p }; delete n.date; return n; });
+                    }}
+                    dateFieldName="date"
+                    timeFieldName="time"
+                    placeholder="YYYY-MM-DD hh:mm"
+                    hasError={!!convertFormErrors.date}
+                  />
                 </FormField>
+                {convertFormErrors.date && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{convertFormErrors.date}</span>}
               </div>
 
-              <div className="col-md-6 mb-2">
+              <div className="col-md-6 mb-3">
                 <FormField label="Warehouse">
                   <FormSelect
                     value={convertFormData.warehouse}
@@ -1696,31 +1765,35 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
             </div>
 
             {/* Receipt Details Section */}
-            <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #e2e2ea" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "14px", color: "#1a1a1a" }}>
+            <div style={{ marginTop: "24px", paddingTop: "24px", borderTop: "1px solid #e2e2ea" }}>
+              <h3 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "20px", color: "#1a1a1a" }}>
                 Receipt Details
               </h3>
-              <div className="row g-2 mb-2">
-                <div className="col-md-6 mb-2">
-                  <FormField label="Received From">
+              <div className="row mb-lg-3">
+                <div className="col-md-6 mb-3">
+                  <FormField label="Received From *">
                     <FormInput
                       type="text"
                       value={convertFormData.receivedFrom}
-                      onChange={(e) => handleConvertFormChange("receivedFrom", e.target.value)}
+                      onChange={(e) => { handleConvertFormChange("receivedFrom", e.target.value); setConvertFormErrors((p) => { const n = { ...p }; delete n.receivedFrom; return n; }); }}
                       placeholder="Enter received from..."
+                      className={convertFormErrors.receivedFrom ? "is-invalid" : ""}
                     />
                   </FormField>
+                  {convertFormErrors.receivedFrom && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{convertFormErrors.receivedFrom}</span>}
                 </div>
 
-                <div className="col-md-6 mb-2">
-                  <FormField label="Location">
+                <div className="col-md-6 mb-3">
+                  <FormField label="Location *">
                     <FormInput
                       type="text"
                       value={convertFormData.location}
-                      onChange={(e) => handleConvertFormChange("location", e.target.value)}
+                      onChange={(e) => { handleConvertFormChange("location", e.target.value); setConvertFormErrors((p) => { const n = { ...p }; delete n.location; return n; }); }}
                       placeholder="Enter location..."
+                      className={convertFormErrors.location ? "is-invalid" : ""}
                     />
                   </FormField>
+                  {convertFormErrors.location && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{convertFormErrors.location}</span>}
                 </div>
               </div>
             </div>
@@ -1728,8 +1801,8 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
 
           {/* Order Details Section */}
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "600", margin: 0, color: "#1a1a1a" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h3 style={{ fontSize: "18px", fontWeight: "600", margin: 0, color: "#1a1a1a" }}>
                 Order Details
               </h3>
               <button
@@ -1886,14 +1959,16 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                       </div>
 
                       <div className="col-lg-4 col-md-6">
-                        <FormField label="Quantity">
+                        <FormField label="Quantity *">
                           <FormInput
                             type="number"
                             value={order.quantity}
-                            onChange={(e) => handleConvertOrderChange(order.id, "quantity", e.target.value)}
+                            onChange={(e) => { handleConvertOrderChange(order.id, "quantity", e.target.value); setConvertFormErrors((p) => { const n = { ...p }; delete n[`co${index}_quantity`]; return n; }); }}
                             placeholder="Enter quantity..."
+                            className={convertFormErrors[`co${index}_quantity`] ? "is-invalid" : ""}
                           />
                         </FormField>
+                        {convertFormErrors[`co${index}_quantity`] && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{convertFormErrors[`co${index}_quantity`]}</span>}
                       </div>
 
                       <div className="col-lg-6 col-md-12">
@@ -1951,7 +2026,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                               <FormSelect
                                 value={order.fromLocation}
                                 onChange={(e) => handleConvertOrderChange(order.id, "fromLocation", e.target.value)}
-                                options={mergeOptionForValue(warehouseLocationOptions, order.fromLocation)}
+                                options={mergeOptionForValue(transportLocationOptions, order.fromLocation)}
                                 placeholder="Select from location..."
                               />
                             </FormField>
@@ -1973,7 +2048,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                               <FormSelect
                                 value={order.toLocation}
                                 onChange={(e) => handleConvertOrderChange(order.id, "toLocation", e.target.value)}
-                                options={mergeOptionForValue(warehouseLocationOptions, order.toLocation)}
+                                options={mergeOptionForValue(transportLocationOptions, order.toLocation)}
                                 placeholder="Select to location..."
                               />
                             </FormField>
@@ -2018,46 +2093,17 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
 
                         <div className="col-lg-4 col-md-6">
                           <FormField label="Dispatch Date">
-                            <div className="cf-select cf-date-input">
-                              <input
-                                type="date"
-                                value={order.dispatchDate}
-                                onChange={(e) => handleConvertOrderChange(order.id, "dispatchDate", e.target.value)}
-                                onClick={(e) => e.stopPropagation()}
-                                style={{
-                                  width: "100%",
-                                  border: "none",
-                                  outline: "none",
-                                  background: "transparent",
-                                  fontSize: "14px",
-                                  color: "#1a1a1a",
-                                  fontFamily: "inherit",
-                                  padding: 0,
-                                  flex: 1,
-                                  cursor: "pointer",
-                                }}
-                              />
-                              <svg
-                                width="18"
-                                height="18"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                style={{
-                                  flexShrink: 0,
-                                  marginLeft: "8px",
-                                  color: "#666",
-                                  pointerEvents: "none",
-                                  position: "relative",
-                                  zIndex: 1,
-                                }}
-                              >
-                                <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
-                                <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                              </svg>
-                            </div>
+                            <DateTimePickerField
+                              dateValue={order.dispatchDate}
+                              timeValue={order.dispatchTime}
+                              onDateTimeChange={(v) => {
+                                handleConvertOrderChange(order.id, "dispatchDate", v.date);
+                                handleConvertOrderChange(order.id, "dispatchTime", v.time);
+                              }}
+                              dateFieldName="dispatchDate"
+                              timeFieldName="dispatchTime"
+                              placeholder="YYYY-MM-DD hh:mm"
+                            />
                           </FormField>
                         </div>
                       </div>
@@ -2136,18 +2182,20 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       <button
         type="submit"
         form="convertToLandingForm"
+        disabled={isBeingConverted}
         style={{
           padding: "10px 20px",
           backgroundColor: "#00368c",
           color: "white",
           border: "none",
           borderRadius: "6px",
-          cursor: "pointer",
+          cursor: isBeingConverted ? "not-allowed" : "pointer",
           fontSize: "14px",
           fontWeight: "500",
+          opacity: isBeingConverted ? 0.7 : 1,
         }}
       >
-        Convert
+        {isBeingConverted ? "Converting..." : "Convert"}
       </button>
     </div>
   );
@@ -2229,7 +2277,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                       <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{item.description}</div>
                     </div>
                   )}
-                  {item.transportation_required === 1 && item.transportation && (
+                  {Number(item.transportation_required) === 1 && item.transportation && (
                     <div style={{ borderTop: "1px dashed #ccc", paddingTop: "12px", marginTop: "8px" }}>
                       <div style={{ fontWeight: "600", color: "#555", marginBottom: "10px", fontSize: "13px" }}>Transportation</div>
                       <div className="view-row" style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
