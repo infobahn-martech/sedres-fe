@@ -63,11 +63,19 @@ const useLandingNoteReducer = create((set) => ({
         }
     },
 
-    convertLandingNote: async ({ data, cb }) => {
+    convertLandingNote: async ({ data, landingNoteId, cb }) => {
         try {
             set({ isLoadingConvert: true });
             const { data: resData } = await landingNoteService.convertLandingNoteToDispatch(data);
-            set({ isLoadingConvert: false });
+            set((state) => ({
+                isLoadingConvert: false,
+                landingNotes: landingNoteId != null
+                    ? state.landingNotes.filter((n) => (n.landing_note_id ?? n.id) !== landingNoteId)
+                    : state.landingNotes,
+                landingTotal: landingNoteId != null
+                    ? Math.max(0, state.landingTotal - 1)
+                    : state.landingTotal,
+            }));
             const { success } = useAlertReducer.getState();
             success(resData?.message ?? 'Landing note converted to dispatch note successfully');
             cb?.(resData);

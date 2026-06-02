@@ -86,11 +86,19 @@ const useInboundOrderReducer = create((set) => ({
         }
     },
 
-    convertInboundToLandingNote: async ({ data, cb }) => {
+    convertInboundToLandingNote: async ({ data, inboundId, cb }) => {
         try {
             set({ isBeingConverted: true });
             const { data: resData } = await inboundOrderService.convertInboundToLandingNote(data);
-            set({ isBeingConverted: false });
+            set((state) => ({
+                isBeingConverted: false,
+                inboundOrders: inboundId != null
+                    ? state.inboundOrders.filter((o) => (o.inbound_id ?? o.id) !== inboundId)
+                    : state.inboundOrders,
+                inboundTotal: inboundId != null
+                    ? Math.max(0, state.inboundTotal - 1)
+                    : state.inboundTotal,
+            }));
             const { success } = useAlertReducer.getState();
             success(resData?.message ?? 'Inbound converted to landing note successfully');
             cb?.();

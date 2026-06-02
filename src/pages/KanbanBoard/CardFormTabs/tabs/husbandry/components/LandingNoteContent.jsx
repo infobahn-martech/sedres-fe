@@ -728,6 +728,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     fd.append("items", JSON.stringify(items));
     convertLandingNote({
       data: fd,
+      landingNoteId,
       cb: () => {
         handleCloseConvertModal();
         if (callId) getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });

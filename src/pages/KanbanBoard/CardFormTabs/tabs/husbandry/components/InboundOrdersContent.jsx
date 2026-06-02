@@ -1208,6 +1208,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     fd.append("items", JSON.stringify(items));
     convertInboundToLandingNote({
       data: fd,
+      inboundId,
       cb: () => {
         handleCloseConvertModal();
         getAllInbound({ call_id: callId, page: inboundPage, limit: INBOUND_LIMIT });
