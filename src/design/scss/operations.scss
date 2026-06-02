@@ -8848,6 +8848,14 @@ body .material-management-modal .modal-body {
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
+
+  @media (max-width: 575px) {
+    padding: 16px 14px;
+  }
+
+  @media (min-width: 576px) and (max-width: 767px) {
+    padding: 20px 20px;
+  }
 }
 
 body .material-management-modal .modal-body::-webkit-scrollbar {
@@ -8898,32 +8906,35 @@ body .material-management-modal {
   .btn.btn-primary,
   button.btn-primary,
   button[type="submit"] {
-    background-color: #e2e6ff !important;
-    border-color: #e2e6ff !important;
-    color: #1a1a1a !important;
+    background-color: #00368c !important;
+    border-color: #00368c !important;
+    color: #ffffff !important;
 
     &:hover,
     &:focus,
     &:active {
-      background-color: #e2e6ff !important;
-      border-color: #e2e6ff !important;
-      opacity: 0.9;
+      background-color: #002d76 !important;
+      border-color: #002d76 !important;
+      color: #ffffff !important;
+      opacity: 1;
     }
   }
 
   .btn-secondary,
   .btn.btn-secondary,
   button.btn-secondary {
-    background-color: #e2e6ff !important;
-    border-color: #e2e6ff !important;
+    background-color: #ffffff !important;
+    border-color: #c5cbee !important;
+    border-width: 1.5px !important;
     color: #1a1a1a !important;
 
     &:hover,
     &:focus,
     &:active {
-      background-color: #e2e6ff !important;
-      border-color: #e2e6ff !important;
-      opacity: 0.9;
+      background-color: #f4f5ff !important;
+      border-color: #a0a8db !important;
+      color: #1a1a1a !important;
+      opacity: 1;
     }
   }
 
@@ -8959,25 +8970,33 @@ body .material-management-modal {
     }
   }
 
-  /* File upload zone — compact height to match field widths */
+  /* File upload zone — compact height, full width to match cf-input/cf-select */
+  .document-upload-wrapper {
+    width: 100% !important;
+    display: block !important;
+  }
+
   .document-upload-zone {
-    height: auto !important;
-    min-height: 56px !important;
+    width: 100% !important;
     max-width: 100% !important;
+    height: auto !important;
+    min-height: 42px !important;
+    box-sizing: border-box !important;
     padding: 8px 16px !important;
-    border-color: #e2e6ff !important;
+    border-color: #c5cbee !important;
+    border-radius: 8px !important;
 
     &:hover {
-      border-color: #e2e6ff !important;
+      border-color: #a0a8db !important;
       background: rgba(226, 230, 255, 0.1) !important;
       transform: none !important;
       box-shadow: none !important;
     }
 
     &.dragging {
-      border-color: #e2e6ff !important;
+      border-color: #7b86cc !important;
       background: rgba(226, 230, 255, 0.15) !important;
-      box-shadow: 0 0 0 4px rgba(226, 230, 255, 0.3) !important;
+      box-shadow: 0 0 0 3px rgba(226, 230, 255, 0.3) !important;
       transform: none !important;
     }
   }
