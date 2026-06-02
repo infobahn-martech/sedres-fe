@@ -15,6 +15,7 @@ import eyeIcon from "../../../../../../assets/images/eye.svg";
 import logisticsWarehouseService from "../../../../../../services/logisticsWarehouseService";
 import packingTypeService from "../../../../../../services/packingTypeService";
 import useInboundOrderReducer from "../../../../../../store/InboundOrderReducer";
+import useLandingNoteReducer from "../../../../../../store/LandingNoteReducer";
 import inboundOrderService from "../../../../../../services/inboundOrderService";
 import vehicleService from "../../../../../../services/vehicleService";
 import driverService from "../../../../../../services/driverService";
@@ -190,6 +191,8 @@ const ReactQuillEditor = ({ value, onChange, placeholder, name = "remarks", clas
 };
 
 const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
+  const { saveLandingNote, isLoadingSave: isLoadingSaveLandingNote } = useLandingNoteReducer((state) => state);
+
   const {
     saveInboundOrder,
     updateInboundOrder,
@@ -1116,9 +1119,27 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
 
   const handleConvertSubmit = (e) => {
     e.preventDefault();
-    console.log("Convert to Landing form submitted:", convertFormData);
-    // Here you can implement the logic to save/convert the order to landing note
-    handleCloseConvertModal();
+    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
+    const payload = new FormData();
+    payload.append("call_id", callId);
+    payload.append("landing_date", convertFormData.date);
+    payload.append("warehouse_id", convertFormData.warehouse || "");
+    payload.append("remarks", convertFormData.remarks || "");
+    if (convertFormData.documents?.length) {
+      convertFormData.documents.forEach((doc) => {
+        if (doc.file instanceof File) payload.append("file", doc.file);
+      });
+    }
+    convertFormData.orders.forEach((order, index) => {
+      payload.append(`items[${index}][inbound_id]`, convertingOrder?.inbound_id || "");
+      payload.append(`items[${index}][po_no]`, order.poDo || "");
+      payload.append(`items[${index}][quantity]`, order.quantity || "");
+      payload.append(`items[${index}][description]`, order.description || "");
+    });
+    saveLandingNote({
+      data: payload,
+      cb: handleCloseConvertModal,
+    });
   };
 
 
@@ -2136,18 +2157,20 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       <button
         type="submit"
         form="convertToLandingForm"
+        disabled={isLoadingSaveLandingNote}
         style={{
           padding: "10px 20px",
           backgroundColor: "#00368c",
           color: "white",
           border: "none",
           borderRadius: "6px",
-          cursor: "pointer",
+          cursor: isLoadingSaveLandingNote ? "not-allowed" : "pointer",
           fontSize: "14px",
           fontWeight: "500",
+          opacity: isLoadingSaveLandingNote ? 0.7 : 1,
         }}
       >
-        Convert
+        {isLoadingSaveLandingNote ? "Converting..." : "Convert"}
       </button>
     </div>
   );
