@@ -2286,8 +2286,10 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                   </div>
                   {item.description && (
                     <div className="view-row" style={{ marginBottom: "12px" }}>
+                      <div className="view-item" style={{ flex: "1" }}>
                       <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Description</div>
                       <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{item.description}</div>
+                      </div>
                     </div>
                   )}
                   {Number(item.transportation_required) === 1 && item.transportation && (
