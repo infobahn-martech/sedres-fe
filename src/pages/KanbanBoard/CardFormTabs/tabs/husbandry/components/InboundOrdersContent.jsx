@@ -2240,6 +2240,12 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
               <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "8px", fontSize: "14px" }}>Date</div>
               <div className="view-value" style={{ color: "#1a1a1a", fontSize: "15px" }}>{formatDate(viewingOrder.inbound_date, viewingOrder.inbound_time || viewingOrder.time) || "-"}</div>
             </div>
+            <div className="view-item" style={{ flex: "1", minWidth: "200px" }}>
+              <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "8px", fontSize: "14px" }}>Warehouse</div>
+              <div className="view-value" style={{ color: "#1a1a1a", fontSize: "15px" }}>
+                {warehouseLocationOptions.find((o) => o.value === String(viewingOrder.warehouse_id))?.label || viewingOrder.warehouse || "-"}
+              </div>
+            </div>
           </div>
 
           {viewingOrder.remarks && (
@@ -2289,8 +2295,40 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                       <div style={{ fontWeight: "600", color: "#555", marginBottom: "10px", fontSize: "13px" }}>Transportation</div>
                       <div className="view-row" style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
                         <div className="view-item" style={{ flex: "1", minWidth: "140px" }}>
+                          <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Type of Vehicle</div>
+                          <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>
+                            {item.transportation.vehicle_type_name ||
+                              materialVehicleOptions.find((o) => o.value === String(item.transportation.vehicle_type_id))?.label ||
+                              "-"}
+                          </div>
+                        </div>
+                        <div className="view-item" style={{ flex: "1", minWidth: "140px" }}>
+                          <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>From Location</div>
+                          <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>
+                            {item.transportation.from_location_name ||
+                              transportLocationOptions.find((o) => o.value === String(item.transportation.from_location_id))?.label ||
+                              "-"}
+                          </div>
+                        </div>
+                        <div className="view-item" style={{ flex: "1", minWidth: "140px" }}>
                           <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Pick-Up From</div>
                           <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{item.transportation.pickup_location || "-"}</div>
+                        </div>
+                        <div className="view-item" style={{ flex: "1", minWidth: "140px" }}>
+                          <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>To Location</div>
+                          <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>
+                            {item.transportation.to_location_name ||
+                              transportLocationOptions.find((o) => o.value === String(item.transportation.to_location_id))?.label ||
+                              "-"}
+                          </div>
+                        </div>
+                        <div className="view-item" style={{ flex: "1", minWidth: "140px" }}>
+                          <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Driver Name</div>
+                          <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>
+                            {item.transportation.driver_name ||
+                              materialDriverOptions.find((o) => o.value === String(item.transportation.driver_id))?.label ||
+                              "-"}
+                          </div>
                         </div>
                       </div>
                     </div>
