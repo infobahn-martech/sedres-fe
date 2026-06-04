@@ -1697,10 +1697,8 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
 
           {/* Order Details Section */}
           <div>
-            <div style={{ marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "18px", fontWeight: "600", margin: 0, color: "#1a1a1a" }}>
-                Order Details
-              </h3>
+            <div className="mb-3">
+              <h3 className="fw-semibold mb-0">Order Details</h3>
             </div>
 
             {convertFormData.orders.map((order, index) => (
