@@ -210,7 +210,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   } = useInboundOrderReducer((state) => state);
 
   const [showModal, setShowModal] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
+  const [printingId, setPrintingId] = useState(null);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [convertFormErrors, setConvertFormErrors] = useState({});
   const [showViewModal, setShowViewModal] = useState(false);
@@ -795,8 +795,8 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   const handlePrintOrder = async (order) => {
     handleCloseDropdown();
     const inboundId = resolveInboundId(order);
-    if (!inboundId || isPrinting) return;
-    setIsPrinting(true);
+    if (!inboundId || printingId) return;
+    setPrintingId(inboundId);
     try {
       const response = await inboundOrderService.printInboundOrder(inboundId);
       const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -807,7 +807,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       const { error: showError } = useAlertReducer.getState();
       showError(err?.response?.data?.message ?? 'Failed to generate print');
     } finally {
-      setIsPrinting(false);
+      setPrintingId(null);
     }
   };
 
@@ -2247,23 +2247,23 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         <button
           type="button"
           onClick={() => handlePrintOrder(viewingOrder)}
-          disabled={isPrinting}
+          disabled={!!printingId}
           style={{
             padding: "10px 20px",
             backgroundColor: "#00368c",
             color: "white",
             border: "none",
             borderRadius: "6px",
-            cursor: isPrinting ? "not-allowed" : "pointer",
+            cursor: printingId === resolveInboundId(viewingOrder) ? "not-allowed" : "pointer",
             fontSize: "14px",
             fontWeight: "500",
-            opacity: isPrinting ? 0.7 : 1,
+            opacity: printingId === resolveInboundId(viewingOrder) ? 0.7 : 1,
             display: "flex",
             alignItems: "center",
             gap: "6px",
           }}
         >
-          {isPrinting ? (
+          {printingId === resolveInboundId(viewingOrder) ? (
             <>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ animation: "spin 1s linear infinite" }}>
                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
@@ -2395,24 +2395,24 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                         type="button"
                         onClick={() => handlePrintOrder(order)}
                         data-tooltip-id={`print-order-${rowKey}`}
-                        disabled={isPrinting}
+                        disabled={!!printingId}
                         style={{
                           padding: "6px 8px",
                           backgroundColor: "transparent",
                           border: "none",
                           borderRadius: "4px",
-                          cursor: isPrinting ? "not-allowed" : "pointer",
+                          cursor: printingId === resolveInboundId(order) ? "not-allowed" : "pointer",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           color: "#00368c",
-                          opacity: isPrinting ? 0.5 : 1,
+                          opacity: printingId === resolveInboundId(order) ? 0.5 : 1,
                           transition: "background-color 0.2s"
                         }}
-                        onMouseEnter={(e) => { if (!isPrinting) e.currentTarget.style.backgroundColor = "#f0f0f0"; }}
+                        onMouseEnter={(e) => { if (!printingId) e.currentTarget.style.backgroundColor = "#f0f0f0"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                       >
-                        {isPrinting ? (
+                        {printingId === resolveInboundId(order) ? (
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ animation: "spin 1s linear infinite" }}>
                             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
                           </svg>
