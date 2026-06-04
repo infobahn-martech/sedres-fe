@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import CustomModal from "../../../../../../components/CustomModal";
-import CustomDeleteModal from "../../../../../../components/CustomDeleteModal";
+import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 import { FormField, FormInput, FormSelect, ReactQuillEditor } from "./Husbandry.components";
 import DateTimePickerField from "../../../components/DateTimePickerField";
 import MaterialTablePagination from "./MaterialTablePagination";
@@ -1900,12 +1900,11 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         dialgName="modal-dialog modal-dialog-centered"
       />
 
-      <CustomDeleteModal
-        showModal={showDeleteModal}
-        closeModal={() => { setShowDeleteModal(false); setSelectedDeleteNote(null); }}
-        deleteTitle="Delete Landing Note"
-        discription="Are you sure you want to delete this landing note? This action cannot be undone"
-        handleDelete={handleDeleteConfirm}
+      <DeleteConfirmationModal
+        show={showDeleteModal}
+        onCancel={() => { setShowDeleteModal(false); setSelectedDeleteNote(null); }}
+        onConfirm={handleDeleteConfirm}
+        deleteText="Are you sure you want to delete this landing note?"
         isLoading={isLoadingDelete}
       />
     </div>
