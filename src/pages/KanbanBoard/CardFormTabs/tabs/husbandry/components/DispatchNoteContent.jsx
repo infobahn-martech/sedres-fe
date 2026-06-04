@@ -11,6 +11,18 @@ import deleteIcon from "../../../../../../assets/images/delete.svg";
 import eyeIcon from "../../../../../../assets/images/eye.svg";
 import useDispatchNoteReducer from "../../../../../../store/DispatchNoteReducer";
 
+const isTruthyFlag = (value) => value === true || Number(value) === 1 || String(value).toLowerCase() === "true";
+
+const getTransportation = (item) => item?.transportation || item?.transport || null;
+
+const getFileUrl = (filePath) => {
+  const base = (import.meta.env.VITE_API_ENDPOINT || "").replace(/\/+$/, "");
+  const path = (filePath || "").replace(/^\/+/, "");
+  return `${base}/${path}`;
+};
+
+const isImageFile = (fileName) => /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName || "");
+
 // Generate dummy dispatch note data
 const generateDummyDispatchNotes = () => {
   const packageTypes = ["Box", "Pallet", "Crate", "Bag", "Container"];
@@ -45,7 +57,7 @@ const generateDummyDispatchNotes = () => {
 };
 
 const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
-  const { getAllDispatchNotes, getDispatchNoteById, dispatchNotes, dispatchTotal, isLoadingList } = useDispatchNoteReducer((state) => state);
+  const { getAllDispatchNotes, getDispatchNoteById, dispatchNotes, dispatchTotal, isLoadingList, isLoadingDetail } = useDispatchNoteReducer((state) => state);
 
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -259,6 +271,12 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
     handleCloseDropdown();
     setViewingNote(note);
     setShowViewModal(true);
+    getDispatchNoteById({
+      id: note.id || note.dispatch_note_id,
+      cb: (detail) => {
+        if (detail) setViewingNote(detail);
+      },
+    });
   };
 
   const handleCloseViewModal = () => {
@@ -628,86 +646,208 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
   const renderViewBody = () => {
     if (!viewingNote) return null;
 
+    if (isLoadingDetail) {
+      return (
+        <div className="modal-body">
+          <div className="d-flex justify-content-center align-items-center py-5">
+            <span className="spinner-border spinner-border-sm me-2" role="status" />
+            Loading...
+          </div>
+        </div>
+      );
+    }
+
+    const viewItems = Array.isArray(viewingNote.items) ? viewingNote.items : [];
+    const documents = Array.isArray(viewingNote.documents) ? viewingNote.documents : [];
+
     return (
       <div className="modal-body">
-        <div className="view-vessel-container" style={{ padding: "20px" }}>
-          {/* Note Information */}
-          <div className="view-row" style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "20px" }}>
-            <div className="view-item" style={{ flex: "1", minWidth: "200px" }}>
-              <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "8px", fontSize: "14px" }}>Order No</div>
-              <div className="view-value" style={{ color: "#1a1a1a", fontSize: "15px" }}>{viewingNote.orderNo || "-"}</div>
+        <div className="lead-form">
+          <div className="row g-3 mb-3">
+            <div className="col-md-4">
+              <label className="landing-view-label">Dispatch Note No</label>
+              <div className="landing-view-box">{viewingNote.dispatch_note_no || "-"}</div>
             </div>
-            <div className="view-item" style={{ flex: "1", minWidth: "200px" }}>
-              <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "8px", fontSize: "14px" }}>Date</div>
-              <div className="view-value" style={{ color: "#1a1a1a", fontSize: "15px" }}>{formatDate(viewingNote.date) || "-"}</div>
+            <div className="col-md-4">
+              <label className="landing-view-label">Dispatch Date</label>
+              <div className="landing-view-box">{formatDate(viewingNote.dispatch_date) || "-"}</div>
             </div>
-            <div className="view-item" style={{ flex: "1", minWidth: "200px" }}>
-              <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "8px", fontSize: "14px" }}>PO/DO</div>
-              <div className="view-value" style={{ color: "#1a1a1a", fontSize: "15px" }}>{viewingNote.poDo || "-"}</div>
+            <div className="col-md-4">
+              <label className="landing-view-label">Warehouse</label>
+              <div className="landing-view-box">{viewingNote.warehouse_id || "-"}</div>
             </div>
-          </div>
-
-          <div className="view-row" style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "20px" }}>
-            <div className="view-item" style={{ flex: "1", minWidth: "200px" }}>
-              <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "8px", fontSize: "14px" }}>Quantity</div>
-              <div className="view-value" style={{ color: "#1a1a1a", fontSize: "15px" }}>{viewingNote.quantity || "-"}</div>
+            <div className="col-md-4">
+              <label className="landing-view-label">Delivery Location</label>
+              <div className="landing-view-box">{viewingNote.delivery_location || "-"}</div>
             </div>
-            <div className="view-item" style={{ flex: "1", minWidth: "200px" }}>
-              <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "8px", fontSize: "14px" }}>Package Type</div>
-              <div className="view-value" style={{ color: "#1a1a1a", fontSize: "15px" }}>{viewingNote.packageType || "-"}</div>
+            <div className="col-md-4">
+              <label className="landing-view-label">Delivered To</label>
+              <div className="landing-view-box">{viewingNote.delivered_to || "-"}</div>
             </div>
-            <div className="view-item" style={{ flex: "1", minWidth: "200px" }}>
-              <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "8px", fontSize: "14px" }}>Delivery Proof</div>
-              <div className="view-value" style={{ color: "#1a1a1a", fontSize: "15px" }}>
-                {viewingNote.deliveryProof && viewingNote.deliveryProof.length > 0 ? `${viewingNote.deliveryProof.length} file(s)` : "No files"}
+            {viewingNote.signature && (
+              <div className="col-md-4">
+                <label className="landing-view-label">Signature</label>
+                <div className="landing-view-box">{viewingNote.signature}</div>
               </div>
+            )}
+            <div className="col-12">
+              <label className="landing-view-label">Documents</label>
+              {documents.length > 0 ? (
+                <div className="landing-doc-list">
+                  {documents.map((doc, i) => {
+                    const fileName = doc.file_name || doc.name || `File ${i + 1}`;
+                    const fileUrl = getFileUrl(doc.file_path || doc.file_url || "");
+                    const isImg = isImageFile(fileName);
+                    return (
+                      <div key={i} className="landing-doc-card">
+                        {isImg ? (
+                          <img src={fileUrl} alt={fileName} className="landing-doc-thumbnail" />
+                        ) : (
+                          <div className="landing-doc-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#00368c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <path d="M14 2V8H20" stroke="#00368c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="landing-doc-info">
+                          <div className="landing-doc-name">{fileName}</div>
+                          {doc.remarks && <div className="landing-doc-remarks">{doc.remarks}</div>}
+                        </div>
+                        <a href={fileUrl} target="_blank" rel="noreferrer" className="landing-doc-view-btn">View</a>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="landing-view-box">No files</div>
+              )}
             </div>
+            {viewingNote.remarks && (
+              <div className="col-12">
+                <label className="landing-view-label">Remarks</label>
+                <div className="landing-view-box landing-view-box--textarea" dangerouslySetInnerHTML={{ __html: viewingNote.remarks }} />
+              </div>
+            )}
           </div>
 
-          <div className="view-row" style={{ marginBottom: "20px" }}>
-            <div className="view-item" style={{ width: "100%" }}>
-              <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "8px", fontSize: "14px" }}>Description</div>
-              <div className="view-value" style={{ color: "#1a1a1a", fontSize: "15px" }}>{viewingNote.description || "-"}</div>
+          {viewItems.length > 0 && (
+            <div className="landing-view-items-section">
+              <h4 className="fw-semibold mb-3">Items</h4>
+              {viewItems.map((item, idx) => {
+                const transport = getTransportation(item);
+                const hasTransport = isTruthyFlag(item.transportation_required) || Boolean(transport);
+                const hasPacking = isTruthyFlag(item.packing_required);
+                return (
+                  <div key={item.dispatch_note_item_id || idx} className="landing-view-item-card">
+                    <div className="landing-view-item-title">
+                      Item {idx + 1}{item.order_no ? ` — ${item.order_no}` : ""}
+                    </div>
+                    <div className="row g-2 mb-2">
+                      <div className="col-md-3 col-6">
+                        <label className="landing-view-label">PO No</label>
+                        <div className="landing-view-box">{item.po_no || "-"}</div>
+                      </div>
+                      <div className="col-md-3 col-6">
+                        <label className="landing-view-label">Quantity</label>
+                        <div className="landing-view-box">{item.quantity ?? "-"}</div>
+                      </div>
+                      <div className="col-md-3 col-6">
+                        <label className="landing-view-label">Package Type</label>
+                        <div className="landing-view-box">{item.package_type || "-"}</div>
+                      </div>
+                      <div className="col-md-3 col-6">
+                        <label className="landing-view-label">Description</label>
+                        <div className="landing-view-box">{item.description || "-"}</div>
+                      </div>
+                    </div>
+
+                    {(item.slot || item.reason) && (
+                      <div className="landing-view-sub-section">
+                        <div className="landing-view-sub-title">Dispatch Details</div>
+                        <div className="row g-2">
+                          {item.slot && (
+                            <div className="col-md-6 col-6">
+                              <label className="landing-view-label">Slot</label>
+                              <div className="landing-view-box">{item.slot}</div>
+                            </div>
+                          )}
+                          {item.reason && (
+                            <div className="col-md-6 col-6">
+                              <label className="landing-view-label">Reason</label>
+                              <div className="landing-view-box">{item.reason}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {hasPacking && (
+                      <div className="landing-view-sub-section">
+                        <div className="landing-view-sub-title">Packing</div>
+                        <div className="row g-2">
+                          <div className="col-md-4 col-6">
+                            <label className="landing-view-label">Repacking Pallets</label>
+                            <div className="landing-view-box">{item.repacking_pallets ?? "-"}</div>
+                          </div>
+                          <div className="col-md-4 col-6">
+                            <label className="landing-view-label">Repacking Rolls</label>
+                            <div className="landing-view-box">{item.repacking_rolls ?? "-"}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {hasTransport && transport && (
+                      <div className="landing-view-sub-section">
+                        <div className="landing-view-sub-title">Transportation</div>
+                        <div className="row g-2">
+                          <div className="col-md-4 col-6">
+                            <label className="landing-view-label">Vehicle Type</label>
+                            <div className="landing-view-box">{transport.vehicle_type_name || transport.vehicle_type_id || "-"}</div>
+                          </div>
+                          <div className="col-md-4 col-6">
+                            <label className="landing-view-label">From Location</label>
+                            <div className="landing-view-box">{transport.from_location_name || transport.from_location_id || "-"}</div>
+                          </div>
+                          <div className="col-md-4 col-6">
+                            <label className="landing-view-label">Pick-Up From</label>
+                            <div className="landing-view-box">{transport.pickup_location || "-"}</div>
+                          </div>
+                          <div className="col-md-4 col-6">
+                            <label className="landing-view-label">To Location</label>
+                            <div className="landing-view-box">{transport.to_location_name || transport.to_location_id || "-"}</div>
+                          </div>
+                          <div className="col-md-4 col-6">
+                            <label className="landing-view-label">Driver</label>
+                            <div className="landing-view-box">{transport.driver_name || transport.driver_id || "-"}</div>
+                          </div>
+                          {transport.remarks && (
+                            <div className="col-md-4 col-6">
+                              <label className="landing-view-label">Remarks</label>
+                              <div className="landing-view-box landing-view-box--textarea" dangerouslySetInnerHTML={{ __html: transport.remarks }} />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          )}
         </div>
       </div>
     );
   };
 
   const renderViewFooter = () => (
-    <div className="modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "12px", padding: "16px 24px" }}>
-      <button
-        type="button"
-        onClick={handleCloseViewModal}
-        style={{
-          padding: "10px 20px",
-          backgroundColor: "#f5f5f5",
-          color: "#333",
-          border: "1px solid #e2e2ea",
-          borderRadius: "6px",
-          cursor: "pointer",
-          fontSize: "14px",
-          fontWeight: "500",
-        }}
-      >
+    <div className="modal-footer">
+      <button type="button" className="btn btn-secondary" onClick={handleCloseViewModal}>
         Close
       </button>
       {viewingNote && (
-        <button
-          type="button"
-          onClick={() => handlePrintNote(viewingNote)}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#00368c",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: "500",
-          }}
-        >
+        <button type="button" className="btn btn-primary" onClick={() => handlePrintNote(viewingNote)}>
           Print
         </button>
       )}
