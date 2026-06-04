@@ -1904,7 +1904,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         show={showDeleteModal}
         onCancel={() => { setShowDeleteModal(false); setSelectedDeleteNote(null); }}
         onConfirm={handleDeleteConfirm}
-        deleteText="Are you sure you want to delete this landing note?"
+        deleteText={`Are you sure you want to delete landing note ${selectedDeleteNote?.landingNoteNo || selectedDeleteNote?.landing_note_no || ""}?`}
         isLoading={isLoadingDelete}
       />
     </div>
