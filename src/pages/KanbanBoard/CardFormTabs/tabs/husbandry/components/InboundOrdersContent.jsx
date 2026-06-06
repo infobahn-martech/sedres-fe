@@ -7,11 +7,13 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import CustomModal from "../../../../../../components/CustomModal";
 import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
+import CardTabListLoading from "../../../../../../components/CardTabListLoading";
 import { FormField, FormInput, FormSelect, FormTextarea } from "./Husbandry.components";
 import DateTimePickerField from "../../../components/DateTimePickerField";
 import editIcon from "../../../../../../assets/images/edit.svg";
 import deleteIcon from "../../../../../../assets/images/delete.svg";
 import eyeIcon from "../../../../../../assets/images/eye.svg";
+import printIcon from "../../../../../../assets/images/print.svg";
 import logisticsWarehouseService from "../../../../../../services/logisticsWarehouseService";
 import packingTypeService from "../../../../../../services/packingTypeService";
 import useInboundOrderReducer from "../../../../../../store/InboundOrderReducer";
@@ -210,6 +212,8 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   } = useInboundOrderReducer((state) => state);
 
   const [showModal, setShowModal] = useState(false);
+
+
   const [printingId, setPrintingId] = useState(null);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [convertFormErrors, setConvertFormErrors] = useState({});
@@ -251,7 +255,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       slotNo: "",
       reason: "",
       dispatchDate: "",
-          dispatchTime: ""
+      dispatchTime: ""
     }], // Order Details array
   });
 
@@ -262,6 +266,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     warehouse: "",
     receivedFrom: "",
     location: "",
+    signature: "",
     documents: [],
     remarks: "",
     orders: [{
@@ -280,7 +285,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       slotNo: "",
       reason: "",
       dispatchDate: "",
-          dispatchTime: ""
+      dispatchTime: ""
     }],
   });
 
@@ -358,57 +363,57 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     const apiItems = Array.isArray(order.items) ? order.items : [];
     const orderItems = apiItems.length > 0
       ? apiItems.map((item, idx) => ({
-          id: item.inbound_item_id || idx + 1,
-          orderNo: item.order_no || "",
-          poDo: item.po_no || "",
-          quantity: item.quantity || "",
-          packageType: String(item.package_type_id || ""),
-          description: item.description || "",
-          transportation: Number(item.transportation_required) === 1,
-          typeOfVehicle: item.transportation
-            ? String(item.transportation.vehicle_type_id || "") ||
-              (materialVehicleOptions.find((o) => o.label.toLowerCase() === (item.transportation.vehicle_type_name || "").toLowerCase())?.value || "") ||
-              (item.transportation.vehicle_type_name ? String(item.transportation.vehicle_type_name) : "")
-            : "",
-          fromLocation: item.transportation
-            ? String(item.transportation.from_location_id || "") ||
-              (transportLocationOptions.find((o) => o.label.toLowerCase() === (item.transportation.from_location_name || "").toLowerCase())?.value || "") ||
-              (item.transportation.from_location_name ? String(item.transportation.from_location_name) : "")
-            : "",
-          pickUpFrom: item.transportation ? item.transportation.pickup_location || "" : "",
-          toLocation: item.transportation
-            ? String(item.transportation.to_location_id || "") ||
-              (transportLocationOptions.find((o) => o.label.toLowerCase() === (item.transportation.to_location_name || "").toLowerCase())?.value || "") ||
-              (item.transportation.to_location_name ? String(item.transportation.to_location_name) : "")
-            : "",
-          driverName: item.transportation
-            ? String(item.transportation.driver_id || "") ||
-              (materialDriverOptions.find((o) => o.label.toLowerCase() === (item.transportation.driver_name || "").toLowerCase())?.value || "") ||
-              (item.transportation.driver_name ? String(item.transportation.driver_name) : "")
-            : "",
-          slotNo: "",
-          reason: "",
-          dispatchDate: "",
-          dispatchTime: "",
-        }))
+        id: item.inbound_item_id || idx + 1,
+        orderNo: item.order_no || "",
+        poDo: item.po_no || "",
+        quantity: item.quantity || "",
+        packageType: String(item.package_type_id || ""),
+        description: item.description || "",
+        transportation: Number(item.transportation_required) === 1,
+        typeOfVehicle: item.transportation
+          ? String(item.transportation.vehicle_type_id || "") ||
+          (materialVehicleOptions.find((o) => o.label.toLowerCase() === (item.transportation.vehicle_type_name || "").toLowerCase())?.value || "") ||
+          (item.transportation.vehicle_type_name ? String(item.transportation.vehicle_type_name) : "")
+          : "",
+        fromLocation: item.transportation
+          ? String(item.transportation.from_location_id || "") ||
+          (transportLocationOptions.find((o) => o.label.toLowerCase() === (item.transportation.from_location_name || "").toLowerCase())?.value || "") ||
+          (item.transportation.from_location_name ? String(item.transportation.from_location_name) : "")
+          : "",
+        pickUpFrom: item.transportation ? item.transportation.pickup_location || "" : "",
+        toLocation: item.transportation
+          ? String(item.transportation.to_location_id || "") ||
+          (transportLocationOptions.find((o) => o.label.toLowerCase() === (item.transportation.to_location_name || "").toLowerCase())?.value || "") ||
+          (item.transportation.to_location_name ? String(item.transportation.to_location_name) : "")
+          : "",
+        driverName: item.transportation
+          ? String(item.transportation.driver_id || "") ||
+          (materialDriverOptions.find((o) => o.label.toLowerCase() === (item.transportation.driver_name || "").toLowerCase())?.value || "") ||
+          (item.transportation.driver_name ? String(item.transportation.driver_name) : "")
+          : "",
+        slotNo: "",
+        reason: "",
+        dispatchDate: "",
+        dispatchTime: "",
+      }))
       : [{
-          id: 1,
-          orderNo: "",
-          poDo: "",
-          quantity: "",
-          packageType: "",
-          description: "",
-          transportation: false,
-          typeOfVehicle: "",
-          fromLocation: "",
-          pickUpFrom: "",
-          toLocation: "",
-          driverName: "",
-          slotNo: "",
-          reason: "",
-          dispatchDate: "",
-          dispatchTime: "",
-        }];
+        id: 1,
+        orderNo: "",
+        poDo: "",
+        quantity: "",
+        packageType: "",
+        description: "",
+        transportation: false,
+        typeOfVehicle: "",
+        fromLocation: "",
+        pickUpFrom: "",
+        toLocation: "",
+        driverName: "",
+        slotNo: "",
+        reason: "",
+        dispatchDate: "",
+        dispatchTime: "",
+      }];
 
     const { date: editDate, time: editTime } = splitApiDateTimeParts(
       order.inbound_date || order.date || "",
@@ -444,7 +449,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
             const detail = data?.data;
             if (detail) populateFormFromOrder(detail);
           })
-          .catch(() => {});
+          .catch(() => { });
       }
       return;
     }
@@ -471,7 +476,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         slotNo: "",
         reason: "",
         dispatchDate: "",
-          dispatchTime: "",
+        dispatchTime: "",
       }],
     });
     setExpandedOrders({ 1: true });
@@ -503,7 +508,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         slotNo: "",
         reason: "",
         dispatchDate: "",
-          dispatchTime: ""
+        dispatchTime: ""
       }],
     });
   };
@@ -687,7 +692,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         slotNo: "",
         reason: "",
         dispatchDate: "",
-          dispatchTime: ""
+        dispatchTime: ""
       }],
     });
     setExpandedOrders({ 1: true });
@@ -825,29 +830,28 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       transportation_id: item.transportation?.transportation_id ? Number(item.transportation.transportation_id) : null,
       typeOfVehicle: item.transportation
         ? String(item.transportation.vehicle_type_id || "") ||
-          (materialVehicleOptions.find((o) => o.label.toLowerCase() === (item.transportation.vehicle_type_name || "").toLowerCase())?.value || "") ||
-          (item.transportation.vehicle_type_name ? String(item.transportation.vehicle_type_name) : "")
+        (materialVehicleOptions.find((o) => o.label.toLowerCase() === (item.transportation.vehicle_type_name || "").toLowerCase())?.value || "") ||
+        (item.transportation.vehicle_type_name ? String(item.transportation.vehicle_type_name) : "")
         : "",
       fromLocation: item.transportation
         ? String(item.transportation.from_location_id || "") ||
-          (transportLocationOptions.find((o) => o.label.toLowerCase() === (item.transportation.from_location_name || "").toLowerCase())?.value || "") ||
-          (item.transportation.from_location_name ? String(item.transportation.from_location_name) : "")
+        (transportLocationOptions.find((o) => o.label.toLowerCase() === (item.transportation.from_location_name || "").toLowerCase())?.value || "") ||
+        (item.transportation.from_location_name ? String(item.transportation.from_location_name) : "")
         : "",
       pickUpFrom: item.transportation ? item.transportation.pickup_location || "" : "",
       toLocation: item.transportation
         ? String(item.transportation.to_location_id || "") ||
-          (transportLocationOptions.find((o) => o.label.toLowerCase() === (item.transportation.to_location_name || "").toLowerCase())?.value || "") ||
-          (item.transportation.to_location_name ? String(item.transportation.to_location_name) : "")
+        (transportLocationOptions.find((o) => o.label.toLowerCase() === (item.transportation.to_location_name || "").toLowerCase())?.value || "") ||
+        (item.transportation.to_location_name ? String(item.transportation.to_location_name) : "")
         : "",
       driverName: item.transportation
         ? String(item.transportation.driver_id || "") ||
-          (materialDriverOptions.find((o) => o.label.toLowerCase() === (item.transportation.driver_name || "").toLowerCase())?.value || "") ||
-          (item.transportation.driver_name ? String(item.transportation.driver_name) : "")
+        (materialDriverOptions.find((o) => o.label.toLowerCase() === (item.transportation.driver_name || "").toLowerCase())?.value || "") ||
+        (item.transportation.driver_name ? String(item.transportation.driver_name) : "")
         : "",
-      slotNo: "",
-      reason: "",
-      dispatchDate: "",
-      dispatchTime: "",
+      slotNo: item.slot_no || (item.slot_no_id != null ? `Slot ${item.slot_no_id}` : (item.slotNo != null ? String(item.slotNo) : "")),
+      reason: item.reason_id != null ? String(item.reason_id) : (item.reason != null ? String(item.reason) : ""),
+      ...splitApiDateTimeParts(item.dispatch_date || item.dispatchDate || ""),
     }));
   };
 
@@ -861,11 +865,14 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       time: `${pad(now.getHours())}:${pad(now.getMinutes())}`,
       warehouse: String(order.warehouse_id || ""),
       receivedFrom: "",
+      signature: "",
       location: "",
       documents: [],
       remarks: "",
-      orders: [{ id: 1, inbound_item_id: null, orderNo: "", poDo: "", quantity: "", packageType: "", description: "", transportation: false, typeOfVehicle: "", fromLocation: "", pickUpFrom: "", toLocation: "", driverName: "", slotNo: "", reason: "", dispatchDate: "",
-          dispatchTime: "" }],
+      orders: [{
+        id: 1, inbound_item_id: null, orderNo: "", poDo: "", quantity: "", packageType: "", description: "", transportation: false, typeOfVehicle: "", fromLocation: "", pickUpFrom: "", toLocation: "", driverName: "", slotNo: "", reason: "", dispatchDate: "",
+        dispatchTime: ""
+      }],
     });
     setExpandedConvertOrders({ 1: true });
     setShowConvertModal(true);
@@ -884,12 +891,15 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
             setConvertFormData((prev) => ({
               ...prev,
               warehouse: String(detail.warehouse_id || prev.warehouse),
+              receivedFrom: detail.received_from || prev.receivedFrom || "",
+              location: detail.location || prev.location || "",
+              signature: detail.signature || prev.signature || "",
               orders,
             }));
             setExpandedConvertOrders(exp);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   };
 
@@ -903,6 +913,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       warehouse: "",
       receivedFrom: "",
       location: "",
+      signature: "",
       documents: [],
       remarks: "",
       orders: [{
@@ -921,7 +932,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
         slotNo: "",
         reason: "",
         dispatchDate: "",
-          dispatchTime: ""
+        dispatchTime: ""
       }],
     });
   };
@@ -1074,6 +1085,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     if (!convertFormData.location) errors.location = "Location is required";
     convertFormData.orders.forEach((order, idx) => {
       if (!order.quantity) errors[`co${idx}_quantity`] = "Quantity is required";
+      if (!order.slotNo) errors[`co${idx}_slotNo`] = "Slot is required";
     });
     setConvertFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -1090,16 +1102,17 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     fd.append("call_id", callId);
     fd.append("warehouse_id", convertFormData.warehouse || "");
     fd.append("landing_date", landingDate);
+    fd.append("landing_note_number", "");
     fd.append("received_from", convertFormData.receivedFrom || "");
     fd.append("location", convertFormData.location || "");
     fd.append("signature", convertFormData.signature || "");
-    fd.append("remarks", convertFormData.remarks || "");
+    fd.append("remarks", (convertFormData.remarks || "").replace(/<[^>]*>/g, "").trim());
     if (convertFormData.documents?.length > 0) fd.append("file", convertFormData.documents[0].file ?? convertFormData.documents[0]);
     const items = convertFormData.orders.map((order) => ({
       inbound_item_id: order.inbound_item_id || null,
       quantity: Number(order.quantity) || 0,
-      slot_no_id: Number(order.slotNo) || 0,
-      reason_id: Number(order.reason) || 0,
+      slot_no: order.slotNo || "",
+      reason: order.reason || "",
       dispatch_date: order.dispatchDate ? (order.dispatchDate + (order.dispatchTime ? ` ${order.dispatchTime}` : "")) : "",
       transportation_required: order.transportation ? 1 : 0,
       transportation: order.transportation ? {
@@ -1129,6 +1142,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     { value: "Slot 3", label: "Slot 3" },
     { value: "Slot 4", label: "Slot 4" },
     { value: "Slot 5", label: "Slot 5" },
+    { value: "Slot 6", label: "Slot 6" },
   ];
 
   const reasonOptions = [
@@ -1149,10 +1163,8 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       <div className="lead-form">
         <form id="inboundOrderForm" onSubmit={handleSubmit}>
           {/* Basic Details Section */}
-          <div style={{ marginBottom: "20px", paddingBottom: "16px", borderBottom: "1px solid #e2e2ea" }}>
-            <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "14px", color: "#1a1a1a" }}>
-              Basic Details
-            </h3>
+          <div className="dispatch-edit-section">
+            <h3 className="dispatch-edit-section-title">Basic Details</h3>
             <div className="row g-2 mb-2">
               <div className="col-md-6 mb-2">
                 <FormField label="Date *">
@@ -1172,7 +1184,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                     placeholder="YYYY-MM-DD hh:mm"
                   />
                 </FormField>
-                {formErrors.date && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{formErrors.date}</span>}
+                {formErrors.date && <span className="dispatch-edit-error">{formErrors.date}</span>}
               </div>
 
               <div className="col-md-6 mb-2">
@@ -1187,7 +1199,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                     placeholder="Select warehouse"
                   />
                 </FormField>
-                {formErrors.warehouse && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{formErrors.warehouse}</span>}
+                {formErrors.warehouse && <span className="dispatch-edit-error">{formErrors.warehouse}</span>}
               </div>
 
             </div>
@@ -1195,39 +1207,9 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
 
           {/* Order Details Section */}
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "600", margin: 0, color: "#1a1a1a" }}>
-                Order Details
-              </h3>
-              <button
-                type="button"
-                onClick={handleAddNewOrder}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "10px 20px",
-                  backgroundColor: "#00368c",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  transition: "all 0.2s ease",
-                  boxShadow: "0 2px 4px rgba(0, 54, 140, 0.2)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#002d6b";
-                  e.currentTarget.style.transform = "translateY(-1px)";
-                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0, 54, 140, 0.3)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "#00368c";
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 2px 4px rgba(0, 54, 140, 0.2)";
-                }}
-              >
+            <div className="dispatch-section-header">
+              <h3 className="dispatch-edit-section-title" style={{ margin: 0 }}>Order Details</h3>
+              <button type="button" onClick={handleAddNewOrder} className="dispatch-add-order-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -1237,72 +1219,15 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
             </div>
 
             {formData.orders.map((order, index) => (
-              <div
-                key={order.id}
-                style={{
-                  marginBottom: "16px",
-                  border: "1px solid #e2e2ea",
-                  borderRadius: "8px",
-                  backgroundColor: "#f8f9fa",
-                  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
-                  transition: "all 0.2s ease",
-                  position: "relative",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#00368c";
-                  e.currentTarget.style.boxShadow = "0 2px 6px rgba(0, 54, 140, 0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#e2e2ea";
-                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
-                }}
-              >
-                <div
-                  onClick={() => toggleOrderExpand(order.id)}
-                  style={{
-                    padding: "12px 16px",
-                    backgroundColor: "#f8f9fa",
-                    cursor: "pointer",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    transition: "background-color 0.2s ease",
-                    borderRadius: expandedOrders[order.id] ? "8px 8px 0 0" : "8px",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#f0f1f5";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "#f8f9fa";
-                  }}
-                >
-                  <span style={{ fontSize: "14px", fontWeight: "600", color: "#1a1a1a" }}>
-                    Order {index + 1}
-                  </span>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <div key={order.id} className="dispatch-edit-item-card">
+                <div className="dispatch-edit-item-header" onClick={() => toggleOrderExpand(order.id)}>
+                  <span className="dispatch-edit-item-label">Order {index + 1}</span>
+                  <div className="dispatch-item-actions">
                     <button
                       type="button"
                       title="Add new order"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddNewOrder();
-                      }}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: "28px",
-                        height: "28px",
-                        backgroundColor: "#00368c",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        flexShrink: 0,
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#002d6b"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#00368c"; }}
+                      onClick={(e) => { e.stopPropagation(); handleAddNewOrder(); }}
+                      className="dispatch-order-icon-btn"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
@@ -1312,44 +1237,15 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                     {formData.orders.length > 1 && (
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveOrder(order.id);
-                        }}
-                        style={{
-                          padding: "6px 12px",
-                          backgroundColor: "#dc3545",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          fontSize: "12px",
-                          fontWeight: "500",
-                          transition: "all 0.2s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#c82333";
-                          e.currentTarget.style.transform = "translateY(-1px)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "#dc3545";
-                          e.currentTarget.style.transform = "translateY(0)";
-                        }}
+                        onClick={(e) => { e.stopPropagation(); handleRemoveOrder(order.id); }}
+                        className="dispatch-remove-order-btn"
                       >
                         Remove
                       </button>
                     )}
                     <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      style={{
-                        transform: expandedOrders[order.id] ? "rotate(180deg)" : "rotate(0deg)",
-                        transition: "transform 0.3s ease",
-                        color: "#666",
-                      }}
+                      width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                      className={`dispatch-edit-chevron${expandedOrders[order.id] ? " expanded" : ""}`}
                     >
                       <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -1357,7 +1253,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                 </div>
 
                 {expandedOrders[order.id] && (
-                  <div style={{ padding: "16px", backgroundColor: "white", borderRadius: "0 0 8px 8px" }}>
+                  <div className="dispatch-edit-item-body">
                     <div className="row g-2 mb-1">
                       <div className="col-lg-4 col-md-6">
                         <FormField label="PO/DO *">
@@ -1371,7 +1267,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                             placeholder="Enter PO/DO number..."
                           />
                         </FormField>
-                        {formErrors[`o${index}_poDo`] && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{formErrors[`o${index}_poDo`]}</span>}
+                        {formErrors[`o${index}_poDo`] && <span className="dispatch-edit-error">{formErrors[`o${index}_poDo`]}</span>}
                       </div>
 
                       <div className="col-lg-4 col-md-6">
@@ -1386,7 +1282,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                             placeholder="Enter quantity..."
                           />
                         </FormField>
-                        {formErrors[`o${index}_quantity`] && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{formErrors[`o${index}_quantity`]}</span>}
+                        {formErrors[`o${index}_quantity`] && <span className="dispatch-edit-error">{formErrors[`o${index}_quantity`]}</span>}
                       </div>
 
                       <div className="col-lg-4 col-md-6">
@@ -1401,7 +1297,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                             placeholder="Select package type..."
                           />
                         </FormField>
-                        {formErrors[`o${index}_packageType`] && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{formErrors[`o${index}_packageType`]}</span>}
+                        {formErrors[`o${index}_packageType`] && <span className="dispatch-edit-error">{formErrors[`o${index}_packageType`]}</span>}
                       </div>
 
                       <div className="col-lg-12 col-md-12">
@@ -1417,16 +1313,16 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                     </div>
 
                     {/* Transportation Section */}
-                    <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #e2e2ea" }}>
-                      <div style={{ marginBottom: "10px" }}>
-                        <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <div className="dispatch-transport-section">
+                      <div className="dispatch-edit-checkbox-group">
+                        <label className="dispatch-edit-checkbox-label">
                           <input
                             type="checkbox"
+                            className="dispatch-edit-checkbox"
                             checked={order.transportation || false}
                             onChange={(e) => handleOrderChange(order.id, "transportation", e.target.checked)}
-                            style={{ cursor: "pointer", width: "18px", height: "18px" }}
                           />
-                          <span style={{ fontSize: "14px", fontWeight: "600", color: "#1a1a1a" }}>Transportation</span>
+                          <span>Transportation</span>
                         </label>
                       </div>
 
@@ -1444,7 +1340,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                                 placeholder="Select type of vehicle..."
                               />
                             </FormField>
-                            {formErrors[`o${index}_typeOfVehicle`] && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{formErrors[`o${index}_typeOfVehicle`]}</span>}
+                            {formErrors[`o${index}_typeOfVehicle`] && <span className="dispatch-edit-error">{formErrors[`o${index}_typeOfVehicle`]}</span>}
                           </div>
 
                           <div className="col-lg-4 col-md-6">
@@ -1459,7 +1355,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                                 placeholder="Select from location..."
                               />
                             </FormField>
-                            {formErrors[`o${index}_fromLocation`] && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{formErrors[`o${index}_fromLocation`]}</span>}
+                            {formErrors[`o${index}_fromLocation`] && <span className="dispatch-edit-error">{formErrors[`o${index}_fromLocation`]}</span>}
                           </div>
 
                           <div className="col-lg-4 col-md-6">
@@ -1485,7 +1381,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                                 placeholder="Select to location..."
                               />
                             </FormField>
-                            {formErrors[`o${index}_toLocation`] && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{formErrors[`o${index}_toLocation`]}</span>}
+                            {formErrors[`o${index}_toLocation`] && <span className="dispatch-edit-error">{formErrors[`o${index}_toLocation`]}</span>}
                           </div>
 
                           <div className="col-lg-4 col-md-6">
@@ -1500,31 +1396,15 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                                 placeholder="Select driver name..."
                               />
                             </FormField>
-                            {formErrors[`o${index}_driverName`] && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{formErrors[`o${index}_driverName`]}</span>}
+                            {formErrors[`o${index}_driverName`] && <span className="dispatch-edit-error">{formErrors[`o${index}_driverName`]}</span>}
                           </div>
                         </div>
                       )}
                     </div>
 
                     {/* Plus button to add next order item without scrolling up */}
-                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "14px", paddingTop: "12px", borderTop: "1px solid #e2e2ea" }}>
-                      <button
-                        type="button"
-                        onClick={handleAddNewOrder}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          padding: "6px 14px",
-                          backgroundColor: "#00368c",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                        }}
-                      >
+                    <div className="dispatch-item-footer">
+                      <button type="button" onClick={handleAddNewOrder} className="dispatch-add-order-btn--sm">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                           <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -1557,55 +1437,19 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   );
 
   const renderFooter = () => (
-    <div className="modal-footer" style={{ display: "flex", justifyContent: "space-between", padding: "16px 24px" }}>
-      <button
-        type="button"
-        onClick={handleReset}
-        style={{
-          padding: "10px 20px",
-          backgroundColor: "#f5f5f5",
-          color: "#333",
-          border: "1px solid #e2e2ea",
-          borderRadius: "6px",
-          cursor: "pointer",
-          fontSize: "14px",
-          fontWeight: "500",
-        }}
-      >
+    <div className="modal-footer justify-content-between">
+      <button type="button" onClick={handleReset} className="btn btn-outline-secondary">
         Reset
       </button>
-      <div style={{ display: "flex", gap: "12px" }}>
-        <button
-          type="button"
-          onClick={handleCloseModal}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#f5f5f5",
-            color: "#333",
-            border: "1px solid #e2e2ea",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: "500",
-          }}
-        >
+      <div className="d-flex gap-2">
+        <button type="button" onClick={handleCloseModal} className="btn btn-secondary">
           Cancel
         </button>
         <button
           type="submit"
           form="inboundOrderForm"
           disabled={isSubmitting || isBeingUpdated}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#00368c",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: (isSubmitting || isBeingUpdated) ? "not-allowed" : "pointer",
-            fontSize: "14px",
-            fontWeight: "500",
-            opacity: (isSubmitting || isBeingUpdated) ? 0.7 : 1,
-          }}
+          className="btn btn-primary"
         >
           {editingOrder ? (isBeingUpdated ? "Updating..." : "Update") : (isSubmitting ? "Saving..." : "Save")}
         </button>
@@ -1625,10 +1469,8 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       <div className="lead-form">
         <form id="convertToLandingForm" onSubmit={handleConvertSubmit}>
           {/* Basic Details Section */}
-          <div style={{ marginBottom: "32px", paddingBottom: "24px", borderBottom: "1px solid #e2e2ea" }}>
-            <h3 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "20px", color: "#1a1a1a" }}>
-              Basic Details
-            </h3>
+          <div className="dispatch-edit-section">
+            <h3 className="dispatch-edit-section-title">Basic Details</h3>
             <div className="row mb-lg-3">
               <div className="col-md-6 mb-3">
                 <FormField label="Date *">
@@ -1645,7 +1487,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                     hasError={!!convertFormErrors.date}
                   />
                 </FormField>
-                {convertFormErrors.date && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{convertFormErrors.date}</span>}
+                {convertFormErrors.date && <span className="dispatch-edit-error">{convertFormErrors.date}</span>}
               </div>
 
               <div className="col-md-6 mb-3">
@@ -1655,16 +1497,15 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                     onChange={(e) => handleConvertFormChange("warehouse", e.target.value)}
                     options={mergeOptionForValue(warehouseLocationOptions, convertFormData.warehouse)}
                     placeholder="Select warehouse"
+                    disabled
                   />
                 </FormField>
               </div>
             </div>
 
             {/* Receipt Details Section */}
-            <div style={{ marginTop: "24px", paddingTop: "24px", borderTop: "1px solid #e2e2ea" }}>
-              <h3 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "20px", color: "#1a1a1a" }}>
-                Receipt Details
-              </h3>
+            <div className="dispatch-transport-section">
+              <h3 className="dispatch-edit-section-title">Receipt Details</h3>
               <div className="row mb-lg-3">
                 <div className="col-md-6 mb-3">
                   <FormField label="Received From *">
@@ -1676,9 +1517,22 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                       className={convertFormErrors.receivedFrom ? "is-invalid" : ""}
                     />
                   </FormField>
-                  {convertFormErrors.receivedFrom && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{convertFormErrors.receivedFrom}</span>}
+                  {convertFormErrors.receivedFrom && <span className="dispatch-edit-error">{convertFormErrors.receivedFrom}</span>}
                 </div>
 
+                <div className="col-md-6 mb-3">
+                  <FormField label="Signature">
+                    <FormInput
+                      type="text"
+                      value={convertFormData.signature}
+                      onChange={(e) => handleConvertFormChange("signature", e.target.value)}
+                      placeholder="Enter signature..."
+                    />
+                  </FormField>
+                </div>
+              </div>
+
+              <div className="row mb-lg-3">
                 <div className="col-md-6 mb-3">
                   <FormField label="Location *">
                     <FormInput
@@ -1689,7 +1543,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                       className={convertFormErrors.location ? "is-invalid" : ""}
                     />
                   </FormField>
-                  {convertFormErrors.location && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{convertFormErrors.location}</span>}
+                  {convertFormErrors.location && <span className="dispatch-edit-error">{convertFormErrors.location}</span>}
                 </div>
               </div>
             </div>
@@ -1697,132 +1551,18 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
 
           {/* Order Details Section */}
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "18px", fontWeight: "600", margin: 0, color: "#1a1a1a" }}>
-                Order Details
-              </h3>
-              <button
-                type="button"
-                onClick={handleAddNewConvertOrder}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "10px 20px",
-                  backgroundColor: "#00368c",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  transition: "all 0.2s ease",
-                  boxShadow: "0 2px 4px rgba(0, 54, 140, 0.2)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#002d6b";
-                  e.currentTarget.style.transform = "translateY(-1px)";
-                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0, 54, 140, 0.3)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "#00368c";
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 2px 4px rgba(0, 54, 140, 0.2)";
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-                Add New Order
-              </button>
+            <div className="dispatch-section-header">
+              <h3 className="dispatch-edit-section-title">Order Details</h3>
             </div>
 
             {convertFormData.orders.map((order, index) => (
-              <div
-                key={order.id}
-                style={{
-                  marginBottom: "16px",
-                  border: "1px solid #e2e2ea",
-                  borderRadius: "8px",
-                  backgroundColor: "#f8f9fa",
-                  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
-                  transition: "all 0.2s ease",
-                  position: "relative",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#00368c";
-                  e.currentTarget.style.boxShadow = "0 2px 6px rgba(0, 54, 140, 0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#e2e2ea";
-                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
-                }}
-              >
-                <div
-                  onClick={() => toggleConvertOrderExpand(order.id)}
-                  style={{
-                    padding: "12px 16px",
-                    backgroundColor: "#f8f9fa",
-                    cursor: "pointer",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    transition: "background-color 0.2s ease",
-                    borderRadius: expandedConvertOrders[order.id] ? "8px 8px 0 0" : "8px",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#f0f1f5";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "#f8f9fa";
-                  }}
-                >
-                  <span style={{ fontSize: "14px", fontWeight: "600", color: "#1a1a1a" }}>
-                    Order {index + 1}
-                  </span>
-                  <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                    {convertFormData.orders.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveConvertOrder(order.id);
-                        }}
-                        style={{
-                          padding: "6px 12px",
-                          backgroundColor: "#dc3545",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          fontSize: "12px",
-                          fontWeight: "500",
-                          transition: "all 0.2s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#c82333";
-                          e.currentTarget.style.transform = "translateY(-1px)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "#dc3545";
-                          e.currentTarget.style.transform = "translateY(0)";
-                        }}
-                      >
-                        Remove
-                      </button>
-                    )}
+              <div key={order.id} className="dispatch-edit-item-card">
+                <div className="dispatch-edit-item-header" onClick={() => toggleConvertOrderExpand(order.id)}>
+                  <span className="dispatch-edit-item-label">Order {index + 1}</span>
+                  <div className="dispatch-item-actions">
                     <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      style={{
-                        transform: expandedConvertOrders[order.id] ? "rotate(180deg)" : "rotate(0deg)",
-                        transition: "transform 0.3s ease",
-                        color: "#666",
-                      }}
+                      width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                      className={`dispatch-edit-chevron${expandedConvertOrders[order.id] ? " expanded" : ""}`}
                     >
                       <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -1830,15 +1570,16 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                 </div>
 
                 {expandedConvertOrders[order.id] && (
-                  <div style={{ padding: "16px", backgroundColor: "white", borderRadius: "0 0 8px 8px" }}>
+                  <div className="dispatch-edit-item-body">
                     <div className="row g-2 mb-1">
                       <div className="col-lg-4 col-md-6">
                         <FormField label="Order No">
                           <FormInput
                             type="text"
                             value={order.orderNo}
-                            onChange={(e) => handleConvertOrderChange(order.id, "orderNo", e.target.value)}
                             placeholder="Enter order number..."
+                            readOnly
+                            disabled
                           />
                         </FormField>
                       </div>
@@ -1848,8 +1589,9 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                           <FormInput
                             type="text"
                             value={order.poDo}
-                            onChange={(e) => handleConvertOrderChange(order.id, "poDo", e.target.value)}
                             placeholder="Enter PO/DO number..."
+                            readOnly
+                            disabled
                           />
                         </FormField>
                       </div>
@@ -1859,12 +1601,13 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                           <FormInput
                             type="number"
                             value={order.quantity}
-                            onChange={(e) => { handleConvertOrderChange(order.id, "quantity", e.target.value); setConvertFormErrors((p) => { const n = { ...p }; delete n[`co${index}_quantity`]; return n; }); }}
                             placeholder="Enter quantity..."
                             className={convertFormErrors[`co${index}_quantity`] ? "is-invalid" : ""}
+                            readOnly
+                            disabled
                           />
                         </FormField>
-                        {convertFormErrors[`co${index}_quantity`] && <span style={{ color: "#dc3545", fontSize: "12px", display: "block", marginTop: "-12px", marginBottom: "4px" }}>{convertFormErrors[`co${index}_quantity`]}</span>}
+                        {convertFormErrors[`co${index}_quantity`] && <span className="dispatch-edit-error">{convertFormErrors[`co${index}_quantity`]}</span>}
                       </div>
 
                       <div className="col-lg-6 col-md-12">
@@ -1872,8 +1615,9 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                           <FormInput
                             type="text"
                             value={order.description}
-                            onChange={(e) => handleConvertOrderChange(order.id, "description", e.target.value)}
                             placeholder="Enter description..."
+                            readOnly
+                            disabled
                           />
                         </FormField>
                       </div>
@@ -1885,22 +1629,24 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                             onChange={(e) => handleConvertOrderChange(order.id, "packageType", e.target.value)}
                             options={mergeOptionForValue(packageTypeOptions, order.packageType)}
                             placeholder="Select package type..."
+                            disabled
                           />
                         </FormField>
                       </div>
                     </div>
 
                     {/* Transportation Section */}
-                    <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #e2e2ea" }}>
-                      <div style={{ marginBottom: "10px" }}>
-                        <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                    <div className="dispatch-transport-section">
+                      <div className="dispatch-edit-checkbox-group">
+                        <label className="dispatch-edit-checkbox-label">
                           <input
                             type="checkbox"
+                            className="dispatch-edit-checkbox"
                             checked={order.transportation || false}
                             onChange={(e) => handleConvertOrderChange(order.id, "transportation", e.target.checked)}
-                            style={{ cursor: "pointer", width: "18px", height: "18px" }}
+                            disabled
                           />
-                          <span style={{ fontSize: "14px", fontWeight: "600", color: "#1a1a1a" }}>Transportation</span>
+                          <span>Transportation</span>
                         </label>
                       </div>
 
@@ -1913,6 +1659,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                                 onChange={(e) => handleConvertOrderChange(order.id, "typeOfVehicle", e.target.value)}
                                 options={mergeOptionForValue(materialVehicleOptions, order.typeOfVehicle)}
                                 placeholder="Select type of vehicle..."
+                                disabled
                               />
                             </FormField>
                           </div>
@@ -1924,6 +1671,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                                 onChange={(e) => handleConvertOrderChange(order.id, "fromLocation", e.target.value)}
                                 options={mergeOptionForValue(transportLocationOptions, order.fromLocation)}
                                 placeholder="Select from location..."
+                                disabled
                               />
                             </FormField>
                           </div>
@@ -1933,8 +1681,9 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                               <FormInput
                                 type="text"
                                 value={order.pickUpFrom}
-                                onChange={(e) => handleConvertOrderChange(order.id, "pickUpFrom", e.target.value)}
                                 placeholder="Enter pick-up location..."
+                                readOnly
+                                disabled
                               />
                             </FormField>
                           </div>
@@ -1946,6 +1695,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                                 onChange={(e) => handleConvertOrderChange(order.id, "toLocation", e.target.value)}
                                 options={mergeOptionForValue(transportLocationOptions, order.toLocation)}
                                 placeholder="Select to location..."
+                                disabled
                               />
                             </FormField>
                           </div>
@@ -1957,6 +1707,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                                 onChange={(e) => handleConvertOrderChange(order.id, "driverName", e.target.value)}
                                 options={mergeOptionForValue(materialDriverOptions, order.driverName)}
                                 placeholder="Select driver name..."
+                                disabled
                               />
                             </FormField>
                           </div>
@@ -1966,14 +1717,16 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                       {/* Slot No, Reason, Dispatch Date - After Transportation */}
                       <div className="row g-2 mb-1" style={{ marginTop: "12px" }}>
                         <div className="col-lg-4 col-md-6">
-                          <FormField label="Slot No">
+                          <FormField label="Slot No *">
                             <FormSelect
                               value={order.slotNo}
                               onChange={(e) => handleConvertOrderChange(order.id, "slotNo", e.target.value)}
                               options={slotNoOptions}
                               placeholder="Select slot no..."
+                              className={convertFormErrors[`co${index}_slotNo`] ? "is-invalid" : ""}
                             />
                           </FormField>
+                          {convertFormErrors[`co${index}_slotNo`] && <span className="dispatch-edit-error">{convertFormErrors[`co${index}_slotNo`]}</span>}
                         </div>
 
                         <div className="col-lg-4 col-md-6">
@@ -2012,29 +1765,25 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
           </div>
 
           {/* Documents & Remarks Section - Outside Order Details */}
-          <div style={{ marginTop: "32px", paddingTop: "24px", borderTop: "2px solid #e2e2ea" }}>
-            <h3 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "20px", color: "#1a1a1a" }}>
-              Documents & Remarks
-            </h3>
+          <div className="dispatch-edit-section dispatch-edit-section--last">
+            <h3 className="dispatch-edit-section-title">Documents & Remarks</h3>
 
             {/* Document Upload - Full Width */}
-            <div className="mb-lg-3 mb-sm-0" style={{ marginBottom: "24px" }}>
+            <div className="mb-2">
               <FormField label="Document Upload">
-                <div style={{ marginTop: "8px" }}>
-                  <AttachmentsList
-                    attachments={convertFormData.documents || []}
-                    onAdd={() => { }}
-                    onRemove={handleDocumentsRemove}
-                    cardColor={cardColor}
-                    isDragging={isDraggingDocuments}
-                    onDragEnter={handleDocumentsDragEnter}
-                    onDragLeave={handleDocumentsDragLeave}
-                    onDragOver={handleDocumentsDragOver}
-                    onDrop={handleDocumentsDrop}
-                    fileInputRef={documentsFileInputRef}
-                    onFileInputChange={handleDocumentsFileInputChange}
-                  />
-                </div>
+                <AttachmentsList
+                  attachments={convertFormData.documents || []}
+                  onAdd={() => { }}
+                  onRemove={handleDocumentsRemove}
+                  cardColor={cardColor}
+                  isDragging={isDraggingDocuments}
+                  onDragEnter={handleDocumentsDragEnter}
+                  onDragLeave={handleDocumentsDragLeave}
+                  onDragOver={handleDocumentsDragOver}
+                  onDrop={handleDocumentsDrop}
+                  fileInputRef={documentsFileInputRef}
+                  onFileInputChange={handleDocumentsFileInputChange}
+                />
               </FormField>
             </div>
 
@@ -2058,39 +1807,11 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   );
 
   const renderConvertFooter = () => (
-    <div className="modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "12px", padding: "16px 24px" }}>
-      <button
-        type="button"
-        onClick={handleCloseConvertModal}
-        style={{
-          padding: "10px 20px",
-          backgroundColor: "#f5f5f5",
-          color: "#333",
-          border: "1px solid #e2e2ea",
-          borderRadius: "6px",
-          cursor: "pointer",
-          fontSize: "14px",
-          fontWeight: "500",
-        }}
-      >
+    <div className="modal-footer">
+      <button type="button" onClick={handleCloseConvertModal} className="btn btn-secondary">
         Cancel
       </button>
-      <button
-        type="submit"
-        form="convertToLandingForm"
-        disabled={isBeingConverted}
-        style={{
-          padding: "10px 20px",
-          backgroundColor: "#00368c",
-          color: "white",
-          border: "none",
-          borderRadius: "6px",
-          cursor: isBeingConverted ? "not-allowed" : "pointer",
-          fontSize: "14px",
-          fontWeight: "500",
-          opacity: isBeingConverted ? 0.7 : 1,
-        }}
-      >
+      <button type="submit" form="convertToLandingForm" disabled={isBeingConverted} className="btn btn-primary">
         {isBeingConverted ? "Converting..." : "Convert"}
       </button>
     </div>
@@ -2107,7 +1828,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     if (isLoadingView) {
       return (
         <div className="modal-body">
-          <div style={{ textAlign: "center", padding: "40px", color: "#666", fontSize: "15px" }}>Loading...</div>
+          <CardTabListLoading message="Loading..." cardColor={cardColor} />
         </div>
       );
     }
@@ -2118,96 +1839,91 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
 
     return (
       <div className="modal-body">
-        <div className="view-vessel-container" style={{ padding: "20px" }}>
-          {/* Inbound Header */}
-          <div className="view-row" style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "20px" }}>
-            <div className="view-item" style={{ flex: "1", minWidth: "200px" }}>
-              <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "8px", fontSize: "14px" }}>Inbound No</div>
-              <div className="view-value" style={{ color: "#1a1a1a", fontSize: "15px" }}>{viewingOrder.inbound_no || "-"}</div>
+        <div className="lead-form">
+          <div className="row g-3 mb-3">
+            <div className="col-md-6">
+              <label className="landing-view-label">Inbound No</label>
+              <div className="landing-view-box">{viewingOrder.inbound_no || "-"}</div>
             </div>
-            <div className="view-item" style={{ flex: "1", minWidth: "200px" }}>
-              <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "8px", fontSize: "14px" }}>Date</div>
-              <div className="view-value" style={{ color: "#1a1a1a", fontSize: "15px" }}>{formatDate(viewingOrder.inbound_date, viewingOrder.inbound_time || viewingOrder.time) || "-"}</div>
+            <div className="col-md-6">
+              <label className="landing-view-label">Date</label>
+              <div className="landing-view-box">{formatDate(viewingOrder.inbound_date, viewingOrder.inbound_time || viewingOrder.time) || "-"}</div>
             </div>
+            {viewingOrder.remarks && (
+              <div className="col-12">
+                <label className="landing-view-label">Remarks</label>
+                <div className="landing-view-box">{viewingOrder.remarks}</div>
+              </div>
+            )}
           </div>
 
-          {viewingOrder.remarks && (
-            <div className="view-row" style={{ marginBottom: "20px" }}>
-              <div className="view-item" style={{ width: "100%" }}>
-                <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "8px", fontSize: "14px" }}>Remarks</div>
-                <div className="view-value" style={{ color: "#1a1a1a", fontSize: "15px" }}>{viewingOrder.remarks}</div>
-              </div>
-            </div>
-          )}
-
-          {/* Items */}
           {items.length > 0 && (
-            <div style={{ borderTop: "1px solid #e2e2ea", paddingTop: "20px", marginTop: "4px" }}>
-              <h4 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "16px", color: "#1a1a1a" }}>Order Items</h4>
+            <div className="landing-view-items-section">
+              <h4 className="fw-semibold mb-3">Order Items</h4>
               {items.map((item, idx) => (
-                <div key={item.inbound_item_id || idx} style={{ marginBottom: "24px", padding: "16px", backgroundColor: "#f9f9f9", borderRadius: "8px", border: "1px solid #e2e2ea" }}>
-                  <div style={{ fontWeight: "600", color: "#00368c", marginBottom: "12px", fontSize: "14px" }}>
+                <div key={item.inbound_item_id || idx} className="landing-view-item-card">
+                  <div className="landing-view-item-title">
                     Item {idx + 1}{item.order_no ? ` — ${item.order_no}` : ""}
                   </div>
-                  <div className="view-row" style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "12px" }}>
-                    <div className="view-item" style={{ flex: "1", minWidth: "160px" }}>
-                      <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>PO/DO</div>
-                      <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{item.po_no || "-"}</div>
+                  <div className="row g-2 mb-2">
+                    <div className="col-md-3 col-6">
+                      <label className="landing-view-label">PO/DO</label>
+                      <div className="landing-view-box">{item.po_no || "-"}</div>
                     </div>
-                    <div className="view-item" style={{ flex: "1", minWidth: "160px" }}>
-                      <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Quantity</div>
-                      <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{item.quantity ?? "-"}</div>
+                    <div className="col-md-3 col-6">
+                      <label className="landing-view-label">Quantity</label>
+                      <div className="landing-view-box">{item.quantity ?? "-"}</div>
                     </div>
-                    <div className="view-item" style={{ flex: "1", minWidth: "160px" }}>
-                      <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Package Type</div>
-                      <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>
+                    <div className="col-md-3 col-6">
+                      <label className="landing-view-label">Package Type</label>
+                      <div className="landing-view-box">
                         {item.package_type ||
                           packageTypeOptions.find((o) => o.value === String(item.package_type_id))?.label ||
                           "-"}
                       </div>
                     </div>
+                    {item.description && (
+                      <div className="col-md-3 col-6">
+                        <label className="landing-view-label">Description</label>
+                        <div className="landing-view-box">{item.description}</div>
+                      </div>
+                    )}
                   </div>
-                  {item.description && (
-                    <div className="view-row" style={{ marginBottom: "12px" }}>
-                      <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Description</div>
-                      <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{item.description}</div>
-                    </div>
-                  )}
                   {Number(item.transportation_required) === 1 && item.transportation && (
-                    <div style={{ borderTop: "1px dashed #ccc", paddingTop: "12px", marginTop: "8px" }}>
-                      <div style={{ fontWeight: "600", color: "#555", marginBottom: "10px", fontSize: "13px" }}>Transportation</div>
-                      <div className="view-row" style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
-                        <div className="view-item" style={{ flex: "1", minWidth: "140px" }}>
-                          <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Type of Vehicle</div>
-                          <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>
+                    <div className="landing-view-sub-section">
+                      <div className="landing-view-sub-title">Transportation</div>
+                      <div className="row g-2">
+                        <div className="col-md-4 col-6">
+                          <label className="landing-view-label">Type of Vehicle</label>
+                          <div className="landing-view-box">
                             {item.transportation.vehicle_type_name ||
                               materialVehicleOptions.find((o) => o.value === String(item.transportation.vehicle_type_id))?.label ||
                               "-"}
                           </div>
                         </div>
-                        <div className="view-item" style={{ flex: "1", minWidth: "140px" }}>
-                          <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>From Location</div>
-                          <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>
+                        <div className="col-md-4 col-6">
+                          <label className="landing-view-label">From Location</label>
+                          <div className="landing-view-box">
                             {item.transportation.from_location_name ||
                               transportLocationOptions.find((o) => o.value === String(item.transportation.from_location_id))?.label ||
                               "-"}
                           </div>
                         </div>
-                        <div className="view-item" style={{ flex: "1", minWidth: "140px" }}>
-                          <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Pick-Up From</div>
-                          <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>{item.transportation.pickup_location || "-"}</div>
+                        <div className="col-md-4 col-6">
+                          <label className="landing-view-label">Pick-Up From</label>
+                          <div className="landing-view-box">{item.transportation.pickup_location || "-"}</div>
                         </div>
-                        <div className="view-item" style={{ flex: "1", minWidth: "140px" }}>
-                          <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>To Location</div>
-                          <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>
+                        <div className="col-md-4 col-6">
+                          <label className="landing-view-label">To Location</label>
+                          <div className="landing-view-box">
                             {item.transportation.to_location_name ||
                               transportLocationOptions.find((o) => o.value === String(item.transportation.to_location_id))?.label ||
                               "-"}
                           </div>
                         </div>
-                        <div className="view-item" style={{ flex: "1", minWidth: "140px" }}>
-                          <div className="view-label" style={{ fontWeight: "600", color: "#666", marginBottom: "6px", fontSize: "13px" }}>Driver Name</div>
-                          <div className="view-value" style={{ color: "#1a1a1a", fontSize: "14px" }}>
+                        <div className="col-md-4 col-6">
+                          <label className="landing-view-label">Driver Name</label>
+                          <div className="landing-view-box">
                             {item.transportation.driver_name ||
                               materialDriverOptions.find((o) => o.value === String(item.transportation.driver_id))?.label ||
                               "-"}
@@ -2226,21 +1942,8 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
   };
 
   const renderViewFooter = () => (
-    <div className="modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "12px", padding: "16px 24px" }}>
-      <button
-        type="button"
-        onClick={handleCloseViewModal}
-        style={{
-          padding: "10px 20px",
-          backgroundColor: "#f5f5f5",
-          color: "#333",
-          border: "1px solid #e2e2ea",
-          borderRadius: "6px",
-          cursor: "pointer",
-          fontSize: "14px",
-          fontWeight: "500",
-        }}
-      >
+    <div className="modal-footer">
+      <button type="button" onClick={handleCloseViewModal} className="btn btn-secondary">
         Close
       </button>
       {viewingOrder && (
@@ -2272,6 +1975,13 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
               Printing...
             </>
           ) : "Print"}
+          disabled={Boolean(printingId)}
+          className="btn btn-primary"
+        >
+          {printingId
+            ? <span className="btn-spinner-content"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="icon-spinning"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" /></svg>Printing...</span>
+            : "Print"
+          }
         </button>
       )}
     </div>
@@ -2295,64 +2005,98 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       </div>
       <div className="table-wrapper table-responsive material-table-container" style={{ display: "flex", flexDirection: "column" }}>
         <div style={{ overflowY: "auto", maxHeight: "calc(100vh - 330px)", minHeight: 0 }}>
-        <table className="table table-striped material-table inbound-table" style={{ "--card-color": "#e2e6ff", tableLayout: "fixed" }}>
-          <thead style={{ position: "sticky", top: 0, zIndex: 1, backgroundColor: "#fff" }}>
-            <tr>
-              <th>Order No</th>
-              <th>Date</th>
-              <th>PO/DO</th>
-              <th>Quantity</th>
-              <th>Package Type</th>
-              <th>Description</th>
-              <th style={{ paddingLeft: "28px" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoadingOrders ? (
+          <table className="table table-striped material-table inbound-table" style={{ "--card-color": "#e2e6ff", tableLayout: "fixed" }}>
+            <thead style={{ position: "sticky", top: 0, zIndex: 1, backgroundColor: "#fff" }}>
               <tr>
-                <td colSpan="7" style={{ textAlign: "center", padding: "20px", color: "#666" }}>Loading...</td>
+                <th>Order No</th>
+                <th>Date</th>
+                <th>PO/DO</th>
+                <th>Quantity</th>
+                <th>Package Type</th>
+                <th>Description</th>
+                <th style={{ paddingLeft: "28px" }}>Actions</th>
               </tr>
-            ) : inboundOrders.length > 0 ? (
-              inboundOrders.map((order) => {
-                const firstItem = Array.isArray(order.items) ? order.items[0] : null;
-                const rowKey = order.inbound_id ?? order.id ?? Math.random();
-                const description = firstItem?.description || "";
-                return (
-                <tr key={rowKey}>
-                  <td>
-                    <div className="material-table-cell">{order.inbound_no || ""}</div>
-                  </td>
-                  <td>
-                    <div className="material-table-cell">
-                      {formatDate(order.inbound_date || order.date, order.inbound_time || order.time)}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="material-table-cell">{firstItem?.po_no || ""}</div>
-                  </td>
-                  <td>
-                    <div className="material-table-cell">{firstItem?.quantity ?? ""}</div>
-                  </td>
-                  <td>
-                    <div className="material-table-cell">
-                      {firstItem?.package_type ||
-                        packageTypeOptions.find((o) => o.value === String(firstItem?.package_type_id))?.label ||
-                        ""}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="material-table-cell">
-                      {description.length > 25 ? (
-                        <>
-                          <Tooltip
-                            id={`description-tooltip-${rowKey}`}
-                            place="right"
-                            content={description}
-                            className="material-table-tooltip"
-                          />
-                          <span
-                            data-tooltip-id={`description-tooltip-${rowKey}`}
-                            style={{ cursor: "help" }}
+            </thead>
+            <tbody>
+              {isLoadingOrders ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: "center", padding: "20px", color: "#666" }}>Loading...</td>
+                </tr>
+              ) : inboundOrders.length > 0 ? (
+                inboundOrders.map((order) => {
+                  const firstItem = Array.isArray(order.items) ? order.items[0] : null;
+                  const rowKey = order.inbound_id ?? order.id ?? Math.random();
+                  const description = firstItem?.description || "";
+                  return (
+                    <tr key={rowKey}>
+                      <td>
+                        <div className="material-table-cell">{order.inbound_no || ""}</div>
+                      </td>
+                      <td>
+                        <div className="material-table-cell">
+                          {formatDate(order.inbound_date || order.date, order.inbound_time || order.time)}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="material-table-cell">{firstItem?.po_no || ""}</div>
+                      </td>
+                      <td>
+                        <div className="material-table-cell">{firstItem?.quantity ?? ""}</div>
+                      </td>
+                      <td>
+                        <div className="material-table-cell">
+                          {firstItem?.package_type ||
+                            packageTypeOptions.find((o) => o.value === String(firstItem?.package_type_id))?.label ||
+                            ""}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="material-table-cell">
+                          {description.length > 25 ? (
+                            <>
+                              <Tooltip
+                                id={`description-tooltip-${rowKey}`}
+                                place="right"
+                                content={description}
+                                className="material-table-tooltip"
+                              />
+                              <span
+                                data-tooltip-id={`description-tooltip-${rowKey}`}
+                                style={{ cursor: "help" }}
+                              >
+                                {description.substring(0, 25)}...
+                              </span>
+                            </>
+                          ) : (
+                            <span>{description}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ position: "relative", overflow: "visible" }}>
+                        <div className="material-table-cell" style={{ position: "relative", overflow: "visible", display: "flex", alignItems: "center", gap: "8px", justifyContent: "flex-start" }}>
+                          <Tooltip id={`view-order-${rowKey}`} place="left" content="View" />
+                          <button
+                            type="button"
+                            onClick={() => handleViewOrder(order)}
+                            data-tooltip-id={`view-order-${rowKey}`}
+                            style={{
+                              padding: "6px 8px",
+                              backgroundColor: "transparent",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#00368c",
+                              transition: "background-color 0.2s"
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "#f0f0f0";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "transparent";
+                            }}
                           >
                             {description.substring(0, 25)}...
                           </span>
@@ -2488,96 +2232,177 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                         {openDropdownId === rowKey && createPortal(
                           <div
                             data-dropdown-menu
+                            <img src={eyeIcon} alt="view" style={{ width: "18px", height: "18px" }} />
+                          </button>
+                          <Tooltip id={`print-order-${rowKey}`} place="left" content="Print" />
+                          <button
+                            type="button"
+                            onClick={() => handlePrintOrder(order)}
+                            data-tooltip-id={`print-order-${rowKey}`}
+                            disabled={printingId === resolveInboundId(order)}
+                            className="print-action-icon-wrap"
+                          >
+                            {printingId === resolveInboundId(order) ? (
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="icon-spinning">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+                              </svg>
+                            ) : (
+                              <img src={printIcon} alt="print" className="material-action-icon" />
+                            )}
+                          </button>
+                          <Tooltip id={`convert-order-${rowKey}`} place="left" content=" Convert" />
+                          <button
+                            type="button"
+                            onClick={() => handleConvertToLanding(order)}
+                            data-tooltip-id={`convert-order-${rowKey}`}
                             style={{
-                              position: "fixed",
-                              top: `${dropdownPosition.top}px`,
-                              right: `${dropdownPosition.right}px`,
-                              backgroundColor: "white",
-                              border: "1px solid #e2e2ea",
-                              borderRadius: "6px",
-                              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-                              zIndex: 99999,
-                              minWidth: "180px",
-                              padding: "4px 0"
+                              padding: "6px 8px",
+                              backgroundColor: "transparent",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#00368c",
+                              transition: "background-color 0.2s"
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "#f0f0f0";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "transparent";
                             }}
                           >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M2 18L4 16L6 18L8 16L10 18L12 16L14 18L16 16L18 18L20 16L22 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <path d="M2 10L12 4L22 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <path d="M12 4V18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </button>
+                          <div className="action-dropdown-wrapper" style={{ position: "relative", display: "inline-block", zIndex: openDropdownId === rowKey ? 9999 : "auto" }}>
+                            <Tooltip id={`more-actions-${rowKey}`} place="left" content="More actions" />
                             <button
                               type="button"
-                              onClick={() => {
-                                handleCloseDropdown();
-                                handleOpenModal(order);
-                              }}
+                              onClick={(e) => handleToggleDropdown(rowKey, e)}
+                              data-tooltip-id={`more-actions-${rowKey}`}
                               style={{
-                                width: "100%",
-                                padding: "10px 16px",
+                                padding: "6px 8px",
                                 backgroundColor: "transparent",
                                 border: "none",
-                                textAlign: "left",
+                                borderRadius: "4px",
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
-                                gap: "10px",
-                                fontSize: "14px",
-                                color: "#1a1a1a",
-                                transition: "background-color 0.2s"
+                                justifyContent: "center",
+                                color: "#00368c"
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = "#f5f5f5";
+                                e.currentTarget.style.backgroundColor = "#f0f0f0";
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.backgroundColor = "transparent";
                               }}
                             >
-                              <img src={editIcon} alt="edit" style={{ width: "16px", height: "16px" }} />
-                              <span>Edit</span>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="6" r="1.5" fill="currentColor" />
+                                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                                <circle cx="12" cy="18" r="1.5" fill="currentColor" />
+                              </svg>
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                handleDelete(order);
-                              }}
-                              style={{
-                                width: "100%",
-                                padding: "10px 16px",
-                                backgroundColor: "transparent",
-                                border: "none",
-                                textAlign: "left",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "10px",
-                                fontSize: "14px",
-                                color: "#dc3545",
-                                transition: "background-color 0.2s"
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = "#f5f5f5";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = "transparent";
-                              }}
-                            >
-                              <img src={deleteIcon} alt="delete" style={{ width: "16px", height: "16px" }} />
-                              <span>Delete</span>
-                            </button>
-                          </div>,
-                          document.body
-                        )}
-                      </div>
-                    </div>
+                            {openDropdownId === rowKey && createPortal(
+                              <div
+                                data-dropdown-menu
+                                style={{
+                                  position: "fixed",
+                                  top: `${dropdownPosition.top}px`,
+                                  right: `${dropdownPosition.right}px`,
+                                  backgroundColor: "white",
+                                  border: "1px solid #e2e2ea",
+                                  borderRadius: "6px",
+                                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+                                  zIndex: 99999,
+                                  minWidth: "180px",
+                                  padding: "4px 0"
+                                }}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handleCloseDropdown();
+                                    handleOpenModal(order);
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "10px 16px",
+                                    backgroundColor: "transparent",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "10px",
+                                    fontSize: "14px",
+                                    color: "#1a1a1a",
+                                    transition: "background-color 0.2s"
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = "#f5f5f5";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = "transparent";
+                                  }}
+                                >
+                                  <img src={editIcon} alt="edit" style={{ width: "16px", height: "16px" }} />
+                                  <span>Edit</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handleDelete(order);
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "10px 16px",
+                                    backgroundColor: "transparent",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "10px",
+                                    fontSize: "14px",
+                                    color: "#dc3545",
+                                    transition: "background-color 0.2s"
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = "#f5f5f5";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = "transparent";
+                                  }}
+                                >
+                                  <img src={deleteIcon} alt="delete" style={{ width: "16px", height: "16px" }} />
+                                  <span>Delete</span>
+                                </button>
+                              </div>,
+                              document.body
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: "center", padding: "20px" }}>
+                    No inbound orders found.
                   </td>
                 </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan="7" style={{ textAlign: "center", padding: "20px" }}>
-                  No inbound orders found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
         </div>
         <MaterialTablePagination
           page={inboundPage}

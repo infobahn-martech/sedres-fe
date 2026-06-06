@@ -20,6 +20,7 @@ export function InwardClearanceToolbar(props) {
     <TaskDocumentUploadPanel
       anchorRef={props.inwardAnchorRef}
       fileInputRef={props.inwardFileInputRef}
+      showMainFileUpload={props.showMainFileUpload}
       isOpen={props.showInwardClearance}
       onToggle={props.onToggleInwardPopover}
       actionLabel={props.inwardActionLabel}
@@ -28,6 +29,9 @@ export function InwardClearanceToolbar(props) {
       onFileChange={props.onInwardFileChange}
       pickerParts={props.inwardPickerParts}
       onDateTimeChange={props.onInwardDateTimeChange}
+      timeObjectFields={props.timeObjectFields}
+      timeObjectsLoading={props.timeObjectsLoading}
+      extraStageFieldsContent={props.extraStageFieldsContent}
       onCancel={props.onInwardCancel}
       onSubmit={props.onInwardSubmit}
       isSaving={props.isSavingInward}
@@ -38,18 +42,22 @@ export function InwardClearanceToolbar(props) {
 
 InwardClearanceToolbar.propTypes = {
   inwardAnchorRef: PropTypes.shape({ current: PropTypes.any }).isRequired,
-  inwardFileInputRef: PropTypes.shape({ current: PropTypes.any }).isRequired,
+  inwardFileInputRef: PropTypes.shape({ current: PropTypes.any }),
+  showMainFileUpload: PropTypes.bool,
   showInwardClearance: PropTypes.bool.isRequired,
   onToggleInwardPopover: PropTypes.func.isRequired,
   inwardActionLabel: PropTypes.string,
   inwardPopoverTitle: PropTypes.string,
   inwardFile: PropTypes.any,
-  onInwardFileChange: PropTypes.func.isRequired,
+  onInwardFileChange: PropTypes.func,
   inwardPickerParts: PropTypes.shape({
     date: PropTypes.string,
     time: PropTypes.string,
-  }).isRequired,
-  onInwardDateTimeChange: PropTypes.func.isRequired,
+  }),
+  onInwardDateTimeChange: PropTypes.func,
+  timeObjectFields: PropTypes.array,
+  timeObjectsLoading: PropTypes.bool,
+  extraStageFieldsContent: PropTypes.node,
   onInwardCancel: PropTypes.func.isRequired,
   onInwardSubmit: PropTypes.func.isRequired,
   isSavingInward: PropTypes.bool.isRequired,

@@ -7,6 +7,7 @@ const useDispatchNoteReducer = create((set) => ({
     isLoadingDetail: false,
     isLoadingUpdate: false,
     isLoadingDelete: false,
+    isLoadingPrint: false,
     dispatchNotes: [],
     dispatchTotal: 0,
 
@@ -63,6 +64,29 @@ const useDispatchNoteReducer = create((set) => ({
             const { error } = useAlertReducer.getState();
             set({ isLoadingDelete: false });
             error(err?.response?.data?.message ?? err.message);
+        }
+    },
+
+    printDispatchNote: async ({ dispatchNoteId, landingNoteId, cb }) => {
+        try {
+            set({ isLoadingPrint: true });
+            const params = landingNoteId ? { landing_note_id: landingNoteId } : {};
+            const response = await dispatchNoteService.printDispatchNote(dispatchNoteId, params);
+            set({ isLoadingPrint: false });
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            cb?.(url);
+        } catch (err) {
+            const { error } = useAlertReducer.getState();
+            set({ isLoadingPrint: false });
+            if (err?.response?.data instanceof Blob) {
+                const text = await err.response.data.text();
+                try { error(JSON.parse(text)?.message ?? 'Failed to print dispatch note'); }
+                catch { error('Failed to print dispatch note'); }
+            } else {
+                error(err?.response?.data?.message ?? err.message);
+            }
+            cb?.(null);
         }
     },
 }));

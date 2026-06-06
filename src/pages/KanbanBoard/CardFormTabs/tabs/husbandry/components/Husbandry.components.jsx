@@ -183,14 +183,16 @@ FormField.propTypes = {
   className: PropTypes.string,
 };
 
-export const FormInput = ({ type = "text", value, onChange, placeholder, className = "" }) => {
+export const FormInput = ({ type = "text", value, onChange, placeholder, className = "", readOnly = false, disabled = false }) => {
   return (
     <div className={`cf-input ${className}`}>
       <input
         type={type}
         value={value}
-        onChange={onChange}
+        onChange={disabled ? undefined : onChange}
         placeholder={placeholder}
+        readOnly={readOnly}
+        disabled={disabled}
       />
     </div>
   );
@@ -198,10 +200,12 @@ export const FormInput = ({ type = "text", value, onChange, placeholder, classNa
 
 FormInput.propTypes = {
   type: PropTypes.string,
-  value: PropTypes.string,
-  onChange: PropTypes.func.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onChange: PropTypes.func,
   placeholder: PropTypes.string,
   className: PropTypes.string,
+  readOnly: PropTypes.bool,
+  disabled: PropTypes.bool,
 };
 
 // Custom Select Component (similar to MultiSelectEmail UI)

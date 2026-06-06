@@ -53,7 +53,7 @@ const StageTimeMappings = () => {
         },
         {
             name: "Port",
-            selector: "port_id",
+            selector: "port",
             sort: true,
             width: "120",
             thclass: "tb-head",
@@ -67,15 +67,15 @@ const StageTimeMappings = () => {
             thclass: "tb-head",
             contentClass: "table-content",
         },
-        {
-            name: "Time objects",
-            selector: "time_objects",
-            sort: false,
-            width: "360",
-            thclass: "tb-head",
-            contentClass: "table-content",
-            cell: TimeObjectsSummary,
-        },
+        // {
+        //     name: "Time objects",
+        //     selector: "time_objects",
+        //     sort: false,
+        //     width: "360",
+        //     thclass: "tb-head",
+        //     contentClass: "table-content",
+        //     cell: TimeObjectsSummary,
+        // },
         {
             name: "Actions",
             selector: "linksInfo",
@@ -116,9 +116,12 @@ const StageTimeMappings = () => {
                         isLoading={isLoadingGet}
                         pagination={{ currentPage: params.page, limit: params.limit }}
                         tableClasses="px-start"
-                        count={totalCount ?? 0}
+                        count={Number(totalCount) || 0}
                         columns={cols}
                         data={Array.isArray(stageTimeMappings) ? stageTimeMappings : []}
+                        getRowKey={(row) =>
+                            `${row?.stage_id ?? ""}-${row?.port_id ?? ""}-${row?.call_type_id ?? ""}`
+                        }
                         Sl={true}
                         onPageChange={(currentPage) =>
                             setParams({ ...params, page: currentPage })

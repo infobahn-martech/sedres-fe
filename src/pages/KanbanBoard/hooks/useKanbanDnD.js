@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { notify } from "../../../components/Toaster";
-import { userHasDeskSupervisorRole } from "../../../shared/helpers/groUserRoles";
+import { userHasDeskStartTaskRole } from "../../../shared/helpers/groUserRoles";
 import taskCardService from "../../../services/groService/taskCardService";
 import {
   findColumnByCardId,
@@ -285,7 +285,7 @@ export default function useKanbanDnD(workflows, setWorkflows, { userProfile, ref
       const sameColumn = startColumnKey === finishColumnKey;
 
       const shouldStartTask =
-        userHasDeskSupervisorRole(userProfile) &&
+        userHasDeskStartTaskRole(userProfile) &&
         !sameColumn &&
         isTodoToInProgressMove(workflow, startColumnKey, finishColumnKey);
 

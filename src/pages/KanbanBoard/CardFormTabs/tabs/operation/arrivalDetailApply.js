@@ -17,6 +17,7 @@ const normalizeImmigrationStatus = (raw) => {
   const text = String(raw ?? "").trim();
   if (!text) return "";
   const lower = text.toLowerCase();
+  if (lower === "pending") return "Pending";
   if (lower === "completed" || lower === "complete") return "Completed";
   if (
     lower === "on hold" ||
@@ -26,6 +27,25 @@ const normalizeImmigrationStatus = (raw) => {
   ) {
     return "On Hold";
   }
+  if (lower === "failed" || lower === "fail") return "Failed";
+  return text;
+};
+
+const normalizeWorkflowStatus = (raw) => {
+  const text = String(raw ?? "").trim();
+  if (!text) return "";
+  const lower = text.toLowerCase();
+  if (lower === "pending") return "Pending";
+  if (lower === "completed" || lower === "complete") return "Completed";
+  if (
+    lower === "on hold" ||
+    lower === "on_hold" ||
+    lower === "onhold" ||
+    lower === "hold"
+  ) {
+    return "On Hold";
+  }
+  if (lower === "failed" || lower === "fail") return "Failed";
   return text;
 };
 
@@ -90,7 +110,9 @@ export function applyArrivalGetDetailToForm({
   const root = responseBody?.data ?? responseBody ?? {};
   const timeObjects = root.time_objects ?? root.timeObjects ?? [];
 
-  const customsStatus = normalizeCustomsStatus(root.customs_status);
+  const customsStatus = normalizeCustomsStatus(
+    root.customs_status ?? root.custom_status
+  );
   if (customsStatus) {
     handleChange("customInspectionStatus")({ target: { value: customsStatus } });
   }
@@ -105,6 +127,37 @@ export function applyArrivalGetDetailToForm({
     handleChange("crewImmigrationHoldRemarks")({ target: { value: immigrationRemarks } });
   }
 
+  const inwardClearanceStatus = normalizeWorkflowStatus(root.inward_clearance_status);
+  if (inwardClearanceStatus) {
+    handleChange("inwardClearanceStatus")({ target: { value: inwardClearanceStatus } });
+  }
+
+  const mwpStatus = normalizeWorkflowStatus(root.mwp_status);
+  if (mwpStatus) {
+    handleChange("mwpStatus")({ target: { value: mwpStatus } });
+  }
+
+  const mwpTicketNo = String(root.mwp_ticket_no ?? "").trim();
+  if (mwpTicketNo) {
+    handleChange("mwpTicketNo")({ target: { value: mwpTicketNo } });
+  }
+
+  const sadadNo = String(root.sadad_no ?? root.sadadNo ?? "").trim();
+  if (sadadNo) {
+    handleChange("sadadNo")({ target: { value: sadadNo } });
+  }
+
+  const mwpExpiryRaw = root.mwp_expiry ?? root.mwpExpiry;
+  if (isUsableDateTime(mwpExpiryRaw)) {
+    const { date, time } = parseApiDateTimeParts(mwpExpiryRaw);
+    if (date) {
+      handleChange("marineWorkPermitExpiresDate")({ target: { value: date } });
+    }
+    if (time) {
+      handleChange("marineWorkPermitExpiresTime")({ target: { value: time } });
+    }
+  }
+
   const inwardEntry = buildAttachmentEntry(root.inward_clearance_doc, root.inward_clearance_doc_url);
   if (inwardEntry) {
     handleChange("arrivalInwardClearanceDoc")({ target: { value: [inwardEntry] } });
@@ -115,9 +168,25 @@ export function applyArrivalGetDetailToForm({
     handleChange("arrivalMwpDoc")({ target: { value: [mwpEntry] } });
   }
 
-  const bayanEntry = buildAttachmentEntry(root.bayan_doc, root.bayan_doc_url);
-  if (bayanEntry) {
-    handleChange("arrivalBayanDoc")({ target: { value: [bayanEntry] } });
+  const sadadEntry = buildAttachmentEntry(root.sadad_doc, root.sadad_doc_url);
+  if (sadadEntry) {
+    handleChange("arrivalSadadDoc")({ target: { value: [sadadEntry] } });
+  }
+
+  const initialBayanEntry = buildAttachmentEntry(
+    root.initial_bayan_doc,
+    root.initial_bayan_doc_url ?? root.bayan_doc_url
+  );
+  if (initialBayanEntry) {
+    handleChange("arrivalInitialBayanDoc")({ target: { value: [initialBayanEntry] } });
+  }
+
+  const finalBayanEntry = buildAttachmentEntry(
+    root.final_bayan_doc,
+    root.final_bayan_doc_url ?? root.bayan_doc_url
+  );
+  if (finalBayanEntry) {
+    handleChange("arrivalFinalBayanDoc")({ target: { value: [finalBayanEntry] } });
   }
 
   const allFields = [
@@ -133,11 +202,22 @@ export function applyArrivalGetDetailToForm({
 
     const toId = to?.time_object_id ?? to?.timeObjectId;
     const toName = to?.time_object ?? to?.event_name ?? "";
+    const fieldKey = String(to?.field_key ?? "").trim();
 
     let keyPrefix = "";
     const matched = allFields.find((field) => {
       const fid = field?.time_object_id ?? field?.event_type_id ?? field?.id;
       if (toId != null && fid != null && Number(fid) === Number(toId)) return true;
+      if (fieldKey) {
+        const candidateKeys = [
+          field?.field_key,
+          field?.keyPrefix,
+          getEventFieldKeyPrefix(field?.event_name ?? field?.time_object ?? ""),
+        ]
+          .map((value) => String(value ?? "").trim().toLowerCase())
+          .filter(Boolean);
+        if (candidateKeys.includes(fieldKey.toLowerCase())) return true;
+      }
       return (
         String(field?.event_name || "").trim().toLowerCase() ===
         String(toName).trim().toLowerCase()

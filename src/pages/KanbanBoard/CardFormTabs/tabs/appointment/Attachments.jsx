@@ -403,29 +403,84 @@ const getViewerUrl = (url, fileName = "") => {
   return url;
 };
 
-/** Map `body.data.attachments` — object keyed by category (e.g. Call File Open, GRO). */
-const mapAttachmentsResponse = (attachmentsByCategory) => {
-  if (!attachmentsByCategory || typeof attachmentsByCategory !== "object") return [];
+const mapDocumentRow = (item, category, idPrefix, index) => {
+  const fileName = item?.file_name != null ? String(item.file_name).trim() : "";
+  return {
+    id: `${idPrefix}::${index}::${fileName || "file"}`,
+    fileName,
+    uploadedBy: item?.uploaded_by != null ? String(item.uploaded_by) : "",
+    uploadedAt:
+      item?.date != null
+        ? String(item.date)
+        : item?.uploaded_at != null
+          ? String(item.uploaded_at)
+          : "",
+    fileUrl: item?.file_url ?? item?.url ?? null,
+    category,
+  };
+};
+
+/** Map category-keyed documents (e.g. `stage_documents`, legacy `attachments`). */
+const mapAttachmentsByCategory = (attachmentsByCategory) => {
+  if (!attachmentsByCategory || typeof attachmentsByCategory !== "object" || Array.isArray(attachmentsByCategory)) {
+    return [];
+  }
 
   const flat = [];
   Object.entries(attachmentsByCategory).forEach(([category, items]) => {
     if (!Array.isArray(items)) return;
     items.forEach((item, index) => {
-      const fileName = item?.file_name != null ? String(item.file_name).trim() : "";
-      flat.push({
-        id: `${category}::${index}::${fileName || "file"}`,
-        fileName,
-        uploadedBy: item?.uploaded_by != null ? String(item.uploaded_by) : "",
-        uploadedAt: item?.date != null ? String(item.date) : "",
-        fileUrl: item?.file_url ?? item?.url ?? null,
-        category,
-      });
+      flat.push(mapDocumentRow(item, category, category, index));
     });
   });
   return flat;
 };
 
-/** Map `body.data.checklist` — items with nested documents. */
+/** Flatten `task_documents` — object keyed by category or role/task groups. */
+const mapTaskDocumentsResponse = (taskDocuments) => {
+  if (!taskDocuments) return [];
+  if (typeof taskDocuments === "object" && !Array.isArray(taskDocuments)) {
+    return mapAttachmentsByCategory(taskDocuments);
+  }
+  if (!Array.isArray(taskDocuments)) return [];
+
+  const flat = [];
+  taskDocuments.forEach((entry, entryIdx) => {
+    const category =
+      entry?.role_name ||
+      entry?.role ||
+      entry?.task_name ||
+      entry?.taskName ||
+      "Task Documents";
+
+    const nestedDocs = Array.isArray(entry?.documents)
+      ? entry.documents
+      : Array.isArray(entry?.tasks)
+        ? entry.tasks.flatMap((task) => (Array.isArray(task?.documents) ? task.documents : []))
+        : [];
+
+    if (nestedDocs.length) {
+      nestedDocs.forEach((item, index) => {
+        flat.push(mapDocumentRow(item, category, `task-${entryIdx}`, index));
+      });
+      return;
+    }
+
+    if (entry?.file_name != null || entry?.file_url != null || entry?.url != null) {
+      flat.push(mapDocumentRow(entry, category, `task-${entryIdx}`, 0));
+    }
+  });
+  return flat;
+};
+
+/** Build attachment list from `get_all_attachments` payload. */
+const buildAttachmentListFromPayload = (payload = {}) => [
+  ...mapAttachmentsByCategory(payload.stage_documents ?? payload.stageDocuments),
+  ...mapTaskDocumentsResponse(payload.task_documents ?? payload.taskDocuments),
+  ...mapAttachmentsByCategory(payload.attachments),
+];
+
+/** Map `checklist_documents` / legacy `checklist` — items with nested documents. */
 const mapChecklistResponse = (checklist) => {
   if (!Array.isArray(checklist)) return [];
 
@@ -486,8 +541,14 @@ function DocumentLibrary({ card, formValues }) {
         }
         const payload = body?.data || {};
         setError(null);
-        setAttachments(mapAttachmentsResponse(payload.attachments));
-        setChecklistItems(mapChecklistResponse(payload.checklist));
+        setAttachments(buildAttachmentListFromPayload(payload));
+        setChecklistItems(
+          mapChecklistResponse(
+            payload.checklist_documents ??
+            payload.checklistDocuments ??
+            payload.checklist
+          )
+        );
       })
       .catch((err) => {
         if (cancelled) return;

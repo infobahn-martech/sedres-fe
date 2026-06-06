@@ -1776,6 +1776,21 @@ function CardForm({
     [close, onBoardRefresh]
   );
 
+  const handleClose = useCallback(async () => {
+    try {
+      if (onBoardRefresh) {
+        await onBoardRefresh();
+      } else {
+        await kanbanBoardService.getFullBoard(boardId ?? 1);
+      }
+    } catch (e) {
+      if (typeof console !== "undefined" && console.error) {
+        console.error("[CardForm] getFullBoard on close failed:", e?.message ?? e);
+      }
+    }
+    close();
+  }, [close, onBoardRefresh, boardId]);
+
   const validateGroCardBeforeAction = useCallback(() => {
     if (!isGROVariant || isCustomVariant) return true;
     const message = groCardViewRef.current?.validate?.();
@@ -2017,7 +2032,7 @@ function CardForm({
         <TopBar
           card={card}
           topbarColor={topbarColor}
-          onClose={close}
+          onClose={handleClose}
           isAddMode={isAddMode}
           onColorChange={handleTopbarColorChange}
           formValues={formValues}

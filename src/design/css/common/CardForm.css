@@ -579,6 +579,87 @@
   white-space: nowrap;
 }
 
+.appointment-email-file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.appointment-email-file-row--preview {
+  flex-wrap: nowrap;
+}
+
+.appointment-email-file-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.appointment-email-file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.appointment-email-file-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.appointment-email-file-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f8f9ff;
+  color: #3e5cb6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.appointment-email-file-action-btn--download {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.appointment-email-file-action-btn:not(:disabled):hover {
+  border-color: #3e5cb6;
+  background: #eef2ff;
+  box-shadow: 0 2px 6px rgba(62, 94, 189, 0.12);
+}
+
+.appointment-email-file-action-btn--download:not(:disabled):hover {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+}
+
+.appointment-email-file-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.appointment-email-file-action-btn:focus,
+.appointment-email-file-action-btn:active,
+.appointment-email-file-action-btn:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .appointment-extraction-mode-btn:focus,
 .appointment-extraction-mode-btn:active,
 .appointment-extraction-mode-btn:focus-visible {

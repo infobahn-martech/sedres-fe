@@ -717,6 +717,50 @@
   z-index: 1;
 }
 
+.gro-card-view .gro-inward-popover-field-error,
+.gro-card-view .gro-inward-popover-loading {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.gro-card-view .gro-inward-popover-field-error {
+  color: #dc2626;
+}
+
+.gro-card-view .gro-inward-popover-select,
+.gro-card-view .gro-inward-popover-input,
+.gro-card-view .gro-inward-popover-textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #0f172a;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
+.gro-card-view .gro-inward-popover-textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.gro-card-view .gro-inward-popover-select:focus,
+.gro-card-view .gro-inward-popover-input:focus,
+.gro-card-view .gro-inward-popover-textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.gro-card-view .gro-inward-popover-field--error .gro-inward-popover-select,
+.gro-card-view .gro-inward-popover-field--error .gro-inward-popover-input,
+.gro-card-view .gro-inward-popover-field--error .gro-inward-popover-textarea {
+  border-color: #fca5a5;
+}
+
 .gro-card-view .gro-document-list {
   background: #ffffff !important;
   background-image: none !important;

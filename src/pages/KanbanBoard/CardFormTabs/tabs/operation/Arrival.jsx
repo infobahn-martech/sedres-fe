@@ -8,6 +8,7 @@ import useArrivalReducer from "../../../../../store/ArrivalReducer";
 import {
   DynamicDateTimeFields,
   FormField,
+  FormInput,
   FormSection,
   FormSelect,
   FormTextarea,
@@ -22,6 +23,7 @@ import {
   applyArrivalGetDetailToForm,
   extractArrivalReportDraftFromDetail,
 } from "./arrivalDetailApply";
+import { isEventFieldRequired } from "./operationConstants";
 
 function Arrival({
   formValues,
@@ -124,15 +126,65 @@ function Arrival({
   const isSendingArrivalReport = useArrivalReducer((s) => s.isSendingArrivalReport);
   const emailPreviewFromDetailRef = useRef(false);
 
-  const crewImmigrationStatusOptions = [
+  const workflowStatusOptions = [
+    { value: "Pending", label: "Pending" },
     { value: "Completed", label: "Completed" },
     { value: "On Hold", label: "On Hold" },
+    { value: "Failed", label: "Failed" },
   ];
+  const crewImmigrationStatusOptions = workflowStatusOptions;
   const customInspectionStatusOptions = [
     { value: "Pending", label: "Pending" },
     { value: "Passed", label: "Passed" },
     { value: "Failed", label: "Failed" },
   ];
+
+  const postArrivalFieldsWithoutMwpExpiry = useMemo(
+    () =>
+      (Array.isArray(postArrivalStageFields) ? postArrivalStageFields : []).filter(
+        (field) => field?.keyPrefix !== "marineWorkPermitExpires"
+      ),
+    [postArrivalStageFields]
+  );
+
+  const validateArrivalBeforeSave = () => {
+    const resolvedCallId = resolveFormId(callId, formValues?.call_id, formValues?.callId);
+    if (!resolvedCallId) {
+      notify("Call ID is required to save Arrival.", "error");
+      return false;
+    }
+
+    const allFields = [...arrivalStageFields, ...postArrivalStageFields];
+    for (const field of allFields) {
+      if (!isEventFieldRequired(field)) continue;
+      const keyPrefix = field?.keyPrefix;
+      if (!keyPrefix) continue;
+      const dateValue = String(formValues?.[`${keyPrefix}Date`] || "").trim();
+      const timeValue = String(formValues?.[`${keyPrefix}Time`] || "").trim();
+      if (!dateValue || !timeValue) {
+        notify(`${field.event_name || "Required date/time field"} is required.`, "error");
+        return false;
+      }
+    }
+
+    if (formValues?.customInspectionStatus === "Failed") {
+      const failReason = String(formValues?.customInspectionFailReason || "").trim();
+      if (!failReason) {
+        notify("Custom inspection remark is required when status is Failed.", "error");
+        return false;
+      }
+    }
+
+    if (formValues?.crewImmigrationStatus === "On Hold") {
+      const holdRemarks = String(formValues?.crewImmigrationHoldRemarks || "").trim();
+      if (!holdRemarks) {
+        notify("Crew immigration remark is required when status is On Hold.", "error");
+        return false;
+      }
+    }
+
+    return true;
+  };
 
   const handleSingleArrivalFileAdd = (fieldKey) => (files) => {
     const nextFile = files?.[0] || null;
@@ -269,19 +321,16 @@ function Arrival({
   };
 
   const saveArrivalData = async () => {
-    const resolvedCallId = resolveFormId(callId, formValues?.call_id, formValues?.callId);
-    if (!resolvedCallId) {
-      notify("Call ID is required to save Arrival.", "error");
-      return false;
-    }
+    if (!validateArrivalBeforeSave()) return false;
 
+    const resolvedCallId = resolveFormId(callId, formValues?.call_id, formValues?.callId);
     const allFields = [...arrivalStageFields, ...postArrivalStageFields];
     const saveTimeObjects = buildSaveTimeObjectsPayload(allFields, formValues);
-    const mwpExpiry = toDateTimeValue(formValues?.marineWorkPermitExpiresDate, formValues?.marineWorkPermitExpiresTime);
-
     const inwardDoc = normalizeAttachmentFile(formValues?.arrivalInwardClearanceDoc?.[0]);
     const mwpDoc = normalizeAttachmentFile(formValues?.arrivalMwpDoc?.[0]);
-    const bayanDoc = normalizeAttachmentFile(formValues?.arrivalBayanDoc?.[0]);
+    const sadadDoc = normalizeAttachmentFile(formValues?.arrivalSadadDoc?.[0]);
+    const initialBayanDoc = normalizeAttachmentFile(formValues?.arrivalInitialBayanDoc?.[0]);
+    const finalBayanDoc = normalizeAttachmentFile(formValues?.arrivalFinalBayanDoc?.[0]);
 
     const fd = new FormData();
     fd.append("call_id", String(resolvedCallId));
@@ -289,10 +338,15 @@ function Arrival({
     fd.append("customs_status", String(formValues?.customInspectionStatus || ""));
     fd.append("immigration_status", String(formValues?.crewImmigrationStatus || ""));
     fd.append("immigration_remarks", String(formValues?.crewImmigrationHoldRemarks || ""));
-    fd.append("mwp_expiry", mwpExpiry);
+    fd.append("inward_clearance_status", String(formValues?.inwardClearanceStatus || ""));
+    fd.append("mwp_ticket_no", String(formValues?.mwpTicketNo || ""));
+    fd.append("mwp_status", String(formValues?.mwpStatus || ""));
+    fd.append("sadad_no", String(formValues?.sadadNo || ""));
     if (inwardDoc) fd.append("inward_clearance_doc", inwardDoc);
     if (mwpDoc) fd.append("mwp_doc", mwpDoc);
-    if (bayanDoc) fd.append("bayan_doc", bayanDoc);
+    if (sadadDoc) fd.append("sadad_doc", sadadDoc);
+    if (initialBayanDoc) fd.append("initial_bayan_doc", initialBayanDoc);
+    if (finalBayanDoc) fd.append("final_bayan_doc", finalBayanDoc);
 
     const createdBy = resolveCreatedBy();
     if (createdBy) {
@@ -310,7 +364,7 @@ function Arrival({
         body: arrivalReportBody ?? "",
         to_email: reportDraft.to ?? "",
         from_email: reportDraft.from ?? "",
-        cc_email: reportDraft.cc ?? "",
+        cc_emails: reportDraft.cc ?? "",
       })
     );
 
@@ -390,7 +444,9 @@ function Arrival({
   const arrivalPreviewAttachments = [
     ...(formValues.arrivalInwardClearanceDoc || []),
     ...(formValues.arrivalMwpDoc || []),
-    ...(formValues.arrivalBayanDoc || []),
+    ...(formValues.arrivalSadadDoc || []),
+    ...(formValues.arrivalInitialBayanDoc || []),
+    ...(formValues.arrivalFinalBayanDoc || []),
   ];
 
   return (
@@ -413,7 +469,7 @@ function Arrival({
 
                   <FormField label="Custom Inspection Status">
                     <FormSelect
-                      value={formValues.customInspectionStatus || "Passed"}
+                      value={formValues.customInspectionStatus || ""}
                       onChange={handleChange("customInspectionStatus")}
                       options={customInspectionStatusOptions}
                       placeholder="Select status..."
@@ -422,7 +478,7 @@ function Arrival({
                   </FormField>
 
                   {formValues.customInspectionStatus === "Failed" && (
-                    <FormField label="Custom Inspection Remark" className="cf-field-full">
+                    <FormField label="Custom Inspection Remark *" className="cf-field-full">
                       <FormTextarea
                         value={formValues.customInspectionFailReason || ""}
                         onChange={handleChange("customInspectionFailReason")}
@@ -433,7 +489,7 @@ function Arrival({
                     </FormField>
                   )}
 
-                  <FormField label="Crew immigration completed / on hold">
+                  <FormField label="Crew Immigration Status">
                     <FormSelect
                       value={formValues.crewImmigrationStatus || ""}
                       onChange={handleChange("crewImmigrationStatus")}
@@ -444,7 +500,7 @@ function Arrival({
                   </FormField>
 
                   {formValues.crewImmigrationStatus === "On Hold" && (
-                    <FormField label="Crew Immigration Remark" className="cf-field-full">
+                    <FormField label="Crew Immigration Remark *" className="cf-field-full">
                       <FormTextarea
                         value={formValues.crewImmigrationHoldRemarks || ""}
                         onChange={handleChange("crewImmigrationHoldRemarks")}
@@ -455,8 +511,46 @@ function Arrival({
                     </FormField>
                   )}
 
+                  <FormField label="Inward Clearance Status">
+                    <FormSelect
+                      value={formValues.inwardClearanceStatus || ""}
+                      onChange={handleChange("inwardClearanceStatus")}
+                      options={workflowStatusOptions}
+                      placeholder="Select status..."
+                      disabled={isViewOnly}
+                    />
+                  </FormField>
+
+                  <FormField label="MWP Ticket No">
+                    <FormInput
+                      value={formValues.mwpTicketNo || ""}
+                      onChange={handleChange("mwpTicketNo")}
+                      placeholder="Enter MWP ticket number"
+                      disabled={isViewOnly}
+                    />
+                  </FormField>
+
+                  <FormField label="MWP Status">
+                    <FormSelect
+                      value={formValues.mwpStatus || ""}
+                      onChange={handleChange("mwpStatus")}
+                      options={workflowStatusOptions}
+                      placeholder="Select status..."
+                      disabled={isViewOnly}
+                    />
+                  </FormField>
+
+                  <FormField label="SADAD No">
+                    <FormInput
+                      value={formValues.sadadNo || ""}
+                      onChange={handleChange("sadadNo")}
+                      placeholder="Enter SADAD no"
+                      disabled={isViewOnly}
+                    />
+                  </FormField>
+
                   <DynamicDateTimeFields
-                    eventFields={postArrivalStageFields}
+                    eventFields={postArrivalFieldsWithoutMwpExpiry}
                     formValues={formValues}
                     handleChange={handleChange}
                     isViewOnly={isViewOnly}
@@ -479,12 +573,28 @@ function Arrival({
                     ariaLabel="Upload MWP document"
                   />
                 </FormField>
-                <FormField label="Bayan Upload">
+                <FormField label="SADAD Document">
                   <OperationFileUpload
-                    files={formValues.arrivalBayanDoc || []}
-                    onAddFiles={handleSingleArrivalFileAdd("arrivalBayanDoc")}
+                    files={formValues.arrivalSadadDoc || []}
+                    onAddFiles={handleSingleArrivalFileAdd("arrivalSadadDoc")}
                     isViewOnly={isViewOnly}
-                    ariaLabel="Upload bayan document"
+                    ariaLabel="Upload SADAD document"
+                  />
+                </FormField>
+                <FormField label="Initial Bayan Document">
+                  <OperationFileUpload
+                    files={formValues.arrivalInitialBayanDoc || []}
+                    onAddFiles={handleSingleArrivalFileAdd("arrivalInitialBayanDoc")}
+                    isViewOnly={isViewOnly}
+                    ariaLabel="Upload initial bayan document"
+                  />
+                </FormField>
+                <FormField label="Final Bayan Document">
+                  <OperationFileUpload
+                    files={formValues.arrivalFinalBayanDoc || []}
+                    onAddFiles={handleSingleArrivalFileAdd("arrivalFinalBayanDoc")}
+                    isViewOnly={isViewOnly}
+                    ariaLabel="Upload final bayan document"
                   />
                 </FormField>
               </OperationFormCard>

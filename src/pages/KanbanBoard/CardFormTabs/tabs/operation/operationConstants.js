@@ -92,6 +92,9 @@ export const getEventFieldKeyPrefix = (eventName = "") => {
   return pascal ? `operation${pascal}` : "operationEvent";
 };
 
+export const isEventFieldRequired = (field) =>
+  String(field?.is_required ?? "0") === "1" || field?.is_required === true || field?.is_required === 1;
+
 export const mapEventFields = (responseData) => {
   const rows = responseData?.fields || responseData?.data || responseData?.time_objects || [];
   return rows
@@ -106,6 +109,7 @@ export const mapEventFields = (responseData) => {
       event_name: field?.event_name ?? field?.time_object ?? "",
       event_type_id: field?.event_type_id ?? field?.time_object_id,
       keyPrefix: getEventFieldKeyPrefix(field?.event_name ?? field?.time_object ?? ""),
+      is_required: isEventFieldRequired(field),
       sort_order: Number(field?.sort_order ?? index + 1),
     }))
     .sort((a, b) => a.sort_order - b.sort_order);

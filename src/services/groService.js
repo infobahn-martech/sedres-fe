@@ -1,5 +1,6 @@
 import Gateway from "../gateway/gateway";
 import taskCardService from "./groService/taskCardService";
+import groArrivalService from "./groService/arrivalService";
 
 export const getCallDetailById = (callId, cardId) => {
   const callSegment = encodeURIComponent(String(callId));
@@ -19,8 +20,7 @@ export const getDocumentsByTask = (taskId, callId) => {
 /** POST task_card/verify_docs — { call_id, task_id, card_id, documents: [{ document_id, status, remarks }] } */
 export const verifyGroDocs = (payload) => Gateway.post("task_card/verify_docs", payload);
 
-export const saveArrivalDocument = (formData) =>
-  Gateway.post("arrival/save_arrival_document", formData);
+export const saveArrivalDocument = groArrivalService.saveArrivalDocument;
 
 export const getPassRequests = (callId) =>
   Gateway.get(`crew_pass/get_pass_requests/${encodeURIComponent(String(callId))}`);
@@ -28,6 +28,10 @@ export const getPassRequests = (callId) =>
 export const uploadZawilPass = (formData) => Gateway.post("crew_pass/upload_zawil_pass", formData);
 
 export const uploadCgPass = (formData) => Gateway.post("crew_pass/upload_cg_pass", formData);
+
+/** POST time_object/get_stage_time_objects — { stage_id, port_id, call_type_id } */
+export const getStageTimeObjects = (payload) =>
+  Gateway.post("time_object/get_stage_time_objects", payload);
 
 const groService = {
   getCallDetailById,
@@ -37,6 +41,7 @@ const groService = {
   getPassRequests,
   uploadZawilPass,
   uploadCgPass,
+  getStageTimeObjects,
   assignTask: taskCardService.assignTask,
   startTask: taskCardService.startTask,
 };

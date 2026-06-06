@@ -6,6 +6,6 @@ const saveLandingNote = (data) => Gateway.post('/material_management/save_landin
 const updateLandingNote = (id, data) => Gateway.post(`/material_management/update_landing_note/${id}`, data);
 const deleteLandingNote = (id) => Gateway.delete(`/material_management/delete_landing_note/${id}`);
 const convertLandingNoteToDispatch = (data) => Gateway.post('/material_management/convert_landing_note_to_dispatch_note', data);
-const printLandingNote = (landingNoteId) => Gateway.get(`/material_management/print_landing_note/${landingNoteId}`, { responseType: 'blob' });
+const printLandingNote = (landingNoteId, inboundId) => Gateway.get(`/material_management/print_landing_note/${landingNoteId}`, { responseType: 'blob', params: { inbound_id: inboundId } });
 
 export default { getAllLandingNotes, getLandingNoteById, saveLandingNote, updateLandingNote, deleteLandingNote, convertLandingNoteToDispatch, printLandingNote };

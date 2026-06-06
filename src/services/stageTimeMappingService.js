@@ -3,7 +3,7 @@ import Gateway from "../gateway/gateway";
 /** GET — { stage_id, stage_name }[] */
 const getCallStages = () => Gateway.get("/time_object/get_call_stages");
 
-/** GET — query: search, sort_by, page, limit */
+/** GET — query: search, sort_by, page, limit → { data, pagination: { total, page, limit, total_pages } } */
 const getTimeObjectsWithStage = ({ params }) =>
   Gateway.get("/time_object/get_time_objects_with_stage", { params });
 

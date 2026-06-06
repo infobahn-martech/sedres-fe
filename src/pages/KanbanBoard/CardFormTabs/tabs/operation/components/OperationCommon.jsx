@@ -4,6 +4,7 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { ensureHtmlForQuill } from "../operationReportMessageHtml";
 import DateTimePickerField from "../../../components/DateTimePickerField";
+import { isEventFieldRequired } from "../operationConstants";
 import SearchableSelect, { deriveSearchPlaceholder } from "../../../../../../components/form/SearchableSelect";
 
 export const FormSection = ({ icon, title, children }) => {
@@ -59,7 +60,7 @@ export const DynamicDateTimeFields = ({ eventFields = [], formValues, handleChan
     const keyPrefix = field.keyPrefix;
     const dateKey = `${keyPrefix}Date`;
     const timeKey = `${keyPrefix}Time`;
-    const label = field.is_required ? `${field.event_name} *` : field.event_name;
+    const label = isEventFieldRequired(field) ? `${field.event_name} *` : field.event_name;
 
     return (
       <FormField key={`${field.stage_id || "stage"}-${field.event_name}-${keyPrefix}`} label={label}>

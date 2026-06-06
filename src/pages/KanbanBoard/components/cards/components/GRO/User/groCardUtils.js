@@ -584,3 +584,87 @@ export const groPassTaskDocUrl = (td) =>
 
 export const groPassTaskDocLabel = (td, index) =>
   firstNonEmptyGroDisplay(td?.document_name, td?.file_name, td?.name, td?.title, `File ${index + 1}`);
+
+/** GRO task name → arrival stage id for time_object/get_stage_time_objects */
+const GRO_TASK_STAGE_ID_BY_NAME = {
+  "vessel inward registration": 6,
+  "crew immigration": 7,
+  "inward clearance": 8,
+  "custom bayan": 9,
+  bayan: 9,
+  "applying mwp": 10,
+};
+
+export const resolveGroStageIdFromTaskName = (taskName) => {
+  const normalized = String(taskName ?? "").trim().toLowerCase();
+  if (!normalized) return null;
+  const stageId = GRO_TASK_STAGE_ID_BY_NAME[normalized];
+  return stageId != null ? stageId : null;
+};
+
+export const resolveGroTimeObjectFieldKey = (item) => {
+  const fieldKey = String(item?.field_key ?? "").trim();
+  if (fieldKey) return fieldKey;
+  const id = item?.time_object_id;
+  return id != null && String(id).trim() !== "" ? String(id).trim() : "";
+};
+
+export const parseGroStageTimeObjectsResponse = (res) => {
+  const data = res?.data?.data ?? res?.data ?? res ?? {};
+  const rows = Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data?.time_objects)
+      ? data.time_objects
+      : Array.isArray(data)
+        ? data
+        : [];
+  return [...rows].sort((a, b) => Number(a?.sort_order ?? 0) - Number(b?.sort_order ?? 0));
+};
+
+export const resolveGroTimeObjectValueKey = (item) => {
+  const id = item?.time_object_id;
+  return id != null && String(id).trim() !== "" ? String(id).trim() : resolveGroTimeObjectFieldKey(item);
+};
+
+const formatGroTimeObjectValue = (parts) => {
+  const date = parts?.date != null ? String(parts.date).trim() : "";
+  const time = parts?.time != null ? String(parts.time).trim() : "";
+  if (!date) return "";
+  const formattedTime = time ? String(time).slice(0, 5) : "00:00";
+  return `${date} ${formattedTime}:00`;
+};
+
+/** arrival/save_arrival_document — [{ time_object_id, time_object_value }] */
+export const buildGroArrivalTimeObjectsPayload = (timeObjects, timeObjectValues) =>
+  (Array.isArray(timeObjects) ? timeObjects : [])
+    .map((item) => {
+      const timeObjectId = item?.time_object_id;
+      if (timeObjectId == null || String(timeObjectId).trim() === "") return null;
+      const valueKey = resolveGroTimeObjectValueKey(item);
+      const parts = timeObjectValues?.[valueKey] ?? { date: "", time: "" };
+      return {
+        time_object_id: Number(timeObjectId),
+        time_object_value: formatGroTimeObjectValue(parts),
+      };
+    })
+    .filter(Boolean);
+
+/** @deprecated Use buildGroArrivalTimeObjectsPayload */
+export const buildGroTimeObjectsSubmitPayload = buildGroArrivalTimeObjectsPayload;
+
+export const validateGroRequiredTimeObjects = (timeObjects, timeObjectValues) => {
+  const errors = {};
+  (Array.isArray(timeObjects) ? timeObjects : []).forEach((item) => {
+    if (String(item?.is_required ?? "0") !== "1") return;
+    const key = resolveGroTimeObjectValueKey(item);
+    if (!key) return;
+    const parts = timeObjectValues?.[key] ?? { date: "", time: "" };
+    const date = String(parts.date ?? "").trim();
+    const time = String(parts.time ?? "").trim();
+    if (!date || !time) {
+      const label = String(item?.time_object ?? "Field").trim() || "Field";
+      errors[key] = `${label} is required.`;
+    }
+  });
+  return errors;
+};

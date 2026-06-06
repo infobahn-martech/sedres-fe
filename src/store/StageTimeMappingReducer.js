@@ -41,14 +41,18 @@ const useStageTimeMappingReducer = create((set) => ({
           }))
         : [];
 
+      const totalCount =
+        Number(
+          data?.pagination?.total ??
+            data?.total ??
+            data?.meta?.total ??
+            data?.count ??
+            0
+        ) || 0;
+
       set({
         stageTimeMappings: list,
-        totalCount:
-          data?.pagination?.total ??
-          data?.total ??
-          data?.meta?.total ??
-          data?.count ??
-          0,
+        totalCount,
         isLoadingGet: false,
       });
     } catch (err) {
