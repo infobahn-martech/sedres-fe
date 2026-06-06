@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import CustomModal from "../../../../../../components/CustomModal";
+import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 import { FormField, FormInput, FormSelect, ReactQuillEditor } from "./Husbandry.components";
 import DateTimePickerField from "../../../components/DateTimePickerField";
 import MaterialTablePagination from "./MaterialTablePagination";
@@ -124,11 +125,13 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
     getAllDispatchNotes,
     getDispatchNoteById,
     updateDispatchNote,
+    deleteDispatchNote,
     dispatchNotes,
     dispatchTotal,
     isLoadingList,
     isLoadingDetail,
     isLoadingUpdate,
+    isLoadingDelete,
   } = useDispatchNoteReducer((state) => state);
 
   const [warehouseOptions, setWarehouseOptions] = useState([]);
@@ -138,6 +141,8 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
 
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedDeleteNote, setSelectedDeleteNote] = useState(null);
   const [notesList, setNotesList] = useState([]);
   const [editingNote, setEditingNote] = useState(null);
   const [viewingNote, setViewingNote] = useState(null);
@@ -396,13 +401,23 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
     });
   };
 
-  const handleDelete = (noteId) => {
-    if (window.confirm("Are you sure you want to delete this dispatch note?")) {
-      const updatedList = notesList.filter(note => note.id !== noteId);
-      setNotesList(updatedList);
-      const syntheticEvent = { target: { value: updatedList } };
-      handleChange("dispatchNoteList")(syntheticEvent);
-    }
+  const handleDeleteClick = (note) => {
+    handleCloseDropdown();
+    setSelectedDeleteNote(note);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    const noteId = selectedDeleteNote?.dispatch_note_id || selectedDeleteNote?.id;
+    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
+    deleteDispatchNote({
+      dispatchNoteId: noteId,
+      cb: () => {
+        setShowDeleteModal(false);
+        setSelectedDeleteNote(null);
+        if (callId) getAllDispatchNotes({ call_id: callId, page: dispatchPage, limit: DISPATCH_LIMIT });
+      },
+    });
   };
 
   const handleToggleDropdown = (noteId, e) => {
@@ -1068,7 +1083,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
                             >
                               <button
                                 type="button"
-                                onClick={() => { handleCloseDropdown(); handleDelete(note.id); }}
+                                onClick={() => handleDeleteClick(note)}
                                 style={{ width: "100%", padding: "10px 16px", backgroundColor: "transparent", border: "none", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", color: "#dc3545", transition: "background-color 0.2s" }}
                                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f5f5f5"; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
@@ -1117,6 +1132,14 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
         body={renderViewBody()}
         footer={renderViewFooter()}
         dialgName="modal-dialog modal-dialog-centered"
+      />
+
+      <DeleteConfirmationModal
+        show={showDeleteModal}
+        onCancel={() => { setShowDeleteModal(false); setSelectedDeleteNote(null); }}
+        onConfirm={handleDeleteConfirm}
+        deleteText={`Are you sure you want to delete dispatch note ${selectedDeleteNote?.dispatch_note_no || selectedDeleteNote?.orderNo || ""}?`}
+        isLoading={isLoadingDelete}
       />
     </div>
   );
