@@ -16,7 +16,7 @@ const updateReportTemplate = (payload) =>
   Gateway.post('/report_template/updatetemplate', payload);
 
 const deleteReportTemplate = (template_id) =>
-  Gateway.post(`/report_template/delete_template/${template_id}`);
+  Gateway.post(`report_template/delete_template/${template_id}`);
 
 const getTemplateByPortCallType = (payload) =>
   Gateway.post('/report_template/get_template_by_port_calltype', payload);
