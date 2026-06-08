@@ -20,6 +20,7 @@ const useRoleReducer = create((set) => ({
                 _id: role.role_id,
                 name: role.role,
                 description: role.description || '',
+                is_archived: role.is_archived ?? role.archived ?? false,
                 created_by: role.created_by,
                 created_date: role.created_date,
                 updated_date: role.updated_date,
@@ -94,6 +95,20 @@ const useRoleReducer = create((set) => ({
                 errorMessage: 'Something went wrong deleting the role',
                 isBeingUpdated: false,
             });
+            error(err?.response?.data?.message ?? err.message);
+        }
+    },
+    archiveUnarchiveRole: async ({ role_id, cb }) => {
+        try {
+            set({ isBeingUpdated: true });
+            const { data } = await roleService.archiveUnarchiveRole(role_id);
+            const { success } = useAlertReducer.getState();
+            success(data?.message ?? 'Role updated successfully');
+            set({ isBeingUpdated: false });
+            cb && cb();
+        } catch (err) {
+            const { error } = useAlertReducer.getState();
+            set({ errorMessage: 'Something went wrong', isBeingUpdated: false });
             error(err?.response?.data?.message ?? err.message);
         }
     },

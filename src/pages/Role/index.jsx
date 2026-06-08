@@ -24,23 +24,23 @@ const Role = () => {
     createRole,
     updateRole,
     deleteRole,
+    archiveUnarchiveRole,
     isBeingUpdated,
     isLoading,
     totalRoleCount,
   } = useRoleReducer((state) => state);
 
+  const getApiParams = () => ({
+    page: params.page,
+    limit: params.limit,
+    ...(params.searchTerm && { search: params.searchTerm }),
+    ...(params.sortBy && { sort_by: params.sortBy }),
+  });
+
   useEffect(() => {
-    // Map component params to API params
-    const apiParams = {
-      page: params.page,
-      limit: params.limit,
-      ...(params.searchTerm && { search: params.searchTerm }),
-      ...(params.sortBy && { sort_by: params.sortBy }),
-    };
-    fetchRoles({ params: apiParams });
+    fetchRoles({ params: getApiParams() });
   }, [params]);
 
-  // 👉 ONLY TWO COLUMNS (Name + Description)
   const cols = [
     {
       name: "Name",
@@ -65,10 +65,16 @@ const Role = () => {
       tableClasses: 'table-striped',
       contentClass: 'table-content',
       thclass: 'tb-head',
-      onEditClick: (row) => { setShowRoleModal(row) },
-      onDeleteClick: (row) => { setSelectedRoleForDelete(row) },
+      onEditClick: (row) => { setShowRoleModal(row); },
+      onDeleteClick: (row) => { setSelectedRoleForDelete(row); },
+      onArchiveClick: (row) => {
+        archiveUnarchiveRole({
+          role_id: row._id,
+          cb: () => fetchRoles({ params: getApiParams() }),
+        });
+      },
       cell: RenderAction,
-      width: '100',
+      width: '150',
     },
   ];
 
@@ -123,13 +129,7 @@ const Role = () => {
               updateRole={updateRole}
               onSuccess={() => {
                 setShowRoleModal(false);
-                const apiParams = {
-                  page: params.page,
-                  limit: params.limit,
-                  ...(params.searchTerm && { search: params.searchTerm }),
-                  ...(params.sortBy && { sort_by: params.sortBy }),
-                };
-                fetchRoles({ params: apiParams });
+                fetchRoles({ params: getApiParams() });
               }}
               isBeingUpdated={isBeingUpdated}
             />
@@ -143,13 +143,7 @@ const Role = () => {
                   id: selectedRoleForDelete._id,
                   cb: () => {
                     setSelectedRoleForDelete(null);
-                    const apiParams = {
-                      page: params.page,
-                      limit: params.limit,
-                      ...(params.searchTerm && { search: params.searchTerm }),
-                      ...(params.sortBy && { sort_by: params.sortBy }),
-                    };
-                    fetchRoles({ params: apiParams });
+                    fetchRoles({ params: getApiParams() });
                   },
                 });
               }}

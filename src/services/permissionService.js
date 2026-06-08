@@ -9,6 +9,7 @@ const assignRolePermission = (data) =>
 const updateRolePermission = (data) =>
   Gateway.post('/permissions/update_role_permission', data);
 const deletePermission = (id) => Gateway.delete(`/permissions/delete_permission/${id}`);
+const archiveUnarchiveRole = (role_id) => Gateway.post(`/permissions/archive_unarchive_role/${role_id}`);
 
 export default {
   fetchPermission,
@@ -17,4 +18,5 @@ export default {
   assignRolePermission,
   updateRolePermission,
   deletePermission,
+  archiveUnarchiveRole,
 };

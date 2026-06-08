@@ -25,6 +25,7 @@ const Permission = () => {
     designations,
     isLoading,
     totalDesignationCount,
+    archiveUnarchiveRole,
   } = usePermissionReducer((state) => state);
 
   useEffect(() => {
@@ -54,9 +55,15 @@ const Permission = () => {
       name: 'Actions',
       selector: 'linksInfo',
       onEditClick: (row) => {
-        setShowPermissionModal(row)
+        setShowPermissionModal(row);
       },
-      onDeleteClick: () => { setShowDeleteModal(true) },
+      onDeleteClick: () => { setShowDeleteModal(true); },
+      onArchiveClick: (row) => {
+        archiveUnarchiveRole({
+          role_id: row?.role_id,
+          cb: () => fetchPermission({ params }),
+        });
+      },
       cell: RenderAction,
       width: '200',
     },

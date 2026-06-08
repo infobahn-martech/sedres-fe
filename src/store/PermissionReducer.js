@@ -17,8 +17,12 @@ const usePermissionReducer = create((set) => ({
     try {
       set({ isLoading: true });
       const { data } = await permissionService.fetchPermission({ params });
+      const list = (data?.data ?? []).map((row) => ({
+        ...row,
+        is_archived: row.is_archived ?? row.archived ?? false,
+      }));
       set({
-        designations: data?.data,
+        designations: list,
         totalDesignationCount: data?.pagination?.total,
         isLoading: false,
       });
@@ -108,6 +112,20 @@ const usePermissionReducer = create((set) => ({
         errorMessage: 'Something went wrong fetching permissions',
         isLoadingPermissions: false,
       });
+      error(err?.response?.data?.message ?? err.message);
+    }
+  },
+  archiveUnarchiveRole: async ({ role_id, cb }) => {
+    try {
+      set({ isBeingUpdated: true });
+      const { data } = await permissionService.archiveUnarchiveRole(role_id);
+      const { success } = useAlertReducer.getState();
+      success(data?.message ?? 'Role updated successfully');
+      set({ isBeingUpdated: false });
+      cb && cb();
+    } catch (err) {
+      const { error } = useAlertReducer.getState();
+      set({ errorMessage: 'Something went wrong', isBeingUpdated: false });
       error(err?.response?.data?.message ?? err.message);
     }
   },

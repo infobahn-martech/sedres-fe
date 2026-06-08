@@ -3,28 +3,30 @@ import moment from 'moment';
 
 import edit from '../../assets/images/edit.svg';
 import trash from '../../assets/images/delete.svg';
+import archiveIcon from '../../assets/images/archive.svg';
+import unarchiveIcon from '../../assets/images/unarchive.svg';
 import { getInitials } from '../../shared/utils/utils';
 
-export const RenderAction = ({ onEditClick, row, onDeleteClick }) => {
+export const RenderAction = ({ onEditClick, row, onDeleteClick, onArchiveClick }) => {
+  const archiveTooltipId = `archive-role-${row._id}`;
   return (
     <>
-      <Tooltip id="edit" place="bottom" content="Edit" />
-      <Tooltip id="delete" place="bottom" content="Delete" />
+      <Tooltip id="edit-role" place="bottom" content="Edit" />
+      <Tooltip id={archiveTooltipId} place="bottom" content={row.is_archived ? 'Unarchive' : 'Archive'} />
+      <Tooltip id="delete-role" place="bottom" content="Delete" />
       <div className="actions">
-        <span
-          data-tooltip-id="edit"
-          type="button"
-          onClick={() => onEditClick(row)}
-          className="edit"
-        >
+        <span data-tooltip-id="edit-role" type="button" onClick={() => onEditClick(row)} className="edit">
           <img src={edit} alt="edit" />
         </span>
         <span
-          data-tooltip-id="delete"
+          data-tooltip-id={archiveTooltipId}
           type="button"
-          className="delete"
-          onClick={() => onDeleteClick(row)}
+          onClick={() => onArchiveClick(row)}
+          className="edit"
         >
+          <img src={row.is_archived ? unarchiveIcon : archiveIcon} alt={row.is_archived ? 'unarchive' : 'archive'} />
+        </span>
+        <span data-tooltip-id="delete-role" type="button" className="delete" onClick={() => onDeleteClick(row)}>
           <img src={trash} alt="delete" />
         </span>
       </div>
