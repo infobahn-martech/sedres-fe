@@ -1,7 +1,7 @@
 import '../../design/scss/employee.scss';
 import CustomTable from '../../components/customTable';
 import CommonHeader from '../../components/CommonHeader';
-import { DateFormat, RenderAction } from './RenderCells';
+import { RenderAction } from './RenderCells';
 import { PermissionModal } from './Modals/AddEditPermission';
 import { useState, useEffect } from 'react';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
@@ -18,6 +18,7 @@ const Permission = () => {
   });
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showUnarchiveModal, setShowUnarchiveModal] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
 
@@ -54,13 +55,24 @@ const Permission = () => {
       width: '200',
     },
     {
+      name: 'Status',
+      selector: 'status',
+      width: '150',
+      thclass: 'tb-head',
+      contentClass: 'table-content',
+      cell: ({ row }) => (
+        <span className={row?.status === '2' ? 'status-pending' : 'status-active'}>
+          {row?.status === '2' ? 'Archive' : 'Active'}
+        </span>
+      ),
+    },
+    {
       name: 'Actions',
       selector: 'linksInfo',
-      onEditClick: (row) => {
-        setShowPermissionModal(row)
-      },
-      onDeleteClick: (row) => { setSelectedRole(row); setShowDeleteModal(true); },
       cell: RenderAction,
+      onEditClick: (row) => setShowPermissionModal(row),
+      onDeleteClick: (row) => { setSelectedRole(row); setShowDeleteModal(true); },
+      onUnarchiveClick: (row) => { setSelectedRole(row); setShowUnarchiveModal(true); },
       width: '200',
     },
   ];
@@ -72,9 +84,7 @@ const Permission = () => {
           <CommonHeader
             tableTitle="Role and Permission"
             isAddEnabled
-            onAddModalClick={() => {
-              setShowPermissionModal(true);
-            }}
+            onAddModalClick={() => setShowPermissionModal(true)}
             addModalLabel="Add Role/Permission"
             setSearch={(e) =>
               setParams({ ...params, search: e, page: 1, limit: 10 })
@@ -84,7 +94,6 @@ const Permission = () => {
           />
         </div>
 
-        {/* TABLE */}
         <CustomTable
           Sl
           pagination={{ currentPage: params.page, limit: params.limit }}
@@ -122,6 +131,7 @@ const Permission = () => {
             onConfirm={() => {
               archiveUnarchiveRole({
                 roleId: selectedRole?.role_id ?? selectedRole?.id,
+                isArchiving: true,
                 cb: () => {
                   setShowDeleteModal(false);
                   setSelectedRole(null);
@@ -129,7 +139,27 @@ const Permission = () => {
                 },
               });
             }}
-            deleteText={`Are you sure you want to ${selectedRole?.is_archived ? 'unarchive' : 'archive'} "${selectedRole?.role ?? 'this role'}"?`}
+            deleteText={`Are you sure you want to archive "${selectedRole?.role ?? 'this role'}"?`}
+            isLoading={isBeingUpdated}
+          />
+        )}
+
+        {!!showUnarchiveModal && (
+          <DeleteConfirmationModal
+            show={showUnarchiveModal}
+            onCancel={() => { setShowUnarchiveModal(false); setSelectedRole(null); }}
+            onConfirm={() => {
+              archiveUnarchiveRole({
+                roleId: selectedRole?.role_id ?? selectedRole?.id,
+                isArchiving: false,
+                cb: () => {
+                  setShowUnarchiveModal(false);
+                  setSelectedRole(null);
+                  fetchPermission({ params });
+                },
+              });
+            }}
+            deleteText={`Are you sure you want to unarchive "${selectedRole?.role ?? 'this role'}"?`}
             isLoading={isBeingUpdated}
           />
         )}

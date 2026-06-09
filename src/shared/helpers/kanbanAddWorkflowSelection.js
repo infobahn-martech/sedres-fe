@@ -51,7 +51,9 @@ export function isWorkflowEligibleForCardCreation(workflow) {
  */
 export function getEligibleWorkflowsForAdd(workflows) {
   if (!Array.isArray(workflows)) return [];
-  return workflows.filter(isWorkflowEligibleForCardCreation);
+  return workflows.filter(
+    (wf) => isWorkflowEligibleForCardCreation(wf) && wf.role_id == null
+  );
 }
 
 /**
