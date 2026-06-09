@@ -40,6 +40,8 @@ const BillingEntity = () => {
     billingEntities,
     totalCount,
     isLoading,
+    getEntityDetailById,
+    selectedBillingEntity,
   } = useBillingEntityReducer((state) => state);
 
   const fetchBillingEntities = useCallback(() => {
@@ -122,7 +124,12 @@ const BillingEntity = () => {
       cell: RenderAction,
       thclass: "tb-head",
       hideDelete: true,
-      onEditClick: (row) => setShowBillingEntityModal(row),
+      onEditClick: (row) => {
+        getEntityDetailById({
+          entityId: row.entity_id,
+          cb: () => setShowBillingEntityModal(true),
+        });
+      },
     },
   ];
 
@@ -165,7 +172,7 @@ const BillingEntity = () => {
           />
           {!!showBillingEntityModal && (
             <BillingEntityModal
-              showModal={showBillingEntityModal}
+              showModal={selectedBillingEntity}
               closeModal={() => setShowBillingEntityModal(false)}
               onSuccess={() => fetchBillingEntities()}
             />
