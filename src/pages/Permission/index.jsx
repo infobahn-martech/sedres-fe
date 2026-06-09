@@ -125,6 +125,7 @@ const Permission = () => {
                 cb: () => {
                   setShowDeleteModal(false);
                   setSelectedRole(null);
+                  fetchPermission({ params });
                 },
               });
             }}
