@@ -12,11 +12,12 @@ export const RenderAction = ({ onEditClick, row, onDeleteClick }) => {
         <img src={edit} alt="edit" />
       </span>
       <span type="button" className="delete" onClick={() => onDeleteClick(row)}>
-        <img src={trash} alt="delete" />
+        <img src={trash} alt="archive" />
       </span>
     </div>
   );
 };
+
 
 export const DateFormat = ({ row, selector }) => {
   const formattedDate = moment(row[selector]).format('DD MMMM YYYY hh:mm a');

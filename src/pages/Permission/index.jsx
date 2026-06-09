@@ -125,11 +125,10 @@ const Permission = () => {
                 cb: () => {
                   setShowDeleteModal(false);
                   setSelectedRole(null);
-                  fetchPermission({ params });
                 },
               });
             }}
-            deleteText={`Are you sure you want to archive "${selectedRole?.role ?? 'this role'}"?`}
+            deleteText={`Are you sure you want to ${selectedRole?.is_archived ? 'unarchive' : 'archive'} "${selectedRole?.role ?? 'this role'}"?`}
             isLoading={isBeingUpdated}
           />
         )}

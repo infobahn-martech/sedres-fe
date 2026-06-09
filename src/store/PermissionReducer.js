@@ -98,7 +98,13 @@ const usePermissionReducer = create((set) => ({
     try {
       set({ isBeingUpdated: true });
       const { data } = await permissionService.archiveUnarchiveRole(roleId);
-      set({ isBeingUpdated: false });
+      set((state) => ({
+        isBeingUpdated: false,
+        designations: (state.designations || []).filter(
+          (r) => String(r.role_id) !== String(roleId)
+        ),
+        totalDesignationCount: Math.max(0, (state.totalDesignationCount || 1) - 1),
+      }));
       const { success } = useAlertReducer.getState();
       success(data?.message ?? 'Role archived successfully');
       cb && cb();
