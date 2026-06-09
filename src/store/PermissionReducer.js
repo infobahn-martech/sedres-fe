@@ -94,6 +94,20 @@ const usePermissionReducer = create((set) => ({
       error(err?.response?.data?.message ?? err.message);
     }
   },
+  archiveUnarchiveRole: async ({ roleId, cb }) => {
+    try {
+      set({ isBeingUpdated: true });
+      const { data } = await permissionService.archiveUnarchiveRole(roleId);
+      set({ isBeingUpdated: false });
+      const { success } = useAlertReducer.getState();
+      success(data?.message ?? 'Role archived successfully');
+      cb && cb();
+    } catch (err) {
+      const { error } = useAlertReducer.getState();
+      set({ isBeingUpdated: false });
+      error(err?.response?.data?.message ?? err.message);
+    }
+  },
   fetchPermissionsList: async () => {
     try {
       set({ isLoadingPermissions: true });

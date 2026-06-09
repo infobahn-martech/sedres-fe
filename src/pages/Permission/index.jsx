@@ -19,12 +19,15 @@ const Permission = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [selectedRole, setSelectedRole] = useState(null);
 
   const {
     fetchPermission,
     designations,
     isLoading,
     totalDesignationCount,
+    isBeingUpdated,
+    archiveUnarchiveRole,
   } = usePermissionReducer((state) => state);
 
   useEffect(() => {
@@ -56,7 +59,7 @@ const Permission = () => {
       onEditClick: (row) => {
         setShowPermissionModal(row)
       },
-      onDeleteClick: () => { setShowDeleteModal(true) },
+      onDeleteClick: (row) => { setSelectedRole(row); setShowDeleteModal(true); },
       cell: RenderAction,
       width: '200',
     },
@@ -115,10 +118,19 @@ const Permission = () => {
         {!!showDeleteModal && (
           <DeleteConfirmationModal
             show={showDeleteModal}
-            onCancel={() => setShowDeleteModal(false)}
-            onConfirm={() => { }}
-            deleteText="Are you sure you want to delete this permission?"
-          // isLoading={isBeingUpdated}
+            onCancel={() => { setShowDeleteModal(false); setSelectedRole(null); }}
+            onConfirm={() => {
+              archiveUnarchiveRole({
+                roleId: selectedRole?.role_id ?? selectedRole?.id,
+                cb: () => {
+                  setShowDeleteModal(false);
+                  setSelectedRole(null);
+                  fetchPermission({ params });
+                },
+              });
+            }}
+            deleteText={`Are you sure you want to archive "${selectedRole?.role ?? 'this role'}"?`}
+            isLoading={isBeingUpdated}
           />
         )}
       </div>

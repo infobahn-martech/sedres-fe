@@ -1904,7 +1904,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                       </div>
                     )}
                   </div>
-                  {Number(item.transportation_required) === 1 && item.transportation && (
+                  {(Number(item.transportation_required) === 1 || item.transportation_required === true) && item.transportation && (
                     <div className="landing-view-sub-section">
                       <div className="landing-view-sub-title">Transportation</div>
                       <div className="row g-2">
@@ -1943,8 +1943,9 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                           <label className="landing-view-label">Driver Name</label>
                           <div className="landing-view-box">
                             {item.transportation.driver_name ||
+                              item.transportation.driver ||
                               materialDriverOptions.find((o) => o.value === String(item.transportation.driver_id))?.label ||
-                              item.transportation.driver_id ||
+                              (item.transportation.driver_id > 0 ? String(item.transportation.driver_id) : null) ||
                               "-"}
                           </div>
                         </div>
