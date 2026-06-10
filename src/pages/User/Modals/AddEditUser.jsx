@@ -95,7 +95,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
         email: showModal?.email || "",
         phone: showModal?.phone || "",
         address: showModal?.address || "",
-        roleid: "", // ✅ keep empty first, set after roles loaded
+        roleid: "", //keep empty first, set after roles loaded
         port_id: "",
       });
 
