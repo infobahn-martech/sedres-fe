@@ -8,6 +8,7 @@ import operatorService from "../../../services/operatorService";
 import "../../../design/scss/prospect-modal.scss";
 import "../../../design/scss/modal-designs.scss";
 import "../../../design/scss/form-designs.scss";
+import "../../../design/scss/master-modal-form.scss";
 
 export function FleetModal({ showModal, closeModal, onSuccess }) {
     const {
@@ -129,10 +130,10 @@ export function FleetModal({ showModal, closeModal, onSuccess }) {
         <div className="modal-body">
             <div className="lead-form">
                 <form id="fleetForm" onSubmit={handleSubmit(onSubmit)}>
-                    {/* Taxi Boat Name */}
+                    {/* Taxi Boat Name + Registration No */}
                     <div className="mb-lg-3 mb-sm-0">
                         <div className="permInputs row">
-                            <div className="col-12">
+                            <div className="col-lg-6 col-sm-12">
                                 <div className="form-floating desig-inp">
                                     <input
                                         type="text"
@@ -148,12 +149,6 @@ export function FleetModal({ showModal, closeModal, onSuccess }) {
                                     )}
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Registration No + Operator */}
-                    <div className="mb-lg-3 mb-sm-0">
-                        <div className="permInputs row">
                             <div className="col-lg-6 col-sm-12">
                                 <div className="form-floating desig-inp">
                                     <input
@@ -165,6 +160,12 @@ export function FleetModal({ showModal, closeModal, onSuccess }) {
                                     <label>Registration No</label>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Operator + Capacity */}
+                    <div className="mb-lg-3 mb-sm-0">
+                        <div className="permInputs row">
                             <div className="col-lg-6 col-sm-12">
                                 <div className="phone-wrapper">
                                     <label className="phone-label">Operator <span className="text-danger">*</span></label>
@@ -191,12 +192,6 @@ export function FleetModal({ showModal, closeModal, onSuccess }) {
                                     )}
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Capacity + Insurance Expiry */}
-                    <div className="mb-lg-3 mb-sm-0">
-                        <div className="permInputs row">
                             <div className="col-lg-6 col-sm-12">
                                 <div className="form-floating desig-inp">
                                     <input
@@ -209,6 +204,12 @@ export function FleetModal({ showModal, closeModal, onSuccess }) {
                                     <label>Capacity (Persons)</label>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Insurance Expiry + Certificate Expiry */}
+                    <div className="mb-lg-3 mb-sm-0">
+                        <div className="permInputs row">
                             <div className="col-lg-6 col-sm-12">
                                 <PremiumDateField
                                     control={control}
@@ -216,12 +217,6 @@ export function FleetModal({ showModal, closeModal, onSuccess }) {
                                     label="Insurance Expiry"
                                 />
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Certificate Expiry */}
-                    <div className="mb-lg-3 mb-sm-0">
-                        <div className="permInputs row">
                             <div className="col-lg-6 col-sm-12">
                                 <PremiumDateField
                                     control={control}
@@ -259,7 +254,7 @@ export function FleetModal({ showModal, closeModal, onSuccess }) {
 
     return (
         <CustomModal
-            className="status-modal-sm"
+            className="role-modal-sm master-modal-form"
             dialgName="modal-dialog modal-dialog-centered"
             show={!!showModal}
             closeModal={() => closeModal(null)}
