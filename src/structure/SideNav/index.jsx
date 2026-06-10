@@ -410,7 +410,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
       ],
     },
     {
-      menu: 'Third Party Management',
+      menu: 'Third Party Service',
       isDefaultMenu: true,
       to: '/third-party-service',
       icon: workerIcon, // Third Party Services-specific icon
@@ -425,7 +425,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
       subMenus: [
         // { menu: 'Material Types', to: '/material-type', hasPermission: true },
         { menu: 'Waste Types', to: '/waste-types', hasPermission: true },
-        { menu: 'Packing Types', to: '/packing-type', hasPermission: true },
+        { menu: 'Packaging Types', to: '/packing-type', hasPermission: true },
         { menu: 'Logistics Warehouses', to: '/logistics-warehouse', hasPermission: true },
       ],
     },
