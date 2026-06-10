@@ -34,6 +34,7 @@ const SearchableSelect = ({
   menuPlacement = "auto",
   menuShouldBlockScroll = false,
   menuClassName = "",
+  searchInMenu = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -250,8 +251,25 @@ const SearchableSelect = ({
     .filter(Boolean)
     .join(" ");
 
+  const menuSearchBox = searchInMenu && (
+    <div className="cf-multi-select-search">
+      <input
+        ref={inputRef}
+        type="text"
+        className="cf-multi-select-search-input"
+        value={searchQuery}
+        onChange={handleSearchChange}
+        onKeyDown={handleInputKeyDown}
+        placeholder={searchPlaceholder}
+        disabled={disabled}
+        autoComplete="off"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  );
+
   const inlineDropdown = isOpen && !useMenuPortal && (
-    <div className={dropdownClassName}>{dropdownInner}</div>
+    <div className={dropdownClassName}>{menuSearchBox}{dropdownInner}</div>
   );
 
   const portaledDropdown =
@@ -277,7 +295,7 @@ const SearchableSelect = ({
           boxSizing: "border-box",
         }}
       >
-        {dropdownInner}
+        {menuSearchBox}{dropdownInner}
       </div>,
       menuPortalTarget
     );
@@ -297,7 +315,7 @@ const SearchableSelect = ({
           style={{ pointerEvents: disabled ? "none" : "auto" }}
         >
           <div className="cf-multi-select-email-tags">
-            {isOpen ? (
+            {isOpen && !searchInMenu ? (
               <input
                 ref={inputRef}
                 type="text"
@@ -348,6 +366,7 @@ SearchableSelect.propTypes = {
   menuPlacement: PropTypes.oneOf(["auto", "top", "bottom"]),
   menuShouldBlockScroll: PropTypes.bool,
   menuClassName: PropTypes.string,
+  searchInMenu: PropTypes.bool,
 };
 
 export default SearchableSelect;

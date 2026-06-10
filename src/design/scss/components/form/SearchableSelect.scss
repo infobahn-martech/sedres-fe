@@ -43,6 +43,34 @@
   background: #e8eef9;
 }
 
+.cf-multi-select-search {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e2e2ea;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+.cf-multi-select-search-input {
+  width: 100%;
+  border: 1px solid #e2e2ea;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  outline: none;
+  color: #1a1a1a;
+  font-family: inherit;
+
+  &::placeholder {
+    color: #999;
+  }
+
+  &:focus {
+    border-color: #6e82d6;
+  }
+}
+
 .cf-owner-searchable-select {
   flex: 1;
   min-width: 0;
