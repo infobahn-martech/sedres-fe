@@ -59,11 +59,11 @@ function SubTaskCardView({ card, onClose }) {
 
                 <div className="subtasks-tab-field-row">
                   <div className="subtasks-tab-field">
-                    <label className="subtasks-tab-label">Task Name</label>
+                    <label className="subtasks-tab-label">Task Description</label>
                     <div className="st-readonly-field">{card?.taskName || card?.title || "—"}</div>
                   </div>
                   <div className="subtasks-tab-field st-due-date-field">
-                    <label className="subtasks-tab-label">Due Date</label>
+                    <label className="subtasks-tab-label">Due Date &amp; Time</label>
                     <div className="st-readonly-field">{card?.dueDate || "—"}</div>
                   </div>
                 </div>
@@ -121,8 +121,8 @@ function SubTaskCardView({ card, onClose }) {
                   )}
                 </div>
 
-                <div className="st-inline-actions">
-                  <button type="button" className="st-inline-save" onClick={onClose}>Submit</button>
+                <div className="subtasks-tab-save-row">
+                  <button type="button" className="subtasks-tab-save-btn" onClick={onClose}>Submit</button>
                 </div>
 
               </div>

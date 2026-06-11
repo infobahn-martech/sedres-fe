@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { FiX } from "react-icons/fi";
+import DateTimePickerField from "../KanbanBoard/CardFormTabs/components/DateTimePickerField";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/pages/kanban-board/cardForm.scss";
 import "../../design/scss/invoice.scss";
@@ -80,15 +81,15 @@ function TaskCardDetailView({ task, onClose }) {
                                 <div className="subtasks-tab-card subtasks-tab-card--editor">
                                     <div className="subtasks-tab-editor-body">
 
-                                        {/* Task Name — readonly */}
+                                        {/* Task Description — readonly */}
                                         <div className="subtasks-tab-field">
-                                            <label className="subtasks-tab-label">Task Name</label>
+                                            <label className="subtasks-tab-label">Task Description</label>
                                             <div className="st-readonly-field">{task.taskName || "—"}</div>
                                         </div>
 
-                                        {/* Due Date — readonly */}
+                                        {/* Due Date & Time — readonly */}
                                         <div className="subtasks-tab-field">
-                                            <label className="subtasks-tab-label">Due Date</label>
+                                            <label className="subtasks-tab-label">Due Date &amp; Time</label>
                                             <div className="st-readonly-field">{task.dueDate || "—"}</div>
                                         </div>
 
@@ -161,6 +162,7 @@ function SubTaskModal({ show, onClose }) {
     const [taskName, setTaskName] = useState("");
     const [assignUserId, setAssignUserId] = useState("");
     const [dueDate, setDueDate] = useState("");
+    const [dueTime, setDueTime] = useState("");
     const [taskNameError, setTaskNameError] = useState("");
 
     const handleReset = () => {
@@ -168,6 +170,7 @@ function SubTaskModal({ show, onClose }) {
         setTaskName("");
         setAssignUserId("");
         setDueDate("");
+        setDueTime("");
         setTaskNameError("");
     };
 
@@ -183,13 +186,14 @@ function SubTaskModal({ show, onClose }) {
         }
         setTaskNameError("");
         const assignedUser = DUMMY_USERS.find((u) => String(u.user_id) === String(assignUserId));
+        const dueDateDisplay = dueDate ? (dueTime ? `${dueDate} ${dueTime}` : dueDate) : "";
         const newTask = {
             id: Date.now(),
             cardTitle: cardTitle || "Task Card",
             taskName,
             assignUserId,
             assignedUserName: assignedUser?.user_name || "",
-            dueDate,
+            dueDate: dueDateDisplay,
         };
         window.dispatchEvent(new CustomEvent("subtask:card-created", { detail: newTask }));
         handleReset();
@@ -218,84 +222,75 @@ function SubTaskModal({ show, onClose }) {
                     </div>
                 </div>
 
-                {/* Split body */}
-                <div className="st-split-body">
+                <div className="cardform-body cardform-body--feed-tab">
+                    <div className="subtasks-tab">
+                        <div className="subtasks-tab-layout">
+                            <section className="subtasks-tab-editor" aria-label="New subtask">
+                                <div className="subtasks-tab-card subtasks-tab-card--editor">
+                                    <div className="subtasks-tab-editor-body">
 
-                    {/* Left: form */}
-                    <div className="cardform-body cardform-body--feed-tab st-form-side">
-                        <div className="subtasks-tab">
-                            <div className="subtasks-tab-layout">
-                                <section className="subtasks-tab-editor" aria-label="New subtask">
-                                    <div className="subtasks-tab-card subtasks-tab-card--editor">
-                                        <div className="subtasks-tab-editor-body">
+                                        <h3 className="subtasks-tab-form-title">Create Task Card</h3>
 
-                                            {/* Task Name */}
-                                            <div className="subtasks-tab-field">
-                                                <label className="subtasks-tab-label" htmlFor="st-task-name">
-                                                    Task Name <span className="text-danger">*</span>
-                                                </label>
-                                                <textarea
-                                                    id="st-task-name"
-                                                    className={`subtasks-tab-textarea ${taskNameError ? "is-invalid" : ""}`}
-                                                    rows={3}
-                                                    placeholder="Enter task title or description..."
-                                                    value={taskName}
-                                                    onChange={(e) => { setTaskName(e.target.value); setTaskNameError(""); }}
-                                                />
-                                                {taskNameError && (
-                                                    <span className="text-danger st-field-error">{taskNameError}</span>
-                                                )}
-                                            </div>
-
-                                            {/* Assign User + Due Date row */}
-                                            <div className="subtasks-tab-field-row">
-                                                <div className="subtasks-tab-field">
-                                                    <label className="subtasks-tab-label" htmlFor="st-assign-user">Assign User</label>
-                                                    <select
-                                                        id="st-assign-user"
-                                                        className="subtasks-tab-select"
-                                                        value={assignUserId}
-                                                        onChange={(e) => setAssignUserId(e.target.value)}
-                                                    >
-                                                        <option value="">Select user</option>
-                                                        {DUMMY_USERS.map((u) => (
-                                                            <option key={u.user_id} value={u.user_id}>{u.user_name}</option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                                <div className="subtasks-tab-field">
-                                                    <label className="subtasks-tab-label" htmlFor="st-due-date">Due Date</label>
-                                                    <input
-                                                        id="st-due-date"
-                                                        type="date"
-                                                        className="subtasks-tab-date-input"
-                                                        value={dueDate}
-                                                        onChange={(e) => setDueDate(e.target.value)}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="st-inline-actions">
-                                                <button type="button" className="st-inline-cancel" onClick={handleClose}>Cancel</button>
-                                                <button type="button" className="st-inline-save" onClick={handleSave}>Create Task Card</button>
-                                            </div>
-
+                                        {/* Task Description */}
+                                        <div className="subtasks-tab-field">
+                                            <label className="subtasks-tab-label" htmlFor="st-task-name">
+                                                Task Description <span className="text-danger">*</span>
+                                            </label>
+                                            <textarea
+                                                id="st-task-name"
+                                                className={`subtasks-tab-textarea ${taskNameError ? "is-invalid" : ""}`}
+                                                rows={3}
+                                                placeholder="Enter task description..."
+                                                value={taskName}
+                                                onChange={(e) => { setTaskName(e.target.value); setTaskNameError(""); }}
+                                            />
+                                            {taskNameError && (
+                                                <span className="cf-field-error">{taskNameError}</span>
+                                            )}
                                         </div>
+
+                                        {/* Assign User + Due Date & Time row */}
+                                        <div className="subtasks-tab-field-row">
+                                            <div className="subtasks-tab-field">
+                                                <label className="subtasks-tab-label" htmlFor="st-assign-user">Assign User</label>
+                                                <select
+                                                    id="st-assign-user"
+                                                    className="subtasks-tab-select"
+                                                    value={assignUserId}
+                                                    onChange={(e) => setAssignUserId(e.target.value)}
+                                                >
+                                                    <option value="">Select user</option>
+                                                    {DUMMY_USERS.map((u) => (
+                                                        <option key={u.user_id} value={u.user_id}>{u.user_name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="subtasks-tab-field">
+                                                <label className="subtasks-tab-label">Due Date &amp; Time</label>
+                                                <DateTimePickerField
+                                                    dateValue={dueDate}
+                                                    timeValue={dueTime}
+                                                    onDateChange={(e) => setDueDate(e.target.value)}
+                                                    onTimeChange={(e) => setDueTime(e.target.value)}
+                                                    dateFieldName="dueDate"
+                                                    timeFieldName="dueTime"
+                                                    placeholder="Select date and time"
+                                                    popperClassName="st-datetime-popper"
+                                                    openOnClick
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="subtasks-tab-save-row">
+                                            <button type="button" className="subtasks-tab-cancel-btn" onClick={handleClose}>Cancel</button>
+                                            <button type="button" className="subtasks-tab-save-btn" onClick={handleSave}>Create Task Card</button>
+                                        </div>
+
                                     </div>
-                                </section>
-                            </div>
+                                </div>
+                            </section>
                         </div>
                     </div>
-
-                    {/* Right: live card preview */}
-                    <div className="st-preview-side">
-                        <CardPreview
-                            cardTitle={cardTitle}
-                            taskName={taskName}
-                            dueDate={dueDate}
-                        />
-                    </div>
-
                 </div>
 
             </div>

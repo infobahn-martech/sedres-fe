@@ -106,7 +106,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
       }
       icons.push(
         { id: 10, icon: FiMapPin, label: 'On Station' },
-        { id: 11, icon: FiLayers, label: 'Sub Task' },
+        { id: 11, icon: FiLayers, label: 'Task' },
         { id: 7, icon: FiMail, label: 'Outlook' },
         { id: 8, icon: FiSettings, label: 'Settings' }
       );
@@ -117,7 +117,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
       icons.push({ id: 9, icon: FiEdit3, label: 'Edit Workflow' });
     }
     icons.push(
-      { id: 11, icon: FiLayers, label: 'Sub Task' },
+      { id: 11, icon: FiLayers, label: 'Task' },
       { id: 7, icon: FiMail, label: 'Outlook' }
     );
     return icons;
@@ -811,7 +811,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
         return;
       }
 
-      if (item.label === 'Sub Task') {
+      if (item.label === 'Task') {
         closeSelectWorkflowModal();
         setShowFilterPanel(false);
         setShowBoardTeamsSubmenu(false);

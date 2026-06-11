@@ -60,6 +60,7 @@ const DateTimePickerField = ({
   minDate,
   maxDate,
   popperClassName = "",
+  openOnClick = false,
 }) => {
   const externalValue = useMemo(() => toDayjsValue(dateValue, timeValue), [dateValue, timeValue]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -147,6 +148,7 @@ const DateTimePickerField = ({
     <div className={`cf-input date-time-row cf-datetime-picker ${hasError ? "is-invalid" : ""}`} title={formatDisplayDateTime(dateValue, timeValue)}>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <DateTimePicker
+          {...(openOnClick ? { open: pickerOpen } : {})}
           value={pickerValue}
           referenceDate={pickerValue || externalValue || undefined}
           onOpen={handleOpen}
@@ -164,12 +166,14 @@ const DateTimePickerField = ({
               fullWidth: true,
               error: hasError,
               className: "cf-datetime-input-field",
+              ...(openOnClick ? { onClick: () => { if (!pickerOpen) handleOpen(); } } : {}),
               sx: {
                 "& .MuiInputBase-input.Mui-disabled": {
                   WebkitTextFillColor: "rgb(26, 26, 26)",
                   color: "rgb(26, 26, 26)",
                   opacity: 1,
                 },
+                ...(openOnClick ? { "& .MuiInputBase-input": { cursor: "pointer" } } : {}),
               },
             },
             popper: {
@@ -199,6 +203,7 @@ DateTimePickerField.propTypes = {
   minDate: PropTypes.oneOfType([PropTypes.instanceOf(Date), PropTypes.string]),
   maxDate: PropTypes.oneOfType([PropTypes.instanceOf(Date), PropTypes.string]),
   popperClassName: PropTypes.string,
+  openOnClick: PropTypes.bool,
 };
 
 export default DateTimePickerField;

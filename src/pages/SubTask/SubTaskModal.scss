@@ -6,6 +6,84 @@
   flex-shrink: 0;
 }
 
+// ── DateTime picker popper — must sit above the modal overlay (z-index 1350) ─
+.st-datetime-popper {
+  z-index: 1400 !important;
+}
+
+// ── Modal form layout overrides ───────────────────────────────────────────────
+// subtasks-tab-editor is flex: 0 0 65% for the split editor+list layout,
+// but in this modal there is no list — make it full width.
+.cardform-panel .subtasks-tab-editor {
+  flex: 1 1 auto;
+}
+
+// subtasks-tab-save-row uses margin-top: auto which floats buttons to bottom
+// in a tall flex container; add a top border for visual separation instead.
+.cardform-panel .subtasks-tab-save-row {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid #e8eaf0;
+  gap: 8px;
+}
+
+// Match DateTimePickerField input height to the select (38px).
+// general.scss sets padding: 10px 12px + min-height: 40px on MuiInputBase-root,
+// which must be overridden here so both fields are the same height.
+.cardform-panel .subtasks-tab-field .cf-datetime-picker {
+  .MuiInputBase-root,
+  .MuiPickersInputBase-root,
+  .MuiOutlinedInput-root {
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+    font-family: "Open Sans", sans-serif !important;
+    color: #1a1a1a !important;
+    border: 1px solid #e2e2ea !important;
+    border-radius: 8px !important;
+    background: #ffffff !important;
+    box-sizing: border-box !important;
+    box-shadow: none !important;
+  }
+
+  .MuiInputBase-input,
+  .MuiOutlinedInput-input,
+  .MuiPickersInputBase-input {
+    padding: 0 !important;
+    font-size: 13px !important;
+    font-family: "Open Sans", sans-serif !important;
+    color: #1a1a1a !important;
+    height: 100% !important;
+  }
+
+  .MuiOutlinedInput-notchedOutline {
+    border: none !important;
+  }
+
+  .MuiInputBase-root:hover,
+  .MuiPickersInputBase-root:hover,
+  .MuiOutlinedInput-root:hover {
+    border-color: #b0b8c8 !important;
+  }
+
+  .MuiInputBase-root.Mui-focused,
+  .MuiPickersInputBase-root.Mui-focused,
+  .MuiOutlinedInput-root.Mui-focused {
+    border-color: #00368c !important;
+    box-shadow: 0 0 0 3px rgba(0, 54, 140, 0.1) !important;
+  }
+
+  .MuiInputAdornment-root {
+    height: 38px;
+    margin: 0;
+  }
+
+  .MuiIconButton-root {
+    padding: 4px;
+  }
+}
+
 // ── Split body ────────────────────────────────────────────────────────────────
 .st-split-body {
   display: flex;
