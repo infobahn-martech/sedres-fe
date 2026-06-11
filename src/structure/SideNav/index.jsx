@@ -44,7 +44,8 @@ import {
 // 🆕 Kanban sidebar icons + tooltip
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
-import { FiPlus, FiInbox, FiFilter, FiPlusCircle, FiActivity, FiLayout, FiMail, FiSettings, FiEdit3, FiMapPin } from 'react-icons/fi';
+import { FiPlus, FiInbox, FiFilter, FiPlusCircle, FiActivity, FiLayout, FiMail, FiSettings, FiEdit3, FiMapPin, FiLayers } from 'react-icons/fi';
+import SubTaskModal from '../../pages/SubTask/SubTaskModal';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
 import useAuthReducer from '../../store/AuthReducer';
@@ -105,6 +106,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
       }
       icons.push(
         { id: 10, icon: FiMapPin, label: 'On Station' },
+        { id: 11, icon: FiLayers, label: 'Sub Task' },
         { id: 7, icon: FiMail, label: 'Outlook' },
         { id: 8, icon: FiSettings, label: 'Settings' }
       );
@@ -114,7 +116,10 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
     if (showEditWorkflowSidebarIcon) {
       icons.push({ id: 9, icon: FiEdit3, label: 'Edit Workflow' });
     }
-    icons.push({ id: 7, icon: FiMail, label: 'Outlook' });
+    icons.push(
+      { id: 11, icon: FiLayers, label: 'Sub Task' },
+      { id: 7, icon: FiMail, label: 'Outlook' }
+    );
     return icons;
   }, [showEditWorkflowSidebarIcon, kanbanFullSidebar]);
 
@@ -168,6 +173,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
   const [showAddDashboardModal, setShowAddDashboardModal] = useState(false);
   const [showMyAccountsModal, setShowMyAccountsModal] = useState(false);
   const [showOnStationModal, setShowOnStationModal] = useState(false);
+  const [showSubTaskModal, setShowSubTaskModal] = useState(false);
   const [showSelectWorkflowModal, setShowSelectWorkflowModal] = useState(false);
   const [addModalStep, setAddModalStep] = useState('workflow');
   const [selectedWorkflowId, setSelectedWorkflowId] = useState(null);
@@ -805,6 +811,18 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
         return;
       }
 
+      if (item.label === 'Sub Task') {
+        closeSelectWorkflowModal();
+        setShowFilterPanel(false);
+        setShowBoardTeamsSubmenu(false);
+        setShowSettingsSubmenu(false);
+        setShowCardManagementSubmenu(false);
+        setShowOnStationModal(false);
+        setShowSubTaskModal(true);
+        setActiveKanbanIcon(item.id);
+        return;
+      }
+
       if (item.label === 'Outlook') {
         setShowSettingsSubmenu(false);
         setShowCardManagementSubmenu(false);
@@ -831,6 +849,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
       if (showSettingsSubmenu) setShowSettingsSubmenu(false);
       if (showCardManagementSubmenu) setShowCardManagementSubmenu(false);
       if (showOnStationModal) setShowOnStationModal(false);
+      if (showSubTaskModal) setShowSubTaskModal(false);
       if (showBusinessRulesModal) setShowBusinessRulesModal(false);
       if (showBlockersModal) setShowBlockersModal(false);
       if (showStickersModal) setShowStickersModal(false);
@@ -944,7 +963,8 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
                 (item.label === 'On Station' && showOnStationModal) ||
                 (item.label === 'Settings' && (showSettingsSubmenu || showCardManagementSubmenu)) ||
                 (item.label === 'Add new dashboard' && showAddDashboardModal) ||
-                (item.label === 'Add' && showSelectWorkflowModal);
+                (item.label === 'Add' && showSelectWorkflowModal) ||
+                (item.label === 'Sub Task' && showSubTaskModal);
 
               return (
                 <div key={item.id} style={{ position: 'relative' }}>
@@ -1047,6 +1067,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
         <StickersModal show={showStickersModal} onClose={() => setShowStickersModal(false)} />
         <TagsModal show={showTagsModal} onClose={() => setShowTagsModal(false)} />
         <TypesModal show={showTypesModal} onClose={() => setShowTypesModal(false)} />
+        <SubTaskModal show={showSubTaskModal} onClose={() => setShowSubTaskModal(false)} />
         <AddDashboardModal
           show={showAddDashboardModal}
           onClose={() => setShowAddDashboardModal(false)}

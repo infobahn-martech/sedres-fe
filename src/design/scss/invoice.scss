@@ -877,6 +877,7 @@
 }
 
 .subtasks-tab-textarea,
+.subtasks-tab-input,
 .subtasks-tab-select,
 .subtasks-tab-date-input {
   width: 100%;
@@ -911,10 +912,15 @@
   }
 }
 
+.subtasks-tab-input,
 .subtasks-tab-select,
 .subtasks-tab-date-input {
   height: 38px;
   padding: 0 12px;
+}
+
+.subtasks-tab-input::placeholder {
+  color: #9aa0ad;
 }
 
 .subtasks-tab-select {

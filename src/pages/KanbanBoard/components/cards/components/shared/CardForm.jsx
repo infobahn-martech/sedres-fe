@@ -5,7 +5,7 @@ import kanbanBoardService from "../../../../../../services/kanbanBoardService";
 import { mapSalesOrderResponse } from "../../../../../../shared/helpers/mapSalesOrderResponse";
 import { useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
-import { Tag, Layers3, AlertTriangle, Sticker } from "lucide-react";
+import { Tag, Layers3, AlertTriangle, Sticker, X as LucideX } from "lucide-react";
 import { notify } from "../../../../../../components/Toaster";
 import "../../../../../../design/scss/pages/kanban-board/cardForm.scss";
 import "../../../../../../design/scss/general.scss";
@@ -31,6 +31,109 @@ import MWPCardView from "../MWP/User/MWPCardView";
 import DynamicIcon from "../../../../../../structure/SideNav/components/DynamicIcon";
 import { mapBackendIconNameToIconKey } from "../../../../../../store/KanbanManagementReducer";
 
+// Simplified view for SubTask cards (isSubTask === true)
+function SubTaskCardView({ card, onClose }) {
+  const [comments, setComments] = useState("");
+  const [files, setFiles] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const dropped = Array.from(e.dataTransfer.files || []);
+    if (dropped.length) setFiles((prev) => [...prev, ...dropped]);
+  };
+
+  const removeFile = (index) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="cardform-body cardform-body--feed-tab">
+      <div className="subtasks-tab">
+        <div className="subtasks-tab-layout">
+          <section className="subtasks-tab-editor">
+            <div className="subtasks-tab-card subtasks-tab-card--editor">
+              <div className="subtasks-tab-editor-body">
+
+                <div className="subtasks-tab-field-row">
+                  <div className="subtasks-tab-field">
+                    <label className="subtasks-tab-label">Task Name</label>
+                    <div className="st-readonly-field">{card?.taskName || card?.title || "—"}</div>
+                  </div>
+                  <div className="subtasks-tab-field st-due-date-field">
+                    <label className="subtasks-tab-label">Due Date</label>
+                    <div className="st-readonly-field">{card?.dueDate || "—"}</div>
+                  </div>
+                </div>
+
+                <div className="subtasks-tab-field">
+                  <label className="subtasks-tab-label" htmlFor="stv-cf-comments">Comments</label>
+                  <textarea
+                    id="stv-cf-comments"
+                    className="subtasks-tab-textarea"
+                    rows={4}
+                    placeholder="Add comments..."
+                    value={comments}
+                    onChange={(e) => setComments(e.target.value)}
+                  />
+                </div>
+
+                <div className="subtasks-tab-field">
+                  <label className="subtasks-tab-label">Document Upload</label>
+                  <div
+                    className={`st-upload-zone ${isDragging ? "st-upload-zone--drag" : ""}`}
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDrop}
+                  >
+                    <span className="st-upload-text">
+                      {files.length > 0
+                        ? `${files.length} file${files.length > 1 ? "s" : ""} selected`
+                        : <>Drag and drop your files here, or <span className="st-upload-browse">click to browse</span></>}
+                    </span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      className="d-none"
+                      onChange={(e) => {
+                        const selected = Array.from(e.target.files || []);
+                        if (selected.length) setFiles((prev) => [...prev, ...selected]);
+                        e.target.value = "";
+                      }}
+                    />
+                  </div>
+                  {files.length > 0 && (
+                    <div className="st-file-chips">
+                      {files.map((f, i) => (
+                        <span key={i} className="st-file-chip">
+                          {f.name}
+                          <button type="button" className="st-upload-clear" onClick={() => removeFile(i)}>
+                            <LucideX size={10} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="st-inline-actions">
+                  <button type="button" className="st-inline-save" onClick={onClose}>Submit</button>
+                </div>
+
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Constants - All tabs
 const ALL_TOP_TABS = [
   "Appointment Details",
@@ -52,9 +155,12 @@ const SIMPLIFIED_TOP_TABS = [
   "General",
   "Sales Order",
   "Invoice",
+  "Comments",
+  "Subtasks",
+  "Notes",
 ];
 
-const SIMPLIFIED_ENABLED_TABS = ["General", "Invoice", "Sales Order"];
+const SIMPLIFIED_ENABLED_TABS = ["General", "Invoice", "Sales Order", "Comments", "Subtasks", "Notes"];
 
 // Constants - DA module tabs (includes Operation and Husbandry)
 const DA_TOP_TABS = [
@@ -544,6 +650,7 @@ const TopBar = ({
   topbarColor,
   onClose,
   isAddMode = false,
+  isSubTaskCard = false,
   onColorChange,
   formValues,
   handleChange,
@@ -901,7 +1008,7 @@ const TopBar = ({
   return (
     <div className="cardform-topbar" style={{ backgroundColor: topbarColor }}>
       <div>
-        {!isAddMode && <span className="cardform-id">ID : {cardId}</span>}
+        {!isAddMode && !isSubTaskCard && <span className="cardform-id">ID : {cardId}</span>}
         {isAddMode ? (
           <input
             type="text"
@@ -1503,6 +1610,7 @@ function CardForm({
   const isCustomVariant = effectiveVariant === "custom";
   const isGROStyleView = isGROVariant || isCustomVariant;
   const isDriverStyleView = isDriverVariant || isHotelVariant;
+  const isSubTaskCard = card?.isSubTask === true;
 
   // Step labels from columns + columnOrder (e.g. DAdata columnTitles); fallback to STEP_LABELS
   const { stepLabels, totalSteps } = useMemo(() => {
@@ -1524,6 +1632,7 @@ function CardForm({
   const defaultTab = isDAModule ? "General" : (isSimplifiedMode ? "General" : "Appointment Details");
 
   const [activeTopTab, setActiveTopTab] = useState(defaultTab)
+  const [activeGroExtraTab, setActiveGroExtraTab] = useState("Comments");
 
   // Reset active tab when mode changes
   useEffect(() => {
@@ -2043,6 +2152,7 @@ function CardForm({
           topbarColor={topbarColor}
           onClose={handleClose}
           isAddMode={isAddMode}
+          isSubTaskCard={isSubTaskCard}
           onColorChange={handleTopbarColorChange}
           formValues={formValues}
           handleChange={handleChange}
@@ -2052,16 +2162,46 @@ function CardForm({
           onCardBlockerChange={handleTopbarCardBlockerChange}
           onCardStickerChange={handleTopbarCardStickerChange}
         />
-        {isDriverStyleView ? (
+        {isSubTaskCard ? (
+          <SubTaskCardView card={card} onClose={handleClose} />
+        ) : isDriverStyleView ? (
           <DriverCardView card={card} variant={effectiveVariant} />
         ) : isMWPVariant ? (
           <MWPCardView card={card} />
         ) : isGROStyleView ? (
-          isCustomVariant ? (
-            <CustomCardView ref={groCardViewRef} card={card} userRoleId={userRoleId} />
-          ) : (
-            <GROCardView ref={groCardViewRef} card={card} mode="gro" userRoleId={userRoleId} />
-          )
+          <>
+            {isCustomVariant ? (
+              <CustomCardView ref={groCardViewRef} card={card} userRoleId={userRoleId} />
+            ) : (
+              <GROCardView ref={groCardViewRef} card={card} mode="gro" userRoleId={userRoleId} />
+            )}
+            <div className="cardform-tabs">
+              {["Comments", "Subtasks", "Notes"].map((tab) => (
+                <NavTabButton
+                  key={tab}
+                  className="tab"
+                  active={activeGroExtraTab === tab}
+                  locked={activeGroExtraTab === tab}
+                  onClick={() => setActiveGroExtraTab(tab)}
+                >
+                  {tab}
+                </NavTabButton>
+              ))}
+            </div>
+            {renderTabContent(
+              activeGroExtraTab,
+              card,
+              formValues,
+              handleChange,
+              ownerInitial,
+              false,
+              false,
+              false,
+              addModeSaveProps,
+              salesOrderApiLoading,
+              salesOrderApiError
+            )}
+          </>
         ) : (
           <>
             {!isAddMode && !isMWPVariant && !isGROStyleView && (
