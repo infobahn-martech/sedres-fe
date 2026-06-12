@@ -12,6 +12,7 @@ import TagsModal from './components/TagsModal';
 import TypesModal from './components/TypesModal';
 import AddDashboardModal from './components/AddDashboardModal';
 import SelectWorkflowModal from './components/SelectWorkflowModal';
+import CallTypeBuilderModal from '../../pages/CallType/CallTypeBuilderModal';
 import WorkspacesSideNavPanel from './components/WorkspacesSideNavPanel';
 import MyAccountsModal from '../Header/MyAccountsModal';
 import OnStationModal from '../Header/OnStationModal';
@@ -148,6 +149,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
     { label: 'Stickers', modal: 'stickers' },
     { label: 'Tags', modal: 'tags' },
     { label: 'Types', modal: 'types' },
+    { label: 'Templates', modal: 'templates' },
   ];
 
   // Select icons based on route (restricted roles: only Workspaces + fixed board)
@@ -175,6 +177,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
   const [showOnStationModal, setShowOnStationModal] = useState(false);
   const [showSubTaskModal, setShowSubTaskModal] = useState(false);
   const [showSelectWorkflowModal, setShowSelectWorkflowModal] = useState(false);
+  const [showCallTypeBuilderModal, setShowCallTypeBuilderModal] = useState(false);
   const [addModalStep, setAddModalStep] = useState('workflow');
   const [selectedWorkflowId, setSelectedWorkflowId] = useState(null);
   const [selectedSwimlaneId, setSelectedSwimlaneId] = useState(null);
@@ -292,7 +295,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
       window.dispatchEvent(new CustomEvent('kanban:add-card', { detail: d }));
     });
     resetAddModalState();
-  }, [resetAddModalState]);
+  }, [resetAddModalState, navigate]);
 
   const [expand, setExpand] = useState(false);
 
@@ -426,6 +429,16 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
       to: '/third-party-service',
       icon: workerIcon, // Third Party Services-specific icon
       hasPermission: true,
+    },
+    {
+      menu: 'Card Management',
+      isDefaultMenu: true,
+      icon: configIcon,
+      hasPermission: true,
+      isOpen: false,
+      subMenus: [
+        { menu: 'Templates', to: '/call-type', hasPermission: true },
+      ],
     },
     {
       menu: 'Material Management',
@@ -940,11 +953,13 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
       setShowStickersModal(false);
       setShowTagsModal(false);
       setShowTypesModal(false);
+      setShowCallTypeBuilderModal(false);
 
       if (item.modal === 'blockers') setShowBlockersModal(true);
       if (item.modal === 'stickers') setShowStickersModal(true);
       if (item.modal === 'tags') setShowTagsModal(true);
       if (item.modal === 'types') setShowTypesModal(true);
+      if (item.modal === 'templates') setShowCallTypeBuilderModal(true);
     };
 
     return (
@@ -1099,6 +1114,10 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
           onClose={closeSelectWorkflowModal}
           onContinue={handleAddModalContinue}
           onExited={handleSelectWorkflowModalExited}
+        />
+        <CallTypeBuilderModal
+          show={showCallTypeBuilderModal}
+          onClose={() => setShowCallTypeBuilderModal(false)}
         />
       </>
     );

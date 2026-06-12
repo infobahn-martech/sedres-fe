@@ -56,6 +56,7 @@ function WorkflowCardIllustrationFlow({ uid = 'f' }) {
   );
 }
 
+
 const DEFAULT_WORKFLOW_DESCRIPTION =
   "New cards open in this workflow's columns so you can track work in the right swimlanes.";
 

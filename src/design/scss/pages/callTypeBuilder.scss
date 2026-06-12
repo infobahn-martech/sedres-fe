@@ -1,0 +1,574 @@
+// Styles for Call Type Builder — uses existing cardform + Bootstrap classes.
+
+// ── Modal overlay & topbar overrides ─────────────────────────────────────────
+.ct-modal-overlay {
+  z-index: 1350;
+}
+
+.ct-modal-topbar {
+  background-color: #7c3aed;
+}
+
+// ── Split-panel body ─────────────────────────────────────────────────────────
+.ct-split-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.ct-split-left {
+  width: 420px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e8e8f0;
+  overflow-y: auto;
+
+  .ct-split-form-area {
+    flex: 1;
+    padding: 16px 20px 0;
+    overflow-y: auto;
+  }
+
+  .ct-split-footer {
+    flex-shrink: 0;
+    padding: 14px 20px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #fff;
+  }
+}
+
+.ct-split-right {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: #f5f5f8;
+}
+
+// ── Saved list ────────────────────────────────────────────────────────────────
+.ct-saved-section {
+  padding: 0 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ct-saved-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 8px;
+}
+
+.ct-saved-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.ct-saved-list {
+  max-height: 140px;
+  overflow-y: auto;
+  margin: 0 -20px;
+  padding: 0 20px 10px;
+}
+
+.ct-saved-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  margin: 2px 0;
+  transition: background 0.15s;
+
+  &:hover { background: #f5f7ff; }
+
+  &.is-active {
+    background: #eff3ff;
+    border-left-color: #7c3aed;
+
+    .ct-saved-name { color: #7c3aed; font-weight: 600; }
+  }
+}
+
+.ct-saved-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7c3aed;
+  flex-shrink: 0;
+}
+
+.ct-saved-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ct-saved-del {
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  font-size: 17px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s;
+
+  &:hover { color: #ef4444; }
+}
+
+.ct-saved-empty {
+  font-size: 12px;
+  color: #94a3b8;
+  font-style: italic;
+  padding: 4px 0 10px;
+}
+
+// ── New template button ───────────────────────────────────────────────────────
+.ct-new-btn {
+  background: none;
+  border: 1.5px solid #7c3aed;
+  color: #7c3aed;
+  border-radius: 7px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: #f5f3ff; }
+}
+
+// ── Topbar title ──────────────────────────────────────────────────────────────
+.ct-topbar-title {
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+// ── Form section title ────────────────────────────────────────────────────────
+.ct-form-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 12px;
+}
+
+.ct-form-top {
+  margin-bottom: 8px;
+
+  .subtasks-tab-field {
+    margin-bottom: 12px;
+  }
+}
+
+// ── Tab configuration section ─────────────────────────────────────────────────
+.ct-tabs-section {
+  margin-bottom: 4px;
+}
+
+.ct-tabs-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+
+  .ct-form-section-title { margin: 0; }
+}
+
+.ct-tabs-count {
+  font-size: 12px;
+  color: #7c3aed;
+  font-weight: 600;
+  background: #f5f3ff;
+  border-radius: 20px;
+  padding: 2px 10px;
+}
+
+.ct-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin: 0 0 6px;
+}
+
+.ct-accordion-group {
+  margin-bottom: 16px;
+}
+
+// ── Accordion item ────────────────────────────────────────────────────────────
+.ct-accordion-item {
+  border: 1.5px solid #e8eaf0;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: #fff;
+  transition: border-color 0.15s;
+
+  &.ct-accordion-item--enabled {
+    border-color: #a78bfa;
+    background: #faf5ff;
+  }
+}
+
+.ct-accordion-header {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+}
+
+.ct-tab-toggle {
+  display: flex;
+  align-items: center;
+  padding: 10px 8px 10px 12px;
+  cursor: pointer;
+  margin: 0;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #7c3aed;
+    cursor: pointer;
+    margin: 0;
+    flex-shrink: 0;
+  }
+}
+
+.ct-accordion-trigger {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 10px 12px 10px 4px;
+  cursor: pointer;
+  text-align: left;
+
+  &:focus { outline: none; }
+
+  svg {
+    margin-left: auto;
+    flex-shrink: 0;
+    color: #94a3b8;
+  }
+}
+
+.ct-accordion-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.ct-accordion-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7c3aed;
+  background: #ede9fe;
+  border-radius: 20px;
+  padding: 1px 8px;
+}
+
+.ct-accordion-body {
+  border-top: 1px solid #ede9fe;
+  padding: 12px 14px 14px;
+}
+
+// ── Field checkboxes ──────────────────────────────────────────────────────────
+.ct-field-select-all-row {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f7;
+}
+
+.ct-field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.ct-field-check-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+  margin: 0;
+  user-select: none;
+
+  input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: #7c3aed;
+    cursor: pointer;
+    margin: 0;
+    flex-shrink: 0;
+  }
+}
+
+// ── Custom fields per tab ─────────────────────────────────────────────────────
+.ct-custom-fields-list {
+  margin-bottom: 8px;
+}
+
+.ct-custom-fields-heading {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin: 0 0 6px;
+}
+
+.ct-custom-field-row {
+  display: grid;
+  grid-template-columns: 1fr 90px 28px;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.ct-custom-field-input {
+  height: 32px;
+  padding: 0 10px;
+  border: 1.5px solid #e2e2ea;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: "Open Sans", sans-serif;
+  color: #374151;
+  background: #fff;
+  outline: none;
+
+  &:focus { border-color: #7c3aed; }
+}
+
+
+.ct-custom-field-select {
+  height: 32px;
+  padding: 0 6px;
+  border: 1.5px solid #e2e2ea;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: "Open Sans", sans-serif;
+  color: #374151;
+  background: #fff;
+  outline: none;
+
+  &:focus { border-color: #7c3aed; }
+}
+
+.ct-custom-field-del {
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover { color: #ef4444; background: #fef2f2; }
+}
+
+.ct-add-custom-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1.5px dashed #c4b5fd;
+  color: #7c3aed;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: "Open Sans", sans-serif;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: #7c3aed;
+    background: #f5f3ff;
+  }
+}
+
+// ── Simple tabs (Checklist, Document Library, etc.) ───────────────────────────
+.ct-simple-tabs-group {
+  margin-bottom: 12px;
+}
+
+.ct-simple-tab-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1.5px solid #e8eaf0;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  background: #fff;
+  margin: 0 0 6px;
+  user-select: none;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:has(input:checked) {
+    border-color: #a78bfa;
+    background: #faf5ff;
+  }
+
+  &:hover { background: #f5f3ff; }
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #7c3aed;
+    cursor: pointer;
+    margin: 0;
+    flex-shrink: 0;
+  }
+}
+
+.ct-simple-tab-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+// ── Template summary (right panel) ────────────────────────────────────────────
+.ct-summary-card {
+  background: #fff;
+  border: 1.5px solid #e8eaf0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.ct-summary-row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 8px;
+
+  &:last-child { margin-bottom: 0; }
+}
+
+.ct-summary-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 90px;
+}
+
+.ct-summary-value {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 600;
+
+  em { font-style: italic; color: #9ca3af; font-weight: 400; }
+}
+
+.ct-summary-empty {
+  font-size: 13px;
+  color: #94a3b8;
+  font-style: italic;
+  line-height: 1.6;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.ct-summary-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ct-summary-tab {
+  background: #fff;
+  border: 1.5px solid #e8eaf0;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.ct-summary-tab-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #7c3aed;
+  margin: 0 0 8px;
+}
+
+.ct-summary-field-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  li {
+    font-size: 12px;
+    color: #374151;
+    padding-left: 14px;
+    position: relative;
+
+    &::before {
+      content: "•";
+      position: absolute;
+      left: 4px;
+      color: #a78bfa;
+    }
+  }
+}
+
+.ct-summary-custom-field {
+  span {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-left: 4px;
+  }
+}
+
+.ct-summary-no-fields {
+  font-size: 12px;
+  color: #9ca3af;
+  font-style: italic;
+  margin: 0;
+}
+
+// ── Page layout (sidebar /call-type route) ────────────────────────────────────
+.ct-page-wrap {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  background: #f5f5f8;
+}
+
+.ct-page-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
