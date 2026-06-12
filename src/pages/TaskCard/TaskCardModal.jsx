@@ -126,7 +126,7 @@ function TaskCardModal({ show, onClose }) {
                             </div>
 
                             <div className="tc-field-row">
-                                <div className="tc-field">
+                                <div className="tc-field tc-assign-user-field">
                                     <label className="tc-label">Assign User</label>
                                     <SearchableSelect
                                         value={assignUserId === "" ? "" : String(assignUserId)}
@@ -135,9 +135,9 @@ function TaskCardModal({ show, onClose }) {
                                         placeholder="Select user"
                                         searchPlaceholder={deriveSearchPlaceholder("Select user")}
                                         renderOption={(option) => (
-                                            <div className="cf-searchable-option-with-avatar">
-                                                <UserOptionAvatar avatarUrl={option.avatar} label={option.label} className="cf-owner-avatar--sm" />
-                                                <span>{option.label}</span>
+                                            <div className="cf-searchable-option-with-avatar tc-user-option">
+                                                <UserOptionAvatar avatarUrl={option.avatar} label={option.label} className="cf-owner-avatar--sm tc-user-avatar" />
+                                                <span className="tc-user-name">{option.label}</span>
                                             </div>
                                         )}
                                     />

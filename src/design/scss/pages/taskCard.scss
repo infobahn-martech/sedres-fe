@@ -34,17 +34,48 @@ $tc-font:         "Open Sans", sans-serif;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+}
+
+// ── Assign user dropdown — smaller avatar + name ──────────────────────────────
+.tc-user-option {
+  gap: 6px;
+}
+
+.tc-user-avatar {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 10px !important;
+  flex-shrink: 0;
+}
+
+.tc-user-name {
+  font-size: 12.5px;
+  font-family: $tc-font;
+  color: #374151;
+  line-height: 1.3;
 }
 
 .tc-preview-side {
-  width: 300px;
+  width: 260px;
   flex-shrink: 0;
-  padding: 24px 20px;
+  padding: 18px 16px;
   background: #f0f2f5;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
 }
 
 .tc-preview-label {
