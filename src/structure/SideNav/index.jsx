@@ -191,6 +191,11 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
   const workflowOptionsForModal = useMemo(() => {
     return (sidebarWorkflows || [])
       .filter((workflow) => workflow?.role_id === null)
+      .filter((workflow) => {
+        const id = workflow?.workflow_id ?? workflow?.id;
+        const name = workflow?.workflow_name ?? workflow?.name ?? workflow?.title ?? '';
+        return String(id) !== 'wf-demo' && name !== 'Task Workflow';
+      })
       .map((workflow) => ({
         id: workflow?.workflow_id ?? workflow?.id,
         name: workflow?.workflow_name ?? workflow?.name ?? workflow?.title ?? 'Workflow',
