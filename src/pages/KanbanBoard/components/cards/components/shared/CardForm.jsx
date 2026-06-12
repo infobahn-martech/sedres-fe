@@ -5,7 +5,7 @@ import kanbanBoardService from "../../../../../../services/kanbanBoardService";
 import { mapSalesOrderResponse } from "../../../../../../shared/helpers/mapSalesOrderResponse";
 import { useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
-import { Tag, Layers3, AlertTriangle, Sticker, X as LucideX } from "lucide-react";
+import { Tag, Layers3, AlertTriangle, Sticker } from "lucide-react";
 import { notify } from "../../../../../../components/Toaster";
 import "../../../../../../design/scss/pages/kanban-board/cardForm.scss";
 import "../../../../../../design/scss/general.scss";
@@ -30,109 +30,7 @@ import CustomCardView from "../Custom/User/CustomCardView";
 import MWPCardView from "../MWP/User/MWPCardView";
 import DynamicIcon from "../../../../../../structure/SideNav/components/DynamicIcon";
 import { mapBackendIconNameToIconKey } from "../../../../../../store/KanbanManagementReducer";
-
-// Simplified view for SubTask cards (isSubTask === true)
-function SubTaskCardView({ card, onClose }) {
-  const [comments, setComments] = useState("");
-  const [files, setFiles] = useState([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef(null);
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const dropped = Array.from(e.dataTransfer.files || []);
-    if (dropped.length) setFiles((prev) => [...prev, ...dropped]);
-  };
-
-  const removeFile = (index) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  return (
-    <div className="cardform-body cardform-body--feed-tab">
-      <div className="subtasks-tab">
-        <div className="subtasks-tab-layout">
-          <section className="subtasks-tab-editor">
-            <div className="subtasks-tab-card subtasks-tab-card--editor">
-              <div className="subtasks-tab-editor-body">
-
-                <div className="subtasks-tab-field-row">
-                  <div className="subtasks-tab-field">
-                    <label className="subtasks-tab-label">Task Description</label>
-                    <div className="st-readonly-field">{card?.taskName || card?.title || "—"}</div>
-                  </div>
-                  <div className="subtasks-tab-field st-due-date-field">
-                    <label className="subtasks-tab-label">Due Date &amp; Time</label>
-                    <div className="st-readonly-field">{card?.dueDate || "—"}</div>
-                  </div>
-                </div>
-
-                <div className="subtasks-tab-field">
-                  <label className="subtasks-tab-label" htmlFor="stv-cf-comments">Comments</label>
-                  <textarea
-                    id="stv-cf-comments"
-                    className="subtasks-tab-textarea"
-                    rows={4}
-                    placeholder="Add comments..."
-                    value={comments}
-                    onChange={(e) => setComments(e.target.value)}
-                  />
-                </div>
-
-                <div className="subtasks-tab-field">
-                  <label className="subtasks-tab-label">Document Upload</label>
-                  <div
-                    className={`st-upload-zone ${isDragging ? "st-upload-zone--drag" : ""}`}
-                    onClick={() => fileInputRef.current?.click()}
-                    onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
-                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={handleDrop}
-                  >
-                    <span className="st-upload-text">
-                      {files.length > 0
-                        ? `${files.length} file${files.length > 1 ? "s" : ""} selected`
-                        : <>Drag and drop your files here, or <span className="st-upload-browse">click to browse</span></>}
-                    </span>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      className="d-none"
-                      onChange={(e) => {
-                        const selected = Array.from(e.target.files || []);
-                        if (selected.length) setFiles((prev) => [...prev, ...selected]);
-                        e.target.value = "";
-                      }}
-                    />
-                  </div>
-                  {files.length > 0 && (
-                    <div className="st-file-chips">
-                      {files.map((f, i) => (
-                        <span key={i} className="st-file-chip">
-                          {f.name}
-                          <button type="button" className="st-upload-clear" onClick={() => removeFile(i)}>
-                            <LucideX size={10} />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="subtasks-tab-save-row">
-                  <button type="button" className="subtasks-tab-save-btn" onClick={onClose}>Submit</button>
-                </div>
-
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
-    </div>
-  );
-}
+import TaskCardDetailView from "../../../../../../pages/TaskCard/TaskCardDetailView";
 
 // Constants - All tabs
 const ALL_TOP_TABS = [
@@ -2163,7 +2061,7 @@ function CardForm({
           onCardStickerChange={handleTopbarCardStickerChange}
         />
         {isSubTaskCard ? (
-          <SubTaskCardView card={card} onClose={handleClose} />
+          <TaskCardDetailView card={card} onClose={handleClose} />
         ) : isDriverStyleView ? (
           <DriverCardView card={card} variant={effectiveVariant} />
         ) : isMWPVariant ? (

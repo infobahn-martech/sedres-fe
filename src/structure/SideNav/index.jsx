@@ -46,7 +46,7 @@ import {
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
 import { FiPlus, FiInbox, FiFilter, FiPlusCircle, FiActivity, FiLayout, FiMail, FiSettings, FiEdit3, FiMapPin, FiLayers } from 'react-icons/fi';
-import SubTaskModal from '../../pages/SubTask/SubTaskModal';
+import TaskCardModal from '../../pages/TaskCard';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
 import useAuthReducer from '../../store/AuthReducer';
@@ -1087,7 +1087,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, isVendorPortal = false }
         <StickersModal show={showStickersModal} onClose={() => setShowStickersModal(false)} />
         <TagsModal show={showTagsModal} onClose={() => setShowTagsModal(false)} />
         <TypesModal show={showTypesModal} onClose={() => setShowTypesModal(false)} />
-        <SubTaskModal show={showSubTaskModal} onClose={() => setShowSubTaskModal(false)} />
+        <TaskCardModal show={showSubTaskModal} onClose={() => setShowSubTaskModal(false)} />
         <AddDashboardModal
           show={showAddDashboardModal}
           onClose={() => setShowAddDashboardModal(false)}

@@ -1,0 +1,424 @@
+// TaskCard — all styles scoped to this feature only.
+// The modal chrome (overlay / panel / topbar) reuses .cardform-* from the
+// pre-existing src/design/css/CardForm.css — nothing is redefined here.
+
+// ── Topbar colour override for TaskCard ───────────────────────────────────────
+.tc-topbar {
+  background-color: #2e7d32;
+}
+
+$tc-green: #2e7d32;
+$tc-green-dark: #1b5e20;
+$tc-border: #e2e2ea;
+$tc-border-hover: #c8d4ea;
+$tc-focus: #00368c;
+$tc-bg-input: #ffffff;
+$tc-bg-readonly: #f5f6fa;
+$tc-text: #1a1a1a;
+$tc-text-muted: #9aa0ad;
+$tc-font: "Open Sans", sans-serif;
+
+// ── Form layout ───────────────────────────────────────────────────────────────
+.tc-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tc-form-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: $tc-text;
+  margin: 0 0 16px;
+  font-family: $tc-font;
+}
+
+.tc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tc-field-row {
+  display: flex;
+  gap: 16px;
+
+  .tc-field {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tc-field--narrow {
+    flex: 0 0 200px;
+    max-width: 200px;
+  }
+}
+
+.tc-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  font-family: $tc-font;
+  margin: 0;
+}
+
+// ── Inputs ────────────────────────────────────────────────────────────────────
+.tc-textarea,
+.tc-select,
+.tc-date-input {
+  width: 100%;
+  font-size: 13px;
+  font-family: $tc-font;
+  color: $tc-text;
+  border: 1px solid $tc-border;
+  border-radius: 8px;
+  background: $tc-bg-input;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover { border-color: $tc-border-hover; }
+
+  &:focus {
+    outline: none;
+    border-color: $tc-focus;
+    box-shadow: 0 0 0 3px rgba(0, 54, 140, 0.1);
+  }
+
+  &.is-invalid { border-color: #ef4444; }
+}
+
+.tc-textarea {
+  resize: vertical;
+  min-height: 90px;
+  max-height: 200px;
+  padding: 10px 12px;
+  line-height: 1.5;
+
+  &::placeholder { color: $tc-text-muted; }
+}
+
+.tc-select,
+.tc-date-input {
+  height: 38px;
+  padding: 0 12px;
+}
+
+.tc-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235c6370' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.tc-readonly-field {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: $tc-font;
+  color: $tc-text;
+  background: $tc-bg-readonly;
+  border: 1px solid $tc-border;
+  border-radius: 8px;
+  line-height: 1.5;
+}
+
+// ── DateTime picker ───────────────────────────────────────────────────────────
+.tc-datetime-popper {
+  z-index: 1400 !important;
+}
+
+.tc-field .cf-datetime-picker {
+  .MuiInputBase-root,
+  .MuiPickersInputBase-root,
+  .MuiOutlinedInput-root {
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+    font-family: $tc-font !important;
+    color: $tc-text !important;
+    border: 1px solid $tc-border !important;
+    border-radius: 8px !important;
+    background: $tc-bg-input !important;
+    box-sizing: border-box !important;
+    box-shadow: none !important;
+  }
+
+  .MuiInputBase-input,
+  .MuiOutlinedInput-input,
+  .MuiPickersInputBase-input {
+    padding: 0 !important;
+    font-size: 13px !important;
+    font-family: $tc-font !important;
+    color: $tc-text !important;
+    height: 100% !important;
+  }
+
+  .MuiOutlinedInput-notchedOutline { border: none !important; }
+
+  .MuiInputBase-root:hover,
+  .MuiPickersInputBase-root:hover,
+  .MuiOutlinedInput-root:hover {
+    border-color: $tc-border-hover !important;
+  }
+
+  .MuiInputBase-root.Mui-focused,
+  .MuiPickersInputBase-root.Mui-focused,
+  .MuiOutlinedInput-root.Mui-focused {
+    border-color: $tc-focus !important;
+    box-shadow: 0 0 0 3px rgba(0, 54, 140, 0.1) !important;
+  }
+
+  .MuiInputAdornment-root { height: 38px; margin: 0; }
+  .MuiIconButton-root { padding: 4px; }
+}
+
+// ── Buttons ───────────────────────────────────────────────────────────────────
+.tc-save-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid #e8eaf0;
+}
+
+.tc-save-btn {
+  height: 36px;
+  min-width: 80px;
+  padding: 0 16px;
+  background: $tc-green;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: $tc-font;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) { background: $tc-green-dark; }
+  &:disabled { opacity: 0.65; cursor: not-allowed; }
+}
+
+.tc-cancel-btn {
+  height: 36px;
+  min-width: 80px;
+  padding: 0 16px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: $tc-font;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover { border-color: #9ca3af; background: #f9fafb; }
+}
+
+// ── Upload zone ───────────────────────────────────────────────────────────────
+.tc-upload-zone {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border: 1.5px dashed #c5d0e8;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #f5f7ff;
+  transition: border-color 0.15s, background 0.15s;
+  font-size: 13px;
+  font-family: $tc-font;
+
+  &:hover,
+  &.tc-upload-zone--drag {
+    border-color: $tc-green;
+    background: #f0faf1;
+  }
+}
+
+.tc-upload-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: $tc-text-muted;
+}
+
+.tc-upload-browse {
+  color: #4a6cf7;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.tc-file-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.tc-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #f0faf1;
+  border: 1px solid #bbf7d0;
+  border-radius: 20px;
+  font-size: 11px;
+  color: #15803d;
+  font-family: $tc-font;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tc-upload-clear {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  flex-shrink: 0;
+
+  &:hover { color: #ef4444; }
+}
+
+// ── Error ─────────────────────────────────────────────────────────────────────
+.tc-field-error {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 2px;
+  font-family: $tc-font;
+}
+
+// ── Detail view (st-* classes — same visual as old SubTaskCardView) ────────────
+.st-due-date-field {
+  max-width: 160px;
+  flex-shrink: 0;
+}
+
+.st-readonly-field {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: $tc-font;
+  color: $tc-text;
+  background: $tc-bg-readonly;
+  border: 1px solid $tc-border;
+  border-radius: 8px;
+  line-height: 1.5;
+}
+
+.st-upload-zone {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border: 1.5px dashed #c5d0e8;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #f5f7ff;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  font-size: 13px;
+  font-family: $tc-font;
+
+  &:hover,
+  &.st-upload-zone--drag {
+    border-color: $tc-green;
+    background: #f0faf1;
+  }
+}
+
+.st-upload-browse {
+  color: #4a6cf7;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.st-upload-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: $tc-text-muted;
+}
+
+.st-upload-clear {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  flex-shrink: 0;
+
+  &:hover { color: #ef4444; }
+}
+
+.st-file-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.st-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #f0faf1;
+  border: 1px solid #bbf7d0;
+  border-radius: 20px;
+  font-size: 11px;
+  color: #15803d;
+  font-family: $tc-font;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st-inline-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.st-inline-save {
+  padding: 6px 14px;
+  background: $tc-green;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: $tc-font;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) { background: $tc-green-dark; }
+  &:disabled { opacity: 0.65; cursor: not-allowed; }
+}
