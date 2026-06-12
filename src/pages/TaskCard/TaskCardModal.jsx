@@ -1,10 +1,25 @@
 import { useState, useCallback, useEffect } from "react";
 
 import userService from "../../services/userService";
+import SearchableSelect, { deriveSearchPlaceholder } from "../../components/form/SearchableSelect";
 import "../../design/css/common/CardForm.css";
 import "../../design/css/components/CardItem.css";
 import "../../design/scss/pages/taskCard.scss";
 import DateTimePickerField from "../KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+
+const UserOptionAvatar = ({ avatarUrl, label, className = "" }) => {
+    const letter = label ? String(label).trim().charAt(0).toUpperCase() : "U";
+    const src = avatarUrl ? String(avatarUrl).trim() : "";
+    const [imgFailed, setImgFailed] = useState(false);
+    if (src && !imgFailed) {
+        return (
+            <div className={`cf-owner-avatar cf-owner-avatar--img ${className}`.trim()}>
+                <img src={src} alt="" onError={() => setImgFailed(true)} />
+            </div>
+        );
+    }
+    return <div className={`cf-owner-avatar ${className}`.trim()}>{letter}</div>;
+};
 
 function TaskCardModal({ show, onClose }) {
     const [cardTitle, setCardTitle] = useState("");
@@ -21,6 +36,12 @@ function TaskCardModal({ show, onClose }) {
             .then(({ data }) => setUsers(data?.data || []))
             .catch(() => setUsers([]));
     }, [show]);
+
+    const userOptions = users.map((u) => ({
+        value: String(u.user_id),
+        label: u.name,
+        avatar: u.avatar_path || u.avatar || "",
+    }));
 
     const assignedUser = users.find((u) => String(u.user_id) === String(assignUserId));
 
@@ -106,18 +127,20 @@ function TaskCardModal({ show, onClose }) {
 
                             <div className="tc-field-row">
                                 <div className="tc-field">
-                                    <label className="tc-label" htmlFor="tc-assign-user">Assign User</label>
-                                    <select
-                                        id="tc-assign-user"
-                                        className="tc-select"
-                                        value={assignUserId}
-                                        onChange={(e) => setAssignUserId(e.target.value)}
-                                    >
-                                        <option value="">Select user</option>
-                                        {users.map((u) => (
-                                            <option key={u.user_id} value={u.user_id}>{u.name}</option>
-                                        ))}
-                                    </select>
+                                    <label className="tc-label">Assign User</label>
+                                    <SearchableSelect
+                                        value={assignUserId === "" ? "" : String(assignUserId)}
+                                        onChange={(val) => setAssignUserId(val)}
+                                        options={userOptions}
+                                        placeholder="Select user"
+                                        searchPlaceholder={deriveSearchPlaceholder("Select user")}
+                                        renderOption={(option) => (
+                                            <div className="cf-searchable-option-with-avatar">
+                                                <UserOptionAvatar avatarUrl={option.avatar} label={option.label} className="cf-owner-avatar--sm" />
+                                                <span>{option.label}</span>
+                                            </div>
+                                        )}
+                                    />
                                 </div>
 
                                 <div className="tc-field">
