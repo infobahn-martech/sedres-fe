@@ -58,9 +58,6 @@ function Comments({ card }) {
     const [selectedMentionUserIds, setSelectedMentionUserIds] = useState([]);
     const [isManagersLoading, setIsManagersLoading] = useState(false);
 
-    const comments = card?.comments ?? [];
-    const hasComments = comments.length > 0;
-
     useEffect(() => {
         let cancelled = false;
 
@@ -259,28 +256,6 @@ function Comments({ card }) {
                         </div>
                     </section>
 
-                    <section className="comments-tab-list" aria-label="Comments">
-                        <div className="comments-tab-card comments-tab-card--list">
-                            <div className="comments-tab-list-scroll">
-                                {!hasComments ? (
-                                    <p className="comments-tab-empty">No comments added yet.</p>
-                                ) : (
-                                    <ul className="comments-tab-list-items">
-                                        {comments.map((comment, index) => (
-                                            <li className="comments-tab-comment-card" key={index}>
-                                                <div className="comments-tab-comment-avatar">
-                                                    <img src={comment.avatar} alt="avatar" />
-                                                </div>
-                                                <div className="comments-tab-comment-content">
-                                                    <p>{comment.content}</p>
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
-                        </div>
-                    </section>
                 </div>
             </div>
         </div>
