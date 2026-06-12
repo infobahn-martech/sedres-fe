@@ -19,17 +19,99 @@ $tc-font:         "Open Sans", sans-serif;
   background-color: $tc-green;
 }
 
+// ── Split layout (form + preview) ────────────────────────────────────────────
+.tc-layout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.tc-form-side {
+  flex: 1;
+  min-width: 0;
+  border-right: 1px solid #e8eaf0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.tc-preview-side {
+  width: 300px;
+  flex-shrink: 0;
+  padding: 24px 20px;
+  background: #f0f2f5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.tc-preview-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin: 0;
+  font-family: $tc-font;
+}
+
+.tc-preview-subtitle {
+  font-size: 12px;
+  color: $tc-text-muted;
+  margin: 0 0 6px;
+  font-family: $tc-font;
+}
+
+.tc-preview-card {
+  --card-color: #{$tc-green};
+  width: 100%;
+  cursor: default;
+}
+
+.tc-preview-title {
+  white-space: normal !important;
+  -webkit-line-clamp: 2 !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden;
+}
+
+.tc-preview-task {
+  white-space: normal !important;
+  -webkit-line-clamp: 3 !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden;
+}
+
+.tc-preview-empty {
+  font-size: 11px;
+  color: #c0c8d8;
+  font-style: italic;
+  margin: 2px 0 4px;
+  font-family: $tc-font;
+}
+
+.tc-preview-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #e8f5e9;
+  color: $tc-green;
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-family: $tc-font;
+}
+
 // ── Form body (creation modal) ────────────────────────────────────────────────
 .tc-body {
   flex: 1;
-  min-height: 0;
   overflow-y: auto;
   padding: 20px 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 50%;
-  min-width: 480px;
 }
 
 .tc-form-title {
