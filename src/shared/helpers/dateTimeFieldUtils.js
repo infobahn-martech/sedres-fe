@@ -86,3 +86,13 @@ export function formatDisplayDateTime(raw, separateTime) {
     hour12: false,
   });
 }
+
+/** Returns the next calendar day (YYYY-MM-DD) after the date in rawDate, or undefined if invalid. */
+export function nextDayOf(rawDate) {
+  const datePart = (rawDate || "").split(" ")[0].split("T")[0];
+  if (!datePart) return undefined;
+  const d = new Date(`${datePart}T00:00:00`);
+  if (isNaN(d.getTime())) return undefined;
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split("T")[0];
+}

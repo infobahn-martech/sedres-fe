@@ -25,17 +25,9 @@ import {
   splitApiDateTimeParts,
   buildApiDateTime,
   formatDisplayDateTime,
+  nextDayOf,
 } from "../../../../../../../shared/helpers/dateTimeFieldUtils";
 import MaterialTablePagination from "./MaterialTablePagination";
-
-const nextDayOf = (rawDate) => {
-  const datePart = (rawDate || "").split(" ")[0].split("T")[0];
-  if (!datePart) return undefined;
-  const d = new Date(`${datePart}T00:00:00`);
-  if (isNaN(d.getTime())) return undefined;
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().split("T")[0];
-};
 
 const extractListFromApi = (body) => {
   if (body == null) return [];
