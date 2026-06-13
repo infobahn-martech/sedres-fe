@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import CustomModal from "../../../../../../../components/CustomModal";
 import { FormField, FormInput, FormSelect } from "./Husbandry.components";
 import LocationAutocomplete from "./LocationAutocomplete";
+import editIcon from "../../../../../../../assets/images/edit.svg";
+import deleteIcon from "../../../../../../../assets/images/delete.svg";
 
 // Generate dummy material data
 const generateDummyMaterials = () => {
@@ -37,7 +40,11 @@ const MaterialManagementContent = ({ formValues, handleChange, cardColor }) => {
   const [materialsList, setMaterialsList] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [editingMaterial, setEditingMaterial] = useState(null);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
   const fileInputRef = useRef(null);
+  const dropdownButtonRefs = useRef({});
 
   // Form state
   const [formData, setFormData] = useState({
@@ -74,39 +81,65 @@ const MaterialManagementContent = ({ formValues, handleChange, cardColor }) => {
     }
   }, [formValues.materialManagementList]);
 
-  const handleOpenModal = () => {
-    setFormData({
-      materialType: "",
-      materialToCollectOrDeliver: "",
-      driver: "",
-      pickUpDate: "",
-      pickUpTime: "",
-      dropOffDate: "",
-      dropOffTime: "",
-      dropOffLocation: "",
-      status: "",
-      reason: "",
-      documents: [],
-    });
-    setSelectedFiles([]);
+  const handleToggleDropdown = (id, e) => {
+    if (openDropdownId === id) {
+      setOpenDropdownId(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDropdownPosition({ top: rect.bottom + window.scrollY + 4, right: window.innerWidth - rect.right });
+    setOpenDropdownId(id);
+  };
+
+  const handleCloseDropdown = () => setOpenDropdownId(null);
+
+  useEffect(() => {
+    if (!openDropdownId) return;
+    const handler = (e) => {
+      if (!e.target.closest(".action-dropdown-wrapper") && !e.target.closest("[data-dropdown-menu]")) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [openDropdownId]);
+
+  const EMPTY_FORM = {
+    materialType: "", materialToCollectOrDeliver: "", driver: "",
+    pickUpDate: "", pickUpTime: "", dropOffDate: "", dropOffTime: "",
+    dropOffLocation: "", status: "", reason: "", documents: [],
+  };
+
+  const handleOpenModal = (material = null) => {
+    setEditingMaterial(material);
+    if (material) {
+      const [pickDate = "", pickTime = ""] = (material.pickUp || "").split("T");
+      const [dropDate = "", dropTime = ""] = (material.dropOff || "").split("T");
+      setFormData({
+        materialType: material.materialType || "",
+        materialToCollectOrDeliver: material.materialToCollectOrDeliver || "",
+        driver: material.driver || "",
+        pickUpDate: pickDate,
+        pickUpTime: pickTime.slice(0, 5),
+        dropOffDate: dropDate,
+        dropOffTime: dropTime.slice(0, 5),
+        dropOffLocation: material.dropOffLocation || "",
+        status: material.status || "",
+        reason: material.reason || "",
+        documents: material.documents || [],
+      });
+      setSelectedFiles(material.documents || []);
+    } else {
+      setFormData(EMPTY_FORM);
+      setSelectedFiles([]);
+    }
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setFormData({
-      materialType: "",
-      materialToCollectOrDeliver: "",
-      driver: "",
-      pickUpDate: "",
-      pickUpTime: "",
-      dropOffDate: "",
-      dropOffTime: "",
-      dropOffLocation: "",
-      status: "",
-      reason: "",
-      documents: [],
-    });
+    setEditingMaterial(null);
+    setFormData(EMPTY_FORM);
     setSelectedFiles([]);
   };
 
@@ -128,20 +161,21 @@ const MaterialManagementContent = ({ formValues, handleChange, cardColor }) => {
       ? `${formData.dropOffDate}T${formData.dropOffTime}`
       : "";
 
-    const newMaterial = {
-      id: materialsList.length > 0 ? Math.max(...materialsList.map(m => m.id)) + 1 : 1,
+    const materialData = {
       materialToCollectOrDeliver: formData.materialToCollectOrDeliver,
       materialType: formData.materialType,
       driver: formData.driver,
-      pickUp: pickUp,
-      dropOff: dropOff,
+      pickUp,
+      dropOff,
       dropOffLocation: formData.dropOffLocation,
       status: formData.status,
       reason: formData.reason,
       documents: selectedFiles,
     };
 
-    const updatedList = [...materialsList, newMaterial];
+    const updatedList = editingMaterial
+      ? materialsList.map((m) => m.id === editingMaterial.id ? { ...m, ...materialData } : m)
+      : [...materialsList, { id: materialsList.length > 0 ? Math.max(...materialsList.map(m => m.id)) + 1 : 1, ...materialData }];
     setMaterialsList(updatedList);
 
     // Update formValues
@@ -252,7 +286,7 @@ const MaterialManagementContent = ({ formValues, handleChange, cardColor }) => {
 
   const renderHeader = () => (
     <>
-      <h1 className="modal-title">Add Material</h1>
+      <h1 className="modal-title">{editingMaterial ? "Edit Material" : "Add Material"}</h1>
     </>
   );
 
@@ -517,7 +551,7 @@ const MaterialManagementContent = ({ formValues, handleChange, cardColor }) => {
         form="materialForm"
         className="btn btn-primary btn-modal-submit"
       >
-        Add Material
+        {editingMaterial ? "Save Changes" : "Add Material"}
       </button>
     </div>
   );
@@ -576,26 +610,45 @@ const MaterialManagementContent = ({ formValues, handleChange, cardColor }) => {
                   </td>
                   <td>
                     <div className="material-table-actions">
-                      <button
-                        type="button"
-                        className="material-table-action-btn edit"
-                        title="Edit"
-                        onClick={() => handleOpenModal()}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M11.333 2a1.886 1.886 0 0 1 2.667 2.667L4.667 14H2v-2.667L11.333 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </button>
-                      <button
-                        type="button"
-                        className="material-table-action-btn delete"
-                        title="Delete"
-                        onClick={() => handleDeleteMaterial(material.id)}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M2 4h12M5.333 4V2.667h5.334V4M6.667 7.333v4M9.333 7.333v4M3.333 4l.667 9.333h8L12.667 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </button>
+                      <div className={`action-dropdown-wrapper${openDropdownId === material.id ? " action-dropdown-wrapper--open" : ""}`}>
+                        <button
+                          type="button"
+                          className="note-action-btn"
+                          onClick={(e) => handleToggleDropdown(material.id, e)}
+                          title="More actions"
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="6" r="1.5" fill="currentColor" />
+                            <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                            <circle cx="12" cy="18" r="1.5" fill="currentColor" />
+                          </svg>
+                        </button>
+                        {openDropdownId === material.id && createPortal(
+                          <div
+                            data-dropdown-menu
+                            className="note-dropdown-menu"
+                            style={{ top: `${dropdownPosition.top}px`, right: `${dropdownPosition.right}px` }}
+                          >
+                            <button
+                              type="button"
+                              className="note-dropdown-btn"
+                              onClick={() => { handleCloseDropdown(); handleOpenModal(material); }}
+                            >
+                              <img src={editIcon} alt="edit" className="note-dropdown-icon" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="note-dropdown-btn note-dropdown-btn--danger"
+                              onClick={() => { handleCloseDropdown(); handleDeleteMaterial(material.id); }}
+                            >
+                              <img src={deleteIcon} alt="delete" className="note-dropdown-icon" />
+                              <span>Delete</span>
+                            </button>
+                          </div>,
+                          document.body
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>
