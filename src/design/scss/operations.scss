@@ -11557,3 +11557,42 @@ body .modal-backdrop.show {
   width: 16px;
   height: 16px;
 }
+
+.note-dropdown-menu {
+  position: fixed;
+  background-color: #fff;
+  border: 1px solid #e2e2ea;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 99999;
+  min-width: 180px;
+  padding: 4px 0;
+}
+
+.note-dropdown-btn {
+  width: 100%;
+  padding: 10px 16px;
+  background-color: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #44444f;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+
+  &--danger {
+    color: #dc3545;
+  }
+}
+
+.note-dropdown-icon {
+  width: 16px;
+  height: 16px;
+}
