@@ -1,0 +1,708 @@
+/* ==========================================================
+   MATERIAL MANAGEMENT STYLES
+   ========================================================== */
+
+.material-management-content-wrapper {
+  padding: 0;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.material-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 22px;
+  background: #ffffff;
+}
+
+.material-list-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: 0.5px;
+}
+
+.material-list-title-bar {
+  width: 4px;
+  height: 18px;
+  background: var(--card-color, #2A00FF);
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.material-add-btn {
+  background: #00368c !important;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 0;
+}
+
+.material-add-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+.material-add-btn:active {
+  transform: translateY(0);
+}
+
+.material-table-container {
+  overflow-x: auto;
+  overflow-y: visible;
+  width: 100%;
+  margin: 0;
+  background: #ffffff;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 22px 22px 22px;
+  border-radius: 12px;
+  // box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.material-table-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.material-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.material-table-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.material-table-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.material-table {
+  margin: 0;
+  width: 100%;
+  background: #ffffff;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.material-table-container .table.material-table th,
+.material-table-container .table.material-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 12px 16px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+  background: #ffffff;
+}
+
+.material-table th:nth-child(1),
+.material-table td:nth-child(1) {
+  width: 150px;
+  min-width: 150px;
+}
+
+/* Material Type */
+.material-table th:nth-child(2),
+.material-table td:nth-child(2) {
+  width: 140px;
+  min-width: 140px;
+}
+
+/* Driver */
+.material-table th:nth-child(3),
+.material-table td:nth-child(3) {
+  width: 180px;
+  min-width: 180px;
+}
+
+/* PickUp */
+.material-table th:nth-child(4),
+.material-table td:nth-child(4) {
+  width: 180px;
+  min-width: 180px;
+}
+
+/* DropOff */
+.material-table th:nth-child(5),
+.material-table td:nth-child(5) {
+  width: 150px;
+  min-width: 120px;
+}
+
+/* Status */
+
+.material-table th:nth-child(6),
+.material-table td:nth-child(6) {
+  width: 100px;
+  min-width: 100px;
+}
+
+/* 7-column Inbound Orders table */
+.inbound-table.material-table th:nth-child(1),
+.inbound-table.material-table td:nth-child(1) {
+  width: 13%;
+}
+
+.inbound-table.material-table th:nth-child(2),
+.inbound-table.material-table td:nth-child(2) {
+  width: 12%;
+}
+
+.inbound-table.material-table th:nth-child(3),
+.inbound-table.material-table td:nth-child(3) {
+  width: 11%;
+}
+
+.inbound-table.material-table th:nth-child(4),
+.inbound-table.material-table td:nth-child(4) {
+  width: 10%;
+}
+
+.inbound-table.material-table th:nth-child(5),
+.inbound-table.material-table td:nth-child(5) {
+  width: 13%;
+}
+
+.inbound-table.material-table th:nth-child(6),
+.inbound-table.material-table td:nth-child(6) {
+  width: 22%;
+}
+
+.inbound-table.material-table th:nth-child(7),
+.inbound-table.material-table td:nth-child(7) {
+  width: 19%;
+}
+
+/* 8-column sub-tab tables (Landing Note, Dispatch Note) */
+.sub-note-table.material-table th:nth-child(1),
+.sub-note-table.material-table td:nth-child(1) {
+  width: 12%;
+}
+
+.sub-note-table.material-table th:nth-child(2),
+.sub-note-table.material-table td:nth-child(2) {
+  width: 11%;
+}
+
+.sub-note-table.material-table th:nth-child(3),
+.sub-note-table.material-table td:nth-child(3) {
+  width: 10%;
+}
+
+.sub-note-table.material-table th:nth-child(4),
+.sub-note-table.material-table td:nth-child(4) {
+  width: 10%;
+}
+
+.sub-note-table.material-table th:nth-child(5),
+.sub-note-table.material-table td:nth-child(5) {
+  width: 9%;
+}
+
+.sub-note-table.material-table th:nth-child(6),
+.sub-note-table.material-table td:nth-child(6) {
+  width: 11%;
+}
+
+.sub-note-table.material-table th:nth-child(7),
+.sub-note-table.material-table td:nth-child(7) {
+  width: 18%;
+}
+
+.sub-note-table.material-table th:nth-child(8),
+.sub-note-table.material-table td:nth-child(8) {
+  width: 19%;
+}
+
+.material-table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.material-table-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+  padding: 0;
+
+  &:hover {
+    background: #f0f0f0;
+  }
+
+  &.edit:hover {
+    background: #e0e7ff;
+    color: var(--card-color, #2a00ff);
+  }
+
+  &.delete:hover {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+}
+
+.material-table-container .table.material-table {
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.material-table-container .table.material-table thead {
+  background: var(--card-color, #2A00FF);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.material-table-container .table.material-table thead th {
+  background: var(--card-color, #2A00FF) !important;
+  color: #3e3633;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0.5px;
+  padding: 12px 16px;
+  border: none;
+  text-align: left !important;
+}
+
+.material-table-container .table.material-table thead th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.material-table-container .table.material-table thead th:last-child {
+  border-top-right-radius: 12px;
+}
+
+.material-table-container .table.material-table tbody td {
+  font-size: 12px;
+  color: #333;
+  padding: 12px 16px;
+  vertical-align: middle;
+}
+
+.material-table-cell {
+  color: #333;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.material-table tbody tr:nth-child(even) {
+  background: #f8f9fc;
+}
+
+.material-table tbody tr:nth-child(even) td {
+  background: #f8f9fc;
+}
+
+.material-table tbody tr:hover {
+  background: rgba(42, 0, 255, 0.03);
+}
+
+.material-table tbody tr:hover td {
+  background: rgb(249 249 255);
+}
+
+.material-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.material-table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 12px;
+}
+
+.material-table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 12px;
+}
+
+.operation-right .material-management-content-wrapper {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Tooltip z-index fix for material table - ensure tooltips appear above action buttons */
+.material-table-tooltip {
+  z-index: 10000 !important;
+  white-space: nowrap !important;
+  max-width: none !important;
+}
+
+.material-table-container [id^="react-tooltip-"] {
+  z-index: 10000 !important;
+  white-space: nowrap !important;
+  max-width: none !important;
+  word-break: keep-all !important;
+  overflow: visible !important;
+}
+
+/* Prevent tooltip text wrapping in action columns */
+.material-table-container .table-actions [id^="react-tooltip-"],
+.material-table-container .table-actions+[id^="react-tooltip-"] {
+  white-space: nowrap !important;
+  max-width: none !important;
+  word-break: keep-all !important;
+  overflow: visible !important;
+}
+
+.material-table-container .table.material-table .note-thead th {
+  background: #e2e6ff !important;
+}
+
+/* ==========================================================
+   MATERIAL MANAGEMENT MODAL
+   ========================================================== */
+
+/* Transparent scrollbar for files list in material management modal */
+body .material-management-modal .files-list {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+body .material-management-modal .files-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+body .material-management-modal .files-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+body .material-management-modal .files-list::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+body .material-management-modal .files-list::-webkit-scrollbar-thumb:hover {
+  background: transparent;
+}
+
+/* Higher z-index to appear above CardForm (z-index: 1200) */
+/* Bootstrap modals are rendered in a portal at body level */
+body .material-management-modal {
+  z-index: 1300 !important;
+}
+
+body .material-management-modal.show {
+  z-index: 1300 !important;
+}
+
+body .material-management-modal .modal-dialog {
+  z-index: 1301 !important;
+  position: relative;
+  max-width: 900px !important;
+  width: 90% !important;
+  margin: 30px auto;
+}
+
+body .material-management-modal .modal-content {
+  border-radius: 16px;
+  padding: 0;
+}
+
+body .material-management-modal .modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+body .material-management-modal .modal-body {
+  padding: 24px 32px;
+  max-height: 70vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #00368c #f1f1f1;
+}
+
+body .material-management-modal .modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+body .material-management-modal .modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+body .material-management-modal .modal-body::-webkit-scrollbar-thumb {
+  background: #00368c;
+  border-radius: 4px;
+}
+
+body .material-management-modal .modal-body::-webkit-scrollbar-thumb:hover {
+  background: #002570;
+}
+
+body .material-management-modal .modal-footer {
+  padding: 12px 24px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Apply #e2e6ff color to labels, buttons, hover states */
+body .material-management-modal {
+
+  /* Labels */
+  .cf-field label {
+    color: #000000 !important;
+  }
+
+  /* Buttons */
+  .btn-primary,
+  .btn.btn-primary,
+  button.btn-primary,
+  button[type="submit"] {
+    background-color: #e2e6ff !important;
+    border-color: #e2e6ff !important;
+    color: #1a1a1a !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: #e2e6ff !important;
+      border-color: #e2e6ff !important;
+      opacity: 0.9;
+    }
+  }
+
+  .btn-secondary,
+  .btn.btn-secondary,
+  button.btn-secondary {
+    background-color: #e2e6ff !important;
+    border-color: #e2e6ff !important;
+    color: #1a1a1a !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: #e2e6ff !important;
+      border-color: #e2e6ff !important;
+      opacity: 0.9;
+    }
+  }
+
+  /* Input hover states */
+  .cf-input:hover {
+    border-color: #e2e6ff !important;
+  }
+
+  .cf-input:focus-within {
+    border-color: #e2e6ff !important;
+    box-shadow: 0 0 0 3px rgba(226, 230, 255, 0.3) !important;
+  }
+
+  /* Select dropdown hover */
+  .cf-select:hover {
+    border-color: #e2e6ff !important;
+  }
+
+  .cf-select:focus-within {
+    border-color: #e2e6ff !important;
+    box-shadow: 0 0 0 3px rgba(226, 230, 255, 0.3) !important;
+  }
+
+  /* Date and time inputs */
+  .cf-input.date-time-row {
+    &:hover {
+      border-color: #e2e6ff !important;
+    }
+
+    &:focus-within {
+      border-color: #e2e6ff !important;
+      box-shadow: 0 0 0 3px rgba(226, 230, 255, 0.3) !important;
+    }
+  }
+
+  /* File upload zone — compact height to match field widths */
+  .document-upload-zone {
+    height: auto !important;
+    min-height: 56px !important;
+    max-width: 100% !important;
+    padding: 8px 16px !important;
+    border-color: #e2e6ff !important;
+
+    &:hover {
+      border-color: #e2e6ff !important;
+      background: rgba(226, 230, 255, 0.1) !important;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    &.dragging {
+      border-color: #e2e6ff !important;
+      background: rgba(226, 230, 255, 0.15) !important;
+      box-shadow: 0 0 0 4px rgba(226, 230, 255, 0.3) !important;
+      transform: none !important;
+    }
+  }
+
+  .upload-zone-content {
+    min-height: 0 !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .upload-icon-wrapper {
+    display: none !important;
+  }
+
+  /* File upload buttons */
+  .add-more-files-btn {
+    background-color: #e2e6ff !important;
+    border-color: #e2e6ff !important;
+    border-width: 1.5px !important;
+    color: #1a1a1a !important;
+    font-weight: 500 !important;
+
+    &:hover {
+      background-color: #e2e6ff !important;
+      border-color: #e2e6ff !important;
+      color: #1a1a1a !important;
+      opacity: 0.9;
+    }
+  }
+
+  .btn-remove-files {
+    background-color: #e2e6ff !important;
+    border-color: #e2e6ff !important;
+    border-width: 1.5px !important;
+    color: #1a1a1a !important;
+    font-weight: 500 !important;
+
+    &:hover {
+      background-color: #e2e6ff !important;
+      border-color: #e2e6ff !important;
+      color: #1a1a1a !important;
+      opacity: 0.9;
+    }
+  }
+
+  .btn-remove-file {
+    border-color: #e2e6ff !important;
+
+    &:hover {
+      background-color: rgba(226, 230, 255, 0.2) !important;
+      border-color: #e2e6ff !important;
+    }
+
+    &:hover svg path {
+      stroke: #e2e6ff !important;
+    }
+  }
+
+  /* Upload icon and text */
+  .upload-icon-wrapper svg rect,
+  .upload-icon-wrapper svg path {
+    stroke: #e2e6ff !important;
+  }
+
+  .upload-link {
+    color: #e2e6ff !important;
+  }
+
+  /* Upload text — smaller to match compact zone height */
+  .upload-main-text {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Modal title */
+  .modal-title {
+    color: #000000 !important;
+  }
+
+  /* Force all single-line field triggers to the same height */
+  .cf-input,
+  .cf-select,
+  .cf-multi-select-email-input {
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    box-sizing: border-box !important;
+  }
+
+  .cf-multi-select-email-input {
+    padding: 0 14px !important;
+    border: 1.5px solid #e2e2ea !important;
+    border-radius: 8px !important;
+  }
+
+  /* Dropdown options list — scrollable */
+  .cf-multi-select-dropdown {
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
+  /* Dropdown search box */
+  .cf-multi-select-search {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e2e2ea;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+  }
+
+  .cf-multi-select-search-input {
+    width: 100%;
+    border: 1px solid #e2e2ea;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: #1a1a1a;
+    outline: none;
+    box-sizing: border-box;
+
+    &::placeholder {
+      color: #999;
+      font-style: normal;
+    }
+
+    &:focus {
+      border-color: #3e5cb6;
+    }
+  }
+
+  .cf-multi-select-no-results {
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #999;
+    text-align: center;
+  }
+
+  /* Normalize placeholder style across all field types */
+  .cf-input input::placeholder {
+    font-size: 13px;
+    font-style: normal;
+    color: #999;
+  }
+
+  .cf-multi-select-placeholder,
+  .cf-select-placeholder {
+    font-size: 13px;
+    font-style: normal;
+    color: #999;
+  }
+}
