@@ -9,6 +9,15 @@ import { splitApiDateTimeParts } from "../../../../../../../shared/helpers/dateT
 import DateTimePickerField from "../../../../shared/components/DateTimePickerField";
 import LocationAutocomplete from "./LocationAutocomplete";
 import MaterialTablePagination from "./MaterialTablePagination";
+
+const nextDayOf = (rawDate) => {
+  const datePart = (rawDate || "").split(" ")[0].split("T")[0];
+  if (!datePart) return undefined;
+  const d = new Date(`${datePart}T00:00:00`);
+  if (isNaN(d.getTime())) return undefined;
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split("T")[0];
+};
 import editIcon from "../../../../../../../assets/images/edit.svg";
 import deleteIcon from "../../../../../../../assets/images/delete.svg";
 import eyeIcon from "../../../../../../../assets/images/eye.svg";
@@ -1260,6 +1269,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                     dateFieldName="dispatch_date"
                     timeFieldName="dispatch_time"
                     placeholder="YYYY-MM-DD hh:mm"
+                    minDate={nextDayOf(convertingNote?.landing_date || convertingNote?.date)}
                   />
                   {convertFormErrors.dispatch_date && <span className="landing-convert-error">{convertFormErrors.dispatch_date}</span>}
                 </FormField>

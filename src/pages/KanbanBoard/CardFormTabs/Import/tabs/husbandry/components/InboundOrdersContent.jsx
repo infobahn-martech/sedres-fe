@@ -28,6 +28,15 @@ import {
 } from "../../../../../../../shared/helpers/dateTimeFieldUtils";
 import MaterialTablePagination from "./MaterialTablePagination";
 
+const nextDayOf = (rawDate) => {
+  const datePart = (rawDate || "").split(" ")[0].split("T")[0];
+  if (!datePart) return undefined;
+  const d = new Date(`${datePart}T00:00:00`);
+  if (isNaN(d.getTime())) return undefined;
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split("T")[0];
+};
+
 const extractListFromApi = (body) => {
   if (body == null) return [];
   if (Array.isArray(body)) return body;
@@ -1573,6 +1582,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                     timeFieldName="time"
                     placeholder="YYYY-MM-DD hh:mm"
                     hasError={!!convertFormErrors.date}
+                    minDate={nextDayOf(convertingOrder?.inbound_date || convertingOrder?.date)}
                   />
                 </FormField>
                 {convertFormErrors.date && <span className="dispatch-edit-error">{convertFormErrors.date}</span>}
