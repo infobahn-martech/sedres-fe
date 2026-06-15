@@ -7,16 +7,12 @@ import { HotelModal } from "./Modals/AddEditHotel";
 import { RenderAction } from "./RenderCells";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 
-// ✅ CHANGE THIS IMPORT PATH based on your project structure
 import useHotelReducer from "../../store/HotelReducer";
-// ex: "../../stores/HotelReducer"
 
 const Hotel = () => {
-    // ✅ Store / API
-    const { getHotelData, hotelData, isLoading, totalHotelCount, deleteHotel } =
+    const { getHotelData, hotelData, isLoading, isBeingUpdated, totalHotelCount, deleteHotel } =
         useHotelReducer((state) => state);
 
-    // ✅ Table params
     const [params, setParams] = useState({
         page: 1,
         searchTerm: "",
@@ -25,12 +21,10 @@ const Hotel = () => {
         sortOrder: 1, // 1 = ASC, -1 = DESC
     });
 
-    // ✅ Modals
-    const [showHotelModal, setShowHotelModal] = useState(false); // boolean OR row object
+    const [showHotelModal, setShowHotelModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedRow, setSelectedRow] = useState(null);
 
-    // ✅ Fetch list when params change
     useEffect(() => {
         getHotelData?.({
             search: params.searchTerm || "",
@@ -48,7 +42,6 @@ const Hotel = () => {
         getHotelData,
     ]);
 
-    // ✅ Debounced search
     const debouncedSearch = useMemo(
         () =>
             debounce((value) => {
@@ -101,8 +94,6 @@ const Hotel = () => {
             thclass: "tb-head",
             contentClass: "table-content",
             sort: false,
-            // If you want tooltip truncation:
-            // cell: ({ row }) => <span title={row.hotel_address}>{row.hotel_address}</span>,
         },
         {
             name: "Actions",
@@ -133,18 +124,16 @@ const Hotel = () => {
     };
 
     const handleDelete = async () => {
-        if (!selectedRow?._id) return;
+        if (!selectedRow?.hotel_id) return;
 
-        // ✅ adjust this payload key based on your backend
-        const payload = { hotel_id: selectedRow._id };
-
-        // If your deleteData expects only id:
-        // await deleteData(selectedRow._id);
-        await deleteHotel?.(payload);
-
-        setShowDeleteModal(false);
-        setSelectedRow(null);
-        refreshList();
+        await deleteHotel?.({
+            hotel_id: selectedRow.hotel_id,
+            cb: () => {
+                setShowDeleteModal(false);
+                setSelectedRow(null);
+                refreshList();
+            },
+        });
     };
 
     return (
@@ -187,7 +176,7 @@ const Hotel = () => {
 
                 {!!showHotelModal && (
                     <HotelModal
-                        showModal={showHotelModal} // boolean OR row object for edit
+                        showModal={showHotelModal}
                         closeModal={() => setShowHotelModal(false)}
                         onSuccess={() => {
                             setShowHotelModal(false);
@@ -204,8 +193,8 @@ const Hotel = () => {
                             setSelectedRow(null);
                         }}
                         onConfirm={handleDelete}
-                        isLoading={isLoading}
-                        deleteText="Are you sure you want to delete this hotel?"
+                        isLoading={isBeingUpdated}
+                        deleteText={`Are you sure you want to delete "${selectedRow?.hotel_name}"?`}
                     />
                 )}
             </div>
