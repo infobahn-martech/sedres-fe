@@ -494,6 +494,63 @@ body .user-modal-sm .modal-dialog {
   box-sizing: border-box;
 }
 
+/* Fleet / Status Modal - compact form, 600px wide */
+body .status-modal-sm {
+  z-index: 1300 !important;
+}
+
+body .status-modal-sm.show {
+  z-index: 1300 !important;
+}
+
+body .status-modal-sm .modal-dialog {
+  max-width: 600px !important;
+  z-index: 1301 !important;
+  position: relative;
+}
+
+.status-modal-sm .modal-content {
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.status-modal-sm {
+  .form-control,
+  .premium-select,
+  .premium-select__control,
+  .premium-date-input,
+  .premium-date-field {
+    min-height: 52px;
+    height: 52px;
+  }
+
+  .phone-wrapper,
+  .desig-inp,
+  .premium-date-field {
+    min-height: 52px;
+  }
+
+  .permInputs.row {
+    row-gap: 18px;
+  }
+
+  .premium-date-field .react-datepicker-wrapper,
+  .premium-date-field .react-datepicker__input-container {
+    width: 100%;
+    height: 100%;
+  }
+
+  .premium-date-input {
+    width: 100%;
+    padding-top: 1rem;
+  }
+
+  .lead-form .form-floating.desig-inp.premium-date-field .form-control.premium-date-input {
+    min-height: 52px;
+    height: 52px;
+  }
+}
+
 /* Permission Modal - Higher z-index to appear above CardForm (z-index: 1200) */
 /* Bootstrap modals are rendered in a portal at body level */
 body .addPermissionMod {
