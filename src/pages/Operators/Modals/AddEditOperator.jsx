@@ -9,13 +9,7 @@ import useOperatorReducer from "../../../store/OperatorReducer";
 import "../../../design/scss/prospect-modal.scss";
 import "../../../design/scss/modal-designs.scss";
 import "../../../design/scss/form-designs.scss";
-import { PORT_OPTIONS_WITH_ID } from "../../../shared/constants/ports";
 import PremiumSelect from "../../../components/form/PremiumSelect";
-
-const OPERATOR_PORT_OPTIONS = PORT_OPTIONS_WITH_ID.map((p) => ({
-    value: String(p.id),
-    label: p.name,
-}));
 
 const OPERATOR_STATUS_OPTIONS = [
     { value: "Active", label: "Active" },
@@ -70,7 +64,6 @@ export function OperatorModal({ showModal, closeModal, onSuccess }) {
     } = useForm({
         defaultValues: {
             operator_name: "",
-            port_id: "",
             contact_person: "",
             contact_no: "",
             email: "",
@@ -89,7 +82,6 @@ export function OperatorModal({ showModal, closeModal, onSuccess }) {
             clearOperatorDetail?.();
             reset({
                 operator_name: "",
-                port_id: "",
                 contact_person: "",
                 contact_no: "",
                 email: "",
@@ -106,7 +98,6 @@ export function OperatorModal({ showModal, closeModal, onSuccess }) {
         if (operatorDetail && isEdit) {
             reset({
                 operator_name: operatorDetail?.operator_name ?? "",
-                port_id: operatorDetail?.port_id ?? "",
                 contact_person: operatorDetail?.contact_person ?? "",
                 contact_no: operatorDetail?.contact_no ?? "",
                 email: operatorDetail?.email ?? "",
@@ -128,7 +119,7 @@ export function OperatorModal({ showModal, closeModal, onSuccess }) {
     const onSubmit = (data) => {
         const basePayload = {
             operator_name: data.operator_name,
-            port_id: Number(data.port_id),
+            port_id: 3,
             contact_person: data.contact_person,
             contact_no: data.contact_no,
             email: data.email?.trim(),
@@ -263,35 +254,9 @@ export function OperatorModal({ showModal, closeModal, onSuccess }) {
                         </div>
                     </div>
 
-                    {/* Port + License No */}
+                    {/* License No + License Expiry */}
                     <div className="mb-lg-3 mb-sm-0">
                         <div className="permInputs row">
-                            <div className="col-lg-6 col-sm-12">
-                                <div className="phone-wrapper">
-                                    <label className="phone-label">Port <span className="text-danger">*</span></label>
-                                    <Controller
-                                        name="port_id"
-                                        control={control}
-                                        rules={{ required: "Port is required" }}
-                                        render={({ field }) => (
-                                            <PremiumSelect
-                                                value={field.value != null ? String(field.value) : ""}
-                                                onChange={(e) => {
-                                                    const raw = e.target.value;
-                                                    field.onChange(raw === "" ? "" : Number(raw));
-                                                }}
-                                                options={OPERATOR_PORT_OPTIONS}
-                                                placeholder="Select port..."
-                                                searchPlaceholder="Search port..."
-                                                hasError={Boolean(errors.port_id)}
-                                            />
-                                        )}
-                                    />
-                                    {errors.port_id && (
-                                        <span className="error text-danger">{errors.port_id.message}</span>
-                                    )}
-                                </div>
-                            </div>
                             <div className="col-lg-6 col-sm-12">
                                 <div className="form-floating desig-inp">
                                     <input
@@ -303,12 +268,6 @@ export function OperatorModal({ showModal, closeModal, onSuccess }) {
                                     <label>License No</label>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* License Expiry + Contract Start — one row (no empty columns) */}
-                    <div className="mb-lg-3 mb-sm-0">
-                        <div className="permInputs row">
                             <div className="col-lg-6 col-sm-12">
                                 <Controller
                                     name="license_expiry"
@@ -327,6 +286,12 @@ export function OperatorModal({ showModal, closeModal, onSuccess }) {
                                     )}
                                 />
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Contract Start + Contract Expiry */}
+                    <div className="mb-lg-3 mb-sm-0">
+                        <div className="permInputs row">
                             <div className="col-lg-6 col-sm-12">
                                 <Controller
                                     name="contract_start_date"
@@ -345,13 +310,7 @@ export function OperatorModal({ showModal, closeModal, onSuccess }) {
                                     )}
                                 />
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Contract Expiry (+ Status when edit) */}
-                    <div className="mb-lg-3 mb-sm-0">
-                        <div className="permInputs row">
-                            <div className={isEdit ? "col-lg-6 col-sm-12" : "col-12"}>
+                            <div className="col-lg-6 col-sm-12">
                                 <Controller
                                     name="contract_expiry_date"
                                     control={control}
@@ -369,7 +328,13 @@ export function OperatorModal({ showModal, closeModal, onSuccess }) {
                                     )}
                                 />
                             </div>
-                            {isEdit && (
+                        </div>
+                    </div>
+
+                    {/* Status (edit only) */}
+                    {isEdit && (
+                        <div className="mb-lg-3 mb-sm-0">
+                            <div className="permInputs row">
                                 <div className="col-lg-6 col-sm-12">
                                     <div className="phone-wrapper">
                                         <label className="phone-label">Status</label>
@@ -388,9 +353,9 @@ export function OperatorModal({ showModal, closeModal, onSuccess }) {
                                         />
                                     </div>
                                 </div>
-                            )}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </form>
             </div>
         </div>
