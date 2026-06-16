@@ -48,7 +48,7 @@ export function PackingTypeModal({ showModal, closeModal, onSuccess }) {
     const renderHeader = () => (
         <>
             <h1 className="modal-title">
-                {isEdit ? "Edit Packing Type" : "Add Packing Type"}
+                {isEdit ? "Edit Packaging Type" : "Add Packaging Type"}
             </h1>
         </>
     );
@@ -61,13 +61,13 @@ export function PackingTypeModal({ showModal, closeModal, onSuccess }) {
                         <div className="form-floating desig-inp">
                             <input
                                 className={`form-control ${errors.package_type ? "is-invalid" : ""}`}
-                                placeholder="Packing Type Name"
+                                placeholder="Packaging Type Name"
                                 {...register("package_type", {
-                                    required: "Packing type name is required"
+                                    required: "Packaging type name is required"
                                 })}
                             />
                             <label>
-                                Packing Type <span className="text-danger">*</span>
+                                Packaging Type <span className="text-danger">*</span>
                             </label>
 
                             {errors.package_type && (

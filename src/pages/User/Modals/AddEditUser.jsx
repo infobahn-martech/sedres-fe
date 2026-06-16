@@ -336,6 +336,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
                           isLoadingRoles ? "Loading roles..." : "Select User Role"
                         }
                         searchPlaceholder="Search role..."
+                        searchInMenu
                         disabled={!isRolesReady}
                         hasError={Boolean(errors.roleid)}
                         menuPortalTarget={

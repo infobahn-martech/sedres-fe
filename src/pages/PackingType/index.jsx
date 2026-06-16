@@ -50,7 +50,7 @@ const PackingType = () => {
     // 👉 Columns (API: package_type_id, package_type, created_date)
     const cols = [
         {
-            name: "Packing Type",
+            name: "Packaging Type",
             selector: "package_type",
             sort: true,
             width: "200",
@@ -100,9 +100,9 @@ const PackingType = () => {
                 <div className="prospect employee">
                     <div className="container-fluid">
                         <CommonHeader
-                            tableTitle="Packing Types"
+                            tableTitle="Packaging Types"
                             isAddEnabled
-                            addModalLabel="Add Packing Type"
+                            addModalLabel="Add Packaging Type"
                             setSearch={(e) => setParams({ ...params, searchTerm: e, page: 1 })}
                             onAddModalClick={() => setShowPackingTypeModal(true)}
                             exportTitle="Export"
@@ -150,7 +150,7 @@ const PackingType = () => {
                             }}
                             onConfirm={handleDelete}
                             isLoading={isLoadingDelete}
-                            deleteText="Are you sure you want to delete this packing type?"
+                            deleteText="Are you sure you want to delete this packaging type?"
                         />
                     )}
                 </div>

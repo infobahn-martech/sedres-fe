@@ -15,6 +15,7 @@ export default function PremiumSelect({
   options = [],
   placeholder,
   searchPlaceholder,
+  searchInMenu = false,
   disabled = false,
   hasError = false,
   className = "",
@@ -40,6 +41,7 @@ export default function PremiumSelect({
       options={options}
       placeholder={placeholder}
       searchPlaceholder={searchPlaceholder ?? deriveSearchPlaceholder(placeholder)}
+      searchInMenu={searchInMenu}
       disabled={disabled}
       hasError={hasError}
       className={mergedClass}
@@ -71,4 +73,5 @@ PremiumSelect.propTypes = {
   menuPlacement: PropTypes.oneOf(["auto", "top", "bottom"]),
   menuShouldBlockScroll: PropTypes.bool,
   menuClassName: PropTypes.string,
+  searchInMenu: PropTypes.bool,
 };

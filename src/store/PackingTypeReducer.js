@@ -17,12 +17,12 @@ const usePackingTypeReducer = create((set) => ({
             const { data } = await packingTypeService.addPackingType(payload);
             set({ successMessage: data.message, isBeingUpdated: false });
             const { success } = useAlertReducer.getState();
-            success(data?.message ?? 'Packing type added successfully');
+            success(data?.message ?? 'Packaging type added successfully');
             cb?.();
         } catch (err) {
             const { error } = useAlertReducer.getState();
             set({
-                errorMessage: 'Something went wrong with adding a packing type',
+                errorMessage: 'Something went wrong with adding a packaging type',
                 isBeingUpdated: false,
             });
             error(err?.response?.data?.message ?? err.message);
@@ -51,12 +51,12 @@ const usePackingTypeReducer = create((set) => ({
             const { data } = await packingTypeService.updatePackingType(payload);
             set({ successMessage: data.message, isBeingUpdated: false });
             const { success } = useAlertReducer.getState();
-            success(data?.message ?? 'Packing type updated successfully');
+            success(data?.message ?? 'Packaging type updated successfully');
             cb?.();
         } catch (err) {
             const { error } = useAlertReducer.getState();
             set({
-                errorMessage: 'Something went wrong updating the packing type',
+                errorMessage: 'Something went wrong updating the packaging type',
                 isBeingUpdated: false,
             });
             error(err?.response?.data?.message ?? err.message);
@@ -68,11 +68,11 @@ const usePackingTypeReducer = create((set) => ({
             const { data } = await packingTypeService.deletePackingType(package_type_id);
             set({ successMessage: data?.message, isLoadingDelete: false });
             const { success } = useAlertReducer.getState();
-            success(data?.message ?? 'Packing type deleted successfully');
+            success(data?.message ?? 'Packaging type deleted successfully');
         } catch (err) {
             const { error } = useAlertReducer.getState();
             set({
-                errorMessage: 'Something went wrong deleting the packing type',
+                errorMessage: 'Something went wrong deleting the packaging type',
                 isLoadingDelete: false,
             });
             error(err?.response?.data?.message ?? err.message);
