@@ -65,6 +65,38 @@
     gap: 10px;
     background: #fff;
     z-index: 1;
+
+    button {
+      height: 36px;
+      padding: 0 20px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: "Open Sans", sans-serif;
+      border-radius: 6px;
+      cursor: pointer;
+      min-width: 88px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+
+      &.btn-common {
+        background: #fff;
+        border: 1.5px solid #d1d5db;
+        color: #374151;
+
+        &:hover { border-color: #9ca3af; background: #f9fafb; }
+      }
+
+      &.subtasks-tab-save-btn {
+        background: #00368c;
+        border: none;
+        color: #fff;
+
+        &:hover:not(:disabled) { background: #002a6e; box-shadow: 0 2px 8px rgba(0, 54, 140, 0.25); }
+        &:disabled { opacity: 0.55; cursor: not-allowed; }
+      }
+    }
   }
 }
 

@@ -8415,6 +8415,7 @@ body .modal-backdrop.show {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   margin-bottom: 20px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .kpi-analytics-header {

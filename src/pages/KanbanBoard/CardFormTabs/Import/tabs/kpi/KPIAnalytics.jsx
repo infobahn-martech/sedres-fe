@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import PropTypes from "prop-types";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
-const KPIAnalytics = ({ kpiData, tasks, isLoading, cardColor }) => {
+const KPIAnalytics = ({ kpiData, tasks = [], isLoading = false, cardColor }) => {
   const performanceData = useMemo(() => {
     const performanceCounts = {
       "On Target": 0,
