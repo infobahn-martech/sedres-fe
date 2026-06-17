@@ -8679,6 +8679,21 @@ body .modal-backdrop.show {
   }
 }
 
+/* KPI tab in card modal: scroll the tall charts+table within the bounded operation-right */
+.kpi-content-wrapper {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 999px;
+  }
+  &::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
+}
+
 /* Inbound Orders — wider dialog, shorter scroll area, tighter body */
 body .inbound-orders-modal .modal-dialog {
   max-width: 1180px !important;
