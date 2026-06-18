@@ -1373,6 +1373,7 @@ function CallTypeBuilderModal({ show, onClose }) {
                                 </div>
 
                                 {effectivePreviewMain && (
+                                    <>
                                     <div className="operation-wrapper">
                                         {allPreviewSubTabs.length > 0 && effectivePreviewMain.id !== "husbandry" && (
                                             <div className="operation-left">
@@ -1706,96 +1707,106 @@ function CallTypeBuilderModal({ show, onClose }) {
                                                             <p className="ct-summary-no-fields">This service will be available in the Husbandry tab.</p>
                                                         </div>
                                                     ) : (
-                                                        <div className="ct-preview-op-grid">
-                                                            <div className="operation-form-column">
-                                                                {previewFieldsList.length > 0 ? previewFieldsList.map((f) => {
-                                                                    if (PREVIEW_DATETIME_FIELDS.has(f)) {
+                                                        <>
+                                                            <div className="ct-preview-op-grid">
+                                                                <div className="ct-preview-form-card">
+                                                                    {previewFieldsList.length > 0 ? previewFieldsList.map((f) => {
+                                                                        if (PREVIEW_DATETIME_FIELDS.has(f)) {
+                                                                            return (
+                                                                                <div key={f} className="cf-field">
+                                                                                    <label>{f}</label>
+                                                                                    <div className="cf-input ct-preview-dt-input">
+                                                                                        <input type="text" placeholder="YYYY-MM-DD hh:mm" readOnly />
+                                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                                                                                        </svg>
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                        if (PREVIEW_SELECT_FIELDS.has(f)) {
+                                                                            return (
+                                                                                <div key={f} className="cf-field">
+                                                                                    <label>{f}</label>
+                                                                                    <div className="cf-input ct-preview-select-input">
+                                                                                        <input type="text" placeholder={`Select ${f.toLowerCase()}...`} readOnly />
+                                                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                                                            <polyline points="6 9 12 15 18 9"/>
+                                                                                        </svg>
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                        if (PREVIEW_FILE_FIELDS.has(f)) {
+                                                                            return (
+                                                                                <div key={f} className="cf-field">
+                                                                                    <label>{f}</label>
+                                                                                    <div className="ct-preview-file-zone">Upload document</div>
+                                                                                </div>
+                                                                            );
+                                                                        }
                                                                         return (
                                                                             <div key={f} className="cf-field">
                                                                                 <label>{f}</label>
-                                                                                <div className="cf-input ct-preview-dt-input">
-                                                                                    <input type="text" placeholder="YYYY-MM-DD hh:mm" />
-                                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                                                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                                                                                    </svg>
+                                                                                <div className="cf-input">
+                                                                                    <input type="text" placeholder={f} readOnly />
                                                                                 </div>
                                                                             </div>
                                                                         );
-                                                                    }
-                                                                    if (PREVIEW_SELECT_FIELDS.has(f)) {
-                                                                        return (
-                                                                            <div key={f} className="cf-field">
-                                                                                <label>{f}</label>
-                                                                                <div className="cf-input ct-preview-select-input">
-                                                                                    <input type="text" placeholder={`Select ${f.toLowerCase()}...`} />
-                                                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                                                                        <polyline points="6 9 12 15 18 9"/>
-                                                                                    </svg>
-                                                                                </div>
-                                                                            </div>
-                                                                        );
-                                                                    }
-                                                                    if (PREVIEW_FILE_FIELDS.has(f)) {
-                                                                        return (
-                                                                            <div key={f} className="cf-field">
-                                                                                <label>{f}</label>
-                                                                                <div className="ct-preview-file-zone">Upload document</div>
-                                                                            </div>
-                                                                        );
-                                                                    }
-                                                                    return (
-                                                                        <div key={f} className="cf-field">
-                                                                            <label>{f}</label>
-                                                                            <div className="cf-input">
-                                                                                <input type="text" placeholder={f} />
-                                                                            </div>
+                                                                    }) : subTabCustomFields.length > 0 ? (
+                                                                        <div className="ct-preview-custom-fields-grid">
+                                                                            {subTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
                                                                         </div>
-                                                                    );
-                                                                }) : subTabCustomFields.length > 0 ? (
-                                                                    <div className="ct-preview-custom-fields-grid">
-                                                                        {subTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
-                                                                    </div>
-                                                                ) : (
-                                                                    <p className="ct-summary-no-fields">No specific fields selected.</p>
-                                                                )}
-                                                            </div>
-
-                                                            <div className="operation-email-column">
-                                                                <p className="ct-preview-email-title">Email Preview</p>
-                                                                {[
-                                                                    { label: "From", placeholder: "operations@shipping.com" },
-                                                                    { label: "To", placeholder: "Recipient emails" },
-                                                                    { label: "Cc", placeholder: "CC emails" },
-                                                                    { label: "Subject", placeholder: OPERATION_SUBTAB_EMAIL_SUBJECTS[effectivePreviewSub.id] || "Report" },
-                                                                ].map(({ label, placeholder }) => (
-                                                                    <div key={label} className="cf-field">
-                                                                        <label>{label}</label>
-                                                                        <div className="cf-input"><input type="text" placeholder={placeholder} /></div>
-                                                                    </div>
-                                                                ))}
-                                                                <div className="cf-field">
-                                                                    <label>Attachments</label>
-                                                                    <div className="ct-preview-attachments">
-                                                                        {["Appointment_Acceptance.pdf(245K)", "Port_Details.xlsx(128K)", "Vessel_Image.jpg(932K)"].map((name) => (
-                                                                            <span key={name} className="ct-preview-attachment-chip">{name} ×</span>
-                                                                        ))}
-                                                                    </div>
+                                                                    ) : (
+                                                                        <p className="ct-summary-no-fields">No specific fields selected.</p>
+                                                                    )}
                                                                 </div>
-                                                                <div className="cf-field">
-                                                                    <label>Message</label>
-                                                                    <div className="ct-preview-message-area">
-                                                                        <div className="ct-preview-msg-toolbar">
-                                                                            {["Normal ▾", "B", "I", "U", "S", "≡", "☰", "A", "Tx"].map((t) => (
-                                                                                <span key={t} className="ct-preview-msg-tool">{t}</span>
+
+                                                                <div className="ct-preview-email-card">
+                                                                    <div className="ct-preview-email-card-header">
+                                                                        <p className="ct-preview-email-title">Email Preview</p>
+                                                                        <button type="button" className="ct-preview-email-send-btn" title="Send">
+                                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                                                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                                                            </svg>
+                                                                        </button>
+                                                                    </div>
+                                                                    {[
+                                                                        { label: "From", placeholder: "operations@shipping.com" },
+                                                                        { label: "To", placeholder: "Recipient emails" },
+                                                                        { label: "Cc", placeholder: "CC emails" },
+                                                                        { label: "Subject", placeholder: OPERATION_SUBTAB_EMAIL_SUBJECTS[effectivePreviewSub.id] || "Report" },
+                                                                    ].map(({ label, placeholder }) => (
+                                                                        <div key={label} className="cf-field">
+                                                                            <label>{label}</label>
+                                                                            <div className="cf-input"><input type="text" placeholder={placeholder} readOnly /></div>
+                                                                        </div>
+                                                                    ))}
+                                                                    <div className="cf-field">
+                                                                        <label>Attachments</label>
+                                                                        <div className="ct-preview-attachments">
+                                                                            {["Appointment_Acceptance.pdf(245K)", "Port_Details.xlsx(128K)", "Vessel_Image.jpg(932K)"].map((name) => (
+                                                                                <span key={name} className="ct-preview-attachment-chip">{name} ×</span>
                                                                             ))}
                                                                         </div>
-                                                                        <p className="ct-preview-msg-body">
-                                                                            {OPERATION_SUBTAB_EMAIL_SUBJECTS[effectivePreviewSub.id] || "Report"} report
-                                                                        </p>
+                                                                    </div>
+                                                                    <div className="cf-field">
+                                                                        <label>Message</label>
+                                                                        <div className="ct-preview-message-area">
+                                                                            <div className="ct-preview-msg-toolbar">
+                                                                                {["Normal ▾", "B", "I", "U", "S", "≡", "☰", "A", "Tx"].map((t) => (
+                                                                                    <span key={t} className="ct-preview-msg-tool">{t}</span>
+                                                                                ))}
+                                                                            </div>
+                                                                            <p className="ct-preview-msg-body">
+                                                                                {OPERATION_SUBTAB_EMAIL_SUBJECTS[effectivePreviewSub.id] || "Report"} report
+                                                                            </p>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
+
+                                                        </>
                                                     )}
                                                 </>
                                             ) : effectivePreviewMain.id === "document_library" ? (
@@ -1869,6 +1880,16 @@ function CallTypeBuilderModal({ show, onClose }) {
                                             )}
                                         </div>
                                     </div>
+
+                                    <div className="ct-preview-stepper">
+                                        {["Appointment Received", "Enroute", "Ops in Progress", "Ops Completed", "Done", "Ready to Archive"].map((step, i) => (
+                                            <div key={step} className={`ct-preview-step${i === 0 ? " ct-preview-step--done" : ""}`}>
+                                                <div className="ct-preview-step-circle">{i + 1}</div>
+                                                <span className="ct-preview-step-label">{step}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    </>
                                 )}
                             </div>
                         )}

@@ -785,18 +785,116 @@
 // ── Operation sub-tab preview layout ─────────────────────────────────────────
 .ct-preview-op-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 0.6fr) minmax(0, 1fr);
   gap: 14px;
-  padding: 14px;
+  padding: 14px 14px 0;
   align-items: start;
+}
 
-  .operation-form-column,
-  .operation-email-column {
-    height: auto;
-    overflow-y: auto;
-    max-height: 380px;
-    @include ct-scrollbar;
+.ct-preview-form-card {
+  background: #fff;
+  border: 1px solid #ededf2;
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-y: auto;
+  max-height: 400px;
+  @include ct-scrollbar;
+}
+
+.ct-preview-email-card {
+  background: #fff;
+  border: 1px solid #ededf2;
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-y: auto;
+  max-height: 400px;
+  @include ct-scrollbar;
+}
+
+.ct-preview-email-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.ct-preview-email-send-btn {
+  background: #00368C;
+  border: none;
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  flex-shrink: 0;
+
+  &:hover { background: #002a6e; }
+}
+
+// ── Progress stepper ──────────────────────────────────────────────────────────
+.ct-preview-stepper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 20px 14px;
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 27px;
+    left: 40px;
+    right: 40px;
+    height: 2px;
+    background: #e2e8f0;
+    z-index: 0;
   }
+}
+
+.ct-preview-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.ct-preview-step-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  font-family: "Open Sans", sans-serif;
+}
+
+.ct-preview-step-label {
+  font-size: 10px;
+  color: #9ca3af;
+  text-align: center;
+  font-family: "Open Sans", sans-serif;
+  white-space: nowrap;
+}
+
+.ct-preview-step--done {
+  .ct-preview-step-circle {
+    background: #2e7d32;
+    border-color: #2e7d32;
+    color: #fff;
+  }
+
+  .ct-preview-step-label { color: #374151; font-weight: 600; }
 }
 
 .ct-preview-dt-input {
