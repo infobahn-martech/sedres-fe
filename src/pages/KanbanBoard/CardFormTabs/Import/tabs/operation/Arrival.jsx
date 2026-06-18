@@ -271,7 +271,7 @@ function Arrival({
       const time = String(formValues?.inwardClearanceReceivedTime || "").trim();
       if (!date || !time) {
         notify(
-          "Inward Clearance Received Timestamp is required when Inward Clearance is Received.",
+          "Inward Clearance Received is required when Inward Clearance is Received.",
           "error"
         );
         return false;
@@ -646,7 +646,7 @@ function Arrival({
                 </FormField>
 
                 {showInwardClearanceTimestamp &&
-                  renderDateTimeField("Inward Clearance Received Timestamp", "inwardClearanceReceived", true)}
+                  renderDateTimeField("Inward Clearance Received", "inwardClearanceReceived", true)}
 
                 {renderDateTimeField("MWP Applied", "mwpApplied")}
                 {renderDateTimeField("MWP Received", "mwpReceived")}
