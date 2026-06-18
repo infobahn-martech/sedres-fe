@@ -24,8 +24,24 @@ const DOCUMENT_STATUS_CLASS_MAP = {
   Rejected: "operation-task-doc-status--rejected",
 };
 
+const MONTH_ABBREVIATIONS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
 function getStatusProgress(status) {
   return STATUS_PROGRESS_MAP[status] ?? 0;
+}
+
+function formatSadadExpiry(value) {
+  if (!value) return "-";
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value).trim());
+  if (!match) return String(value);
+  const [, year, month, day] = match;
+  const monthIndex = Number(month) - 1;
+  const monthLabel = MONTH_ABBREVIATIONS[monthIndex];
+  if (!monthLabel) return String(value);
+  return `${day}-${monthLabel}-${year}`;
 }
 
 function ChevronIcon({ isOpen }) {
@@ -177,6 +193,48 @@ TaskDocumentsAccordion.propTypes = {
   taskId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 };
 
+function SadadInfoTable({ sadadNo, sadadDocument, sadadExpiry }) {
+  return (
+    <div className="operation-task-sadad">
+      <table className="operation-task-sadad-table">
+        <thead>
+          <tr>
+            <th scope="col">Sadad No</th>
+            <th scope="col">Sadad Document</th>
+            <th scope="col">Sadad Expiry</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{sadadNo || "-"}</td>
+            <td>
+              {sadadDocument ? (
+                <a
+                  className="operation-task-sadad-link"
+                  href={sadadDocument}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View Document
+                </a>
+              ) : (
+                "-"
+              )}
+            </td>
+            <td>{formatSadadExpiry(sadadExpiry)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+SadadInfoTable.propTypes = {
+  sadadNo: PropTypes.string,
+  sadadDocument: PropTypes.string,
+  sadadExpiry: PropTypes.string,
+};
+
 function OperationTasksPanel({
   cardColor,
   isViewOnly = false,
@@ -250,6 +308,13 @@ function OperationTasksPanel({
                         </span>
                       </p>
                       <TaskProgressIndicator status={task.status} progress={task.progress} />
+                      {(String(task.id) === "6" || task.title === "Applying MWP") && (
+                        <SadadInfoTable
+                          sadadNo={task.sadadDocNo}
+                          sadadDocument={task.sadadDocument}
+                          sadadExpiry={task.sadadExpiry}
+                        />
+                      )}
                       <TaskDocumentsAccordion documents={task.documents} taskId={task.id} />
                     </div>
                   </li>
@@ -280,6 +345,9 @@ OperationTasksPanel.propTypes = {
           status: PropTypes.string,
           documentCount: PropTypes.number,
           progress: PropTypes.number,
+          sadadDocNo: PropTypes.string,
+          sadadDocument: PropTypes.string,
+          sadadExpiry: PropTypes.string,
           documents: PropTypes.arrayOf(
             PropTypes.shape({
               id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,

@@ -1454,9 +1454,9 @@ $send-report-optional: #80868b;
   background: #f0f1f6;
   border-right: 1px solid #e0e0e0;
   flex-shrink: 0;
-  min-width: 178px;
-  max-width: 178px;
-  width: 178px;
+  min-width: 200px;
+  max-width: 200px;
+  width: 200px;
 }
 
 .op-tab-group {
@@ -1505,7 +1505,7 @@ $send-report-optional: #80868b;
   margin-top: 4px;
   margin-left: 12px;
   padding-left: 12px;
-  border-left: 2px solid #e2e6ff;
+  border-left: 2px solid rgba(42, 0, 255, 0.2);
   padding-top: 4px;
   padding-bottom: 4px;
 }
@@ -8443,7 +8443,6 @@ body .modal-backdrop.show {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   margin-bottom: 20px;
   overflow: hidden;
-  flex-shrink: 0;
 }
 
 .kpi-analytics-header {
@@ -8706,21 +8705,6 @@ body .modal-backdrop.show {
     font-size: 11px;
     padding: 12px 10px;
   }
-}
-
-/* KPI tab in card modal: scroll the tall charts+table within the bounded operation-right */
-.kpi-content-wrapper {
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
-
-  &::-webkit-scrollbar { width: 6px; }
-  &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 999px;
-  }
-  &::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
 }
 
 /* Inbound Orders — wider dialog, shorter scroll area, tighter body */
@@ -9409,6 +9393,75 @@ body .modal-backdrop.show {
   color: #8b93a7;
   font-style: italic;
   line-height: 1.4;
+}
+
+.operation-task-sadad {
+  width: 100%;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.operation-task-sadad-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 12px;
+
+  th,
+  td {
+    padding: 6px 10px;
+    text-align: left;
+    line-height: 1.4;
+    word-break: break-word;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  thead th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody td {
+    color: #374151;
+    font-weight: 500;
+  }
+}
+
+.operation-task-sadad-link {
+  color: rgb(25, 118, 210);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(25, 118, 210, 0.35);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+@media (max-width: 480px) {
+  .operation-task-sadad-table {
+    font-size: 11px;
+
+    th,
+    td {
+      padding: 5px 7px;
+    }
+  }
 }
 
 .operation-task-view-only-note {

@@ -2,7 +2,45 @@ import { useMemo } from "react";
 import PropTypes from "prop-types";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
-const KPIAnalytics = ({ kpiData, tasks = [], isLoading = false, cardColor }) => {
+// Generate dummy task data for the table
+const generateDummyTasks = () => {
+  const taskNames = [
+    "Appointment Acceptance",
+    "Call file open",
+    "Pre arrival report",
+    "Arrival report",
+    "Vessel inward formalities",
+    "Daily report",
+    "Outward clearance issue",
+    "Outward clearance deliver",
+    "Sailing Report",
+    "Documentation review",
+    "Custom clearance",
+    "Port operations",
+    "Cargo handling",
+    "Vessel inspection",
+    "Final reporting"
+  ];
+  const statuses = ["Pending", "In Progress", "Completed", "Cancelled"];
+
+  const dummyTasks = [];
+  for (let i = 1; i <= 12; i++) {
+    const estimatedHours = Math.floor(Math.random() * 48) + 4; // 4-52 hours
+    const elapsedHours = Math.floor(Math.random() * estimatedHours);
+
+    dummyTasks.push({
+      id: i,
+      task: taskNames[Math.floor(Math.random() * taskNames.length)],
+      estimatedDuration: `${estimatedHours}h ${Math.floor(Math.random() * 60)}m`,
+      elapsedTime: `${elapsedHours}h ${Math.floor(Math.random() * 60)}m`,
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+    });
+  }
+  return dummyTasks;
+};
+
+const KPIAnalytics = ({ kpiData, cardColor }) => {
+  // Calculate data for pie chart (KPI performance distribution)
   const performanceData = useMemo(() => {
     const performanceCounts = {
       "On Target": 0,
@@ -23,7 +61,9 @@ const KPIAnalytics = ({ kpiData, tasks = [], isLoading = false, cardColor }) => 
     }));
   }, [kpiData]);
 
+  // Calculate data for bar chart (KPIs by category)
   const categoryData = useMemo(() => {
+    // Define the order of categories - all 9 categories must be shown
     const categoryOrder = [
       "Appointment Acceptance",
       "Call file open",
@@ -36,11 +76,13 @@ const KPIAnalytics = ({ kpiData, tasks = [], isLoading = false, cardColor }) => 
       "Sailing Report"
     ];
 
+    // Initialize all categories with 0 count
     const categoryCounts = {};
     categoryOrder.forEach((cat) => {
       categoryCounts[cat] = 0;
     });
 
+    // Count KPIs for each category
     kpiData.forEach((kpi) => {
       const category = kpi.category || "Other";
       if (categoryCounts.hasOwnProperty(category)) {
@@ -48,12 +90,14 @@ const KPIAnalytics = ({ kpiData, tasks = [], isLoading = false, cardColor }) => 
       }
     });
 
+    // Ensure minimum count of 1 for all categories
     categoryOrder.forEach((cat) => {
       if (categoryCounts[cat] === 0) {
         categoryCounts[cat] = 1;
       }
     });
 
+    // Return all categories in the specified order
     return categoryOrder.map((name) => ({
       name: name.length > 20 ? name.substring(0, 20) + "..." : name,
       fullName: name,
@@ -61,6 +105,8 @@ const KPIAnalytics = ({ kpiData, tasks = [], isLoading = false, cardColor }) => 
     }));
   }, [kpiData]);
 
+
+  // Color palette based on card color
   const COLORS = [
     cardColor || "#2A00FF",
     "#10b981",
@@ -166,39 +212,24 @@ const KPIAnalytics = ({ kpiData, tasks = [], isLoading = false, cardColor }) => 
                 </tr>
               </thead>
               <tbody>
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={4} className="text-center py-3">
-                      <span className="spinner-border spinner-border-sm me-2" role="status" />
-                      Loading...
+                {generateDummyTasks().map((task) => (
+                  <tr key={task.id}>
+                    <td>
+                      <div className="kpi-table-cell">{task.task || ""}</div>
+                    </td>
+                    <td>
+                      <div className="kpi-table-cell">{task.estimatedDuration || ""}</div>
+                    </td>
+                    <td>
+                      <div className="kpi-table-cell">{task.elapsedTime || ""}</div>
+                    </td>
+                    <td>
+                      <div className={`kpi-table-cell ${getStatusClass(task.status)}`}>
+                        {task.status || ""}
+                      </div>
                     </td>
                   </tr>
-                ) : tasks.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="text-center py-3 text-muted">
-                      No KPI data available
-                    </td>
-                  </tr>
-                ) : (
-                  tasks.map((task) => (
-                    <tr key={task.id}>
-                      <td>
-                        <div className="kpi-table-cell">{task.task || ""}</div>
-                      </td>
-                      <td>
-                        <div className="kpi-table-cell">{task.estimatedDuration || ""}</div>
-                      </td>
-                      <td>
-                        <div className="kpi-table-cell">{task.elapsedTime || ""}</div>
-                      </td>
-                      <td>
-                        <div className={`kpi-table-cell ${getStatusClass(task.status)}`}>
-                          {task.status || ""}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
@@ -208,6 +239,7 @@ const KPIAnalytics = ({ kpiData, tasks = [], isLoading = false, cardColor }) => 
   );
 };
 
+// Helper function to get status class
 const getStatusClass = (status) => {
   const statusMap = {
     "Pending": "status-pending",
@@ -220,14 +252,8 @@ const getStatusClass = (status) => {
 
 KPIAnalytics.propTypes = {
   kpiData: PropTypes.array.isRequired,
-  tasks: PropTypes.array,
-  isLoading: PropTypes.bool,
   cardColor: PropTypes.string,
 };
 
-KPIAnalytics.defaultProps = {
-  tasks: [],
-  isLoading: false,
-};
-
 export default KPIAnalytics;
+
