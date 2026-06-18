@@ -1463,6 +1463,8 @@ DailyTaskTodo.propTypes = {
   error: PropTypes.string,
 };
 
+export { DailyTaskTodo };
+
 const GeneralViewSectionShimmer = () => (
   <div className="general-info-three-column general-info-view-with-tasks general-tab-form-layout general-view-section-shimmer" aria-live="polite">
     <div className="general-info-left">

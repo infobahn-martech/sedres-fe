@@ -8443,6 +8443,7 @@ body .modal-backdrop.show {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   margin-bottom: 20px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .kpi-analytics-header {
@@ -8705,6 +8706,21 @@ body .modal-backdrop.show {
     font-size: 11px;
     padding: 12px 10px;
   }
+}
+
+/* KPI tab in card modal: scroll the tall charts+table within the bounded operation-right */
+.kpi-content-wrapper {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 999px;
+  }
+  &::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
 }
 
 /* Inbound Orders — wider dialog, shorter scroll area, tighter body */
