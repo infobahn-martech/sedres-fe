@@ -323,7 +323,7 @@ const buildInitialTabConfig = () => {
                         sub.id,
                         sub.fields
                             ? { enabled: false, fields: Object.fromEntries(sub.fields.map((f) => [f, false])), customFields: [] }
-                            : { enabled: false },
+                            : { enabled: false, customFields: [] },
                     ])
                 ),
             };
@@ -335,7 +335,7 @@ const buildInitialTabConfig = () => {
                 ...(tab.editableWhenUnchecked ? { fieldOverrides: {}, deletedFields: [] } : {}),
             };
         } else {
-            config[tab.id] = { enabled: false };
+            config[tab.id] = { enabled: false, customFields: [] };
         }
     }
     return config;
@@ -626,13 +626,14 @@ function SubTabRow({ mainId, sub, mainConfig, isOpen, onToggleOpen, onToggleSubT
     const fieldMap = subConfig.fields ?? {};
     const customFields = subConfig.customFields ?? [];
     const allChecked = hasFields && sub.fields.every((f) => fieldMap[f]);
-    const anyChecked = hasFields && (sub.fields.some((f) => fieldMap[f]) || customFields.length > 0);
+    const anyChecked = hasFields
+        ? sub.fields.some((f) => fieldMap[f]) || customFields.length > 0
+        : customFields.length > 0;
 
     const handleLabelClick = (e) => {
         e.stopPropagation();
-        if (!hasFields) return;
         if (!isOpen) onToggleOpen(sub.id);
-        onSelectAll(mainId, sub.id, sub.fields, !allChecked);
+        if (hasFields) onSelectAll(mainId, sub.id, sub.fields, !allChecked);
     };
 
     return (
@@ -645,28 +646,51 @@ function SubTabRow({ mainId, sub, mainConfig, isOpen, onToggleOpen, onToggleSubT
                         onChange={(e) => onToggleSubTab(mainId, sub.id, e.target.checked)}
                     />
                 </label>
-                {hasFields ? (
-                    <button type="button" className="ct-accordion-trigger" onClick={() => onToggleOpen(sub.id)}>
-                        <span className="ct-accordion-label" onClick={handleLabelClick}>{sub.label}</span>
-                        {anyChecked && <span className="ct-accordion-badge">{sub.fields.filter((f) => fieldMap[f]).length + customFields.length}</span>}
-                        {isOpen ? <FiChevronDown size={14} /> : <FiChevronRight size={14} />}
-                    </button>
-                ) : (
-                    <span className="ct-accordion-label ct-subtab-label-static">{sub.label}</span>
-                )}
+                <button type="button" className="ct-accordion-trigger" onClick={() => onToggleOpen(sub.id)}>
+                    <span className="ct-accordion-label" onClick={handleLabelClick}>{sub.label}</span>
+                    {anyChecked && (
+                        <span className="ct-accordion-badge">
+                            {hasFields
+                                ? sub.fields.filter((f) => fieldMap[f]).length + customFields.length
+                                : customFields.length}
+                        </span>
+                    )}
+                    {isOpen ? <FiChevronDown size={14} /> : <FiChevronRight size={14} />}
+                </button>
             </div>
 
-            {hasFields && isOpen && (
+            {isOpen && (
                 <div className="ct-accordion-body">
-                    <FieldsBlock
-                        fields={sub.fields}
-                        fieldMap={fieldMap}
-                        customFields={customFields}
-                        onToggleField={(field, checked) => onToggleField(mainId, sub.id, field, checked)}
-                        onAddCustomField={() => onAddCustomField(mainId, sub.id)}
-                        onUpdateCustomField={(id, key, val) => onUpdateCustomField(mainId, sub.id, id, key, val)}
-                        onRemoveCustomField={(id) => onRemoveCustomField(mainId, sub.id, id)}
-                    />
+                    {hasFields ? (
+                        <FieldsBlock
+                            fields={sub.fields}
+                            fieldMap={fieldMap}
+                            customFields={customFields}
+                            onToggleField={(field, checked) => onToggleField(mainId, sub.id, field, checked)}
+                            onAddCustomField={() => onAddCustomField(mainId, sub.id)}
+                            onUpdateCustomField={(id, key, val) => onUpdateCustomField(mainId, sub.id, id, key, val)}
+                            onRemoveCustomField={(id) => onRemoveCustomField(mainId, sub.id, id)}
+                        />
+                    ) : (
+                        <>
+                            {customFields.length > 0 && (
+                                <div className="ct-custom-fields-list">
+                                    <p className="ct-custom-fields-heading">Custom Fields</p>
+                                    {customFields.map((cf) => (
+                                        <CustomFieldRow
+                                            key={cf.id}
+                                            field={cf}
+                                            onUpdate={(id, key, val) => onUpdateCustomField(mainId, sub.id, id, key, val)}
+                                            onRemove={(id) => onRemoveCustomField(mainId, sub.id, id)}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                            <button type="button" className="ct-add-custom-btn" onClick={() => onAddCustomField(mainId, sub.id)}>
+                                <FiPlus size={13} /> Add Custom Field
+                            </button>
+                        </>
+                    )}
                 </div>
             )}
         </div>
@@ -676,23 +700,9 @@ function SubTabRow({ mainId, sub, mainConfig, isOpen, onToggleOpen, onToggleSubT
 function MainTabAccordion({ tab, config, openMainTab, openSubTab, onToggleOpenMain, onToggleOpenSub, onToggleMainTab, onToggleSubTab, onToggleField, onSelectAll, onAddCustomField, onUpdateCustomField, onRemoveCustomField, onRenameReportField, onDeleteReportField }) {
     const mainConfig = config[tab.id] ?? {};
     const isEnabled = mainConfig.enabled ?? false;
-    const isExpandable = Boolean(tab.fields || tab.groups || tab.subTabs);
-
-    if (!isExpandable) {
-        return (
-            <label className="ct-simple-tab-row">
-                <input
-                    type="checkbox"
-                    checked={isEnabled}
-                    onChange={(e) => onToggleMainTab(tab.id, e.target.checked)}
-                />
-                <span className="ct-simple-tab-label">{tab.label}</span>
-            </label>
-        );
-    }
-
     const isOpen = openMainTab === tab.id;
     const hasDirectFields = Boolean(tab.fields || tab.groups);
+    const isSimpleTab = !hasDirectFields && !tab.subTabs;
     const allFieldsList = getTabFieldList(tab);
     const fieldMap = mainConfig.fields ?? {};
     const customFields = mainConfig.customFields ?? [];
@@ -700,7 +710,9 @@ function MainTabAccordion({ tab, config, openMainTab, openSubTab, onToggleOpenMa
     const enabledSubCount = tab.subTabs?.filter((s) => mainConfig.subTabs?.[s.id]?.enabled).length ?? 0;
     const anyChecked = hasDirectFields
         ? allFieldsList.some((f) => fieldMap[f]) || customFields.length > 0
-        : enabledSubCount > 0;
+        : tab.subTabs
+            ? enabledSubCount > 0
+            : customFields.length > 0;
 
     const handleLabelClick = (e) => {
         e.stopPropagation();
@@ -720,11 +732,14 @@ function MainTabAccordion({ tab, config, openMainTab, openSubTab, onToggleOpenMa
                 </label>
                 <button type="button" className="ct-accordion-trigger" onClick={() => onToggleOpenMain(tab.id)}>
                     <span className="ct-accordion-label" onClick={handleLabelClick}>{tab.label}</span>
-                    {hasDirectFields && anyChecked && (
-                        <span className="ct-accordion-badge">{allFieldsList.filter((f) => fieldMap[f]).length + customFields.length}</span>
-                    )}
-                    {!hasDirectFields && enabledSubCount > 0 && (
-                        <span className="ct-accordion-badge">{enabledSubCount} sub-tab{enabledSubCount > 1 ? "s" : ""}</span>
+                    {anyChecked && (
+                        <span className="ct-accordion-badge">
+                            {hasDirectFields
+                                ? allFieldsList.filter((f) => fieldMap[f]).length + customFields.length
+                                : tab.subTabs
+                                    ? `${enabledSubCount} sub-tab${enabledSubCount > 1 ? "s" : ""}`
+                                    : customFields.length}
+                        </span>
                     )}
                     {isOpen ? <FiChevronDown size={14} /> : <FiChevronRight size={14} />}
                 </button>
@@ -769,6 +784,27 @@ function MainTabAccordion({ tab, config, openMainTab, openSubTab, onToggleOpenMa
                                 />
                             ))}
                         </div>
+                    )}
+
+                    {isSimpleTab && (
+                        <>
+                            {customFields.length > 0 && (
+                                <div className="ct-custom-fields-list">
+                                    <p className="ct-custom-fields-heading">Custom Fields</p>
+                                    {customFields.map((cf) => (
+                                        <CustomFieldRow
+                                            key={cf.id}
+                                            field={cf}
+                                            onUpdate={(id, key, val) => onUpdateCustomField(tab.id, null, id, key, val)}
+                                            onRemove={(id) => onRemoveCustomField(tab.id, null, id)}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                            <button type="button" className="ct-add-custom-btn" onClick={() => onAddCustomField(tab.id, null)}>
+                                <FiPlus size={13} /> Add Custom Field
+                            </button>
+                        </>
                     )}
                 </div>
             )}
@@ -896,11 +932,19 @@ function CallTypeBuilderModal({ show, onClose }) {
                     for (const sub of tab.subTabs) {
                         const savedSub = saved.subTabs?.[sub.id];
                         if (savedSub) {
-                            restored[tab.id].subTabs[sub.id] = { ...restored[tab.id].subTabs[sub.id], ...savedSub };
+                            restored[tab.id].subTabs[sub.id] = {
+                                ...restored[tab.id].subTabs[sub.id],
+                                ...savedSub,
+                                customFields: (savedSub.customFields ?? []).map((f) => ({ ...f, id: `cf-${Date.now()}-${Math.random()}` })),
+                            };
                         }
                     }
                 } else {
-                    restored[tab.id] = { ...restored[tab.id], ...saved };
+                    restored[tab.id] = {
+                        ...restored[tab.id],
+                        ...saved,
+                        customFields: (saved.customFields ?? []).map((f) => ({ ...f, id: `cf-${Date.now()}-${Math.random()}` })),
+                    };
                 }
             }
         }
@@ -965,7 +1009,7 @@ function CallTypeBuilderModal({ show, onClose }) {
     const handleAddCustomField = (mainId, subId) =>
         setTabConfig((prev) => updateScope(prev, mainId, subId, (scope) => ({
             ...scope,
-            customFields: [...(scope.customFields ?? []), { id: Date.now() + Math.random(), label: "", type: "text" }],
+            customFields: [...(scope.customFields ?? []), { id: `cf-${Date.now()}-${Math.random()}`, label: "", type: "text" }],
         })));
 
     const handleUpdateCustomField = (mainId, subId, fieldId, key, value) =>
@@ -1039,8 +1083,24 @@ function CallTypeBuilderModal({ show, onClose }) {
         }
         setCallTypeError("");
         const callTypeLabel = CALL_TYPE_OPTIONS.find((o) => o.value === selectedCallType)?.label ?? "";
+        const stripCustomFieldIds = (cfg) => {
+            const out = {};
+            for (const [k, v] of Object.entries(cfg)) {
+                if (!v || typeof v !== "object") { out[k] = v; continue; }
+                if (v.subTabs) {
+                    const subs = {};
+                    for (const [sid, sv] of Object.entries(v.subTabs)) {
+                        subs[sid] = { ...sv, customFields: (sv.customFields ?? []).map(({ id: _i, ...f }) => f) };
+                    }
+                    out[k] = { ...v, subTabs: subs };
+                } else {
+                    out[k] = { ...v, customFields: (v.customFields ?? []).map(({ id: _i, ...f }) => f) };
+                }
+            }
+            return out;
+        };
         const savedTabConfig = {
-            ...tabConfig,
+            ...stripCustomFieldIds(tabConfig),
             customTabs: customTabs.map(({ id: _id, ...rest }) => ({
                 ...rest,
                 fields: (rest.fields ?? []).map(({ id: _fid, ...frest }) => frest),
@@ -1110,6 +1170,17 @@ function CallTypeBuilderModal({ show, onClose }) {
             ...previewFieldDefsList.filter((f) => previewScopeConfig?.fields?.[f]),
             ...(previewScopeConfig?.customFields ?? []).filter((cf) => cf.label).map((cf) => cf.label),
         ]
+        : [];
+
+    const isSimplePreviewTab = effectivePreviewMain && !effectivePreviewMain._isCustom
+        && !effectivePreviewMain.fields && !effectivePreviewMain.groups && !effectivePreviewMain.subTabs;
+    const simpleTabCustomFields = isSimplePreviewTab
+        ? (tabConfig[effectivePreviewMain.id]?.customFields ?? []).filter((cf) => cf.label)
+        : [];
+
+    const isSimplePreviewSubTab = Boolean(effectivePreviewSub && !Array.isArray(effectivePreviewSub.fields));
+    const subTabCustomFields = isSimplePreviewSubTab
+        ? (previewScopeConfig?.customFields ?? []).filter((cf) => cf.label)
         : [];
 
     return (
@@ -1660,7 +1731,11 @@ function CallTypeBuilderModal({ show, onClose }) {
                                                                             </div>
                                                                         </div>
                                                                     );
-                                                                }) : (
+                                                                }) : subTabCustomFields.length > 0 ? (
+                                                                    <div className="ct-preview-custom-fields-grid">
+                                                                        {subTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
+                                                                    </div>
+                                                                ) : (
                                                                     <p className="ct-summary-no-fields">No specific fields selected.</p>
                                                                 )}
                                                             </div>
@@ -1704,19 +1779,69 @@ function CallTypeBuilderModal({ show, onClose }) {
                                                     )}
                                                 </>
                                             ) : effectivePreviewMain.id === "document_library" ? (
-                                                <DocumentLibrary card={{ color: "#2A00FF" }} />
+                                                <>
+                                                    <DocumentLibrary card={{ color: "#2A00FF" }} />
+                                                    {simpleTabCustomFields.length > 0 && (
+                                                        <div className="ct-preview-simple-custom-fields">
+                                                            <p className="ct-preview-custom-fields-label">Custom Fields</p>
+                                                            <div className="ct-preview-custom-fields-grid">
+                                                                {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </>
                                             ) : effectivePreviewMain.id === "comments" ? (
-                                                <Comments card={{ comments: [] }} />
+                                                <>
+                                                    <Comments card={{ comments: [] }} />
+                                                    {simpleTabCustomFields.length > 0 && (
+                                                        <div className="ct-preview-simple-custom-fields">
+                                                            <p className="ct-preview-custom-fields-label">Custom Fields</p>
+                                                            <div className="ct-preview-custom-fields-grid">
+                                                                {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </>
                                             ) : effectivePreviewMain.id === "kpi" ? (
-                                                <KPIAnalytics
-                                                    kpiData={PREVIEW_KPI_DATA}
-                                                    tasks={PREVIEW_KPI_TASKS}
-                                                    cardColor="#2A00FF"
-                                                />
+                                                <>
+                                                    <KPIAnalytics
+                                                        kpiData={PREVIEW_KPI_DATA}
+                                                        tasks={PREVIEW_KPI_TASKS}
+                                                        cardColor="#2A00FF"
+                                                    />
+                                                    {simpleTabCustomFields.length > 0 && (
+                                                        <div className="ct-preview-simple-custom-fields">
+                                                            <p className="ct-preview-custom-fields-label">Custom Fields</p>
+                                                            <div className="ct-preview-custom-fields-grid">
+                                                                {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </>
                                             ) : effectivePreviewMain.id === "subtasks" ? (
-                                                <Subtasks card={{}} />
+                                                <>
+                                                    <Subtasks card={{}} />
+                                                    {simpleTabCustomFields.length > 0 && (
+                                                        <div className="ct-preview-simple-custom-fields">
+                                                            <p className="ct-preview-custom-fields-label">Custom Fields</p>
+                                                            <div className="ct-preview-custom-fields-grid">
+                                                                {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </>
                                             ) : effectivePreviewMain.id === "notes" ? (
-                                                <Notes card={{ notes: [] }} />
+                                                <>
+                                                    <Notes card={{ notes: [] }} />
+                                                    {simpleTabCustomFields.length > 0 && (
+                                                        <div className="ct-preview-simple-custom-fields">
+                                                            <p className="ct-preview-custom-fields-label">Custom Fields</p>
+                                                            <div className="ct-preview-custom-fields-grid">
+                                                                {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </>
                                             ) : (
                                                 <div className="operation-content-box">
                                                     <p className="ct-summary-no-fields">This tab is included as-is</p>
