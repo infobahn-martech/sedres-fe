@@ -1604,68 +1604,88 @@ function CallTypeBuilderModal({ show, onClose }) {
                                                 // plus the real DailyTaskTodo/OperationTasksPanel components (with
                                                 // static sample data) for the Daily Tasks and Operation Tasks rails,
                                                 // since those two always appear regardless of the builder's toggles.
-                                                <div className="ct-preview-general-columns">
-                                                    <div className="cf-section">
-                                                        <div className="cf-section-header">
-                                                            <span className="cf-section-title">General Information</span>
-                                                        </div>
-                                                        <div className="cf-section-body">
-                                                            <div className="cf-field">
-                                                                <label>Owner</label>
-                                                                <div className="cf-owner-row">
-                                                                    <span className="cf-owner-avatar">CO</span>
-                                                                    <div className="cf-input">
-                                                                        <input type="text" placeholder="Select owner" />
-                                                                    </div>
-                                                                </div>
+                                                <div className="general-info-three-column general-info-view-with-tasks">
+                                                    <div className="general-info-left">
+                                                        <div className="cf-field">
+                                                            <label>Owner</label>
+                                                            <div className="cf-owner-row">
+                                                                <div className="cf-owner-avatar">M</div>
+                                                                <span className="ct-preview-owner-name">Martech</span>
                                                             </div>
-                                                            {previewFieldsList.length === 0 ? (
-                                                                <p className="ct-summary-no-fields">No specific fields selected — full tab will be included</p>
-                                                            ) : (
-                                                                <>
-                                                                    {previewGroups.map((group) => {
-                                                                        const checkedInGroup = group.fields.filter((f) => previewScopeConfig?.fields?.[f]);
-                                                                        if (checkedInGroup.length === 0) return null;
-                                                                        return (
-                                                                            <div key={group.label} className="form-group">
-                                                                                <h3 className="form-group-title">{group.label}</h3>
-                                                                                {checkedInGroup.map((f) => (
+                                                        </div>
+                                                        {previewFieldsList.length === 0 ? (
+                                                            <p className="ct-summary-no-fields">No specific fields selected — full tab will be included</p>
+                                                        ) : (
+                                                            <>
+                                                                {previewGroups.map((group) => {
+                                                                    const checkedInGroup = group.fields.filter((f) => previewScopeConfig?.fields?.[f]);
+                                                                    if (checkedInGroup.length === 0) return null;
+                                                                    return (
+                                                                        <div key={group.label} className="form-group">
+                                                                            <h3 className="form-group-title">{group.label}</h3>
+                                                                            {checkedInGroup.map((f) => {
+                                                                                if (PREVIEW_DATETIME_FIELDS.has(f)) {
+                                                                                    return (
+                                                                                        <div key={f} className="cf-field">
+                                                                                            <label>{f}</label>
+                                                                                            <div className="cf-input ct-preview-dt-input">
+                                                                                                <input type="text" placeholder="YYYY-MM-DD hh:mm" readOnly />
+                                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                                                                                                </svg>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    );
+                                                                                }
+                                                                                if (PREVIEW_FILE_FIELDS.has(f)) {
+                                                                                    return (
+                                                                                        <div key={f} className="cf-field">
+                                                                                            <label>{f}</label>
+                                                                                            <div className="ct-preview-file-zone">Upload document</div>
+                                                                                        </div>
+                                                                                    );
+                                                                                }
+                                                                                return (
                                                                                     <div key={f} className="cf-field">
                                                                                         <label>{f}</label>
                                                                                         <div className="cf-input">
-                                                                                            <input type="text" placeholder={f} />
+                                                                                            <input type="text" placeholder={f} readOnly />
                                                                                         </div>
                                                                                     </div>
-                                                                                ))}
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                    {(previewScopeConfig?.customFields ?? []).some((cf) => cf.label) && (
-                                                                        <div className="form-group">
-                                                                            <h3 className="form-group-title">Custom Fields</h3>
-                                                                            {previewScopeConfig.customFields.filter((cf) => cf.label).map((cf) => (
-                                                                                <div key={cf.id} className="cf-field">
-                                                                                    <label>{cf.label}</label>
-                                                                                    <div className="cf-input">
-                                                                                        <input type="text" placeholder={cf.label} />
-                                                                                    </div>
-                                                                                </div>
-                                                                            ))}
+                                                                                );
+                                                                            })}
                                                                         </div>
-                                                                    )}
-                                                                </>
-                                                            )}
+                                                                    );
+                                                                })}
+                                                                {(previewScopeConfig?.customFields ?? []).some((cf) => cf.label) && (
+                                                                    <div className="form-group">
+                                                                        <h3 className="form-group-title">Custom Fields</h3>
+                                                                        {previewScopeConfig.customFields.filter((cf) => cf.label).map((cf) => (
+                                                                            <div key={cf.id} className="cf-field">
+                                                                                <label>{cf.label}</label>
+                                                                                <div className="cf-input">
+                                                                                    <input type="text" placeholder={cf.label} readOnly />
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="general-info-middle">
+                                                        <div className="general-info-tasks-card general-info-tasks-card--daily">
+                                                            <div className="daily-task-box-wrapper">
+                                                                <DailyTaskTodo tasks={PREVIEW_DAILY_TASKS} accentColor="#2e7d32" />
+                                                            </div>
                                                         </div>
                                                     </div>
 
-                                                    <div className="general-info-tasks-card general-info-tasks-card--daily">
-                                                        <div className="daily-task-box-wrapper">
-                                                            <DailyTaskTodo tasks={PREVIEW_DAILY_TASKS} accentColor="#2e7d32" />
+                                                    <div className="general-info-right">
+                                                        <div className="general-info-tasks-card general-info-tasks-card--operation">
+                                                            <OperationTasksPanel embedded taskSections={PREVIEW_OPERATION_TASK_SECTIONS} />
                                                         </div>
-                                                    </div>
-
-                                                    <div className="general-info-tasks-card general-info-tasks-card--operation">
-                                                        <OperationTasksPanel embedded taskSections={PREVIEW_OPERATION_TASK_SECTIONS} />
                                                     </div>
                                                 </div>
                                             ) : effectivePreviewSub ? (

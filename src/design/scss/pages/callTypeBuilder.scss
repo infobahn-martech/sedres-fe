@@ -756,18 +756,20 @@
   background: #2e7d32;
 }
 
-// General Information + Daily Tasks + Operation Tasks side-by-side, like the real
-// Appointment Details tab's 3-column layout — sized for the smaller preview box
-// rather than reusing the real layout's full-modal-height grid rules.
-.ct-preview-general-columns {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+// Override height/min-height from general.scss so the 3-column grid
+// doesn't try to fill 100% of an unbounded parent inside the preview box.
+.ct-preview-modal .general-info-three-column {
+  height: auto;
+  min-height: 360px;
   gap: 14px;
-  align-items: start;
+}
 
-  @media (max-width: 1100px) {
-    grid-template-columns: 1fr;
-  }
+// Owner display in the preview — static name text, no dropdown.
+.ct-preview-owner-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  font-family: "Open Sans", sans-serif;
 }
 
 // Non-enabled sub-tab button in preview operation-left — grayed out but still clickable
