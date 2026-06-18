@@ -788,15 +788,14 @@ function CustomTabAccordion({ tab, isOpen, onToggleOpen, onToggle, onRename, onR
                         onChange={(e) => onToggle(tab.id, e.target.checked)}
                     />
                 </label>
-                <button type="button" className="ct-accordion-trigger" onClick={() => onToggleOpen(tab.id)}>
-                    <input
-                        className="ct-custom-tab-name-input"
-                        value={tab.label}
-                        placeholder="Tab name..."
-                        onChange={(e) => { e.stopPropagation(); onRename(tab.id, e.target.value); }}
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                    {fields.length > 0 && <span className="ct-accordion-badge">{fields.length}</span>}
+                <input
+                    className="ct-custom-tab-name-input"
+                    value={tab.label}
+                    placeholder="Tab name..."
+                    onChange={(e) => onRename(tab.id, e.target.value)}
+                />
+                {fields.length > 0 && <span className="ct-accordion-badge">{fields.length}</span>}
+                <button type="button" className="ct-accordion-expand-btn" onClick={() => onToggleOpen(tab.id)}>
                     {isOpen ? <FiChevronDown size={14} /> : <FiChevronRight size={14} />}
                 </button>
                 <button type="button" className="ct-custom-field-del ct-custom-tab-del" title="Delete tab" onClick={() => onRemove(tab.id)}>
@@ -874,14 +873,23 @@ function CallTypeBuilderModal({ show, onClose }) {
         setOpenCustomTab(null);
     }, []);
 
+    const parseTabConfig = (raw) => {
+        if (!raw) return null;
+        if (typeof raw === "string") {
+            try { return JSON.parse(raw); } catch { return null; }
+        }
+        return typeof raw === "object" ? raw : null;
+    };
+
     const handleSelectCallType = (ct) => {
         setEditingCallType(ct);
         setTemplateName(ct.call_type_name ?? "");
         setSelectedCallType(ct.selected_call_type ?? "");
+        const tabCfg = parseTabConfig(ct.tab_config);
         const restored = buildInitialTabConfig();
-        if (ct.tab_config && typeof ct.tab_config === "object") {
+        if (tabCfg) {
             for (const tab of MAIN_TABS) {
-                const saved = ct.tab_config[tab.id];
+                const saved = tabCfg[tab.id];
                 if (!saved) continue;
                 if (tab.subTabs) {
                     restored[tab.id].enabled = saved.enabled ?? false;
@@ -899,7 +907,7 @@ function CallTypeBuilderModal({ show, onClose }) {
         setTabConfig(restored);
         setOpenMainTab(null);
         setOpenSubTab(null);
-        const savedCustomTabs = ct.tab_config?._customTabs ?? [];
+        const savedCustomTabs = tabCfg?.customTabs ?? tabCfg?._customTabs ?? [];
         setCustomTabs(savedCustomTabs.map((t) => ({
             ...t,
             id: `ct-${Date.now()}-${Math.random()}`,
@@ -1031,18 +1039,25 @@ function CallTypeBuilderModal({ show, onClose }) {
         }
         setCallTypeError("");
         const callTypeLabel = CALL_TYPE_OPTIONS.find((o) => o.value === selectedCallType)?.label ?? "";
+        const savedTabConfig = {
+            ...tabConfig,
+            customTabs: customTabs.map(({ id: _id, ...rest }) => ({
+                ...rest,
+                fields: (rest.fields ?? []).map(({ id: _fid, ...frest }) => frest),
+            })),
+        };
         const payload = {
             call_type_name: isCreateTemplate ? templateName.trim() : callTypeLabel,
             selected_call_type: selectedCallType,
-            tab_config: {
-                ...tabConfig,
-                _customTabs: customTabs.map(({ id: _id, ...rest }) => rest),
-            },
+            tab_config: savedTabConfig,
         };
         if (editingCallType?.call_type_id) {
             await updateCallType({
                 formData: { call_type_id: editingCallType.call_type_id, ...payload },
-                cb: () => getCallTypes({}),
+                cb: () => {
+                    setEditingCallType((prev) => prev ? { ...prev, tab_config: savedTabConfig } : prev);
+                    getCallTypes({});
+                },
             });
         } else {
             await addCallType({
