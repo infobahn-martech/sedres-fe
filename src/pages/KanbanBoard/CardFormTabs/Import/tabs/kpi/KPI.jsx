@@ -1,109 +1,59 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect } from "react";
 import PropTypes from "prop-types";
 import KPIAnalytics from "./KPIAnalytics";
-import kpiTasksService from "../../../../../../services/kpiTasksService";
 import "../../../../../../design/scss/operations.scss";
 
-const KNOWN_CATEGORIES = [
-  "Appointment Acceptance",
-  "Call file open",
-  "Pre arrival report",
-  "Arrival report",
-  "Vessel inward formalities",
-  "Daily report",
-  "Outward clearance issue",
-  "Outward clearance deliver",
-  "Sailing Report",
-];
+// Generate dummy KPI data
+const generateDummyKPIs = () => {
+  const categories = [
+    "Appointment Acceptance",
+    "Call file open",
+    "Pre arrival report",
+    "Arrival report",
+    "Vessel inward formalities",
+    "Daily report",
+    "Outward clearance issue",
+    "Outward clearance deliver",
+    "Sailing Report"
+  ];
+  const performances = ["On Target", "Above Target", "Below Target", "Critical"];
 
-function deriveCategory(taskName) {
-  const name = String(taskName ?? "").toLowerCase();
-  const match = KNOWN_CATEGORIES.find(
-    (c) => name.includes(c.toLowerCase()) || c.toLowerCase().includes(name)
-  );
-  return match ?? String(taskName ?? "Other");
-}
-
-function derivePerformance(row) {
-  if (row?.delay_text) return "Critical";
-  const status = String(row?.status ?? "").toLowerCase();
-  if (status.includes("complet")) return "On Target";
-  if (status.includes("above") || status.includes("ahead")) return "Above Target";
-  return "Below Target";
-}
-
-function formatDuration(startIso, endIso) {
-  if (!startIso || !endIso) return "";
-  const diff = new Date(endIso) - new Date(startIso);
-  if (isNaN(diff) || diff <= 0) return "";
-  const hours = Math.floor(diff / 3600000);
-  const mins = Math.floor((diff % 3600000) / 60000);
-  return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-}
+  const dummyKPIs = [];
+  for (let i = 1; i <= 15; i++) {
+    dummyKPIs.push({
+      id: i,
+      name: `KPI_${String(100 + i).padStart(3, '0')}`,
+      category: categories[Math.floor(Math.random() * categories.length)],
+      performance: performances[Math.floor(Math.random() * performances.length)],
+      value: Math.floor(Math.random() * 100),
+      target: 75,
+    });
+  }
+  return dummyKPIs;
+};
 
 function KPI({ card, formValues, handleChange }) {
   const cardColor = card?.color || "#2A00FF";
-  const [operatorKpiTasks, setOperatorKpiTasks] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const kpiData = formValues.kpiData || [];
 
-  const cardId = card?.id ?? card?.card_id ?? formValues?.card_id;
-
+  // Initialize with dummy data on mount if empty
   useEffect(() => {
-    if (!cardId) {
-      setOperatorKpiTasks([]);
-      return;
+    if (!formValues.kpiData || formValues.kpiData.length === 0) {
+      const dummyData = generateDummyKPIs();
+      const syntheticEvent = { target: { value: dummyData } };
+      handleChange("kpiData")(syntheticEvent);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
-    let cancelled = false;
-    const load = async () => {
-      setIsLoading(true);
-      try {
-        const { data } = await kpiTasksService.getOperatorKpi(String(cardId).trim());
-        if (!cancelled) setOperatorKpiTasks(Array.isArray(data?.data) ? data.data : []);
-      } catch (e) {
-        if (!cancelled) setOperatorKpiTasks([]);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    void load();
-    return () => { cancelled = true; };
-  }, [cardId]);
-
-  const kpiData = useMemo(
-    () =>
-      operatorKpiTasks.map((row, i) => ({
-        id: row?.operator_kpi_id ?? row?.id ?? i,
-        name: row?.task_name ?? "",
-        category: row?.category ?? deriveCategory(row?.task_name),
-        performance: derivePerformance(row),
-        value: Number(row?.value ?? row?.earned_points ?? 0),
-        target: Number(row?.target ?? row?.total_points ?? 75),
-      })),
-    [operatorKpiTasks]
-  );
-
-  const tasks = useMemo(
-    () =>
-      operatorKpiTasks.map((row, i) => ({
-        id: row?.operator_kpi_id ?? row?.id ?? i,
-        task: row?.task_name ?? "",
-        estimatedDuration: formatDuration(row?.start_time, row?.due_time),
-        elapsedTime: row?.completed_time
-          ? formatDuration(row?.start_time, row?.completed_time)
-          : formatDuration(row?.start_time, new Date().toISOString()),
-        status: row?.status ?? "",
-      })),
-    [operatorKpiTasks]
-  );
+  const displayKpiData = kpiData.length > 0 ? kpiData : generateDummyKPIs();
 
   return (
     <div className="operation-wrapper" style={{ "--card-color": cardColor }}>
       <div className="operation-content-container">
         <div className="operation-right">
           <div className="cardform-left-full kpi-content-wrapper" style={{ "--card-color": cardColor }}>
-            <KPIAnalytics kpiData={kpiData} tasks={tasks} isLoading={isLoading} cardColor={cardColor} />
+            <KPIAnalytics kpiData={displayKpiData} cardColor={cardColor} />
           </div>
         </div>
       </div>
@@ -118,3 +68,4 @@ KPI.propTypes = {
 };
 
 export default KPI;
+
