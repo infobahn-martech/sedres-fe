@@ -438,7 +438,6 @@
   grid-template-columns: 1fr 90px 28px;
   gap: 6px;
   align-items: center;
-  margin-bottom: 6px;
 }
 
 .ct-custom-field-input {
@@ -1251,6 +1250,259 @@
     color: #7c3aed;
     background: #f5f3ff;
   }
+}
+
+// ── Radio options builder (inside CustomFieldRow) ────────────────────────────
+.ct-custom-field-wrap {
+  margin-bottom: 8px;
+}
+
+.ct-radio-options {
+  margin: 4px 0 0 20px;
+  padding: 8px 10px;
+  border: 1.5px dashed #e2e2ea;
+  border-radius: 6px;
+  background: #fafafe;
+}
+
+.ct-radio-option-row {
+  display: grid;
+  grid-template-columns: 10px 1fr 28px;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.ct-radio-option-dot {
+  width: 10px;
+  height: 10px;
+  border: 2px solid #a78bfa;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ct-add-radio-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #7c3aed;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: "Open Sans", sans-serif;
+  cursor: pointer;
+  padding: 2px 0;
+  margin-top: 2px;
+
+  &:hover { text-decoration: underline; }
+}
+
+// ── Custom tabs section (left panel) ─────────────────────────────────────────
+.ct-custom-tabs-section {
+  margin-bottom: 16px;
+}
+
+.ct-custom-tabs-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 10px;
+
+  &::before, &::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e8eaf0;
+  }
+
+  span {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    white-space: nowrap;
+  }
+}
+
+.ct-custom-tab-item {
+  border-style: dashed;
+}
+
+.ct-custom-tab-name-input {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 8px;
+  border: 1.5px solid transparent;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: "Open Sans", sans-serif;
+  color: #374151;
+  background: transparent;
+  outline: none;
+  cursor: text;
+
+  &::placeholder { color: #c0c8d8; font-weight: 400; }
+  &:hover { border-color: #e2e2ea; background: #fff; }
+  &:focus { border-color: #7c3aed; background: #fff; }
+}
+
+.ct-custom-tab-del {
+  margin-right: 8px;
+}
+
+.ct-add-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: 1.5px dashed #7c3aed;
+  color: #7c3aed;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: "Open Sans", sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  margin-top: 6px;
+
+  &:hover {
+    background: #f5f3ff;
+    border-color: #6d28d9;
+  }
+}
+
+// ── Custom tab live preview (right panel) ─────────────────────────────────────
+.ct-preview-custom-tab-wrap {
+  padding: 2px 0;
+}
+
+.ct-preview-custom-tab-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ct-preview-custom-tab-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.ct-preview-custom-tab-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7c3aed;
+  background: #ede9fe;
+  border-radius: 20px;
+  padding: 2px 8px;
+  flex-shrink: 0;
+}
+
+.ct-preview-custom-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 16px;
+  align-items: start;
+
+  // Each cell must not overflow its column
+  > * {
+    min-width: 0;
+  }
+
+  // cf-field uses margin-bottom globally; inside a grid gap controls spacing
+  .cf-field {
+    margin-bottom: 0;
+  }
+
+  // .cf-field label { display: block } from CardForm.css breaks flex labels —
+  // restore flex for checkbox and radio elements inside the preview grid
+  .ct-preview-check-mock {
+    display: flex !important;
+    margin-bottom: 0 !important;
+    font-weight: normal !important;
+    font-size: 13px !important;
+  }
+
+  .ct-preview-radio-option {
+    display: flex !important;
+    margin-bottom: 0 !important;
+    font-weight: normal !important;
+    font-size: 13px !important;
+  }
+}
+
+.ct-preview-span-full {
+  grid-column: 1 / -1;
+}
+
+.ct-preview-check-mock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+  font-size: 13px;
+  color: #374151;
+
+  input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: #7c3aed;
+    margin: 0;
+    flex-shrink: 0;
+    cursor: default;
+  }
+}
+
+.ct-preview-radio-mock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.ct-preview-radio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+  font-size: 13px;
+  color: #374151;
+
+  input[type="radio"] {
+    width: 14px;
+    height: 14px;
+    accent-color: #7c3aed;
+    margin: 0;
+    flex-shrink: 0;
+    cursor: default;
+  }
+}
+
+.ct-preview-textarea-mock {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid #e2e2ea;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: "Open Sans", sans-serif;
+  color: #9ca3af;
+  background: #fff;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
 }
 
 // ── Page layout (sidebar /call-type route) ────────────────────────────────────

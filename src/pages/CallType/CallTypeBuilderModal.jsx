@@ -9,6 +9,8 @@ import DocumentLibrary from "../KanbanBoard/CardFormTabs/Import/tabs/appointment
 import Comments from "../KanbanBoard/CardFormTabs/Import/tabs/comments/Comments";
 import Subtasks from "../KanbanBoard/CardFormTabs/Import/tabs/subTasks/SubTasks";
 import Notes from "../KanbanBoard/CardFormTabs/Import/tabs/notes/Notes";
+import DatePickerField from "../KanbanBoard/CardFormTabs/shared/components/DatePickerField";
+import DateTimePickerField from "../KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/pages/callTypeBuilder.scss";
 
@@ -79,8 +81,11 @@ const FIELD_TYPES = [
     { value: "text", label: "Text" },
     { value: "number", label: "Number" },
     { value: "date", label: "Date" },
+    { value: "datetime", label: "Date & Time" },
     { value: "dropdown", label: "Dropdown" },
     { value: "checkbox", label: "Checkbox" },
+    { value: "radio", label: "Radio Button" },
+    { value: "textarea", label: "Textarea" },
 ];
 
 const CALL_TYPE_OPTIONS = [
@@ -351,26 +356,161 @@ const updateScope = (prev, mainId, subId, updater) => {
 };
 
 function CustomFieldRow({ field, onUpdate, onRemove }) {
+    const isRadio = field.type === "radio";
+    const options = field.options ?? [];
+
+    const handleAddOption = () =>
+        onUpdate(field.id, "options", [...options, ""]);
+
+    const handleUpdateOption = (idx, val) => {
+        const next = [...options];
+        next[idx] = val;
+        onUpdate(field.id, "options", next);
+    };
+
+    const handleRemoveOption = (idx) =>
+        onUpdate(field.id, "options", options.filter((_, i) => i !== idx));
+
     return (
-        <div className="ct-custom-field-row">
-            <input
-                className="ct-custom-field-input"
-                placeholder="Field name"
-                value={field.label}
-                onChange={(e) => onUpdate(field.id, "label", e.target.value)}
-            />
-            <select
-                className="ct-custom-field-select"
-                value={field.type}
-                onChange={(e) => onUpdate(field.id, "type", e.target.value)}
-            >
-                {FIELD_TYPES.map((ft) => (
-                    <option key={ft.value} value={ft.value}>{ft.label}</option>
-                ))}
-            </select>
-            <button type="button" className="ct-custom-field-del" onClick={() => onRemove(field.id)}>
-                <FiTrash2 size={13} />
-            </button>
+        <div className="ct-custom-field-wrap">
+            <div className="ct-custom-field-row">
+                <input
+                    className="ct-custom-field-input"
+                    placeholder="Field name"
+                    value={field.label}
+                    onChange={(e) => onUpdate(field.id, "label", e.target.value)}
+                />
+                <select
+                    className="ct-custom-field-select"
+                    value={field.type}
+                    onChange={(e) => onUpdate(field.id, "type", e.target.value)}
+                >
+                    {FIELD_TYPES.map((ft) => (
+                        <option key={ft.value} value={ft.value}>{ft.label}</option>
+                    ))}
+                </select>
+                <button type="button" className="ct-custom-field-del" onClick={() => onRemove(field.id)}>
+                    <FiTrash2 size={13} />
+                </button>
+            </div>
+            {isRadio && (
+                <div className="ct-radio-options">
+                    {options.map((opt, idx) => (
+                        <div key={idx} className="ct-radio-option-row">
+                            <span className="ct-radio-option-dot" />
+                            <input
+                                className="ct-custom-field-input"
+                                placeholder={`Option ${idx + 1}`}
+                                value={opt}
+                                onChange={(e) => handleUpdateOption(idx, e.target.value)}
+                            />
+                            <button type="button" className="ct-custom-field-del" onClick={() => handleRemoveOption(idx)}>
+                                <FiTrash2 size={12} />
+                            </button>
+                        </div>
+                    ))}
+                    <button type="button" className="ct-add-radio-option-btn" onClick={handleAddOption}>
+                        <FiPlus size={11} /> Add Option
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function CustomFieldPreviewItem({ field }) {
+    const label = field.label || "Unnamed Field";
+    const [dateVal, setDateVal] = useState("");
+    const [datetimeDate, setDatetimeDate] = useState("");
+    const [datetimeTime, setDatetimeTime] = useState("");
+    const [checked, setChecked] = useState(false);
+    const [radioVal, setRadioVal] = useState("");
+    const [textVal, setTextVal] = useState("");
+
+    if (field.type === "date") {
+        return (
+            <div className="cf-field">
+                <label>{label}</label>
+                <DatePickerField
+                    dateValue={dateVal}
+                    onDateChange={(e) => setDateVal(e.target.value)}
+                    placeholder="Select date"
+                />
+            </div>
+        );
+    }
+    if (field.type === "datetime") {
+        return (
+            <div className="cf-field">
+                <label>{label}</label>
+                <DateTimePickerField
+                    dateValue={datetimeDate}
+                    timeValue={datetimeTime}
+                    onDateTimeChange={({ date, time }) => { setDatetimeDate(date); setDatetimeTime(time); }}
+                    placeholder="Select date and time"
+                />
+            </div>
+        );
+    }
+    if (field.type === "checkbox") {
+        return (
+            <div className="cf-field ct-preview-span-full">
+                <label className="ct-preview-check-mock">
+                    <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} />
+                    <span>{label}</span>
+                </label>
+            </div>
+        );
+    }
+    if (field.type === "radio") {
+        const radioOptions = (field.options ?? []).filter(Boolean);
+        const displayOptions = radioOptions.length > 0 ? radioOptions : ["Option 1", "Option 2", "Option 3"];
+        return (
+            <div className="cf-field ct-preview-span-full">
+                <label>{label}</label>
+                <div className="ct-preview-radio-mock">
+                    {displayOptions.map((opt, i) => (
+                        <label key={i} className="ct-preview-radio-option">
+                            <input type="radio" name={`preview-radio-${field.id}`} value={opt} checked={radioVal === opt} onChange={() => setRadioVal(opt)} />
+                            <span>{opt}</span>
+                        </label>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+    if (field.type === "textarea") {
+        return (
+            <div className="cf-field ct-preview-span-full">
+                <label>{label}</label>
+                <textarea className="ct-preview-textarea-mock" rows={3} placeholder="Enter text..." value={textVal} onChange={(e) => setTextVal(e.target.value)} />
+            </div>
+        );
+    }
+    if (field.type === "dropdown") {
+        return (
+            <div className="cf-field">
+                <label>{label}</label>
+                <div className="cf-input ct-preview-select-input">
+                    <input type="text" placeholder="Select option..." value={textVal} onChange={(e) => setTextVal(e.target.value)} />
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </div>
+            </div>
+        );
+    }
+    return (
+        <div className="cf-field">
+            <label>{label}</label>
+            <div className="cf-input">
+                <input
+                    type={field.type === "number" ? "number" : "text"}
+                    placeholder={label}
+                    value={textVal}
+                    onChange={(e) => setTextVal(e.target.value)}
+                />
+            </div>
         </div>
     );
 }
@@ -636,6 +776,58 @@ function MainTabAccordion({ tab, config, openMainTab, openSubTab, onToggleOpenMa
     );
 }
 
+function CustomTabAccordion({ tab, isOpen, onToggleOpen, onToggle, onRename, onRemove, onAddField, onUpdateField, onRemoveField }) {
+    const fields = tab.fields ?? [];
+    return (
+        <div className={`ct-accordion-item ct-custom-tab-item ${tab.enabled ? "ct-accordion-item--enabled" : ""}`}>
+            <div className="ct-accordion-header">
+                <label className="ct-tab-toggle">
+                    <input
+                        type="checkbox"
+                        checked={tab.enabled}
+                        onChange={(e) => onToggle(tab.id, e.target.checked)}
+                    />
+                </label>
+                <button type="button" className="ct-accordion-trigger" onClick={() => onToggleOpen(tab.id)}>
+                    <input
+                        className="ct-custom-tab-name-input"
+                        value={tab.label}
+                        placeholder="Tab name..."
+                        onChange={(e) => { e.stopPropagation(); onRename(tab.id, e.target.value); }}
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                    {fields.length > 0 && <span className="ct-accordion-badge">{fields.length}</span>}
+                    {isOpen ? <FiChevronDown size={14} /> : <FiChevronRight size={14} />}
+                </button>
+                <button type="button" className="ct-custom-field-del ct-custom-tab-del" title="Delete tab" onClick={() => onRemove(tab.id)}>
+                    <FiTrash2 size={13} />
+                </button>
+            </div>
+
+            {isOpen && (
+                <div className="ct-accordion-body">
+                    {fields.length > 0 && (
+                        <div className="ct-custom-fields-list">
+                            <p className="ct-custom-fields-heading">Fields</p>
+                            {fields.map((f) => (
+                                <CustomFieldRow
+                                    key={f.id}
+                                    field={f}
+                                    onUpdate={(id, key, val) => onUpdateField(tab.id, id, key, val)}
+                                    onRemove={(id) => onRemoveField(tab.id, id)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                    <button type="button" className="ct-add-custom-btn" onClick={() => onAddField(tab.id)}>
+                        <FiPlus size={13} /> Add Field
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function CallTypeBuilderModal({ show, onClose }) {
     const {
         getCallTypes, callTypes, isLoadingGet,
@@ -649,6 +841,8 @@ function CallTypeBuilderModal({ show, onClose }) {
     const [tabConfig, setTabConfig] = useState(buildInitialTabConfig);
     const [openMainTab, setOpenMainTab] = useState(null);
     const [openSubTab, setOpenSubTab] = useState(null);
+    const [customTabs, setCustomTabs] = useState([]);
+    const [openCustomTab, setOpenCustomTab] = useState(null);
     const [callTypeError, setCallTypeError] = useState("");
     const [previewActiveMain, setPreviewActiveMain] = useState(null);
     const [previewActiveSub, setPreviewActiveSub] = useState(null);
@@ -667,6 +861,8 @@ function CallTypeBuilderModal({ show, onClose }) {
         setTabConfig(buildInitialTabConfig());
         setOpenMainTab(null);
         setOpenSubTab(null);
+        setCustomTabs([]);
+        setOpenCustomTab(null);
         setCallTypeError("");
     }, []);
 
@@ -674,6 +870,8 @@ function CallTypeBuilderModal({ show, onClose }) {
         setTabConfig(buildInitialTabConfig());
         setOpenMainTab(null);
         setOpenSubTab(null);
+        setCustomTabs([]);
+        setOpenCustomTab(null);
     }, []);
 
     const handleSelectCallType = (ct) => {
@@ -701,6 +899,13 @@ function CallTypeBuilderModal({ show, onClose }) {
         setTabConfig(restored);
         setOpenMainTab(null);
         setOpenSubTab(null);
+        const savedCustomTabs = ct.tab_config?._customTabs ?? [];
+        setCustomTabs(savedCustomTabs.map((t) => ({
+            ...t,
+            id: `ct-${Date.now()}-${Math.random()}`,
+            fields: (t.fields ?? []).map((f) => ({ ...f, id: `cf-${Date.now()}-${Math.random()}` })),
+        })));
+        setOpenCustomTab(null);
         setCallTypeError("");
     };
 
@@ -767,6 +972,45 @@ function CallTypeBuilderModal({ show, onClose }) {
             customFields: scope.customFields.filter((cf) => cf.id !== fieldId),
         })));
 
+    const handleAddCustomTab = useCallback(() => {
+        const newTab = { id: `ct-${Date.now()}-${Math.random()}`, label: "", enabled: true, fields: [] };
+        setCustomTabs((prev) => [...prev, newTab]);
+        setOpenCustomTab(newTab.id);
+    }, []);
+
+    const handleToggleCustomTab = (tabId, checked) =>
+        setCustomTabs((prev) => prev.map((t) => (t.id === tabId ? { ...t, enabled: checked } : t)));
+
+    const handleRenameCustomTab = (tabId, label) =>
+        setCustomTabs((prev) => prev.map((t) => (t.id === tabId ? { ...t, label } : t)));
+
+    const handleRemoveCustomTab = (tabId) => {
+        setCustomTabs((prev) => prev.filter((t) => t.id !== tabId));
+        setOpenCustomTab((prev) => (prev === tabId ? null : prev));
+    };
+
+    const handleToggleOpenCustomTab = (tabId) =>
+        setOpenCustomTab((prev) => (prev === tabId ? null : tabId));
+
+    const handleAddCustomTabField = (tabId) =>
+        setCustomTabs((prev) => prev.map((t) =>
+            t.id === tabId
+                ? { ...t, fields: [...t.fields, { id: `cf-${Date.now()}-${Math.random()}`, label: "", type: "text" }] }
+                : t
+        ));
+
+    const handleUpdateCustomTabField = (tabId, fieldId, key, val) =>
+        setCustomTabs((prev) => prev.map((t) =>
+            t.id === tabId
+                ? { ...t, fields: t.fields.map((f) => (f.id === fieldId ? { ...f, [key]: val } : f)) }
+                : t
+        ));
+
+    const handleRemoveCustomTabField = (tabId, fieldId) =>
+        setCustomTabs((prev) => prev.map((t) =>
+            t.id === tabId ? { ...t, fields: t.fields.filter((f) => f.id !== fieldId) } : t
+        ));
+
     const handleRenameReportField = (mainId, fieldName, newLabel) =>
         setTabConfig((prev) => updateScope(prev, mainId, null, (scope) => ({
             ...scope,
@@ -790,7 +1034,10 @@ function CallTypeBuilderModal({ show, onClose }) {
         const payload = {
             call_type_name: isCreateTemplate ? templateName.trim() : callTypeLabel,
             selected_call_type: selectedCallType,
-            tab_config: tabConfig,
+            tab_config: {
+                ...tabConfig,
+                _customTabs: customTabs.map(({ id: _id, ...rest }) => rest),
+            },
         };
         if (editingCallType?.call_type_id) {
             await updateCallType({
@@ -819,10 +1066,12 @@ function CallTypeBuilderModal({ show, onClose }) {
     const isEditMode = !!editingCallType?.call_type_id;
 
     const enabledMainTabs = MAIN_TABS.filter((t) => tabConfig[t.id]?.enabled);
-    const enabledTabCount = enabledMainTabs.length;
+    const enabledCustomPreviewTabs = customTabs.filter((t) => t.enabled).map((t) => ({ ...t, _isCustom: true }));
+    const allEnabledTabs = [...enabledMainTabs, ...enabledCustomPreviewTabs];
+    const enabledTabCount = allEnabledTabs.length;
 
-    const effectivePreviewMain = enabledMainTabs.find((t) => t.id === previewActiveMain) ?? enabledMainTabs[0] ?? null;
-    const allPreviewSubTabs = effectivePreviewMain?.subTabs ?? [];
+    const effectivePreviewMain = allEnabledTabs.find((t) => t.id === previewActiveMain) ?? allEnabledTabs[0] ?? null;
+    const allPreviewSubTabs = effectivePreviewMain?._isCustom ? [] : (effectivePreviewMain?.subTabs ?? []);
     const enabledSubTabs = allPreviewSubTabs.filter(
         (s) => tabConfig[effectivePreviewMain?.id]?.subTabs?.[s.id]?.enabled
     );
@@ -968,6 +1217,32 @@ function CallTypeBuilderModal({ show, onClose }) {
                                         />
                                     ))}
                                 </div>
+
+                                {/* Custom tabs */}
+                                <div className="ct-custom-tabs-section">
+                                    <div className="ct-custom-tabs-divider">
+                                        <span>Custom Tabs</span>
+                                    </div>
+                                    <div className="ct-accordion-group">
+                                        {customTabs.map((tab) => (
+                                            <CustomTabAccordion
+                                                key={tab.id}
+                                                tab={tab}
+                                                isOpen={openCustomTab === tab.id}
+                                                onToggleOpen={handleToggleOpenCustomTab}
+                                                onToggle={handleToggleCustomTab}
+                                                onRename={handleRenameCustomTab}
+                                                onRemove={handleRemoveCustomTab}
+                                                onAddField={handleAddCustomTabField}
+                                                onUpdateField={handleUpdateCustomTabField}
+                                                onRemoveField={handleRemoveCustomTabField}
+                                            />
+                                        ))}
+                                    </div>
+                                    <button type="button" className="ct-add-tab-btn" onClick={handleAddCustomTab}>
+                                        <FiPlus size={13} /> Add New Tab
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -985,7 +1260,7 @@ function CallTypeBuilderModal({ show, onClose }) {
                     {/* ── Right panel: live preview ── */}
                     <div className="ct-split-right">
 
-                        {enabledMainTabs.length > 0 && (
+                        {allEnabledTabs.length > 0 && (
                             // Reuses the real kanban card modal's own classes (cardform-tabs/tab,
                             // operation-wrapper/operation-left/op-tab/operation-right from CardForm.css)
                             // so the preview's fonts and colors are pixel-identical to the live modal.
@@ -999,14 +1274,14 @@ function CallTypeBuilderModal({ show, onClose }) {
                                 </div>
 
                                 <div className="cardform-tabs">
-                                    {enabledMainTabs.map((tab) => (
+                                    {allEnabledTabs.map((tab) => (
                                         <button
                                             key={tab.id}
                                             type="button"
                                             className={`tab ${effectivePreviewMain?.id === tab.id ? "active" : ""}`}
                                             onClick={() => { setPreviewActiveMain(tab.id); setPreviewActiveSub(null); }}
                                         >
-                                            {tab.label}
+                                            {tab.label || "Unnamed Tab"}
                                         </button>
                                     ))}
                                 </div>
@@ -1032,7 +1307,23 @@ function CallTypeBuilderModal({ show, onClose }) {
                                         )}
 
                                         <div className="operation-right">
-                                            {effectivePreviewMain.id === "husbandry" ? (
+                                            {effectivePreviewMain._isCustom ? (
+                                                <div className="ct-preview-custom-tab-wrap">
+                                                    <div className="ct-preview-custom-tab-header">
+                                                        <span className="ct-preview-custom-tab-title">{effectivePreviewMain.label || "Unnamed Tab"}</span>
+                                                        <span className="ct-preview-custom-tab-badge">Custom</span>
+                                                    </div>
+                                                    {(effectivePreviewMain.fields ?? []).filter((f) => f.label).length === 0 ? (
+                                                        <p className="ct-summary-no-fields">No fields yet — add fields in the left panel.</p>
+                                                    ) : (
+                                                        <div className="ct-preview-custom-fields-grid">
+                                                            {effectivePreviewMain.fields.filter((f) => f.label).map((f) => (
+                                                                <CustomFieldPreviewItem key={f.id} field={f} />
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : effectivePreviewMain.id === "husbandry" ? (
                                                 <div className="ct-preview-husb-wrap">
                                                     <div className="ct-preview-husb-hero">
                                                         <p className="ct-preview-husb-eyebrow">Husbandry Dashboard</p>
