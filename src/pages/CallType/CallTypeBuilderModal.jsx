@@ -12,6 +12,9 @@ import Notes from "../KanbanBoard/CardFormTabs/Import/tabs/notes/Notes";
 import DatePickerField from "../KanbanBoard/CardFormTabs/shared/components/DatePickerField";
 import DateTimePickerField from "../KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import "../../design/css/common/CardForm.css";
+import "../../design/scss/general.scss";
+import "../../design/scss/operations.scss";
+import "../../design/scss/salesOrder.scss";
 import "../../design/scss/pages/callTypeBuilder.scss";
 
 // Static sample data for the Live Preview's Daily Tasks / Operation Tasks panels —
@@ -272,10 +275,8 @@ const MAIN_TABS = [
             {
                 label: "Header Fields",
                 fields: [
-                    "Customer Code", "Customer Name", "Contact Person", "Contact Email",
-                    "PO No", "SRT Number", "Project Name", "Port",
-                    "Branch", "SO No", "Posting Date", "Delivery Date",
-                    "Document Date", "Ship Name", "BP Currency",
+                    "PO No", "Project Name", "Port",
+                    "Delivery Date", "Document Date", "Ship Name", "BP Currency",
                 ],
             },
             {
@@ -494,7 +495,7 @@ function CustomFieldPreviewItem({ field }) {
                 <div className="cf-input ct-preview-select-input">
                     <input type="text" placeholder="Select option..." value={textVal} onChange={(e) => setTextVal(e.target.value)} />
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <polyline points="6 9 12 15 18 9"/>
+                        <polyline points="6 9 12 15 18 9" />
                     </svg>
                 </div>
             </div>
@@ -1374,265 +1375,622 @@ function CallTypeBuilderModal({ show, onClose }) {
 
                                 {effectivePreviewMain && (
                                     <>
-                                    <div className="operation-wrapper">
-                                        {allPreviewSubTabs.length > 0 && effectivePreviewMain.id !== "husbandry" && (
-                                            <div className="operation-left">
-                                                {allPreviewSubTabs.map((sub) => {
-                                                    const isEnabled = Boolean(tabConfig[effectivePreviewMain?.id]?.subTabs?.[sub.id]?.enabled);
-                                                    return (
-                                                        <button
-                                                            key={sub.id}
-                                                            type="button"
-                                                            className={`op-tab ${effectivePreviewSub?.id === sub.id ? "active" : ""} ${!isEnabled ? "ct-preview-op-tab-off" : ""}`}
-                                                            onClick={() => setPreviewActiveSub(sub.id)}
-                                                        >
-                                                            {sub.label}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-
-                                        <div className="operation-right">
-                                            {effectivePreviewMain._isCustom ? (
-                                                <div className="ct-preview-custom-tab-wrap">
-                                                    <div className="ct-preview-custom-tab-header">
-                                                        <span className="ct-preview-custom-tab-title">{effectivePreviewMain.label || "Unnamed Tab"}</span>
-                                                        <span className="ct-preview-custom-tab-badge">Custom</span>
-                                                    </div>
-                                                    {(effectivePreviewMain.fields ?? []).filter((f) => f.label).length === 0 ? (
-                                                        <p className="ct-summary-no-fields">No fields yet — add fields in the left panel.</p>
-                                                    ) : (
-                                                        <div className="ct-preview-custom-fields-grid">
-                                                            {effectivePreviewMain.fields.filter((f) => f.label).map((f) => (
-                                                                <CustomFieldPreviewItem key={f.id} field={f} />
-                                                            ))}
-                                                        </div>
-                                                    )}
+                                        <div className="operation-wrapper">
+                                            {allPreviewSubTabs.length > 0 && effectivePreviewMain.id !== "husbandry" && (
+                                                <div className="operation-left">
+                                                    {allPreviewSubTabs.map((sub) => {
+                                                        const isEnabled = Boolean(tabConfig[effectivePreviewMain?.id]?.subTabs?.[sub.id]?.enabled);
+                                                        return (
+                                                            <button
+                                                                key={sub.id}
+                                                                type="button"
+                                                                className={`op-tab ${effectivePreviewSub?.id === sub.id ? "active" : ""} ${!isEnabled ? "ct-preview-op-tab-off" : ""}`}
+                                                                onClick={() => setPreviewActiveSub(sub.id)}
+                                                            >
+                                                                {sub.label}
+                                                            </button>
+                                                        );
+                                                    })}
                                                 </div>
-                                            ) : effectivePreviewMain.id === "husbandry" ? (
-                                                <div className="ct-preview-husb-wrap">
-                                                    <div className="ct-preview-husb-hero">
-                                                        <p className="ct-preview-husb-eyebrow">Husbandry Dashboard</p>
-                                                        <h2 className="ct-preview-husb-title">What services do you need?</h2>
-                                                        <p className="ct-preview-husb-subtitle">Select a service to initiate requests, monitor progress and keep vessel support activities in one place.</p>
+                                            )}
+
+                                            <div className="operation-right">
+                                                {effectivePreviewMain._isCustom ? (
+                                                    <div className="ct-preview-custom-tab-wrap">
+                                                        <div className="ct-preview-custom-tab-header">
+                                                            <span className="ct-preview-custom-tab-title">{effectivePreviewMain.label || "Unnamed Tab"}</span>
+                                                            <span className="ct-preview-custom-tab-badge">Custom</span>
+                                                        </div>
+                                                        {(effectivePreviewMain.fields ?? []).filter((f) => f.label).length === 0 ? (
+                                                            <p className="ct-summary-no-fields">No fields yet — add fields in the left panel.</p>
+                                                        ) : (
+                                                            <div className="ct-preview-custom-fields-grid">
+                                                                {effectivePreviewMain.fields.filter((f) => f.label).map((f) => (
+                                                                    <CustomFieldPreviewItem key={f.id} field={f} />
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    <div className="ct-preview-husb-stats">
-                                                        {(() => {
-                                                            const bookedCount = Object.values(tabConfig.husbandry?.subTabs ?? {}).filter((s) => s.enabled).length;
-                                                            return [
-                                                                { label: "Total Services", value: 8, helper: "Available now" },
-                                                                { label: "Booked Services", value: bookedCount, helper: "Added to workflow" },
-                                                                { label: "Pending", value: bookedCount, helper: "Awaiting action" },
-                                                                { label: "Completed", value: 0, helper: "Successfully closed" },
-                                                            ].map((stat) => (
-                                                                <div key={stat.label} className="ct-preview-husb-stat">
-                                                                    <span className="ct-preview-husb-stat-label">{stat.label}</span>
-                                                                    <span className="ct-preview-husb-stat-value">{stat.value}</span>
-                                                                    <span className="ct-preview-husb-stat-helper">{stat.helper}</span>
-                                                                </div>
-                                                            ));
-                                                        })()}
+                                                ) : effectivePreviewMain.id === "husbandry" ? (
+                                                    <div className="husbandry-service-selection" style={{ "--card-color": "#00368c" }}>
+                                                        <div className="husbandry-service-selection-content">
+                                                            <div className="husbandry-service-hero">
+                                                                <p className="husbandry-service-hero-eyebrow">Husbandry Dashboard</p>
+                                                                <h2 className="husbandry-service-selection-title">What services do you need?</h2>
+                                                                <p className="husbandry-service-hero-subtitle">Select a service to initiate requests, monitor progress and keep vessel support activities in one place.</p>
+                                                            </div>
+                                                            <div className="husbandry-service-summary-grid">
+                                                                {[
+                                                                    { label: "Total Services", value: 6 },
+                                                                    { label: "Booked Services", value: 0 },
+                                                                    { label: "Pending", value: 0 },
+                                                                    { label: "Completed", value: 0 },
+                                                                ].map((stat) => (
+                                                                    <div key={stat.label} className="husbandry-service-summary-card">
+                                                                        <span className="husbandry-service-summary-label">{stat.label}</span>
+                                                                        <span className="husbandry-service-summary-value">{stat.value}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            <div className="husbandry-service-options">
+                                                                {[
+                                                                    {
+                                                                        id: "crewManagement", label: "Crew Management", summary: "Crew transport, hotel, medical and launch hire support.", badges: ["Sign In: 0", "Sign Off: 0"],
+                                                                        icon: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="16" r="7" stroke="currentColor" strokeWidth="2" fill="none" /><path d="M10 40C10 32.268 16.268 26 24 26C31.732 26 38 32.268 38 40" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                                                                    },
+                                                                    {
+                                                                        id: "materialManagement", label: "Material Management", summary: "Inbound orders, landing note and dispatch note handling.", badges: ["Inbound: 0", "Dispatch: 0"],
+                                                                        icon: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 16L24 8L40 16V34L24 42L8 34V16Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none" /><path d="M24 8V42M8 16L24 24L40 16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
+                                                                    },
+                                                                    {
+                                                                        id: "wasteDisposal", label: "Waste Disposal", summary: "Waste request initiation and disposal progress tracking.",
+                                                                        icon: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 14H34M18 14V12C18 10.8954 18.8954 10 20 10H28C29.1046 10 30 10.8954 30 12V14M20 22V34M28 22V34M16 14L18 38H30L32 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                                                    },
+                                                                    {
+                                                                        id: "launchHire", label: "Launch Hire", summary: "Launch booking, transfer coordination and movement support.",
+                                                                        icon: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 30H38L34 38H14L10 30Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none" /><path d="M24 10V30M20 14L24 10L28 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M8 30C12 26 16 24 24 24C32 24 36 26 40 30" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                                                                    },
+                                                                    {
+                                                                        id: "mwpRenewal", label: "MWP Renewal", summary: "Monitor MWP renewal requests and expected completion updates.",
+                                                                        icon: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="2" fill="none" /><path d="M28 16L32 12L28 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M20 32L16 36L20 40" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M32 12C30 16 28 20 28 24C28 28 30 32 32 36M16 12C18 16 20 20 20 24C20 28 18 32 16 36" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                                                                    },
+                                                                    {
+                                                                        id: "thirdPartyServices", label: "Third-Party Services", summary: "Raise and monitor external vendor service requests.",
+                                                                        icon: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="18" width="28" height="22" rx="2" stroke="currentColor" strokeWidth="2" fill="none" /><path d="M16 18V14C16 11.7909 17.7909 10 20 10H28C30.2091 10 32 11.7909 32 14V18" stroke="currentColor" strokeWidth="2" /><path d="M10 26H38M20 26V32M28 26V32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                                                                    },
+                                                                ].map((svc) => (
+                                                                    <button key={svc.id} type="button" className="husbandry-service-option" style={{ "--card-color": "#00368c" }}>
+                                                                        <div className="husbandry-service-option-icon">{svc.icon}</div>
+                                                                        <div className="husbandry-service-option-content">
+                                                                            <span className="husbandry-service-option-label">{svc.label}</span>
+                                                                            <p className="husbandry-service-option-summary">{svc.summary}</p>
+                                                                        </div>
+                                                                        {svc.badges && (
+                                                                            <div className="husbandry-service-option-footer">
+                                                                                {svc.badges.map((b) => <span key={b} className="husbandry-service-option-meta">{b}</span>)}
+                                                                            </div>
+                                                                        )}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="ct-preview-husb-grid">
-                                                        {[
-                                                            { id: "crewManagement", label: "Crew Management", summary: "Crew transport, hotel, medical and launch hire support." },
-                                                            { id: "warehouse", label: "Warehouse", summary: "Warehouse storage and inventory handling." },
-                                                            { id: "onOffHireSurvey", label: "On/Off-Hire Survey", summary: "Survey scheduling and report documentation." },
-                                                            { id: "onStation", label: "On Station", summary: "On-station monitoring and coordination." },
-                                                            { id: "materialManagement", label: "Material Management", summary: "Inbound orders, landing note and dispatch note handling." },
-                                                            { id: "wasteDisposal", label: "Waste Disposal", summary: "Waste request initiation and disposal progress tracking." },
-                                                            { id: "mwpRenewal", label: "MWP Renewal", summary: "Monitor MWP renewal requests and expected completion updates." },
-                                                            { id: "thirdPartyServices", label: "Third-Party Services", summary: "Raise and monitor external vendor service requests." },
-                                                        ].map((svc) => {
-                                                            const isEnabled = Boolean(tabConfig.husbandry?.subTabs?.[svc.id]?.enabled);
+                                                ) : effectivePreviewMain.id === "sales_order" ? (
+                                                    (() => {
+                                                        const SO_CARD_COLOR = "#e2e6ff";
+                                                        const SO_COL_CLASS = {
+                                                            "Item No": "col-item-no",
+                                                            "Item Description": "col-item-desc",
+                                                            "Quantity": "col-qty",
+                                                            "Unit Price": "col-unit-price",
+                                                            "Discount %": "col-discount",
+                                                            "Tax Code": "col-tax",
+                                                            "Total Amount": "col-total",
+                                                            "Type of PO": "col-type-po",
+                                                            "Document Picker": "col-documents",
+                                                            "Supplier Code": "col-supplier",
+                                                        };
+                                                        const SO_READONLY_FIELDS = new Set([
+                                                            "Customer Code", "Customer Name", "Contact Person", "Contact Email",
+                                                            "SRT Number", "Branch", "SO No", "Posting Date",
+                                                        ]);
+                                                        const SO_REQUIRED_FIELDS = new Set(["PO No", "Project Name"]);
+                                                        const SO_DATE_FIELDS = new Set(["Posting Date", "Delivery Date", "Document Date"]);
+                                                        const SO_SELECT_FIELDS = { Port: "Select Port...", "BP Currency": "SAR / USD / EURO" };
+                                                        const soGroups = effectivePreviewMain.groups ?? [];
+                                                        const headerFields = soGroups[0]?.fields ?? [];
+                                                        const lineItemFields = soGroups[1]?.fields ?? [];
+                                                        const fieldMap = previewScopeConfig?.fields ?? {};
+                                                        
+                                                        // Always include read-only fields, then append selected optional fields
+                                                        const selectedHeaderFields = [
+                                                            ...Array.from(SO_READONLY_FIELDS),
+                                                            ...headerFields.filter((f) => fieldMap[f])
+                                                        ];
+                                                        const selectedColumns = lineItemFields.filter((f) => fieldMap[f]);
+                                                        const hasAnySelected = selectedHeaderFields.length > 0 || selectedColumns.length > 0;
+                                                        const headerRows = [];
+                                                        for (let i = 0; i < selectedHeaderFields.length; i += 4) {
+                                                            headerRows.push(selectedHeaderFields.slice(i, i + 4));
+                                                        }
+                                                        const SAMPLE_ROW = {
+                                                            "Item No": "OFM0076",
+                                                            "Item Description": "Road Transport for Agent",
+                                                            "Quantity": "1",
+                                                            "Unit Price": "SAR 175.00",
+                                                            "Discount %": "0%",
+                                                            "Tax Code": "15%",
+                                                            "Total Amount": "SAR 201.25",
+                                                            "Type of PO": "— Select —",
+                                                            "Document Picker": "—",
+                                                            "Supplier Code": "—",
+                                                        };
+                                                        const renderSoHeaderField = (f) => {
+                                                            const label = SO_REQUIRED_FIELDS.has(f)
+                                                                ? <>{f} <span className="so-required">*</span></>
+                                                                : f;
+                                                            if (f === "Status") {
+                                                                return (
+                                                                    <div key={f} className="so-header-field so-header-field-status">
+                                                                        <label className="so-header-label">{label}</label>
+                                                                        <span className="so-status-badge so-status-open">Open</span>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            if (SO_DATE_FIELDS.has(f)) {
+                                                                return (
+                                                                    <div key={f} className="so-header-field">
+                                                                        <label className="so-header-label">{label}</label>
+                                                                        <input
+                                                                            type="date"
+                                                                            className={`so-header-input${SO_READONLY_FIELDS.has(f) ? " so-header-input-readonly" : ""}`}
+                                                                            readOnly={SO_READONLY_FIELDS.has(f)}
+                                                                        />
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            if (SO_SELECT_FIELDS[f]) {
+                                                                return (
+                                                                    <div key={f} className="so-header-field">
+                                                                        <label className="so-header-label">{label}</label>
+                                                                        <select className="so-header-select">
+                                                                            <option>{SO_SELECT_FIELDS[f]}</option>
+                                                                        </select>
+                                                                    </div>
+                                                                );
+                                                            }
                                                             return (
-                                                                <div key={svc.id} className={`ct-preview-husb-card${isEnabled ? " ct-preview-husb-card--on" : ""}`}>
-                                                                    <span className="ct-preview-husb-label">{svc.label}</span>
-                                                                    <p className="ct-preview-husb-summary">{svc.summary}</p>
+                                                                <div key={f} className="so-header-field">
+                                                                    <label className="so-header-label">{label}</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        className={`so-header-input${SO_READONLY_FIELDS.has(f) ? " so-header-input-readonly" : ""}${SO_REQUIRED_FIELDS.has(f) ? " so-input-required" : ""}`}
+                                                                        placeholder={`Enter ${f.toLowerCase()}...`}
+                                                                        readOnly={SO_READONLY_FIELDS.has(f)}
+                                                                    />
                                                                 </div>
                                                             );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            ) : effectivePreviewMain.id === "sales_order" ? (
-                                                (() => {
-                                                    const soGroups = effectivePreviewMain.groups ?? [];
-                                                    const headerFields = soGroups[0]?.fields ?? [];
-                                                    const lineItemFields = soGroups[1]?.fields ?? [];
-                                                    const fieldMap = previewScopeConfig?.fields ?? {};
-                                                    const selectedHeaderFields = headerFields.filter((f) => fieldMap[f]);
-                                                    const selectedColumns = lineItemFields.filter((f) => fieldMap[f]);
-                                                    const hasAnySelected = selectedHeaderFields.length > 0 || selectedColumns.length > 0;
-                                                    const SAMPLE_ROW = {
-                                                        "Item No": "OFM0076",
-                                                        "Item Description": "Road Transport for Agent",
-                                                        "Quantity": "1",
-                                                        "Unit Price": "SAR 175.00",
-                                                        "Discount %": "0%",
-                                                        "Tax Code": "15%",
-                                                        "Total Amount": "SAR 201.25",
-                                                        "Type of PO": "— Select —",
-                                                        "Document Picker": "—",
-                                                        "Supplier Code": "—",
-                                                    };
-                                                    return (
-                                                        <div className="ct-preview-so">
-                                                            <div className="ct-preview-so-topbar">
-                                                                <div className="ct-preview-so-title">
-                                                                    <span className="ct-preview-so-title-accent" />
-                                                                    SALES ORDER LIST
+                                                        };
+                                                        const renderSoTableCell = (col) => {
+                                                            const val = SAMPLE_ROW[col] ?? "—";
+                                                            if (col === "Type of PO") {
+                                                                return (
+                                                                    <td key={col}>
+                                                                        <div className="sales-order-table-cell">
+                                                                            <select className="sales-order-type-po-select" defaultValue="">
+                                                                                <option>{val}</option>
+                                                                            </select>
+                                                                        </div>
+                                                                    </td>
+                                                                );
+                                                            }
+                                                            if (col === "Document Picker" || col === "Supplier Code") {
+                                                                return (
+                                                                    <td key={col}>
+                                                                        <div className="sales-order-table-cell sales-order-supplier-cell">
+                                                                            <span className="sales-order-supplier-code-text is-empty">{val}</span>
+                                                                            <button type="button" className="sales-order-supplier-select-btn">Select</button>
+                                                                        </div>
+                                                                    </td>
+                                                                );
+                                                            }
+                                                            const cellClass = col === "Total Amount"
+                                                                ? "sales-order-table-cell sales-order-table-cell-total"
+                                                                : "sales-order-table-cell";
+                                                            return (
+                                                                <td key={col}>
+                                                                    <div className={cellClass}>{val}</div>
+                                                                </td>
+                                                            );
+                                                        };
+                                                        return (
+                                                            <div className="sales-order-content-wrapper" style={{ "--card-color": SO_CARD_COLOR }}>
+                                                                <div className="sales-order-list-header">
+                                                                    <h3 className="sales-order-list-title">
+                                                                        <span className="sales-order-list-title-bar" />
+                                                                        SALES ORDER LIST
+                                                                    </h3>
+                                                                    <button type="button" className="sales-order-add-button">+ Add Item</button>
                                                                 </div>
-                                                                <button type="button" className="ct-preview-so-add-btn">+ Add Item</button>
-                                                            </div>
-                                                            {!hasAnySelected ? (
-                                                                <p className="ct-summary-no-fields">No specific fields selected — full tab will be included</p>
-                                                            ) : (
-                                                                <>
-                                                                    {selectedHeaderFields.length > 0 && (
-                                                                        <div className="ct-preview-so-fields-panel">
-                                                                            {selectedHeaderFields.map((f) => {
-                                                                                const DATE_FIELDS = new Set(["Posting Date", "Delivery Date", "Document Date"]);
-                                                                                const SELECT_FIELDS = { "Port": "Select Port...", "BP Currency": "SAR / USD / EURO" };
-                                                                                if (f === "Status") {
-                                                                                    return (
-                                                                                        <div key={f} className="ct-preview-so-field">
-                                                                                            <label className="ct-preview-so-field-label">{f}</label>
-                                                                                            <div className="ct-preview-so-field-status"><span className="ct-preview-so-status-badge">Open</span></div>
-                                                                                        </div>
-                                                                                    );
-                                                                                }
-                                                                                if (DATE_FIELDS.has(f)) {
-                                                                                    return (
-                                                                                        <div key={f} className="ct-preview-so-field">
-                                                                                            <label className="ct-preview-so-field-label">{f}</label>
-                                                                                            <input type="date" className="ct-preview-so-input" />
-                                                                                        </div>
-                                                                                    );
-                                                                                }
-                                                                                if (SELECT_FIELDS[f]) {
-                                                                                    return (
-                                                                                        <div key={f} className="ct-preview-so-field">
-                                                                                            <label className="ct-preview-so-field-label">{f}</label>
-                                                                                            <select className="ct-preview-so-input">
-                                                                                                <option>{SELECT_FIELDS[f]}</option>
-                                                                                            </select>
-                                                                                        </div>
-                                                                                    );
-                                                                                }
-                                                                                return (
-                                                                                    <div key={f} className="ct-preview-so-field">
-                                                                                        <label className="ct-preview-so-field-label">{f}</label>
-                                                                                        <input type="text" className="ct-preview-so-input" placeholder={`Enter ${f.toLowerCase()}...`} />
+                                                                {!hasAnySelected ? (
+                                                                    <p className="ct-summary-no-fields">No specific fields selected — full tab will be included</p>
+                                                                ) : (
+                                                                    <>
+                                                                        {selectedHeaderFields.length > 0 && (
+                                                                            <div className="so-header-panel">
+                                                                                {headerRows.map((row, idx) => (
+                                                                                    <div key={idx} className="so-header-row">
+                                                                                        {row.map(renderSoHeaderField)}
                                                                                     </div>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    )}
-                                                                    {selectedColumns.length > 0 && (
-                                                                        <div className="ct-preview-so-table-wrap">
-                                                                            <table className="ct-preview-so-table">
-                                                                                <thead>
-                                                                                    <tr>
-                                                                                        {selectedColumns.map((col) => <th key={col}>{col}</th>)}
-                                                                                    </tr>
-                                                                                </thead>
-                                                                                <tbody>
-                                                                                    <tr>
-                                                                                        {selectedColumns.map((col) => (
-                                                                                            <td key={col}>{SAMPLE_ROW[col] ?? "—"}</td>
-                                                                                        ))}
-                                                                                    </tr>
-                                                                                </tbody>
-                                                                            </table>
-                                                                        </div>
-                                                                    )}
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })()
-                                            ) : effectivePreviewMain.id === "reports" ? (
-                                                (() => {
-                                                    const enabledReports = previewFieldsList;
-                                                    const extraReports = (previewScopeConfig?.customFields ?? []).filter((cf) => cf.label);
-                                                    const hasAny = enabledReports.length > 0 || extraReports.length > 0;
-                                                    return (
-                                                        <div className="ct-preview-reports-wrap">
-                                                            <div className="ct-preview-reports-header">
-                                                                <span className="ct-preview-reports-title-bar" />
-                                                                REPORT LIST
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                        {selectedColumns.length > 0 && (
+                                                                            <div className="table-wrapper sales-order-table-container">
+                                                                                <table
+                                                                                    className="table table-striped sales-order-table sales-order-list-table"
+                                                                                    style={{ "--card-color": SO_CARD_COLOR }}
+                                                                                >
+                                                                                    <thead>
+                                                                                        <tr>
+                                                                                            {selectedColumns.map((col) => (
+                                                                                                <th key={col} className={SO_COL_CLASS[col] || undefined}>{col}</th>
+                                                                                            ))}
+                                                                                        </tr>
+                                                                                    </thead>
+                                                                                    <tbody>
+                                                                                        <tr>
+                                                                                            {selectedColumns.map(renderSoTableCell)}
+                                                                                        </tr>
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                )}
                                                             </div>
-                                                            {!hasAny ? (
-                                                                <p className="ct-summary-no-fields">No report types selected. Enable some on the left.</p>
-                                                            ) : (
-                                                                <div className="ct-preview-reports-list">
-                                                                    {[
-                                                                        ...enabledReports.map((f) => previewScopeConfig?.fieldOverrides?.[f] ?? f),
-                                                                        ...extraReports.map((cf) => cf.label),
-                                                                    ].map((label) => (
-                                                                        <div key={label} className="ct-preview-report-row">
-                                                                            <div className="ct-preview-report-icon">
-                                                                                <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-                                                                                    <rect width="32" height="32" rx="6" fill="#DC2626" />
-                                                                                    <text x="16" y="22" textAnchor="middle" fill="white" fontSize="10" fontWeight="600">PDF</text>
-                                                                                </svg>
-                                                                            </div>
-                                                                            <span className="ct-preview-report-name">{label}</span>
-                                                                            <div className="ct-preview-report-actions">
-                                                                                <button type="button" className="ct-preview-report-btn" title="View report">
-                                                                                    <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-                                                                                        <path d="M9 4C5 4 2.27 6.11 1 9C2.27 11.89 5 14 9 14C13 14 15.73 11.89 17 9C15.73 6.11 13 4 9 4Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                                        <circle cx="9" cy="9" r="2.25" stroke="currentColor" strokeWidth="1.5"/>
-                                                                                    </svg>
-                                                                                </button>
-                                                                                <button type="button" className="ct-preview-report-btn" title="Download report">
-                                                                                    <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-                                                                                        <path d="M9 12V3M9 12L6 9M9 12L12 9M3 15H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                                    </svg>
-                                                                                </button>
-                                                                            </div>
+                                                        );
+                                                    })()) : effectivePreviewMain.id === "reports" ? (
+                                                        (() => {
+                                                            const enabledReports = previewFieldsList;
+                                                            const extraReports = (previewScopeConfig?.customFields ?? []).filter((cf) => cf.label);
+                                                            const hasAny = enabledReports.length > 0 || extraReports.length > 0;
+                                                            return (
+                                                                <div className="ct-preview-reports-wrap">
+                                                                    <div className="ct-preview-reports-header">
+                                                                        <span className="ct-preview-reports-title-bar" />
+                                                                        REPORT LIST
+                                                                    </div>
+                                                                    {!hasAny ? (
+                                                                        <p className="ct-summary-no-fields">No report types selected. Enable some on the left.</p>
+                                                                    ) : (
+                                                                        <div className="ct-preview-reports-list">
+                                                                            {[
+                                                                                ...enabledReports.map((f) => previewScopeConfig?.fieldOverrides?.[f] ?? f),
+                                                                                ...extraReports.map((cf) => cf.label),
+                                                                            ].map((label) => (
+                                                                                <div key={label} className="ct-preview-report-row">
+                                                                                    <div className="ct-preview-report-icon">
+                                                                                        <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+                                                                                            <rect width="32" height="32" rx="6" fill="#DC2626" />
+                                                                                            <text x="16" y="22" textAnchor="middle" fill="white" fontSize="10" fontWeight="600">PDF</text>
+                                                                                        </svg>
+                                                                                    </div>
+                                                                                    <span className="ct-preview-report-name">{label}</span>
+                                                                                    <div className="ct-preview-report-actions">
+                                                                                        <button type="button" className="ct-preview-report-btn" title="View report">
+                                                                                            <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+                                                                                                <path d="M9 4C5 4 2.27 6.11 1 9C2.27 11.89 5 14 9 14C13 14 15.73 11.89 17 9C15.73 6.11 13 4 9 4Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                                                                <circle cx="9" cy="9" r="2.25" stroke="currentColor" strokeWidth="1.5" />
+                                                                                            </svg>
+                                                                                        </button>
+                                                                                        <button type="button" className="ct-preview-report-btn" title="Download report">
+                                                                                            <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+                                                                                                <path d="M9 12V3M9 12L6 9M9 12L12 9M3 15H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                                                            </svg>
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
                                                                         </div>
-                                                                    ))}
+                                                                    )}
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })()
-                                            ) : previewGroups ? (
-                                                // Mirrors the real "General Information" panel (General.jsx) — same
-                                                // cf-section/form-group/cf-field classes for the configurable fields,
-                                                // plus the real DailyTaskTodo/OperationTasksPanel components (with
-                                                // static sample data) for the Daily Tasks and Operation Tasks rails,
-                                                // since those two always appear regardless of the builder's toggles.
-                                                <div className="general-info-three-column general-info-view-with-tasks">
-                                                    <div className="general-info-left">
-                                                        <div className="cf-field">
-                                                            <label>Owner</label>
-                                                            <div className="cf-owner-row">
-                                                                <div className="cf-owner-avatar">M</div>
-                                                                <span className="ct-preview-owner-name">Martech</span>
+                                                            );
+                                                        })()
+                                                    ) : previewGroups ? (
+                                                        // Mirrors the real "General Information" panel (General.jsx) — same
+                                                        // cf-section / form-group / cf-field structure, including the
+                                                        // document-upload-zone + file-display row for Appointment Email,
+                                                        // extraction-mode buttons, and date-time pickers for time fields.
+                                                        <div className="general-tab-body general-tab-body--view-mode" style={{ padding: 0, overflow: "visible" }}>
+                                                            <div className="general-sections-wrapper" style={{ gap: 0 }}>
+                                                                <div className="cf-section general-info-section">
+                                                                    <div className="cf-section-header">
+                                                                        <div className="cf-section-title">General Information</div>
+                                                                    </div>
+                                                                    <div className="cf-section-body">
+                                                                        <div className="general-info-three-column general-info-view-with-tasks general-tab-form-layout">
+
+                                                                            {/* Left column — form fields */}
+                                                                            <div className="general-info-left">
+                                                                                <div className="general-view-form-scroll">
+                                                                                    <div className="pre-arrival-form">
+
+                                                                                        {/* Owner — always present */}
+                                                                                        <div className="cf-field">
+                                                                                            <label>Owner</label>
+                                                                                            <div className="cf-owner-row">
+                                                                                                <div className="cf-owner-avatar">M</div>
+                                                                                                <div className="cf-owner-select ct-preview-owner-input">Martech</div>
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        {previewFieldsList.length === 0 ? (
+                                                                                            <p className="ct-summary-no-fields">No specific fields selected — full tab will be included</p>
+                                                                                        ) : (
+                                                                                            <>
+                                                                                                {previewGroups.map((group) => {
+                                                                                                    const checkedInGroup = group.fields.filter((f) => previewScopeConfig?.fields?.[f]);
+                                                                                                    if (checkedInGroup.length === 0) return null;
+                                                                                                    return (
+                                                                                                        <div key={group.label} className="form-group">
+                                                                                                            <h3 className="form-group-title">{group.label}</h3>
+
+                                                                                                            {checkedInGroup.map((f) => {
+
+                                                                                                                /* ── Appointment Email — upload zone + file row ── */
+                                                                                                                if (f === "Appointment Email") {
+                                                                                                                    return (
+                                                                                                                        <div key={f} className="cf-field">
+                                                                                                                            {/* Label row with extraction-mode toggles */}
+                                                                                                                            <div className="appointment-email-label-row">
+                                                                                                                                <label className="appointment-email-label">Appointment Email</label>
+                                                                                                                                <div className="appointment-extraction-mode-group" role="group" aria-label="Extraction mode">
+                                                                                                                                    {["Manual", "AI", "Server"].map((mode, i) => (
+                                                                                                                                        <span
+                                                                                                                                            key={mode}
+                                                                                                                                            className={`appointment-extraction-mode-btn${i === 0 ? " active" : ""}`}
+                                                                                                                                            style={{ cursor: "default" }}
+                                                                                                                                        >
+                                                                                                                                            {mode}
+                                                                                                                                        </span>
+                                                                                                                                    ))}
+                                                                                                                                </div>
+                                                                                                                            </div>
+
+                                                                                                                            {/* Upload zone — same document-upload-zone class from general.scss */}
+                                                                                                                            <div className="document-upload-wrapper">
+                                                                                                                                <div
+                                                                                                                                    className="document-upload-zone"
+                                                                                                                                    style={{ pointerEvents: "none", opacity: 0.85 }}
+                                                                                                                                    aria-label="Drag and drop or click to upload"
+                                                                                                                                >
+                                                                                                                                    <div className="upload-zone-content">
+                                                                                                                                        <div className="upload-text-content">
+                                                                                                                                            <p className="upload-main-text">
+                                                                                                                                                Drag and drop your file here, or{" "}
+                                                                                                                                                <span className="upload-link">click to browse</span>
+                                                                                                                                            </p>
+                                                                                                                                        </div>
+                                                                                                                                    </div>
+                                                                                                                                </div>
+
+                                                                                                                                {/* Existing file display row — same appointment-email-file-row classes */}
+                                                                                                                                <div className="document-file-display-list" style={{ marginTop: 8 }}>
+                                                                                                                                    <div className="appointment-email-file-row document-file-display-item">
+                                                                                                                                        <div className="appointment-email-file-left">
+                                                                                                                                            <div className="document-file-icon" style={{ color: "#3e5cb6" }}>
+                                                                                                                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                                                                                                                                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                                                                                                    <path d="M14 2V8H20M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                                                                                                </svg>
+                                                                                                                                            </div>
+                                                                                                                                            <span className="appointment-email-file-name document-file-name">
+                                                                                                                                                2_IMP_-_Horizon_Client_Appointment_Email.pdf
+                                                                                                                                            </span>
+                                                                                                                                        </div>
+                                                                                                                                        {/* View action button */}
+                                                                                                                                        <div className="appointment-email-file-actions">
+                                                                                                                                            <button
+                                                                                                                                                type="button"
+                                                                                                                                                className="appointment-email-file-action-btn"
+                                                                                                                                                title="View appointment email"
+                                                                                                                                                style={{ pointerEvents: "none" }}
+                                                                                                                                                aria-label="View appointment email"
+                                                                                                                                            >
+                                                                                                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                                                                                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                                                                                                                    <circle cx="12" cy="12" r="3" />
+                                                                                                                                                </svg>
+                                                                                                                                            </button>
+                                                                                                                                        </div>
+                                                                                                                                    </div>
+                                                                                                                                </div>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    );
+                                                                                                                }
+
+                                                                                                                /* ── Appointment Received — date+time picker ── */
+                                                                                                                if (f === "Appointment Received") {
+                                                                                                                    return (
+                                                                                                                        <div key={f} className="cf-field">
+                                                                                                                            <label>Appointment Received *</label>
+                                                                                                                            <div className="cf-input ct-preview-dt-input">
+                                                                                                                                <input type="text" placeholder="2026-06-11  10:00" />
+                                                                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                                                                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                                                                                                                                </svg>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    );
+                                                                                                                }
+
+                                                                                                                /* ── Time Objects ── */
+                                                                                                                if (f === "Time Objects") {
+                                                                                                                    return (
+                                                                                                                        <div key={f} className="cf-field">
+                                                                                                                            <label>Expected Time of Arrival</label>
+                                                                                                                            <div className="cf-input ct-preview-dt-input">
+                                                                                                                                <input type="text" placeholder="YYYY-MM-DD  hh:mm" />
+                                                                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                                                                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                                                                                                                                </svg>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    );
+                                                                                                                }
+
+                                                                                                                /* ── General datetime fields ── */
+                                                                                                                if (PREVIEW_DATETIME_FIELDS.has(f)) {
+                                                                                                                    return (
+                                                                                                                        <div key={f} className="cf-field">
+                                                                                                                            <label>{f}</label>
+                                                                                                                            <div className="cf-input ct-preview-dt-input">
+                                                                                                                                <input type="text" placeholder="YYYY-MM-DD  hh:mm" />
+                                                                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                                                                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                                                                                                                                </svg>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    );
+                                                                                                                }
+
+                                                                                                                /* ── Searchable selects ── */
+                                                                                                                if (["Main Billing Entity", "Appointment Type", "Vessel Type", "Vessel Name", "Barge Type", "Assigned Operator"].includes(f)) {
+                                                                                                                    return (
+                                                                                                                        <div key={f} className="cf-field">
+                                                                                                                            <label>{f}</label>
+                                                                                                                            <div className="cf-input ct-preview-select-input">
+                                                                                                                                <input type="text" placeholder={`Select ${f.toLowerCase()}...`} />
+                                                                                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                                                                                                    <polyline points="6 9 12 15 18 9" />
+                                                                                                                                </svg>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    );
+                                                                                                                }
+
+                                                                                                                /* ── Multi-select email tags ── */
+                                                                                                                if (["Daily Report Emails", "Billing Instructions"].includes(f)) {
+                                                                                                                    return (
+                                                                                                                        <div key={f} className="cf-field">
+                                                                                                                            <label>{f}</label>
+                                                                                                                            <div className="cf-multi-select-email-input disabled">
+                                                                                                                                <div className="cf-multi-select-email-tags">
+                                                                                                                                    <span className="cf-email-tag">
+                                                                                                                                        ops@example.com
+                                                                                                                                        <span className="cf-email-tag-remove" style={{ pointerEvents: "none" }}>×</span>
+                                                                                                                                    </span>
+                                                                                                                                    <span className="cf-email-tag">
+                                                                                                                                        mgr@example.com
+                                                                                                                                        <span className="cf-email-tag-remove" style={{ pointerEvents: "none" }}>×</span>
+                                                                                                                                    </span>
+                                                                                                                                </div>
+                                                                                                                                <span className="cf-multi-select-arrow">▼</span>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    );
+                                                                                                                }
+
+                                                                                                                /* ── Default text input ── */
+                                                                                                                return (
+                                                                                                                    <div key={f} className="cf-field">
+                                                                                                                        <label>{f}</label>
+                                                                                                                        <div className="cf-input">
+                                                                                                                            <input type="text" placeholder={f} />
+                                                                                                                        </div>
+                                                                                                                    </div>
+                                                                                                                );
+                                                                                                            })}
+                                                                                                        </div>
+                                                                                                    );
+                                                                                                })}
+
+                                                                                                {/* Custom fields */}
+                                                                                                {(previewScopeConfig?.customFields ?? []).some((cf) => cf.label) && (
+                                                                                                    <div className="form-group">
+                                                                                                        <h3 className="form-group-title">Custom Fields</h3>
+                                                                                                        {previewScopeConfig.customFields.filter((cf) => cf.label).map((cf) => (
+                                                                                                            <div key={cf.id} className="cf-field">
+                                                                                                                <label>{cf.label}</label>
+                                                                                                                <div className="cf-input">
+                                                                                                                    <input type="text" placeholder={cf.label} />
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                        ))}
+                                                                                                    </div>
+                                                                                                )}
+                                                                                            </>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Middle column — Daily Tasks */}
+                                                                            <div className="general-info-middle">
+                                                                                <div className="general-info-tasks-card general-info-tasks-card--daily">
+                                                                                    <div className="daily-task-box-wrapper">
+                                                                                        <DailyTaskTodo tasks={PREVIEW_DAILY_TASKS} accentColor="#2e7d32" />
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Right column — Operation Tasks */}
+                                                                            <div className="general-info-right">
+                                                                                <div className="general-info-tasks-card general-info-tasks-card--operation">
+                                                                                    <OperationTasksPanel embedded taskSections={PREVIEW_OPERATION_TASK_SECTIONS} />
+                                                                                </div>
+                                                                            </div>
+
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        {previewFieldsList.length === 0 ? (
-                                                            <p className="ct-summary-no-fields">No specific fields selected — full tab will be included</p>
-                                                        ) : (
-                                                            <>
-                                                                {previewGroups.map((group) => {
-                                                                    const checkedInGroup = group.fields.filter((f) => previewScopeConfig?.fields?.[f]);
-                                                                    if (checkedInGroup.length === 0) return null;
-                                                                    return (
-                                                                        <div key={group.label} className="form-group">
-                                                                            <h3 className="form-group-title">{group.label}</h3>
-                                                                            {checkedInGroup.map((f) => {
+                                                    ) : effectivePreviewSub ? (
+                                                        <>
+                                                            <div className="operation-content-header">
+                                                                <h3 className="operation-content-title">
+                                                                    {effectivePreviewMain?.id === "husbandry"
+                                                                        ? effectivePreviewSub.label
+                                                                        : (OPERATION_SUBTAB_TITLES[effectivePreviewSub.id] || effectivePreviewSub.label)}
+                                                                </h3>
+                                                            </div>
+                                                            {!isPreviewSubEnabled ? (
+                                                                <div className="ct-preview-sub-off-msg">
+                                                                    This {effectivePreviewMain?.id === "husbandry" ? "service" : "sub-tab"} is not enabled. Tick it in the left panel to include it.
+                                                                </div>
+                                                            ) : effectivePreviewMain?.id === "husbandry" ? (
+                                                                <div className="operation-content-box">
+                                                                    <p className="ct-summary-no-fields">This service will be available in the Husbandry tab.</p>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="operation-tab-layout">
+                                                                    <div className="operation-two-column-grid">
+                                                                        <div className="operation-form-column">
+                                                                            {previewFieldsList.length > 0 ? previewFieldsList.map((f) => {
                                                                                 if (PREVIEW_DATETIME_FIELDS.has(f)) {
                                                                                     return (
                                                                                         <div key={f} className="cf-field">
                                                                                             <label>{f}</label>
                                                                                             <div className="cf-input ct-preview-dt-input">
-                                                                                                <input type="text" placeholder="YYYY-MM-DD hh:mm" readOnly />
+                                                                                                <input type="text" placeholder="YYYY-MM-DD hh:mm" />
                                                                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                                                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                                                                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                                                                                                </svg>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    );
+                                                                                }
+                                                                                if (PREVIEW_SELECT_FIELDS.has(f)) {
+                                                                                    return (
+                                                                                        <div key={f} className="cf-field">
+                                                                                            <label>{f}</label>
+                                                                                            <div className="cf-input ct-preview-select-input">
+                                                                                                <input type="text" placeholder={`Select ${f.toLowerCase()}...`} />
+                                                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                                                                    <polyline points="6 9 12 15 18 9" />
                                                                                                 </svg>
                                                                                             </div>
                                                                                         </div>
@@ -1650,245 +2008,159 @@ function CallTypeBuilderModal({ show, onClose }) {
                                                                                     <div key={f} className="cf-field">
                                                                                         <label>{f}</label>
                                                                                         <div className="cf-input">
-                                                                                            <input type="text" placeholder={f} readOnly />
+                                                                                            <input type="text" placeholder={f} />
                                                                                         </div>
                                                                                     </div>
                                                                                 );
-                                                                            })}
+                                                                            }) : subTabCustomFields.length > 0 ? (
+                                                                                <div className="ct-preview-custom-fields-grid">
+                                                                                    {subTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
+                                                                                </div>
+                                                                            ) : (
+                                                                                <p className="ct-summary-no-fields">No specific fields selected.</p>
+                                                                            )}
                                                                         </div>
-                                                                    );
-                                                                })}
-                                                                {(previewScopeConfig?.customFields ?? []).some((cf) => cf.label) && (
-                                                                    <div className="form-group">
-                                                                        <h3 className="form-group-title">Custom Fields</h3>
-                                                                        {previewScopeConfig.customFields.filter((cf) => cf.label).map((cf) => (
-                                                                            <div key={cf.id} className="cf-field">
-                                                                                <label>{cf.label}</label>
-                                                                                <div className="cf-input">
-                                                                                    <input type="text" placeholder={cf.label} readOnly />
+
+                                                                        <div className="operation-email-preview-panel">
+                                                                            <div className="operation-email-preview-header">
+                                                                                <h4>Email Preview</h4>
+                                                                                <div className="operation-email-preview-header-tools">
+                                                                                    <button type="button" className="operation-email-send-btn" title="Save and send report" aria-label="Save and send report">
+                                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                                                            <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                                                                                        </svg>
+                                                                                    </button>
                                                                                 </div>
                                                                             </div>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="general-info-middle">
-                                                        <div className="general-info-tasks-card general-info-tasks-card--daily">
-                                                            <div className="daily-task-box-wrapper">
-                                                                <DailyTaskTodo tasks={PREVIEW_DAILY_TASKS} accentColor="#2e7d32" />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="general-info-right">
-                                                        <div className="general-info-tasks-card general-info-tasks-card--operation">
-                                                            <OperationTasksPanel embedded taskSections={PREVIEW_OPERATION_TASK_SECTIONS} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : effectivePreviewSub ? (
-                                                <>
-                                                    <div className="operation-content-header">
-                                                        <h3 className="operation-content-title">
-                                                            {effectivePreviewMain?.id === "husbandry"
-                                                                ? effectivePreviewSub.label
-                                                                : (OPERATION_SUBTAB_TITLES[effectivePreviewSub.id] || effectivePreviewSub.label)}
-                                                        </h3>
-                                                    </div>
-                                                    {!isPreviewSubEnabled ? (
-                                                        <div className="ct-preview-sub-off-msg">
-                                                            This {effectivePreviewMain?.id === "husbandry" ? "service" : "sub-tab"} is not enabled. Tick it in the left panel to include it.
-                                                        </div>
-                                                    ) : effectivePreviewMain?.id === "husbandry" ? (
-                                                        <div className="operation-content-box">
-                                                            <p className="ct-summary-no-fields">This service will be available in the Husbandry tab.</p>
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <div className="ct-preview-op-grid">
-                                                                <div className="ct-preview-form-card">
-                                                                    {previewFieldsList.length > 0 ? previewFieldsList.map((f) => {
-                                                                        if (PREVIEW_DATETIME_FIELDS.has(f)) {
-                                                                            return (
-                                                                                <div key={f} className="cf-field">
-                                                                                    <label>{f}</label>
-                                                                                    <div className="cf-input ct-preview-dt-input">
-                                                                                        <input type="text" placeholder="YYYY-MM-DD hh:mm" readOnly />
-                                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                                                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                                                                                        </svg>
+                                                                            <div className="operation-email-preview-body">
+                                                                                {[
+                                                                                    { label: "From", placeholder: "operations@shipping.com" },
+                                                                                    { label: "To", placeholder: "Recipient emails" },
+                                                                                    { label: "Cc", placeholder: "CC emails" },
+                                                                                    { label: "Subject", placeholder: OPERATION_SUBTAB_EMAIL_SUBJECTS[effectivePreviewSub.id] || "Report" },
+                                                                                ].map(({ label, placeholder }) => (
+                                                                                    <div key={label} className="cf-field">
+                                                                                        <label>{label}</label>
+                                                                                        <div className="cf-input"><input type="text" placeholder={placeholder} /></div>
                                                                                     </div>
-                                                                                </div>
-                                                                            );
-                                                                        }
-                                                                        if (PREVIEW_SELECT_FIELDS.has(f)) {
-                                                                            return (
-                                                                                <div key={f} className="cf-field">
-                                                                                    <label>{f}</label>
-                                                                                    <div className="cf-input ct-preview-select-input">
-                                                                                        <input type="text" placeholder={`Select ${f.toLowerCase()}...`} readOnly />
-                                                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                                                                            <polyline points="6 9 12 15 18 9"/>
-                                                                                        </svg>
-                                                                                    </div>
-                                                                                </div>
-                                                                            );
-                                                                        }
-                                                                        if (PREVIEW_FILE_FIELDS.has(f)) {
-                                                                            return (
-                                                                                <div key={f} className="cf-field">
-                                                                                    <label>{f}</label>
-                                                                                    <div className="ct-preview-file-zone">Upload document</div>
-                                                                                </div>
-                                                                            );
-                                                                        }
-                                                                        return (
-                                                                            <div key={f} className="cf-field">
-                                                                                <label>{f}</label>
-                                                                                <div className="cf-input">
-                                                                                    <input type="text" placeholder={f} readOnly />
-                                                                                </div>
-                                                                            </div>
-                                                                        );
-                                                                    }) : subTabCustomFields.length > 0 ? (
-                                                                        <div className="ct-preview-custom-fields-grid">
-                                                                            {subTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <p className="ct-summary-no-fields">No specific fields selected.</p>
-                                                                    )}
-                                                                </div>
-
-                                                                <div className="ct-preview-email-card">
-                                                                    <div className="ct-preview-email-card-header">
-                                                                        <p className="ct-preview-email-title">Email Preview</p>
-                                                                        <button type="button" className="ct-preview-email-send-btn" title="Send">
-                                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                                                                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                                                                            </svg>
-                                                                        </button>
-                                                                    </div>
-                                                                    {[
-                                                                        { label: "From", placeholder: "operations@shipping.com" },
-                                                                        { label: "To", placeholder: "Recipient emails" },
-                                                                        { label: "Cc", placeholder: "CC emails" },
-                                                                        { label: "Subject", placeholder: OPERATION_SUBTAB_EMAIL_SUBJECTS[effectivePreviewSub.id] || "Report" },
-                                                                    ].map(({ label, placeholder }) => (
-                                                                        <div key={label} className="cf-field">
-                                                                            <label>{label}</label>
-                                                                            <div className="cf-input"><input type="text" placeholder={placeholder} readOnly /></div>
-                                                                        </div>
-                                                                    ))}
-                                                                    <div className="cf-field">
-                                                                        <label>Attachments</label>
-                                                                        <div className="ct-preview-attachments">
-                                                                            {["Appointment_Acceptance.pdf(245K)", "Port_Details.xlsx(128K)", "Vessel_Image.jpg(932K)"].map((name) => (
-                                                                                <span key={name} className="ct-preview-attachment-chip">{name} ×</span>
-                                                                            ))}
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="cf-field">
-                                                                        <label>Message</label>
-                                                                        <div className="ct-preview-message-area">
-                                                                            <div className="ct-preview-msg-toolbar">
-                                                                                {["Normal ▾", "B", "I", "U", "S", "≡", "☰", "A", "Tx"].map((t) => (
-                                                                                    <span key={t} className="ct-preview-msg-tool">{t}</span>
                                                                                 ))}
+                                                                                <div className="cf-field operation-email-preview-attachments-field">
+                                                                                    <label>Attachments</label>
+                                                                                    <div className="email-preview-attachments-list">
+                                                                                        {[
+                                                                                            { id: "a1", name: "Appointment_Acceptance.pdf", size: "245K" },
+                                                                                            { id: "a2", name: "Port_Details.xlsx", size: "128K" },
+                                                                                            { id: "a3", name: "Vessel_Image.jpg", size: "932K" },
+                                                                                        ].map((a) => (
+                                                                                            <div key={a.id} className="email-preview-attachment-chip">
+                                                                                                <button type="button" className="email-preview-attachment-link">
+                                                                                                    <span className="email-preview-attachment-name">{a.name}</span>
+                                                                                                    <span className="email-preview-attachment-size"> ({a.size})</span>
+                                                                                                </button>
+                                                                                                <button type="button" className="email-preview-attachment-remove" aria-label="Remove">×</button>
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="cf-field operation-email-preview-message-field">
+                                                                                    <label>Message</label>
+                                                                                    <div className="ct-preview-message-area">
+                                                                                        <div className="ct-preview-msg-toolbar">
+                                                                                            {["Normal ▾", "B", "I", "U", "S", "≡", "☰", "A", "Tx"].map((t) => (
+                                                                                                <span key={t} className="ct-preview-msg-tool">{t}</span>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                        <p className="ct-preview-msg-body">
+                                                                                            {OPERATION_SUBTAB_EMAIL_SUBJECTS[effectivePreviewSub.id] || "Report"} report
+                                                                                        </p>
+                                                                                    </div>
+                                                                                </div>
                                                                             </div>
-                                                                            <p className="ct-preview-msg-body">
-                                                                                {OPERATION_SUBTAB_EMAIL_SUBJECTS[effectivePreviewSub.id] || "Report"} report
-                                                                            </p>
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-
+                                                            )}
                                                         </>
-                                                    )}
-                                                </>
-                                            ) : effectivePreviewMain.id === "document_library" ? (
-                                                <>
-                                                    <DocumentLibrary card={{ color: "#2A00FF" }} />
-                                                    {simpleTabCustomFields.length > 0 && (
-                                                        <div className="ct-preview-simple-custom-fields">
-                                                            <p className="ct-preview-custom-fields-label">Custom Fields</p>
-                                                            <div className="ct-preview-custom-fields-grid">
-                                                                {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            ) : effectivePreviewMain.id === "comments" ? (
-                                                <>
-                                                    <Comments card={{ comments: [] }} />
-                                                    {simpleTabCustomFields.length > 0 && (
-                                                        <div className="ct-preview-simple-custom-fields">
-                                                            <p className="ct-preview-custom-fields-label">Custom Fields</p>
-                                                            <div className="ct-preview-custom-fields-grid">
-                                                                {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            ) : effectivePreviewMain.id === "kpi" ? (
-                                                <>
-                                                    <KPIAnalytics
-                                                        kpiData={PREVIEW_KPI_DATA}
-                                                        tasks={PREVIEW_KPI_TASKS}
-                                                        cardColor="#2A00FF"
-                                                    />
-                                                    {simpleTabCustomFields.length > 0 && (
-                                                        <div className="ct-preview-simple-custom-fields">
-                                                            <p className="ct-preview-custom-fields-label">Custom Fields</p>
-                                                            <div className="ct-preview-custom-fields-grid">
-                                                                {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            ) : effectivePreviewMain.id === "subtasks" ? (
-                                                <>
-                                                    <Subtasks card={{}} />
-                                                    {simpleTabCustomFields.length > 0 && (
-                                                        <div className="ct-preview-simple-custom-fields">
-                                                            <p className="ct-preview-custom-fields-label">Custom Fields</p>
-                                                            <div className="ct-preview-custom-fields-grid">
-                                                                {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            ) : effectivePreviewMain.id === "notes" ? (
-                                                <>
-                                                    <Notes card={{ notes: [] }} />
-                                                    {simpleTabCustomFields.length > 0 && (
-                                                        <div className="ct-preview-simple-custom-fields">
-                                                            <p className="ct-preview-custom-fields-label">Custom Fields</p>
-                                                            <div className="ct-preview-custom-fields-grid">
-                                                                {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <div className="operation-content-box">
-                                                    <p className="ct-summary-no-fields">This tab is included as-is</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="ct-preview-stepper">
-                                        {["Appointment Received", "Enroute", "Ops in Progress", "Ops Completed", "Done", "Ready to Archive"].map((step, i) => (
-                                            <div key={step} className={`ct-preview-step${i === 0 ? " ct-preview-step--done" : ""}`}>
-                                                <div className="ct-preview-step-circle">{i + 1}</div>
-                                                <span className="ct-preview-step-label">{step}</span>
+                                                    ) : effectivePreviewMain.id === "document_library" ? (
+                                                        <>
+                                                            <DocumentLibrary card={{ color: "#2A00FF" }} />
+                                                            {simpleTabCustomFields.length > 0 && (
+                                                                <div className="ct-preview-simple-custom-fields">
+                                                                    <p className="ct-preview-custom-fields-label">Custom Fields</p>
+                                                                    <div className="ct-preview-custom-fields-grid">
+                                                                        {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : effectivePreviewMain.id === "comments" ? (
+                                                        <>
+                                                            <Comments card={{ comments: [] }} />
+                                                            {simpleTabCustomFields.length > 0 && (
+                                                                <div className="ct-preview-simple-custom-fields">
+                                                                    <p className="ct-preview-custom-fields-label">Custom Fields</p>
+                                                                    <div className="ct-preview-custom-fields-grid">
+                                                                        {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : effectivePreviewMain.id === "kpi" ? (
+                                                        <>
+                                                            <KPIAnalytics
+                                                                kpiData={PREVIEW_KPI_DATA}
+                                                                tasks={PREVIEW_KPI_TASKS}
+                                                                cardColor="#2A00FF"
+                                                            />
+                                                            {simpleTabCustomFields.length > 0 && (
+                                                                <div className="ct-preview-simple-custom-fields">
+                                                                    <p className="ct-preview-custom-fields-label">Custom Fields</p>
+                                                                    <div className="ct-preview-custom-fields-grid">
+                                                                        {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : effectivePreviewMain.id === "subtasks" ? (
+                                                        <>
+                                                            <Subtasks card={{}} />
+                                                            {simpleTabCustomFields.length > 0 && (
+                                                                <div className="ct-preview-simple-custom-fields">
+                                                                    <p className="ct-preview-custom-fields-label">Custom Fields</p>
+                                                                    <div className="ct-preview-custom-fields-grid">
+                                                                        {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : effectivePreviewMain.id === "notes" ? (
+                                                        <>
+                                                            <Notes card={{ notes: [] }} />
+                                                            {simpleTabCustomFields.length > 0 && (
+                                                                <div className="ct-preview-simple-custom-fields">
+                                                                    <p className="ct-preview-custom-fields-label">Custom Fields</p>
+                                                                    <div className="ct-preview-custom-fields-grid">
+                                                                        {simpleTabCustomFields.map((cf) => <CustomFieldPreviewItem key={cf.id} field={cf} />)}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                    <div className="operation-content-box">
+                                                        <p className="ct-summary-no-fields">This tab is included as-is</p>
+                                                    </div>
+                                                )}
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+
+                                        <div className="ct-preview-stepper">
+                                            {["Appointment Received", "Enroute", "Ops in Progress", "Ops Completed", "Done", "Ready to Archive"].map((step, i) => (
+                                                <div key={step} className={`ct-preview-step${i === 0 ? " ct-preview-step--done" : ""}`}>
+                                                    <div className="ct-preview-step-circle">{i + 1}</div>
+                                                    <span className="ct-preview-step-label">{step}</span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </>
                                 )}
                             </div>

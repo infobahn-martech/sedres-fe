@@ -85,7 +85,10 @@
         border: 1.5px solid #d1d5db;
         color: #374151;
 
-        &:hover { border-color: #9ca3af; background: #f9fafb; }
+        &:hover {
+          border-color: #9ca3af;
+          background: #f9fafb;
+        }
       }
 
       &.subtasks-tab-save-btn {
@@ -93,8 +96,15 @@
         border: none;
         color: #fff;
 
-        &:hover:not(:disabled) { background: #002a6e; box-shadow: 0 2px 8px rgba(0, 54, 140, 0.25); }
-        &:disabled { opacity: 0.55; cursor: not-allowed; }
+        &:hover:not(:disabled) {
+          background: #002a6e;
+          box-shadow: 0 2px 8px rgba(0, 54, 140, 0.25);
+        }
+
+        &:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
       }
     }
   }
@@ -148,13 +158,18 @@
   margin: 2px 0;
   transition: background 0.15s;
 
-  &:hover { background: #f5f7ff; }
+  &:hover {
+    background: #f5f7ff;
+  }
 
   &.is-active {
     background: #eff3ff;
     border-left-color: #7c3aed;
 
-    .ct-saved-name { color: #7c3aed; font-weight: 600; }
+    .ct-saved-name {
+      color: #7c3aed;
+      font-weight: 600;
+    }
   }
 }
 
@@ -187,7 +202,9 @@
   flex-shrink: 0;
   transition: color 0.15s;
 
-  &:hover { color: #ef4444; }
+  &:hover {
+    color: #ef4444;
+  }
 }
 
 .ct-saved-empty {
@@ -215,7 +232,9 @@
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover { background: #f5f3ff; }
+  &:hover {
+    background: #f5f3ff;
+  }
 }
 
 .ct-clear-btn {
@@ -272,7 +291,9 @@
   justify-content: space-between;
   margin-bottom: 10px;
 
-  .ct-form-section-title { margin: 0; }
+  .ct-form-section-title {
+    margin: 0;
+  }
 }
 
 .ct-tabs-count {
@@ -346,7 +367,9 @@
   cursor: pointer;
   text-align: left;
 
-  &:focus { outline: none; }
+  &:focus {
+    outline: none;
+  }
 
   svg {
     margin-left: auto;
@@ -379,7 +402,9 @@
 .ct-field-group {
   margin-bottom: 12px;
 
-  &:last-child { margin-bottom: 0; }
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .ct-field-group-label {
@@ -451,7 +476,9 @@
   background: #fff;
   outline: none;
 
-  &:focus { border-color: #7c3aed; }
+  &:focus {
+    border-color: #7c3aed;
+  }
 }
 
 
@@ -466,7 +493,9 @@
   background: #fff;
   outline: none;
 
-  &:focus { border-color: #7c3aed; }
+  &:focus {
+    border-color: #7c3aed;
+  }
 }
 
 .ct-custom-field-del {
@@ -481,7 +510,10 @@
   border-radius: 4px;
   transition: color 0.15s, background 0.15s;
 
-  &:hover { color: #ef4444; background: #fef2f2; }
+  &:hover {
+    color: #ef4444;
+    background: #fef2f2;
+  }
 }
 
 .ct-add-custom-btn {
@@ -558,7 +590,9 @@
     background: #faf5ff;
   }
 
-  &:hover { background: #f5f3ff; }
+  &:hover {
+    background: #f5f3ff;
+  }
 
   input[type="checkbox"] {
     width: 16px;
@@ -591,7 +625,9 @@
   align-items: baseline;
   margin-bottom: 8px;
 
-  &:last-child { margin-bottom: 0; }
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .ct-summary-label {
@@ -610,7 +646,11 @@
   color: #374151;
   font-weight: 600;
 
-  em { font-style: italic; color: #9ca3af; font-weight: 400; }
+  em {
+    font-style: italic;
+    color: #9ca3af;
+    font-weight: 400;
+  }
 }
 
 .ct-summary-empty {
@@ -761,12 +801,18 @@
   gap: 14px;
 }
 
-// Owner display in the preview — static name text, no dropdown.
-.ct-preview-owner-name {
-  font-size: 13px;
-  font-weight: 500;
+// Left form column scrolls independently — matches the live Appointment Details behaviour.
+.ct-preview-modal .general-info-left {
+  max-height: 480px;
+  overflow-y: auto;
+  @include ct-scrollbar;
+  padding-right: 4px;
+}
+
+// Owner value box in the preview — uses cf-owner-select styling.
+.ct-preview-owner-input {
   color: #374151;
-  font-family: "Open Sans", sans-serif;
+  font-weight: 500;
 }
 
 // Non-enabled sub-tab button in preview operation-left — grayed out but still clickable
@@ -782,56 +828,26 @@
   font-style: italic;
 }
 
-// ── Operation sub-tab preview layout ─────────────────────────────────────────
-.ct-preview-op-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 0.6fr) minmax(0, 1fr);
-  gap: 14px;
-  padding: 14px 14px 0;
+// Operation sub-tab preview uses real operation-* classes from operations.scss.
+// Override split-scroll height so the columns scroll naturally inside the preview box.
+.ct-preview-modal .operation-tab-layout {
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+}
+
+.ct-preview-modal .operation-two-column-grid {
+  height: auto;
+  overflow: visible;
   align-items: start;
 }
 
-.ct-preview-form-card {
-  background: #fff;
-  border: 1px solid #ededf2;
-  border-radius: 8px;
-  padding: 14px 16px;
+.ct-preview-modal .operation-two-column-grid .operation-form-column,
+.ct-preview-modal .operation-two-column-grid .operation-email-preview-panel {
+  height: auto;
+  max-height: 420px;
   overflow-y: auto;
-  max-height: 400px;
   @include ct-scrollbar;
-}
-
-.ct-preview-email-card {
-  background: #fff;
-  border: 1px solid #ededf2;
-  border-radius: 8px;
-  padding: 14px 16px;
-  overflow-y: auto;
-  max-height: 400px;
-  @include ct-scrollbar;
-}
-
-.ct-preview-email-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.ct-preview-email-send-btn {
-  background: #00368C;
-  border: none;
-  border-radius: 6px;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #fff;
-  flex-shrink: 0;
-
-  &:hover { background: #002a6e; }
 }
 
 // ── Progress stepper ──────────────────────────────────────────────────────────
@@ -894,13 +910,18 @@
     color: #fff;
   }
 
-  .ct-preview-step-label { color: #374151; font-weight: 600; }
+  .ct-preview-step-label {
+    color: #374151;
+    font-weight: 600;
+  }
 }
 
 .ct-preview-dt-input {
   justify-content: space-between;
 
-  input { flex: 1; }
+  input {
+    flex: 1;
+  }
 
   svg {
     flex-shrink: 0;
@@ -912,7 +933,9 @@
 .ct-preview-select-input {
   justify-content: space-between;
 
-  input { flex: 1; }
+  input {
+    flex: 1;
+  }
 
   svg {
     flex-shrink: 0;
@@ -931,33 +954,7 @@
   background: #fafafa;
 }
 
-.ct-preview-email-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 12px;
-}
-
-.ct-preview-attachments {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-}
-
-.ct-preview-attachment-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: #f0f4ff;
-  border: 1px solid #c7d4f5;
-  border-radius: 5px;
-  padding: 3px 8px;
-  font-size: 11px;
-  color: #2f5fcc;
-  white-space: nowrap;
-}
-
+// Message mock toolbar (Quill placeholder — no ReactQuill dependency in the preview)
 .ct-preview-message-area {
   border: 1.5px solid #e2e2ea;
   border-radius: 8px;
@@ -988,7 +985,9 @@
   border-radius: 4px;
   cursor: default;
 
-  &:hover { background: #f0f0f0; }
+  &:hover {
+    background: #f0f0f0;
+  }
 }
 
 .ct-preview-msg-body {
@@ -1000,242 +999,18 @@
 }
 
 // ── Husbandry Dashboard preview (full-width, no sidebar) ─────────────────────
-.ct-preview-husb-wrap {
-  padding: 4px 0;
-}
-
-.ct-preview-husb-hero {
-  margin-bottom: 14px;
-}
-
-.ct-preview-husb-eyebrow {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #00368c;
-  margin: 0 0 4px;
-}
-
-.ct-preview-husb-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 4px;
-}
-
-.ct-preview-husb-subtitle {
-  font-size: 11px;
-  color: #64748b;
-  margin: 0;
-}
-
-.ct-preview-husb-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.ct-preview-husb-stat {
-  border: 1px solid #e8eaf0;
-  border-radius: 8px;
-  padding: 10px 12px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.ct-preview-husb-stat-label {
-  font-size: 10px;
-  color: #94a3b8;
-}
-
-.ct-preview-husb-stat-value {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1a1a1a;
-  line-height: 1.2;
-}
-
-.ct-preview-husb-stat-helper {
-  font-size: 10px;
-  color: #00368c;
-  font-weight: 500;
-}
-
-.ct-preview-husb-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
-}
-
-.ct-preview-husb-card {
-  border: 1.5px solid #e8eaf0;
-  border-radius: 10px;
-  padding: 12px 14px;
-  background: #fff;
-  opacity: 0.38;
-  transition: opacity 0.15s, border-color 0.15s, background 0.15s;
-
-  &.ct-preview-husb-card--on {
-    opacity: 1;
-    border-color: #00368c;
-    background: #f0f4ff;
-  }
-}
-
-.ct-preview-husb-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 5px;
-}
-
-.ct-preview-husb-summary {
-  font-size: 11px;
-  color: #64748b;
-  margin: 0;
-  line-height: 1.4;
-}
+// Husbandry preview uses real husbandry-service-* classes from operations.scss directly.
 
 // ── Sales Order tab preview ───────────────────────────────────────────────────
-.ct-preview-so {
-    padding: 2px 0;
-}
-
-.ct-preview-so-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-}
-
-.ct-preview-so-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    color: #1a1a1a;
-    letter-spacing: 0.04em;
-}
-
-.ct-preview-so-title-accent {
-    display: inline-block;
-    width: 4px;
-    height: 16px;
-    background: #e2e6ff;
-    border-radius: 2px;
-    flex-shrink: 0;
-}
-
-.ct-preview-so-add-btn {
-    padding: 5px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #2c3649;
-    background: #e2e6ff;
-    border: none;
-    border-radius: 6px;
-    cursor: default;
-}
-
-.ct-preview-so-fields-panel {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px 12px;
-    margin-bottom: 14px;
-    padding: 12px;
-    background: #f8f9fc;
-    border: 1px solid #e8eaf0;
-    border-radius: 8px;
-}
-
-.ct-preview-so-field {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.ct-preview-so-field-label {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #94a3b8;
-    margin: 0;
-}
-
-.ct-preview-so-input {
-    width: 100%;
-    height: 28px;
-    border: 1px solid #e2e2ea;
-    border-radius: 5px;
-    background: #fff;
-    font-size: 12px;
-    color: #374151;
-    padding: 0 8px;
-    font-family: inherit;
-    box-sizing: border-box;
-    outline: none;
-
-    &::placeholder { color: #c0c8d8; }
-    &:focus { border-color: #a78bfa; }
-}
-
-.ct-preview-so-field-status {
-    display: flex;
-    align-items: center;
-    height: 28px;
-}
-
-.ct-preview-so-status-badge {
-    display: inline-block;
-    padding: 2px 10px;
-    background: #e8f5e9;
-    color: #2e7d32;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.ct-preview-so-table-wrap {
-    overflow-x: auto;
-    border: 1px solid #e8eaf0;
-    border-radius: 8px;
-    @include ct-scrollbar;
-}
-
-.ct-preview-so-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-
-    thead tr {
-        background: #f5f6ff;
-    }
-
-    th {
-        padding: 8px 10px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: #64748b;
-        border-bottom: 1px solid #e8eaf0;
-        white-space: nowrap;
-        text-align: left;
-    }
-
-    td {
-        padding: 8px 10px;
-        color: #374151;
-        border-bottom: 1px solid #f0f0f5;
-        white-space: nowrap;
-    }
+// Sales Order preview uses real sales-order-* / so-header-* classes from salesOrder.scss directly.
+.ct-preview-modal .sales-order-content-wrapper {
+  max-height: none;
+  min-height: 0;
+  box-shadow: none;
+  border-radius: 0;
+  padding-bottom: 0;
+  margin: -18px -20px;
+  width: calc(100% + 40px);
 }
 
 // ── Report field editable row (unchecked standard report types in builder) ────
@@ -1266,7 +1041,9 @@
   background: #fff;
   outline: none;
 
-  &:focus { border-color: #7c3aed; }
+  &:focus {
+    border-color: #7c3aed;
+  }
 }
 
 // ── Reports tab live preview (right panel) ────────────────────────────────────
@@ -1392,7 +1169,9 @@
   padding: 2px 0;
   margin-top: 2px;
 
-  &:hover { text-decoration: underline; }
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 // ── Custom tabs section (left panel) ─────────────────────────────────────────
@@ -1406,7 +1185,8 @@
   gap: 10px;
   margin: 16px 0 10px;
 
-  &::before, &::after {
+  &::before,
+  &::after {
     content: "";
     flex: 1;
     height: 1px;
@@ -1442,9 +1222,20 @@
   outline: none;
   cursor: text;
 
-  &::placeholder { color: #c0c8d8; font-weight: 400; }
-  &:hover { border-color: #e2e2ea; background: #fff; }
-  &:focus { border-color: #7c3aed; background: #fff; }
+  &::placeholder {
+    color: #c0c8d8;
+    font-weight: 400;
+  }
+
+  &:hover {
+    border-color: #e2e2ea;
+    background: #fff;
+  }
+
+  &:focus {
+    border-color: #7c3aed;
+    background: #fff;
+  }
 }
 
 .ct-accordion-expand-btn {
@@ -1459,8 +1250,14 @@
   flex-shrink: 0;
   border-radius: 4px;
 
-  &:focus { outline: none; }
-  &:hover { color: #7c3aed; background: #f5f3ff; }
+  &:focus {
+    outline: none;
+  }
+
+  &:hover {
+    color: #7c3aed;
+    background: #f5f3ff;
+  }
 }
 
 .ct-custom-tab-del {
@@ -1531,7 +1328,7 @@
   align-items: start;
 
   // Each cell must not overflow its column
-  > * {
+  >* {
     min-width: 0;
   }
 
@@ -1648,3 +1445,200 @@
   height: 100%;
 }
 
+
+// ── Appointment Details preview — upload zone + file row overrides ────────────
+// Scoped to .ct-preview-modal so the sizing fits the smaller preview column
+// without affecting the real General.jsx in the live card modal.
+
+.ct-preview-modal {
+
+  // Wrap the general-tab-body so it fills the operation-right panel properly
+  .general-tab-body {
+    padding: 0;
+    overflow: visible;
+    flex: unset;
+    min-height: 0;
+  }
+
+  .general-sections-wrapper {
+    gap: 0;
+  }
+
+  // Section card — no extra shadow inside the preview box
+  .cf-section.general-info-section {
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    margin-bottom: 0;
+  }
+
+  .cf-section-header {
+    padding: 10px 16px;
+    background: #fafbfc;
+    border-bottom: 1px solid #eceef2;
+  }
+
+  .cf-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+
+  .cf-section-body {
+    padding: 14px 16px 16px;
+  }
+
+  // Appointment Email label row — label + extraction-mode toggle group
+  .appointment-email-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  .appointment-email-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+  }
+
+  // Extraction-mode pill buttons (Manual / AI / Server)
+  .appointment-extraction-mode-group {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .appointment-extraction-mode-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    padding: 0 12px;
+    border: 1.5px solid #e2e2ea;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    background: #fff;
+    cursor: default;
+    transition: none;
+    user-select: none;
+
+    &.active {
+      background: #7c3aed;
+      border-color: #7c3aed;
+      color: #fff;
+    }
+  }
+
+  // Upload zone — compact height for the narrow preview column
+  .document-upload-zone {
+    height: 52px !important;
+    min-height: 52px !important;
+    padding: 0 14px !important;
+    cursor: default !important;
+    border: 1.5px dashed #c4b5fd !important;
+    background: #faf5ff !important;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: none !important;
+    transform: none !important;
+
+    &:hover {
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .upload-zone-content {
+      gap: 0;
+    }
+
+    .upload-text-content {
+      text-align: center;
+    }
+
+    .upload-main-text {
+      font-size: 12px;
+      color: #64748b;
+      margin: 0;
+    }
+
+    .upload-link {
+      color: #7c3aed;
+      font-weight: 600;
+    }
+  }
+
+  // File display row — same appointment-email-file-row style from general.scss
+  .appointment-email-file-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f8f9ff;
+    border: 1px solid #e2e2ea;
+    border-radius: 8px;
+  }
+
+  .appointment-email-file-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .document-file-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: #eff4ff;
+    flex-shrink: 0;
+    color: #3e5cb6;
+  }
+
+  .appointment-email-file-name,
+  .document-file-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1a1a1a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // View/download action button beside the file row
+  .appointment-email-file-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .appointment-email-file-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e2e2ea;
+    border-radius: 7px;
+    background: #fff;
+    color: #64748b;
+    cursor: default;
+    transition: none;
+
+    &:disabled,
+    &[disabled] {
+      opacity: 0.5;
+    }
+  }
+}
