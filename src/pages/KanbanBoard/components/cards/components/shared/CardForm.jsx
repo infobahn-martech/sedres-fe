@@ -560,6 +560,7 @@ const TopBar = ({
   card,
   topbarColor,
   onClose,
+  closeLoading = false,
   isAddMode = false,
   onColorChange,
   formValues,
@@ -983,8 +984,23 @@ const TopBar = ({
               document.body
             )}
         </div>
-        <button className="cardform-close-btn" onClick={onClose} type="button" aria-label="Close">
-          ✕
+        <button
+          className={`cardform-close-btn${closeLoading ? " cardform-close-btn--loading" : ""}`}
+          onClick={onClose}
+          type="button"
+          aria-label="Close"
+          disabled={closeLoading}
+          aria-busy={closeLoading}
+        >
+          {closeLoading ? (
+            <span
+              className="spinner-border spinner-border-sm cardform-close-btn__spinner"
+              role="status"
+              aria-hidden="true"
+            />
+          ) : (
+            "✕"
+          )}
         </button>
       </div>
     </div>
@@ -995,6 +1011,7 @@ TopBar.propTypes = {
   card: PropTypes.object,
   topbarColor: PropTypes.string.isRequired,
   onClose: PropTypes.func.isRequired,
+  closeLoading: PropTypes.bool,
   isAddMode: PropTypes.bool,
   onColorChange: PropTypes.func,
   formValues: PropTypes.object,
@@ -1806,6 +1823,8 @@ function CardForm({
 
   const [salesOrderApiLoading, setSalesOrderApiLoading] = useState(false);
   const [salesOrderApiError, setSalesOrderApiError] = useState(null);
+  const [isClosing, setIsClosing] = useState(false);
+  const isClosingRef = useRef(false);
   const lastSalesOrderFetchKeyRef = useRef(null);
 
   useEffect(() => {
@@ -1891,6 +1910,9 @@ function CardForm({
   );
 
   const handleClose = useCallback(async () => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    setIsClosing(true);
     try {
       if (onBoardRefresh) {
         await onBoardRefresh();
@@ -1901,9 +1923,19 @@ function CardForm({
       if (typeof console !== "undefined" && console.error) {
         console.error("[CardForm] getFullBoard on close failed:", e?.message ?? e);
       }
+    } finally {
+      close();
+      isClosingRef.current = false;
+      setIsClosing(false);
     }
-    close();
   }, [close, onBoardRefresh, boardId]);
+
+  useEffect(() => {
+    if (!show) {
+      isClosingRef.current = false;
+      setIsClosing(false);
+    }
+  }, [show]);
 
   const validateGroCardBeforeAction = useCallback(() => {
     if (!isGROVariant || isCustomVariant) return true;
@@ -2147,6 +2179,7 @@ function CardForm({
           card={card}
           topbarColor={topbarColor}
           onClose={handleClose}
+          closeLoading={isClosing}
           isAddMode={isAddMode}
           isSubTaskCard={isSubTaskCard}
           onColorChange={handleTopbarColorChange}

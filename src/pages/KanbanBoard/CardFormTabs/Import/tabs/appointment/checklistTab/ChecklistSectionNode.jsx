@@ -1,51 +1,15 @@
 import PropTypes from "prop-types";
-import { useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import ChecklistItemRow from "./ChecklistItemRow";
 import { countNodeItems, countNodeCompleted } from "./checklistMappers";
 
-const ChecklistItemsTable = ({ items, itemsData, onItemChange, cardColor, isViewOnly, isDAModule }) => (
-  <div className="checklist-items-table-wrapper checklist-table-card cl-items-table-wrap">
-    <table className="checklist-items-table cl-items-table cl-items-table--5col">
-      <colgroup>
-        <col className="checklist-col-check cl-col-check" />
-        <col className="cl-col-item" />
-        <col className="cl-col-role" />
-        <col className="cl-col-upload" />
-        <col className="cl-col-remarks" />
-      </colgroup>
-      <thead>
-        <tr>
-          <th className="checklist-table-checkbox-header">Done</th>
-          <th className="checklist-table-label-header">Item</th>
-          <th className="checklist-table-role-header">Task</th>
-          <th className="checklist-table-upload-header">Document upload</th>
-          <th className="checklist-table-remarks-header">Remarks</th>
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((item) => (
-          <ChecklistItemRow
-            key={item.id}
-            item={item}
-            itemData={itemsData[item.id] || {}}
-            onChange={onItemChange}
-            cardColor={cardColor}
-            isViewOnly={isViewOnly}
-            isDAModule={isDAModule}
-          />
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+const SECTION_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-ChecklistItemsTable.propTypes = {
-  items: PropTypes.array.isRequired,
-  itemsData: PropTypes.object.isRequired,
-  onItemChange: PropTypes.func.isRequired,
-  cardColor: PropTypes.string,
-  isViewOnly: PropTypes.bool,
-  isDAModule: PropTypes.bool,
+const formatSectionHeaderTitle = (title, depth, sectionIndex) => {
+  const label = String(title || "Section").trim();
+  if (depth > 0) return label.toUpperCase();
+  const letter = SECTION_LETTERS[sectionIndex] ?? String(sectionIndex + 1);
+  return `${letter}) ${label.toUpperCase()}`;
 };
 
 const ChecklistSectionNode = ({
@@ -59,12 +23,11 @@ const ChecklistSectionNode = ({
   isViewOnly = false,
   isDAModule = false,
   depth = 0,
+  sectionIndex = 0,
 }) => {
   const isSub = depth > 0;
-  const isOpen = openSections[node.id] !== false;
   const total = countNodeItems(node);
   const done = countNodeCompleted(node, itemsData);
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
   const allSelected =
     total > 0
@@ -81,92 +44,70 @@ const ChecklistSectionNode = ({
     onSelectAll(node.id, !allSelected);
   };
 
-  return (
-    <div
-      className={`cl-sec-node ${isSub ? "cl-sec-node--sub" : "cl-sec-node--root"}`}
-      data-cl-depth={depth}
-      style={{ "--card-color": cardColor }}
-    >
-      <div className={`cl-sec-head ${isSub ? "cl-sec-head--sub" : ""}`}>
-        <button
-          type="button"
-          className="cl-sec-head__main"
-          onClick={() => onSectionToggle(node.id)}
-          aria-expanded={isOpen}
-        >
-          <div className="cl-sec-head__text">
-            <h3 className="cl-sec-title" title={node.title || "Section"}>
-              {node.title || "Section"}
-            </h3>
-            <div className="cl-sec-progress">
-              <span className="cl-sec-count">
-                {done} / {total}
-              </span>
-              <div className="checklist-progress-bar cl-sec-progress-bar">
-                <div className="checklist-progress-fill" style={{ width: `${pct}%`, backgroundColor: cardColor }} />
-              </div>
-            </div>
-          </div>
-        </button>
-        <div className="cl-sec-head__actions">
-          <button
-            type="button"
-            className="checklist-select-all-btn"
-            onClick={handleSelectAllClick}
-            title={allSelected ? "Deselect all" : "Select all"}
-            style={{ "--card-color": cardColor }}
-          >
-            <input
-              type="checkbox"
-              ref={checkboxRef}
-              checked={allSelected}
-              onChange={() => {}}
-              className="checklist-select-all-checkbox"
-            />
-            <span className="checklist-select-all-label">{allSelected ? "Deselect all" : "Select all"}</span>
-          </button>
-          <button
-            type="button"
-            className="cl-sec-toggle"
-            onClick={() => onSectionToggle(node.id)}
-            aria-label={isOpen ? "Collapse section" : "Expand section"}
-            aria-expanded={isOpen}
-          >
-            <span className="checklist-accordion-icon">{isOpen ? "▼" : "▶"}</span>
-          </button>
-        </div>
-      </div>
+  const sectionTitle = formatSectionHeaderTitle(node.title, depth, sectionIndex);
 
-      {isOpen && (
-        <div className="cl-sec-body">
-          {node.items.length > 0 && (
-            <ChecklistItemsTable
-              items={node.items}
-              itemsData={itemsData}
-              onItemChange={onItemChange}
-              cardColor={cardColor}
-              isViewOnly={isViewOnly}
-              isDAModule={isDAModule}
-            />
-          )}
-          {(node.subSections || []).map((sub) => (
-            <ChecklistSectionNode
-              key={sub.id}
-              node={sub}
-              itemsData={itemsData}
-              onItemChange={onItemChange}
-              openSections={openSections}
-              onSectionToggle={onSectionToggle}
-              onSelectAll={onSelectAll}
-              cardColor={cardColor}
-              isViewOnly={isViewOnly}
-              isDAModule={isDAModule}
-              depth={depth + 1}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+  return (
+    <Fragment>
+      <tr
+        className={`cl-excel-section-header-row ${isSub ? "cl-excel-section-header-row--sub" : ""}`}
+        data-cl-depth={depth}
+      >
+        <td colSpan={5} className="cl-excel-section-header-title-cell">
+          <span className="cl-excel-section-title">{sectionTitle}</span>
+          {total > 0 ? (
+            <span className="cl-excel-section-count">{done} / {total}</span>
+          ) : null}
+        </td>
+        <td className="cl-excel-section-header-actions-cell">
+          {!isViewOnly ? (
+            <button
+              type="button"
+              className="checklist-select-all-btn cl-excel-select-all-btn"
+              onClick={handleSelectAllClick}
+              title={allSelected ? "Deselect all" : "Select all"}
+            >
+              <input
+                type="checkbox"
+                ref={checkboxRef}
+                checked={allSelected}
+                onChange={() => {}}
+                className="checklist-select-all-checkbox"
+              />
+              <span className="checklist-select-all-label">{allSelected ? "Deselect all" : "Select all"}</span>
+            </button>
+          ) : null}
+        </td>
+      </tr>
+
+      {node.items.map((item) => (
+        <ChecklistItemRow
+          key={item.id}
+          item={item}
+          itemData={itemsData[item.id] || {}}
+          onChange={onItemChange}
+          cardColor={cardColor}
+          isViewOnly={isViewOnly}
+          isDAModule={isDAModule}
+        />
+      ))}
+
+      {(node.subSections || []).map((sub, subIndex) => (
+        <ChecklistSectionNode
+          key={sub.id}
+          node={sub}
+          itemsData={itemsData}
+          onItemChange={onItemChange}
+          openSections={openSections}
+          onSectionToggle={onSectionToggle}
+          onSelectAll={onSelectAll}
+          cardColor={cardColor}
+          isViewOnly={isViewOnly}
+          isDAModule={isDAModule}
+          depth={depth + 1}
+          sectionIndex={subIndex}
+        />
+      ))}
+    </Fragment>
   );
 };
 
@@ -216,6 +157,7 @@ ChecklistSectionNode.propTypes = {
   isViewOnly: PropTypes.bool,
   isDAModule: PropTypes.bool,
   depth: PropTypes.number,
+  sectionIndex: PropTypes.number,
 };
 
 export default ChecklistSectionNode;

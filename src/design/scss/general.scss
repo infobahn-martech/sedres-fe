@@ -215,6 +215,7 @@
 }
 
 .cf-section.general-info-section .general-info-view-with-tasks.general-tab-form-layout {
+
   .general-info-middle,
   .general-info-right {
     display: flex;
@@ -263,7 +264,7 @@
     margin-right: 0;
     overflow: hidden;
 
-    > label {
+    >label {
       flex-shrink: 0;
     }
   }
@@ -509,6 +510,7 @@
   }
 
   &.general-info-view-with-tasks {
+
     .general-info-left,
     .general-info-middle,
     .general-info-right {
@@ -679,7 +681,7 @@
   flex-direction: column;
   overflow: hidden;
 
-  > .general-info-three-column.general-info-view-with-tasks {
+  >.general-info-three-column.general-info-view-with-tasks {
     flex: 1 1 auto;
     min-height: 0;
   }

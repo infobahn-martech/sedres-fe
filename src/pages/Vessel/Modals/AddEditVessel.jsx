@@ -284,7 +284,7 @@ export function VesselModal({ showModal, closeModal, callBack }) {
       ) : (
         <div className="lead-form">
           <form id="vesselForm" onSubmit={handleSubmit(onSubmit)}>
-            {/* entity_id → year_built: mandatory */}
+            {/* Row 1: Billing Entity | Vessel Name */}
             <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="phone-wrapper">
@@ -340,6 +340,7 @@ export function VesselModal({ showModal, closeModal, callBack }) {
               </div>
             </div>
 
+            {/* Row 2: Vessel Owner | Vessel Principal */}
             <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="form-floating desig-inp">
@@ -363,6 +364,7 @@ export function VesselModal({ showModal, closeModal, callBack }) {
               </div>
             </div>
 
+            {/* Row 3: Vessel Manager | IMO Number */}
             <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="form-floating desig-inp">
@@ -374,15 +376,18 @@ export function VesselModal({ showModal, closeModal, callBack }) {
                   <label>Vessel Manager</label>
                 </div>
               </div>
-            </div>
-
-            <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="form-floating desig-inp">
                   <input
                     className={`form-control ${errors.imoNumber ? "is-invalid" : ""}`}
                     placeholder="IMO Number (7 digits)"
+                    type="text"
                     inputMode="numeric"
+                    onInput={(e) => {
+                      e.target.value = e.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 7);
+                    }}
                     {...register("imoNumber", {
                       required: "IMO number is required",
                       pattern: {
@@ -401,6 +406,10 @@ export function VesselModal({ showModal, closeModal, callBack }) {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* Row 4: Vessel Type | Flag State */}
+            <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="phone-wrapper">
                   <label className="phone-label">
@@ -431,9 +440,6 @@ export function VesselModal({ showModal, closeModal, callBack }) {
                   )}
                 </div>
               </div>
-            </div>
-
-            <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="form-floating desig-inp">
                   <input
@@ -455,6 +461,10 @@ export function VesselModal({ showModal, closeModal, callBack }) {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* Row 5: Gross Tonnage | Call Sign */}
+            <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="form-floating desig-inp">
                   <input
@@ -482,9 +492,6 @@ export function VesselModal({ showModal, closeModal, callBack }) {
                   )}
                 </div>
               </div>
-            </div>
-
-            <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="form-floating desig-inp">
                   <input
@@ -506,12 +513,22 @@ export function VesselModal({ showModal, closeModal, callBack }) {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* Row 6: Year Built | Class Society */}
+            <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="form-floating desig-inp">
                   <input
                     className={`form-control ${errors.yearBuilt ? "is-invalid" : ""}`}
                     placeholder="Year Built"
+                    type="text"
                     inputMode="numeric"
+                    onInput={(e) => {
+                      e.target.value = e.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 4);
+                    }}
                     {...register("yearBuilt", {
                       required: "Year built is required",
                       validate: (v) => {
@@ -533,9 +550,6 @@ export function VesselModal({ showModal, closeModal, callBack }) {
                   )}
                 </div>
               </div>
-            </div>
-
-            <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="form-floating desig-inp">
                   <input
@@ -546,6 +560,10 @@ export function VesselModal({ showModal, closeModal, callBack }) {
                   <label>Class Society</label>
                 </div>
               </div>
+            </div>
+
+            {/* Row 7: P&I Club | Length Overall (LOA) */}
+            <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="form-floating desig-inp">
                   <input
@@ -556,9 +574,6 @@ export function VesselModal({ showModal, closeModal, callBack }) {
                   <label>P&I Club</label>
                 </div>
               </div>
-            </div>
-
-            <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="form-floating desig-inp">
                   <input
@@ -569,6 +584,10 @@ export function VesselModal({ showModal, closeModal, callBack }) {
                   <label>Length Overall (LOA)</label>
                 </div>
               </div>
+            </div>
+
+            {/* Row 8: Beam | Draft */}
+            <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="form-floating desig-inp">
                   <input
@@ -579,9 +598,6 @@ export function VesselModal({ showModal, closeModal, callBack }) {
                   <label>Beam</label>
                 </div>
               </div>
-            </div>
-
-            <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <div className="form-floating desig-inp">
                   <input
@@ -592,6 +608,10 @@ export function VesselModal({ showModal, closeModal, callBack }) {
                   <label>Draft</label>
                 </div>
               </div>
+            </div>
+
+            {/* Row 9: MWP Expiry Date | MWP Document Upload */}
+            <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
                 <PremiumDateField
                   control={control}
@@ -599,41 +619,39 @@ export function VesselModal({ showModal, closeModal, callBack }) {
                   label="MWP expiry date"
                 />
               </div>
-
-            </div>
-
-            <div className="permInputs row mb-lg-3">
               <div className="col-lg-6 col-sm-12 mb-3">
-                <label className="form-label text-muted small mb-1 d-block">
-                  MWP document
-                </label>
-                {existingMwpDocument ? (
-                  <div className="small text-secondary mb-2 text-break">
-                    Current file:{" "}
-                    {/^https?:\/\//i.test(String(existingMwpDocument)) ? (
-                      <a
-                        href={existingMwpDocument}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Open link
-                      </a>
-                    ) : (
-                      String(existingMwpDocument)
-                    )}
+                <div className="vessel-mwp-upload">
+                  <div className="vessel-file-field">
+                    <label className="vessel-file-label">MWP document</label>
+                    <input
+                      type="file"
+                      className="form-control vessel-mwp-file"
+                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*"
+                      {...register("mwpDocument")}
+                    />
                   </div>
-                ) : null}
-                <input
-                  type="file"
-                  className="form-control vessel-mwp-file"
-                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*"
-                  {...register("mwpDocument")}
-                />
-                <span className="small text-muted">
-                  {existingMwpDocument
-                    ? "Upload a new file to replace the current one."
-                    : ""}
-                </span>
+                  {existingMwpDocument ? (
+                    <div className="small text-secondary mt-1 text-break">
+                      Current file:{" "}
+                      {/^https?:\/\//i.test(String(existingMwpDocument)) ? (
+                        <a
+                          href={existingMwpDocument}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Open link
+                        </a>
+                      ) : (
+                        String(existingMwpDocument)
+                      )}
+                    </div>
+                  ) : null}
+                  <span className="small text-muted">
+                    {existingMwpDocument
+                      ? "Upload a new file to replace the current one."
+                      : ""}
+                  </span>
+                </div>
               </div>
             </div>
           </form>

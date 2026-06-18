@@ -127,9 +127,6 @@ const Vessel = () => {
         sort: true,
         thclass: "tb-head",
         width: "220",
-        cell: ({ row }) => (
-          <EllipsisText value={row.vessel_name} limit={10} />
-        ),
       },
       {
         name: "Unique ID",
@@ -152,34 +149,34 @@ const Vessel = () => {
         thclass: "tb-head",
         width: "200",
       },
-      {
-        name: "Owner",
-        selector: "vessel_owner",
-        sort: true,
-        thclass: "tb-head",
-        width: "180",
-      },
-      {
-        name: "Manager",
-        selector: "vessel_manager",
-        sort: true,
-        thclass: "tb-head",
-        width: "180",
-      },
-      {
-        name: "Principal",
-        selector: "vessel_principal",
-        sort: true,
-        thclass: "tb-head",
-        width: "180",
-      },
-      {
-        name: "Flag",
-        selector: "flag_state",
-        sort: true,
-        thclass: "tb-head",
-        width: "150",
-      },
+      // {
+      //   name: "Owner",
+      //   selector: "vessel_owner",
+      //   sort: true,
+      //   thclass: "tb-head",
+      //   width: "180",
+      // },
+      // {
+      //   name: "Manager",
+      //   selector: "vessel_manager",
+      //   sort: true,
+      //   thclass: "tb-head",
+      //   width: "180",
+      // },
+      // {
+      //   name: "Principal",
+      //   selector: "vessel_principal",
+      //   sort: true,
+      //   thclass: "tb-head",
+      //   width: "180",
+      // },
+      // {
+      //   name: "Flag",
+      //   selector: "flag_state",
+      //   sort: true,
+      //   thclass: "tb-head",
+      //   width: "150",
+      // },
       {
         name: "Gross Tonnage",
         selector: "gross_tonnage",
@@ -195,14 +192,11 @@ const Vessel = () => {
       //   width: "100",
       // },
       {
-        name: <EllipsisHeader label="Days to MWP expiry" limit={8} />,
+        name: <EllipsisHeader label="Days to MWP expiry" limit={12} />,
         selector: "days_to_expiry",
         sort: true,
         thclass: "tb-head",
         width: "160",
-        cell: ({ row }) => (
-          <EllipsisText value={row.days_to_expiry} limit={8} />
-        ),
       },
       {
         name: "Status",

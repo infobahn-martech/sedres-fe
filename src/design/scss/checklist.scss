@@ -23,6 +23,58 @@
   overflow-x: hidden;
 }
 
+.checklist-tab-layout--full {
+  width: 100%;
+  padding: 0 12px 12px;
+  box-sizing: border-box;
+}
+
+.checklist-page-header {
+  align-items: flex-start;
+  padding: 20px 26px 16px 22px;
+  border-bottom: none;
+  min-height: 0;
+  gap: 12px;
+}
+
+.checklist-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.checklist-header-type-select {
+  width: min(420px, 100%);
+  min-width: 320px;
+}
+
+.checklist-header-type-select.cf-multiselect {
+  width: min(420px, 100%);
+  min-width: 320px;
+}
+
+.checklist-header-type-select .cf-multiselect-input {
+  min-height: 36px;
+  border-radius: 4px;
+  border-width: 1px;
+  box-shadow: none;
+}
+
+.checklist-header-type-select .cf-multiselect-input:hover {
+  box-shadow: none;
+}
+
+.checklist-form--compact {
+  padding-top: 0;
+  padding-bottom: 72px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .checklist-actions {
   position: absolute;
   right: 24px;
@@ -574,19 +626,22 @@
   resize: none;
   background: #ffffff;
   color: #1f2937;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  transition: none;
   flex: 0 1 auto;
   align-self: center;
+  box-shadow: none;
+  outline: none;
 }
 
 .cf-textarea.checklist-table-textarea textarea::placeholder {
   color: #9ca3af;
 }
 
+.cf-textarea.checklist-table-textarea textarea:hover,
 .cf-textarea.checklist-table-textarea textarea:focus {
   outline: none;
-  border-color: rgb(77 85 188);
-  box-shadow: 0 0 0 3px rgba(77, 85, 188, 0.12);
+  border: 1px solid #d1d5db;
+  box-shadow: none;
 }
 
 /* Compact single-row file chip inside upload cell (same 56px as empty state) */
@@ -3162,6 +3217,17 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   max-height: 32px;
   display: flex;
   align-items: center;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+}
+
+.cl-items-table .checklist-table-remarks .checklist-table-textarea.cf-textarea:hover,
+.cl-items-table .checklist-table-remarks .checklist-table-textarea.cf-textarea:focus-within {
+  border: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 .cl-items-table .checklist-table-remarks .cf-textarea.checklist-table-textarea textarea {
@@ -3169,6 +3235,15 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   min-height: 32px;
   max-height: 32px;
   padding: 6px 10px;
+  box-shadow: none;
+  outline: none;
+  transition: none;
+}
+
+.cl-items-table .checklist-table-remarks .cf-textarea.checklist-table-textarea textarea:hover,
+.cl-items-table .checklist-table-remarks .cf-textarea.checklist-table-textarea textarea:focus {
+  box-shadow: none;
+  outline: none;
 }
 
 .cl-upload-remove-btn:hover {
@@ -3270,9 +3345,35 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   max-height: 36px;
 }
 
+.cl-remarks-ta.cf-textarea {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+}
+
+.cl-remarks-ta.cf-textarea:hover,
+.cl-remarks-ta.cf-textarea:focus-within {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
 .cl-remarks-ta.cf-textarea textarea {
   padding: 6px 10px;
   font-size: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  box-shadow: none;
+  outline: none;
+  transition: none;
+}
+
+.cl-remarks-ta.cf-textarea textarea:hover,
+.cl-remarks-ta.cf-textarea textarea:focus {
+  border: 1px solid #d1d5db;
+  box-shadow: none;
+  outline: none;
 }
 
 .cl-api-file-chip {
@@ -4246,5 +4347,419 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
 
   .cl-item-title-row {
     flex-wrap: wrap;
+  }
+}
+
+/* ==========================================================
+   EXCEL / FLAT TABLE CHECKLIST (appointment tab)
+   ========================================================== */
+
+.cl-excel-type-group {
+  margin-bottom: 12px;
+}
+
+.cl-excel-type-group:last-child {
+  margin-bottom: 0;
+}
+
+.cl-excel-block {
+  width: 100%;
+  border: 1px solid #000;
+  background: #fff;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.cl-excel-type-title {
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #000;
+  text-transform: uppercase;
+  text-decoration: underline;
+  background: #d9e9f4;
+  border-bottom: 1px solid #000;
+  letter-spacing: 0.02em;
+}
+
+.cl-excel-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.cl-excel-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  border-spacing: 0;
+  background: #fff;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  min-width: 760px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11px;
+}
+
+.cl-excel-table thead {
+  background: #fff;
+}
+
+.cl-excel-table thead th {
+  height: auto;
+  min-height: 28px;
+  padding: 4px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border: 1px solid #000;
+  border-top: none;
+  background: #fff;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.cl-excel-table tbody td {
+  border: 1px solid #000;
+  border-top: none;
+  padding: 4px 6px;
+  vertical-align: middle;
+  background: #fff;
+}
+
+.cl-excel-table tbody tr.checklist-table-row td {
+  min-height: 0;
+  height: auto;
+  padding: 4px 6px;
+}
+
+.cl-excel-table tbody tr.checklist-table-row td+td {
+  border-left-style: dotted;
+}
+
+.cl-excel-table thead th+th {
+  border-left-style: dotted;
+}
+
+.cl-excel-table .checklist-table-row {
+  border-bottom: none;
+  transition: none;
+}
+
+.cl-excel-table .checklist-table-row:hover:not(.checked),
+.cl-excel-table .checklist-table-row.checked,
+.cl-excel-table .checklist-table-row:hover.checked {
+  background: transparent;
+}
+
+.cl-excel-table .checklist-table-row.checked td {
+  background: #f4faf4;
+}
+
+.cl-excel-section-header-row td {
+  background: #d9e9f4 !important;
+  padding: 4px 8px;
+  border: 1px solid #000;
+  border-top: none;
+  vertical-align: middle;
+}
+
+.cl-excel-section-header-row--sub td {
+  background: #e8f2f8 !important;
+}
+
+.cl-excel-section-header-title-cell {
+  text-align: left;
+}
+
+.cl-excel-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #000;
+  text-transform: uppercase;
+  text-decoration: underline;
+  letter-spacing: 0.02em;
+}
+
+.cl-excel-section-count {
+  margin-left: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #333;
+  text-decoration: none;
+  text-transform: none;
+}
+
+.cl-excel-section-header-actions-cell {
+  text-align: right;
+  white-space: nowrap;
+  width: 18%;
+}
+
+.cl-excel-select-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 10px;
+  font-weight: 600;
+  color: #000;
+  cursor: pointer;
+}
+
+.cl-excel-select-all-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.cl-excel-select-all-btn .checklist-select-all-label {
+  font-size: 10px;
+  color: #000;
+  text-transform: uppercase;
+}
+
+.cl-items-table--6col col.cl-col-check {
+  width: 6%;
+}
+
+.cl-items-table--6col col.cl-col-requirement {
+  width: 14%;
+}
+
+.cl-items-table--6col col.cl-col-item {
+  width: 22%;
+}
+
+.cl-items-table--6col col.cl-col-role {
+  width: 14%;
+}
+
+.cl-items-table--6col col.cl-col-upload {
+  width: 18%;
+}
+
+.cl-items-table--6col col.cl-col-remarks {
+  width: 26%;
+}
+
+.cl-excel-table .checklist-table-checkbox-header,
+.cl-excel-table .checklist-table-checkbox {
+  width: 6%;
+  text-align: center;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.cl-excel-table .checklist-checkbox-custom--table {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border-color: #333;
+}
+
+.cl-excel-table .cl-item-title.cl-item-title--primary {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0066cc;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.cl-excel-table .cl-req-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.cl-excel-table .cl-req-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.cl-excel-table .cl-req-label {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #000;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.cl-excel-table .cl-req-label-text {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.cl-excel-table .cl-req-empty {
+  color: #666;
+  font-size: 11px;
+}
+
+.cl-excel-table .cl-req-preview-btn {
+  padding: 1px;
+  border: none;
+  background: transparent;
+  color: #0066cc;
+  cursor: pointer;
+}
+
+.cl-excel-table .cl-role-badge {
+  border-radius: 2px;
+  padding: 2px 5px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #0066cc;
+  background: transparent;
+  border: 1px solid #99bbe8;
+  text-transform: uppercase;
+}
+
+.cl-excel-table .cl-role-empty {
+  font-size: 11px;
+  color: #666;
+}
+
+.cl-excel-table .checklist-upload-btn {
+  padding: 2px 6px;
+  font-size: 10px;
+  border-radius: 2px;
+  border: 1px solid #666;
+  background: #fff;
+  box-shadow: none;
+  color: #000;
+  gap: 3px;
+  min-height: 22px;
+}
+
+.cl-excel-table .checklist-upload-btn:hover {
+  background: #f5f5f5;
+  border-color: #333;
+}
+
+.cl-excel-table .checklist-file-chip {
+  border-radius: 2px;
+  border: 1px solid #ccc;
+  background: #fafafa;
+  font-size: 9px;
+  padding: 1px 4px;
+}
+
+.cl-excel-table .checklist-file-chip__name {
+  font-size: 9px;
+  max-width: 80px;
+}
+
+.cl-excel-table .checklist-table-textarea.cf-textarea,
+.cl-excel-table .cl-remarks-ta.cf-textarea {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+}
+
+.cl-excel-table .checklist-table-textarea.cf-textarea:hover,
+.cl-excel-table .checklist-table-textarea.cf-textarea:focus-within,
+.cl-excel-table .cl-remarks-ta.cf-textarea:hover,
+.cl-excel-table .cl-remarks-ta.cf-textarea:focus-within {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.cl-excel-table .cf-textarea.checklist-table-textarea textarea,
+.cl-excel-table .cf-textarea.cl-remarks-ta textarea {
+  border-radius: 2px;
+  border: 1px solid #999;
+  padding: 3px 5px;
+  font-size: 11px;
+  min-height: 24px;
+  box-shadow: none;
+  background: #fff;
+  outline: none;
+  transition: none;
+}
+
+.cl-excel-table .cf-textarea.checklist-table-textarea textarea::placeholder,
+.cl-excel-table .cf-textarea.cl-remarks-ta textarea::placeholder {
+  color: #9ca3af;
+}
+
+.cl-excel-table .cf-textarea.checklist-table-textarea textarea:hover,
+.cl-excel-table .cf-textarea.checklist-table-textarea textarea:focus,
+.cl-excel-table .cf-textarea.cl-remarks-ta textarea:hover,
+.cl-excel-table .cf-textarea.cl-remarks-ta textarea:focus {
+  border: 1px solid #999;
+  box-shadow: none;
+  outline: none;
+}
+
+.cl-excel-table span.cl-item-meta-chip.cl-item-meta-chip--expiry,
+.cl-excel-table .cl-item-meta-chip.cl-item-meta-chip--expiry.cl-item-meta-chip--clickable {
+  border-radius: 2px;
+  padding: 2px 5px;
+  min-height: 20px;
+  font-size: 10px;
+  box-shadow: none;
+  border-color: #999;
+  background: #fff;
+}
+
+.cl-excel-table .cl-item-meta-chip--expiry.cl-item-meta-chip--clickable:hover {
+  box-shadow: none;
+  background: #f5f5f5;
+}
+
+.cl-excel-table .checklist-more-files-chip {
+  border-radius: 2px;
+  font-size: 9px;
+  padding: 1px 4px;
+}
+
+.cl-excel-table .checklist-files-popover {
+  border-radius: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 768px) {
+  .checklist-page-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px 10px 6px;
+  }
+
+  .checklist-header-right {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .checklist-header-type-select,
+  .checklist-header-type-select.cf-multiselect {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .checklist-tab-layout--full {
+    padding: 0 8px 10px;
+  }
+
+  .cl-excel-table {
+    min-width: 680px;
+  }
+
+  .cl-excel-section-header-actions-cell {
+    width: auto;
   }
 }

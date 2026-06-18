@@ -338,7 +338,7 @@ const ChecklistItemRow = ({
 
   const firstPreviewableReference = referenceFiles.find((entry) => canPreviewEntry(entry));
   const canOpenReferencePreview = Boolean(firstPreviewableReference || referencePreviewUrl);
-  const showMetaRow = Boolean(expiryDateRequired || requirementMetaLabel || canOpenReferencePreview);
+  const showMetaRow = Boolean(expiryDateRequired);
 
   const handlePreviewReferenceFile = (e) => {
     e.preventDefault();
@@ -491,6 +491,42 @@ const ChecklistItemRow = ({
           </span>
         </label>
       </td>
+      <td className="checklist-table-requirement cl-col-requirement cl-req-cell">
+        <div className="cl-req-content">
+          {requirementMetaLabel ? (
+            <span className="cl-req-label" title={requirementMetaLabel}>
+              <span className="cl-item-meta-icon" aria-hidden>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="M14 3H7C5.9 3 5 3.9 5 5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V8L14 3Z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M14 3V8H19" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M9 12H15M9 16H15" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+              </span>
+              <span className="cl-req-label-text">{requirementMetaLabel}</span>
+            </span>
+          ) : (
+            <span className="cl-req-empty" aria-hidden>-</span>
+          )}
+          {canOpenReferencePreview ? (
+            <button
+              type="button"
+              className="cl-item-meta-preview-btn cl-req-preview-btn"
+              onClick={handlePreviewReferenceFile}
+              title="Preview reference file"
+              aria-label="Preview reference file"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path
+                  d="M2 12C3.8 8.5 7.3 6 12 6C16.7 6 20.2 8.5 22 12C20.2 15.5 16.7 18 12 18C7.3 18 3.8 15.5 2 12Z"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                />
+                <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" />
+              </svg>
+            </button>
+          ) : null}
+        </div>
+      </td>
       <td className="checklist-table-label cl-col-item cl-item-cell">
         <div className="cl-item-content">
           <div className="cl-item-title-row">
@@ -523,43 +559,6 @@ const ChecklistItemRow = ({
                     }
                   />
                 )
-              ) : null}
-              {expiryDateRequired && requirementMetaLabel ? <span className="cl-item-meta-sep" aria-hidden>|</span> : null}
-              {requirementMetaLabel ? (
-                <span className="cl-item-meta-chip" title={requirementMetaLabel}>
-                  <span className="cl-item-meta-icon" aria-hidden>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                      <path d="M14 3H7C5.9 3 5 3.9 5 5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V8L14 3Z" stroke="currentColor" strokeWidth="1.8" />
-                      <path d="M14 3V8H19" stroke="currentColor" strokeWidth="1.8" />
-                      <path d="M9 12H15M9 16H15" stroke="currentColor" strokeWidth="1.8" />
-                    </svg>
-                  </span>
-                  <span className="cl-item-meta-label">{requirementMetaLabel}</span>
-                </span>
-              ) : null}
-              {canOpenReferencePreview &&
-              (expiryDateRequired || requirementMetaLabel) ? (
-                <span className="cl-item-meta-sep" aria-hidden>
-                  |
-                </span>
-              ) : null}
-              {canOpenReferencePreview ? (
-                <button
-                  type="button"
-                  className="cl-item-meta-preview-btn"
-                  onClick={handlePreviewReferenceFile}
-                  title="Preview reference file"
-                  aria-label="Preview reference file"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path
-                      d="M2 12C3.8 8.5 7.3 6 12 6C16.7 6 20.2 8.5 22 12C20.2 15.5 16.7 18 12 18C7.3 18 3.8 15.5 2 12Z"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                    />
-                    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" />
-                  </svg>
-                </button>
               ) : null}
             </div>
           ) : null}

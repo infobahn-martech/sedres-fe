@@ -27,19 +27,6 @@ import {
   normalizeSavedChecklistLookup,
 } from "./checklistTab/checklistMappers";
 
-const FormField = ({ label, children, className = "" }) => (
-  <div className={`cf-field ${className}`}>
-    {label ? <label>{label}</label> : null}
-    {children}
-  </div>
-);
-
-FormField.propTypes = {
-  label: PropTypes.string,
-  children: PropTypes.node.isRequired,
-  className: PropTypes.string,
-};
-
 const toIdString = (v) => (v == null || String(v).trim() === "" ? null : String(v).trim());
 
 const normalizeExpiryDateForUi = (value) => {
@@ -715,105 +702,81 @@ function Checklist({
 
   return (
     <>
-      <div className="operation-content-header">
+      <div className="operation-content-header checklist-page-header">
         <h3 className="operation-content-title">Checklist Information</h3>
-        {onOpenReportPreview && !isViewOnly ? (
-          <SendReportButton onClick={handleOpenChecklistReport} cardColor={cardColor} tabName="Check List" />
-        ) : null}
+        <div className="checklist-header-right">
+          <ChecklistMultiSelect
+            className="checklist-header-type-select"
+            value={selectedChecklistTypeIds}
+            onChange={handleChecklistTypeChange}
+            options={checklistTypeOptions}
+            placeholder={checklistTypeOptions.length ? "Select checklist type..." : "No checklist types available"}
+            cardColor={cardColor}
+            disabled={isViewOnly || typeLoading || !prerequisiteState.canLoadChecklists}
+          />
+          {onOpenReportPreview && !isViewOnly ? (
+            <SendReportButton onClick={handleOpenChecklistReport} cardColor={cardColor} tabName="Check List" />
+          ) : null}
+        </div>
       </div>
 
-      <div className="cf-section-body checklist-tab-layout">
-        <div className="checklist-form">
-          <div className="form-group">
-            <div className="cf-grid two">
-              <FormField label="Checklist Type">
-                <ChecklistMultiSelect
-                  value={selectedChecklistTypeIds}
-                  onChange={handleChecklistTypeChange}
-                  options={checklistTypeOptions}
-                  placeholder={checklistTypeOptions.length ? "Select checklist type..." : "No checklist types available"}
+      <div className="checklist-tab-layout checklist-tab-layout--full">
+        <div className="checklist-form checklist-form--compact">
+          {isLoading ? <ChecklistLoadingState /> : null}
+          {!isLoading && callDetailError ? (
+            <ChecklistEmptyState title="Call detail error" message={callDetailError} variant="error" />
+          ) : null}
+          {!isLoading && !callDetailError && !prerequisiteState.canLoadChecklists ? (
+            <ChecklistEmptyState
+              title="Checklist prerequisites"
+              message="Checklist types will load after call type, port, and vessel/barge are available."
+              variant="prerequisite"
+            />
+          ) : null}
+          {!isLoading && prerequisiteState.canLoadChecklists && checklistError ? (
+            <ChecklistEmptyState title="Checklist loading failed" message={checklistError} variant="error" />
+          ) : null}
+          {!isLoading &&
+            prerequisiteState.canLoadChecklists &&
+            !checklistError &&
+            selectedChecklistTypeIds.length === 0 ? (
+            <ChecklistEmptyState
+              title="No checklist selected"
+              message="Select checklist type(s) to render checklist items."
+              variant="noData"
+            />
+          ) : null}
+          {!isLoading &&
+            prerequisiteState.canLoadChecklists &&
+            !checklistError &&
+            selectedChecklistTypeIds.length > 0 &&
+            !hasChecklistData ? (
+            <ChecklistEmptyState
+              title="No checklist details returned"
+              message="Selected checklist type(s) returned empty detail."
+              variant="noData"
+            />
+          ) : null}
+
+          {!isLoading &&
+            !checklistError &&
+            hasChecklistData &&
+            checklistBlocks.map((block) => (
+              <div className="checklist-type-group cl-excel-type-group" key={block.typeId} style={{ "--card-color": cardColor }}>
+                <ChecklistTypeBlock
+                  typeTitle={block.typeName}
+                  sectionTree={block.tree}
+                  itemsData={itemsData}
+                  onItemChange={handleItemChange}
+                  openSections={openSections}
+                  onSectionToggle={handleSectionToggle}
+                  onSelectAll={handleSelectAll}
                   cardColor={cardColor}
-                  disabled={isViewOnly || typeLoading || !prerequisiteState.canLoadChecklists}
+                  isViewOnly={isViewOnly}
+                  isDAModule={isDAModule}
                 />
-              </FormField>
-            </div>
-          </div>
-
-          <div className="cf-section">
-            <div className="cf-section-header">
-              <div className="cf-section-title">Checklist Items</div>
-            </div>
-            <div className="cf-section-body">
-              {isLoading ? <ChecklistLoadingState /> : null}
-              {!isLoading && callDetailError ? (
-                <ChecklistEmptyState title="Call detail error" message={callDetailError} variant="error" />
-              ) : null}
-              {!isLoading && !callDetailError && !prerequisiteState.canLoadChecklists ? (
-                <ChecklistEmptyState
-                  title="Checklist prerequisites"
-                  message="Checklist types will load after call type, port, and vessel/barge are available."
-                  variant="prerequisite"
-                />
-              ) : null}
-              {!isLoading && prerequisiteState.canLoadChecklists && checklistError ? (
-                <ChecklistEmptyState title="Checklist loading failed" message={checklistError} variant="error" />
-              ) : null}
-              {!isLoading &&
-                prerequisiteState.canLoadChecklists &&
-                !checklistError &&
-                selectedChecklistTypeIds.length === 0 ? (
-                <ChecklistEmptyState
-                  title="No checklist selected"
-                  message="Select checklist type(s) to render checklist items."
-                  variant="noData"
-                />
-              ) : null}
-              {!isLoading &&
-                prerequisiteState.canLoadChecklists &&
-                !checklistError &&
-                selectedChecklistTypeIds.length > 0 &&
-                !hasChecklistData ? (
-                <ChecklistEmptyState
-                  title="No checklist details returned"
-                  message="Selected checklist type(s) returned empty detail."
-                  variant="noData"
-                />
-              ) : null}
-
-              {!isLoading &&
-                !checklistError &&
-                hasChecklistData &&
-                checklistBlocks.map((block) => (
-                  <div className="checklist-type-group" key={block.typeId} style={{ "--card-color": cardColor }}>
-                    <button
-                      type="button"
-                      className="checklist-type-title-accordion"
-                      onClick={() => handleTypeGroupToggle(block.typeId)}
-                      aria-expanded={openTypeGroups[block.typeId] !== false}
-                    >
-                      <span className="checklist-type-title-text">{block.typeName}</span>
-                      <span className="checklist-type-accordion-icon">
-                        {openTypeGroups[block.typeId] !== false ? "▼" : "▶"}
-                      </span>
-                    </button>
-                    {openTypeGroups[block.typeId] !== false ? (
-                      <ChecklistTypeBlock
-                        typeTitle={block.typeName}
-                        sectionTree={block.tree}
-                        itemsData={itemsData}
-                        onItemChange={handleItemChange}
-                        openSections={openSections}
-                        onSectionToggle={handleSectionToggle}
-                        onSelectAll={handleSelectAll}
-                        cardColor={cardColor}
-                        isViewOnly={isViewOnly}
-                        isDAModule={isDAModule}
-                      />
-                    ) : null}
-                  </div>
-                ))}
-            </div>
-          </div>
+              </div>
+            ))}
 
           {!isViewOnly ? (
             <div className="checklist-actions">

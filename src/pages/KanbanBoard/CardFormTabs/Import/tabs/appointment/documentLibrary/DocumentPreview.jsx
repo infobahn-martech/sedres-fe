@@ -50,6 +50,10 @@ const getTypeLabel = (type) => {
   return "Document";
 };
 
+const getFileType = (document) => document.fileType || document.type;
+
+const getUploadedDate = (document) => document.date || document.uploadDate;
+
 const PdfPreviewMock = ({ fileName }) => (
   <div className="doc-lib-preview-mock doc-lib-preview-mock--pdf">
     <div className="doc-lib-preview-mock-toolbar">
@@ -146,7 +150,27 @@ const DocumentPreview = ({ document }) => {
     );
   }
 
-  const isPdf = document.type === "pdf";
+  const fileType = getFileType(document);
+  const isPdf = fileType === "pdf";
+  const hasPreviewUrl = Boolean(document.previewUrl);
+
+  const handleView = () => {
+    if (document.previewUrl) {
+      window.open(document.previewUrl, "_blank", "noopener,noreferrer");
+    }
+  };
+
+  const handleDownload = () => {
+    if (!document.previewUrl) return;
+
+    const link = window.document.createElement("a");
+    link.href = document.previewUrl;
+    link.download = document.name;
+    link.rel = "noopener";
+    window.document.body.appendChild(link);
+    link.click();
+    window.document.body.removeChild(link);
+  };
 
   return (
     <div className="doc-lib-preview">
@@ -158,7 +182,7 @@ const DocumentPreview = ({ document }) => {
           <dl className="doc-lib-preview-meta">
             <div className="doc-lib-preview-meta-row">
               <dt>Type</dt>
-              <dd>{getTypeLabel(document.type)}</dd>
+              <dd>{getTypeLabel(fileType)}</dd>
             </div>
             <div className="doc-lib-preview-meta-row">
               <dt>Size</dt>
@@ -170,17 +194,27 @@ const DocumentPreview = ({ document }) => {
             </div>
             <div className="doc-lib-preview-meta-row">
               <dt>Uploaded</dt>
-              <dd>{document.date}</dd>
+              <dd>{getUploadedDate(document)}</dd>
             </div>
           </dl>
         </div>
 
         <div className="doc-lib-preview-actions">
-          <button type="button" className="doc-lib-preview-action-btn">
+          <button
+            type="button"
+            className="doc-lib-preview-action-btn"
+            onClick={handleView}
+            disabled={!hasPreviewUrl}
+          >
             <ViewIcon />
             <span>View</span>
           </button>
-          <button type="button" className="doc-lib-preview-action-btn">
+          <button
+            type="button"
+            className="doc-lib-preview-action-btn"
+            onClick={handleDownload}
+            disabled={!hasPreviewUrl}
+          >
             <DownloadIcon />
             <span>Download</span>
           </button>
@@ -188,17 +222,23 @@ const DocumentPreview = ({ document }) => {
             <LinkIcon />
             <span>Copy Link</span>
           </button>
-          <button type="button" className="doc-lib-preview-action-btn doc-lib-preview-action-btn--icon" aria-label="Favorite">
+          {/* <button type="button" className="doc-lib-preview-action-btn doc-lib-preview-action-btn--icon" aria-label="Favorite">
             <StarIcon />
-          </button>
+          </button> */}
         </div>
       </div>
 
       <div className="doc-lib-preview-body">
-        {isPdf ? (
+        {hasPreviewUrl ? (
+          <iframe
+            src={document.previewUrl}
+            title={document.name}
+            className="document-preview__iframe"
+          />
+        ) : isPdf ? (
           <PdfPreviewMock fileName={document.name} />
         ) : (
-          <PlaceholderPreview type={document.type} />
+          <PlaceholderPreview type={fileType} />
         )}
       </div>
     </div>
@@ -207,12 +247,15 @@ const DocumentPreview = ({ document }) => {
 
 DocumentPreview.propTypes = {
   document: PropTypes.shape({
-    id: PropTypes.number.isRequired,
+    id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
     type: PropTypes.string.isRequired,
+    fileType: PropTypes.string,
     name: PropTypes.string.isRequired,
     size: PropTypes.string.isRequired,
     uploadedBy: PropTypes.string.isRequired,
-    date: PropTypes.string.isRequired,
+    date: PropTypes.string,
+    uploadDate: PropTypes.string,
+    previewUrl: PropTypes.string,
   }),
 };
 

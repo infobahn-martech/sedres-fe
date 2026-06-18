@@ -7,8 +7,15 @@ const normalizeCustomsStatus = (raw) => {
   const text = String(raw ?? "").trim();
   if (!text) return "";
   const lower = text.toLowerCase();
-  if (lower === "pending") return "Pending";
   if (lower === "passed" || lower === "pass") return "Passed";
+  if (
+    lower === "on hold" ||
+    lower === "on_hold" ||
+    lower === "onhold" ||
+    lower === "hold"
+  ) {
+    return "On Hold";
+  }
   if (lower === "failed" || lower === "fail") return "Failed";
   return text;
 };
@@ -31,21 +38,16 @@ const normalizeImmigrationStatus = (raw) => {
   return text;
 };
 
-const normalizeWorkflowStatus = (raw) => {
+const normalizeInwardClearanceStatus = (raw) => {
   const text = String(raw ?? "").trim();
   if (!text) return "";
   const lower = text.toLowerCase();
-  if (lower === "pending") return "Pending";
-  if (lower === "completed" || lower === "complete") return "Completed";
-  if (
-    lower === "on hold" ||
-    lower === "on_hold" ||
-    lower === "onhold" ||
-    lower === "hold"
-  ) {
-    return "On Hold";
+  if (lower === "received") return "Received";
+  if (lower === "not received" || lower === "not_received" || lower === "notreceived") {
+    return "Not Received";
   }
-  if (lower === "failed" || lower === "fail") return "Failed";
+  if (lower === "completed" || lower === "complete") return "Received";
+  if (lower === "pending") return "Not Received";
   return text;
 };
 
@@ -57,29 +59,11 @@ const isUsableDateTime = (raw) => {
   return true;
 };
 
-const deriveFileName = (rawName, rawUrl) => {
-  const name = String(rawName ?? "").trim();
-  if (name) return name;
-  const url = String(rawUrl ?? "").trim();
-  if (!url) return "";
-  if (/^https?:\/\//i.test(url)) {
-    try {
-      const seg = url.split("/").pop() || url;
-      return seg.includes("?") ? seg.split("?")[0] : seg;
-    } catch {
-      return url;
-    }
-  }
-  return url;
-};
-
-const buildAttachmentEntry = (rawName, rawUrl) => {
-  const name = deriveFileName(rawName, rawUrl);
-  const url = String(rawUrl ?? "").trim();
-  if (!name && !url) return null;
-  const entry = { name: name || "Document" };
-  if (url) entry.url = url;
-  return entry;
+const applyDateTimeFieldToForm = (raw, dateKey, timeKey, handleChange) => {
+  if (!isUsableDateTime(raw)) return;
+  const { date, time } = parseApiDateTimeParts(raw);
+  if (date) handleChange(dateKey)({ target: { value: date } });
+  if (time) handleChange(timeKey)({ target: { value: time } });
 };
 
 const REPORT_TYPE_ID_TO_TYPE = {
@@ -117,6 +101,11 @@ export function applyArrivalGetDetailToForm({
     handleChange("customInspectionStatus")({ target: { value: customsStatus } });
   }
 
+  const customsRemarks = String(root.customs_remarks ?? "").trim();
+  if (customsRemarks) {
+    handleChange("customsRemarks")({ target: { value: customsRemarks } });
+  }
+
   const immigrationStatus = normalizeImmigrationStatus(root.immigration_status);
   if (immigrationStatus) {
     handleChange("crewImmigrationStatus")({ target: { value: immigrationStatus } });
@@ -127,67 +116,19 @@ export function applyArrivalGetDetailToForm({
     handleChange("crewImmigrationHoldRemarks")({ target: { value: immigrationRemarks } });
   }
 
-  const inwardClearanceStatus = normalizeWorkflowStatus(root.inward_clearance_status);
+  const inwardClearanceStatus = normalizeInwardClearanceStatus(root.inward_clearance_status);
   if (inwardClearanceStatus) {
     handleChange("inwardClearanceStatus")({ target: { value: inwardClearanceStatus } });
   }
 
-  const mwpStatus = normalizeWorkflowStatus(root.mwp_status);
-  if (mwpStatus) {
-    handleChange("mwpStatus")({ target: { value: mwpStatus } });
-  }
-
-  const mwpTicketNo = String(root.mwp_ticket_no ?? "").trim();
-  if (mwpTicketNo) {
-    handleChange("mwpTicketNo")({ target: { value: mwpTicketNo } });
-  }
-
-  const sadadNo = String(root.sadad_no ?? root.sadadNo ?? "").trim();
-  if (sadadNo) {
-    handleChange("sadadNo")({ target: { value: sadadNo } });
-  }
-
-  const mwpExpiryRaw = root.mwp_expiry ?? root.mwpExpiry;
-  if (isUsableDateTime(mwpExpiryRaw)) {
-    const { date, time } = parseApiDateTimeParts(mwpExpiryRaw);
-    if (date) {
-      handleChange("marineWorkPermitExpiresDate")({ target: { value: date } });
-    }
-    if (time) {
-      handleChange("marineWorkPermitExpiresTime")({ target: { value: time } });
-    }
-  }
-
-  const inwardEntry = buildAttachmentEntry(root.inward_clearance_doc, root.inward_clearance_doc_url);
-  if (inwardEntry) {
-    handleChange("arrivalInwardClearanceDoc")({ target: { value: [inwardEntry] } });
-  }
-
-  const mwpEntry = buildAttachmentEntry(root.mwp_doc, root.mwp_doc_url);
-  if (mwpEntry) {
-    handleChange("arrivalMwpDoc")({ target: { value: [mwpEntry] } });
-  }
-
-  const sadadEntry = buildAttachmentEntry(root.sadad_doc, root.sadad_doc_url);
-  if (sadadEntry) {
-    handleChange("arrivalSadadDoc")({ target: { value: [sadadEntry] } });
-  }
-
-  const initialBayanEntry = buildAttachmentEntry(
-    root.initial_bayan_doc,
-    root.initial_bayan_doc_url ?? root.bayan_doc_url
+  applyDateTimeFieldToForm(
+    root.inward_clearance_received_timestamp,
+    "inwardClearanceReceivedDate",
+    "inwardClearanceReceivedTime",
+    handleChange
   );
-  if (initialBayanEntry) {
-    handleChange("arrivalInitialBayanDoc")({ target: { value: [initialBayanEntry] } });
-  }
-
-  const finalBayanEntry = buildAttachmentEntry(
-    root.final_bayan_doc,
-    root.final_bayan_doc_url ?? root.bayan_doc_url
-  );
-  if (finalBayanEntry) {
-    handleChange("arrivalFinalBayanDoc")({ target: { value: [finalBayanEntry] } });
-  }
+  applyDateTimeFieldToForm(root.mwp_applied, "mwpAppliedDate", "mwpAppliedTime", handleChange);
+  applyDateTimeFieldToForm(root.mwp_received, "mwpReceivedDate", "mwpReceivedTime", handleChange);
 
   const allFields = [
     ...(Array.isArray(arrivalEventFields) ? arrivalEventFields : []),
@@ -213,6 +154,8 @@ export function applyArrivalGetDetailToForm({
       }
       continue;
     }
+
+    if (toId == null && !fieldKey && !toName) continue;
 
     let keyPrefix = "";
     const matched = allFields.find((field) => {

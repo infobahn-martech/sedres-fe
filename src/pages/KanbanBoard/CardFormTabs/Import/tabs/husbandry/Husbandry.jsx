@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback } from "react";
 import PropTypes from "prop-types";
 import "../../../../../../design/scss/operations.scss";
 import "../../../../../../design/scss/table-common.scss";
@@ -34,78 +34,35 @@ import ThirdPartyServicesContent from "./components/ThirdPartyServicesContent";
 
 // Service Selection Component
 const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [] }) => {
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(true);
-  const scrollContainerRef = useRef(null);
-
-  const checkScrollButtons = useCallback(() => {
-    if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-      setShowLeftArrow(scrollLeft > 0);
-      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  }, []);
-
-  useEffect(() => {
-    checkScrollButtons();
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', checkScrollButtons);
-      window.addEventListener('resize', checkScrollButtons);
-      return () => {
-        container.removeEventListener('scroll', checkScrollButtons);
-        window.removeEventListener('resize', checkScrollButtons);
-      };
-    }
-  }, [checkScrollButtons]);
-
-  const scrollLeft = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
-    }
-  };
-
-  const scrollRight = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
-    }
-  };
-
   const services = [
     {
       id: MAIN_TABS.CREW_MANAGEMENT,
       label: "Crew Management",
-      icon: "clock",
+      icon: "crew",
       summary: "Crew transport, hotel, medical and launch hire support.",
-      metaInfo: "3 requests",
-      quickNote: "Fast booking",
+      footerBadges: ["Sign In: 0", "Sign Off: 0"],
       bookedSummary: "Coordinate crew movement, accommodation and welfare services.",
     },
     {
       id: MAIN_TABS.MATERIAL_MANAGEMENT,
       label: "Material Management",
-      icon: "document",
+      icon: "box",
       summary: "Inbound orders, landing note and dispatch note handling.",
-      metaInfo: "2 pending",
-      quickNote: "Auto updates",
+      footerBadges: ["Inbound: 0", "Dispatch: 0"],
       bookedSummary: "Track vessel material flow from intake to final dispatch.",
     },
     {
       id: MAIN_TABS.WASTE_DISPOSAL,
       label: "Waste Disposal",
-      icon: "document",
+      icon: "trash",
       summary: "Waste request initiation and disposal progress tracking.",
-      metaInfo: "4 tasks",
-      quickNote: "Compliant",
       bookedSummary: "Ensure regulated pickup and transparent disposal follow-up.",
     },
     {
       id: "LAUNCH_HIRE",
       label: "Launch Hire",
-      icon: "document",
+      icon: "boat",
       summary: "Launch booking, transfer coordination and movement support.",
-      metaInfo: "Priority lane",
-      quickNote: "24/7 support",
       bookedSummary: "Arrange transfer windows with optimized launch availability.",
     },
     {
@@ -113,17 +70,13 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [] }) =
       label: "MWP Renewal",
       icon: "renewal",
       summary: "Monitor MWP renewal requests and expected completion updates.",
-      metaInfo: "1 expiring",
-      quickNote: "Proactive alerts",
       bookedSummary: "Keep permits current with proactive renewal processing.",
     },
     {
       id: MAIN_TABS.THIRD_PARTY_SERVICES,
       label: "Third-Party Services",
-      icon: "document",
+      icon: "vendor",
       summary: "Raise and monitor external vendor service requests.",
-      metaInfo: "Vendor ready",
-      quickNote: "Unified view",
       bookedSummary: "Manage third-party support under a single service view.",
     },
   ];
@@ -151,11 +104,32 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [] }) =
 
   const getServiceIcon = (iconType) => {
     switch (iconType) {
-      case "clock":
+      case "crew":
         return (
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="2" fill="none" />
-            <path d="M24 12V24L30 30" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <circle cx="24" cy="16" r="7" stroke="currentColor" strokeWidth="2" fill="none" />
+            <path d="M10 40C10 32.268 16.268 26 24 26C31.732 26 38 32.268 38 40" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        );
+      case "box":
+        return (
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 16L24 8L40 16V34L24 42L8 34V16Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none" />
+            <path d="M24 8V42M8 16L24 24L40 16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+          </svg>
+        );
+      case "trash":
+        return (
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 14H34M18 14V12C18 10.8954 18.8954 10 20 10H28C29.1046 10 30 10.8954 30 12V14M20 22V34M28 22V34M16 14L18 38H30L32 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        );
+      case "boat":
+        return (
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 30H38L34 38H14L10 30Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none" />
+            <path d="M24 10V30M20 14L24 10L28 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M8 30C12 26 16 24 24 24C32 24 36 26 40 30" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         );
       case "renewal":
@@ -167,13 +141,16 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [] }) =
             <path d="M32 12C30 16 28 20 28 24C28 28 30 32 32 36M16 12C18 16 20 20 20 24C20 28 18 32 16 36" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         );
-      default:
+      case "vendor":
         return (
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="8" y="8" width="32" height="32" rx="4" stroke="currentColor" strokeWidth="2" fill="none" />
-            <path d="M16 20H32M16 24H32M16 28H24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <rect x="10" y="18" width="28" height="22" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
+            <path d="M16 18V14C16 11.7909 17.7909 10 20 10H28C30.2091 10 32 11.7909 32 14V18" stroke="currentColor" strokeWidth="2" />
+            <path d="M10 26H38M20 26V32M28 26V32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         );
+      default:
+        return null;
     }
   };
 
@@ -203,87 +180,62 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [] }) =
             <div key={card.label} className="husbandry-service-summary-card">
               <span className="husbandry-service-summary-label">{card.label}</span>
               <span className="husbandry-service-summary-value">{card.value}</span>
-              <span className="husbandry-service-summary-helper">{card.helper}</span>
+              {/* <span className="husbandry-service-summary-helper">{card.helper}</span> */}
             </div>
           ))}
         </div>
 
-        <div
-          className={`husbandry-service-scroll-wrapper${showLeftArrow ? " has-left-arrow" : ""}${showRightArrow ? " has-right-arrow" : ""}`}
-        >
-          <div className="husbandry-service-scroll-viewport" ref={scrollContainerRef}>
-            <div className="husbandry-service-options-row">
-            {services.map((service) => {
-              const bookedEntry = bookedServicesMap[service.id];
-              const isBooked = Boolean(bookedEntry);
-              const status = bookedEntry?.status || "Pending";
+        <div className="husbandry-service-options">
+          {services.map((service) => {
+            const bookedEntry = bookedServicesMap[service.id];
+            const isBooked = Boolean(bookedEntry);
+            const status = bookedEntry?.status || "Pending";
 
-              return (
-                <button
-                  key={service.id}
-                  type="button"
-                  className={`husbandry-service-option ${isBooked ? "booked" : ""}`}
-                  onClick={() => onSelectService(service.id)}
-                  style={{ "--card-color": cardColor }}
-                >
-                  {isBooked && (
-                    <span
-                      className={`husbandry-service-option-status ${getStatusBadgeClass(status)}`}
-                      aria-label={`${service.label} status: ${status}`}
-                    >
-                      {status}
-                    </span>
-                  )}
-                  <div className="husbandry-service-option-icon">
-                    {getServiceIcon(service.icon)}
+            return (
+              <button
+                key={service.id}
+                type="button"
+                className={`husbandry-service-option ${isBooked ? "booked" : ""}`}
+                onClick={() => onSelectService(service.id)}
+                style={{ "--card-color": cardColor }}
+              >
+                {isBooked && (
+                  <span
+                    className={`husbandry-service-option-status ${getStatusBadgeClass(status)}`}
+                    aria-label={`${service.label} status: ${status}`}
+                  >
+                    {status}
+                  </span>
+                )}
+                <div className="husbandry-service-option-icon">
+                  {getServiceIcon(service.icon)}
+                </div>
+                <div className="husbandry-service-option-content">
+                  <span className="husbandry-service-option-label">{service.label}</span>
+                  <p className="husbandry-service-option-summary">{service.summary}</p>
+                </div>
+                {isBooked && (
+                  <div className="husbandry-service-option-booking">
+                    {bookedEntry.subService && (
+                      <span className="husbandry-service-option-sub">{bookedEntry.subService}</span>
+                    )}
+                    <p className="husbandry-service-option-booking-summary">
+                      {service.bookedSummary}
+                    </p>
                   </div>
-                  <div className="husbandry-service-option-content">
-                    <span className="husbandry-service-option-label">{service.label}</span>
-                    <p className="husbandry-service-option-summary">{service.summary}</p>
-                  </div>
-                  {isBooked && (
-                    <div className="husbandry-service-option-booking">
-                      {bookedEntry.subService && (
-                        <span className="husbandry-service-option-sub">{bookedEntry.subService}</span>
-                      )}
-                      <p className="husbandry-service-option-booking-summary">
-                        {service.bookedSummary}
-                      </p>
-                    </div>
-                  )}
+                )}
+                {service.footerBadges?.length > 0 && (
                   <div className="husbandry-service-option-footer">
-                    <span className="husbandry-service-option-meta">{service.metaInfo}</span>
-                    <span className="husbandry-service-option-note">{service.quickNote}</span>
+                    {service.footerBadges.map((badge) => (
+                      <span key={badge} className="husbandry-service-option-meta">
+                        {badge}
+                      </span>
+                    ))}
                   </div>
-                </button>
-              );
-            })}
-            </div>
-          </div>
-          {showLeftArrow && (
-            <button
-              type="button"
-              className="husbandry-scroll-button husbandry-scroll-button-left"
-              onClick={scrollLeft}
-              aria-label="Scroll left"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          )}
-          {showRightArrow && (
-            <button
-              type="button"
-              className="husbandry-scroll-button husbandry-scroll-button-right"
-              onClick={scrollRight}
-              aria-label="Scroll right"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          )}
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

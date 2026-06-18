@@ -5,6 +5,7 @@ import { notify } from "../../../../../../components/Toaster";
 import { buildArrivalReportBody, buildArrivalDailyReportBody } from "../../services/sendReportBodyBuilder";
 import appointmentAcceptanceService from "../../../../../../services/appointmentAcceptanceService";
 import useArrivalReducer from "../../../../../../store/ArrivalReducer";
+import DateTimePickerField from "../../../shared/components/DateTimePickerField";
 import {
   AdditionalTimeObjectAddButton,
   AdditionalTimeObjectsFields,
@@ -12,12 +13,10 @@ import {
   buildAdditionalTimeObjectsPayload,
   DynamicDateTimeFields,
   FormField,
-  FormInput,
   FormSection,
   FormSelect,
   FormTextarea,
   OperationEmailPreviewPanel,
-  OperationFileUpload,
   OperationFormCard,
   OperationSaveSection,
   validateAdditionalTimeObjects,
@@ -30,13 +29,78 @@ import {
 } from "./arrivalDetailApply";
 import { isEventFieldRequired } from "./operationConstants";
 
+const ARRIVAL_CUSTOMS_FIELD_KEYS = new Set(["ATA", "CIC", "CIC_1"]);
+const ARRIVAL_IMMIGRATION_FIELD_KEYS = new Set(["CIC_2", "CIC_3"]);
+
+const FALLBACK_ARRIVAL_TIME_OBJECT_FIELDS = [
+  {
+    event_name: "Actual Time of Arrival",
+    keyPrefix: "actualArrival",
+    time_object_id: 11,
+    field_key: "ATA",
+    is_required: "0",
+    sort_order: 1,
+  },
+  {
+    event_name: "Custom Inspection Commenced",
+    keyPrefix: "customInspectionCommenced",
+    time_object_id: 9,
+    field_key: "CIC",
+    sort_order: 2,
+  },
+  {
+    event_name: "Custom Inspection Completed",
+    keyPrefix: "customInspectionCompleted",
+    time_object_id: 10,
+    field_key: "CIC_1",
+    sort_order: 3,
+  },
+  {
+    event_name: "Crew Immigration Commenced",
+    keyPrefix: "crewImmigrationCommenced",
+    time_object_id: 12,
+    field_key: "CIC_2",
+    sort_order: 4,
+  },
+  {
+    event_name: "Crew Immigration Completed",
+    keyPrefix: "crewImmigrationCompleted",
+    time_object_id: 20,
+    field_key: "CIC_3",
+    sort_order: 5,
+  },
+];
+
+const resolveArrivalTimeObjectFields = (apiFields = []) => {
+  const source =
+    Array.isArray(apiFields) && apiFields.length ? apiFields : FALLBACK_ARRIVAL_TIME_OBJECT_FIELDS;
+  return [...source].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+};
+
+const splitArrivalTimeObjectFields = (fields = []) => {
+  const hasFieldKeys = fields.some((field) => String(field?.field_key || "").trim());
+  if (hasFieldKeys) {
+    return {
+      customs: fields.filter((field) =>
+        ARRIVAL_CUSTOMS_FIELD_KEYS.has(String(field?.field_key || "").toUpperCase())
+      ),
+      immigration: fields.filter((field) =>
+        ARRIVAL_IMMIGRATION_FIELD_KEYS.has(String(field?.field_key || "").toUpperCase())
+      ),
+    };
+  }
+  return {
+    customs: fields.slice(0, 3),
+    immigration: fields.slice(3, 5),
+  };
+};
+
 function Arrival({
   formValues,
   handleChange,
   cardColor,
   isViewOnly = false,
   arrivalStageFields = [],
-  postArrivalStageFields = [],
   callId = "",
   portId = "",
   callTypeId = "",
@@ -99,12 +163,23 @@ function Arrival({
       })
       .filter(Boolean);
 
-  const normalizeAttachmentFile = (fileLike) => {
-    if (!fileLike) return null;
-    if (fileLike instanceof File || fileLike instanceof Blob) return fileLike;
-    if (fileLike?.file instanceof File || fileLike?.file instanceof Blob) return fileLike.file;
-    return null;
-  };
+  const renderDateTimeField = (label, keyPrefix, required = false) => (
+    <FormField
+      key={keyPrefix}
+      label={required ? `${label} *` : label}
+      className="cf-field-full"
+    >
+      <DateTimePickerField
+        dateValue={formValues[`${keyPrefix}Date`] || ""}
+        timeValue={formValues[`${keyPrefix}Time`] || ""}
+        onDateChange={handleChange(`${keyPrefix}Date`)}
+        onTimeChange={handleChange(`${keyPrefix}Time`)}
+        dateFieldName={`${keyPrefix}Date`}
+        timeFieldName={`${keyPrefix}Time`}
+        disabled={isViewOnly}
+      />
+    </FormField>
+  );
 
   const resolveCreatedBy = () => {
     if (typeof window === "undefined") return "";
@@ -131,26 +206,30 @@ function Arrival({
   const isSendingArrivalReport = useArrivalReducer((s) => s.isSendingArrivalReport);
   const emailPreviewFromDetailRef = useRef(false);
 
-  const workflowStatusOptions = [
-    { value: "Pending", label: "Pending" },
-    { value: "Completed", label: "Completed" },
+  const arrivalTimeObjectFields = useMemo(
+    () => resolveArrivalTimeObjectFields(arrivalStageFields),
+    [arrivalStageFields]
+  );
+  const { customs: arrivalCustomsTimeFields, immigration: arrivalImmigrationTimeFields } = useMemo(
+    () => splitArrivalTimeObjectFields(arrivalTimeObjectFields),
+    [arrivalTimeObjectFields]
+  );
+
+  const customInspectionStatusOptions = [
+    { value: "Passed", label: "Passed" },
     { value: "On Hold", label: "On Hold" },
     { value: "Failed", label: "Failed" },
   ];
-  const crewImmigrationStatusOptions = workflowStatusOptions;
-  const customInspectionStatusOptions = [
+  const crewImmigrationStatusOptions = [
+    { value: "Completed", label: "Completed" },
     { value: "Pending", label: "Pending" },
-    { value: "Passed", label: "Passed" },
-    { value: "Failed", label: "Failed" },
   ];
 
-  const postArrivalFieldsWithoutMwpExpiry = useMemo(
-    () =>
-      (Array.isArray(postArrivalStageFields) ? postArrivalStageFields : []).filter(
-        (field) => field?.keyPrefix !== "marineWorkPermitExpires"
-      ),
-    [postArrivalStageFields]
-  );
+  const showCustomInspectionRemarks =
+    formValues?.customInspectionStatus === "On Hold" ||
+    formValues?.customInspectionStatus === "Failed";
+  const showCrewImmigrationRemarks = formValues?.crewImmigrationStatus === "Pending";
+  const showInwardClearanceTimestamp = formValues?.inwardClearanceStatus === "Received";
 
   const validateArrivalBeforeSave = () => {
     const resolvedCallId = resolveFormId(callId, formValues?.call_id, formValues?.callId);
@@ -159,8 +238,7 @@ function Arrival({
       return false;
     }
 
-    const allFields = [...arrivalStageFields, ...postArrivalStageFields];
-    for (const field of allFields) {
+    for (const field of arrivalTimeObjectFields) {
       if (!isEventFieldRequired(field)) continue;
       const keyPrefix = field?.keyPrefix;
       if (!keyPrefix) continue;
@@ -172,18 +250,30 @@ function Arrival({
       }
     }
 
-    if (formValues?.customInspectionStatus === "Failed") {
-      const failReason = String(formValues?.customInspectionFailReason || "").trim();
-      if (!failReason) {
-        notify("Custom inspection remark is required when status is Failed.", "error");
+    if (showCustomInspectionRemarks) {
+      const remarks = String(formValues?.customsRemarks || "").trim();
+      if (!remarks) {
+        notify("Custom Inspection Remarks is required when status is On Hold or Failed.", "error");
         return false;
       }
     }
 
-    if (formValues?.crewImmigrationStatus === "On Hold") {
-      const holdRemarks = String(formValues?.crewImmigrationHoldRemarks || "").trim();
-      if (!holdRemarks) {
-        notify("Crew immigration remark is required when status is On Hold.", "error");
+    if (showCrewImmigrationRemarks) {
+      const remarks = String(formValues?.crewImmigrationHoldRemarks || "").trim();
+      if (!remarks) {
+        notify("Crew Immigration Remarks is required when status is Pending.", "error");
+        return false;
+      }
+    }
+
+    if (showInwardClearanceTimestamp) {
+      const date = String(formValues?.inwardClearanceReceivedDate || "").trim();
+      const time = String(formValues?.inwardClearanceReceivedTime || "").trim();
+      if (!date || !time) {
+        notify(
+          "Inward Clearance Received Timestamp is required when Inward Clearance is Received.",
+          "error"
+        );
         return false;
       }
     }
@@ -195,11 +285,6 @@ function Arrival({
     }
 
     return true;
-  };
-
-  const handleSingleArrivalFileAdd = (fieldKey) => (files) => {
-    const nextFile = files?.[0] || null;
-    handleChange(fieldKey)({ target: { value: nextFile ? [nextFile] : [] } });
   };
 
   const handleReportDraftChange = (field, value) => {
@@ -219,18 +304,11 @@ function Arrival({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const arrivalEventFieldsApplyKey = useMemo(
-    () =>
-      [
-        ...(Array.isArray(arrivalStageFields) ? arrivalStageFields : []),
-        ...(Array.isArray(postArrivalStageFields) ? postArrivalStageFields : []),
-      ]
-        .map((f) =>
-          [f?.keyPrefix, f?.event_type_id ?? f?.time_object_id ?? "", f?.event_name ?? ""].join(":")
-        )
-        .join("|"),
-    [arrivalStageFields, postArrivalStageFields]
-  );
+  const arrivalEventFieldsApplyKey = arrivalTimeObjectFields
+    .map((field) =>
+      [field.keyPrefix, field.time_object_id ?? field.event_type_id ?? "", field.field_key ?? ""].join(":")
+    )
+    .join("|");
 
   useEffect(() => {
     emailPreviewFromDetailRef.current = false;
@@ -249,8 +327,8 @@ function Arrival({
 
       applyArrivalGetDetailToForm({
         responseBody: detail,
-        arrivalEventFields: arrivalStageFields,
-        postArrivalEventFields: postArrivalStageFields,
+        arrivalEventFields: arrivalTimeObjectFields,
+        postArrivalEventFields: [],
         handleChange,
       });
 
@@ -289,7 +367,7 @@ function Arrival({
       const resolvedCallTypeId = resolveFormId(callTypeId, formValues?.call_type_id, formValues?.typeOfCall, formValues?.callTypeId);
       if (!resolvedCallId || !resolvedPortId || !resolvedCallTypeId) return;
 
-      const timeObjects = buildTimeObjectsPayload([...arrivalStageFields, ...postArrivalStageFields], formValues);
+      const timeObjects = buildTimeObjectsPayload(arrivalTimeObjectFields, formValues);
 
       try {
         const response = await appointmentAcceptanceService.getArrivalTemplateByPortCallType({
@@ -319,7 +397,7 @@ function Arrival({
     return () => {
       cancelled = true;
     };
-  }, [callId, portId, callTypeId, formValues, arrivalStageFields, postArrivalStageFields, reportDraft.reportType]);
+  }, [callId, portId, callTypeId, formValues, arrivalTimeObjectFields, reportDraft.reportType]);
 
   const handleReportTypeChange = (nextType) => {
     emailPreviewFromDetailRef.current = false;
@@ -335,32 +413,34 @@ function Arrival({
     if (!validateArrivalBeforeSave()) return false;
 
     const resolvedCallId = resolveFormId(callId, formValues?.call_id, formValues?.callId);
-    const allFields = [...arrivalStageFields, ...postArrivalStageFields];
     const saveTimeObjects = [
-      ...buildSaveTimeObjectsPayload(allFields, formValues),
+      ...buildSaveTimeObjectsPayload(arrivalTimeObjectFields, formValues),
       ...buildAdditionalTimeObjectsPayload(formValues.arrivalAdditionalTimeObjects),
     ];
-    const inwardDoc = normalizeAttachmentFile(formValues?.arrivalInwardClearanceDoc?.[0]);
-    const mwpDoc = normalizeAttachmentFile(formValues?.arrivalMwpDoc?.[0]);
-    const sadadDoc = normalizeAttachmentFile(formValues?.arrivalSadadDoc?.[0]);
-    const initialBayanDoc = normalizeAttachmentFile(formValues?.arrivalInitialBayanDoc?.[0]);
-    const finalBayanDoc = normalizeAttachmentFile(formValues?.arrivalFinalBayanDoc?.[0]);
 
     const fd = new FormData();
     fd.append("call_id", String(resolvedCallId));
     fd.append("time_objects", JSON.stringify(saveTimeObjects));
     fd.append("customs_status", String(formValues?.customInspectionStatus || ""));
+    fd.append("customs_remarks", String(formValues?.customsRemarks || ""));
     fd.append("immigration_status", String(formValues?.crewImmigrationStatus || ""));
     fd.append("immigration_remarks", String(formValues?.crewImmigrationHoldRemarks || ""));
     fd.append("inward_clearance_status", String(formValues?.inwardClearanceStatus || ""));
-    fd.append("mwp_ticket_no", String(formValues?.mwpTicketNo || ""));
-    fd.append("mwp_status", String(formValues?.mwpStatus || ""));
-    fd.append("sadad_no", String(formValues?.sadadNo || ""));
-    if (inwardDoc) fd.append("inward_clearance_doc", inwardDoc);
-    if (mwpDoc) fd.append("mwp_doc", mwpDoc);
-    if (sadadDoc) fd.append("sadad_doc", sadadDoc);
-    if (initialBayanDoc) fd.append("initial_bayan_doc", initialBayanDoc);
-    if (finalBayanDoc) fd.append("final_bayan_doc", finalBayanDoc);
+    fd.append(
+      "inward_clearance_received_timestamp",
+      toDateTimeValue(
+        formValues?.inwardClearanceReceivedDate,
+        formValues?.inwardClearanceReceivedTime
+      )
+    );
+    fd.append(
+      "mwp_applied",
+      toDateTimeValue(formValues?.mwpAppliedDate, formValues?.mwpAppliedTime)
+    );
+    fd.append(
+      "mwp_received",
+      toDateTimeValue(formValues?.mwpReceivedDate, formValues?.mwpReceivedTime)
+    );
 
     const createdBy = resolveCreatedBy();
     if (createdBy) {
@@ -455,14 +535,6 @@ function Arrival({
     await saveArrivalData();
   };
 
-  const arrivalPreviewAttachments = [
-    ...(formValues.arrivalInwardClearanceDoc || []),
-    ...(formValues.arrivalMwpDoc || []),
-    ...(formValues.arrivalSadadDoc || []),
-    ...(formValues.arrivalInitialBayanDoc || []),
-    ...(formValues.arrivalFinalBayanDoc || []),
-  ];
-
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
       <div className="operation-content-header">
@@ -488,153 +560,105 @@ function Arrival({
                   ) : null
                 }
               >
-                <OperationFormCard>
-                  <DynamicDateTimeFields
-                    eventFields={arrivalStageFields}
-                    formValues={formValues}
-                    handleChange={handleChange}
-                    isViewOnly={isViewOnly}
-                  />
+                <DynamicDateTimeFields
+                  eventFields={arrivalCustomsTimeFields}
+                  formValues={formValues}
+                  handleChange={handleChange}
+                  isViewOnly={isViewOnly}
+                />
 
-                  <FormField label="Custom Inspection Status">
-                    <FormSelect
-                      value={formValues.customInspectionStatus || ""}
-                      onChange={handleChange("customInspectionStatus")}
-                      options={customInspectionStatusOptions}
-                      placeholder="Select status..."
+                <FormField label="Custom Inspection Status">
+                  <FormSelect
+                    value={formValues.customInspectionStatus || ""}
+                    onChange={handleChange("customInspectionStatus")}
+                    options={customInspectionStatusOptions}
+                    placeholder="Select status..."
+                    disabled={isViewOnly}
+                  />
+                </FormField>
+
+                {showCustomInspectionRemarks && (
+                  <FormField label="Custom Inspection Remarks *" className="cf-field-full">
+                    <FormTextarea
+                      value={formValues.customsRemarks || ""}
+                      onChange={handleChange("customsRemarks")}
+                      placeholder="Specify remarks..."
+                      rows={3}
                       disabled={isViewOnly}
                     />
                   </FormField>
+                )}
 
-                  {formValues.customInspectionStatus === "Failed" && (
-                    <FormField label="Custom Inspection Remark *" className="cf-field-full">
-                      <FormTextarea
-                        value={formValues.customInspectionFailReason || ""}
-                        onChange={handleChange("customInspectionFailReason")}
-                        placeholder="Specify remark..."
-                        rows={3}
+                <DynamicDateTimeFields
+                  eventFields={arrivalImmigrationTimeFields}
+                  formValues={formValues}
+                  handleChange={handleChange}
+                  isViewOnly={isViewOnly}
+                />
+
+                <FormField label="Crew Immigration Status">
+                  <FormSelect
+                    value={formValues.crewImmigrationStatus || ""}
+                    onChange={handleChange("crewImmigrationStatus")}
+                    options={crewImmigrationStatusOptions}
+                    placeholder="Select status..."
+                    disabled={isViewOnly}
+                  />
+                </FormField>
+
+                {showCrewImmigrationRemarks && (
+                  <FormField label="Crew Immigration Remarks *" className="cf-field-full">
+                    <FormTextarea
+                      value={formValues.crewImmigrationHoldRemarks || ""}
+                      onChange={handleChange("crewImmigrationHoldRemarks")}
+                      placeholder="Specify remarks..."
+                      rows={3}
+                      disabled={isViewOnly}
+                    />
+                  </FormField>
+                )}
+
+                <FormField label="Inward Clearance">
+                  <div className="operation-inline-radio-row">
+                    <label className="operation-inline-radio">
+                      <input
+                        type="radio"
+                        name="inwardClearanceStatus"
+                        value="Received"
+                        checked={formValues.inwardClearanceStatus === "Received"}
+                        onChange={handleChange("inwardClearanceStatus")}
                         disabled={isViewOnly}
                       />
-                    </FormField>
-                  )}
-
-                  <FormField label="Crew Immigration Status">
-                    <FormSelect
-                      value={formValues.crewImmigrationStatus || ""}
-                      onChange={handleChange("crewImmigrationStatus")}
-                      options={crewImmigrationStatusOptions}
-                      placeholder="Select status..."
-                      disabled={isViewOnly}
-                    />
-                  </FormField>
-
-                  {formValues.crewImmigrationStatus === "On Hold" && (
-                    <FormField label="Crew Immigration Remark *" className="cf-field-full">
-                      <FormTextarea
-                        value={formValues.crewImmigrationHoldRemarks || ""}
-                        onChange={handleChange("crewImmigrationHoldRemarks")}
-                        placeholder="Specify remark..."
-                        rows={3}
+                      <span>Received</span>
+                    </label>
+                    <label className="operation-inline-radio">
+                      <input
+                        type="radio"
+                        name="inwardClearanceStatus"
+                        value="Not Received"
+                        checked={formValues.inwardClearanceStatus === "Not Received"}
+                        onChange={handleChange("inwardClearanceStatus")}
                         disabled={isViewOnly}
                       />
-                    </FormField>
-                  )}
-
-                  <FormField label="Inward Clearance Status">
-                    <FormSelect
-                      value={formValues.inwardClearanceStatus || ""}
-                      onChange={handleChange("inwardClearanceStatus")}
-                      options={workflowStatusOptions}
-                      placeholder="Select status..."
-                      disabled={isViewOnly}
-                    />
-                  </FormField>
-
-                  <FormField label="MWP Ticket No">
-                    <FormInput
-                      value={formValues.mwpTicketNo || ""}
-                      onChange={handleChange("mwpTicketNo")}
-                      placeholder="Enter MWP ticket number"
-                      disabled={isViewOnly}
-                    />
-                  </FormField>
-
-                  <FormField label="MWP Status">
-                    <FormSelect
-                      value={formValues.mwpStatus || ""}
-                      onChange={handleChange("mwpStatus")}
-                      options={workflowStatusOptions}
-                      placeholder="Select status..."
-                      disabled={isViewOnly}
-                    />
-                  </FormField>
-
-                  <FormField label="SADAD No">
-                    <FormInput
-                      value={formValues.sadadNo || ""}
-                      onChange={handleChange("sadadNo")}
-                      placeholder="Enter SADAD no"
-                      disabled={isViewOnly}
-                    />
-                  </FormField>
-
-                  <DynamicDateTimeFields
-                    eventFields={postArrivalFieldsWithoutMwpExpiry}
-                    formValues={formValues}
-                    handleChange={handleChange}
-                    isViewOnly={isViewOnly}
-                  />
-
-                  <AdditionalTimeObjectsFields
-                    value={formValues.arrivalAdditionalTimeObjects || []}
-                    onChange={(next) =>
-                      handleChange("arrivalAdditionalTimeObjects")({ target: { value: next } })
-                    }
-                    isViewOnly={isViewOnly}
-                    hideAddButton
-                  />
-                </OperationFormCard>
-
-                <FormField label="Inward Clearance Document">
-                  <OperationFileUpload
-                    files={formValues.arrivalInwardClearanceDoc || []}
-                    onAddFiles={handleSingleArrivalFileAdd("arrivalInwardClearanceDoc")}
-                    isViewOnly={isViewOnly}
-                    ariaLabel="Upload inward clearance document"
-                  />
+                      <span>Not Received</span>
+                    </label>
+                  </div>
                 </FormField>
-                <FormField label="MWP Document">
-                  <OperationFileUpload
-                    files={formValues.arrivalMwpDoc || []}
-                    onAddFiles={handleSingleArrivalFileAdd("arrivalMwpDoc")}
-                    isViewOnly={isViewOnly}
-                    ariaLabel="Upload MWP document"
-                  />
-                </FormField>
-                <FormField label="SADAD Document">
-                  <OperationFileUpload
-                    files={formValues.arrivalSadadDoc || []}
-                    onAddFiles={handleSingleArrivalFileAdd("arrivalSadadDoc")}
-                    isViewOnly={isViewOnly}
-                    ariaLabel="Upload SADAD document"
-                  />
-                </FormField>
-                <FormField label="Initial Bayan Document">
-                  <OperationFileUpload
-                    files={formValues.arrivalInitialBayanDoc || []}
-                    onAddFiles={handleSingleArrivalFileAdd("arrivalInitialBayanDoc")}
-                    isViewOnly={isViewOnly}
-                    ariaLabel="Upload initial bayan document"
-                  />
-                </FormField>
-                <FormField label="Final Bayan Document">
-                  <OperationFileUpload
-                    files={formValues.arrivalFinalBayanDoc || []}
-                    onAddFiles={handleSingleArrivalFileAdd("arrivalFinalBayanDoc")}
-                    isViewOnly={isViewOnly}
-                    ariaLabel="Upload final bayan document"
-                  />
-                </FormField>
+
+                {showInwardClearanceTimestamp &&
+                  renderDateTimeField("Inward Clearance Received Timestamp", "inwardClearanceReceived", true)}
+
+                {renderDateTimeField("MWP Applied", "mwpApplied")}
+                {renderDateTimeField("MWP Received", "mwpReceived")}
+
+                <AdditionalTimeObjectsFields
+                  value={formValues.arrivalAdditionalTimeObjects || []}
+                  onChange={(next) =>
+                    handleChange("arrivalAdditionalTimeObjects")({ target: { value: next } })
+                  }
+                  isViewOnly={isViewOnly}
+                  hideAddButton
+                />
               </OperationFormCard>
               <OperationFormCard className="operation-email-column">
                 <OperationEmailPreviewPanel
@@ -648,7 +672,7 @@ function Arrival({
                   cc={reportDraft.cc}
                   subject={reportDraft.subject}
                   message={reportDraft.message}
-                  attachments={arrivalPreviewAttachments}
+                  attachments={[]}
                   onChange={handleReportDraftChange}
                   onReportTypeChange={handleReportTypeChange}
                   onSend={handleSaveAndSendReport}
@@ -673,7 +697,6 @@ Arrival.propTypes = {
   onRemoveLink: PropTypes.func,
   isViewOnly: PropTypes.bool,
   arrivalStageFields: PropTypes.array,
-  postArrivalStageFields: PropTypes.array,
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   portId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   callTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),

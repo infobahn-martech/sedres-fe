@@ -240,14 +240,14 @@ FileExplorer.propTypes = {
   ).isRequired,
   files: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.number.isRequired,
+      id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
       type: PropTypes.string.isRequired,
       name: PropTypes.string.isRequired,
       size: PropTypes.string.isRequired,
       date: PropTypes.string.isRequired,
     })
   ).isRequired,
-  selectedDocumentId: PropTypes.number,
+  selectedDocumentId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   searchQuery: PropTypes.string.isRequired,
   sortBy: PropTypes.string.isRequired,
   viewMode: PropTypes.oneOf(["list", "grid"]).isRequired,

@@ -107,7 +107,9 @@ export const mapEventFields = (responseData) => {
     .map((field, index) => ({
       ...field,
       event_name: field?.event_name ?? field?.time_object ?? "",
+      time_object_id: field?.time_object_id ?? field?.event_type_id,
       event_type_id: field?.event_type_id ?? field?.time_object_id,
+      field_key: field?.field_key ?? "",
       keyPrefix: getEventFieldKeyPrefix(field?.event_name ?? field?.time_object ?? ""),
       is_required: isEventFieldRequired(field),
       sort_order: Number(field?.sort_order ?? index + 1),

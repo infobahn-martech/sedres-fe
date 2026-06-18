@@ -3007,6 +3007,34 @@ $send-report-optional: #80868b;
     align-items: stretch;
   }
 
+  .operation-inline-radio-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    margin-top: 2px;
+  }
+
+  .operation-inline-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #1f2937;
+
+    input {
+      cursor: pointer;
+    }
+  }
+
+  .cf-field-full .cf-datetime-picker,
+  .cf-field-full .cf-input.date-time-row.cf-datetime-picker,
+  .operation-form-column .cf-field .cf-datetime-picker,
+  .operation-form-column .cf-field .cf-input.date-time-row.cf-datetime-picker {
+    width: 100%;
+  }
+
   .react-quill-wrapper.arrival-quill-editor {
     flex: 1;
     min-height: 0;
@@ -8442,7 +8470,7 @@ body .modal-backdrop.show {
 .kpi-analytics-title-bar {
   width: 4px;
   height: 18px;
-  background: var(--card-color, #2A00FF);
+  background: #2A00FF;
   border-radius: 2px;
   display: inline-block;
 }
@@ -8552,14 +8580,14 @@ body .modal-backdrop.show {
 }
 
 .kpi-table-container .table.kpi-table thead {
-  background: var(--card-color, #e2e6ff);
+  background: #e2e6ff;
   position: sticky;
   top: 0;
   z-index: 10;
 }
 
 .kpi-table-container .table.kpi-table thead th {
-  background: var(--card-color, #e2e6ff) !important;
+  background: #e2e6ff !important;
   color: #3e3633;
   font-weight: 600;
   font-size: 12px;
