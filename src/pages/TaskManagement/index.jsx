@@ -15,12 +15,13 @@ const TaskManagement = () => {
         sortOrder: 1,
     });
 
-    const { getTaskManagement, taskManagement, isLoadingGet, totalCount } = useTaskManagementReducer(
+    const { getTaskManagement, deleteTaskManagement, taskManagement, isLoadingGet, isLoadingDelete, totalCount } = useTaskManagementReducer(
         (state) => state
     );
 
     const [showTaskManagementModal, setShowTaskManagementModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectedTaskManagement, setSelectedTaskManagement] = useState(null);
 
     useEffect(() => {
         getTaskManagement?.();
@@ -58,7 +59,7 @@ const TaskManagement = () => {
             contentClass: 'table-content',
             thclass: 'tb-head',
             onEditClick: (row) => { setShowTaskManagementModal(row) },
-            onDeleteClick: () => { setShowDeleteModal(true) },
+            onDeleteClick: (row) => { setSelectedTaskManagement(row); setShowDeleteModal(true); },
             cell: RenderAction,
             width: '200',
         },
@@ -116,10 +117,20 @@ const TaskManagement = () => {
                     {!!showDeleteModal && (
                         <DeleteConfirmationModal
                             show={showDeleteModal}
-                            onCancel={() => setShowDeleteModal(false)}
-                            onConfirm={() => setShowDeleteModal(false)}
-                            deleteText="Delete API is not integrated for tasks yet."
-                        // isLoading={isBeingUpdated}
+                            onCancel={() => { setShowDeleteModal(false); setSelectedTaskManagement(null); }}
+                            onConfirm={() => {
+                                const taskId = selectedTaskManagement?.task_id ?? selectedTaskManagement?._id;
+                                deleteTaskManagement({
+                                    taskId,
+                                    cb: () => {
+                                        setShowDeleteModal(false);
+                                        setSelectedTaskManagement(null);
+                                        getTaskManagement?.();
+                                    },
+                                });
+                            }}
+                            deleteText="Are you sure you want to delete this task?"
+                            isLoading={isLoadingDelete}
                         />
                     )}
                 </div>

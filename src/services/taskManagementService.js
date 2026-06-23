@@ -14,9 +14,13 @@ const updateTaskList = (taskId, payload) =>
     payload
   );
 
+const deleteTaskList = (taskId) =>
+  Gateway.delete(`/task_list/delete_task_list/${encodeURIComponent(String(taskId))}`);
+
 export default {
   createTaskList,
   getAllTaskLists,
   getTaskListById,
   updateTaskList,
+  deleteTaskList,
 };
