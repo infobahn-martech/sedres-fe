@@ -12,7 +12,7 @@ const isOperatorBoardId = (id) => String(id ?? "").toLowerCase() === "operator";
 
 export default function useKanbanBoardState(selectedBoardId) {
   const [workflows, setWorkflows] = useState(() =>
-    isOperatorBoardId(selectedBoardId) ? operatorKanbanStaticWorkflows : initialData
+    isOperatorBoardId(selectedBoardId) ? operatorKanbanStaticWorkflows : [TASK_WORKFLOW_TEMPLATE]
   );
   const [boardLoading, setBoardLoading] = useState(false);
   const [boardLoadError, setBoardLoadError] = useState(null);
@@ -54,7 +54,7 @@ export default function useKanbanBoardState(selectedBoardId) {
       if (typeof console !== "undefined" && console.error) {
         console.error("[KanbanBoard] getFullBoard failed:", msg);
       }
-      setWorkflows([]);
+      setWorkflows([TASK_WORKFLOW_TEMPLATE]);
       setBoardLoadError("Could not load board data.");
     } finally {
       setBoardLoading(false);
@@ -100,7 +100,7 @@ export default function useKanbanBoardState(selectedBoardId) {
           if (typeof console !== "undefined" && console.error) {
             console.error("[KanbanBoard] getFullBoard failed:", msg);
           }
-          setWorkflows([]);
+          setWorkflows([TASK_WORKFLOW_TEMPLATE]);
           setBoardLoadError("Could not load board data.");
         }
       } finally {

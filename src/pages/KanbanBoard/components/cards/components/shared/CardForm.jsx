@@ -31,6 +31,7 @@ import NavTabButton from "../../../../../../components/NavTabButton";
 import GROCardView from "../GRO/User/GROCardView";
 import CustomCardView from "../Custom/User/CustomCardView";
 import MWPCardView from "../MWP/User/MWPCardView";
+import TaxiBoatCardView from "../TaxiBoat/TaxiBoatCardView";
 import DynamicIcon from "../../../../../../structure/SideNav/components/DynamicIcon";
 import { mapBackendIconNameToIconKey } from "../../../../../../store/KanbanManagementReducer";
 import { TaskCardDetailView } from "../../../../../../pages/TaskCard";
@@ -1579,6 +1580,7 @@ function CardForm({
   const isMWPVariant = effectiveVariant === "mwp";
   const isGROVariant = effectiveVariant === "gro";
   const isCustomVariant = effectiveVariant === "custom";
+  const isTaxiBoatVariant = effectiveVariant === "taxi-boat";
   const isGROStyleView = isGROVariant || isCustomVariant;
   const isDriverStyleView = isDriverVariant || isHotelVariant;
   const isSubTaskCard = card?.isSubTask === true;
@@ -2297,6 +2299,8 @@ function CardForm({
         />
         {isSubTaskCard ? (
           <TaskCardDetailView card={card} onClose={handleClose} />
+        ) : isTaxiBoatVariant ? (
+          <TaxiBoatCardView card={card} />
         ) : isDriverStyleView ? (
           <DriverCardView card={card} variant={effectiveVariant} />
         ) : isMWPVariant ? (
@@ -2384,7 +2388,7 @@ CardForm.propTypes = {
     cardIds: PropTypes.array,
   }),
   isAddMode: PropTypes.bool,
-  variant: PropTypes.oneOf(["default", "driver", "hotel", "mwp", "gro", "custom"]),
+  variant: PropTypes.oneOf(["default", "driver", "hotel", "mwp", "gro", "custom", "taxi-boat"]),
   boardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onBoardRefresh: PropTypes.func,
   patchCardColor: PropTypes.func,

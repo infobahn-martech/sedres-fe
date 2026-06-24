@@ -1,0 +1,337 @@
+.tb-card-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 32px;
+  overflow-y: auto;
+  gap: 20px;
+  background: #f8fafc;
+}
+
+/* ---- Summary info grid ---- */
+.tb-info-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 1100px) {
+  .tb-info-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 700px) {
+  .tb-info-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.tb-info-card {
+  background: #ffffff;
+  border: 1px solid #e8edf3;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05);
+}
+
+.tb-info-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+/* ---- Service badge ---- */
+.tb-service-badge-row {
+  display: flex;
+  align-items: center;
+}
+
+.tb-service-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #dbeafe;
+  color: #1d4ed8;
+  letter-spacing: 0.02em;
+  border: 1px solid #bfdbfe;
+}
+
+/* ---- Timestamp section ---- */
+.tb-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tb-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* ---- Drop/Pickup tabs ---- */
+.tb-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tb-tab {
+  padding: 7px 22px;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(.tb-tab--active) {
+    border-color: #94a3b8;
+    background: #f8fafc;
+  }
+
+  &.tb-tab--active {
+    border-color: #1d4ed8;
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+}
+
+/* ---- Timestamp card grid (Husbandry style) ---- */
+.tb-ts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 700px) {
+  .tb-ts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tb-ts-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  outline: none;
+
+  &:hover:not(.tb-ts-card--done) {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.14);
+  }
+
+  &:focus-visible:not(.tb-ts-card--done) {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+
+  &.tb-ts-card--done {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    cursor: default;
+  }
+}
+
+.tb-ts-card-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+  flex-shrink: 0;
+
+  .tb-ts-card--done & {
+    background: #dcfce7;
+    color: #16a34a;
+  }
+}
+
+.tb-ts-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.tb-ts-card-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #64748b;
+  width: fit-content;
+  white-space: nowrap;
+
+  &.tb-ts-card-pill--captured {
+    background: #dcfce7;
+    color: #15803d;
+    white-space: normal;
+    font-size: 10.5px;
+  }
+}
+
+/* ---- Progress hint chips ---- */
+.tb-section-progress-hint {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.tb-progress-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+
+  &.tb-progress-chip--done {
+    background: #dcfce7;
+    color: #15803d;
+    border-color: #bbf7d0;
+  }
+}
+
+/* ---- Job Completed ---- */
+.tb-job-complete-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.tb-ts-checkbox {
+  width: 17px;
+  height: 17px;
+  accent-color: #16a34a;
+  flex-shrink: 0;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.8;
+  }
+}
+
+.tb-job-complete-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  cursor: pointer;
+  user-select: none;
+
+  &.tb-job-complete-label--disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.tb-job-complete-hint {
+  font-size: 12px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* ---- Launch Slip upload section ---- */
+.tb-launch-slip-section {
+  padding: 18px 20px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+}
+
+.tb-launch-slip-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #92400e;
+  margin: 0 0 6px 0;
+}
+
+.tb-launch-slip-hint {
+  font-size: 12px;
+  color: #b45309;
+  margin: 0 0 12px 0;
+}
+
+.tb-launch-slip-upload {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tb-launch-slip-input {
+  display: none;
+}
+
+.tb-launch-slip-btn {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 2px solid #f59e0b;
+  background: #ffffff;
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #fef3c7;
+  }
+}
+
+.tb-launch-slip-filename {
+  font-size: 12px;
+  color: #92400e;
+  font-weight: 500;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

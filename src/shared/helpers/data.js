@@ -344,9 +344,31 @@ export const TASK_WORKFLOW_TEMPLATE = {
   },
   swimlaneOrder: ["default"],
   swimlanes: {
-    default: { id: "default", title: "Default", color: "#ffffff", cardMap: { "col-todo": [], "col-progress": [], "col-done": [] } },
+    default: { id: "default", title: "Default", color: "#ffffff", cardMap: { "col-todo": ["tb-demo-card-1"], "col-progress": [], "col-done": [] } },
   },
-  cards: {},
+  cards: {
+    "tb-demo-card-1": {
+      id: "tb-demo-card-1",
+      laneId: "default",
+      columnId: "col-todo",
+      workflow_id: "wf-demo",
+      workflow_role_id: null,
+      cardVariant: "taxi-boat",
+      cardSource: "static",
+      title: "TB – Crew Change",
+      vesselName: "MV Atlantic Star",
+      name: "Gulf Marine",
+      user: "James Okonkwo",
+      requestedOperator: "Ali Hassan",
+      typeOfService: "Crew Change",
+      location: "Freighter Anchorage",
+      bookingDate: "23 Jun 2026",
+      batchCount: 2,
+      timeLeft: "4h 30m",
+      progress: 0,
+      color: "rgb(62 94 189)",
+    },
+  },
 };
 
 /** Ensures the Task Workflow is always present in the workflows array. */

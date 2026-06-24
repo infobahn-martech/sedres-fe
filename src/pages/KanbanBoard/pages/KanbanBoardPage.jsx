@@ -280,7 +280,7 @@ export default function KanbanBoardPage() {
           columnOrder={columnOrderForCardForm}
           currentColumn={isAddMode ? null : findCardColumn(selectedCard.id)}
           isAddMode={isAddMode}
-          variant={resolveCardFormVariant(selectedCard?.workflow_role_id, userRoleId)}
+          variant={selectedCard?.cardVariant ?? resolveCardFormVariant(selectedCard?.workflow_role_id, userRoleId)}
           boardId={selectedBoardId}
           onBoardRefresh={isOperatorBoard ? undefined : refetchBoard}
           patchCardColor={patchCardColor}

@@ -646,7 +646,7 @@ export default function TBCBoard() {
           columnOrder={columnOrderForCardForm}
           currentColumn={isAddMode ? null : findCardColumn(selectedCard.id)}
           isAddMode={isAddMode}
-          variant="driver"
+          variant="taxi-boat"
         />
       )}
 

@@ -100,11 +100,40 @@ const generateCard = (workflowId, colId, cardId) => {
         "Yuki Tanaka", "Luis Fernandez", "Anna Kowalski", "Hassan Ibrahim",
     ];
 
+    const serviceTypes = [
+        "Crew Change",
+        "Technician Visit",
+        "Port Captain & Port Engineer Visit",
+        "Aramco Personnel",
+        "Immigration Clearance",
+        "Material Delivery",
+        "Provision Delivery",
+        "Garbage Collection",
+        "Custom Inspection",
+        "Tanker Clearance",
+    ];
+
+    const locations = ["Freighter Anchorage", "RT7", "Sea Island", "Juaymah"];
+
+    const operators = [
+        "Ali Hassan", "Faisal Al-Otaibi", "Khalid Mansour", "Tariq Nasser",
+        "Samir Al-Zahrani", "Rayan Bakr", "Yousef Qureshi", "Nabil Farooq",
+    ];
+
     // Footer status icons: random subset per card (1–5 icons, including link)
     const footerIconKeys = ["priority", "subtasks", "deadline", "watchers", "link"];
-    const footerIconCount = Math.floor(Math.random() * 5) + 1; // 1, 2, 3, 4, or 5
+    const footerIconCount = Math.floor(Math.random() * 5) + 1;
     const shuffledKeys = [...footerIconKeys].sort(() => Math.random() - 0.5);
     const footerShowIcons = shuffledKeys.slice(0, footerIconCount);
+
+    const selectedServiceType = serviceTypes[Math.floor(Math.random() * serviceTypes.length)];
+    const isImmigration = selectedServiceType === "Immigration Clearance";
+
+    const bookingDateObj = new Date();
+    bookingDateObj.setDate(bookingDateObj.getDate() - Math.floor(Math.random() * 30));
+    const bookingDate = bookingDateObj.toLocaleDateString("en-GB", {
+        day: "2-digit", month: "short", year: "numeric",
+    });
 
     const cardData = {
         id,
@@ -130,6 +159,11 @@ const generateCard = (workflowId, colId, cardId) => {
         footerShowIcons: footerShowIcons,
         typeOfCall: callTypes[Math.floor(Math.random() * callTypes.length)],
         vesselType: vesselTypes[Math.floor(Math.random() * vesselTypes.length)],
+        typeOfService: selectedServiceType,
+        location: locations[Math.floor(Math.random() * locations.length)],
+        requestedOperator: operators[Math.floor(Math.random() * operators.length)],
+        bookingDate,
+        batchCount: isImmigration ? (Math.random() > 0.5 ? 3 : 2) : 2,
         crew: (() => {
             const n = Math.floor(Math.random() * 7) + 6; // 6–12 crew per card
             const statuses = ["done", "pending"];
