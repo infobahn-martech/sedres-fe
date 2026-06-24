@@ -367,6 +367,12 @@ export const TASK_WORKFLOW_TEMPLATE = {
       timeLeft: "4h 30m",
       progress: 0,
       color: "rgb(62 94 189)",
+      crew: [
+        { id: "c1", crewName: "Ahmed Al-Rashid", rank: "Chief Officer", nationality: "Saudi",    passportNo: "P1234567", seamanBookNo: "SB-10021" },
+        { id: "c2", crewName: "Vikram Singh",     rank: "2nd Engineer",  nationality: "Indian",   passportNo: "P2345678", seamanBookNo: "SB-10022" },
+        { id: "c3", crewName: "Juan Dela Cruz",   rank: "AB Seaman",     nationality: "Filipino", passportNo: "P3456789", seamanBookNo: "SB-10023" },
+        { id: "c4", crewName: "Omar Hassan",      rank: "Cook",          nationality: "Egyptian", passportNo: "P4567890", seamanBookNo: "SB-10024" },
+      ],
     },
   },
 };
@@ -409,6 +415,13 @@ export const TAXI_BOARD_WORKFLOW_TEMPLATE = {
       user: "John Smith", requestedOperator: "Ali Hassan", typeOfService: "Crew Change",
       location: "Freighter Anchorage", bookingDate: "10 Jan 2025", batchCount: 2,
       timeLeft: "3d 2h", progress: 0, color: "#2666be",
+      crew: [
+        { id: "c1", crewName: "Ahmed Al-Rashid", rank: "Chief Officer", nationality: "Saudi",    passportNo: "P1234567", seamanBookNo: "SB-10021" },
+        { id: "c2", crewName: "Vikram Singh",     rank: "2nd Engineer",  nationality: "Indian",   passportNo: "P2345678", seamanBookNo: "SB-10022" },
+        { id: "c3", crewName: "Juan Dela Cruz",   rank: "AB Seaman",     nationality: "Filipino", passportNo: "P3456789", seamanBookNo: "SB-10023" },
+        { id: "c4", crewName: "Omar Hassan",      rank: "Cook",          nationality: "Egyptian", passportNo: "P4567890", seamanBookNo: "SB-10024" },
+        { id: "c5", crewName: "Carlos Mendez",    rank: "Bosun",         nationality: "Mexican",  passportNo: "P5678901", seamanBookNo: "SB-10025" },
+      ],
     },
     "tbwf-card-2": {
       id: "tbwf-card-2", laneId: "default", columnId: "tb-col-1",

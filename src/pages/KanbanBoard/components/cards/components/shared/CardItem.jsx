@@ -573,8 +573,13 @@ function CardItem({
                     style={{ cursor: "pointer" }}
                     onClick={() => setSelectedCard(card)}
                   >
-                    {card.vesselName || card.cardName || card.title}
+                    {card.cardVariant === "taxi-boat" && card.typeOfService
+                      ? card.typeOfService
+                      : (card.vesselName || card.cardName || card.title)}
                   </h3>
+                  {card.cardVariant === "taxi-boat" && card.vesselName && (
+                    <div className="card-tb-vessel">{card.vesselName}</div>
+                  )}
                   {isClassicLayout && (
                     <div className="card-mini-tags">
                       {card.port && (

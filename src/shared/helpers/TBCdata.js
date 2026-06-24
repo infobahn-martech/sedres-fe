@@ -36,22 +36,20 @@ const workflowsConfig = [
         id: "taxi-boat-captain-workflow",
         title: "Taxi Boat Captain Board",
         columnColors: {
-            "col-1": "rgb(226 16 108)", // ToDo - Pink
+            "col-1": "rgb(226 16 108)", // To Do - Pink
             "col-2": "rgb(121 21 188)", // In Progress - Purple
-            "col-3": "rgb(62 94 189)", // Done - Blue
+            "col-3": "rgb(62 94 189)",  // Completed - Blue
         },
         columnTitles: [
-            "Backlog",
-            "ToDo",
+            "To Do",
             "In Progress",
-            "Done",
+            "Completed",
         ],
         nestedColumns: {},
         cardCounts: {
-            "col-1": 0, // Backlog
-            "col-2": 7, // ToDo
-            "col-3": 3, // In Progress
-            "col-4": 1, // Done
+            "col-1": 7, // To Do
+            "col-2": 3, // In Progress
+            "col-3": 1, // Completed
         },
     },
 ];

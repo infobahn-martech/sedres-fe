@@ -97,6 +97,9 @@
 }
 
 .tb-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 7px 22px;
   border-radius: 8px;
   border: 2px solid #e2e8f0;
@@ -119,6 +122,90 @@
   }
 }
 
+.tb-tab-vessel-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 14px;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.tb-tab-cargo-dot {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0;
+  top: 2px;
+  left: calc(50% - 2px);
+  pointer-events: none;
+}
+
+.tb-tab-vessel-wrap--drop-firing .tb-tab-cargo-dot {
+  animation: tb-cargo-drop 1.4s ease-in-out infinite;
+}
+
+.tb-tab-vessel-wrap--pickup-firing .tb-tab-cargo-dot {
+  animation: tb-cargo-pickup 1.4s ease-in-out infinite;
+}
+
+@keyframes tb-cargo-drop {
+  0%   { opacity: 0; transform: translate(0, 0) scale(0.8); }
+  8%   { opacity: 1; transform: translate(1px, -1px) scale(1); }
+  50%  { opacity: 1; transform: translate(7px, 10px) scale(0.9); }
+  85%  { opacity: 0.4; transform: translate(4px, 18px) scale(0.5); }
+  100% { opacity: 0; transform: translate(2px, 22px) scale(0); }
+}
+
+@keyframes tb-cargo-pickup {
+  0%   { opacity: 0; transform: translate(2px, 22px) scale(0); }
+  15%  { opacity: 0.4; transform: translate(4px, 18px) scale(0.5); }
+  50%  { opacity: 1; transform: translate(7px, 10px) scale(0.9); }
+  92%  { opacity: 1; transform: translate(1px, -1px) scale(1); }
+  100% { opacity: 0; transform: translate(0, 0) scale(0.8); }
+}
+
+/* ---- Tab panel slide animations ---- */
+.tb-ts-panel {
+  animation-duration: 0.28s;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tb-ts-panel--drop {
+  animation-name: tb-panel-drop-in;
+}
+
+.tb-ts-panel--pickup {
+  animation-name: tb-panel-pickup-in;
+}
+
+@keyframes tb-panel-drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tb-panel-pickup-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ---- Timestamp card grid (Husbandry style) ---- */
 .tb-ts-grid {
   display: grid;
@@ -133,6 +220,8 @@
 }
 
 .tb-ts-card {
+  position: relative;
+  overflow: hidden;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
@@ -141,7 +230,7 @@
   flex-direction: column;
   gap: 10px;
   cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.25s ease;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   outline: none;
 
@@ -159,6 +248,21 @@
     background: #f0fdf4;
     border-color: #bbf7d0;
     cursor: default;
+    animation: tb-ts-card-stamp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(22, 163, 74, 0.28);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: tb-ts-ripple 0.55s ease-out forwards;
+      pointer-events: none;
+    }
   }
 }
 
@@ -176,6 +280,7 @@
   .tb-ts-card--done & {
     background: #dcfce7;
     color: #16a34a;
+    animation: tb-ts-icon-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 }
 
@@ -203,6 +308,7 @@
     color: #15803d;
     white-space: normal;
     font-size: 10.5px;
+    animation: tb-ts-pill-slide-in 0.35s ease-out forwards;
   }
 }
 
@@ -229,6 +335,441 @@
     color: #15803d;
     border-color: #bbf7d0;
   }
+}
+
+/* ---- Movement Timestamp Stepper (horizontal) ---- */
+.tb-stepper {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.tb-stepper-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  outline: none;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+
+  &.tb-stepper-item--next {
+    cursor: pointer;
+
+    &:hover { background: rgba(37, 99, 235, 0.04); }
+    &:focus-visible { outline: 2px solid rgba(37, 99, 235, 0.35); outline-offset: 2px; }
+  }
+
+  &.tb-stepper-item--locked { cursor: default; }
+  &.tb-stepper-item--done   { cursor: default; }
+}
+
+.tb-stepper-track {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+}
+
+.tb-stepper-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: #cbd5e1;
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+
+  .tb-stepper-item--next & {
+    border-color: #2563eb;
+    background: #eff6ff;
+    color: #2563eb;
+    animation: tb-stepper-dot-pulse 1.6s ease-in-out infinite;
+  }
+
+  .tb-stepper-item--done & {
+    border-color: #16a34a;
+    background: #16a34a;
+    color: #ffffff;
+    animation: tb-stepper-dot-stamp 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+}
+
+.tb-stepper-line {
+  flex: 1;
+  height: 2px;
+  min-width: 8px;
+  margin: 0 2px;
+  border-radius: 2px;
+  background: #e2e8f0;
+  transition: background 0.4s ease 0.15s;
+
+  .tb-stepper-item--done & {
+    background: #16a34a;
+  }
+}
+
+.tb-stepper-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 4px 8px;
+  text-align: center;
+  width: 100%;
+}
+
+.tb-stepper-icon-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: background 0.22s ease, color 0.22s ease;
+
+  .tb-stepper-item--next & {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+
+  .tb-stepper-item--done & {
+    background: #dcfce7;
+    color: #16a34a;
+    animation: tb-ts-icon-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .tb-stepper-item--locked & {
+    background: #f8fafc;
+    color: #e2e8f0;
+  }
+}
+
+.tb-stepper-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.tb-stepper-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: center;
+  line-height: 1.3;
+  transition: color 0.2s ease;
+
+  .tb-stepper-item--locked & { color: #94a3b8; }
+}
+
+.tb-stepper-pill {
+  display: inline-flex;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #94a3b8;
+  width: fit-content;
+  max-width: 100%;
+
+  &.tb-stepper-pill--next {
+    background: #eff6ff;
+    color: #2563eb;
+    animation: tb-stepper-pill-blink 2s ease-in-out infinite;
+  }
+
+  &.tb-stepper-pill--done {
+    background: #dcfce7;
+    color: #15803d;
+    white-space: normal;
+    font-size: 9.5px;
+    text-align: center;
+    animation: tb-stepper-pill-in 0.3s ease-out forwards;
+  }
+}
+
+@keyframes tb-stepper-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.35); }
+  50%       { box-shadow: 0 0 0 5px rgba(37, 99, 235, 0); }
+}
+
+@keyframes tb-stepper-dot-stamp {
+  0%   { transform: scale(0.55); }
+  65%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+@keyframes tb-stepper-pill-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+@keyframes tb-stepper-pill-in {
+  from { opacity: 0; transform: translateX(-5px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* stop mini-scene animations once the step is captured */
+.tb-stepper-item--done .tb-tsanim-ship,
+.tb-stepper-item--done .tb-tsanim-boat {
+  animation: none;
+}
+
+/* ---- Stepper journey boat indicator ---- */
+.tb-stepper-wrap {
+  position: relative;
+  padding-top: 24px;
+}
+
+/* Boat slides left→right across steps as each completes */
+.tb-stepper-boat-wrap {
+  position: absolute;
+  top: 2px;
+  left: 10%;
+  transition:
+    left    0.78s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.3s ease;
+
+  .tb-stepper-wrap--step-1 & { left: 35%; }
+  .tb-stepper-wrap--step-2 & { left: 60%; }
+  .tb-stepper-wrap--step-3 & { left: 84%; }
+  .tb-stepper-wrap--step-4 & { left: 84%; opacity: 0.5; }
+
+  /* 6-step variant (3 immigration batches × 2 steps each) */
+  .tb-stepper-wrap--steps-6.tb-stepper-wrap--step-1 & { left: 23%; }
+  .tb-stepper-wrap--steps-6.tb-stepper-wrap--step-2 & { left: 40%; }
+  .tb-stepper-wrap--steps-6.tb-stepper-wrap--step-3 & { left: 56%; }
+  .tb-stepper-wrap--steps-6.tb-stepper-wrap--step-4 & { left: 72%; }
+  .tb-stepper-wrap--steps-6.tb-stepper-wrap--step-5 & { left: 88%; }
+  .tb-stepper-wrap--steps-6.tb-stepper-wrap--step-6 & { left: 88%; opacity: 0.5; }
+}
+
+.tb-stepper-boat-icon {
+  color: #2563eb;
+  filter: drop-shadow(0 1px 4px rgba(37, 99, 235, 0.35));
+  animation: tb-stepper-bob 2.4s ease-in-out infinite;
+}
+
+@keyframes tb-stepper-bob {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-3px); }
+}
+
+/* ---- Timestamp card mini-scene animations ---- */
+.tb-tsanim {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Cast Off: dock rope on left + ship drifting away */
+.tb-tsanim--castoff {
+  .tb-tsanim-rope {
+    position: absolute;
+    left: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 55%;
+    background: currentColor;
+    border-radius: 2px;
+    opacity: 0.3;
+  }
+  .tb-tsanim-ship {
+    position: absolute;
+    animation: tb-tsanim-depart 2.6s ease-in-out infinite;
+  }
+}
+
+/* Boat Alongside: large vessel static on right + small taxi approaching from left */
+.tb-tsanim--alongside {
+  .tb-tsanim-vessel {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.35;
+  }
+  .tb-tsanim-boat {
+    position: absolute;
+    left: 2px;
+    top: 56%;
+    animation: tb-tsanim-approach 2.4s ease-in-out infinite;
+  }
+}
+
+/* Boat Cast off Ship: large vessel static on left + small taxi departing right */
+.tb-tsanim--castoff-ship {
+  .tb-tsanim-vessel {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.35;
+  }
+  .tb-tsanim-boat {
+    position: absolute;
+    right: 2px;
+    top: 56%;
+    animation: tb-tsanim-depart-boat 2.4s ease-in-out infinite;
+  }
+}
+
+/* Back to Jetty: anchor static on right + ship returning from left */
+.tb-tsanim--back-jetty {
+  .tb-tsanim-anchor {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.35;
+  }
+  .tb-tsanim-ship {
+    position: absolute;
+    left: 1px;
+    top: 44%;
+    animation: tb-tsanim-return 2.6s ease-in-out infinite;
+  }
+}
+
+.tb-ts-card--done .tb-tsanim-ship,
+.tb-ts-card--done .tb-tsanim-boat,
+.tb-ts-card--done .tb-tsanim-crew-dot {
+  animation: none;
+}
+
+/* Batch Pickup: crew dot near ship drifts left — crew leaving vessel */
+.tb-tsanim--batch-pickup {
+  .tb-tsanim-vessel {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.3;
+  }
+  .tb-tsanim-crew-dot {
+    position: absolute;
+    right: 8px;
+    top: calc(50% - 2px);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: tb-tsanim-crew-pickup 2.2s ease-in-out infinite;
+  }
+}
+
+/* Batch Drop: crew dot on left drifts right toward vessel — crew going to vessel */
+.tb-tsanim--batch-drop {
+  .tb-tsanim-vessel {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.3;
+  }
+  .tb-tsanim-crew-dot {
+    position: absolute;
+    left: 6px;
+    top: calc(50% - 2px);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: tb-tsanim-crew-drop 2.2s ease-in-out infinite;
+  }
+}
+
+@keyframes tb-tsanim-crew-pickup {
+  0%   { transform: translateX(0); opacity: 0; }
+  12%  { transform: translateX(-2px); opacity: 0.8; }
+  55%  { transform: translateX(-12px); opacity: 1; }
+  80%  { transform: translateX(-14px); opacity: 0.4; }
+  100% { transform: translateX(0); opacity: 0; }
+}
+
+@keyframes tb-tsanim-crew-drop {
+  0%   { transform: translateX(0); opacity: 0; }
+  12%  { transform: translateX(2px); opacity: 0.8; }
+  55%  { transform: translateX(12px); opacity: 1; }
+  80%  { transform: translateX(14px); opacity: 0.4; }
+  100% { transform: translateX(0); opacity: 0; }
+}
+
+@keyframes tb-tsanim-depart {
+  0%   { transform: translate(-2px, 0) rotate(0deg); }
+  30%  { transform: translate(1px, -1px) rotate(-2deg); }
+  60%  { transform: translate(3px, 0) rotate(0deg); }
+  80%  { transform: translate(2px, 1px) rotate(1deg); }
+  100% { transform: translate(-2px, 0) rotate(0deg); }
+}
+
+@keyframes tb-tsanim-approach {
+  0%   { transform: translateX(0); opacity: 0.4; }
+  50%  { transform: translateX(6px); opacity: 1; }
+  65%  { transform: translateX(5px); }
+  80%  { transform: translateX(5px); }
+  100% { transform: translateX(0); opacity: 0.4; }
+}
+
+@keyframes tb-tsanim-depart-boat {
+  0%   { transform: translateX(0); opacity: 1; }
+  20%  { transform: translateX(1px); }
+  60%  { transform: translateX(-6px); opacity: 0.4; }
+  78%  { transform: translateX(-6px); opacity: 0.4; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes tb-tsanim-return {
+  0%   { transform: translateX(0); opacity: 0.4; }
+  50%  { transform: translateX(5px); opacity: 1; }
+  65%  { transform: translateX(6px); }
+  80%  { transform: translateX(5px); }
+  100% { transform: translateX(0); opacity: 0.4; }
+}
+
+/* ---- Timestamp capture animations ---- */
+@keyframes tb-ts-card-stamp {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(0.96); }
+  65%  { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+@keyframes tb-ts-ripple {
+  0%   { width: 0; height: 0; opacity: 0.7; }
+  100% { width: 240px; height: 240px; opacity: 0; }
+}
+
+@keyframes tb-ts-icon-pop {
+  0%   { transform: scale(0.5) rotate(-15deg); opacity: 0.3; }
+  65%  { transform: scale(1.2) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes tb-ts-pill-slide-in {
+  0%   { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 /* ---- Job Completed ---- */

@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import PropTypes from "prop-types";
 import { FiFlag, FiAnchor, FiNavigation, FiHome, FiArrowDown, FiArrowUp, FiClock, FiUpload, FiPlus } from "react-icons/fi";
 import { FaShip } from "react-icons/fa";
+import { MdDirectionsBoat } from "react-icons/md";
 import "../../../../../../design/scss/pages/kanban-board/taxi-boat-card.scss";
 import "../../../../../../design/scss/pages/kanban-board/taxi-boat-service-scenarios.scss";
 
@@ -17,10 +18,10 @@ const MOCK_CREW_ROWS = [
 ];
 
 const STANDARD_TIMESTAMPS = [
-  { key: "castOff",           label: "Cast off Time",       icon: FiFlag       },
-  { key: "boatAlongsideShip", label: "Boat Alongside Ship", icon: FiAnchor     },
-  { key: "boatCastOffShip",   label: "Boat Cast off Ship",  icon: FiNavigation },
-  { key: "backToJetty",       label: "Back to Jetty",       icon: FiHome       },
+  { key: "castOff",           label: "Cast off Time",       icon: FiFlag,       animKey: "castOff"           },
+  { key: "boatAlongsideShip", label: "Boat Alongside Ship", icon: FiAnchor,     animKey: "boatAlongsideShip" },
+  { key: "boatCastOffShip",   label: "Boat Cast off Ship",  icon: FiNavigation, animKey: "boatCastOffShip"   },
+  { key: "backToJetty",       label: "Back to Jetty",       icon: FiHome,       animKey: "backToJetty"       },
 ];
 
 const BATCH_ORDINALS = ["1st", "2nd", "3rd", "4th", "5th", "6th"];
@@ -40,7 +41,61 @@ const formatDateTime = (iso) => {
   });
 };
 
-function TimestampCard({ label, value, onCheck, icon: Icon }) {
+function TimestampAnimIcon({ animKey }) {
+  if (animKey === "castOff") {
+    return (
+      <span className="tb-tsanim tb-tsanim--castoff">
+        <span className="tb-tsanim-rope" />
+        <FaShip size={16} className="tb-tsanim-ship" />
+      </span>
+    );
+  }
+  if (animKey === "boatAlongsideShip") {
+    return (
+      <span className="tb-tsanim tb-tsanim--alongside">
+        <FaShip size={20} className="tb-tsanim-vessel" />
+        <FaShip size={11} className="tb-tsanim-boat" />
+      </span>
+    );
+  }
+  if (animKey === "boatCastOffShip") {
+    return (
+      <span className="tb-tsanim tb-tsanim--castoff-ship">
+        <FaShip size={20} className="tb-tsanim-vessel" />
+        <FaShip size={11} className="tb-tsanim-boat" />
+      </span>
+    );
+  }
+  if (animKey === "backToJetty") {
+    return (
+      <span className="tb-tsanim tb-tsanim--back-jetty">
+        <FiAnchor size={15} className="tb-tsanim-anchor" />
+        <FaShip size={15} className="tb-tsanim-ship" />
+      </span>
+    );
+  }
+  if (animKey === "batchPickup") {
+    return (
+      <span className="tb-tsanim tb-tsanim--batch-pickup">
+        <FaShip size={14} className="tb-tsanim-vessel" />
+        <span className="tb-tsanim-crew-dot" />
+      </span>
+    );
+  }
+  if (animKey === "batchDrop") {
+    return (
+      <span className="tb-tsanim tb-tsanim--batch-drop">
+        <FaShip size={14} className="tb-tsanim-vessel" />
+        <span className="tb-tsanim-crew-dot" />
+      </span>
+    );
+  }
+  return null;
+}
+
+TimestampAnimIcon.propTypes = { animKey: PropTypes.string.isRequired };
+
+function TimestampCard({ label, value, onCheck, icon: Icon, animKey }) {
   const isChecked = value !== null;
   const formatted = formatDateTime(value);
   return (
@@ -52,7 +107,7 @@ function TimestampCard({ label, value, onCheck, icon: Icon }) {
       onKeyDown={(e) => { if (!isChecked && (e.key === "Enter" || e.key === " ")) onCheck(); }}
     >
       <div className="tb-ts-card-icon-box">
-        <Icon size={20} />
+        {animKey ? <TimestampAnimIcon animKey={animKey} /> : <Icon size={20} />}
       </div>
       <div className="tb-ts-card-title">{label}</div>
       <div className={`tb-ts-card-pill${isChecked ? " tb-ts-card-pill--captured" : ""}`}>
@@ -67,18 +122,20 @@ TimestampCard.propTypes = {
   value: PropTypes.string,
   onCheck: PropTypes.func.isRequired,
   icon: PropTypes.elementType.isRequired,
+  animKey: PropTypes.string,
 };
 
 function TimestampGrid({ timestamps, tsState, onCapture }) {
   return (
     <div className="tb-ts-grid">
-      {timestamps.map(({ key, label, icon }) => (
+      {timestamps.map(({ key, label, icon, animKey }) => (
         <TimestampCard
           key={key}
           label={label}
           value={tsState[key]}
           onCheck={() => onCapture(key)}
           icon={icon || FiClock}
+          animKey={animKey}
         />
       ))}
     </div>
@@ -86,6 +143,71 @@ function TimestampGrid({ timestamps, tsState, onCapture }) {
 }
 
 TimestampGrid.propTypes = {
+  timestamps: PropTypes.arrayOf(
+    PropTypes.shape({ key: PropTypes.string, label: PropTypes.string, icon: PropTypes.elementType })
+  ).isRequired,
+  tsState: PropTypes.object.isRequired,
+  onCapture: PropTypes.func.isRequired,
+};
+
+function TimestampStepper({ timestamps, tsState, onCapture }) {
+  const doneCount = timestamps.filter((t) => tsState[t.key] !== null).length;
+  const totalSteps = timestamps.length;
+  return (
+    <div className={`tb-stepper-wrap tb-stepper-wrap--step-${doneCount} tb-stepper-wrap--steps-${totalSteps}`}>
+      <div className="tb-stepper-boat-wrap">
+        <MdDirectionsBoat size={20} className="tb-stepper-boat-icon" />
+      </div>
+      <ol className="tb-stepper">
+      {timestamps.map(({ key, label, icon: Icon, animKey }, i) => {
+        const done = tsState[key] !== null;
+        const prevDone = i === 0 || tsState[timestamps[i - 1].key] !== null;
+        const isNext = !done && prevDone;
+        const isLocked = !done && !isNext;
+        return (
+          <li
+            key={key}
+            className={[
+              "tb-stepper-item",
+              done     ? "tb-stepper-item--done"   : "",
+              isNext   ? "tb-stepper-item--next"   : "",
+              isLocked ? "tb-stepper-item--locked" : "",
+            ].filter(Boolean).join(" ")}
+            onClick={() => isNext && onCapture(key)}
+            role={isNext ? "button" : undefined}
+            tabIndex={isNext ? 0 : -1}
+            onKeyDown={(e) => {
+              if (isNext && (e.key === "Enter" || e.key === " ")) onCapture(key);
+            }}
+          >
+            <div className="tb-stepper-track">
+              <div className="tb-stepper-dot">{done ? "✓" : i + 1}</div>
+              <div className="tb-stepper-line" />
+            </div>
+            <div className="tb-stepper-body">
+              <div className="tb-stepper-icon-box">
+                {animKey ? <TimestampAnimIcon animKey={animKey} /> : <Icon size={20} />}
+              </div>
+              <div className="tb-stepper-content">
+                <span className="tb-stepper-label">{label}</span>
+                <span className={[
+                  "tb-stepper-pill",
+                  done   ? "tb-stepper-pill--done" : "",
+                  isNext ? "tb-stepper-pill--next" : "",
+                ].filter(Boolean).join(" ")}>
+                  {done ? formatDateTime(tsState[key]) : isNext ? "Tap to capture" : "—"}
+                </span>
+              </div>
+            </div>
+          </li>
+        );
+      })}
+      </ol>
+    </div>
+  );
+}
+
+TimestampStepper.propTypes = {
   timestamps: PropTypes.arrayOf(
     PropTypes.shape({ key: PropTypes.string, label: PropTypes.string, icon: PropTypes.elementType })
   ).isRequired,
@@ -122,8 +244,8 @@ function TaxiBoatCardView({ card }) {
   const isImmigration    = IMMIGRATION_SERVICES.includes(serviceType);
 
   const batchRows = Array.from({ length: batchCount }, (_, i) => [
-    { key: `pickup${i + 1}`, label: `Pickup ${BATCH_ORDINALS[i] ?? `${i + 1}th`} Batch`, icon: FiArrowDown },
-    { key: `drop${i + 1}`,   label: `Drop ${BATCH_ORDINALS[i] ?? `${i + 1}th`} Batch`,   icon: FiArrowUp  },
+    { key: `pickup${i + 1}`, label: `Pickup ${BATCH_ORDINALS[i] ?? `${i + 1}th`} Batch`, icon: FiArrowDown, animKey: "batchPickup" },
+    { key: `drop${i + 1}`,   label: `Drop ${BATCH_ORDINALS[i] ?? `${i + 1}th`} Batch`,   icon: FiArrowUp,   animKey: "batchDrop"   },
   ]).flat();
 
   const [dropTs, setDropTs] = useState(() =>
@@ -142,7 +264,17 @@ function TaxiBoatCardView({ card }) {
   // Scenario A: Crew Change
   const [signMode, setSignMode] = useState("sign-on");
   const [crewListFile, setCrewListFile] = useState(null);
-  const [parsedCrewRows, setParsedCrewRows] = useState(null);
+  const [parsedCrewRows, setParsedCrewRows] = useState(() => {
+    if (!Array.isArray(card?.crew) || card.crew.length === 0) return null;
+    return card.crew.map((c) => ({
+      name:        c.crewName     ?? "—",
+      rank:        c.rank         ?? "—",
+      nationality: c.nationality  ?? "—",
+      passportNo:  c.passportNo   ?? "—",
+      seamanBookNo: c.seamanBookNo ?? "—",
+    }));
+  });
+  const crewFromCard = Array.isArray(card?.crew) && card.crew.length > 0 && !crewListFile;
 
   // Scenario B: Material / Provision / Garbage
   const [packingListFile, setPackingListFile] = useState(null);
@@ -167,9 +299,7 @@ function TaxiBoatCardView({ card }) {
   const allDone = (tsState, keys) => keys.every((k) => tsState[k] !== null);
 
   const tsKeys = STANDARD_TIMESTAMPS.map((t) => t.key);
-  const canComplete = isCrewChange
-    ? true
-    : isImmigration
+  const canComplete = isImmigration
     ? allDone(batchTs, batchRows.map((r) => r.key))
     : allDone(dropTs, tsKeys) && allDone(pickupTs, tsKeys);
 
@@ -234,7 +364,11 @@ function TaxiBoatCardView({ card }) {
           </div>
           {parsedCrewRows && (
             <>
-              <span className="tb-ai-parse-status">AI parsed — {parsedCrewRows.length} crew members found</span>
+              <span className="tb-ai-parse-status">
+                {crewFromCard
+                  ? `From operator card — ${parsedCrewRows.length} crew members`
+                  : `AI parsed — ${parsedCrewRows.length} crew members found`}
+              </span>
               <div className="tb-crew-table-wrapper">
                 <table className="tb-crew-table">
                   <thead>
@@ -324,7 +458,7 @@ function TaxiBoatCardView({ card }) {
       {isImmigration && (
         <div className="tb-section">
           <h3 className="tb-section-title">Immigration Batch Tracking</h3>
-          <TimestampGrid
+          <TimestampStepper
             timestamps={batchRows}
             tsState={batchTs}
             onCapture={(key) => captureNow(setBatchTs, key)}
@@ -332,7 +466,7 @@ function TaxiBoatCardView({ card }) {
         </div>
       )}
 
-      {!isCrewChange && !isImmigration && (
+      {!isImmigration && (
         <div className="tb-section">
           <h3 className="tb-section-title">Movement Timestamps</h3>
           <div className="tb-tabs">
@@ -340,35 +474,43 @@ function TaxiBoatCardView({ card }) {
               className={`tb-tab${activeTab === "drop" ? " tb-tab--active" : ""}`}
               onClick={() => setActiveTab("drop")}
             >
+              <span
+                key={`drop-${activeTab}`}
+                className={`tb-tab-vessel-wrap${activeTab === "drop" ? " tb-tab-vessel-wrap--drop-firing" : ""}`}
+              >
+                <FaShip size={12} />
+                <span className="tb-tab-cargo-dot" />
+              </span>
               Drop
             </button>
             <button
               className={`tb-tab${activeTab === "pickup" ? " tb-tab--active" : ""}`}
               onClick={() => setActiveTab("pickup")}
             >
+              <span
+                key={`pickup-${activeTab}`}
+                className={`tb-tab-vessel-wrap${activeTab === "pickup" ? " tb-tab-vessel-wrap--pickup-firing" : ""}`}
+              >
+                <FaShip size={12} />
+                <span className="tb-tab-cargo-dot" />
+              </span>
               Pickup
             </button>
           </div>
-          {activeTab === "drop" ? (
-            <TimestampGrid
-              timestamps={STANDARD_TIMESTAMPS}
-              tsState={dropTs}
-              onCapture={(key) => captureNow(setDropTs, key)}
-            />
-          ) : (
-            <TimestampGrid
-              timestamps={STANDARD_TIMESTAMPS}
-              tsState={pickupTs}
-              onCapture={(key) => captureNow(setPickupTs, key)}
-            />
-          )}
-          <div className="tb-section-progress-hint">
-            <span className={`tb-progress-chip${allDone(dropTs, tsKeys) ? " tb-progress-chip--done" : ""}`}>
-              Drop {STANDARD_TIMESTAMPS.filter((t) => dropTs[t.key]).length}/{STANDARD_TIMESTAMPS.length}
-            </span>
-            <span className={`tb-progress-chip${allDone(pickupTs, tsKeys) ? " tb-progress-chip--done" : ""}`}>
-              Pickup {STANDARD_TIMESTAMPS.filter((t) => pickupTs[t.key]).length}/{STANDARD_TIMESTAMPS.length}
-            </span>
+          <div key={activeTab} className={`tb-ts-panel tb-ts-panel--${activeTab}`}>
+            {activeTab === "drop" ? (
+              <TimestampStepper
+                timestamps={STANDARD_TIMESTAMPS}
+                tsState={dropTs}
+                onCapture={(key) => captureNow(setDropTs, key)}
+              />
+            ) : (
+              <TimestampStepper
+                timestamps={STANDARD_TIMESTAMPS}
+                tsState={pickupTs}
+                onCapture={(key) => captureNow(setPickupTs, key)}
+              />
+            )}
           </div>
         </div>
       )}
