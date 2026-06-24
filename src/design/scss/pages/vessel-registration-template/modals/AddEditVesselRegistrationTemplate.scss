@@ -17,19 +17,23 @@
   .desig-inp input.form-control {
     min-height: 46px;
     height: 46px;
-    border-radius: 8px;
-    border: 1px solid #e2e2ea;
-    font-size: 13px;
-    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid #BCDEE2;
+    font-size: 14px;
+    padding: 10px 14px;
     box-sizing: border-box;
 
+    &::placeholder {
+      padding-left: 0;
+    }
+
     &:hover {
-      border-color: #cfd4dc;
+      border-color: #98CBD0;
     }
 
     &:focus {
-      border-color: #b8c0cc;
-      box-shadow: none;
+      border-color: #BCDEE2;
+      box-shadow: 0 0 0 2px rgba(0, 54, 140, 0.1);
       outline: none;
     }
 
@@ -41,6 +45,21 @@
   .desig-inp .cf-multi-select-placeholder,
   .desig-inp .cf-multi-select-selected-value {
     font-size: 13px;
+  }
+
+  .lead-form .mb-lg-3 {
+    margin-bottom: 20px !important;
+  }
+
+  .lead-form .permInputs.row {
+    row-gap: 20px;
+  }
+
+  .desig-inp > label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #35475E;
+    margin-bottom: 8px;
   }
 
   .lead-form span.error.text-danger {
