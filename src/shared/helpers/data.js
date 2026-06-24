@@ -371,9 +371,108 @@ export const TASK_WORKFLOW_TEMPLATE = {
   },
 };
 
+/** Static template for the Taxi Board Workflow. */
+export const TAXI_BOARD_WORKFLOW_TEMPLATE = {
+  id: "taxi-board-wf",
+  title: "Taxi Board Workflow",
+  columnOrder: ["tb-col-1", "tb-col-2", "tb-col-3", "tb-col-4", "tb-col-5", "tb-col-6"],
+  columns: {
+    "tb-col-1": { id: "tb-col-1", title: "Appointment Received", color: "#2666be", stageId: "tb-stage-1", stageTitle: "Appointment Received", wipLimit: null, cardsPerRow: 2, backgroundColor: "#ffffff" },
+    "tb-col-2": { id: "tb-col-2", title: "Enroute",              color: "#2666be", stageId: "tb-stage-2", stageTitle: "Enroute",              wipLimit: null, cardsPerRow: 2, backgroundColor: "#ffffff" },
+    "tb-col-3": { id: "tb-col-3", title: "Vessel Arrived",       color: "#f38a30", stageId: "tb-stage-3", stageTitle: "Vessel Arrived",       wipLimit: null, cardsPerRow: 2, backgroundColor: "#ffffff" },
+    "tb-col-4": { id: "tb-col-4", title: "Vessel Cleared",       color: "#f38a30", stageId: "tb-stage-4", stageTitle: "Vessel Cleared",       wipLimit: null, cardsPerRow: 2, backgroundColor: "#ffffff" },
+    "tb-col-5": { id: "tb-col-5", title: "Vessel Sailed",        color: "#f38a30", stageId: "tb-stage-5", stageTitle: "Vessel Sailed",        wipLimit: null, cardsPerRow: 2, backgroundColor: "#ffffff" },
+    "tb-col-6": { id: "tb-col-6", title: "Ready to Finalize",    color: "#42af49", stageId: "tb-stage-6", stageTitle: "Ready to Finalize",    wipLimit: null, cardsPerRow: 2, backgroundColor: "#ffffff" },
+  },
+  swimlaneOrder: ["default"],
+  swimlanes: {
+    default: {
+      id: "default",
+      title: "Default",
+      color: "#ffffff",
+      cardMap: {
+        "tb-col-1": ["tbwf-card-1", "tbwf-card-2", "tbwf-card-3"],
+        "tb-col-2": ["tbwf-card-4", "tbwf-card-5"],
+        "tb-col-3": ["tbwf-card-6"],
+        "tb-col-4": [],
+        "tb-col-5": [],
+        "tb-col-6": [],
+      },
+    },
+  },
+  cards: {
+    "tbwf-card-1": {
+      id: "tbwf-card-1", laneId: "default", columnId: "tb-col-1",
+      workflow_id: "taxi-board-wf", workflow_role_id: null,
+      cardVariant: "taxi-boat", cardSource: "static",
+      title: "TB – JAN 2025", vesselName: "MV Atlantic Star", name: "Gulf Marine",
+      user: "John Smith", requestedOperator: "Ali Hassan", typeOfService: "Crew Change",
+      location: "Freighter Anchorage", bookingDate: "10 Jan 2025", batchCount: 2,
+      timeLeft: "3d 2h", progress: 0, color: "#2666be",
+    },
+    "tbwf-card-2": {
+      id: "tbwf-card-2", laneId: "default", columnId: "tb-col-1",
+      workflow_id: "taxi-board-wf", workflow_role_id: null,
+      cardVariant: "taxi-boat", cardSource: "static",
+      title: "TB – FEB 2025", vesselName: "SS Pacific Wave", name: "Saudi Marcap",
+      user: "Michael Johnson", requestedOperator: "Faisal Al-Otaibi", typeOfService: "Technician Visit",
+      location: "RT7", bookingDate: "15 Feb 2025", batchCount: 2,
+      timeLeft: "1d 5h", progress: 0, color: "#2666be",
+    },
+    "tbwf-card-3": {
+      id: "tbwf-card-3", laneId: "default", columnId: "tb-col-1",
+      workflow_id: "taxi-board-wf", workflow_role_id: null,
+      cardVariant: "taxi-boat", cardSource: "static",
+      title: "TB – MAR 2025", vesselName: "MV Indian Ocean", name: "Saipem",
+      user: "David Williams", requestedOperator: "Khalid Mansour", typeOfService: "Immigration Clearance",
+      location: "Sea Island", bookingDate: "20 Mar 2025", batchCount: 3,
+      timeLeft: "5h 10m", progress: 0, color: "#2666be",
+    },
+    "tbwf-card-4": {
+      id: "tbwf-card-4", laneId: "default", columnId: "tb-col-2",
+      workflow_id: "taxi-board-wf", workflow_role_id: null,
+      cardVariant: "taxi-boat", cardSource: "static",
+      title: "TB – APR 2025", vesselName: "SS Mediterranean", name: "Snamprogetti",
+      user: "Robert Brown", requestedOperator: "Tariq Nasser", typeOfService: "Material Delivery",
+      location: "Juaymah", bookingDate: "05 Apr 2025", batchCount: 2,
+      timeLeft: "2d 8h", progress: 30, color: "#2666be",
+    },
+    "tbwf-card-5": {
+      id: "tbwf-card-5", laneId: "default", columnId: "tb-col-2",
+      workflow_id: "taxi-board-wf", workflow_role_id: null,
+      cardVariant: "taxi-boat", cardSource: "static",
+      title: "TB – MAY 2025", vesselName: "MV Caribbean Breeze", name: "Lamprell",
+      user: "James Davis", requestedOperator: "Samir Al-Zahrani", typeOfService: "Provision Delivery",
+      location: "Freighter Anchorage", bookingDate: "12 May 2025", batchCount: 2,
+      timeLeft: "1d 1h", progress: 50, color: "#2666be",
+    },
+    "tbwf-card-6": {
+      id: "tbwf-card-6", laneId: "default", columnId: "tb-col-3",
+      workflow_id: "taxi-board-wf", workflow_role_id: null,
+      cardVariant: "taxi-boat", cardSource: "static",
+      title: "TB – JUN 2025", vesselName: "MV Ocean Express", name: "Gulf Marine",
+      user: "William Miller", requestedOperator: "Rayan Bakr", typeOfService: "Tanker Clearance",
+      location: "RT7", bookingDate: "01 Jun 2025", batchCount: 2,
+      timeLeft: "6h 45m", progress: 70, color: "#f38a30",
+    },
+  },
+};
+
 /** Ensures the Task Workflow is always present in the workflows array. */
 export const ensureTaskWorkflow = (mapped) => {
   const has = mapped.some((wf) => wf.id === "wf-demo" || wf.title === "Task Workflow");
   if (has) return mapped;
   return [...mapped, TASK_WORKFLOW_TEMPLATE];
+};
+
+/** Ensures both Task Workflow and Taxi Board Workflow are always present. */
+export const ensureStaticWorkflows = (mapped) => {
+  let result = mapped;
+  if (!result.some((wf) => wf.id === "wf-demo" || wf.title === "Task Workflow")) {
+    result = [...result, TASK_WORKFLOW_TEMPLATE];
+  }
+  if (!result.some((wf) => wf.id === "taxi-board-wf" || wf.title === "Taxi Board Workflow")) {
+    result = [...result, TAXI_BOARD_WORKFLOW_TEMPLATE];
+  }
+  return result;
 };

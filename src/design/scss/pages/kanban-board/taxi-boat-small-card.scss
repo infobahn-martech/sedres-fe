@@ -1,0 +1,167 @@
+/* ---- Taxi Boat Small Card ---- */
+
+@keyframes tb-step-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(38, 102, 190, 0.5); transform: scale(1); }
+  50%       { box-shadow: 0 0 0 5px rgba(38, 102, 190, 0); transform: scale(1.15); }
+}
+
+@keyframes tb-card-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.tb-small-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+  animation: tb-card-in 0.25s ease both;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    border-color: #2666be;
+    box-shadow: 0 4px 16px rgba(38, 102, 190, 0.12);
+    transform: translateY(-1px);
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--tb-card-color, #2666be);
+    border-radius: 12px 12px 0 0;
+  }
+}
+
+/* ---- Top row: badge + menu ---- */
+.tb-small-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tb-small-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: var(--tb-badge-bg, #dbeafe);
+  color: var(--tb-badge-color, #1d4ed8);
+  border: 1px solid var(--tb-badge-border, #bfdbfe);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+/* ---- Vessel name ---- */
+.tb-small-card-vessel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- User + date row ---- */
+.tb-small-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tb-small-card-user {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tb-small-card-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2666be;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tb-small-card-username {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+
+.tb-small-card-date {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ---- Animated step dots ---- */
+.tb-small-card-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.tb-step-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  border: 1.5px solid #cbd5e1;
+  flex-shrink: 0;
+  transition: background 0.2s ease, border-color 0.2s ease;
+
+  &.tb-step-dot--done {
+    background: #16a34a;
+    border-color: #16a34a;
+  }
+
+  &.tb-step-dot--active {
+    background: #2666be;
+    border-color: #2666be;
+    animation: tb-step-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+.tb-step-line {
+  flex: 1;
+  height: 2px;
+  background: #e2e8f0;
+  min-width: 12px;
+  transition: background 0.2s ease;
+
+  &.tb-step-line--done {
+    background: #16a34a;
+  }
+}

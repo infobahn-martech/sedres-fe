@@ -4,6 +4,35 @@
 
 const workflowsConfig = [
     {
+        id: "taxi-board-workflow",
+        title: "Taxi Board Workflow",
+        columnColors: {
+            "col-1": "#2666be",
+            "col-2": "#2666be",
+            "col-3": "#f38a30",
+            "col-4": "#f38a30",
+            "col-5": "#f38a30",
+            "col-6": "#42af49",
+        },
+        columnTitles: [
+            "Appointment Received",
+            "Enroute",
+            "Vessel Arrived",
+            "Vessel Cleared",
+            "Vessel Sailed",
+            "Ready to Finalize",
+        ],
+        nestedColumns: {},
+        cardCounts: {
+            "col-1": 3,
+            "col-2": 2,
+            "col-3": 1,
+            "col-4": 0,
+            "col-5": 0,
+            "col-6": 0,
+        },
+    },
+    {
         id: "taxi-boat-captain-workflow",
         title: "Taxi Boat Captain Board",
         columnColors: {
