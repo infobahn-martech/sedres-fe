@@ -1,3 +1,27 @@
+.tb-card-view,
+.tb-card-view *,
+.tb-card-view input,
+.tb-card-view select,
+.tb-card-view textarea,
+.tb-card-view button,
+.tb-card-view label,
+.tb-card-view span,
+.tb-card-view p,
+.tb-card-view div,
+.tb-card-view h1,
+.tb-card-view h2,
+.tb-card-view h3,
+.tb-card-view h4,
+.tb-card-view h5,
+.tb-card-view h6,
+.tb-card-view ul,
+.tb-card-view ol,
+.tb-card-view li,
+.tb-card-view a,
+.tb-card-view option {
+  font-family: "Open Sans", sans-serif !important;
+}
+
 .tb-card-view {
   flex: 1;
   min-height: 0;
@@ -7,7 +31,6 @@
   overflow-y: auto;
   gap: 0;
   background: #f1f5f9;
-  font-family: "Open Sans", sans-serif;
 }
 
 /* ---- Summary info grid ---- */
