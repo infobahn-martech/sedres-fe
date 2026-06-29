@@ -1,7 +1,10 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { Tag, Layers3, AlertTriangle, Sticker } from "lucide-react";
 
 import userService from "../../services/userService";
 import SearchableSelect, { deriveSearchPlaceholder } from "../../components/form/SearchableSelect";
+import ColorPickerIcon from "../../assets/images/ColorPicker.png";
+import SedresColorPicker from "../../components/SedresColorPicker/SedresColorPicker";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/pages/taskCard.scss";
 import "../../design/scss/invoice.scss";
@@ -38,6 +41,9 @@ function TaskCardModal({ show, onClose }) {
     const [mentionSearch, setMentionSearch] = useState("");
     const [mentionStartIndex, setMentionStartIndex] = useState(null);
     const [selectedMentionUserIds, setSelectedMentionUserIds] = useState([]);
+
+    const [topbarColor, setTopbarColor] = useState("#2e7d32");
+    const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
 
     useEffect(() => {
         if (!show) return;
@@ -108,6 +114,7 @@ function TaskCardModal({ show, onClose }) {
         setTaskNameError("");
         setSelectedMentionUserIds([]);
         closeMentionDropdown();
+        setIsColorPickerOpen(false);
     }, [closeMentionDropdown]);
 
     const handleClose = useCallback(() => {
@@ -145,7 +152,7 @@ function TaskCardModal({ show, onClose }) {
         <div className="cardform-overlay">
             <div className="cardform-panel add-mode">
 
-                <div className="cardform-topbar tc-topbar">
+                <div className="cardform-topbar tc-topbar" style={{ backgroundColor: topbarColor }}>
                     <input
                         type="text"
                         className="cardform-title-input"
@@ -155,6 +162,41 @@ function TaskCardModal({ show, onClose }) {
                         autoFocus
                     />
                     <div className="cardform-topbar-right">
+                        <button type="button" className="topbar-icon-btn" title="Tag" aria-label="Tag" disabled>
+                            <Tag size={20} aria-hidden />
+                        </button>
+                        <button type="button" className="topbar-icon-btn" title="Type" aria-label="Type" disabled>
+                            <Layers3 size={20} aria-hidden />
+                        </button>
+                        <button type="button" className="topbar-icon-btn" title="Blocker" aria-label="Blocker" disabled>
+                            <AlertTriangle size={20} aria-hidden />
+                        </button>
+                        <button type="button" className="topbar-icon-btn" title="Sticker" aria-label="Sticker" disabled>
+                            <Sticker size={20} aria-hidden />
+                        </button>
+                        <div className="topbar-color-picker-wrapper">
+                            <button
+                                type="button"
+                                className="topbar-color-picker-label"
+                                onClick={() => setIsColorPickerOpen((o) => !o)}
+                                title="Change header color"
+                                aria-label="Color Picker"
+                                aria-expanded={isColorPickerOpen}
+                            >
+                                <img src={ColorPickerIcon} alt="Color Picker" className="topbar-color-picker-icon" />
+                            </button>
+                            {isColorPickerOpen && (
+                                <div className="tc-color-picker-popover">
+                                    <SedresColorPicker
+                                        ariaLabel="Pick card header color"
+                                        initialHex={topbarColor}
+                                        className="kanban-dashboard-color-picker-popover--floating"
+                                        onApply={(hex) => { setTopbarColor(hex); setIsColorPickerOpen(false); }}
+                                        onCancel={() => setIsColorPickerOpen(false)}
+                                    />
+                                </div>
+                            )}
+                        </div>
                         <button type="button" className="cardform-close-btn" onClick={handleClose}>✕</button>
                     </div>
                 </div>

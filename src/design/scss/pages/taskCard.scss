@@ -3,6 +3,17 @@
 // Layout inside the detail view (.subtasks-tab-*) reuses invoice.scss — not modified here.
 // DateTimePicker styling reuses general.scss (.cf-datetime-picker) — not redefined here.
 
+@import "../partials/variables";
+
+// Typography tokens — reference $font-primary from common style
+$tb-font-family:       $font-primary;
+$tb-font-size-xs:      10px;
+$tb-font-size-sm:      11px;
+$tb-font-size-caption: 12px;
+$tb-font-size-md:      13px;
+$tb-font-size-base:    14px;
+$tb-font-size-lg:      15px;
+
 $tc-green:        #2e7d32;
 $tc-green-dark:   #1b5e20;
 $tc-border:       #e2e2ea;
@@ -12,11 +23,18 @@ $tc-bg-input:     #ffffff;
 $tc-bg-readonly:  #f5f6fa;
 $tc-text:         #1a1a1a;
 $tc-text-muted:   #9aa0ad;
-$tc-font:         "Open Sans", sans-serif;
 
 // ── Topbar colour ─────────────────────────────────────────────────────────────
 .tc-topbar {
   background-color: $tc-green;
+}
+
+// ── Color picker popover (positioned below trigger inside topbar-color-picker-wrapper) ──
+.tc-color-picker-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 1300;
 }
 
 // ── Assign user dropdown — avatar + name ──────────────────────────────────────
@@ -27,13 +45,13 @@ $tc-font:         "Open Sans", sans-serif;
 .tc-user-avatar {
   width: 20px !important;
   height: 20px !important;
-  font-size: 10px !important;
+  font-size: $tb-font-size-xs !important;
   flex-shrink: 0;
 }
 
 .tc-user-name {
-  font-size: 12.5px;
-  font-family: $tc-font;
+  font-size: $tb-font-size-md;
+  font-family: $tb-font-family;
   color: #374151;
   line-height: 1.3;
 }
@@ -52,11 +70,11 @@ $tc-font:         "Open Sans", sans-serif;
 }
 
 .tc-form-title {
-  font-size: 15px;
+  font-size: $tb-font-size-lg;
   font-weight: 700;
   color: $tc-text;
   margin: 0 0 4px;
-  font-family: $tc-font;
+  font-family: $tb-font-family;
 }
 
 // ── Field layout ──────────────────────────────────────────────────────────────
@@ -74,10 +92,10 @@ $tc-font:         "Open Sans", sans-serif;
 }
 
 .tc-label {
-  font-size: 12px;
+  font-size: $tb-font-size-caption;
   font-weight: 600;
   color: #374151;
-  font-family: $tc-font;
+  font-family: $tb-font-family;
   margin: 0;
 }
 
@@ -85,8 +103,8 @@ $tc-font:         "Open Sans", sans-serif;
 .tc-textarea,
 .tc-select {
   width: 100%;
-  font-size: 13px;
-  font-family: $tc-font;
+  font-size: $tb-font-size-md;
+  font-family: $tb-font-family;
   color: $tc-text;
   border: 1px solid $tc-border;
   border-radius: 8px;
@@ -143,9 +161,9 @@ $tc-font:         "Open Sans", sans-serif;
   color: #fff;
   border: none;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: $tb-font-size-md;
   font-weight: 600;
-  font-family: $tc-font;
+  font-family: $tb-font-family;
   cursor: pointer;
   transition: background 0.15s;
 
@@ -161,9 +179,9 @@ $tc-font:         "Open Sans", sans-serif;
   border: 1px solid #d1d5db;
   color: #374151;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: $tb-font-size-md;
   font-weight: 500;
-  font-family: $tc-font;
+  font-family: $tb-font-family;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 
@@ -172,10 +190,10 @@ $tc-font:         "Open Sans", sans-serif;
 
 // ── Validation error ──────────────────────────────────────────────────────────
 .tc-field-error {
-  font-size: 12px;
+  font-size: $tb-font-size-caption;
   color: #ef4444;
   margin-top: 2px;
-  font-family: $tc-font;
+  font-family: $tb-font-family;
 }
 
 // ── Detail view — st-* classes (replaces deleted SubTaskModal.scss) ────────────
@@ -190,8 +208,8 @@ $tc-font:         "Open Sans", sans-serif;
   width: 100%;
   min-height: 38px;
   padding: 8px 12px;
-  font-size: 13px;
-  font-family: $tc-font;
+  font-size: $tb-font-size-md;
+  font-family: $tb-font-family;
   color: $tc-text;
   background: $tc-bg-readonly;
   border: 1px solid $tc-border;
@@ -209,8 +227,8 @@ $tc-font:         "Open Sans", sans-serif;
   cursor: pointer;
   background: #f5f7ff;
   transition: border-color 0.15s ease, background 0.15s ease;
-  font-size: 13px;
-  font-family: $tc-font;
+  font-size: $tb-font-size-md;
+  font-family: $tb-font-family;
 
   &:hover,
   &.st-upload-zone--drag {
@@ -231,7 +249,7 @@ $tc-font:         "Open Sans", sans-serif;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: $tb-font-size-md;
   color: $tc-text-muted;
 }
 
@@ -263,9 +281,9 @@ $tc-font:         "Open Sans", sans-serif;
   background: #f0faf1;
   border: 1px solid #bbf7d0;
   border-radius: 20px;
-  font-size: 11px;
+  font-size: $tb-font-size-sm;
   color: #15803d;
-  font-family: $tc-font;
+  font-family: $tb-font-family;
   max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -287,10 +305,10 @@ $tc-font:         "Open Sans", sans-serif;
   color: #fff;
   border: none;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: $tb-font-size-caption;
   font-weight: 600;
   cursor: pointer;
-  font-family: $tc-font;
+  font-family: $tb-font-family;
   transition: background 0.15s;
 
   &:hover:not(:disabled) { background: $tc-green-dark; }
