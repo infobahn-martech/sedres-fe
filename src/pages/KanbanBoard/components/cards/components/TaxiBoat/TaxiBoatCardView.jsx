@@ -253,7 +253,7 @@ ConfirmDialog.propTypes = {
   onCancel:  PropTypes.func.isRequired,
 };
 
-function TimestampStepper({ timestamps, tsState, onCapture, onComplete, jobCompleted, canFinish, onUndo, now, tsOps, shipName }) {
+function TimestampStepper({ timestamps, tsState, onCapture, onComplete, jobCompleted, canFinish, onUndo, now, tsOps, shipName, intermediateTrip }) {
   const doneCount = timestamps.filter((t) => tsState[t.key] !== null).length;
   const totalSteps = timestamps.length;
   const allTimestampsDone = doneCount === totalSteps;
@@ -267,7 +267,7 @@ function TimestampStepper({ timestamps, tsState, onCapture, onComplete, jobCompl
         <MdDirectionsBoat size={20} className="tb-stepper-boat-icon" />
       </div>
       <ol className="tb-stepper">
-      {timestamps.map(({ key, label, icon: Icon, animKey, showShip }, i) => {
+      {timestamps.flatMap(({ key, label, icon: Icon, animKey, showShip }, i) => {
         const done = tsState[key] !== null;
         const prevKey = i > 0 ? timestamps[i - 1].key : null;
         const prevDone = i === 0 || tsState[prevKey] !== null;
@@ -283,7 +283,7 @@ function TimestampStepper({ timestamps, tsState, onCapture, onComplete, jobCompl
           ? formatDuration(now - new Date(tsState[prevKey]))
           : null;
 
-        return (
+        const mainItem = (
           <li
             key={key}
             className={[
@@ -347,6 +347,35 @@ function TimestampStepper({ timestamps, tsState, onCapture, onComplete, jobCompl
             </div>
           </li>
         );
+
+        if (key === "boatCastOffShip" && intermediateTrip) {
+          const tripItem = (
+            <li key="intermediate-trip" className="tb-stepper-item tb-stepper-item--intermediate">
+              <div className="tb-stepper-track">
+                <div className="tb-stepper-dot tb-stepper-dot--trip"><FiArrowUp size={9} /></div>
+                <div className="tb-stepper-line" />
+              </div>
+              <div className="tb-stepper-body">
+                <div className="tb-stepper-icon-box tb-stepper-icon-box--trip">
+                  <FiNavigation size={18} />
+                </div>
+                <div className="tb-stepper-content">
+                  <span className="tb-stepper-label tb-stepper-label--trip">Intermediate Trip</span>
+                  {intermediateTrip.purpose && <span className="tb-trip-split-purpose">{intermediateTrip.purpose}</span>}
+                  {intermediateTrip.destShip && (
+                    <span className="tb-trip-split-dest"><FaShip size={9} />{intermediateTrip.destShip}</span>
+                  )}
+                  {intermediateTrip.billingEntity && (
+                    <span className="tb-trip-split-billing">{intermediateTrip.billingEntity}</span>
+                  )}
+                </div>
+              </div>
+            </li>
+          );
+          return [mainItem, tripItem];
+        }
+
+        return [mainItem];
       })}
       {onComplete && (
         <li
@@ -409,9 +438,14 @@ TimestampStepper.propTypes = {
   jobCompleted: PropTypes.bool,
   canFinish:    PropTypes.bool,
   onUndo:       PropTypes.func,
-  now:          PropTypes.instanceOf(Date),
-  tsOps:        PropTypes.object,
-  shipName:     PropTypes.string,
+  now:             PropTypes.instanceOf(Date),
+  tsOps:           PropTypes.object,
+  shipName:        PropTypes.string,
+  intermediateTrip: PropTypes.shape({
+    purpose:       PropTypes.string,
+    destShip:      PropTypes.string,
+    billingEntity: PropTypes.string,
+  }),
 };
 
 function InfoCard({ label, value }) {
@@ -1154,6 +1188,7 @@ function TaxiBoatCardView({ card }) {
                   tsState={dropTs}
                   tsOps={dropTsOps}
                   shipName={vesselName}
+                  intermediateTrip={tripAdded ? { purpose: addTripPurpose, destShip: addTripDestShip, billingEntity: addTripBillingEntity } : undefined}
                   onCapture={(key) => captureNow(setDropTs, key, setDropTsOps, operatorName)}
                   onComplete={() => { setJobCompleted(true); setJobCompletedAt(new Date().toISOString()); }}
                   jobCompleted={jobCompleted}
@@ -1207,6 +1242,7 @@ function TaxiBoatCardView({ card }) {
                   tsState={pickupTs}
                   tsOps={pickupTsOps}
                   shipName={vesselName}
+                  intermediateTrip={tripAdded ? { purpose: addTripPurpose, destShip: addTripDestShip, billingEntity: addTripBillingEntity } : undefined}
                   onCapture={(key) => captureNow(setPickupTs, key, setPickupTsOps, operatorName)}
                   onComplete={() => { setJobCompleted(true); setJobCompletedAt(new Date().toISOString()); }}
                   jobCompleted={jobCompleted}
