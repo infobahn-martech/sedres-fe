@@ -18,6 +18,17 @@ const MOCK_CREW_ROWS = [
   { name: "Omar Hassan",      rank: "Cook",          nationality: "Egyptian", passportNo: "P4567890", seamanBookNo: "SB-10024" },
 ];
 
+const MOCK_PACKING_LIST_ROWS = [
+  { itemNo: "PL-001", description: "Safety Helmets",          qty: 20,  unit: "pcs",  weight: 12.0,  notes: ""         },
+  { itemNo: "PL-002", description: "Fire Hose Assemblies",    qty: 4,   unit: "sets", weight: 48.5,  notes: ""         },
+  { itemNo: "PL-003", description: "Hydraulic Fluid (ISO 46)",qty: 200, unit: "L",    weight: 180.0, notes: "Hazmat"   },
+  { itemNo: "PL-004", description: "Spare Pump Impellers",    qty: 2,   unit: "pcs",  weight: 35.0,  notes: ""         },
+  { itemNo: "PL-005", description: "Rope (16mm, 200m coil)",  qty: 3,   unit: "coil", weight: 90.0,  notes: ""         },
+  { itemNo: "PL-006", description: "Electrical Cable Reels",  qty: 6,   unit: "reels",weight: 144.0, notes: ""         },
+  { itemNo: "PL-007", description: "Engine Lube Oil 40W",     qty: 100, unit: "L",    weight: 88.0,  notes: "Hazmat"   },
+  { itemNo: "PL-008", description: "Life Jacket (SOLAS)",     qty: 30,  unit: "pcs",  weight: 24.0,  notes: ""         },
+];
+
 function getBatchCrewRows(crewCount) {
   const n = Math.max(0, parseInt(crewCount, 10) || 0);
   if (n === 0) return [];
@@ -813,6 +824,7 @@ function TaxiBoatCardView({ card }) {
 
   // Scenario B: Material / Provision / Garbage
   const [packingListFile, setPackingListFile] = useState(null);
+  const parsedPackingRows = packingListFile ? MOCK_PACKING_LIST_ROWS : null;
 
   // Scenario C: unified batch state — each batch has its own crew count, operator, timestamps, and file
   const [activeBatchTab, setActiveBatchTab] = useState(0);
@@ -1035,12 +1047,47 @@ function TaxiBoatCardView({ card }) {
             />
             <label htmlFor="tb-packing-list-input" className="tb-excel-upload-btn">
               <FiUpload size={15} />
-              Upload Packing List
+              {packingListFile ? "Replace File" : "Upload Packing List"}
             </label>
             {packingListFile && (
               <span className="tb-excel-upload-filename">{packingListFile.name}</span>
             )}
           </div>
+          {parsedPackingRows && (
+            <>
+              <span className="tb-ai-parse-status">
+                AI parsed — {parsedPackingRows.length} items found
+              </span>
+              <div className="tb-crew-table-wrapper">
+                <table className="tb-crew-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Item No.</th>
+                      <th>Description</th>
+                      <th>Qty</th>
+                      <th>Unit</th>
+                      <th>Weight (kg)</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {parsedPackingRows.map((row, i) => (
+                      <tr key={i}>
+                        <td>{i + 1}</td>
+                        <td>{row.itemNo}</td>
+                        <td>{row.description}</td>
+                        <td>{row.qty}</td>
+                        <td>{row.unit}</td>
+                        <td>{row.weight}</td>
+                        <td>{row.notes || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       )}
 
