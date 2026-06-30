@@ -25,10 +25,10 @@ function getBatchCrewRows(crewCount) {
 }
 
 const STANDARD_TIMESTAMPS = [
-  { key: "castOff",           label: "Cast off Time",       icon: FiFlag,       animKey: "castOff"           },
-  { key: "boatAlongsideShip", label: "Boat Alongside Ship", icon: FiAnchor,     animKey: "boatAlongsideShip" },
-  { key: "boatCastOffShip",   label: "Boat Cast off Ship",  icon: FiNavigation, animKey: "boatCastOffShip"   },
-  { key: "backToJetty",       label: "Back to Jetty",       icon: FiHome,       animKey: "backToJetty"       },
+  { key: "castOff",           label: "Cast off Time",       icon: FiFlag,       animKey: "castOff"                          },
+  { key: "boatAlongsideShip", label: "Boat Alongside Ship", icon: FiAnchor,     animKey: "boatAlongsideShip", showShip: true },
+  { key: "boatCastOffShip",   label: "Boat Cast off Ship",  icon: FiNavigation, animKey: "boatCastOffShip",   showShip: true },
+  { key: "backToJetty",       label: "Back to Jetty",       icon: FiHome,       animKey: "backToJetty"                      },
 ];
 
 const BATCH_ORDINALS = ["1st", "2nd", "3rd", "4th", "5th", "6th"];
@@ -253,7 +253,7 @@ ConfirmDialog.propTypes = {
   onCancel:  PropTypes.func.isRequired,
 };
 
-function TimestampStepper({ timestamps, tsState, onCapture, onComplete, jobCompleted, canFinish, onUndo, now, tsOps }) {
+function TimestampStepper({ timestamps, tsState, onCapture, onComplete, jobCompleted, canFinish, onUndo, now, tsOps, shipName }) {
   const doneCount = timestamps.filter((t) => tsState[t.key] !== null).length;
   const totalSteps = timestamps.length;
   const allTimestampsDone = doneCount === totalSteps;
@@ -267,7 +267,7 @@ function TimestampStepper({ timestamps, tsState, onCapture, onComplete, jobCompl
         <MdDirectionsBoat size={20} className="tb-stepper-boat-icon" />
       </div>
       <ol className="tb-stepper">
-      {timestamps.map(({ key, label, icon: Icon, animKey }, i) => {
+      {timestamps.map(({ key, label, icon: Icon, animKey, showShip }, i) => {
         const done = tsState[key] !== null;
         const prevKey = i > 0 ? timestamps[i - 1].key : null;
         const prevDone = i === 0 || tsState[prevKey] !== null;
@@ -315,7 +315,12 @@ function TimestampStepper({ timestamps, tsState, onCapture, onComplete, jobCompl
                 {animKey ? <TimestampAnimIcon animKey={animKey} /> : <Icon size={20} />}
               </div>
               <div className="tb-stepper-content">
-                <span className="tb-stepper-label">{label}</span>
+                <span className="tb-stepper-label">
+                  {label}
+                  {showShip && shipName && shipName !== "—" && (
+                    <span className="tb-stepper-ship-name"><FaShip size={8} />{shipName}</span>
+                  )}
+                </span>
                 <span className={[
                   "tb-stepper-pill",
                   done   ? "tb-stepper-pill--done" : "",
@@ -406,6 +411,7 @@ TimestampStepper.propTypes = {
   onUndo:       PropTypes.func,
   now:          PropTypes.instanceOf(Date),
   tsOps:        PropTypes.object,
+  shipName:     PropTypes.string,
 };
 
 function InfoCard({ label, value }) {
@@ -994,6 +1000,7 @@ function TaxiBoatCardView({ card }) {
                   timestamps={STANDARD_TIMESTAMPS}
                   tsState={batch.ts}
                   tsOps={batch.tsOps}
+                  shipName={vesselName}
                   onCapture={(key) => captureBatchTs(i, key)}
                   onComplete={() => setBatches((prev) => prev.map((b, idx) => idx === i ? { ...b, completed: true, completedAt: new Date().toISOString() } : b))}
                   jobCompleted={batch.completed}
@@ -1121,6 +1128,7 @@ function TaxiBoatCardView({ card }) {
                   timestamps={STANDARD_TIMESTAMPS}
                   tsState={dropTs}
                   tsOps={dropTsOps}
+                  shipName={vesselName}
                   onCapture={(key) => captureNow(setDropTs, key, setDropTsOps, operatorName)}
                   onComplete={() => { setJobCompleted(true); setJobCompletedAt(new Date().toISOString()); }}
                   jobCompleted={jobCompleted}
@@ -1148,6 +1156,7 @@ function TaxiBoatCardView({ card }) {
                   timestamps={STANDARD_TIMESTAMPS}
                   tsState={pickupTs}
                   tsOps={pickupTsOps}
+                  shipName={vesselName}
                   onCapture={(key) => captureNow(setPickupTs, key, setPickupTsOps, operatorName)}
                   onComplete={() => { setJobCompleted(true); setJobCompletedAt(new Date().toISOString()); }}
                   jobCompleted={jobCompleted}

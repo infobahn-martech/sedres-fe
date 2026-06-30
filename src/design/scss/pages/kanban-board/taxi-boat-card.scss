@@ -1014,6 +1014,21 @@ $tb-space-2xl:  32px;
   color: #64748b;
 }
 
+/* ---- Ship name badge shown inline on "Alongside / Cast Off" steps ---- */
+.tb-stepper-ship-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #e0f2fe;
+  font-size: 10px;
+  font-weight: 600;
+  color: #0369a1;
+  white-space: nowrap;
+}
+
 /* ---- Taxi Boat Guide name input above timestamps ---- */
 .tb-guide-name-row {
   display: flex;
