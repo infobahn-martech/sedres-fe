@@ -6,6 +6,8 @@ import { MdDirectionsBoat } from "react-icons/md";
 import "../../../../../../design/scss/pages/kanban-board/taxi-boat-card.scss";
 import "../../../../../../design/scss/pages/kanban-board/taxi-boat-service-scenarios.scss";
 import GroSummaryCard from "../GRO/User/GroSummaryCard";
+import { useCTPendingCards } from "../../../../../../store/ctStore";
+import { useTaxiBoatStore } from "../../../../../../store/taxiBoatStore";
 
 const CREW_CHANGE_SERVICES = ["Crew Change"];
 const MATERIAL_SERVICES   = ["Material Delivery", "Provision Delivery", "Garbage Collection"];
@@ -58,21 +60,6 @@ const formatDuration = (ms) => {
   return `${s}s`;
 };
 
-const RECENT_OPS_KEY = "tb-recent-operators";
-const MAX_RECENT_OPS = 5;
-
-const loadRecentOps = () => {
-  try { return JSON.parse(localStorage.getItem(RECENT_OPS_KEY) || "[]"); }
-  catch { return []; }
-};
-
-const saveRecentOp = (name) => {
-  if (!name?.trim()) return;
-  const trimmed = name.trim();
-  const prev = loadRecentOps();
-  const next = [trimmed, ...prev.filter((op) => op !== trimmed)].slice(0, MAX_RECENT_OPS);
-  localStorage.setItem(RECENT_OPS_KEY, JSON.stringify(next));
-};
 
 const formatDateTime = (iso) => {
   if (!iso) return null;
@@ -785,16 +772,16 @@ function TaxiBoatCardView({ card }) {
     return () => clearInterval(id);
   }, []);
 
-  // Operator quick-select — recent names from localStorage
-  const [recentOps, setRecentOps] = useState(loadRecentOps);
+  // Operator quick-select — recent names from Zustand store
+  const recentOps = useTaxiBoatStore((s) => s.recentOperators);
+  const addRecentOperator = useTaxiBoatStore((s) => s.addRecentOperator);
   const [opFocusedBatch, setOpFocusedBatch] = useState(null);
   const opBlurTimer = useRef(null);
 
   const handleOpBlur = useCallback((operator) => {
     opBlurTimer.current = setTimeout(() => {
       if (operator?.trim()) {
-        saveRecentOp(operator);
-        setRecentOps(loadRecentOps());
+        addRecentOperator(operator);
       }
       setOpFocusedBatch(null);
     }, 150);
@@ -853,9 +840,11 @@ function TaxiBoatCardView({ card }) {
     );
   }, []);
 
+  const addPendingCard = useCTPendingCards((s) => s.addPendingCard);
+
   const handleAddTrip = useCallback(() => {
     if (!addTripPurpose.trim()) return;
-    const newCard = {
+    addPendingCard({
       id: `ct-extra-${Date.now()}`,
       typeOfService: addTripPurpose.trim(),
       name: addTripBillingEntity.trim() || billingEntity,
@@ -863,13 +852,10 @@ function TaxiBoatCardView({ card }) {
       progress: 0,
       timeLeft: "",
       isExtraTrip: true,
-    };
-    const pending = JSON.parse(localStorage.getItem("ct-pending-cards") || "[]");
-    pending.push(newCard);
-    localStorage.setItem("ct-pending-cards", JSON.stringify(pending));
+    });
     setTripAdded(true);
     setAddTripOpen(false);
-  }, [addTripPurpose, addTripBillingEntity, addTripDestShip, billingEntity, vesselName]);
+  }, [addTripPurpose, addTripBillingEntity, addTripDestShip, billingEntity, vesselName, addPendingCard]);
 
   const handleAddBatch = useCallback(() => {
     const initKeys = STANDARD_TIMESTAMPS.map((t) => t.key);

@@ -1,4 +1,5 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useCTPendingCards } from "../../store/ctStore";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { KANBAN_DND_DISABLED } from "../../shared/constants/kanbanConfig";
 import { FiLayers } from "react-icons/fi";
@@ -167,10 +168,11 @@ export default function CoordinatorTransport() {
     }, []);
 
     // Consume any intermediate-trip cards queued from TaxiBoatCardView
+    const consumePendingCards = useCTPendingCards((s) => s.consumePendingCards);
+    const consumeRef = useRef(consumePendingCards);
     useEffect(() => {
-        const pending = JSON.parse(localStorage.getItem("ct-pending-cards") || "[]");
+        const pending = consumeRef.current();
         if (pending.length === 0) return;
-        localStorage.removeItem("ct-pending-cards");
         setWorkflows(prev => prev.map(workflow => {
             const inProgressKey = Object.keys(workflow.columns).find(k => workflow.columns[k].title === "In Progress");
             if (!inProgressKey) return workflow;
