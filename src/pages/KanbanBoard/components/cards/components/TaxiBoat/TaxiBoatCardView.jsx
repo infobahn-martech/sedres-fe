@@ -720,6 +720,13 @@ function TaxiBoatCardView({ card }) {
   const [dropTsOps, setDropTsOps] = useState(() => makeTsState(STANDARD_TIMESTAMPS.map(t => t.key)));
   const [pickupTsOps, setPickupTsOps] = useState(() => makeTsState(STANDARD_TIMESTAMPS.map(t => t.key)));
 
+  // Intermediate trip form
+  const [addTripOpen, setAddTripOpen] = useState(false);
+  const [addTripBillingEntity, setAddTripBillingEntity] = useState("");
+  const [addTripPurpose, setAddTripPurpose] = useState("");
+  const [addTripDestShip, setAddTripDestShip] = useState("");
+  const [tripAdded, setTripAdded] = useState(false);
+
   // Taxi fleet assignment
   const [selectedFleet, setSelectedFleet] = useState(null);
   const [fleetAssigned, setFleetAssigned] = useState(false);
@@ -799,6 +806,24 @@ function TaxiBoatCardView({ card }) {
       )
     );
   }, []);
+
+  const handleAddTrip = useCallback(() => {
+    if (!addTripPurpose.trim()) return;
+    const newCard = {
+      id: `ct-extra-${Date.now()}`,
+      typeOfService: addTripPurpose.trim(),
+      name: addTripBillingEntity.trim() || billingEntity,
+      vesselName: addTripDestShip.trim() || vesselName,
+      progress: 0,
+      timeLeft: "",
+      isExtraTrip: true,
+    };
+    const pending = JSON.parse(localStorage.getItem("ct-pending-cards") || "[]");
+    pending.push(newCard);
+    localStorage.setItem("ct-pending-cards", JSON.stringify(pending));
+    setTripAdded(true);
+    setAddTripOpen(false);
+  }, [addTripPurpose, addTripBillingEntity, addTripDestShip, billingEntity, vesselName]);
 
   const handleAddBatch = useCallback(() => {
     const initKeys = STANDARD_TIMESTAMPS.map((t) => t.key);
@@ -1140,6 +1165,31 @@ function TaxiBoatCardView({ card }) {
                     addToLog: (reason) => setDropStepBackLog((prev) => [...prev, { step: label, reason, time: new Date().toISOString() }]),
                   })}
                 />
+                {dropTs.boatCastOffShip && (
+                  tripAdded ? (
+                    <div className="tb-add-trip-done"><FiCheckCircle size={13} />New task added to Coordinator Board</div>
+                  ) : addTripOpen ? (
+                    <div className="tb-add-trip-form">
+                      <span className="tb-add-trip-form-title">Intermediate Trip Details</span>
+                      <div className="tb-add-trip-fields">
+                        <label className="tb-add-trip-label">Billing Entity</label>
+                        <input className="tb-add-trip-input" type="text" placeholder="Billing entity..." value={addTripBillingEntity} onChange={(e) => setAddTripBillingEntity(e.target.value)} />
+                        <label className="tb-add-trip-label">Purpose <span className="tb-add-trip-required">*</span></label>
+                        <input className="tb-add-trip-input" type="text" placeholder="e.g. Material Delivery, Crew Change..." value={addTripPurpose} onChange={(e) => setAddTripPurpose(e.target.value)} />
+                        <label className="tb-add-trip-label">Destination Ship</label>
+                        <input className="tb-add-trip-input" type="text" placeholder="Vessel name..." value={addTripDestShip} onChange={(e) => setAddTripDestShip(e.target.value)} />
+                      </div>
+                      <div className="tb-add-trip-btns">
+                        <button className="tb-add-trip-submit" onClick={handleAddTrip} disabled={!addTripPurpose.trim()}>Add to Board</button>
+                        <button className="tb-add-trip-cancel" onClick={() => setAddTripOpen(false)}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button className="tb-add-trip-btn" onClick={() => { setAddTripBillingEntity(billingEntity !== "—" ? billingEntity : ""); setAddTripDestShip(vesselName !== "—" ? vesselName : ""); setAddTripOpen(true); }}>
+                      <FiPlus size={13} />Add Intermediate Trip
+                    </button>
+                  )
+                )}
                 <TimestampSummaryTable
                   timestamps={STANDARD_TIMESTAMPS}
                   tsState={dropTs}
@@ -1168,6 +1218,31 @@ function TaxiBoatCardView({ card }) {
                     addToLog: (reason) => setPickupStepBackLog((prev) => [...prev, { step: label, reason, time: new Date().toISOString() }]),
                   })}
                 />
+                {pickupTs.boatCastOffShip && (
+                  tripAdded ? (
+                    <div className="tb-add-trip-done"><FiCheckCircle size={13} />New task added to Coordinator Board</div>
+                  ) : addTripOpen ? (
+                    <div className="tb-add-trip-form">
+                      <span className="tb-add-trip-form-title">Intermediate Trip Details</span>
+                      <div className="tb-add-trip-fields">
+                        <label className="tb-add-trip-label">Billing Entity</label>
+                        <input className="tb-add-trip-input" type="text" placeholder="Billing entity..." value={addTripBillingEntity} onChange={(e) => setAddTripBillingEntity(e.target.value)} />
+                        <label className="tb-add-trip-label">Purpose <span className="tb-add-trip-required">*</span></label>
+                        <input className="tb-add-trip-input" type="text" placeholder="e.g. Material Delivery, Crew Change..." value={addTripPurpose} onChange={(e) => setAddTripPurpose(e.target.value)} />
+                        <label className="tb-add-trip-label">Destination Ship</label>
+                        <input className="tb-add-trip-input" type="text" placeholder="Vessel name..." value={addTripDestShip} onChange={(e) => setAddTripDestShip(e.target.value)} />
+                      </div>
+                      <div className="tb-add-trip-btns">
+                        <button className="tb-add-trip-submit" onClick={handleAddTrip} disabled={!addTripPurpose.trim()}>Add to Board</button>
+                        <button className="tb-add-trip-cancel" onClick={() => setAddTripOpen(false)}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button className="tb-add-trip-btn" onClick={() => { setAddTripBillingEntity(billingEntity !== "—" ? billingEntity : ""); setAddTripDestShip(vesselName !== "—" ? vesselName : ""); setAddTripOpen(true); }}>
+                      <FiPlus size={13} />Add Intermediate Trip
+                    </button>
+                  )
+                )}
                 <TimestampSummaryTable
                   timestamps={STANDARD_TIMESTAMPS}
                   tsState={pickupTs}

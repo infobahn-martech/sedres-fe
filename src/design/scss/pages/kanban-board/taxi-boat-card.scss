@@ -1724,3 +1724,127 @@ $tb-space-2xl:  32px;
   svg { flex-shrink: 0; }
   strong { font-weight: 800; }
 }
+
+/* ---- Intermediate trip add section ---- */
+.tb-add-trip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 10px 0 4px;
+  padding: 6px 14px;
+  border: 1.5px dashed #94a3b8;
+  border-radius: 8px;
+  background: #f8fafc;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+    color: #2563eb;
+  }
+}
+
+.tb-add-trip-form {
+  margin: 10px 0 4px;
+  padding: 14px 16px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tb-add-trip-form-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e40af;
+}
+
+.tb-add-trip-fields {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.tb-add-trip-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.tb-add-trip-required {
+  color: #dc2626;
+}
+
+.tb-add-trip-input {
+  padding: 5px 10px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #1e293b;
+  background: #fff;
+
+  &:focus {
+    outline: none;
+    border-color: #2563eb;
+  }
+
+  &::placeholder { color: #94a3b8; }
+}
+
+.tb-add-trip-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.tb-add-trip-submit {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:disabled {
+    background: #93c5fd;
+    cursor: not-allowed;
+  }
+
+  &:not(:disabled):hover { background: #1d4ed8; }
+}
+
+.tb-add-trip-cancel {
+  padding: 6px 14px;
+  border: 1.5px solid #94a3b8;
+  border-radius: 6px;
+  background: #fff;
+  color: #475569;
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover { background: #f1f5f9; }
+}
+
+.tb-add-trip-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 4px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  font-size: 12px;
+  font-weight: 600;
+  color: #15803d;
+}

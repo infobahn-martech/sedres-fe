@@ -166,6 +166,31 @@ export default function CoordinatorTransport() {
         return () => clearTimeout(timer);
     }, []);
 
+    // Consume any intermediate-trip cards queued from TaxiBoatCardView
+    useEffect(() => {
+        const pending = JSON.parse(localStorage.getItem("ct-pending-cards") || "[]");
+        if (pending.length === 0) return;
+        localStorage.removeItem("ct-pending-cards");
+        setWorkflows(prev => prev.map(workflow => {
+            const inProgressKey = Object.keys(workflow.columns).find(k => workflow.columns[k].title === "In Progress");
+            if (!inProgressKey) return workflow;
+            const newCards = {};
+            const newIds = [];
+            pending.forEach(card => { newCards[card.id] = card; newIds.push(card.id); });
+            return {
+                ...workflow,
+                cards: { ...workflow.cards, ...newCards },
+                columns: {
+                    ...workflow.columns,
+                    [inProgressKey]: {
+                        ...workflow.columns[inProgressKey],
+                        cardIds: [...newIds, ...workflow.columns[inProgressKey].cardIds],
+                    },
+                },
+            };
+        }));
+    }, []);
+
     useSyncKanbanSidebarWorkflows(workflows);
     useKanbanAddCardFromSidebar({ setSelectedCard, setIsAddMode, setAddTargetWorkflowId });
 
