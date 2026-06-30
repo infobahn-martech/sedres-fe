@@ -4,22 +4,50 @@ import { Modal } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import BusinessRuleIcon from './BusinessRuleIcon';
 import BusinessRuleFormModal from './BusinessRuleFormModal';
-import { BUSINESS_RULES } from './businessRulesData';
+import businessRuleService from '../../../services/businessRuleService';
 import '../../../design/scss/business-rules-modal.scss';
+
+const TRIGGER_CODE_TO_ICON = {
+  card_created: 'create',
+  card_updated: 'update',
+  card_moved: 'moved',
+  child_card_blocked: 'child-blocked',
+  child_card_moved: 'child-moved',
+  all_children_moved: 'all-children-moved',
+};
 
 const BusinessRulesModal = ({ show, onClose, boardName }) => {
   const [searchValue, setSearchValue] = useState('');
   const [selectedRule, setSelectedRule] = useState(null);
   const [showFormModal, setShowFormModal] = useState(false);
+  const [triggerTypes, setTriggerTypes] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!show) {
       setShowFormModal(false);
       setSelectedRule(null);
+      return;
     }
+    setLoading(true);
+    businessRuleService
+      .getTriggerTypes()
+      .then((res) => {
+        const items = res?.data?.data ?? [];
+        setTriggerTypes(
+          items.map((item) => ({
+            id: item.trigger_type_id,
+            name: item.trigger_name,
+            icon: TRIGGER_CODE_TO_ICON[item.trigger_code] ?? item.trigger_code,
+            description: item.description,
+          }))
+        );
+      })
+      .catch(() => setTriggerTypes([]))
+      .finally(() => setLoading(false));
   }, [show]);
 
-  const filteredRules = BUSINESS_RULES.filter((rule) =>
+  const filteredRules = triggerTypes.filter((rule) =>
     rule.name.toLowerCase().includes(searchValue.toLowerCase().trim())
   );
 
@@ -72,7 +100,9 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
           </div>
 
           <div className="business-rules-grid-wrapper">
-            {filteredRules.length > 0 ? (
+            {loading ? (
+              <div className="business-rules-empty-state">Loading...</div>
+            ) : filteredRules.length > 0 ? (
               <div className="business-rules-grid">
                 {filteredRules.map((rule) => (
                   <button
