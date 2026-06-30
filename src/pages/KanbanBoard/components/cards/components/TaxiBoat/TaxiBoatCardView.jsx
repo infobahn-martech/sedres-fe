@@ -876,6 +876,57 @@ function TaxiBoatCardView({ card }) {
     ? batches.every((b) => b.completed)
     : allDone(dropTs, tsKeys) && allDone(pickupTs, tsKeys);
 
+  const printLaunchSlip = useCallback((tsState, tabLabel, guide, completedAt) => {
+    const slip = window.open("", "_blank", "width=820,height=680");
+    if (!slip) return;
+    const tsRows = STANDARD_TIMESTAMPS.map(({ key, label }, i) => {
+      const val = tsState[key];
+      const prevKey = i > 0 ? STANDARD_TIMESTAMPS[i - 1].key : null;
+      const prevVal = prevKey ? tsState[prevKey] : null;
+      const dur = val && prevVal ? formatDuration(new Date(val) - new Date(prevVal)) : null;
+      return `<tr><td>${label}</td><td>${val ? formatDateTime(val) : "—"}</td><td>${dur ?? "—"}</td></tr>`;
+    }).join("");
+    slip.document.write(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"/><title>Launch Slip</title>
+<style>
+  body{font-family:Arial,sans-serif;padding:36px 40px;color:#111;font-size:13px;}
+  h1{font-size:20px;margin:0 0 2px;} .sub{font-size:12px;color:#555;margin-bottom:18px;}
+  .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-bottom:20px;}
+  .meta-item{display:flex;flex-direction:column;gap:1px;}
+  .meta-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em;}
+  .meta-value{font-size:13px;font-weight:600;}
+  table{width:100%;border-collapse:collapse;margin-bottom:22px;}
+  th{background:#f1f5f9;font-size:11px;text-align:left;padding:7px 10px;border:1px solid #e2e8f0;}
+  td{font-size:12px;padding:7px 10px;border:1px solid #e2e8f0;}
+  .sig-row{display:flex;gap:32px;margin-top:40px;}
+  .sig-box{flex:1;border-top:1.5px solid #111;padding-top:8px;font-size:11px;color:#444;}
+  .footer{margin-top:24px;font-size:10px;color:#aaa;text-align:center;}
+  @media print{body{padding:0;}}
+</style></head><body>
+  <h1>Launch Slip &mdash; ${tabLabel}</h1>
+  <div class="sub">Printed: ${new Date().toLocaleString("en-GB")}</div>
+  <div class="meta-grid">
+    <div class="meta-item"><span class="meta-label">Vessel</span><span class="meta-value">${vesselName}</span></div>
+    <div class="meta-item"><span class="meta-label">Service Type</span><span class="meta-value">${serviceType}</span></div>
+    <div class="meta-item"><span class="meta-label">Billing Entity</span><span class="meta-value">${billingEntity}</span></div>
+    <div class="meta-item"><span class="meta-label">Requested Operator</span><span class="meta-value">${requestedOperator}</span></div>
+    <div class="meta-item"><span class="meta-label">Location</span><span class="meta-value">${location}</span></div>
+    ${guide ? `<div class="meta-item"><span class="meta-label">Taxi Boat Guide</span><span class="meta-value">${guide}</span></div>` : ""}
+    ${completedAt ? `<div class="meta-item"><span class="meta-label">Trip Completed</span><span class="meta-value">${formatDateTime(completedAt)}</span></div>` : ""}
+  </div>
+  <table><thead><tr><th>Step</th><th>Captured Time</th><th>Duration</th></tr></thead><tbody>${tsRows}</tbody></table>
+  <div class="sig-row">
+    <div class="sig-box">Operator Signature</div>
+    <div class="sig-box">Captain / OIM Signature</div>
+    <div class="sig-box">Date &amp; Time</div>
+  </div>
+  <div class="footer">Sedres &mdash; Taxi Boat Launch Slip</div>
+</body></html>`);
+    slip.document.close();
+    slip.focus();
+    setTimeout(() => slip.print(), 250);
+  }, [vesselName, serviceType, billingEntity, requestedOperator, location]);
+
   return (
     <div className="tb-card-view">
       <div className="gro-summary-grid gro-summary-grid--six-col">
@@ -1098,7 +1149,10 @@ function TaxiBoatCardView({ card }) {
 
                 {batch.completed && (
                   <div className="tb-batch-actions">
-                    <button className="tb-batch-print-btn">
+                    <button
+                      className="tb-batch-print-btn"
+                      onClick={() => printLaunchSlip(batch.ts, `Batch ${batch.id}`, operatorName, batch.completedAt)}
+                    >
                       <FiPrinter size={14} />
                       Print Launch Slip
                     </button>
@@ -1293,7 +1347,15 @@ function TaxiBoatCardView({ card }) {
           </div>
           {jobCompleted && (
             <div className="tb-batch-actions">
-              <button className="tb-batch-print-btn">
+              <button
+                className="tb-batch-print-btn"
+                onClick={() => printLaunchSlip(
+                  activeTab === "drop" ? dropTs : pickupTs,
+                  activeTab === "drop" ? "Drop" : "Pickup",
+                  operatorName,
+                  jobCompletedAt
+                )}
+              >
                 <FiPrinter size={14} />
                 Print Launch Slip
               </button>
