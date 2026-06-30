@@ -4,7 +4,7 @@ import { Modal } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import BusinessRuleIcon from './BusinessRuleIcon';
 import BusinessRuleFormModal from './BusinessRuleFormModal';
-import businessRuleService from '../../../services/businessRuleService';
+import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import '../../../design/scss/business-rules-modal.scss';
 
 const TRIGGER_CODE_TO_ICON = {
@@ -20,8 +20,8 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
   const [searchValue, setSearchValue] = useState('');
   const [selectedRule, setSelectedRule] = useState(null);
   const [showFormModal, setShowFormModal] = useState(false);
-  const [triggerTypes, setTriggerTypes] = useState([]);
-  const [loading, setLoading] = useState(false);
+
+  const { triggerTypes, isLoadingGet, getTriggerTypes } = useBusinessRuleReducer();
 
   useEffect(() => {
     if (!show) {
@@ -29,25 +29,17 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
       setSelectedRule(null);
       return;
     }
-    setLoading(true);
-    businessRuleService
-      .getTriggerTypes()
-      .then((res) => {
-        const items = res?.data?.data ?? [];
-        setTriggerTypes(
-          items.map((item) => ({
-            id: item.trigger_type_id,
-            name: item.trigger_name,
-            icon: TRIGGER_CODE_TO_ICON[item.trigger_code] ?? item.trigger_code,
-            description: item.description,
-          }))
-        );
-      })
-      .catch(() => setTriggerTypes([]))
-      .finally(() => setLoading(false));
+    getTriggerTypes();
   }, [show]);
 
-  const filteredRules = triggerTypes.filter((rule) =>
+  const mappedRules = triggerTypes.map((item) => ({
+    id: item.trigger_type_id,
+    name: item.trigger_name,
+    icon: TRIGGER_CODE_TO_ICON[item.trigger_code] ?? item.trigger_code,
+    description: item.description,
+  }));
+
+  const filteredRules = mappedRules.filter((rule) =>
     rule.name.toLowerCase().includes(searchValue.toLowerCase().trim())
   );
 
@@ -100,7 +92,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
           </div>
 
           <div className="business-rules-grid-wrapper">
-            {loading ? (
+            {isLoadingGet ? (
               <div className="business-rules-empty-state">Loading...</div>
             ) : filteredRules.length > 0 ? (
               <div className="business-rules-grid">
