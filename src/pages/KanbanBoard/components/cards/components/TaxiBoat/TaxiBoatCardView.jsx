@@ -400,7 +400,7 @@ function TimestampStepper({ timestamps, tsState, onCapture, onComplete, jobCompl
               <FiCheckCircle size={20} />
             </div>
             <div className="tb-stepper-content">
-              <span className="tb-stepper-label">Job Completed</span>
+              <span className="tb-stepper-label">Trip Completed</span>
               <span className={[
                 "tb-stepper-pill",
                 jobCompleted                    ? "tb-stepper-pill--done" : "",
@@ -487,7 +487,7 @@ function FinalStep({ canComplete, isDone, onComplete }) {
             <FiCheckCircle size={20} />
           </div>
           <div className="tb-stepper-content">
-            <span className="tb-stepper-label">Job Completed</span>
+            <span className="tb-stepper-label">Trip Completed</span>
             <span className={[
               "tb-stepper-pill",
               isDone                 ? "tb-stepper-pill--done" : "",
@@ -542,10 +542,10 @@ function TimestampSummaryTable({ timestamps, tsState, jobCompletedAt, cobTime, o
             );
           })}
 
-          {/* Job Completed row */}
+          {/* Trip Completed row */}
           <tr className={["tb-ts-summary-row--job", jobCompletedAt ? "tb-ts-summary-row--done" : "tb-ts-summary-row--locked"].join(" ")}>
             <td className="tb-ts-summary-num">{jobCompletedAt ? "✓" : <FiCheckCircle size={11} />}</td>
-            <td className="tb-ts-summary-step tb-ts-summary-job-label">Job Completed</td>
+            <td className="tb-ts-summary-step tb-ts-summary-job-label">Trip Completed</td>
             <td className="tb-ts-summary-time">
               {jobCompletedAt
                 ? formatDateTime(jobCompletedAt)
