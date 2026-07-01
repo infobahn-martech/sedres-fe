@@ -6,4 +6,7 @@ const getTriggerTypes = ({ params } = {}) =>
 const getFields = ({ params } = {}) =>
   Gateway.get('/business_rule/get_fields', { params });
 
-export default { getTriggerTypes, getFields };
+const getCustomFields = ({ params } = {}) =>
+  Gateway.get('/business_rule/get_custom_fields', { params });
+
+export default { getTriggerTypes, getFields, getCustomFields };
