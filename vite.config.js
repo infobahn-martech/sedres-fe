@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/sedres-fe/',
+  base: command === "build" ? "/sedres-fe/" : "/",  // build vs dev
   build: {
     outDir: 'dist',
   },
