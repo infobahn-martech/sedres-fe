@@ -304,6 +304,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const [convertMinDate, setConvertMinDate] = useState(undefined);
   const [viewingNote, setViewingNote] = useState(null);
   const [isDraggingDocuments, setIsDraggingDocuments] = useState(false);
+  const [isDraggingEditDocuments, setIsDraggingEditDocuments] = useState(false);
   const documentsFileInputRef = useRef(null);
   const editDocInputRef = useRef(null);
   const [expandedConvertOrders, setExpandedConvertOrders] = useState({ 1: true });
@@ -322,7 +323,9 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     location: "",
     signature: "",
     remarks: "",
-    file: null,
+    newDocuments: [],
+    existingDocuments: [],
+    removedDocumentIds: [],
     items: [],
   });
   const [formErrors, setFormErrors] = useState({});
@@ -345,7 +348,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const emptyEditFormData = () => ({
     landing_date: "", landing_time: "", warehouse_id: "",
     inbound_id: "", received_from: "", location: "", signature: "",
-    remarks: "", file: null, existingDocuments: [], items: [],
+    remarks: "", newDocuments: [], existingDocuments: [], removedDocumentIds: [], items: [],
   });
 
   const populateFormFromDetail = (detail) => {
@@ -367,8 +370,8 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         pickUpFrom: transport?.pickup_location || "",
         toLocation: transport ? String(transport.to_location_id || "") : "",
         driverName: transport ? String(transport.driver_id || "") : "",
-        slot_no: item.slot_no || "",
-        reason: item.reason || item.reason_name || "",
+        slot_no: item.slot_no_id ?? item.slot_no ?? "",
+        reason: item.reason_id ?? item.reason ?? item.reason_name ?? "",
         dispatch_date: item.dispatch_date || "",
         dispatch_time: "",
       };
@@ -386,8 +389,9 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
       location: detail.location || "",
       signature: detail.signature || "",
       remarks: (detail.remarks || "").replace(/<[^>]*>/g, "").trim(),
-      file: null,
+      newDocuments: [],
       existingDocuments: Array.isArray(detail.documents) ? detail.documents : [],
+      removedDocumentIds: [],
       items,
     });
     setExpandedEditItems(exp);
@@ -432,6 +436,41 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     setExpandedEditItems((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
   };
 
+  const addEditNewDocuments = (files) => {
+    if (!files.length) return;
+    setFormData((prev) => ({
+      ...prev,
+      newDocuments: [...(prev.newDocuments || []), ...files.map((f) => ({ name: f.name, file: f, size: f.size }))],
+    }));
+  };
+
+  const handleEditDocumentsDragEnter = (e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingEditDocuments(true); };
+  const handleEditDocumentsDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingEditDocuments(false); };
+  const handleEditDocumentsDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
+  const handleEditDocumentsDrop = (e) => {
+    e.preventDefault(); e.stopPropagation(); setIsDraggingEditDocuments(false);
+    addEditNewDocuments(Array.from(e.dataTransfer.files || []));
+  };
+  const handleEditDocumentsFileInputChange = (e) => {
+    addEditNewDocuments(Array.from(e.target.files || []));
+    if (editDocInputRef.current) editDocInputRef.current.value = "";
+  };
+  const handleEditNewDocumentRemove = (index) => {
+    setFormData((prev) => ({ ...prev, newDocuments: (prev.newDocuments || []).filter((_, i) => i !== index) }));
+  };
+  const handleEditExistingDocumentRemove = (index) => {
+    setFormData((prev) => {
+      const docs = prev.existingDocuments || [];
+      const removed = docs[index];
+      const docId = removed?.material_document_id ?? removed?.document_id ?? removed?.id;
+      return {
+        ...prev,
+        existingDocuments: docs.filter((_, i) => i !== index),
+        removedDocumentIds: docId != null ? [...(prev.removedDocumentIds || []), docId] : (prev.removedDocumentIds || []),
+      };
+    });
+  };
+
   const validateEditForm = () => {
     const errors = {};
     if (!formData.landing_date) errors.landing_date = "Date is required";
@@ -464,15 +503,16 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     fd.append("location", formData.location || "");
     fd.append("signature", formData.signature || "");
     fd.append("remarks", (formData.remarks || "").replace(/<[^>]*>/g, "").trim());
-    if (formData.file) fd.append("file", formData.file);
+    (formData.newDocuments || []).forEach((doc) => fd.append("file[]", doc.file));
+    (formData.removedDocumentIds || []).forEach((id) => fd.append("removed_document_ids[]", id));
 
     const items = formData.items.map((item) => {
       const result = {
         inbound_item_id: item.inbound_item_id || null,
         quantity: Number(item.quantity) || 0,
         transportation_required: item.transportation_required ? 1 : 0,
-        slot_no: item.slot_no || "",
-        reason: item.reason || "",
+        slot_no_id: item.slot_no || "",
+        reason_id: item.reason || "",
         dispatch_date: item.dispatch_date ? item.dispatch_date + (item.dispatch_time ? ` ${item.dispatch_time}` : "") : null,
       };
       if (item.transportation_required) {
@@ -755,7 +795,10 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     fd.append("delivery_location", convertFormData.delivery_location || "");
     fd.append("delivered_to", convertFormData.delivered_to || "");
     fd.append("remarks", (convertFormData.remarks || "").replace(/<[^>]*>/g, "").trim());
-    if (convertFormData.documents?.length > 0) fd.append("file", convertFormData.documents[0].file ?? convertFormData.documents[0]);
+    (convertFormData.documents || []).forEach((doc) => {
+      const file = doc?.file ?? doc;
+      if (file) fd.append("file[]", file);
+    });
     const items = convertFormData.orders.map((order) => {
       const landingNoteItemId = order.landing_note_item_id || null;
       const item = {
@@ -966,25 +1009,30 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
             </div>
             <div className="row g-2">
               <div className="col-md-12">
-                <FormField label="Document">
+                <FormField label="Documents">
                   <div className="document-upload-wrapper">
                     <div
-                      className="document-upload-zone"
+                      className={`document-upload-zone${isDraggingEditDocuments ? " dragging" : ""}`}
                       style={{ "--card-color": cardColor || "#00368c" }}
                       onClick={() => editDocInputRef.current?.click()}
+                      onDragEnter={handleEditDocumentsDragEnter}
+                      onDragOver={handleEditDocumentsDragOver}
+                      onDragLeave={handleEditDocumentsDragLeave}
+                      onDrop={handleEditDocumentsDrop}
                     >
                       <input
                         ref={editDocInputRef}
                         type="file"
                         className="file-input-hidden"
                         accept="*/*"
-                        onChange={(e) => setFormData((p) => ({ ...p, file: e.target.files?.[0] || null }))}
+                        multiple
+                        onChange={handleEditDocumentsFileInputChange}
                       />
                       <div className="upload-zone-content">
                         <div className="upload-icon-wrapper"></div>
                         <div className="upload-text-content">
                           <p className="upload-main-text">
-                            Drag and drop your file here, or <span className="upload-link">click to browse</span>
+                            Drag and drop your files here, or <span className="upload-link">click to browse</span>
                           </p>
                         </div>
                       </div>
@@ -1011,38 +1059,50 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                                 <div className="landing-doc-name">{fileName}</div>
                               </div>
                               <a href={fileUrl} target="_blank" rel="noreferrer" className="landing-doc-view-btn">View</a>
+                              <button
+                                type="button"
+                                className="document-file-preview-remove"
+                                onClick={() => handleEditExistingDocumentRemove(i)}
+                                title="Remove file"
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </button>
                             </div>
                           );
                         })}
                       </div>
                     )}
-                    {formData.file && (
+                    {formData.newDocuments?.length > 0 && (
                       <div className="document-file-preview-list">
-                        <div className="document-file-preview-item">
-                          <div className="document-file-preview-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
+                        {formData.newDocuments.map((doc, i) => (
+                          <div key={i} className="document-file-preview-item">
+                            <div className="document-file-preview-icon">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </div>
+                            <div className="document-file-preview-info">
+                              <span className="document-file-preview-name">{doc.name}</span>
+                              <span className="document-file-preview-size">
+                                {doc.size < 1024 * 1024
+                                  ? `${(doc.size / 1024).toFixed(1)} KB`
+                                  : `${(doc.size / 1024 / 1024).toFixed(2)} MB`}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              className="document-file-preview-remove"
+                              onClick={() => handleEditNewDocumentRemove(i)}
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </button>
                           </div>
-                          <div className="document-file-preview-info">
-                            <span className="document-file-preview-name">{formData.file.name}</span>
-                            <span className="document-file-preview-size">
-                              {formData.file.size < 1024 * 1024
-                                ? `${(formData.file.size / 1024).toFixed(1)} KB`
-                                : `${(formData.file.size / 1024 / 1024).toFixed(2)} MB`}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            className="document-file-preview-remove"
-                            onClick={() => { setFormData((p) => ({ ...p, file: null })); if (editDocInputRef.current) editDocInputRef.current.value = ""; }}
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </button>
-                        </div>
+                        ))}
                       </div>
                     )}
                   </div>

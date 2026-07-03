@@ -163,6 +163,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
   const [expandedEditItems, setExpandedEditItems] = useState({ 1: true });
   const [editItems, setEditItems] = useState([emptyEditItem(1)]);
   const [isDraggingDocuments, setIsDraggingDocuments] = useState(false);
+  const [removedDocumentIds, setRemovedDocumentIds] = useState([]);
   const documentsFileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -252,6 +253,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
     setEditItems([emptyEditItem(1)]);
     setExpandedEditItems({ 1: true });
     setEditFormErrors({});
+    setRemovedDocumentIds([]);
   };
 
   const handleOpenModal = (note) => {
@@ -349,7 +351,15 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
     if (documentsFileInputRef.current) documentsFileInputRef.current.value = "";
   };
   const handleDocumentsRemove = (index) => {
-    setFormData((prev) => ({ ...prev, documents: (prev.documents || []).filter((_, i) => i !== index) }));
+    setFormData((prev) => {
+      const docs = prev.documents || [];
+      const removed = docs[index];
+      if (removed && !(removed.file instanceof File)) {
+        const docId = removed.material_document_id ?? removed.document_id ?? removed.id;
+        if (docId != null) setRemovedDocumentIds((ids) => [...ids, docId]);
+      }
+      return { ...prev, documents: docs.filter((_, i) => i !== index) };
+    });
   };
 
   const handleSubmit = (e) => {
@@ -375,7 +385,8 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
     fd.append("delivered_to", formData.delivered_to || "");
     fd.append("remarks", (formData.remarks || "").replace(/<[^>]*>/g, "").trim());
     const newFiles = (formData.documents || []).filter((d) => d.file instanceof File);
-    if (newFiles.length > 0) fd.append("file", newFiles[0].file);
+    newFiles.forEach((d) => fd.append("file[]", d.file));
+    removedDocumentIds.forEach((id) => fd.append("removed_document_ids[]", id));
 
     const items = editItems.map((item) => {
       const obj = {

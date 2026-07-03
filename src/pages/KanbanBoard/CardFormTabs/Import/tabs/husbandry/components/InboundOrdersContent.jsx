@@ -1159,7 +1159,10 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     fd.append("location", convertFormData.location || "");
     fd.append("signature", convertFormData.signature || "");
     fd.append("remarks", (convertFormData.remarks || "").replace(/<[^>]*>/g, "").trim());
-    if (convertFormData.documents?.length > 0) fd.append("file", convertFormData.documents[0].file ?? convertFormData.documents[0]);
+    (convertFormData.documents || []).forEach((doc) => {
+      const file = doc?.file ?? doc;
+      if (file) fd.append("file[]", file);
+    });
     const items = convertFormData.orders.map((order) => ({
       inbound_item_id: order.inbound_item_id || null,
       quantity: Number(order.quantity) || 0,
