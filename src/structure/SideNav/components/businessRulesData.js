@@ -261,22 +261,22 @@ export const DUMMY_WORKSPACE_BOARDS = [
       { board_id: 7, board_name: 'SUPER MARKET MAIN BOARD' },
     ],
   },
-  {
-    workspace_id: 2,
-    workspace_name: 'New Offshore Marine Logistics',
-    boards: [
-      { board_id: 8, board_name: 'Rastanura/ Dammam Operations' },
-      { board_id: 9, board_name: 'Jubail Operations' },
-      { board_id: 10, board_name: 'Centralized DA DESK' },
-    ],
-  },
-  {
-    workspace_id: 3,
-    workspace_name: 'Limousine',
-    boards: [
-      { board_id: 11, board_name: 'Coordinator Transport' },
-    ],
-  },
+  { workspace_id: 2, workspace_name: 'New Offshore Marine Logistics', boards: [{ board_id: 8, board_name: 'New Offshore Marine Logistics' }] },
+  { workspace_id: 3, workspace_name: 'RT - Port Permit & Taxi Boat', boards: [{ board_id: 9, board_name: 'RT - Port Permit & Taxi Boat' }] },
+  { workspace_id: 4, workspace_name: 'MARINE SUPPORT', boards: [{ board_id: 10, board_name: 'MARINE SUPPORT' }] },
+  { workspace_id: 5, workspace_name: 'Funds Collection', boards: [{ board_id: 11, board_name: 'Funds Collection' }] },
+  { workspace_id: 6, workspace_name: 'Centralized DA DESK', boards: [{ board_id: 12, board_name: 'Centralized DA DESK' }] },
+  { workspace_id: 7, workspace_name: 'Jubail Operations', boards: [{ board_id: 13, board_name: 'Jubail Operations' }] },
+  { workspace_id: 8, workspace_name: 'Rastanura/ Dammam Operations', boards: [{ board_id: 14, board_name: 'Rastanura/ Dammam Operations' }] },
+  { workspace_id: 9, workspace_name: 'Bahrain Operations', boards: [{ board_id: 15, board_name: 'Bahrain Operations' }] },
+  { workspace_id: 10, workspace_name: 'MARINE SUPPORT - Copy', boards: [{ board_id: 16, board_name: 'MARINE SUPPORT - Copy' }] },
+  { workspace_id: 11, workspace_name: 'Crew HUB gro', boards: [{ board_id: 17, board_name: 'Crew HUB gro' }] },
+  { workspace_id: 12, workspace_name: 'Crew Hub opsss', boards: [{ board_id: 18, board_name: 'Crew Hub opsss' }] },
+  { workspace_id: 13, workspace_name: 'Driver Assign', boards: [{ board_id: 19, board_name: 'Driver Assign' }] },
+  { workspace_id: 14, workspace_name: 'Marine Work permit', boards: [{ board_id: 20, board_name: 'Marine Work permit' }] },
+  { workspace_id: 15, workspace_name: 'Bidding', boards: [{ board_id: 21, board_name: 'Bidding' }] },
+  { workspace_id: 16, workspace_name: 'Limousine', boards: [{ board_id: 22, board_name: 'Limousine' }] },
+  { workspace_id: 17, workspace_name: 'Coordinator Transport', boards: [{ board_id: 23, board_name: 'Coordinator Transport' }] },
 ];
 
 export const DUMMY_CUSTOM_FIELDS = [

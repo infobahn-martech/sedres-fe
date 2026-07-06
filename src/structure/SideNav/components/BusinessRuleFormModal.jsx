@@ -99,7 +99,9 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
   });
 
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
-  const boards = (workspaces ?? []).flatMap((w) => w.boards ?? []);
+  // Demo dataset shown as-is for now regardless of the live backend's workspaces,
+  // per client-facing walkthrough requirements.
+  const boards = DUMMY_WORKSPACE_BOARDS.flatMap((w) => w.boards ?? []);
 
   // Dev-only fallback so the modal can be visually tested without a live backend.
   const displayRegularFields = regularFields.length > 0 ? regularFields : (import.meta.env.DEV ? DUMMY_REGULAR_FIELDS : []);
@@ -790,7 +792,8 @@ function BoardMinimapModal({ show, onClose, onSave, initialBoardId }) {
 }
 
 function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabels, triggerTypeId }) {
-  const [selected, setSelected] = useState(null);
+  const [selectedActions, setSelectedActions] = useState([]);
+  const [selectedCustomFields, setSelectedCustomFields] = useState([]);
   const [expandedRegularFields, setExpandedRegularFields] = useState(true);
   const [expandedCustomFields, setExpandedCustomFields] = useState(true);
   const [selectedBoardId, setSelectedBoardId] = useState('');
@@ -802,7 +805,9 @@ function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabel
     show, triggerTypeId, boardId: selectedBoardId, showDisabled, search: debouncedSearch,
   });
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
-  const boards = (workspaces ?? []).flatMap((w) => w.boards ?? []);
+  // Demo dataset shown as-is for now regardless of the live backend's workspaces,
+  // per client-facing walkthrough requirements.
+  const boards = DUMMY_WORKSPACE_BOARDS.flatMap((w) => w.boards ?? []);
 
   const displayCustomFields = customFields.length > 0 ? customFields : (import.meta.env.DEV ? DUMMY_CUSTOM_FIELDS : []);
 
@@ -817,7 +822,8 @@ function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabel
 
   useEffect(() => {
     if (!show) return;
-    setSelected(null);
+    setSelectedActions([]);
+    setSelectedCustomFields([]);
     setFilterText('');
     setDebouncedSearch('');
     if (workspaces.length === 0) listAllWorkspaces();
@@ -830,17 +836,26 @@ function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabel
     return () => clearTimeout(timeoutId);
   }, [filterText]);
 
-  const handlePickAction = (option) => {
-    setSelected({ key: `action-${option.key}`, type: 'action', item: option });
+  const handleToggleAction = (option, key) => {
+    setSelectedActions((prev) =>
+      prev.some((item) => item.key === key)
+        ? prev.filter((item) => item.key !== key)
+        : [...prev, { key, item: option }]
+    );
   };
 
-  const handlePickCustom = (field, idx) => {
-    setSelected({ key: `custom-${field.custom_field_id ?? idx}`, type: 'custom', item: field });
+  const handleToggleCustomField = (field, key) => {
+    setSelectedCustomFields((prev) =>
+      prev.some((item) => item.key === key)
+        ? prev.filter((item) => item.key !== key)
+        : [...prev, { key, field }]
+    );
   };
 
   const handleAdd = () => {
-    if (!selected) return;
-    onSelect(selected.item, { category_key: selected.type });
+    if (selectedActions.length === 0 && selectedCustomFields.length === 0) return;
+    selectedActions.forEach(({ item }) => onSelect(item, { category_key: 'action' }));
+    selectedCustomFields.forEach(({ field }) => onSelect(field, { category_key: 'custom' }));
     onClose();
   };
 
@@ -898,8 +913,8 @@ function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabel
                       key={option.key}
                       pillKey={option.key}
                       label={option.label}
-                      selected={selected?.key === `action-${option.key}`}
-                      onClick={() => handlePickAction(option)}
+                      selected={selectedActions.some((item) => item.key === option.key)}
+                      onClick={() => handleToggleAction(option, option.key)}
                     />
                   ))
                 )}
@@ -970,10 +985,10 @@ function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabel
                           key={key}
                           pillKey={key}
                           label={getFieldLabel(field)}
-                          selected={selected?.key === key}
+                          selected={selectedCustomFields.some((item) => item.key === key)}
                           dotColor={getPropertyDotColor(idx)}
                           disabled={isFieldUsed(field)}
-                          onClick={() => handlePickCustom(field, idx)}
+                          onClick={() => handleToggleCustomField(field, key)}
                         />
                       );
                     })
@@ -988,7 +1003,7 @@ function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabel
           <button
             type="button"
             className="br-property-add-btn"
-            disabled={!selected}
+            disabled={selectedActions.length === 0 && selectedCustomFields.length === 0}
             onClick={handleAdd}
           >
             Add
@@ -1481,16 +1496,17 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
   const activeMoveAction = moveActions.find((a) => a.id === activeMoveActionId);
 
   const handleSelectUpdateAction = (item, meta) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     if (meta.category_key === 'custom') {
       const rawLabel = getFieldLabel(item);
       setUpdateActions((prev) => [
         ...prev,
-        { id: Date.now(), category: 'custom', key: `custom-${item.custom_field_id}`, label: `Set ${rawLabel}`, rawLabel, field: rawLabel },
+        { id, category: 'custom', key: `custom-${item.custom_field_id}`, label: `Set ${rawLabel}`, rawLabel, field: rawLabel },
       ]);
     } else {
       setUpdateActions((prev) => [
         ...prev,
-        { id: Date.now(), category: 'action', key: item.key, label: item.label, field: item.field },
+        { id, category: 'action', key: item.key, label: item.label, field: item.field },
       ]);
     }
   };
