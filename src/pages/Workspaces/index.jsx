@@ -44,6 +44,7 @@ const transformWorkspaces = (data) => {
     id: ws.workspace_id,
     name: ws.workspace_name,
     status: ws.workspace_status,
+    boardCount: Number(ws.board_count) || (Array.isArray(ws.boards) ? ws.boards.length : 0),
     boards: Array.isArray(ws.boards)
       ? ws.boards.map((b) => ({
         id: b.board_id,
@@ -465,9 +466,9 @@ function Workspaces() {
                   <WorkspaceBarChartIcon className="workspace-icon" />
                 </div>
                 <h2 className="workspace-name">{workspace.name}</h2>
-                {workspace.boards?.length > 0 && (
+                {workspace.boardCount > 0 && (
                   <span className="workspace-board-count-badge">
-                    {workspace.boards.length} {workspace.boards.length === 1 ? 'board' : 'boards'}
+                    {workspace.boardCount} {workspace.boardCount === 1 ? 'board' : 'boards'}
                   </span>
                 )}
               </div>
