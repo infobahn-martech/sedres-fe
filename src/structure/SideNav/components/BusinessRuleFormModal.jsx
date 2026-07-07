@@ -1943,14 +1943,24 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
   const [showWebInvokeSettings, setShowWebInvokeSettings] = useState(false);
   const [activeInvokeActionId, setActiveInvokeActionId] = useState(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [boardConditionRows, setBoardConditionRows] = useState([{ id: 'board-0', boardId: '' }]);
+  const [openBoardConditionRowId, setOpenBoardConditionRowId] = useState(null);
+  const [boardConditionFilterText, setBoardConditionFilterText] = useState('');
+  const boardConditionTriggerRef = useRef(null);
+  const boardConditionPanelRef = useRef(null);
 
   const { getTriggerConfig } = useBusinessRuleReducer((s) => s);
   const { users, usersLoading, getUsers } = useCommonReducer((s) => s);
+  const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
 
   useEffect(() => {
     if (!show || !rule) return;
     getTriggerConfig(rule.id);
     if (users.length === 0 && !usersLoading) getUsers({ params: { limit: 200 } });
+    if (workspaces.length === 0) listAllWorkspaces();
+    setBoardConditionRows([{ id: 'board-0', boardId: '' }]);
+    setOpenBoardConditionRowId(null);
+    setBoardConditionFilterText('');
     setName(rule.name ?? '');
     setDescription(rule.description ?? '');
     setTags('');
@@ -1992,6 +2002,18 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
     return () => document.removeEventListener('mousedown', onDocMouseDown);
   }, [isOwnerPickerOpen]);
 
+  useEffect(() => {
+    if (openBoardConditionRowId == null) return undefined;
+    const onDocMouseDown = (event) => {
+      const t = event.target;
+      if (boardConditionPanelRef.current?.contains(t)) return;
+      if (boardConditionTriggerRef.current?.contains(t)) return;
+      setOpenBoardConditionRowId(null);
+    };
+    document.addEventListener('mousedown', onDocMouseDown);
+    return () => document.removeEventListener('mousedown', onDocMouseDown);
+  }, [openBoardConditionRowId]);
+
   if (!rule) return null;
 
   const handleSave = () => {
@@ -2000,6 +2022,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
       name: name.trim(),
       description: description.trim(),
       tags: tags.trim(),
+      boardIds: boardConditionRows.map((row) => row.boardId || null),
       owner,
       sharePermissions,
       disallowTriggerChain,
@@ -2168,7 +2191,47 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
 
   const activeInvokeAction = invokeActions.find((a) => a.id === activeInvokeActionId);
 
-  const boardLabel = boardName?.trim() || 'Current board';
+  const displayWorkspaces = workspaces ?? [];
+  const conditionBoardFilterQuery = boardConditionFilterText.trim().toLowerCase();
+  const filteredBoardConditionGroups = displayWorkspaces
+    .map((w) => {
+      const wsMatch = w.workspace_name.toLowerCase().includes(conditionBoardFilterQuery);
+      const groupBoards = wsMatch
+        ? (w.boards ?? [])
+        : (w.boards ?? []).filter((b) => b.board_name.toLowerCase().includes(conditionBoardFilterQuery));
+      return { workspace_id: w.workspace_id, workspace_name: w.workspace_name, boards: groupBoards };
+    })
+    .filter((g) => g.boards.length > 0);
+
+  const allConditionBoards = displayWorkspaces.flatMap((w) => w.boards ?? []);
+
+  const getBoardConditionLabel = (boardId) => {
+    if (!boardId) return boardName?.trim() || 'Current board';
+    return allConditionBoards.find((b) => String(b.board_id) === String(boardId))?.board_name ?? 'Current board';
+  };
+
+  const handlePickConditionBoard = (rowId, board) => {
+    setBoardConditionRows((prev) =>
+      prev.map((row) => (row.id === rowId ? { ...row, boardId: board?.board_id ?? '' } : row))
+    );
+    setOpenBoardConditionRowId(null);
+    setBoardConditionFilterText('');
+  };
+
+  const handleAddBoardConditionRow = (rowId) => {
+    setBoardConditionRows((prev) => {
+      const idx = prev.findIndex((row) => row.id === rowId);
+      if (idx === -1) return prev;
+      const newRow = { id: `board-${Date.now()}`, boardId: prev[idx].boardId };
+      const next = [...prev];
+      next.splice(idx + 1, 0, newRow);
+      return next;
+    });
+  };
+
+  const handleRemoveBoardConditionRow = (rowId) => {
+    setBoardConditionRows((prev) => prev.filter((row) => row.id !== rowId));
+  };
 
   const handleCloseAttempt = () => {
     setShowCancelConfirm(true);
@@ -2345,18 +2408,113 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
             <div className="business-rule-form-column">
               <h3 className="business-rule-form-column-title">AND</h3>
               <div className="business-rule-form-column-card">
-                <div className="business-rule-form-condition">
-                  <span className="business-rule-form-condition-label">Board is</span>
-                  <button type="button" className="business-rule-form-condition-value">
-                    {boardLabel}
-                    <FiChevronDown size={16} aria-hidden />
-                  </button>
-                </div>
+                <p className="business-rule-form-filter-hint">the created card matches this filter</p>
+
+                {boardConditionRows.length > 0 && (
+                  <div className="business-rule-form-filter-row business-rule-form-filter-row--multi">
+                    <span className="business-rule-form-condition-label">Board is</span>
+                    {boardConditionRows.map((row) => {
+                      const isOpen = openBoardConditionRowId === row.id;
+                      return (
+                        <div key={row.id} className="br-board-condition-value-row">
+                          <div className="board-minimap-picker-wrap br-board-condition-wrap">
+                            <button
+                              type="button"
+                              ref={isOpen ? boardConditionTriggerRef : undefined}
+                              className="business-rule-form-condition-value"
+                              onClick={() => {
+                                setBoardConditionFilterText('');
+                                setOpenBoardConditionRowId((prev) => (prev === row.id ? null : row.id));
+                              }}
+                              aria-haspopup="listbox"
+                              aria-expanded={isOpen}
+                            >
+                              {getBoardConditionLabel(row.boardId)}
+                              <FiChevronDown size={16} aria-hidden />
+                            </button>
+
+                            {isOpen && (
+                              <div className="board-minimap-picker-panel br-board-condition-panel" ref={boardConditionPanelRef}>
+                                <div className="board-minimap-picker-search">
+                                  <FiFilter size={20} className="board-minimap-picker-search-icon" aria-hidden />
+                                  <input
+                                    type="text"
+                                    placeholder="Filter"
+                                    value={boardConditionFilterText}
+                                    onChange={(e) => setBoardConditionFilterText(e.target.value)}
+                                    autoFocus
+                                  />
+                                </div>
+
+                                <div className="board-minimap-picker-scroll">
+                                  {'current board'.includes(conditionBoardFilterQuery) && (
+                                    <button
+                                      type="button"
+                                      className={`board-minimap-picker-tile br-board-condition-current${!row.boardId ? ' board-minimap-picker-tile--selected' : ''}`}
+                                      onClick={() => handlePickConditionBoard(row.id, null)}
+                                    >
+                                      Current board
+                                    </button>
+                                  )}
+
+                                  {filteredBoardConditionGroups.length === 0 ? (
+                                    conditionBoardFilterQuery && (
+                                      <div className="br-property-picker-empty">No matches</div>
+                                    )
+                                  ) : (
+                                    filteredBoardConditionGroups.map((ws) => (
+                                      <div key={ws.workspace_id} className="board-minimap-picker-group">
+                                        <div className="board-minimap-picker-group-head">
+                                          <FiUsers size={20} aria-hidden />
+                                          <span>{ws.workspace_name}</span>
+                                        </div>
+                                        <div className="board-minimap-picker-grid">
+                                          {ws.boards.map((board) => (
+                                            <button
+                                              key={board.board_id}
+                                              type="button"
+                                              className={`board-minimap-picker-tile${String(board.board_id) === String(row.boardId) ? ' board-minimap-picker-tile--selected' : ''}`}
+                                              onClick={() => handlePickConditionBoard(row.id, board)}
+                                            >
+                                              {board.board_name}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="business-rule-form-filter-row-actions">
+                            <button
+                              type="button"
+                              className="business-rule-form-or-btn"
+                              onClick={() => handleAddBoardConditionRow(row.id)}
+                            >
+                              OR
+                            </button>
+                            <button
+                              type="button"
+                              className="business-rule-form-filter-row-delete"
+                              onClick={() => handleRemoveBoardConditionRow(row.id)}
+                              aria-label="Remove filter"
+                            >
+                              <FiTrash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {conditions.map((cond) => (
-                  <div key={cond.id} className="business-rule-form-condition">
-                    <span className="business-rule-form-condition-label">{cond.fieldLabel}</span>
-                    <div className="business-rule-form-condition-row">
+                  <div key={cond.id} className="business-rule-form-filter-row">
+                    <div className="business-rule-form-filter-row-main">
+                      <span className="business-rule-form-condition-label">{cond.fieldLabel}</span>
                       <input
                         type="text"
                         className="business-rule-form-condition-input"
@@ -2369,9 +2527,13 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
                           );
                         }}
                       />
+                    </div>
+
+                    <div className="business-rule-form-filter-row-actions">
+                      <button type="button" className="business-rule-form-or-btn">OR</button>
                       <button
                         type="button"
-                        className="business-rule-form-condition-remove"
+                        className="business-rule-form-filter-row-delete"
                         onClick={() => handleRemoveCondition(cond.id)}
                         aria-label="Remove condition"
                       >
