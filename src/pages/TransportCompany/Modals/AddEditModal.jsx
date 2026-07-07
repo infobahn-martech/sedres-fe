@@ -270,20 +270,18 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
                   <div className="transport-company-driver-row__fields">
                     <div className="transport-company-driver-field">
                       <div className="transport-field">
-                        <div className="form-floating desig-inp">
-                          <input
-                            type="text"
-                            className={`form-control ${errors.drivers?.[index]?.driver_name ? 'is-invalid' : ''}`}
-                            placeholder=" "
-                            disabled={isEdit && isLoadingDetail}
-                            {...register(`drivers.${index}.driver_name`, {
-                              required: 'Driver name is required',
-                            })}
-                          />
-                          <label>
-                            Driver name <span className="text-danger">*</span>
-                          </label>
-                        </div>
+                        <label className="transport-company-driver-field__label">
+                          Driver name <span className="text-danger">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className={`form-control transport-company-driver-field__input ${errors.drivers?.[index]?.driver_name ? 'is-invalid' : ''}`}
+                          placeholder="Enter driver name"
+                          disabled={isEdit && isLoadingDetail}
+                          {...register(`drivers.${index}.driver_name`, {
+                            required: 'Driver name is required',
+                          })}
+                        />
                         <div className="transport-field__error">
                           {errors.drivers?.[index]?.driver_name?.message}
                         </div>
@@ -327,6 +325,9 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
                     </div>
                     <div className="transport-company-driver-field transport-company-driver-field--vehicle">
                       <div className="transport-field">
+                        <label className="transport-company-driver-field__label">
+                          Vehicle type <span className="text-danger">*</span>
+                        </label>
                         <div className="transport-company-driver-field--select">
                           <Controller
                             name={`drivers.${index}.vehicle_type_id`}
@@ -361,29 +362,37 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
                       </div>
                     </div>
                     <div className="transport-company-driver-row__actions">
-                      {fields.length > 1 && (
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-danger transport-company-driver-row__remove"
-                          onClick={() => remove(index)}
-                          title="Remove driver"
-                          aria-label="Remove driver"
-                        >
-                          <FiX size={18} />
-                        </button>
-                      )}
-                      {index === fields.length - 1 && (
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-primary transport-company-drivers__add transport-company-drivers__add--icon"
-                          onClick={() => append(emptyDriver())}
-                          disabled={isEdit && isLoadingDetail}
-                          title="Add driver"
-                          aria-label="Add driver"
-                        >
-                          <FiPlus size={18} aria-hidden />
-                        </button>
-                      )}
+                      <span
+                        className="transport-company-driver-field__label transport-company-driver-row__actions-spacer"
+                        aria-hidden="true"
+                      >
+                        &nbsp;
+                      </span>
+                      <div className="transport-company-driver-row__actions-buttons">
+                        {fields.length > 1 && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger transport-company-driver-row__remove"
+                            onClick={() => remove(index)}
+                            title="Remove driver"
+                            aria-label="Remove driver"
+                          >
+                            <FiX size={18} />
+                          </button>
+                        )}
+                        {index === fields.length - 1 && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-primary transport-company-drivers__add transport-company-drivers__add--icon"
+                            onClick={() => append(emptyDriver())}
+                            disabled={isEdit && isLoadingDetail}
+                            title="Add driver"
+                            aria-label="Add driver"
+                          >
+                            <FiPlus size={18} aria-hidden />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -297,6 +297,12 @@ span.error.text-danger {
   }
 
   .phone-wrapper .phone-label {
+    position: static;
+    top: auto;
+    left: auto;
+    background: none;
+    padding: 0;
+    z-index: auto;
     margin-bottom: 0.35rem;
     font-size: 14px;
     font-weight: 500;
@@ -309,6 +315,7 @@ span.error.text-danger {
     padding-top: 0.5rem !important;
     padding-bottom: 0.5rem !important;
     font-size: 13px !important;
+    font-family: $primary-font !important;
     border-radius: 6px;
   }
 
@@ -441,6 +448,12 @@ span.error.text-danger {
   }
 
   .transport-company-drivers .transport-company-driver-field .phone-wrapper .phone-label {
+    position: static;
+    top: auto;
+    left: auto;
+    background: none;
+    padding: 0;
+    z-index: auto;
     margin-bottom: 0.35rem;
     font-size: 12px;
     font-weight: 600;
@@ -454,6 +467,9 @@ span.error.text-danger {
     padding-top: 0.45rem !important;
     padding-bottom: 0.45rem !important;
     font-size: 13px !important;
+    font-family: $primary-font !important;
+    border: 1px solid $borderLight !important;
+    border-radius: 6px !important;
     width: 100%;
   }
 
@@ -466,18 +482,64 @@ span.error.text-danger {
     white-space: normal;
     word-break: break-word;
   }
+
+  .transport-company-driver-field__label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 12px;
+    font-weight: 600;
+    color: #35475e;
+    letter-spacing: 0.02em;
+  }
+
+  .transport-company-driver-field__input {
+    width: 100%;
+    min-height: 42px;
+    height: 42px;
+    padding: 0.45rem 0.75rem;
+    font-size: 13px;
+    border: 1px solid $borderLight;
+    border-radius: 6px;
+
+    &:focus {
+      box-shadow: none;
+      border-color: $borderLight;
+    }
+
+    &.is-invalid {
+      border-color: #dc3545;
+    }
+  }
+
+  /* Vehicle type (PremiumSelect) trigger defaults to 40px/grey border — match the other driver row inputs */
+  .transport-company-driver-field--vehicle .cf-multi-select-email-input {
+    min-height: 42px;
+    height: 42px;
+    box-sizing: border-box;
+    border: 1px solid $borderLight;
+    border-radius: 6px;
+  }
 }
 
 .transport-company-driver-row__actions {
   flex: 0 0 auto;
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: flex-end;
+  display: flex;
+  flex-direction: column;
   align-self: flex-start;
+}
+
+/* Invisible label-sized spacer so the buttons line up with the input row, not the label row */
+.transport-company-driver-row__actions-spacer {
+  visibility: hidden;
+}
+
+.transport-company-driver-row__actions-buttons {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
   gap: 0.35rem;
   min-height: 42px;
-  padding-bottom: 1px;
 }
 
 .transport-company-driver-row__remove {
