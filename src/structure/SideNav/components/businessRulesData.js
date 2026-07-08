@@ -246,6 +246,19 @@ export const DUMMY_BOARD_LEAF_COLUMNS = [
   { id: 'archive', name: 'Ready to Archive' },
 ];
 
+// Second column set used for the TEST / Default Swimlane / New Swimlane rows at the
+// bottom of the "Board Minimap" grid, distinct from DUMMY_BOARD_LEAF_COLUMNS above it.
+// Ids are prefixed to avoid colliding with DUMMY_BOARD_LEAF_COLUMNS' ids (both sets
+// happen to use "requested"/"archive"), which would otherwise cross-highlight columns
+// between the two unrelated column sets on hover.
+export const DUMMY_BOARD_BOTTOM_STAGES = [
+  { id: 'stage-backlog', name: 'Backlog', color: '#9ca3af' },
+  { id: 'stage-requested', name: 'Requested', color: '#1d4ed8' },
+  { id: 'stage-in_progress', name: 'In Progress', color: '#f97316' },
+  { id: 'stage-done', name: 'Done', color: '#16a34a' },
+  { id: 'stage-archive', name: 'Ready to Archive', color: '#7c3aed' },
+];
+
 // Dev-only fallback swimlane list for the "Board Minimap" grid, shown for every board
 // regardless of the real board's actual lanes, per client-facing walkthrough requirements.
 export const DUMMY_BOARD_SWIMLANES = [

@@ -12,7 +12,7 @@ import {
   THEN_ACTION_SECTIONS, CREATE_ACTION_OPTIONS, LINK_ACTION_OPTIONS, MOVE_ACTION_OPTIONS, NOTIFY_ACTION_OPTIONS, UPDATE_ACTION_OPTIONS,
   INVOKE_ACTION_OPTIONS, DUMMY_INVOKE_METHOD_OPTIONS, DUMMY_INVOKE_AUTH_OPTIONS, DUMMY_INVOKE_PAYLOAD_FIELDS, DUMMY_URL_FIELD_OPTIONS,
   DUMMY_REGULAR_FIELDS, DUMMY_TIME_UNITS, DUMMY_CUSTOM_FIELDS, DUMMY_BOARD_TITLE,
-  DUMMY_BOARD_AREA_GROUPS, DUMMY_BOARD_HEADER_CELLS, DUMMY_BOARD_LEAF_COLUMNS, DUMMY_BOARD_SWIMLANES,
+  DUMMY_BOARD_AREA_GROUPS, DUMMY_BOARD_HEADER_CELLS, DUMMY_BOARD_LEAF_COLUMNS, DUMMY_BOARD_SWIMLANES, DUMMY_BOARD_BOTTOM_STAGES,
   DUMMY_NOTIFICATION_FROM_EMAIL, DUMMY_INTERNAL_USERS,
   DUMMY_NOTIFICATION_SUBJECT_PARTS, DUMMY_NOTIFICATION_BODY_DELTA_OPS, INTERNAL_USER_ROLE_OPTIONS,
 } from './businessRulesData';
@@ -49,6 +49,11 @@ Quill.register(NotificationPillBlot);
 const QuillDelta = Quill.import('delta');
 
 const DEFAULT_OWNER = { name: 'You', initials: 'YO' };
+
+// Swimlanes at the bottom of the "Board Minimap" grid that use the DUMMY_BOARD_BOTTOM_STAGES
+// column set (Backlog/Requested/In Progress/Done/Ready to Archive) instead of the main
+// DUMMY_BOARD_LEAF_COLUMNS set shown for the swimlanes above them.
+const BOTTOM_GROUP_SWIMLANE_NAMES = ['TEST', 'Default Swimlane', 'New Swimlane'];
 
 const PROPERTY_DOT_COLORS = [...PRIMARY_PRESET_COLORS, ...SECONDARY_PRESET_COLORS];
 
@@ -899,34 +904,45 @@ function BoardMinimapModal({ show, onClose, onSave, initialBoardId }) {
                 })}
               </div>
 
-              {swimlanes.map((swimlane) => (
-                <div key={swimlane.id} className="board-minimap-lane-row">
-                  <div
-                    className="board-minimap-lane-label"
-                    style={swimlane.colorCode
-                      ? { backgroundColor: swimlane.colorCode, color: pickForegroundOnSwimlaneBackground(swimlane.colorCode) }
-                      : undefined}
-                    role="button"
-                    tabIndex={0}
-                    onMouseEnter={() => setHoveredSwimlaneId(swimlane.id)}
-                    onMouseLeave={() => setHoveredSwimlaneId(null)}
-                    onClick={() => handlePickRow(swimlane)}
-                  >
-                    {swimlane.name}
+              {swimlanes.map((swimlane) => {
+                const isBottomGroup = BOTTOM_GROUP_SWIMLANE_NAMES.includes(swimlane.name);
+                const rowStages = isBottomGroup ? DUMMY_BOARD_BOTTOM_STAGES : leafColumns;
+                const showStageLabels = swimlane.name === 'TEST';
+
+                return (
+                  <div key={swimlane.id} className="board-minimap-lane-row">
+                    <div
+                      className="board-minimap-lane-label"
+                      style={swimlane.colorCode
+                        ? { backgroundColor: swimlane.colorCode, color: pickForegroundOnSwimlaneBackground(swimlane.colorCode) }
+                        : undefined}
+                      role="button"
+                      tabIndex={0}
+                      onMouseEnter={() => setHoveredSwimlaneId(swimlane.id)}
+                      onMouseLeave={() => setHoveredSwimlaneId(null)}
+                      onClick={() => handlePickRow(swimlane)}
+                    >
+                      {swimlane.name}
+                    </div>
+                    <div className="board-minimap-lane-cells">
+                      {rowStages.map((stage) => (
+                        <button
+                          type="button"
+                          key={stage.id}
+                          className={`board-minimap-cell${stage.accent ? ` board-minimap-cell--${stage.accent}` : ''}${showStageLabels ? ' board-minimap-cell--labeled' : ''}${hoveredLeafColumnId === stage.id && !showStageLabels ? ' board-minimap-cell--col-active' : ''}${hoveredSwimlaneId === swimlane.id ? ' board-minimap-cell--row-active' : ''}`}
+                          style={showStageLabels ? { borderTopColor: stage.color } : undefined}
+                          onMouseEnter={showStageLabels ? () => setHoveredLeafColumnId(stage.id) : undefined}
+                          onMouseLeave={showStageLabels ? () => setHoveredLeafColumnId(null) : undefined}
+                          onClick={() => handlePickCell(swimlane, stage)}
+                          aria-label={`Move to ${swimlane.name}, ${stage.name}`}
+                        >
+                          {showStageLabels ? stage.name : null}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="board-minimap-lane-cells">
-                    {leafColumns.map((leafColumn) => (
-                      <button
-                        type="button"
-                        key={leafColumn.id}
-                        className={`board-minimap-cell${leafColumn.accent ? ` board-minimap-cell--${leafColumn.accent}` : ''}${hoveredLeafColumnId === leafColumn.id ? ' board-minimap-cell--col-active' : ''}${hoveredSwimlaneId === swimlane.id ? ' board-minimap-cell--row-active' : ''}`}
-                        onClick={() => handlePickCell(swimlane, leafColumn)}
-                        aria-label={`Move to ${swimlane.name}, ${leafColumn.name}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
