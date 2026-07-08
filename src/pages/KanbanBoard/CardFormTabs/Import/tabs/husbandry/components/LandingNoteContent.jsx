@@ -302,6 +302,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   const [editingNote, setEditingNote] = useState(null);
   const [convertingNote, setConvertingNote] = useState(null);
   const [convertMinDate, setConvertMinDate] = useState(undefined);
+  const [editMinDate, setEditMinDate] = useState(undefined);
   const [viewingNote, setViewingNote] = useState(null);
   const [isDraggingDocuments, setIsDraggingDocuments] = useState(false);
   const documentsFileInputRef = useRef(null);
@@ -395,6 +396,17 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
       items,
     });
     setExpandedEditItems(exp);
+
+    setEditMinDate(undefined);
+    if (detail.inbound_id) {
+      inboundOrderService.getInboundById(detail.inbound_id)
+        .then(({ data }) => {
+          const inboundDetail = data?.data;
+          const minDate = nextDayOf(inboundDetail?.inbound_date || inboundDetail?.date);
+          if (minDate) setEditMinDate(minDate);
+        })
+        .catch(() => {});
+    }
   };
 
   const handleOpenModal = (note = null) => {
@@ -414,6 +426,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     setFormData(emptyEditFormData());
     setExpandedEditItems({});
     setFormErrors({});
+    setEditMinDate(undefined);
     setShowModal(true);
   };
 
@@ -423,6 +436,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
     setFormData(emptyEditFormData());
     setExpandedEditItems({});
     setFormErrors({});
+    setEditMinDate(undefined);
   };
 
   const handleEditItemChange = (itemId, field, value) => {
@@ -998,6 +1012,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                     dateFieldName="landing_date"
                     timeFieldName="landing_time"
                     placeholder="YYYY-MM-DD hh:mm"
+                    minDate={editMinDate}
                   />
                 </FormField>
                 {formErrors.landing_date && <span className="text-danger small">{formErrors.landing_date}</span>}

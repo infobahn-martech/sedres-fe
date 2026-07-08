@@ -18,6 +18,8 @@ import CardTabListLoading from "../../../../../../../components/CardTabListLoadi
 import logisticsWarehouseService from "../../../../../../../services/logisticsWarehouseService";
 import vehicleService from "../../../../../../../services/vehicleService";
 import inboundOrderService from "../../../../../../../services/inboundOrderService";
+import landingNoteService from "../../../../../../../services/landingNoteService";
+import { nextDayOf } from "../../../../../../../shared/helpers/dateTimeFieldUtils";
 
 const isTruthyFlag = (value) => value === true || Number(value) === 1 || String(value).toLowerCase() === "true";
 
@@ -159,6 +161,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
   const [deletingNote, setDeletingNote] = useState(null);
 
   const [editFormErrors, setEditFormErrors] = useState({});
+  const [editMinDate, setEditMinDate] = useState(undefined);
   const [editorKey, setEditorKey] = useState(0);
   const [expandedEditItems, setExpandedEditItems] = useState({ 1: true });
   const [editItems, setEditItems] = useState([emptyEditItem(1)]);
@@ -259,6 +262,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
   const handleOpenModal = (note) => {
     setEditingNote(note);
     resetForm();
+    setEditMinDate(undefined);
     setShowModal(true);
     getDispatchNoteById({
       id: note.id || note.dispatch_note_id,
@@ -266,6 +270,15 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
         if (!detail) return;
         const [datePart, timePart] = (detail.dispatch_date || "").split(" ");
         setEditorKey((k) => k + 1);
+        if (detail.landing_note_id) {
+          landingNoteService.getLandingNoteById(detail.landing_note_id)
+            .then(({ data }) => {
+              const landingDetail = data?.data;
+              const minDate = nextDayOf(landingDetail?.landing_date || landingDetail?.date);
+              if (minDate) setEditMinDate(minDate);
+            })
+            .catch(() => {});
+        }
         setFormData({
           landing_note_id: String(detail.landing_note_id || ""),
           warehouse_id: String(detail.warehouse_id || ""),
@@ -318,6 +331,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
     setShowModal(false);
     setEditingNote(null);
     resetForm();
+    setEditMinDate(undefined);
   };
 
   const handleFormChange = (field, value) => {
@@ -549,6 +563,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
                     dateFieldName="dispatch_date"
                     timeFieldName="dispatch_time"
                     placeholder="YYYY-MM-DD hh:mm"
+                    minDate={editMinDate}
                   />
                   {editFormErrors.dispatch_date && <span className="dispatch-edit-error">{editFormErrors.dispatch_date}</span>}
                 </FormField>

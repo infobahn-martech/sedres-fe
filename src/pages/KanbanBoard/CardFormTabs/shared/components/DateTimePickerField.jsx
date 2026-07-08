@@ -78,6 +78,16 @@ const DateTimePickerField = ({
     [minDateValue]
   );
 
+  const isWithinRange = useCallback(
+    (value) => {
+      if (!value) return true;
+      if (minDateValue && value.isBefore(minDateValue, "day")) return false;
+      if (maxDateValue && value.isAfter(maxDateValue, "day")) return false;
+      return true;
+    },
+    [minDateValue, maxDateValue]
+  );
+
   const pickerValue = pickerOpen ? (draftValue ?? externalValue) : externalValue;
 
   const emitDateTimeChange = useCallback(
@@ -99,9 +109,10 @@ const DateTimePickerField = ({
         emitDateTimeChange({ date: "", time: "" });
         return;
       }
+      if (!isWithinRange(next)) return;
       emitDateTimeChange(toPickerParts(next));
     },
-    [emitDateTimeChange]
+    [emitDateTimeChange, isWithinRange]
   );
 
   const handleOpen = useCallback(() => {
@@ -112,7 +123,7 @@ const DateTimePickerField = ({
 
   const handleClose = useCallback(() => {
     const draft = draftRef.current;
-    if (pickerOpen && draft != null && dayjs(draft).isValid()) {
+    if (pickerOpen && draft != null && dayjs(draft).isValid() && isWithinRange(dayjs(draft))) {
       const next = toPickerParts(draft);
       const current = parseDateTimeParts(dateValue, timeValue);
       if (next.date !== current.date || next.time !== current.time) {
@@ -122,7 +133,7 @@ const DateTimePickerField = ({
     setPickerOpen(false);
     setDraftValue(null);
     draftRef.current = null;
-  }, [pickerOpen, dateValue, timeValue, emitDateTimeChange]);
+  }, [pickerOpen, dateValue, timeValue, emitDateTimeChange, isWithinRange]);
 
   const handleChange = useCallback(
     (newValue, context) => {

@@ -20,7 +20,7 @@ import {
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
 
-import logo from '../../assets/images/SedresLogo.png';
+import logo from '../../assets/images/SedresLogoWhite.png';
 import useWindowSize from '../../shared/hooks/useWindowSize';
 import useAuthReducer from '../../store/AuthReducer';
 import MyAccountsModal from './MyAccountsModal';

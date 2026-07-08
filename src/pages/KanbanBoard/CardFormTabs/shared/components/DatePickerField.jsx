@@ -60,6 +60,16 @@ const DatePickerField = ({
 
   const pickerValue = pickerOpen ? (draftValue ?? externalValue) : externalValue;
 
+  const isWithinRange = useCallback(
+    (value) => {
+      if (!value) return true;
+      if (minDateValue && value.isBefore(minDateValue, "day")) return false;
+      if (maxDateValue && value.isAfter(maxDateValue, "day")) return false;
+      return true;
+    },
+    [minDateValue, maxDateValue]
+  );
+
   const emitDateChange = useCallback(
     (nextDate) => {
       const dateEvent = { target: { name: dateFieldName || "", value: nextDate } };
@@ -72,9 +82,10 @@ const DatePickerField = ({
   const commitDraft = useCallback(
     (value) => {
       const next = value != null && dayjs(value).isValid() ? dayjs(value) : null;
+      if (next && !isWithinRange(next)) return;
       emitDateChange(next ? toPickerDate(next) : "");
     },
-    [emitDateChange]
+    [emitDateChange, isWithinRange]
   );
 
   const handleOpen = useCallback(() => {
@@ -85,7 +96,7 @@ const DatePickerField = ({
 
   const handleClose = useCallback(() => {
     const draft = draftRef.current;
-    if (pickerOpen && draft != null && dayjs(draft).isValid()) {
+    if (pickerOpen && draft != null && dayjs(draft).isValid() && isWithinRange(dayjs(draft))) {
       const nextDate = toPickerDate(draft);
       const currentDate = toPickerDate(externalValue);
       if (nextDate !== currentDate) {
@@ -95,7 +106,7 @@ const DatePickerField = ({
     setPickerOpen(false);
     setDraftValue(null);
     draftRef.current = null;
-  }, [pickerOpen, externalValue, emitDateChange]);
+  }, [pickerOpen, externalValue, emitDateChange, isWithinRange]);
 
   const handleChange = useCallback(
     (newValue, context) => {
