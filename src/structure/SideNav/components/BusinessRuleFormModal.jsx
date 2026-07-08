@@ -2627,15 +2627,34 @@ WebInvokeSettingsModal.propTypes = {
   onSave: PropTypes.func.isRequired,
 };
 
-function ShareWithModal({ show, onClose, permissions, onTogglePermission }) {
+function ShareWithModal({ show, onClose, permissions, onSave }) {
   const [filterText, setFilterText] = useState('');
+  const [draftPermissions, setDraftPermissions] = useState(permissions);
   const { users, usersLoading, getUsers } = useCommonReducer((s) => s);
 
   useEffect(() => {
     if (!show) return;
     setFilterText('');
+    setDraftPermissions(permissions);
     if (users.length === 0 && !usersLoading) getUsers({ params: { limit: 200 } });
   }, [show]);
+
+  const handleToggleDraftPermission = (userId, type) => {
+    setDraftPermissions((prev) => {
+      const current = prev[userId] ?? { viewer: false, editor: false };
+      return { ...prev, [userId]: { ...current, [type]: !current[type] } };
+    });
+  };
+
+  const handleCancel = () => {
+    setDraftPermissions(permissions);
+    onClose();
+  };
+
+  const handleSave = () => {
+    onSave?.(draftPermissions);
+    onClose();
+  };
 
   const filterQuery = filterText.trim().toLowerCase();
   const filteredUsers = filterQuery
@@ -2647,7 +2666,7 @@ function ShareWithModal({ show, onClose, permissions, onTogglePermission }) {
   return (
     <Modal
       show={show}
-      onHide={onClose}
+      onHide={handleCancel}
       className="card-property-match-modal"
       dialogClassName="card-property-match-modal-dialog"
       backdropClassName="card-property-match-modal-backdrop"
@@ -2660,7 +2679,7 @@ function ShareWithModal({ show, onClose, permissions, onTogglePermission }) {
           <button
             type="button"
             className="business-rule-form-modal-close"
-            onClick={onClose}
+            onClick={handleCancel}
             aria-label="Close"
           >
             <FiX size={20} />
@@ -2695,7 +2714,7 @@ function ShareWithModal({ show, onClose, permissions, onTogglePermission }) {
               <div className="br-property-picker-empty">No users found</div>
             ) : (
               filteredUsers.map((user) => {
-                const perm = permissions[user.user_id] ?? { viewer: false, editor: false };
+                const perm = draftPermissions[user.user_id] ?? { viewer: false, editor: false };
                 return (
                   <div key={user.user_id} className="share-with-row">
                     <span className="share-with-name">{user.name}</span>
@@ -2707,7 +2726,7 @@ function ShareWithModal({ show, onClose, permissions, onTogglePermission }) {
                       <input
                         type="checkbox"
                         checked={perm.viewer}
-                        onChange={() => onTogglePermission(user.user_id, 'viewer')}
+                        onChange={() => handleToggleDraftPermission(user.user_id, 'viewer')}
                       />
                       <span className="business-rule-form-toggle-track" aria-hidden />
                     </label>
@@ -2715,7 +2734,7 @@ function ShareWithModal({ show, onClose, permissions, onTogglePermission }) {
                       <input
                         type="checkbox"
                         checked={perm.editor}
-                        onChange={() => onTogglePermission(user.user_id, 'editor')}
+                        onChange={() => handleToggleDraftPermission(user.user_id, 'editor')}
                       />
                       <span className="business-rule-form-toggle-track" aria-hidden />
                     </label>
@@ -2725,6 +2744,15 @@ function ShareWithModal({ show, onClose, permissions, onTogglePermission }) {
             )}
           </div>
         </div>
+
+        <footer className="card-property-match-modal-footer share-with-modal-footer">
+          <button type="button" className="share-with-cancel-btn" onClick={handleCancel}>
+            Cancel
+          </button>
+          <button type="button" className="br-property-add-btn" onClick={handleSave}>
+            Save
+          </button>
+        </footer>
       </div>
     </Modal>
   );
@@ -2734,7 +2762,7 @@ ShareWithModal.propTypes = {
   show: PropTypes.bool,
   onClose: PropTypes.func,
   permissions: PropTypes.object,
-  onTogglePermission: PropTypes.func,
+  onSave: PropTypes.func,
 };
 
 function BusinessRuleFormModal({ show, rule, boardId, onClose, onSave }) {
@@ -2864,11 +2892,8 @@ function BusinessRuleFormModal({ show, rule, boardId, onClose, onSave }) {
     setOwnerFilterText('');
   };
 
-  const handleToggleSharePermission = (userId, type) => {
-    setSharePermissions((prev) => {
-      const current = prev[userId] ?? { viewer: false, editor: false };
-      return { ...prev, [userId]: { ...current, [type]: !current[type] } };
-    });
+  const handleSaveSharePermissions = (nextPermissions) => {
+    setSharePermissions(nextPermissions);
   };
 
   const sharedUserCount = Object.values(sharePermissions).filter((p) => p.viewer || p.editor).length;
@@ -3574,7 +3599,7 @@ function BusinessRuleFormModal({ show, rule, boardId, onClose, onSave }) {
       show={showShareModal}
       onClose={() => setShowShareModal(false)}
       permissions={sharePermissions}
-      onTogglePermission={handleToggleSharePermission}
+      onSave={handleSaveSharePermissions}
     />
 
     <Modal

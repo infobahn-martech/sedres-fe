@@ -81,8 +81,11 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
 
   // The board the user is currently viewing, used to default board pickers
   // (e.g. Business Rules) to "this board" instead of a hardcoded placeholder.
+  // Only the generic /kanban-board/:boardId route (router/index.jsx) carries a
+  // real numeric board id — the named routes (operator, driver, hotel, ...) are
+  // fixed per-role boards with no id in the URL, so they fall through to ''.
   const currentKanbanBoardId = useMemo(() => {
-    const match = pathname.match(/\/kanban-board\/operator\/(\d+)/);
+    const match = pathname.match(/^\/kanban-board\/(\d+)$/);
     return match ? match[1] : '';
   }, [pathname]);
 
