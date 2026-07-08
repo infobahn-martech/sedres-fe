@@ -79,6 +79,13 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
 
   const isWorkspacesShell = pathname === '/workspaces' || pathname.startsWith('/workspaces/dashboard');
 
+  // The board the user is currently viewing, used to default board pickers
+  // (e.g. Business Rules) to "this board" instead of a hardcoded placeholder.
+  const currentKanbanBoardId = useMemo(() => {
+    const match = pathname.match(/\/kanban-board\/operator\/(\d+)/);
+    return match ? match[1] : '';
+  }, [pathname]);
+
   // Vendor Portal menu - simple direct links, no accordions
   const vendorMenus = [
     { menu: 'Dashboard', isDefaultMenu: true, to: '/vendor-portal/dashboard', icon: dashboardIcon, hasPermission: true },
@@ -761,7 +768,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         <BoardFilterPanel show={showFilterPanel} onClose={() => setShowFilterPanel(false)} />
         <ManagersModal show={showManagersModal} onClose={() => setShowManagersModal(false)} />
         <DashboardsModal show={showDashboardsModal} onClose={() => setShowDashboardsModal(false)} />
-        <BusinessRulesModal show={showBusinessRulesModal} onClose={() => setShowBusinessRulesModal(false)} />
+        <BusinessRulesModal show={showBusinessRulesModal} onClose={() => setShowBusinessRulesModal(false)} boardId={currentKanbanBoardId} />
         <BlockersModal show={showBlockersModal} onClose={() => setShowBlockersModal(false)} />
         <StickersModal show={showStickersModal} onClose={() => setShowStickersModal(false)} />
         <TagsModal show={showTagsModal} onClose={() => setShowTagsModal(false)} />
@@ -1162,7 +1169,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         />
         <ManagersModal show={showManagersModal} onClose={() => setShowManagersModal(false)} />
         <DashboardsModal show={showDashboardsModal} onClose={() => setShowDashboardsModal(false)} />
-        <BusinessRulesModal show={showBusinessRulesModal} onClose={() => setShowBusinessRulesModal(false)} />
+        <BusinessRulesModal show={showBusinessRulesModal} onClose={() => setShowBusinessRulesModal(false)} boardId={currentKanbanBoardId} />
         <BlockersModal show={showBlockersModal} onClose={() => setShowBlockersModal(false)} />
         <StickersModal show={showStickersModal} onClose={() => setShowStickersModal(false)} />
         <TagsModal show={showTagsModal} onClose={() => setShowTagsModal(false)} />

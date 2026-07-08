@@ -45,7 +45,7 @@ const OwnerCell = ({ owner }) => {
   );
 };
 
-const BusinessRulesModal = ({ show, onClose, boardName }) => {
+const BusinessRulesModal = ({ show, onClose, boardId }) => {
   const [searchValue, setSearchValue] = useState('');
   const [triggerSearch, setTriggerSearch] = useState('');
   const [debouncedTriggerSearch, setDebouncedTriggerSearch] = useState('');
@@ -353,7 +353,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
       <BusinessRuleFormModal
         show={show && showFormModal}
         rule={selectedRule}
-        boardName={boardName}
+        boardId={boardId}
         onClose={handleCancelFormModal}
         onSave={handleSaveFormModal}
       />
@@ -364,7 +364,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
 BusinessRulesModal.propTypes = {
   show: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  boardName: PropTypes.string,
+  boardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
 export default BusinessRulesModal;

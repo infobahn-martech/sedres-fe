@@ -788,15 +788,110 @@ function LinkOperatorSettingsModal({ show, onClose, onSave, initialSettings }) {
   );
 }
 
-function BoardMinimapModal({ show, onClose, onSave, initialBoardId }) {
+// Shared by every board picker that needs to filter/select a board grouped by
+// workspace (the Move action minimap and the "Board is" filter condition), so
+// the dropdown behaviour lives in one place instead of being duplicated per modal.
+function BoardPickerDropdown({ workspaces, boardId, onSelect, renderTrigger, wrapClassName, panelClassName }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [filterText, setFilterText] = useState('');
+  const triggerRef = useRef(null);
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onDocMouseDown = (event) => {
+      const t = event.target;
+      if (panelRef.current?.contains(t)) return;
+      if (triggerRef.current?.contains(t)) return;
+      setIsOpen(false);
+    };
+    document.addEventListener('mousedown', onDocMouseDown);
+    return () => document.removeEventListener('mousedown', onDocMouseDown);
+  }, [isOpen]);
+
+  const filterQuery = filterText.trim().toLowerCase();
+  const filteredGroups = (workspaces ?? [])
+    .map((w) => {
+      const wsMatch = w.workspace_name.toLowerCase().includes(filterQuery);
+      const groupBoards = wsMatch
+        ? (w.boards ?? [])
+        : (w.boards ?? []).filter((b) => b.board_name.toLowerCase().includes(filterQuery));
+      return { workspace_id: w.workspace_id, workspace_name: w.workspace_name, boards: groupBoards };
+    })
+    .filter((g) => g.boards.length > 0);
+
+  const handlePick = (board) => {
+    onSelect(board);
+    setIsOpen(false);
+    setFilterText('');
+  };
+
+  return (
+    <div className={`board-minimap-picker-wrap${wrapClassName ? ` ${wrapClassName}` : ''}`}>
+      {renderTrigger({ isOpen, triggerRef, toggle: () => setIsOpen((v) => !v) })}
+
+      {isOpen && (
+        <div className={`board-minimap-picker-panel${panelClassName ? ` ${panelClassName}` : ''}`} ref={panelRef}>
+          <div className="board-minimap-picker-search">
+            <FiFilter size={20} className="board-minimap-picker-search-icon" aria-hidden />
+            <input
+              type="text"
+              placeholder="Filter"
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <div className="board-minimap-picker-scroll">
+            {filteredGroups.length === 0 ? (
+              <div className="br-property-picker-empty">No matches</div>
+            ) : (
+              filteredGroups.map((ws) => (
+                <div key={ws.workspace_id} className="board-minimap-picker-group">
+                  <div className="board-minimap-picker-group-head">
+                    <FiUsers size={20} aria-hidden />
+                    <span>{ws.workspace_name}</span>
+                  </div>
+                  <div className="board-minimap-picker-grid">
+                    {ws.boards.map((board) => (
+                      <button
+                        type="button"
+                        key={board.board_id}
+                        className={`board-minimap-picker-tile${String(board.board_id) === String(boardId) ? ' board-minimap-picker-tile--selected' : ''}`}
+                        onClick={() => handlePick(board)}
+                      >
+                        {board.board_name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+BoardPickerDropdown.propTypes = {
+  workspaces: PropTypes.arrayOf(PropTypes.shape({
+    workspace_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    workspace_name: PropTypes.string,
+    boards: PropTypes.array,
+  })),
+  boardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onSelect: PropTypes.func.isRequired,
+  renderTrigger: PropTypes.func.isRequired,
+  wrapClassName: PropTypes.string,
+  panelClassName: PropTypes.string,
+};
+
+function BoardMinimapModal({ show, onClose, onSave, initialBoardId, currentBoardId }) {
   const [boardId, setBoardId] = useState('');
-  const [isBoardPickerOpen, setIsBoardPickerOpen] = useState(false);
-  const [boardFilterText, setBoardFilterText] = useState('');
   const [hoveredLeafColumnId, setHoveredLeafColumnId] = useState(null);
   const [hoveredSwimlaneId, setHoveredSwimlaneId] = useState(null);
-
-  const boardPickerTriggerRef = useRef(null);
-  const boardPickerPanelRef = useRef(null);
 
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
   const displayWorkspaces = useMemo(() => workspaces ?? [], [workspaces]);
@@ -804,50 +899,23 @@ function BoardMinimapModal({ show, onClose, onSave, initialBoardId }) {
     (w.boards ?? []).map((b) => ({ ...b, workspace_name: w.workspace_name }))
   );
 
-  const boardFilterQuery = boardFilterText.trim().toLowerCase();
-  const filteredWorkspaceGroups = displayWorkspaces
-    .map((w) => {
-      const wsMatch = w.workspace_name.toLowerCase().includes(boardFilterQuery);
-      const groupBoards = wsMatch
-        ? (w.boards ?? [])
-        : (w.boards ?? []).filter((b) => b.board_name.toLowerCase().includes(boardFilterQuery));
-      return { workspace_id: w.workspace_id, workspace_name: w.workspace_name, boards: groupBoards };
-    })
-    .filter((g) => g.boards.length > 0);
-
   const selectedBoard = boards.find((b) => String(b.board_id) === String(boardId));
 
   const handlePickBoard = (board) => {
     setBoardId(board.board_id);
-    setIsBoardPickerOpen(false);
-    setBoardFilterText('');
   };
 
   useEffect(() => {
     if (!show) return;
     setBoardId(initialBoardId ?? '');
-    setIsBoardPickerOpen(false);
-    setBoardFilterText('');
     if (workspaces.length === 0) listAllWorkspaces();
   }, [show]);
 
   useEffect(() => {
     if (!show || boardId || initialBoardId) return;
-    const firstBoard = displayWorkspaces[0]?.boards?.[0];
-    if (firstBoard) setBoardId(firstBoard.board_id);
-  }, [show, boardId, initialBoardId, displayWorkspaces]);
-
-  useEffect(() => {
-    if (!isBoardPickerOpen) return undefined;
-    const onDocMouseDown = (event) => {
-      const t = event.target;
-      if (boardPickerPanelRef.current?.contains(t)) return;
-      if (boardPickerTriggerRef.current?.contains(t)) return;
-      setIsBoardPickerOpen(false);
-    };
-    document.addEventListener('mousedown', onDocMouseDown);
-    return () => document.removeEventListener('mousedown', onDocMouseDown);
-  }, [isBoardPickerOpen]);
+    const preferredBoard = boards.find((b) => String(b.board_id) === String(currentBoardId)) ?? boards[0];
+    if (preferredBoard) setBoardId(preferredBoard.board_id);
+  }, [show, boardId, initialBoardId, boards, currentBoardId]);
 
   // The swimlanes and the column/header layout below are a fixed demo dataset (see
   // DUMMY_BOARD_* in businessRulesData.js) shown for every board regardless of its
@@ -919,63 +987,26 @@ function BoardMinimapModal({ show, onClose, onSave, initialBoardId }) {
         </header>
 
         <div className="card-property-match-modal-body board-minimap-body">
-          <div className="board-minimap-picker-wrap">
-            <button
-              type="button"
-              ref={boardPickerTriggerRef}
-              className="board-minimap-board-trigger"
-              onClick={() => setIsBoardPickerOpen((v) => !v)}
-              aria-haspopup="listbox"
-              aria-expanded={isBoardPickerOpen}
-            >
-              <span>
-                {selectedBoard ? `${selectedBoard.workspace_name} / ${selectedBoard.board_name}` : 'Select a board'}
-              </span>
-              <FiChevronDown aria-hidden />
-            </button>
-
-            {isBoardPickerOpen && (
-              <div className="board-minimap-picker-panel" ref={boardPickerPanelRef}>
-                <div className="board-minimap-picker-search">
-                  <FiFilter size={20} className="board-minimap-picker-search-icon" aria-hidden />
-                  <input
-                    type="text"
-                    placeholder="Filter"
-                    value={boardFilterText}
-                    onChange={(e) => setBoardFilterText(e.target.value)}
-                    autoFocus
-                  />
-                </div>
-
-                <div className="board-minimap-picker-scroll">
-                  {filteredWorkspaceGroups.length === 0 ? (
-                    <div className="br-property-picker-empty">No matches</div>
-                  ) : (
-                    filteredWorkspaceGroups.map((ws) => (
-                      <div key={ws.workspace_id} className="board-minimap-picker-group">
-                        <div className="board-minimap-picker-group-head">
-                          <FiUsers size={20} aria-hidden />
-                          <span>{ws.workspace_name}</span>
-                        </div>
-                        <div className="board-minimap-picker-grid">
-                          {ws.boards.map((board) => (
-                            <button
-                              type="button"
-                              key={board.board_id}
-                              className={`board-minimap-picker-tile${String(board.board_id) === String(boardId) ? ' board-minimap-picker-tile--selected' : ''}`}
-                              onClick={() => handlePickBoard(board)}
-                            >
-                              {board.board_name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+          <BoardPickerDropdown
+            workspaces={displayWorkspaces}
+            boardId={boardId}
+            onSelect={handlePickBoard}
+            renderTrigger={({ isOpen, toggle, triggerRef }) => (
+              <button
+                type="button"
+                ref={triggerRef}
+                className="board-minimap-board-trigger"
+                onClick={toggle}
+                aria-haspopup="listbox"
+                aria-expanded={isOpen}
+              >
+                <span>
+                  {selectedBoard ? `${selectedBoard.workspace_name} / ${selectedBoard.board_name}` : 'Select a board'}
+                </span>
+                <FiChevronDown aria-hidden />
+              </button>
             )}
-          </div>
+          />
 
           {!boardId ? (
             <div className="br-property-picker-empty">Select a board to view its structure</div>
@@ -2706,7 +2737,7 @@ ShareWithModal.propTypes = {
   onTogglePermission: PropTypes.func,
 };
 
-function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
+function BusinessRuleFormModal({ show, rule, boardId, onClose, onSave }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
@@ -2738,11 +2769,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
   const [showWebInvokeSettings, setShowWebInvokeSettings] = useState(false);
   const [activeInvokeActionId, setActiveInvokeActionId] = useState(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [boardConditionRows, setBoardConditionRows] = useState([{ id: 'board-0', boardId: '' }]);
-  const [openBoardConditionRowId, setOpenBoardConditionRowId] = useState(null);
-  const [boardConditionFilterText, setBoardConditionFilterText] = useState('');
-  const boardConditionTriggerRef = useRef(null);
-  const boardConditionPanelRef = useRef(null);
+  const [boardConditionRows, setBoardConditionRows] = useState([{ id: 'board-0', boardId: boardId ?? '' }]);
 
   const { getTriggerConfig, getFieldDetails, fieldDetailsByKey, isLoadingFieldDetails } = useBusinessRuleReducer((s) => s);
   const { users, usersLoading, getUsers } = useCommonReducer((s) => s);
@@ -2753,9 +2780,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
     getTriggerConfig(rule.id);
     if (users.length === 0 && !usersLoading) getUsers({ params: { limit: 200 } });
     if (workspaces.length === 0) listAllWorkspaces();
-    setBoardConditionRows([{ id: 'board-0', boardId: '' }]);
-    setOpenBoardConditionRowId(null);
-    setBoardConditionFilterText('');
+    setBoardConditionRows([{ id: 'board-0', boardId: boardId ?? '' }]);
     setName(rule.name ?? '');
     setDescription(rule.description ?? '');
     setTags('');
@@ -2785,7 +2810,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
     setShowWebInvokeSettings(false);
     setActiveInvokeActionId(null);
     setShowCancelConfirm(false);
-  }, [show, rule]);
+  }, [show, rule, boardId]);
 
   useEffect(() => {
     if (!isOwnerPickerOpen) return undefined;
@@ -2798,18 +2823,6 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
     document.addEventListener('mousedown', onDocMouseDown);
     return () => document.removeEventListener('mousedown', onDocMouseDown);
   }, [isOwnerPickerOpen]);
-
-  useEffect(() => {
-    if (openBoardConditionRowId == null) return undefined;
-    const onDocMouseDown = (event) => {
-      const t = event.target;
-      if (boardConditionPanelRef.current?.contains(t)) return;
-      if (boardConditionTriggerRef.current?.contains(t)) return;
-      setOpenBoardConditionRowId(null);
-    };
-    document.addEventListener('mousedown', onDocMouseDown);
-    return () => document.removeEventListener('mousedown', onDocMouseDown);
-  }, [openBoardConditionRowId]);
 
   if (!rule) return null;
 
@@ -3010,30 +3023,15 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
   const activeInvokeAction = invokeActions.find((a) => a.id === activeInvokeActionId);
 
   const displayWorkspaces = workspaces ?? [];
-  const conditionBoardFilterQuery = boardConditionFilterText.trim().toLowerCase();
-  const filteredBoardConditionGroups = displayWorkspaces
-    .map((w) => {
-      const wsMatch = w.workspace_name.toLowerCase().includes(conditionBoardFilterQuery);
-      const groupBoards = wsMatch
-        ? (w.boards ?? [])
-        : (w.boards ?? []).filter((b) => b.board_name.toLowerCase().includes(conditionBoardFilterQuery));
-      return { workspace_id: w.workspace_id, workspace_name: w.workspace_name, boards: groupBoards };
-    })
-    .filter((g) => g.boards.length > 0);
-
   const allConditionBoards = displayWorkspaces.flatMap((w) => w.boards ?? []);
 
-  const getBoardConditionLabel = (boardId) => {
-    if (!boardId) return boardName?.trim() || 'Current board';
-    return allConditionBoards.find((b) => String(b.board_id) === String(boardId))?.board_name ?? 'Current board';
-  };
+  const getBoardConditionLabel = (rowBoardId) =>
+    allConditionBoards.find((b) => String(b.board_id) === String(rowBoardId))?.board_name ?? 'Select a board';
 
   const handlePickConditionBoard = (rowId, board) => {
     setBoardConditionRows((prev) =>
-      prev.map((row) => (row.id === rowId ? { ...row, boardId: board?.board_id ?? '' } : row))
+      prev.map((row) => (row.id === rowId ? { ...row, boardId: board.board_id } : row))
     );
-    setOpenBoardConditionRowId(null);
-    setBoardConditionFilterText('');
   };
 
   const handleAddBoardConditionRow = (rowId) => {
@@ -3232,79 +3230,28 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
                   <div className="business-rule-form-filter-row business-rule-form-filter-row--multi">
                     <span className="business-rule-form-condition-label">Board is</span>
                     {boardConditionRows.map((row) => {
-                      const isOpen = openBoardConditionRowId === row.id;
                       return (
                         <div key={row.id} className="br-board-condition-value-row">
-                          <div className="board-minimap-picker-wrap br-board-condition-wrap">
-                            <button
-                              type="button"
-                              ref={isOpen ? boardConditionTriggerRef : undefined}
-                              className="business-rule-form-condition-value"
-                              onClick={() => {
-                                setBoardConditionFilterText('');
-                                setOpenBoardConditionRowId((prev) => (prev === row.id ? null : row.id));
-                              }}
-                              aria-haspopup="listbox"
-                              aria-expanded={isOpen}
-                            >
-                              {getBoardConditionLabel(row.boardId)}
-                              <FiChevronDown size={16} aria-hidden />
-                            </button>
-
-                            {isOpen && (
-                              <div className="board-minimap-picker-panel br-board-condition-panel" ref={boardConditionPanelRef}>
-                                <div className="board-minimap-picker-search">
-                                  <FiFilter size={20} className="board-minimap-picker-search-icon" aria-hidden />
-                                  <input
-                                    type="text"
-                                    placeholder="Filter"
-                                    value={boardConditionFilterText}
-                                    onChange={(e) => setBoardConditionFilterText(e.target.value)}
-                                    autoFocus
-                                  />
-                                </div>
-
-                                <div className="board-minimap-picker-scroll">
-                                  {'current board'.includes(conditionBoardFilterQuery) && (
-                                    <button
-                                      type="button"
-                                      className={`board-minimap-picker-tile br-board-condition-current${!row.boardId ? ' board-minimap-picker-tile--selected' : ''}`}
-                                      onClick={() => handlePickConditionBoard(row.id, null)}
-                                    >
-                                      Current board
-                                    </button>
-                                  )}
-
-                                  {filteredBoardConditionGroups.length === 0 ? (
-                                    conditionBoardFilterQuery && (
-                                      <div className="br-property-picker-empty">No matches</div>
-                                    )
-                                  ) : (
-                                    filteredBoardConditionGroups.map((ws) => (
-                                      <div key={ws.workspace_id} className="board-minimap-picker-group">
-                                        <div className="board-minimap-picker-group-head">
-                                          <FiUsers size={20} aria-hidden />
-                                          <span>{ws.workspace_name}</span>
-                                        </div>
-                                        <div className="board-minimap-picker-grid">
-                                          {ws.boards.map((board) => (
-                                            <button
-                                              key={board.board_id}
-                                              type="button"
-                                              className={`board-minimap-picker-tile${String(board.board_id) === String(row.boardId) ? ' board-minimap-picker-tile--selected' : ''}`}
-                                              onClick={() => handlePickConditionBoard(row.id, board)}
-                                            >
-                                              {board.board_name}
-                                            </button>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    ))
-                                  )}
-                                </div>
-                              </div>
+                          <BoardPickerDropdown
+                            workspaces={displayWorkspaces}
+                            boardId={row.boardId}
+                            onSelect={(board) => handlePickConditionBoard(row.id, board)}
+                            wrapClassName="br-board-condition-wrap"
+                            panelClassName="br-board-condition-panel"
+                            renderTrigger={({ isOpen, toggle, triggerRef }) => (
+                              <button
+                                type="button"
+                                ref={triggerRef}
+                                className="business-rule-form-condition-value"
+                                onClick={toggle}
+                                aria-haspopup="listbox"
+                                aria-expanded={isOpen}
+                              >
+                                {getBoardConditionLabel(row.boardId)}
+                                <FiChevronDown size={16} aria-hidden />
+                              </button>
                             )}
-                          </div>
+                          />
 
                           <div className="business-rule-form-filter-row-actions">
                             <button
@@ -3595,6 +3542,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
       onClose={() => setShowMoveDestinationPicker(false)}
       onSave={handleSaveMoveDestination}
       initialBoardId={activeMoveAction?.boardId}
+      currentBoardId={boardId}
     />
 
     <RefineUpdateCriteriaModal
@@ -3664,7 +3612,7 @@ BusinessRuleFormModal.propTypes = {
     icon: PropTypes.string,
     description: PropTypes.string,
   }),
-  boardName: PropTypes.string,
+  boardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func,
 };
@@ -3711,6 +3659,7 @@ LinkOperatorSettingsModal.propTypes = {
 BoardMinimapModal.propTypes = {
   show: PropTypes.bool.isRequired,
   initialBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  currentBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
 };
