@@ -2125,6 +2125,18 @@
   flex-shrink: 0;
 }
 
+.business-rule-form-toggle--disabled {
+  cursor: not-allowed;
+
+  .business-rule-form-toggle-track {
+    opacity: 0.5;
+  }
+
+  .business-rule-form-toggle-label {
+    color: #9ca3af;
+  }
+}
+
 .share-with-filter-row {
   display: flex;
   align-items: center;
