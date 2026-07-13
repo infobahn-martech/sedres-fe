@@ -3257,7 +3257,7 @@ function ShareWithModal({ show, onClose, permissions, onSave }) {
     : users;
   const filteredUsers = filterQuery
     ? baseUsers.filter((user) =>
-        (user.name ?? '').toLowerCase().includes(filterQuery) || (user.username ?? '').toLowerCase().includes(filterQuery)
+        (user.name ?? '').toLowerCase().includes(filterQuery) || (user.email ?? '').toLowerCase().includes(filterQuery)
       )
     : baseUsers;
 
@@ -3331,7 +3331,7 @@ function ShareWithModal({ show, onClose, permissions, onSave }) {
                     <span className="share-with-name">{user.name}</span>
                     <span className="share-with-username">
                       <span className="share-with-avatar" aria-hidden>{getInitials(user.name)}</span>
-                      {user.username}
+                      {user.email}
                     </span>
                     <label className="business-rule-form-toggle share-with-toggle">
                       <input

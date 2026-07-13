@@ -23,7 +23,7 @@ const getUsers = ({ params }) => {
   return Gateway.get('/users', { params: apiParams });
 };
 
-const getNonVendorUsers = ({ params } = {}) => Gateway.get('/users/get_non_vendor_users', { params });
+const getNonVendorUsers = ({ params } = {}) => Gateway.get('/users/non_vendor_users', { params });
 
 const createUser = (formData) => Gateway.post('/users/create', formData);
 
