@@ -3731,6 +3731,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
     getNotificationSettings, notificationSettings, isLoadingNotificationSettings, resetNotificationSettings,
     deleteNotificationSettings,
     getWebServiceSettings, webServiceSettings, isLoadingWebServiceSettings, resetWebServiceSettings,
+    deleteWebServiceSettings,
   } = useBusinessRuleReducer((s) => s);
   const { users, usersLoading, getUsers } = useCommonReducer((s) => s);
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
@@ -4322,7 +4323,17 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave }) {
   };
 
   const handleRemoveInvokeAction = (id) => {
-    setInvokeActions((prev) => prev.filter((a) => a.id !== id));
+    // Only an invoke action that was actually saved on the backend (has a
+    // web_service_id) needs the delete call — one still unconfigured/unsaved
+    // has nothing to remove server-side.
+    const action = invokeActions.find((a) => a.id === id);
+    if (action?.webServiceId) {
+      deleteWebServiceSettings(action.webServiceId, {
+        cb: () => setInvokeActions((prev) => prev.filter((a) => a.id !== id)),
+      });
+    } else {
+      setInvokeActions((prev) => prev.filter((a) => a.id !== id));
+    }
   };
 
   const handleOpenWebInvokeSettings = (id) => {
