@@ -2,15 +2,144 @@
    MATERIAL SUMMARY (Husbandry tab) — all-material summary by call
    ========================================================== */
 
+@keyframes ms-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ms-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+// The shared .operation-right (operations.scss) clips overflow on both
+// axes, shared .cardform-left-full doesn't add scrolling of its own, and
+// shared .material-management-content-wrapper (materialmanagement.scss)
+// sets overflow: hidden — so with 3 sections plus expanded rows, content
+// taller than the visible area was silently clipped instead of scrollable.
+// All three classes sit on the same root div as .material-summary-wrapper,
+// so this compound selector (both our classes together) out-specifies the
+// shared single-class rule regardless of CSS import order, scoping the fix
+// to this page without editing either shared file.
 .material-summary-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 8px;
+}
+
+.material-summary-wrapper.material-management-content-wrapper {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #b0b6c0 #f1f1f1;
+}
+
+// common.scss's global ::-webkit-scrollbar is unscoped (width: 5px, near-
+// white #d1ebee track) and easy to miss. Scope a clearly visible one to
+// this container's own scrollbar, matching the look already used for
+// .material-table-container's horizontal scrollbar in materialmanagement.scss.
+.material-summary-wrapper.material-management-content-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.material-summary-wrapper.material-management-content-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 8px;
+}
+
+.material-summary-wrapper.material-management-content-wrapper::-webkit-scrollbar-thumb {
+  background: #b0b6c0;
+  border-radius: 8px;
+}
+
+.material-summary-wrapper.material-management-content-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #8b93a1;
 }
 
 .material-summary-section {
   display: flex;
   flex-direction: column;
+  animation: ms-fade-up 0.35s ease both;
+
+  &:nth-child(2) {
+    animation-delay: 0.06s;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 0.12s;
+  }
+
+  &:not(:first-child) {
+    border-top: 1px solid #edeff4;
+    padding-top: 8px;
+  }
+}
+
+// Expanded row detail (items/documents) fades in on open instead of
+// just popping in with the row's default table transition.
+.material-summary-wrapper .custom-table-expanded-inner {
+  animation: ms-fade-in 0.2s ease both;
+}
+
+// Row count next to each section title, e.g. "Inbound Orders  7"
+.material-summary-wrapper .material-list-title .ms-section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #eef0f8;
+  color: #4b5563;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: normal;
+}
+
+// materialmanagement.scss's plain `.material-table th:nth-child(n)` rules
+// hard-code pixel widths tuned for the (unrelated) 6-column dummy Material
+// Management table, and `.inbound-table`/`.sub-note-table` add a second,
+// differently-tuned width map on top. Both selectors match our table too
+// since it also carries the shared `.material-table` class, which is why
+// the three summary sections (4/5/7 columns each) rendered with mismatched,
+// unaligned column widths. Reset to auto here, at higher specificity than
+// either shared rule, so each section's own columns size themselves evenly.
+.material-summary-wrapper .material-summary-section .material-table-container .ms-summary-table th,
+.material-summary-wrapper .material-summary-section .material-table-container .ms-summary-table td {
+  width: auto;
+  min-width: 0;
+}
+
+.material-summary-wrapper .material-summary-section .material-table-container .ms-summary-table th.custom-table-expand-header,
+.material-summary-wrapper .material-summary-section .material-table-container .ms-summary-table td.custom-table-expand-cell {
+  width: 44px;
+  min-width: 44px;
+}
+
+// MaterialTablePagination renders its own root div with inline padding
+// (10px 4px 4px) and sits as a sibling of .material-table-container rather
+// than inside it, so it doesn't inherit the table's 22px horizontal
+// padding — that's why "Showing X to Y of Z entries" sat closer to the
+// left edge than the table headings above it. Realign it here, scoped to
+// this page only, without editing the shared pagination component (also
+// used by the Inbound Orders / Landing Note / Dispatch Note tabs).
+.material-summary-wrapper .ms-pagination-wrap>div {
+  padding-left: 22px !important;
+  padding-right: 22px !important;
 }
 
 .material-summary-empty-note {
@@ -67,10 +196,13 @@
   color: #1a1a1a;
   font-size: 13px;
   max-width: 220px;
+  transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 
   &:hover {
     border-color: #00368c;
     color: #00368c;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 54, 140, 0.12);
   }
 }
 
@@ -90,4 +222,194 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+// Status pills for the Status column across all three summary tables.
+// Prefixed ms- (not status-) so it never collides with table-common.scss's
+// unrelated .status-active/.status-inactive/.status-pending text-color rules.
+.ms-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  background: #eef0f5;
+  color: #4b5563;
+  transition: transform 0.15s ease;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.ms-status-badge.ms-status-submitted {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.ms-status-badge.ms-status-converted {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.ms-status-badge.ms-status-received {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.ms-status-badge.ms-status-dispatched {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.ms-status-badge.ms-status-fully-dispatched {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.ms-status-badge.ms-status-pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.ms-status-badge.ms-status-cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+// Per-row process chain: Inbound Order -> Landing Note -> Dispatch Note,
+// shown inside each expanded row so it's clear where that specific item
+// stands in the flow.
+@keyframes ms-pop-in {
+  from {
+    transform: scale(0);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes ms-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 54, 140, 0.35);
+  }
+
+  100% {
+    box-shadow: 0 0 0 8px rgba(0, 54, 140, 0);
+  }
+}
+
+@keyframes ms-connector-fill {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.ms-stepper {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  padding: 4px 6px 10px;
+}
+
+.ms-stepper-step {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 0;
+}
+
+.ms-stepper-node {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 2px solid #d5d9e2;
+  color: #9aa1ae;
+  z-index: 1;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.ms-stepper-step--done .ms-stepper-node {
+  background: #00368c;
+  border-color: #00368c;
+  color: #ffffff;
+}
+
+.ms-stepper-step--current .ms-stepper-node {
+  border-color: #00368c;
+  color: #00368c;
+  animation: ms-pulse-ring 1.6s ease-out infinite;
+}
+
+.ms-stepper-check {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #16a34a;
+  border: 2px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: ms-pop-in 0.25s ease-out both;
+  animation-delay: 0.1s;
+}
+
+.ms-stepper-text {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 130px;
+}
+
+.ms-stepper-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #344054;
+}
+
+.ms-stepper-step--pending .ms-stepper-label {
+  color: #9aa1ae;
+}
+
+.ms-stepper-sublabel {
+  font-size: 11px;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ms-stepper-connector {
+  position: absolute;
+  top: 15px;
+  left: calc(50% + 21px);
+  right: calc(-50% + 21px);
+  height: 2px;
+  background: #d5d9e2;
+  transform-origin: left center;
+}
+
+.ms-stepper-connector.is-done {
+  background: #00368c;
+  animation: ms-connector-fill 0.4s ease-out both;
 }

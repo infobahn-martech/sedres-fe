@@ -10,16 +10,6 @@ const useDispatchNoteReducer = create((set) => ({
     isLoadingPrint: false,
     dispatchNotes: [],
     dispatchTotal: 0,
-    dispatchNotesCount: 0,
-
-    getDispatchNotesTotal: async ({ call_id }) => {
-        try {
-            const { data } = await dispatchNoteService.getDispatchNotesTotal(call_id);
-            set({ dispatchNotesCount: data?.total ?? 0 });
-        } catch {
-            set({ dispatchNotesCount: 0 });
-        }
-    },
 
     getAllDispatchNotes: async ({ call_id, ...params }) => {
         try {

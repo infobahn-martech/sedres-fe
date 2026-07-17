@@ -10,16 +10,6 @@ const useLandingNoteReducer = create((set) => ({
     isLoadingConvert: false,
     landingNotes: [],
     landingTotal: 0,
-    landingNotesCount: 0,
-
-    getLandingNotesTotal: async ({ call_id }) => {
-        try {
-            const { data } = await landingNoteService.getLandingNotesTotal(call_id);
-            set({ landingNotesCount: data?.total ?? 0 });
-        } catch {
-            set({ landingNotesCount: 0 });
-        }
-    },
 
     getAllLandingNotes: async ({ call_id, ...params }) => {
         try {

@@ -14,6 +14,7 @@ import deleteIcon from "../../../../../../../assets/images/delete.svg";
 import eyeIcon from "../../../../../../../assets/images/eye.svg";
 import printIcon from "../../../../../../../assets/images/print.svg";
 import useDispatchNoteReducer from "../../../../../../../store/DispatchNoteReducer";
+import useMaterialSummaryReducer from "../../../../../../../store/MaterialSummaryReducer";
 import CardTabListLoading from "../../../../../../../components/CardTabListLoading";
 import logisticsWarehouseService from "../../../../../../../services/logisticsWarehouseService";
 import vehicleService from "../../../../../../../services/vehicleService";
@@ -126,7 +127,6 @@ AttachmentsList.propTypes = {
 const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
   const {
     getAllDispatchNotes,
-    getDispatchNotesTotal,
     getDispatchNoteById,
     updateDispatchNote,
     printDispatchNote,
@@ -139,6 +139,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
     isLoadingPrint,
     isLoadingDelete,
   } = useDispatchNoteReducer((state) => state);
+  const getMaterialSummaryByCall = useMaterialSummaryReducer((state) => state.getMaterialSummaryByCall);
 
   const [warehouseOptions, setWarehouseOptions] = useState([]);
   const [vehicleOptions, setVehicleOptions] = useState([]);
@@ -436,7 +437,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
         handleCloseModal();
         if (callId) {
           getAllDispatchNotes({ call_id: callId, page: dispatchPage, limit: DISPATCH_LIMIT });
-          getDispatchNotesTotal({ call_id: callId });
+          getMaterialSummaryByCall({ call_id: callId });
         }
       },
     });
@@ -457,7 +458,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
         setDeletingNote(null);
         if (callId) {
           getAllDispatchNotes({ call_id: callId, page: dispatchPage, limit: DISPATCH_LIMIT });
-          getDispatchNotesTotal({ call_id: callId });
+          getMaterialSummaryByCall({ call_id: callId });
         }
       },
     });

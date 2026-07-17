@@ -33,9 +33,7 @@ import MWPRenewalContent from "./components/MWPRenewalContent";
 import OnStationContent from "./components/OnStationContent";
 import ThirdPartyServicesContent from "./components/ThirdPartyServicesContent";
 import AddOnServicesContent from "./components/AddOnServicesContent";
-import useInboundOrderReducer from "../../../../../../store/InboundOrderReducer";
-import useLandingNoteReducer from "../../../../../../store/LandingNoteReducer";
-import useDispatchNoteReducer from "../../../../../../store/DispatchNoteReducer";
+import useMaterialSummaryReducer from "../../../../../../store/MaterialSummaryReducer";
 
 // Left-nav services that jump straight to their sidebar subtab. CG Pass/
 // Zawil Pass are handled via handleNavigateToTab instead. Crew Change/Port
@@ -349,29 +347,23 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false }) {
   ] : []);
   const cardColor = "#00368c"; // Fixed color for all buttons, effects, and backgrounds
 
-  const inboundOrdersCount = useInboundOrderReducer((state) => state.inboundOrdersCount);
-  const getInboundOrdersTotal = useInboundOrderReducer((state) => state.getInboundOrdersTotal);
-  const landingNotesCount = useLandingNoteReducer((state) => state.landingNotesCount);
-  const getLandingNotesTotal = useLandingNoteReducer((state) => state.getLandingNotesTotal);
-  const dispatchNotesCount = useDispatchNoteReducer((state) => state.dispatchNotesCount);
-  const getDispatchNotesTotal = useDispatchNoteReducer((state) => state.getDispatchNotesTotal);
+  const summaryPagination = useMaterialSummaryReducer((state) => state.summaryPagination);
+  const getMaterialSummaryByCall = useMaterialSummaryReducer((state) => state.getMaterialSummaryByCall);
+  const inboundOrdersCount = summaryPagination?.inbounds?.total ?? 0;
+  const landingNotesCount = summaryPagination?.landing_notes?.total ?? 0;
+  const dispatchNotesCount = summaryPagination?.dispatch_notes?.total ?? 0;
 
   useEffect(() => {
     if (activeMainTab !== MAIN_TABS.MATERIAL_MANAGEMENT) return;
     const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
     if (!callId) return;
-    getInboundOrdersTotal({ call_id: callId });
-    getLandingNotesTotal({ call_id: callId });
-    getDispatchNotesTotal({ call_id: callId });
+    getMaterialSummaryByCall({ call_id: callId });
   }, [
     activeMainTab,
-    activeSubTab,
     formValues?.call_id,
     formValues?.callId,
     formValues?.card_call_id,
-    getInboundOrdersTotal,
-    getLandingNotesTotal,
-    getDispatchNotesTotal,
+    getMaterialSummaryByCall,
   ]);
 
   const handleServiceSelect = useCallback((tab) => {

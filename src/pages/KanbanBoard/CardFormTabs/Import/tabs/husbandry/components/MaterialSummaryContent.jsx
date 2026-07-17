@@ -20,6 +20,17 @@ const formatDate = (dateStr) => {
 
 const isImageFile = (fileName) => /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName || "");
 
+const StatusBadge = ({ status }) => {
+  if (!status) return <span>—</span>;
+  const slug = status.toLowerCase().replace(/[\s_]+/g, "-");
+  const label = status.replace(/[\s_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return <span className={`ms-status-badge ms-status-${slug}`}>{label}</span>;
+};
+
+StatusBadge.propTypes = {
+  status: PropTypes.string,
+};
+
 const ItemsTable = ({ items }) => {
   if (!items?.length) {
     return <p className="material-summary-empty-note">No items available.</p>;
@@ -50,6 +61,117 @@ const ItemsTable = ({ items }) => {
 
 ItemsTable.propTypes = {
   items: PropTypes.array,
+};
+
+const STEP_ICONS = {
+  inbound: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 8L12 4L20 8V17L12 21L4 17V8Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M12 4V21M4 8L12 12L20 8" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    </svg>
+  ),
+  landing: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  dispatch: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 7H14V16H3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M14 10H18L21 13V16H14Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <circle cx="7" cy="18.5" r="1.6" stroke="currentColor" strokeWidth="2" />
+      <circle cx="17.5" cy="18.5" r="1.6" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  ),
+};
+
+const CheckIcon = () => (
+  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+// Per-row journey: Inbound Order -> Landing Note -> Dispatch Note.
+// "current" marks the immediate next stage to happen; "pending" marks a
+// stage that can't start until the one before it exists.
+const buildChainSteps = (kind, row, landingNotes, dispatchNotes) => {
+  if (kind === "inbound") {
+    const landing = landingNotes.find((l) => String(l.inbound_id) === String(row.inbound_id));
+    const dispatch = landing
+      ? dispatchNotes.find((d) => String(d.landing_note_id) === String(landing.landing_note_id))
+      : null;
+    return [
+      { key: "inbound", label: "Inbound Order", sublabel: row.inbound_no || "—", status: "done" },
+      {
+        key: "landing",
+        label: "Landing Note",
+        sublabel: landing?.landing_note_no || "Not yet created",
+        status: landing ? "done" : "current",
+      },
+      {
+        key: "dispatch",
+        label: "Dispatch Note",
+        sublabel: dispatch?.dispatch_note_no || "Not yet created",
+        status: dispatch ? "done" : landing ? "current" : "pending",
+      },
+    ];
+  }
+
+  if (kind === "landing") {
+    const dispatch = dispatchNotes.find((d) => String(d.landing_note_id) === String(row.landing_note_id));
+    return [
+      { key: "inbound", label: "Inbound Order", sublabel: row.inbound_no || "—", status: "done" },
+      { key: "landing", label: "Landing Note", sublabel: row.landing_note_no || "—", status: "done" },
+      {
+        key: "dispatch",
+        label: "Dispatch Note",
+        sublabel: dispatch?.dispatch_note_no || "Not yet created",
+        status: dispatch ? "done" : "current",
+      },
+    ];
+  }
+
+  return [
+    { key: "inbound", label: "Inbound Order", sublabel: row.inbound_no || "—", status: "done" },
+    { key: "landing", label: "Landing Note", sublabel: row.landing_note_no || "—", status: "done" },
+    { key: "dispatch", label: "Dispatch Note", sublabel: row.dispatch_note_no || "—", status: "done" },
+  ];
+};
+
+const ProcessStepper = ({ steps }) => (
+  <div className="ms-stepper">
+    {steps.map((step, idx) => (
+      <div key={step.key} className={`ms-stepper-step ms-stepper-step--${step.status}`}>
+        <div className="ms-stepper-node">
+          <span className="ms-stepper-icon">{STEP_ICONS[step.key]}</span>
+          {step.status === "done" && (
+            <span className="ms-stepper-check">
+              <CheckIcon />
+            </span>
+          )}
+        </div>
+        <div className="ms-stepper-text">
+          <span className="ms-stepper-label">{step.label}</span>
+          <span className="ms-stepper-sublabel">{step.sublabel}</span>
+        </div>
+        {idx < steps.length - 1 && (
+          <span className={`ms-stepper-connector${step.status === "done" ? " is-done" : ""}`} />
+        )}
+      </div>
+    ))}
+  </div>
+);
+
+ProcessStepper.propTypes = {
+  steps: PropTypes.arrayOf(
+    PropTypes.shape({
+      key: PropTypes.string.isRequired,
+      label: PropTypes.string.isRequired,
+      sublabel: PropTypes.string,
+      status: PropTypes.oneOf(["done", "current", "pending"]).isRequired,
+    })
+  ).isRequired,
 };
 
 const DocumentsList = ({ documents }) => {
@@ -91,6 +213,7 @@ const SummarySection = ({ title, columns, rows, rowKey, isLoading, cardColor, pa
       <h3 className="material-list-title">
         <span className="material-list-title-bar"></span>
         {title}
+        <span className="ms-section-count">{total}</span>
       </h3>
     </div>
     <div className="table-wrapper table-responsive material-table-container note-table-container">
@@ -98,7 +221,7 @@ const SummarySection = ({ title, columns, rows, rowKey, isLoading, cardColor, pa
         {isLoading ? (
           <CardTabListLoading message={`Loading ${title.toLowerCase()}...`} cardColor={cardColor} />
         ) : (
-          <table className="table table-striped material-table inbound-table note-table">
+          <table className="table table-striped material-table ms-summary-table note-table">
             <thead className="note-thead">
               <tr>
                 <th width="44" className="custom-table-expand-header" aria-label="Expand row" />
@@ -156,7 +279,9 @@ const SummarySection = ({ title, columns, rows, rowKey, isLoading, cardColor, pa
         )}
       </div>
     </div>
-    <MaterialTablePagination page={page} total={total} limit={SUMMARY_LIMIT} onPageChange={onPageChange} />
+    <div className="ms-pagination-wrap">
+      <MaterialTablePagination page={page} total={total} limit={SUMMARY_LIMIT} onPageChange={onPageChange} />
+    </div>
   </div>
 );
 
@@ -216,9 +341,14 @@ const MaterialSummaryContent = ({ formValues, cardColor }) => {
         columns={[
           { key: "inbound_no", label: "Inbound Order No" },
           { key: "inbound_date", label: "Date", render: (row) => formatDate(row.inbound_date) },
-          { key: "status", label: "Status" },
+          { key: "status", label: "Status", render: (row) => <StatusBadge status={row.status} /> },
         ]}
-        renderExpanded={(row) => <ItemsTable items={row.items} />}
+        renderExpanded={(row) => (
+          <>
+            <ProcessStepper steps={buildChainSteps("inbound", row, landingNotes, dispatchNotes)} />
+            <ItemsTable items={row.items} />
+          </>
+        )}
       />
 
       <SummarySection
@@ -235,11 +365,12 @@ const MaterialSummaryContent = ({ formValues, cardColor }) => {
         columns={[
           { key: "landing_note_no", label: "Landing Note No" },
           { key: "landing_date", label: "Date", render: (row) => formatDate(row.landing_date) },
-          { key: "status", label: "Status" },
+          { key: "status", label: "Status", render: (row) => <StatusBadge status={row.status} /> },
           { key: "inbound_no", label: "Inbound Order No" },
         ]}
         renderExpanded={(row) => (
           <>
+            <ProcessStepper steps={buildChainSteps("landing", row, landingNotes, dispatchNotes)} />
             <ItemsTable items={row.items} />
             <DocumentsList documents={row.documents} />
           </>
@@ -260,13 +391,14 @@ const MaterialSummaryContent = ({ formValues, cardColor }) => {
         columns={[
           { key: "dispatch_note_no", label: "Dispatch Note No" },
           { key: "dispatch_date", label: "Date", render: (row) => formatDate(row.dispatch_date) },
-          { key: "status", label: "Status" },
+          { key: "status", label: "Status", render: (row) => <StatusBadge status={row.status} /> },
           { key: "delivery_location", label: "Delivery Location" },
           { key: "delivered_to", label: "Delivered To" },
           { key: "landing_note_no", label: "Landing Note No" },
         ]}
         renderExpanded={(row) => (
           <>
+            <ProcessStepper steps={buildChainSteps("dispatch", row, landingNotes, dispatchNotes)} />
             <ItemsTable items={row.items} />
             <DocumentsList documents={row.documents} />
           </>

@@ -11,7 +11,6 @@ const useInboundOrderReducer = create((set) => ({
     isBeingConverted: false,
     inboundOrders: [],
     inboundTotal: 0,
-    inboundOrdersCount: 0,
     inboundDetail: null,
 
     saveInboundOrder: async ({ data, cb }) => {
@@ -42,15 +41,6 @@ const useInboundOrderReducer = create((set) => ({
             const { error } = useAlertReducer.getState();
             set({ isLoadingList: false, inboundOrders: [], inboundTotal: 0 });
             error(err?.response?.data?.message ?? err.message);
-        }
-    },
-
-    getInboundOrdersTotal: async ({ call_id }) => {
-        try {
-            const { data } = await inboundOrderService.getInboundOrdersTotal(call_id);
-            set({ inboundOrdersCount: data?.total ?? 0 });
-        } catch {
-            set({ inboundOrdersCount: 0 });
         }
     },
 
