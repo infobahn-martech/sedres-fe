@@ -252,10 +252,6 @@ export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, on
   } else if (activeMainTab === MAIN_TABS.MATERIAL_MANAGEMENT) {
     subTabs = [
       {
-        id: MATERIAL_MANAGEMENT_SUBTABS.SUMMARY,
-        label: "Summary"
-      },
-      {
         id: MATERIAL_MANAGEMENT_SUBTABS.INBOUND_ORDERS,
         label: "Inbound Orders"
       },
