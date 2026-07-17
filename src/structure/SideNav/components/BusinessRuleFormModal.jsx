@@ -66,22 +66,14 @@ const USER_REFERENCE_UPDATE_KEYS = ['add_co_owners', 'remove_co_owners', 'add_wa
 // image/mention-style plugins make chips non-editable.
 const QuillEmbedBlot = Quill.import('blots/embed');
 class NotificationPillBlot extends QuillEmbedBlot {
-  // Carries its own "×" remove button, same as the Subject/Url field pills — the
-  // value is kept in a data attribute (not just textContent) so it can be read back
-  // without the button's "×" bleeding into it.
+  // No remove button — this is an atomic embed, so Quill's own backspace/delete
+  // handling already removes it as a whole unit; the value is kept in a data
+  // attribute (not just textContent) so it can be read back reliably.
   static create(value) {
     const node = super.create();
-    node.classList.add('notification-pill--removable');
     node.setAttribute('contenteditable', 'false');
     node.dataset.fieldValue = value;
     node.appendChild(document.createTextNode(value));
-
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'notification-pill-remove';
-    removeBtn.setAttribute('aria-label', `Remove ${value}`);
-    removeBtn.textContent = '×';
-    node.appendChild(removeBtn);
 
     return node;
   }
@@ -2305,8 +2297,8 @@ function NotificationSettingsModal({
 
   // A recipient pill is a non-editable atomic node inside the contentEditable To/Cc box,
   // carrying its backend id/type as data attributes so parseRecipientTokens can read them
-  // back out at save time (mirrors the plain-text "×" affordance instead of the FiX icon,
-  // since these nodes are built with raw DOM calls, not JSX).
+  // back out at save time. No remove button — it's removed the same way any other atomic
+  // contentEditable=false node is, via Backspace/Delete.
   const buildRecipientPill = (label, type, id) => {
     const span = document.createElement('span');
     span.className = `notification-user-pill notification-user-pill--${type}`;
@@ -2315,13 +2307,6 @@ function NotificationSettingsModal({
     span.dataset.tokenId = id != null ? String(id) : '';
     span.dataset.label = label;
     span.appendChild(document.createTextNode(label));
-
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'notification-user-pill-remove';
-    removeBtn.setAttribute('aria-label', `Remove ${label}`);
-    removeBtn.textContent = '×';
-    span.appendChild(removeBtn);
 
     return span;
   };
@@ -2368,22 +2353,15 @@ function NotificationSettingsModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show, initialSettings, fetchedSettings]);
 
-  // Mirrors buildRecipientPill: a non-editable field pill with its own "×" remove
-  // button. The value is kept in a data attribute (not just textContent) so
-  // parseSubjectParts can read it back without the button's "×".
+  // Mirrors buildRecipientPill: a non-editable field pill, with the value kept in a
+  // data attribute (not just textContent) so parseSubjectParts can read it back. No
+  // remove button — removed via Backspace/Delete like any other atomic node.
   const buildSubjectFieldPill = (value) => {
     const span = document.createElement('span');
-    span.className = 'notification-pill notification-pill--removable';
+    span.className = 'notification-pill';
     span.contentEditable = 'false';
     span.dataset.fieldValue = value;
     span.appendChild(document.createTextNode(value));
-
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'notification-pill-remove';
-    removeBtn.setAttribute('aria-label', `Remove ${value}`);
-    removeBtn.textContent = '×';
-    span.appendChild(removeBtn);
 
     return span;
   };
@@ -2413,17 +2391,6 @@ function NotificationSettingsModal({
     const quill = quillRef.current?.getEditor();
     if (!quill || quill._pillMatcherAdded) return;
     quill.clipboard.addMatcher('span.notification-pill', (node) => new QuillDelta().insert({ pill: node.dataset.fieldValue ?? node.textContent }));
-    // Clicking a pill's "×" must go through Quill's own API (deleteText) rather than
-    // removing the DOM node directly, so Quill's internal Delta model stays in sync.
-    quill.root.addEventListener('click', (e) => {
-      const removeBtn = e.target.closest('.notification-pill-remove');
-      if (!removeBtn) return;
-      e.preventDefault();
-      const pillNode = removeBtn.closest('.notification-pill');
-      const blot = pillNode && Quill.find(pillNode);
-      if (!blot) return;
-      quill.deleteText(blot.offset(quill.scroll), 1, Quill.sources.USER);
-    });
     quill._pillMatcherAdded = true;
   }, [show]);
 
@@ -2455,15 +2422,6 @@ function NotificationSettingsModal({
       }
     });
     boxEl.focus();
-  };
-
-  // Clicking the × inside a pill removes just that pill; a click anywhere else in the box
-  // is left to the browser's native contentEditable caret placement — nothing else moves.
-  const handleRecipientBoxClick = (e) => {
-    const removeBtn = e.target.closest('.notification-user-pill-remove');
-    if (!removeBtn) return;
-    e.preventDefault();
-    removeBtn.closest('.notification-user-pill')?.remove();
   };
 
   // Enter/comma turns the plain text the user just typed (since the last pill or the
@@ -2605,15 +2563,6 @@ function NotificationSettingsModal({
       }
       return acc;
     }, []);
-  };
-
-  // Mirrors handleRecipientBoxClick: clicking a pill's "×" removes just that pill,
-  // leaving native contentEditable caret placement for clicks anywhere else.
-  const handleSubjectBoxClick = (e) => {
-    const removeBtn = e.target.closest('.notification-pill-remove');
-    if (!removeBtn) return;
-    e.preventDefault();
-    removeBtn.closest('.notification-pill')?.remove();
   };
 
   // Pill tokens are rendered inline as their label text — there's no template/placeholder
@@ -2802,7 +2751,6 @@ function NotificationSettingsModal({
               aria-multiline="false"
               aria-label="To recipients"
               data-placeholder="Type an email and press Enter"
-              onClick={handleRecipientBoxClick}
               onInput={() => setToRecipientError(false)}
               onKeyDown={handleRecipientKeyDown(toBoxRef, setToRecipientError)}
             />
@@ -2838,7 +2786,6 @@ function NotificationSettingsModal({
               aria-multiline="false"
               aria-label="Cc recipients"
               data-placeholder="Type an email and press Enter"
-              onClick={handleRecipientBoxClick}
               onInput={() => setCcRecipientError(false)}
               onKeyDown={handleRecipientKeyDown(ccBoxRef, setCcRecipientError)}
             />
@@ -2866,7 +2813,6 @@ function NotificationSettingsModal({
               role="textbox"
               aria-multiline="false"
               aria-label="Notification subject"
-              onClick={handleSubjectBoxClick}
               onKeyDown={handleSubjectKeyDown}
               onPaste={handleSubjectPaste}
             />
@@ -3257,8 +3203,8 @@ function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetche
     if (e.key === 'Enter') e.preventDefault();
   };
 
-  // Mirrors handleRecipientBoxClick: clicking a pill's "×" removes just that pill,
-  // leaving native contentEditable caret placement for clicks anywhere else.
+  // Clicking a pill's "×" removes just that pill, leaving native contentEditable
+  // caret placement for clicks anywhere else.
   const handleUrlBoxClick = (e) => {
     const removeBtn = e.target.closest('.br-invoke-value-pill-remove');
     if (!removeBtn) return;

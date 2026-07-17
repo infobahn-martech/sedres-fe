@@ -3139,42 +3139,13 @@
   background: #e5e7eb;
   font: normal normal 500 13px/1.4 $font-primary;
   color: $txtColor;
-
-  // Modifier for pills that carry a "×" remove button (Subject/Body field pills) —
-  // matches the .br-invoke-value-pill override already used for the Url box's pills.
-  &--removable {
-    gap: 6px;
-    padding: 2px 6px 2px 10px;
-  }
-}
-
-.notification-pill-remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: #6b7280;
-  cursor: pointer;
-  padding: 0;
-  font-size: 14px;
-  line-height: 1;
-
-  &:hover {
-    background: #d1d5db;
-    color: #111827;
-  }
 }
 
 .notification-user-pill {
   display: inline-flex;
   align-items: center;
   vertical-align: middle;
-  gap: 6px;
-  padding: 2px 6px 2px 10px;
+  padding: 2px 10px;
   border-radius: 999px;
   background: #d3f2e0;
   font: normal normal 500 13px/1.4 $font-primary;
@@ -3183,44 +3154,11 @@
   &.notification-user-pill--field {
     background: #f6dcec;
     color: #a3286b;
-
-    .notification-user-pill-remove {
-      color: #a3286b;
-
-      &:hover {
-        color: #7d1e51;
-      }
-    }
   }
 
   &.notification-user-pill--email {
     background: #dbe7fb;
     color: #1849a9;
-
-    .notification-user-pill-remove {
-      color: #1849a9;
-
-      &:hover {
-        color: #12377f;
-      }
-    }
-  }
-}
-
-.notification-user-pill-remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: transparent;
-  padding: 0;
-  color: #0f7a4a;
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-
-  &:hover {
-    color: #0a5c37;
   }
 }
 
