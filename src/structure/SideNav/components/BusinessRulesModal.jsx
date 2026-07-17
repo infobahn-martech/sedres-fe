@@ -46,11 +46,18 @@ const OwnerCell = ({ owner }) => {
   );
 };
 
+const FILTER_OPTIONS = [
+  { label: 'All', value: 'all' },
+  { label: 'Enabled', value: 'enabled' },
+  { label: 'Disabled', value: 'disabled' },
+];
+
 const BusinessRulesModal = ({ show, onClose, boardName }) => {
   const [searchValue, setSearchValue] = useState('');
   const [triggerSearch, setTriggerSearch] = useState('');
   const [debouncedTriggerSearch, setDebouncedTriggerSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [filter, setFilter] = useState('all');
   const limit = 10;
 
   // view: 'table' | 'picker'
@@ -71,13 +78,15 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
       setTriggerSearch('');
       setDebouncedTriggerSearch('');
       setPage(1);
+      setFilter('all');
       setView('table');
       setSelectedRule(null);
       setShowFormModal(false);
       return;
     }
-    getBusinessRules({ params: { page, per_page: limit, search: searchValue || undefined } });
-  }, [show, page, searchValue]);
+    const is_enabled = filter === 'enabled' ? 1 : filter === 'disabled' ? 0 : undefined;
+    getBusinessRules({ params: { page, per_page: limit, search: searchValue || undefined, is_enabled } });
+  }, [show, page, searchValue, filter]);
 
   useEffect(() => {
     if (!show) return;
@@ -116,7 +125,8 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
         setShowFormModal(false);
         setSelectedRule(null);
         setView('table');
-        getBusinessRules({ params: { page, per_page: limit, search: searchValue || undefined } });
+        const is_enabled = filter === 'enabled' ? 1 : filter === 'disabled' ? 0 : undefined;
+        getBusinessRules({ params: { page, per_page: limit, search: searchValue || undefined, is_enabled } });
         getBusinessRuleStats();
       },
     });
@@ -178,6 +188,30 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
             <>
               <div className="br-table-toolbar">
                 <div className="br-table-toolbar-left">
+                  <div className="dropdown">
+                    <button
+                      className="btn btn-primary dropdown-toggle br-table-filter-btn"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                    >
+                      {FILTER_OPTIONS.find((o) => o.value === filter)?.label ?? 'All'}
+                    </button>
+                    <ul className="dropdown-menu">
+                      {FILTER_OPTIONS.map((opt) => (
+                        <li key={opt.value}>
+                          <button
+                            className="dropdown-item"
+                            type="button"
+                            onClick={() => { setFilter(opt.value); setPage(1); }}
+                          >
+                            {opt.label}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
                   <div className="business-rules-search-wrapper br-table-search-wrap">
                     <FiSearch className="business-rules-search-icon" />
                     <input
