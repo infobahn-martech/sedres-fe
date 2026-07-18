@@ -65,6 +65,19 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
     createBusinessRule, isCreatingBusinessRule,
   } = useBusinessRuleReducer((s) => s);
 
+  // UI-only status override, keyed by rule id. The backend has no toggle endpoint
+  // yet, so this just flips the switch locally instead of persisting anything —
+  // swap this out for a real store/service call once that endpoint exists.
+  const [localStatusOverrides, setLocalStatusOverrides] = useState({});
+
+  const handleToggleRuleStatus = (rule) => {
+    const ruleId = rule?.business_rule_id ?? rule?.id;
+    if (!ruleId) return;
+    const currentStatus = localStatusOverrides[ruleId] ?? rule?.status;
+    const nextStatus = String(currentStatus) === '1' ? 0 : 1;
+    setLocalStatusOverrides((prev) => ({ ...prev, [ruleId]: nextStatus }));
+  };
+
   useEffect(() => {
     if (!show) {
       setSearchValue('');
@@ -74,6 +87,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
       setView('table');
       setSelectedRule(null);
       setShowFormModal(false);
+      setLocalStatusOverrides({});
       return;
     }
     getBusinessRules({ params: { page, per_page: limit, search: searchValue || undefined } });
@@ -225,7 +239,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                         const name = rule?.name ?? rule?.rule_name ?? '-';
                         const execOrder = rule?.execution_order ?? '-';
                         const tags = rule?.tags || '-';
-                        const isEnabled = String(rule?.status) === '1';
+                        const isEnabled = String(localStatusOverrides[ruleId] ?? rule?.status) === '1';
                         const sharedWith = Array.isArray(rule?.shared_with) && rule.shared_with.length > 0
                           ? rule.shared_with.map((s) => (typeof s === 'object' ? s?.name : s)).join(', ')
                           : '-';
@@ -239,7 +253,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                                   className="form-check-input"
                                   type="checkbox"
                                   checked={isEnabled}
-                                  readOnly
+                                  onChange={() => handleToggleRuleStatus(rule)}
                                 />
                               </div>
                             </td>
