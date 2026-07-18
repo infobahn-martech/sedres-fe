@@ -2025,6 +2025,21 @@
   z-index: 1075 !important;
 }
 
+// Darker backdrop for every Business Rule popup (Add Business Rule form + all
+// "Card property match"-family modals: Add new action, Create Subtask, Select
+// fields, Notification/Invoke settings, Board Minimap, Share with, etc).
+// Targeted at each modal's own backdropClassName rather than the generic
+// `.modal-backdrop.show` selector, since that one already has a documented
+// history of losing !important/specificity fights against other pages'
+// leftover global overrides bundled app-wide (see the WebInvokeSettingsModal
+// comment further down this file).
+.business-rule-form-modal-backdrop.show,
+.card-property-match-modal-backdrop.show {
+  background-color: rgba(0, 0, 0, 0.65) !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+}
+
 .card-property-match-modal {
   z-index: 1076 !important;
 
@@ -3742,3 +3757,31 @@ body .modal.br-invoke-test-result-modal.show {
   min-height: 64px;
 }
 
+// Override global `.modal.show` (1300) and `.modal-backdrop.show` (1299)
+// to fix stacking issues with nested modals (where a nested modal's backdrop
+// would otherwise fall behind the parent modal due to uniform z-indexes).
+
+// 1) Main business rule modal (should sit above standard page elements like CardForm's 1200)
+body .modal-backdrop.show.business-rule-form-modal-backdrop {
+  z-index: 1305 !important;
+  background-color: rgba(0, 0, 0, 0.65) !important;
+  opacity: 1 !important;
+}
+
+body .modal.show.business-rule-form-modal {
+  z-index: 1306 !important;
+}
+
+// 2) Nested modals (Card Property Match, Create Action, Cancel Confirm, etc.)
+// They sit above the main business rule modal
+body .modal-backdrop.show.card-property-match-modal-backdrop,
+body .modal-backdrop.show.br-cancel-confirm-backdrop {
+  z-index: 1315 !important;
+  background-color: rgba(0, 0, 0, 0.65) !important;
+  opacity: 1 !important;
+}
+
+body .modal.show.card-property-match-modal,
+body .modal.show.br-cancel-confirm-modal {
+  z-index: 1316 !important;
+}
