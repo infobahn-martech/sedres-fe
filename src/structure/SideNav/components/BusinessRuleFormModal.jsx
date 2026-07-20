@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX, FiPlus, FiChevronDown, FiChevronUp, FiTrash2, FiFilter, FiUsers, FiInfo, FiCalendar } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
@@ -9,7 +9,7 @@ import 'react-quill-new/dist/quill.snow.css';
 import 'quill-table-better/dist/quill-table-better.css';
 import {
   THEN_ACTION_SECTIONS, ACTION_GROUP_TYPE_TO_SECTION_ID, CREATE_ACTION_OPTIONS, RELATIONAL_CREATE_ACTION_LABELS, COPY_CARD_DETAIL_REGULAR_FIELDS, DUMMY_CREATE_ACTION_TEMPLATES, LINK_ACTION_OPTIONS, LINK_REMOVE_OTHERS_OPTIONS, MOVE_ACTION_OPTIONS, CONVERT_SUBTASK_ACTION_OPTIONS, NOTIFY_ACTION_OPTIONS, UPDATE_ACTION_OPTIONS,
-  INVOKE_ACTION_OPTIONS, DUMMY_INVOKE_METHOD_OPTIONS, DUMMY_INVOKE_AUTH_OPTIONS, INVOKE_METHODS_WITH_BODY,
+  INVOKE_ACTION_OPTIONS, DUMMY_INVOKE_METHOD_OPTIONS, DUMMY_INVOKE_AUTH_OPTIONS, INVOKE_METHODS_WITH_BODY, DUMMY_URL_FIELD_OPTIONS,
   DUMMY_REGULAR_FIELDS, DUMMY_TIME_UNITS, DUMMY_CUSTOM_FIELDS,
   DUMMY_WORKSPACE_BOARDS,
   DUMMY_NOTIFICATION_FROM_EMAIL, DUMMY_INTERNAL_USERS,
@@ -1930,7 +1930,7 @@ CustomFieldPickerModal.propTypes = {
 // separate board-filterable custom-fields lookup. Used for then-action contexts
 // (e.g. "Invoke web service") where the available fields are scoped to that action,
 // not to the rule's trigger.
-function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTypeId }) {
+function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTypeId, allowedRegularFieldLabels }) {
   const [selectedKeys, setSelectedKeys] = useState([]);
   const [expandedRegularFields, setExpandedRegularFields] = useState(true);
   const [expandedTimeUnit, setExpandedTimeUnit] = useState(true);
@@ -1939,8 +1939,13 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
   const [showDisabled, setShowDisabled] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [includeLoggedTimeSubtasks, setIncludeLoggedTimeSubtasks] = useState(false);
 
   const isActionMode = actionTypeId != null;
+  // Url tokens can only carry simple id-like values, so its trigger passes a fixed
+  // label whitelist (Card ID/Custom card ID/Internal card id) and neither Time unit
+  // nor Custom fields apply there — unlike Params, which accepts any card field.
+  const isRestricted = allowedRegularFieldLabels != null;
 
   const {
     regularFields, isLoadingRegularFields, getRegularFields,
@@ -1950,7 +1955,7 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
   } = useBusinessRuleReducer((s) => s);
 
   const { customFields, isLoadingCustomFields } = useCustomFieldsByTrigger({
-    show: show && !isActionMode, triggerTypeId, boardId: selectedBoardId, showDisabled, search: debouncedSearch,
+    show: show && !isActionMode && !isRestricted, triggerTypeId, boardId: selectedBoardId, showDisabled, search: debouncedSearch,
   });
 
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
@@ -1962,9 +1967,18 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
     ? list.filter((field) => getFieldLabel(field).toLowerCase().includes(filterQuery))
     : list;
 
-  const displayRegularFields = isActionMode
-    ? applyClientFilter(thenActionRegularFields)
-    : (regularFields.length > 0 ? regularFields : DUMMY_REGULAR_FIELDS);
+  // Card ID/Custom card ID/Internal card id are fixed system fields, not board data —
+  // rendered directly from the whitelist instead of depending on get_regular_fields
+  // actually including them for this trigger.
+  const restrictedRegularFields = isRestricted
+    ? allowedRegularFieldLabels.map((label, idx) => ({ regular_field_id: `url-${idx}`, field_label: label, field_key: label }))
+    : null;
+
+  const displayRegularFields = isRestricted
+    ? applyClientFilter(restrictedRegularFields)
+    : (isActionMode
+      ? applyClientFilter(thenActionRegularFields)
+      : (regularFields.length > 0 ? regularFields : DUMMY_REGULAR_FIELDS));
   const displayTimeUnits = isActionMode
     ? applyClientFilter(thenActionTimeUnits)
     : (timeUnits.length > 0 ? timeUnits : DUMMY_TIME_UNITS);
@@ -1977,7 +1991,7 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
     ? applyClientFilter(thenActionCustomFields)
     : (customFields.length > 0 ? customFields : (isCustomFieldsUnfiltered ? DUMMY_CUSTOM_FIELDS : []));
 
-  const regularFieldsLoading = isActionMode ? isLoadingThenActionFields : isLoadingRegularFields;
+  const regularFieldsLoading = isRestricted ? false : (isActionMode ? isLoadingThenActionFields : isLoadingRegularFields);
   const timeUnitsLoading = isActionMode ? isLoadingThenActionFields : isLoadingTimeUnits;
   const customFieldsLoading = isActionMode ? isLoadingThenActionFields : isLoadingCustomFields;
 
@@ -1988,6 +2002,7 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
     setDebouncedSearch('');
     setSelectedBoardId('');
     setShowDisabled(false);
+    setIncludeLoggedTimeSubtasks(false);
     if (!isActionMode && workspaces.length === 0) listAllWorkspaces();
   }, [show]);
 
@@ -2004,14 +2019,14 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
   }, [show, isActionMode, actionTypeId]);
 
   useEffect(() => {
-    if (!show || isActionMode) return;
+    if (!show || isActionMode || isRestricted) return;
     getRegularFields({ params: { trigger_type_id: triggerTypeId, search: debouncedSearch || undefined } });
-  }, [show, isActionMode, debouncedSearch, triggerTypeId]);
+  }, [show, isActionMode, isRestricted, debouncedSearch, triggerTypeId]);
 
   useEffect(() => {
-    if (!show || isActionMode) return;
+    if (!show || isActionMode || isRestricted) return;
     getTimeUnits({ params: { trigger_type_id: triggerTypeId, search: debouncedSearch || undefined } });
-  }, [show, isActionMode, debouncedSearch, triggerTypeId]);
+  }, [show, isActionMode, isRestricted, debouncedSearch, triggerTypeId]);
 
   const handleToggleKey = (key) => {
     setSelectedKeys((prev) =>
@@ -2029,7 +2044,11 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
   const findLabelForKey = (key) => {
     if (key.startsWith('regular-')) {
       const field = displayRegularFields.find((f, idx) => `regular-${f.regular_field_id ?? idx}` === key);
-      return field ? getFieldLabel(field) : null;
+      if (!field) return null;
+      const label = getFieldLabel(field);
+      return label.toLowerCase() === 'logged time' && includeLoggedTimeSubtasks
+        ? `${label} (include subtasks)`
+        : label;
     }
     if (key.startsWith('time_unit-')) {
       const field = displayTimeUnits.find((f, idx) => `time_unit-${f.time_unit_id ?? idx}` === key);
@@ -2100,14 +2119,27 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
                 ) : (
                   displayRegularFields.map((field, idx) => {
                     const key = `regular-${field.regular_field_id ?? idx}`;
+                    const label = getFieldLabel(field);
+                    const isLoggedTime = label.toLowerCase() === 'logged time';
                     return (
-                      <PropertyPill
-                        key={key}
-                        pillKey={key}
-                        label={getFieldLabel(field)}
-                        selected={selectedKeys.includes(key)}
-                        onClick={() => handleToggleKey(key)}
-                      />
+                      <Fragment key={key}>
+                        <PropertyPill
+                          pillKey={key}
+                          label={label}
+                          selected={selectedKeys.includes(key)}
+                          onClick={() => handleToggleKey(key)}
+                        />
+                        {isLoggedTime && (
+                          <label className="br-link-checkbox-row br-property-inline-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={includeLoggedTimeSubtasks}
+                              onChange={(e) => setIncludeLoggedTimeSubtasks(e.target.checked)}
+                            />
+                            include subtasks
+                          </label>
+                        )}
+                      </Fragment>
                     );
                   })
                 )}
@@ -2115,7 +2147,7 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
             )}
           </div>
 
-          {!isActionMode && (
+          {!isRestricted && (
             <>
               <div className="br-property-section">
                 <button
@@ -2165,34 +2197,38 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
                 </button>
                 {expandedCustomFields && (
                   <>
-                    <div className="br-property-board-filter">
-                      <span className="br-property-board-filter-label">Show fields from board:</span>
-                      <div className="br-property-board-filter-row">
-                        <BoardFilterPicker
-                          workspaces={workspaces ?? []}
-                          value={selectedBoardId}
-                          onChange={setSelectedBoardId}
-                        />
-                        <button
-                          type="button"
-                          className="br-property-board-clear-btn"
-                          onClick={() => setSelectedBoardId('')}
-                          aria-label="Reset board filter"
-                        >
-                          <FiTrash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
+                    {!isActionMode && (
+                      <>
+                        <div className="br-property-board-filter">
+                          <span className="br-property-board-filter-label">Show fields from board:</span>
+                          <div className="br-property-board-filter-row">
+                            <BoardFilterPicker
+                              workspaces={workspaces ?? []}
+                              value={selectedBoardId}
+                              onChange={setSelectedBoardId}
+                            />
+                            <button
+                              type="button"
+                              className="br-property-board-clear-btn"
+                              onClick={() => setSelectedBoardId('')}
+                              aria-label="Reset board filter"
+                            >
+                              <FiTrash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
 
-                    <label className="business-rule-form-toggle br-property-disabled-toggle">
-                      <input
-                        type="checkbox"
-                        checked={showDisabled}
-                        onChange={(e) => setShowDisabled(e.target.checked)}
-                      />
-                      <span className="business-rule-form-toggle-track" aria-hidden />
-                      <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
-                    </label>
+                        <label className="business-rule-form-toggle br-property-disabled-toggle">
+                          <input
+                            type="checkbox"
+                            checked={showDisabled}
+                            onChange={(e) => setShowDisabled(e.target.checked)}
+                          />
+                          <span className="business-rule-form-toggle-track" aria-hidden />
+                          <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
+                        </label>
+                      </>
+                    )}
 
                     <div className="br-property-pill-grid">
                       {customFieldsLoading ? (
@@ -2243,6 +2279,7 @@ CardFieldPickerModal.propTypes = {
   onApply: PropTypes.func.isRequired,
   triggerTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   actionTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  allowedRegularFieldLabels: PropTypes.arrayOf(PropTypes.string),
 };
 
 const NOTIFICATION_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -3200,7 +3237,7 @@ const extractTestErrorDetail = (responseBody) => {
     : detail;
 };
 
-function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetchedSettings, isLoadingSettings, triggerTypeId, actionTypeId }) {
+function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetchedSettings, isLoadingSettings, triggerTypeId }) {
   const [serviceName, setServiceName] = useState('');
   const [method, setMethod] = useState(DUMMY_INVOKE_METHOD_OPTIONS[1]);
   const [authentication, setAuthentication] = useState(DUMMY_INVOKE_AUTH_OPTIONS[0]);
@@ -3216,6 +3253,7 @@ function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetche
   const [fieldPickerTarget, setFieldPickerTarget] = useState(null);
   const [paramPendingRemoveId, setParamPendingRemoveId] = useState(null);
   const [testResult, setTestResult] = useState(null);
+  const [saveError, setSaveError] = useState('');
   const urlBoxRef = useRef(null);
 
   const { saveWebServiceSettings, updateWebServiceSettings, testWebServiceSettings, isSavingWebServiceSettings, isUpdatingWebServiceSettings, isTestingWebServiceSettings } = useBusinessRuleReducer((s) => s);
@@ -3254,6 +3292,7 @@ function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetche
     setFieldPickerTarget(null);
     setParamPendingRemoveId(null);
     setTestResult(null);
+    setSaveError('');
   }, [show, initialSettings, fetchedSettings]);
 
   // Seeds the Url contentEditable box once per open, same as the Subject box in
@@ -3427,8 +3466,25 @@ function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetche
     return { payload, urlValue };
   };
 
+  // Shared by Test Settings and Save Service so both block on the same required
+  // fields instead of letting an empty Name/Url reach the backend first.
+  const validateRequiredFields = (urlValue) => {
+    if (!serviceName.trim()) {
+      setSaveError('The service name cannot be empty.');
+      return false;
+    }
+    if (!urlValue.trim()) {
+      setSaveError('The service url cannot be empty.');
+      return false;
+    }
+    setSaveError('');
+    return true;
+  };
+
   const handleTestSettings = () => {
-    const { payload } = buildWebServicePayload();
+    const { payload, urlValue } = buildWebServicePayload();
+    if (!validateRequiredFields(urlValue)) return;
+
     setTestResult(null);
     testWebServiceSettings(payload, {
       cb: (data) => {
@@ -3459,6 +3515,7 @@ function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetche
 
   const handleSave = () => {
     const { payload, urlValue } = buildWebServicePayload();
+    if (!validateRequiredFields(urlValue)) return;
 
     const existingWebServiceId = initialSettings?.webServiceId;
     const saveOrUpdate = existingWebServiceId
@@ -3512,7 +3569,10 @@ function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetche
               className="business-rule-form-input"
               placeholder="Enter name"
               value={serviceName}
-              onChange={(e) => setServiceName(e.target.value)}
+              onChange={(e) => {
+                setServiceName(e.target.value);
+                setSaveError('');
+              }}
             />
           </div>
 
@@ -3540,6 +3600,7 @@ function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetche
               onClick={handleUrlBoxClick}
               onKeyDown={handleUrlKeyDown}
               onPaste={handleUrlPaste}
+              onInput={() => setSaveError('')}
             />
           </div>
 
@@ -3733,7 +3794,10 @@ function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetche
                         <button
                           type="button"
                           className="br-invoke-value-add-btn"
-                          onClick={() => setFieldPickerTarget({ paramId: p.id })}
+                          onClick={() => {
+                            setParamPendingRemoveId(null);
+                            setFieldPickerTarget({ paramId: p.id });
+                          }}
                           aria-label="Insert card fields"
                         >
                           <FiPlus size={14} aria-hidden />
@@ -3756,6 +3820,7 @@ function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetche
         </div>
 
         <footer className="card-property-match-modal-footer br-invoke-modal-footer">
+          {saveError && <p className="br-invoke-save-error">{saveError}</p>}
           <div className="br-invoke-modal-footer-actions">
             <button
               type="button"
@@ -3778,11 +3843,11 @@ function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetche
       onClose={() => setFieldPickerTarget(null)}
       onApply={handleApplyFieldPicker}
       triggerTypeId={triggerTypeId}
-      actionTypeId={actionTypeId}
+      allowedRegularFieldLabels={fieldPickerTarget === 'url' ? DUMMY_URL_FIELD_OPTIONS : undefined}
     />
 
     <Modal
-      show={paramPendingRemoveId != null}
+      show={paramPendingRemoveId != null && fieldPickerTarget == null}
       onHide={handleCancelRemoveParam}
       className="br-cancel-confirm-modal"
       dialogClassName="br-cancel-confirm-dialog"
@@ -3880,7 +3945,6 @@ WebInvokeSettingsModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
   triggerTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  actionTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
 function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fetchedSettings, isLoadingSettings, users }) {
@@ -4512,7 +4576,6 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
   // group_type (get_trigger_config's actions[] carries one per group_type).
   const createActionTypeId = sortedTriggerActions.find((a) => a.group_type === 'create_cards')?.action_type_id;
   const updateActionTypeId = sortedTriggerActions.find((a) => a.group_type === 'update_card')?.action_type_id;
-  const webInvokeActionTypeId = sortedTriggerActions.find((a) => a.group_type === 'invoke_web_service')?.action_type_id;
 
   // Resolved once per trigger: which cross-card direction (if any) this trigger's own
   // move/update-related action applies to, so the nested filter block can read
@@ -6926,7 +6989,6 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
       fetchedSettings={webServiceSettings}
       isLoadingSettings={isLoadingWebServiceSettings}
       triggerTypeId={rule.id}
-      actionTypeId={webInvokeActionTypeId}
     />
 
     <CreateSubtaskSettingsModal
