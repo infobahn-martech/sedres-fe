@@ -2369,11 +2369,15 @@ function NotificationSettingsModal({
   // is why a saved custom-field recipient pill was stuck showing the raw numeric id forever
   // instead of its name. The unscoped custom-fields list (same endpoint the "add custom
   // fields" picker uses, which does return real labels) is the reliable source instead.
+  //
+  // Fired on `show` alone (not gated on fetchedSettings) so it runs in parallel with
+  // get_notification_settings instead of after it — waiting for fetchedSettings first
+  // serialized the two requests and was the extra lag before a saved custom-field pill's
+  // real label appeared.
   useEffect(() => {
-    if (!show || !fetchedSettings) return;
-    if (toCustomFieldIds.length === 0 && ccCustomFieldIds.length === 0) return;
+    if (!show) return;
     getRecipientCustomFields({ params: { trigger_type_id: triggerTypeId } });
-  }, [show, fetchedSettings]);
+  }, [show, triggerTypeId]);
 
   const recipientCustomFieldById = new Map(
     (recipientCustomFields ?? []).map((field) => [String(field.custom_field_id), field])
