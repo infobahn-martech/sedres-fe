@@ -1239,14 +1239,3 @@ body.app-dark-mode {
     }
   }
 }
-
-// Modal backdrop — darker overlay to match client UI, overrides per-feature
-// modal-backdrop rules (many of which set their own rgba/blur at equal specificity).
-// `opacity` is reset because Bootstrap applies --bs-backdrop-opacity (0.5) as an
-// element-level opacity on top of background-color, which would otherwise halve
-// the rgba alpha below again.
-body .modal-backdrop.show {
-  opacity: 1 !important;
-  background-color: rgba(0, 0, 0, 0.65) !important;
-  backdrop-filter: none !important;
-}
