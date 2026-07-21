@@ -43,6 +43,31 @@ export const BUSINESS_RULES = [
   },
 ];
 
+// Maps a business rule's trigger_code (e.g. from get_business_rule_list/get_business_rule_by_id)
+// to the same icon-type strings used by BUSINESS_RULES[].icon above, so both the trigger-type
+// picker grid and any other rule listing/detail view can resolve the same icon from either shape.
+export const TRIGGER_CODE_TO_ICON = {
+  card_created: 'create',
+  card_updated: 'update',
+  card_moved: 'moved',
+  child_card_blocked: 'child-blocked',
+  child_card_moved: 'child-moved',
+  child_card_updated: 'child-updated',
+  all_children_moved: 'all-children-moved',
+  time_based: 'time-based',
+  recurring_created: 'time-based',
+  recurring_create_cards: 'time-based',
+  time_based_rule: 'time-based',
+  parent_card_moved: 'parent-moved',
+  parent_card_updated: 'parent-updated',
+  parent_card_created: 'parent-created',
+  archive_cards: 'archive',
+  card_archived: 'archive',
+  task_created: 'task-created',
+  task_card_moved: 'task-moved',
+  task_card_updated: 'task-updated',
+};
+
 // Dev-only fallback for the THEN column, used when get_trigger_config hasn't
 // returned an `actions` list yet (e.g. local dev without a live backend).
 export const THEN_ACTION_SECTIONS = [

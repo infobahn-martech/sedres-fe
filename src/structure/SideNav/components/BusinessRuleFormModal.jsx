@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiPlus, FiChevronDown, FiChevronUp, FiTrash2, FiFilter, FiUsers, FiInfo, FiCalendar } from 'react-icons/fi';
+import { FiX, FiPlus, FiChevronDown, FiChevronUp, FiTrash2, FiFilter, FiUsers, FiInfo, FiCalendar, FiDownload } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import ReactQuill, { Quill } from 'react-quill-new';
@@ -15,9 +15,11 @@ import {
   DUMMY_NOTIFICATION_FROM_EMAIL, DUMMY_INTERNAL_USERS,
   DUMMY_NOTIFICATION_SUBJECT_PARTS, DUMMY_NOTIFICATION_BODY_DELTA_OPS, INTERNAL_USER_ROLE_OPTIONS,
   DUMMY_LINK_ACTION_OPERATORS, DUMMY_FIELD_OPERATORS,
+  TRIGGER_CODE_TO_ICON,
 } from './businessRulesData';
 import { buildBoardMinimapWorkflows } from './boardMinimap.utils';
 import { buildCreateBusinessRulePayload, getUnconfiguredActionLabels } from './buildBusinessRulePayload';
+import ThenGroupRawSummary from './ThenGroupRawSummary';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import useWorkSpaceReducer from '../../../store/WorkSpaceReducer';
 import useCommonReducer from '../../../store/CommonReducer';
@@ -2343,6 +2345,18 @@ function NotificationSettingsModal({
   const ccBoxRef = useRef(null);
 
   const { saveNotificationSettings, updateNotificationSettings, isSavingNotificationSettings } = useBusinessRuleReducer((s) => s);
+  const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
+
+  // get_custom_fields comes back empty when called unscoped (see the DUMMY_CUSTOM_FIELDS
+  // fallback in CustomFieldPickerModal, needed for the exact same reason) — it only ever
+  // returns real data when filtered by board_ids. A saved recipient custom field can belong
+  // to any board, not just whichever one was selected in the picker at add-time and never
+  // persisted back, so every known board id has to be sent to have a chance of covering it.
+  useEffect(() => {
+    if (!show) return;
+    if (workspaces.length === 0) listAllWorkspaces();
+  }, [show]);
+  const allBoardIds = workspaces.flatMap((w) => (w.boards ?? []).map((b) => b.board_id));
 
   // A previously-saved notify action carries a backend notification_id: its To/Cc/Subject/Body
   // come from get_notification_settings (user + custom-field ids) instead of the plain
@@ -2367,17 +2381,15 @@ function NotificationSettingsModal({
   // display label — it's used everywhere else purely for a condition row's operator
   // dropdown, and getFieldLabel(details) on its response reliably comes back empty, which
   // is why a saved custom-field recipient pill was stuck showing the raw numeric id forever
-  // instead of its name. The unscoped custom-fields list (same endpoint the "add custom
-  // fields" picker uses, which does return real labels) is the reliable source instead.
-  //
-  // Fired on `show` alone (not gated on fetchedSettings) so it runs in parallel with
-  // get_notification_settings instead of after it — waiting for fetchedSettings first
-  // serialized the two requests and was the extra lag before a saved custom-field pill's
-  // real label appeared.
+  // instead of its name. The custom-fields list (same endpoint the "add custom fields"
+  // picker uses, which does return real labels) is the reliable source instead — but only
+  // once board_ids is sent (see allBoardIds above), so wait for workspaces to load first.
   useEffect(() => {
-    if (!show) return;
-    getRecipientCustomFields({ params: { trigger_type_id: triggerTypeId } });
-  }, [show, triggerTypeId]);
+    if (!show || !fetchedSettings) return;
+    if (toCustomFieldIds.length === 0 && ccCustomFieldIds.length === 0) return;
+    if (allBoardIds.length === 0) return;
+    getRecipientCustomFields({ params: { trigger_type_id: triggerTypeId, board_ids: allBoardIds } });
+  }, [show, fetchedSettings, allBoardIds.length]);
 
   const recipientCustomFieldById = new Map(
     (recipientCustomFields ?? []).map((field) => [String(field.custom_field_id), field])
@@ -2481,12 +2493,26 @@ function NotificationSettingsModal({
     toEl.replaceChildren();
     ccEl.replaceChildren();
 
-    const seedTo = fetchedSettings
-      ? [...resolveUserTokens(toUserIds), ...resolveCustomFieldTokens(toCustomFieldIds), ...resolveEmailTokens(toEmails)]
-      : (initialSettings?.to ?? []);
-    const seedCc = fetchedSettings
-      ? [...resolveUserTokens(ccUserIds), ...resolveCustomFieldTokens(ccCustomFieldIds), ...resolveEmailTokens(ccEmails)]
-      : (initialSettings?.cc ?? []);
+    // initialSettings.to/cc (set by handleSaveNotificationSettings right after a save, from
+    // parseRecipientTokens reading the box that was just on screen) already carries correct
+    // labels for every token, custom fields included — unlike fetchedSettings, which only
+    // carries raw ids that still need an async label lookup. Re-resolving from fetchedSettings
+    // whenever it's present (the old behavior) clobbered those already-correct pills with '…'
+    // placeholders on every reopen right after a save, and only ever got patched back if/when
+    // that lookup resolved — this is why a saved custom-field recipient looked stuck on
+    // reopen. initialSettings.to is only undefined the very first time a notify action's
+    // settings are opened (never saved this session yet), which is the one case that still
+    // needs the id-based fetchedSettings resolution below.
+    const seedTo = initialSettings?.to !== undefined
+      ? initialSettings.to
+      : (fetchedSettings
+        ? [...resolveUserTokens(toUserIds), ...resolveCustomFieldTokens(toCustomFieldIds), ...resolveEmailTokens(toEmails)]
+        : []);
+    const seedCc = initialSettings?.cc !== undefined
+      ? initialSettings.cc
+      : (fetchedSettings
+        ? [...resolveUserTokens(ccUserIds), ...resolveCustomFieldTokens(ccCustomFieldIds), ...resolveEmailTokens(ccEmails)]
+        : []);
 
     // A trailing space (real text node) after every pill gives the browser a valid
     // caret anchor next to it — back-to-back pills with nothing but CSS gap between
@@ -4554,7 +4580,7 @@ ShareWithModal.propTypes = {
   onSave: PropTypes.func,
 };
 
-function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSaving }) {
+function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName, onClose, onSave, isSaving }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState([]);
@@ -4638,6 +4664,11 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
   const [showCreateSubtaskSettings, setShowCreateSubtaskSettings] = useState(false);
   const [activeCreateSubtaskActionId, setActiveCreateSubtaskActionId] = useState(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  // Edit mode only: THEN groups whose saved data has no reliable inverse mapping back into
+  // the editable chip UI (update_parent_card/update_child_card, copy_values_to_parent,
+  // execute_at, and create-subtask create actions) — rendered as a read-only key/value
+  // dump instead, keyed by the THEN section id they'd otherwise belong to.
+  const [rawSummaryBySectionId, setRawSummaryBySectionId] = useState({});
   const [boardConditionRows, setBoardConditionRows] = useState([{ id: 'board-0', boardId: '', joinWord: 'OR' }]);
   // The first-board auto-fill effect below must only ever apply once per modal-open
   // session — otherwise a late-resolving (or re-fetched) workspaces list can silently
@@ -4695,12 +4726,121 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
     deleteWebServiceSettings,
     deleteCreateSubtaskSettings,
     getCreateSubtaskSettings, createSubtaskSettings, isLoadingCreateSubtaskSettings, resetCreateSubtaskSettings,
+    getBusinessRuleById, businessRuleDetails, isLoadingBusinessRuleDetails, resetBusinessRuleDetails,
+    regularFields, getRegularFields,
+    getExecutionLogs, executionLogs, isLoadingExecutionLogs, resetExecutionLogs,
+    getBusinessRuleHistory, businessRuleHistory, isLoadingBusinessRuleHistory, resetBusinessRuleHistory,
   } = useBusinessRuleReducer((s) => s);
   const { users, usersLoading, getUsers } = useCommonReducer((s) => s);
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
   const userProfile = useAuthReducer((s) => s.userProfile);
   const loggedInUserId = userProfile?.user_id ?? userProfile?.userid ?? null;
   const loggedInUserName = userProfile?.name || userProfile?.username || 'You';
+
+  // Edit mode (businessRuleId set) sources `rule` from the fetched business rule's own
+  // trigger info instead of the create-flow's trigger-picker prop, so every existing
+  // `rule.id`/`rule.name` usage below (getTriggerConfig, header text, field-picker
+  // triggerTypeId props) keeps working unchanged regardless of which mode is active.
+  const isEditMode = Boolean(businessRuleId);
+  const businessRuleDetailsReady = isEditMode
+    && businessRuleDetails
+    && String(businessRuleDetails.business_rule_id) === String(businessRuleId);
+  // Memoized so its object identity only changes when the underlying data actually
+  // does — several existing effects key their dependency array on `rule` itself (not
+  // `rule?.id`), so a fresh object literal every render here would re-fire them every
+  // render too (infinite update loop).
+  const rule = useMemo(() => {
+    if (!isEditMode) return ruleProp;
+    if (!businessRuleDetailsReady) return null;
+    return {
+      id: Number(businessRuleDetails.trigger_type_id),
+      name: businessRuleDetails.trigger_name,
+      icon: TRIGGER_CODE_TO_ICON[businessRuleDetails.trigger_code],
+      description: '',
+    };
+  }, [
+    isEditMode, businessRuleDetailsReady, ruleProp,
+    businessRuleDetails?.trigger_type_id, businessRuleDetails?.trigger_name, businessRuleDetails?.trigger_code,
+  ]);
+  const isEditDataLoading = isEditMode && (isLoadingBusinessRuleDetails || !businessRuleDetailsReady);
+  const [activeTab, setActiveTab] = useState('details');
+
+  // Execution logs tab — defaults to the trailing 7 days, matching the reference UI.
+  const toDateInputValue = (date) => date.toISOString().slice(0, 10);
+  const [logsFromDate, setLogsFromDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return toDateInputValue(d);
+  });
+  const [logsFromTime, setLogsFromTime] = useState('00:00');
+  const [logsToDate, setLogsToDate] = useState(() => toDateInputValue(new Date()));
+  const [logsToTime, setLogsToTime] = useState('23:59');
+  const [logsSearch, setLogsSearch] = useState('');
+  const [debouncedLogsSearch, setDebouncedLogsSearch] = useState('');
+
+  // History tab
+  const [historySearch, setHistorySearch] = useState('');
+  const [debouncedHistorySearch, setDebouncedHistorySearch] = useState('');
+
+  // Edit mode needs the full regular/custom field catalog up front to resolve a saved
+  // condition's/when-field's regular_field_id or custom_field_id back into a display
+  // label — the create flow never needs this at the top level since CardPropertyMatchModal
+  // (below) fetches its own copy lazily, scoped to whichever picker the user has open.
+  const { customFields: editModeCustomFields } = useCustomFieldsByTrigger({
+    show: show && isEditMode, triggerTypeId: rule?.id, boardId: null, showDisabled: true, search: '',
+  });
+
+  useEffect(() => {
+    if (!show || !isEditMode) return;
+    getBusinessRuleById(businessRuleId);
+  }, [show, isEditMode, businessRuleId]);
+
+  useEffect(() => {
+    if (!show || !isEditMode || !rule?.id) return;
+    getRegularFields({ params: { trigger_type_id: rule.id } });
+  }, [show, isEditMode, rule?.id]);
+
+  useEffect(() => {
+    if (!show) resetBusinessRuleDetails();
+  }, [show]);
+
+  useEffect(() => {
+    if (show) setActiveTab('details');
+  }, [show, businessRuleId]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => setDebouncedLogsSearch(logsSearch.trim()), 400);
+    return () => clearTimeout(timeoutId);
+  }, [logsSearch]);
+
+  useEffect(() => {
+    if (!show || !isEditMode || activeTab !== 'logs' || !businessRuleId) return;
+    getExecutionLogs(businessRuleId, {
+      params: {
+        search: debouncedLogsSearch || undefined,
+        from: logsFromDate || undefined,
+        to: logsToDate || undefined,
+      },
+    });
+  }, [show, isEditMode, activeTab, businessRuleId, debouncedLogsSearch, logsFromDate, logsToDate]);
+
+  useEffect(() => {
+    if (!show) resetExecutionLogs();
+  }, [show]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => setDebouncedHistorySearch(historySearch.trim()), 400);
+    return () => clearTimeout(timeoutId);
+  }, [historySearch]);
+
+  useEffect(() => {
+    if (!show || !isEditMode || activeTab !== 'history' || !businessRuleId) return;
+    getBusinessRuleHistory(businessRuleId, { params: { search: debouncedHistorySearch || undefined } });
+  }, [show, isEditMode, activeTab, businessRuleId, debouncedHistorySearch]);
+
+  useEffect(() => {
+    if (!show) resetBusinessRuleHistory();
+  }, [show]);
 
   // The WHEN card is seeded from the picker's already-fetched trigger (get_trigger_types),
   // but once get_trigger_config resolves for this trigger_type_id, its trigger_name is the
@@ -4818,6 +4958,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
     resetCreateSubtaskSettings();
     setActiveCreateSubtaskActionId(null);
     setShowCancelConfirm(false);
+    setRawSummaryBySectionId({});
     setRecurrenceUnit('days');
     setShowRecurrenceUnitPicker(false);
     setExecuteAtTime('00:00');
@@ -4825,6 +4966,321 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
     setTimezoneFilterText('');
     if (timeUnits.length === 0) getTimeUnits();
   }, [show, rule, loggedInUserName, loggedInUserId]);
+
+  // Overwrites the blank defaults the reset effect above just seeded, once the fetched
+  // rule's data is ready — runs after that effect within the same commit (both are keyed
+  // off `rule`/`businessRuleDetailsReady` flipping together), so there's nothing to see
+  // in between.
+  useEffect(() => {
+    if (!isEditMode || !businessRuleDetailsReady) return;
+    const details = businessRuleDetails;
+    setName(details.rule_name ?? '');
+    setDescription(details.description ?? '');
+    const tagsText = Array.isArray(details.tags) ? details.tags.join(', ') : (details.tags ?? '');
+    setTags(tagsText.split(',').map((t) => t.trim()).filter(Boolean));
+    setOwnerUserId(details.owner_user_id ?? null);
+    const ownerMatch = [{ user_id: loggedInUserId, name: loggedInUserName }, ...users].find(
+      (u) => String(u.user_id) === String(details.owner_user_id)
+    );
+    setOwner(ownerMatch?.name ?? '');
+    setDisallowTriggerChain(String(details.disallow_rule_action_trigger) === '1');
+    const nextSharePermissions = {};
+    (details.shared_users ?? []).forEach((su) => {
+      const userId = su?.user_id ?? su?.id;
+      if (userId == null) return;
+      nextSharePermissions[userId] = {
+        viewer: su?.permission_type !== 'edit',
+        editor: su?.permission_type === 'edit',
+      };
+    });
+    setSharePermissions(nextSharePermissions);
+  }, [isEditMode, businessRuleDetailsReady, businessRuleDetails, users, loggedInUserId, loggedInUserName]);
+
+  // Resolves a saved condition's/when-field's regular_field_id or custom_field_id back into
+  // a display label, using the same field lists CardPropertyMatchModal would otherwise fetch
+  // lazily when a user opens it interactively.
+  const resolveEditFieldLabel = (fieldType, fieldId) => {
+    if (fieldId == null) return '';
+    if (fieldType === 'custom') {
+      const match = editModeCustomFields.find((f) => String(f.custom_field_id) === String(fieldId));
+      return match ? getFieldLabel(match) : `Custom field #${fieldId}`;
+    }
+    const match = regularFields.find((f) => String(f.regular_field_id) === String(fieldId));
+    return match ? getFieldLabel(match) : `Field #${fieldId}`;
+  };
+
+  useEffect(() => {
+    if (!isEditMode || !businessRuleDetailsReady) return;
+    const realWhenFields = (businessRuleDetails.when_fields ?? [])
+      .filter((wf) => wf.regular_field_id != null || wf.custom_field_id != null)
+      .sort((a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0))
+      .map((wf) => {
+        const fieldType = wf.regular_field_id != null ? 'regular' : 'custom';
+        const fieldId = wf.regular_field_id ?? wf.custom_field_id;
+        return {
+          id: `when-${wf.when_id}`,
+          fieldLabel: resolveEditFieldLabel(fieldType, fieldId),
+          category: fieldType,
+          fieldType,
+          fieldId,
+        };
+      });
+    setWhenFields(realWhenFields);
+  }, [isEditMode, businessRuleDetailsReady, businessRuleDetails, regularFields, editModeCustomFields]);
+
+  // Board/position restriction rows carry no field id of their own in the saved rule's flat
+  // conditions[] list — best-effort split against this trigger's own default_conditions
+  // catalog by field_label, the exact inverse of buildConditions()'s equally best-effort
+  // forward mapping in buildBusinessRulePayload.js.
+  useEffect(() => {
+    if (!isEditMode || !businessRuleDetailsReady) return;
+    const rawConditions = businessRuleDetails.conditions ?? [];
+    const defaultConditionFor = (label) =>
+      (triggerConfig?.default_conditions ?? []).find((c) => String(c.field_label ?? '').trim().toLowerCase() === label);
+    const boardDefault = defaultConditionFor('board');
+    const positionDefault = defaultConditionFor('position');
+
+    const boardRows = [];
+    const positionRows = [];
+    const plainConditions = [];
+
+    rawConditions
+      .slice()
+      .sort((a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0))
+      .forEach((cond) => {
+        const conditionFieldId = boardDefault?.regular_field_id ?? boardDefault?.field_id;
+        if (boardDefault && cond.regular_field_id != null && String(cond.regular_field_id) === String(conditionFieldId)) {
+          boardRows.push({ id: `board-${cond.condition_id}`, boardId: cond.input_value ?? '', joinWord: cond.connector || 'OR' });
+          return;
+        }
+        const positionFieldId = positionDefault?.regular_field_id ?? positionDefault?.field_id;
+        if (positionDefault && cond.regular_field_id != null && String(cond.regular_field_id) === String(positionFieldId)) {
+          const [boardId = '', swimlaneId = '', stageId = ''] = String(cond.input_value ?? '').split(':');
+          positionRows.push({
+            id: `position-${cond.condition_id}`, boardId, boardName: '', swimlaneId, swimlaneName: '', stageId, stageName: '',
+            joinWord: cond.connector || 'OR',
+          });
+          return;
+        }
+        plainConditions.push(cond);
+      });
+
+    if (boardRows.length > 0) setBoardConditionRows(boardRows);
+    if (positionRows.length > 0) setPositionConditionRows(positionRows);
+
+    // Group the flat per-value-row list into one box per distinct field, each with its own
+    // values[] — the inverse of how the create-side payload flattens boxes back into rows.
+    const boxesByField = new Map();
+    plainConditions.forEach((cond) => {
+      const fieldType = cond.regular_field_id != null ? 'regular' : cond.custom_field_id != null ? 'custom' : null;
+      const fieldId = cond.regular_field_id ?? cond.custom_field_id ?? null;
+      if (!fieldType || fieldId == null) return; // time-unit / unresolvable conditions — best-effort skip
+      const key = `${fieldType}-${fieldId}`;
+      if (!boxesByField.has(key)) {
+        boxesByField.set(key, {
+          id: `cond-${cond.condition_id}`,
+          fieldLabel: resolveEditFieldLabel(fieldType, fieldId),
+          fieldKey: key,
+          category: fieldType,
+          fieldType,
+          fieldId,
+          valueType: null,
+          operatorId: '',
+          desiredOperatorLabel: cond.operator || '',
+          values: [],
+        });
+      }
+      boxesByField.get(key).values.push({
+        id: `cond-val-${cond.condition_id}`,
+        value: cond.input_value ?? '',
+        joinWord: cond.connector || 'OR',
+      });
+    });
+    const nextConditions = Array.from(boxesByField.values());
+    setConditions(nextConditions);
+    nextConditions.forEach((box) => getFieldDetails(box.fieldType, box.fieldId));
+  }, [isEditMode, businessRuleDetailsReady, businessRuleDetails, triggerConfig, regularFields, editModeCustomFields]);
+
+  // Routes each saved then_groups[] entry into whichever of the 9 THEN action arrays it
+  // belongs to (via ACTION_GROUP_TYPE_TO_SECTION_ID, the same map the live THEN column
+  // already uses to decide which sections to render), inverting each buildThenActions()
+  // sub-case in buildBusinessRulePayload.js. Waits on triggerConfig too, since routing
+  // depends on that map already being meaningful for this rule's trigger type.
+  useEffect(() => {
+    if (!isEditMode || !businessRuleDetailsReady || !triggerConfig) return;
+    const groups = (businessRuleDetails.then_groups ?? [])
+      .slice()
+      .sort((a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0));
+
+    const nextCreateActions = [];
+    const nextUpdateActions = [];
+    const nextLinkActions = [];
+    const nextRemoveOtherLinksByType = {};
+    const nextMoveActions = [];
+    const nextConvertActions = [];
+    const nextNotifyActions = [];
+    const nextInvokeActions = [];
+    const nextRawSummaryBySectionId = {};
+
+    const pushRaw = (sectionId, group) => {
+      const key = sectionId ?? group.group_type;
+      if (!nextRawSummaryBySectionId[key]) nextRawSummaryBySectionId[key] = [];
+      nextRawSummaryBySectionId[key].push(group);
+    };
+
+    const propVal = (action, key) => (action.properties ?? []).find((p) => p.property_key === key)?.property_value ?? null;
+
+    const resolveBoardName = (boardId) => {
+      if (boardId == null || boardId === '') return '';
+      const match = (workspaces ?? []).flatMap((w) => w.boards ?? []).find((b) => String(b.board_id) === String(boardId));
+      return match ? match.board_name : `Board #${boardId}`;
+    };
+
+    groups.forEach((group) => {
+      const sectionId = ACTION_GROUP_TYPE_TO_SECTION_ID[group.group_type];
+      const actions = group.actions ?? [];
+
+      if (sectionId === 'create') {
+        actions.forEach((action) => {
+          // Subtask owner/deadline/description live server-side (saveCreateSubtaskSettings)
+          // and have no confirmed property shape here — route to the raw summary instead
+          // of guessing.
+          if (action.create_subtask_id != null || propVal(action, 'create_subtask_id') != null) {
+            pushRaw('create', { ...group, actions: [action] });
+            return;
+          }
+          const relationType = propVal(action, 'relation_type');
+          const copyRegular = propVal(action, 'copy_regular_fields');
+          const copyCustom = propVal(action, 'copy_custom_fields');
+          nextCreateActions.push({
+            id: `create-${action.then_action_id}`,
+            key: relationType ?? 'card',
+            label: relationType ? `Create ${relationType}` : 'Create card',
+            boardId: propVal(action, 'target_board_id') ?? '',
+            stageId: propVal(action, 'target_column_id') ?? '',
+            templateName: propVal(action, 'card_title') ?? '',
+            copyFields: (copyRegular || copyCustom) ? {
+              regularFields: copyRegular ? copyRegular.split(',').map((s) => s.trim()).filter(Boolean) : [],
+              customFields: copyCustom ? copyCustom.split(',').map((s) => s.trim()).filter(Boolean) : [],
+            } : undefined,
+          });
+        });
+        return;
+      }
+
+      if (sectionId === 'update') {
+        actions.forEach((action) => {
+          const fieldKey = propVal(action, 'field_key');
+          const fieldValue = propVal(action, 'field_value');
+          const matchedOption = UPDATE_ACTION_OPTIONS.find(
+            (opt) => opt.field.toLowerCase() === String(fieldKey ?? '').trim().toLowerCase()
+          );
+          const isUserRef = matchedOption && USER_REFERENCE_UPDATE_KEYS.includes(matchedOption.key);
+          nextUpdateActions.push({
+            id: `update-${action.then_action_id}`,
+            category: matchedOption ? 'action' : 'custom',
+            key: matchedOption?.key ?? `custom-${fieldKey}`,
+            label: matchedOption?.label ?? `Set ${fieldKey ?? ''}`,
+            field: fieldKey ?? '',
+            rawLabel: fieldKey ?? '',
+            ...(isUserRef
+              ? {
+                values: String(fieldValue ?? '').split(',').map((v) => v.trim()).filter(Boolean).map((userId) => ({
+                  id: `${action.then_action_id}-${userId}`,
+                  userId,
+                  userName: users.find((u) => String(u.user_id) === String(userId))?.name ?? `User #${userId}`,
+                })),
+              }
+              : { value: fieldValue ?? '' }),
+          });
+        });
+        return;
+      }
+
+      if (sectionId === 'link') {
+        actions.forEach((action) => {
+          (action.link_card ?? [])
+            .slice()
+            .sort((a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0))
+            .forEach((row) => {
+              let target = nextLinkActions.find((a) => a.key === row.relation_type && a.operatorKey === row.operator_key);
+              if (!target) {
+                const optionMeta = LINK_ACTION_OPTIONS.find((o) => o.key === row.relation_type);
+                target = {
+                  id: `link-${row.link_card_id}`,
+                  key: row.relation_type,
+                  label: optionMeta?.label ?? `Link as ${row.relation_type}`,
+                  operatorKey: row.operator_key,
+                  operatorLabel: row.operator_key,
+                  values: [],
+                };
+                nextLinkActions.push(target);
+              }
+              target.values.push({ id: `link-val-${row.link_card_id}`, value: row.input_value ?? '' });
+              if (String(row.remove_other) === '1') nextRemoveOtherLinksByType[row.relation_type] = true;
+            });
+        });
+        return;
+      }
+
+      if (sectionId === 'move' || sectionId === 'convert') {
+        const targetArray = sectionId === 'move' ? nextMoveActions : nextConvertActions;
+        actions.forEach((action) => {
+          const boardId = propVal(action, 'target_board_id');
+          targetArray.push({
+            id: `${sectionId}-${action.then_action_id}`,
+            key: sectionId === 'move' ? 'move_to' : 'convert_to',
+            label: sectionId === 'move' ? 'Move card to' : 'Convert subtasks to',
+            boardId: boardId ?? '',
+            boardName: resolveBoardName(boardId),
+            workflowId: propVal(action, 'target_workflow_id') ?? '',
+            workflowName: '',
+            swimlaneId: propVal(action, 'target_swimlane_id') ?? '',
+            swimlaneName: '',
+            stageId: propVal(action, 'target_column_id') ?? '',
+            stageName: '',
+            filterProperties: [],
+          });
+        });
+        return;
+      }
+
+      if (sectionId === 'notify') {
+        actions.forEach((action) => {
+          nextNotifyActions.push({
+            id: `notify-${action.then_action_id}`, key: 'send_notification', label: 'Send notification',
+            notification_id: action.notification_id ?? null,
+          });
+        });
+        return;
+      }
+
+      if (sectionId === 'invoke') {
+        actions.forEach((action) => {
+          nextInvokeActions.push({
+            id: `invoke-${action.then_action_id}`, key: 'invoke_web_service', label: 'Invoke web service',
+            webServiceId: action.web_service_id ?? null,
+          });
+        });
+        return;
+      }
+
+      // update_related / copy_values / execute_at / anything else — no reliable forward
+      // mapping exists to invert (per confirmed scope), so it's always shown as a raw
+      // read-only summary rather than forced into editable-looking fields.
+      pushRaw(sectionId, group);
+    });
+
+    setCreateActions(nextCreateActions);
+    setUpdateActions(nextUpdateActions);
+    setLinkActions(nextLinkActions);
+    setRemoveOtherLinksByType(nextRemoveOtherLinksByType);
+    setMoveActions(nextMoveActions);
+    setConvertSubtaskActions(nextConvertActions);
+    setNotifyActions(nextNotifyActions);
+    setInvokeActions(nextInvokeActions);
+    setRawSummaryBySectionId(nextRawSummaryBySectionId);
+  }, [isEditMode, businessRuleDetailsReady, businessRuleDetails, triggerConfig, workspaces, users]);
 
   useEffect(() => {
     if (!isOwnerPickerOpen) return undefined;
@@ -4966,6 +5422,9 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
 
   // Default each condition's operator to the first option (usually "is") as soon as its
   // field details load, so the row reads "Label is" instead of a blank "Select operator".
+  // A prefilled (edit-mode) condition carries its own `desiredOperatorLabel` — the operator
+  // label the saved rule actually used — so it's matched by label instead of defaulting to
+  // the first option, once this trigger's own operator list for that field has loaded.
   useEffect(() => {
     setConditions((prev) => {
       let changed = false;
@@ -4975,11 +5434,42 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
         const operators = detailsKey ? fieldDetailsByKey[detailsKey]?.operators : null;
         if (!operators || operators.length === 0) return cond;
         changed = true;
-        return { ...cond, operatorId: operators[0].field_operator_id };
+        const desiredMatch = cond.desiredOperatorLabel
+          ? operators.find((op) => (op.operator_label || '').trim().toLowerCase() === cond.desiredOperatorLabel.trim().toLowerCase())
+          : null;
+        return { ...cond, operatorId: (desiredMatch ?? operators[0]).field_operator_id };
       });
       return changed ? next : prev;
     });
   }, [fieldDetailsByKey]);
+
+  if (isEditMode && show && isEditDataLoading) {
+    return (
+      <Modal
+        show={show}
+        onHide={onClose}
+        className="business-rule-form-modal"
+        dialogClassName="business-rule-form-modal-dialog"
+        backdropClassName="business-rule-form-modal-backdrop"
+        centered={false}
+        backdrop="static"
+      >
+        <div className="business-rule-form-modal-shell">
+          <header className="business-rule-form-modal-header">
+            <h2 className="business-rule-form-modal-title">Edit Business Rule</h2>
+            <button type="button" className="business-rule-form-modal-close" onClick={onClose} aria-label="Close">
+              <FiX size={20} />
+            </button>
+          </header>
+          <div className="business-rule-form-modal-body business-rule-form-loading-body">
+            <div className="spinner-border spinner-border-sm" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
 
   if (!rule) return null;
 
@@ -5785,7 +6275,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
     >
       <div className="business-rule-form-modal-shell">
         <header className="business-rule-form-modal-header">
-          <h2 className="business-rule-form-modal-title">Add business rule</h2>
+          <h2 className="business-rule-form-modal-title">{isEditMode ? 'Edit Business Rule' : 'Add business rule'}</h2>
           <button
             type="button"
             className="business-rule-form-modal-close"
@@ -5796,7 +6286,26 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
           </button>
         </header>
 
-        <div className="business-rule-form-modal-body">
+        {isEditMode && (
+          <nav className="business-rule-form-tabs">
+            {[
+              { id: 'details', label: 'Details' },
+              { id: 'logs', label: 'Execution logs' },
+              { id: 'history', label: 'History' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`business-rule-form-tab${activeTab === tab.id ? ' active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        )}
+
+        <div className={`business-rule-form-modal-body${isEditMode && activeTab !== 'details' ? ' business-rule-form-tab-hidden' : ''}`}>
           <section className="business-rule-form-meta">
             <div className="business-rule-form-field">
               <label htmlFor="br-form-name" className="business-rule-form-label business-rule-form-label--hint">Name</label>
@@ -5806,6 +6315,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
                 className="business-rule-form-input"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                readOnly={isEditMode}
               />
             </div>
 
@@ -5817,6 +6327,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                readOnly={isEditMode}
               />
             </div>
 
@@ -5826,13 +6337,15 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
                 {tags.map((tag, idx) => (
                   <span key={`${tag}-${idx}`} className="business-rule-form-tag-pill">
                     {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(idx)}
-                      aria-label={`Remove tag ${tag}`}
-                    >
-                      <FiX size={12} />
-                    </button>
+                    {!isEditMode && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(idx)}
+                        aria-label={`Remove tag ${tag}`}
+                      >
+                        <FiX size={12} />
+                      </button>
+                    )}
                   </span>
                 ))}
                 <input
@@ -5844,6 +6357,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={handleTagInputKeyDown}
                   onBlur={handleAddTag}
+                  readOnly={isEditMode}
                 />
               </div>
             </div>
@@ -5859,6 +6373,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
                   onClick={() => setIsOwnerPickerOpen((v) => !v)}
                   aria-haspopup="listbox"
                   aria-expanded={isOwnerPickerOpen}
+                  disabled={isEditMode}
                 >
                   <span className="business-rule-form-owner-avatar" aria-hidden>
                     {getInitials(owner)}
@@ -5913,6 +6428,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
                   id="br-form-share"
                   className="business-rule-form-select-wrap business-rule-form-control business-rule-form-share-trigger"
                   onClick={() => setShowShareModal(true)}
+                  disabled={isEditMode}
                 >
                   {sharedUsers.length === 0 ? (
                     <span className="business-rule-form-share-placeholder">Add people</span>
@@ -5937,6 +6453,7 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
                   type="checkbox"
                   checked={disallowTriggerChain}
                   onChange={(e) => setDisallowTriggerChain(e.target.checked)}
+                  disabled={isEditMode}
                 />
                 <span className="business-rule-form-toggle-track" aria-hidden />
                 <span className="business-rule-form-toggle-label">
@@ -5946,7 +6463,10 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
             </div>
           </section>
 
-          <section className="business-rule-form-flow" aria-label="Rule builder">
+          <section
+            className={`business-rule-form-flow${isEditMode ? ' business-rule-form-readonly-zone' : ''}`}
+            aria-label="Rule builder"
+          >
             <div className="business-rule-form-column">
               <h3 className="business-rule-form-column-title">WHEN</h3>
               <p className="business-rule-form-trigger-name business-rule-form-trigger-name--plain">{whenTriggerName}</p>
@@ -7032,6 +7552,10 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
                       </div>
                     ))}
 
+                    {isEditMode && (rawSummaryBySectionId[section.id] ?? []).map((group) => (
+                      <ThenGroupRawSummary key={group.then_group_id ?? group.group_type} group={group} />
+                    ))}
+
                     {section.id !== 'execute' && !(section.id === 'link' && linkActions.length > 0) && !(section.id === 'create' && createActions.length > 0) && (
                       <button
                         type="button"
@@ -7057,17 +7581,211 @@ function BusinessRuleFormModal({ show, rule, boardName, onClose, onSave, isSavin
                     )}
                   </div>
                 ))}
+
+                {isEditMode && Object.entries(rawSummaryBySectionId)
+                  .filter(([sectionId]) => !thenActionSections.some((s) => s.id === sectionId))
+                  .flatMap(([, groups]) => groups)
+                  .map((group) => (
+                    <div key={group.then_group_id ?? group.group_type} className="business-rule-form-action-section">
+                      <ThenGroupRawSummary group={group} />
+                    </div>
+                  ))}
               </div>
             </div>
           </section>
         </div>
 
+        {isEditMode && activeTab === 'logs' && (() => {
+          // get_execution_logs has a confirmed endpoint/params (search, from, to) but no
+          // documented response field names yet — best-effort fallback across a few
+          // likely keys per column, same convention as the rest of this file's
+          // unconfirmed-shape handling.
+          const normalizeLogRow = (row, idx) => ({
+            key: row.execution_log_id ?? row.id ?? idx,
+            ruleName: row.business_rule_name ?? row.rule_name ?? name,
+            ruleId: row.business_rule_id ?? businessRuleId,
+            cardId: row.card_id ?? row.executed_on_card_id ?? row.executed_card_id ?? '-',
+            executedAt: row.executed_at ?? row.execution_time ?? row.executed_at_local ?? row.created_at ?? '-',
+          });
+          const logRows = (executionLogs ?? []).map(normalizeLogRow);
+
+          const handleExportLogs = () => {
+            const header = ['Business Rule Name', 'Business Rule ID', 'Executed on Card ID', 'Executed at (Asia/Dubai)'];
+            const csvRows = logRows.map((r) => [r.ruleName, r.ruleId, r.cardId, r.executedAt]);
+            const csv = [header, ...csvRows]
+              .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
+              .join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `business-rule-${businessRuleId}-execution-logs.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+          };
+
+          return (
+            <div className="business-rule-form-tab-panel">
+              <div className="business-rule-form-tab-filters">
+                <div className="business-rule-form-tab-date-group">
+                  <label className="business-rule-form-label business-rule-form-label--hint">From</label>
+                  <div className="business-rule-form-tab-date-inputs">
+                    <input
+                      type="date"
+                      className="business-rule-form-input"
+                      value={logsFromDate}
+                      onChange={(e) => setLogsFromDate(e.target.value)}
+                    />
+                    <input
+                      type="time"
+                      className="business-rule-form-input"
+                      value={logsFromTime}
+                      onChange={(e) => setLogsFromTime(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="business-rule-form-tab-date-group">
+                  <label className="business-rule-form-label business-rule-form-label--hint">To</label>
+                  <div className="business-rule-form-tab-date-inputs">
+                    <input
+                      type="date"
+                      className="business-rule-form-input"
+                      value={logsToDate}
+                      onChange={(e) => setLogsToDate(e.target.value)}
+                    />
+                    <input
+                      type="time"
+                      className="business-rule-form-input"
+                      value={logsToTime}
+                      onChange={(e) => setLogsToTime(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="business-rule-form-tab-export-btn"
+                  onClick={handleExportLogs}
+                  disabled={logRows.length === 0}
+                >
+                  <FiDownload size={14} aria-hidden />
+                  Export
+                </button>
+              </div>
+
+              <input
+                type="text"
+                className="business-rule-form-input business-rule-form-tab-search"
+                placeholder="Filter"
+                value={logsSearch}
+                onChange={(e) => setLogsSearch(e.target.value)}
+              />
+
+              <div className="business-rule-form-tab-table-wrap">
+                <table className="business-rule-form-tab-table">
+                  <thead>
+                    <tr>
+                      <th>Business Rule Name</th>
+                      <th>Business Rule ID</th>
+                      <th>Executed on Card ID</th>
+                      <th>Executed at (Asia/Dubai)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isLoadingExecutionLogs ? (
+                      <tr><td colSpan={4} className="business-rule-form-tab-table-state">Loading...</td></tr>
+                    ) : logRows.length === 0 ? (
+                      <tr><td colSpan={4} className="business-rule-form-tab-table-state">No items</td></tr>
+                    ) : (
+                      logRows.map((row) => (
+                        <tr key={row.key}>
+                          <td>{row.ruleName}</td>
+                          <td>{row.ruleId}</td>
+                          <td>{row.cardId}</td>
+                          <td>{row.executedAt}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
+
+        {isEditMode && activeTab === 'history' && (() => {
+          // get_business_rule_history is an unconfirmed guessed endpoint (see
+          // businessRuleService.js) — both existence and response shape are best-effort;
+          // falls back across a few likely field names per column, same convention as
+          // the execution-logs tab above.
+          const normalizeHistoryRow = (row, idx) => ({
+            key: row.history_id ?? row.id ?? idx,
+            eventType: row.event_type ?? row.action_type ?? row.type ?? '-',
+            details: row.details ?? row.description ?? row.message ?? '-',
+            author: row.author ?? row.author_name ?? row.user_name ?? row.updated_by ?? '-',
+            time: row.time ?? row.created_at ?? row.event_time ?? row.updated_at ?? '-',
+          });
+          const historyRows = (businessRuleHistory ?? []).map(normalizeHistoryRow);
+
+          return (
+            <div className="business-rule-form-tab-panel">
+              <input
+                type="text"
+                className="business-rule-form-input business-rule-form-tab-search"
+                placeholder="Filter"
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+              />
+
+              <div className="business-rule-form-tab-table-wrap">
+                <table className="business-rule-form-tab-table">
+                  <thead>
+                    <tr>
+                      <th>Event Type</th>
+                      <th>Details</th>
+                      <th>Author</th>
+                      <th>Time (Asia/Dubai)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isLoadingBusinessRuleHistory ? (
+                      <tr><td colSpan={4} className="business-rule-form-tab-table-state">Loading...</td></tr>
+                    ) : historyRows.length === 0 ? (
+                      <tr><td colSpan={4} className="business-rule-form-tab-table-state">No items</td></tr>
+                    ) : (
+                      historyRows.map((row) => (
+                        <tr key={row.key}>
+                          <td>{row.eventType}</td>
+                          <td>{row.details}</td>
+                          <td>{row.author}</td>
+                          <td>{row.time}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
+
         <footer className="business-rule-form-modal-footer">
           {saveError && <p className="text-danger mb-2">{saveError}</p>}
-          <p className="business-rule-form-footer-note">
-            <strong>Note:</strong> Due to their asynchronous nature, the business rules may sometimes run with a short delay. In rare cases it may take up to 30 minutes.
-          </p>
-          <button type="button" className="business-rule-form-save-btn" onClick={handleSave} disabled={isSaving}>
+          {isEditMode ? (
+            <p className="business-rule-form-footer-note">
+              Saving changes isn&apos;t wired up yet — the backend update endpoint hasn&apos;t been confirmed.
+            </p>
+          ) : (
+            <p className="business-rule-form-footer-note">
+              <strong>Note:</strong> Due to their asynchronous nature, the business rules may sometimes run with a short delay. In rare cases it may take up to 30 minutes.
+            </p>
+          )}
+          <button
+            type="button"
+            className="business-rule-form-save-btn"
+            onClick={handleSave}
+            disabled={isSaving || isEditMode}
+            title={isEditMode ? 'Update endpoint not yet available' : undefined}
+          >
             {isSaving ? 'Saving...' : 'Save'}
           </button>
         </footer>

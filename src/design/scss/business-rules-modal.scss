@@ -761,6 +761,216 @@
   }
 }
 
+.business-rule-form-loading-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+}
+
+.business-rule-form-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 0 32px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+
+  @media ($sm-767) {
+    padding: 0 20px;
+  }
+}
+
+.business-rule-form-tab {
+  border: none;
+  background: none;
+  padding: 12px 4px;
+  margin-bottom: -1px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  border-bottom: 2px solid transparent;
+
+  &.active {
+    color: #1d4ed8;
+    border-bottom-color: #1d4ed8;
+  }
+}
+
+.business-rule-form-tab-hidden {
+  display: none;
+}
+
+// Edit mode is view-only (no update endpoint exists yet — see the footer note) — this
+// blocks every add/remove/picker click across the WHEN/AND/THEN builder in one shot,
+// rather than threading a readOnly prop through every individual interactive element in
+// this large form. The handful of "Add new action"/chip-remove controls most likely to
+// read as broken dead buttons are also explicitly hidden (see business-rule-form-add-action
+// / business-rule-form-chip-remove usages), so this is a safety net, not the only guard.
+.business-rule-form-readonly-zone,
+.business-rule-form-readonly-zone * {
+  pointer-events: none;
+}
+
+// The "Add new action/property" and "Clear all" call-to-action links are the ones most
+// likely to read as broken (an inviting, clickable-looking link that silently does
+// nothing) — hidden outright rather than just inert, unlike the many per-row remove
+// icons throughout this form, which read fine simply dimmed by the pointer-events lock.
+.business-rule-form-readonly-zone .business-rule-form-add-link,
+.business-rule-form-readonly-zone .business-rule-form-add-action {
+  display: none;
+}
+
+.business-rule-form-raw-summary {
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  background: #fafafa;
+}
+
+.business-rule-form-raw-summary-action + .business-rule-form-raw-summary-action {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.business-rule-form-raw-summary-action-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.business-rule-form-raw-summary-kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  margin: 0;
+  font-size: 0.8125rem;
+
+  dt {
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  dd {
+    margin: 0;
+    color: #111827;
+    word-break: break-word;
+  }
+}
+
+.business-rule-form-raw-summary-empty {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.business-rule-form-tab-placeholder {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  color: #6b7280;
+  font-size: 0.875rem;
+  text-align: center;
+  background: #f8f9fc;
+}
+
+// Shared by the Execution logs and History tabs.
+.business-rule-form-tab-panel {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 24px 32px;
+  background: #f8f9fc;
+}
+
+.business-rule-form-tab-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.business-rule-form-tab-date-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.business-rule-form-tab-date-inputs {
+  display: flex;
+  gap: 8px;
+
+  input {
+    width: auto;
+  }
+}
+
+.business-rule-form-tab-export-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  background: #ffffff;
+  color: #1d4ed8;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 8px 16px;
+
+  &:disabled {
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+}
+
+.business-rule-form-tab-search {
+  margin-bottom: 16px;
+}
+
+.business-rule-form-tab-table-wrap {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.business-rule-form-tab-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    color: #6b7280;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f2f4;
+    color: #111827;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.business-rule-form-tab-table-state {
+  text-align: center;
+  color: #9ca3af;
+  padding: 24px 16px !important;
+}
+
 .business-rule-form-meta {
   background: #ffffff;
   border: 1px solid #e5e7eb;

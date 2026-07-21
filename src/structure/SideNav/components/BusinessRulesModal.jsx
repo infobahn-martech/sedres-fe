@@ -4,30 +4,9 @@ import { Modal } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import BusinessRuleIcon from './BusinessRuleIcon';
 import BusinessRuleFormModal from './BusinessRuleFormModal';
+import { TRIGGER_CODE_TO_ICON } from './businessRulesData';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import '../../../design/scss/business-rules-modal.scss';
-
-const TRIGGER_CODE_TO_ICON = {
-  card_created: 'create',
-  card_updated: 'update',
-  card_moved: 'moved',
-  child_card_blocked: 'child-blocked',
-  child_card_moved: 'child-moved',
-  child_card_updated: 'child-updated',
-  all_children_moved: 'all-children-moved',
-  time_based: 'time-based',
-  recurring_created: 'time-based',
-  recurring_create_cards: 'time-based',
-  time_based_rule: 'time-based',
-  parent_card_moved: 'parent-moved',
-  parent_card_updated: 'parent-updated',
-  parent_card_created: 'parent-created',
-  archive_cards: 'archive',
-  card_archived: 'archive',
-  task_created: 'task-created',
-  task_card_moved: 'task-moved',
-  task_card_updated: 'task-updated',
-};
 
 const OwnerCell = ({ owner }) => {
   if (!owner) return <span className="br-table-deleted-user">Deleted user</span>;
@@ -58,6 +37,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
   const [view, setView] = useState('table');
   const [selectedRule, setSelectedRule] = useState(null);
   const [showFormModal, setShowFormModal] = useState(false);
+  const [selectedRuleId, setSelectedRuleId] = useState(null);
 
   const {
     getBusinessRules, businessRules, businessRulesCount, isLoadingBusinessRules,
@@ -89,6 +69,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
       setView('table');
       setSelectedRule(null);
       setShowFormModal(false);
+      setSelectedRuleId(null);
       return;
     }
     const isEnabled = statusFilter === 'enabled' ? 1 : statusFilter === 'disabled' ? 0 : undefined;
@@ -136,6 +117,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
       cb: () => {
         setShowFormModal(false);
         setSelectedRule(null);
+        setSelectedRuleId(null);
         setView('table');
         const isEnabled = statusFilter === 'enabled' ? 1 : statusFilter === 'disabled' ? 0 : undefined;
         getBusinessRules({ params: { page, per_page: limit, search: searchValue || undefined, is_enabled: isEnabled } });
@@ -145,9 +127,11 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
   };
 
   const handleCancelFormModal = () => {
+    const wasEditing = Boolean(selectedRuleId);
     setShowFormModal(false);
     setSelectedRule(null);
-    setView('picker');
+    setSelectedRuleId(null);
+    setView(wasEditing ? 'table' : 'picker');
   };
 
   const handleAddNewRule = () => {
@@ -305,7 +289,15 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                                   &#8942;
                                 </button>
                                 <ul className="dropdown-menu dropdown-menu-end">
-                                  <li><button className="dropdown-item" type="button">Edit</button></li>
+                                  <li>
+                                    <button
+                                      className="dropdown-item"
+                                      type="button"
+                                      onClick={() => { setSelectedRule(null); setSelectedRuleId(ruleId); setShowFormModal(true); }}
+                                    >
+                                      Edit
+                                    </button>
+                                  </li>
                                   <li><button className="dropdown-item text-danger" type="button">Delete</button></li>
                                 </ul>
                               </div>
@@ -399,6 +391,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
       <BusinessRuleFormModal
         show={show && showFormModal}
         rule={selectedRule}
+        businessRuleId={selectedRuleId}
         boardName={boardName}
         onClose={handleCancelFormModal}
         onSave={handleSaveFormModal}

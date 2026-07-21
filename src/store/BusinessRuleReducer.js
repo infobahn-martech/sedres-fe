@@ -179,6 +179,52 @@ const useBusinessRuleReducer = create((set) => ({
 
     resetBusinessRuleDetails: () => set({ businessRuleDetails: null, isLoadingBusinessRuleDetails: false }),
 
+    isLoadingExecutionLogs: false,
+    executionLogs: [],
+
+    // Confirmed endpoint (business_rule/get_execution_logs/{business_rule_id}, params
+    // search/from/to) but no documented response shape yet — falls back across a few
+    // likely list keys (data.data / data.data.items / data.data.logs) rather than
+    // assuming one, and normalizeExecutionLogRow (BusinessRuleFormModal.jsx) does the
+    // same best-effort fallback per-row for field names.
+    getExecutionLogs: async (businessRuleId, { params } = {}) => {
+        try {
+            set({ isLoadingExecutionLogs: true });
+            const { data } = await businessRuleService.getExecutionLogs(businessRuleId, { params });
+            const list = Array.isArray(data?.data) ? data.data
+                : Array.isArray(data?.data?.items) ? data.data.items
+                    : Array.isArray(data?.data?.logs) ? data.data.logs
+                        : [];
+            set({ executionLogs: list, isLoadingExecutionLogs: false });
+        } catch (err) {
+            set({ executionLogs: [], isLoadingExecutionLogs: false });
+        }
+    },
+
+    resetExecutionLogs: () => set({ executionLogs: [], isLoadingExecutionLogs: false }),
+
+    isLoadingBusinessRuleHistory: false,
+    businessRuleHistory: [],
+
+    // TODO: endpoint itself is an unconfirmed guess (see businessRuleService.js) and the
+    // response shape is unconfirmed too — same best-effort list/row fallback pattern as
+    // getExecutionLogs above.
+    getBusinessRuleHistory: async (businessRuleId, { params } = {}) => {
+        try {
+            set({ isLoadingBusinessRuleHistory: true });
+            const { data } = await businessRuleService.getBusinessRuleHistory(businessRuleId, { params });
+            const list = Array.isArray(data?.data) ? data.data
+                : Array.isArray(data?.data?.items) ? data.data.items
+                    : Array.isArray(data?.data?.history) ? data.data.history
+                        : [];
+            set({ businessRuleHistory: list, isLoadingBusinessRuleHistory: false });
+        } catch (err) {
+            set({ businessRuleHistory: [], isLoadingBusinessRuleHistory: false });
+        }
+    },
+
+    resetBusinessRuleHistory: () => set({ businessRuleHistory: [], isLoadingBusinessRuleHistory: false }),
+
     isTogglingBusinessRuleStatus: false,
 
     toggleBusinessRuleStatus: async (businessRuleId, { cb, onSettled } = {}) => {
