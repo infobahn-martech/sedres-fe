@@ -2,6 +2,9 @@ import { useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { FiNavigation, FiSend } from "react-icons/fi";
 import DateTimePickerField from "../../../../shared/components/DateTimePickerField";
+import ChecklistMultiSelect from "../../appointment/checklistTab/ChecklistMultiSelect";
+
+const LOCATION_OPTIONS = ["Freighter Anchorage", "RT7", "Sea Island", "Juaymah"];
 
 // Compact inline scheduling panel for the Crew Summary "Request Launch
 // Hire" action. Always mounted (even collapsed) so open/close can transition
@@ -19,6 +22,8 @@ const LaunchHireInlineForm = ({
   selectValue,
   onSelectChange,
   selectOptions = [],
+  locationValue,
+  onLocationChange,
 }) => {
   const fieldWrapperRef = useRef(null);
 
@@ -61,14 +66,28 @@ const LaunchHireInlineForm = ({
         {onSelectChange && (
           <div className="crew-launch-hire-panel__field">
             <label className="crew-launch-hire-panel__label">Batch</label>
+            <ChecklistMultiSelect
+              value={selectValue}
+              onChange={(e) => onSelectChange(e.target.value)}
+              options={selectOptions.map((option) => ({ value: option, label: option }))}
+              placeholder="Select batch(es)"
+              disabled={isSubmitting}
+              id="launch-hire-batch-multiselect"
+            />
+          </div>
+        )}
+
+        {onLocationChange && (
+          <div className="crew-launch-hire-panel__field">
+            <label className="crew-launch-hire-panel__label">Location</label>
             <select
               className="crew-launch-hire-panel__select"
-              value={selectValue}
+              value={locationValue}
               disabled={isSubmitting}
-              onChange={(e) => onSelectChange(e.target.value)}
+              onChange={(e) => onLocationChange(e.target.value)}
             >
-              <option value="">Select batch</option>
-              {selectOptions.map((option) => (
+              <option value="">Select location</option>
+              {LOCATION_OPTIONS.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -134,9 +153,11 @@ LaunchHireInlineForm.propTypes = {
   onDateTimeChange: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
-  selectValue: PropTypes.string,
+  selectValue: PropTypes.arrayOf(PropTypes.string),
   onSelectChange: PropTypes.func,
   selectOptions: PropTypes.arrayOf(PropTypes.string),
+  locationValue: PropTypes.string,
+  onLocationChange: PropTypes.func,
 };
 
 export default LaunchHireInlineForm;

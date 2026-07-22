@@ -3499,6 +3499,10 @@
   max-height: 160px;
   opacity: 1;
   margin: 0 0 $space-5;
+  // Batch/Location dropdowns are absolutely positioned inside this panel —
+  // once open (no longer animating from 0), let them escape the box instead
+  // of being clipped by the collapse animation's overflow: hidden.
+  overflow: visible;
 }
 
 .crew-launch-hire-panel__inner {

@@ -260,6 +260,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   const [showLaunchHireForm, setShowLaunchHireForm] = useState(false);
   const [launchDate, setLaunchDate] = useState("");
   const [launchTime, setLaunchTime] = useState("");
+  const [launchLocation, setLaunchLocation] = useState("");
   const [launchDateTimeError, setLaunchDateTimeError] = useState("");
   const [isSubmittingLaunchHire, setIsSubmittingLaunchHire] = useState(false);
   const [launchHireRequested, setLaunchHireRequested] = useState(false);
@@ -919,6 +920,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     setShowLaunchHireForm(false);
     setLaunchDate("");
     setLaunchTime("");
+    setLaunchLocation("");
     setLaunchDateTimeError("");
   };
 
@@ -943,6 +945,10 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 
   const handleSubmitLaunchHire = async () => {
     if (isSubmittingLaunchHire) return;
+    if (!launchLocation) {
+      setLaunchDateTimeError("Select a location.");
+      return;
+    }
     if (!launchDate) {
       setLaunchDateTimeError("Select a launch date and time.");
       return;
@@ -964,12 +970,14 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
       await createCrewImmigrationBooking({
         call_id: resolvedCallId,
         booking_datetime: buildApiDateTime(launchDate, launchTime),
+        location: launchLocation,
       });
 
       notify("Launch hire request submitted successfully.", "success");
       setShowLaunchHireForm(false);
       setLaunchDate("");
       setLaunchTime("");
+      setLaunchLocation("");
       setLaunchDateTimeError("");
       setLaunchHireRequested(true);
     } catch (err) {
@@ -1224,6 +1232,8 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
             onDateTimeChange={handleLaunchDateTimeChange}
             onCancel={handleCancelLaunchHire}
             onSubmit={handleSubmitLaunchHire}
+            locationValue={launchLocation}
+            onLocationChange={setLaunchLocation}
           />
 
           {crewSummaryRows.length === 0 ? (
