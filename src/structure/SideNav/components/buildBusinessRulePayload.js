@@ -1,4 +1,4 @@
-import { ACTION_GROUP_TYPE_TO_SECTION_ID, RELATIONAL_CREATE_ACTION_LABELS } from './businessRulesData';
+import { ACTION_GROUP_TYPE_TO_SECTION_ID, RELATIONAL_CREATE_ACTION_KEYWORDS } from './businessRulesData';
 
 const findActionTypeId = (triggerActions, sectionId) =>
   triggerActions.find((a) => ACTION_GROUP_TYPE_TO_SECTION_ID[a.group_type] === sectionId)?.action_type_id ?? null;
@@ -6,10 +6,11 @@ const findActionTypeId = (triggerActions, sectionId) =>
 // A create action's `key` is the DEV-fallback's literal 'child'/'parent'/... string, but a
 // live backend response keys it by its own field_key instead — so relation_type has to be
 // derived from the label ("Create child" -> "child") the same way hasCustomProperties does
-// in BusinessRuleFormModal.jsx, not from action.key.
+// in BusinessRuleFormModal.jsx, not from action.key. Matched by keyword-in-label rather than
+// exact phrase, since a live label may carry extra wording (e.g. "Create Child Card").
 const getRelationTypeFromLabel = (label) => {
   const normalized = label?.trim().toLowerCase() ?? '';
-  return RELATIONAL_CREATE_ACTION_LABELS.includes(normalized) ? normalized.replace(/^create /, '') : null;
+  return RELATIONAL_CREATE_ACTION_KEYWORDS.find((kw) => normalized.includes(kw)) ?? null;
 };
 
 const getOperatorLabel = (fieldDetailsByKey, fieldType, fieldId, operatorId) => {
@@ -165,6 +166,16 @@ const buildThenActions = (formState, ctx) => {
       // template name as a best-effort placeholder.
       { property_key: 'card_title', property_value: action.templateName ?? '', property_value_type: 'string' },
     ];
+    // Same board-can-have-several-workflows reasoning as buildDestinationProperties below
+    // (move/convert) — without these, a create action's workflow/swimlane pick is silently
+    // dropped on save, so it can never be resolved back into a name on reopen and always
+    // reads as "Any stage / Any lane".
+    if (action.workflowId) {
+      properties.push({ property_key: 'target_workflow_id', property_value: action.workflowId, property_value_type: 'number' });
+    }
+    if (action.swimlaneId) {
+      properties.push({ property_key: 'target_swimlane_id', property_value: action.swimlaneId, property_value_type: 'number' });
+    }
     const relationType = getRelationTypeFromLabel(action.label);
     if (relationType) {
       // Cross-card create variants (child/parent/predecessor/relative/successor) aren't

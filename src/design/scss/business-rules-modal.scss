@@ -3309,6 +3309,552 @@ body .modal.card-property-match-modal.show {
   min-height: 0;
 }
 
+// CreateCardFieldsModal — read-only preview of the card a "Create card" THEN-action will
+// produce, opened after Copy Card Details so the rule author can set default field values.
+// Accent is green (not $colorPrimary) to match the real production card-details modal,
+// which uses this green header bar consistently, not the business-rule builder's blue.
+$br-card-preview-accent: #1F9D6E;
+
+.br-card-preview-modal-dialog {
+  max-width: 1080px !important;
+  width: 92vw !important;
+}
+
+.br-card-preview-shell {
+  max-height: 90vh;
+}
+
+.br-card-preview-header-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: $br-card-preview-accent;
+  flex-shrink: 0;
+}
+
+.br-card-preview-title-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font: normal normal 500 15px/1.3 $font-primary;
+  color: $txtColor;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+}
+
+.br-card-preview-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
+}
+
+.br-card-preview-body {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.br-card-preview-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// Rich-text description editor — same wrap/toolbar treatment as
+// .notification-quill-wrap, reused here for the card description field.
+.br-card-preview-quill-wrap {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  .ql-container {
+    min-height: 220px;
+    font-size: 14px;
+    border: none;
+    border-radius: 0 0 8px 8px;
+  }
+
+  .ql-editor {
+    min-height: 220px;
+
+    li {
+      margin-bottom: 6px;
+    }
+  }
+
+  .ql-toolbar.ql-snow {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 2px;
+    padding: 6px 8px;
+    background: #f9fafb;
+    border: none;
+    border-bottom: 1px solid #e5e7eb;
+    border-radius: 8px 8px 0 0;
+
+    .ql-formats {
+      display: flex;
+      align-items: center;
+      flex: 0 0 auto;
+      margin-right: 6px;
+    }
+  }
+}
+
+.br-card-preview-subtasks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.br-card-preview-subtask-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.br-card-preview-subtask-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font: normal normal 400 13px/1.4 $font-primary;
+  color: $txtColor;
+}
+
+.br-card-preview-subtask-item-title {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.br-card-preview-subtask-input {
+  width: 100%;
+  min-height: 56px;
+  resize: vertical;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font: normal normal 400 13px/1.4 $font-primary;
+  color: $txtColor;
+  outline: none;
+
+  &:focus {
+    border-color: #00368c;
+    box-shadow: 0 0 0 3px rgba(0, 54, 140, 0.08);
+  }
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+}
+
+.br-card-preview-placeholder {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font: normal normal 400 13px/1.4 $font-primary;
+  color: #9ca3af;
+}
+
+.br-card-preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// Shared toggle-bar look for Card fields / Custom fields / Subtasks / Docs headers —
+// rendered as a <button> where it's collapsible, a plain <div> (--static modifier) where
+// it isn't (the sidebar panels don't currently support collapsing their own content).
+.br-card-preview-section-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #eef1f6;
+  font: normal normal 600 13px/1.4 $font-primary;
+  color: $txtColor;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #e5e9f0;
+  }
+
+  &.br-card-preview-section-bar--static {
+    cursor: default;
+
+    &:hover {
+      background: #eef1f6;
+    }
+  }
+}
+
+.br-card-preview-section-bar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #111827;
+  color: #ffffff;
+}
+
+.br-card-preview-section-bar-label {
+  flex: 1;
+  text-align: left;
+}
+
+.br-card-preview-section-bar-right {
+  display: inline-flex;
+  align-items: center;
+  color: #6b7280;
+}
+
+.br-card-preview-fields-header-wrap {
+  position: relative;
+}
+
+.br-card-preview-add-field-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: rgba(0, 54, 140, 0.08);
+    color: $colorPrimary;
+  }
+}
+
+.br-card-preview-add-field-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  min-width: 200px;
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  gap: 2px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+}
+
+.br-card-preview-add-field-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font: normal normal 400 13px/1.4 $font-primary;
+  color: $txtColor;
+  cursor: pointer;
+
+  &:hover {
+    background: #eef1f6;
+  }
+}
+
+.br-card-preview-add-field-group-label {
+  padding: 8px 10px 4px;
+  font: normal normal 600 11px/1.4 $font-primary;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 4px;
+}
+
+.br-card-preview-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.br-card-preview-fields-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px;
+  background: #fbfcfe;
+}
+
+.br-card-preview-custom-fields-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 4px;
+  padding-top: 12px;
+  justify-content: center;
+}
+
+.br-card-preview-custom-fields-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #ffffff;
+  padding: 6px 16px;
+  font: normal normal 500 12px/1.4 $font-primary;
+  color: $txtColor;
+  cursor: pointer;
+  margin-top: -20px;
+
+  &:hover {
+    border-color: #9fb2c2;
+  }
+}
+
+.br-card-preview-custom-fields-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  font: normal normal 400 12px/1.5 $font-primary;
+  color: #6b7280;
+}
+
+.br-card-preview-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  padding: 0 2px;
+}
+
+.br-card-preview-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+
+  label {
+    font: normal normal 500 12px/1.4 $font-primary;
+    color: #6b7280;
+  }
+
+  .br-card-preview-field-row-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  &.br-card-preview-field-row--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.br-card-preview-field-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #ef4444;
+  }
+}
+
+.br-card-preview-avatar-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 7px 10px;
+  background: #ffffff;
+}
+
+.br-card-preview-avatar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #cbd5e1;
+  color: #ffffff;
+  font: normal normal 600 11px/1 $font-primary;
+}
+
+.br-card-preview-avatar-select {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  appearance: none;
+  font: normal normal 400 13px/1.4 $font-primary;
+  color: $txtColor;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    color: #9ca3af;
+  }
+}
+
+.br-card-preview-avatar-chevron {
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.br-card-preview-select-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .business-rule-form-input {
+    width: 100%;
+    padding-right: 32px;
+  }
+}
+
+.br-card-preview-select-chevron {
+  position: absolute;
+  right: 10px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.br-card-preview-footer {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.br-card-preview-breadcrumb {
+  font: normal normal 400 12px/1.4 $font-primary;
+  color: #6b7280;
+
+  span {
+    color: $colorPrimary;
+    font-weight: 600;
+  }
+}
+
+.br-card-preview-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.br-card-preview-stepper {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  overflow-x: auto;
+  flex: 1;
+  min-width: 0;
+}
+
+// Each step is a circle with its label stacked underneath, not inline beside it.
+.br-card-preview-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  width: 84px;
+}
+
+.br-card-preview-step-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid #d1d5db;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #ffffff;
+  color: #ffffff;
+}
+
+.br-card-preview-step-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: normal normal 500 10px/1.3 $font-primary;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+// Done: neutral gray fill + checkmark, not the stage's own color.
+.br-card-preview-step--done .br-card-preview-step-dot {
+  border-color: #cbd5e1;
+  background: #cbd5e1;
+}
+
+.br-card-preview-save-btn {
+  flex-shrink: 0;
+}
+
 .board-minimap-body {
   display: flex;
   flex-direction: column;

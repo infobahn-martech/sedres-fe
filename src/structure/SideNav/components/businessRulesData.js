@@ -143,11 +143,13 @@ export const CREATE_ACTION_OPTIONS = [
 // triggered the rule (an "originator"), so after picking a destination they get an extra
 // "Copy Card Details" step to pick which of the originator's fields to carry over. A plain
 // "Create card" has no originator relationship, so it skips that step entirely.
-// Matched by label rather than key — same reason as the "Create subtask" check nearby
-// (hasCustomProperties): a live get_then_action_fields response keys each regular field by
-// its own backend field_key, not the dev-fallback's literal 'child'/'parent'/... strings,
-// so key-based matching silently never fires once real backend data is in play.
-export const RELATIONAL_CREATE_ACTION_LABELS = ['create child', 'create parent', 'create predecessor', 'create relative', 'create successor'];
+// Matched by keyword-in-label rather than key or exact phrase — same reason as the
+// "Create subtask" check nearby (hasCustomProperties): a live get_then_action_fields
+// response keys/labels each regular field using the backend's own wording (e.g. "Create
+// Child Card"), not the dev-fallback's literal 'child'/'parent'/... strings or exact
+// 'create child' phrasing, so key-based or exact-phrase matching silently never fires
+// once real backend data is in play.
+export const RELATIONAL_CREATE_ACTION_KEYWORDS = ['child', 'parent', 'predecessor', 'relative', 'successor'];
 
 // Fixed field list for the "Copy Card Details" step (no backend endpoint returns this
 // list today — best-effort, hardcoded to match the same fixed-option pattern as
@@ -294,6 +296,17 @@ export const PRIORITY_OPTIONS = [
   { key: 'high', label: 'High', color: '#f5a623' },
   { key: 'average', label: 'Average', color: '#9ca3af' },
   { key: 'low', label: 'Low', color: '#2f80ed' },
+];
+
+// Static size catalog for the card fields "Size" dropdown — no backend endpoint for this
+// today, same fixed-option pattern as PRIORITY_OPTIONS above.
+export const SIZE_OPTIONS = [
+  { key: '', label: 'Not Set' },
+  { key: 'xs', label: 'XS' },
+  { key: 's', label: 'S' },
+  { key: 'm', label: 'M' },
+  { key: 'l', label: 'L' },
+  { key: 'xl', label: 'XL' },
 ];
 
 // Custom fields carry no confirmed field_type anywhere in this app yet (nothing in the
