@@ -334,7 +334,7 @@ export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, on
                   };
 
                   const subTabCount = subTabCounts?.[subTab.id];
-                  const hasSubTabCount = typeof subTabCount === "number";
+                  const hasSubTabCount = typeof subTabCount === "number" && subTabCount > 0;
 
                   return (
                     <NavTabButton

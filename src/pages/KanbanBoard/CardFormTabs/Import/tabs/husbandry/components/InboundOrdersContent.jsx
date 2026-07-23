@@ -437,7 +437,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
     );
 
     const { date: launchHireDate, time: launchHireTime } = splitApiDateTimeParts(
-      order.launch_hire_date || "",
+      order.booking_datetime || "",
       ""
     );
 
@@ -449,7 +449,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       launchHire: Number(order.launch_hire) === 1,
       launchHireDate,
       launchHireTime,
-      launchHireLocation: order.launch_hire_location || order.location || "",
+      launchHireLocation: order.location || "",
       orders: orderItems,
     });
     if (editDate) setEditOrderMinDate(editDate);
@@ -691,10 +691,10 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
       inbound_time: (formData.time || "").slice(0, 5),
       remarks: formData.remarks || "",
       launch_hire: formData.launchHire ? 1 : 0,
-      ...(formData.launchHire ? {
-        launch_hire_date: buildApiDateTime(formData.launchHireDate, formData.launchHireTime),
-        launch_hire_location: formData.launchHireLocation || "",
-      } : {}),
+      location: formData.launchHire ? (formData.launchHireLocation || "") : "",
+      booking_datetime: formData.launchHire
+        ? buildApiDateTime(formData.launchHireDate, formData.launchHireTime)
+        : "",
       items,
     };
 
@@ -1514,7 +1514,6 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                       dateFieldName="launchHireDate"
                       timeFieldName="launchHireTime"
                       placeholder="YYYY-MM-DD hh:mm"
-                      hasError={!!formErrors.launchHireDate}
                     />
                   </FormField>
                   {formErrors.launchHireDate && <span className="dispatch-edit-error">{formErrors.launchHireDate}</span>}
