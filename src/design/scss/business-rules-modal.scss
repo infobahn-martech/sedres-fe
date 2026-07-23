@@ -1823,6 +1823,40 @@ body .modal.business-rule-form-modal.show {
   }
 }
 
+.business-rule-form-when-deadline-label-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.business-rule-form-when-deadline-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.business-rule-form-when-deadline-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+  font: normal normal 500 14px/1.4 $font-primary;
+  color: $txtColor;
+
+  &:focus {
+    outline: none;
+    border-color: #00368c;
+  }
+}
+
+.business-rule-form-when-deadline-suffix {
+  font: normal normal 500 13px/1.4 $font-primary;
+  color: $txtColor;
+  text-decoration: underline dashed;
+  text-underline-offset: 3px;
+}
+
 .business-rule-form-trigger-name {
   font: normal normal 600 15px/1.4 $font-primary;
   color: $colorPrimary;

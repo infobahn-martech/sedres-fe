@@ -58,6 +58,9 @@ export const TRIGGER_CODE_TO_ICON = {
   recurring_created: 'time-based',
   recurring_create_cards: 'time-based',
   time_based_rule: 'time-based',
+  // Best-effort guess for the "Deadline is in/was more than N day(s)" trigger — not
+  // confirmed against a real get_trigger_types response yet.
+  deadline_reached: 'time-based',
   parent_card_moved: 'parent-moved',
   parent_card_updated: 'parent-updated',
   parent_card_created: 'parent-created',
@@ -284,6 +287,14 @@ export const LIST_UPDATE_MODE_OPTIONS = [
 export const DEADLINE_MODE_OPTIONS = [
   { key: 'relative', label: 'to a relative date' },
   { key: 'absolute', label: 'to an absolute date' },
+];
+
+// WHEN-side comparison for the "Deadline is in/was more than N day(s)" trigger
+// (when_type 'deadline', e.g. "Time-based rule", trigger_type_id 9). No backend
+// catalog for this yet, best-effort fixed set until confirmed against a real save payload.
+export const WHEN_DEADLINE_COMPARISON_OPTIONS = [
+  { key: 'is_in', label: 'is in' },
+  { key: 'was_more_than', label: 'was more than' },
 ];
 
 // Static weekday catalog for the deadline action's "Non-working days" multi-select — no
