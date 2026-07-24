@@ -33,6 +33,9 @@ import CoordinatorTransportCardView from "../CoordinatorTransport/CoordinatorTra
 import CustomCardView from "../Custom/User/CustomCardView";
 import MWPCardView from "../MWP/User/MWPCardView";
 import TaxiBoatCardView from "../TaxiBoat/TaxiBoatCardView";
+import DACardView from "../DA/DACardView";
+import DATabDetails from "../DA/DATabDetails";
+import { isAwaitingAcknowledgmentTitle, isDispatchedTitle, isFinalizedTitle, isAlGihazAwaitingSubmissionTitle } from "../../../../../../shared/helpers/DAWorkflowData";
 import DynamicIcon from "../../../../../../structure/SideNav/components/DynamicIcon";
 import { mapBackendIconNameToIconKey } from "../../../../../../store/KanbanManagementReducer";
 import { TaskCardDetailView } from "../../../../../../pages/TaskCard";
@@ -1442,7 +1445,9 @@ const renderTabContent = (
   isDAModule = false,
   addModeSave = {},
   salesOrderApiLoading = false,
-  salesOrderApiError = null
+  salesOrderApiError = null,
+  isDAVariant = false,
+  userRoleId = null
 ) => {
   const commonProps = {
     card,
@@ -1459,6 +1464,16 @@ const renderTabContent = (
     salesOrderApiLoading,
     salesOrderApiError,
   };
+
+  if (activeTab === "DA") {
+    return (
+      <DATabDetails
+        cardId={card?.id ?? card?.card_id}
+        cardBillingEntity={card?.billingEntity}
+        cardMwpIssuedBySedres={card?.mwpIssuedBySedres}
+      />
+    );
+  }
 
   if (isDAModule) {
     // DA mode - General, Operation, Husbandry, Sales Order, Reports, KPI, Invoice
@@ -1508,7 +1523,11 @@ const renderTabContent = (
     // Full mode - all tabs
     switch (activeTab) {
       case "Appointment Details":
-        return <General {...commonProps} />;
+        return isDAVariant ? (
+          <DACardView card={card} userRoleId={userRoleId} />
+        ) : (
+          <General {...commonProps} />
+        );
       case "Export Approval":
         return <Approval {...commonProps} />;
       case "Operation":
@@ -1921,17 +1940,27 @@ function CardForm({
   // Husbandry Call (call_type_id === "4") has no Operation stage.
   const isHusbandryCall = String(formValues.call_type_id ?? "") === "4";
 
+  // DA tab (blank for now) — only shown while the card sits in the "Awaiting acknowledgment", "Dispatched",
+  // "Finalized", or "Al Gihaz awaiting submission" column.
+  const isAwaitingAcknowledgment = isAwaitingAcknowledgmentTitle(currentColumn?.title);
+  const isDispatched = isDispatchedTitle(currentColumn?.title);
+  const isFinalized = isFinalizedTitle(currentColumn?.title);
+  const isAlGihazAwaitingSubmission = isAlGihazAwaitingSubmissionTitle(currentColumn?.title);
+  const showDATab = isAwaitingAcknowledgment || isDispatched || isFinalized || isAlGihazAwaitingSubmission;
+
   const TOP_TABS = useMemo(() => {
     const base = isDAModule ? DA_TOP_TABS : (isSimplifiedMode ? SIMPLIFIED_TOP_TABS : ALL_TOP_TABS);
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode ? withExportTabs(base) : base;
-    return isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
-  }, [isDAModule, isSimplifiedMode, showExportTabs, isHusbandryCall]);
+    const withHusbandry = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
+    return showDATab ? [...withHusbandry, "DA"] : withHusbandry;
+  }, [isDAModule, isSimplifiedMode, showExportTabs, isHusbandryCall, showDATab]);
 
   const ENABLED_TABS = useMemo(() => {
     const base = isDAModule ? DA_ENABLED_TABS : (isSimplifiedMode ? SIMPLIFIED_ENABLED_TABS : ALL_ENABLED_TABS);
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode ? withExportTabs(base) : base;
-    return isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
-  }, [isDAModule, isSimplifiedMode, showExportTabs, isHusbandryCall]);
+    const withHusbandry = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
+    return showDATab ? [...withHusbandry, "DA"] : withHusbandry;
+  }, [isDAModule, isSimplifiedMode, showExportTabs, isHusbandryCall, showDATab]);
 
   useEffect(() => {
     setActiveTopTab(defaultTab);
@@ -2341,7 +2370,7 @@ function CardForm({
           <TaskCardDetailView card={card} onClose={handleClose} />
         ) : isTaxiBoatVariant ? (
           <TaxiBoatCardView card={card} userRoleId={userRoleId} />
-        ) : isDAVariant ? null : isDriverStyleView ? (
+        ) : isDriverStyleView ? (
           <DriverCardView card={card} variant={effectiveVariant} />
         ) : isMWPVariant ? (
           <MWPCardView card={card} />
@@ -2376,7 +2405,9 @@ function CardForm({
                 isDAModule,
                 addModeSaveProps,
                 salesOrderApiLoading,
-                salesOrderApiError
+                salesOrderApiError,
+                isDAVariant,
+                userRoleId
               )}
           </>
         )}

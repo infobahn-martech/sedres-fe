@@ -1,8 +1,6 @@
-  import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useTaxiBoatStore } from "../../../../../../shared/store/taxiBoatStore";
 import { useCTPendingCards } from "../../../../../../shared/store/ctStore";
-import { useDAStore } from "../../../../../../shared/store/DAStore";
-import useDAAssignmentReducer from "../../../../../../store/DAAssignmentReducer";
-import useAuthReducer from "../../../../../../store/AuthReducer";
 import useAlertReducer from "../../../../../../store/AlertReducer";
 import groService from "../../../../../../services/groService";
 import launchHireService from "../../../../../../services/launchHireService";
@@ -91,7 +89,6 @@ const isBatchDone = (batch) => STANDARD_TIMESTAMPS.every((t) => batch.ts[t.key] 
 
 const makeTsState = (keys) =>
   keys.reduce((acc, key) => ({ ...acc, [key]: null }), {});
-
 const formatDuration = (ms) => {
   if (!ms || ms <= 0) return null;
   const totalSec = Math.floor(ms / 1000);
@@ -647,119 +644,6 @@ const parseToInputDate = (raw) => {
   return "";
 };
 
-function DAFleetAssignPanel({
-  bookingDate, bookingTime,
-  fleets, isLoadingFleets,
-  selectedFleet, onSelectFleet,
-  captains, isLoadingCaptains,
-  selectedCaptainId, onSelectCaptainId,
-  isAssigning,
-  assigned, assignedCaptainName,
-  onAssignCaptain,
-}) {
-  return (
-    <div className="da-fleet-panel">
-      <h3 className="da-fleet-panel-title">Taxi Fleet Assignment</h3>
-      <span className="da-fleet-select-label">Select Fleet</span>
-      {isLoadingFleets ? (
-        <span className="da-fleet-empty-hint">Loading fleets…</span>
-      ) : fleets.length === 0 ? (
-        <span className="da-fleet-empty-hint">No fleets found for this operator.</span>
-      ) : (
-        <div className="da-fleet-cards">
-          {fleets.map((fleet) => {
-            const isSelected = selectedFleet?.taxi_boat_id === fleet.taxi_boat_id;
-            const isAssigned = assigned && isSelected;
-            return (
-              <button
-                key={fleet.taxi_boat_id}
-                className={[
-                  "da-fleet-card",
-                  isSelected ? "da-fleet-card--selected" : "",
-                  isAssigned ? "da-fleet-card--assigned" : "",
-                ].filter(Boolean).join(" ")}
-                onClick={() => !assigned && onSelectFleet(fleet)}
-                disabled={assigned}
-              >
-                <MdDirectionsBoat size={24} className="da-fleet-card-icon" />
-                <span className="da-fleet-card-name">{fleet.taxi_boat_name}</span>
-                {fleet.registration_no && <span className="da-fleet-card-tagline">{fleet.registration_no}</span>}
-                {fleet.capacity_persons != null && (
-                  <span className="da-fleet-card-cap">Capacity: {fleet.capacity_persons}</span>
-                )}
-                {isAssigned && <span className="da-fleet-card-badge"><FiCheckCircle size={10} /> Assigned</span>}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {selectedFleet && (
-        <div className="da-captain-assign-box">
-          <span className="da-fleet-select-label">Assign Captain</span>
-          {!assigned ? (
-            <div className="da-captain-assign-row">
-              <select
-                className="da-captain-select"
-                value={selectedCaptainId ?? ""}
-                onChange={(e) => onSelectCaptainId(e.target.value)}
-                disabled={isLoadingCaptains || captains.length === 0}
-              >
-                <option value="" disabled>
-                  {isLoadingCaptains
-                    ? "Loading captains…"
-                    : captains.length === 0
-                    ? "No captains available"
-                    : "Select a captain"}
-                </option>
-                {captains.map((captain) => (
-                  <option key={captain.taxiboat_captain_id} value={captain.taxiboat_captain_id}>
-                    {captain.captain_name}
-                  </option>
-                ))}
-              </select>
-              <button
-                className={[
-                  "da-fleet-assign-btn",
-                  (!selectedCaptainId || isAssigning) ? "da-fleet-assign-btn--disabled" : "",
-                ].filter(Boolean).join(" ")}
-                disabled={!selectedCaptainId || isAssigning}
-                onClick={onAssignCaptain}
-              >
-                {isAssigning ? "Assigning…" : "Assign Captain"}
-              </button>
-            </div>
-          ) : (
-            <div className="da-fleet-assigned-banner">
-              <FiCheckCircle size={15} />
-              Captain <strong>{assignedCaptainName}</strong> assigned to <strong>{selectedFleet.taxi_boat_name}</strong>
-              {bookingDate && <> · {bookingDate}</>}
-              {bookingTime && <> at {bookingTime}</>}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-DAFleetAssignPanel.propTypes = {
-  bookingDate:         PropTypes.string.isRequired,
-  bookingTime:         PropTypes.string.isRequired,
-  fleets:              PropTypes.array.isRequired,
-  isLoadingFleets:     PropTypes.bool.isRequired,
-  selectedFleet:       PropTypes.object,
-  onSelectFleet:       PropTypes.func.isRequired,
-  captains:            PropTypes.array.isRequired,
-  isLoadingCaptains:   PropTypes.bool.isRequired,
-  selectedCaptainId:   PropTypes.string,
-  onSelectCaptainId:   PropTypes.func.isRequired,
-  isAssigning:         PropTypes.bool.isRequired,
-  assigned:            PropTypes.bool.isRequired,
-  assignedCaptainName: PropTypes.string,
-  onAssignCaptain:     PropTypes.func.isRequired,
-};
-
 function CrewListBatchwisePanel({
   batches, setBatches, activeBatchTab, setActiveBatchTab,
   opFocusedBatch, setOpFocusedBatch, recentOps, handleOpBlur, handleOpChipClick,
@@ -840,7 +724,7 @@ function CrewListBatchwisePanel({
                 disabled={uploadingBatchId === activeBatch.id}
                 onChange={(e) => handleUploadLaunchSlip(activeBatchTab, activeBatch.id, e.target.files?.[0] ?? null)}
               />
-              <label htmlFor={`da-batch-file-${activeBatch.id}`} className="da-batch-upload-btn">
+              <label htmlFor={`da-batch-file-${activeBatch.id}`} className="tb-batch-upload-btn">
                 <FiUpload size={14} />
                 {uploadingBatchId === activeBatch.id
                   ? "Uploading…"
@@ -862,10 +746,10 @@ function CrewListBatchwisePanel({
           crewPageSafe * CREW_PAGE_SIZE
         );
         return (
-          <div key={batch.id} className="da-batch-tab-content">
+          <div key={batch.id} className="tb-batch-tab-content">
             {crewRows.length > 0 && (
-              <div className="da-crew-table-wrapper da-crew-table-wrapper--paged">
-                <table className="da-crew-table">
+              <div className="tb-crew-table-wrapper tb-crew-table-wrapper--paged">
+                <table className="tb-crew-table">
                   <thead>
                     <tr>
                       <th>#</th>
@@ -890,21 +774,21 @@ function CrewListBatchwisePanel({
                   </tbody>
                 </table>
                 {totalCrewPages > 1 && (
-                  <div className="da-crew-pagination">
+                  <div className="tb-crew-pagination">
                     <button
                       type="button"
-                      className="da-crew-page-btn"
+                      className="tb-crew-page-btn"
                       onClick={() => setCrewPage((p) => Math.max(1, p - 1))}
                       disabled={crewPageSafe === 1}
                     >
                       Prev
                     </button>
-                    <span className="da-crew-page-status">
+                    <span className="tb-crew-page-status">
                       Page {crewPageSafe} of {totalCrewPages}
                     </span>
                     <button
                       type="button"
-                      className="da-crew-page-btn"
+                      className="tb-crew-page-btn"
                       onClick={() => setCrewPage((p) => Math.min(totalCrewPages, p + 1))}
                       disabled={crewPageSafe === totalCrewPages}
                     >
@@ -957,7 +841,7 @@ function CrewListBatchwisePanel({
             />
 
             {done && (
-              <div className="da-batch-done-badge">
+              <div className="tb-batch-done-badge">
                 <FiCheckCircle size={16} />
                 Batch {BATCH_ORDINALS[i] ?? `${i + 1}th`} Complete
               </div>
@@ -987,21 +871,16 @@ CrewListBatchwisePanel.propTypes = {
   bookingId:        PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
-const DA_OPERATOR_ROLE_ID = "20";
-const DA_CAPTAIN_ROLE_ID = "21";
+const TAXI_BOAT_OPERATOR_ROLE_ID = "20";
+const TAXI_BOAT_CAPTAIN_ROLE_ID = "21";
 
 function DACardView({ card, userRoleId = null }) {
   const serviceType = card?.typeOfService ?? "—";
   const isCrewChange     = CREW_CHANGE_SERVICES.includes(serviceType);
   const isMaterialService = MATERIAL_SERVICES.includes(serviceType);
   const isImmigration    = IMMIGRATION_SERVICES.includes(serviceType);
-  const isDAOperator = String(userRoleId ?? "") === DA_OPERATOR_ROLE_ID;
-  const isDACaptain  = String(userRoleId ?? "") === DA_CAPTAIN_ROLE_ID;
-
-  // A Taxi Boat Operator account has no separate operator record — confirmed with
-  // backend that this login's own userid IS its operator_id (no dedicated field
-  // exists on the user/login response, unlike e.g. vendor_id for vendor logins).
-  const loggedInUserId = useAuthReducer((s) => s.userProfile?.userid ?? s.authData?.userid ?? null);
+  const isDAOperator = String(userRoleId ?? "") === TAXI_BOAT_OPERATOR_ROLE_ID;
+  const isDACaptain  = String(userRoleId ?? "") === TAXI_BOAT_CAPTAIN_ROLE_ID;
 
   // Open Call — call_file/get_call_detail_by_id/{call_id}/{card_id}
   const callId = card?.call_id ?? card?.callId ?? card?.id ?? null;
@@ -1028,11 +907,6 @@ function DACardView({ card, userRoleId = null }) {
   const location = callDetail?.port ?? card?.location ?? "—";
   const billingEntity = callDetail?.billing_entity ?? card?.name ?? "—";
 
-  // get_fleet_by_operator expects the card's vendor_id (confirmed with backend), not an
-  // operator_id — read from the raw board card payload until it's promoted by the mapper.
-  const vendorId = card?.vendor_id ?? card?.raw?.vendor_id
-    ?? callDetail?.vendor_id
-    ?? (isDAOperator ? loggedInUserId : null);
   const bookingId = callDetail?.launch_hire_booking_id
     ?? card?.booking_id ?? card?.raw?.booking_id ?? card?.raw?.launch_hire_booking_id
     ?? card?.raw?.crew_immigration_booking_id ?? card?.callId ?? card?.id ?? null;
@@ -1076,710 +950,511 @@ function DACardView({ card, userRoleId = null }) {
   const [addTripDestShip, setAddTripDestShip] = useState("");
   const [tripAdded, setTripAdded] = useState(false);
 
-  // Taxi fleet assignment
-  const {
-    fleets, isLoadingFleets, getFleetsByOperator,
-    captains, isLoadingCaptains, getCaptainsByTaxiBoat, resetCaptains,
-    isAssigning, assignCaptain,
-  } = useDAAssignmentReducer((state) => state);
-  const [selectedFleet, setSelectedFleet] = useState(null);
-  const [selectedCaptainId, setSelectedCaptainId] = useState(null);
-  const [fleetAssigned, setFleetAssigned] = useState(false);
-  const [assignedCaptainName, setAssignedCaptainName] = useState(null);
   const [bookingDateEdit, setBookingDateEdit] = useState(() => parseToInputDate(card?.bookingDate));
   const [bookingTimeEdit, setBookingTimeEdit] = useState("");
 
-  useEffect(() => {
-    if (!isDACaptain) getFleetsByOperator(vendorId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDACaptain, vendorId]);
-
-  const handleSelectFleet = useCallback((fleet) => {
-    setSelectedFleet(fleet);
-    setSelectedCaptainId(null);
-    resetCaptains();
-    getCaptainsByTaxiBoat(fleet.taxi_boat_id);
-  }, [resetCaptains, getCaptainsByTaxiBoat]);
-
-  const handleAssignCaptain = useCallback(() => {
-    if (!selectedFleet || !selectedCaptainId) return;
-    const captain = captains.find((c) => String(c.taxiboat_captain_id) === String(selectedCaptainId));
-    assignCaptain({
-      booking_id: bookingId,
-      taxi_boat_id: selectedFleet.taxi_boat_id,
-      taxiboat_captain_id: selectedCaptainId,
-      cb: () => {
-        setFleetAssigned(true);
-        setAssignedCaptainName(captain?.captain_name ?? null);
-      },
-    });
-  }, [selectedFleet, selectedCaptainId, captains, bookingId, assignCaptain]);
-
   // Live clock — ticks every second for the live waiting timer on pending steps
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Operator quick-select — recent names from Zustand store
-  const recentOps = useDAStore((s) => s.recentOperators);
-  const addRecentOperator = useDAStore((s) => s.addRecentOperator);
-  const [opFocusedBatch, setOpFocusedBatch] = useState(null);
-  const opBlurTimer = useRef(null);
-
-  const handleOpBlur = useCallback((operator) => {
-    opBlurTimer.current = setTimeout(() => {
-      if (operator?.trim()) addRecentOperator(operator);
+    const [now, setNow] = useState(() => new Date());
+    useEffect(() => {
+      const id = setInterval(() => setNow(new Date()), 1000);
+      return () => clearInterval(id);
+    }, []);
+  
+    // Operator quick-select — recent names from Zustand store
+    const recentOps = useTaxiBoatStore((s) => s.recentOperators);
+    const addRecentOperator = useTaxiBoatStore((s) => s.addRecentOperator);
+    const [opFocusedBatch, setOpFocusedBatch] = useState(null);
+    const opBlurTimer = useRef(null);
+  
+    const handleOpBlur = useCallback((operator) => {
+      opBlurTimer.current = setTimeout(() => {
+        if (operator?.trim()) addRecentOperator(operator);
+        setOpFocusedBatch(null);
+      }, 150);
+    }, [addRecentOperator]);
+  
+    const handleOpChipClick = useCallback((batchIdx, op) => {
+      clearTimeout(opBlurTimer.current);
+      setBatches((prev) =>
+        prev.map((b, i) => (i === batchIdx ? { ...b, operator: op } : b))
+      );
       setOpFocusedBatch(null);
-    }, 150);
-  }, [addRecentOperator]);
-
-  const handleOpChipClick = useCallback((batchIdx, op) => {
-    clearTimeout(opBlurTimer.current);
-    setBatches((prev) =>
-      prev.map((b, i) => (i === batchIdx ? { ...b, operator: op } : b))
-    );
-    setOpFocusedBatch(null);
-  }, []);
-
-  // Scenario A: Crew Change
-  const [signMode, setSignMode] = useState("sign-on");
-  const [parsedCrewRows] = useState(() => {
-    if (!Array.isArray(card?.crew) || card.crew.length === 0) return null;
-    return card.crew.map((c) => ({
-      name:        c.crewName     ?? "—",
-      rank:        c.rank         ?? "—",
-      nationality: c.nationality  ?? "—",
-      passportNo:  c.passportNo   ?? "—",
-      seamanBookNo: c.seamanBookNo ?? "—",
-    }));
-  });
-  const crewFromCard = Array.isArray(card?.crew) && card.crew.length > 0;
-
-  // Scenario A: Crew Change — own timestamps + print/upload
-  const [crewTs, setCrewTs]               = useState(() => makeTsState(STANDARD_TIMESTAMPS.map((t) => t.key)));
-  const [crewTsOps, setCrewTsOps]         = useState(() => makeTsState(STANDARD_TIMESTAMPS.map((t) => t.key)));
-  const [crewStepBackLog, setCrewStepBackLog] = useState([]);
-  const [crewJobCompleted, setCrewJobCompleted]   = useState(false);
-  const [crewJobCompletedAt, setCrewJobCompletedAt] = useState(null);
-  const [crewLaunchSlipFile, setCrewLaunchSlipFile] = useState(null);
-  const [crewCobTime, setCrewCobTime]     = useState(null);
-
-  // Scenario B: Material / Provision / Garbage
-  const [packingListFile, setPackingListFile] = useState(null);
-  const parsedPackingRows = packingListFile ? MOCK_PACKING_LIST_ROWS : null;
-
-  // Scenario C: unified batch state — each batch has its own crew count, operator, timestamps, and file
-  const [activeBatchTab, setActiveBatchTab] = useState(0);
-  const [batches, setBatches] = useState(() => {
-    const initKeys = STANDARD_TIMESTAMPS.map((t) => t.key);
-    return [
-      { id: 1, crewCount: "10", operator: "", ts: makeTsState(initKeys), cobTime: null, completedAt: null, stepBackLog: [], file: null, completed: false },
-      { id: 2, crewCount: "8",  operator: "", ts: makeTsState(initKeys), cobTime: null, completedAt: null, stepBackLog: [], file: null, completed: false },
-      { id: 3, crewCount: "6",  operator: "", ts: makeTsState(initKeys), cobTime: null, completedAt: null, stepBackLog: [], file: null, completed: false },
-      { id: 4, crewCount: "5",  operator: "", ts: makeTsState(initKeys), cobTime: null, completedAt: null, stepBackLog: [], file: null, completed: false },
-    ];
-  });
-
-  // Crew List — Batchwise is shown for Immigration Clearance and as the Captain/Operator
-  // default view; load real batches from the booking wherever it's shown.
-  const showsBatchwisePanel = !isCrewChange && !isMaterialService;
-  useEffect(() => {
-    if (!showsBatchwisePanel || bookingId == null) return undefined;
-    let cancelled = false;
-    launchHireService.getCrewImmigrationBooking(bookingId)
-      .then((res) => {
-        if (cancelled) return;
-        const data = res?.data?.data ?? res?.data ?? {};
-        const mapped = mapImmigrationBatches(data?.batches);
-        if (mapped.length > 0) {
-          setBatches(mapped);
-          setActiveBatchTab(0);
-        }
-      })
-      .catch(() => {
-        /* keep existing/mock batches on failure */
-      });
-    return () => { cancelled = true; };
-  }, [showsBatchwisePanel, bookingId]);
-
-  const captureNow = useCallback((setter, key, opSetter, operator) => {
-    setter((prev) => ({ ...prev, [key]: new Date().toISOString() }));
-    if (opSetter) opSetter((prev) => ({ ...prev, [key]: operator || "—" }));
-  }, []);
-
-  const captureBatchTs = useCallback((batchIdx, key) => {
-    setBatches((prev) =>
-      prev.map((b, i) =>
-        i === batchIdx
-          ? { ...b, ts: { ...b.ts, [key]: new Date().toISOString() }, tsOps: { ...(b.tsOps ?? {}), [key]: b.operator || "—" } }
-          : b
-      )
-    );
-  }, []);
-
-  const handleAddTrip = useCallback(() => {
-    if (!addTripPurpose.trim()) return;
-    addPendingCard({
-      id: `ct-extra-${Date.now()}`,
-      typeOfService: addTripPurpose.trim(),
-      name: addTripBillingEntity.trim() || billingEntity,
-      vesselName: addTripDestShip.trim() || vesselName,
-      progress: 0,
-      timeLeft: "",
+    }, []);
+  
+    // Scenario B: Material / Provision / Garbage
+    const [packingListFile, setPackingListFile] = useState(null);
+    const parsedPackingRows = packingListFile ? MOCK_PACKING_LIST_ROWS : null;
+  
+    // Scenario C: unified batch state — each batch has its own crew count, operator, timestamps, and file
+    const [activeBatchTab, setActiveBatchTab] = useState(0);
+    const [batches, setBatches] = useState(() => {
+      const initKeys = STANDARD_TIMESTAMPS.map((t) => t.key);
+      return [
+        { id: 1, crewCount: "10", operator: "", ts: makeTsState(initKeys), cobTime: null, completedAt: null, stepBackLog: [], file: null, completed: false },
+        { id: 2, crewCount: "8",  operator: "", ts: makeTsState(initKeys), cobTime: null, completedAt: null, stepBackLog: [], file: null, completed: false },
+        { id: 3, crewCount: "6",  operator: "", ts: makeTsState(initKeys), cobTime: null, completedAt: null, stepBackLog: [], file: null, completed: false },
+        { id: 4, crewCount: "5",  operator: "", ts: makeTsState(initKeys), cobTime: null, completedAt: null, stepBackLog: [], file: null, completed: false },
+      ];
     });
-    setTripAdded(true);
-    setAddTripOpen(false);
-  }, [addTripPurpose, addTripBillingEntity, addTripDestShip, billingEntity, vesselName, addPendingCard]);
-
-  const allDone = (tsState, keys) => keys.every((k) => tsState[k] !== null);
-
-  const tsKeys = STANDARD_TIMESTAMPS.map((t) => t.key);
-  const canComplete = isImmigration
-    ? batches.every((b) => b.completed)
-    : allDone(dropTs, tsKeys) && allDone(pickupTs, tsKeys);
-
-  const printLaunchSlip = useCallback((tsState, tabLabel, guide, completedAt) => {
-    const slip = window.open("", "_blank", "width=820,height=680");
-    if (!slip) return;
-    const tsRows = STANDARD_TIMESTAMPS.map(({ key, label }, i) => {
-      const val = tsState[key];
-      const prevKey = i > 0 ? STANDARD_TIMESTAMPS[i - 1].key : null;
-      const prevVal = prevKey ? tsState[prevKey] : null;
-      const dur = val && prevVal ? formatDuration(new Date(val) - new Date(prevVal)) : null;
-      return `<tr>
-        <td>${label}</td>
-        <td>${val ? formatDateTime(val) : "—"}</td>
-        <td>${dur ?? "—"}</td>
-      </tr>`;
-    }).join("");
-    slip.document.write(`<!DOCTYPE html>
-<html><head><meta charset="utf-8"/><title>Launch Slip</title>
-<style>
-  body{font-family:Arial,sans-serif;padding:36px 40px;color:#111;font-size:13px;}
-  h1{font-size:20px;margin:0 0 2px;letter-spacing:.01em;}
-  .sub{font-size:12px;color:#555;margin-bottom:18px;}
-  .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-bottom:20px;}
-  .meta-item{display:flex;flex-direction:column;gap:1px;}
-  .meta-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em;}
-  .meta-value{font-size:13px;font-weight:600;}
-  table{width:100%;border-collapse:collapse;margin-bottom:22px;}
-  th{background:#f1f5f9;font-size:11px;text-align:left;padding:7px 10px;border:1px solid #e2e8f0;}
-  td{font-size:12px;padding:7px 10px;border:1px solid #e2e8f0;vertical-align:top;}
-  .sig-row{display:flex;gap:32px;margin-top:40px;}
-  .sig-box{flex:1;border-top:1.5px solid #111;padding-top:8px;font-size:11px;color:#444;}
-  .footer{margin-top:24px;font-size:10px;color:#aaa;text-align:center;}
-  @media print{body{padding:0;}}
-</style></head><body>
-  <h1>Launch Slip &mdash; ${tabLabel}</h1>
-  <div class="sub">Printed: ${new Date().toLocaleString("en-GB")}</div>
-  <div class="meta-grid">
-    <div class="meta-item"><span class="meta-label">Vessel</span><span class="meta-value">${vesselName}</span></div>
-    <div class="meta-item"><span class="meta-label">Service Type</span><span class="meta-value">${serviceType}</span></div>
-    <div class="meta-item"><span class="meta-label">Billing Entity</span><span class="meta-value">${billingEntity}</span></div>
-    <div class="meta-item"><span class="meta-label">Requested Operator</span><span class="meta-value">${requestedOperator}</span></div>
-    <div class="meta-item"><span class="meta-label">Location</span><span class="meta-value">${location}</span></div>
-    ${guide ? `<div class="meta-item"><span class="meta-label">Taxi Boat Guide</span><span class="meta-value">${guide}</span></div>` : ""}
-    ${completedAt ? `<div class="meta-item"><span class="meta-label">Trip Completed</span><span class="meta-value">${formatDateTime(completedAt)}</span></div>` : ""}
-  </div>
-  <table>
-    <thead><tr><th>Step</th><th>Captured Time</th><th>Duration</th></tr></thead>
-    <tbody>${tsRows}</tbody>
-  </table>
-  <div class="sig-row">
-    <div class="sig-box">Operator Signature</div>
-    <div class="sig-box">Captain / OIM Signature</div>
-    <div class="sig-box">Date &amp; Time</div>
-  </div>
-  <div class="footer">Sedres &mdash; Taxi Boat Launch Slip</div>
-</body></html>`);
-    slip.document.close();
-    slip.focus();
-    setTimeout(() => slip.print(), 250);
-  }, [vesselName, serviceType, billingEntity, requestedOperator, location]);
-
-  return (
-    <div className="da-card-view">
-      <div className={`gro-summary-grid${isDAOperator ? "" : " gro-summary-grid--six-col"}`}>
-        {!isDAOperator && (
-          <GroSummaryCard label="Requested Operator" value={requestedOperator} />
-        )}
-        <GroSummaryCard label="Billing Entity" value={billingEntity} />
-        <GroSummaryCard label="Vessel Name"    value={vesselName}    />
-        {isDAOperator ? (
-          <GroSummaryFieldCard label="Location">
-            <input
-              type="text"
-              className="da-summary-input"
-              value={locationEdit}
-              onChange={(e) => setLocationEdit(e.target.value)}
-            />
-          </GroSummaryFieldCard>
-        ) : (
-          <GroSummaryCard label="Location" value={location} />
-        )}
-        {isDAOperator ? (
-          <GroSummaryFieldCard label="Booking Date">
-            <DateTimePickerField
-              dateValue={bookingDateEdit}
-              timeValue={bookingTimeEdit}
-              onDateChange={(e) => setBookingDateEdit(e.target.value)}
-              onTimeChange={(e) => setBookingTimeEdit(e.target.value)}
-            />
-          </GroSummaryFieldCard>
-        ) : (
-          <GroSummaryCard label="Booking Date" value={bookingDate} />
-        )}
-        {isDAOperator ? (
-          <GroSummaryFieldCard label="Assigned Captian">
-            <input
-              type="text"
-              className="da-summary-input"
-              value={assignedUserEdit}
-              onChange={(e) => setAssignedUserEdit(e.target.value)}
-            />
-          </GroSummaryFieldCard>
-        ) : (
-          <GroSummaryCard label="Assigned Captian" value={assignedUser} />
-        )}
-      </div>
-
-      {isDACaptain ? (
-        <CrewListBatchwisePanel
-          batches={batches}
-          setBatches={setBatches}
-          activeBatchTab={activeBatchTab}
-          setActiveBatchTab={setActiveBatchTab}
-          opFocusedBatch={opFocusedBatch}
-          setOpFocusedBatch={setOpFocusedBatch}
-          recentOps={recentOps}
-          handleOpBlur={handleOpBlur}
-          handleOpChipClick={handleOpChipClick}
-          captureBatchTs={captureBatchTs}
-          setUndoPending={setUndoPending}
-          vesselName={vesselName}
-          now={now}
-          printLaunchSlip={printLaunchSlip}
-          bookingId={bookingId}
-        />
-      ) : (
-        <DAFleetAssignPanel
-          bookingDate={bookingDateEdit}
-          bookingTime={bookingTimeEdit}
-          fleets={fleets}
-          isLoadingFleets={isLoadingFleets}
-          selectedFleet={selectedFleet}
-          onSelectFleet={handleSelectFleet}
-          captains={captains}
-          isLoadingCaptains={isLoadingCaptains}
-          selectedCaptainId={selectedCaptainId}
-          onSelectCaptainId={setSelectedCaptainId}
-          isAssigning={isAssigning}
-          assigned={fleetAssigned}
-          assignedCaptainName={assignedCaptainName}
-          onAssignCaptain={handleAssignCaptain}
-        />
-      )}
-
-      {/* Scenario A: Crew Change */}
-      {isCrewChange && (
-        <div className="da-scenario-section">
-          <h3 className="da-section-title">Crew List</h3>
-          <div className="da-sign-mode-row">
-            <div className="da-sign-mode-toggle">
-              <div className={`da-sign-mode-slider${signMode === "sign-off" ? " da-sign-mode-slider--off" : ""}`} />
-              <button
-                data-mode="sign-on"
-                className={`da-sign-mode-btn${signMode === "sign-on" ? " da-sign-mode-btn--active" : ""}`}
-                onClick={() => setSignMode("sign-on")}
-              >
-                <span className={`da-ship-icon da-ship-icon--in${signMode === "sign-on" ? " da-ship-icon--sailing" : ""}`}>
-                  <FaShip size={16} />
-                </span>
-                Sign On
-              </button>
-              <button
-                data-mode="sign-off"
-                className={`da-sign-mode-btn${signMode === "sign-off" ? " da-sign-mode-btn--active" : ""}`}
-                onClick={() => setSignMode("sign-off")}
-              >
-                Sign Off
-                <span className={`da-ship-icon da-ship-icon--out${signMode === "sign-off" ? " da-ship-icon--sailing" : ""}`}>
-                  <FaShip size={16} />
-                </span>
-              </button>
-            </div>
-            <span className="da-sign-mode-hint">
-              {signMode === "sign-on" ? "Crew boarding the vessel" : "Crew disembarking the vessel"}
-            </span>
-          </div>
-          {parsedCrewRows && (
-            <>
-              <span className="da-ai-parse-status">
-                {crewFromCard
-                  ? `From operator card — ${parsedCrewRows.length} crew members`
-                  : `AI parsed — ${parsedCrewRows.length} crew members found`}
-              </span>
-              <div className="da-crew-table-wrapper">
-                <table className="da-crew-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Name</th>
-                      <th>Rank</th>
-                      <th>Nationality</th>
-                      <th>Passport No.</th>
-                      <th>Seaman Book No.</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {parsedCrewRows.map((row, i) => (
-                      <tr key={i}>
-                        <td>{i + 1}</td>
-                        <td>{row.name}</td>
-                        <td>{row.rank}</td>
-                        <td>{row.nationality}</td>
-                        <td>{row.passportNo}</td>
-                        <td>{row.seamanBookNo}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-          <h3 className="da-section-title">Movement Timestamps</h3>
-          <TimestampStepper
-            timestamps={STANDARD_TIMESTAMPS}
-            tsState={crewTs}
-            tsOps={crewTsOps}
-            shipName={vesselName}
-            onCapture={(key) => captureNow(setCrewTs, key, setCrewTsOps, operatorName)}
-            onComplete={() => { setCrewJobCompleted(true); setCrewJobCompletedAt(new Date().toISOString()); }}
-            jobCompleted={crewJobCompleted}
-            canFinish={STANDARD_TIMESTAMPS.every((t) => crewTs[t.key] !== null)}
-            now={now}
-            onUndo={(key, label) => setUndoPending({
-              label,
-              resetter: () => { setCrewTs((prev) => ({ ...prev, [key]: null })); setCrewTsOps((prev) => ({ ...prev, [key]: null })); setCrewJobCompleted(false); setCrewJobCompletedAt(null); },
-              addToLog: (reason) => setCrewStepBackLog((prev) => [...prev, { step: label, reason, time: new Date().toISOString() }]),
-            })}
-          />
-          <TimestampSummaryTable
-            timestamps={STANDARD_TIMESTAMPS}
-            tsState={crewTs}
-            jobCompletedAt={crewJobCompletedAt}
-            cobTime={crewCobTime}
-            stepsAllDone={STANDARD_TIMESTAMPS.every((t) => crewTs[t.key] !== null)}
-            stepBackLog={crewStepBackLog}
-            onCaptureCob={() => setCrewCobTime(new Date().toISOString())}
-          />
-          {crewJobCompleted && (
-            <div className="da-batch-actions">
-              <button
-                className="da-batch-print-btn"
-                onClick={() => printLaunchSlip(crewTs, `Crew Change — ${signMode === "sign-on" ? "Sign On" : "Sign Off"}`, operatorName, crewJobCompletedAt)}
-              >
-                <FiPrinter size={14} />
-                Print Launch Slip
-              </button>
-              <div>
-                <input
-                  type="file"
-                  id="da-crew-launch-slip-file"
-                  className="da-launch-slip-input"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => setCrewLaunchSlipFile(e.target.files?.[0] ?? null)}
-                />
-                <label htmlFor="da-crew-launch-slip-file" className="da-batch-upload-btn">
-                  <FiUpload size={14} />
-                  {crewLaunchSlipFile ? crewLaunchSlipFile.name : "Upload Launch Slip"}
-                </label>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Scenario B: Material / Provision / Garbage Collection */}
-      {isMaterialService && (
-        <div className="da-scenario-section">
-          <h3 className="da-section-title">Packing List</h3>
-          <div className="da-excel-upload-row">
-            <input
-              type="file"
-              id="da-packing-list-input"
-              className="da-excel-upload-input"
-              accept=".xlsx,.xls,.csv"
-              onChange={(e) => setPackingListFile(e.target.files?.[0] ?? null)}
-            />
-            <label htmlFor="da-packing-list-input" className="da-excel-upload-btn">
-              <FiUpload size={15} />
-              {packingListFile ? "Replace File" : "Upload Packing List"}
-            </label>
-            {packingListFile && (
-              <span className="da-excel-upload-filename">{packingListFile.name}</span>
-            )}
-          </div>
-          {parsedPackingRows && (
-            <>
-              <span className="da-ai-parse-status">
-                AI parsed — {parsedPackingRows.length} items found
-              </span>
-              <div className="da-crew-table-wrapper">
-                <table className="da-crew-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Item No.</th>
-                      <th>Description</th>
-                      <th>Qty</th>
-                      <th>Unit</th>
-                      <th>Weight (kg)</th>
-                      <th>Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {parsedPackingRows.map((row, i) => (
-                      <tr key={i}>
-                        <td>{i + 1}</td>
-                        <td>{row.itemNo}</td>
-                        <td>{row.description}</td>
-                        <td>{row.qty}</td>
-                        <td>{row.unit}</td>
-                        <td>{row.weight}</td>
-                        <td>{row.notes || "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Scenario C: Immigration Clearance — per-batch tabs (Captain already sees this above, in place of Fleet Assignment) */}
-      {isImmigration && !isDACaptain && (
-        <CrewListBatchwisePanel
-          batches={batches}
-          setBatches={setBatches}
-          activeBatchTab={activeBatchTab}
-          setActiveBatchTab={setActiveBatchTab}
-          opFocusedBatch={opFocusedBatch}
-          setOpFocusedBatch={setOpFocusedBatch}
-          recentOps={recentOps}
-          handleOpBlur={handleOpBlur}
-          handleOpChipClick={handleOpChipClick}
-          captureBatchTs={captureBatchTs}
-          setUndoPending={setUndoPending}
-          vesselName={vesselName}
-          now={now}
-          printLaunchSlip={printLaunchSlip}
-          bookingId={bookingId}
-        />
-      )}
-
-      {!isImmigration && !isCrewChange && isDAOperator && (
-        <CrewListBatchwisePanel
-          batches={batches}
-          setBatches={setBatches}
-          activeBatchTab={activeBatchTab}
-          setActiveBatchTab={setActiveBatchTab}
-          opFocusedBatch={opFocusedBatch}
-          setOpFocusedBatch={setOpFocusedBatch}
-          recentOps={recentOps}
-          handleOpBlur={handleOpBlur}
-          handleOpChipClick={handleOpChipClick}
-          captureBatchTs={captureBatchTs}
-          setUndoPending={setUndoPending}
-          vesselName={vesselName}
-          now={now}
-          printLaunchSlip={printLaunchSlip}
-          bookingId={bookingId}
-        />
-      )}
-
-      {!isImmigration && !isCrewChange && !isDAOperator && (
-        <div className="da-section">
-          <h3 className="da-section-title">Movement Timestamps</h3>
-          <div className="da-tabs">
-            <div className="da-tabs-group">
-              <button
-                className={`da-tab${activeTab === "pickup" ? " da-tab--active" : ""}`}
-                onClick={() => setActiveTab("pickup")}
-              >
-                <span
-                  key={`pickup-${activeTab}`}
-                  className={`da-tab-vessel-wrap${activeTab === "pickup" ? " da-tab-vessel-wrap--pickup-firing" : ""}`}
-                >
-                  <FaShip size={12} />
-                  <span className="da-tab-cargo-dot" />
-                </span>
-                Pickup
-              </button>
-              <button
-                className={`da-tab${activeTab === "drop" ? " da-tab--active" : ""}`}
-                onClick={() => setActiveTab("drop")}
-              >
-                <span
-                  key={`drop-${activeTab}`}
-                  className={`da-tab-vessel-wrap${activeTab === "drop" ? " da-tab-vessel-wrap--drop-firing" : ""}`}
-                >
-                  <FaShip size={12} />
-                  <span className="da-tab-cargo-dot" />
-                </span>
-                Drop
-              </button>
-            </div>
-
-            {tripAdded ? (
-              <span className="da-add-trip-done da-add-trip-done--compact">
-                <FiCheckCircle size={13} />Trip Added
-              </span>
-            ) : (activeTab === "drop" ? dropTs.boatCastOffShip : pickupTs.boatCastOffShip) && (
-              <div className="da-add-trip-anchor">
-                <button
-                  className="da-add-trip-btn"
-                  onClick={() => {
-                    setAddTripBillingEntity(billingEntity !== "—" ? billingEntity : "");
-                    setAddTripDestShip(vesselName !== "—" ? vesselName : "");
-                    setAddTripOpen((open) => !open);
-                  }}
-                >
-                  <FiPlus size={13} />Add Intermediate Trip
-                </button>
-                {addTripOpen && (
-                  <div className="da-add-trip-popover">
-                    <span className="da-add-trip-form-title">Intermediate Trip Details</span>
-                    <div className="da-add-trip-fields">
-                      <div className="da-add-trip-field">
-                        <label className="da-add-trip-label">Billing Entity</label>
-                        <input className="da-add-trip-input" type="text" placeholder="Billing entity..." value={addTripBillingEntity} onChange={(e) => setAddTripBillingEntity(e.target.value)} />
-                      </div>
-                      <div className="da-add-trip-field">
-                        <label className="da-add-trip-label">Purpose <span className="da-add-trip-required">*</span></label>
-                        <input className="da-add-trip-input" type="text" placeholder="e.g. Material Delivery, Crew Change..." value={addTripPurpose} onChange={(e) => setAddTripPurpose(e.target.value)} />
-                      </div>
-                      <div className="da-add-trip-field">
-                        <label className="da-add-trip-label">Destination Ship</label>
-                        <input className="da-add-trip-input" type="text" placeholder="Vessel name..." value={addTripDestShip} onChange={(e) => setAddTripDestShip(e.target.value)} />
-                      </div>
-                    </div>
-                    <div className="da-add-trip-btns">
-                      <button className="da-add-trip-submit" onClick={handleAddTrip} disabled={!addTripPurpose.trim()}>Add to Board</button>
-                      <button className="da-add-trip-cancel" onClick={() => setAddTripOpen(false)}>Cancel</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <div key={activeTab} className={`da-ts-panel da-ts-panel--${activeTab}`}>
-            {activeTab === "drop" ? (
-              <>
-                <TimestampStepper
-                  timestamps={STANDARD_TIMESTAMPS}
-                  tsState={dropTs}
-                  tsOps={dropTsOps}
-                  shipName={vesselName}
-                  intermediateTrip={tripAdded ? { purpose: addTripPurpose, destShip: addTripDestShip, billingEntity: addTripBillingEntity } : undefined}
-                  onCapture={(key) => captureNow(setDropTs, key, setDropTsOps, operatorName)}
-                  onComplete={() => { setJobCompleted(true); setJobCompletedAt(new Date().toISOString()); }}
-                  jobCompleted={jobCompleted}
-                  canFinish={allDone(dropTs, tsKeys)}
-                  now={now}
-                  onUndo={(key, label) => setUndoPending({
-                    label,
-                    resetter: () => { setDropTs((prev) => ({ ...prev, [key]: null })); setDropTsOps((prev) => ({ ...prev, [key]: null })); setJobCompleted(false); setJobCompletedAt(null); },
-                    addToLog: (reason) => setDropStepBackLog((prev) => [...prev, { step: label, reason, time: new Date().toISOString() }]),
-                  })}
-                />
-                <TimestampSummaryTable
-                  timestamps={STANDARD_TIMESTAMPS}
-                  tsState={dropTs}
-                  jobCompletedAt={jobCompletedAt}
-                  cobTime={dropCobTime}
-                  stepsAllDone={allDone(dropTs, tsKeys)}
-                  stepBackLog={dropStepBackLog}
-                  onCaptureCob={() => setDropCobTime(new Date().toISOString())}
-                />
-              </>
-            ) : (
-              <>
-                <TimestampStepper
-                  timestamps={STANDARD_TIMESTAMPS}
-                  tsState={pickupTs}
-                  tsOps={pickupTsOps}
-                  shipName={vesselName}
-                  intermediateTrip={tripAdded ? { purpose: addTripPurpose, destShip: addTripDestShip, billingEntity: addTripBillingEntity } : undefined}
-                  onCapture={(key) => captureNow(setPickupTs, key, setPickupTsOps, operatorName)}
-                  onComplete={() => { setJobCompleted(true); setJobCompletedAt(new Date().toISOString()); }}
-                  jobCompleted={jobCompleted}
-                  canFinish={allDone(pickupTs, tsKeys)}
-                  now={now}
-                  onUndo={(key, label) => setUndoPending({
-                    label,
-                    resetter: () => { setPickupTs((prev) => ({ ...prev, [key]: null })); setPickupTsOps((prev) => ({ ...prev, [key]: null })); setJobCompleted(false); setJobCompletedAt(null); },
-                    addToLog: (reason) => setPickupStepBackLog((prev) => [...prev, { step: label, reason, time: new Date().toISOString() }]),
-                  })}
-                />
-                <TimestampSummaryTable
-                  timestamps={STANDARD_TIMESTAMPS}
-                  tsState={pickupTs}
-                  jobCompletedAt={jobCompletedAt}
-                  cobTime={pickupCobTime}
-                  stepsAllDone={allDone(pickupTs, tsKeys)}
-                  stepBackLog={pickupStepBackLog}
-                  onCaptureCob={() => setPickupCobTime(new Date().toISOString())}
-                />
-              </>
-            )}
-          </div>
-          {jobCompleted && (
-            <div className="da-batch-actions">
-              <button className="da-batch-print-btn" onClick={() => printLaunchSlip(activeTab === "drop" ? dropTs : pickupTs, activeTab === "drop" ? "Drop Trip" : "Pickup Trip", operatorName, jobCompletedAt)}>
-                <FiPrinter size={14} />
-                Print Launch Slip
-              </button>
-              <div>
-                <input
-                  type="file"
-                  id="da-launch-slip-file"
-                  className="da-launch-slip-input"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => setLaunchSlipFile(e.target.files?.[0] ?? null)}
-                />
-                <label htmlFor="da-launch-slip-file" className="da-batch-upload-btn">
-                  <FiUpload size={14} />
-                  {launchSlipFile ? launchSlipFile.name : "Upload Launch Slip"}
-                </label>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-
-      <div className="da-card-footer-bar">
-        <button className="da-save-btn">Save</button>
-      </div>
-
-      {undoPending && (
-        <ConfirmDialog
-          label={undoPending.label}
-          onConfirm={(reason) => { undoPending.resetter(); undoPending.addToLog?.(reason); setUndoPending(null); }}
-          onCancel={() => setUndoPending(null)}
-        />
-      )}
+  
+    // Crew List — Batchwise is shown for Immigration Clearance and as the Captain/Operator
+    // default view; load real batches from the booking wherever it's shown.
+    const showsBatchwisePanel = !isCrewChange && !isMaterialService;
+    useEffect(() => {
+      if (!showsBatchwisePanel || bookingId == null) return undefined;
+      let cancelled = false;
+      launchHireService.getCrewImmigrationBooking(bookingId)
+        .then((res) => {
+          if (cancelled) return;
+          const data = res?.data?.data ?? res?.data ?? {};
+          const mapped = mapImmigrationBatches(data?.batches);
+          if (mapped.length > 0) {
+            setBatches(mapped);
+            setActiveBatchTab(0);
+          }
+        })
+        .catch(() => {
+          /* keep existing/mock batches on failure */
+        });
+      return () => { cancelled = true; };
+    }, [showsBatchwisePanel, bookingId]);
+  
+    const captureNow = useCallback((setter, key, opSetter, operator) => {
+      setter((prev) => ({ ...prev, [key]: new Date().toISOString() }));
+      if (opSetter) opSetter((prev) => ({ ...prev, [key]: operator || "—" }));
+    }, []);
+  
+    const captureBatchTs = useCallback((batchIdx, key) => {
+      setBatches((prev) =>
+        prev.map((b, i) =>
+          i === batchIdx
+            ? { ...b, ts: { ...b.ts, [key]: new Date().toISOString() }, tsOps: { ...(b.tsOps ?? {}), [key]: b.operator || "—" } }
+            : b
+        )
+      );
+    }, []);
+  
+    const handleAddTrip = useCallback(() => {
+      if (!addTripPurpose.trim()) return;
+      addPendingCard({
+        id: `ct-extra-${Date.now()}`,
+        typeOfService: addTripPurpose.trim(),
+        name: addTripBillingEntity.trim() || billingEntity,
+        vesselName: addTripDestShip.trim() || vesselName,
+        progress: 0,
+        timeLeft: "",
+      });
+      setTripAdded(true);
+      setAddTripOpen(false);
+    }, [addTripPurpose, addTripBillingEntity, addTripDestShip, billingEntity, vesselName, addPendingCard]);
+  
+    const allDone = (tsState, keys) => keys.every((k) => tsState[k] !== null);
+  
+    const tsKeys = STANDARD_TIMESTAMPS.map((t) => t.key);
+    const canComplete = isImmigration
+      ? batches.every((b) => b.completed)
+      : allDone(dropTs, tsKeys) && allDone(pickupTs, tsKeys);
+  
+    const printLaunchSlip = useCallback((tsState, tabLabel, guide, completedAt) => {
+      const slip = window.open("", "_blank", "width=820,height=680");
+      if (!slip) return;
+      const tsRows = STANDARD_TIMESTAMPS.map(({ key, label }, i) => {
+        const val = tsState[key];
+        const prevKey = i > 0 ? STANDARD_TIMESTAMPS[i - 1].key : null;
+        const prevVal = prevKey ? tsState[prevKey] : null;
+        const dur = val && prevVal ? formatDuration(new Date(val) - new Date(prevVal)) : null;
+        return `<tr>
+          <td>${label}</td>
+          <td>${val ? formatDateTime(val) : "—"}</td>
+          <td>${dur ?? "—"}</td>
+        </tr>`;
+      }).join("");
+      slip.document.write(`<!DOCTYPE html>
+  <html><head><meta charset="utf-8"/><title>Launch Slip</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:36px 40px;color:#111;font-size:13px;}
+    h1{font-size:20px;margin:0 0 2px;letter-spacing:.01em;}
+    .sub{font-size:12px;color:#555;margin-bottom:18px;}
+    .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-bottom:20px;}
+    .meta-item{display:flex;flex-direction:column;gap:1px;}
+    .meta-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em;}
+    .meta-value{font-size:13px;font-weight:600;}
+    table{width:100%;border-collapse:collapse;margin-bottom:22px;}
+    th{background:#f1f5f9;font-size:11px;text-align:left;padding:7px 10px;border:1px solid #e2e8f0;}
+    td{font-size:12px;padding:7px 10px;border:1px solid #e2e8f0;vertical-align:top;}
+    .sig-row{display:flex;gap:32px;margin-top:40px;}
+    .sig-box{flex:1;border-top:1.5px solid #111;padding-top:8px;font-size:11px;color:#444;}
+    .footer{margin-top:24px;font-size:10px;color:#aaa;text-align:center;}
+    @media print{body{padding:0;}}
+  </style></head><body>
+    <h1>Launch Slip &mdash; ${tabLabel}</h1>
+    <div class="sub">Printed: ${new Date().toLocaleString("en-GB")}</div>
+    <div class="meta-grid">
+      <div class="meta-item"><span class="meta-label">Vessel</span><span class="meta-value">${vesselName}</span></div>
+      <div class="meta-item"><span class="meta-label">Service Type</span><span class="meta-value">${serviceType}</span></div>
+      <div class="meta-item"><span class="meta-label">Billing Entity</span><span class="meta-value">${billingEntity}</span></div>
+      <div class="meta-item"><span class="meta-label">Requested Operator</span><span class="meta-value">${requestedOperator}</span></div>
+      <div class="meta-item"><span class="meta-label">Location</span><span class="meta-value">${location}</span></div>
+      ${guide ? `<div class="meta-item"><span class="meta-label">Taxi Boat Guide</span><span class="meta-value">${guide}</span></div>` : ""}
+      ${completedAt ? `<div class="meta-item"><span class="meta-label">Trip Completed</span><span class="meta-value">${formatDateTime(completedAt)}</span></div>` : ""}
     </div>
-  );
-}
-
-DACardView.propTypes = {
-  card: PropTypes.object,
-  userRoleId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-};
-
-export default DACardView;
+    <table>
+      <thead><tr><th>Step</th><th>Captured Time</th><th>Duration</th></tr></thead>
+      <tbody>${tsRows}</tbody>
+    </table>
+    <div class="sig-row">
+      <div class="sig-box">Operator Signature</div>
+      <div class="sig-box">Captain / OIM Signature</div>
+      <div class="sig-box">Date &amp; Time</div>
+    </div>
+    <div class="footer">Sedres &mdash; Taxi Boat Launch Slip</div>
+  </body></html>`);
+      slip.document.close();
+      slip.focus();
+      setTimeout(() => slip.print(), 250);
+    }, [vesselName, serviceType, billingEntity, requestedOperator, location]);
+  
+    return (
+      <div className="tb-card-view">
+        <div className={`gro-summary-grid${isDAOperator ? "" : " gro-summary-grid--six-col"}`}>
+          {!isDAOperator && (
+            <GroSummaryCard label="Requested Operator" value={requestedOperator} />
+          )}
+          <GroSummaryCard label="Billing Entity" value={billingEntity} />
+          <GroSummaryCard label="Vessel Name"    value={vesselName}    />
+          {isDAOperator ? (
+            <GroSummaryFieldCard label="Location">
+              <input
+                type="text"
+                className="tb-summary-input"
+                value={locationEdit}
+                onChange={(e) => setLocationEdit(e.target.value)}
+              />
+            </GroSummaryFieldCard>
+          ) : (
+            <GroSummaryCard label="Location" value={location} />
+          )}
+          {isDAOperator ? (
+            <GroSummaryFieldCard label="Booking Date">
+              <DateTimePickerField
+                dateValue={bookingDateEdit}
+                timeValue={bookingTimeEdit}
+                onDateChange={(e) => setBookingDateEdit(e.target.value)}
+                onTimeChange={(e) => setBookingTimeEdit(e.target.value)}
+              />
+            </GroSummaryFieldCard>
+          ) : (
+            <GroSummaryCard label="Booking Date" value={bookingDate} />
+          )}
+          {isDAOperator ? (
+            <GroSummaryFieldCard label="Assigned Captian">
+              <input
+                type="text"
+                className="tb-summary-input"
+                value={assignedUserEdit}
+                onChange={(e) => setAssignedUserEdit(e.target.value)}
+              />
+            </GroSummaryFieldCard>
+          ) : (
+            <GroSummaryCard label="Assigned Captian" value={assignedUser} />
+          )}
+        </div>
+  
+        {isDACaptain && (
+          <CrewListBatchwisePanel
+            batches={batches}
+            setBatches={setBatches}
+            activeBatchTab={activeBatchTab}
+            setActiveBatchTab={setActiveBatchTab}
+            opFocusedBatch={opFocusedBatch}
+            setOpFocusedBatch={setOpFocusedBatch}
+            recentOps={recentOps}
+            handleOpBlur={handleOpBlur}
+            handleOpChipClick={handleOpChipClick}
+            captureBatchTs={captureBatchTs}
+            setUndoPending={setUndoPending}
+            vesselName={vesselName}
+            now={now}
+            printLaunchSlip={printLaunchSlip}
+            bookingId={bookingId}
+          />
+        )}
+  
+        {/* Scenario B: Material / Provision / Garbage Collection */}
+        {isMaterialService && (
+          <div className="da-scenario-section">
+            <h3 className="da-section-title">Packing List</h3>
+            <div className="da-excel-upload-row">
+              <input
+                type="file"
+                id="da-packing-list-input"
+                className="da-excel-upload-input"
+                accept=".xlsx,.xls,.csv"
+                onChange={(e) => setPackingListFile(e.target.files?.[0] ?? null)}
+              />
+              <label htmlFor="da-packing-list-input" className="da-excel-upload-btn">
+                <FiUpload size={15} />
+                {packingListFile ? "Replace File" : "Upload Packing List"}
+              </label>
+              {packingListFile && (
+                <span className="da-excel-upload-filename">{packingListFile.name}</span>
+              )}
+            </div>
+            {parsedPackingRows && (
+              <>
+                <span className="da-ai-parse-status">
+                  AI parsed — {parsedPackingRows.length} items found
+                </span>
+                <div className="da-crew-table-wrapper">
+                  <table className="da-crew-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Item No.</th>
+                        <th>Description</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                        <th>Weight (kg)</th>
+                        <th>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parsedPackingRows.map((row, i) => (
+                        <tr key={i}>
+                          <td>{i + 1}</td>
+                          <td>{row.itemNo}</td>
+                          <td>{row.description}</td>
+                          <td>{row.qty}</td>
+                          <td>{row.unit}</td>
+                          <td>{row.weight}</td>
+                          <td>{row.notes || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+  
+        {/* Scenario C: Immigration Clearance — per-batch tabs (Captain already sees this above, in place of Fleet Assignment) */}
+        {isImmigration && !isDACaptain && (
+          <CrewListBatchwisePanel
+            batches={batches}
+            setBatches={setBatches}
+            activeBatchTab={activeBatchTab}
+            setActiveBatchTab={setActiveBatchTab}
+            opFocusedBatch={opFocusedBatch}
+            setOpFocusedBatch={setOpFocusedBatch}
+            recentOps={recentOps}
+            handleOpBlur={handleOpBlur}
+            handleOpChipClick={handleOpChipClick}
+            captureBatchTs={captureBatchTs}
+            setUndoPending={setUndoPending}
+            vesselName={vesselName}
+            now={now}
+            printLaunchSlip={printLaunchSlip}
+            bookingId={bookingId}
+          />
+        )}
+  
+        {!isImmigration && !isCrewChange && isDAOperator && (
+          <CrewListBatchwisePanel
+            batches={batches}
+            setBatches={setBatches}
+            activeBatchTab={activeBatchTab}
+            setActiveBatchTab={setActiveBatchTab}
+            opFocusedBatch={opFocusedBatch}
+            setOpFocusedBatch={setOpFocusedBatch}
+            recentOps={recentOps}
+            handleOpBlur={handleOpBlur}
+            handleOpChipClick={handleOpChipClick}
+            captureBatchTs={captureBatchTs}
+            setUndoPending={setUndoPending}
+            vesselName={vesselName}
+            now={now}
+            printLaunchSlip={printLaunchSlip}
+            bookingId={bookingId}
+          />
+        )}
+  
+        {!isImmigration && !isCrewChange && !isDAOperator && (
+          <div className="da-section">
+            <h3 className="da-section-title">Movement Timestamps</h3>
+            <div className="da-tabs">
+              <div className="da-tabs-group">
+                <button
+                  className={`da-tab${activeTab === "pickup" ? " da-tab--active" : ""}`}
+                  onClick={() => setActiveTab("pickup")}
+                >
+                  <span
+                    key={`pickup-${activeTab}`}
+                    className={`da-tab-vessel-wrap${activeTab === "pickup" ? " da-tab-vessel-wrap--pickup-firing" : ""}`}
+                  >
+                    <FaShip size={12} />
+                    <span className="da-tab-cargo-dot" />
+                  </span>
+                  Pickup
+                </button>
+                <button
+                  className={`da-tab${activeTab === "drop" ? " da-tab--active" : ""}`}
+                  onClick={() => setActiveTab("drop")}
+                >
+                  <span
+                    key={`drop-${activeTab}`}
+                    className={`da-tab-vessel-wrap${activeTab === "drop" ? " da-tab-vessel-wrap--drop-firing" : ""}`}
+                  >
+                    <FaShip size={12} />
+                    <span className="da-tab-cargo-dot" />
+                  </span>
+                  Drop
+                </button>
+              </div>
+  
+              {tripAdded ? (
+                <span className="da-add-trip-done tb-add-trip-done--compact">
+                  <FiCheckCircle size={13} />Trip Added
+                </span>
+              ) : (activeTab === "drop" ? dropTs.boatCastOffShip : pickupTs.boatCastOffShip) && (
+                <div className="da-add-trip-anchor">
+                  <button
+                    className="da-add-trip-btn"
+                    onClick={() => {
+                      setAddTripBillingEntity(billingEntity !== "—" ? billingEntity : "");
+                      setAddTripDestShip(vesselName !== "—" ? vesselName : "");
+                      setAddTripOpen((open) => !open);
+                    }}
+                  >
+                    <FiPlus size={13} />Add Intermediate Trip
+                  </button>
+                  {addTripOpen && (
+                    <div className="da-add-trip-popover">
+                      <span className="da-add-trip-form-title">Intermediate Trip Details</span>
+                      <div className="da-add-trip-fields">
+                        <div className="da-add-trip-field">
+                          <label className="da-add-trip-label">Billing Entity</label>
+                          <input className="da-add-trip-input" type="text" placeholder="Billing entity..." value={addTripBillingEntity} onChange={(e) => setAddTripBillingEntity(e.target.value)} />
+                        </div>
+                        <div className="da-add-trip-field">
+                          <label className="da-add-trip-label">Purpose <span className="da-add-trip-required">*</span></label>
+                          <input className="da-add-trip-input" type="text" placeholder="e.g. Material Delivery, Crew Change..." value={addTripPurpose} onChange={(e) => setAddTripPurpose(e.target.value)} />
+                        </div>
+                        <div className="da-add-trip-field">
+                          <label className="da-add-trip-label">Destination Ship</label>
+                          <input className="da-add-trip-input" type="text" placeholder="Vessel name..." value={addTripDestShip} onChange={(e) => setAddTripDestShip(e.target.value)} />
+                        </div>
+                      </div>
+                      <div className="da-add-trip-btns">
+                        <button className="da-add-trip-submit" onClick={handleAddTrip} disabled={!addTripPurpose.trim()}>Add to Board</button>
+                        <button className="da-add-trip-cancel" onClick={() => setAddTripOpen(false)}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div key={activeTab} className={`da-ts-panel tb-ts-panel--${activeTab}`}>
+              {activeTab === "drop" ? (
+                <>
+                  <TimestampStepper
+                    timestamps={STANDARD_TIMESTAMPS}
+                    tsState={dropTs}
+                    tsOps={dropTsOps}
+                    shipName={vesselName}
+                    intermediateTrip={tripAdded ? { purpose: addTripPurpose, destShip: addTripDestShip, billingEntity: addTripBillingEntity } : undefined}
+                    onCapture={(key) => captureNow(setDropTs, key, setDropTsOps, operatorName)}
+                    onComplete={() => { setJobCompleted(true); setJobCompletedAt(new Date().toISOString()); }}
+                    jobCompleted={jobCompleted}
+                    canFinish={allDone(dropTs, tsKeys)}
+                    now={now}
+                    onUndo={(key, label) => setUndoPending({
+                      label,
+                      resetter: () => { setDropTs((prev) => ({ ...prev, [key]: null })); setDropTsOps((prev) => ({ ...prev, [key]: null })); setJobCompleted(false); setJobCompletedAt(null); },
+                      addToLog: (reason) => setDropStepBackLog((prev) => [...prev, { step: label, reason, time: new Date().toISOString() }]),
+                    })}
+                  />
+                  <TimestampSummaryTable
+                    timestamps={STANDARD_TIMESTAMPS}
+                    tsState={dropTs}
+                    jobCompletedAt={jobCompletedAt}
+                    cobTime={dropCobTime}
+                    stepsAllDone={allDone(dropTs, tsKeys)}
+                    stepBackLog={dropStepBackLog}
+                    onCaptureCob={() => setDropCobTime(new Date().toISOString())}
+                  />
+                </>
+              ) : (
+                <>
+                  <TimestampStepper
+                    timestamps={STANDARD_TIMESTAMPS}
+                    tsState={pickupTs}
+                    tsOps={pickupTsOps}
+                    shipName={vesselName}
+                    intermediateTrip={tripAdded ? { purpose: addTripPurpose, destShip: addTripDestShip, billingEntity: addTripBillingEntity } : undefined}
+                    onCapture={(key) => captureNow(setPickupTs, key, setPickupTsOps, operatorName)}
+                    onComplete={() => { setJobCompleted(true); setJobCompletedAt(new Date().toISOString()); }}
+                    jobCompleted={jobCompleted}
+                    canFinish={allDone(pickupTs, tsKeys)}
+                    now={now}
+                    onUndo={(key, label) => setUndoPending({
+                      label,
+                      resetter: () => { setPickupTs((prev) => ({ ...prev, [key]: null })); setPickupTsOps((prev) => ({ ...prev, [key]: null })); setJobCompleted(false); setJobCompletedAt(null); },
+                      addToLog: (reason) => setPickupStepBackLog((prev) => [...prev, { step: label, reason, time: new Date().toISOString() }]),
+                    })}
+                  />
+                  <TimestampSummaryTable
+                    timestamps={STANDARD_TIMESTAMPS}
+                    tsState={pickupTs}
+                    jobCompletedAt={jobCompletedAt}
+                    cobTime={pickupCobTime}
+                    stepsAllDone={allDone(pickupTs, tsKeys)}
+                    stepBackLog={pickupStepBackLog}
+                    onCaptureCob={() => setPickupCobTime(new Date().toISOString())}
+                  />
+                </>
+              )}
+            </div>
+            {jobCompleted && (
+              <div className="da-batch-actions">
+                <button className="da-batch-print-btn" onClick={() => printLaunchSlip(activeTab === "drop" ? dropTs : pickupTs, activeTab === "drop" ? "Drop Trip" : "Pickup Trip", operatorName, jobCompletedAt)}>
+                  <FiPrinter size={14} />
+                  Print Launch Slip
+                </button>
+                <div>
+                  <input
+                    type="file"
+                    id="da-launch-slip-file"
+                    className="da-launch-slip-input"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => setLaunchSlipFile(e.target.files?.[0] ?? null)}
+                  />
+                  <label htmlFor="da-launch-slip-file" className="da-batch-upload-btn">
+                    <FiUpload size={14} />
+                    {launchSlipFile ? launchSlipFile.name : "Upload Launch Slip"}
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+  
+  
+        {undoPending && (
+          <ConfirmDialog
+            label={undoPending.label}
+            onConfirm={(reason) => { undoPending.resetter(); undoPending.addToLog?.(reason); setUndoPending(null); }}
+            onCancel={() => setUndoPending(null)}
+          />
+        )}
+      </div>
+    );
+  }
+  
+  DACardView.propTypes = {
+    card: PropTypes.object,
+    userRoleId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  };
+  
+  export default DACardView;
+  

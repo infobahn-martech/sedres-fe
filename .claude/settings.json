@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat -ano)",
+      "Bash(powershell -Command \"Get-NetTCPConnection -State Listen -LocalPort 5173,3000,4173,8080 -ErrorAction SilentlyContinue | Select-Object LocalPort\")",
+      "PowerShell(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in 5173,3000,4173,8080 } | Select-Object LocalPort)",
+      "Bash(python3 -)",
+      "Bash(node -e ' *)",
+      "PowerShell(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -ge 3000 -and $_.LocalPort -le 9000 } | Select-Object LocalPort, OwningProcess | Sort-Object LocalPort -Unique)",
+      "Bash(npm run *)",
+      "Bash(echo \"started with pid $!\")",
+      "Bash(sleep 2 && cat /tmp/vite-dev.log 2>/dev/null; echo \"---\"; cat \"C:\\\\Users\\\\balav\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-balav-Downloads-sedres-fe\\\\38df8d95-9f65-42d2-90f4-f3f570f95d2a\\\\tasks\\\\bu6chgenz.output\")",
+      "Read(//tmp/**)",
+      "Bash(mkdir -p \"C:/Users/balav/AppData/Local/Temp/claude/c--Users-balav-Downloads-sedres-fe/38df8d95-9f65-42d2-90f4-f3f570f95d2a/scratchpad\")",
+      "Bash(node \"C:\\\\Users\\\\balav\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-balav-Downloads-sedres-fe\\\\38df8d95-9f65-42d2-90f4-f3f570f95d2a\\\\scratchpad\\\\check-rt-da.js\")",
+      "Bash(node -e \"console.log\\(require.resolve\\('playwright'\\)\\)\")",
+      "Bash(grep -oE \".{0,40}\\(Ask AI|Update card\\).{0,40}\" \"c:/Users/balav/Downloads/sedres-fe/dist/assets/index-CYzRMKLe.js\")",
+      "Bash(node --experimental-vm-modules -e \"require.resolve\\('playwright'\\)\")",
+      "Read(//c//**)",
+      "Bash(npx --yes -p playwright node \"C:\\\\Users\\\\balav\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-balav-Downloads-sedres-fe\\\\38df8d95-9f65-42d2-90f4-f3f570f95d2a\\\\scratchpad\\\\check-da-desk.js\")",
+      "Bash(git checkout *)",
+      "Bash(tasklist //FI \"IMAGENAME eq node.exe\" //V)",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code} in %{time_total}s\\\\n\" --max-time 10 \"https://onlinebareed.com/sedres/kanban_board/get_full_board/1\")",
+      "Bash(grep -n \"// ---- Dark accordion\\\\|// ---- Main tab\" \"c:/Users/balav/Downloads/sedres-fe/src/pages/KanbanBoard/components/cards/components/DA/DATabDetails.jsx\")",
+      "Bash(grep -n \"// ---- Dark accordion\\\\|^\\\\.da-subheader {\" \"c:/Users/balav/Downloads/sedres-fe/src/design/scss/pages/kanban-board/da-tab-details.scss\")",
+      "Bash(awk '/^const EMPTY_FILES = \\\\{/,/^\\\\};/' src/pages/KanbanBoard/components/cards/components/DA/DATabDetails.jsx)",
+      "Bash(sort -t: -k2)",
+      "Bash(awk -F'function |const ' '{print $2}')",
+      "Bash(powershell -Command \"Stop-Process -Id 21860,31104 -Force -ErrorAction SilentlyContinue\")",
+      "PowerShell(Stop-Process -Id 21860,31104 -Force -ErrorAction SilentlyContinue)",
+      "Bash(nohup npm run dev)",
+      "Bash(disown)",
+      "PowerShell(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in 5173,5174,5175,3000,4173 } | Select-Object LocalAddress,LocalPort)"
+    ]
+  }
+}
