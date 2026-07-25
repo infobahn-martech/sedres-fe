@@ -1583,7 +1583,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
             ))}
           </div>
 
-          {/* Launch Hire Section - form level (read-only) */}
+          {/* Launch Hire Section */}
           <div className="dispatch-edit-section">
             <div className="dispatch-edit-checkbox-group">
               <label className="dispatch-edit-checkbox-label">
@@ -1591,8 +1591,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                   type="checkbox"
                   className="dispatch-edit-checkbox"
                   checked={formData.launchHire || false}
-                  disabled
-                  readOnly
+                  onChange={(e) => handleFormChange("launchHire", e.target.checked)}
                 />
                 <span>Launch Hire</span>
               </label>
@@ -1618,11 +1617,16 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                       <DateTimePickerField
                         dateValue={formData.launchHireDate}
                         timeValue={formData.launchHireTime}
-                        onDateTimeChange={() => {}}
+                        onDateTimeChange={(nextValues) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            launchHireDate: nextValues.date,
+                            launchHireTime: nextValues.time,
+                          }));
+                        }}
                         dateFieldName="launchHireDate"
                         timeFieldName="launchHireTime"
                         placeholder="YYYY-MM-DD hh:mm"
-                        disabled
                       />
                     </div>
                   </div>
@@ -1654,10 +1658,9 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor }) => {
                     <div className="dispatch-launch-hire-step-field">
                       <FormSelect
                         value={formData.launchHireLocation}
-                        onChange={() => {}}
+                        onChange={(e) => handleFormChange("launchHireLocation", e.target.value)}
                         options={mergeOptionForValue(launchHireLocationOptions, formData.launchHireLocation)}
                         placeholder="Select location..."
-                        disabled
                       />
                     </div>
                   </div>
