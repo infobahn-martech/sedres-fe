@@ -21,7 +21,7 @@ const VesselRegistrationTemplate = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
 
-  const { getTemplates, templates, totalCount, deleteTemplate, isLoading, isBeingUpdated } =
+  const { getTemplates, templates, totalCount, deleteTemplate, getTemplateById, isLoading, isBeingUpdated } =
     useVesselRegistrationTemplateReducer((s) => s);
 
   const debouncedSearch = useMemo(
@@ -77,7 +77,17 @@ const VesselRegistrationTemplate = () => {
       cell: (props) =>
         RenderAction({
           ...props,
-          onEditClick: (row) => setShowModal(row),
+          onEditClick: (row) =>
+            getTemplateById({
+              templateId: row?.pass_vesselreg_template_id,
+              cb: (data) => {
+                // eslint-disable-next-line no-console
+                console.log('[VesselRegistrationTemplate] row from list:', row);
+                // eslint-disable-next-line no-console
+                console.log('[VesselRegistrationTemplate] getTemplateById response:', data);
+                setShowModal(data || row);
+              },
+            }),
           onDeleteClick: (row) => {
             setSelectedRow(row);
             setShowDeleteModal(true);
