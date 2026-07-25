@@ -405,6 +405,7 @@ function QuillEditor({ value, onChange, placeholder }) {
   const containerRef = useRef(null);
   const quillRef = useRef(null);
   const lastHtmlRef = useRef('');
+  const isPristineRef = useRef(true);
 
   useEffect(() => {
     if (!containerRef.current || quillRef.current) return;
@@ -505,7 +506,32 @@ function QuillEditor({ value, onChange, placeholder }) {
     if (incoming === lastHtmlRef.current) return;
     lastHtmlRef.current = incoming;
     const delta = quill.clipboard.convert({ html: incoming });
-    quill.setContents(delta, Quill.sources.SILENT);
+    // Quill core's own default clipboard matcher for <tr> (quill/formats/table, a
+    // legacy plain-attribute table format that stays registered even though the
+    // 'table' module is disabled) also fires on every row and stamps a bare
+    // `table: <rowNumber>` attribute onto the same ops quill-table-better's matchers
+    // already formatted with `table-cell`/`table-cell-block`. quill-table-better's own
+    // insertTable() never produces that key, and its presence stops the cells from
+    // being wrapped into real <tbody>/<tr>/<td> blots. Strip it before loading.
+    delta.ops.forEach((op) => {
+      if (op.attributes && 'table' in op.attributes) {
+        delete op.attributes.table;
+      }
+    });
+    if (isPristineRef.current) {
+      // quill-table-better's row/cell wrap-and-merge cascade needs an existing sibling
+      // block already in the scroll to anchor onto. setContents() deletes Quill's own
+      // default empty paragraph before inserting, so when a table is the very first
+      // thing being loaded, it ends up with no prior sibling and the cells never get
+      // grouped into real rows. Insert into the untouched default document instead
+      // (leaving that empty paragraph in place), then trim the trailing blank line
+      // it leaves behind.
+      quill.updateContents(delta, Quill.sources.SILENT);
+      quill.deleteText(quill.getLength() - 1, 1, Quill.sources.SILENT);
+      isPristineRef.current = false;
+    } else {
+      quill.setContents(delta, Quill.sources.SILENT);
+    }
   }, [value]);
 
   return (
