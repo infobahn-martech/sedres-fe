@@ -254,6 +254,19 @@
     color: #f97316;
   }
 
+  .approval-hold-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #fff8ef;
+    border: 1px solid #ffe0b2;
+    border-radius: 6px;
+    color: #c2410c;
+    font-weight: 600;
+    font-size: 13.5px;
+  }
+
   .approval-field {
     margin-bottom: 12px;
     min-width: 0;
@@ -340,6 +353,16 @@
     line-height: 1.4;
   }
 
+  .approval-stage-wait-text {
+    margin: 8px 0 0;
+    width: 100%;
+    font-size: 12px;
+    color: #9a3412;
+    font-style: italic;
+    line-height: 1.4;
+    text-align: center;
+  }
+
   .approval-upload-field,
   .approval-document-upload {
     width: 100%;
@@ -374,6 +397,18 @@
       border-color: #3e5cb6;
       background: #f8f9ff;
       outline: none;
+    }
+  }
+
+  .approval-document-upload-zone--disabled {
+    cursor: not-allowed;
+    background: #f1f2f4;
+    opacity: 0.7;
+
+    &:hover,
+    &:focus-visible {
+      border-color: #e2e8f0;
+      background: #f1f2f4;
     }
   }
 
