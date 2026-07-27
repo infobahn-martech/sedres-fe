@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -449,14 +450,15 @@ const CustomSelect = ({ value, onChange, options = [], placeholder, className = 
   const [searchTerm, setSearchTerm] = useState("");
   const wrapperRef = useRef(null);
   const triggerRef = useRef(null);
+  const portalRef = useRef(null);
   const searchInputRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setIsOpen(false);
-        setSearchTerm("");
-      }
+      if (wrapperRef.current?.contains(event.target)) return;
+      if (portalRef.current?.contains(event.target)) return;
+      setIsOpen(false);
+      setSearchTerm("");
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -503,8 +505,9 @@ const CustomSelect = ({ value, onChange, options = [], placeholder, className = 
         <span className="cf-multi-select-arrow">▼</span>
       </div>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <div
+          ref={portalRef}
           className="cf-select-portal"
           style={{
             position: "fixed",
@@ -538,7 +541,8 @@ const CustomSelect = ({ value, onChange, options = [], placeholder, className = 
           ) : (
             <div className="cf-multi-select-no-results">No results found</div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Fragment } from "react";
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
@@ -9,6 +9,7 @@ import { LAUNCH_HIRE_LOCATION_OPTIONS } from "./Husbandry.constants";
 import { splitApiDateTimeParts, nextDayOf } from "../../../../../../../shared/helpers/dateTimeFieldUtils";
 import DateTimePickerField from "../../../../shared/components/DateTimePickerField";
 import LocationAutocomplete from "./LocationAutocomplete";
+import LocationMapPicker from "./LocationMapPicker";
 import MaterialTablePagination from "./MaterialTablePagination";
 import editIcon from "../../../../../../../assets/images/edit.svg";
 import deleteIcon from "../../../../../../../assets/images/delete.svg";
@@ -228,6 +229,20 @@ const renderViewIcon = (icon) => {
           <path d="M13 11h4l3 3v2h-7z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
           <circle cx="6" cy="18" r="1.8" stroke="currentColor" strokeWidth="2" />
           <circle cx="17" cy="18" r="1.8" stroke="currentColor" strokeWidth="2" />
+        </svg>
+      );
+    case "target":
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
+          <circle cx="12" cy="12" r="3.5" stroke="currentColor" strokeWidth="2" />
+          <circle cx="12" cy="12" r="0.6" fill="currentColor" />
+        </svg>
+      );
+    case "check":
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
     default:
@@ -605,11 +620,11 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
 
     const items = formData.items.map((item) => {
       const result = {
-        inbound_item_id: item.inbound_item_id || null,
+        landing_note_item_id: item.landing_note_item_id || null,
         quantity: Number(item.quantity) || 0,
         transportation_required: item.transportation_required ? 1 : 0,
-        slot_no_id: item.slot_no || "",
-        reason_id: item.reason || "",
+        slot_no: item.slot_no || "",
+        reason: item.reason || "",
         dispatch_date: item.dispatch_date ? item.dispatch_date + (item.dispatch_time ? ` ${item.dispatch_time}` : "") : null,
       };
       if (item.transportation_required) {
@@ -1356,73 +1371,118 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                         </div>
 
                         {/* Transportation */}
-                        <div className="mt-2">
+                        <div className="mt-2 dispatch-transport-section">
                           <label className="d-flex align-items-center gap-2 mb-2">
                             <input
                               type="checkbox"
                               className="form-check-input"
                               checked={item.transportation_required}
                               onChange={(e) => handleEditItemChange(item.id, "transportation_required", e.target.checked)}
+                              disabled
                             />
                             <span className="fw-semibold landing-edit-transport-label-text">Transportation Required</span>
                           </label>
-                          {item.transportation_required && (
-                            <div className="row g-2">
-                              <div className="col-md-4">
-                                <FormField label="Vehicle Type *">
-                                  <FormSelect
-                                    value={item.typeOfVehicle}
-                                    onChange={(e) => { handleEditItemChange(item.id, "typeOfVehicle", e.target.value); if (formErrors[`item_${index}_veh`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_veh`]; return n; }); }}
-                                    options={mergeOptionForValue(vehicleOptions, item.typeOfVehicle)}
-                                    placeholder="Select vehicle..."
-                                  />
-                                </FormField>
-                                {formErrors[`item_${index}_veh`] && <span className="text-danger landing-edit-error-msg">{formErrors[`item_${index}_veh`]}</span>}
+                          {item.transportation_required && (() => {
+                            const transportSteps = [
+                              { key: "vehicle", icon: "truck", label: "Vehicle Type *", value: item.typeOfVehicle, errorKey: `item_${index}_veh`, field: (
+                                <FormSelect
+                                  value={item.typeOfVehicle}
+                                  onChange={(e) => { handleEditItemChange(item.id, "typeOfVehicle", e.target.value); if (formErrors[`item_${index}_veh`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_veh`]; return n; }); }}
+                                  options={mergeOptionForValue(vehicleOptions, item.typeOfVehicle)}
+                                  placeholder="Select vehicle..."
+                                  disabled
+                                />
+                              ) },
+                              { key: "from", icon: "pin", label: "From Location *", value: item.fromLocation, errorKey: `item_${index}_from`, field: (
+                                <FormSelect
+                                  value={item.fromLocation}
+                                  onChange={(e) => { handleEditItemChange(item.id, "fromLocation", e.target.value); if (formErrors[`item_${index}_from`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_from`]; return n; }); }}
+                                  options={mergeOptionForValue(locationOptions, item.fromLocation)}
+                                  placeholder="From location..."
+                                  disabled
+                                />
+                              ) },
+                              { key: "pickup", icon: "target", label: "Pick-Up From", value: item.pickUpFrom, field: (
+                                <LocationAutocomplete
+                                  value={item.pickUpFrom}
+                                  onChange={(e) => handleEditItemChange(item.id, "pickUpFrom", e.target.value)}
+                                  placeholder="Pick-up location..."
+                                />
+                              ) },
+                              { key: "to", icon: "flag", label: "To Location *", value: item.toLocation, errorKey: `item_${index}_to`, field: (
+                                <FormSelect
+                                  value={item.toLocation}
+                                  onChange={(e) => { handleEditItemChange(item.id, "toLocation", e.target.value); if (formErrors[`item_${index}_to`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_to`]; return n; }); }}
+                                  options={mergeOptionForValue(locationOptions, item.toLocation)}
+                                  placeholder="To location..."
+                                  disabled
+                                />
+                              ) },
+                              { key: "driver", icon: "user", label: "Driver *", value: item.driverName, errorKey: `item_${index}_drv`, field: (
+                                <FormSelect
+                                  value={item.driverName}
+                                  onChange={(e) => { handleEditItemChange(item.id, "driverName", e.target.value); if (formErrors[`item_${index}_drv`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_drv`]; return n; }); }}
+                                  options={mergeOptionForValue(driverOptions, item.driverName)}
+                                  placeholder="Select driver..."
+                                  disabled
+                                />
+                              ) },
+                            ];
+                            const allDone = transportSteps.every((s) => !!s.value);
+                            return (
+                              <div className="dispatch-launch-hire-card dispatch-transport-form-card">
+                                <div className="dispatch-launch-hire-steps dispatch-launch-hire-steps--form dispatch-transport-form-steps dispatch-transport-form-steps--readonly">
+                                  {transportSteps.map((step, stepIdx, steps) => {
+                                    const isDone = !!step.value;
+                                    const isCurrent = !isDone && steps.slice(0, stepIdx).every((s) => !!s.value);
+                                    return (
+                                      <Fragment key={step.key}>
+                                        <div className="dispatch-launch-hire-step dispatch-launch-hire-step--form" style={{ "--stagger-index": stepIdx }}>
+                                          <div className="dispatch-launch-hire-step-head">
+                                            <span className="dispatch-launch-hire-step-icon-wrap">
+                                              <span className={`dispatch-launch-hire-step-icon dispatch-launch-hire-step-icon--transport${isCurrent ? " dispatch-launch-hire-step-icon--highlight-transport" : ""}`}>
+                                                {renderViewIcon(step.icon)}
+                                              </span>
+                                              <span className={`dispatch-launch-hire-step-num${isDone ? " dispatch-launch-hire-step-num--done" : ""}`}>
+                                                {isDone ? (
+                                                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                                                  </svg>
+                                                ) : (
+                                                  stepIdx + 1
+                                                )}
+                                              </span>
+                                            </span>
+                                            <span className="dispatch-launch-hire-step-label">{step.label}</span>
+                                          </div>
+                                          <div className="dispatch-launch-hire-step-field">
+                                            {step.field}
+                                            {step.errorKey && formErrors[step.errorKey] && <span className="text-danger landing-edit-error-msg">{formErrors[step.errorKey]}</span>}
+                                          </div>
+                                        </div>
+                                        <div className="dispatch-launch-hire-track" aria-hidden="true">
+                                          <span className="dispatch-launch-hire-track-line dispatch-launch-hire-track-line--transport" />
+                                          {stepIdx < steps.findIndex((s) => s.key === "to") && (
+                                            <span className="dispatch-launch-hire-track-boat dispatch-launch-hire-track-boat--transport">
+                                              {renderViewIcon("truck")}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </Fragment>
+                                    );
+                                  })}
+                                  <div className={`dispatch-transport-track-node${allDone ? " dispatch-transport-track-node--done" : ""}`}>
+                                    <span className="dispatch-launch-hire-step-icon-wrap">
+                                      <span className={`dispatch-launch-hire-step-icon${allDone ? " dispatch-launch-hire-step-icon--done" : " dispatch-launch-hire-step-icon--transport"}`}>
+                                        {renderViewIcon("check")}
+                                      </span>
+                                    </span>
+                                    <span className="dispatch-transport-track-node-label">Done</span>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="col-md-4">
-                                <FormField label="From Location *">
-                                  <FormSelect
-                                    value={item.fromLocation}
-                                    onChange={(e) => { handleEditItemChange(item.id, "fromLocation", e.target.value); if (formErrors[`item_${index}_from`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_from`]; return n; }); }}
-                                    options={mergeOptionForValue(locationOptions, item.fromLocation)}
-                                    placeholder="From location..."
-                                  />
-                                </FormField>
-                                {formErrors[`item_${index}_from`] && <span className="text-danger landing-edit-error-msg">{formErrors[`item_${index}_from`]}</span>}
-                              </div>
-                              <div className="col-md-4">
-                                <FormField label="Pick-Up From">
-                                  <LocationAutocomplete
-                                    value={item.pickUpFrom}
-                                    onChange={(e) => handleEditItemChange(item.id, "pickUpFrom", e.target.value)}
-                                    placeholder="Pick-up location..."
-                                  />
-                                </FormField>
-                              </div>
-                              <div className="col-md-6">
-                                <FormField label="To Location *">
-                                  <FormSelect
-                                    value={item.toLocation}
-                                    onChange={(e) => { handleEditItemChange(item.id, "toLocation", e.target.value); if (formErrors[`item_${index}_to`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_to`]; return n; }); }}
-                                    options={mergeOptionForValue(locationOptions, item.toLocation)}
-                                    placeholder="To location..."
-                                  />
-                                </FormField>
-                                {formErrors[`item_${index}_to`] && <span className="text-danger landing-edit-error-msg">{formErrors[`item_${index}_to`]}</span>}
-                              </div>
-                              <div className="col-md-6">
-                                <FormField label="Driver *">
-                                  <FormSelect
-                                    value={item.driverName}
-                                    onChange={(e) => { handleEditItemChange(item.id, "driverName", e.target.value); if (formErrors[`item_${index}_drv`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_drv`]; return n; }); }}
-                                    options={mergeOptionForValue(driverOptions, item.driverName)}
-                                    placeholder="Select driver..."
-                                  />
-                                </FormField>
-                                {formErrors[`item_${index}_drv`] && <span className="text-danger landing-edit-error-msg">{formErrors[`item_${index}_drv`]}</span>}
-                              </div>
-                            </div>
-                          )}
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -1725,49 +1785,86 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                       </div>
 
                       {/* Transportation Required */}
-                      <div className="mt-2">
+                      <div className="mt-2 dispatch-transport-section">
                         <label className="landing-convert-checkbox-label">
                           <input type="checkbox" checked={order.transportation_required || false} onChange={(e) => handleConvertOrderChange(order.id, "transportation_required", e.target.checked)} className="landing-convert-checkbox" />
                           <span className="landing-convert-checkbox-text">Transportation Required</span>
                         </label>
-                        {order.transportation_required && (
-                          <div className="row g-2">
-                            <div className="col-md-4">
-                              <FormField label="Vehicle Type">
-                                <FormSelect value={order.typeOfVehicle} onChange={(e) => handleConvertOrderChange(order.id, "typeOfVehicle", e.target.value)} options={mergeOptionForValue(vehicleOptions, order.typeOfVehicle)} placeholder="Select vehicle..." />
-                              </FormField>
+                        {order.transportation_required && (() => {
+                          const transportSteps = [
+                            { key: "vehicle", icon: "truck", label: "Vehicle Type", value: order.typeOfVehicle, field: (
+                              <FormSelect value={order.typeOfVehicle} onChange={(e) => handleConvertOrderChange(order.id, "typeOfVehicle", e.target.value)} options={mergeOptionForValue(vehicleOptions, order.typeOfVehicle)} placeholder="Select vehicle..." />
+                            ) },
+                            { key: "from", icon: "pin", label: "From Location", value: order.fromLocation, field: (
+                              <FormSelect value={order.fromLocation} onChange={(e) => handleConvertOrderChange(order.id, "fromLocation", e.target.value)} options={mergeOptionForValue(locationOptions, order.fromLocation)} placeholder="From location..." />
+                            ) },
+                            { key: "pickup", icon: "target", label: "Pick-Up From", value: order.pickUpFrom, field: (
+                              <LocationMapPicker value={order.pickUpFrom} onChange={(e) => handleConvertOrderChange(order.id, "pickUpFrom", e.target.value)} placeholder="Pick-up location..." />
+                            ) },
+                            { key: "to", icon: "flag", label: "To Location", value: order.toLocation, field: (
+                              <FormSelect value={order.toLocation} onChange={(e) => handleConvertOrderChange(order.id, "toLocation", e.target.value)} options={mergeOptionForValue(locationOptions, order.toLocation)} placeholder="To location..." />
+                            ) },
+                            { key: "driver", icon: "user", label: "Driver", value: order.driverName, field: (
+                              <FormSelect value={order.driverName} onChange={(e) => handleConvertOrderChange(order.id, "driverName", e.target.value)} options={mergeOptionForValue(driverOptions, order.driverName)} placeholder="Select driver..." />
+                            ) },
+                            { key: "remarks", icon: "note", label: "Remarks", value: order.transportRemarks, field: (
+                              <FormInput type="text" value={order.transportRemarks} onChange={(e) => handleConvertOrderChange(order.id, "transportRemarks", e.target.value)} placeholder="Transport remarks..." />
+                            ) },
+                          ];
+                          const allDone = transportSteps.every((s) => !!s.value);
+                          return (
+                            <div className="dispatch-launch-hire-card dispatch-transport-form-card">
+                              <div className="dispatch-launch-hire-steps dispatch-launch-hire-steps--form dispatch-transport-form-steps">
+                                {transportSteps.map((step, stepIdx, steps) => {
+                                  const isDone = !!step.value;
+                                  const isCurrent = !isDone && steps.slice(0, stepIdx).every((s) => !!s.value);
+                                  return (
+                                    <Fragment key={step.key}>
+                                      <div className="dispatch-launch-hire-step dispatch-launch-hire-step--form" style={{ "--stagger-index": stepIdx }}>
+                                        <div className="dispatch-launch-hire-step-head">
+                                          <span className="dispatch-launch-hire-step-icon-wrap">
+                                            <span className={`dispatch-launch-hire-step-icon dispatch-launch-hire-step-icon--transport${isCurrent ? " dispatch-launch-hire-step-icon--highlight-transport" : ""}`}>
+                                              {renderViewIcon(step.icon)}
+                                            </span>
+                                            <span className={`dispatch-launch-hire-step-num${isDone ? " dispatch-launch-hire-step-num--done" : ""}`}>
+                                              {isDone ? (
+                                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                  <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                              ) : (
+                                                stepIdx + 1
+                                              )}
+                                            </span>
+                                          </span>
+                                          <span className="dispatch-launch-hire-step-label">{step.label}</span>
+                                        </div>
+                                        <div className="dispatch-launch-hire-step-field">
+                                          {step.field}
+                                        </div>
+                                      </div>
+                                      <div className="dispatch-launch-hire-track" aria-hidden="true">
+                                        <span className="dispatch-launch-hire-track-line dispatch-launch-hire-track-line--transport" />
+                                        {stepIdx < steps.findIndex((s) => s.key === "to") && (
+                                          <span className="dispatch-launch-hire-track-boat dispatch-launch-hire-track-boat--transport">
+                                            {renderViewIcon("truck")}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </Fragment>
+                                  );
+                                })}
+                                <div className={`dispatch-transport-track-node${allDone ? " dispatch-transport-track-node--done" : ""}`}>
+                                  <span className="dispatch-launch-hire-step-icon-wrap">
+                                    <span className={`dispatch-launch-hire-step-icon${allDone ? " dispatch-launch-hire-step-icon--done" : " dispatch-launch-hire-step-icon--transport"}`}>
+                                      {renderViewIcon("check")}
+                                    </span>
+                                  </span>
+                                  <span className="dispatch-transport-track-node-label">Done</span>
+                                </div>
+                              </div>
                             </div>
-                            <div className="col-md-4">
-                              <FormField label="From Location">
-                                <FormSelect value={order.fromLocation} onChange={(e) => handleConvertOrderChange(order.id, "fromLocation", e.target.value)} options={mergeOptionForValue(locationOptions, order.fromLocation)} placeholder="From location..." />
-                              </FormField>
-                            </div>
-                            <div className="col-md-4">
-                              <FormField label="Pick-Up From">
-                                <LocationAutocomplete
-                                  value={order.pickUpFrom}
-                                  onChange={(e) => handleConvertOrderChange(order.id, "pickUpFrom", e.target.value)}
-                                  placeholder="Pick-up location..."
-                                />
-                              </FormField>
-                            </div>
-                            <div className="col-md-4">
-                              <FormField label="To Location">
-                                <FormSelect value={order.toLocation} onChange={(e) => handleConvertOrderChange(order.id, "toLocation", e.target.value)} options={mergeOptionForValue(locationOptions, order.toLocation)} placeholder="To location..." />
-                              </FormField>
-                            </div>
-                            <div className="col-md-4">
-                              <FormField label="Driver">
-                                <FormSelect value={order.driverName} onChange={(e) => handleConvertOrderChange(order.id, "driverName", e.target.value)} options={mergeOptionForValue(driverOptions, order.driverName)} placeholder="Select driver..." />
-                              </FormField>
-                            </div>
-                            <div className="col-md-4">
-                              <FormField label="Remarks">
-                                <FormInput type="text" value={order.transportRemarks} onChange={(e) => handleConvertOrderChange(order.id, "transportRemarks", e.target.value)} placeholder="Transport remarks..." />
-                              </FormField>
-                            </div>
-                          </div>
-                        )}
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -2028,41 +2125,79 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                     )}
 
                     {hasTransport && transport && (
-                      <div className="landing-view-sub-section">
+                      <div className="landing-view-sub-section landing-view-sub-section--transport-card">
                         <div className="landing-view-sub-title landing-view-sub-title--iconic">
                           <span className="landing-view-section-icon landing-view-section-icon--transport landing-view-section-icon--sm">
                             {renderViewIcon("truck")}
                           </span>
                           <span>Transportation</span>
                         </div>
-                        <div className="row g-2">
-                          <div className="col-md-4 col-6">
-                            <label className="landing-view-label">Type of Vehicle</label>
-                            <div className="landing-view-box">{vehicleName}</div>
-                          </div>
-                          <div className="col-md-4 col-6">
-                            <label className="landing-view-label">From Location</label>
-                            <div className="landing-view-box">{fromLocName}</div>
-                          </div>
-                          <div className="col-md-4 col-6">
-                            <label className="landing-view-label">Pick-Up From</label>
-                            <div className="landing-view-box">{transport.pickup_location || "-"}</div>
-                          </div>
-                          <div className="col-md-4 col-6">
-                            <label className="landing-view-label">To Location</label>
-                            <div className="landing-view-box">{toLocName}</div>
-                          </div>
-                          <div className="col-md-4 col-6">
-                            <label className="landing-view-label">Driver</label>
-                            <div className="landing-view-box">{driverName}</div>
-                          </div>
-                          {transport.remarks && (
-                            <div className="col-md-4 col-6">
+                        {(() => {
+                          const isDriverEmpty = driverName === "-";
+                          const routeSteps = [
+                            { key: "vehicle", icon: "truck", label: "Type of Vehicle", value: vehicleName },
+                            { key: "from", icon: "pin", label: "From Location", value: fromLocName },
+                            { key: "pickup", icon: "target", label: "Pick-Up From", value: transport.pickup_location || "-" },
+                            { key: "to", icon: "flag", label: "To Location", value: toLocName },
+                          ];
+                          return (
+                            <>
+                              <div className="landing-view-transport-driver-row">
+                                <div className={`landing-view-transport-step${isDriverEmpty ? " landing-view-transport-step--empty" : ""}`}>
+                                  <span className="landing-view-transport-step-icon-wrap">
+                                    <span className="landing-view-transport-step-icon">
+                                      {renderViewIcon("user")}
+                                    </span>
+                                  </span>
+                                  <div className="landing-view-transport-step-body">
+                                    <span className="landing-view-transport-step-label">Driver</span>
+                                    <span className="landing-view-transport-step-value">{driverName}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="landing-view-transport-steps">
+                                {routeSteps.map((step, stepIdx, steps) => {
+                                  const isEmpty = step.value === "-";
+                                  return (
+                                    <Fragment key={step.key}>
+                                      <div
+                                        className={`landing-view-transport-step${isEmpty ? " landing-view-transport-step--empty" : ""}`}
+                                        style={{ "--stagger-index": stepIdx }}
+                                      >
+                                        <span className="landing-view-transport-step-icon-wrap">
+                                          <span className="landing-view-transport-step-icon">
+                                            {renderViewIcon(step.icon)}
+                                          </span>
+                                          <span className="landing-view-transport-step-num">{stepIdx + 1}</span>
+                                        </span>
+                                        <div className="landing-view-transport-step-body">
+                                          <span className="landing-view-transport-step-label">{step.label}</span>
+                                          <span className="landing-view-transport-step-value">{step.value}</span>
+                                        </div>
+                                      </div>
+                                      {stepIdx < steps.length - 1 && (
+                                        <div className="landing-view-transport-track" aria-hidden="true" style={{ "--stagger-index": stepIdx }}>
+                                          <span className="landing-view-transport-track-line" />
+                                          <span className="landing-view-transport-track-truck">
+                                            {renderViewIcon("truck")}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </Fragment>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          );
+                        })()}
+                        {transport.remarks && (
+                          <div className="row g-2 mt-2">
+                            <div className="col-md-6 col-12">
                               <label className="landing-view-label">Remarks</label>
                               <div className="landing-view-box">{transport.remarks}</div>
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

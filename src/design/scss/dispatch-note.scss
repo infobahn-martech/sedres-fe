@@ -260,6 +260,170 @@
   animation: dispatchLaunchHireHighlight 2.4s ease-in-out infinite;
 }
 
+// Common system blue ($colorPrimary, #00368C) for the Transportation step
+// tracker (Convert to Landing Note form + Add/Edit form) — reuses the same
+// step/head/icon/field layout as Launch Hire, recolored to match the app's
+// shared brand blue instead of a one-off accent.
+.dispatch-launch-hire-step-icon--transport {
+  background: rgba(0, 54, 140, 0.12);
+  color: #00368c;
+}
+
+// A track sits between every adjacent pair of steps (same as Launch Hire),
+// so wrapping to a second row still gets its own connecting line — a
+// single row-spanning line would only reach whichever row it sits in.
+.dispatch-launch-hire-track-line--transport {
+  background: repeating-linear-gradient(90deg, rgba(0, 54, 140, 0.3) 0 6px, transparent 6px 12px);
+}
+
+.dispatch-launch-hire-track-boat--transport {
+  color: #00368c;
+}
+
+// The step the user hasn't filled in yet (first one with no value) gets a
+// blue glow so it reads as "you are here" while typing through the form —
+// same glow mechanic as --highlight, recolored to the system blue.
+.dispatch-launch-hire-step-icon--highlight-transport {
+  animation: dispatchLaunchHireHighlightTransport 2.4s ease-in-out infinite;
+}
+
+@keyframes dispatchLaunchHireHighlightTransport {
+  0%, 70% {
+    box-shadow: 0 0 0 0 rgba(0, 54, 140, 0);
+  }
+  85% {
+    box-shadow: 0 0 0 6px rgba(0, 54, 140, 0.22);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 54, 140, 0);
+  }
+}
+
+// Step number badge flips to a green check once that field has a value.
+.dispatch-launch-hire-step-num--done {
+  background: #059669;
+  border-color: #059669;
+  color: #fff;
+}
+
+// Gives Transportation its own bordered card like Launch Hire's, tinted to
+// the system blue instead of the default neutral gray.
+.dispatch-transport-form-card {
+  background: #f5f8fd;
+  border-color: rgba(0, 54, 140, 0.2);
+}
+
+// FormSelect's dropdown (CustomSelect, Husbandry.components.jsx) renders
+// via createPortal straight to document.body — same technique LocationMapPicker
+// and Google's own .pac-container already use — so it's a real top-level
+// sibling of the modal, immune to any ancestor's stacking context/overflow.
+// Its background/border/shadow normally come from operations.scss, which
+// Inbound Order / Dispatch Note / Landing Note never load, so left unstyled
+// it rendered with no background at all (see-through) wherever that file
+// wasn't loaded. Unscoped (like .pac-container below) since the portal is no
+// longer a DOM descendant of any particular modal wrapper class.
+.cf-select-portal {
+  z-index: 100000 !important;
+  background: #fff !important;
+  border: 1px solid #e2e2ea !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+// Google Places' own dropdown for LocationAutocomplete (Pick-Up From) is a
+// `.pac-container` appended straight to <body>, not a descendant of this
+// modal — so it can't be scoped the way .cf-select-portal was above. Its
+// background/border/shadow normally come from operations.scss too, which
+// Inbound Order / Dispatch Note / Landing Note never load, so the suggestion
+// list rendered fully see-through, showing whatever field sits underneath it
+// (e.g. the Vehicle Type options bleeding through behind Pick-Up From).
+// z-index: 20000 matches location-map-picker.scss's own `.pac-container`
+// rule (Convert to Dispatch Note's Pick-Up From uses LocationMapPicker,
+// whose portal panel sits at z-index 13000) — both files set !important on
+// the same selector, so whichever loads last wins the cascade; keeping the
+// values identical means load order can no longer matter. Anything lower
+// here would win the cascade sometimes and sink Google's dropdown behind
+// that panel, which looks just as broken as no background at all.
+.pac-container {
+  background: #fff !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid #e2e2ea !important;
+  margin-top: 4px !important;
+  z-index: 20000 !important;
+
+  .pac-item {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+    cursor: pointer !important;
+    border: none !important;
+
+    &:hover {
+      background-color: rgba(0, 54, 140, 0.1) !important;
+    }
+
+    &.pac-item-selected {
+      background-color: #00368c !important;
+      color: #ffffff !important;
+    }
+  }
+}
+
+// Icon -> label -> field cards for Transportation. Wraps to a second row
+// when the modal is too narrow for all 5 steps + Done — each row keeps its
+// own connecting arrow (the per-pair track below), so the path never goes
+// bare on the wrapped row.
+.dispatch-transport-form-steps {
+  row-gap: 28px;
+  margin-bottom: 20px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// Add/Edit Inbound Order's Transportation is laid out as three stacked
+// rows — Driver alone, then the Vehicle -> From -> Pick-Up -> To journey,
+// then Done — instead of one wrapping row. This modifier is for the
+// standalone rows (Driver, Done): no wrap/scroll behavior needed since
+// there's only ever one item.
+.dispatch-transport-form-steps--single {
+  justify-content: center;
+}
+
+// Edit Dispatch Note's Transportation is view-only by request — FormSelect
+// and FormInput already take a `disabled` prop, but LocationAutocomplete
+// (Pick-Up From) doesn't, so this blocks interaction + dims every field
+// uniformly regardless of which component renders it.
+.dispatch-transport-form-steps--readonly {
+  .dispatch-launch-hire-step-field {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+}
+
+// Trailing "Done" node after the last step — icon + label only, no field,
+// same vertical alignment as the step cards' icon row.
+.dispatch-transport-track-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 60px;
+}
+
+.dispatch-transport-track-node-label {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.dispatch-transport-track-node--done .dispatch-transport-track-node-label {
+  color: #059669;
+}
+
 // A step whose value is still "-" (no data yet) reads as a dashed, muted
 // placeholder instead of a filled step, so a partially-booked Launch Hire
 // visually distinguishes what's confirmed from what's still missing.
@@ -387,7 +551,8 @@
   .dispatch-launch-hire-icon svg,
   .dispatch-launch-hire-badge--partial,
   .dispatch-launch-hire-track-boat,
-  .dispatch-launch-hire-step-icon--highlight {
+  .dispatch-launch-hire-step-icon--highlight,
+  .dispatch-launch-hire-step-icon--highlight-transport {
     animation: none;
   }
 
@@ -550,9 +715,9 @@
   }
 
   &--transport {
-    background: rgba(217, 119, 6, 0.14);
-    color: #d97706;
-    --pulse-color: rgba(217, 119, 6, 0.3);
+    background: rgba(0, 54, 140, 0.12);
+    color: #00368c;
+    --pulse-color: rgba(0, 54, 140, 0.28);
 
     svg {
       animation: landingViewTruckDrive 1.6s ease-in-out infinite;
@@ -661,3 +826,219 @@
     animation: none;
   }
 }
+
+/* ===========================================================
+   TRANSPORTATION — animated step tracker (view modal)
+   Vehicle -> From Location -> Pick-Up From -> To Location -> Driver,
+   each step joined by a track with a truck icon driving along it.
+   Additive only, dedicated to the Transportation sub-section.
+   =========================================================== */
+
+// The other view sub-sections (Packing, etc.) just sit flat under a dashed
+// top border. Transportation gets its own tinted card instead — same
+// background/border treatment as the edit form's .dispatch-transport-form-card
+// — so the step tracker isn't floating transparent against the modal body.
+// Shared across Inbound Orders, Landing Note, and Dispatch Note view modals.
+.landing-view-sub-section--transport-card {
+  background: #f5f8fd;
+  border: 1px solid rgba(0, 54, 140, 0.2);
+  border-radius: 10px;
+  padding: 16px 18px;
+  border-top: 1px solid rgba(0, 54, 140, 0.2);
+}
+
+.landing-view-transport-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  width: 100%;
+  gap: 4px 0;
+}
+
+// Driver sits on its own centered line above the Vehicle -> ... -> To
+// Location route, so it doesn't compete with the route track for width.
+.landing-view-transport-driver-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed #e2e2ea;
+}
+
+.landing-view-transport-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 1 auto;
+  min-width: 0;
+  animation: dispatchLaunchHireReveal 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--stagger-index, 0) * 140ms + 80ms);
+
+  &--empty {
+    .landing-view-transport-step-icon {
+      background: transparent;
+      border: 1.5px dashed #d1d5db;
+      color: #b0b6c0;
+    }
+
+    .landing-view-transport-step-value {
+      color: #9ca3af;
+      font-weight: 500;
+      font-style: italic;
+    }
+  }
+}
+
+.landing-view-transport-step-icon-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.landing-view-transport-step-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(0, 54, 140, 0.12);
+  color: #00368c;
+}
+
+.landing-view-transport-step-num {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #e2e2ea;
+  font-size: 9px;
+  font-weight: 700;
+  color: #6b7280;
+  line-height: 1;
+}
+
+.landing-view-transport-step-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.landing-view-transport-step-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.landing-view-transport-step-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+
+// A track sits between every adjacent pair of steps — if the row wraps
+// (e.g. narrower modal), the wrapped row still gets its own connecting
+// line instead of being left with none.
+.landing-view-transport-track {
+  position: relative;
+  align-self: center;
+  flex: 1 1 36px;
+  min-width: 28px;
+  height: 16px;
+  margin: 0 4px;
+}
+
+.landing-view-transport-track-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  transform: translateY(-50%) scaleX(0);
+  transform-origin: left center;
+  background: repeating-linear-gradient(90deg, rgba(0, 54, 140, 0.3) 0 6px, transparent 6px 12px);
+  animation: landingViewTransportTrackFill 0.5s ease both;
+  animation-delay: calc(var(--stagger-index, 0) * 140ms + 220ms);
+}
+
+.landing-view-transport-track-truck {
+  position: absolute;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  color: #00368c;
+  animation: landingViewTransportTrackTruck 2.2s ease-in-out infinite;
+  animation-delay: calc(var(--stagger-index, 0) * 260ms);
+}
+
+@keyframes landingViewTransportTrackFill {
+  from {
+    transform: translateY(-50%) scaleX(0);
+  }
+  to {
+    transform: translateY(-50%) scaleX(1);
+  }
+}
+
+// Truck drives left-to-right along each connector, fading out and resetting.
+@keyframes landingViewTransportTrackTruck {
+  0% {
+    left: 0;
+    transform: translate(0, -50%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    transform: translate(-100%, -50%);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .landing-view-transport-steps {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .landing-view-transport-track {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-view-transport-step,
+  .landing-view-transport-track-truck {
+    animation: none;
+  }
+
+  .landing-view-transport-track-line {
+    animation: none;
+    transform: translateY(-50%) scaleX(1);
+  }
+
+  .landing-view-transport-track-truck {
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+}
+
