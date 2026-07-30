@@ -4,7 +4,7 @@ import {
   X, FileText, UploadCloud, Hash, Tag, Clock, User, Ship,
   Sparkles, IdCard, CalendarCheck, Anchor, FileCheck, Receipt, Package,
   Paperclip, FolderOpen, Link2, GitBranch, Trash2, Plus, ArrowUpRight, ChevronDown, Building2, Search,
-  CheckCircle2, CircleDashed, RefreshCw, Banknote, FileArchive, ShieldCheck,
+  CheckCircle2, CircleDashed, Banknote, FileArchive, ShieldCheck,
 } from "lucide-react";
 import { notify } from "../../../../../../components/Toaster";
 import billingEntityService from "../../../../../../services/billingEntityService";
@@ -21,9 +21,7 @@ const SUB_TABS = [
   { key: "mwpLaunchHire", label: "MWP & Launch Hire", icon: Anchor },
   { key: "clearanceCopies", label: "Clearance Copies", icon: FileCheck },
   { key: "invoicesFees", label: "Invoices, Fees & Certificates", icon: Receipt },
-  { key: "billingCargo", label: "Billing", icon: Package },
   { key: "vesselSalesOrder", label: "Vessel & Sales Order", icon: Ship },
-  { key: "timeObjects", label: "Time Objects", icon: Clock },
   { key: "more", label: "More", icon: Paperclip },
 ];
 
@@ -80,6 +78,7 @@ const RAW_FIELDS_CONFIG = [
   { key: "customCardId", label: "Custom card ID", type: "text", group: "card", placeholder: "e.g. DA-2026-001" },
   { key: "lastMoved", label: "Last moved", type: "readonly", group: "card" },
   { key: "tags", label: "Tags", type: "chips", group: "card", placeholder: "Add tags" },
+  { key: "billingOthers", label: "Billing Note", type: "text", group: "card", placeholder: "e.g. Additional billing note" },
   // Appointment & Clearance
   { key: "appointmentEmail", label: "Appointment Email", type: "files", group: "appointmentClearance" },
   { key: "inwardClearanceDate", label: "Inward Clearance date", type: "datetime", group: "appointmentClearance" },
@@ -98,9 +97,6 @@ const RAW_FIELDS_CONFIG = [
   { key: "taxInvoice", label: "Tax Invoice", type: "text", group: "invoicesFees", placeholder: "e.g. INV-88213" },
   { key: "srtPoWbs", label: "SRT|PO|WBS", type: "text", group: "invoicesFees", placeholder: "e.g. SRT-2201/PO-9982" },
   { key: "invoiceAmount", label: "Invoice amount (Including VAT)", type: "text", group: "invoicesFees", placeholder: "e.g. 12,500.00" },
-  // Billing
-  { key: "billingEntity", label: "Billing Entity- -", type: "billing-entity", group: "billingCargo" },
-  { key: "billingOthers", label: "Others", type: "text", group: "billingCargo", placeholder: "e.g. Additional billing note" },
   // Vessel & Sales Order
   { key: "vesselName", label: "VESSEL NAME", type: "text", group: "vesselSalesOrder", placeholder: "e.g. MV Atlantic Star" },
   { key: "serviceRequester", label: "Service requester", type: "text", group: "vesselSalesOrder", placeholder: "e.g. Jeffrey Steve" },
@@ -124,7 +120,7 @@ const FIELDS_BY_GROUP = FIELDS_CONFIG.reduce((acc, field) => {
 // Groups that mix full-width tiles (files/chips) with half-width ones need a fixed
 // column count so the full-width tiles end at the same edge as the row above them,
 // instead of stretching across extra auto-fit columns on wide screens.
-const FIXED_2COL_GROUPS = new Set(["mwpLaunchHire", "billingCargo"]);
+const FIXED_2COL_GROUPS = new Set(["mwpLaunchHire"]);
 
 const makeInitialFieldState = () => {
   const state = {};
@@ -603,30 +599,64 @@ FileDropzone.propTypes = {
   onRemoveFile: PropTypes.func.isRequired,
 };
 
-function AutoBillingEntityField({ label, icon, value, isLoading }) {
+// Placeholder status timeline — hardcoded until a backend status-history endpoint
+// exists for DA (no such endpoint in daService.js yet). Swap STATUS_TIMELINE_STEPS
+// for real data (step/date/state per call) once that API is available.
+const STATUS_TIMELINE_STEPS = [
+  { key: "created", label: "DA Card Created", date: "2026-07-18", state: "done" },
+  { key: "appointmentEmail", label: "Appointment Email Uploaded", date: "2026-07-20", state: "done" },
+  { key: "inwardClearance", label: "Inward Clearance", date: "2026-07-22", state: "done" },
+  { key: "operationsCompletion", label: "Operations Completed", date: null, state: "current" },
+  { key: "outwardClearance", label: "Outward Clearance", date: null, state: "pending" },
+  { key: "invoiceRaised", label: "Invoice Raised", date: null, state: "pending" },
+  { key: "completed", label: "DA Completed", date: null, state: "pending" },
+];
+
+function StatusTimelineSection({ steps }) {
   return (
-    <div className="da-cf-tile">
-      <TileLabel icon={icon}>{label}</TileLabel>
-      <input
-        type="text"
-        className="da-cf-input da-cf-input--readonly"
-        value={isLoading ? "Loading…" : value}
-        placeholder="Not set in Appointment Details / Operation yet"
-        readOnly
-      />
-      <span className="da-cf-tile-hint">Auto-filled from Appointment Details / Operation — not editable here.</span>
-    </div>
+    <>
+      <div className="da-cf-timeline-header">
+        <h3 className="da-cf-summary-section-heading">Status Timeline</h3>
+      </div>
+      <div className="da-cf-timeline">
+        {steps.map((step, index) => {
+          const Icon = step.state === "done" ? CheckCircle2 : step.state === "current" ? Clock : CircleDashed;
+          return (
+            <div className={`da-cf-timeline-step da-cf-timeline-step--${step.state}`} key={step.key}>
+              <div className="da-cf-timeline-step-marker">
+                <span className="da-cf-timeline-step-icon"><Icon size={14} /></span>
+                {index < steps.length - 1 && <span className="da-cf-timeline-step-connector" />}
+              </div>
+              <div className="da-cf-timeline-step-body">
+                <span className="da-cf-timeline-step-label">{step.label}</span>
+                <span className="da-cf-timeline-step-date">
+                  {step.date
+                    ? formatDisplayDateOnly(step.date)
+                    : step.state === "current"
+                      ? "In progress"
+                      : "Not reached yet"}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
-AutoBillingEntityField.propTypes = {
-  label: PropTypes.string.isRequired,
-  icon: PropTypes.elementType.isRequired,
-  value: PropTypes.string.isRequired,
-  isLoading: PropTypes.bool.isRequired,
+StatusTimelineSection.propTypes = {
+  steps: PropTypes.arrayOf(
+    PropTypes.shape({
+      key: PropTypes.string,
+      label: PropTypes.string,
+      date: PropTypes.string,
+      state: PropTypes.oneOf(["done", "current", "pending"]),
+    })
+  ).isRequired,
 };
 
-function SummaryPanel({ fieldValues, billingEntityLabel, summaryData, isLoadingSummary, onRefresh }) {
+function SummaryPanel({ fieldValues, billingEntityLabel, summaryData, isLoadingSummary }) {
   const formatDateTime = (dt) => (dt?.date ? `${dt.date}${dt.time ? ` · ${dt.time}` : ""}` : null);
 
   // api/da/summary_tab/{call_id} is the source of truth once it loads; until then, or if
@@ -637,7 +667,18 @@ function SummaryPanel({ fieldValues, billingEntityLabel, summaryData, isLoadingS
   const apiDateValue = (key, fallback) =>
     isSummaryPending ? "Loading…" : (formatApiDateTime(summaryData?.[key]) || fallback);
 
+  // Mirrors the Status Timeline above as individual Overview stat cards — same steps,
+  // same date/progress text per step, just in the card grid instead of the timeline rail.
+  const STEP_STATE_ACCENT = { done: "#1e9e52", current: "#4338ca", pending: "#9a9fb8" };
+  const statusStats = STATUS_TIMELINE_STEPS.map((step) => ({
+    label: step.label,
+    value: step.date ? formatDisplayDateOnly(step.date) : step.state === "current" ? "In progress" : "Not reached yet",
+    icon: step.state === "done" ? CheckCircle2 : step.state === "current" ? Clock : CircleDashed,
+    accent: STEP_STATE_ACCENT[step.state],
+  }));
+
   const stats = [
+    ...statusStats,
     { label: "Vessel", value: fieldValues.vesselName, icon: Ship, accent: "#2563eb" },
     { label: "Owner", value: fieldValues.owner, icon: User, accent: "#0d9488" },
     { label: "Vessel Owner", value: apiValue("vessel_owner", null), icon: Building2, accent: "#d97706" },
@@ -649,26 +690,7 @@ function SummaryPanel({ fieldValues, billingEntityLabel, summaryData, isLoadingS
 
   return (
     <div className="da-cf-summary">
-      <div className="da-cf-summary-hero">
-        <div className="da-cf-summary-hero-main">
-          <p className="da-cf-summary-hero-eyebrow">DA Summary</p>
-          <h2 className="da-cf-summary-title">{fieldValues.vesselName || "Vessel not set yet"}</h2>
-          <p className="da-cf-summary-hero-subtitle">
-            A quick overview of this call&rsquo;s clearance, billing and sales order details.
-          </p>
-        </div>
-        <div className="da-cf-summary-hero-actions">
-          <button
-            type="button"
-            className="da-cf-summary-refresh-btn"
-            onClick={onRefresh}
-            disabled={isLoadingSummary}
-          >
-            <RefreshCw size={13} className={isLoadingSummary ? "da-cf-summary-refresh-icon--spinning" : ""} />
-            {isLoadingSummary ? "Refreshing…" : "Refresh"}
-          </button>
-        </div>
-      </div>
+      <StatusTimelineSection steps={STATUS_TIMELINE_STEPS} />
 
       <h3 className="da-cf-summary-section-heading">Overview</h3>
 
@@ -701,7 +723,6 @@ SummaryPanel.propTypes = {
   billingEntityLabel: PropTypes.string,
   summaryData: PropTypes.object,
   isLoadingSummary: PropTypes.bool,
-  onRefresh: PropTypes.func,
 };
 
 function ListRowsSection({ label, icon, rows, collapsed, onToggleCollapse, onAdd, onChangeRow, onRemoveRow, placeholder, accent }) {
@@ -884,37 +905,6 @@ RequiredDocumentsSection.propTypes = {
   configs: PropTypes.arrayOf(PropTypes.shape({ key: PropTypes.string, label: PropTypes.string, icon: PropTypes.elementType, accent: PropTypes.string })),
   title: PropTypes.string,
   standalone: PropTypes.bool,
-};
-
-// Read-only list fed by api/da/time_objects/{call_id} — the set of time objects is
-// configured per port/call type (same source as the Appointment tab's stage time
-// mapping), so this renders whatever entries the API returns instead of a fixed config.
-function TimeObjectsSection({ timeObjects, isLoading }) {
-  if (isLoading) {
-    return <p className="da-cf-more-empty">Loading…</p>;
-  }
-  if (timeObjects.length === 0) {
-    return <p className="da-cf-more-empty">No time objects recorded yet.</p>;
-  }
-  return (
-    <div className="da-cf-fields-grid da-cf-fields-grid--compact">
-      {timeObjects.map((item) => (
-        <ReadonlyField
-          key={item.key}
-          label={item.label}
-          icon={Clock}
-          value={item.value ? formatApiDateTime(item.value) : "Not set yet"}
-        />
-      ))}
-    </div>
-  );
-}
-
-TimeObjectsSection.propTypes = {
-  timeObjects: PropTypes.arrayOf(
-    PropTypes.shape({ key: PropTypes.string, label: PropTypes.string, value: PropTypes.string })
-  ).isRequired,
-  isLoading: PropTypes.bool,
 };
 
 // Operations completion is a plain date (no time) — a lighter formatter than
@@ -1355,46 +1345,6 @@ function DA({ card, formValues, handleChange }) {
     return () => { cancelled = true; };
   }, [callId]);
 
-  // api/da/time_objects/{call_id} — read-only checkpoints (inward/outward clearance,
-  // etc.) recorded against this call, shown in the "Time Objects" sub-tab. The response
-  // is flattened/deduped the same way General.jsx's viewModeTimeObjects handles it,
-  // since the set of objects is configured per port/call type, not fixed here.
-  const [timeObjects, setTimeObjects] = useState([]);
-  const [isLoadingTimeObjects, setIsLoadingTimeObjects] = useState(false);
-
-  useEffect(() => {
-    if (callId == null) return undefined;
-    let cancelled = false;
-    setIsLoadingTimeObjects(true);
-    daService.getTimeObjects(callId)
-      .then(({ data }) => {
-        if (cancelled) return;
-        const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-        const seen = new Set();
-        const parsed = rows
-          .flatMap((item) => (Array.isArray(item) ? item : [item]))
-          .map((item) => {
-            if (!item || typeof item !== "object") return null;
-            const label = firstNonEmptyString(item?.time_object, item?.time_object_name, item?.name);
-            const value = firstNonEmptyString(item?.value, item?.time_object_value, item?.event_datetime);
-            if (!label) return null;
-            const key = `${firstNonEmptyString(String(item?.time_object_id ?? ""))}|${label}`;
-            if (seen.has(key)) return null;
-            seen.add(key);
-            return { key, label, value };
-          })
-          .filter(Boolean);
-        setTimeObjects(parsed);
-      })
-      .catch(() => {
-        if (!cancelled) setTimeObjects([]);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingTimeObjects(false);
-      });
-    return () => { cancelled = true; };
-  }, [callId]);
-
   // api/da/save_card_tab/{call_id} — persists the Card sub-tab fields. current_sticker_id
   // comes from the card's global sticker picker (formValues.card_sticker_id, set via the
   // "Sticker" button in the card header) rather than a field on this tab.
@@ -1468,20 +1418,16 @@ function DA({ card, formValues, handleChange }) {
   // tugBillingEntity / otherBillingEntity), so this tab just resolves that id to a
   // display name and mirrors it, read-only.
   const [billingEntityOptions, setBillingEntityOptions] = useState([]);
-  const [isBillingEntityLoading, setIsBillingEntityLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const loadBillingEntities = async () => {
-      setIsBillingEntityLoading(true);
       try {
         const { data } = await billingEntityService.getBillingEntities({ params: { page: 1, limit: 1000 } });
         const options = mapBillingEntitiesToOptions(unwrapListResponse(data));
         if (!cancelled) setBillingEntityOptions(options);
       } catch {
         if (!cancelled) setBillingEntityOptions([]);
-      } finally {
-        if (!cancelled) setIsBillingEntityLoading(false);
       }
     };
     loadBillingEntities();
@@ -1633,16 +1579,6 @@ function DA({ card, formValues, handleChange }) {
             onRemoveFile={(i) => updateField(field.key, value.filter((_, idx) => idx !== i))}
           />
         );
-      case "billing-entity":
-        return (
-          <AutoBillingEntityField
-            key={field.key}
-            label={field.label}
-            icon={field.icon}
-            value={billingEntityLabel}
-            isLoading={isBillingEntityLoading}
-          />
-        );
       default:
         return null;
     }
@@ -1681,18 +1617,8 @@ function DA({ card, formValues, handleChange }) {
           <div className="da-cf-group-header">
             <span className="da-cf-group-icon"><ActiveGroupIcon size={16} /></span>
             <h4 className="da-cf-group-title">{activeTabMeta.label}</h4>
-            {activeSubTab !== "more" && activeSubTab !== "timeObjects" && activeSubTab !== "appointmentClearance" && activeSubTab !== "mwpLaunchHire" && activeSubTab !== "invoicesFees" && activeSubTab !== "vesselSalesOrder" && (
+            {activeSubTab !== "more" && activeSubTab !== "appointmentClearance" && activeSubTab !== "mwpLaunchHire" && activeSubTab !== "invoicesFees" && activeSubTab !== "vesselSalesOrder" && (
               <span className="da-cf-group-count">{activeFields.length} field{activeFields.length === 1 ? "" : "s"}</span>
-            )}
-            {activeSubTab === "appointmentClearance" && (
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={handleSaveAppointmentClearanceTab}
-                disabled={isSavingAppointmentClearanceTab || callId == null}
-              >
-                {isSavingAppointmentClearanceTab ? "Saving…" : "Save"}
-              </button>
             )}
           </div>
         )}
@@ -1703,7 +1629,6 @@ function DA({ card, formValues, handleChange }) {
             billingEntityLabel={billingEntityLabel}
             summaryData={summaryData}
             isLoadingSummary={isLoadingSummary}
-            onRefresh={fetchSummaryTab}
           />
         ) : activeSubTab === "card" ? (
           <CardPanel
@@ -1713,8 +1638,6 @@ function DA({ card, formValues, handleChange }) {
             isSaving={isSavingCardTab}
             saveDisabled={callId == null}
           />
-        ) : activeSubTab === "timeObjects" ? (
-          <TimeObjectsSection timeObjects={timeObjects} isLoading={isLoadingTimeObjects} />
         ) : activeSubTab === "appointmentClearance" ? (
           <AppointmentClearanceSection fieldValues={fieldValues} updateField={updateField} />
         ) : activeSubTab === "invoicesFees" ? (
