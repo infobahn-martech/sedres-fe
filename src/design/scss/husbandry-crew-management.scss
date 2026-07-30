@@ -2899,6 +2899,10 @@
   color: #b91c1c;
 }
 
+.crew-uploaded-card__delete {
+  flex-shrink: 0;
+}
+
 .crew-summary-empty {
   margin: 12px 0 0;
   padding: 24px;

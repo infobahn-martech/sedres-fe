@@ -1366,6 +1366,17 @@
   color: var(--da-ink-faint);
   background: var(--da-surface);
   border: 1.5px solid var(--da-line);
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+}
+
+.da-cf-timeline-step-icon:hover {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--da-accent) 12%, transparent);
+}
+
+.da-cf-timeline-step-icon:focus-visible {
+  outline: 2px solid var(--da-accent);
+  outline-offset: 2px;
 }
 
 .da-cf-timeline-step-connector {
@@ -1373,6 +1384,7 @@
   height: 2px;
   margin-left: 4px;
   background: var(--da-line);
+  cursor: help;
 }
 
 .da-cf-timeline-step--done .da-cf-timeline-step-icon {

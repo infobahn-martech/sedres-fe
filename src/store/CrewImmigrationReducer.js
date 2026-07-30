@@ -79,6 +79,29 @@ const useCrewImmigrationReducer = create((set) => ({
             throw err;
         }
     },
+
+    // crew/remove_immigration_crew_file accepts { call_id, crew_excel_upload_id }
+    // to delete a single uploaded crew list file.
+    removeCrewImmigrationFile: async ({ callId, crewExcelUploadId } = {}) => {
+        try {
+            set({ isBeingUpdated: true, errorMessage: '' });
+            const { data } = await crewImmigrationService.removeImmigrationCrewFile({
+                call_id: callId,
+                crew_excel_upload_id: crewExcelUploadId,
+            });
+            set({ isBeingUpdated: false });
+            return data;
+        } catch (err) {
+            const { error } = useAlertReducer.getState();
+            const message = err?.response?.data?.message ?? err.message;
+            set({
+                errorMessage: message,
+                isBeingUpdated: false,
+            });
+            error(message);
+            throw err;
+        }
+    },
 }));
 
 export default useCrewImmigrationReducer;

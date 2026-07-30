@@ -615,7 +615,7 @@ const STATUS_TIMELINE_STEPS = [
   { key: "closedPaid", label: "Closed paid", date: null, state: "pending" },
 ];
 
-function StatusTimelineSection({ steps }) {
+function StatusTimelineSection({ steps, onStepClick }) {
   return (
     <>
       <div className="da-cf-timeline-header">
@@ -627,14 +627,29 @@ function StatusTimelineSection({ steps }) {
           return (
             <div className={`da-cf-timeline-step da-cf-timeline-step--${step.state}`} key={step.key}>
               <div className="da-cf-timeline-step-marker">
-                <span className="da-cf-timeline-step-icon"><Icon size={14} /></span>
-                {index < steps.length - 1 && <span className="da-cf-timeline-step-connector" />}
+                <span
+                  className="da-cf-timeline-step-icon"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onStepClick?.(index)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onStepClick?.(index);
+                    }
+                  }}
+                >
+                  <Icon size={14} />
+                </span>
+                {index < steps.length - 1 && (
+                  <span className="da-cf-timeline-step-connector" title={steps[index + 1].label} />
+                )}
               </div>
               <div className="da-cf-timeline-step-body">
                 <span className="da-cf-timeline-step-label">{step.label}</span>
                 <span className="da-cf-timeline-step-date">
                   {step.date
-                    ? formatDisplayDateOnly(step.date)
+                    ? `${formatDisplayDateOnly(step.date)}${step.time ? ` · ${step.time}` : ""}`
                     : step.state === "current"
                       ? "In progress"
                       : "Not reached yet"}
@@ -654,13 +669,33 @@ StatusTimelineSection.propTypes = {
       key: PropTypes.string,
       label: PropTypes.string,
       date: PropTypes.string,
+      time: PropTypes.string,
       state: PropTypes.oneOf(["done", "current", "pending"]),
     })
   ).isRequired,
+  onStepClick: PropTypes.func,
 };
 
 function SummaryPanel({ fieldValues, billingEntityLabel, summaryData, isLoadingSummary }) {
   const formatDateTime = (dt) => (dt?.date ? `${dt.date}${dt.time ? ` · ${dt.time}` : ""}` : null);
+
+  // Local-only progression: clicking a timeline step marks it (and everything before it)
+  // done and stamps it with today's date/time, since there's no backend status-history
+  // endpoint yet to drive this from real data (see STATUS_TIMELINE_STEPS above).
+  const [timelineSteps, setTimelineSteps] = useState(() => STATUS_TIMELINE_STEPS.map((step) => ({ ...step })));
+
+  const handleTimelineStepClick = (clickedIndex) => {
+    const now = new Date();
+    const todayDate = now.toISOString().slice(0, 10);
+    const nowTime = now.toTimeString().slice(0, 5);
+    setTimelineSteps((prev) =>
+      prev.map((step, index) => {
+        if (index < clickedIndex) return { ...step, state: "done", date: step.date || todayDate };
+        if (index === clickedIndex) return { ...step, state: "current", date: todayDate, time: nowTime };
+        return { ...step, state: "pending", date: null, time: null };
+      })
+    );
+  };
 
   // api/da/summary_tab/{call_id} is the source of truth once it loads; until then, or if
   // it comes back without a field, fall back to what's already been typed in other tabs.
@@ -670,22 +705,10 @@ function SummaryPanel({ fieldValues, billingEntityLabel, summaryData, isLoadingS
   const apiDateValue = (key, fallback) =>
     isSummaryPending ? "Loading…" : (formatApiDateTime(summaryData?.[key]) || fallback);
 
-  // Mirrors the Status Timeline above as individual Overview stat cards — same steps,
-  // same date/progress text per step, just in the card grid instead of the timeline rail.
-  const STEP_STATE_ACCENT = { done: "#1e9e52", current: "#4338ca", pending: "#9a9fb8" };
-  const statusStats = STATUS_TIMELINE_STEPS.map((step) => ({
-    label: step.label,
-    value: step.date ? formatDisplayDateOnly(step.date) : step.state === "current" ? "In progress" : "Not reached yet",
-    icon: step.state === "done" ? CheckCircle2 : step.state === "current" ? Clock : CircleDashed,
-    accent: STEP_STATE_ACCENT[step.state],
-  }));
-
   const stats = [
-    ...statusStats,
     { label: "Vessel", value: fieldValues.vesselName, icon: Ship, accent: "#2563eb" },
     { label: "Owner", value: fieldValues.owner, icon: User, accent: "#0d9488" },
     { label: "Vessel Owner", value: apiValue("vessel_owner", null), icon: Building2, accent: "#d97706" },
-    { label: "Inward Clearance", value: apiDateValue("inward_clearance_date", formatDateTime(fieldValues.inwardClearanceDate)), icon: CalendarCheck, accent: "#0891b2" },
     { label: "Outward Clearance", value: apiDateValue("outward_clearance_date", formatDateTime(fieldValues.outwardClearanceDate)), icon: CalendarCheck, accent: "#7c3aed" },
     { label: "Billing Entity", value: apiValue("billing_entity", billingEntityLabel || null), icon: Package, accent: "#e11d48" },
     { label: "SAP Sales Order No", value: apiValue("sap_sales_order_no", fieldValues.sapSalesOrderNo), icon: Receipt, accent: "#059669" },
@@ -693,7 +716,7 @@ function SummaryPanel({ fieldValues, billingEntityLabel, summaryData, isLoadingS
 
   return (
     <div className="da-cf-summary">
-      <StatusTimelineSection steps={STATUS_TIMELINE_STEPS} />
+      <StatusTimelineSection steps={timelineSteps} onStepClick={handleTimelineStepClick} />
 
       <h3 className="da-cf-summary-section-heading">Overview</h3>
 

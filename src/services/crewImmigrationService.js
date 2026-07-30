@@ -8,7 +8,11 @@ const importCrewImmigration = (formData) =>
 const getImmigrationCrewList = (payload) =>
   Gateway.post("crew/get_immigration_crew_list", payload);
 
+const removeImmigrationCrewFile = (payload) =>
+  Gateway.post("crew/remove_immigration_crew_file", payload);
+
 export default {
   importCrewImmigration,
   getImmigrationCrewList,
+  removeImmigrationCrewFile,
 };

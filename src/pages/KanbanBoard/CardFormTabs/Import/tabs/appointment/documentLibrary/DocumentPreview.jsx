@@ -153,6 +153,10 @@ const DocumentPreview = ({ document }) => {
   const fileType = getFileType(document);
   const isPdf = fileType === "pdf";
   const hasPreviewUrl = Boolean(document.previewUrl);
+  // Only PDFs render safely inside an <iframe>; other file types (e.g. .msg, .doc)
+  // aren't inline-renderable and the browser triggers a download of the raw
+  // file_url instead of displaying it, so those fall back to the placeholder.
+  const canEmbedPreview = hasPreviewUrl && isPdf;
 
   const handleView = () => {
     if (document.previewUrl) {
@@ -224,7 +228,7 @@ const DocumentPreview = ({ document }) => {
       </div>
 
       <div className="doc-lib-preview-body">
-        {hasPreviewUrl ? (
+        {canEmbedPreview ? (
           <iframe
             src={document.previewUrl}
             title={document.name}

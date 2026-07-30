@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 import { FiSearch, FiChevronLeft, FiChevronRight, FiCheck, FiNavigation, FiEdit2, FiX, FiTrash2 } from "react-icons/fi";
 import CrewListUploadBox from "../husbandry/components/CrewListUploadBox";
 import CrewUploadDropzones from "../husbandry/components/CrewUploadDropzones";
-import CrewUploadPreviewModal from "../husbandry/components/CrewUploadPreviewModal";
 import LaunchHireInlineForm from "../husbandry/components/LaunchHireInlineForm";
 import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 import PremiumSelect from "../../../../../../components/form/PremiumSelect";
@@ -85,9 +84,10 @@ DocStatusIcon.propTypes = {
 // One uploaded crew-list file's summary card — sourced directly from
 // crew/get_immigration_crew_list's uploaded_crew_files, same visual language
 // as CrewUploadedCard in CrewUploadedListsPanel (husbandry Crew Management).
-// There's no per-file Preview/Replace here since crew/get_immigration_crew_list
-// only accepts call_id — it can't scope to a single upload.
-const UploadedCrewFileCard = ({ file }) => (
+// There's no per-file Replace here since crew/get_immigration_crew_list
+// only accepts call_id — it can't scope to a single upload. Delete goes
+// through crew/remove_immigration_crew_file via onDelete.
+const UploadedCrewFileCard = ({ file, onDelete, isDeleting }) => (
   <div className="crew-uploaded-card">
     <span className="crew-uploaded-card__icon" aria-hidden="true">
       <FileIcon />
@@ -110,6 +110,16 @@ const UploadedCrewFileCard = ({ file }) => (
       {file.uploaded_at && <div className="crew-uploaded-card__meta">Uploaded {file.uploaded_at}</div>}
       <span className="crew-uploaded-card__status crew-uploaded-card__status--success">Uploaded successfully</span>
     </div>
+    <button
+      type="button"
+      className="crew-action-btn crew-action-btn--delete crew-uploaded-card__delete"
+      aria-label="Delete crew list file"
+      title="Delete"
+      disabled={isDeleting}
+      onClick={() => onDelete(file)}
+    >
+      {isDeleting ? <span className="crew-action-btn__spinner" aria-hidden="true" /> : <FiTrash2 size={14} />}
+    </button>
   </div>
 );
 
@@ -120,6 +130,8 @@ UploadedCrewFileCard.propTypes = {
     uploaded_at: PropTypes.string,
     crew_file_url: PropTypes.string,
   }).isRequired,
+  onDelete: PropTypes.func.isRequired,
+  isDeleting: PropTypes.bool,
 };
 
 // Crew Immigration — crew document intake for the Operation section.
@@ -140,6 +152,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
   const importCrewImmigrationFile = useCrewImmigrationReducer((state) => state.importCrewImmigrationFile);
   const fetchCallCrewList = useCrewImmigrationReducer((state) => state.fetchCallCrewList);
   const uploadedCrewFiles = useCrewImmigrationReducer((state) => state.uploadedCrewFiles);
+  const removeCrewImmigrationFile = useCrewImmigrationReducer((state) => state.removeCrewImmigrationFile);
   // Shared config for the passport/iqama/visa doc-copy upload actions —
   // both the top dropzones and the Crew Listing bulk actions use these.
   const docUploadConfig = {
@@ -152,8 +165,9 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
   const createCrewImmigrationBooking = useLaunchHireServiceReducer((state) => state.createCrewImmigrationBooking);
 
   const [uploadSteps, setUploadSteps] = useState(() => createUploadSteps());
-  const [showCrewPreview, setShowCrewPreview] = useState(false);
-  const [previewCrewRows, setPreviewCrewRows] = useState([]);
+  const [deletingFileKey, setDeletingFileKey] = useState(null);
+  const [showDeleteFileModal, setShowDeleteFileModal] = useState(false);
+  const [filePendingDelete, setFilePendingDelete] = useState(null);
 
   const [listingSearch, setListingSearch] = useState("");
   const [debouncedListingSearch, setDebouncedListingSearch] = useState("");
@@ -388,29 +402,42 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
     }
   };
 
-  const handlePreviewCrew = async () => {
-    setShowCrewPreview(true);
-    const { resolvedCallId } = await resolveCallAndVesselIds();
-    if (!resolvedCallId) {
-      setPreviewCrewRows([]);
-      return;
-    }
-    const list = await fetchCallCrewList({ payload: { call_id: resolvedCallId, page: 1, limit: 1000 } });
-    setPreviewCrewRows(
-      Array.isArray(list)
-        ? list.map((crew, index) => ({
-            id: getCrewOptionId(crew, index),
-            crewName: crew?.crew_name ?? "",
-            nationality: crew?.nationality ?? "N/A",
-            rank: crew?.rank ?? "",
-          }))
-        : []
-    );
+  const handleDeleteFile = (file) => {
+    setFilePendingDelete(file);
+    setShowDeleteFileModal(true);
   };
 
-  const handleClosePreview = () => {
-    setShowCrewPreview(false);
-    setPreviewCrewRows([]);
+  const handleCancelDeleteFile = () => {
+    if (deletingFileKey) return;
+    setShowDeleteFileModal(false);
+    setFilePendingDelete(null);
+  };
+
+  // Deletes one uploaded crew list file via crew/remove_immigration_crew_file,
+  // then refetches so the panel and Crew Listing table drop its crew.
+  const handleConfirmDeleteFile = async () => {
+    const file = filePendingDelete;
+    const fileKey = file?.crew_excel_upload_id ?? file?.crew_file;
+    if (!fileKey) return;
+
+    const { resolvedCallId } = await resolveCallAndVesselIds();
+    if (!resolvedCallId) {
+      notify("Unable to delete: missing call information.", "error");
+      return;
+    }
+
+    setDeletingFileKey(fileKey);
+    try {
+      await removeCrewImmigrationFile({ callId: resolvedCallId, crewExcelUploadId: file.crew_excel_upload_id });
+      setListingRefreshTick((tick) => tick + 1);
+      notify("Crew list file removed.", "success");
+      setShowDeleteFileModal(false);
+      setFilePendingDelete(null);
+    } catch {
+      // error already surfaced via notify in the store
+    } finally {
+      setDeletingFileKey(null);
+    }
   };
 
   const listingRows = useMemo(
@@ -697,11 +724,6 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
             <div className="crew-uploaded-lists-panel" style={{ "--card-color": cardColor }}>
               <div className="crew-uploaded-lists-panel__header">
                 <span className="crew-mgmt-section-label">Uploaded Crew Lists</span>
-                {uploadedCrewFiles.length > 0 && (
-                  <button type="button" className="crew-uploaded-card__action" onClick={handlePreviewCrew}>
-                    Preview
-                  </button>
-                )}
               </div>
               {uploadedCrewFiles.length === 0 ? (
                 <div className="crew-uploaded-lists-panel__empty">
@@ -711,7 +733,12 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
               ) : (
                 <div className="crew-uploaded-lists-panel__stack crew-uploaded-lists-panel__stack--grid">
                   {uploadedCrewFiles.map((file) => (
-                    <UploadedCrewFileCard key={file.crew_excel_upload_id ?? file.crew_file} file={file} />
+                    <UploadedCrewFileCard
+                      key={file.crew_excel_upload_id ?? file.crew_file}
+                      file={file}
+                      onDelete={handleDeleteFile}
+                      isDeleting={deletingFileKey === (file.crew_excel_upload_id ?? file.crew_file)}
+                    />
                   ))}
                 </div>
               )}
@@ -1080,20 +1107,20 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
         </div>
       </div>
 
-      <CrewUploadPreviewModal
-        show={showCrewPreview}
-        movementTypeLabel="All"
-        crewRows={previewCrewRows}
-        cardColor={cardColor}
-        onClose={handleClosePreview}
-      />
-
       <DeleteConfirmationModal
         show={showDeleteCrewModal}
         onCancel={handleCancelDeleteCrew}
         onConfirm={handleConfirmDeleteCrew}
         deleteText={`Are you sure you want to remove ${crewPendingDelete?.crewName || "this crew member"} from the crew list?`}
         isLoading={Boolean(deletingRowId) && deletingRowId === crewPendingDelete?.id}
+      />
+
+      <DeleteConfirmationModal
+        show={showDeleteFileModal}
+        onCancel={handleCancelDeleteFile}
+        onConfirm={handleConfirmDeleteFile}
+        deleteText={`Are you sure you want to delete ${filePendingDelete?.crew_file || "this file"}?`}
+        isLoading={Boolean(deletingFileKey)}
       />
     </div>
   );
