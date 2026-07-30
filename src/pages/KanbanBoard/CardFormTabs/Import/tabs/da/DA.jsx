@@ -607,9 +607,12 @@ const STATUS_TIMELINE_STEPS = [
   { key: "appointmentEmail", label: "Appointment Email Uploaded", date: "2026-07-20", state: "done" },
   { key: "inwardClearance", label: "Inward Clearance", date: "2026-07-22", state: "done" },
   { key: "operationsCompletion", label: "Operations Completed", date: null, state: "current" },
-  { key: "outwardClearance", label: "Outward Clearance", date: null, state: "pending" },
-  { key: "invoiceRaised", label: "Invoice Raised", date: null, state: "pending" },
-  { key: "completed", label: "DA Completed", date: null, state: "pending" },
+  { key: "soApprovalPending", label: "To be sent for SO approval", date: null, state: "pending" },
+  { key: "soApprovalAwaiting", label: "Awaiting SO approval", date: null, state: "pending" },
+  { key: "invoiceIssuance", label: "Invoice Issuance", date: null, state: "pending" },
+  { key: "invoiceDispatched", label: "Invoice dispatched", date: null, state: "pending" },
+  { key: "awaitingPayment", label: "Awaiting payment", date: null, state: "pending" },
+  { key: "closedPaid", label: "Closed paid", date: null, state: "pending" },
 ];
 
 function StatusTimelineSection({ steps }) {
