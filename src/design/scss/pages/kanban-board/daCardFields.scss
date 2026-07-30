@@ -108,6 +108,103 @@
   margin-bottom: 16px;
 }
 
+// Inner toggle for the "MWP & Launch Hire" sub-tab — switches between the MWP
+// required documents and the editable launch-hire fields, mirroring the main
+// sub-tab pill style but smaller so it reads as nested navigation.
+.da-cf-inner-tabs {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--da-sunken);
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 18px;
+  // Shrink-to-fit + centered in the flex-column panel, instead of stretching
+  // full-width and leaving the buttons hugging the left edge.
+  align-self: center;
+}
+
+.da-cf-inner-tab {
+  border: none;
+  background: transparent;
+  padding: 7px 16px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--da-ink-soft);
+  cursor: pointer;
+  border-radius: 7px;
+  transition: background 0.12s ease, color 0.12s ease;
+
+  &:hover {
+    color: var(--da-ink);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--da-accent);
+    outline-offset: -2px;
+  }
+}
+
+.da-cf-inner-tab--active {
+  color: var(--da-accent);
+  background: var(--da-surface);
+  box-shadow: 0 1px 2px rgba(28, 32, 51, 0.08);
+
+  svg {
+    opacity: 1;
+  }
+}
+
+.da-cf-inner-tab svg {
+  opacity: 0.65;
+  transition: opacity 0.12s ease;
+  margin-right: 5px;
+  vertical-align: -3px;
+  width: 15px;
+  height: 15px;
+}
+
+// Wraps the inner-tab toggle + content pane — stretches to fill the remaining height
+// of .da-cf-subtab-body (which is already flex:1) so the Launch Hire grid below has
+// real height to fill instead of collapsing to its content's natural height.
+.da-cf-mwp-launch-hire {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+// Content pane below the MWP/Launch Hire toggle. React remounts this (keyed on the
+// active inner-tab) on every switch, so the entrance animation below replays each
+// time instead of the content just snapping in.
+.da-cf-mwp-launch-hire-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  animation: da-cf-fade-up 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.da-cf-mwp-launch-hire-panel .da-cf-tile,
+.da-cf-mwp-launch-hire-panel .da-cf-file-row {
+  animation: da-cf-fade-up 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@for $i from 1 through 6 {
+  .da-cf-mwp-launch-hire-panel .da-cf-tile:nth-child(#{$i}),
+  .da-cf-mwp-launch-hire-panel .da-cf-file-row:nth-child(#{$i}) {
+    animation-delay: #{$i * 0.04}s;
+  }
+}
+
+.da-cf-mwp-launch-hire-panel .da-cf-file-row {
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    transform: translateX(3px);
+    border-color: var(--da-accent);
+    background: var(--da-accent-soft);
+  }
+}
+
 .da-cf-group-icon {
   display: inline-flex;
   align-items: center;
@@ -150,6 +247,122 @@
   grid-template-columns: repeat(2, 1fr);
 }
 
+// Time Objects sub-tab: entry count varies with the port/call-type config, so a fixed
+// column count leaves a lone trailing tile stretched across half the row. Cap each
+// tile's width instead so however many come back sit together on one row.
+.da-cf-fields-grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 260px));
+}
+
+// Clearance Copies sub-tab: all 4 fields are file-upload tiles, which default to
+// full-width (.da-cf-tile--full) elsewhere so a growing file list doesn't crowd a
+// neighboring field. There's nothing beside them here, so pair them up 2-by-2
+// instead of stacking 4 full-width rows.
+.da-cf-fields-grid--files2 {
+  grid-template-columns: repeat(2, 1fr);
+
+  .da-cf-tile--full {
+    grid-column: auto;
+  }
+
+  // Taller cards with a bigger icon badge than the rest of the app's tiles —
+  // these 4 sit alone in a spacious 2-up grid instead of packed 3-4 up.
+  .da-cf-tile {
+    padding: 20px 22px 22px;
+  }
+
+  .da-cf-tile-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .da-cf-tile-label {
+    font-size: 13px;
+    gap: 10px;
+  }
+
+  .da-cf-dropzone {
+    padding: 26px 14px;
+  }
+
+  .da-cf-dropzone-icon {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+// Launch Hire inner-tab (MWP & Launch Hire sub-tab): the dropzone (Launch Hire Slips)
+// keeps its own full-width row on top, and 3rd Party Launch hire + Road Transport
+// share one row of 2 columns below it — filling the full width/height of the panel.
+// Icon badge and tile padding are enlarged — same treatment as
+// .da-cf-fields-grid--files2 — so the tiles carry more visual weight instead of
+// floating in extra whitespace.
+.da-cf-fields-grid--launch-hire {
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: minmax(140px, 1fr);
+  flex: 1;
+  // Pulled in slightly from the full panel width — not a hard cap, just a touch
+  // of breathing room — and centered instead of hugging the left edge.
+  max-width: 92%;
+  align-self: center;
+  align-items: stretch;
+
+  .da-cf-tile {
+    padding: 18px 20px 20px;
+  }
+
+  // The Launch Hire Slips tile is the only file field here — give it room to breathe
+  // and let the dropzone below fill that space, instead of just wrapping its own text.
+  .da-cf-tile--full {
+    min-height: 200px;
+    height: 100%;
+
+    // Icon + label centered horizontally, unlike the left-aligned tiles beside it.
+    .da-cf-tile-label {
+      align-items: center;
+      text-align: center;
+      width: 100%;
+    }
+  }
+
+  .da-cf-tile-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  // Icon on its own line, label text on the next — instead of the default
+  // icon-and-text-inline row every other tab uses.
+  .da-cf-tile-label {
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 13px;
+    gap: 10px;
+  }
+
+  .da-cf-dropzone {
+    width: 100%;
+    flex: 1;
+    padding: 22px 14px;
+  }
+
+  .da-cf-dropzone-icon {
+    width: 24px;
+    height: 24px;
+  }
+}
+
 .da-cf-tile {
   display: flex;
   flex-direction: column;
@@ -188,6 +401,171 @@
   background: var(--da-accent-soft);
   color: var(--da-accent);
   flex-shrink: 0;
+}
+
+// Card sub-tab — a self-contained, framed panel instead of bare tiles
+// floating on the page background, with its own animated header and
+// staggered card entrance. Keeps its own visual boundary so the empty
+// space around it (only 3 fields) reads as normal page margin rather than
+// a broken/half-filled layout.
+.da-cf-card-panel {
+  position: relative;
+  width: 100%;
+  min-height: calc(100vh - 300px);
+  overflow: hidden;
+  border: 1px solid var(--da-line);
+  border-radius: 24px;
+  padding: 36px 40px 44px;
+  background: linear-gradient(150deg, var(--da-accent-soft) 0%, var(--da-surface) 42%, var(--da-sunken) 100%);
+  box-shadow: 0 20px 44px -20px rgba(67, 56, 202, 0.22), 0 2px 8px rgba(15, 23, 42, 0.04);
+  animation: da-cf-fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  // Soft decorative glow in the corner — the kind of subtle depth cue that
+  // keeps a mostly-empty panel from reading as flat/plain.
+  &::before {
+    content: "";
+    position: absolute;
+    top: -120px;
+    right: -120px;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--da-accent) 18%, transparent) 0%, transparent 70%);
+    pointer-events: none;
+  }
+}
+
+.da-cf-card-panel-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid color-mix(in srgb, var(--da-line) 70%, transparent);
+}
+
+.da-cf-card-panel-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  flex-shrink: 0;
+  background: linear-gradient(150deg, var(--da-accent) 0%, #6d5bd0 100%);
+  color: #fff;
+  box-shadow: 0 10px 20px -8px rgba(67, 56, 202, 0.55), 0 0 0 0 rgba(67, 56, 202, 0.45);
+  animation: da-cf-icon-pulse 2.6s ease-out 0.6s infinite;
+}
+
+@keyframes da-cf-icon-pulse {
+  0% { box-shadow: 0 10px 20px -8px rgba(67, 56, 202, 0.55), 0 0 0 0 rgba(67, 56, 202, 0.35); }
+  70% { box-shadow: 0 10px 20px -8px rgba(67, 56, 202, 0.55), 0 0 0 14px rgba(67, 56, 202, 0); }
+  100% { box-shadow: 0 10px 20px -8px rgba(67, 56, 202, 0.55), 0 0 0 0 rgba(67, 56, 202, 0); }
+}
+
+.da-cf-card-panel-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.da-cf-card-panel-title {
+  margin: 0;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--da-ink);
+}
+
+.da-cf-card-panel-subtitle {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--da-ink-soft);
+}
+
+.da-cf-card-panel-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.da-cf-card-panel-tile {
+  position: relative;
+  opacity: 0;
+  animation: da-cf-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--stagger-index, 0) * 90ms + 120ms);
+
+  // Each tile's fade-up animation gives it its own stacking layer, so a
+  // tile lower in the grid (e.g. Last moved) paints over an earlier tile's
+  // open user-search dropdown (e.g. Co-owners). Lift whichever tile
+  // currently has its dropdown open above all its siblings.
+  &:has(.da-cf-user-search-dropdown) {
+    z-index: 20;
+  }
+
+  // Tags normally spans the full row (.da-cf-tile--full) so it can hold a
+  // growing chip list — inside this fixed 3-column panel there's room for
+  // it as a normal column instead.
+  .da-cf-tile--full {
+    grid-column: auto;
+  }
+
+  .da-cf-tile {
+    height: 100%;
+    border-radius: 18px;
+    padding: 22px 22px 24px;
+    gap: 14px;
+    background: var(--da-surface);
+    border: 1px solid var(--da-line);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease;
+
+    &:hover {
+      transform: translateY(-3px);
+      border-color: color-mix(in srgb, var(--tile-accent, var(--da-accent)) 45%, var(--da-line));
+      box-shadow: 0 16px 28px -16px color-mix(in srgb, var(--tile-accent, var(--da-accent)) 50%, transparent);
+    }
+  }
+
+  .da-cf-tile-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .da-cf-tile-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 2px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--tile-accent, var(--da-accent)) 14%, #ffffff);
+    color: var(--tile-accent, var(--da-accent));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tile-accent, var(--da-accent)) 20%, transparent);
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .da-cf-input {
+    padding: 12px 14px;
+    border-radius: 11px;
+    font-size: 14.5px;
+    background: var(--da-sunken);
+    border-color: transparent;
+
+    &:focus {
+      background: var(--da-surface);
+      border-color: color-mix(in srgb, var(--tile-accent, var(--da-accent)) 55%, var(--da-line));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--tile-accent, var(--da-accent)) 16%, transparent);
+    }
+  }
 }
 
 .da-cf-input {
@@ -491,6 +869,23 @@
   display: inline-flex;
 }
 
+// Reserved row shown when a field expects a file synced in from the backend
+// rather than uploaded here — keeps the card's height steady instead of it
+// growing once that data arrives (see FileDropzone's `reserveSpace` prop).
+.da-cf-file-row--placeholder {
+  border-style: dashed;
+  background: var(--da-sunken);
+
+  .da-cf-file-icon {
+    color: var(--da-ink-faint);
+  }
+}
+
+.da-cf-file-name--placeholder {
+  font-style: italic;
+  color: var(--da-ink-faint);
+}
+
 .da-cf-file-name-wrap {
   flex: 1;
   min-width: 0;
@@ -518,6 +913,153 @@
   color: var(--da-ink-faint);
 }
 
+// Read-only list fed by api/da/required_documents/{call_id}, shown below the
+// editable upload fields on the Clearance Copies sub-tab (and standalone inside
+// the MWP inner-tab). A checklist — progress summary + a grid of status cards —
+// rather than a plain file list, since these entries are a fixed checklist of
+// documents rather than freeform uploads.
+.da-cf-required-docs {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--da-line);
+}
+
+// Used when the section is the sole content of a tab (the MWP inner-tab) instead
+// of trailing below other fields — no separator needed in that context.
+.da-cf-required-docs--standalone {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.da-cf-required-docs-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.da-cf-required-docs-title {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--da-ink);
+}
+
+.da-cf-required-docs-progress-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--da-ink-faint);
+  white-space: nowrap;
+}
+
+.da-cf-required-docs-progress-track {
+  --da-progress: 0%;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--da-sunken);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.da-cf-required-docs-progress-fill {
+  height: 100%;
+  width: var(--da-progress);
+  border-radius: inherit;
+  background: var(--da-accent);
+  transition: width 0.25s ease;
+}
+
+.da-cf-required-docs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.da-cf-required-doc-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border: 1px solid var(--da-line);
+  border-radius: 9px;
+  padding: 10px 30px 10px 11px;
+  background: var(--da-surface);
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease;
+
+  &:hover {
+    border-color: var(--doc-accent, var(--da-accent));
+  }
+}
+
+.da-cf-required-doc-card--done {
+  border-color: color-mix(in srgb, var(--doc-accent, var(--da-accent)) 35%, var(--da-line));
+  background: color-mix(in srgb, var(--doc-accent, var(--da-accent)) 5%, var(--da-surface));
+}
+
+.da-cf-required-doc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--doc-accent, var(--da-accent)) 14%, #ffffff);
+  color: var(--doc-accent, var(--da-accent));
+  flex-shrink: 0;
+}
+
+.da-cf-required-doc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.da-cf-required-doc-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--da-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.da-cf-required-doc-link {
+  font-size: 11px;
+  color: var(--da-accent);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.da-cf-required-doc-status {
+  font-size: 11px;
+  color: var(--da-ink-faint);
+}
+
+.da-cf-required-doc-status--pending {
+  font-style: italic;
+}
+
+.da-cf-required-doc-badge {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  display: inline-flex;
+  color: var(--da-ink-faint);
+}
+
+.da-cf-required-doc-badge--done {
+  color: #1e9e52;
+}
+
 .da-cf-file-remove {
   border: none;
   background: transparent;
@@ -537,6 +1079,9 @@
 }
 
 .da-cf-download-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 12px;
   font-weight: 600;
   color: var(--da-accent);
@@ -565,129 +1110,324 @@
   font-variant-numeric: tabular-nums;
 }
 
-.da-cf-stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+// Hero header + card grid for the Summary sub-tab — same visual language
+// (soft gradient hero, staggered fade-up cards) as Husbandry's service
+// dashboard (operations.scss `.husbandry-service-hero` /
+// `.husbandry-service-summary-*`), rebuilt here under DA's own tokens so
+// this file stays DA's dedicated module rather than reaching into
+// Husbandry's shared stylesheet.
+@keyframes da-cf-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.da-cf-stat-tile {
+.da-cf-summary-hero {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  background: var(--da-surface);
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  text-align: left;
   border: 1px solid var(--da-line);
-  border-radius: 10px;
-  padding: 13px 14px;
+  border-radius: 20px;
+  padding: 28px 32px;
+  background: linear-gradient(125deg, var(--da-accent-soft) 0%, var(--da-surface) 55%, var(--da-sunken) 100%);
+  box-shadow: 0 14px 32px -16px rgba(67, 56, 202, 0.16), 0 2px 8px rgba(15, 23, 42, 0.04);
+  margin-bottom: 20px;
+  animation: da-cf-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.da-cf-stat-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: var(--da-accent-soft);
-  color: var(--da-accent);
+.da-cf-summary-hero-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.da-cf-summary-hero-actions {
   flex-shrink: 0;
 }
 
-.da-cf-stat-body {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
+.da-cf-summary-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(67, 56, 202, 0.25);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--da-accent);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--da-surface);
+    border-color: var(--da-accent);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.75;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--da-accent);
+    outline-offset: 2px;
+  }
 }
 
-.da-cf-stat-label {
-  font-size: 11px;
+.da-cf-summary-refresh-icon--spinning {
+  animation: da-cf-spin 0.8s linear infinite;
+}
+
+@keyframes da-cf-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.da-cf-summary-hero-eyebrow {
+  margin: 0;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--da-accent);
+}
+
+.da-cf-summary-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--da-ink);
+  margin: 8px 0;
+  letter-spacing: -0.6px;
+}
+
+.da-cf-summary-hero-subtitle {
+  margin: 0;
+  max-width: 720px;
+  color: var(--da-ink-soft);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+// Section heading between the hero panel and the stat cards below it — gives
+// the card grid its own labeled section instead of running straight on
+// from the hero with no separation.
+.da-cf-summary-section-heading {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--da-ink-faint);
 }
 
-.da-cf-stat-value {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--da-ink);
-  font-variant-numeric: tabular-nums;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+// Summary stat cards — same card shape as Husbandry's service-option cards
+// (operations.scss `.husbandry-service-option*`): icon badge, bold title,
+// value in place of the description line. Each card takes a per-field
+// accent color (--summary-accent, set inline per stat) instead of a single
+// shared color, matching the varied icon-badge colors in that reference.
+.da-cf-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
 }
 
-.da-cf-stat-value--empty {
-  font-size: 12.5px;
-  font-weight: 500;
+.da-cf-summary-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 22px 20px;
+  background: var(--da-surface);
+  border: 1.5px solid var(--da-line);
+  border-radius: 18px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+  animation: da-cf-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--stagger-index, 0) * 60ms + 80ms);
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: var(--summary-accent, var(--da-accent));
+    box-shadow: 0 16px 28px -16px color-mix(in srgb, var(--summary-accent, var(--da-accent)) 45%, transparent), 0 4px 10px rgba(15, 23, 42, 0.06);
+  }
+}
+
+.da-cf-summary-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  color: var(--summary-accent, var(--da-accent));
+  background: color-mix(in srgb, var(--summary-accent, var(--da-accent)) 12%, #ffffff);
+  flex-shrink: 0;
+}
+
+.da-cf-summary-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.da-cf-summary-card-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--da-ink);
+}
+
+.da-cf-summary-card-value {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--da-ink-soft);
+  overflow-wrap: break-word;
+}
+
+.da-cf-summary-card-value--empty {
   font-style: italic;
   color: var(--da-ink-faint);
+}
+
+@media (max-width: 992px) {
+  .da-cf-summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .da-cf-summary-cards {
+    grid-template-columns: 1fr;
+  }
 }
 
 .da-cf-more {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 20px;
 }
 
-.da-cf-more-section {
+// "More" sub-tab card grid (see ListRowsSection/RelativesSection in DA.jsx) —
+// reuses the .da-cf-ac-card visual language (icon badge, per-card accent via
+// --step-accent, hover lift) instead of the plain collapsible list it used
+// to be, so it reads consistently with the other redesigned DA sub-tabs.
+.da-cf-more-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.da-cf-more-card {
   background: var(--da-surface);
-  border: 1px solid var(--da-line);
-  border-radius: 10px;
+  border: 1.5px solid var(--da-line);
+  border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+  animation: da-cf-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  &:hover {
+    border-color: var(--step-accent, var(--da-accent));
+    box-shadow: 0 14px 26px -16px color-mix(in srgb, var(--step-accent, var(--da-accent)) 45%, transparent), 0 4px 10px rgba(15, 23, 42, 0.05);
+  }
 }
 
-.da-cf-more-section-header {
+.da-cf-more-card-header {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 14px;
   border: none;
-  background: var(--da-sunken);
-  padding: 10px 12px;
+  background: transparent;
+  padding: 16px 18px;
   cursor: pointer;
   font-family: inherit;
   text-align: left;
+}
+
+.da-cf-more-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  color: var(--step-accent, var(--da-accent));
+  background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 14%, #ffffff);
+  flex-shrink: 0;
+}
+
+.da-cf-more-card-heading {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.da-cf-more-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--da-ink);
+}
+
+.da-cf-more-card-count {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--da-ink-faint);
 }
 
 .da-cf-more-chevron {
   display: inline-flex;
   color: var(--da-ink-faint);
   transition: transform 0.12s ease;
+  flex-shrink: 0;
 }
 
 .da-cf-more-chevron--collapsed {
   transform: rotate(-90deg);
 }
 
-.da-cf-more-section-title {
-  flex: 1;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--da-ink);
-}
-
 .da-cf-more-add-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  color: var(--da-ink-soft);
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--step-accent, var(--da-accent));
+  background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 12%, #ffffff);
   cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, transform 0.15s ease;
 
   &:hover {
-    background: var(--da-accent-soft);
-    color: var(--da-accent);
+    background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 22%, #ffffff);
+    transform: scale(1.06);
   }
 }
 
 .da-cf-more-empty {
   margin: 0;
-  padding: 12px;
-  font-size: 12px;
+  padding: 0 18px 16px;
+  font-size: 12.5px;
   color: var(--da-ink-faint);
 }
 
@@ -695,22 +1435,34 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 0 18px 16px;
 }
 
 .da-cf-more-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 4px 10px;
+  border-radius: 9px;
+  background: var(--da-sunken);
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 8%, var(--da-sunken));
+  }
 
   .da-cf-input {
     flex: 1;
   }
+
+  input {
+    background: transparent;
+    border: none;
+  }
 }
 
-.da-cf-more-relative-icon {
-  display: inline-flex;
-  color: var(--da-accent);
+.da-cf-more-row-icon {
+  color: var(--step-accent, var(--da-accent));
   flex-shrink: 0;
 }
 
@@ -728,7 +1480,118 @@
   flex-shrink: 0;
 
   &:hover {
-    background: var(--da-accent-soft);
+    background: color-mix(in srgb, #dc2626 12%, transparent);
     color: #dc2626;
+  }
+}
+
+@media (max-width: 720px) {
+  .da-cf-more-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Appointment & Clearance sub-tab (see AppointmentClearanceSection in DA.jsx) — a 2x2
+// card grid. Only Appointment Email is editable here; the 3 clearance dates are synced
+// from elsewhere in the backend, so there's no step/progress framing, just 4 cards in
+// the same shape language as .da-cf-summary-card (per-card accent via --step-accent).
+.da-cf-ac-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+// Invoices, Fees & Certificates sub-tab (see InvoicesFeesSection in DA.jsx) reuses this
+// card shape for 3 editable fields instead of 4 readonly ones, so it needs its own
+// column count.
+.da-cf-ac-grid--3col {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.da-cf-ac-card {
+  padding: 16px 18px 20px;
+  background: var(--da-surface);
+  border: 1.5px solid var(--da-line);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: var(--step-accent, var(--da-accent));
+    box-shadow: 0 14px 26px -16px color-mix(in srgb, var(--step-accent, var(--da-accent)) 45%, transparent), 0 4px 10px rgba(15, 23, 42, 0.05);
+  }
+}
+
+.da-cf-ac-card--done {
+  border-color: color-mix(in srgb, var(--step-accent, var(--da-accent)) 35%, var(--da-line));
+}
+
+.da-cf-ac-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  color: var(--step-accent, var(--da-accent));
+  background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 14%, #ffffff);
+  flex-shrink: 0;
+}
+
+.da-cf-ac-card-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.da-cf-ac-card-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--da-ink);
+  flex: 1;
+}
+
+.da-cf-ac-card-hint {
+  margin: 4px 0 12px;
+  font-size: 13.5px;
+  color: var(--da-ink-soft);
+}
+
+.da-cf-ac-card-field {
+  .da-cf-tile {
+    padding: 0;
+    border: none;
+    background: transparent;
+  }
+
+  .da-cf-tile-label {
+    display: none;
+  }
+}
+
+.da-cf-ac-readonly-value {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--da-ink);
+}
+
+.da-cf-ac-readonly-empty {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--da-ink-faint);
+}
+
+@media (max-width: 900px) {
+  .da-cf-ac-grid--3col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .da-cf-ac-grid {
+    grid-template-columns: 1fr;
   }
 }

@@ -1,0 +1,22 @@
+// Scoped sizing fix for the Husbandry module when embedded inside the DA
+// tab's "Husbandry" sub-tab (CardFormTabs/Import/tabs/da/DA.jsx).
+// Husbandry's own layout (operations.scss `.operation-wrapper`) is written
+// for its normal spot as a top-level card-form tab, where an ancestor
+// establishes a real height. Nested one level deeper under DA's
+// `.da-cf-subtab-body` (which has no defined height), `height: 100%` has
+// nothing to resolve against, so it renders squashed. This class wraps the
+// embedded instance only — Husbandry's own top-level tab is untouched.
+.da-cf-husbandry-embed {
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;
+
+  .operation-wrapper {
+    height: auto;
+    min-height: 560px;
+  }
+
+  .operation-content-container {
+    min-height: 480px;
+  }
+}

@@ -37,3 +37,6 @@ Thumbs.db
 
 # Swap files
 *.sw?
+
+# Local Claude working notes
+CLAUDE.md
