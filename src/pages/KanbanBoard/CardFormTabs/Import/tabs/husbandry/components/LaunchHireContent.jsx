@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
+import { format, isValid, parseISO } from "date-fns";
 import GroupSettingsIcon from "../../../../../../../assets/images/cv.png";
 import { FormSection } from "./Husbandry.components";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
@@ -8,12 +9,40 @@ import { SERVICE_ACCENT } from "./Husbandry.constants";
 
 const LAUNCH_HIRE_ACCENT = SERVICE_ACCENT.LAUNCH_HIRE;
 
+// booking_datetime comes back as "YYYY-MM-DD HH:mm:ss" — same raw shape the
+// read-only item_type listings on the TaxiBoat board parse (see TaxiBoatCardView).
+const formatBookingDateTime = (value) => {
+  if (!value) return "";
+  const normalized = typeof value === "string" ? value.replace(" ", "T") : value;
+  const parsed = typeof value === "string" ? parseISO(normalized) : new Date(value);
+  return isValid(parsed) ? format(parsed, "dd/MM/yyyy HH:mm") : "";
+};
+
+const humanizeItemType = (value) =>
+  value
+    ? String(value)
+        .split("_")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ")
+    : "";
+
+const summarizeBatches = (batches) => {
+  if (!Array.isArray(batches) || batches.length === 0) return "";
+  const types = [...new Set(batches.map((b) => humanizeItemType(b?.item_type)).filter(Boolean))];
+  if (types.length === 0) return `${batches.length} item${batches.length > 1 ? "s" : ""}`;
+  return batches.length > 1 ? `${types.join(", ")} (${batches.length})` : types.join(", ");
+};
+
+// operator/fleet/captain naming (operator_name/taxi_boat_name/captain_name) matches
+// the shared launch_hire booking-detail shape used by the TaxiBoat board.
 const LAUNCH_HIRE_REQUEST_COLUMNS = [
   { key: "location", header: "Location", accessor: (r) => r?.location },
-  { key: "type_of_service", header: "Type of Service", accessor: (r) => r?.type_of_service ?? r?.service_type },
+  { key: "booking_datetime", header: "Booking Date & Time", accessor: (r) => formatBookingDateTime(r?.booking_datetime) },
   { key: "status", header: "Status", accessor: (r) => r?.status, type: "status" },
-  { key: "requested_date", header: "Requested", accessor: (r) => r?.created_date, type: "date" },
-  { key: "document", header: "Document", accessor: (r) => r?.document_url, type: "document" },
+  { key: "operator", header: "Operator", accessor: (r) => r?.operator?.operator_name ?? r?.operator?.name },
+  { key: "fleet", header: "Fleet", accessor: (r) => r?.fleet?.taxi_boat_name ?? r?.fleet?.name },
+  { key: "captain", header: "Captain", accessor: (r) => r?.captain?.captain_name ?? r?.captain?.name },
+  { key: "batches", header: "Items", accessor: (r) => summarizeBatches(r?.batches) },
 ];
 
 const LaunchHireContent = ({ formValues, cardColor }) => {
@@ -24,10 +53,12 @@ const LaunchHireContent = ({ formValues, cardColor }) => {
     void getLaunchHireRequests(callId);
   }, [callId, getLaunchHireRequests]);
 
-  const launchHireRequestRows = launchHireRequests.map((row) => ({
-    ...row,
-    document_url: row?.request_email_url || row?.documents?.[0]?.file_url || "",
-  }));
+  // Table's row-key/pagination-signature logic falls back to `id`/`request_id` —
+  // map the booking's real id onto `id` so pagination resets correctly on refetch.
+  const launchHireRequestRows = useMemo(
+    () => launchHireRequests.map((row) => ({ ...row, id: row?.launch_hire_booking_id ?? row?.id })),
+    [launchHireRequests]
+  );
 
   return (
     <div className="cardform-left-full launchhire-booking" style={{ "--card-color": cardColor }}>
