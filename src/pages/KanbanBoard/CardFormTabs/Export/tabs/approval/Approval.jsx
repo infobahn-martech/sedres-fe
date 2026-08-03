@@ -790,13 +790,6 @@ const createEmptyPartySection = () => ({
     // untouched here).
     const isControllerRole = String(userRoleId) === "2";
     const isManagerRole = String(userRoleId) === "1";
-    // DA (role_id 22) is a read-only viewer of the whole tab like any other
-    // unlisted role, but gets a temporary exception: while the real Credit
-    // Controller hasn't acted yet, DA can fill in and submit the Credit
-    // Controller section on their behalf. The moment the Controller actually
-    // approves/proceeds, that exception closes and DA reverts to view-only
-    // like everyone else — see canEditCreditControllerSection below.
-    const isDaRole = String(userRoleId) === "22";
     // TEMPORARY: role_id "3" (Port Supervisor) is also being let in as CEO
     // for testing, alongside the real CEO role_id "23" — per explicit user
     // request. Remove `|| String(userRoleId) === "3"` once CEO testing
@@ -822,10 +815,11 @@ const createEmptyPartySection = () => ({
     // already on hold, since re-clicking it is a no-op.
     const isCeoStageUsable = stageActive.ceo || isOnHold;
 
-    // DA can only stand in for the Credit Controller while that stage is
-    // still pending (nobody has approved/proceeded yet) — once it moves on,
-    // stageActive.credit_controller goes false and this closes automatically.
-    const canEditCreditControllerSection = isControllerRole || (isDaRole && stageActive.credit_controller);
+    // Only the real Credit Controller can edit this section — DA (and every
+    // other role) is view-only here, seeing just the status badge (e.g.
+    // "Still processing by Credit Controller") once Controller has
+    // approved/proceeded, same as the Manager/CEO cards below.
+    const canEditCreditControllerSection = isControllerRole;
 
     // "Approved" doesn't advance the effective stage (only "proceed_to_*"
     // does), so stageActive alone can't stop the Approved button from being
@@ -1239,16 +1233,14 @@ const createEmptyPartySection = () => ({
                 />
               ) : null}
 
-              {/* Same phased reveal as the Manager card above, and now also
-                  applied to CEO's own view of their own card: both Manager
-                  and CEO only see the CEO card once Manager has proceeded
-                  (isStagePassed handles the "Manager clicked Approved but
-                  didn't proceed" case correctly — that keeps effectiveStage
-                  at "manager_ofm", so it stays hidden). Controller never
-                  sees it; every other role (DA, generic viewers) always
-                  does. */}
-              {!isControllerRole &&
-              ((!isManagerRole && !isCeoRole) || isStagePassed(effectiveStage, "manager_ofm")) ? (
+              {/* Same phased reveal as the Manager card above, applied to
+                  every non-Controller viewer (Manager, CEO, DA, generic
+                  viewers alike): the CEO card only appears once Manager has
+                  actually proceeded to CEO (isStagePassed handles the
+                  "Manager clicked Approved but didn't proceed" case
+                  correctly — that keeps effectiveStage at "manager_ofm", so
+                  it stays hidden). Controller never sees it at all. */}
+              {!isControllerRole && isStagePassed(effectiveStage, "manager_ofm") ? (
                 <ApprovalCard
                   title="CEO Comments"
                   commentsLabel={

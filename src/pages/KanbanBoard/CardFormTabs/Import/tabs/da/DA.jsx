@@ -746,12 +746,17 @@ function StatusTimelineSection({ steps, onStepClick, isLoading, isAdvancing }) {
           // - a "done" step's round moves the DA back one stage, but only the step right
           //   before the current one — reverting is one-by-one too, not a jump straight
           //   back to an arbitrary earlier stage.
+          // - the very first step has no prior step to be "current", so if the DA hasn't
+          //   reached it yet (still "pending"), clicking it activates it directly instead
+          //   of relying on the "up next" rule above — otherwise it was only reachable via
+          //   the header card-sticker picker (see handleTopbarCardStickerChange, CardForm.jsx).
           const prevStep = steps[index - 1];
           const nextStep = steps[index + 1];
           const isForwardClickable = step.state === "current" && Boolean(nextStep);
           const isUpNextClickable = step.state === "pending" && prevStep?.state === "current";
           const isBackClickable = step.state === "done" && nextStep?.state === "current";
-          const isClickable = Boolean(onStepClick) && !isAdvancing && (isForwardClickable || isUpNextClickable || isBackClickable);
+          const isFirstStepActivatable = index === 0 && step.state === "pending";
+          const isClickable = Boolean(onStepClick) && !isAdvancing && (isForwardClickable || isUpNextClickable || isBackClickable || isFirstStepActivatable);
           const targetLabel = isForwardClickable ? nextStep.label : step.label;
           return (
             <div className={`da-cf-timeline-step da-cf-timeline-step--${step.state}`} key={step.key}>

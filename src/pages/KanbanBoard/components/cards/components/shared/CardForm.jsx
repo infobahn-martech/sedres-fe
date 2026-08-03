@@ -2678,6 +2678,31 @@ function CardForm({
                 setDaCardStage((prev) => ({ ...prev, ...advanceData.current_stage }));
                 setDaStatusRefreshToken((t) => t + 1);
                 if (moveCardToColumn) moveCardToColumn(card.id, targetColumnId);
+
+                // Backend gap: advance_stage's current_stage only carries sticker info
+                // going forward — reverting (the timeline's "done" round) moves the
+                // board column fine but comes back with no current_sticker_id/sticker_id,
+                // so the daCardStage mirror effect above has nothing to patch the header
+                // "Card sticker" with. Fall back to matching a board sticker by name
+                // against the target status label ourselves (same name-match convention
+                // handleTopbarCardStickerChange already relies on for forward moves).
+                const stageStickerId = advanceData.current_stage.current_sticker_id ?? advanceData.current_stage.sticker_id;
+                const cardIdRaw = card?.id ?? card?.card_id;
+                if ((stageStickerId == null || String(stageStickerId).trim() === "") && boardId && cardIdRaw != null) {
+                  kanbanBoardService.getCardStickersByBoard(boardId)
+                    .then(({ data: stickerBody }) => {
+                      const list = unwrapListFromApi(stickerBody, ["card_stickers", "stickers"]).map(normalizeBoardCardStickerRow);
+                      const match = list.find((s) => normalizeLabelForMatch(s.name) === normalizeLabelForMatch(statusName));
+                      if (match?.id) {
+                        patchCardSticker?.(String(cardIdRaw).trim(), match.id, {
+                          name: match.name,
+                          color_code: match.color_code,
+                          icon_name: match.iconKey,
+                        });
+                      }
+                    })
+                    .catch(() => {});
+                }
               }
             });
         })
@@ -2686,7 +2711,7 @@ function CardForm({
         })
         .finally(() => setIsAdvancingStage(false));
     },
-    [isDaCardContext, card?.call_id, card?.callId, card?.id, isAdvancingStage, columns, columnOrder, moveCardToColumn, setDaLocalReachedDate]
+    [isDaCardContext, card, isAdvancingStage, columns, columnOrder, moveCardToColumn, setDaLocalReachedDate, boardId, patchCardSticker]
   );
 
   const handleTopbarColorChange = useCallback(
