@@ -1827,6 +1827,12 @@ a.da-cf-file-name {
   text-align: left;
 }
 
+// Read-only sections (e.g. the Links tab's LinksOverviewSection / LinkRelationsSection)
+// reuse the same header markup without a collapse toggle, so it shouldn't look clickable.
+.da-cf-more-card-header--static {
+  cursor: default;
+}
+
 .da-cf-more-card-icon {
   display: inline-flex;
   align-items: center;
@@ -1949,6 +1955,39 @@ a.da-cf-file-name {
     background: color-mix(in srgb, #dc2626 12%, transparent);
     color: #dc2626;
   }
+}
+
+// Links tab — LinksOverviewSection's rows are anchors (not inputs), so they need
+// their own link-reset + label treatment on top of the shared .da-cf-more-row.
+.da-cf-more-row--link {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.da-cf-more-row-link-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--da-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Links tab — LinkRelationsSection's relation_type pill.
+.da-cf-relation-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--step-accent, var(--da-accent));
+  background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 14%, #ffffff);
+  flex-shrink: 0;
 }
 
 @media (max-width: 720px) {

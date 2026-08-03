@@ -25,6 +25,7 @@ const SUB_TABS = [
   { key: "summary", label: "Summary", icon: Sparkles },
   { key: "daOperator", label: "DA Operations", icon: UserCog },
   { key: "daDocuments", label: "DA Documents", icon: FolderOpen },
+  { key: "links", label: "Links", icon: Link2 },
   { key: "more", label: "Link", icon: Paperclip },
 ];
 
@@ -47,7 +48,6 @@ const AUTO_SAVE_DEBOUNCE_MS = 1200;
 const LIST_SECTIONS = [
   { key: "attachments", label: "Attachments", icon: Paperclip, placeholder: "Add an attachment link or name…", accent: "#2563eb" },
   { key: "docs", label: "Docs", icon: FolderOpen, placeholder: "Add a doc link or name…", accent: "#7c3aed" },
-  { key: "linksOverview", label: "Links overview", icon: Link2, placeholder: "Add a link…", accent: "#059669" },
 ];
 
 // api/da/required_documents/{call_id} — read-only reference documents. The full list
@@ -157,11 +157,11 @@ const DA_DOCUMENTS_FIELDS_BY_KEY = (FIELDS_BY_GROUP.daDocuments ?? [])
   .reduce((acc, f) => ({ ...acc, [f.key]: f }), {});
 
 // DA Documents shows only the "Attachments" and "Docs" free-form lists from the
-// "More" tab's LIST_SECTIONS — "Links overview" belongs to the separate Links tab.
+// "More" tab's LIST_SECTIONS — the "Links" tab (api/da/links_tab) is separate.
 const DA_DOCUMENTS_LIST_SECTIONS = LIST_SECTIONS.filter((s) => s.key === "attachments" || s.key === "docs");
 
-// "More" tab now only shows "Docs" (Attachments moved to DA Documents, Links overview
-// to the separate Links tab), alongside the Relatives & Dependencies card below.
+// "More" tab now only shows "Docs" (Attachments moved to DA Documents, backend-driven
+// links moved to the separate Links tab), alongside the Relatives & Dependencies card below.
 const MORE_TAB_LIST_SECTIONS = LIST_SECTIONS.filter((s) => s.key === "docs");
 
 // DA Operations > Launch Hire — same card-hero treatment as the other DA Operations
@@ -1018,6 +1018,104 @@ RelativesSection.propTypes = {
   onChangeRow: PropTypes.func.isRequired,
   onRemoveRow: PropTypes.func.isRequired,
   accent: PropTypes.string,
+};
+
+// Read-only list fed by api/da/links_tab/{call_id}'s "links" array — reference
+// links (label + URL) the backend has attached to this call. No local add/edit;
+// this tab only mirrors what's already there.
+function LinksOverviewSection({ links, isLoading }) {
+  return (
+    <div className="da-cf-more-card" style={{ "--step-accent": "#059669" }}>
+      <div className="da-cf-more-card-header da-cf-more-card-header--static">
+        <span className="da-cf-more-card-icon"><Link2 size={20} /></span>
+        <div className="da-cf-more-card-heading">
+          <h5 className="da-cf-more-card-title">Links overview</h5>
+          <span className="da-cf-more-card-count">{links.length} item{links.length === 1 ? "" : "s"}</span>
+        </div>
+      </div>
+      {isLoading && links.length === 0 ? (
+        <p className="da-cf-more-empty">Loading…</p>
+      ) : links.length === 0 ? (
+        <p className="da-cf-more-empty">No links added yet.</p>
+      ) : (
+        <div className="da-cf-more-rows">
+          {links.map((link) => (
+            <a
+              className="da-cf-more-row da-cf-more-row--link"
+              key={link.link_id}
+              href={link.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Link2 size={13} className="da-cf-more-row-icon" />
+              <span className="da-cf-more-row-link-label">{link.label || link.url}</span>
+              <ArrowUpRight size={13} className="da-cf-more-row-icon" />
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+LinksOverviewSection.propTypes = {
+  links: PropTypes.arrayOf(
+    PropTypes.shape({
+      link_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      call_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      url: PropTypes.string,
+      label: PropTypes.string,
+    })
+  ).isRequired,
+  isLoading: PropTypes.bool,
+};
+
+// Read-only list fed by api/da/links_tab/{call_id}'s "relations" array — other
+// calls this call is linked to (e.g. shared billing entity), same read-only
+// treatment as LinksOverviewSection above.
+function LinkRelationsSection({ relations, isLoading }) {
+  return (
+    <div className="da-cf-more-card" style={{ "--step-accent": "#d97706" }}>
+      <div className="da-cf-more-card-header da-cf-more-card-header--static">
+        <span className="da-cf-more-card-icon"><GitBranch size={20} /></span>
+        <div className="da-cf-more-card-heading">
+          <h5 className="da-cf-more-card-title">Related calls</h5>
+          <span className="da-cf-more-card-count">{relations.length} item{relations.length === 1 ? "" : "s"}</span>
+        </div>
+      </div>
+      {isLoading && relations.length === 0 ? (
+        <p className="da-cf-more-empty">Loading…</p>
+      ) : relations.length === 0 ? (
+        <p className="da-cf-more-empty">No related calls yet.</p>
+      ) : (
+        <div className="da-cf-more-rows">
+          {relations.map((relation) => (
+            <div className="da-cf-more-row" key={relation.relation_id}>
+              <ArrowUpRight size={13} className="da-cf-more-row-icon" />
+              <span className="da-cf-relation-type-badge">{relation.relation_type}</span>
+              <span className="da-cf-more-row-link-label">
+                Call #{relation.related_call_id}
+                {relation.billing_entity ? ` · ${relation.billing_entity}` : ""}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+LinkRelationsSection.propTypes = {
+  relations: PropTypes.arrayOf(
+    PropTypes.shape({
+      relation_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      relation_type: PropTypes.string,
+      related_call_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      entity_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      billing_entity: PropTypes.string,
+    })
+  ).isRequired,
+  isLoading: PropTypes.bool,
 };
 
 // Read-only list fed by api/da/required_documents/{call_id} — each entry is
@@ -2052,7 +2150,6 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
   const [listSections, setListSections] = useState(() => ({
     attachments: { rows: [], collapsed: false },
     docs: { rows: [], collapsed: false },
-    linksOverview: { rows: [], collapsed: false },
   }));
 
   const addListRow = (sectionKey) => {
@@ -2136,6 +2233,33 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
   const changeRelative = (idx, value) =>
     setRelatives((prev) => prev.map((row, i) => (i === idx ? { ...row, value } : row)));
   const removeRelative = (idx) => setRelatives((prev) => prev.filter((_, i) => i !== idx));
+
+  // api/da/links_tab/{call_id} — hydrates the "Links" sub-tab: reference links
+  // (label + URL) and related-call relations (shared billing entity etc.) for
+  // this call. Read-only — no save/create endpoint for this tab yet.
+  const [linksTabData, setLinksTabData] = useState({ links: [], relations: [] });
+  const [isLoadingLinksTab, setIsLoadingLinksTab] = useState(false);
+
+  useEffect(() => {
+    if (callId == null) return undefined;
+    let cancelled = false;
+    setIsLoadingLinksTab(true);
+    daService.getLinksTab(callId)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setLinksTabData({
+          links: Array.isArray(data?.data?.links) ? data.data.links : [],
+          relations: Array.isArray(data?.data?.relations) ? data.data.relations : [],
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setLinksTabData({ links: [], relations: [] });
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingLinksTab(false);
+      });
+    return () => { cancelled = true; };
+  }, [callId]);
 
   const renderField = (field) => {
     const value = fieldValues[field.key];
@@ -2301,7 +2425,7 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
           <div className="da-cf-group-header">
             <span className="da-cf-group-icon"><ActiveGroupIcon size={16} /></span>
             <h4 className="da-cf-group-title">{activeTabMeta.label}</h4>
-            {activeSubTab !== "more" && activeSubTab !== "appointmentClearance" && activeSubTab !== "invoicesFees" && activeSubTab !== "vesselSalesOrder" && (
+            {activeSubTab !== "more" && activeSubTab !== "links" && activeSubTab !== "appointmentClearance" && activeSubTab !== "invoicesFees" && activeSubTab !== "vesselSalesOrder" && (
               <span className="da-cf-group-count">{activeFields.length} field{activeFields.length === 1 ? "" : "s"}</span>
             )}
           </div>
@@ -2340,6 +2464,22 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
           <InvoicesFeesSection fieldValues={fieldValues} updateField={updateField} />
         ) : activeSubTab === "vesselSalesOrder" ? (
           <VesselSalesOrderSection fieldValues={fieldValues} updateField={updateField} />
+        ) : activeSubTab === "links" ? (
+          <div className="da-cf-more">
+            <div className="da-cf-summary-hero">
+              <div className="da-cf-summary-hero-main">
+                <p className="da-cf-summary-hero-eyebrow">Links</p>
+                <h2 className="da-cf-summary-title">Links &amp; Related Calls</h2>
+                <p className="da-cf-summary-hero-subtitle">
+                  Reference links and related calls synced from the backend for this call.
+                </p>
+              </div>
+            </div>
+            <div className="da-cf-more-grid">
+              <LinksOverviewSection links={linksTabData.links} isLoading={isLoadingLinksTab} />
+              <LinkRelationsSection relations={linksTabData.relations} isLoading={isLoadingLinksTab} />
+            </div>
+          </div>
         ) : activeSubTab === "more" ? (
           <div className="da-cf-more">
             <div className="da-cf-summary-hero">
