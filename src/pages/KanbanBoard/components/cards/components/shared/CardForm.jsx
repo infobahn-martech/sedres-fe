@@ -2240,9 +2240,9 @@ function CardForm({
   const isHusbandryCall = String(formValues.call_type_id ?? "") === "4";
 
   // Launch Hire is a call-level capability (get_call_detail launch_hire flag).
-  // Husbandry's Launch Hire option/sections stay visible until the snapshot
-  // confirms it's explicitly disabled (0) for this call.
-  const showLaunchHire = Number(callDetailSnapshot?.launch_hire) !== 0;
+  // Husbandry's Launch Hire option/sections only show once the snapshot
+  // confirms it's explicitly enabled (1) for this call.
+  const showLaunchHire = Number(callDetailSnapshot?.launch_hire) === 1;
 
   // For export calls, the "Operation" tab stays visible but disabled until
   // export approval has fully completed (backend sets export_approval_status
