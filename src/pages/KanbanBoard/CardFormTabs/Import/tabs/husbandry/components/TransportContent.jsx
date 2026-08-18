@@ -10,7 +10,7 @@
   import { buildPickupDateTime } from "../../../../../../../store/TransportContent";
   import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
   import CrewSelectionField from "./CrewSelectionField";
-  import LocationAutocomplete from "./LocationAutocomplete";
+  import LeafletLocationField from "./LeafletLocationField";
   import DateTimePickerField from "../../../../shared/components/DateTimePickerField";
 
   // Helper functions to extract and flatten transport requests from API response
@@ -468,7 +468,7 @@
                         options={TRANSPORT_ROUTE_LOCATION_OPTIONS}
                         placeholder="Select location type"
                       />
-                      <LocationAutocomplete
+                      <LeafletLocationField
                         value={formValues.transportFromLocation || ""}
                         onChange={handleChange("transportFromLocation")}
                         placeholder="Enter pickup location"
@@ -481,7 +481,7 @@
                         options={TRANSPORT_ROUTE_LOCATION_OPTIONS}
                         placeholder="Select location type"
                       />
-                      <LocationAutocomplete
+                      <LeafletLocationField
                         value={formValues.transportToLocation || ""}
                         onChange={handleChange("transportToLocation")}
                         placeholder="Enter drop-off location"

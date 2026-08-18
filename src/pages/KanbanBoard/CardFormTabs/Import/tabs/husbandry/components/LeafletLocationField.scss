@@ -1,0 +1,115 @@
+.cf-input.leaflet-location-field {
+  min-height: 40px;
+  height: auto;
+  margin-top: 10px;
+  padding: 0;
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  background: var(--surface-primary);
+  box-sizing: border-box;
+  gap: 0;
+  align-items: stretch;
+  flex-direction: column;
+  position: relative;
+
+  &:hover {
+    border-color: #999;
+  }
+
+  &:focus-within {
+    border-color: #3e5cb6;
+    box-shadow: 0 0 0 1px #3e5cb6;
+  }
+
+  .leaflet-location-field__input-row {
+    display: flex;
+    align-items: stretch;
+    height: 40px;
+
+    input {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      padding: 0 12px;
+      font-size: 13px;
+      line-height: 1.35;
+      border: none;
+      background: transparent;
+      box-sizing: border-box;
+
+      &::placeholder {
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+    }
+  }
+
+  .leaflet-location-field__map-toggle {
+    flex-shrink: 0;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #3e5cb6;
+    background: transparent;
+    border: none;
+    border-left: 1px solid var(--border-primary);
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(62, 92, 182, 0.08);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  .leaflet-location-field__suggestions {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: var(--surface-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-height: 220px;
+    overflow-y: auto;
+
+    li {
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: rgba(0, 54, 140, 0.1);
+      }
+    }
+  }
+
+  .leaflet-location-field__status {
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .leaflet-location-field__map {
+    border-top: 1px solid var(--border-primary);
+
+    .leaflet-container {
+      border-bottom-left-radius: 6px;
+      border-bottom-right-radius: 6px;
+    }
+
+    .leaflet-location-field__map-hint {
+      padding: 4px 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+  }
+}
