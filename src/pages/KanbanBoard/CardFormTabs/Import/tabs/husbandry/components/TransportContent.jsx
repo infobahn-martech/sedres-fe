@@ -460,34 +460,33 @@
                     </FormField>
                   </FormGroup>
 
-                  <FieldRow>
-                    <FormField label="From">
-                      <FormSelect
-                        value={formValues.transportFromType || ""}
-                        onChange={handleChange("transportFromType")}
-                        options={TRANSPORT_ROUTE_LOCATION_OPTIONS}
-                        placeholder="Select location type"
-                      />
-                      <LeafletLocationField
-                        value={formValues.transportFromLocation || ""}
-                        onChange={handleChange("transportFromLocation")}
-                        placeholder="Enter pickup location"
-                      />
-                    </FormField>
-                    <FormField label="To">
-                      <FormSelect
-                        value={formValues.transportToType || ""}
-                        onChange={handleChange("transportToType")}
-                        options={TRANSPORT_ROUTE_LOCATION_OPTIONS}
-                        placeholder="Select location type"
-                      />
-                      <LeafletLocationField
-                        value={formValues.transportToLocation || ""}
-                        onChange={handleChange("transportToLocation")}
-                        placeholder="Enter drop-off location"
-                      />
-                    </FormField>
-                  </FieldRow>
+                  <FormField label="From">
+                    <FormSelect
+                      value={formValues.transportFromType || ""}
+                      onChange={handleChange("transportFromType")}
+                      options={TRANSPORT_ROUTE_LOCATION_OPTIONS}
+                      placeholder="Select location type"
+                    />
+                    <LeafletLocationField
+                      value={formValues.transportFromLocation || ""}
+                      onChange={handleChange("transportFromLocation")}
+                      placeholder="Enter pickup location"
+                    />
+                  </FormField>
+
+                  <FormField label="To">
+                    <FormSelect
+                      value={formValues.transportToType || ""}
+                      onChange={handleChange("transportToType")}
+                      options={TRANSPORT_ROUTE_LOCATION_OPTIONS}
+                      placeholder="Select location type"
+                    />
+                    <LeafletLocationField
+                      value={formValues.transportToLocation || ""}
+                      onChange={handleChange("transportToLocation")}
+                      placeholder="Enter drop-off location"
+                    />
+                  </FormField>
 
                   {launchHireEnabled && (
                     <FormGroup icon="LAUNCH_HIRE" label="Launch Hire" accent={TRANSPORT_ACCENT}>
