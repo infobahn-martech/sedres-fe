@@ -143,37 +143,39 @@ const LeafletLocationField = ({ value, onChange, placeholder, className = "", on
 
   return (
     <div className={`cf-input leaflet-location-field ${className}`} ref={wrapperRef}>
-      <div className="leaflet-location-field__input-row">
-        <input
-          type="text"
-          value={inputValue}
-          onChange={handleInputChange}
-          onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-          placeholder={placeholder || "Search for a location..."}
-          disabled={disabled}
-        />
-        <button
-          type="button"
-          className="leaflet-location-field__map-toggle"
-          onClick={toggleMap}
-          disabled={disabled}
-          title={showMap ? "Hide map" : "Pick on map"}
-        >
-          {showMap ? "Hide map" : "Map"}
-        </button>
+      <div className="leaflet-location-field__anchor">
+        <div className="leaflet-location-field__input-row">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={handleInputChange}
+            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+            placeholder={placeholder || "Search for a location..."}
+            disabled={disabled}
+          />
+          <button
+            type="button"
+            className="leaflet-location-field__map-toggle"
+            onClick={toggleMap}
+            disabled={disabled}
+            title={showMap ? "Hide map" : "Pick on map"}
+          >
+            {showMap ? "Hide map" : "Map"}
+          </button>
+        </div>
+
+        {showSuggestions && suggestions.length > 0 && (
+          <ul className="leaflet-location-field__suggestions">
+            {suggestions.map((s) => (
+              <li key={s.placeId || s.address} onClick={() => handleSuggestionClick(s)}>
+                {s.address}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {isSearching && <div className="leaflet-location-field__status">Searching...</div>}
       </div>
-
-      {showSuggestions && suggestions.length > 0 && (
-        <ul className="leaflet-location-field__suggestions">
-          {suggestions.map((s) => (
-            <li key={s.placeId || s.address} onClick={() => handleSuggestionClick(s)}>
-              {s.address}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {isSearching && <div className="leaflet-location-field__status">Searching...</div>}
 
       {showMap && (
         <div className="leaflet-location-field__map">

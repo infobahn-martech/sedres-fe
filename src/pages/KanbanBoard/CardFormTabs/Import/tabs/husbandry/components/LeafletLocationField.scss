@@ -10,7 +10,6 @@
   gap: 0;
   align-items: stretch;
   flex-direction: column;
-  position: relative;
 
   &:hover {
     border-color: #999;
@@ -19,6 +18,10 @@
   &:focus-within {
     border-color: #3e5cb6;
     box-shadow: 0 0 0 1px #3e5cb6;
+  }
+
+  .leaflet-location-field__anchor {
+    position: relative;
   }
 
   .leaflet-location-field__input-row {
