@@ -2,43 +2,25 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import {
   X, FileText, UploadCloud, Hash, Tag, Clock, User, Ship,
-  Sparkles, CalendarCheck, Anchor, Receipt, Package,
+  CalendarCheck, Anchor, Receipt, Package,
   Paperclip, FolderOpen, Link2, GitBranch, Trash2, Plus, ArrowUpRight, ChevronDown, Building2, Search,
-  CheckCircle2, CircleDashed, Banknote, FileArchive, ShieldCheck, UserCog, Loader2, AlertCircle, Eye,
+  CheckCircle2, CircleDashed, Banknote, FileArchive, ShieldCheck, Loader2, AlertCircle, Eye,
   Download, Printer,
 } from "lucide-react";
 import { debounce } from "lodash";
 import { notify } from "../../../../../../components/Toaster";
 import CustomModal from "../../../../../../components/CustomModal";
-import billingEntityService from "../../../../../../services/billingEntityService";
 import daService from "../../../../../../services/daService";
 import userService from "../../../../../../services/userService";
-import { mapBillingEntitiesToOptions, unwrapListResponse } from "../../../../../../shared/helpers/callFileFormOptions";
 import { getInitials } from "../../../../../../shared/utils/utils";
 import { useDaLocalReachedDates, useDaLocalLaunchHire } from "../../../../../../shared/store/daStore";
 import "../../../../../../design/scss/pages/kanban-board/daCardFields.scss";
 
 // Card / Appointment & Clearance / MWP / Launch Hire / Clearance Copies / Invoices,
-// Fees & Certificates / Vessel & Sales Order tabs were folded into DA Operations (see
-// that branch below) and are no longer shown as their own tabs — their FIELDS_CONFIG
-// groups and render branches stay since Operation Details etc. still read the same
-// underlying fieldValues keys.
-const SUB_TABS = [
-  { key: "summary", label: "Summary", icon: Sparkles },
-  { key: "daOperator", label: "DA Operations", icon: UserCog },
-  { key: "more", label: "Link", icon: Paperclip },
-];
-
-// Tabs long enough that the "More below" scroll hint (see daOperationsRef in the DA
-// component) is worth showing.
-const SCROLL_HINT_TABS = ["summary", "daOperator"];
-
-// Nested sub-tabs shown inside the "DA Operations" tab.
+// Nested sub-tabs shown inside the "DA Operations" section.
 const DA_OPERATOR_SUB_TABS = [
-  { key: "operationDetails", label: "Operation Details", icon: Anchor },
-  { key: "launchHire", label: "Launch Hire", icon: Ship },
-  { key: "invoice", label: "Invoice", icon: Receipt },
-  { key: "salesOrder", label: "Sales Order", icon: FileText },
+  { key: "operationDetails", label: "Operation Details", icon: Anchor, accent: "#2563eb", hint: "Owner, co-owner, service requester and last moved status for this call." },
+  { key: "invoice", label: "Invoice", icon: Receipt, accent: "#059669", hint: "Tax invoice, SRT/PO/WBS reference and invoice amount for this call." },
 ];
 
 // Matches the debounce delay used for the Export Approval tab's autosave (Approval.jsx).
@@ -114,10 +96,8 @@ const RAW_FIELDS_CONFIG = [
   { key: "salesOrderSupportingDocs", label: "Sales Order Supporting documents", type: "files", group: "vesselSalesOrder", showCount: true },
   // DA Operations > Operation Details — mirrors fields already captured in Card / Vessel
   // & Sales Order above, kept in sync since they share the same fieldValues keys.
-  { key: "vesselName", label: "Vessel", type: "text", group: "operationDetails", placeholder: "e.g. MV Atlantic Star" },
   { key: "coOwners", label: "Co-owner", type: "user", group: "operationDetails", placeholder: "Search a user…" },
   { key: "serviceRequester", label: "Service requester", type: "text", group: "operationDetails", placeholder: "e.g. Jeffrey Steve" },
-  { key: "billingOthers", label: "Billing Note", type: "text", group: "operationDetails", placeholder: "e.g. Additional billing note" },
   { key: "lastMoved", label: "Last moved", type: "readonly", group: "operationDetails" },
 ];
 
@@ -140,72 +120,6 @@ const OPERATION_DETAILS_FIELDS_BY_KEY = (FIELDS_BY_GROUP.operationDetails ?? [])
 
 // "Link" tab shows the free-form "Links overview" text/link list.
 const MORE_TAB_LIST_SECTIONS = LIST_SECTIONS.filter((s) => s.key === "linksOverview");
-
-// DA Operations > Launch Hire — same card-hero treatment as the other DA Operations
-// sections (Clearance Details, Invoice, Sales Order): 3rd Party Launch hire and Road
-// Transport, minus the Launch Hire Slips upload, so it isn't the odd one out styled
-// as plain field tiles.
-const LAUNCH_HIRE_CARDS = [
-  { key: "thirdPartyLaunchHire", type: "text", icon: Ship, label: "3rd Party Launch hire (If any)", hint: "Name of the third-party company handling launch hire, if any.", accent: "#2563eb", placeholder: "e.g. Al Rashid Transport Co." },
-  { key: "roadTransport", type: "number-unit", icon: Hash, label: "Road Transport", hint: "Number of days required for road transport.", accent: "#d97706", unit: "DAYS", placeholder: "e.g. 3" },
-];
-
-// Synced from api/da/operation_tab/{call_id} (third_party_launch_hire, road_transport_days)
-// when the backend has a value, but always editable regardless — save_operation_tab has no
-// field for either, so typed values are saved via the local-only useDaLocalLaunchHire
-// fallback (see updateField in DA below) since there's no real backend field to persist to.
-function LaunchHireCardsSection({ fieldValues, updateField }) {
-  return (
-    <div className="da-cf-ac-grid">
-      {LAUNCH_HIRE_CARDS.map((card) => {
-        const Icon = card.icon;
-        const value = fieldValues[card.key];
-        return (
-          <div
-            className={`da-cf-ac-card${value ? " da-cf-ac-card--done" : ""}`}
-            style={{ "--step-accent": card.accent }}
-            key={card.key}
-          >
-            <div className="da-cf-ac-card-head">
-              <span className="da-cf-ac-card-icon"><Icon size={26} /></span>
-              <h5 className="da-cf-ac-card-title">{card.label}</h5>
-            </div>
-            <div className="da-cf-ac-card-field">
-              {card.type === "number-unit" ? (
-                <NumberUnitField
-                  label={card.label}
-                  icon={Icon}
-                  unit={card.unit}
-                  value={value}
-                  placeholder={card.placeholder}
-                  onChange={(v) => updateField(card.key, v)}
-                />
-              ) : (
-                <TextField
-                  label={card.label}
-                  icon={Icon}
-                  value={value}
-                  placeholder={card.placeholder}
-                  onChange={(v) => updateField(card.key, v)}
-                />
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-LaunchHireCardsSection.propTypes = {
-  fieldValues: PropTypes.object.isRequired,
-  updateField: PropTypes.func.isRequired,
-};
-
-// Groups that mix full-width tiles (files/chips) with half-width ones need a fixed
-// column count so the full-width tiles end at the same edge as the row above them,
-// instead of stretching across extra auto-fit columns on wide screens.
-const FIXED_2COL_GROUPS = new Set(["launchHire"]);
 
 const makeInitialFieldState = () => {
   const state = {};
@@ -988,7 +902,7 @@ StatusTimelineSection.propTypes = {
   isAdvancing: PropTypes.bool,
 };
 
-function SummaryPanel({ callId, fieldValues, billingEntityLabel, summaryData, isLoadingSummary, statusTimeline, isLoadingStatusTimeline, onAdvanceDaStage, isAdvancingDaStage }) {
+function SummaryPanel({ callId, summaryData, isLoadingSummary, statusTimeline, isLoadingStatusTimeline, onAdvanceDaStage, isAdvancingDaStage }) {
   const getLocalReachedDate = useDaLocalReachedDates((s) => s.getReachedDate);
 
   // api/da/update_status doesn't persist reached_date yet (backend gap) — for a step that's
@@ -1016,13 +930,9 @@ function SummaryPanel({ callId, fieldValues, billingEntityLabel, summaryData, is
     isSummaryPending ? "Loading…" : (formatApiDateTime(summaryData?.[key]) || fallback);
 
   const stats = [
-    { label: "Vessel", value: apiValue("vessel_name", fieldValues.vesselName), icon: Ship, accent: "#2563eb" },
-    { label: "Owner", value: apiValue("call_owner_name", null), icon: User, accent: "#0d9488" },
     { label: "Vessel Owner", value: apiValue("vessel_owner", null), icon: Building2, accent: "#d97706" },
     { label: "Inward Clearance", value: apiDateValue("inward_clearance_date", null), icon: CalendarCheck, accent: "#0891b2" },
     { label: "Outward Clearance", value: apiDateValue("outward_clearance_date", null), icon: CalendarCheck, accent: "#7c3aed" },
-    { label: "Billing Entity", value: apiValue("billing_entity", billingEntityLabel || null), icon: Package, accent: "#e11d48" },
-    { label: "SAP Sales Order No", value: apiValue("sap_sales_order_no", fieldValues.sapSalesOrderNo), icon: Receipt, accent: "#059669" },
   ];
 
   return (
@@ -1062,8 +972,6 @@ function SummaryPanel({ callId, fieldValues, billingEntityLabel, summaryData, is
 
 SummaryPanel.propTypes = {
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  fieldValues: PropTypes.object.isRequired,
-  billingEntityLabel: PropTypes.string,
   summaryData: PropTypes.object,
   isLoadingSummary: PropTypes.bool,
   statusTimeline: PropTypes.array,
@@ -1471,71 +1379,6 @@ VesselSalesOrderSection.propTypes = {
   onRemoveDocument: PropTypes.func.isRequired,
 };
 
-// DA Operations > Sales Order — the SAP Sales Order No / SRN No. (L & T) cards from
-// VesselSalesOrderSection above, minus its own hero header and the vessel/file fields
-// not asked for here.
-// SAP Sales Order No is editable and persisted via api/da/save_operation_tab/{call_id};
-// SRN No. has no field in that payload, so typed values are saved via the local-only
-// useDaLocalLaunchHire fallback (see updateField in DA below) since there's no real
-// backend field to persist it to.
-const SALES_ORDER_CARDS = VESSEL_SALES_ORDER_CARDS.filter(
-  (card) => card.key === "sapSalesOrderNo" || card.key === "srnNo"
-);
-
-function SalesOrderCardsSection({ fieldValues, updateField, onRemoveDocument, callId }) {
-  return (
-    <div className="da-cf-ac-grid">
-      {SALES_ORDER_CARDS.map((card) => {
-        const Icon = card.icon;
-        const value = fieldValues[card.key];
-        const isDone = card.type === "files" ? value.length > 0 : Boolean(value);
-        return (
-          <div
-            className={`da-cf-ac-card${isDone ? " da-cf-ac-card--done" : ""}`}
-            style={{ "--step-accent": card.accent }}
-            key={card.key}
-          >
-            <div className="da-cf-ac-card-head">
-              <span className="da-cf-ac-card-icon"><Icon size={26} /></span>
-              <h5 className="da-cf-ac-card-title">{card.label}</h5>
-            </div>
-            <div className="da-cf-ac-card-field">
-              {card.type === "files" ? (
-                <FileDropzone
-                  label={card.label}
-                  icon={Icon}
-                  files={value}
-                  showCount={card.showCount}
-                  showDownloadAll={card.showDownloadAll}
-                  documentName={card.documentName}
-                  callId={callId}
-                  onAddFiles={(newFiles) => updateField(card.key, [...value, ...newFiles])}
-                  onRemoveFile={(i) => onRemoveDocument(card.key, i)}
-                />
-              ) : (
-                <TextField
-                  label={card.label}
-                  icon={Icon}
-                  value={value}
-                  placeholder={card.placeholder}
-                  onChange={(v) => updateField(card.key, v)}
-                />
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-SalesOrderCardsSection.propTypes = {
-  fieldValues: PropTypes.object.isRequired,
-  updateField: PropTypes.func.isRequired,
-  onRemoveDocument: PropTypes.func.isRequired,
-  callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-};
-
 // Inline status pill shown next to the "DA Operations" Save button, reflecting the
 // debounced autosave (see runSaveOperationTab / debouncedAutoSaveOperationTab in DA
 // below) — same idle/saving/saved/error states as the Export Approval tab's AutoSaveStatus.
@@ -1568,8 +1411,7 @@ OperationAutoSaveStatus.propTypes = {
   status: PropTypes.oneOf(["idle", "saving", "saved", "error"]),
 };
 
-function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaStage, isAdvancingDaStage }) {
-  const [activeSubTab, setActiveSubTab] = useState("summary");
+function DA({ card, handleChange, daStatusRefreshToken, onAdvanceDaStage, isAdvancingDaStage }) {
   const [fieldValues, setFieldValues] = useState(makeInitialFieldState);
   // co_owner_id isn't a visible field — UserSearchField only exposes the picked user's
   // name — but api/da/save_operation_tab needs the id, so it's tracked alongside coOwners.
@@ -1660,8 +1502,8 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
           serviceRequester: opData.service_requester ?? prev.serviceRequester,
           billingOthers: opData.billing_note ?? prev.billingOthers,
           coOwners: opData.co_owner_name ?? prev.coOwners,
-          // save_operation_tab has no field for either of these (see LaunchHireCardsSection),
-          // so an empty API value falls back to the local-only override (see
+          // save_operation_tab has no field for either of these (they're editable on the
+          // standalone "Launch Hire" tab), so an empty API value falls back to the local-only override (see
           // useDaLocalLaunchHire) before finally falling back to whatever's already typed.
           thirdPartyLaunchHire: opData.third_party_launch_hire
             || getLaunchHireOverride(callId, "thirdPartyLaunchHire")
@@ -1678,7 +1520,7 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
             || prev.srtPoWbs,
           invoiceAmount: opData.invoice_amount ?? prev.invoiceAmount,
           sapSalesOrderNo: opData.sap_sales_order_no ?? prev.sapSalesOrderNo,
-          // save_operation_tab has no field for this (see SALES_ORDER_CARDS comment), so
+          // save_operation_tab has no field for this (see VESSEL_SALES_ORDER_CARDS comment), so
           // an empty API value falls back to the local-only override before finally
           // falling back to whatever's already typed.
           srnNo: opData.srn_no
@@ -1694,29 +1536,6 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
       });
     return () => { cancelled = true; };
   }, [callId, getLaunchHireOverride]);
-
-  // api/da/required_documents/{call_id} — read-only reference documents already
-  // uploaded elsewhere in the system, shown at the bottom of the Clearance Copies
-  // sub-tab; not editable here.
-  const [requiredDocuments, setRequiredDocuments] = useState(null);
-  const [isLoadingRequiredDocuments, setIsLoadingRequiredDocuments] = useState(false);
-
-  useEffect(() => {
-    if (callId == null) return undefined;
-    let cancelled = false;
-    setIsLoadingRequiredDocuments(true);
-    daService.getRequiredDocuments(callId)
-      .then(({ data }) => {
-        if (!cancelled) setRequiredDocuments(data?.data ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setRequiredDocuments(null);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingRequiredDocuments(false);
-      });
-    return () => { cancelled = true; };
-  }, [callId]);
 
   // api/da/save_operation_tab/{call_id} — persists the editable fields spread across
   // the "DA Operations" sub-tab cards (Operation Details' Co-owner/Billing Note,
@@ -1784,7 +1603,7 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
   ]);
 
   // thirdPartyLaunchHire/roadTransport/srtPoWbs/srnNo have no save_operation_tab field (see
-  // LaunchHireCardsSection / INVOICE_CARDS_EDITABLE_KEYS / SALES_ORDER_CARDS), so typed
+  // INVOICE_CARDS_EDITABLE_KEYS / VESSEL_SALES_ORDER_CARDS comments), so typed
   // values also get mirrored into useDaLocalLaunchHire — the only place they're
   // remembered across reopening the card, since there's no backend to persist them to.
   const LOCAL_ONLY_FIELD_KEYS = useMemo(() => new Set(["thirdPartyLaunchHire", "roadTransport", "srtPoWbs", "srnNo"]), []);
@@ -1819,52 +1638,6 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
 
   const rowIdCounter = useRef(0);
   const nextRowId = () => `row-${++rowIdCounter.current}`;
-
-  // Billing Entity defaults to whatever's already captured in the Appointment Details /
-  // Operation tabs (formValues.mainBillingEntity / vesselBillingEntity / tugBillingEntity /
-  // otherBillingEntity), resolved to a display name below — but same as
-  // thirdPartyLaunchHire/roadTransport/srtPoWbs, save_operation_tab has no field for it,
-  // so it's editable here via the same local-only useDaLocalLaunchHire fallback.
-  const [billingEntityOptions, setBillingEntityOptions] = useState([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const loadBillingEntities = async () => {
-      try {
-        const { data } = await billingEntityService.getBillingEntities({ params: { page: 1, limit: 1000 } });
-        const options = mapBillingEntitiesToOptions(unwrapListResponse(data));
-        if (!cancelled) setBillingEntityOptions(options);
-      } catch {
-        if (!cancelled) setBillingEntityOptions([]);
-      }
-    };
-    loadBillingEntities();
-    return () => { cancelled = true; };
-  }, []);
-
-  const billingEntityId =
-    formValues?.mainBillingEntity ||
-    formValues?.vesselBillingEntity ||
-    formValues?.tugBillingEntity ||
-    formValues?.otherBillingEntity ||
-    "";
-  const billingEntityLabel = billingEntityId
-    ? billingEntityOptions.find((opt) => opt.value === String(billingEntityId))?.label ?? ""
-    : "";
-
-  // Manual edits to Billing Entity (see comment above billingEntityOptions) are kept
-  // client-side only, the same as thirdPartyLaunchHire/roadTransport/srtPoWbs — seeded
-  // from useDaLocalLaunchHire so a typed value survives reopening the card.
-  const [billingEntityOverride, setBillingEntityOverride] = useState("");
-  useEffect(() => {
-    if (callId == null) return;
-    setBillingEntityOverride(getLaunchHireOverride(callId, "billingEntity") || "");
-  }, [callId, getLaunchHireOverride]);
-  const billingEntityDisplayValue = billingEntityOverride || operationTabData?.billing_entity || billingEntityLabel || "";
-  const updateBillingEntity = (value) => {
-    setBillingEntityOverride(value);
-    if (callId != null) setLaunchHireOverride(callId, "billingEntity", value);
-  };
 
   const [listSections, setListSections] = useState(() => ({
     attachments: { rows: [], collapsed: false },
@@ -2070,279 +1843,107 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
     }
   };
 
-  const activeTabMeta = SUB_TABS.find((tab) => tab.key === activeSubTab);
-  const activeFields = FIELDS_BY_GROUP[activeSubTab] ?? [];
-  const ActiveGroupIcon = activeTabMeta.icon;
-
-  // Summary, DA Operations and DA Documents each pack several sections onto one page
-  // (see their branches below), so it's easy to miss that there's more below the fold.
-  // Rather than making the user notice and click a hint, we nudge the scroll parent
-  // down automatically once when a tab with overflowing content is opened. Only one
-  // of the three tabs is ever mounted at a time, so all three wrapper divs share this
-  // same ref.
-  const daOperationsRef = useRef(null);
-
-  useEffect(() => {
-    if (!SCROLL_HINT_TABS.includes(activeSubTab)) return undefined;
-    const node = daOperationsRef.current;
-    if (!node) return undefined;
-
-    const getScrollParent = (el) => {
-      let current = el?.parentElement;
-      while (current) {
-        const { overflowY } = window.getComputedStyle(current);
-        if ((overflowY === "auto" || overflowY === "scroll") && current.scrollHeight > current.clientHeight) {
-          return current;
-        }
-        current = current.parentElement;
-      }
-      return document.scrollingElement || document.documentElement;
-    };
-
-    const scrollParent = getScrollParent(node);
-    const distanceFromBottom = scrollParent.scrollHeight - scrollParent.scrollTop - scrollParent.clientHeight;
-    if (distanceFromBottom > 32) {
-      scrollParent.scrollBy({ top: 320, behavior: "smooth" });
-    }
-  }, [activeSubTab]);
-
   return (
     <div className="cardform-body da-cf-panel">
-      <div className="da-cf-subtabs">
-        {SUB_TABS.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              className={`da-cf-subtab${activeSubTab === tab.key ? " da-cf-subtab--active" : ""}`}
-              onClick={() => setActiveSubTab(tab.key)}
-            >
-              <Icon size={14} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
       <div className="da-cf-subtab-body">
-        {activeSubTab !== "summary" && activeSubTab !== "card" && activeSubTab !== "mwp" && activeSubTab !== "launchHire" && activeSubTab !== "daOperator" && (
-          <div className="da-cf-group-header">
-            <span className="da-cf-group-icon"><ActiveGroupIcon size={16} /></span>
-            <h4 className="da-cf-group-title">{activeTabMeta.label}</h4>
-            {activeSubTab !== "more" && activeSubTab !== "appointmentClearance" && activeSubTab !== "invoicesFees" && activeSubTab !== "vesselSalesOrder" && (
-              <span className="da-cf-group-count">{activeFields.length} field{activeFields.length === 1 ? "" : "s"}</span>
-            )}
-          </div>
-        )}
+        <div className="da-cf-mwp-launch-hire">
+          <SummaryPanel
+            callId={callId}
+            summaryData={summaryData}
+            isLoadingSummary={isLoadingSummary}
+            statusTimeline={statusTimeline}
+            isLoadingStatusTimeline={isLoadingStatusTimeline}
+            onAdvanceDaStage={onAdvanceDaStage}
+            isAdvancingDaStage={isAdvancingDaStage}
+          />
+        </div>
 
-        {activeSubTab === "summary" ? (
-          <div className="da-cf-mwp-launch-hire" ref={daOperationsRef}>
-            <SummaryPanel
-              callId={callId}
-              fieldValues={fieldValues}
-              billingEntityLabel={billingEntityLabel}
-              summaryData={summaryData}
-              isLoadingSummary={isLoadingSummary}
-              statusTimeline={statusTimeline}
-              isLoadingStatusTimeline={isLoadingStatusTimeline}
-              onAdvanceDaStage={onAdvanceDaStage}
-              isAdvancingDaStage={isAdvancingDaStage}
+        <div className="da-cf-mwp-launch-hire">
+          <div className="da-cf-ops-toolbar">
+            <OperationAutoSaveStatus status={operationSaveStatus} />
+          </div>
+
+          <div className="da-cf-ops-grid">
+            {DA_OPERATOR_SUB_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isOperationDetails = tab.key === "operationDetails";
+              const isInvoice = tab.key === "invoice";
+              return (
+                <section
+                  className={`da-cf-ops-card${isOperationDetails || isInvoice ? " da-cf-ops-card--wide" : ""}`}
+                  style={{ "--step-accent": tab.accent }}
+                  key={tab.key}
+                >
+                  <header className="da-cf-ops-card-header">
+                    <span className="da-cf-ops-card-icon"><Icon size={20} /></span>
+                    <h4 className="da-cf-ops-card-title">{tab.label}</h4>
+                  </header>
+                  <p className="da-cf-ac-card-hint">{tab.hint}</p>
+                  <div className="da-cf-ops-card-body">
+                    {isOperationDetails ? (
+                      <div className="da-cf-fields-grid da-cf-fields-grid--fixed4">
+                        <ReadonlyField
+                          label="Owner"
+                          icon={User}
+                          value={isLoadingOperationTab && !operationTabData ? "Loading…" : (operationTabData?.call_owner_name || summaryData?.call_owner_name || "Not set yet")}
+                          accent="#0d9488"
+                        />
+                        {renderField(OPERATION_DETAILS_FIELDS_BY_KEY.coOwners)}
+                        <ReadonlyField
+                          label="Service requester"
+                          icon={OPERATION_DETAILS_FIELDS_BY_KEY.serviceRequester.icon}
+                          value={isLoadingOperationTab && !operationTabData ? "Loading…" : (fieldValues.serviceRequester || "Not set yet")}
+                          accent={OPERATION_DETAILS_FIELDS_BY_KEY.serviceRequester.accent}
+                        />
+                        <ReadonlyField
+                          label="Last moved"
+                          icon={Clock}
+                          value={isLoadingOperationTab && !operationTabData ? "Loading…" : (formatApiDateTime(operationTabData?.stage_entered_date) || lastMovedDisplay)}
+                          accent={OPERATION_DETAILS_FIELDS_BY_KEY.lastMoved.accent}
+                        />
+                      </div>
+                    ) : isInvoice ? (
+                      <InvoiceCardsSection fieldValues={fieldValues} updateField={updateField} />
+                    ) : (
+                      <p className="da-cf-ac-readonly-value">
+                        <span className="da-cf-ac-readonly-empty">Coming soon.</span>
+                      </p>
+                    )}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="da-cf-more">
+          <div className="da-cf-more-grid">
+            {MORE_TAB_LIST_SECTIONS.map((section) => (
+              <ListRowsSection
+                key={section.key}
+                label={section.label}
+                icon={section.icon}
+                rows={listSections[section.key].rows}
+                collapsed={listSections[section.key].collapsed}
+                onToggleCollapse={() => toggleListCollapse(section.key)}
+                onAdd={() => addListRow(section.key)}
+                onChangeRow={(i, v) => changeListRow(section.key, i, v)}
+                onRemoveRow={(i) => removeListRow(section.key, i)}
+                placeholder={section.placeholder}
+                accent={section.accent}
+              />
+            ))}
+            <RelativesSection
+              rows={relatives}
+              collapsed={relativesCollapsed}
+              onToggleCollapse={() => setRelativesCollapsed((c) => !c)}
+              onAdd={addRelative}
+              onChangeRow={changeRelative}
+              onRemoveRow={removeRelative}
+              accent="#d97706"
             />
           </div>
-        ) : activeSubTab === "invoicesFees" ? (
-          <InvoicesFeesSection fieldValues={fieldValues} updateField={updateField} />
-        ) : activeSubTab === "vesselSalesOrder" ? (
-          <VesselSalesOrderSection fieldValues={fieldValues} updateField={updateField} onRemoveDocument={handleRemoveDocument} />
-        ) : activeSubTab === "more" ? (
-          <div className="da-cf-more">
-            <div className="da-cf-summary-hero">
-              <div className="da-cf-summary-hero-main">
-                <p className="da-cf-summary-hero-eyebrow">Link</p>
-                <h2 className="da-cf-summary-title">Additional Details</h2>
-                <p className="da-cf-summary-hero-subtitle">
-                  Links and related cards that don&rsquo;t fit anywhere else on this call.
-                </p>
-              </div>
-            </div>
-            <div className="da-cf-more-grid">
-              {MORE_TAB_LIST_SECTIONS.map((section) => (
-                <ListRowsSection
-                  key={section.key}
-                  label={section.label}
-                  icon={section.icon}
-                  rows={listSections[section.key].rows}
-                  collapsed={listSections[section.key].collapsed}
-                  onToggleCollapse={() => toggleListCollapse(section.key)}
-                  onAdd={() => addListRow(section.key)}
-                  onChangeRow={(i, v) => changeListRow(section.key, i, v)}
-                  onRemoveRow={(i) => removeListRow(section.key, i)}
-                  placeholder={section.placeholder}
-                  accent={section.accent}
-                />
-              ))}
-              <RelativesSection
-                rows={relatives}
-                collapsed={relativesCollapsed}
-                onToggleCollapse={() => setRelativesCollapsed((c) => !c)}
-                onAdd={addRelative}
-                onChangeRow={changeRelative}
-                onRemoveRow={removeRelative}
-                accent="#d97706"
-              />
-            </div>
-          </div>
-        ) : activeSubTab === "mwp" ? (
-          <div className="da-cf-mwp-launch-hire">
-            <div className="da-cf-summary-hero">
-              <div className="da-cf-summary-hero-main">
-                <p className="da-cf-summary-hero-eyebrow">MWP</p>
-                <h2 className="da-cf-summary-title">MWP Documents</h2>
-                <p className="da-cf-summary-hero-subtitle">
-                  Track the MWP-related documents required for this call.
-                </p>
-              </div>
-            </div>
-            <div className="da-cf-mwp-launch-hire-panel" key={activeSubTab}>
-              <RequiredDocumentsSection
-                documents={requiredDocuments}
-                isLoading={isLoadingRequiredDocuments}
-                configs={MWP_REQUIRED_DOCUMENTS_CONFIG}
-                title="MWP Documents"
-                standalone
-              />
-            </div>
-          </div>
-        ) : activeSubTab === "launchHire" ? (
-          <div className="da-cf-mwp-launch-hire">
-            <div className="da-cf-summary-hero">
-              <div className="da-cf-summary-hero-main">
-                <p className="da-cf-summary-hero-eyebrow">Launch Hire</p>
-                <h2 className="da-cf-summary-title">Launch Hire Details</h2>
-                <p className="da-cf-summary-hero-subtitle">
-                  Manage launch hire slips, 3rd party hire and road transport days for this call.
-                </p>
-              </div>
-            </div>
-            <div className="da-cf-mwp-launch-hire-panel" key={activeSubTab}>
-              <div className="da-cf-fields-grid da-cf-fields-grid--launch-hire">
-                {activeFields.map((field) => renderField(field))}
-              </div>
-            </div>
-          </div>
-        ) : activeSubTab === "daOperator" ? (
-          <div className="da-cf-mwp-launch-hire" ref={daOperationsRef}>
-            <div className="da-cf-summary-hero">
-              <div className="da-cf-summary-hero-main">
-                <p className="da-cf-summary-hero-eyebrow">DA Operations</p>
-                <h2 className="da-cf-summary-title">Operations Overview</h2>
-                <p className="da-cf-summary-hero-subtitle">
-                  Everything for this call in one place — no need to switch tabs.
-                </p>
-              </div>
-              <div className="da-cf-summary-hero-actions">
-                <OperationAutoSaveStatus status={operationSaveStatus} />
-              </div>
-            </div>
-
-            <div className="da-cf-ops-grid">
-              {DA_OPERATOR_SUB_TABS.map((tab) => {
-                const Icon = tab.icon;
-                const isOperationDetails = tab.key === "operationDetails";
-                const isLaunchHire = tab.key === "launchHire";
-                const isInvoice = tab.key === "invoice";
-                const isSalesOrder = tab.key === "salesOrder";
-                return (
-                  <section
-                    className={`da-cf-ops-card${isOperationDetails || isLaunchHire || isInvoice || isSalesOrder ? " da-cf-ops-card--wide" : ""}`}
-                    key={tab.key}
-                  >
-                    <header className="da-cf-ops-card-header">
-                      <span className="da-cf-ops-card-icon"><Icon size={16} /></span>
-                      <h4 className="da-cf-ops-card-title">{tab.label}</h4>
-                    </header>
-                    <div className="da-cf-ops-card-body">
-                      {isOperationDetails ? (
-                        <>
-                          <div className="da-cf-fields-grid da-cf-fields-grid--fixed4">
-                            <ReadonlyField
-                              label="Vessel"
-                              icon={OPERATION_DETAILS_FIELDS_BY_KEY.vesselName.icon}
-                              value={isLoadingOperationTab && !operationTabData ? "Loading…" : (fieldValues.vesselName || "Not set yet")}
-                              accent={OPERATION_DETAILS_FIELDS_BY_KEY.vesselName.accent}
-                            />
-                            <ReadonlyField
-                              label="Vessel Owner"
-                              icon={Building2}
-                              value={isLoadingOperationTab && !operationTabData ? "Loading…" : (operationTabData?.vessel_owner || summaryData?.vessel_owner || "Not set yet")}
-                              accent="#d97706"
-                            />
-                            <ReadonlyField
-                              label="Owner"
-                              icon={User}
-                              value={isLoadingOperationTab && !operationTabData ? "Loading…" : (operationTabData?.call_owner_name || summaryData?.call_owner_name || "Not set yet")}
-                              accent="#0d9488"
-                            />
-                            {renderField(OPERATION_DETAILS_FIELDS_BY_KEY.coOwners)}
-                          </div>
-                          <div className="da-cf-fields-grid">
-                            <ReadonlyField
-                              label="Service requester"
-                              icon={OPERATION_DETAILS_FIELDS_BY_KEY.serviceRequester.icon}
-                              value={isLoadingOperationTab && !operationTabData ? "Loading…" : (fieldValues.serviceRequester || "Not set yet")}
-                              accent={OPERATION_DETAILS_FIELDS_BY_KEY.serviceRequester.accent}
-                            />
-                            <TextField
-                              label="Billing Entity"
-                              icon={Package}
-                              value={billingEntityDisplayValue}
-                              placeholder="e.g. Al Rashid Shipping Agency"
-                              onChange={updateBillingEntity}
-                              accent="#e11d48"
-                            />
-                            {renderField(OPERATION_DETAILS_FIELDS_BY_KEY.billingOthers)}
-                            <ReadonlyField
-                              label="Last moved"
-                              icon={Clock}
-                              value={isLoadingOperationTab && !operationTabData ? "Loading…" : (formatApiDateTime(operationTabData?.stage_entered_date) || lastMovedDisplay)}
-                              accent={OPERATION_DETAILS_FIELDS_BY_KEY.lastMoved.accent}
-                            />
-                          </div>
-                        </>
-                      ) : isLaunchHire ? (
-                        <LaunchHireCardsSection fieldValues={fieldValues} updateField={updateField} />
-                      ) : isInvoice ? (
-                        <InvoiceCardsSection fieldValues={fieldValues} updateField={updateField} />
-                      ) : isSalesOrder ? (
-                        <SalesOrderCardsSection fieldValues={fieldValues} updateField={updateField} onRemoveDocument={handleRemoveDocument} callId={callId} />
-                      ) : (
-                        <p className="da-cf-ac-readonly-value">
-                          <span className="da-cf-ac-readonly-empty">Coming soon.</span>
-                        </p>
-                      )}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
-          </div>
-        ) : activeSubTab === "clearanceCopies" ? (
-          <>
-            <div className="da-cf-fields-grid da-cf-fields-grid--files2">
-              {activeFields.map((field) => renderField(field))}
-            </div>
-            <RequiredDocumentsSection
-              documents={requiredDocuments}
-              isLoading={isLoadingRequiredDocuments}
-            />
-          </>
-        ) : (
-          <div
-            className={`da-cf-fields-grid${FIXED_2COL_GROUPS.has(activeSubTab) ? " da-cf-fields-grid--fixed2" : ""}`}
-          >
-            {activeFields.map((field) => renderField(field))}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

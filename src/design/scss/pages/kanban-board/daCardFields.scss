@@ -107,6 +107,13 @@
   }
 }
 
+// Autosave status pill sits above the "DA Operations" card grid now that the section
+// no longer has its own hero banner.
+.da-cf-ops-toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
 // "DA Operations" tab: every section (Operation Details, Clearance Details, Launch
 // Hire, Invoice, Sales Order) rendered as its own boxed card on one page, instead of
 // behind a second row of click-through tabs.
@@ -121,32 +128,55 @@
   grid-column: 1 / -1;
 }
 
+// Matches the .da-cf-more-card / .da-cf-ac-card / .da-cf-summary-card visual language
+// (rounded corners, soft shadow, accent-tinted hover lift, colored icon badge) so every
+// card-shaped section in the DA tab reads as one consistent UI instead of several.
 .da-cf-ops-card {
   display: flex;
   flex-direction: column;
   gap: 14px;
   background: var(--da-surface);
-  border: 1px solid var(--da-line);
-  border-radius: 14px;
+  border: 1.5px solid var(--da-line);
+  border-radius: 16px;
   padding: 18px 20px 20px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+  animation: da-cf-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  &:hover {
+    border-color: var(--step-accent, var(--da-accent));
+    box-shadow: 0 14px 26px -16px color-mix(in srgb, var(--step-accent, var(--da-accent)) 45%, transparent), 0 4px 10px rgba(15, 23, 42, 0.05);
+  }
+}
+
+// The fade-up animation above gives each ops-card its own stacking context, so the
+// Invoice card (later in the grid) paints over Operation Details' open Co-owner
+// dropdown regardless of the dropdown's own z-index. Lift whichever ops-card
+// currently has a dropdown open above its siblings.
+.da-cf-ops-card:has(.da-cf-user-search-dropdown) {
+  z-index: 20;
 }
 
 .da-cf-ops-card-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 14px;
 }
 
 .da-cf-ops-card-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--da-accent);
-  opacity: 0.85;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  color: var(--step-accent, var(--da-accent));
+  background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 14%, #ffffff);
+  flex-shrink: 0;
 }
 
 .da-cf-ops-card-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--da-ink);
   margin: 0;
@@ -154,6 +184,12 @@
 
 .da-cf-ops-card-header-status {
   margin-left: auto;
+}
+
+// The shared .da-cf-ac-card-hint has its own margin for use inside non-flex cards;
+// .da-cf-ops-card already spaces its children via flex gap, so reset it here.
+.da-cf-ops-card > .da-cf-ac-card-hint {
+  margin: 0;
 }
 
 .da-cf-ops-card-body {
@@ -167,6 +203,14 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 16px;
+}
+
+// Summary, DA Operations and Link now render stacked as one continuous page (see DA.jsx)
+// instead of one-at-a-time behind tabs, so this needs real spacing between them.
+.da-cf-subtab-body {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
 }
 
 // Shared wrapper for the "MWP" and "Launch Hire" sub-tabs' hero + content pane —
@@ -307,11 +351,9 @@
   grid-template-columns: repeat(2, 1fr);
 }
 
-// DA Operator > Operation Details: Vessel / Vessel Owner / Owner / Co-owner pinned to
-// one row, with a second .da-cf-fields-grid (auto-fit) for the remaining fields below.
+// DA Operator > Operation Details: all 4 fields pinned to a single row.
 .da-cf-fields-grid--fixed4 {
   grid-template-columns: repeat(4, 1fr);
-  margin-bottom: 20px;
 }
 
 // Time Objects sub-tab: entry count varies with the port/call-type config, so a fixed
