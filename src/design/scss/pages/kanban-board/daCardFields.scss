@@ -1342,7 +1342,7 @@ a.da-cf-file-name {
 // shared color, matching the varied icon-badge colors in that reference.
 .da-cf-summary-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 18px;
 }
 

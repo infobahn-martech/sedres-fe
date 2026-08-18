@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import {
   X, FileText, UploadCloud, Hash, Tag, Clock, User, Ship,
   CalendarCheck, Anchor, Receipt, Package,
-  Paperclip, FolderOpen, Link2, GitBranch, Trash2, Plus, ArrowUpRight, ChevronDown, Building2, Search,
+  Paperclip, FolderOpen, Link2, GitBranch, Trash2, Plus, ArrowUpRight, ChevronDown, Search,
   CheckCircle2, CircleDashed, Banknote, FileArchive, ShieldCheck, Loader2, AlertCircle, Eye,
   Download, Printer,
 } from "lucide-react";
@@ -924,13 +924,10 @@ function SummaryPanel({ callId, summaryData, isLoadingSummary, statusTimeline, i
   // api/da/summary_tab/{call_id} is the source of truth once it loads; until then, or if
   // it comes back without a field, fall back to what's already been typed in other tabs.
   const isSummaryPending = isLoadingSummary && !summaryData;
-  const apiValue = (key, fallback) =>
-    isSummaryPending ? "Loading…" : (summaryData?.[key] || fallback);
   const apiDateValue = (key, fallback) =>
     isSummaryPending ? "Loading…" : (formatApiDateTime(summaryData?.[key]) || fallback);
 
   const stats = [
-    { label: "Vessel Owner", value: apiValue("vessel_owner", null), icon: Building2, accent: "#d97706" },
     { label: "Inward Clearance", value: apiDateValue("inward_clearance_date", null), icon: CalendarCheck, accent: "#0891b2" },
     { label: "Outward Clearance", value: apiDateValue("outward_clearance_date", null), icon: CalendarCheck, accent: "#7c3aed" },
   ];
@@ -943,8 +940,6 @@ function SummaryPanel({ callId, summaryData, isLoadingSummary, statusTimeline, i
         onStepClick={onAdvanceDaStage}
         isAdvancing={isAdvancingDaStage}
       />
-
-      <h3 className="da-cf-summary-section-heading">Overview</h3>
 
       <div className="da-cf-summary-cards">
         {stats.map((stat, index) => {
@@ -1390,13 +1385,6 @@ function OperationAutoSaveStatus({ status }) {
       </span>
     );
   }
-  if (status === "saved") {
-    return (
-      <span className="da-cf-autosave-status da-cf-autosave-status--saved">
-        <CheckCircle2 size={13} /> All changes saved
-      </span>
-    );
-  }
   if (status === "error") {
     return (
       <span className="da-cf-autosave-status da-cf-autosave-status--error">
@@ -1575,6 +1563,7 @@ function DA({ card, handleChange, daStatusRefreshToken, onAdvanceDaStage, isAdva
     try {
       await daService.saveOperationTab(callId, formData);
       setOperationSaveStatus("saved");
+      notify("Changes saved successfully.", "success", "top-center");
     } catch {
       setOperationSaveStatus("error");
     }
