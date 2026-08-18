@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import PropTypes from "prop-types";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
@@ -19,7 +19,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const SEARCH_DEBOUNCE_MS = 400;
-const DEFAULT_CENTER = { lat: 26.2172, lng: 50.1971 }; // Jubail, Saudi Arabia
+const DEFAULT_CENTER = { lat: 26.2172, lng: 50.1971 }; // Dammam/Al Khobar area, Saudi Arabia
 
 const MapClickHandler = ({ onSelect }) => {
   useMapEvents({
@@ -32,6 +32,31 @@ const MapClickHandler = ({ onSelect }) => {
 
 MapClickHandler.propTypes = {
   onSelect: PropTypes.func.isRequired,
+};
+
+// MapContainer only applies center/zoom on first mount, so once a location is picked
+// after the map is already open, the marker can end up placed outside the still-frozen
+// viewport. Pan the live map instance imperatively whenever the marker position changes.
+const RecenterOnPosition = ({ position }) => {
+  const map = useMap();
+  const prevPositionRef = useRef(null);
+
+  useEffect(() => {
+    if (!position) return;
+    const prev = prevPositionRef.current;
+    if (prev && prev.lat === position.lat && prev.lng === position.lng) return;
+    prevPositionRef.current = position;
+    map.setView([position.lat, position.lng], Math.max(map.getZoom(), 15));
+  }, [position, map]);
+
+  return null;
+};
+
+RecenterOnPosition.propTypes = {
+  position: PropTypes.shape({
+    lat: PropTypes.number,
+    lng: PropTypes.number,
+  }),
 };
 
 const LeafletLocationField = ({ value, onChange, placeholder, className = "", onLocationSelect, disabled = false }) => {
@@ -190,6 +215,7 @@ const LeafletLocationField = ({ value, onChange, placeholder, className = "", on
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <MapClickHandler onSelect={handleMapSelect} />
+            <RecenterOnPosition position={markerPosition} />
             {markerPosition && (
               <Marker
                 position={[markerPosition.lat, markerPosition.lng]}
