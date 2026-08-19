@@ -124,6 +124,7 @@ function Subtasks({ card }) {
     const [editDueTime, setEditDueTime] = useState("");
     const [editDocumentFile, setEditDocumentFile] = useState(null);
     const [editDocumentRemoved, setEditDocumentRemoved] = useState(false);
+    const [editCompleted, setEditCompleted] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [togglingId, setTogglingId] = useState(null);
     const [title, setTitle] = useState("");
@@ -247,6 +248,7 @@ function Subtasks({ card }) {
         setEditDueTime(task.dueTime ?? "");
         setEditDocumentFile(null);
         setEditDocumentRemoved(false);
+        setEditCompleted(task.completed);
     }, []);
 
     const handleEditCancel = useCallback(() => {
@@ -257,6 +259,7 @@ function Subtasks({ card }) {
         setEditDueTime("");
         setEditDocumentFile(null);
         setEditDocumentRemoved(false);
+        setEditCompleted(false);
     }, []);
 
     const handleUpdate = useCallback(async (taskId) => {
@@ -272,6 +275,7 @@ function Subtasks({ card }) {
             if (dueDateStr) formData.append("due_date", dueDateStr);
             if (editDocumentFile) formData.append("document", editDocumentFile);
             else if (editDocumentRemoved) formData.append("document", "");
+            formData.append("is_completed", editCompleted ? "1" : "0");
             await kanbanBoardService.updateSubtask(formData);
             notify("Task updated successfully.", "success");
             handleEditCancel();
@@ -281,7 +285,7 @@ function Subtasks({ card }) {
         } finally {
             setIsUpdating(false);
         }
-    }, [editDescription, editAssignedTo, editDueDate, editDueTime, editDocumentFile, editDocumentRemoved, handleEditCancel, loadSubtasks]);
+    }, [editDescription, editAssignedTo, editDueDate, editDueTime, editDocumentFile, editDocumentRemoved, editCompleted, handleEditCancel, loadSubtasks]);
 
     const handleToggleComplete = useCallback(async (task) => {
         const nextCompleted = !task.completed;
@@ -538,6 +542,18 @@ function Subtasks({ card }) {
                                                                         </label>
                                                                     )}
                                                                     <span className="task-tab-doc-hint">{DOCUMENT_HINT}</span>
+                                                                </div>
+                                                                <div className="task-tab-field">
+                                                                    <label className="task-tab-label">Status</label>
+                                                                    <select
+                                                                        className="task-tab-status-select"
+                                                                        value={editCompleted ? "1" : "0"}
+                                                                        onChange={(e) => setEditCompleted(e.target.value === "1")}
+                                                                        disabled={isUpdating}
+                                                                    >
+                                                                        <option value="0">Pending</option>
+                                                                        <option value="1">Completed</option>
+                                                                    </select>
                                                                 </div>
                                                             </div>
                                                             <div className="task-tab-edit-actions">
