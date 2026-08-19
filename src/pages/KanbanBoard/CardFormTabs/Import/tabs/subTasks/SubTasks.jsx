@@ -125,6 +125,7 @@ function Subtasks({ card }) {
     const [editDocumentFile, setEditDocumentFile] = useState(null);
     const [editDocumentRemoved, setEditDocumentRemoved] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [togglingId, setTogglingId] = useState(null);
     const [title, setTitle] = useState("");
     const [assignUserId, setAssignUserId] = useState("");
     const [dueDate, setDueDate] = useState("");
@@ -281,6 +282,22 @@ function Subtasks({ card }) {
             setIsUpdating(false);
         }
     }, [editDescription, editAssignedTo, editDueDate, editDueTime, editDocumentFile, editDocumentRemoved, handleEditCancel, loadSubtasks]);
+
+    const handleToggleComplete = useCallback(async (task) => {
+        const nextCompleted = !task.completed;
+        setTogglingId(task.id);
+        try {
+            const formData = new FormData();
+            formData.append("subtask_id", String(task.id));
+            formData.append("is_completed", nextCompleted ? "1" : "0");
+            await kanbanBoardService.updateSubtask(formData);
+            setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, completed: nextCompleted } : t)));
+        } catch {
+            notify("Failed to update task status.", "error");
+        } finally {
+            setTogglingId(null);
+        }
+    }, []);
 
     return (
         <div className="cardform-body cardform-body--feed-tab">
@@ -538,10 +555,17 @@ function Subtasks({ card }) {
                                                             <div className="task-tab-task-header">
                                                                 <p className="task-tab-task-title">{task.title}</p>
                                                                 <div className="task-tab-task-actions">
-                                                                    <span className={`task-tab-status-badge task-tab-status-badge--${task.completed ? "completed" : "pending"}`}>
+                                                                    <button
+                                                                        type="button"
+                                                                        className={`task-tab-status-badge task-tab-status-badge--${task.completed ? "completed" : "pending"}`}
+                                                                        onClick={() => handleToggleComplete(task)}
+                                                                        disabled={togglingId === task.id}
+                                                                        aria-label={task.completed ? "Mark as pending" : "Mark as completed"}
+                                                                        title={task.completed ? "Mark as pending" : "Mark as completed"}
+                                                                    >
                                                                         {task.completed ? <FiCheck size={10} /> : <FiClock size={10} />}
-                                                                        {task.completed ? "Completed" : "Pending"}
-                                                                    </span>
+                                                                        {togglingId === task.id ? "Updating..." : task.completed ? "Completed" : "Pending"}
+                                                                    </button>
                                                                     <button
                                                                         type="button"
                                                                         className="task-tab-icon-btn"
