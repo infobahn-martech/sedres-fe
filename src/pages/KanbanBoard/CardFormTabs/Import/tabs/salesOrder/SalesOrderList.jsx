@@ -52,224 +52,6 @@ GroupCheckbox.propTypes = {
   onClick: PropTypes.func.isRequired,
 };
 
-// Preview Modal Component for Generate Invoice and Create Purchase Order
-const PreviewModal = ({ show, onClose, onSend, modalType }) => {
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  const getModalTitle = () => {
-    if (modalType === "invoice") {
-      return "PREVIEW: INVOICE";
-    } else if (modalType === "purchaseOrder") {
-      return "PREVIEW: PURCHASE ORDER";
-    }
-    return "PREVIEW";
-  };
-
-  if (!show) return null;
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-      }}
-      onClick={handleBackdropClick}
-    >
-      <div
-        style={{
-          backgroundColor: "#ffffff",
-          borderRadius: "8px",
-          width: "90%",
-          maxWidth: "600px",
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Modal Header */}
-        <div
-          style={{
-            padding: "20px 24px",
-            borderBottom: "1px solid #e0e0e0",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-          }}
-        >
-          <div
-            style={{
-              width: "4px",
-              height: "24px",
-              backgroundColor: "#4169E1",
-              borderRadius: "2px",
-            }}
-          />
-          <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#1a1a1a" }}>
-            {getModalTitle()}
-          </h2>
-        </div>
-
-        {/* Modal Body */}
-        <div
-          style={{
-            padding: "40px 24px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "550px",
-          }}
-        >
-          {/* Document Preview */}
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "400px",
-              backgroundColor: "#ffffff",
-              border: "1px solid #e0e0e0",
-              borderRadius: "4px",
-              padding: "30px",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-              position: "relative",
-              minHeight: "468px",
-            }}
-          >
-            {/* Folded corner effect */}
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                width: "40px",
-                height: "40px",
-                background: "linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.05) 50%)",
-                borderTopRightRadius: "4px",
-              }}
-            />
-
-            {/* PDF Badge */}
-            <div
-              style={{
-                backgroundColor: "#DC143C",
-                color: "#ffffff",
-                padding: "8px 16px",
-                borderRadius: "4px",
-                fontSize: "14px",
-                fontWeight: "600",
-                display: "inline-block",
-                marginBottom: "20px",
-              }}
-            >
-              PDF
-            </div>
-
-            {/* Placeholder lines */}
-            <div style={{ marginTop: "20px" }}>
-              <div
-                style={{
-                  height: "12px",
-                  backgroundColor: "#666",
-                  borderRadius: "2px",
-                  marginBottom: "12px",
-                  width: "100%",
-                }}
-              />
-              <div
-                style={{
-                  height: "12px",
-                  backgroundColor: "#666",
-                  borderRadius: "2px",
-                  marginBottom: "12px",
-                  width: "85%",
-                }}
-              />
-              <div
-                style={{
-                  height: "12px",
-                  backgroundColor: "#666",
-                  borderRadius: "2px",
-                  marginBottom: "12px",
-                  width: "75%",
-                }}
-              />
-              <div
-                style={{
-                  height: "12px",
-                  backgroundColor: "#666",
-                  borderRadius: "2px",
-                  width: "60%",
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div
-          style={{
-            padding: "20px 24px",
-            borderTop: "1px solid #e0e0e0",
-            display: "flex",
-            justifyContent: "center",
-            gap: "12px",
-          }}
-        >
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              padding: "10px 24px",
-              backgroundColor: "#f5f5f5",
-              color: "#333",
-              border: "1px solid #ddd",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: "500",
-            }}
-          >
-            CLOSE
-          </button>
-          <button
-            type="button"
-            onClick={onSend}
-            style={{
-              padding: "10px 24px",
-              backgroundColor: "#8B5CF6",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: "600",
-            }}
-          >
-            Send
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-PreviewModal.propTypes = {
-  show: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onSend: PropTypes.func.isRequired,
-  modalType: PropTypes.oneOf(["invoice", "purchaseOrder"]).isRequired,
-};
-
 const TAX_CODE_OPTIONS = ["15%", "5%", "0%"];
 const TYPE_OF_PO_OPTIONS = ["Inhouse", "Outhouse PO", "Multiple PO"];
 
@@ -806,10 +588,6 @@ const SalesOrderList = ({
   const [isGeneratingWorkOrder, setIsGeneratingWorkOrder] = useState(false);
   const bulkActionBarRef = useRef(null);
 
-  // State for preview modal (DA module only)
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [previewModalType, setPreviewModalType] = useState(null);
-
   // State for Generate PO modal
   const [showGeneratePOPopup, setShowGeneratePOPopup] = useState(false);
   const [isGeneratingPO, setIsGeneratingPO] = useState(false);
@@ -1300,17 +1078,6 @@ const SalesOrderList = ({
     }
   };
 
-  // Handlers for preview modal (DA module only)
-  const handleOpenPreviewModal = (type) => {
-    setPreviewModalType(type);
-    setShowPreviewModal(true);
-  };
-
-  const handleClosePreviewModal = () => {
-    setShowPreviewModal(false);
-    setPreviewModalType(null);
-  };
-
   const handleGeneratePO = () => {
     if (!canGeneratePO) return;
     // Re-validate against the latest item state — a selected item may have had a PO
@@ -1403,11 +1170,6 @@ const SalesOrderList = ({
     }
   };
 
-  const handleSendPreview = () => {
-    // TODO: Implement send functionality
-    handleClosePreviewModal();
-  };
-
   // Helper function to render table header with tooltip if label > 10 chars (DAModule only)
   const renderTableHeader = (label, className = "") => {
     const thProps = { className: className || undefined };
@@ -1461,18 +1223,8 @@ const SalesOrderList = ({
     <tr key={order.id}>
       {/* Item No */}
       <td>
-        <div className="sales-order-table-cell" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+        <div className="sales-order-table-cell">
           <span>{order.itemNo || ""}</span>
-          {isDaVerifyContext && order.poStatus === "Draft" && (
-            <>
-              <Tooltip id="create-purchase-order-tooltip" place="top" content="Create Purchase Order" />
-              <FiFilePlus
-                data-tooltip-id="create-purchase-order-tooltip"
-                style={{ cursor: "pointer", color: "#FFD700", fontSize: "18px", flexShrink: 0 }}
-                onClick={(e) => { e.stopPropagation(); handleOpenPreviewModal("purchaseOrder"); }}
-              />
-            </>
-          )}
         </div>
       </td>
 
@@ -2428,16 +2180,6 @@ const SalesOrderList = ({
           cardColor={cardColor}
           vesselName={soShipName}
           portName={soPort}
-        />
-      )}
-
-      {/* Preview Modal for DA Module (Generate Invoice / Create Purchase Order) */}
-      {isDAModule && showPreviewModal && previewModalType && (
-        <PreviewModal
-          show={showPreviewModal}
-          onClose={handleClosePreviewModal}
-          onSend={handleSendPreview}
-          modalType={previewModalType}
         />
       )}
 
