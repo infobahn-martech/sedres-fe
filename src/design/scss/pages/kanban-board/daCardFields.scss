@@ -1600,6 +1600,112 @@ a.da-cf-file-name {
   background: color-mix(in srgb, var(--da-ink-faint) 10%, transparent);
 }
 
+// Sales Order Activity — local-only event log fed from the Sales Order tab's
+// Client Approval & Invoicing process, laid out landscape (left-to-right, oldest-first)
+// to match the horizontal step orientation of the DA Status Timeline above it.
+.da-cf-so-activity-list {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  overflow-x: auto;
+  padding: 10px 4px 8px;
+  margin-top: 6px;
+}
+
+@keyframes da-cf-so-activity-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes da-cf-so-activity-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--da-accent) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--da-accent) 0%, transparent);
+  }
+}
+
+.da-cf-so-activity-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  min-width: 170px;
+  flex-shrink: 0;
+  padding: 4px 18px;
+  animation: da-cf-so-activity-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.da-cf-so-activity-row:nth-child(1) { animation-delay: 0.05s; }
+.da-cf-so-activity-row:nth-child(2) { animation-delay: 0.1s; }
+.da-cf-so-activity-row:nth-child(3) { animation-delay: 0.15s; }
+.da-cf-so-activity-row:nth-child(4) { animation-delay: 0.2s; }
+.da-cf-so-activity-row:nth-child(5) { animation-delay: 0.25s; }
+.da-cf-so-activity-row:nth-child(n+6) { animation-delay: 0.3s; }
+
+// Horizontal connecting line running through the dots — full-width for middle items,
+// half-width at the first/last so the line doesn't overshoot the row of dots.
+.da-cf-so-activity-marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 14px;
+}
+
+.da-cf-so-activity-marker::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: var(--da-line);
+  transform: translateY(-50%);
+}
+
+.da-cf-so-activity-row:first-child .da-cf-so-activity-marker::before {
+  left: 50%;
+}
+
+.da-cf-so-activity-row:last-child .da-cf-so-activity-marker::before {
+  right: 50%;
+}
+
+.da-cf-so-activity-dot {
+  position: relative;
+  z-index: 1;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--da-accent);
+}
+
+// Most recent event pulses so it reads as "just happened."
+.da-cf-so-activity-row:last-child .da-cf-so-activity-dot {
+  animation: da-cf-so-activity-pulse 1.8s ease-in-out infinite;
+}
+
+.da-cf-so-activity-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--da-ink);
+}
+
+.da-cf-so-activity-time {
+  font-size: 11px;
+  color: var(--da-ink-faint);
+}
+
 @media (max-width: 768px) {
   .da-cf-timeline-card {
     padding: 16px 16px 4px;

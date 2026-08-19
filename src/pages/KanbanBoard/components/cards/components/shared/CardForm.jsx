@@ -89,12 +89,13 @@ const DA_TOP_TABS = [
   "Reports",
   "KPI",
   "Invoice",
+  "Document Library",
   "Comments",
   "Subtasks",
   "Notes",
 ];
 
-const DA_ENABLED_TABS = ["General", "Operation", "Husbandry", "Sales Order", "Reports", "KPI", "Invoice", "Comments", "Subtasks", "Notes"];
+const DA_ENABLED_TABS = ["General", "Operation", "Husbandry", "Sales Order", "Reports", "KPI", "Invoice", "Document Library", "Comments", "Subtasks", "Notes"];
 
 const DEFAULT_ACCENT_COLOR = "#2A00FF";
 const ADD_CARD_TOPBAR_DEFAULT_HEX = "#2e7d32";
@@ -1654,7 +1655,8 @@ const renderTabContent = (
   daStatusRefreshToken,
   onAdvanceDaStage,
   isAdvancingDaStage,
-  showLaunchHire = true
+  showLaunchHire = true,
+  isDaCardContext = false
 ) => {
   const commonProps = {
     card,
@@ -1663,6 +1665,7 @@ const renderTabContent = (
     isAddMode,
     isSimplifiedMode,
     isDAModule,
+    isDaCardContext,
     onSave: addModeSave.onSave,
     isSavingGeneral: addModeSave.isSavingGeneral,
     hasSubmitted: addModeSave.hasSubmitted,
@@ -1693,6 +1696,8 @@ const renderTabContent = (
         return <Reports {...commonProps} />;
       case "KPI":
         return <KPI {...commonProps} />;
+      case "Document Library":
+        return <DocumentLibrary {...commonProps} />;
       case "Comments":
         return <Comments {...commonProps} />;
       case "Subtasks":
@@ -2965,7 +2970,8 @@ function CardForm({
                 daStatusRefreshToken,
                 handleDaTimelineStepClick,
                 isAdvancingStage,
-                showLaunchHire
+                showLaunchHire,
+                isDaCardContext
               )}
           </>
         )}

@@ -939,7 +939,52 @@ StatusTimelineSection.propTypes = {
   isAdvancing: PropTypes.bool,
 };
 
-function SummaryPanel({ callId, statusTimeline, isLoadingStatusTimeline, onAdvanceDaStage, isAdvancingDaStage }) {
+// Separate from the backend-driven DA Status Timeline above — this is a local-only activity
+// log fed by the Sales Order tab's Client Approval & Invoicing process (Send SO → Upload
+// Invoice → Send Invoice → Payment), shared via formValues.soProcessTimeline. No backend
+// field/endpoint yet for any of this.
+function SalesOrderActivitySection({ events }) {
+  if (!events || events.length === 0) return null;
+  // Oldest-first, left-to-right — reads as a process flow, same direction as the
+  // step-based DA Status Timeline above it.
+  const sorted = [...events].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  return (
+    <div className="da-cf-timeline-card">
+      <div className="da-cf-timeline-header">
+        <h3 className="da-cf-summary-section-heading da-cf-timeline-heading">
+          <Clock size={14} className="da-cf-timeline-heading-icon" />
+          Sales Order Activity
+        </h3>
+      </div>
+      <div className="da-cf-so-activity-list">
+        {sorted.map((entry) => (
+          <div className="da-cf-so-activity-row" key={entry.id}>
+            <div className="da-cf-so-activity-marker">
+              <span className="da-cf-so-activity-dot" />
+            </div>
+            <span className="da-cf-so-activity-text">
+              {entry.event}{entry.itemNo ? ` — Item ${entry.itemNo}` : ""}
+            </span>
+            <span className="da-cf-so-activity-time">{formatApiDateTime(entry.timestamp)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+SalesOrderActivitySection.propTypes = {
+  events: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string,
+      event: PropTypes.string,
+      itemNo: PropTypes.string,
+      timestamp: PropTypes.string,
+    })
+  ),
+};
+
+function SummaryPanel({ callId, statusTimeline, isLoadingStatusTimeline, onAdvanceDaStage, isAdvancingDaStage, soProcessTimeline }) {
   const getLocalReachedDate = useDaLocalReachedDates((s) => s.getReachedDate);
 
   // api/da/update_status doesn't persist reached_date yet (backend gap) — for a step that's
@@ -959,12 +1004,15 @@ function SummaryPanel({ callId, statusTimeline, isLoadingStatusTimeline, onAdvan
   }, [statusTimeline, callId, getLocalReachedDate]);
 
   return (
-    <StatusTimelineSection
-      steps={timelineSteps}
-      isLoading={isLoadingStatusTimeline}
-      onStepClick={onAdvanceDaStage}
-      isAdvancing={isAdvancingDaStage}
-    />
+    <>
+      <StatusTimelineSection
+        steps={timelineSteps}
+        isLoading={isLoadingStatusTimeline}
+        onStepClick={onAdvanceDaStage}
+        isAdvancing={isAdvancingDaStage}
+      />
+      <SalesOrderActivitySection events={soProcessTimeline} />
+    </>
   );
 }
 
@@ -974,6 +1022,7 @@ SummaryPanel.propTypes = {
   isLoadingStatusTimeline: PropTypes.bool,
   onAdvanceDaStage: PropTypes.func,
   isAdvancingDaStage: PropTypes.bool,
+  soProcessTimeline: PropTypes.array,
 };
 
 function ListRowsSection({ label, icon, hint, rows, onAdd, onChangeRow, onRemoveRow, placeholder, accent }) {
@@ -1353,7 +1402,7 @@ OperationAutoSaveStatus.propTypes = {
   status: PropTypes.oneOf(["idle", "saving", "saved", "error"]),
 };
 
-function DA({ card, handleChange, daStatusRefreshToken, onAdvanceDaStage, isAdvancingDaStage }) {
+function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaStage, isAdvancingDaStage }) {
   const [fieldValues, setFieldValues] = useState(makeInitialFieldState);
   // co_owner_id isn't a visible field — UserSearchField only exposes the picked user's
   // name — but api/da/save_operation_tab needs the id, so it's tracked alongside coOwners.
@@ -1797,6 +1846,7 @@ function DA({ card, handleChange, daStatusRefreshToken, onAdvanceDaStage, isAdva
           isLoadingStatusTimeline={isLoadingStatusTimeline}
           onAdvanceDaStage={onAdvanceDaStage}
           isAdvancingDaStage={isAdvancingDaStage}
+          soProcessTimeline={formValues?.soProcessTimeline}
         />
 
         <div className="da-cf-ops-toolbar">

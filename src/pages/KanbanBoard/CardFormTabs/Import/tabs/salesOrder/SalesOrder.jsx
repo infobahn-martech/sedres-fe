@@ -7,6 +7,7 @@ function SalesOrder({
   handleChange,
   isSimplifiedMode = false,
   isDAModule = false,
+  isDaCardContext = false,
   salesOrderApiLoading = false,
   salesOrderApiError = null,
 }) {
@@ -24,6 +25,7 @@ function SalesOrder({
             readOnly={isSimplifiedMode}
             showPOStatus={isDAModule}
             isDAModule={isDAModule}
+            isDaCardContext={isDaCardContext}
             isLoadingSalesOrder={salesOrderApiLoading}
             salesOrderError={salesOrderApiError}
           />
@@ -39,6 +41,7 @@ SalesOrder.propTypes = {
   handleChange: PropTypes.func,
   isSimplifiedMode: PropTypes.bool,
   isDAModule: PropTypes.bool,
+  isDaCardContext: PropTypes.bool,
   salesOrderApiLoading: PropTypes.bool,
   salesOrderApiError: PropTypes.oneOfType([PropTypes.string, PropTypes.oneOf([null])]),
 };

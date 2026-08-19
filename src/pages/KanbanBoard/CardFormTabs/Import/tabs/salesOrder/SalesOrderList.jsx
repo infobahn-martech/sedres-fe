@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import PropTypes from "prop-types";
-import { FiFilePlus, FiFileText, FiClipboard, FiTool, FiCheck, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiFilePlus, FiFileText, FiClipboard, FiTool, FiCheck, FiChevronLeft, FiChevronRight, FiRefreshCw } from "react-icons/fi";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import "../../../../../../design/scss/salesOrder.scss";
@@ -272,6 +272,93 @@ PreviewModal.propTypes = {
 
 const TAX_CODE_OPTIONS = ["15%", "5%", "0%"];
 const TYPE_OF_PO_OPTIONS = ["Inhouse", "Outhouse PO", "Multiple PO"];
+
+// Client-specific SO → Invoice → Payment status sequence, per ops-provided reference
+// (API.txt). Different clients follow different named statuses/timelines — "GENERAL" is
+// the fallback for clients without specific invoicing guidelines. Where a client has
+// multiple port/call-type variants in the reference, one representative variant is used
+// here (see comment per entry) — not yet split by port/call type. maxDays is shown as a
+// target, not enforced.
+const CLIENT_SO_STATUS_TIMELINES = {
+  GENERAL: [
+    { label: "Ops Completed" },
+    { label: "To Be Sent for SO Approval", maxDays: "1" },
+    { label: "Awaiting SO Approval", maxDays: "3" },
+    { label: "Invoice Issuance", maxDays: "1" },
+    { label: "Invoice Dispatched", maxDays: "1" },
+    { label: "Awaiting Payment", maxDays: "Credit period" },
+    { label: "Closed Paid" },
+  ],
+  MCDERMOTT: [ // import/export/domestic — Rastanura variant
+    { label: "Ops Completed" },
+    { label: "To Be Sent for SRF", maxDays: "1" },
+    { label: "Awaiting SRF", maxDays: "4" },
+    { label: "Invoice Issued and Send for PO", maxDays: "1" },
+    { label: "PO Received", maxDays: "7" },
+    { label: "Invoice Dispatched", maxDays: "1" },
+    { label: "Archived" },
+  ],
+  SAIPEM: [ // Domestic call-Jubail variant
+    { label: "Ops Completed" },
+    { label: "To Be Sent for SO Approval", maxDays: "1" },
+    { label: "Awaiting SO Approval", maxDays: "3" },
+    { label: "To Be Sent for Service Entry", maxDays: "1" },
+    { label: "Awaiting Consolidated Invoice" },
+  ],
+  "L&T": [ // Domestic call-Jubail/RT variant
+    { label: "Ops Completed" },
+    { label: "Sent for SCC Approval / SCC (Service Request Form)", maxDays: "2 days" },
+    { label: "Follow Up SCC Approval" },
+    { label: "Invoice Issued", maxDays: "3 days" },
+    { label: "Submitted", maxDays: "2 days" },
+    { label: "Closed Unpaid" },
+    { label: "Closed Paid" },
+  ],
+  "SUBSEA 7": [ // Domestic call-Jubail/RT variant
+    { label: "Ops Completed" },
+    { label: "To Be Sent for SRT / SRT (Service Request Ticket)", maxDays: "3" },
+    { label: "Follow Up SRT Approval", maxDays: "1" },
+    { label: "Invoice Issued", maxDays: "2" },
+    { label: "Submitted", maxDays: "1" },
+    { label: "Closed Unpaid" },
+    { label: "Closed Paid" },
+  ],
+  "AL-GIHAZ": [ // (Lamprell) — Domestic/Husbandry call-Jubail/RT variant (same steps both)
+    { label: "Ops Completed" },
+    { label: "SO Approval", maxDays: "7" },
+    { label: "Request for PO", maxDays: "7" },
+    { label: "Invoice Issued", maxDays: "4" },
+    { label: "Payment Application Form", maxDays: "7" },
+    { label: "Final Submission of Invoice" },
+    { label: "Closed Unpaid" },
+    { label: "Closed Paid" },
+  ],
+  "LAMPRELL SAUDI": [ // Domestic call /RT variant
+    { label: "Ops Completed" },
+    { label: "SO Approval", maxDays: "2" },
+    { label: "Invoice Issued", maxDays: "1" },
+    { label: "Submitted", maxDays: "1" },
+    { label: "Closed Unpaid" },
+    { label: "Closed Paid" },
+  ],
+  "LAMPRELL UAE": [ // Domestic call-Jubail/RT variant
+    { label: "Ops Completed" },
+    { label: "Approved SO Along with PO" },
+    { label: "Invoice Issued" },
+    { label: "Submitted" },
+    { label: "Closed Unpaid" },
+    { label: "Closed Paid" },
+  ],
+};
+
+// Matches the SO's client/billing entity name against the reference table above,
+// falling back to GENERAL when the client isn't listed.
+const resolveClientSoStatusSteps = (clientName) => {
+  const name = String(clientName || "").trim().toUpperCase();
+  if (!name) return CLIENT_SO_STATUS_TIMELINES.GENERAL;
+  const key = Object.keys(CLIENT_SO_STATUS_TIMELINES).find((k) => k !== "GENERAL" && name.includes(k));
+  return CLIENT_SO_STATUS_TIMELINES[key] || CLIENT_SO_STATUS_TIMELINES.GENERAL;
+};
 
 const EMPTY_NEW_ITEM_FORM = {
   callFile: "",
@@ -602,9 +689,14 @@ const SalesOrderList = ({
   readOnly = false,
   showPOStatus = false,
   isDAModule = false,
+  isDaCardContext = false,
   isLoadingSalesOrder = false,
   salesOrderError = null,
 }) => {
+  // Broader "this is a DA card" signal — isDAModule alone only covers the dedicated DA-desk
+  // board routes; isDaCardContext also covers DA-variant/DA-board cards reached via the
+  // generic /kanban-board/:boardId route (where a separate "DA" tab is appended instead).
+  const isDaVerifyContext = isDAModule || isDaCardContext;
   const salesOrderList = formValues.salesOrderList || [];
   const billingEntity = formValues.billingEntity || "";
   const lineItemTotal = formValues.lineItemTotal || 0;
@@ -705,6 +797,11 @@ const SalesOrderList = ({
   // has a PO can still be selected for Work Order, and vice versa.
   const [selectedPoItems, setSelectedPoItems] = useState(new Set());
   const [selectedWoItems, setSelectedWoItems] = useState(new Set());
+  // Local-only for now — no backend field/endpoint yet to persist per-item verification (DA-only column).
+  const [verifiedItems, setVerifiedItems] = useState(new Set());
+  // Local-only — whole-SO status stepper (Ops Completed → ... → Closed Paid), steps driven
+  // by the client-specific reference table above. No backend field/endpoint yet.
+  const [soStatusStepIndex, setSoStatusStepIndex] = useState(0);
   const [showWorkOrderModal, setShowWorkOrderModal] = useState(false);
   const [isGeneratingWorkOrder, setIsGeneratingWorkOrder] = useState(false);
   const bulkActionBarRef = useRef(null);
@@ -884,6 +981,41 @@ const SalesOrderList = ({
     handleChange("salesOrderList")({ target: { value: updatedList } });
   };
 
+  const handleToggleVerified = (orderId, itemNo) => {
+    setVerifiedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) {
+        next.delete(orderId);
+        useAlertReducer.getState().success(`Item ${itemNo || orderId} verification removed.`);
+      } else {
+        next.add(orderId);
+        useAlertReducer.getState().success(`Item ${itemNo || orderId} verified successfully.`);
+      }
+      return next;
+    });
+  };
+
+  // Logs each SO-process step into shared formValues.soProcessTimeline so the DA tab's
+  // Summary sub-tab (DA.jsx) can show it as a "Sales Order Activity" timeline — local-only,
+  // same as the process itself, but shared across tabs via the card's formValues.
+  const appendSoTimelineEvent = (event, itemNo) => {
+    const existing = Array.isArray(formValues.soProcessTimeline) ? formValues.soProcessTimeline : [];
+    const entry = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, event, itemNo, timestamp: new Date().toISOString() };
+    handleChange("soProcessTimeline")({ target: { value: [...existing, entry] } });
+  };
+
+  // Advances the whole-SO status stepper by one step (forward-only, one at a time —
+  // same interaction pattern as the real DA Status Timeline in the DA tab).
+  const handleAdvanceSoStatus = (steps) => {
+    setSoStatusStepIndex((prev) => {
+      if (prev >= steps.length - 1) return prev;
+      const next = prev + 1;
+      useAlertReducer.getState().success(`Sales order status moved to "${steps[next].label}".`);
+      appendSoTimelineEvent(steps[next].label, null);
+      return next;
+    });
+  };
+
   const handleVendorSelect = (vendor) => {
     if (vendorModalTarget === "new") {
       setNewItemForm((prev) => ({ ...prev, supplierCode: vendor.code, supplierName: vendor.name }));
@@ -955,6 +1087,11 @@ const SalesOrderList = ({
     setNewItemForm(EMPTY_NEW_ITEM_FORM);
     setItemNoError("");
     setIsAccordionOpen(true);
+  };
+
+  // No backend endpoint yet — button placeholder, API wiring to follow separately.
+  const handleSyncSap = () => {
+    useAlertReducer.getState().error("Sync SAP is not available yet.");
   };
 
   const handleFormChange = (field, value) => {
@@ -1326,24 +1463,14 @@ const SalesOrderList = ({
       <td>
         <div className="sales-order-table-cell" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
           <span>{order.itemNo || ""}</span>
-          {isDAModule && (
+          {isDaVerifyContext && order.poStatus === "Draft" && (
             <>
               <Tooltip id="create-purchase-order-tooltip" place="top" content="Create Purchase Order" />
-              <Tooltip id="generate-invoice-tooltip" place="top" content="Generate Invoice" />
-              {order.poStatus === "Draft" && (
-                <FiFilePlus
-                  data-tooltip-id="create-purchase-order-tooltip"
-                  style={{ cursor: "pointer", color: "#FFD700", fontSize: "18px", flexShrink: 0 }}
-                  onClick={(e) => { e.stopPropagation(); handleOpenPreviewModal("purchaseOrder"); }}
-                />
-              )}
-              {order.poStatus === "Completed" && (
-                <FiFileText
-                  data-tooltip-id="generate-invoice-tooltip"
-                  style={{ cursor: "pointer", color: "#008000", fontSize: "18px", flexShrink: 0 }}
-                  onClick={(e) => { e.stopPropagation(); handleOpenPreviewModal("invoice"); }}
-                />
-              )}
+              <FiFilePlus
+                data-tooltip-id="create-purchase-order-tooltip"
+                style={{ cursor: "pointer", color: "#FFD700", fontSize: "18px", flexShrink: 0 }}
+                onClick={(e) => { e.stopPropagation(); handleOpenPreviewModal("purchaseOrder"); }}
+              />
             </>
           )}
         </div>
@@ -1511,6 +1638,21 @@ const SalesOrderList = ({
           )}
         </div>
       </td>
+
+      {/* Verify — DA-only, local state until a backend field exists to persist it */}
+      {isDaVerifyContext && (
+        <td>
+          <div className="sales-order-table-cell" style={{ textAlign: "center" }}>
+            <input
+              type="checkbox"
+              className="sales-order-verify-checkbox"
+              checked={verifiedItems.has(order.id)}
+              onChange={() => handleToggleVerified(order.id, order.itemNo)}
+              aria-label="Verify line item"
+            />
+          </div>
+        </td>
+      )}
     </tr>
     );
   };
@@ -1705,6 +1847,17 @@ const SalesOrderList = ({
               )}
             </div>
           )}
+
+          {!readOnly && (
+            <button
+              type="button"
+              className="sales-order-sync-sap-button"
+              onClick={handleSyncSap}
+            >
+              <FiRefreshCw />
+              Sync SAP
+            </button>
+          )}
         </div>
       </div>
 
@@ -1782,9 +1935,11 @@ const SalesOrderList = ({
               <label className="so-header-label">SRT Number</label>
               <input
                 type="text"
-                className="so-header-input so-header-input-readonly"
+                className="so-header-input"
+                placeholder="Enter SRT Number..."
                 value={srtNumber}
-                readOnly
+                onChange={handleChange("srtNumber")}
+                readOnly={readOnly}
               />
             </div>
             <div className="so-header-field">
@@ -1991,13 +2146,14 @@ const SalesOrderList = ({
                   {renderTableHeader("Third Party", "col-third-party")}
                   {renderTableHeader("Supporting Documents", "col-documents")}
                   {renderTableHeader("Supplier Code", "col-supplier")}
+                  {isDaVerifyContext && renderTableHeader("Verify", "col-verify")}
                 </tr>
               </thead>
               <tbody>
                 {displayOrderList.length === 0 && !isLoadingSalesOrder && (
                   <tr>
                     <td
-                      colSpan={13}
+                      colSpan={isDaVerifyContext ? 14 : 13}
                       style={{ padding: "28px 16px", textAlign: "center", color: "#64748b", fontSize: "14px" }}
                     >
                       No sales order line items for this call.
@@ -2032,7 +2188,7 @@ const SalesOrderList = ({
                         }}
                         style={{ cursor: "pointer", backgroundColor: isExpanded ? "rgba(42, 0, 255, 0.05)" : "#ffffff" }}
                       >
-                        <td colSpan={13} style={{ padding: "12px 16px" }}>
+                        <td colSpan={isDaVerifyContext ? 14 : 13} style={{ padding: "12px 16px" }}>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                               {!isDAModule && (
@@ -2097,6 +2253,60 @@ const SalesOrderList = ({
           </div>
         </div>
       </div>
+
+      {/* Sales Order Status — DA-only, whole-SO step-by-step timeline (Ops Completed →
+          ... → Closed Paid), steps sourced from the client-specific reference table
+          (CLIENT_SO_STATUS_TIMELINES) matched against this SO's client/billing entity name.
+          Click the current step to advance, one step at a time — same interaction pattern
+          as the real DA Status Timeline in the DA tab. Local-only for now — no backend
+          field/endpoint yet to persist the current step. */}
+      {isDaVerifyContext && (() => {
+        const steps = resolveClientSoStatusSteps(soCustomerName);
+        const currentIndex = Math.min(soStatusStepIndex, steps.length - 1);
+        return (
+          <div className="so-client-process-section">
+            <h3 className="so-client-process-title">
+              <FiClipboard className="so-client-process-title-icon" />
+              Sales Order Status{soCustomerName ? ` — ${soCustomerName}` : ""}
+            </h3>
+            <div className="so-status-stepper">
+              {steps.map((step, index) => {
+                const state = index < currentIndex ? "done" : index === currentIndex ? "current" : "pending";
+                const isClickable = state === "current" && index < steps.length - 1;
+                return (
+                  <div
+                    className={`so-status-step so-status-step--${state}`}
+                    key={step.label}
+                  >
+                    <div className="so-status-step-marker">
+                      {isClickable ? (
+                        <button
+                          type="button"
+                          className="so-status-step-dot so-status-step-dot--clickable"
+                          title={`Move to "${steps[index + 1].label}"`}
+                          onClick={() => handleAdvanceSoStatus(steps)}
+                        >
+                          <span className="so-status-step-dot-pulse" />
+                        </button>
+                      ) : state === "done" ? (
+                        <span className="so-status-step-dot so-status-step-dot--done">
+                          <FiCheck />
+                        </span>
+                      ) : (
+                        <span className="so-status-step-dot" />
+                      )}
+                    </div>
+                    <div className="so-status-step-body">
+                      <span className="so-status-step-label">{step.label}</span>
+                      {step.maxDays && <span className="so-status-step-days">Max {step.maxDays} {/^\d+$/.test(String(step.maxDays)) ? "day(s)" : ""}</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Accounting Summary — always visible at the bottom of the page */}
       {(() => {
@@ -2287,6 +2497,7 @@ SalesOrderList.propTypes = {
   readOnly: PropTypes.bool,
   showPOStatus: PropTypes.bool,
   isDAModule: PropTypes.bool,
+  isDaCardContext: PropTypes.bool,
   isLoadingSalesOrder: PropTypes.bool,
   salesOrderError: PropTypes.oneOfType([PropTypes.string, PropTypes.oneOf([null])]),
 };
