@@ -1412,7 +1412,13 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
   // api/da/summary_tab/{call_id} — feeds the Summary sub-tab with the real,
   // backend-resolved values (clearance dates, billing entity, SAP sales order no,
   // vessel owner) instead of relying only on locally-typed fields from other tabs.
-  const callId = card?.call_id ?? card?.callId ?? card?.id ?? null;
+  // Normalized to a string (not just whatever type `card` happens to carry) so it's a
+  // stable primitive across re-renders — `card.call_id` flips between number and string
+  // as the card prop gets replaced by different sources (list stub vs. fetched detail),
+  // and each flip was re-triggering every effect below keyed on [callId, ...], firing
+  // duplicate GETs (e.g. operation_tab) for the exact same call.
+  const rawCallId = card?.call_id ?? card?.callId ?? card?.id ?? null;
+  const callId = rawCallId != null ? String(rawCallId) : null;
   const [summaryData, setSummaryData] = useState(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
 
@@ -1463,80 +1469,61 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
     return () => { cancelled = true; };
   }, [callId, daStatusRefreshToken]);
 
-  // api/da/operation_tab/{call_id} — hydrates the "DA Operations" sub-tabs (Operation
-  // Details, Launch Hire, Invoice, Sales Order) with the backend's saved values once,
-  // when the card first loads. operationTabData itself is also kept for the read-only
-  // Vessel Owner / Owner / Billing Entity / Last moved tiles in Operation Details.
-  const [operationTabData, setOperationTabData] = useState(null);
-  const [isLoadingOperationTab, setIsLoadingOperationTab] = useState(false);
-  const getLaunchHireOverride = useDaLocalLaunchHire((s) => s.getLaunchHireOverride);
+  // api/da/da_details/{call_id} — Owner, Co-owner, Service requester, Last moved (stage
+  // entered date), Tax Invoice, SRT/PO/WBS and Invoice amount now come from this dedicated
+  // endpoint rather than being guessed off operation_tab/summary_tab. assigned_operator_id
+  // is fetched too but has no matching name field in the response and no established UI
+  // slot yet, so it's kept on daDetailsData without being rendered. Co-owner, Tax Invoice,
+  // SRT/PO/WBS and Invoice amount are the editable ones here — they're persisted via
+  // api/da/save_da_details (see the autosave effect below); Owner, Service requester and
+  // Last moved stay read-only, sourced from this GET only.
+  const [daDetailsData, setDaDetailsData] = useState(null);
+  const [isLoadingDaDetails, setIsLoadingDaDetails] = useState(false);
   const setLaunchHireOverride = useDaLocalLaunchHire((s) => s.setLaunchHireOverride);
+  // Guards the api/da/save_da_details autosave below, same pattern/purpose as
+  // skipNextOperationAutoSaveRef further down but scoped to this GET's own fields so the
+  // two hydration effects don't steal each other's one-shot skip.
+  const skipNextDaDetailsAutoSaveRef = useRef(true);
 
   useEffect(() => {
     if (callId == null) return undefined;
     let cancelled = false;
-    setIsLoadingOperationTab(true);
-    daService.getOperationTab(callId)
+    setIsLoadingDaDetails(true);
+    daService.getDaDetails(callId)
       .then(({ data }) => {
         if (cancelled) return;
-        const opData = data?.data ?? null;
-        setOperationTabData(opData);
-        if (!opData) return;
-        // billing_note / tax_invoice_no / invoice_amount / sap_sales_order_no are
-        // watched by the DA Operations autosave effect further down — guard it so
-        // hydrating from the backend doesn't immediately re-save what it just fetched.
-        skipNextOperationAutoSaveRef.current = true;
-        if (opData.co_owner_id != null) setCoOwnerId(opData.co_owner_id);
+        const details = data?.data ?? null;
+        setDaDetailsData(details);
+        if (!details) return;
+        skipNextDaDetailsAutoSaveRef.current = true;
+        if (details.co_owner_id != null) setCoOwnerId(details.co_owner_id);
         setFieldValues((prev) => ({
           ...prev,
-          vesselName: opData.vessel_name ?? prev.vesselName,
-          serviceRequester: opData.service_requester ?? prev.serviceRequester,
-          billingOthers: opData.billing_note ?? prev.billingOthers,
-          coOwners: opData.co_owner_name ?? prev.coOwners,
-          // save_operation_tab has no field for either of these (they're editable on the
-          // standalone "Launch Hire" tab), so an empty API value falls back to the local-only override (see
-          // useDaLocalLaunchHire) before finally falling back to whatever's already typed.
-          thirdPartyLaunchHire: opData.third_party_launch_hire
-            || getLaunchHireOverride(callId, "thirdPartyLaunchHire")
-            || prev.thirdPartyLaunchHire,
-          roadTransport: (opData.road_transport_days != null ? String(opData.road_transport_days) : "")
-            || getLaunchHireOverride(callId, "roadTransport")
-            || prev.roadTransport,
-          taxInvoice: opData.tax_invoice_no ?? prev.taxInvoice,
-          // save_operation_tab has no field for this (see InvoiceCardsSection comment),
-          // so an empty API value falls back to the local-only override before finally
-          // falling back to whatever's already typed.
-          srtPoWbs: opData.srt_po_wbs_ref
-            || getLaunchHireOverride(callId, "srtPoWbs")
-            || prev.srtPoWbs,
-          invoiceAmount: opData.invoice_amount ?? prev.invoiceAmount,
-          sapSalesOrderNo: opData.sap_sales_order_no ?? prev.sapSalesOrderNo,
-          // save_operation_tab has no field for this (see VESSEL_SALES_ORDER_CARDS comment), so
-          // an empty API value falls back to the local-only override before finally
-          // falling back to whatever's already typed.
-          srnNo: opData.srn_no
-            || getLaunchHireOverride(callId, "srnNo")
-            || prev.srnNo,
+          coOwners: details.co_owner_name ?? prev.coOwners,
+          serviceRequester: details.service_requester ?? prev.serviceRequester,
+          taxInvoice: details.tax_invoice_no ?? prev.taxInvoice,
+          srtPoWbs: details.srt_po_wbs_ref ?? prev.srtPoWbs,
+          invoiceAmount: details.invoice_amount ?? prev.invoiceAmount,
         }));
       })
       .catch(() => {
-        if (!cancelled) setOperationTabData(null);
+        if (!cancelled) setDaDetailsData(null);
       })
       .finally(() => {
-        if (!cancelled) setIsLoadingOperationTab(false);
+        if (!cancelled) setIsLoadingDaDetails(false);
       });
     return () => { cancelled = true; };
-  }, [callId, getLaunchHireOverride]);
+  }, [callId, daStatusRefreshToken]);
 
-  // api/da/save_operation_tab/{call_id} — persists the editable fields spread across
-  // the "DA Operations" sub-tab cards (Operation Details' Co-owner/Billing Note,
-  // Invoice's Tax Invoice/Invoice amount, Sales Order's SAP Sales Order No). Everything
-  // else in that tab (Vessel, Service requester, Launch Hire, SRT|PO|WBS, SRN No.) has
-  // no field in this payload and stays read-only, synced only from the GET above.
+  // api/da/save_operation_tab/{call_id} — persists Operation Details' Billing Note and
+  // Sales Order's SAP Sales Order No. Co-owner/Tax Invoice/SRT|PO|WBS/Invoice amount moved
+  // to api/da/save_da_details below; everything else in that tab (Vessel, Service requester,
+  // Launch Hire, SRN No.) has no field in either payload and stays read-only, synced only
+  // from the GETs above.
   //
-  // Autosaves AUTO_SAVE_DEBOUNCE_MS after the last edit to any of those 5 fields, same
-  // debounce pattern as the Export Approval tab (Approval.jsx). latestOperationFormRef
-  // keeps the debounced closure reading fresh values instead of a stale snapshot.
+  // Autosaves AUTO_SAVE_DEBOUNCE_MS after the last edit to either field, same debounce
+  // pattern as the Export Approval tab (Approval.jsx). latestOperationFormRef keeps the
+  // debounced closure reading fresh values instead of a stale snapshot.
   // skipNextOperationAutoSaveRef is set right before the operation_tab GET hydrates
   // these fields, so loading a card doesn't immediately re-save what it just fetched.
   // There's no manual Save button — this is the only way these fields get persisted,
@@ -1544,22 +1531,16 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
   const [operationSaveStatus, setOperationSaveStatus] = useState("idle");
   const latestOperationFormRef = useRef(null);
   latestOperationFormRef.current = {
-    coOwnerId,
     billingNote: fieldValues.billingOthers,
-    taxInvoiceNo: fieldValues.taxInvoice,
-    invoiceAmount: fieldValues.invoiceAmount,
     sapSalesOrderNo: fieldValues.sapSalesOrderNo,
   };
   const skipNextOperationAutoSaveRef = useRef(true);
 
   const runSaveOperationTab = useCallback(async () => {
     if (callId == null) return;
-    const { coOwnerId: co, billingNote, taxInvoiceNo, invoiceAmount, sapSalesOrderNo } = latestOperationFormRef.current;
+    const { billingNote, sapSalesOrderNo } = latestOperationFormRef.current;
     const formData = new FormData();
-    if (co != null && co !== "") formData.append("co_owner_id", co);
     formData.append("billing_note", billingNote || "");
-    formData.append("tax_invoice_no", taxInvoiceNo || "");
-    formData.append("invoice_amount", invoiceAmount || "");
     formData.append("sap_sales_order_no", sapSalesOrderNo || "");
 
     setOperationSaveStatus("saving");
@@ -1586,19 +1567,71 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
     }
     debouncedAutoSaveOperationTab();
   }, [
-    coOwnerId,
     fieldValues.billingOthers,
-    fieldValues.taxInvoice,
-    fieldValues.invoiceAmount,
     fieldValues.sapSalesOrderNo,
     debouncedAutoSaveOperationTab,
   ]);
 
-  // thirdPartyLaunchHire/roadTransport/srtPoWbs/srnNo have no save_operation_tab field (see
-  // InvoiceCardsSection / VESSEL_SALES_ORDER_CARDS comments), so typed
-  // values also get mirrored into useDaLocalLaunchHire — the only place they're
-  // remembered across reopening the card, since there's no backend to persist them to.
-  const LOCAL_ONLY_FIELD_KEYS = useMemo(() => new Set(["thirdPartyLaunchHire", "roadTransport", "srtPoWbs", "srnNo"]), []);
+  // api/da/save_da_details/{call_id} — persists Operation Details' Co-owner and Invoice's
+  // Tax Invoice/SRT|PO|WBS/Invoice amount. Same debounce + skip-on-hydrate pattern as
+  // save_operation_tab above, just against its own status/skip ref so the two autosaves
+  // (and the two GETs that hydrate them) don't interfere with each other. Reuses the same
+  // operationSaveStatus pill since both cards live under the one "DA Operations" toolbar.
+  const latestDaDetailsFormRef = useRef(null);
+  latestDaDetailsFormRef.current = {
+    coOwnerId,
+    taxInvoiceNo: fieldValues.taxInvoice,
+    srtPoWbs: fieldValues.srtPoWbs,
+    invoiceAmount: fieldValues.invoiceAmount,
+  };
+
+  const runSaveDaDetails = useCallback(async () => {
+    if (callId == null) return;
+    const { coOwnerId: co, taxInvoiceNo, srtPoWbs, invoiceAmount } = latestDaDetailsFormRef.current;
+    const payload = {
+      co_owner_id: co != null && co !== "" ? co : null,
+      tax_invoice_no: taxInvoiceNo || "",
+      srt_po_wbs_ref: srtPoWbs || "",
+      invoice_amount: invoiceAmount || "",
+    };
+
+    setOperationSaveStatus("saving");
+    try {
+      await daService.saveDaDetails(callId, payload);
+      setOperationSaveStatus("saved");
+      notify("Changes saved successfully.", "success", "top-center");
+    } catch (err) {
+      setOperationSaveStatus("error");
+      notify(err?.response?.data?.message || "Failed to save changes.", "error", "top-center");
+    }
+  }, [callId]);
+
+  const debouncedAutoSaveDaDetails = useMemo(
+    () => debounce(runSaveDaDetails, AUTO_SAVE_DEBOUNCE_MS),
+    [runSaveDaDetails],
+  );
+
+  useEffect(() => () => debouncedAutoSaveDaDetails.flush(), [debouncedAutoSaveDaDetails]);
+
+  useEffect(() => {
+    if (skipNextDaDetailsAutoSaveRef.current) {
+      skipNextDaDetailsAutoSaveRef.current = false;
+      return;
+    }
+    debouncedAutoSaveDaDetails();
+  }, [
+    coOwnerId,
+    fieldValues.taxInvoice,
+    fieldValues.srtPoWbs,
+    fieldValues.invoiceAmount,
+    debouncedAutoSaveDaDetails,
+  ]);
+
+  // thirdPartyLaunchHire/roadTransport/srnNo have no save endpoint (see InvoiceCardsSection /
+  // VESSEL_SALES_ORDER_CARDS comments), so typed values also get mirrored into
+  // useDaLocalLaunchHire — the only place they're remembered across reopening the card,
+  // since there's no backend to persist them to.
+  const LOCAL_ONLY_FIELD_KEYS = useMemo(() => new Set(["thirdPartyLaunchHire", "roadTransport", "srnNo"]), []);
 
   const updateField = useCallback((key, value) => {
     setFieldValues((prev) => ({ ...prev, [key]: value }));
@@ -1875,20 +1908,20 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
                       <ReadonlyField
                         label="Owner"
                         icon={User}
-                        value={isLoadingOperationTab && !operationTabData ? "Loading…" : (operationTabData?.call_owner_name || summaryData?.call_owner_name || "Not set yet")}
+                        value={isLoadingDaDetails && !daDetailsData ? "Loading…" : (daDetailsData?.call_owner_name || summaryData?.call_owner_name || "Not set yet")}
                         accent="#0d9488"
                       />
                       {renderField(OPERATION_DETAILS_FIELDS_BY_KEY.coOwners)}
                       <ReadonlyField
                         label="Service requester"
                         icon={OPERATION_DETAILS_FIELDS_BY_KEY.serviceRequester.icon}
-                        value={isLoadingOperationTab && !operationTabData ? "Loading…" : (fieldValues.serviceRequester || "Not set yet")}
+                        value={isLoadingDaDetails && !daDetailsData ? "Loading…" : (fieldValues.serviceRequester || "Not set yet")}
                         accent={OPERATION_DETAILS_FIELDS_BY_KEY.serviceRequester.accent}
                       />
                       <ReadonlyField
                         label="Last moved"
                         icon={Clock}
-                        value={isLoadingOperationTab && !operationTabData ? "Loading…" : (formatApiDateTime(operationTabData?.stage_entered_date) || lastMovedDisplay)}
+                        value={isLoadingDaDetails && !daDetailsData ? "Loading…" : (formatApiDateTime(daDetailsData?.stage_entered_date) || lastMovedDisplay)}
                         accent={OPERATION_DETAILS_FIELDS_BY_KEY.lastMoved.accent}
                       />
                     </div>
