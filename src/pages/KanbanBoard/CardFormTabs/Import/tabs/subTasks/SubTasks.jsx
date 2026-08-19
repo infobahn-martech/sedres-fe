@@ -11,6 +11,11 @@ import "../../../../../../design/scss/invoice.scss";
 import "../../../../../../design/css/common/CardForm.css";
 import "../../../../../../design/scss/subtasks.scss";
 
+const STATUS_OPTIONS = [
+    { value: "0", label: "Pending" },
+    { value: "1", label: "Completed" },
+];
+
 const mapUserToOption = (user) => ({
     value: String(user.user_id),
     label: user.name ?? "",
@@ -470,7 +475,7 @@ function Subtasks({ card }) {
                                                                     disabled={isUpdating}
                                                                 />
                                                             </div>
-                                                            <div className="task-tab-field-row">
+                                                            <div className="task-tab-field-row task-tab-field-row--pair">
                                                                 <div className="task-tab-field">
                                                                     <label className="task-tab-label">Assign User <span className="task-tab-required">*</span></label>
                                                                     <SearchableSelect
@@ -501,6 +506,8 @@ function Subtasks({ card }) {
                                                                         disabled={isUpdating}
                                                                     />
                                                                 </div>
+                                                            </div>
+                                                            <div className="task-tab-field-row task-tab-field-row--pair">
                                                                 <div className="task-tab-field">
                                                                     <label className="task-tab-label">Document</label>
                                                                     {editDocumentFile ? (
@@ -545,15 +552,14 @@ function Subtasks({ card }) {
                                                                 </div>
                                                                 <div className="task-tab-field">
                                                                     <label className="task-tab-label">Status</label>
-                                                                    <select
-                                                                        className="task-tab-status-select"
+                                                                    <SearchableSelect
+                                                                        className="cf-owner-searchable-select"
                                                                         value={editCompleted ? "1" : "0"}
                                                                         onChange={(e) => setEditCompleted(e.target.value === "1")}
+                                                                        options={STATUS_OPTIONS}
+                                                                        placeholder="Select status"
                                                                         disabled={isUpdating}
-                                                                    >
-                                                                        <option value="0">Pending</option>
-                                                                        <option value="1">Completed</option>
-                                                                    </select>
+                                                                    />
                                                                 </div>
                                                             </div>
                                                             <div className="task-tab-edit-actions">
