@@ -15,7 +15,7 @@
   --da-accent-soft: #edeefd;
 
   font-family: "Manrope", sans-serif;
-  padding: 18px 24px 40px;
+  padding: 16px 22px 32px;
   width: 100%;
   color: var(--da-ink);
   box-sizing: border-box;
@@ -120,25 +120,28 @@
 .da-cf-ops-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
-  margin-top: 20px;
+  gap: 14px;
 }
 
-.da-cf-ops-card--wide {
-  grid-column: 1 / -1;
+// Clearance, Operation Details and Invoice on one row — Clearance is much lighter
+// than the other two, but a dedicated 3-up row still reads more consistently than
+// stranding it alone above a 2-column row. Link and Relatives & Dependencies have
+// their own 2-column row below (da-cf-ops-grid) instead of sharing this one.
+.da-cf-ops-grid--3col {
+  grid-template-columns: repeat(3, 1fr);
 }
 
-// Matches the .da-cf-more-card / .da-cf-ac-card / .da-cf-summary-card visual language
-// (rounded corners, soft shadow, accent-tinted hover lift, colored icon badge) so every
-// card-shaped section in the DA tab reads as one consistent UI instead of several.
+// Matches the .da-cf-ac-card / .da-cf-timeline-card visual language (rounded corners,
+// soft shadow, accent-tinted hover lift, colored icon badge) so every card-shaped
+// section in the DA tab reads as one consistent UI instead of several.
 .da-cf-ops-card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
   background: var(--da-surface);
   border: 1.5px solid var(--da-line);
   border-radius: 16px;
-  padding: 18px 20px 20px;
+  padding: 12px 14px 14px;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
   animation: da-cf-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -160,16 +163,16 @@
 .da-cf-ops-card-header {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 .da-cf-ops-card-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
   color: var(--step-accent, var(--da-accent));
   background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 14%, #ffffff);
   flex-shrink: 0;
@@ -195,7 +198,7 @@
 .da-cf-ops-card-body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
 }
 
 .da-cf-group-header {
@@ -210,17 +213,7 @@
 .da-cf-subtab-body {
   display: flex;
   flex-direction: column;
-  gap: 28px;
-}
-
-// Shared wrapper for the "MWP" and "Launch Hire" sub-tabs' hero + content pane —
-// stretches to fill the remaining height of .da-cf-subtab-body (which is already
-// flex:1) so the Launch Hire grid below has real height to fill instead of
-// collapsing to its content's natural height.
-.da-cf-mwp-launch-hire {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
+  gap: 12px;
 }
 
 // "More below" hint shown on the DA Operations page while there's unscrolled content
@@ -342,18 +335,22 @@
 .da-cf-fields-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px 20px;
+  gap: 8px 14px;
 }
 
-// Card sub-tab: fixed 2 columns so full-width tiles (e.g. Tags) end at the same
-// edge as the row above instead of stretching across extra auto-fit columns.
+// Card sub-tab, and DA Operator > Operation Details/Invoice: fixed 2 columns so
+// full-width tiles (e.g. Tags) end at the same edge as the row above instead of
+// stretching across extra auto-fit columns. Operation Details/Invoice cards now sit
+// side-by-side in the ops grid (see da-cf-ops-grid in DA.jsx), so their field counts
+// (4 and 3) both fit this 2-column layout instead of each getting its own fixed column
+// count — a lone trailing field (Invoice's 3rd) spans the full row instead of leaving
+// an empty cell beside it.
 .da-cf-fields-grid--fixed2 {
   grid-template-columns: repeat(2, 1fr);
-}
 
-// DA Operator > Operation Details: all 4 fields pinned to a single row.
-.da-cf-fields-grid--fixed4 {
-  grid-template-columns: repeat(4, 1fr);
+  > *:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
 }
 
 // Time Objects sub-tab: entry count varies with the port/call-type config, so a fixed
@@ -475,11 +472,11 @@
 .da-cf-tile {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 4px;
   background: var(--da-surface);
   border: 1px solid var(--da-line);
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 8px 10px;
   transition: border-color 0.12s ease;
 
   &:focus-within {
@@ -529,7 +526,7 @@
   width: 100%;
   border: 1px solid var(--da-line);
   border-radius: 7px;
-  padding: 8px 10px;
+  padding: 6px 10px;
   font-family: inherit;
   font-size: 13.5px;
   font-weight: 500;
@@ -1335,69 +1332,23 @@ a.da-cf-file-name {
   color: var(--da-ink-faint);
 }
 
-// Summary stat cards — same card shape as Husbandry's service-option cards
-// (operations.scss `.husbandry-service-option*`): icon badge, bold title,
-// value in place of the description line. Each card takes a per-field
-// accent color (--summary-accent, set inline per stat) instead of a single
-// shared color, matching the varied icon-badge colors in that reference.
-.da-cf-summary-cards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
+// Inward/Outward Clearance card (see ClearanceStatsRow in DA.jsx) — reuses the same
+// .da-cf-ops-card icon-badge-header shape and .da-cf-tile (ReadonlyField) UI Operation
+// Details uses, so the two cards read as one consistent style. The grid row stretches
+// this card to match Operation Details/Invoice's height, so the tiles center in that
+// height instead of sitting at the top with dead space below.
+.da-cf-clearance-card {
+  padding-bottom: 14px;
 }
 
-.da-cf-summary-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 22px 20px;
-  background: var(--da-surface);
-  border: 1.5px solid var(--da-line);
-  border-radius: 18px;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
-  animation: da-cf-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: calc(var(--stagger-index, 0) * 60ms + 80ms);
-
-  &:hover {
-    transform: translateY(-4px);
-    border-color: var(--summary-accent, var(--da-accent));
-    box-shadow: 0 16px 28px -16px color-mix(in srgb, var(--summary-accent, var(--da-accent)) 45%, transparent), 0 4px 10px rgba(15, 23, 42, 0.06);
-  }
-}
-
-.da-cf-summary-card-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  color: var(--summary-accent, var(--da-accent));
-  background: color-mix(in srgb, var(--summary-accent, var(--da-accent)) 12%, #ffffff);
-  flex-shrink: 0;
-}
-
-.da-cf-summary-card-content {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-  width: 100%;
-}
-
-.da-cf-summary-card-label {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--da-ink);
-}
-
-.da-cf-summary-card-value {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--da-ink-soft);
-  overflow-wrap: break-word;
+// Inward and Outward Clearance each get their own line (1 column) instead of sitting
+// side by side, unlike Operation Details/Invoice's 2-column field grids. Spread across
+// the full stretched card height (space-between) instead of centering, so there's no
+// leftover empty gap at the bottom.
+.da-cf-clearance-fields {
+  flex: 1;
+  grid-template-columns: 1fr;
+  align-content: space-between;
 }
 
 .da-cf-summary-card-value--empty {
@@ -1405,39 +1356,22 @@ a.da-cf-file-name {
   color: var(--da-ink-faint);
 }
 
-@media (max-width: 992px) {
-  .da-cf-summary-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
-  .da-cf-summary-cards {
-    grid-template-columns: 1fr;
-  }
-}
-
-// DA Operations tab (.da-cf-ops-grid) and "More" sub-tab (.da-cf-more-grid) share the
-// same fixed-column pattern as .da-cf-summary-cards above but were missing the matching
-// breakpoints — the Vessel/Vessel Owner/Owner/Co-owner row (--fixed4) in particular
-// squeezes into unreadable ~60px columns below ~600px without this.
+// Both da-cf-ops-grid rows (Clearance/Operation Details/Invoice, and Link/Relatives)
+// collapse to one column below tablet width so cards keep their internal field grid
+// (.da-cf-fields-grid--fixed2) readable instead of squeezing 2-3 up side by side.
 @media (max-width: 767px) {
   .da-cf-ops-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .da-cf-fields-grid--fixed4 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .da-cf-more-grid {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 479px) {
-  .da-cf-fields-grid--fixed4 {
+  .da-cf-fields-grid--fixed2 {
     grid-template-columns: 1fr;
+
+    > *:last-child:nth-child(odd) {
+      grid-column: auto;
+    }
   }
 }
 
@@ -1449,8 +1383,7 @@ a.da-cf-file-name {
   background: var(--da-surface);
   border: 1.5px solid var(--da-line);
   border-radius: 18px;
-  padding: 20px 22px 6px;
-  margin-bottom: 24px;
+  padding: 20px 22px 14px;
   box-shadow: 0 3px 10px -6px rgba(15, 23, 42, 0.08);
   animation: da-cf-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -1460,7 +1393,7 @@ a.da-cf-file-name {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 0 0 28px;
+  margin: 0 0 12px;
 }
 
 .da-cf-timeline-header .da-cf-summary-section-heading {
@@ -1482,8 +1415,8 @@ a.da-cf-file-name {
 .da-cf-timeline {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 17px 2px 14px;
+  gap: 8px;
+  padding: 10px 2px 8px;
   overflow-x: auto;
 }
 
@@ -1491,8 +1424,8 @@ a.da-cf-file-name {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  min-width: 140px;
+  gap: 9px;
+  min-width: 115px;
   flex: 1;
 }
 
@@ -1529,13 +1462,13 @@ a.da-cf-file-name {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   flex-shrink: 0;
   color: var(--da-ink-faint);
   background: var(--da-surface);
-  border: 2.5px solid var(--da-line);
+  border: 2px solid var(--da-line);
   padding: 0;
   transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
@@ -1711,125 +1644,36 @@ a.da-cf-file-name {
   }
 }
 
-.da-cf-more {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-// "More" sub-tab card grid (see ListRowsSection/RelativesSection in DA.jsx) —
-// reuses the .da-cf-ac-card visual language (icon badge, per-card accent via
-// --step-accent, hover lift) instead of the plain collapsible list it used
-// to be, so it reads consistently with the other redesigned DA sub-tabs.
-.da-cf-more-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
-}
-
-.da-cf-more-card {
-  background: var(--da-surface);
-  border: 1.5px solid var(--da-line);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
-  animation: da-cf-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-
-  &:hover {
-    border-color: var(--step-accent, var(--da-accent));
-    box-shadow: 0 14px 26px -16px color-mix(in srgb, var(--step-accent, var(--da-accent)) 45%, transparent), 0 4px 10px rgba(15, 23, 42, 0.05);
-  }
-}
-
-.da-cf-more-card-header {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  border: none;
-  background: transparent;
-  padding: 16px 18px;
-  cursor: pointer;
-  font-family: inherit;
-  text-align: left;
-}
-
-.da-cf-more-card-icon {
+// "Add row" button for ListRowsSection/RelativesSection — sits below the row list
+// inside the shared .da-cf-ops-card body now that these cards use the same plain
+// icon-badge-header style as Operation Details/Invoice instead of their own
+// collapsible-card treatment.
+.da-cf-more-add-row-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
-  color: var(--step-accent, var(--da-accent));
-  background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 14%, #ffffff);
-  flex-shrink: 0;
-}
-
-.da-cf-more-card-heading {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.da-cf-more-card-title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--da-ink);
-}
-
-.da-cf-more-card-count {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--da-ink-faint);
-}
-
-.da-cf-more-chevron {
-  display: inline-flex;
-  color: var(--da-ink-faint);
-  transition: transform 0.12s ease;
-  flex-shrink: 0;
-}
-
-.da-cf-more-chevron--collapsed {
-  transform: rotate(-90deg);
-}
-
-.da-cf-more-add-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
+  align-self: flex-start;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px dashed var(--da-line);
   border-radius: 8px;
+  background: transparent;
   color: var(--step-accent, var(--da-accent));
-  background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 12%, #ffffff);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
   cursor: pointer;
-  flex-shrink: 0;
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 
   &:hover {
-    background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 22%, #ffffff);
-    transform: scale(1.06);
+    background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 10%, #ffffff);
+    border-color: var(--step-accent, var(--da-accent));
   }
-}
-
-.da-cf-more-empty {
-  margin: 0;
-  padding: 0 18px 16px;
-  font-size: 12.5px;
-  color: var(--da-ink-faint);
 }
 
 .da-cf-more-rows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 0 18px 16px;
+  gap: 6px;
 }
 
 .da-cf-more-row {
@@ -1876,12 +1720,6 @@ a.da-cf-file-name {
   &:hover {
     background: color-mix(in srgb, #dc2626 12%, transparent);
     color: #dc2626;
-  }
-}
-
-@media (max-width: 720px) {
-  .da-cf-more-grid {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -1947,8 +1785,8 @@ a.da-cf-file-name {
 }
 
 .da-cf-ac-card-hint {
-  margin: 4px 0 12px;
-  font-size: 13.5px;
+  margin: 2px 0 8px;
+  font-size: 12.5px;
   color: var(--da-ink-soft);
 }
 

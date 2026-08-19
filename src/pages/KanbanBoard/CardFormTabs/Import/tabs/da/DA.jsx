@@ -27,9 +27,9 @@ const DA_OPERATOR_SUB_TABS = [
 const AUTO_SAVE_DEBOUNCE_MS = 1200;
 
 const LIST_SECTIONS = [
-  { key: "attachments", label: "Attachments", icon: Paperclip, placeholder: "Add an attachment link or name…", accent: "#2563eb" },
-  { key: "docs", label: "Docs", icon: FolderOpen, placeholder: "Add a doc link or name…", accent: "#7c3aed" },
-  { key: "linksOverview", label: "Links overview", icon: Link2, placeholder: "Add a link…", accent: "#059669" },
+  { key: "attachments", label: "Attachments", icon: Paperclip, placeholder: "Add an attachment link or name…", accent: "#2563eb", hint: "Attachment links or names related to this call." },
+  { key: "docs", label: "Docs", icon: FolderOpen, placeholder: "Add a doc link or name…", accent: "#7c3aed", hint: "Doc links or names related to this call." },
+  { key: "linksOverview", label: "Links overview", icon: Link2, placeholder: "Add a link…", accent: "#059669", hint: "Links and references related to this call." },
 ];
 
 // api/da/required_documents/{call_id} — read-only reference documents. The full list
@@ -811,6 +811,43 @@ const mapStatusTimelineResponse = (rows) => {
   return mapped;
 };
 
+// Inward/Outward Clearance — its own card section (same icon-badge-header shape as
+// Operation Details/Invoice/Link beside it), using the same ReadonlyField tile UI
+// Operation Details uses for Owner/Service requester/Last moved, so the two cards
+// read as one consistent style instead of Clearance having its own custom look.
+function ClearanceStatsRow({ stats }) {
+  return (
+    <section className="da-cf-ops-card da-cf-clearance-card">
+      <header className="da-cf-ops-card-header">
+        <span className="da-cf-ops-card-icon"><CalendarCheck size={20} /></span>
+        <h4 className="da-cf-ops-card-title">Clearance</h4>
+      </header>
+      <div className="da-cf-fields-grid da-cf-clearance-fields">
+        {stats.map((stat) => (
+          <ReadonlyField
+            key={stat.label}
+            label={stat.label}
+            icon={stat.icon}
+            value={stat.value || "Not set"}
+            accent={stat.accent}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+ClearanceStatsRow.propTypes = {
+  stats: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.string,
+      value: PropTypes.string,
+      icon: PropTypes.elementType,
+      accent: PropTypes.string,
+    })
+  ).isRequired,
+};
+
 function StatusTimelineSection({ steps, onStepClick, isLoading, isAdvancing }) {
   return (
     <div className="da-cf-timeline-card">
@@ -902,7 +939,7 @@ StatusTimelineSection.propTypes = {
   isAdvancing: PropTypes.bool,
 };
 
-function SummaryPanel({ callId, summaryData, isLoadingSummary, statusTimeline, isLoadingStatusTimeline, onAdvanceDaStage, isAdvancingDaStage }) {
+function SummaryPanel({ callId, statusTimeline, isLoadingStatusTimeline, onAdvanceDaStage, isAdvancingDaStage }) {
   const getLocalReachedDate = useDaLocalReachedDates((s) => s.getReachedDate);
 
   // api/da/update_status doesn't persist reached_date yet (backend gap) — for a step that's
@@ -921,86 +958,35 @@ function SummaryPanel({ callId, summaryData, isLoadingSummary, statusTimeline, i
     });
   }, [statusTimeline, callId, getLocalReachedDate]);
 
-  // api/da/summary_tab/{call_id} is the source of truth once it loads; until then, or if
-  // it comes back without a field, fall back to what's already been typed in other tabs.
-  const isSummaryPending = isLoadingSummary && !summaryData;
-  const apiDateValue = (key, fallback) =>
-    isSummaryPending ? "Loading…" : (formatApiDateTime(summaryData?.[key]) || fallback);
-
-  const stats = [
-    { label: "Inward Clearance", value: apiDateValue("inward_clearance_date", null), icon: CalendarCheck, accent: "#0891b2" },
-    { label: "Outward Clearance", value: apiDateValue("outward_clearance_date", null), icon: CalendarCheck, accent: "#7c3aed" },
-  ];
-
   return (
-    <div className="da-cf-summary">
-      <StatusTimelineSection
-        steps={timelineSteps}
-        isLoading={isLoadingStatusTimeline}
-        onStepClick={onAdvanceDaStage}
-        isAdvancing={isAdvancingDaStage}
-      />
-
-      <div className="da-cf-summary-cards">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              className="da-cf-summary-card"
-              key={stat.label}
-              style={{ "--stagger-index": index, "--summary-accent": stat.accent }}
-            >
-              <span className="da-cf-summary-card-icon"><Icon size={22} /></span>
-              <div className="da-cf-summary-card-content">
-                <span className="da-cf-summary-card-label">{stat.label}</span>
-                <p className={`da-cf-summary-card-value${stat.value ? "" : " da-cf-summary-card-value--empty"}`}>
-                  {stat.value || "Not filled in yet"}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <StatusTimelineSection
+      steps={timelineSteps}
+      isLoading={isLoadingStatusTimeline}
+      onStepClick={onAdvanceDaStage}
+      isAdvancing={isAdvancingDaStage}
+    />
   );
 }
 
 SummaryPanel.propTypes = {
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  summaryData: PropTypes.object,
-  isLoadingSummary: PropTypes.bool,
   statusTimeline: PropTypes.array,
   isLoadingStatusTimeline: PropTypes.bool,
   onAdvanceDaStage: PropTypes.func,
   isAdvancingDaStage: PropTypes.bool,
 };
 
-function ListRowsSection({ label, icon, rows, collapsed, onToggleCollapse, onAdd, onChangeRow, onRemoveRow, placeholder, accent }) {
+function ListRowsSection({ label, icon, hint, rows, onAdd, onChangeRow, onRemoveRow, placeholder, accent }) {
   const Icon = icon;
   return (
-    <div className="da-cf-more-card" style={{ "--step-accent": accent }}>
-      <button type="button" className="da-cf-more-card-header" onClick={onToggleCollapse}>
-        <span className="da-cf-more-card-icon"><Icon size={20} /></span>
-        <div className="da-cf-more-card-heading">
-          <h5 className="da-cf-more-card-title">{label}</h5>
-          <span className="da-cf-more-card-count">{rows.length} item{rows.length === 1 ? "" : "s"}</span>
-        </div>
-        <span
-          className="da-cf-more-add-btn"
-          role="button"
-          tabIndex={0}
-          onClick={(e) => { e.stopPropagation(); onAdd(); }}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); onAdd(); } }}
-          title={`Add ${label.toLowerCase()}`}
-        >
-          <Plus size={15} />
-        </span>
-        <span className={`da-cf-more-chevron${collapsed ? " da-cf-more-chevron--collapsed" : ""}`}><ChevronDown size={16} /></span>
-      </button>
-      {!collapsed && (
-        rows.length === 0 ? (
-          <p className="da-cf-more-empty">Nothing added yet.</p>
-        ) : (
+    <section className="da-cf-ops-card" style={{ "--step-accent": accent }}>
+      <header className="da-cf-ops-card-header">
+        <span className="da-cf-ops-card-icon"><Icon size={20} /></span>
+        <h4 className="da-cf-ops-card-title">{label}</h4>
+      </header>
+      <p className="da-cf-ac-card-hint">{hint}</p>
+      <div className="da-cf-ops-card-body">
+        {rows.length > 0 && (
           <div className="da-cf-more-rows">
             {rows.map((row, i) => (
               <div className="da-cf-more-row" key={row.id}>
@@ -1018,18 +1004,20 @@ function ListRowsSection({ label, icon, rows, collapsed, onToggleCollapse, onAdd
               </div>
             ))}
           </div>
-        )
-      )}
-    </div>
+        )}
+        <button type="button" className="da-cf-more-add-row-btn" onClick={onAdd}>
+          <Plus size={14} /> Add {label.toLowerCase()}
+        </button>
+      </div>
+    </section>
   );
 }
 
 ListRowsSection.propTypes = {
   label: PropTypes.string.isRequired,
   icon: PropTypes.elementType.isRequired,
+  hint: PropTypes.string,
   rows: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, value: PropTypes.string })).isRequired,
-  collapsed: PropTypes.bool.isRequired,
-  onToggleCollapse: PropTypes.func.isRequired,
   onAdd: PropTypes.func.isRequired,
   onChangeRow: PropTypes.func.isRequired,
   onRemoveRow: PropTypes.func.isRequired,
@@ -1037,31 +1025,16 @@ ListRowsSection.propTypes = {
   accent: PropTypes.string,
 };
 
-function RelativesSection({ rows, collapsed, onToggleCollapse, onAdd, onChangeRow, onRemoveRow, accent }) {
+function RelativesSection({ rows, onAdd, onChangeRow, onRemoveRow, accent }) {
   return (
-    <div className="da-cf-more-card" style={{ "--step-accent": accent }}>
-      <button type="button" className="da-cf-more-card-header" onClick={onToggleCollapse}>
-        <span className="da-cf-more-card-icon"><GitBranch size={20} /></span>
-        <div className="da-cf-more-card-heading">
-          <h5 className="da-cf-more-card-title">Relatives &amp; Dependencies</h5>
-          <span className="da-cf-more-card-count">{rows.length} item{rows.length === 1 ? "" : "s"}</span>
-        </div>
-        <span
-          className="da-cf-more-add-btn"
-          role="button"
-          tabIndex={0}
-          onClick={(e) => { e.stopPropagation(); onAdd(); }}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); onAdd(); } }}
-          title="Add related card"
-        >
-          <Plus size={15} />
-        </span>
-        <span className={`da-cf-more-chevron${collapsed ? " da-cf-more-chevron--collapsed" : ""}`}><ChevronDown size={16} /></span>
-      </button>
-      {!collapsed && (
-        rows.length === 0 ? (
-          <p className="da-cf-more-empty">No related cards yet.</p>
-        ) : (
+    <section className="da-cf-ops-card" style={{ "--step-accent": accent }}>
+      <header className="da-cf-ops-card-header">
+        <span className="da-cf-ops-card-icon"><GitBranch size={20} /></span>
+        <h4 className="da-cf-ops-card-title">Relatives &amp; Dependencies</h4>
+      </header>
+      <p className="da-cf-ac-card-hint">Related cards linked to this call.</p>
+      <div className="da-cf-ops-card-body">
+        {rows.length > 0 && (
           <div className="da-cf-more-rows">
             {rows.map((row, i) => (
               <div className="da-cf-more-row" key={row.id}>
@@ -1079,16 +1052,17 @@ function RelativesSection({ rows, collapsed, onToggleCollapse, onAdd, onChangeRo
               </div>
             ))}
           </div>
-        )
-      )}
-    </div>
+        )}
+        <button type="button" className="da-cf-more-add-row-btn" onClick={onAdd}>
+          <Plus size={14} /> Add related card
+        </button>
+      </div>
+    </section>
   );
 }
 
 RelativesSection.propTypes = {
   rows: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, value: PropTypes.string })).isRequired,
-  collapsed: PropTypes.bool.isRequired,
-  onToggleCollapse: PropTypes.func.isRequired,
   onAdd: PropTypes.func.isRequired,
   onChangeRow: PropTypes.func.isRequired,
   onRemoveRow: PropTypes.func.isRequired,
@@ -1247,47 +1221,27 @@ InvoicesFeesSection.propTypes = {
   updateField: PropTypes.func.isRequired,
 };
 
-// DA Operations > Invoice — the same 3 cards from InvoicesFeesSection above (Tax
-// Invoice, SRT / PO / WBS, Invoice amount), minus its own hero header since the ops-card
-// wrapper already has a "Invoice" title. All 3 are editable; Tax Invoice / Invoice amount
-// persist via api/da/save_operation_tab/{call_id}, while SRT / PO / WBS has no field in
-// that payload, so typed values are saved via the local-only useDaLocalLaunchHire
-// fallback (see updateField in DA below) since there's no real backend field to persist to.
-const INVOICE_CARDS_EDITABLE_KEYS = ["taxInvoice", "invoiceAmount", "srtPoWbs"];
-
+// DA Operations > Invoice — same 3 fields as InvoicesFeesSection above (Tax Invoice,
+// SRT / PO / WBS, Invoice amount), styled as plain field tiles like Operation Details
+// instead of the bigger InvoicesFeesSection card treatment. All 3 are editable; Tax
+// Invoice / Invoice amount persist via api/da/save_operation_tab/{call_id}, while
+// SRT / PO / WBS has no field in that payload, so typed values are saved via the
+// local-only useDaLocalLaunchHire fallback (see updateField in DA below) since there's
+// no real backend field to persist to.
 function InvoiceCardsSection({ fieldValues, updateField }) {
   return (
-    <div className="da-cf-ac-grid da-cf-ac-grid--3col">
-      {INVOICES_FEES_CARDS.map((card) => {
-        const Icon = card.icon;
-        const value = fieldValues[card.key];
-        const isEditable = INVOICE_CARDS_EDITABLE_KEYS.includes(card.key);
-        return (
-          <div
-            className={`da-cf-ac-card${value ? " da-cf-ac-card--done" : ""}`}
-            style={{ "--step-accent": card.accent }}
-            key={card.key}
-          >
-            <div className="da-cf-ac-card-head">
-              <span className="da-cf-ac-card-icon"><Icon size={26} /></span>
-              <h5 className="da-cf-ac-card-title">{card.label}</h5>
-            </div>
-            <div className="da-cf-ac-card-field">
-              {isEditable ? (
-                <TextField
-                  label={card.label}
-                  icon={Icon}
-                  value={value}
-                  placeholder={card.placeholder}
-                  onChange={(v) => updateField(card.key, v)}
-                />
-              ) : (
-                <ReadonlyField label={card.label} icon={Icon} value={value || "Not set yet"} />
-              )}
-            </div>
-          </div>
-        );
-      })}
+    <div className="da-cf-fields-grid da-cf-fields-grid--fixed2">
+      {INVOICES_FEES_CARDS.map((card) => (
+        <TextField
+          key={card.key}
+          label={card.label}
+          icon={card.icon}
+          value={fieldValues[card.key]}
+          placeholder={card.placeholder}
+          onChange={(v) => updateField(card.key, v)}
+          accent={card.accent}
+        />
+      ))}
     </div>
   );
 }
@@ -1500,9 +1454,9 @@ function DA({ card, handleChange, daStatusRefreshToken, onAdvanceDaStage, isAdva
             || getLaunchHireOverride(callId, "roadTransport")
             || prev.roadTransport,
           taxInvoice: opData.tax_invoice_no ?? prev.taxInvoice,
-          // save_operation_tab has no field for this (see INVOICE_CARDS_EDITABLE_KEYS
-          // comment), so an empty API value falls back to the local-only override before
-          // finally falling back to whatever's already typed.
+          // save_operation_tab has no field for this (see InvoiceCardsSection comment),
+          // so an empty API value falls back to the local-only override before finally
+          // falling back to whatever's already typed.
           srtPoWbs: opData.srt_po_wbs_ref
             || getLaunchHireOverride(callId, "srtPoWbs")
             || prev.srtPoWbs,
@@ -1592,7 +1546,7 @@ function DA({ card, handleChange, daStatusRefreshToken, onAdvanceDaStage, isAdva
   ]);
 
   // thirdPartyLaunchHire/roadTransport/srtPoWbs/srnNo have no save_operation_tab field (see
-  // INVOICE_CARDS_EDITABLE_KEYS / VESSEL_SALES_ORDER_CARDS comments), so typed
+  // InvoiceCardsSection / VESSEL_SALES_ORDER_CARDS comments), so typed
   // values also get mirrored into useDaLocalLaunchHire — the only place they're
   // remembered across reopening the card, since there's no backend to persist them to.
   const LOCAL_ONLY_FIELD_KEYS = useMemo(() => new Set(["thirdPartyLaunchHire", "roadTransport", "srtPoWbs", "srnNo"]), []);
@@ -1655,13 +1609,6 @@ function DA({ card, handleChange, daStatusRefreshToken, onAdvanceDaStage, isAdva
       [sectionKey]: { ...prev[sectionKey], rows: prev[sectionKey].rows.filter((_, i) => i !== idx) },
     }));
   };
-  const toggleListCollapse = (sectionKey) => {
-    setListSections((prev) => ({
-      ...prev,
-      [sectionKey]: { ...prev[sectionKey], collapsed: !prev[sectionKey].collapsed },
-    }));
-  };
-
   // api/da/documents_tab/{call_id} — pre-fills the "Link" tab's free-form "Docs" text
   // list with names of documents already uploaded elsewhere against this call, once
   // when the card first loads.
@@ -1685,7 +1632,6 @@ function DA({ card, handleChange, daStatusRefreshToken, onAdvanceDaStage, isAdva
   }, [callId]);
 
   const [relatives, setRelatives] = useState([]);
-  const [relativesCollapsed, setRelativesCollapsed] = useState(false);
   const addRelative = () => setRelatives((prev) => [...prev, { id: nextRowId(), value: "" }]);
   const changeRelative = (idx, value) =>
     setRelatives((prev) => prev.map((row, i) => (i === idx ? { ...row, value } : row)));
@@ -1832,106 +1778,105 @@ function DA({ card, handleChange, daStatusRefreshToken, onAdvanceDaStage, isAdva
     }
   };
 
+  // api/da/summary_tab/{call_id} is the source of truth once it loads; until then, or if
+  // it comes back without a field, fall back to what's already been typed in other tabs.
+  const isSummaryPending = isLoadingSummary && !summaryData;
+  const apiDateValue = (key, fallback) =>
+    isSummaryPending ? "Loading…" : (formatApiDateTime(summaryData?.[key]) || fallback);
+  const clearanceStats = [
+    { label: "Inward Clearance", value: apiDateValue("inward_clearance_date", null), icon: CalendarCheck, accent: "#0891b2" },
+    { label: "Outward Clearance", value: apiDateValue("outward_clearance_date", null), icon: CalendarCheck, accent: "#7c3aed" },
+  ];
+
   return (
     <div className="cardform-body da-cf-panel">
       <div className="da-cf-subtab-body">
-        <div className="da-cf-mwp-launch-hire">
-          <SummaryPanel
-            callId={callId}
-            summaryData={summaryData}
-            isLoadingSummary={isLoadingSummary}
-            statusTimeline={statusTimeline}
-            isLoadingStatusTimeline={isLoadingStatusTimeline}
-            onAdvanceDaStage={onAdvanceDaStage}
-            isAdvancingDaStage={isAdvancingDaStage}
-          />
+        <SummaryPanel
+          callId={callId}
+          statusTimeline={statusTimeline}
+          isLoadingStatusTimeline={isLoadingStatusTimeline}
+          onAdvanceDaStage={onAdvanceDaStage}
+          isAdvancingDaStage={isAdvancingDaStage}
+        />
+
+        <div className="da-cf-ops-toolbar">
+          <OperationAutoSaveStatus status={operationSaveStatus} />
         </div>
 
-        <div className="da-cf-mwp-launch-hire">
-          <div className="da-cf-ops-toolbar">
-            <OperationAutoSaveStatus status={operationSaveStatus} />
-          </div>
-
-          <div className="da-cf-ops-grid">
-            {DA_OPERATOR_SUB_TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isOperationDetails = tab.key === "operationDetails";
-              const isInvoice = tab.key === "invoice";
-              return (
-                <section
-                  className={`da-cf-ops-card${isOperationDetails || isInvoice ? " da-cf-ops-card--wide" : ""}`}
-                  style={{ "--step-accent": tab.accent }}
-                  key={tab.key}
-                >
-                  <header className="da-cf-ops-card-header">
-                    <span className="da-cf-ops-card-icon"><Icon size={20} /></span>
-                    <h4 className="da-cf-ops-card-title">{tab.label}</h4>
-                  </header>
-                  <p className="da-cf-ac-card-hint">{tab.hint}</p>
-                  <div className="da-cf-ops-card-body">
-                    {isOperationDetails ? (
-                      <div className="da-cf-fields-grid da-cf-fields-grid--fixed4">
-                        <ReadonlyField
-                          label="Owner"
-                          icon={User}
-                          value={isLoadingOperationTab && !operationTabData ? "Loading…" : (operationTabData?.call_owner_name || summaryData?.call_owner_name || "Not set yet")}
-                          accent="#0d9488"
-                        />
-                        {renderField(OPERATION_DETAILS_FIELDS_BY_KEY.coOwners)}
-                        <ReadonlyField
-                          label="Service requester"
-                          icon={OPERATION_DETAILS_FIELDS_BY_KEY.serviceRequester.icon}
-                          value={isLoadingOperationTab && !operationTabData ? "Loading…" : (fieldValues.serviceRequester || "Not set yet")}
-                          accent={OPERATION_DETAILS_FIELDS_BY_KEY.serviceRequester.accent}
-                        />
-                        <ReadonlyField
-                          label="Last moved"
-                          icon={Clock}
-                          value={isLoadingOperationTab && !operationTabData ? "Loading…" : (formatApiDateTime(operationTabData?.stage_entered_date) || lastMovedDisplay)}
-                          accent={OPERATION_DETAILS_FIELDS_BY_KEY.lastMoved.accent}
-                        />
-                      </div>
-                    ) : isInvoice ? (
-                      <InvoiceCardsSection fieldValues={fieldValues} updateField={updateField} />
-                    ) : (
-                      <p className="da-cf-ac-readonly-value">
-                        <span className="da-cf-ac-readonly-empty">Coming soon.</span>
-                      </p>
-                    )}
-                  </div>
-                </section>
-              );
-            })}
-          </div>
+        {/* Clearance, Operation Details and Invoice share one 3-up row — Clearance is
+            the smallest of the three, but sits alongside them instead of on its own
+            line since all three are just small pieces of read/edit data. */}
+        <div className="da-cf-ops-grid da-cf-ops-grid--3col">
+          <ClearanceStatsRow stats={clearanceStats} />
+          {DA_OPERATOR_SUB_TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isOperationDetails = tab.key === "operationDetails";
+            const isInvoice = tab.key === "invoice";
+            return (
+              <section className="da-cf-ops-card" style={{ "--step-accent": tab.accent }} key={tab.key}>
+                <header className="da-cf-ops-card-header">
+                  <span className="da-cf-ops-card-icon"><Icon size={20} /></span>
+                  <h4 className="da-cf-ops-card-title">{tab.label}</h4>
+                </header>
+                <p className="da-cf-ac-card-hint">{tab.hint}</p>
+                <div className="da-cf-ops-card-body">
+                  {isOperationDetails ? (
+                    <div className="da-cf-fields-grid da-cf-fields-grid--fixed2">
+                      <ReadonlyField
+                        label="Owner"
+                        icon={User}
+                        value={isLoadingOperationTab && !operationTabData ? "Loading…" : (operationTabData?.call_owner_name || summaryData?.call_owner_name || "Not set yet")}
+                        accent="#0d9488"
+                      />
+                      {renderField(OPERATION_DETAILS_FIELDS_BY_KEY.coOwners)}
+                      <ReadonlyField
+                        label="Service requester"
+                        icon={OPERATION_DETAILS_FIELDS_BY_KEY.serviceRequester.icon}
+                        value={isLoadingOperationTab && !operationTabData ? "Loading…" : (fieldValues.serviceRequester || "Not set yet")}
+                        accent={OPERATION_DETAILS_FIELDS_BY_KEY.serviceRequester.accent}
+                      />
+                      <ReadonlyField
+                        label="Last moved"
+                        icon={Clock}
+                        value={isLoadingOperationTab && !operationTabData ? "Loading…" : (formatApiDateTime(operationTabData?.stage_entered_date) || lastMovedDisplay)}
+                        accent={OPERATION_DETAILS_FIELDS_BY_KEY.lastMoved.accent}
+                      />
+                    </div>
+                  ) : isInvoice ? (
+                    <InvoiceCardsSection fieldValues={fieldValues} updateField={updateField} />
+                  ) : (
+                    <p className="da-cf-ac-readonly-value">
+                      <span className="da-cf-ac-readonly-empty">Coming soon.</span>
+                    </p>
+                  )}
+                </div>
+              </section>
+            );
+          })}
         </div>
 
-        <div className="da-cf-more">
-          <div className="da-cf-more-grid">
-            {MORE_TAB_LIST_SECTIONS.map((section) => (
-              <ListRowsSection
-                key={section.key}
-                label={section.label}
-                icon={section.icon}
-                rows={listSections[section.key].rows}
-                collapsed={listSections[section.key].collapsed}
-                onToggleCollapse={() => toggleListCollapse(section.key)}
-                onAdd={() => addListRow(section.key)}
-                onChangeRow={(i, v) => changeListRow(section.key, i, v)}
-                onRemoveRow={(i) => removeListRow(section.key, i)}
-                placeholder={section.placeholder}
-                accent={section.accent}
-              />
-            ))}
-            <RelativesSection
-              rows={relatives}
-              collapsed={relativesCollapsed}
-              onToggleCollapse={() => setRelativesCollapsed((c) => !c)}
-              onAdd={addRelative}
-              onChangeRow={changeRelative}
-              onRemoveRow={removeRelative}
-              accent="#d97706"
+        <div className="da-cf-ops-grid">
+          {MORE_TAB_LIST_SECTIONS.map((section) => (
+            <ListRowsSection
+              key={section.key}
+              label={section.label}
+              icon={section.icon}
+              hint={section.hint}
+              rows={listSections[section.key].rows}
+              onAdd={() => addListRow(section.key)}
+              onChangeRow={(i, v) => changeListRow(section.key, i, v)}
+              onRemoveRow={(i) => removeListRow(section.key, i)}
+              placeholder={section.placeholder}
+              accent={section.accent}
             />
-          </div>
+          ))}
+          <RelativesSection
+            rows={relatives}
+            onAdd={addRelative}
+            onChangeRow={changeRelative}
+            onRemoveRow={removeRelative}
+            accent="#d97706"
+          />
         </div>
       </div>
     </div>
