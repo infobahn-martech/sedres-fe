@@ -81,23 +81,25 @@ const WorkOrderCreationModal = ({
 
             <div className="so-wo-field">
               <label className="so-wo-label">Selected Line ({selectedLineItems.length})</label>
-              <div className="so-wo-line-list">
-                {selectedLineItems.map((item) => (
-                  <div key={item.id} className="so-wo-line-item">
-                    <div className="so-wo-line-cell">
-                      <span className="so-wo-line-cell-label">Item Code</span>
-                      <div className="so-wo-line-cell-value">{item.itemNo || "—"}</div>
+              <div className="so-wo-line-table">
+                <div className="so-wo-line-head">
+                  <span />
+                  <span>Item Code</span>
+                  <span>Item Description</span>
+                  <span className="so-wo-line-head-qty">Qty</span>
+                </div>
+                <div className="so-wo-line-list">
+                  {selectedLineItems.map((item, index) => (
+                    <div key={item.id} className="so-wo-line-row">
+                      <span className="so-wo-line-index">{index + 1}</span>
+                      <span className="so-wo-line-code">{item.itemNo || "—"}</span>
+                      <span className="so-wo-line-desc" title={item.itemDescription || ""}>
+                        {item.itemDescription || "—"}
+                      </span>
+                      <span className="so-wo-line-qty">{item.qty ?? "—"}</span>
                     </div>
-                    <div className="so-wo-line-cell">
-                      <span className="so-wo-line-cell-label">Item Description</span>
-                      <div className="so-wo-line-cell-value">{item.itemDescription || "—"}</div>
-                    </div>
-                    <div className="so-wo-line-cell so-wo-line-cell-qty">
-                      <span className="so-wo-line-cell-label">Quantity</span>
-                      <div className="so-wo-line-cell-value">{item.qty ?? "—"}</div>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
 
