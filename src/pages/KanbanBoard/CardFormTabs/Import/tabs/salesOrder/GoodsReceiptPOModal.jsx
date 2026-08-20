@@ -134,10 +134,10 @@ const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN, isSubmitti
                       </td>
                       <td>{item.qty ?? 0}</td>
                       <td>{formatCurrencySAR(item.unitPrice)}</td>
-                      <td>{item.discount ?? 0}</td>
+                      <td>{item.discount ?? 0}%</td>
                       <td>{item.taxCode || "—"}</td>
                       <td>{formatCurrencySAR(item.taxAmount)}</td>
-                      <td>{formatCurrencySAR(item.totalAmount)}</td>
+                      <td className="so-po-doc-item-total">{formatCurrencySAR(item.totalAmount)}</td>
                     </tr>
                   ))}
                 </tbody>

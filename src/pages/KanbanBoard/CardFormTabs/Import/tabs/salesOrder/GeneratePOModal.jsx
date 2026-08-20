@@ -8,6 +8,14 @@ const formatCurrencySAR = (amount) =>
     minimumFractionDigits: 2,
   }).format(amount || 0);
 
+const getStatusPillColors = (status) => {
+  const s = String(status || "").toLowerCase();
+  if (s.includes("closed") || s.includes("complete")) return { color: "#15803d", background: "#dcfce7" };
+  if (s.includes("cancel")) return { color: "#b91c1c", background: "#fee2e2" };
+  if (s.includes("open") || s.includes("draft")) return { color: "#1d4ed8", background: "#dbeafe" };
+  return { color: "#475569", background: "#f1f5f9" };
+};
+
 const calcLineAmounts = (item) => {
   const qty = parseFloat(item.qty) || 0;
   const unitPrice = parseFloat(item.unitPrice) || 0;
@@ -193,7 +201,13 @@ const GeneratePOModal = ({
                 </div>
                 <div className="so-po-field-row">
                   <span className="so-po-field-label">Status</span>
-                  <span className="so-po-field-value">{status || "—"}</span>
+                  {status ? (
+                    <span className="so-po-status-pill" style={getStatusPillColors(status)}>
+                      {status}
+                    </span>
+                  ) : (
+                    <span className="so-po-field-value">—</span>
+                  )}
                 </div>
                 <div className="so-po-field-row">
                   <span className="so-po-field-label">Posting Date</span>
@@ -246,9 +260,9 @@ const GeneratePOModal = ({
                       </td>
                       <td>{item.qty ?? 0}</td>
                       <td>{formatCurrencySAR(item.unitPrice)}</td>
-                      <td>{item.discount ?? 0}</td>
+                      <td>{item.discount ?? 0}%</td>
                       <td>{item.taxCode || "—"}</td>
-                      <td>{formatCurrencySAR(total)}</td>
+                      <td className="so-po-doc-item-total">{formatCurrencySAR(total)}</td>
                       <td>{item.uomCode || "—"}</td>
                     </tr>
                   ))}
