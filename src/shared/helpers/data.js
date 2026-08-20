@@ -229,7 +229,7 @@ export function mapBoardWorkflowFromApi(workflow) {
             entityLogo:
               card.entity_logo && String(card.entity_logo).trim()
                 ? String(card.entity_logo).trim()
-                : defaultEntityLogo,
+                : "",
             createdDate: card.created_date && String(card.created_date).trim() ? String(card.created_date).trim() : "",
             progress,
             timeLeft,
