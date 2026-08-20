@@ -64,7 +64,7 @@ export function mapSalesOrderResponse(apiData) {
     qty: Number(item.quantity) || 0,
     unitPrice: Number(item.unit_price) || 0,
     totalAmount: Number(item.total_price) || 0,
-    discount: 0,
+    discount: item.discount_percentage != null && String(item.discount_percentage).trim() !== "" ? Number(item.discount_percentage) : 0,
     taxCode: taxCodeFromApi(item),
     typeOfPo: "",
     supplierCode: "",
