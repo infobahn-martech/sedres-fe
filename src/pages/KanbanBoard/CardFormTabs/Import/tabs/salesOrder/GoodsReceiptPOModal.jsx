@@ -101,14 +101,6 @@ const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN, isSubmitti
               </div>
             </div>
 
-            <div className="so-po-tabs">
-              {TABS.map((tab) => (
-                <span key={tab} className={`so-po-tab${tab === "Contents" ? " so-po-tab-active" : ""}`}>
-                  {tab}
-                </span>
-              ))}
-            </div>
-
             <div className="so-po-table-scroll">
               <table className="so-po-doc-table">
                 <thead>

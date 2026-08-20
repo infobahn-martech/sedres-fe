@@ -2495,26 +2495,6 @@ $so-po-blue: #1a56db;
   }
 }
 
-.so-po-toolbar-btn-submit {
-  color: #ffffff;
-  background: #00368c;
-  border-color: #00368c;
-  box-shadow: 0 4px 14px rgba(0, 54, 140, 0.32);
-
-  &:hover:not(:disabled) {
-    background: #002a6e;
-    border-color: #002a6e;
-    box-shadow: 0 4px 14px rgba(0, 54, 140, 0.4);
-  }
-
-  &:disabled {
-    background: #7d97bf;
-    border-color: #7d97bf;
-    box-shadow: none;
-    opacity: 1;
-  }
-}
-
 .so-po-copyto {
   position: relative;
 }
@@ -2808,7 +2788,6 @@ $so-po-blue: #1a56db;
   display: inline-block;
   padding: 3px 8px;
   border-radius: 6px;
-  background: rgba(26, 86, 219, 0.08);
   color: $so-po-blue;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 12px;

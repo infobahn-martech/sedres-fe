@@ -145,15 +145,6 @@ const GeneratePOModal = ({
                 </div>
               )}
             </div>
-            <button
-              type="button"
-              className="so-po-toolbar-btn so-po-toolbar-btn-submit"
-              onClick={() => onGenerate(vendorRefNo)}
-              disabled={isSubmitting || Boolean(purchaseOrderId)}
-              title={purchaseOrderId ? "This purchase order has already been submitted." : undefined}
-            >
-              {isSubmitting ? "Submitting..." : purchaseOrderId ? "Submitted" : "Submit"}
-            </button>
           </div>
         </div>
 
@@ -321,6 +312,21 @@ const GeneratePOModal = ({
 
             {error && <div className="so-po-doc-error">{error}</div>}
           </div>
+        </div>
+
+        <div className="so-po-modal-footer">
+          <button type="button" className="so-po-btn so-po-btn-cancel" onClick={onClose} disabled={isSubmitting}>
+            Close
+          </button>
+          <button
+            type="button"
+            className="so-po-btn so-po-btn-generate"
+            onClick={() => onGenerate(vendorRefNo)}
+            disabled={isSubmitting || Boolean(purchaseOrderId)}
+            title={purchaseOrderId ? "This purchase order has already been submitted." : undefined}
+          >
+            {isSubmitting ? "Submitting..." : purchaseOrderId ? "Submitted" : "Submit"}
+          </button>
         </div>
       </div>
     </div>
