@@ -2001,6 +2001,12 @@
   }
 }
 
+.so-wo-input-readonly {
+  color: var(--text-secondary);
+  background: var(--surface-secondary, #f5f6fa);
+  cursor: default;
+}
+
 .so-wo-line-list {
   max-height: 220px;
   overflow-y: auto;

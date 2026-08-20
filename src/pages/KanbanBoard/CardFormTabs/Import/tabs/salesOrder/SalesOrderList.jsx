@@ -2225,6 +2225,7 @@ const SalesOrderList = ({
           selectedItems={Array.from(selectedWoItems)}
           salesOrderList={displayOrderList}
           cardColor={cardColor}
+          billingEntity={billingEntity || soCustomerName}
           vesselName={soShipName}
           portName={soPort}
         />

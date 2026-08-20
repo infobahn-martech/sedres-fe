@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { FaWhatsapp } from "react-icons/fa";
 
@@ -11,37 +11,13 @@ const WorkOrderCreationModal = ({
   selectedItems,
   salesOrderList,
   cardColor,
+  billingEntity = "",
   vesselName = "",
   portName = "",
 }) => {
-  const [formData, setFormData] = useState({
-    workOrderName: "",
-    vesselName: "",
-    portName: "",
-    createAs: "Draft",
-  });
+  const [createAs, setCreateAs] = useState("Draft");
 
   const selectedLineItems = salesOrderList.filter((item) => selectedItems.includes(item.id));
-
-  // Auto-generate work order name and pre-fill vessel/port
-  useEffect(() => {
-    if (show && selectedLineItems.length > 0) {
-      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-      const itemNames = selectedLineItems.slice(0, 2).map((item) => item.itemDescription || item.itemNo || "").join(", ");
-      const generatedName = `WO-${timestamp}-${itemNames.substring(0, 30)}${itemNames.length > 30 ? "..." : ""}`;
-      setFormData((prev) => ({
-        ...prev,
-        workOrderName: generatedName,
-        vesselName: vesselName || prev.vesselName,
-        portName: portName || prev.portName,
-      }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [show]);
-
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
 
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget && !isSubmitting) onClose();
@@ -50,15 +26,15 @@ const WorkOrderCreationModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (isSubmitting) return;
-    onGenerate(formData);
+    onGenerate({ billingEntity, vesselName, portName, createAs });
   };
 
   const handleShareWhatsApp = () => {
     const lines = [
-      `*Work Order:* ${formData.workOrderName}`,
-      `*Vessel:* ${formData.vesselName || "—"}`,
-      `*Port:* ${formData.portName || "—"}`,
-      `*Status:* ${formData.createAs}`,
+      `*Billing Entity:* ${billingEntity || "—"}`,
+      `*Vessel:* ${vesselName || "—"}`,
+      `*Port:* ${portName || "—"}`,
+      `*Status:* ${createAs}`,
       "",
       `*Line Items (${selectedLineItems.length}):*`,
       ...selectedLineItems.map(
@@ -88,36 +64,18 @@ const WorkOrderCreationModal = ({
         <form onSubmit={handleSubmit} className="so-wo-modal-form">
           <div className="so-wo-modal-body">
             <div className="so-wo-field">
-              <label className="so-wo-label">Work Order Name</label>
-              <input
-                type="text"
-                className="so-wo-input"
-                value={formData.workOrderName}
-                onChange={(e) => handleInputChange("workOrderName", e.target.value)}
-                required
-              />
+              <label className="so-wo-label">Billing Entity</label>
+              <input type="text" className="so-wo-input so-wo-input-readonly" value={billingEntity} readOnly />
             </div>
 
             <div className="so-wo-field-row">
               <div className="so-wo-field">
                 <label className="so-wo-label">Vessel Name</label>
-                <input
-                  type="text"
-                  className="so-wo-input"
-                  value={formData.vesselName}
-                  onChange={(e) => handleInputChange("vesselName", e.target.value)}
-                  placeholder="Enter vessel name"
-                />
+                <input type="text" className="so-wo-input so-wo-input-readonly" value={vesselName} readOnly />
               </div>
               <div className="so-wo-field">
                 <label className="so-wo-label">Port Name</label>
-                <input
-                  type="text"
-                  className="so-wo-input"
-                  value={formData.portName}
-                  onChange={(e) => handleInputChange("portName", e.target.value)}
-                  placeholder="Enter port name"
-                />
+                <input type="text" className="so-wo-input so-wo-input-readonly" value={portName} readOnly />
               </div>
             </div>
 
@@ -127,11 +85,11 @@ const WorkOrderCreationModal = ({
                 {selectedLineItems.map((item) => (
                   <div key={item.id} className="so-wo-line-item">
                     <div className="so-wo-line-cell">
-                      <span className="so-wo-line-cell-label">Internal Code</span>
+                      <span className="so-wo-line-cell-label">Item Code</span>
                       <div className="so-wo-line-cell-value">{item.itemNo || "—"}</div>
                     </div>
                     <div className="so-wo-line-cell">
-                      <span className="so-wo-line-cell-label">Job Description</span>
+                      <span className="so-wo-line-cell-label">Item Description</span>
                       <div className="so-wo-line-cell-value">{item.itemDescription || "—"}</div>
                     </div>
                     <div className="so-wo-line-cell so-wo-line-cell-qty">
@@ -147,8 +105,8 @@ const WorkOrderCreationModal = ({
               <label className="so-wo-label">Create As</label>
               <select
                 className="so-wo-input"
-                value={formData.createAs}
-                onChange={(e) => handleInputChange("createAs", e.target.value)}
+                value={createAs}
+                onChange={(e) => setCreateAs(e.target.value)}
               >
                 <option value="Draft">Draft</option>
                 <option value="Active">Active</option>
@@ -189,6 +147,7 @@ WorkOrderCreationModal.propTypes = {
   selectedItems: PropTypes.arrayOf(PropTypes.number).isRequired,
   salesOrderList: PropTypes.array.isRequired,
   cardColor: PropTypes.string,
+  billingEntity: PropTypes.string,
   vesselName: PropTypes.string,
   portName: PropTypes.string,
 };
