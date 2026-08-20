@@ -1656,7 +1656,8 @@ const renderTabContent = (
   onAdvanceDaStage,
   isAdvancingDaStage,
   showLaunchHire = true,
-  isDaCardContext = false
+  isDaCardContext = false,
+  refreshSalesOrder
 ) => {
   const commonProps = {
     card,
@@ -1677,6 +1678,7 @@ const renderTabContent = (
     onAdvanceDaStage,
     isAdvancingDaStage,
     showLaunchHire,
+    refreshSalesOrder,
   };
 
   if (isDAModule) {
@@ -2330,6 +2332,55 @@ function CardForm({
   const isClosingRef = useRef(false);
   const lastSalesOrderFetchKeyRef = useRef(null);
 
+  // Shared by the auto-fetch effect below and by refreshSalesOrder (called after actions
+  // that change the SO items server-side, e.g. generating a Work Order or PO).
+  const loadSalesOrder = useCallback((callId, { markKey } = {}) => {
+    if (!callId) {
+      setSalesOrderApiError("No call identifier available for this card.");
+      setSalesOrderApiLoading(false);
+      return Promise.resolve();
+    }
+
+    setSalesOrderApiLoading(true);
+    setSalesOrderApiError(null);
+
+    return salesOrderService
+      .getSoItemsByCall(callId)
+      .then((response) => {
+        const body = response?.data;
+        if (body?.status !== "success" || !body?.data) {
+          setSalesOrderApiError(
+            typeof body?.message === "string" && body.message.trim()
+              ? body.message
+              : "Unable to load sales order data."
+          );
+          setFormValues((prev) => ({
+            ...prev,
+            salesOrderList: [],
+          }));
+          return;
+        }
+        if (markKey) lastSalesOrderFetchKeyRef.current = markKey;
+        const mapped = mapSalesOrderResponse(body.data);
+        setFormValues((prev) => ({ ...prev, ...mapped }));
+      })
+      .catch((err) => {
+        const msg =
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to load sales order.";
+        setSalesOrderApiError(typeof msg === "string" ? msg : "Failed to load sales order.");
+        setFormValues((prev) => ({
+          ...prev,
+          salesOrderList: [],
+        }));
+      })
+      .finally(() => {
+        setSalesOrderApiLoading(false);
+      });
+  }, []);
+
   useEffect(() => {
     if (!show) {
       lastSalesOrderFetchKeyRef.current = null;
@@ -2351,52 +2402,18 @@ function CardForm({
     const key = `${card?.id ?? ""}:${callId}`;
     if (lastSalesOrderFetchKeyRef.current === key) return;
 
-    let cancelled = false;
-    setSalesOrderApiLoading(true);
-    setSalesOrderApiError(null);
+    loadSalesOrder(callId, { markKey: key });
+  }, [show, activeTopTab, card?.call_id, card?.callId, card?.id, loadSalesOrder]);
 
-    salesOrderService
-      .getSoItemsByCall(callId)
-      .then((response) => {
-        if (cancelled) return;
-        const body = response?.data;
-        if (body?.status !== "success" || !body?.data) {
-          setSalesOrderApiError(
-            typeof body?.message === "string" && body.message.trim()
-              ? body.message
-              : "Unable to load sales order data."
-          );
-          setFormValues((prev) => ({
-            ...prev,
-            salesOrderList: [],
-          }));
-          return;
-        }
-        lastSalesOrderFetchKeyRef.current = key;
-        const mapped = mapSalesOrderResponse(body.data);
-        setFormValues((prev) => ({ ...prev, ...mapped }));
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        const msg =
-          err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          err?.message ||
-          "Failed to load sales order.";
-        setSalesOrderApiError(typeof msg === "string" ? msg : "Failed to load sales order.");
-        setFormValues((prev) => ({
-          ...prev,
-          salesOrderList: [],
-        }));
-      })
-      .finally(() => {
-        if (!cancelled) setSalesOrderApiLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [show, activeTopTab, card?.call_id, card?.callId, card?.id]);
+  // Re-fetches the current call's sales order items — used after actions that mutate SO
+  // items server-side (e.g. sales_order/generate_work_order) so the table reflects the
+  // updated Work Order No. / wo_status without requiring the tab to be closed and reopened.
+  const refreshSalesOrder = useCallback(() => {
+    const callIdRaw = card?.call_id ?? card?.callId;
+    const callId = callIdRaw === undefined || callIdRaw === null ? "" : String(callIdRaw).trim();
+    const key = `${card?.id ?? ""}:${callId}`;
+    return loadSalesOrder(callId, { markKey: key });
+  }, [card?.call_id, card?.callId, card?.id, loadSalesOrder]);
 
   const [isSavingGeneral, setIsSavingGeneral] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -2971,7 +2988,8 @@ function CardForm({
                 handleDaTimelineStepClick,
                 isAdvancingStage,
                 showLaunchHire,
-                isDaCardContext
+                isDaCardContext,
+                refreshSalesOrder
               )}
           </>
         )}

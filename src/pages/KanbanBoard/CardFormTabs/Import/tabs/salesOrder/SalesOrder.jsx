@@ -10,6 +10,7 @@ function SalesOrder({
   isDaCardContext = false,
   salesOrderApiLoading = false,
   salesOrderApiError = null,
+  refreshSalesOrder,
 }) {
   const cardColor = "#e2e6ff";
 
@@ -28,6 +29,7 @@ function SalesOrder({
             isDaCardContext={isDaCardContext}
             isLoadingSalesOrder={salesOrderApiLoading}
             salesOrderError={salesOrderApiError}
+            refreshSalesOrder={refreshSalesOrder}
           />
         </div>
       </div>
@@ -44,6 +46,7 @@ SalesOrder.propTypes = {
   isDaCardContext: PropTypes.bool,
   salesOrderApiLoading: PropTypes.bool,
   salesOrderApiError: PropTypes.oneOfType([PropTypes.string, PropTypes.oneOf([null])]),
+  refreshSalesOrder: PropTypes.func,
 };
 
 export default SalesOrder;

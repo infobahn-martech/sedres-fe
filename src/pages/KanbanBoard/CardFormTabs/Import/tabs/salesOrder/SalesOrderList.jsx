@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import PropTypes from "prop-types";
-import { FiFilePlus, FiFileText, FiClipboard, FiTool, FiCheck, FiChevronLeft, FiChevronRight, FiRefreshCw } from "react-icons/fi";
+import { FiFilePlus, FiFileText, FiClipboard, FiTool, FiCheck, FiChevronLeft, FiChevronRight, FiRefreshCw, FiUpload } from "react-icons/fi";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import "../../../../../../design/scss/salesOrder.scss";
@@ -239,13 +239,16 @@ VendorListModal.propTypes = {
 };
 
 // Document List Modal
-const DocumentListModal = ({ show, onClose, onSave, initialSelected = [] }) => {
+const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], documents = DUMMY_DOCUMENTS, onUploadDocument }) => {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(new Set());
 
   useEffect(() => {
     if (show) {
-      setSelected(new Set((initialSelected || []).map((d) => d.id)));
+      const initialIds = (initialSelected || []).map((d) => d.id);
+      // Nothing saved for this item yet — default to all documents selected so the user
+      // starts from "everything attached" and only has to uncheck what doesn't apply.
+      setSelected(new Set(initialIds.length > 0 ? initialIds : documents.map((d) => d.id)));
       setSearch("");
     }
     // Only reset when modal opens; initialSelected is captured at open time via key on parent
@@ -254,7 +257,7 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [] }) => {
 
   if (!show) return null;
 
-  const filtered = DUMMY_DOCUMENTS.filter((d) =>
+  const filtered = documents.filter((d) =>
     d.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -271,9 +274,19 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [] }) => {
   };
 
   const handleSave = () => {
-    const documents = DUMMY_DOCUMENTS.filter((d) => selected.has(d.id));
-    onSave(documents);
+    const selectedDocuments = documents.filter((d) => selected.has(d.id));
+    onSave(selectedDocuments);
     onClose();
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !onUploadDocument) return;
+    const newDoc = onUploadDocument(file);
+    if (newDoc) {
+      setSelected((prev) => new Set(prev).add(newDoc.id));
+    }
   };
 
   return (
@@ -286,15 +299,23 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [] }) => {
           <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#1a1a2e" }}>Select Supporting Documents</h3>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#888", lineHeight: 1 }}>×</button>
         </div>
-        <div style={{ padding: "14px 22px", borderBottom: "1px solid #eee", flexShrink: 0 }}>
+        <div style={{ padding: "14px 22px", borderBottom: "1px solid #eee", flexShrink: 0, display: "flex", gap: "10px", alignItems: "center" }}>
           <input
             type="text"
             placeholder="Search by document name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             autoFocus
-            style={{ width: "100%", padding: "8px 12px", border: "1px solid #dde0ea", borderRadius: "7px", fontSize: "13px", boxSizing: "border-box", fontFamily: "inherit" }}
+            style={{ flex: 1, padding: "8px 12px", border: "1px solid #dde0ea", borderRadius: "7px", fontSize: "13px", boxSizing: "border-box", fontFamily: "inherit" }}
           />
+          {onUploadDocument && (
+            <label
+              style={{ padding: "8px 14px", fontSize: "13px", border: "1px solid #dde0ea", borderRadius: "7px", background: "#f5f6ff", color: "#2A00FF", cursor: "pointer", fontFamily: "inherit", fontWeight: "600", whiteSpace: "nowrap", flexShrink: 0 }}
+            >
+              Upload New
+              <input type="file" onChange={handleFileUpload} style={{ display: "none" }} />
+            </label>
+          )}
         </div>
         <div style={{ overflowY: "auto", flex: 1, minHeight: 0, padding: "14px 18px", display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "10px", alignContent: "start" }}>
           {filtered.length === 0 ? (
@@ -382,6 +403,14 @@ DocumentListModal.propTypes = {
       type: PropTypes.string.isRequired,
     })
   ),
+  documents: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      name: PropTypes.string.isRequired,
+      type: PropTypes.string.isRequired,
+    })
+  ),
+  onUploadDocument: PropTypes.func,
 };
 
 // Premium pagination control for the sales order table
@@ -474,6 +503,7 @@ const SalesOrderList = ({
   isDaCardContext = false,
   isLoadingSalesOrder = false,
   salesOrderError = null,
+  refreshSalesOrder,
 }) => {
   // Broader "this is a DA card" signal — isDAModule alone only covers the dedicated DA-desk
   // board routes; isDaCardContext also covers DA-variant/DA-board cards reached via the
@@ -603,6 +633,17 @@ const SalesOrderList = ({
 
   // State for document modal (row-level document picker)
   const [documentModalTarget, setDocumentModalTarget] = useState(null); // orderId or "new"
+  // Documents selectable across all rows — starts from the dummy reference list, grows as
+  // users upload new files from the modal (local-only, same as the rest of this mock data).
+  const [documentPool, setDocumentPool] = useState(DUMMY_DOCUMENTS);
+
+  const handleUploadDocument = (file) => {
+    const ext = (file.name.split(".").pop() || "").toUpperCase();
+    const newId = documentPool.length > 0 ? Math.max(...documentPool.map((d) => d.id)) + 1 : 1;
+    const newDoc = { id: newId, name: file.name, type: ext || "FILE" };
+    setDocumentPool((prev) => [...prev, newDoc]);
+    return newDoc;
+  };
 
   const displayOrderList = Array.isArray(salesOrderList) ? salesOrderList : [];
 
@@ -832,17 +873,38 @@ const SalesOrderList = ({
     const count = documents?.length || 0;
 
     if (count > 0) {
+      const chipContent = (
+        <>
+          <FiFileText className="so-docs-chip-icon" />
+          <span className="so-docs-chip-count">
+            {count} file{count > 1 ? "s" : ""}
+          </span>
+        </>
+      );
       return (
         <div className="so-docs-control">
-          <span className="so-docs-chip">
-            <FiFileText className="so-docs-chip-icon" />
-            <span className="so-docs-chip-count">
-              {count} file{count > 1 ? "s" : ""}
-            </span>
-          </span>
+          {readOnly ? (
+            <span className="so-docs-chip">{chipContent}</span>
+          ) : (
+            <button
+              type="button"
+              className="so-docs-chip so-docs-chip--clickable"
+              onClick={onOpen}
+              disabled={disabled}
+            >
+              {chipContent}
+            </button>
+          )}
           {!readOnly && (
-            <button type="button" className="so-docs-action-btn" onClick={onOpen} disabled={disabled}>
-              View/Edit
+            <button
+              type="button"
+              className="so-docs-action-btn so-docs-action-btn--icon"
+              onClick={onOpen}
+              disabled={disabled}
+              title="Upload documents"
+              aria-label="Upload documents"
+            >
+              <FiUpload />
             </button>
           )}
         </div>
@@ -1066,6 +1128,7 @@ const SalesOrderList = ({
       useAlertReducer.getState().success("Work order generated successfully.");
       setShowWorkOrderModal(false);
       setSelectedWoItems(new Set());
+      if (refreshSalesOrder) await refreshSalesOrder();
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -2210,6 +2273,8 @@ const SalesOrderList = ({
         onClose={() => setDocumentModalTarget(null)}
         onSave={handleDocumentSave}
         initialSelected={getDocumentModalInitialSelected()}
+        documents={documentPool}
+        onUploadDocument={handleUploadDocument}
       />
     </div>
   );
@@ -2226,6 +2291,7 @@ SalesOrderList.propTypes = {
   isDaCardContext: PropTypes.bool,
   isLoadingSalesOrder: PropTypes.bool,
   salesOrderError: PropTypes.oneOfType([PropTypes.string, PropTypes.oneOf([null])]),
+  refreshSalesOrder: PropTypes.func,
 };
 
 export default SalesOrderList;

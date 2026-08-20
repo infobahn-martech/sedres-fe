@@ -1138,6 +1138,31 @@
   box-shadow: 0 1px 4px rgba(42, 0, 255, 0.15);
 }
 
+.so-docs-action-btn--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 14px;
+}
+
+.so-docs-chip--clickable {
+  cursor: pointer;
+  font-family: "Manrope", sans-serif;
+  transition: box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.so-docs-chip--clickable:hover {
+  box-shadow: 0 1px 4px rgba(42, 0, 255, 0.15);
+}
+
+.so-docs-chip--clickable:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .so-docs-add-btn {
   display: inline-flex;
   align-items: center;
