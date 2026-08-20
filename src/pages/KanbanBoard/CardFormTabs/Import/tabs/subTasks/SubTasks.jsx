@@ -11,6 +11,11 @@ import "../../../../../../design/scss/invoice.scss";
 import "../../../../../../design/css/common/CardForm.css";
 import "../../../../../../design/scss/subtasks.scss";
 
+const STATUS_OPTIONS = [
+    { value: "0", label: "Pending" },
+    { value: "1", label: "Completed" },
+];
+
 const mapUserToOption = (user) => ({
     value: String(user.user_id),
     label: user.name ?? "",
@@ -124,7 +129,9 @@ function Subtasks({ card }) {
     const [editDueTime, setEditDueTime] = useState("");
     const [editDocumentFile, setEditDocumentFile] = useState(null);
     const [editDocumentRemoved, setEditDocumentRemoved] = useState(false);
+    const [editCompleted, setEditCompleted] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [togglingId, setTogglingId] = useState(null);
     const [title, setTitle] = useState("");
     const [assignUserId, setAssignUserId] = useState("");
     const [dueDate, setDueDate] = useState("");
@@ -246,6 +253,7 @@ function Subtasks({ card }) {
         setEditDueTime(task.dueTime ?? "");
         setEditDocumentFile(null);
         setEditDocumentRemoved(false);
+        setEditCompleted(task.completed);
     }, []);
 
     const handleEditCancel = useCallback(() => {
@@ -256,6 +264,7 @@ function Subtasks({ card }) {
         setEditDueTime("");
         setEditDocumentFile(null);
         setEditDocumentRemoved(false);
+        setEditCompleted(false);
     }, []);
 
     const handleUpdate = useCallback(async (taskId) => {
@@ -271,6 +280,7 @@ function Subtasks({ card }) {
             if (dueDateStr) formData.append("due_date", dueDateStr);
             if (editDocumentFile) formData.append("document", editDocumentFile);
             else if (editDocumentRemoved) formData.append("document", "");
+            formData.append("is_completed", editCompleted ? "1" : "0");
             await kanbanBoardService.updateSubtask(formData);
             notify("Task updated successfully.", "success");
             handleEditCancel();
@@ -280,7 +290,23 @@ function Subtasks({ card }) {
         } finally {
             setIsUpdating(false);
         }
-    }, [editDescription, editAssignedTo, editDueDate, editDueTime, editDocumentFile, editDocumentRemoved, handleEditCancel, loadSubtasks]);
+    }, [editDescription, editAssignedTo, editDueDate, editDueTime, editDocumentFile, editDocumentRemoved, editCompleted, handleEditCancel, loadSubtasks]);
+
+    const handleToggleComplete = useCallback(async (task) => {
+        const nextCompleted = !task.completed;
+        setTogglingId(task.id);
+        try {
+            const formData = new FormData();
+            formData.append("subtask_id", String(task.id));
+            formData.append("is_completed", nextCompleted ? "1" : "0");
+            await kanbanBoardService.updateSubtask(formData);
+            setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, completed: nextCompleted } : t)));
+        } catch {
+            notify("Failed to update task status.", "error");
+        } finally {
+            setTogglingId(null);
+        }
+    }, []);
 
     return (
         <div className="cardform-body cardform-body--feed-tab">
@@ -449,7 +475,7 @@ function Subtasks({ card }) {
                                                                     disabled={isUpdating}
                                                                 />
                                                             </div>
-                                                            <div className="task-tab-field-row">
+                                                            <div className="task-tab-field-row task-tab-field-row--pair">
                                                                 <div className="task-tab-field">
                                                                     <label className="task-tab-label">Assign User <span className="task-tab-required">*</span></label>
                                                                     <SearchableSelect
@@ -480,6 +506,8 @@ function Subtasks({ card }) {
                                                                         disabled={isUpdating}
                                                                     />
                                                                 </div>
+                                                            </div>
+                                                            <div className="task-tab-field-row task-tab-field-row--pair">
                                                                 <div className="task-tab-field">
                                                                     <label className="task-tab-label">Document</label>
                                                                     {editDocumentFile ? (
@@ -522,6 +550,17 @@ function Subtasks({ card }) {
                                                                     )}
                                                                     <span className="task-tab-doc-hint">{DOCUMENT_HINT}</span>
                                                                 </div>
+                                                                <div className="task-tab-field">
+                                                                    <label className="task-tab-label">Status</label>
+                                                                    <SearchableSelect
+                                                                        className="cf-owner-searchable-select"
+                                                                        value={editCompleted ? "1" : "0"}
+                                                                        onChange={(e) => setEditCompleted(e.target.value === "1")}
+                                                                        options={STATUS_OPTIONS}
+                                                                        placeholder="Select status"
+                                                                        disabled={isUpdating}
+                                                                    />
+                                                                </div>
                                                             </div>
                                                             <div className="task-tab-edit-actions">
                                                                 <button type="button" className="task-tab-save-btn" onClick={() => handleUpdate(task.id)} disabled={!editDescription.trim() || !editAssignedTo || !editDueDate || isUpdating}>
@@ -538,10 +577,17 @@ function Subtasks({ card }) {
                                                             <div className="task-tab-task-header">
                                                                 <p className="task-tab-task-title">{task.title}</p>
                                                                 <div className="task-tab-task-actions">
-                                                                    <span className={`task-tab-status-badge task-tab-status-badge--${task.completed ? "completed" : "pending"}`}>
+                                                                    <button
+                                                                        type="button"
+                                                                        className={`task-tab-status-badge task-tab-status-badge--${task.completed ? "completed" : "pending"}`}
+                                                                        onClick={() => handleToggleComplete(task)}
+                                                                        disabled={togglingId === task.id}
+                                                                        aria-label={task.completed ? "Mark as pending" : "Mark as completed"}
+                                                                        title={task.completed ? "Mark as pending" : "Mark as completed"}
+                                                                    >
                                                                         {task.completed ? <FiCheck size={10} /> : <FiClock size={10} />}
-                                                                        {task.completed ? "Completed" : "Pending"}
-                                                                    </span>
+                                                                        {togglingId === task.id ? "Updating..." : task.completed ? "Completed" : "Pending"}
+                                                                    </button>
                                                                     <button
                                                                         type="button"
                                                                         className="task-tab-icon-btn"
