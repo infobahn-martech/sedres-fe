@@ -12,6 +12,7 @@ import PremiumSelect from "../../../../../../components/form/PremiumSelect";
 import useAlertReducer from "../../../../../../store/AlertReducer";
 import useAuthReducer from "../../../../../../store/AuthReducer";
 import WorkOrderCreationModal from "./WorkOrderCreationModal";
+import WorkOrderDetailsModal from "./WorkOrderDetailsModal";
 import GeneratePOModal from "./GeneratePOModal";
 import GoodsReceiptPOModal from "./GoodsReceiptPOModal";
 
@@ -618,6 +619,13 @@ const SalesOrderList = ({
   const [isGeneratingWorkOrder, setIsGeneratingWorkOrder] = useState(false);
   const bulkActionBarRef = useRef(null);
 
+  // State for the Work Order Details modal (sales_order/get_work_order/{wo_id}) — opened by
+  // clicking a Work Order No. in the table.
+  const [workOrderDetailsTarget, setWorkOrderDetailsTarget] = useState(null); // order id
+  const [workOrderDetails, setWorkOrderDetails] = useState(null);
+  const [isLoadingWorkOrderDetails, setIsLoadingWorkOrderDetails] = useState(false);
+  const [workOrderDetailsError, setWorkOrderDetailsError] = useState(null);
+
   // State for Generate PO modal
   const [showGeneratePOPopup, setShowGeneratePOPopup] = useState(false);
   const [isGeneratingPO, setIsGeneratingPO] = useState(false);
@@ -1106,6 +1114,47 @@ const SalesOrderList = ({
     setShowWorkOrderModal(false);
   };
 
+  // Opens the Work Order Details modal for a table row and fetches sales_order/get_work_order/{wo_id}.
+  const handleOpenWorkOrderDetails = (order) => {
+    if (!order.woId) {
+      useAlertReducer.getState().error("No work order identifier available for this item.");
+      return;
+    }
+    setWorkOrderDetailsTarget(order.id);
+    setWorkOrderDetails(null);
+    setWorkOrderDetailsError(null);
+    setIsLoadingWorkOrderDetails(true);
+    salesOrderService
+      .getWorkOrder(order.woId)
+      .then((response) => {
+        const body = response?.data;
+        if (body?.status !== "success" || !body?.data) {
+          setWorkOrderDetailsError(
+            typeof body?.message === "string" && body.message.trim()
+              ? body.message
+              : "Unable to load work order details."
+          );
+          return;
+        }
+        setWorkOrderDetails(body.data);
+      })
+      .catch((err) => {
+        const msg =
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to load work order details.";
+        setWorkOrderDetailsError(typeof msg === "string" ? msg : "Failed to load work order details.");
+      })
+      .finally(() => setIsLoadingWorkOrderDetails(false));
+  };
+
+  const handleCloseWorkOrderDetails = () => {
+    setWorkOrderDetailsTarget(null);
+    setWorkOrderDetails(null);
+    setWorkOrderDetailsError(null);
+  };
+
   const handleCreateWorkOrder = async () => {
     if (isGeneratingWorkOrder) return;
 
@@ -1338,7 +1387,13 @@ const SalesOrderList = ({
       <td>
         <div className="sales-order-table-cell" style={{ textAlign: "center" }}>
           {isDAModule ? (
-            order.workOrder || "—"
+            order.workOrder ? (
+              <button type="button" className="so-wo-number-link" onClick={() => handleOpenWorkOrderDetails(order)}>
+                {order.workOrder}
+              </button>
+            ) : (
+              "—"
+            )
           ) : eligibleForWo ? (
             <input
               type="checkbox"
@@ -1347,8 +1402,12 @@ const SalesOrderList = ({
               aria-label="Select for Generate Work Order"
               style={{ width: "18px", height: "18px", cursor: "pointer" }}
             />
+          ) : order.workOrder ? (
+            <button type="button" className="so-wo-number-link" onClick={() => handleOpenWorkOrderDetails(order)}>
+              {order.workOrder}
+            </button>
           ) : (
-            order.workOrder || "—"
+            "—"
           )}
         </div>
       </td>
@@ -2228,6 +2287,18 @@ const SalesOrderList = ({
           billingEntity={billingEntity || soCustomerName}
           vesselName={soShipName}
           portName={soPort}
+        />
+      )}
+
+      {/* Work Order Details Modal */}
+      {workOrderDetailsTarget !== null && (
+        <WorkOrderDetailsModal
+          show={workOrderDetailsTarget !== null}
+          onClose={handleCloseWorkOrderDetails}
+          isLoading={isLoadingWorkOrderDetails}
+          error={workOrderDetailsError}
+          details={workOrderDetails}
+          cardColor={cardColor}
         />
       )}
 

@@ -74,6 +74,7 @@ export function mapSalesOrderResponse(apiData) {
     is_third_party: item.is_third_party,
     woStatus: Number(item.wo_status) || 0,
     workOrder: item.work_order?.wo_number || "",
+    woId: item.work_order?.wo_id != null ? String(item.work_order.wo_id) : null,
     status: item.status || "",
   };
   });

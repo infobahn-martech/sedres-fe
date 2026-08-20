@@ -13,6 +13,12 @@ const generateWorkOrder = (soItemIds) =>
   Gateway.post("sales_order/generate_work_order", { so_item_ids: soItemIds });
 
 /**
+ * @param {string|number} woId
+ */
+const getWorkOrder = (woId) =>
+  Gateway.get(`sales_order/get_work_order/${encodeURIComponent(String(woId))}`);
+
+/**
  * @param {object} payload
  * @param {Array<number>} payload.so_item_ids
  * @param {string} [payload.vendor_ref_no]
@@ -60,6 +66,7 @@ const saveSalesOrderItem = (payload) => Gateway.post("sales_order/save_sales_ord
 export default {
   getSoItemsByCall,
   generateWorkOrder,
+  getWorkOrder,
   generatePO,
   uploadInvoice,
   getItemCodes,
