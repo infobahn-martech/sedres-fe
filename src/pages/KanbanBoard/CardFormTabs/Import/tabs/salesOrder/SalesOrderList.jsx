@@ -985,7 +985,7 @@ const SalesOrderList = ({
   // PO and Work Order have their own selection column/state — a row already carrying one
   // is not selectable for that action, so eligibility is enforced at the checkbox itself
   // rather than by disabling the whole bulk action after the fact.
-  const isEligibleForPo = (order) => !order.poNo;
+  const isEligibleForPo = (order) => !order.poNo && Number(order.woStatus) === 1;
   const isEligibleForWo = (order) => !order.workOrder && Number(order.woStatus) !== 1;
 
   const handleItemCheckboxToggle = (itemId, checked, setSelected) => {
@@ -1377,15 +1377,17 @@ const SalesOrderList = ({
               >
                 {order.supplierCode ? `${order.supplierCode}` : "—"}
               </span>
-              <button
-                type="button"
-                onClick={() => setVendorModalTarget(order.id)}
-                title={order.supplierName || "Select Vendor"}
-                className="sales-order-supplier-select-btn"
-                disabled={!hasWorkOrder}
-              >
-                {order.supplierCode ? "Change" : "Select"}
-              </button>
+              {isThirdParty(order.is_third_party) && (
+                <button
+                  type="button"
+                  onClick={() => setVendorModalTarget(order.id)}
+                  title={order.supplierName || "Select Vendor"}
+                  className="sales-order-supplier-select-btn"
+                  disabled={!hasWorkOrder}
+                >
+                  {order.supplierCode ? "Change" : "Select"}
+                </button>
+              )}
             </>
           )}
         </div>
