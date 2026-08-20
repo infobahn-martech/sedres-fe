@@ -83,6 +83,15 @@ const getItemDetails = (tariffId, entityId) =>
  */
 const saveSalesOrderItem = (payload) => Gateway.post("sales_order/save_sales_order_item", payload);
 
+/**
+ * @param {object} payload
+ * @param {string|number} payload.so_item_id
+ * @param {number} payload.quantity
+ * @param {number} payload.discount_percentage
+ * @param {number} payload.tax_percentage
+ */
+const updateSalesOrderItemAmount = (payload) => Gateway.post("sales_order/update_sales_order_item_amount", payload);
+
 export default {
   getSoItemsByCall,
   generateWorkOrder,
@@ -94,4 +103,5 @@ export default {
   getItemCodes,
   getItemDetails,
   saveSalesOrderItem,
+  updateSalesOrderItemAmount,
 };

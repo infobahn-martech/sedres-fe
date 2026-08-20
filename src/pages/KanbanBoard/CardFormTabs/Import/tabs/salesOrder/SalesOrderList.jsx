@@ -820,6 +820,30 @@ const SalesOrderList = ({
     handleChange("salesOrderList")({ target: { value: updatedList } });
   };
 
+  // Persists Quantity / Discount % / Tax Code edits to sales_order/update_sales_order_item_amount.
+  // Fired on blur (qty/discount inputs) or immediately after a select change (tax code) —
+  // not on every keystroke, to avoid spamming the API while the user is still typing.
+  const handleUpdateItemAmount = async (order) => {
+    if (!order?.id) return;
+    const payload = {
+      so_item_id: order.id,
+      quantity: parseFloat(order.qty) || 0,
+      discount_percentage: parseFloat(order.discount) || 0,
+      tax_percentage: parseFloat(String(order.taxCode ?? "0").replace(/%/g, "")) || 0,
+    };
+    try {
+      await salesOrderService.updateSalesOrderItemAmount(payload);
+      if (refreshSalesOrder) await refreshSalesOrder();
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to update the item.";
+      useAlertReducer.getState().error(msg);
+    }
+  };
+
   const handleToggleVerified = (orderId, itemNo) => {
     setVerifiedItems((prev) => {
       const next = new Set(prev);
@@ -1402,6 +1426,7 @@ const SalesOrderList = ({
               step="1"
               value={order.qty ?? 0}
               onChange={(e) => handleFieldChange(order.id, "qty", e.target.value)}
+              onBlur={() => handleUpdateItemAmount(order)}
               className="sales-order-qty-input"
               style={cellStyle}
             />
@@ -1427,6 +1452,7 @@ const SalesOrderList = ({
               step="0.01"
               value={order.discount ?? 0}
               onChange={(e) => handleFieldChange(order.id, "discount", e.target.value)}
+              onBlur={() => handleUpdateItemAmount(order)}
               className="sales-order-qty-input"
               style={cellStyle}
             />
@@ -1437,7 +1463,21 @@ const SalesOrderList = ({
       {/* Tax Code */}
       <td>
         <div className="sales-order-table-cell">
-          {order.taxCode || "15%"}
+          {readOnly ? (order.taxCode || "15%") : (
+            <select
+              value={order.taxCode || "15%"}
+              onChange={(e) => {
+                const value = e.target.value;
+                handleFieldChange(order.id, "taxCode", value);
+                handleUpdateItemAmount({ ...order, taxCode: value });
+              }}
+              className="sales-order-type-po-select"
+            >
+              {TAX_CODE_OPTIONS.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          )}
         </div>
       </td>
 
