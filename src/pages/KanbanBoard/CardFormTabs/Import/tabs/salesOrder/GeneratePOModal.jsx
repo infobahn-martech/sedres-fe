@@ -215,17 +215,6 @@ const GeneratePOModal = ({
               </div>
             </div>
 
-            <div className="so-po-branch-row">
-              <div className="so-po-field-row">
-                <span className="so-po-field-label">Branch</span>
-                <span className="so-po-field-value">{branch || "—"}</span>
-              </div>
-              <div className="so-po-field-row">
-                <span className="so-po-field-label">Branch Reg. No.</span>
-                <span className="so-po-field-value">{branchRegNo || "—"}</span>
-              </div>
-            </div>
-
             <div className="so-po-table-scroll">
               <table className="so-po-doc-table">
                 <thead>
