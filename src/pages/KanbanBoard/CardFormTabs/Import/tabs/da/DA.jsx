@@ -169,26 +169,6 @@ const firstNonEmptyString = (...values) => {
   return "";
 };
 
-const getFileUrl = (filePath) => {
-  const base = (import.meta.env.VITE_API_ENDPOINT || "").replace(/\/+$/, "");
-  const path = String(filePath || "").replace(/^\/+/, "");
-  return path ? `${base}/${path}` : "";
-};
-
-// api/da/documents_tab returns already-uploaded documents (attachment path +
-// uploader/date), not browser File objects — map them into the shape FileDropzone renders.
-const mapApiDocument = (doc) => {
-  const raw = doc?.attachment || "";
-  const name = raw.split("/").pop() || raw || "Document";
-  return {
-    name,
-    url: getFileUrl(raw),
-    stage_document_id: doc?.stage_document_id ?? null,
-    uploaded_by_name: doc?.uploaded_by_name ?? null,
-    created_date: doc?.created_date ?? null,
-  };
-};
-
 function TileLabel({ icon, children }) {
   const Icon = icon;
   return (
@@ -1419,31 +1399,6 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
   // duplicate GETs (e.g. operation_tab) for the exact same call.
   const rawCallId = card?.call_id ?? card?.callId ?? card?.id ?? null;
   const callId = rawCallId != null ? String(rawCallId) : null;
-  const [summaryData, setSummaryData] = useState(null);
-  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
-
-  // Shared by the mount effect below and the Summary hero's manual Refresh button.
-  const fetchSummaryTab = useCallback(() => {
-    if (callId == null) return undefined;
-    let cancelled = false;
-    setIsLoadingSummary(true);
-    daService.getSummaryTab(callId)
-      .then(({ data }) => {
-        if (!cancelled) setSummaryData(data?.data ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setSummaryData(null);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingSummary(false);
-      });
-    return () => { cancelled = true; };
-  }, [callId]);
-
-  useEffect(() => {
-    fetchSummaryTab();
-  }, [fetchSummaryTab, daStatusRefreshToken]);
-
   // api/da/status_timeline/{call_id} — real per-call status progression shown in the
   // Summary sub-tab's Status Timeline, replacing the old hardcoded/click-driven placeholder.
   // Also refetches when daStatusRefreshToken bumps (CardForm's footer stepper / header
@@ -1691,72 +1646,11 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
       [sectionKey]: { ...prev[sectionKey], rows: prev[sectionKey].rows.filter((_, i) => i !== idx) },
     }));
   };
-  // api/da/documents_tab/{call_id} — pre-fills the "Link" tab's free-form "Docs" text
-  // list with names of documents already uploaded elsewhere against this call, once
-  // when the card first loads.
-  useEffect(() => {
-    if (callId == null) return undefined;
-    let cancelled = false;
-    daService.getDocumentsTab(callId)
-      .then(({ data }) => {
-        if (cancelled) return;
-        const documents = data?.data?.documents;
-        const docsDocs = documents?.["Docs"];
-        if (!Array.isArray(docsDocs) || !docsDocs.length) return;
-
-        setListSections((prev) => ({
-          ...prev,
-          docs: { ...prev.docs, rows: docsDocs.map((doc) => ({ id: nextRowId(), value: mapApiDocument(doc).name })) },
-        }));
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [callId]);
-
   const [relatives, setRelatives] = useState([]);
   const addRelative = () => setRelatives((prev) => [...prev, { id: nextRowId(), value: "" }]);
   const changeRelative = (idx, value) =>
     setRelatives((prev) => prev.map((row, i) => (i === idx ? { ...row, value } : row)));
   const removeRelative = (idx) => setRelatives((prev) => prev.filter((_, i) => i !== idx));
-
-  // api/da/links_tab/{call_id} — pre-fills the "Link" tab's free-form "Links overview"
-  // and "Relatives & Dependencies" lists from the backend's structured links/relations,
-  // once when the card first loads. Both lists stay plain text rows (see
-  // ListRowsSection/RelativesSection) rather than becoming structured editable fields,
-  // since there's no save endpoint for this tab — this is read-only seed data the user
-  // can still edit/remove locally like any other row here.
-  useEffect(() => {
-    if (callId == null) return undefined;
-    let cancelled = false;
-    daService.getLinksTab(callId)
-      .then(({ data }) => {
-        if (cancelled) return;
-        const tabData = data?.data;
-        if (!tabData) return;
-        const links = Array.isArray(tabData.links) ? tabData.links : [];
-        const relations = Array.isArray(tabData.relations) ? tabData.relations : [];
-        if (links.length) {
-          setListSections((prev) => ({
-            ...prev,
-            linksOverview: {
-              ...prev.linksOverview,
-              rows: links.map((link) => ({
-                id: nextRowId(),
-                value: link.label ? `${link.label} - ${link.url}` : link.url,
-              })),
-            },
-          }));
-        }
-        if (relations.length) {
-          setRelatives(relations.map((relation) => ({
-            id: nextRowId(),
-            value: `${relation.billing_entity || "Related call"} #${relation.related_call_id} (${relation.relation_type})`,
-          })));
-        }
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [callId]);
 
   const renderField = (field, extraProps) => {
     const value = fieldValues[field.key];
@@ -1860,14 +1754,9 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
     }
   };
 
-  // api/da/summary_tab/{call_id} is the source of truth once it loads; until then, or if
-  // it comes back without a field, fall back to what's already been typed in other tabs.
-  const isSummaryPending = isLoadingSummary && !summaryData;
-  const apiDateValue = (key, fallback) =>
-    isSummaryPending ? "Loading…" : (formatApiDateTime(summaryData?.[key]) || fallback);
   const clearanceStats = [
-    { label: "Inward Clearance", value: apiDateValue("inward_clearance_date", null), icon: CalendarCheck, accent: "#0891b2" },
-    { label: "Outward Clearance", value: apiDateValue("outward_clearance_date", null), icon: CalendarCheck, accent: "#7c3aed" },
+    { label: "Inward Clearance", value: null, icon: CalendarCheck, accent: "#0891b2" },
+    { label: "Outward Clearance", value: null, icon: CalendarCheck, accent: "#7c3aed" },
   ];
 
   return (
@@ -1908,7 +1797,7 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
                       <ReadonlyField
                         label="Owner"
                         icon={User}
-                        value={isLoadingDaDetails && !daDetailsData ? "Loading…" : (daDetailsData?.call_owner_name || summaryData?.call_owner_name || "Not set yet")}
+                        value={isLoadingDaDetails && !daDetailsData ? "Loading…" : (daDetailsData?.call_owner_name || "Not set yet")}
                         accent="#0d9488"
                       />
                       {renderField(OPERATION_DETAILS_FIELDS_BY_KEY.coOwners)}
