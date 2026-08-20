@@ -11,8 +11,9 @@ const formatCurrencySAR = (amount) =>
 const TABS = ["Contents", "Logistics", "Accounting", "Attachments"];
 
 // Goods Receipt PO (GRN) preview modal - opened via "Copy To" from GeneratePOModal.
-// Frontend-only: no GRN creation API exists yet, so "Add & New" is a marked integration point, not a real submit.
-const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN }) => {
+// "Add & New" calls sales_order/generate_grn against the purchase_order_id captured when the
+// source PO was submitted (poDetails.purchaseOrderId) — requires the PO to have been submitted first.
+const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN, isSubmitting = false }) => {
   if (!show || !poDetails) return null;
 
   const {
@@ -30,6 +31,7 @@ const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN }) => {
     discountPct = 0,
     tax = 0,
     totalPaymentDue = 0,
+    purchaseOrderId = null,
   } = poDetails;
 
   const handleBackdropClick = (e) => {
@@ -144,10 +146,11 @@ const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN }) => {
 
             <div className="so-po-bottom">
               <div className="so-po-bottom-left">
-                <div className="so-po-grn-note">
-                  Goods Receipt PO creation is not yet connected to a backend service. This preview mirrors the
-                  source purchase order; posting it will be enabled once the GRN API is available.
-                </div>
+                {!purchaseOrderId && (
+                  <div className="so-po-grn-note">
+                    This purchase order hasn&apos;t been submitted yet. Submit it before generating a Goods Receipt.
+                  </div>
+                )}
               </div>
 
               <div className="so-po-doc-totals">
@@ -173,17 +176,17 @@ const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN }) => {
         </div>
 
         <div className="so-po-modal-footer">
-          <button type="button" className="so-po-btn so-po-btn-cancel" onClick={onClose}>
+          <button type="button" className="so-po-btn so-po-btn-cancel" onClick={onClose} disabled={isSubmitting}>
             Close
           </button>
           <button
             type="button"
             className="so-po-btn so-po-btn-generate"
             onClick={() => onCreateGRN?.(poDetails)}
-            disabled={!onCreateGRN}
-            title={!onCreateGRN ? "Goods Receipt PO API integration pending" : undefined}
+            disabled={!onCreateGRN || !purchaseOrderId || isSubmitting}
+            title={!purchaseOrderId ? "Submit the purchase order first" : undefined}
           >
-            Add &amp; New
+            {isSubmitting ? "Generating..." : "Generate GRN"}
           </button>
         </div>
       </div>
@@ -220,8 +223,10 @@ GoodsReceiptPOModal.propTypes = {
     discountPct: PropTypes.number,
     tax: PropTypes.number,
     totalPaymentDue: PropTypes.number,
+    purchaseOrderId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   }),
   onCreateGRN: PropTypes.func,
+  isSubmitting: PropTypes.bool,
 };
 
 export default GoodsReceiptPOModal;

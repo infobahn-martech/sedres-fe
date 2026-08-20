@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import PropTypes from "prop-types";
 import { FiFilePlus, FiFileText, FiClipboard, FiTool, FiCheck, FiChevronLeft, FiChevronRight, FiRefreshCw, FiUpload } from "react-icons/fi";
 import { Tooltip } from "react-tooltip";
@@ -631,10 +631,15 @@ const SalesOrderList = ({
   const [isGeneratingPO, setIsGeneratingPO] = useState(false);
   const [generatePOError, setGeneratePOError] = useState(null);
   const [generatePOItemIds, setGeneratePOItemIds] = useState([]);
+  // Captured from a successful sales_order/generate_po response — required to generate a GRN
+  // against that PO. Reset whenever a new Generate PO session starts so a stale ID from a
+  // previous PO can never be reused.
+  const [lastGeneratedPurchaseOrderId, setLastGeneratedPurchaseOrderId] = useState(null);
 
   // State for Goods Receipt PO (GRN) modal - opened via "Copy To" on the Generate PO modal
   const [showGRNModal, setShowGRNModal] = useState(false);
   const [grnDetails, setGrnDetails] = useState(null);
+  const [isGeneratingGRN, setIsGeneratingGRN] = useState(false);
 
   // State for vendor modal (row-level supplier picker)
   const [vendorModalTarget, setVendorModalTarget] = useState(null); // orderId or "new"
@@ -687,33 +692,40 @@ const SalesOrderList = ({
 
   const { grouped, ungrouped } = groupByCallFile(paginatedOrderList);
 
-  // Load item codes for the SO's port as soon as the Sales Order tab is opened
-  useEffect(() => {
+  // Fetches sales_order/get_item_codes/{portId} — shared by the auto-load effect below and by
+  // a post-generate_po refresh (a generated PO can change which items are still available for
+  // the port).
+  const fetchItemCodes = useCallback((cancelledRef) => {
     if (!portId) {
       setItemCodeOptions([]);
-      return;
+      return Promise.resolve();
     }
-    let cancelled = false;
     setIsLoadingItemCodes(true);
-    salesOrderService
+    return salesOrderService
       .getItemCodes(portId)
       .then((response) => {
-        if (cancelled) return;
+        if (cancelledRef?.current) return;
         const body = response?.data;
         setItemCodeOptions(body?.status === "success" && Array.isArray(body?.data) ? body.data : []);
       })
       .catch(() => {
-        if (cancelled) return;
+        if (cancelledRef?.current) return;
         setItemCodeOptions([]);
         useAlertReducer.getState().error("Failed to load item codes for the selected port.");
       })
       .finally(() => {
-        if (!cancelled) setIsLoadingItemCodes(false);
+        if (!cancelledRef?.current) setIsLoadingItemCodes(false);
       });
-    return () => {
-      cancelled = true;
-    };
   }, [portId]);
+
+  // Load item codes for the SO's port as soon as the Sales Order tab is opened
+  useEffect(() => {
+    const cancelledRef = { current: false };
+    fetchItemCodes(cancelledRef);
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, [fetchItemCodes]);
 
   // Toggle accordion for callFile
   const toggleCallFileAccordion = (callFile) => {
@@ -1204,6 +1216,7 @@ const SalesOrderList = ({
     }
     setGeneratePOItemIds(validItemIds);
     setGeneratePOError(null);
+    setLastGeneratedPurchaseOrderId(null);
     setShowGeneratePOPopup(true);
   };
 
@@ -1213,7 +1226,7 @@ const SalesOrderList = ({
   };
 
   const handleCopyToGoodsReceipt = (poDetails) => {
-    setGrnDetails(poDetails);
+    setGrnDetails({ ...poDetails, purchaseOrderId: lastGeneratedPurchaseOrderId });
     setShowGRNModal(true);
     setShowGeneratePOPopup(false);
   };
@@ -1221,6 +1234,53 @@ const SalesOrderList = ({
   const handleCloseGRNModal = () => {
     setShowGRNModal(false);
     setGrnDetails(null);
+  };
+
+  const handleCreateGRN = async (details) => {
+    if (isGeneratingGRN) return;
+
+    const purchaseOrderId = details?.purchaseOrderId;
+    if (!purchaseOrderId) {
+      useAlertReducer.getState().error("Please submit the purchase order before generating a Goods Receipt.");
+      return;
+    }
+
+    const discountPercentage =
+      formValues.soDiscountPercentage != null && String(formValues.soDiscountPercentage).trim() !== ""
+        ? Number(formValues.soDiscountPercentage)
+        : 0;
+
+    const payload = {
+      purchase_order_id: purchaseOrderId,
+      contact_person: soContactPerson,
+      due_date: soDeliveryDate,
+      document_date: soDocumentDate,
+      buyer: soContactPerson,
+      owner: soOwner,
+      discount_percentage: discountPercentage,
+      rounding: 0,
+      remarks: soRemarks,
+    };
+
+    setIsGeneratingGRN(true);
+    try {
+      const response = await salesOrderService.generateGRN(payload);
+      const body = response?.data;
+      if (body?.status !== "success") {
+        throw new Error(body?.message || "Failed to generate goods receipt.");
+      }
+      useAlertReducer.getState().success("Goods receipt generated successfully.");
+      handleCloseGRNModal();
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to generate goods receipt.";
+      useAlertReducer.getState().error(msg);
+    } finally {
+      setIsGeneratingGRN(false);
+    }
   };
 
   const handleConfirmGeneratePO = async (vendorRefNo) => {
@@ -1267,8 +1327,13 @@ const SalesOrderList = ({
 
       useAlertReducer.getState().success("Purchase order generated successfully.");
 
-      setShowGeneratePOPopup(false);
+      const newPurchaseOrderId = body?.data?.purchase_order_id ?? body?.purchase_order_id ?? null;
+      setLastGeneratedPurchaseOrderId(newPurchaseOrderId);
+
+      // Leave the modal open (rather than closing it) so "Copy To > Goods Receipt PO" can use
+      // the purchase_order_id just captured above.
       setSelectedPoItems(new Set());
+      fetchItemCodes();
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -2322,13 +2387,20 @@ const SalesOrderList = ({
           localCurrency={soBpCurrency}
           owner={soOwner}
           remarks={soRemarks}
+          purchaseOrderId={lastGeneratedPurchaseOrderId}
           onCopyToGoodsReceipt={handleCopyToGoodsReceipt}
         />
       )}
 
       {/* Goods Receipt PO (GRN) Modal - opened via Copy To on the Generate PO modal */}
       {showGRNModal && (
-        <GoodsReceiptPOModal show={showGRNModal} onClose={handleCloseGRNModal} poDetails={grnDetails} />
+        <GoodsReceiptPOModal
+          show={showGRNModal}
+          onClose={handleCloseGRNModal}
+          poDetails={grnDetails}
+          onCreateGRN={handleCreateGRN}
+          isSubmitting={isGeneratingGRN}
+        />
       )}
 
       {/* Vendor List Modal */}

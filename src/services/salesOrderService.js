@@ -40,6 +40,20 @@ const getWorkOrderPdf = (woId) =>
 const generatePO = (payload) => Gateway.post("sales_order/generate_po", payload);
 
 /**
+ * @param {object} payload
+ * @param {string|number} payload.purchase_order_id
+ * @param {string} [payload.contact_person]
+ * @param {string} [payload.due_date]
+ * @param {string} [payload.document_date]
+ * @param {string} [payload.buyer]
+ * @param {string} [payload.owner]
+ * @param {number} [payload.discount_percentage]
+ * @param {number} [payload.rounding]
+ * @param {string} [payload.remarks]
+ */
+const generateGRN = (payload) => Gateway.post("sales_order/generate_grn", payload);
+
+/**
  * @param {FormData} formData - purchase_order_id, invoice_number, invoice_amount, invoice_date, file
  */
 const uploadInvoice = (formData) => Gateway.post("sales_order/upload_invoice", formData);
@@ -75,6 +89,7 @@ export default {
   getWorkOrder,
   getWorkOrderPdf,
   generatePO,
+  generateGRN,
   uploadInvoice,
   getItemCodes,
   getItemDetails,

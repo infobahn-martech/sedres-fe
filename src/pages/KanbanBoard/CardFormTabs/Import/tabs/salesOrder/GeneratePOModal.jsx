@@ -43,6 +43,7 @@ const GeneratePOModal = ({
   remarks = "",
   shippingFee = 0,
   termsAndConditions = "",
+  purchaseOrderId = null,
   onCopyToGoodsReceipt,
 }) => {
   const [copyToOpen, setCopyToOpen] = useState(false);
@@ -140,9 +141,10 @@ const GeneratePOModal = ({
               type="button"
               className="so-po-toolbar-btn so-po-toolbar-btn-submit"
               onClick={() => onGenerate(vendorRefNo)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || Boolean(purchaseOrderId)}
+              title={purchaseOrderId ? "This purchase order has already been submitted." : undefined}
             >
-              {isSubmitting ? "Submitting..." : "Submit"}
+              {isSubmitting ? "Submitting..." : purchaseOrderId ? "Submitted" : "Submit"}
             </button>
           </div>
         </div>
@@ -345,6 +347,7 @@ GeneratePOModal.propTypes = {
   remarks: PropTypes.string,
   shippingFee: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   termsAndConditions: PropTypes.string,
+  purchaseOrderId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   onCopyToGoodsReceipt: PropTypes.func,
 };
 
