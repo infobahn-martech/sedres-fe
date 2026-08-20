@@ -1363,7 +1363,7 @@ const SalesOrderList = ({
       // Leave the modal open (rather than closing it) so "Copy To > Goods Receipt PO" can use
       // the purchase_order_id just captured above.
       setSelectedPoItems(new Set());
-      fetchItemCodes();
+      if (refreshSalesOrder) await refreshSalesOrder();
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -1892,7 +1892,7 @@ const SalesOrderList = ({
               <label className="so-header-label">PO No <span className="so-required">*</span></label>
               <input
                 type="text"
-                className={"so-header-input" + (!soPoNo && !readOnly ? " so-input-required" : "")}
+                className="so-header-input"
                 placeholder="Enter PO No..."
                 value={soPoNo}
                 onChange={handleChange("soPoNo")}
@@ -1915,7 +1915,7 @@ const SalesOrderList = ({
               <label className="so-header-label">Project Name <span className="so-required">*</span></label>
               <input
                 type="text"
-                className={"so-header-input" + (!soProjectName && !readOnly ? " so-input-required" : "")}
+                className="so-header-input"
                 placeholder="Enter project name..."
                 value={soProjectName}
                 onChange={handleChange("soProjectName")}
@@ -2019,7 +2019,7 @@ const SalesOrderList = ({
                   type="number"
                   min="0"
                   step="0.01"
-                  className={"so-header-input" + (!soEuroRate && !readOnly ? " so-input-required" : "")}
+                  className="so-header-input"
                   placeholder="Enter EUR → SAR rate..."
                   value={soEuroRate}
                   onChange={handleChange("soEuroRate")}
