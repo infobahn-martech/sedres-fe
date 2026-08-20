@@ -782,7 +782,7 @@
   position: relative;
   z-index: 2;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
-  overscroll-behavior: contain;
+  overscroll-behavior: auto;
   scrollbar-width: thin;
   scrollbar-color: #9ca8c3 #eef1f7;
 }
