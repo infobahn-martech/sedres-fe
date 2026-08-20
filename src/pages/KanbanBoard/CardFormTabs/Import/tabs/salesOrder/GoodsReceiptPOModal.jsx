@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 
 const formatCurrencySAR = (amount) =>
@@ -14,6 +14,17 @@ const TABS = ["Contents", "Logistics", "Accounting", "Attachments"];
 // "Add & New" calls sales_order/generate_grn against the purchase_order_id captured when the
 // source PO was submitted (poDetails.purchaseOrderId) — requires the PO to have been submitted first.
 const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN, isSubmitting = false }) => {
+  const computedTotalPaymentDue = poDetails?.totalPaymentDue ?? 0;
+
+  // Total Payment Due is editable — the delta from the computed total is sent to
+  // sales_order/generate_grn as `rounding` (the same adjustment concept already shown,
+  // read-only, in the Generate PO document). Resets whenever a new PO is copied in.
+  const [editableTotal, setEditableTotal] = useState(() => (computedTotalPaymentDue || 0).toFixed(2));
+
+  useEffect(() => {
+    setEditableTotal((computedTotalPaymentDue || 0).toFixed(2));
+  }, [computedTotalPaymentDue, show]);
+
   if (!show || !poDetails) return null;
 
   const {
@@ -30,12 +41,21 @@ const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN, isSubmitti
     totalBeforeDiscount = 0,
     discountPct = 0,
     tax = 0,
-    totalPaymentDue = 0,
     purchaseOrderId = null,
   } = poDetails;
 
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) onClose();
+  };
+
+  const handleCreateGRNClick = () => {
+    const finalTotal = parseFloat(editableTotal);
+    const roundingAdjustment = Number.isFinite(finalTotal) ? finalTotal - computedTotalPaymentDue : 0;
+    onCreateGRN?.({
+      ...poDetails,
+      totalPaymentDue: Number.isFinite(finalTotal) ? finalTotal : computedTotalPaymentDue,
+      roundingAdjustment,
+    });
   };
 
   return (
@@ -150,7 +170,18 @@ const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN, isSubmitti
                 </div>
                 <div className="so-po-doc-totals-row so-po-doc-totals-grand">
                   <span>Total Payment Due</span>
-                  <span>{formatCurrencySAR(totalPaymentDue)}</span>
+                  <span className="so-po-doc-totals-grand-input-wrap">
+                    <span className="so-po-doc-totals-grand-currency">SAR</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="so-po-doc-totals-grand-input"
+                      value={editableTotal}
+                      onChange={(e) => setEditableTotal(e.target.value)}
+                      disabled={isSubmitting}
+                      aria-label="Total Payment Due"
+                    />
+                  </span>
                 </div>
               </div>
             </div>
@@ -164,7 +195,7 @@ const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN, isSubmitti
           <button
             type="button"
             className="so-po-btn so-po-btn-generate"
-            onClick={() => onCreateGRN?.(poDetails)}
+            onClick={handleCreateGRNClick}
             disabled={!onCreateGRN || !purchaseOrderId || isSubmitting}
             title={!purchaseOrderId ? "Submit the purchase order first" : undefined}
           >

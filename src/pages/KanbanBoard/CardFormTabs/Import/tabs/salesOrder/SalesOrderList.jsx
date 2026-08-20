@@ -1274,6 +1274,12 @@ const SalesOrderList = ({
         ? Number(formValues.soDiscountPercentage)
         : 0;
 
+    // Total Payment Due is editable in the GRN preview — the delta the user dialed in
+    // against the computed total is sent through as the rounding adjustment.
+    const rounding = Number.isFinite(details?.roundingAdjustment)
+      ? Math.round(details.roundingAdjustment * 100) / 100
+      : 0;
+
     const payload = {
       purchase_order_id: purchaseOrderId,
       contact_person: soContactPerson,
@@ -1282,7 +1288,7 @@ const SalesOrderList = ({
       buyer: soContactPerson,
       owner: soOwner,
       discount_percentage: discountPercentage,
-      rounding: 0,
+      rounding,
       remarks: soRemarks,
     };
 
