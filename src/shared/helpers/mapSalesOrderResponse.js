@@ -54,6 +54,22 @@ export function mapSalesOrderResponse(apiData) {
     return /^\d+(\.\d+)?$/.test(s) ? `${s}%` : "15%";
   };
 
+  /** Maps one entry of an item's `documents` array (document_id, file_name, uploaded_by, uploaded_at, file_url). */
+  const mapDocument = (doc) => {
+    const rawName = doc?.file_name != null ? String(doc.file_name) : "";
+    const baseName = rawName.split("/").pop() || rawName;
+    const ext = (baseName.split(".").pop() || "").toUpperCase();
+    const rawId = Number(doc?.document_id);
+    return {
+      id: Number.isFinite(rawId) && rawId > 0 ? rawId : baseName,
+      name: baseName,
+      type: ext || "FILE",
+      url: doc?.file_url || "",
+      uploadedBy: doc?.uploaded_by ?? null,
+      uploadedAt: doc?.uploaded_at || "",
+    };
+  };
+
   const salesOrderList = items.map((item, idx) => {
     const rawId = Number(item.so_item_id);
     const id = Number.isFinite(rawId) && rawId > 0 ? rawId : idx + 1;
@@ -76,6 +92,7 @@ export function mapSalesOrderResponse(apiData) {
     workOrder: item.work_order?.wo_number || "",
     woId: item.work_order?.wo_id != null ? String(item.work_order.wo_id) : null,
     status: item.status || "",
+    documents: Array.isArray(item.documents) ? item.documents.map(mapDocument) : [],
   };
   });
 

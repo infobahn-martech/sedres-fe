@@ -171,14 +171,6 @@ const DUMMY_VENDORS = [
   { code: "VEND-008", name: "Saudi Freight Solutions" },
 ];
 
-const DUMMY_DOCUMENTS = [
-  { id: 1, name: "Port Clearance Document.pdf", type: "PDF" },
-  { id: 2, name: "Vessel Certificate.pdf", type: "PDF" },
-  { id: 3, name: "Agency Agreement.docx", type: "DOCX" },
-  { id: 4, name: "Transport Instruction.pdf", type: "PDF" },
-  { id: 5, name: "Customs Declaration.pdf", type: "PDF" },
-];
-
 // Vendor List Modal
 const VendorListModal = ({ show, onClose, onSelect }) => {
   const [search, setSearch] = useState("");
@@ -239,17 +231,18 @@ VendorListModal.propTypes = {
   onSelect: PropTypes.func.isRequired,
 };
 
-// Document List Modal
-const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], documents = DUMMY_DOCUMENTS, onUploadDocument }) => {
+// Document List Modal — manages the documents already attached to a sales order item
+// (sourced from the API's per-item `documents` array) plus any newly uploaded this session.
+// No shared document library concept — each item only ever shows/edits its own files.
+const DocumentListModal = ({ show, onClose, onSave, initialSelected = [] }) => {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(new Set());
+  const [uploadedDocs, setUploadedDocs] = useState([]);
 
   useEffect(() => {
     if (show) {
-      const initialIds = (initialSelected || []).map((d) => d.id);
-      // Nothing saved for this item yet — default to all documents selected so the user
-      // starts from "everything attached" and only has to uncheck what doesn't apply.
-      setSelected(new Set(initialIds.length > 0 ? initialIds : documents.map((d) => d.id)));
+      setSelected(new Set((initialSelected || []).map((d) => d.id)));
+      setUploadedDocs([]);
       setSearch("");
     }
     // Only reset when modal opens; initialSelected is captured at open time via key on parent
@@ -258,9 +251,8 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], docume
 
   if (!show) return null;
 
-  const filtered = documents.filter((d) =>
-    d.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const allDocs = [...(initialSelected || []), ...uploadedDocs];
+  const filtered = allDocs.filter((d) => d.name.toLowerCase().includes(search.toLowerCase()));
 
   const toggleDocument = (id) => {
     setSelected((prev) => {
@@ -275,7 +267,7 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], docume
   };
 
   const handleSave = () => {
-    const selectedDocuments = documents.filter((d) => selected.has(d.id));
+    const selectedDocuments = allDocs.filter((d) => selected.has(d.id));
     onSave(selectedDocuments);
     onClose();
   };
@@ -283,11 +275,11 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], docume
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (!file || !onUploadDocument) return;
-    const newDoc = onUploadDocument(file);
-    if (newDoc) {
-      setSelected((prev) => new Set(prev).add(newDoc.id));
-    }
+    if (!file) return;
+    const ext = (file.name.split(".").pop() || "").toUpperCase();
+    const newDoc = { id: `local-${Date.now()}`, name: file.name, type: ext || "FILE" };
+    setUploadedDocs((prev) => [...prev, newDoc]);
+    setSelected((prev) => new Set(prev).add(newDoc.id));
   };
 
   return (
@@ -309,14 +301,12 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], docume
             autoFocus
             style={{ flex: 1, padding: "8px 12px", border: "1px solid #dde0ea", borderRadius: "7px", fontSize: "13px", boxSizing: "border-box", fontFamily: "inherit" }}
           />
-          {onUploadDocument && (
-            <label
-              style={{ padding: "8px 14px", fontSize: "13px", border: "1px solid #dde0ea", borderRadius: "7px", background: "#f5f6ff", color: "#2A00FF", cursor: "pointer", fontFamily: "inherit", fontWeight: "600", whiteSpace: "nowrap", flexShrink: 0 }}
-            >
-              Upload New
-              <input type="file" onChange={handleFileUpload} style={{ display: "none" }} />
-            </label>
-          )}
+          <label
+            style={{ padding: "8px 14px", fontSize: "13px", border: "1px solid #dde0ea", borderRadius: "7px", background: "#f5f6ff", color: "#2A00FF", cursor: "pointer", fontFamily: "inherit", fontWeight: "600", whiteSpace: "nowrap", flexShrink: 0 }}
+          >
+            Upload New
+            <input type="file" onChange={handleFileUpload} style={{ display: "none" }} />
+          </label>
         </div>
         <div style={{ overflowY: "auto", flex: 1, minHeight: 0, padding: "14px 18px", display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "10px", alignContent: "start" }}>
           {filtered.length === 0 ? (
@@ -399,19 +389,11 @@ DocumentListModal.propTypes = {
   onSave: PropTypes.func.isRequired,
   initialSelected: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.number.isRequired,
+      id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
       name: PropTypes.string.isRequired,
-      type: PropTypes.string.isRequired,
+      type: PropTypes.string,
     })
   ),
-  documents: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      name: PropTypes.string.isRequired,
-      type: PropTypes.string.isRequired,
-    })
-  ),
-  onUploadDocument: PropTypes.func,
 };
 
 // Premium pagination control for the sales order table
@@ -644,19 +626,9 @@ const SalesOrderList = ({
   // State for vendor modal (row-level supplier picker)
   const [vendorModalTarget, setVendorModalTarget] = useState(null); // orderId or "new"
 
-  // State for document modal (row-level document picker)
+  // State for document modal (row-level document picker) — documents themselves come from
+  // each item's own `documents` array (mapped from the API), not a shared pool.
   const [documentModalTarget, setDocumentModalTarget] = useState(null); // orderId or "new"
-  // Documents selectable across all rows — starts from the dummy reference list, grows as
-  // users upload new files from the modal (local-only, same as the rest of this mock data).
-  const [documentPool, setDocumentPool] = useState(DUMMY_DOCUMENTS);
-
-  const handleUploadDocument = (file) => {
-    const ext = (file.name.split(".").pop() || "").toUpperCase();
-    const newId = documentPool.length > 0 ? Math.max(...documentPool.map((d) => d.id)) + 1 : 1;
-    const newDoc = { id: newId, name: file.name, type: ext || "FILE" };
-    setDocumentPool((prev) => [...prev, newDoc]);
-    return newDoc;
-  };
 
   const displayOrderList = Array.isArray(salesOrderList) ? salesOrderList : [];
 
@@ -2463,8 +2435,6 @@ const SalesOrderList = ({
         onClose={() => setDocumentModalTarget(null)}
         onSave={handleDocumentSave}
         initialSelected={getDocumentModalInitialSelected()}
-        documents={documentPool}
-        onUploadDocument={handleUploadDocument}
       />
     </div>
   );
