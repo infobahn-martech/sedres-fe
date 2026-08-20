@@ -1181,24 +1181,6 @@ const SalesOrderList = ({
     return <th {...thProps}>{label}</th>;
   };
 
-  // "Select all" header for the Work Order No. / PO No. columns — scoped to the currently
-  // visible (paginated) rows, reusing the same group select-all logic as the accordion headers.
-  const renderSelectAllHeader = (label, className, selectedSet, isEligible, setSelected) => (
-    <th className={className}>
-      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-        {!isDAModule && (
-          <GroupCheckbox
-            checked={isGroupAllSelected(paginatedOrderList, selectedSet, isEligible)}
-            indeterminate={isGroupSomeSelected(paginatedOrderList, selectedSet, isEligible)}
-            onChange={(e) => handleGroupSelectAll(paginatedOrderList, e.target.checked, isEligible, setSelected)}
-            onClick={(e) => e.stopPropagation()}
-          />
-        )}
-        <span>{label}</span>
-      </div>
-    </th>
-  );
-
   const cellStyle = {
     width: "100%",
     border: "1px solid var(--border-primary)",
@@ -1894,8 +1876,8 @@ const SalesOrderList = ({
                   {renderTableHeader("Discount", "col-discount")}
                   {renderTableHeader("Tax Code", "col-tax")}
                   {renderTableHeader("Total Amount", "col-total")}
-                  {renderSelectAllHeader("Work Order No.", "col-work-order", selectedWoItems, isEligibleForWo, setSelectedWoItems)}
-                  {renderSelectAllHeader("PO No.", "col-po-no", selectedPoItems, isEligibleForPo, setSelectedPoItems)}
+                  {renderTableHeader("Work Order No.", "col-work-order")}
+                  {renderTableHeader("PO No.", "col-po-no")}
                   {renderTableHeader("Type of PO", "col-type-po")}
                   {renderTableHeader("Third Party", "col-third-party")}
                   {renderTableHeader("Supporting Documents", "col-documents")}
