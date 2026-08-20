@@ -39,15 +39,12 @@ const GeneratePOModal = ({
   branchRegNo = "",
   contactPerson = "",
   localCurrency = "",
-  buyer = "",
   owner = "",
   remarks = "",
   shippingFee = 0,
   termsAndConditions = "",
-  onAddNew,
   onCopyToGoodsReceipt,
 }) => {
-  const [showItemDetails, setShowItemDetails] = useState(false);
   const [copyToOpen, setCopyToOpen] = useState(false);
   const [vendorRefNo, setVendorRefNo] = useState("");
   const copyToRef = useRef(null);
@@ -127,19 +124,6 @@ const GeneratePOModal = ({
           <h3 className="so-po-doc-title">PURCHASE ORDER</h3>
 
           <div className="so-po-modal-actions">
-            <button type="button" className="so-po-toolbar-btn" onClick={() => onAddNew?.()} disabled={isSubmitting}>
-              Add &amp; New
-            </button>
-            <button type="button" className="so-po-toolbar-btn" onClick={onClose} disabled={isSubmitting}>
-              Cancel
-            </button>
-            <button
-              type="button"
-              className={`so-po-toolbar-btn${showItemDetails ? " so-po-toolbar-btn-active" : ""}`}
-              onClick={() => setShowItemDetails((v) => !v)}
-            >
-              Item Details
-            </button>
             <div className="so-po-copyto" ref={copyToRef}>
               <button type="button" className="so-po-toolbar-btn" onClick={() => setCopyToOpen((v) => !v)}>
                 Copy To ▾
@@ -165,34 +149,6 @@ const GeneratePOModal = ({
 
         <div className="so-po-modal-body">
           <div className="so-po-doc">
-            {showItemDetails && (
-              <div className="so-po-quickview">
-                <div className="so-po-quickview-title">Item Details — Quick View</div>
-                <table className="so-po-quickview-table">
-                  <thead>
-                    <tr>
-                      <th>Item</th>
-                      <th>Qty</th>
-                      <th>Unit Price</th>
-                      <th>Tax Amount</th>
-                      <th>Total Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lineAmounts.map(({ item, tax: lineTax, total }) => (
-                      <tr key={item.id}>
-                        <td>{item.itemDescription || "—"}</td>
-                        <td>{item.qty ?? 0}</td>
-                        <td>{formatCurrencySAR(item.unitPrice)}</td>
-                        <td>{formatCurrencySAR(lineTax)}</td>
-                        <td>{formatCurrencySAR(total)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
             <div className="so-po-fields">
               <div className="so-po-fields-col">
                 <div className="so-po-field-row">
@@ -314,10 +270,6 @@ const GeneratePOModal = ({
             <div className="so-po-bottom">
               <div className="so-po-bottom-left">
                 <div className="so-po-field-row">
-                  <span className="so-po-field-label">Buyer</span>
-                  <span className="so-po-field-value">{buyer || "—"}</span>
-                </div>
-                <div className="so-po-field-row">
                   <span className="so-po-field-label">Owner</span>
                   <span className="so-po-field-value">{owner || "—"}</span>
                 </div>
@@ -389,12 +341,10 @@ GeneratePOModal.propTypes = {
   branchRegNo: PropTypes.string,
   contactPerson: PropTypes.string,
   localCurrency: PropTypes.string,
-  buyer: PropTypes.string,
   owner: PropTypes.string,
   remarks: PropTypes.string,
   shippingFee: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   termsAndConditions: PropTypes.string,
-  onAddNew: PropTypes.func,
   onCopyToGoodsReceipt: PropTypes.func,
 };
 
