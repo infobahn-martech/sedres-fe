@@ -221,19 +221,6 @@ const GeneratePOModal = ({
               </div>
             </div>
 
-            <div className="so-po-tabs">
-              {TABS.map((tab) => (
-                <span key={tab} className={`so-po-tab${tab === "Contents" ? " so-po-tab-active" : ""}`}>
-                  {tab}
-                </span>
-              ))}
-            </div>
-
-            <div className="so-po-item-type-row">
-              <span className="so-po-field-label">Item/Service Type</span>
-              <span className="so-po-field-value so-po-field-value-compact">Item</span>
-            </div>
-
             <div className="so-po-table-scroll">
               <table className="so-po-doc-table">
                 <thead>
