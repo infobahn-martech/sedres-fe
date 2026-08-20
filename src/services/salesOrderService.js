@@ -19,6 +19,12 @@ const getWorkOrder = (woId) =>
   Gateway.get(`sales_order/get_work_order/${encodeURIComponent(String(woId))}`);
 
 /**
+ * @param {string|number} woId
+ */
+const getWorkOrderPdf = (woId) =>
+  Gateway.get(`sales_order/get_work_order_pdf/${encodeURIComponent(String(woId))}`);
+
+/**
  * @param {object} payload
  * @param {Array<number>} payload.so_item_ids
  * @param {string} [payload.vendor_ref_no]
@@ -67,6 +73,7 @@ export default {
   getSoItemsByCall,
   generateWorkOrder,
   getWorkOrder,
+  getWorkOrderPdf,
   generatePO,
   uploadInvoice,
   getItemCodes,

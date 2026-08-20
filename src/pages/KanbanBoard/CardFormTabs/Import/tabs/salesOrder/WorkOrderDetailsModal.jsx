@@ -1,5 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
+import { FaWhatsapp } from "react-icons/fa";
+import salesOrderService from "../../../../../../services/salesOrderService";
+import useAlertReducer from "../../../../../../store/AlertReducer";
 
 const formatDateTime = (value) => {
   if (!value) return "—";
@@ -38,11 +41,35 @@ const getStatusStyle = (status) => STATUS_STYLES[status] || { color: "#475569", 
 // Fetches sales_order/get_work_order/{wo_id} (handled by the parent, which passes down
 // loading/error/details), same presentational-only pattern as the other SO modals.
 const WorkOrderDetailsModal = ({ show, onClose, isLoading = false, error = null, details, cardColor }) => {
+  const [isSharing, setIsSharing] = useState(false);
+
   if (!show) return null;
 
   const wo = details || {};
   const items = Array.isArray(wo.items) ? wo.items : [];
   const itemsTotal = items.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
+
+  const handleShareWhatsApp = () => {
+    if (!wo.wo_id || isSharing) return;
+    setIsSharing(true);
+    salesOrderService
+      .getWorkOrderPdf(wo.wo_id)
+      .then((response) => {
+        const body = response?.data;
+        const fileUrl = body?.data?.file_url;
+        if (body?.status !== "success" || !fileUrl) {
+          throw new Error(body?.message || "Unable to generate the work order PDF.");
+        }
+        const text = encodeURIComponent(`*Work Order:* ${wo.wo_number || ""}\n${fileUrl}`);
+        window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
+      })
+      .catch((err) => {
+        const msg =
+          err?.response?.data?.message || err?.response?.data?.error || err?.message || "Failed to share work order PDF.";
+        useAlertReducer.getState().error(typeof msg === "string" ? msg : "Failed to share work order PDF.");
+      })
+      .finally(() => setIsSharing(false));
+  };
 
   const metaFields = [
     { label: "Vessel Name", value: wo.vessel_name },
@@ -177,6 +204,18 @@ const WorkOrderDetailsModal = ({ show, onClose, isLoading = false, error = null,
         </div>
 
         <div className="so-wo-modal-footer">
+          {!isLoading && !error && wo.wo_id && (
+            <button
+              type="button"
+              className="so-wo-btn so-wo-btn-share"
+              onClick={handleShareWhatsApp}
+              disabled={isSharing}
+              style={{ display: "flex", alignItems: "center", gap: "6px" }}
+            >
+              <FaWhatsapp size={16} color="#25D366" />
+              {isSharing ? "Preparing PDF..." : "Share"}
+            </button>
+          )}
           <button type="button" className="so-wo-btn so-wo-btn-cancel" onClick={onClose}>
             Close
           </button>
