@@ -991,6 +991,21 @@
   min-height: 26px;
 }
 
+.sales-order-percent-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.sales-order-percent-input-suffix {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
 .sales-order-table-container .sales-order-table .sales-order-type-po-select {
   width: 100%;
   height: 28px;
