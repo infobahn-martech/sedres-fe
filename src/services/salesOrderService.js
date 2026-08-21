@@ -92,6 +92,16 @@ const saveSalesOrderItem = (payload) => Gateway.post("sales_order/save_sales_ord
  */
 const updateSalesOrderItemAmount = (payload) => Gateway.post("sales_order/update_sales_order_item_amount", payload);
 
+/**
+ * @param {object} payload
+ * @param {string|number} payload.sales_order_id
+ * @param {string} [payload.delivery_date]
+ * @param {string} [payload.document_date]
+ * @param {number} [payload.discount_percentage]
+ * @param {object} [payload.fields] - other editable SO fields, e.g. { po_number, project_name }
+ */
+const updateSalesOrder = (payload) => Gateway.post("sales_order/update_sales_order", payload);
+
 export default {
   getSoItemsByCall,
   generateWorkOrder,
@@ -104,4 +114,5 @@ export default {
   getItemDetails,
   saveSalesOrderItem,
   updateSalesOrderItemAmount,
+  updateSalesOrder,
 };

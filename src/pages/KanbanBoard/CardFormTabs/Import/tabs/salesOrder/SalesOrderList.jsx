@@ -816,6 +816,44 @@ const SalesOrderList = ({
     }
   };
 
+  // Persists SO header field edits to sales_order/update_sales_order. Fired on blur or Enter
+  // (no submit button) — sends only the sales_order_id plus the single field that changed.
+  // Known columns (delivery_date, document_date, discount_percentage) go top-level; everything
+  // else goes under `fields`.
+  const handleUpdateSalesOrder = async (payloadFields) => {
+    if (!formValues.salesOrderId) return;
+    try {
+      await salesOrderService.updateSalesOrder({ sales_order_id: formValues.salesOrderId, ...payloadFields });
+      if (refreshSalesOrder) await refreshSalesOrder();
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to update the sales order.";
+      useAlertReducer.getState().error(msg);
+    }
+  };
+
+  // Attach to onKeyDown alongside an onBlur handler so Enter commits immediately (blurring
+  // triggers the actual save, avoiding a duplicate call for the same value).
+  const handleEnterBlur = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.target.blur();
+    }
+  };
+
+  const handleSoDeliveryDateChange = (e) => {
+    handleChange("soDeliveryDate")(e);
+    handleUpdateSalesOrder({ delivery_date: e.target.value });
+  };
+
+  const handleSoDocumentDateChange = (e) => {
+    handleChange("soDocumentDate")(e);
+    handleUpdateSalesOrder({ document_date: e.target.value });
+  };
+
   const handleToggleVerified = (orderId, itemNo) => {
     setVerifiedItems((prev) => {
       const next = new Set(prev);
@@ -1868,6 +1906,8 @@ const SalesOrderList = ({
                 placeholder="Enter PO No..."
                 value={soPoNo}
                 onChange={handleChange("soPoNo")}
+                onBlur={() => handleUpdateSalesOrder({ fields: { po_number: soPoNo } })}
+                onKeyDown={handleEnterBlur}
                 readOnly={readOnly}
                 required
               />
@@ -1891,6 +1931,8 @@ const SalesOrderList = ({
                 placeholder="Enter project name..."
                 value={soProjectName}
                 onChange={handleChange("soProjectName")}
+                onBlur={() => handleUpdateSalesOrder({ fields: { project_name: soProjectName } })}
+                onKeyDown={handleEnterBlur}
                 readOnly={readOnly}
                 required
               />
@@ -1938,7 +1980,7 @@ const SalesOrderList = ({
               <label className="so-header-label">Delivery Date</label>
               <DatePickerField
                 dateValue={soDeliveryDate}
-                onDateChange={handleChange("soDeliveryDate")}
+                onDateChange={handleSoDeliveryDateChange}
                 dateFieldName="soDeliveryDate"
                 disabled={readOnly}
                 className="so-header-input"
@@ -1948,7 +1990,7 @@ const SalesOrderList = ({
               <label className="so-header-label">Document Date</label>
               <DatePickerField
                 dateValue={soDocumentDate}
-                onDateChange={handleChange("soDocumentDate")}
+                onDateChange={handleSoDocumentDateChange}
                 dateFieldName="soDocumentDate"
                 disabled={readOnly}
                 className="so-header-input"
@@ -2333,6 +2375,10 @@ const SalesOrderList = ({
                       step="0.01"
                       value={formValues.soDiscountPercentage ?? ""}
                       onChange={handleChange("soDiscountPercentage")}
+                      onBlur={() =>
+                        handleUpdateSalesOrder({ discount_percentage: parseFloat(formValues.soDiscountPercentage) || 0 })
+                      }
+                      onKeyDown={handleEnterBlur}
                       placeholder="0"
                       className="so-accounting-discount-input"
                     />
