@@ -16,6 +16,8 @@ import useWorkflowPinning from "../hooks/useWorkflowPinning";
 import useColumnHeights from "../hooks/useColumnHeights";
 import useKanbanDnD from "../hooks/useKanbanDnD";
 import useKanbanRoleAccess from "../hooks/useKanbanRoleAccess";
+import usePermissions from "../../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../shared/constants/permissions";
 import { createNewCardDraft } from "../utils/cardHelpers";
 import { findWorkflowByCardId } from "../utils/boardHelpers";
 import { resolveCardFormVariant } from "../../../shared/helpers/cardFormVariant";
@@ -195,12 +197,22 @@ export default function KanbanBoardPage() {
     setContextMenuLaneId(null);
   }, []);
 
+  const { hasPermission } = usePermissions();
   const handleCreateCard = useCallback(() => {
+    if (
+      !hasPermission({
+        moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+        submoduleKey: PERMISSION_SUBMODULES.ADD_CARD,
+        actionKey: PERMISSION_ACTIONS.VIEW,
+      })
+    ) {
+      return;
+    }
     const newCard = createNewCardDraft(contextMenuColumn?.color, contextMenuLaneId);
     setSelectedCard(newCard);
     setIsAddMode(true);
     setAddTargetWorkflowId(null);
-  }, [contextMenuColumn, contextMenuLaneId, setSelectedCard, setIsAddMode, setAddTargetWorkflowId]);
+  }, [contextMenuColumn, contextMenuLaneId, setSelectedCard, setIsAddMode, setAddTargetWorkflowId, hasPermission]);
 
   const handleWorkflowColumnHeightChange = useCallback(
     (columnId, height, laneId) => {

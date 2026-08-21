@@ -371,6 +371,10 @@ function PreArrival({
   vesselTypeId,
   billingEntityId,
   stageId = OPERATION_STAGE_IDS.PRE_ARRIVAL,
+  canAddTimeObject = true,
+  canDeleteTimeObject = true,
+  canPreviewEmail = true,
+  canSendReport = true,
 }) {
   const saveCallTimeObjectAction = useArrivalReducer((s) => s.saveCallTimeObject);
   const deleteCallTimeObjectAction = useArrivalReducer((s) => s.deleteCallTimeObject);
@@ -1214,24 +1218,29 @@ function PreArrival({
                   onCommitRow={handleCommitAdditionalTimeObject}
                   isViewOnly={isViewOnly}
                   hideAddButton
+                  canAdd={canAddTimeObject}
+                  canDelete={canDeleteTimeObject}
                 />
               </OperationFormCard>
-              <OperationFormCard className="operation-email-column">
-                <OperationEmailPreviewPanel
-                  from={reportDraft.from}
-                  to={reportDraft.to}
-                  cc={reportDraft.cc}
-                  subject={reportDraft.subject}
-                  message={reportDraft.message}
-                  attachments={reportAttachments}
-                  onAttachmentsChange={setReportAttachments}
-                  billingEntityId={billingEntityId ?? formValues.mainBillingEntity}
-                  onChange={handleReportDraftChange}
-                  onSend={handleSendPreArrivalReport}
-                  isSending={isSendingReport || isSavingPreArrival}
-                  isViewOnly={isViewOnly}
-                />
-              </OperationFormCard>
+              {canPreviewEmail && (
+                <OperationFormCard className="operation-email-column">
+                  <OperationEmailPreviewPanel
+                    from={reportDraft.from}
+                    to={reportDraft.to}
+                    cc={reportDraft.cc}
+                    subject={reportDraft.subject}
+                    message={reportDraft.message}
+                    attachments={reportAttachments}
+                    onAttachmentsChange={setReportAttachments}
+                    billingEntityId={billingEntityId ?? formValues.mainBillingEntity}
+                    onChange={handleReportDraftChange}
+                    onSend={handleSendPreArrivalReport}
+                    isSending={isSendingReport || isSavingPreArrival}
+                    isViewOnly={isViewOnly}
+                    canSend={canSendReport}
+                  />
+                </OperationFormCard>
+              )}
             </div>
           </div>
           <OperationSaveSection isViewOnly={isViewOnly} onSave={savePreArrivalData} isSaving={isSavingPreArrival} />
@@ -1257,6 +1266,10 @@ PreArrival.propTypes = {
   vesselTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   billingEntityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   stageId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  canAddTimeObject: PropTypes.bool,
+  canDeleteTimeObject: PropTypes.bool,
+  canPreviewEmail: PropTypes.bool,
+  canSendReport: PropTypes.bool,
 };
 
 export default PreArrival;

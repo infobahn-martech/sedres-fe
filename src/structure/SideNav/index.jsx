@@ -149,6 +149,11 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     moduleKey: PERMISSION_MODULES.KANBAN_WORKFLOW,
     actionKey: PERMISSION_ACTIONS.VIEW_WORKFLOW,
   });
+  const canAddCard = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.ADD_CARD,
+    actionKey: PERMISSION_ACTIONS.VIEW,
+  });
 
   const boardRouteMatchForEditWorkflow = pathname.match(/^\/kanban-board\/([^/]+)$/);
   const kanbanBoardIdForEditWorkflow = boardRouteMatchForEditWorkflow?.[1] ?? null;
@@ -159,7 +164,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
 
   const kanbanBoardIcons = useMemo(() => {
     if (kanbanFullSidebar || isPortSupervisorRole) {
-      const icons = [{ id: 1, icon: FiPlus, label: 'Add' }];
+      const icons = canAddCard ? [{ id: 1, icon: FiPlus, label: 'Add' }] : [];
       if (showEditWorkflowSidebarIcon) {
         icons.push({ id: 9, icon: FiEdit3, label: 'Edit Workflow' });
       }
@@ -180,7 +185,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       { id: 7, icon: FiMail, label: 'Outlook' }
     );
     return icons;
-  }, [showEditWorkflowSidebarIcon, kanbanFullSidebar, isPortSupervisorRole]);
+  }, [showEditWorkflowSidebarIcon, kanbanFullSidebar, isPortSupervisorRole, canAddCard]);
 
   const restrictedKanbanStripIcons = useMemo(
     () =>

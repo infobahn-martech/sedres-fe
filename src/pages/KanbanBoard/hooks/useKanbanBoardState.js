@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import usePermissions from "../../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES } from "../../../shared/constants/permissions";
 import { initialData } from "../../../shared/helpers/data";
 import { operatorKanbanStaticWorkflows } from "../../../shared/helpers/kanbanOperatorStaticData";
 import {
@@ -21,6 +23,7 @@ const sortByPinState = (mapped) => {
 };
 
 export default function useKanbanBoardState(selectedBoardId) {
+  const { hasModule } = usePermissions();
   const [workflows, setWorkflows] = useState(() =>
     isOperatorBoardId(selectedBoardId) ? operatorKanbanStaticWorkflows : []
   );
@@ -136,10 +139,11 @@ export default function useKanbanBoardState(selectedBoardId) {
   }, [refetchBoard]);
 
   const handleSelectCard = useCallback((card) => {
+    if (!hasModule(PERMISSION_MODULES.KANBAN_CARD)) return;
     setSelectedCard(card);
     setIsAddMode(false);
     setAddTargetWorkflowId(null);
-  }, []);
+  }, [hasModule]);
 
   const handleCloseCard = useCallback(() => {
     setSelectedCard(null);

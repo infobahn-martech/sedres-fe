@@ -487,6 +487,8 @@ export const AdditionalTimeObjectsFields = ({
   isViewOnly = false,
   title = "Additional Time Objects",
   hideAddButton = false,
+  canAdd = true,
+  canDelete = true,
 }) => {
   const rows = Array.isArray(value) ? value : [];
   const rowRefs = useRef([]);
@@ -701,7 +703,7 @@ export const AdditionalTimeObjectsFields = ({
               aria-label={`Time object name ${index + 1}`}
             />
           )}
-          {!isViewOnly ? (
+          {!isViewOnly && canDelete ? (
             <button
               type="button"
               className="operation-additional-time-object-remove-btn"
@@ -734,7 +736,7 @@ export const AdditionalTimeObjectsFields = ({
     <div className="operation-additional-time-objects">
       <div className="operation-additional-time-objects-header">
         <h4 className="operation-additional-time-objects-title">{title}</h4>
-        {!isViewOnly ? (
+        {!isViewOnly && canAdd ? (
           <button
             type="button"
             className="operation-additional-time-objects-add-btn"
@@ -765,6 +767,8 @@ AdditionalTimeObjectsFields.propTypes = {
   isViewOnly: PropTypes.bool,
   title: PropTypes.string,
   hideAddButton: PropTypes.bool,
+  canAdd: PropTypes.bool,
+  canDelete: PropTypes.bool,
 };
 
 export const FormInput = ({ type = "text", value, onChange, placeholder, className = "", disabled = false }) => {
@@ -1123,12 +1127,13 @@ export const OperationEmailPreviewPanel = ({
   isViewOnly = false,
   attachmentsAccept,
   billingEntityId,
+  canSend = true,
 }) => {
   const attachmentInputRef = useRef(null);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
   const attachmentList = Array.isArray(attachments) ? attachments : [];
   const canEditAttachments = !isViewOnly && typeof onAttachmentsChange === "function";
-  const showSend = !isViewOnly && typeof onSend === "function";
+  const showSend = !isViewOnly && typeof onSend === "function" && canSend;
 
   const handleAttachmentFilesSelected = async (event) => {
     const selected = Array.from(event.target.files || []);
@@ -1299,6 +1304,7 @@ OperationEmailPreviewPanel.propTypes = {
   isViewOnly: PropTypes.bool,
   attachmentsAccept: PropTypes.string,
   billingEntityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  canSend: PropTypes.bool,
 };
 
 export const OperationFileUpload = ({
