@@ -5,6 +5,8 @@ import CustomTable from "../../components/customTable";
 import { BillingInstructionModal } from "./Modals/AddEditBillingInstruction";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import useBillingInstructionReducer from "../../store/BillingInstructionReducer";
+import usePermissions from "../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../shared/constants/permissions";
 
 const formatEmailsCell = (row) => {
     if (row?.instruction_type !== "Email") return "—";
@@ -23,6 +25,23 @@ const formatDescriptionCell = (row) => {
 };
 
 const BillingInstruction = () => {
+    const { hasPermission } = usePermissions();
+    const canAddBillingInstruction = hasPermission({
+        moduleKey: PERMISSION_MODULES.ENTITY_MANAGEMENT,
+        submoduleKey: PERMISSION_SUBMODULES.BILLING_INSTRUCTION,
+        actionKey: PERMISSION_ACTIONS.ADD,
+    });
+    const canEditBillingInstruction = hasPermission({
+        moduleKey: PERMISSION_MODULES.ENTITY_MANAGEMENT,
+        submoduleKey: PERMISSION_SUBMODULES.BILLING_INSTRUCTION,
+        actionKey: PERMISSION_ACTIONS.EDIT,
+    });
+    const canDeleteBillingInstruction = hasPermission({
+        moduleKey: PERMISSION_MODULES.ENTITY_MANAGEMENT,
+        submoduleKey: PERMISSION_SUBMODULES.BILLING_INSTRUCTION,
+        actionKey: PERMISSION_ACTIONS.DELETE,
+    });
+
     const { getAllBillingInstructions, deleteBillingInstruction, billingInstructions, isLoading, totalCount, isDeleteLoading } =
         useBillingInstructionReducer((state) => state);
 
@@ -56,10 +75,12 @@ const BillingInstruction = () => {
     const list = billingInstructions || [];
 
     const handleOpenAdd = () => {
+        if (!canAddBillingInstruction) return;
         setShowBillingInstructionModal({});
     };
 
     const handleOpenEdit = (row) => {
+        if (!canEditBillingInstruction) return;
         setShowBillingInstructionModal(row);
     };
 
@@ -104,8 +125,11 @@ const BillingInstruction = () => {
             width: "120",
             cell: RenderAction,
             thclass: "tb-head",
+            canEditBillingInstruction,
+            canDeleteBillingInstruction,
             onEditClick: (row) => handleOpenEdit(row),
             onDeleteClick: (row) => {
+                if (!canDeleteBillingInstruction) return;
                 setSelectedRowForDelete(row);
                 setShowDeleteModal(true);
             },
@@ -119,7 +143,7 @@ const BillingInstruction = () => {
                     <div className="container-fluid">
                         <CommonHeader
                             tableTitle="Billing Instructions"
-                            isAddEnabled
+                            isAddEnabled={canAddBillingInstruction}
                             addModalLabel="Add Billing Instruction"
                             setSearch={(e) => setParams({ ...params, search: e, page: 1 })}
                             onAddModalClick={handleOpenAdd}
@@ -172,6 +196,7 @@ const BillingInstruction = () => {
                                 setSelectedRowForDelete(null);
                             }}
                             onConfirm={() => {
+                                if (!canDeleteBillingInstruction) return;
                                 const entity_id =
                                     selectedRowForDelete?.entity_id ??
                                     selectedRowForDelete?.billing_instruction_id ??

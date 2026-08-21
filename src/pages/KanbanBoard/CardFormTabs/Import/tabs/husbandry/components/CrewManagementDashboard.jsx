@@ -16,6 +16,8 @@ import useLaunchHireServiceReducer from "../../../../../../../store/LaunchHireSe
 import callFileService from "../../../../../../../services/callFileService";
 import { buildApiDateTime } from "../../../../../../../shared/helpers/dateTimeFieldUtils";
 import { notify } from "../../../../../../../components/Toaster";
+import usePermissions from "../../../../../../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../../shared/constants/permissions";
 
 const INITIAL_UPLOAD_STEPS = {
   crewList: { status: "pending", files: [], progress: 0 },
@@ -191,6 +193,49 @@ MovementTypeRadioCard.propTypes = {
 // on submit the selection is saved to the matching service field and the
 // existing service form is opened via onNavigateToTab.
 const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNavigateToTab }) => {
+  const { hasPermission } = usePermissions();
+  // KANBAN_CARD > CREW_MANAGEMENT per-action gates — absence of the module/
+  // submodule/action in the permissions response means false (deny by default).
+  const canUploadCrewList = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.UPLOAD_CREW_LIST,
+  });
+  const canUploadPassport = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.UPLOAD_PASSPORT,
+  });
+  const canUploadIqama = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.UPLOAD_IQAMA,
+  });
+  const canUploadVisa = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.UPLOAD_VISA,
+  });
+  const canEditCrew = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.EDIT,
+  });
+  const canDeleteCrew = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.DELETE,
+  });
+  const canViewCrewSummary = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.VIEW,
+  });
+  const canUploadDocKind = {
+    passport: canUploadPassport,
+    iqama: canUploadIqama,
+    visa: canUploadVisa,
+  };
   const importCrewFile = useCrewReducer((state) => state.importCrewFile);
   const fetchCallCrewList = useCrewReducer((state) => state.fetchCallCrewList);
   const uploadPassportCopies = useCrewReducer((state) => state.uploadPassportCopies);
@@ -546,6 +591,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   // Summary bulk actions. Refetches crew/get_crew_list afterwards so the doc
   // status icons reflect the real result.
   const handleCrewDocCopyUpload = (kind) => async (fileList) => {
+    if (!canUploadDocKind[kind]) return;
     if (uploadSteps.crewList.status !== "completed") return;
     const files = Array.from(fileList || []);
     if (files.length === 0) return;
@@ -630,6 +676,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   };
 
   const handleVisaFiles = async (fileList) => {
+    if (!canUploadVisa) return;
     if (uploadSteps.crewList.status !== "completed") return;
     const files = Array.from(fileList || []);
     if (files.length === 0) return;
@@ -770,6 +817,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   // selected file via the shared uploadVisaFiles helper (see handleVisaFiles
   // above), unlike Passport/Iqama which batch every file into a single call.
   const handleBulkVisaUpload = async (event) => {
+    if (!canUploadVisa) return;
     const files = Array.from(event.target.files || []);
     event.target.value = "";
     if (files.length === 0) return;
@@ -785,6 +833,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   // above, this hits a real endpoint, then refetches crew/get_crew_list so
   // the doc status icons reflect the real result.
   const handleBulkCopyUpload = (kind) => async (event) => {
+    if (!canUploadDocKind[kind]) return;
     const files = Array.from(event.target.files || []);
     event.target.value = "";
     if (files.length === 0) return;
@@ -849,6 +898,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   // Persists inline Crew Summary edits via crew/update_crew, then refetches
   // crew/get_crew_list so the table reflects the saved values.
   const handleSaveEdit = async () => {
+    if (!canEditCrew) return;
     if (!editingRowId || !editDraft) return;
     const row = crewSummaryRows.find((summaryRow) => summaryRow.id === editingRowId);
     const crewIdNum = Number(row?.crewId);
@@ -896,6 +946,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   // crew list so both the summary table and the rest of the dashboard
   // (service popups, crewCount, etc.) drop the removed crew member.
   const handleDeleteCrew = async (row) => {
+    if (!canDeleteCrew) return;
     const crewIdNum = Number(row?.crewId);
     if (!crewIdNum) {
       notify("Unable to delete: missing crew id.", "error");
@@ -1056,18 +1107,21 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
                 </div>
 
                 <div className="crew-mgmt-crewlist-block">
-                  <CrewListUploadBox
-                    movementType={movementType}
-                    movementTypeLabel={selectedMovementTypeLabel}
-                    status={crewListStatus}
-                    onSelectFile={handleCrewListFiles}
-                    onBlocked={handleCrewListBlocked}
-                  />
+                  {canUploadCrewList && (
+                    <CrewListUploadBox
+                      movementType={movementType}
+                      movementTypeLabel={selectedMovementTypeLabel}
+                      status={crewListStatus}
+                      onSelectFile={handleCrewListFiles}
+                      onBlocked={handleCrewListBlocked}
+                    />
+                  )}
                   <CrewUploadDropzones
                     steps={uploadSteps}
                     onSelectPassportFiles={handlePassportFiles}
                     onSelectIqamaFiles={handleIqamaFiles}
                     onSelectVisaFiles={handleVisaFiles}
+                    visibleKeys={Object.keys(canUploadDocKind).filter((kind) => canUploadDocKind[kind])}
                   />
                 </div>
               </div>
@@ -1187,57 +1241,69 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 
               {summarySelectedIds.length > 0 && (
                 <div className="crew-summary-bulk-actions">
-                  <button
-                    type="button"
-                    className="crew-header-btn"
-                    disabled={isUploadingPassports}
-                    onClick={() => summaryPassportInputRef.current?.click()}
-                  >
-                    <span className="crew-header-btn__label">
-                      {isUploadingPassports ? "Uploading Passport…" : "Upload Passport"}
-                    </span>
-                  </button>
-                  <input
-                    ref={summaryPassportInputRef}
-                    type="file"
-                    multiple
-                    className="crew-doc-input"
-                    onChange={handleBulkCopyUpload("passport")}
-                  />
-                  <button
-                    type="button"
-                    className="crew-header-btn"
-                    disabled={isUploadingIqamas}
-                    onClick={() => summaryIqamaInputRef.current?.click()}
-                  >
-                    <span className="crew-header-btn__label">
-                      {isUploadingIqamas ? "Uploading Iqama…" : "Upload Iqama"}
-                    </span>
-                  </button>
-                  <input
-                    ref={summaryIqamaInputRef}
-                    type="file"
-                    multiple
-                    className="crew-doc-input"
-                    onChange={handleBulkCopyUpload("iqama")}
-                  />
-                  <button
-                    type="button"
-                    className="crew-header-btn"
-                    disabled={isUploadingVisas}
-                    onClick={() => summaryVisaInputRef.current?.click()}
-                  >
-                    <span className="crew-header-btn__label">
-                      {isUploadingVisas ? "Uploading Visa…" : "Upload Visa"}
-                    </span>
-                  </button>
-                  <input
-                    ref={summaryVisaInputRef}
-                    type="file"
-                    multiple
-                    className="crew-doc-input"
-                    onChange={handleBulkVisaUpload}
-                  />
+                  {canUploadPassport && (
+                    <>
+                      <button
+                        type="button"
+                        className="crew-header-btn"
+                        disabled={isUploadingPassports}
+                        onClick={() => summaryPassportInputRef.current?.click()}
+                      >
+                        <span className="crew-header-btn__label">
+                          {isUploadingPassports ? "Uploading Passport…" : "Upload Passport"}
+                        </span>
+                      </button>
+                      <input
+                        ref={summaryPassportInputRef}
+                        type="file"
+                        multiple
+                        className="crew-doc-input"
+                        onChange={handleBulkCopyUpload("passport")}
+                      />
+                    </>
+                  )}
+                  {canUploadIqama && (
+                    <>
+                      <button
+                        type="button"
+                        className="crew-header-btn"
+                        disabled={isUploadingIqamas}
+                        onClick={() => summaryIqamaInputRef.current?.click()}
+                      >
+                        <span className="crew-header-btn__label">
+                          {isUploadingIqamas ? "Uploading Iqama…" : "Upload Iqama"}
+                        </span>
+                      </button>
+                      <input
+                        ref={summaryIqamaInputRef}
+                        type="file"
+                        multiple
+                        className="crew-doc-input"
+                        onChange={handleBulkCopyUpload("iqama")}
+                      />
+                    </>
+                  )}
+                  {canUploadVisa && (
+                    <>
+                      <button
+                        type="button"
+                        className="crew-header-btn"
+                        disabled={isUploadingVisas}
+                        onClick={() => summaryVisaInputRef.current?.click()}
+                      >
+                        <span className="crew-header-btn__label">
+                          {isUploadingVisas ? "Uploading Visa…" : "Upload Visa"}
+                        </span>
+                      </button>
+                      <input
+                        ref={summaryVisaInputRef}
+                        type="file"
+                        multiple
+                        className="crew-doc-input"
+                        onChange={handleBulkVisaUpload}
+                      />
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -1257,7 +1323,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
             onLocationChange={setLaunchLocation}
           />
 
-          {crewSummaryRows.length === 0 ? (
+          {canViewCrewSummary && (crewSummaryRows.length === 0 ? (
             <p className="crew-summary-empty">
               No crew uploaded yet. Select a movement type and upload a crew list to see it here.
             </p>
@@ -1412,30 +1478,34 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
                                 </>
                               ) : (
                                 <>
-                                  <button
-                                    type="button"
-                                    className="crew-action-btn crew-action-btn--edit"
-                                    aria-label="Edit crew"
-                                    title="Edit"
-                                    disabled={deletingRowId === row.id}
-                                    onClick={() => handleStartEdit(row)}
-                                  >
-                                    <FiEdit2 size={14} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="crew-action-btn crew-action-btn--delete"
-                                    aria-label="Delete crew"
-                                    title="Delete"
-                                    disabled={deletingRowId === row.id}
-                                    onClick={() => handleDeleteCrew(row)}
-                                  >
-                                    {deletingRowId === row.id ? (
-                                      <span className="crew-action-btn__spinner" aria-hidden="true" />
-                                    ) : (
-                                      <FiTrash2 size={14} />
-                                    )}
-                                  </button>
+                                  {canEditCrew && (
+                                    <button
+                                      type="button"
+                                      className="crew-action-btn crew-action-btn--edit"
+                                      aria-label="Edit crew"
+                                      title="Edit"
+                                      disabled={deletingRowId === row.id}
+                                      onClick={() => handleStartEdit(row)}
+                                    >
+                                      <FiEdit2 size={14} />
+                                    </button>
+                                  )}
+                                  {canDeleteCrew && (
+                                    <button
+                                      type="button"
+                                      className="crew-action-btn crew-action-btn--delete"
+                                      aria-label="Delete crew"
+                                      title="Delete"
+                                      disabled={deletingRowId === row.id}
+                                      onClick={() => handleDeleteCrew(row)}
+                                    >
+                                      {deletingRowId === row.id ? (
+                                        <span className="crew-action-btn__spinner" aria-hidden="true" />
+                                      ) : (
+                                        <FiTrash2 size={14} />
+                                      )}
+                                    </button>
+                                  )}
                                 </>
                               )}
                             </div>
@@ -1484,7 +1554,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
                 </div>
               </div>
             </div>
-          )}
+          ))}
         </div>
       </div>
 

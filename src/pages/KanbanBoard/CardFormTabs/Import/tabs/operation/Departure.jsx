@@ -55,6 +55,10 @@ function Departure({
   callTypeId = "",
   billingEntityId,
   stageId = OPERATION_STAGE_IDS.DEPARTURE,
+  canAddTimeObject = true,
+  canDeleteTimeObject = true,
+  canPreviewEmail = true,
+  canSendReport = true,
 }) {
   const saveCallTimeObjectAction = useArrivalReducer((s) => s.saveCallTimeObject);
   const getTimeObjectsByCallAction = useArrivalReducer((s) => s.getTimeObjectsByCall);
@@ -523,6 +527,8 @@ function Departure({
                   onCommitRow={handleCommitAdditionalTimeObject}
                   isViewOnly={isViewOnly}
                   hideAddButton
+                  canAdd={canAddTimeObject}
+                  canDelete={canDeleteTimeObject}
                 />
 
                 <FormField label="Attachments">
@@ -534,22 +540,25 @@ function Departure({
                   />
                 </FormField>
               </OperationFormCard>
-              <OperationFormCard className="operation-email-column">
-                <OperationEmailPreviewPanel
-                  from={reportDraft.from}
-                  to={reportDraft.to}
-                  cc={reportDraft.cc}
-                  subject={reportDraft.subject}
-                  message={reportDraft.message}
-                  attachments={formValues.departureReportAttachments || []}
-                  onAttachmentsChange={handleDepartureReportAttachmentsChange}
-                  billingEntityId={billingEntityId ?? formValues.mainBillingEntity}
-                  onChange={handleReportDraftChange}
-                  onSend={handleSaveAndSendReport}
-                  isSending={isSavingDeparture}
-                  isViewOnly={isViewOnly}
-                />
-              </OperationFormCard>
+              {canPreviewEmail && (
+                <OperationFormCard className="operation-email-column">
+                  <OperationEmailPreviewPanel
+                    from={reportDraft.from}
+                    to={reportDraft.to}
+                    cc={reportDraft.cc}
+                    subject={reportDraft.subject}
+                    message={reportDraft.message}
+                    attachments={formValues.departureReportAttachments || []}
+                    onAttachmentsChange={handleDepartureReportAttachmentsChange}
+                    billingEntityId={billingEntityId ?? formValues.mainBillingEntity}
+                    onChange={handleReportDraftChange}
+                    onSend={handleSaveAndSendReport}
+                    isSending={isSavingDeparture}
+                    isViewOnly={isViewOnly}
+                    canSend={canSendReport}
+                  />
+                </OperationFormCard>
+              )}
             </div>
           </div>
           <OperationSaveSection isViewOnly={isViewOnly} onSave={handleSaveAndSendReport} isSaving={isSavingDeparture} />
@@ -573,6 +582,10 @@ Departure.propTypes = {
   callTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   billingEntityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   stageId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  canAddTimeObject: PropTypes.bool,
+  canDeleteTimeObject: PropTypes.bool,
+  canPreviewEmail: PropTypes.bool,
+  canSendReport: PropTypes.bool,
 };
 
 export default Departure;

@@ -5,21 +5,30 @@ import edit from '../../assets/images/edit.svg';
 import trash from '../../assets/images/delete.svg';
 import { getInitials } from '../../shared/utils/utils';
 
-export const RenderAction = ({ onEditClick, row, onDeleteClick, hideDelete }) => {
+export const RenderAction = ({
+    onEditClick,
+    row,
+    onDeleteClick,
+    hideDelete,
+    canEditBillingInstruction = false,
+    canDeleteBillingInstruction = false,
+}) => {
     return (
         <>
-            <Tooltip id="edit" place="top" content="Edit" />
-            {!hideDelete && <Tooltip id="delete" place="top" content="Delete" />}
+            {canEditBillingInstruction && <Tooltip id="edit" place="top" content="Edit" />}
+            {!hideDelete && canDeleteBillingInstruction && <Tooltip id="delete" place="top" content="Delete" />}
             <div className="actions">
-                <span
-                    data-tooltip-id="edit"
-                    type="button"
-                    onClick={() => onEditClick(row)}
-                    className="edit"
-                >
-                    <img src={edit} alt="edit" />
-                </span>
-                {!hideDelete && (
+                {canEditBillingInstruction && (
+                    <span
+                        data-tooltip-id="edit"
+                        type="button"
+                        onClick={() => onEditClick(row)}
+                        className="edit"
+                    >
+                        <img src={edit} alt="edit" />
+                    </span>
+                )}
+                {!hideDelete && canDeleteBillingInstruction && (
                     <span
                         data-tooltip-id="delete"
                         type="button"

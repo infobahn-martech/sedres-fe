@@ -5,6 +5,8 @@ import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import { BillingEntityModal } from "./Modals/AddEditBillingEntity";
 import { RenderAction } from "./RenderCells";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
+import usePermissions from "../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../shared/constants/permissions";
 import "../../design/scss/pages/billing-entity/BillingEntity.scss";
 
 const resolveLogoUrl = (logoValue) => {
@@ -24,6 +26,13 @@ const resolveLogoUrl = (logoValue) => {
 };
 
 const BillingEntity = () => {
+  const { hasPermission } = usePermissions();
+  const canEditBillingEntity = hasPermission({
+    moduleKey: PERMISSION_MODULES.ENTITY_MANAGEMENT,
+    submoduleKey: PERMISSION_SUBMODULES.BILLING_ENTITY,
+    actionKey: PERMISSION_ACTIONS.EDIT,
+  });
+
   const [params, setParams] = useState({
     page: 1,
     total: 0,
@@ -132,7 +141,9 @@ const BillingEntity = () => {
       cell: RenderAction,
       thclass: "tb-head",
       hideDelete: true,
+      canEditBillingEntity,
       onEditClick: (row) => {
+        if (!canEditBillingEntity) return;
         getEntityDetailById({
           entityId: row.entity_id,
           cb: () => setShowBillingEntityModal(true),

@@ -24,6 +24,8 @@ import GeneralViewAppointmentDetails from "./GeneralViewAppointmentDetails";
 import { mapTasksToSections } from "../operation/operationTasksMapper";
 import stageTimeMappingService from "../../../../../../services/stageTimeMappingService";
 import preArrivalInfoService from "../../../../../../services/preArrivalInfoService";
+import usePermissions from "../../../../../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../shared/constants/permissions";
 import {
   unwrapListResponse,
   mapOperatorsToOptions,
@@ -2401,6 +2403,12 @@ function General({
   setHasSubmitted = () => { },
   setIsSavingGeneral = () => { },
 }) {
+  const { hasPermission } = usePermissions();
+  const canAddCard = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.ADD_CARD,
+    actionKey: PERMISSION_ACTIONS.VIEW,
+  });
   const accentColor = useMemo(
     () =>
       isAddMode
@@ -3048,6 +3056,7 @@ function General({
   ]);
 
   const handleSubmit = async () => {
+    if (isAddMode && !canAddCard) return;
     setHasSubmitted(true);
     const isValid = validateGeneralForm();
     if (!isValid) {
@@ -6289,7 +6298,7 @@ ${body}
                     </>
                   )}
                 </div>
-                {isAddMode && (
+                {isAddMode && canAddCard && (
                   <div className="general-add-page-actions">
                     <button
                       type="button"

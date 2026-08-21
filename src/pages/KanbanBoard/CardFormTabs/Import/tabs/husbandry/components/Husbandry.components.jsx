@@ -223,7 +223,7 @@ RouteCell.propTypes = {
   to: PropTypes.string,
 };
 
-export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, onSubTabChange, onNavigateToTab, selectedActionTab = null, selectedServices = [], onBackToServiceSelection, cardColor = "#00368c", crewCount, subTabCounts = {} }) => {
+export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, onSubTabChange, onNavigateToTab, selectedActionTab = null, selectedServices = [], onBackToServiceSelection, cardColor = "#00368c", crewCount, subTabCounts = {}, materialManagementVisibleSubTabIds = null }) => {
   const hasCrewCount = typeof crewCount === "number";
   // Mobile-only: the stacked main+submenu list pushes real content far down
   // the page on phones, so it starts collapsed behind a toggle there. Has no
@@ -274,6 +274,12 @@ export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, on
         label: "Order History"
       },
     ];
+    // KANBAN_CARD > MATERIAL_MANAGEMENT per-tab VIEW gates — null means the
+    // caller didn't pass a permission filter, so nothing changes for callers
+    // that don't care about it.
+    if (materialManagementVisibleSubTabIds) {
+      subTabs = subTabs.filter((tab) => materialManagementVisibleSubTabIds.includes(tab.id));
+    }
   } else if (activeMainTab === "LAUNCH_HIRE") {
     subTabs = [
       { id: LAUNCH_HIRE_SUBTABS.REQUESTS, label: "Requests" },

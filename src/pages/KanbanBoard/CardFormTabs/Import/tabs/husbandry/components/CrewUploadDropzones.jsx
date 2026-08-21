@@ -45,9 +45,13 @@ const CrewUploadDropzones = ({
   onSelectPassportFiles,
   onSelectIqamaFiles,
   onSelectVisaFiles,
+  visibleKeys,
 }) => {
   const [draggingKey, setDraggingKey] = useState(null);
   const fileInputRefs = useRef({});
+  // UPLOAD_PASSPORT/UPLOAD_IQAMA/UPLOAD_VISA permissions — when omitted, all
+  // three dropzones show (existing behavior).
+  const zones = visibleKeys ? DROPZONE_CONFIG.filter((zone) => visibleKeys.includes(zone.key)) : DROPZONE_CONFIG;
 
   const handlers = {
     passport: (fileList) => onSelectPassportFiles(fileList),
@@ -89,7 +93,7 @@ const CrewUploadDropzones = ({
 
   return (
     <div className="crew-upload-dropzones">
-      {DROPZONE_CONFIG.map((zone) => {
+      {zones.map((zone) => {
         const state = steps[zone.key] || { status: "pending", files: [] };
         const disabled = isDisabled();
 
@@ -146,6 +150,7 @@ CrewUploadDropzones.propTypes = {
   onSelectPassportFiles: PropTypes.func.isRequired,
   onSelectIqamaFiles: PropTypes.func.isRequired,
   onSelectVisaFiles: PropTypes.func.isRequired,
+  visibleKeys: PropTypes.arrayOf(PropTypes.oneOf(["passport", "iqama", "visa"])),
 };
 
 export default CrewUploadDropzones;

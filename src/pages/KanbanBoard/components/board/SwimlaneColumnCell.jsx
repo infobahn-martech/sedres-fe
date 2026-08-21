@@ -6,6 +6,8 @@ import TaxiBoatSmallCard from "../cards/components/TaxiBoat/TaxiBoatSmallCard";
 import DASmallCard from "../cards/components/DA/DASmallCard";
 import { buildSwimlaneDroppableId } from "../../hooks/useKanbanDnD";
 import { CARD_GAP, CELL_PADDING_X, getCardsPerRow, getCardWidth } from "../../utils/boardGridHelpers";
+import usePermissions from "../../../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES } from "../../../../shared/constants/permissions";
 import "../../../../design/scss/pages/kanban-board/column.scss";
 
 /**
@@ -25,6 +27,8 @@ export default function SwimlaneColumnCell({
   isDarkMode = false,
   layoutView = null,
 }) {
+  const { hasModule } = usePermissions();
+  const canViewCards = hasModule(PERMISSION_MODULES.KANBAN_CARD);
   const EMPTY_DROP_ZONE_MIN_HEIGHT = 720;
   /* Only fall back to the big placeholder height when nothing else in the row sets a
      height — otherwise an empty column would stretch the whole swimlane row to 720px
@@ -143,7 +147,7 @@ export default function SwimlaneColumnCell({
               ...(column.backgroundColor ? { backgroundColor: column.backgroundColor } : {}),
             }}
           >
-            {cards.map((card, index) =>
+            {canViewCards && cards.map((card, index) =>
               card.cardVariant === "taxi-boat" ? (
                 <TaxiBoatSmallCard
                   key={card.id}

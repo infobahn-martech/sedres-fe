@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import {
   X, FileText, UploadCloud, Hash, Tag, Clock, User, Ship,
   CalendarCheck, Anchor, Receipt, Package,
-  Paperclip, FolderOpen, Link2, GitBranch, Trash2, Plus, ArrowUpRight, ChevronDown, Search,
+  Paperclip, FolderOpen, ChevronDown, Search,
   CheckCircle2, CircleDashed, Banknote, FileArchive, ShieldCheck, Loader2, AlertCircle, Eye,
   Download, Printer,
 } from "lucide-react";
@@ -25,12 +25,6 @@ const DA_OPERATOR_SUB_TABS = [
 
 // Matches the debounce delay used for the Export Approval tab's autosave (Approval.jsx).
 const AUTO_SAVE_DEBOUNCE_MS = 1200;
-
-const LIST_SECTIONS = [
-  { key: "attachments", label: "Attachments", icon: Paperclip, placeholder: "Add an attachment link or name…", accent: "#2563eb", hint: "Attachment links or names related to this call." },
-  { key: "docs", label: "Docs", icon: FolderOpen, placeholder: "Add a doc link or name…", accent: "#7c3aed", hint: "Doc links or names related to this call." },
-  { key: "linksOverview", label: "Links overview", icon: Link2, placeholder: "Add a link…", accent: "#059669", hint: "Links and references related to this call." },
-];
 
 // api/da/required_documents/{call_id} — read-only reference documents. The full list
 // (see RequiredDocumentsSection below) is shown at the bottom of the "Clearance Copies"
@@ -117,9 +111,6 @@ const FIELDS_BY_GROUP = FIELDS_CONFIG.reduce((acc, field) => {
 // them as ReadonlyField tiles rather than routing them through renderField.
 const OPERATION_DETAILS_FIELDS_BY_KEY = (FIELDS_BY_GROUP.operationDetails ?? [])
   .reduce((acc, f) => ({ ...acc, [f.key]: f }), {});
-
-// "Link" tab shows the free-form "Links overview" text/link list.
-const MORE_TAB_LIST_SECTIONS = LIST_SECTIONS.filter((s) => s.key === "linksOverview");
 
 const makeInitialFieldState = () => {
   const state = {};
@@ -1005,99 +996,6 @@ SummaryPanel.propTypes = {
   soProcessTimeline: PropTypes.array,
 };
 
-function ListRowsSection({ label, icon, hint, rows, onAdd, onChangeRow, onRemoveRow, placeholder, accent }) {
-  const Icon = icon;
-  return (
-    <section className="da-cf-ops-card" style={{ "--step-accent": accent }}>
-      <header className="da-cf-ops-card-header">
-        <span className="da-cf-ops-card-icon"><Icon size={20} /></span>
-        <h4 className="da-cf-ops-card-title">{label}</h4>
-      </header>
-      <p className="da-cf-ac-card-hint">{hint}</p>
-      <div className="da-cf-ops-card-body">
-        {rows.length > 0 && (
-          <div className="da-cf-more-rows">
-            {rows.map((row, i) => (
-              <div className="da-cf-more-row" key={row.id}>
-                <Icon size={13} className="da-cf-more-row-icon" />
-                <input
-                  type="text"
-                  className="da-cf-input"
-                  value={row.value}
-                  placeholder={placeholder}
-                  onChange={(e) => onChangeRow(i, e.target.value)}
-                />
-                <button type="button" className="da-cf-more-row-remove" onClick={() => onRemoveRow(i)} title="Remove">
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        <button type="button" className="da-cf-more-add-row-btn" onClick={onAdd}>
-          <Plus size={14} /> Add {label.toLowerCase()}
-        </button>
-      </div>
-    </section>
-  );
-}
-
-ListRowsSection.propTypes = {
-  label: PropTypes.string.isRequired,
-  icon: PropTypes.elementType.isRequired,
-  hint: PropTypes.string,
-  rows: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, value: PropTypes.string })).isRequired,
-  onAdd: PropTypes.func.isRequired,
-  onChangeRow: PropTypes.func.isRequired,
-  onRemoveRow: PropTypes.func.isRequired,
-  placeholder: PropTypes.string,
-  accent: PropTypes.string,
-};
-
-function RelativesSection({ rows, onAdd, onChangeRow, onRemoveRow, accent }) {
-  return (
-    <section className="da-cf-ops-card" style={{ "--step-accent": accent }}>
-      <header className="da-cf-ops-card-header">
-        <span className="da-cf-ops-card-icon"><GitBranch size={20} /></span>
-        <h4 className="da-cf-ops-card-title">Relatives &amp; Dependencies</h4>
-      </header>
-      <p className="da-cf-ac-card-hint">Related cards linked to this call.</p>
-      <div className="da-cf-ops-card-body">
-        {rows.length > 0 && (
-          <div className="da-cf-more-rows">
-            {rows.map((row, i) => (
-              <div className="da-cf-more-row" key={row.id}>
-                <ArrowUpRight size={14} className="da-cf-more-row-icon" />
-                <input
-                  type="text"
-                  className="da-cf-input"
-                  value={row.value}
-                  placeholder="e.g. VESSEL NAME - OUTWARD CLEARANCE ON ..."
-                  onChange={(e) => onChangeRow(i, e.target.value)}
-                />
-                <button type="button" className="da-cf-more-row-remove" onClick={() => onRemoveRow(i)} title="Remove">
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        <button type="button" className="da-cf-more-add-row-btn" onClick={onAdd}>
-          <Plus size={14} /> Add related card
-        </button>
-      </div>
-    </section>
-  );
-}
-
-RelativesSection.propTypes = {
-  rows: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, value: PropTypes.string })).isRequired,
-  onAdd: PropTypes.func.isRequired,
-  onChangeRow: PropTypes.func.isRequired,
-  onRemoveRow: PropTypes.func.isRequired,
-  accent: PropTypes.string,
-};
-
 // Read-only list fed by api/da/required_documents/{call_id} — each entry is
 // either already uploaded elsewhere in the system (file_name/file_url set)
 // or still pending, unlike the editable FileDropzone fields above it.
@@ -1368,6 +1266,13 @@ function OperationAutoSaveStatus({ status }) {
       </span>
     );
   }
+  if (status === "saved") {
+    return (
+      <span className="da-cf-autosave-status da-cf-autosave-status--saved">
+        <CheckCircle2 size={13} /> All changes saved
+      </span>
+    );
+  }
   if (status === "error") {
     return (
       <span className="da-cf-autosave-status da-cf-autosave-status--error">
@@ -1502,7 +1407,6 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
     try {
       await daService.saveOperationTab(callId, formData);
       setOperationSaveStatus("saved");
-      notify("Changes saved successfully.", "success", "top-center");
     } catch {
       setOperationSaveStatus("error");
     }
@@ -1543,18 +1447,20 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
   const runSaveDaDetails = useCallback(async () => {
     if (callId == null) return;
     const { coOwnerId: co, taxInvoiceNo, srtPoWbs, invoiceAmount } = latestDaDetailsFormRef.current;
-    const payload = {
-      co_owner_id: co != null && co !== "" ? co : null,
-      tax_invoice_no: taxInvoiceNo || "",
-      srt_po_wbs_ref: srtPoWbs || "",
-      invoice_amount: invoiceAmount || "",
-    };
+    // Sent as FormData, not a plain JSON object — matches every other DA save call
+    // (saveOperationTab, saveDocumentsTab); the backend for this endpoint doesn't
+    // read a raw JSON body, so a plain object here was posting successfully while
+    // silently dropping every field.
+    const payload = new FormData();
+    payload.append("co_owner_id", co != null && co !== "" ? co : "");
+    payload.append("tax_invoice_no", taxInvoiceNo || "");
+    payload.append("srt_po_wbs_ref", srtPoWbs || "");
+    payload.append("invoice_amount", invoiceAmount || "");
 
     setOperationSaveStatus("saving");
     try {
       await daService.saveDaDetails(callId, payload);
       setOperationSaveStatus("saved");
-      notify("Changes saved successfully.", "success", "top-center");
     } catch (err) {
       setOperationSaveStatus("error");
       notify(err?.response?.data?.message || "Failed to save changes.", "error", "top-center");
@@ -1615,42 +1521,6 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
       notify(err?.response?.data?.message || "Failed to delete document.", "error", "top-center");
     });
   }, [fieldValues]);
-
-  const rowIdCounter = useRef(0);
-  const nextRowId = () => `row-${++rowIdCounter.current}`;
-
-  const [listSections, setListSections] = useState(() => ({
-    attachments: { rows: [], collapsed: false },
-    docs: { rows: [], collapsed: false },
-    linksOverview: { rows: [], collapsed: false },
-  }));
-
-  const addListRow = (sectionKey) => {
-    setListSections((prev) => ({
-      ...prev,
-      [sectionKey]: { ...prev[sectionKey], rows: [...prev[sectionKey].rows, { id: nextRowId(), value: "" }] },
-    }));
-  };
-  const changeListRow = (sectionKey, idx, value) => {
-    setListSections((prev) => ({
-      ...prev,
-      [sectionKey]: {
-        ...prev[sectionKey],
-        rows: prev[sectionKey].rows.map((row, i) => (i === idx ? { ...row, value } : row)),
-      },
-    }));
-  };
-  const removeListRow = (sectionKey, idx) => {
-    setListSections((prev) => ({
-      ...prev,
-      [sectionKey]: { ...prev[sectionKey], rows: prev[sectionKey].rows.filter((_, i) => i !== idx) },
-    }));
-  };
-  const [relatives, setRelatives] = useState([]);
-  const addRelative = () => setRelatives((prev) => [...prev, { id: nextRowId(), value: "" }]);
-  const changeRelative = (idx, value) =>
-    setRelatives((prev) => prev.map((row, i) => (i === idx ? { ...row, value } : row)));
-  const removeRelative = (idx) => setRelatives((prev) => prev.filter((_, i) => i !== idx));
 
   const renderField = (field, extraProps) => {
     const value = fieldValues[field.key];
@@ -1825,30 +1695,6 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
               </section>
             );
           })}
-        </div>
-
-        <div className="da-cf-ops-grid">
-          {MORE_TAB_LIST_SECTIONS.map((section) => (
-            <ListRowsSection
-              key={section.key}
-              label={section.label}
-              icon={section.icon}
-              hint={section.hint}
-              rows={listSections[section.key].rows}
-              onAdd={() => addListRow(section.key)}
-              onChangeRow={(i, v) => changeListRow(section.key, i, v)}
-              onRemoveRow={(i) => removeListRow(section.key, i)}
-              placeholder={section.placeholder}
-              accent={section.accent}
-            />
-          ))}
-          <RelativesSection
-            rows={relatives}
-            onAdd={addRelative}
-            onChangeRow={changeRelative}
-            onRemoveRow={removeRelative}
-            accent="#d97706"
-          />
         </div>
       </div>
     </div>

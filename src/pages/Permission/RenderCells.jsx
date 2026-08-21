@@ -6,11 +6,21 @@ import edit from '../../assets/images/edit.svg';
 import trash from '../../assets/images/delete.svg';
 import unarchiveIcon from '../../assets/images/CircleTick.svg';
 
-export const RenderAction = ({ onEditClick, row, onDeleteClick, onUnarchiveClick }) => {
+export const RenderAction = ({
+  onEditClick,
+  row,
+  onDeleteClick,
+  onUnarchiveClick,
+  // New module/action permission system — default to false so controls fail
+  // closed if a caller forgets to pass them.
+  canEditPermission = false,
+  canArchivePermission = false,
+}) => {
   const isArchived = row?.status === '2';
   const unarchiveTipId = `unarchive-role-${row?.role_id ?? 'row'}`;
 
   if (isArchived) {
+    if (!canArchivePermission) return null;
     return (
       <>
         <Tooltip id={unarchiveTipId} place="top" content="Unarchive" />
@@ -30,15 +40,19 @@ export const RenderAction = ({ onEditClick, row, onDeleteClick, onUnarchiveClick
 
   return (
     <>
-      <Tooltip id="edit-role" place="top" content="Edit" />
-      <Tooltip id="archive-role" place="top" content="Archive" />
+      {canEditPermission && <Tooltip id="edit-role" place="top" content="Edit" />}
+      {canArchivePermission && <Tooltip id="archive-role" place="top" content="Archive" />}
       <div className="actions">
-        <span data-tooltip-id="edit-role" type="button" onClick={() => onEditClick(row)} className="edit">
-          <img src={edit} alt="edit" />
-        </span>
-        <span data-tooltip-id="archive-role" type="button" className="delete" onClick={() => onDeleteClick(row)}>
-          <img src={trash} alt="archive" />
-        </span>
+        {canEditPermission && (
+          <span data-tooltip-id="edit-role" type="button" onClick={() => onEditClick(row)} className="edit">
+            <img src={edit} alt="edit" />
+          </span>
+        )}
+        {canArchivePermission && (
+          <span data-tooltip-id="archive-role" type="button" className="delete" onClick={() => onDeleteClick(row)}>
+            <img src={trash} alt="archive" />
+          </span>
+        )}
       </div>
     </>
   );

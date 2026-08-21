@@ -6,8 +6,27 @@ import { RenderAction } from "./renderCells";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import useGroupEmailBEReducer from "../../store/GroupEmailBEReducer";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
+import usePermissions from "../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../shared/constants/permissions";
 
 const GroupEmailBE = () => {
+    const { hasPermission } = usePermissions();
+    const canAddGroupEmail = hasPermission({
+        moduleKey: PERMISSION_MODULES.ENTITY_MANAGEMENT,
+        submoduleKey: PERMISSION_SUBMODULES.GROUP_EMAIL,
+        actionKey: PERMISSION_ACTIONS.ADD,
+    });
+    const canEditGroupEmail = hasPermission({
+        moduleKey: PERMISSION_MODULES.ENTITY_MANAGEMENT,
+        submoduleKey: PERMISSION_SUBMODULES.GROUP_EMAIL,
+        actionKey: PERMISSION_ACTIONS.EDIT,
+    });
+    const canDeleteGroupEmail = hasPermission({
+        moduleKey: PERMISSION_MODULES.ENTITY_MANAGEMENT,
+        submoduleKey: PERMISSION_SUBMODULES.GROUP_EMAIL,
+        actionKey: PERMISSION_ACTIONS.DELETE,
+    });
+
     const {
         getGroupEmailBEs,
         groupEmailBEs,
@@ -62,21 +81,25 @@ const GroupEmailBE = () => {
     }));
 
     const handleOpenAdd = () => {
+        if (!canAddGroupEmail) return;
         setSelectedRow(null);
         setShowGroupEmailModal({});
     };
 
     const handleOpenEdit = (row) => {
+        if (!canEditGroupEmail) return;
         setSelectedRow(row);
         setShowGroupEmailModal(row);
     };
 
     const handleOpenDelete = (row) => {
+        if (!canDeleteGroupEmail) return;
         setSelectedRow(row);
         setShowDeleteModal(true);
     };
 
     const handleConfirmDelete = async () => {
+        if (!canDeleteGroupEmail) return;
         if (!selectedRow?.entity_id) return;
 
         await deleteGroupEmailBE({
@@ -112,6 +135,8 @@ const GroupEmailBE = () => {
             tableClasses: "table-striped",
             contentClass: "table-content",
             thclass: "tb-head",
+            canEditGroupEmail,
+            canDeleteGroupEmail,
             onEditClick: (row) => handleOpenEdit(row),
             onDeleteClick: (row) => handleOpenDelete(row),
             cell: RenderAction,
@@ -126,7 +151,7 @@ const GroupEmailBE = () => {
                     <div className="container-fluid">
                         <CommonHeader
                             tableTitle="Billing Entity Group Email"
-                            isAddEnabled
+                            isAddEnabled={canAddGroupEmail}
                             addModalLabel="Add Group Email"
                             setSearch={(e) => setParams({ ...params, search: e, page: 1 })}
                             onAddModalClick={handleOpenAdd}

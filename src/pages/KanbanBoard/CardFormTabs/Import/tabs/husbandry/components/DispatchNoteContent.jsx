@@ -18,6 +18,8 @@ import useDispatchNoteReducer from "../../../../../../../store/DispatchNoteReduc
 import useAlertReducer from "../../../../../../../store/AlertReducer";
 import CardTabListLoading from "../../../../../../../components/CardTabListLoading";
 import logisticsWarehouseService from "../../../../../../../services/logisticsWarehouseService";
+import usePermissions from "../../../../../../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../../shared/constants/permissions";
 import vehicleService from "../../../../../../../services/vehicleService";
 import inboundOrderService from "../../../../../../../services/inboundOrderService";
 import landingNoteService from "../../../../../../../services/landingNoteService";
@@ -149,6 +151,25 @@ AttachmentsList.propTypes = {
 };
 
 const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
+  const { hasPermission } = usePermissions();
+  // KANBAN_CARD > MATERIAL_MANAGEMENT per-action gates — absence of the
+  // module/submodule/action in the permissions response means false (deny by
+  // default).
+  const canUpdateDispatchNote = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.UPDATE_DISPATCH_NOTE,
+  });
+  const canDeleteDispatchNote = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.DELETE_DISPATCH_NOTE,
+  });
+  const canPrintDispatchNote = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.PRINT_DISPATCH_NOTE,
+  });
   const {
     getAllDispatchNotes,
     getDispatchNotesTotal,
@@ -288,6 +309,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
   };
 
   const handleOpenModal = (note) => {
+    if (!canUpdateDispatchNote) return;
     setEditingNote(note);
     resetForm();
     setEditMinDate(undefined);
@@ -419,6 +441,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!canUpdateDispatchNote) return;
     if (!editingNote) return;
 
     const errors = {};
@@ -488,6 +511,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
   };
 
   const handleDelete = (note) => {
+    if (!canDeleteDispatchNote) return;
     setDeletingNote(note);
     setShowDeleteModal(true);
   };
@@ -561,6 +585,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
   };
 
   const handlePrintNote = (note) => {
+    if (!canPrintDispatchNote) return;
     handleCloseDropdown();
     const noteId = note.dispatch_note_id || note.id;
     if (printingNoteId) return;
@@ -1384,7 +1409,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
       <button type="button" className="btn btn-secondary" onClick={handleCloseViewModal}>
         Close
       </button>
-      {viewingNote && (
+      {viewingNote && canPrintDispatchNote && (
         <button
           type="button"
           className="btn btn-primary d-flex align-items-center gap-2"
@@ -1468,20 +1493,24 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
                         >
                           <img src={eyeIcon} alt="view" className="dispatch-note-action-icon" />
                         </button>
-                        <Tooltip id={`print-note-${note.id}`} place="left" content="Print" />
-                        <button
-                          type="button"
-                          onClick={() => handlePrintNote(note)}
-                          data-tooltip-id={`print-note-${note.id}`}
-                          className="print-action-icon-wrap"
-                          disabled={printingNoteId === (note.dispatch_note_id || note.id)}
-                        >
-                          {printingNoteId === (note.dispatch_note_id || note.id) ? (
-                            <span className="spinner-border spinner-border-sm" role="status" />
-                          ) : (
-                            <img src={printIcon} alt="print" className="material-action-icon" />
-                          )}
-                        </button>
+                        {canPrintDispatchNote && (
+                          <>
+                            <Tooltip id={`print-note-${note.id}`} place="left" content="Print" />
+                            <button
+                              type="button"
+                              onClick={() => handlePrintNote(note)}
+                              data-tooltip-id={`print-note-${note.id}`}
+                              className="print-action-icon-wrap"
+                              disabled={printingNoteId === (note.dispatch_note_id || note.id)}
+                            >
+                              {printingNoteId === (note.dispatch_note_id || note.id) ? (
+                                <span className="spinner-border spinner-border-sm" role="status" />
+                              ) : (
+                                <img src={printIcon} alt="print" className="material-action-icon" />
+                              )}
+                            </button>
+                          </>
+                        )}
                         <div className={`action-dropdown-wrapper${openDropdownId === note.id ? " action-dropdown-wrapper--open" : ""}`}>
                           <Tooltip id={`more-actions-${note.id}`} place="right" content="More actions" />
                           <button
@@ -1502,14 +1531,17 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
                               className="dispatch-note-dropdown-menu"
                               style={{ top: `${dropdownPosition.top}px`, right: `${dropdownPosition.right}px` }}
                             >
-                              <button
-                                type="button"
-                                onClick={() => { handleCloseDropdown(); handleOpenModal(note); }}
-                                className="dispatch-note-dropdown-btn"
-                              >
-                                <img src={editIcon} alt="edit" className="dispatch-note-dropdown-icon" />
-                                <span>Edit</span>
-                              </button>
+                              {canUpdateDispatchNote && (
+                                <button
+                                  type="button"
+                                  onClick={() => { handleCloseDropdown(); handleOpenModal(note); }}
+                                  className="dispatch-note-dropdown-btn"
+                                >
+                                  <img src={editIcon} alt="edit" className="dispatch-note-dropdown-icon" />
+                                  <span>Edit</span>
+                                </button>
+                              )}
+                              {canDeleteDispatchNote && (
                               <button
                                 type="button"
                                 onClick={() => { handleCloseDropdown(); handleDelete(note); }}
@@ -1518,6 +1550,7 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
                                 <img src={deleteIcon} alt="delete" className="dispatch-note-dropdown-icon" />
                                 <span>Delete</span>
                               </button>
+                              )}
                             </div>,
                             document.body
                           )}

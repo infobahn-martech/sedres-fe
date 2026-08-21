@@ -13,6 +13,12 @@ import Arrival from "./Arrival";
 import Departure from "./Departure";
 import CheckListTab from "./CheckListTab";
 import { buildSendReportRequestBody } from "./components/OperationCommon";
+import usePermissions from "../../../../../../shared/hooks/usePermissions";
+import {
+  PERMISSION_MODULES,
+  PERMISSION_SUBMODULES,
+  PERMISSION_ACTIONS,
+} from "../../../../../../shared/constants/permissions";
 import {
   OPERATION_TABS,
   OPERATION_STAGE_IDS,
@@ -141,7 +147,54 @@ async function sendOperationReportRequest(payload) {
 }
 
 function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = false, isAddMode = false }) {
+  const { hasPermission } = usePermissions();
+  const hasCardPermission = useCallback(
+    (submoduleKey, actionKey) =>
+      hasPermission({ moduleKey: PERMISSION_MODULES.KANBAN_CARD, submoduleKey, actionKey }),
+    [hasPermission]
+  );
+  const canViewPreArrivalTab = hasCardPermission(PERMISSION_SUBMODULES.PRE_ARRIVAL, PERMISSION_ACTIONS.VIEW);
+  const canViewCrewImmigrationTab = hasCardPermission(PERMISSION_SUBMODULES.CREW_IMMIGRATION, PERMISSION_ACTIONS.VIEW);
+  const canViewArrivalTab = hasCardPermission(PERMISSION_SUBMODULES.ARRIVAL, PERMISSION_ACTIONS.VIEW);
+  const canViewDepartureTab = hasCardPermission(PERMISSION_SUBMODULES.DEPARTURE, PERMISSION_ACTIONS.VIEW);
+  const canViewChecklistTab = hasCardPermission(PERMISSION_SUBMODULES.CHECKLIST, PERMISSION_ACTIONS.VIEW);
+  const canEditPreArrival = hasCardPermission(PERMISSION_SUBMODULES.PRE_ARRIVAL, PERMISSION_ACTIONS.EDIT);
+  const canEditArrival = hasCardPermission(PERMISSION_SUBMODULES.ARRIVAL, PERMISSION_ACTIONS.EDIT);
+  const canEditDeparture = hasCardPermission(PERMISSION_SUBMODULES.DEPARTURE, PERMISSION_ACTIONS.EDIT);
+  const canDeletePreArrivalTimeObject = hasCardPermission(PERMISSION_SUBMODULES.PRE_ARRIVAL, PERMISSION_ACTIONS.DELETE_NEW_TIME_OBJECT);
+  const canDeleteArrivalTimeObject = hasCardPermission(PERMISSION_SUBMODULES.ARRIVAL, PERMISSION_ACTIONS.DELETE_NEW_TIME_OBJECT);
+  const canDeleteDepartureTimeObject = hasCardPermission(PERMISSION_SUBMODULES.DEPARTURE, PERMISSION_ACTIONS.DELETE_NEW_TIME_OBJECT);
+  const canAddPreArrivalTimeObject = hasCardPermission(PERMISSION_SUBMODULES.PRE_ARRIVAL, PERMISSION_ACTIONS.ADD_NEW_TIME_OBJECT);
+  const canAddArrivalTimeObject = hasCardPermission(PERMISSION_SUBMODULES.ARRIVAL, PERMISSION_ACTIONS.ADD_NEW_TIME_OBJECT);
+  const canAddDepartureTimeObject = hasCardPermission(PERMISSION_SUBMODULES.DEPARTURE, PERMISSION_ACTIONS.ADD_NEW_TIME_OBJECT);
+  const canPreviewPreArrivalEmail = hasCardPermission(PERMISSION_SUBMODULES.PRE_ARRIVAL, PERMISSION_ACTIONS.PREVIEW_EMAIL);
+  const canPreviewArrivalEmail = hasCardPermission(PERMISSION_SUBMODULES.ARRIVAL, PERMISSION_ACTIONS.PREVIEW_EMAIL);
+  const canPreviewDepartureEmail = hasCardPermission(PERMISSION_SUBMODULES.DEPARTURE, PERMISSION_ACTIONS.PREVIEW_EMAIL);
+  const canSendPreArrivalReport = hasCardPermission(PERMISSION_SUBMODULES.PRE_ARRIVAL, PERMISSION_ACTIONS.SEND_REPORT);
+  const canSendArrivalReport = hasCardPermission(PERMISSION_SUBMODULES.ARRIVAL, PERMISSION_ACTIONS.SEND_REPORT);
+  const canSendDepartureReport = hasCardPermission(PERMISSION_SUBMODULES.DEPARTURE, PERMISSION_ACTIONS.SEND_REPORT);
+
+  const allowedOperationTabIds = useMemo(
+    () =>
+      [
+        canViewPreArrivalTab && OPERATION_TABS.PRE_ARRIVAL,
+        canViewCrewImmigrationTab && OPERATION_TABS.CREW_IMMIGRATION,
+        canViewArrivalTab && OPERATION_TABS.ARRIVAL,
+        canViewDepartureTab && OPERATION_TABS.DEPARTURE,
+        canViewChecklistTab && OPERATION_TABS.CHECK_LIST,
+      ].filter(Boolean),
+    [canViewPreArrivalTab, canViewCrewImmigrationTab, canViewArrivalTab, canViewDepartureTab, canViewChecklistTab]
+  );
+
   const [activeOperationTab, setActiveOperationTab] = useState(OPERATION_TABS.PRE_ARRIVAL);
+
+  // KANBAN_CARD sub-tab permissions removed the active sub-tab — fall back to
+  // the first sub-tab the user still has permission for.
+  useEffect(() => {
+    if (allowedOperationTabIds.length > 0 && !allowedOperationTabIds.includes(activeOperationTab)) {
+      setActiveOperationTab(allowedOperationTabIds[0]);
+    }
+  }, [allowedOperationTabIds, activeOperationTab]);
   const [callDetailData, setCallDetailData] = useState(null);
   const [callDetailLoading, setCallDetailLoading] = useState(false);
   const [eventTypeFieldsByStage, setEventTypeFieldsByStage] = useState({
@@ -433,6 +486,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
         <OperationTabs
           activeTab={activeOperationTab}
           onTabChange={handleTabChange}
+          allowedTabIds={allowedOperationTabIds}
         />
         <div className="operation-right">
           {activeOperationTab === OPERATION_TABS.CREW_IMMIGRATION && (
@@ -452,13 +506,17 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               cardColor={cardColor}
               onAddLink={handleAddLink}
               onRemoveLink={handleRemoveLink}
-              isViewOnly={isViewOnly}
               eventFields={preArrivalEventFields}
               portId={preArrivalPortId}
               callTypeId={preArrivalCallTypeId}
               vesselTypeId={preArrivalVesselTypeId}
               billingEntityId={billingEntityId}
               stageId={OPERATION_STAGE_IDS.PRE_ARRIVAL}
+              isViewOnly={isViewOnly || !canEditPreArrival}
+              canAddTimeObject={canAddPreArrivalTimeObject}
+              canDeleteTimeObject={canDeletePreArrivalTimeObject}
+              canPreviewEmail={canPreviewPreArrivalEmail}
+              canSendReport={canSendPreArrivalReport}
             />
           )}
           {activeOperationTab === OPERATION_TABS.ARRIVAL && (
@@ -469,7 +527,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               onAddLink={handleAddLink}
               onRemoveLink={handleRemoveLink}
               onSendReport={handleSendReportRequest}
-              isViewOnly={isViewOnly}
+              isViewOnly={isViewOnly || !canEditArrival}
               arrivalStageFields={arrivalStageFields}
               postArrivalStageFields={postArrivalStageFields}
               callId={currentCallId}
@@ -478,6 +536,10 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               billingEntityId={billingEntityId}
               stageId={OPERATION_STAGE_IDS.ARRIVAL}
               exportApprovalStatus={callDetailData?.export_approval_status}
+              canAddTimeObject={canAddArrivalTimeObject}
+              canDeleteTimeObject={canDeleteArrivalTimeObject}
+              canPreviewEmail={canPreviewArrivalEmail}
+              canSendReport={canSendArrivalReport}
             />
           )}
           {activeOperationTab === OPERATION_TABS.DEPARTURE && (
@@ -488,13 +550,17 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               onAddLink={handleAddLink}
               onRemoveLink={handleRemoveLink}
               onSendReport={handleSendReportRequest}
-              isViewOnly={isViewOnly}
+              isViewOnly={isViewOnly || !canEditDeparture}
               eventFields={departureEventFields}
               callId={currentCallId}
               portId={preArrivalPortId}
               callTypeId={preArrivalCallTypeId}
               billingEntityId={billingEntityId}
               stageId={OPERATION_STAGE_IDS.DEPARTURE}
+              canAddTimeObject={canAddDepartureTimeObject}
+              canDeleteTimeObject={canDeleteDepartureTimeObject}
+              canPreviewEmail={canPreviewDepartureEmail}
+              canSendReport={canSendDepartureReport}
             />
           )}
           {activeOperationTab === OPERATION_TABS.CHECK_LIST && (

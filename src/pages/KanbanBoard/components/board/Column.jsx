@@ -6,12 +6,16 @@ import "react-tooltip/dist/react-tooltip.css";
 import CardItem from "../cards/CardItem";
 import TaxiBoatSmallCard from "../cards/components/TaxiBoat/TaxiBoatSmallCard";
 import DASmallCard from "../cards/components/DA/DASmallCard";
+import usePermissions from "../../../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES } from "../../../../shared/constants/permissions";
 import "../../../../design/scss/pages/kanban-board/column.scss";
 
 function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk = false, onHeaderClick, onContextMenu, columnHeight, onHeightChange, isClassicLayout = false, isModernLayout = false, isDarkMode = false }) {
   const columnRef = useRef(null);
   const lastReportedHeightRef = useRef(null);
   const columnColor = column.color || "#2A00FF";
+  const { hasModule } = usePermissions();
+  const canViewCards = hasModule(PERMISSION_MODULES.KANBAN_CARD);
 
   // Truncate title to 8 characters when shrunk
   const displayTitle = isShrunk && column.title.length > 8
@@ -132,7 +136,7 @@ function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk =
             ref={provided.innerRef}
             {...provided.droppableProps}
           >
-            {cards.map((card, index) =>
+            {canViewCards && cards.map((card, index) =>
               card.cardVariant === "taxi-boat" ? (
                 <TaxiBoatSmallCard
                   key={card.id}

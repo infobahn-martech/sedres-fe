@@ -23,6 +23,12 @@ import {
 } from "../../../../../../shared/helpers/groUserRoles";
 import useAuthReducer from "../../../../../../store/AuthReducer";
 import { useDaLocalReachedDates } from "../../../../../../shared/store/daStore";
+import usePermissions from "../../../../../../shared/hooks/usePermissions";
+import {
+  PERMISSION_MODULES,
+  PERMISSION_SUBMODULES,
+  PERMISSION_ACTIONS,
+} from "../../../../../../shared/constants/permissions";
 
 // Import Tab Components
 import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Reports, KPI, Comments, Subtasks, Notes, DA } from "../../../../CardFormTabs/Import";
@@ -1782,6 +1788,44 @@ function CardForm({
   initialTab,
 }) {
   const userProfile = useAuthReducer((state) => state.userProfile);
+  const { hasPermission, hasAnyPermission } = usePermissions();
+  // KANBAN_CARD top-tab visibility: absence of the module/submodule/action in the
+  // permissions response means false (deny by default). "Operation" hosts Pre
+  // Arrival/Arrival/Departure/Checklist/Crew Immigration, so it stays visible if
+  // the user can view any one of those sub-sections.
+  const canViewAppointmentDetailsTab = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.APPOINTMENT_DETAILS,
+    actionKey: PERMISSION_ACTIONS.VIEW,
+  });
+  const canViewHusbandryTab = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.HUSBANDRY,
+    actionKey: PERMISSION_ACTIONS.VIEW,
+  });
+  const canViewOperationTab = hasAnyPermission(
+    [
+      PERMISSION_SUBMODULES.PRE_ARRIVAL,
+      PERMISSION_SUBMODULES.ARRIVAL,
+      PERMISSION_SUBMODULES.DEPARTURE,
+      PERMISSION_SUBMODULES.CHECKLIST,
+      PERMISSION_SUBMODULES.CREW_IMMIGRATION,
+    ].map((submoduleKey) => ({
+      moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+      submoduleKey,
+      actionKey: PERMISSION_ACTIONS.VIEW,
+    }))
+  );
+  const filterTabsByCardPermission = useCallback(
+    (tabs) =>
+      tabs.filter((tab) => {
+        if (tab === "Appointment Details") return canViewAppointmentDetailsTab;
+        if (tab === "Operation") return canViewOperationTab;
+        if (tab === "Husbandry") return canViewHusbandryTab;
+        return true;
+      }),
+    [canViewAppointmentDetailsTab, canViewOperationTab, canViewHusbandryTab]
+  );
   const userRoleId = getFirstUserRoleId(userProfile);
   // DA (22) shares the GRO Supervisor view for GRO-workflow cards, but on their own
   // Centralized DA Desk board (board_id "3") they should get the normal DA card view
@@ -2264,8 +2308,9 @@ function CardForm({
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
       ? withExportTabs(withDAOnly)
       : withDAOnly;
-    return isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
-  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, showExportTabs, isHusbandryCall]);
+    const withHusbandryCall = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
+    return filterTabsByCardPermission(withHusbandryCall);
+  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, showExportTabs, isHusbandryCall, filterTabsByCardPermission]);
 
   const ENABLED_TABS = useMemo(() => {
     const base = isDAModule ? DA_ENABLED_TABS : (isSimplifiedMode ? SIMPLIFIED_ENABLED_TABS : ALL_ENABLED_TABS);
@@ -2274,8 +2319,9 @@ function CardForm({
       ? withExportTabs(withDAOnly)
       : withDAOnly;
     const withHusbandry = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
-    return lockOperationForExport ? withHusbandry.filter((tab) => tab !== "Operation") : withHusbandry;
-  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, showExportTabs, isHusbandryCall, lockOperationForExport]);
+    const withLockOperation = lockOperationForExport ? withHusbandry.filter((tab) => tab !== "Operation") : withHusbandry;
+    return filterTabsByCardPermission(withLockOperation);
+  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, showExportTabs, isHusbandryCall, lockOperationForExport, filterTabsByCardPermission]);
 
   useEffect(() => {
     setActiveTopTab(defaultTab);
@@ -2314,6 +2360,16 @@ function CardForm({
       setActiveTopTab(defaultTab);
     }
   }, [isHusbandryCall, activeTopTab, defaultTab]);
+
+  // KANBAN_CARD permissions removed the active tab (e.g. role's Appointment
+  // Details/Operation/Husbandry access was revoked) — fall back to the first
+  // tab the user still has permission for, matching the existing tab-recovery
+  // pattern above instead of leaving a hidden tab selected.
+  useEffect(() => {
+    if (TOP_TABS.length > 0 && !TOP_TABS.includes(activeTopTab)) {
+      setActiveTopTab(TOP_TABS[0]);
+    }
+  }, [TOP_TABS, activeTopTab]);
 
   const handleChange = useCallback(
     (field) => (e) => {

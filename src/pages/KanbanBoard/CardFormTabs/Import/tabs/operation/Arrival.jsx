@@ -64,6 +64,10 @@ function Arrival({
   billingEntityId,
   stageId = OPERATION_STAGE_IDS.ARRIVAL,
   exportApprovalStatus,
+  canAddTimeObject = true,
+  canDeleteTimeObject = true,
+  canPreviewEmail = true,
+  canSendReport = true,
 }) {
   const resolveFormId = (...values) => {
     for (const value of values) {
@@ -713,30 +717,35 @@ function Arrival({
                   onCommitRow={handleCommitAdditionalTimeObject}
                   isViewOnly={isViewOnly}
                   hideAddButton
+                  canAdd={canAddTimeObject}
+                  canDelete={canDeleteTimeObject}
                 />
               </OperationFormCard>
-              <OperationFormCard className="operation-email-column">
-                <OperationEmailPreviewPanel
-                  reportType={reportDraft.reportType}
-                  reportTypeOptions={[
-                    { value: "arrival", label: "Arrival Report" },
-                    { value: "daily", label: "Daily Report" },
-                  ]}
-                  from={reportDraft.from}
-                  to={reportDraft.to}
-                  cc={reportDraft.cc}
-                  subject={reportDraft.subject}
-                  message={reportDraft.message}
-                  attachments={reportAttachments}
-                  onAttachmentsChange={setReportAttachments}
-                  billingEntityId={billingEntityId ?? formValues.mainBillingEntity}
-                  onChange={handleReportDraftChange}
-                  onReportTypeChange={handleReportTypeChange}
-                  onSend={handleSaveAndSendReport}
-                  isSending={isSendingArrivalReport || isSavingArrival}
-                  isViewOnly={isViewOnly}
-                />
-              </OperationFormCard>
+              {canPreviewEmail && (
+                <OperationFormCard className="operation-email-column">
+                  <OperationEmailPreviewPanel
+                    reportType={reportDraft.reportType}
+                    reportTypeOptions={[
+                      { value: "arrival", label: "Arrival Report" },
+                      { value: "daily", label: "Daily Report" },
+                    ]}
+                    from={reportDraft.from}
+                    to={reportDraft.to}
+                    cc={reportDraft.cc}
+                    subject={reportDraft.subject}
+                    message={reportDraft.message}
+                    attachments={reportAttachments}
+                    onAttachmentsChange={setReportAttachments}
+                    billingEntityId={billingEntityId ?? formValues.mainBillingEntity}
+                    onChange={handleReportDraftChange}
+                    onReportTypeChange={handleReportTypeChange}
+                    onSend={handleSaveAndSendReport}
+                    isSending={isSendingArrivalReport || isSavingArrival}
+                    isViewOnly={isViewOnly}
+                    canSend={canSendReport}
+                  />
+                </OperationFormCard>
+              )}
             </div>
           </div>
           <OperationSaveSection isViewOnly={isViewOnly} onSave={handleSaveOnly} isSaving={isSavingArrival} />
@@ -761,6 +770,10 @@ Arrival.propTypes = {
   billingEntityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   stageId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   exportApprovalStatus: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  canAddTimeObject: PropTypes.bool,
+  canDeleteTimeObject: PropTypes.bool,
+  canPreviewEmail: PropTypes.bool,
+  canSendReport: PropTypes.bool,
 };
 
 export default Arrival;

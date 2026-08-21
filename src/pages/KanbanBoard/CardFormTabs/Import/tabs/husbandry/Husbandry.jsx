@@ -41,6 +41,8 @@ import transportContentService, { extractTransportRequestsFromEnvelope } from ".
 import hotelService, { extractHotelRequestsFromEnvelope } from "../../../../../../services/hotelService";
 import hospitalService, { extractMedicalRequestsFromEnvelope } from "../../../../../../services/hospitalService";
 import { getPassRequests, extractPassRequestsFromEnvelope } from "../../../../../../services/cgAndZwailpassService";
+import usePermissions from "../../../../../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../shared/constants/permissions";
 
 // Left-nav services that jump straight to their sidebar subtab. CG Pass/
 // Zawil Pass are handled via handleNavigateToTab instead. Crew Change/Port
@@ -341,6 +343,37 @@ const DAMODULE_CREW_DUMMY = [
 
 // Main Husbandry Component
 function Husbandry({ card, formValues, handleChange, isDAModule = false, showLaunchHire = true }) {
+  const { hasPermission } = usePermissions();
+  // KANBAN_CARD > MATERIAL_MANAGEMENT per-subtab VIEW gates — absence of the
+  // module/submodule/action in the permissions response means false (deny by
+  // default).
+  const canViewInboundOrders = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.VIEW_INBOUND_ORDER,
+  });
+  const canViewLandingNote = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.VIEW_LANDING_NOTE,
+  });
+  const canViewDispatchNote = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.VIEW_DISPATCH_NOTE,
+  });
+  const canViewOrderHistory = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.VIEW_ORDER_HISTORY,
+  });
+  const materialManagementVisibleSubTabIds = [
+    canViewInboundOrders && MATERIAL_MANAGEMENT_SUBTABS.INBOUND_ORDERS,
+    canViewLandingNote && MATERIAL_MANAGEMENT_SUBTABS.LANDING_NOTE,
+    canViewDispatchNote && MATERIAL_MANAGEMENT_SUBTABS.DISPATCH_NOTE,
+    canViewOrderHistory && MATERIAL_MANAGEMENT_SUBTABS.ORDER_HISTORY,
+  ].filter(Boolean);
+
   const [serviceSelected, setServiceSelected] = useState(false);
   const [selectedServices, setSelectedServices] = useState([]); // Array to track selected services
   const [activeMainTab, setActiveMainTab] = useState(null);
@@ -480,6 +513,15 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
       cancelled = true;
     };
   }, [isDAModule, formValues?.call_id, formValues?.callId, formValues?.card_call_id]);
+
+  // KANBAN_CARD > MATERIAL_MANAGEMENT sub-tab permissions removed the active
+  // sub-tab — fall back to the first sub-tab the user still has permission
+  // for (or null if none are permitted).
+  useEffect(() => {
+    if (activeMainTab !== MAIN_TABS.MATERIAL_MANAGEMENT) return;
+    if (activeSubTab && materialManagementVisibleSubTabIds.includes(activeSubTab)) return;
+    setActiveSubTab(materialManagementVisibleSubTabIds[0] ?? null);
+  }, [activeMainTab, activeSubTab, materialManagementVisibleSubTabIds]);
 
   const handleServiceSelect = useCallback((tab) => {
     setServiceSelected(true);
@@ -835,6 +877,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
   const renderMaterialManagementContent = () => {
     switch (activeSubTab) {
       case MATERIAL_MANAGEMENT_SUBTABS.INBOUND_ORDERS:
+        if (!canViewInboundOrders) return null;
         return (
           <InboundOrdersContent
             formValues={formValues}
@@ -844,6 +887,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
           />
         );
       case MATERIAL_MANAGEMENT_SUBTABS.LANDING_NOTE:
+        if (!canViewLandingNote) return null;
         return (
           <LandingNoteContent
             formValues={formValues}
@@ -852,6 +896,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
           />
         );
       case MATERIAL_MANAGEMENT_SUBTABS.DISPATCH_NOTE:
+        if (!canViewDispatchNote) return null;
         return (
           <DispatchNoteContent
             formValues={formValues}
@@ -860,6 +905,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
           />
         );
       case MATERIAL_MANAGEMENT_SUBTABS.ORDER_HISTORY:
+        if (!canViewOrderHistory) return null;
         return (
           <OrderHistoryContent
             formValues={formValues}
@@ -868,6 +914,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
           />
         );
       default:
+        if (!canViewInboundOrders) return null;
         return (
           <InboundOrdersContent
             formValues={formValues}
@@ -950,6 +997,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
           onBackToServiceSelection={handleBackToServiceSelection}
           cardColor={cardColor}
           crewCount={formValues?.crewCount}
+          materialManagementVisibleSubTabIds={materialManagementVisibleSubTabIds}
           subTabCounts={{
             [MATERIAL_MANAGEMENT_SUBTABS.INBOUND_ORDERS]: inboundOrdersCount,
             [MATERIAL_MANAGEMENT_SUBTABS.LANDING_NOTE]: landingNotesCount,

@@ -3846,3 +3846,36 @@
     max-height: 320px;
   }
 }
+
+// Google Places' dropdown for LocationAutocomplete (Transport tab's From/To
+// fields) is a `.pac-container` appended straight to <body>, not a
+// descendant of the card form. operations.scss's own `.pac-container` rule
+// (lower in the cascade than this file, which it @imports) only sets
+// z-index: 9999, which sits below the card form modal's own stacking
+// context, so the suggestion list rendered behind the modal — same bug
+// already fixed for Dispatch Note / Inbound Order / Landing Note via their
+// own .pac-container overrides.
+.pac-container {
+  background: var(--surface-primary) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid var(--border-primary) !important;
+  margin-top: 4px !important;
+  z-index: 20000 !important;
+
+  .pac-item {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+    cursor: pointer !important;
+    border: none !important;
+
+    &:hover {
+      background-color: rgba(0, 54, 140, 0.1) !important;
+    }
+
+    &.pac-item-selected {
+      background-color: #00368c !important;
+      color: #ffffff !important;
+    }
+  }
+}

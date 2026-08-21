@@ -15,6 +15,7 @@ import callFileService from "../../../../../../services/callFileService";
 import { buildApiDateTime } from "../../../../../../shared/helpers/dateTimeFieldUtils";
 import { notify } from "../../../../../../components/Toaster";
 import PermissionGuard from "../../../../../../components/PermissionGuard";
+import usePermissions from "../../../../../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../shared/constants/permissions";
 
 const LISTING_PAGE_SIZE = 10;
@@ -144,6 +145,49 @@ UploadedCrewFileCard.propTypes = {
 // Passport/iqama copies still reuse the existing Crew Management APIs via
 // useCrewReducer.
 const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
+  const { hasPermission } = usePermissions();
+  // KANBAN_CARD > CREW_IMMIGRATION per-action gates — absence of the module/
+  // submodule/action in the permissions response means false (deny by default).
+  const canUploadCrewList = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_IMMIGRATION,
+    actionKey: PERMISSION_ACTIONS.UPLOAD_CREW_LIST,
+  });
+  const canUploadPassport = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_IMMIGRATION,
+    actionKey: PERMISSION_ACTIONS.UPLOAD_PASSPORT,
+  });
+  const canUploadIqama = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_IMMIGRATION,
+    actionKey: PERMISSION_ACTIONS.UPLOAD_IQAMA,
+  });
+  const canUploadVisa = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_IMMIGRATION,
+    actionKey: PERMISSION_ACTIONS.UPLOAD_VISA,
+  });
+  const canViewCrewList = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_IMMIGRATION,
+    actionKey: PERMISSION_ACTIONS.VIEW_CREW_LIST,
+  });
+  const canEditCrew = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_IMMIGRATION,
+    actionKey: PERMISSION_ACTIONS.EDIT_CREW,
+  });
+  const canDeleteCrew = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_IMMIGRATION,
+    actionKey: PERMISSION_ACTIONS.DELETE_CREW,
+  });
+  const canUploadDocKind = {
+    passport: canUploadPassport,
+    iqama: canUploadIqama,
+    visa: canUploadVisa,
+  };
   const uploadPassportCopies = useCrewReducer((state) => state.uploadPassportCopies);
   const uploadIqamaCopies = useCrewReducer((state) => state.uploadIqamaCopies);
   const uploadVisaCopies = useCrewReducer((state) => state.uploadVisaCopies);
@@ -376,6 +420,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
   );
 
   const handleDocCopyUpload = (kind) => async (fileList) => {
+    if (!canUploadDocKind[kind]) return;
     if (uploadSteps.crewList.status !== "completed") return;
     const files = Array.from(fileList || []);
     if (files.length === 0) return;
@@ -470,6 +515,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
   };
 
   const handleListingBulkCopyUpload = (kind) => async (event) => {
+    if (!canUploadDocKind[kind]) return;
     const files = Array.from(event.target.files || []);
     event.target.value = "";
     if (files.length === 0) return;
@@ -522,6 +568,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
   // Persists inline Crew Listing edits via crew/update_crew, then refetches
   // crew/get_immigration_crew_list so the table reflects the saved values.
   const handleSaveEdit = async () => {
+    if (!canEditCrew) return;
     if (!editingRowId || !editDraft) return;
     const row = listingRows.find((listingRow) => listingRow.id === editingRowId);
     const crewIdNum = Number(row?.crewId);
@@ -557,6 +604,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
   // listing so the removed crew member drops out of the table. Confirmation
   // is handled by DeleteConfirmationModal rather than a native window.confirm.
   const handleDeleteCrew = (row) => {
+    if (!canDeleteCrew) return;
     const crewIdNum = Number(row?.crewId);
     if (!crewIdNum) {
       notify("Unable to delete: missing crew id.", "error");
@@ -699,17 +747,20 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
 
               <div className="crew-mgmt-hero-middle crew-immigration-batches">
                 <div className="crew-mgmt-crewlist-block">
-                  <CrewListUploadBox
-                    movementType="crew-list"
-                    movementTypeLabel="Crew List"
-                    status={uploadSteps.crewList.status}
-                    onSelectFile={handleCrewListFile}
-                  />
+                  {canUploadCrewList && (
+                    <CrewListUploadBox
+                      movementType="crew-list"
+                      movementTypeLabel="Crew List"
+                      status={uploadSteps.crewList.status}
+                      onSelectFile={handleCrewListFile}
+                    />
+                  )}
                   <CrewUploadDropzones
                     steps={uploadSteps}
                     onSelectPassportFiles={handleDocCopyUpload("passport")}
                     onSelectIqamaFiles={handleDocCopyUpload("iqama")}
                     onSelectVisaFiles={handleDocCopyUpload("visa")}
+                    visibleKeys={Object.keys(canUploadDocKind).filter((kind) => canUploadDocKind[kind])}
                   />
                 </div>
               </div>
@@ -748,14 +799,10 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
             </div>
             <div className="crew-summary-header-actions">
               {launchHireEnabled && (
-                // Keep legacy role access until the role-based permission system is formally retired.
-                // No legacy role condition currently gates this action (only the launchHireEnabled/
-                // hasCallInfo business state above), so legacyAllow keeps it visible either way.
                 <PermissionGuard
                   moduleKey={PERMISSION_MODULES.KANBAN_CARD}
                   submoduleKey={PERMISSION_SUBMODULES.CREW_IMMIGRATION}
                   actionKey={PERMISSION_ACTIONS.REQUEST_LAUNCH_HIRE}
-                  legacyAllow
                 >
                   <div className="crew-launch-hire-trigger">
                     <button
@@ -820,57 +867,69 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
 
               {listingSelectedIds.length > 0 && (
                 <div className="crew-summary-bulk-actions">
-                  <button
-                    type="button"
-                    className="crew-header-btn"
-                    disabled={isUploadingPassports}
-                    onClick={() => listingPassportInputRef.current?.click()}
-                  >
-                    <span className="crew-header-btn__label">
-                      {isUploadingPassports ? "Uploading Passport…" : "Upload Passport"}
-                    </span>
-                  </button>
-                  <input
-                    ref={listingPassportInputRef}
-                    type="file"
-                    multiple
-                    className="crew-doc-input"
-                    onChange={handleListingBulkCopyUpload("passport")}
-                  />
-                  <button
-                    type="button"
-                    className="crew-header-btn"
-                    disabled={isUploadingIqamas}
-                    onClick={() => listingIqamaInputRef.current?.click()}
-                  >
-                    <span className="crew-header-btn__label">
-                      {isUploadingIqamas ? "Uploading Iqama…" : "Upload Iqama"}
-                    </span>
-                  </button>
-                  <input
-                    ref={listingIqamaInputRef}
-                    type="file"
-                    multiple
-                    className="crew-doc-input"
-                    onChange={handleListingBulkCopyUpload("iqama")}
-                  />
-                  <button
-                    type="button"
-                    className="crew-header-btn"
-                    disabled={isUploadingVisas}
-                    onClick={() => listingVisaInputRef.current?.click()}
-                  >
-                    <span className="crew-header-btn__label">
-                      {isUploadingVisas ? "Uploading Visa…" : "Upload Visa"}
-                    </span>
-                  </button>
-                  <input
-                    ref={listingVisaInputRef}
-                    type="file"
-                    multiple
-                    className="crew-doc-input"
-                    onChange={handleListingBulkCopyUpload("visa")}
-                  />
+                  {canUploadPassport && (
+                    <>
+                      <button
+                        type="button"
+                        className="crew-header-btn"
+                        disabled={isUploadingPassports}
+                        onClick={() => listingPassportInputRef.current?.click()}
+                      >
+                        <span className="crew-header-btn__label">
+                          {isUploadingPassports ? "Uploading Passport…" : "Upload Passport"}
+                        </span>
+                      </button>
+                      <input
+                        ref={listingPassportInputRef}
+                        type="file"
+                        multiple
+                        className="crew-doc-input"
+                        onChange={handleListingBulkCopyUpload("passport")}
+                      />
+                    </>
+                  )}
+                  {canUploadIqama && (
+                    <>
+                      <button
+                        type="button"
+                        className="crew-header-btn"
+                        disabled={isUploadingIqamas}
+                        onClick={() => listingIqamaInputRef.current?.click()}
+                      >
+                        <span className="crew-header-btn__label">
+                          {isUploadingIqamas ? "Uploading Iqama…" : "Upload Iqama"}
+                        </span>
+                      </button>
+                      <input
+                        ref={listingIqamaInputRef}
+                        type="file"
+                        multiple
+                        className="crew-doc-input"
+                        onChange={handleListingBulkCopyUpload("iqama")}
+                      />
+                    </>
+                  )}
+                  {canUploadVisa && (
+                    <>
+                      <button
+                        type="button"
+                        className="crew-header-btn"
+                        disabled={isUploadingVisas}
+                        onClick={() => listingVisaInputRef.current?.click()}
+                      >
+                        <span className="crew-header-btn__label">
+                          {isUploadingVisas ? "Uploading Visa…" : "Upload Visa"}
+                        </span>
+                      </button>
+                      <input
+                        ref={listingVisaInputRef}
+                        type="file"
+                        multiple
+                        className="crew-doc-input"
+                        onChange={handleListingBulkCopyUpload("visa")}
+                      />
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -893,7 +952,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
             onLocationChange={setLaunchLocation}
           />
 
-          {isListingLoading && listingRows.length === 0 ? (
+          {canViewCrewList && (isListingLoading && listingRows.length === 0 ? (
             <p className="crew-summary-empty">Loading crew…</p>
           ) : !isListingLoading && totalListingItems === 0 ? (
             <p className="crew-summary-empty">
@@ -1025,30 +1084,34 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
                                 </>
                               ) : (
                                 <>
-                                  <button
-                                    type="button"
-                                    className="crew-action-btn crew-action-btn--edit"
-                                    aria-label="Edit crew"
-                                    title="Edit"
-                                    disabled={deletingRowId === row.id}
-                                    onClick={() => handleStartEdit(row)}
-                                  >
-                                    <FiEdit2 size={14} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="crew-action-btn crew-action-btn--delete"
-                                    aria-label="Delete crew"
-                                    title="Delete"
-                                    disabled={deletingRowId === row.id}
-                                    onClick={() => handleDeleteCrew(row)}
-                                  >
-                                    {deletingRowId === row.id ? (
-                                      <span className="crew-action-btn__spinner" aria-hidden="true" />
-                                    ) : (
-                                      <FiTrash2 size={14} />
-                                    )}
-                                  </button>
+                                  {canEditCrew && (
+                                    <button
+                                      type="button"
+                                      className="crew-action-btn crew-action-btn--edit"
+                                      aria-label="Edit crew"
+                                      title="Edit"
+                                      disabled={deletingRowId === row.id}
+                                      onClick={() => handleStartEdit(row)}
+                                    >
+                                      <FiEdit2 size={14} />
+                                    </button>
+                                  )}
+                                  {canDeleteCrew && (
+                                    <button
+                                      type="button"
+                                      className="crew-action-btn crew-action-btn--delete"
+                                      aria-label="Delete crew"
+                                      title="Delete"
+                                      disabled={deletingRowId === row.id}
+                                      onClick={() => handleDeleteCrew(row)}
+                                    >
+                                      {deletingRowId === row.id ? (
+                                        <span className="crew-action-btn__spinner" aria-hidden="true" />
+                                      ) : (
+                                        <FiTrash2 size={14} />
+                                      )}
+                                    </button>
+                                  )}
                                 </>
                               )}
                             </div>
@@ -1097,7 +1160,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
                 </div>
               </div>
             </div>
-          )}
+          ))}
         </div>
       </div>
 

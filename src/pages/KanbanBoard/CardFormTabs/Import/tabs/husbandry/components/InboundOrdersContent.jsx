@@ -23,6 +23,8 @@ import useLandingNoteReducer from "../../../../../../../store/LandingNoteReducer
 import useAlertReducer from "../../../../../../../store/AlertReducer";
 import inboundOrderService from "../../../../../../../services/inboundOrderService";
 import vehicleService from "../../../../../../../services/vehicleService";
+import usePermissions from "../../../../../../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../../shared/constants/permissions";
 import {
   splitApiDateTimeParts,
   buildApiDateTime,
@@ -323,6 +325,35 @@ const ReactQuillEditor = ({ value, onChange, placeholder, name = "remarks", clas
 };
 
 const InboundOrdersContent = ({ formValues, handleChange, cardColor, showLaunchHire = true }) => {
+  const { hasPermission } = usePermissions();
+  // KANBAN_CARD > MATERIAL_MANAGEMENT per-action gates — absence of the
+  // module/submodule/action in the permissions response means false (deny by
+  // default).
+  const canAddInbound = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.ADD_INBOUND_ORDER,
+  });
+  const canUpdateInbound = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.UPDATE_INBOUND_ORDER,
+  });
+  const canDeleteInbound = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.DELETE_INBOUND_ORDER,
+  });
+  const canPrintInbound = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.PRINT_INBOUND_ORDER,
+  });
+  const canConvertToLandingNote = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.CONVERT_TO_LANDING_NOTE,
+  });
   const {
     saveInboundOrder,
     updateInboundOrder,
@@ -593,6 +624,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor, showLaunchH
 
   const handleOpenModal = (order = null) => {
     if (order) {
+      if (!canUpdateInbound) return;
       setEditingOrder(order);
       populateFormFromOrder(order);
       setShowModal(true);
@@ -610,6 +642,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor, showLaunchH
       return;
     }
 
+    if (!canAddInbound) return;
     setEditingOrder(null);
     setEditOrderMinDate(undefined);
     setFormData({
@@ -790,6 +823,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor, showLaunchH
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (editingOrder?.inbound_id ? !canUpdateInbound : !canAddInbound) return;
     if (!validateForm()) return;
     const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
 
@@ -886,6 +920,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor, showLaunchH
   };
 
   const handleDelete = (order) => {
+    if (!canDeleteInbound) return;
     handleCloseDropdown();
     setDeletingOrder(order);
     setShowDeleteModal(true);
@@ -986,6 +1021,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor, showLaunchH
   }, [openDropdownId]);
 
   const handlePrintOrder = async (order) => {
+    if (!canPrintInbound) return;
     handleCloseDropdown();
     const inboundId = resolveInboundId(order);
     if (!inboundId || printingId) return;
@@ -1044,6 +1080,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor, showLaunchH
   };
 
   const handleConvertToLanding = (order) => {
+    if (!canConvertToLandingNote) return;
     handleCloseDropdown();
     setConvertingOrder(order);
     setConvertMinDate(nextDayOf(order.inbound_date || order.date));
@@ -2397,7 +2434,7 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor, showLaunchH
       <button type="button" onClick={handleCloseViewModal} className="btn btn-secondary">
         Close
       </button>
-      {viewingOrder && (
+      {viewingOrder && canPrintInbound && (
         <button
           type="button"
           onClick={() => handlePrintOrder(viewingOrder)}
@@ -2420,13 +2457,15 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor, showLaunchH
           <span className="material-list-title-bar"></span>
           Inbound Orders
         </h3>
-        <button
-          type="button"
-          className="material-add-btn"
-          onClick={() => handleOpenModal()}
-        >
-          + Add
-        </button>
+        {canAddInbound && (
+          <button
+            type="button"
+            className="material-add-btn"
+            onClick={() => handleOpenModal()}
+          >
+            + Add
+          </button>
+        )}
       </div>
       <div className="table-wrapper table-responsive material-table-container note-table-container">
         <div className="note-table-scroll">
@@ -2508,35 +2547,43 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor, showLaunchH
                           >
                             <img src={eyeIcon} alt="view" className="note-action-icon" />
                           </button>
-                          <Tooltip id={`print-order-${rowKey}`} place="left" content="Print" />
-                          <button
-                            type="button"
-                            onClick={() => handlePrintOrder(order)}
-                            data-tooltip-id={`print-order-${rowKey}`}
-                            disabled={printingId === resolveInboundId(order)}
-                            className="print-action-icon-wrap"
-                          >
-                            {printingId === resolveInboundId(order) ? (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="icon-spinning">
-                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
-                              </svg>
-                            ) : (
-                              <img src={printIcon} alt="print" className="material-action-icon" />
-                            )}
-                          </button>
-                          <Tooltip id={`convert-order-${rowKey}`} place="left" content=" Convert" />
-                          <button
-                            type="button"
-                            onClick={() => handleConvertToLanding(order)}
-                            data-tooltip-id={`convert-order-${rowKey}`}
-                            className="note-action-btn"
-                          >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M2 18L4 16L6 18L8 16L10 18L12 16L14 18L16 16L18 18L20 16L22 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              <path d="M2 10L12 4L22 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              <path d="M12 4V18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </button>
+                          {canPrintInbound && (
+                            <>
+                              <Tooltip id={`print-order-${rowKey}`} place="left" content="Print" />
+                              <button
+                                type="button"
+                                onClick={() => handlePrintOrder(order)}
+                                data-tooltip-id={`print-order-${rowKey}`}
+                                disabled={printingId === resolveInboundId(order)}
+                                className="print-action-icon-wrap"
+                              >
+                                {printingId === resolveInboundId(order) ? (
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="icon-spinning">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+                                  </svg>
+                                ) : (
+                                  <img src={printIcon} alt="print" className="material-action-icon" />
+                                )}
+                              </button>
+                            </>
+                          )}
+                          {canConvertToLandingNote && (
+                            <>
+                              <Tooltip id={`convert-order-${rowKey}`} place="left" content=" Convert" />
+                              <button
+                                type="button"
+                                onClick={() => handleConvertToLanding(order)}
+                                data-tooltip-id={`convert-order-${rowKey}`}
+                                className="note-action-btn"
+                              >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M2 18L4 16L6 18L8 16L10 18L12 16L14 18L16 16L18 18L20 16L22 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                  <path d="M2 10L12 4L22 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                  <path d="M12 4V18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </button>
+                            </>
+                          )}
                           <div className={`action-dropdown-wrapper${openDropdownId === rowKey ? " action-dropdown-wrapper--open" : ""}`}>
                             <Tooltip id={`more-actions-${rowKey}`} place="left" content="More actions" />
                             <button
@@ -2557,22 +2604,26 @@ const InboundOrdersContent = ({ formValues, handleChange, cardColor, showLaunchH
                                 className="dispatch-note-dropdown-menu"
                                 style={{ top: `${dropdownPosition.top}px`, right: `${dropdownPosition.right}px` }}
                               >
-                                <button
-                                  type="button"
-                                  onClick={() => { handleCloseDropdown(); handleOpenModal(order); }}
-                                  className="dispatch-note-dropdown-btn"
-                                >
-                                  <img src={editIcon} alt="edit" className="dispatch-note-dropdown-icon" />
-                                  <span>Edit</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => { handleDelete(order); }}
-                                  className="dispatch-note-dropdown-btn dispatch-note-dropdown-btn--danger"
-                                >
-                                  <img src={deleteIcon} alt="delete" className="dispatch-note-dropdown-icon" />
-                                  <span>Delete</span>
-                                </button>
+                                {canUpdateInbound && (
+                                  <button
+                                    type="button"
+                                    onClick={() => { handleCloseDropdown(); handleOpenModal(order); }}
+                                    className="dispatch-note-dropdown-btn"
+                                  >
+                                    <img src={editIcon} alt="edit" className="dispatch-note-dropdown-icon" />
+                                    <span>Edit</span>
+                                  </button>
+                                )}
+                                {canDeleteInbound && (
+                                  <button
+                                    type="button"
+                                    onClick={() => { handleDelete(order); }}
+                                    className="dispatch-note-dropdown-btn dispatch-note-dropdown-btn--danger"
+                                  >
+                                    <img src={deleteIcon} alt="delete" className="dispatch-note-dropdown-icon" />
+                                    <span>Delete</span>
+                                  </button>
+                                )}
                               </div>,
                               document.body
                             )}
