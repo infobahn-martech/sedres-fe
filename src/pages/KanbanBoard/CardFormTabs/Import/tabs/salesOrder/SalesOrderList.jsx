@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import PropTypes from "prop-types";
-import { FiFilePlus, FiFileText, FiClipboard, FiTool, FiCheck, FiChevronLeft, FiChevronRight, FiRefreshCw, FiUpload } from "react-icons/fi";
+import { FiFilePlus, FiFileText, FiClipboard, FiTool, FiCheck, FiChevronLeft, FiChevronRight, FiRefreshCw, FiUpload, FiTrash2 } from "react-icons/fi";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import "../../../../../../design/scss/salesOrder.scss";
@@ -15,6 +15,9 @@ import WorkOrderCreationModal from "./WorkOrderCreationModal";
 import WorkOrderDetailsModal from "./WorkOrderDetailsModal";
 import GeneratePOModal from "./GeneratePOModal";
 import GoodsReceiptPOModal from "./GoodsReceiptPOModal";
+import SoApprovalEmailModal from "./SoApprovalEmailModal";
+import CustomModal from "../../../../../../components/CustomModal";
+import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 
 const BP_CURRENCY_OPTIONS = ["SAR", "USD", "EURO"];
 const USD_TO_SAR_RATE = 3.75;
@@ -64,7 +67,6 @@ const TYPE_OF_PO_OPTIONS = ["Inhouse", "Outhouse PO", "Multiple PO"];
 // target, not enforced.
 const CLIENT_SO_STATUS_TIMELINES = {
   GENERAL: [
-    { label: "Ops Completed" },
     { label: "To Be Sent for SO Approval", maxDays: "1" },
     { label: "Awaiting SO Approval", maxDays: "3" },
     { label: "Invoice Issuance", maxDays: "1" },
@@ -73,7 +75,6 @@ const CLIENT_SO_STATUS_TIMELINES = {
     { label: "Closed Paid" },
   ],
   MCDERMOTT: [ // import/export/domestic — Rastanura variant
-    { label: "Ops Completed" },
     { label: "To Be Sent for SRF", maxDays: "1" },
     { label: "Awaiting SRF", maxDays: "4" },
     { label: "Invoice Issued and Send for PO", maxDays: "1" },
@@ -82,14 +83,12 @@ const CLIENT_SO_STATUS_TIMELINES = {
     { label: "Archived" },
   ],
   SAIPEM: [ // Domestic call-Jubail variant
-    { label: "Ops Completed" },
     { label: "To Be Sent for SO Approval", maxDays: "1" },
     { label: "Awaiting SO Approval", maxDays: "3" },
     { label: "To Be Sent for Service Entry", maxDays: "1" },
     { label: "Awaiting Consolidated Invoice" },
   ],
   "L&T": [ // Domestic call-Jubail/RT variant
-    { label: "Ops Completed" },
     { label: "Sent for SCC Approval / SCC (Service Request Form)", maxDays: "2 days" },
     { label: "Follow Up SCC Approval" },
     { label: "Invoice Issued", maxDays: "3 days" },
@@ -98,7 +97,6 @@ const CLIENT_SO_STATUS_TIMELINES = {
     { label: "Closed Paid" },
   ],
   "SUBSEA 7": [ // Domestic call-Jubail/RT variant
-    { label: "Ops Completed" },
     { label: "To Be Sent for SRT / SRT (Service Request Ticket)", maxDays: "3" },
     { label: "Follow Up SRT Approval", maxDays: "1" },
     { label: "Invoice Issued", maxDays: "2" },
@@ -107,7 +105,6 @@ const CLIENT_SO_STATUS_TIMELINES = {
     { label: "Closed Paid" },
   ],
   "AL-GIHAZ": [ // (Lamprell) — Domestic/Husbandry call-Jubail/RT variant (same steps both)
-    { label: "Ops Completed" },
     { label: "SO Approval", maxDays: "7" },
     { label: "Request for PO", maxDays: "7" },
     { label: "Invoice Issued", maxDays: "4" },
@@ -117,7 +114,6 @@ const CLIENT_SO_STATUS_TIMELINES = {
     { label: "Closed Paid" },
   ],
   "LAMPRELL SAUDI": [ // Domestic call /RT variant
-    { label: "Ops Completed" },
     { label: "SO Approval", maxDays: "2" },
     { label: "Invoice Issued", maxDays: "1" },
     { label: "Submitted", maxDays: "1" },
@@ -125,7 +121,6 @@ const CLIENT_SO_STATUS_TIMELINES = {
     { label: "Closed Paid" },
   ],
   "LAMPRELL UAE": [ // Domestic call-Jubail/RT variant
-    { label: "Ops Completed" },
     { label: "Approved SO Along with PO" },
     { label: "Invoice Issued" },
     { label: "Submitted" },
@@ -594,12 +589,31 @@ const SalesOrderList = ({
   const [selectedWoItems, setSelectedWoItems] = useState(new Set());
   // Local-only for now — no backend field/endpoint yet to persist per-item verification (DA-only column).
   const [verifiedItems, setVerifiedItems] = useState(new Set());
-  // Local-only — whole-SO status stepper (Ops Completed → ... → Closed Paid), steps driven
+  // Local-only — whole-SO status stepper (SO Approval → ... → Closed Paid), steps driven
   // by the client-specific reference table above. No backend field/endpoint yet.
   const [soStatusStepIndex, setSoStatusStepIndex] = useState(0);
   const [showWorkOrderModal, setShowWorkOrderModal] = useState(false);
   const [isGeneratingWorkOrder, setIsGeneratingWorkOrder] = useState(false);
   const bulkActionBarRef = useRef(null);
+  // State for the email modal on the SO Status stepper's "To Be Sent for SO Approval"
+  // step. Local-only for now — no backend send endpoint yet.
+  const [showSoApprovalEmailModal, setShowSoApprovalEmailModal] = useState(false);
+  // Invoice PDF uploaded on the SO Status stepper's "Invoice Issuance" step. Local-only
+  // for now — no backend field/endpoint yet to persist it. Uploading just attaches the
+  // file — advancing to the next step happens separately via the Confirm checkbox.
+  const [invoicePdfFile, setInvoicePdfFile] = useState(null);
+  const [invoicePdfPreviewUrl, setInvoicePdfPreviewUrl] = useState(null);
+  const invoicePdfInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!invoicePdfFile) {
+      setInvoicePdfPreviewUrl(null);
+      return undefined;
+    }
+    const url = URL.createObjectURL(invoicePdfFile);
+    setInvoicePdfPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [invoicePdfFile]);
 
   // State for the Work Order Details modal (sales_order/get_work_order/{wo_id}) — opened by
   // clicking a Work Order No. in the table.
@@ -629,6 +643,15 @@ const SalesOrderList = ({
   // State for document modal (row-level document picker) — documents themselves come from
   // each item's own `documents` array (mapped from the API), not a shared pool.
   const [documentModalTarget, setDocumentModalTarget] = useState(null); // orderId or "new"
+
+  // State for the line item delete confirmation modal
+  const [showDeleteItemModal, setShowDeleteItemModal] = useState(false);
+  const [deletingItem, setDeletingItem] = useState(null);
+
+  // State for the "Approved" checkbox confirmation modal (Awaiting SO Approval step)
+  const [showApproveSoModal, setShowApproveSoModal] = useState(false);
+  // State for the "Confirm" checkbox confirmation modal (Invoice Issuance step)
+  const [showInvoiceConfirmModal, setShowInvoiceConfirmModal] = useState(false);
 
   const displayOrderList = Array.isArray(salesOrderList) ? salesOrderList : [];
 
@@ -816,15 +839,13 @@ const SalesOrderList = ({
     }
   };
 
-  const handleToggleVerified = (orderId, itemNo) => {
+  const handleToggleVerified = (orderId) => {
     setVerifiedItems((prev) => {
       const next = new Set(prev);
       if (next.has(orderId)) {
         next.delete(orderId);
-        useAlertReducer.getState().success(`Item ${itemNo || orderId} verification removed.`);
       } else {
         next.add(orderId);
-        useAlertReducer.getState().success(`Item ${itemNo || orderId} verified successfully.`);
       }
       return next;
     });
@@ -845,10 +866,101 @@ const SalesOrderList = ({
     setSoStatusStepIndex((prev) => {
       if (prev >= steps.length - 1) return prev;
       const next = prev + 1;
-      useAlertReducer.getState().success(`Sales order status moved to "${steps[next].label}".`);
       appendSoTimelineEvent(steps[next].label, null);
       return next;
     });
+  };
+
+  // Called from the SO Approval email modal — sending is local-only for now (no backend
+  // endpoint yet), so this just closes the modal and advances the stepper.
+  const handleCreateSoApprovalEmail = (steps) => {
+    setShowSoApprovalEmailModal(false);
+    handleAdvanceSoStatus(steps);
+  };
+
+  // DA ticks "Approved" once the SO approval response has been received — asks for
+  // confirmation first, then advances the stepper the same way the other step actions do.
+  const handleApproveSoApproval = (steps) => {
+    handleAdvanceSoStatus(steps);
+    useAlertReducer.getState().success("Sales order approval confirmed.");
+  };
+
+  const handleConfirmApproveSoModal = () => {
+    handleApproveSoApproval(resolveClientSoStatusSteps(soCustomerName));
+    setShowApproveSoModal(false);
+  };
+
+  const handleCancelApproveSoModal = () => {
+    setShowApproveSoModal(false);
+  };
+
+  // Uploading the invoice on the "Invoice Issuance" step — PDF only, local-only for now
+  // (no backend field/endpoint yet). Only attaches the file; DA advances separately via
+  // the Confirm checkbox once they've reviewed it.
+  const handleInvoicePdfSelected = (file) => {
+    if (!file) return;
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) {
+      useAlertReducer.getState().error("Please upload a PDF file.");
+      return;
+    }
+    setInvoicePdfFile(file);
+  };
+
+  const handleRemoveInvoicePdf = () => {
+    setInvoicePdfFile(null);
+  };
+
+  // DA confirms the attached invoice PDF is correct — asks for confirmation first, then
+  // advances the stepper the same way the other step actions do.
+  const handleConfirmInvoiceIssuance = (steps) => {
+    if (!invoicePdfFile) return;
+    handleAdvanceSoStatus(steps);
+    useAlertReducer.getState().success(`Invoice "${invoicePdfFile.name}" confirmed.`);
+  };
+
+  const handleConfirmInvoiceConfirmModal = () => {
+    handleConfirmInvoiceIssuance(resolveClientSoStatusSteps(soCustomerName));
+    setShowInvoiceConfirmModal(false);
+  };
+
+  const handleCancelInvoiceConfirmModal = () => {
+    setShowInvoiceConfirmModal(false);
+  };
+
+  // Delete a line item — no backend endpoint yet, so this is local-only (removes from
+  // formValues.salesOrderList the same way other row edits in this file persist).
+  const handleDeleteItem = (order) => {
+    setDeletingItem(order);
+    setShowDeleteItemModal(true);
+  };
+
+  const handleConfirmDeleteItem = () => {
+    if (!deletingItem) return;
+    const updatedList = salesOrderList.filter((order) => order.id !== deletingItem.id);
+    handleChange("salesOrderList")({ target: { value: updatedList } });
+    setSelectedPoItems((prev) => {
+      const next = new Set(prev);
+      next.delete(deletingItem.id);
+      return next;
+    });
+    setSelectedWoItems((prev) => {
+      const next = new Set(prev);
+      next.delete(deletingItem.id);
+      return next;
+    });
+    setVerifiedItems((prev) => {
+      const next = new Set(prev);
+      next.delete(deletingItem.id);
+      return next;
+    });
+    setShowDeleteItemModal(false);
+    setDeletingItem(null);
+  };
+
+  const handleCancelDeleteItem = () => {
+    setShowDeleteItemModal(false);
+    setDeletingItem(null);
   };
 
   const handleVendorSelect = (vendor) => {
@@ -1588,9 +1700,26 @@ const SalesOrderList = ({
               type="checkbox"
               className="sales-order-verify-checkbox"
               checked={verifiedItems.has(order.id)}
-              onChange={() => handleToggleVerified(order.id, order.itemNo)}
+              onChange={() => handleToggleVerified(order.id)}
               aria-label="Verify line item"
             />
+          </div>
+        </td>
+      )}
+
+      {/* Delete — no backend endpoint yet, removes the item locally */}
+      {!readOnly && (
+        <td>
+          <div className="sales-order-table-cell" style={{ textAlign: "center" }}>
+            <button
+              type="button"
+              className="sales-order-delete-item-btn"
+              onClick={() => handleDeleteItem(order)}
+              title={`Delete Item No. ${order.itemNo || ""}`}
+              aria-label={`Delete Item No. ${order.itemNo || ""}`}
+            >
+              <FiTrash2 />
+            </button>
           </div>
         </td>
       )}
@@ -2088,13 +2217,14 @@ const SalesOrderList = ({
                   {renderTableHeader("Supporting Documents", "col-documents")}
                   {renderTableHeader("Supplier Code", "col-supplier")}
                   {isDaVerifyContext && renderTableHeader("Verify", "col-verify")}
+                  {!readOnly && renderTableHeader("", "col-delete")}
                 </tr>
               </thead>
               <tbody>
                 {displayOrderList.length === 0 && !isLoadingSalesOrder && (
                   <tr>
                     <td
-                      colSpan={isDaVerifyContext ? 14 : 13}
+                      colSpan={13 + (isDaVerifyContext ? 1 : 0) + (!readOnly ? 1 : 0)}
                       style={{ padding: "28px 16px", textAlign: "center", color: "#64748b", fontSize: "14px" }}
                     >
                       No sales order line items for this call.
@@ -2195,12 +2325,13 @@ const SalesOrderList = ({
         </div>
       </div>
 
-      {/* Sales Order Status — DA-only, whole-SO step-by-step timeline (Ops Completed →
+      {/* Sales Order Status — DA-only, whole-SO status checklist (SO Approval →
           ... → Closed Paid), steps sourced from the client-specific reference table
           (CLIENT_SO_STATUS_TIMELINES) matched against this SO's client/billing entity name.
-          Click the current step to advance, one step at a time — same interaction pattern
-          as the real DA Status Timeline in the DA tab. Local-only for now — no backend
-          field/endpoint yet to persist the current step. */}
+          Plain vertical checklist (no timeline/progress-bar visual) — each row's own action
+          advances one step at a time, same interaction pattern as the real DA Status
+          Timeline in the DA tab. Local-only for now — no backend field/endpoint yet to
+          persist the current step. */}
       {isDaVerifyContext && (() => {
         const steps = resolveClientSoStatusSteps(soCustomerName);
         const currentIndex = Math.min(soStatusStepIndex, steps.length - 1);
@@ -2210,41 +2341,160 @@ const SalesOrderList = ({
               <FiClipboard className="so-client-process-title-icon" />
               Sales Order Status{soCustomerName ? ` — ${soCustomerName}` : ""}
             </h3>
-            <div className="so-status-stepper">
+            <div className="so-status-checklist">
               {steps.map((step, index) => {
+                if (index !== currentIndex) return null;
                 const state = index < currentIndex ? "done" : index === currentIndex ? "current" : "pending";
                 const isClickable = state === "current" && index < steps.length - 1;
                 return (
                   <div
-                    className={`so-status-step so-status-step--${state}`}
+                    className={`so-status-check-row so-status-check-row--${state}`}
                     key={step.label}
                   >
-                    <div className="so-status-step-marker">
-                      {isClickable ? (
+                    <div className="so-status-check-icon">
+                      {state === "done" ? <FiCheck /> : <span className="so-status-check-dot" />}
+                    </div>
+                    <div className="so-status-check-info">
+                      <span className="so-status-check-label">{step.label}</span>
+                    </div>
+                    <div className="so-status-check-action">
+                      {isClickable && step.label === "To Be Sent for SO Approval" ? (
                         <button
                           type="button"
-                          className="so-status-step-dot so-status-step-dot--clickable"
-                          title={`Move to "${steps[index + 1].label}"`}
+                          className="so-status-step-dot--labeled"
+                          title="Open SO Approval email"
+                          onClick={() => setShowSoApprovalEmailModal(true)}
+                        >
+                          To Be Sent for SO Approval
+                        </button>
+                      ) : isClickable && step.label === "Awaiting SO Approval" ? (
+                        <label className="so-status-step-approve-check" title={`Move to "${steps[index + 1].label}"`}>
+                          <input
+                            type="checkbox"
+                            checked={false}
+                            onChange={() => setShowApproveSoModal(true)}
+                          />
+                          <span>Approved</span>
+                        </label>
+                      ) : isClickable && step.label === "Invoice Issuance" ? (
+                        <div className="so-status-check-invoice-action">
+                          <button
+                            type="button"
+                            className="so-status-step-upload-btn"
+                            title="Upload invoice PDF"
+                            onClick={() => invoicePdfInputRef.current?.click()}
+                          >
+                            <FiUpload />
+                            <span>{invoicePdfFile ? "Replace Invoice PDF" : "Upload Invoice PDF"}</span>
+                          </button>
+                          <input
+                            ref={invoicePdfInputRef}
+                            type="file"
+                            accept="application/pdf,.pdf"
+                            className="so-status-step-upload-input-hidden"
+                            onChange={(e) => {
+                              handleInvoicePdfSelected(e.target.files?.[0]);
+                              e.target.value = "";
+                            }}
+                          />
+                          {invoicePdfFile && (
+                            <span className="so-status-step-file-name" title={invoicePdfFile.name}>
+                              <FiFileText />
+                              <span className="so-status-step-file-label">{invoicePdfFile.name}</span>
+                              {invoicePdfPreviewUrl && (
+                                <a
+                                  href={invoicePdfPreviewUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="so-status-step-file-action"
+                                  title="View invoice PDF"
+                                >
+                                  View
+                                </a>
+                              )}
+                              <button
+                                type="button"
+                                className="so-status-step-file-action so-status-step-file-action--remove"
+                                title="Remove invoice PDF"
+                                onClick={handleRemoveInvoicePdf}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+                          <label
+                            className={`so-status-step-approve-check${!invoicePdfFile ? " so-status-step-approve-check--disabled" : ""}`}
+                            title={invoicePdfFile ? `Move to "${steps[index + 1].label}"` : undefined}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={false}
+                              disabled={!invoicePdfFile}
+                              onChange={() => setShowInvoiceConfirmModal(true)}
+                            />
+                            <span>Confirm</span>
+                          </label>
+                        </div>
+                      ) : isClickable ? (
+                        <button
+                          type="button"
+                          className="so-status-check-advance-btn"
                           onClick={() => handleAdvanceSoStatus(steps)}
                         >
-                          <span className="so-status-step-dot-pulse" />
+                          Move to &quot;{steps[index + 1].label}&quot;
                         </button>
-                      ) : state === "done" ? (
-                        <span className="so-status-step-dot so-status-step-dot--done">
-                          <FiCheck />
-                        </span>
-                      ) : (
-                        <span className="so-status-step-dot" />
-                      )}
-                    </div>
-                    <div className="so-status-step-body">
-                      <span className="so-status-step-label">{step.label}</span>
-                      {step.maxDays && <span className="so-status-step-days">Max {step.maxDays} {/^\d+$/.test(String(step.maxDays)) ? "day(s)" : ""}</span>}
+                      ) : null}
                     </div>
                   </div>
                 );
               })}
             </div>
+            <SoApprovalEmailModal
+              show={showSoApprovalEmailModal}
+              onClose={() => setShowSoApprovalEmailModal(false)}
+              onCreate={() => handleCreateSoApprovalEmail(steps)}
+              soCustomerName={soCustomerName}
+            />
+            <CustomModal
+              show={showApproveSoModal}
+              closeModal={handleCancelApproveSoModal}
+              dialgName="so-approve-confirm-dialog"
+              body={
+                <div className="so-approve-confirm-body">
+                  <div className="so-approve-confirm-title">
+                    {`Are you sure you want to approve this Sales Order${soCustomerName ? ` — ${soCustomerName}` : ""}?`}
+                  </div>
+                  <div className="so-approve-confirm-actions">
+                    <button type="button" className="btn btn-secondary" onClick={handleCancelApproveSoModal}>
+                      Cancel
+                    </button>
+                    <button type="button" className="btn btn-primary" onClick={handleConfirmApproveSoModal}>
+                      Confirm
+                    </button>
+                  </div>
+                </div>
+              }
+            />
+            <CustomModal
+              show={showInvoiceConfirmModal}
+              closeModal={handleCancelInvoiceConfirmModal}
+              dialgName="so-approve-confirm-dialog"
+              body={
+                <div className="so-approve-confirm-body">
+                  <div className="so-approve-confirm-title">
+                    {`Are you sure you want to confirm invoice${invoicePdfFile ? ` "${invoicePdfFile.name}"` : ""}?`}
+                  </div>
+                  <div className="so-approve-confirm-actions">
+                    <button type="button" className="btn btn-secondary" onClick={handleCancelInvoiceConfirmModal}>
+                      Cancel
+                    </button>
+                    <button type="button" className="btn btn-primary" onClick={handleConfirmInvoiceConfirmModal}>
+                      Confirm
+                    </button>
+                  </div>
+                </div>
+              }
+            />
           </div>
         );
       })()}
@@ -2435,6 +2685,14 @@ const SalesOrderList = ({
         onClose={() => setDocumentModalTarget(null)}
         onSave={handleDocumentSave}
         initialSelected={getDocumentModalInitialSelected()}
+      />
+
+      {/* Delete Line Item confirmation */}
+      <DeleteConfirmationModal
+        show={showDeleteItemModal}
+        onCancel={handleCancelDeleteItem}
+        onConfirm={handleConfirmDeleteItem}
+        deleteText={`Are you sure you want to delete Item No. ${deletingItem?.itemNo || ""}?`}
       />
     </div>
   );
