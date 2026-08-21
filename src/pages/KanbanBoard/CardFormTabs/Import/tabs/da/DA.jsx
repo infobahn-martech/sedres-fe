@@ -1266,6 +1266,13 @@ function OperationAutoSaveStatus({ status }) {
       </span>
     );
   }
+  if (status === "saved") {
+    return (
+      <span className="da-cf-autosave-status da-cf-autosave-status--saved">
+        <CheckCircle2 size={13} /> All changes saved
+      </span>
+    );
+  }
   if (status === "error") {
     return (
       <span className="da-cf-autosave-status da-cf-autosave-status--error">
@@ -1400,7 +1407,6 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
     try {
       await daService.saveOperationTab(callId, formData);
       setOperationSaveStatus("saved");
-      notify("Changes saved successfully.", "success", "top-center");
     } catch {
       setOperationSaveStatus("error");
     }
@@ -1441,18 +1447,20 @@ function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaS
   const runSaveDaDetails = useCallback(async () => {
     if (callId == null) return;
     const { coOwnerId: co, taxInvoiceNo, srtPoWbs, invoiceAmount } = latestDaDetailsFormRef.current;
-    const payload = {
-      co_owner_id: co != null && co !== "" ? co : null,
-      tax_invoice_no: taxInvoiceNo || "",
-      srt_po_wbs_ref: srtPoWbs || "",
-      invoice_amount: invoiceAmount || "",
-    };
+    // Sent as FormData, not a plain JSON object — matches every other DA save call
+    // (saveOperationTab, saveDocumentsTab); the backend for this endpoint doesn't
+    // read a raw JSON body, so a plain object here was posting successfully while
+    // silently dropping every field.
+    const payload = new FormData();
+    payload.append("co_owner_id", co != null && co !== "" ? co : "");
+    payload.append("tax_invoice_no", taxInvoiceNo || "");
+    payload.append("srt_po_wbs_ref", srtPoWbs || "");
+    payload.append("invoice_amount", invoiceAmount || "");
 
     setOperationSaveStatus("saving");
     try {
       await daService.saveDaDetails(callId, payload);
       setOperationSaveStatus("saved");
-      notify("Changes saved successfully.", "success", "top-center");
     } catch (err) {
       setOperationSaveStatus("error");
       notify(err?.response?.data?.message || "Failed to save changes.", "error", "top-center");
