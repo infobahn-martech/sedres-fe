@@ -7,6 +7,7 @@ import "../../../../../../design/scss/salesOrder.scss";
 import { PORT_OPTIONS, PORT_OPTIONS_WITH_ID } from "../../../../../../shared/constants/ports";
 import salesOrderService from "../../../../../../services/salesOrderService";
 import callFileService from "../../../../../../services/callFileService";
+import useAttachmentsReducer from "../../../../../../store/AttachmentsReducer";
 import DatePickerField from "../../../shared/components/DatePickerField";
 import PremiumSelect from "../../../../../../components/form/PremiumSelect";
 import useAlertReducer from "../../../../../../store/AlertReducer";
@@ -234,7 +235,7 @@ VendorListModal.propTypes = {
 // Document List Modal — manages the documents already attached to a sales order item
 // (sourced from the API's per-item `documents` array) plus any newly uploaded this session.
 // No shared document library concept — each item only ever shows/edits its own files.
-const DocumentListModal = ({ show, onClose, onSave, initialSelected = [] }) => {
+const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], libraryDocs = [] }) => {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(new Set());
   const [uploadedDocs, setUploadedDocs] = useState([]);
@@ -251,7 +252,15 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [] }) => {
 
   if (!show) return null;
 
-  const allDocs = [...(initialSelected || []), ...uploadedDocs];
+  // initialSelected first (so already-attached docs keep their id/name), then the call's
+  // supporting-doc library (attachments/get_all_supporting_docs — always offered), then any
+  // newly uploaded this session. Deduped by id so a doc already attached isn't listed twice.
+  const seenDocIds = new Set();
+  const allDocs = [...(initialSelected || []), ...libraryDocs, ...uploadedDocs].filter((d) => {
+    if (seenDocIds.has(d.id)) return false;
+    seenDocIds.add(d.id);
+    return true;
+  });
   const filtered = allDocs.filter((d) => d.name.toLowerCase().includes(search.toLowerCase()));
 
   const toggleDocument = (id) => {
@@ -388,6 +397,13 @@ DocumentListModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
   initialSelected: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+      name: PropTypes.string.isRequired,
+      type: PropTypes.string,
+    })
+  ),
+  libraryDocs: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
       name: PropTypes.string.isRequired,
@@ -571,6 +587,15 @@ const SalesOrderList = ({
       cancelled = true;
     };
   }, [callId]);
+
+  // attachments/get_all_supporting_docs/{call_id} — always offered as pickable options in the
+  // Select Supporting Documents modal, alongside whatever's already attached to the item.
+  const supportingDocsLibrary = useAttachmentsReducer((state) => state.supportingDocs);
+  const getAllSupportingDocs = useAttachmentsReducer((state) => state.getAllSupportingDocs);
+
+  useEffect(() => {
+    getAllSupportingDocs(callId);
+  }, [callId, getAllSupportingDocs]);
 
   const entityId =
     callDetailData?.main_billing_entity_id ??
@@ -2481,6 +2506,7 @@ const SalesOrderList = ({
         onClose={() => setDocumentModalTarget(null)}
         onSave={handleDocumentSave}
         initialSelected={getDocumentModalInitialSelected()}
+        libraryDocs={supportingDocsLibrary}
       />
     </div>
   );
