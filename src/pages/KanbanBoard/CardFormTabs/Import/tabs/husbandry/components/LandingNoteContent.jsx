@@ -23,6 +23,8 @@ import inboundOrderService from "../../../../../../../services/inboundOrderServi
 import landingNoteService from "../../../../../../../services/landingNoteService";
 import "../../../../../../../design/scss/material-edit-form.scss";
 import "../../../../../../../design/scss/dispatch-note.scss";
+import usePermissions from "../../../../../../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../../shared/constants/permissions";
 
 // AttachmentsList Component (from Operation.jsx)
 const AttachmentsList = ({ attachments = [], onRemove, cardColor, isDragging, onDragEnter, onDragLeave, onDragOver, onDrop, fileInputRef, onFileInputChange }) => {
@@ -364,6 +366,30 @@ const buildDispatchConvertOrders = (note, vehicleOpts = [], locationOpts = [], d
 };
 
 const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
+  const { hasPermission } = usePermissions();
+  // KANBAN_CARD > MATERIAL_MANAGEMENT per-action gates — absence of the
+  // module/submodule/action in the permissions response means false (deny by
+  // default).
+  const canUpdateLandingNote = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.UPDATE_LANDING_NOTE,
+  });
+  const canDeleteLandingNote = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.DELETE_LANDING_NOTE,
+  });
+  const canPrintLandingNote = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.PRINT_LANDING_NOTE,
+  });
+  const canConvertToDispatchNote = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT,
+    actionKey: PERMISSION_ACTIONS.CONVERT_TO_DISPATCH_NOTE,
+  });
   const {
     convertLandingNote,
     getAllLandingNotes,
@@ -548,6 +574,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
 
   const handleOpenModal = (note = null) => {
     if (note) {
+      if (!canUpdateLandingNote) return;
       setEditingNote(note);
       setShowModal(true);
       const noteId = note?.landing_note_id ?? note?.id;
@@ -608,6 +635,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!canUpdateLandingNote) return;
     if (!validateEditForm()) return;
 
     const landingNoteId = editingNote?.landing_note_id ?? editingNote?.id;
@@ -672,6 +700,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   };
 
   const handleDelete = (note) => {
+    if (!canDeleteLandingNote) return;
     setDeletingNote(note);
     setShowDeleteModal(true);
   };
@@ -717,6 +746,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
 
 
   const handleConvertToDispatch = (note) => {
+    if (!canConvertToDispatchNote) return;
     handleCloseDropdown();
     setConvertingNote(note);
     setConvertMinDate(nextDayOf(note.landing_date || note.date));
@@ -1140,6 +1170,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
   };
 
   const handlePrintNote = async (note) => {
+    if (!canPrintLandingNote) return;
     handleCloseDropdown();
     const landingNoteId = note?.landing_note_id ?? note?.id;
     if (!landingNoteId || printingNoteId) return;
@@ -2168,7 +2199,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
       <button type="button" className="btn btn-secondary" onClick={handleCloseViewModal}>
         Close
       </button>
-      {viewingNote && (
+      {viewingNote && canPrintLandingNote && (
         <button
           type="button"
           className="btn btn-primary d-flex align-items-center gap-2"
@@ -2276,42 +2307,50 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                       >
                         <img src={eyeIcon} alt="view" />
                       </button>
-                      <Tooltip id={`print-note-${note.id}`} place="left" content="Print" />
-                      <button
-                        type="button"
-                        onClick={() => handlePrintNote(note)}
-                        data-tooltip-id={`print-note-${note.id}`}
-                        disabled={printingNoteId === (note.landing_note_id ?? note.id)}
-                        className="landing-action-btn"
-                      >
-                        {printingNoteId === (note.landing_note_id ?? note.id) ? (
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="landing-spin">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
-                          </svg>
-                        ) : (
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M6 9V2H18V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M6 18H4C2.89543 18 2 17.1046 2 16V11C2 9.89543 2.89543 9 4 9H20C21.1046 9 22 9.89543 22 11V16C22 17.1046 21.1046 18 20 18H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M18 14H6V22H18V14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M18 9H6V14H18V9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </button>
-                      <Tooltip id={`convert-note-${note.id}`} place="left" content=" Convert" />
-                      <button
-                        type="button"
-                        onClick={() => handleConvertToDispatch(note)}
-                        data-tooltip-id={`convert-note-${note.id}`}
-                        className="landing-action-btn"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M1 4H10V12H1V4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M10 6H16L19 9V12H10V6Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          <circle cx="4" cy="17" r="2" stroke="currentColor" strokeWidth="2" />
-                          <circle cx="17" cy="17" r="2" stroke="currentColor" strokeWidth="2" />
-                          <path d="M19 9H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
-                      </button>
+                      {canPrintLandingNote && (
+                        <>
+                          <Tooltip id={`print-note-${note.id}`} place="left" content="Print" />
+                          <button
+                            type="button"
+                            onClick={() => handlePrintNote(note)}
+                            data-tooltip-id={`print-note-${note.id}`}
+                            disabled={printingNoteId === (note.landing_note_id ?? note.id)}
+                            className="landing-action-btn"
+                          >
+                            {printingNoteId === (note.landing_note_id ?? note.id) ? (
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="landing-spin">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+                              </svg>
+                            ) : (
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M6 9V2H18V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M6 18H4C2.89543 18 2 17.1046 2 16V11C2 9.89543 2.89543 9 4 9H20C21.1046 9 22 9.89543 22 11V16C22 17.1046 21.1046 18 20 18H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M18 14H6V22H18V14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M18 9H6V14H18V9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                          </button>
+                        </>
+                      )}
+                      {canConvertToDispatchNote && (
+                        <>
+                          <Tooltip id={`convert-note-${note.id}`} place="left" content=" Convert" />
+                          <button
+                            type="button"
+                            onClick={() => handleConvertToDispatch(note)}
+                            data-tooltip-id={`convert-note-${note.id}`}
+                            className="landing-action-btn"
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M1 4H10V12H1V4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <path d="M10 6H16L19 9V12H10V6Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <circle cx="4" cy="17" r="2" stroke="currentColor" strokeWidth="2" />
+                              <circle cx="17" cy="17" r="2" stroke="currentColor" strokeWidth="2" />
+                              <path d="M19 9H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
                       <div className={`action-dropdown-wrapper landing-more-actions-wrapper${openDropdownId === note.id ? " landing-more-actions-wrapper--open" : ""}`}>
                         <Tooltip id={`more-actions-${note.id}`} place="left" content="More actions" />
                         <button
@@ -2332,28 +2371,32 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
                             className="landing-dropdown-menu"
                             style={{ top: `${dropdownPosition.top}px`, right: `${dropdownPosition.right}px` }}
                           >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                handleCloseDropdown();
-                                handleOpenModal(note);
-                              }}
-                              className="landing-dropdown-item landing-dropdown-item--default"
-                            >
-                              <img src={editIcon} alt="edit" />
-                              <span>Edit</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                handleCloseDropdown();
-                                handleDelete(note);
-                              }}
-                              className="landing-dropdown-item landing-dropdown-item--danger"
-                            >
-                              <img src={deleteIcon} alt="delete" />
-                              <span>Delete</span>
-                            </button>
+                            {canUpdateLandingNote && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleCloseDropdown();
+                                  handleOpenModal(note);
+                                }}
+                                className="landing-dropdown-item landing-dropdown-item--default"
+                              >
+                                <img src={editIcon} alt="edit" />
+                                <span>Edit</span>
+                              </button>
+                            )}
+                            {canDeleteLandingNote && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleCloseDropdown();
+                                  handleDelete(note);
+                                }}
+                                className="landing-dropdown-item landing-dropdown-item--danger"
+                              >
+                                <img src={deleteIcon} alt="delete" />
+                                <span>Delete</span>
+                              </button>
+                            )}
                           </div>,
                           document.body
                         )}

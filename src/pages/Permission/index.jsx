@@ -6,8 +6,27 @@ import { PermissionModal } from './Modals/AddEditPermission';
 import { useState, useEffect } from 'react';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 import usePermissionReducer from '../../store/PermissionReducer';
+import usePermissions from '../../shared/hooks/usePermissions';
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from '../../shared/constants/permissions';
 
 const Permission = () => {
+  const { hasPermission } = usePermissions();
+  const canAddPermission = hasPermission({
+    moduleKey: PERMISSION_MODULES.USER_MANAGEMENT,
+    submoduleKey: PERMISSION_SUBMODULES.PERMISSIONS,
+    actionKey: PERMISSION_ACTIONS.ADD,
+  });
+  const canEditPermission = hasPermission({
+    moduleKey: PERMISSION_MODULES.USER_MANAGEMENT,
+    submoduleKey: PERMISSION_SUBMODULES.PERMISSIONS,
+    actionKey: PERMISSION_ACTIONS.EDIT,
+  });
+  const canArchivePermission = hasPermission({
+    moduleKey: PERMISSION_MODULES.USER_MANAGEMENT,
+    submoduleKey: PERMISSION_SUBMODULES.PERMISSIONS,
+    actionKey: PERMISSION_ACTIONS.ARCHIVE,
+  });
+
   const [params, setParams] = useState({
     page: 1,
     total: 0,
@@ -70,9 +89,22 @@ const Permission = () => {
       name: 'Actions',
       selector: 'linksInfo',
       cell: RenderAction,
-      onEditClick: (row) => setShowPermissionModal(row),
-      onDeleteClick: (row) => { setSelectedRole(row); setShowDeleteModal(true); },
-      onUnarchiveClick: (row) => { setSelectedRole(row); setShowUnarchiveModal(true); },
+      canEditPermission,
+      canArchivePermission,
+      onEditClick: (row) => {
+        if (!canEditPermission) return;
+        setShowPermissionModal(row);
+      },
+      onDeleteClick: (row) => {
+        if (!canArchivePermission) return;
+        setSelectedRole(row);
+        setShowDeleteModal(true);
+      },
+      onUnarchiveClick: (row) => {
+        if (!canArchivePermission) return;
+        setSelectedRole(row);
+        setShowUnarchiveModal(true);
+      },
       width: '200',
     },
   ];
@@ -83,8 +115,11 @@ const Permission = () => {
         <div className="container-fluid">
           <CommonHeader
             tableTitle="Roles and Permissions"
-            isAddEnabled
-            onAddModalClick={() => setShowPermissionModal(true)}
+            isAddEnabled={canAddPermission}
+            onAddModalClick={() => {
+              if (!canAddPermission) return;
+              setShowPermissionModal(true);
+            }}
             addModalLabel="Add Role/Permission"
             setSearch={(e) =>
               setParams({ ...params, search: e, page: 1, limit: 10 })

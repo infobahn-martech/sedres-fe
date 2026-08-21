@@ -204,7 +204,19 @@ const router = createBrowserRouter(
                 },
                 // Role Management - Super Admin, Admin only
                 { path: "/roles", element: <RouteGuard><Role /></RouteGuard> },
-                { path: "/permissions", element: <RouteGuard><Permission /></RouteGuard> },
+                {
+                  path: "/permissions",
+                  element: (
+                    <PermissionRoute
+                      moduleKey={PERMISSION_MODULES.USER_MANAGEMENT}
+                      submoduleKey={PERMISSION_SUBMODULES.PERMISSIONS}
+                      actionKey={PERMISSION_ACTIONS.VIEW}
+                      permissionOnly
+                    >
+                      <Permission />
+                    </PermissionRoute>
+                  ),
+                },
                 // User Management
                 {
                   path: "/users",
@@ -231,15 +243,51 @@ const router = createBrowserRouter(
                 // Vessel Onboarding
                 { path: "/vessel-onboarding", element: <RouteGuard><Vessel /></RouteGuard> },
                 // Billing Entity
-                { path: "/billing-entity", element: <RouteGuard><BillingEntity /></RouteGuard> },
+                {
+                  path: "/billing-entity",
+                  element: (
+                    <PermissionRoute
+                      moduleKey={PERMISSION_MODULES.ENTITY_MANAGEMENT}
+                      submoduleKey={PERMISSION_SUBMODULES.BILLING_ENTITY}
+                      actionKey={PERMISSION_ACTIONS.LIST}
+                      permissionOnly
+                    >
+                      <BillingEntity />
+                    </PermissionRoute>
+                  ),
+                },
                 // Customer Pricing
-                { path: "/customer-pricing", element: <RouteGuard><CustomerPricing /></RouteGuard> },
+                {
+                  path: "/customer-pricing",
+                  element: (
+                    <PermissionRoute
+                      moduleKey={PERMISSION_MODULES.ENTITY_MANAGEMENT}
+                      submoduleKey={PERMISSION_SUBMODULES.CUSTOMER_PRICING}
+                      actionKey={PERMISSION_ACTIONS.LIST}
+                      permissionOnly
+                    >
+                      <CustomerPricing />
+                    </PermissionRoute>
+                  ),
+                },
                 // Customer Pricing Infobhan
                 { path: "/customer-pricing-infobhan", element: <RouteGuard><CustomerPricingInfobhan /></RouteGuard> },
                 // Custom Inspection
                 { path: "/custom-inspection", element: <RouteGuard><CustomInspection /></RouteGuard> },
                 // Crew Management
-                { path: "/crew-management", element: <RouteGuard><Crew /></RouteGuard> },
+                {
+                  path: "/crew-management",
+                  element: (
+                    <PermissionRoute
+                      moduleKey={PERMISSION_MODULES.ENTITY_MANAGEMENT}
+                      submoduleKey={PERMISSION_SUBMODULES.CREW_MANAGEMENT}
+                      actionKey={PERMISSION_ACTIONS.LIST}
+                      permissionOnly
+                    >
+                      <Crew />
+                    </PermissionRoute>
+                  ),
+                },
                 // Report Management
                 { path: "/report-management", element: <RouteGuard><ReportManagement /></RouteGuard> },
                 // Activity Log
@@ -283,9 +331,33 @@ const router = createBrowserRouter(
                 // Job Status BE
                 { path: "/job-status", element: <RouteGuard><JobStatusBE /></RouteGuard> },
                 // Group Email BE
-                { path: "/group-email", element: <RouteGuard><GroupEmailBE /></RouteGuard> },
+                {
+                  path: "/group-email",
+                  element: (
+                    <PermissionRoute
+                      moduleKey={PERMISSION_MODULES.ENTITY_MANAGEMENT}
+                      submoduleKey={PERMISSION_SUBMODULES.GROUP_EMAIL}
+                      actionKey={PERMISSION_ACTIONS.LIST}
+                      permissionOnly
+                    >
+                      <GroupEmailBE />
+                    </PermissionRoute>
+                  ),
+                },
                 // Billing Instruction
-                { path: "/billing-instruction", element: <RouteGuard><BillingInstruction /></RouteGuard> },
+                {
+                  path: "/billing-instruction",
+                  element: (
+                    <PermissionRoute
+                      moduleKey={PERMISSION_MODULES.ENTITY_MANAGEMENT}
+                      submoduleKey={PERMISSION_SUBMODULES.BILLING_INSTRUCTION}
+                      actionKey={PERMISSION_ACTIONS.LIST}
+                      permissionOnly
+                    >
+                      <BillingInstruction />
+                    </PermissionRoute>
+                  ),
+                },
                 // Captains
                 { path: "/captains", element: <RouteGuard><Captains /></RouteGuard> },
                 // Fleet
@@ -326,7 +398,19 @@ const router = createBrowserRouter(
                 { path: "/medical-services", element: <RouteGuard><MedicalServices /></RouteGuard> },
                 { path: "/third-party-service", element: <RouteGuard><ThirdPartyService /></RouteGuard> },
                 { path: "/hospital-services", element: <RouteGuard><HospitalServices /></RouteGuard> },
-                { path: ROUTE_PATHS.MWP_HISTORY, element: <RouteGuard><MWPHistory /></RouteGuard> },
+                {
+                  path: ROUTE_PATHS.MWP_HISTORY,
+                  element: (
+                    <PermissionRoute
+                      moduleKey={PERMISSION_MODULES.ENTITY_MANAGEMENT}
+                      submoduleKey={PERMISSION_SUBMODULES.MWP_HISTORY}
+                      actionKey={PERMISSION_ACTIONS.LIST}
+                      permissionOnly
+                    >
+                      <MWPHistory />
+                    </PermissionRoute>
+                  ),
+                },
                 { path: "/kpi-tasks", element: <RouteGuard><KPITasks /></RouteGuard> },
                 { path: "/kpi-users", element: <RouteGuard><KPIUsers /></RouteGuard> },
                 { path: "/coordinates", element: <RouteGuard><Coordinates /></RouteGuard> },
