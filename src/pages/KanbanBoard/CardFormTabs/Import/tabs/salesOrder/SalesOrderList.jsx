@@ -1770,8 +1770,8 @@ const SalesOrderList = ({
         </td>
       )}
 
-      {/* Delete — no backend endpoint yet, removes the item locally */}
-      {!readOnly && (
+      {/* Delete — DA-only, no backend endpoint yet, removes the item locally */}
+      {isDaVerifyContext && !readOnly && (
         <td>
           <div className="sales-order-table-cell" style={{ textAlign: "center" }}>
             <button
@@ -2284,14 +2284,14 @@ const SalesOrderList = ({
                   {renderTableHeader("Supporting Documents", "col-documents")}
                   {renderTableHeader("Supplier Code", "col-supplier")}
                   {isDaVerifyContext && renderTableHeader("Verify", "col-verify")}
-                  {!readOnly && renderTableHeader("", "col-delete")}
+                  {isDaVerifyContext && !readOnly && renderTableHeader("", "col-delete")}
                 </tr>
               </thead>
               <tbody>
                 {displayOrderList.length === 0 && !isLoadingSalesOrder && (
                   <tr>
                     <td
-                      colSpan={13 + (isDaVerifyContext ? 1 : 0) + (!readOnly ? 1 : 0)}
+                      colSpan={13 + (isDaVerifyContext ? 1 : 0) + (isDaVerifyContext && !readOnly ? 1 : 0)}
                       style={{ padding: "28px 16px", textAlign: "center", color: "#64748b", fontSize: "14px" }}
                     >
                       No sales order line items for this call.
