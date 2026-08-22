@@ -18,6 +18,7 @@ export default function SwimlaneColumnCell({
   column,
   cards,
   setSelectedCard,
+  cardsById,
   isCollapsed = false,
   onContextMenu,
   columnHeight,
@@ -168,6 +169,7 @@ export default function SwimlaneColumnCell({
                   card={card}
                   index={index}
                   setSelectedCard={setSelectedCard}
+                  cardsById={cardsById}
                   isClassicLayout={isClassicLayout}
                   isModernLayout={isModernLayout}
                   columnTitle={column.title}
@@ -194,6 +196,7 @@ SwimlaneColumnCell.propTypes = {
   }).isRequired,
   cards: PropTypes.arrayOf(PropTypes.object).isRequired,
   setSelectedCard: PropTypes.func.isRequired,
+  cardsById: PropTypes.object,
   isCollapsed: PropTypes.bool,
   onContextMenu: PropTypes.func,
   columnHeight: PropTypes.number,

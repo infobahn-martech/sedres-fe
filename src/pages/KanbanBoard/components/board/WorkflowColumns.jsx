@@ -25,6 +25,7 @@ export default function WorkflowColumns({
   maxColumnHeights,
   onDragEnd,
   onSelectCard,
+  cardsById,
   onColumnHeaderClick,
   onContextMenu,
   onHeightChange,
@@ -207,6 +208,7 @@ export default function WorkflowColumns({
                         column={column}
                         cards={cards}
                         setSelectedCard={onSelectCard}
+                        cardsById={cardsById}
                         isCollapsed={isCollapsed}
                         onContextMenu={onContextMenu}
                         columnHeight={maxHeight}

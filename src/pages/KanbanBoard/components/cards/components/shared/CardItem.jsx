@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { KANBAN_DND_DISABLED } from "../../../../../../shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
@@ -120,13 +121,15 @@ ApiCardCountBadge.propTypes = {
 };
 
 /** Row of API service-count icons (transport/hotel/medical/material/waste) shown on full API cards. */
-function ApiCardCountIconsRow({ card }) {
+function ApiCardCountIconsRow({ card, cardsById, setSelectedCard }) {
+  const hasLink = card.hasLinkedCall && Array.isArray(card.linkedCardIds) && card.linkedCardIds.length > 0;
   const hasAny =
     Number(card.transportCount) > 0 ||
     Number(card.hotelCount) > 0 ||
     Number(card.medicalCount) > 0 ||
     Number(card.materialManagementCount) > 0 ||
-    Number(card.wasteDisposalCount) > 0;
+    Number(card.wasteDisposalCount) > 0 ||
+    hasLink;
   if (!hasAny) return null;
 
   return (
@@ -136,6 +139,7 @@ function ApiCardCountIconsRow({ card }) {
       <ApiCardCountBadge IconComp={MedicalIcon} count={card.medicalCount} label="Medical" />
       <ApiCardCountBadge IconComp={MaterialManagementIcon} count={card.materialManagementCount} label="Material Management" />
       <ApiCardCountBadge IconComp={WasteDisposalIcon} count={card.wasteDisposalCount} label="Waste Disposal" />
+      <ApiCardLinkBadge card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} />
     </div>
   );
 }
@@ -147,7 +151,83 @@ ApiCardCountIconsRow.propTypes = {
     medicalCount: PropTypes.number,
     materialManagementCount: PropTypes.number,
     wasteDisposalCount: PropTypes.number,
+    hasLinkedCall: PropTypes.bool,
+    linkedCardIds: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
+  cardsById: PropTypes.object,
+  setSelectedCard: PropTypes.func.isRequired,
+};
+
+/**
+ * Clickable "Linked call" badge: navigates straight to the other card when there's exactly one,
+ * otherwise opens a small picker listing every linked card by title (resolved via `cardsById`).
+ */
+function ApiCardLinkBadge({ card, cardsById, setSelectedCard }) {
+  const [showPicker, setShowPicker] = useState(false);
+  const linkedIds = Array.isArray(card.linkedCardIds) ? card.linkedCardIds : [];
+  if (!card.hasLinkedCall || linkedIds.length === 0) return null;
+
+  const openCard = (id) => {
+    const target = cardsById?.[id];
+    if (target) setSelectedCard(target);
+  };
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (linkedIds.length === 1) {
+      openCard(linkedIds[0]);
+      return;
+    }
+    setShowPicker((prev) => !prev);
+  };
+
+  return (
+    <span className="card-api-link-badge-wrap">
+      <span
+        className="card-api-count-badge card-api-link-badge"
+        style={{ cursor: "pointer" }}
+        data-tooltip-id={`link-badge-${card.id}`}
+        data-tooltip-content={linkedIds.length === 1 ? "View linked card" : "View linked cards"}
+        onClick={handleClick}
+      >
+        <LinkCardIcon size={13} color="#2563eb" />
+        <span>{linkedIds.length}</span>
+      </span>
+      <Tooltip id={`link-badge-${card.id}`} place="top" className="card-name-tooltip" />
+      {showPicker && (
+        <>
+          <div className="card-api-link-picker-overlay" onClick={(e) => { e.stopPropagation(); setShowPicker(false); }} />
+          <div className="card-api-link-picker" onClick={(e) => e.stopPropagation()}>
+            {linkedIds.map((id) => {
+              const target = cardsById?.[id];
+              const label = target ? getApiCardDisplayTitle(target) : `Card #${id}`;
+              return (
+                <div
+                  key={id}
+                  className="card-api-link-picker-item"
+                  onClick={() => {
+                    setShowPicker(false);
+                    openCard(id);
+                  }}
+                >
+                  {label || `Card #${id}`}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </span>
+  );
+}
+
+ApiCardLinkBadge.propTypes = {
+  card: PropTypes.shape({
+    hasLinkedCall: PropTypes.bool,
+    linkedCardIds: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
+  cardsById: PropTypes.object,
+  setSelectedCard: PropTypes.func.isRequired,
 };
 
 /** Circular KPI used in API card summary row (classic + compact). */
@@ -390,6 +470,7 @@ function ApiKanbanCardShrunk({ card, setSelectedCard }) {
 function ApiKanbanCardFull({
   card,
   setSelectedCard,
+  cardsById,
   isModernLayout,
   isClassicLayout,
 }) {
@@ -480,7 +561,7 @@ function ApiKanbanCardFull({
         ) : null}
       </div>
 
-      <ApiCardCountIconsRow card={card} />
+      <ApiCardCountIconsRow card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} />
 
       {showSummaryRow ? (
         <div className="card-api-summary-row">
@@ -508,6 +589,7 @@ function CardItem({
   card,
   index,
   setSelectedCard,
+  cardsById,
   isShrunk = false,
   hideExtraDetails = false,
   isClassicLayout = false,
@@ -588,6 +670,7 @@ function CardItem({
               <ApiKanbanCardFull
                 card={card}
                 setSelectedCard={setSelectedCard}
+                cardsById={cardsById}
                 isModernLayout={isModernLayout}
                 isClassicLayout={isClassicLayout}
               />
@@ -1007,9 +1090,12 @@ CardItem.propTypes = {
     footerLinkCount: PropTypes.number,
     footerEta: PropTypes.string,
     extraDetailsShowIcons: PropTypes.arrayOf(PropTypes.string),
+    hasLinkedCall: PropTypes.bool,
+    linkedCardIds: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
   index: PropTypes.number.isRequired,
   setSelectedCard: PropTypes.func.isRequired,
+  cardsById: PropTypes.object,
   isShrunk: PropTypes.bool,
   hideExtraDetails: PropTypes.bool,
   isClassicLayout: PropTypes.bool,

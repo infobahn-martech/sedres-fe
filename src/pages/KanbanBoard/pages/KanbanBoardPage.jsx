@@ -87,6 +87,12 @@ export default function KanbanBoardPage() {
     { userProfile, refetchBoard, boardId: selectedBoardId }
   );
 
+  /** Flat id -> card lookup across every workflow, used to resolve linked-card navigation (see CardItem). */
+  const cardsById = useMemo(
+    () => Object.assign({}, ...workflows.map((wf) => wf.cards)),
+    [workflows]
+  );
+
   useKanbanRoleAccess();
 
   useEffect(() => {
@@ -316,6 +322,7 @@ export default function KanbanBoardPage() {
         )}
         <KanbanBoardContent
           workflows={workflows}
+          cardsById={cardsById}
           boardLoading={boardLoading}
           suppressEmptyMessage={isOperatorBoard}
           expandedWorkflows={expandedWorkflows}

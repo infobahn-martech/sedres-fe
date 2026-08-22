@@ -909,6 +909,56 @@
   color: var(--text-primary);
 }
 
+.card-api-link-badge-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.card-api-link-badge {
+  cursor: pointer;
+  color: #2563eb;
+}
+
+.card-api-link-badge:hover {
+  text-decoration: underline;
+}
+
+.card-api-link-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+
+.card-api-link-picker {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 21;
+  min-width: 160px;
+  max-width: 240px;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+}
+
+.card-api-link-picker-item {
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-api-link-picker-item:hover {
+  background: var(--bg-hover, #f1f5f9);
+}
+
 .card-api-summary-row .card-api-kpi .circular-progress {
   margin-top: 0;
 }

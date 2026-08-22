@@ -225,6 +225,10 @@ export function mapBoardWorkflowFromApi(workflow) {
             port: card.port_id != null && String(card.port_id).trim() !== "" ? String(card.port_id) : "",
             callId: String(card.call_id || ""),
             vesselId: String(card.vessel_id || ""),
+            hasLinkedCall: card.has_linked_call === true || card.has_linked_call === "1" || card.has_linked_call === 1,
+            linkedCardIds: Array.isArray(card.linked_card_id)
+              ? card.linked_card_id.map((id) => String(id)).filter((id) => id !== cardId)
+              : [],
             userId: String(card.user_id || ""),
             entityLogo:
               card.entity_logo && String(card.entity_logo).trim()

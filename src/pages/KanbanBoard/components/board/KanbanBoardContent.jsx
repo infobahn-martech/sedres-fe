@@ -3,6 +3,7 @@ import WorkflowColumns from "./WorkflowColumns";
 
 export default function KanbanBoardContent({
   workflows,
+  cardsById,
   boardLoading = false,
   suppressEmptyMessage = false,
   expandedWorkflows,
@@ -50,6 +51,7 @@ export default function KanbanBoardContent({
         maxColumnHeights={maxColumnHeights}
         onDragEnd={createDragEndHandler(workflow.id)}
         onSelectCard={onSelectCard}
+        cardsById={cardsById}
         onColumnHeaderClick={onColumnHeaderClick}
         onContextMenu={onContextMenu}
         onHeightChange={onHeightChange}
