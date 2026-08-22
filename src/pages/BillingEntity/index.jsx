@@ -38,8 +38,8 @@ const BillingEntity = () => {
     total: 0,
     limit: 10,
     searchTerm: "",
-    sortOrder: -1,
-    sortBy: "createdAt",
+    sortOrder: 1,
+    sortBy: "customer_code",
   });
 
   const [showBillingEntityModal, setShowBillingEntityModal] = useState(false);
@@ -58,9 +58,9 @@ const BillingEntity = () => {
     const apiParams = {
       page: params.page,
       limit: params.limit,
-      ...(params.searchTerm && { searchTerm: params.searchTerm }),
-      ...(params.sortBy && { sortBy: params.sortBy }),
-      ...(params.sortOrder != null && { sortOrder: params.sortOrder }),
+      ...(params.searchTerm && { search: params.searchTerm }),
+      ...(params.sortBy && { sort_by: params.sortBy }),
+      ...(params.sortOrder != null && { sort_order: params.sortOrder }),
     };
     getBillingEntities({ params: apiParams });
   }, [getBillingEntities, params]);
@@ -123,7 +123,7 @@ const BillingEntity = () => {
     {
       name: "Credit Limit",
       selector: "credit_limit",
-      sort: false,
+      sort: true,
       width: "150",
       thclass: "tb-head",
       contentClass: "table-content",
