@@ -1444,6 +1444,13 @@
   transform: scale(1.1);
 }
 
+.sales-order-action-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
 .sales-order-delete-item-btn {
   display: inline-flex;
   align-items: center;
