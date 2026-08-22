@@ -934,6 +934,13 @@ const SalesOrderList = ({
     });
   };
 
+  // Generic "Move to ..." step button (steps without a dedicated action, e.g. Awaiting SRF,
+  // PO Received) — these are meant to come from SAP sync, not a manual click, so this just
+  // informs the user instead of advancing the stepper.
+  const handleGenericSoStatusStepClick = () => {
+    useAlertReducer.getState().error("This status is synced from SAP and will update automatically.");
+  };
+
   // Called from the SO Approval email modal — sending is local-only for now (no backend
   // endpoint yet), so this just closes the modal and advances the stepper.
   const handleCreateSoApprovalEmail = (steps) => {
@@ -1758,10 +1765,11 @@ const SalesOrderList = ({
         </div>
       </td>
 
-      {/* Verify — DA-only, local state until a backend field exists to persist it */}
+      {/* Action — DA-only: Verify checkbox (local state until a backend field exists to
+          persist it) + Delete (no backend endpoint yet, removes the item locally) */}
       {isDaVerifyContext && (
         <td>
-          <div className="sales-order-table-cell" style={{ textAlign: "center" }}>
+          <div className="sales-order-table-cell sales-order-action-cell">
             <input
               type="checkbox"
               className="sales-order-verify-checkbox"
@@ -1769,23 +1777,17 @@ const SalesOrderList = ({
               onChange={() => handleToggleVerified(order.id)}
               aria-label="Verify line item"
             />
-          </div>
-        </td>
-      )}
-
-      {/* Delete — DA-only, no backend endpoint yet, removes the item locally */}
-      {isDaVerifyContext && !readOnly && (
-        <td>
-          <div className="sales-order-table-cell" style={{ textAlign: "center" }}>
-            <button
-              type="button"
-              className="sales-order-delete-item-btn"
-              onClick={() => handleDeleteItem(order)}
-              title={`Delete Item Code. ${order.itemNo || ""}`}
-              aria-label={`Delete Item Code. ${order.itemNo || ""}`}
-            >
-              <FiTrash2 />
-            </button>
+            {!readOnly && (
+              <button
+                type="button"
+                className="sales-order-delete-item-btn"
+                onClick={() => handleDeleteItem(order)}
+                title={`Delete Item No. ${order.itemNo || ""}`}
+                aria-label={`Delete Item No. ${order.itemNo || ""}`}
+              >
+                <FiTrash2 />
+              </button>
+            )}
           </div>
         </td>
       )}
@@ -2288,15 +2290,14 @@ const SalesOrderList = ({
                   {renderTableHeader("Third Party", "col-third-party")}
                   {renderTableHeader("Supporting Documents", "col-documents")}
                   {renderTableHeader("Supplier Code", "col-supplier")}
-                  {isDaVerifyContext && renderTableHeader("Verify", "col-verify")}
-                  {isDaVerifyContext && !readOnly && renderTableHeader("", "col-delete")}
+                  {isDaVerifyContext && renderTableHeader("Action", "col-verify")}
                 </tr>
               </thead>
               <tbody>
                 {displayOrderList.length === 0 && !isLoadingSalesOrder && (
                   <tr>
                     <td
-                      colSpan={13 + (isDaVerifyContext ? 1 : 0) + (isDaVerifyContext && !readOnly ? 1 : 0)}
+                      colSpan={13 + (isDaVerifyContext ? 1 : 0)}
                       style={{ padding: "28px 16px", textAlign: "center", color: "#64748b", fontSize: "14px" }}
                     >
                       No sales order line items for this call.
@@ -2411,7 +2412,7 @@ const SalesOrderList = ({
           <div className="so-client-process-section">
             <h3 className="so-client-process-title">
               <FiClipboard className="so-client-process-title-icon" />
-              Sales Order Status{soCustomerName ? ` — ${soCustomerName}` : ""}
+              DA Status{soCustomerName ? ` — ${soCustomerName}` : ""}
             </h3>
             <div className="so-status-checklist">
               {steps.map((step, index) => {
@@ -2511,7 +2512,7 @@ const SalesOrderList = ({
                         <button
                           type="button"
                           className="so-status-check-advance-btn"
-                          onClick={() => handleAdvanceSoStatus(steps)}
+                          onClick={handleGenericSoStatusStepClick}
                         >
                           Move to &quot;{steps[index + 1].label}&quot;
                         </button>
