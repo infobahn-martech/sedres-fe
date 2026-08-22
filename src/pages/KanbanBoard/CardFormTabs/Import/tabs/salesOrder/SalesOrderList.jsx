@@ -1169,7 +1169,7 @@ const SalesOrderList = ({
 
   const handleSaveNewItem = async () => {
     if (!newItemForm.tariffId || !newItemForm.itemDescription) {
-      setItemNoError("Please select an Item No");
+      setItemNoError("Please select an Item Code");
       return;
     }
     setItemNoError("");
@@ -1605,17 +1605,20 @@ const SalesOrderList = ({
       <td>
         <div className="sales-order-table-cell">
           {readOnly ? `${order.discount ?? 0}%` : (
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.01"
-              value={order.discount ?? 0}
-              onChange={(e) => handleFieldChange(order.id, "discount", e.target.value)}
-              onBlur={() => handleUpdateItemAmount(order)}
-              className="sales-order-qty-input"
-              style={cellStyle}
-            />
+            <div className="sales-order-percent-input-wrapper">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={order.discount ?? 0}
+                onChange={(e) => handleFieldChange(order.id, "discount", e.target.value)}
+                onBlur={() => handleUpdateItemAmount(order)}
+                className="sales-order-qty-input"
+                style={{ ...cellStyle, boxSizing: "border-box", paddingRight: "20px" }}
+              />
+              <span className="sales-order-percent-input-suffix">%</span>
+            </div>
           )}
         </div>
       </td>
@@ -1836,7 +1839,7 @@ const SalesOrderList = ({
                   <div className="sales-order-add-accordion-body">
                     <div className="sales-order-add-form-grid">
                       <div className="sales-order-add-form-field">
-                        <label>Item No <span style={{ color: "#e53935" }}>*</span></label>
+                        <label>Item Code <span style={{ color: "#e53935" }}>*</span></label>
                         <select
                           value={newItemForm.itemNo}
                           onChange={(e) => handleItemCodeSelect(e.target.value)}
@@ -1849,7 +1852,7 @@ const SalesOrderList = ({
                               ? "Select Port first..."
                               : isLoadingItemCodes
                               ? "Loading item codes..."
-                              : "Select Item No..."}
+                              : "Select Item Code..."}
                           </option>
                           {itemCodeOptions.map((o) => (
                             <option key={o.tariff_id} value={o.item_code}>{o.item_code}</option>
@@ -2076,6 +2079,8 @@ const SalesOrderList = ({
                 placeholder="Enter SRT Number..."
                 value={srtNumber}
                 onChange={handleChange("srtNumber")}
+                onBlur={() => handleUpdateSalesOrder({ fields: { srt_number: srtNumber } })}
+                onKeyDown={handleEnterBlur}
                 readOnly={readOnly}
               />
             </div>
@@ -2272,7 +2277,7 @@ const SalesOrderList = ({
             <table className="table table-striped sales-order-table sales-order-list-table" style={{ "--card-color": "#e2e6ff" }}>
               <thead>
                 <tr>
-                  {renderTableHeader("Item No", "col-item-no")}
+                  {renderTableHeader("Item Code", "col-item-no")}
                   {renderTableHeader("Item Description", "col-item-desc")}
                   {renderTableHeader("Quantity", "col-qty")}
                   {renderTableHeader("Unit Price", "col-unit-price")}
@@ -2765,7 +2770,7 @@ const SalesOrderList = ({
         show={showDeleteItemModal}
         onCancel={handleCancelDeleteItem}
         onConfirm={handleConfirmDeleteItem}
-        deleteText={`Are you sure you want to delete Item No. ${deletingItem?.itemNo || ""}?`}
+        deleteText={`Are you sure you want to delete Item Code. ${deletingItem?.itemNo || ""}?`}
       />
     </div>
   );
