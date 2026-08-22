@@ -2403,11 +2403,40 @@ function General({
   setHasSubmitted = () => { },
   setIsSavingGeneral = () => { },
 }) {
-  const { hasPermission } = usePermissions();
-  const canAddCard = hasPermission({
+  const { hasPermission, hasAnyPermission } = usePermissions();
+  // ADD_CARD no longer has a VIEW action — it's gated by its granular
+  // Basic fields / Email actions instead.
+  const canAddCard = hasAnyPermission(
+    [PERMISSION_ACTIONS.BASIC_FIELDS, PERMISSION_ACTIONS.EMAIL].map((actionKey) => ({
+      moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+      submoduleKey: PERMISSION_SUBMODULES.ADD_CARD,
+      actionKey,
+    }))
+  );
+  const canViewBasicFields = hasPermission({
     moduleKey: PERMISSION_MODULES.KANBAN_CARD,
     submoduleKey: PERMISSION_SUBMODULES.ADD_CARD,
-    actionKey: PERMISSION_ACTIONS.VIEW,
+    actionKey: PERMISSION_ACTIONS.BASIC_FIELDS,
+  });
+  const canViewGeneralInformation = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.APPOINTMENT_DETAILS,
+    actionKey: PERMISSION_ACTIONS.GENERAL_INFORMATION,
+  });
+  const canViewEmail = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.ADD_CARD,
+    actionKey: PERMISSION_ACTIONS.EMAIL,
+  });
+  const canViewDailyTasks = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.APPOINTMENT_DETAILS,
+    actionKey: PERMISSION_ACTIONS.DAILY_TASKS,
+  });
+  const canViewOperationTasks = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.APPOINTMENT_DETAILS,
+    actionKey: PERMISSION_ACTIONS.OPERATION_TASKS,
   });
   const accentColor = useMemo(
     () =>
@@ -5081,6 +5110,7 @@ ${body}
                 <div
                   className={`${!isAddMode ? "general-info-three-column general-info-view-with-tasks" : "general-info-two-column general-add-3col-layout general-add-card-layout"} general-tab-form-layout`}
                 >
+                  {(isAddMode ? canViewBasicFields : canViewGeneralInformation) && (
                   <div className={`general-info-left ${isAddMode ? "general-add-form-panel" : ""}`}>
                     <div className={isAddMode ? "general-add-form-scroll" : "general-view-form-scroll"}>
                       <div className="pre-arrival-form">
@@ -6222,9 +6252,11 @@ ${body}
                       </div>
                     </div>
                   </div>
+                  )}
 
                   {isAddMode ? (
                     <>
+                      {canViewEmail && (
                       <div className="general-info-right">
                         <EmailPreviewPanel
                           ownerOptions={ownerOptions}
@@ -6251,6 +6283,7 @@ ${body}
                           isBillingEntitySelected={!isEmptyValue(getPrimaryBillingEntityId())}
                         />
                       </div>
+                      )}
                     </>
                   ) : (
                     <>
@@ -6267,6 +6300,7 @@ ${body}
                           </div>
                         </div>
                       )} */}
+                      {canViewDailyTasks && (
                       <div className="general-info-middle">
                         <div className="general-info-tasks-card general-info-tasks-card--daily">
                           <div className="daily-task-box-wrapper">
@@ -6279,6 +6313,8 @@ ${body}
                           </div>
                         </div>
                       </div>
+                      )}
+                      {canViewOperationTasks && (
                       <div className="general-info-right">
                         <div className="general-info-tasks-card general-info-tasks-card--operation">
                           <OperationTasksPanel
@@ -6295,6 +6331,7 @@ ${body}
                           />
                         </div>
                       </div>
+                      )}
                     </>
                   )}
                 </div>

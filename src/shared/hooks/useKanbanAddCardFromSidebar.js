@@ -3,16 +3,20 @@ import usePermissions from './usePermissions';
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from '../constants/permissions';
 
 export default function useKanbanAddCardFromSidebar({ setSelectedCard, setIsAddMode, setAddTargetWorkflowId }) {
-  const { hasPermission } = usePermissions();
+  const { hasAnyPermission } = usePermissions();
 
   useEffect(() => {
     const handleAddCard = (e) => {
+      // ADD_CARD no longer has a VIEW action — it's gated by its granular
+      // Basic fields / Email actions instead.
       if (
-        !hasPermission({
-          moduleKey: PERMISSION_MODULES.KANBAN_CARD,
-          submoduleKey: PERMISSION_SUBMODULES.ADD_CARD,
-          actionKey: PERMISSION_ACTIONS.VIEW,
-        })
+        !hasAnyPermission(
+          [PERMISSION_ACTIONS.BASIC_FIELDS, PERMISSION_ACTIONS.EMAIL].map((actionKey) => ({
+            moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+            submoduleKey: PERMISSION_SUBMODULES.ADD_CARD,
+            actionKey,
+          }))
+        )
       ) {
         return;
       }
@@ -38,5 +42,5 @@ export default function useKanbanAddCardFromSidebar({ setSelectedCard, setIsAddM
 
     window.addEventListener('kanban:add-card', handleAddCard);
     return () => window.removeEventListener('kanban:add-card', handleAddCard);
-  }, [setSelectedCard, setIsAddMode, setAddTargetWorkflowId, hasPermission]);
+  }, [setSelectedCard, setIsAddMode, setAddTargetWorkflowId, hasAnyPermission]);
 }

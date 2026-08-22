@@ -203,14 +203,18 @@ export default function KanbanBoardPage() {
     setContextMenuLaneId(null);
   }, []);
 
-  const { hasPermission } = usePermissions();
+  const { hasAnyPermission } = usePermissions();
   const handleCreateCard = useCallback(() => {
+    // ADD_CARD no longer has a VIEW action — it's gated by its granular
+    // Basic fields / Email actions instead.
     if (
-      !hasPermission({
-        moduleKey: PERMISSION_MODULES.KANBAN_CARD,
-        submoduleKey: PERMISSION_SUBMODULES.ADD_CARD,
-        actionKey: PERMISSION_ACTIONS.VIEW,
-      })
+      !hasAnyPermission(
+        [PERMISSION_ACTIONS.BASIC_FIELDS, PERMISSION_ACTIONS.EMAIL].map((actionKey) => ({
+          moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+          submoduleKey: PERMISSION_SUBMODULES.ADD_CARD,
+          actionKey,
+        }))
+      )
     ) {
       return;
     }
@@ -218,7 +222,7 @@ export default function KanbanBoardPage() {
     setSelectedCard(newCard);
     setIsAddMode(true);
     setAddTargetWorkflowId(null);
-  }, [contextMenuColumn, contextMenuLaneId, setSelectedCard, setIsAddMode, setAddTargetWorkflowId, hasPermission]);
+  }, [contextMenuColumn, contextMenuLaneId, setSelectedCard, setIsAddMode, setAddTargetWorkflowId, hasAnyPermission]);
 
   const handleWorkflowColumnHeightChange = useCallback(
     (columnId, height, laneId) => {

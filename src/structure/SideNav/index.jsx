@@ -127,7 +127,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     () => pathname.match(/^\/kanban-board\/[^/]+/)?.[0] ?? '/kanban-board',
     [pathname]
   );
-  const { hasPermission } = usePermissions();
+  const { hasPermission, hasAnyPermission } = usePermissions();
   // User Management → Users is fully migrated to the new permission system:
   // the backend permission response is authoritative here, no legacy OR.
   const canViewUsersMenu = hasPermission({
@@ -149,11 +149,16 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     moduleKey: PERMISSION_MODULES.KANBAN_WORKFLOW,
     actionKey: PERMISSION_ACTIONS.VIEW_WORKFLOW,
   });
-  const canAddCard = hasPermission({
-    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
-    submoduleKey: PERMISSION_SUBMODULES.ADD_CARD,
-    actionKey: PERMISSION_ACTIONS.VIEW,
-  });
+  // ADD_CARD no longer has a VIEW action — it's gated by its granular
+  // Basic fields / Email actions instead, so the icon stays visible if the
+  // user can access either sub-section.
+  const canAddCard = hasAnyPermission(
+    [PERMISSION_ACTIONS.BASIC_FIELDS, PERMISSION_ACTIONS.EMAIL].map((actionKey) => ({
+      moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+      submoduleKey: PERMISSION_SUBMODULES.ADD_CARD,
+      actionKey,
+    }))
+  );
 
   const boardRouteMatchForEditWorkflow = pathname.match(/^\/kanban-board\/([^/]+)$/);
   const kanbanBoardIdForEditWorkflow = boardRouteMatchForEditWorkflow?.[1] ?? null;

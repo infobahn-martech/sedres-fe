@@ -1793,11 +1793,20 @@ function CardForm({
   // permissions response means false (deny by default). "Operation" hosts Pre
   // Arrival/Arrival/Departure/Checklist/Crew Immigration, so it stays visible if
   // the user can view any one of those sub-sections.
-  const canViewAppointmentDetailsTab = hasPermission({
-    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
-    submoduleKey: PERMISSION_SUBMODULES.APPOINTMENT_DETAILS,
-    actionKey: PERMISSION_ACTIONS.VIEW,
-  });
+  // APPOINTMENT_DETAILS no longer has a VIEW action — it's gated by its three
+  // granular sub-section actions instead, so the tab stays visible if the user
+  // can view any one of General Information / Daily Tasks / Operation Tasks.
+  const canViewAppointmentDetailsTab = hasAnyPermission(
+    [
+      PERMISSION_ACTIONS.GENERAL_INFORMATION,
+      PERMISSION_ACTIONS.DAILY_TASKS,
+      PERMISSION_ACTIONS.OPERATION_TASKS,
+    ].map((actionKey) => ({
+      moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+      submoduleKey: PERMISSION_SUBMODULES.APPOINTMENT_DETAILS,
+      actionKey,
+    }))
+  );
   const canViewHusbandryTab = hasPermission({
     moduleKey: PERMISSION_MODULES.KANBAN_CARD,
     submoduleKey: PERMISSION_SUBMODULES.HUSBANDRY,
