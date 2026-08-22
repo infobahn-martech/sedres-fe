@@ -2077,6 +2077,8 @@ const SalesOrderList = ({
                 placeholder="Enter SRT Number..."
                 value={srtNumber}
                 onChange={handleChange("srtNumber")}
+                onBlur={() => handleUpdateSalesOrder({ fields: { srt_number: srtNumber } })}
+                onKeyDown={handleEnterBlur}
                 readOnly={readOnly}
               />
             </div>
