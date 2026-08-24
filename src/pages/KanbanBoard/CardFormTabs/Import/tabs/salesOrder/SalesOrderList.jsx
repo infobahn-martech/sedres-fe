@@ -628,6 +628,12 @@ const SalesOrderList = ({
   const effectiveNextDaStatusLabel = localDaStatusOverride ?? realDaActionLabel;
   const isSoApprovalDaStatus = effectiveNextDaStatusLabel != null && effectiveNextDaStatusLabel === soApprovalLabel;
 
+  // Drives the header button's visibility directly off the Verify checkbox rather than
+  // isSoApprovalDaStatus alone — the backend's status_timeline for this call may not resolve
+  // a "so approval" row yet even right after verifying (see soApprovalLabel above), which
+  // would otherwise leave the button hidden despite the user having just verified an item.
+  const hasVerifiedItems = verifiedItems.size > 0;
+
   // Backend's exact wording for this stage varies/is inconsistent (seen as both "To be
   // sent for SO approval" and "Awaiting SO approval"), but the button should always read
   // "Sent for SO Approval" here regardless — the api/da/update_status call underneath
@@ -661,14 +667,14 @@ const SalesOrderList = ({
   const [paymentClientDecision, setPaymentClientDecision] = useState(null);
 
   useEffect(() => {
-    if (soApprovalEmailSent && !isSoApprovalDaStatus) {
+    if (soApprovalEmailSent && !isSoApprovalDaStatus && !hasVerifiedItems) {
       setSoApprovalEmailSent(false);
       setSoClientDecision(null);
       setInvoiceDispatched(false);
       setInvoiceClientDecision(null);
       setPaymentClientDecision(null);
     }
-  }, [isSoApprovalDaStatus, soApprovalEmailSent]);
+  }, [isSoApprovalDaStatus, hasVerifiedItems, soApprovalEmailSent]);
 
   const daActionButtonLabel =
     paymentClientDecision === "approved"
@@ -696,7 +702,7 @@ const SalesOrderList = ({
   const [showInvoiceIssuanceModal, setShowInvoiceIssuanceModal] = useState(false);
 
   const handleAdvanceDaStatusFromHeader = () => {
-    if (!effectiveNextDaStatusLabel) return;
+    if (!isSoApprovalDaStatus && !hasVerifiedItems) return;
     if (paymentClientDecision === "approved") return; // terminal — nothing further to do here
     if (invoiceClientDecision === "approved") return; // awaiting payment — decision is recorded via the standalone Approved/Rejected buttons
     if (invoiceDispatched) return; // awaiting — decision is recorded via the standalone Approved/Rejected buttons
@@ -705,7 +711,7 @@ const SalesOrderList = ({
       return;
     }
     if (soApprovalEmailSent) return; // awaiting — decision is recorded via the standalone Approved/Rejected buttons
-    setShowSoApprovalEmailModal(true); // only reachable state left once isSoApprovalDaStatus gates the button's render
+    setShowSoApprovalEmailModal(true); // only reachable state left once the button's render is gated
   };
 
   const handleCreateSoApprovalEmail = () => {
@@ -1844,7 +1850,7 @@ const SalesOrderList = ({
             onPageChange={setCurrentPage}
             compact
           />
-          {isDaVerifyContext && isSoApprovalDaStatus && (
+          {isDaVerifyContext && (isSoApprovalDaStatus || hasVerifiedItems) && (
             soApprovalEmailSent && !soClientDecision ? (
               <div className="sales-order-da-status-group">
                 <span className="sales-order-da-status-button sales-order-da-status-button--label">
