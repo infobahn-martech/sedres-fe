@@ -2792,7 +2792,13 @@ function CardForm({
   // with the timeline instead of only the timeline updating.
   const handleDaTimelineStepClick = useCallback(
     (statusName) => {
-      if (!isDaCardContext || isAdvancingStage) return;
+      // Matches isDaVerifyContext (DA.jsx / SalesOrderList.jsx's header action button use
+      // isDAModule || isDaCardContext to decide whether to show DA status controls at all) —
+      // this guard used to check isDaCardContext alone, which silently no-op'd the click on
+      // DA-style department boards (Jubail Operations, Rastanura-Dammam, etc.) reached via
+      // isDAModule's route match but not flagged isDaCardContext (not boardId "3" and not an
+      // explicit "da" card variant).
+      if (!(isDaCardContext || isDAModule) || isAdvancingStage) return;
       const callIdRaw = card?.call_id ?? card?.callId;
       const callId = callIdRaw != null ? String(callIdRaw).trim() : "";
       if (!callId || !statusName) return;
@@ -2850,7 +2856,7 @@ function CardForm({
         })
         .finally(() => setIsAdvancingStage(false));
     },
-    [isDaCardContext, card, isAdvancingStage, columns, columnOrder, moveCardToColumn, setDaLocalReachedDate, boardId, patchCardSticker]
+    [isDaCardContext, isDAModule, card, isAdvancingStage, columns, columnOrder, moveCardToColumn, setDaLocalReachedDate, boardId, patchCardSticker]
   );
 
   const handleTopbarColorChange = useCallback(
