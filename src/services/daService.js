@@ -18,6 +18,8 @@ const getStatusTimeline = (callId) => Gateway.get(`/da/status_timeline/${callId}
 const advanceStage = (payload) => Gateway.post('/da/advance_stage', payload);
 /** @param {{ call_id: string|number, status_name: string, reached_date?: string }} payload */
 const updateStatus = (payload) => Gateway.post('/da/update_status', payload);
+/** @param {{ so_item_id: string|number }} payload */
+const verifySalesLineItem = (payload) => Gateway.post('/da/da_verify_sales_line_item', payload);
 
 export default {
   getDaDetails,
@@ -32,4 +34,5 @@ export default {
   advanceStage,
   getStatusTimeline,
   updateStatus,
+  verifySalesLineItem,
 };

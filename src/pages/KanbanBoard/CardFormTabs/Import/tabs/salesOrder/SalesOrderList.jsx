@@ -15,6 +15,7 @@ import DatePickerField from "../../../shared/components/DatePickerField";
 import PremiumSelect from "../../../../../../components/form/PremiumSelect";
 import useAlertReducer from "../../../../../../store/AlertReducer";
 import useAuthReducer from "../../../../../../store/AuthReducer";
+import { useDaLocalVerifiedItems } from "../../../../../../shared/store/daStore";
 import WorkOrderCreationModal from "./WorkOrderCreationModal";
 import WorkOrderDetailsModal from "./WorkOrderDetailsModal";
 import GeneratePOModal from "./GeneratePOModal";
@@ -525,8 +526,15 @@ const SalesOrderList = ({
   // has a PO can still be selected for Work Order, and vice versa.
   const [selectedPoItems, setSelectedPoItems] = useState(new Set());
   const [selectedWoItems, setSelectedWoItems] = useState(new Set());
-  // Local-only for now — no backend field/endpoint yet to persist per-item verification (DA-only column).
-  const [verifiedItems, setVerifiedItems] = useState(new Set());
+  // Per-item verification (DA-only column) — persisted via da/da_verify_sales_line_item.
+  // The list reload endpoint (sales_order/get_so_items_by_call) has no status/item_status
+  // field on its items yet, so the mapped `status` field alone doesn't survive a page
+  // reload; useDaLocalVerifiedItems (daStore.js) is the same in-memory-only fallback
+  // pattern used elsewhere in DA until the backend adds the field. verifyingItemIds just
+  // tracks which item currently has a verify request in flight.
+  const [verifyingItemIds, setVerifyingItemIds] = useState(new Set());
+  const localVerifiedItemIds = useDaLocalVerifiedItems((s) => s.verifiedItemIds[callId]);
+  const setLocalItemVerified = useDaLocalVerifiedItems((s) => s.setItemVerified);
   const [showWorkOrderModal, setShowWorkOrderModal] = useState(false);
   const [isGeneratingWorkOrder, setIsGeneratingWorkOrder] = useState(false);
   const bulkActionBarRef = useRef(null);
@@ -608,11 +616,13 @@ const SalesOrderList = ({
   }, [isDaVerifyContext, callId, daStatusRefreshToken]);
 
   // The header action button is a simple two-state toggle driven by the per-item Verify
-  // checkbox (see handleToggleVerified) — "Ops completed" and the DA status timeline's "SO
-  // approval" stage right after it. It is NOT a general multi-step advance: re-verifying
+  // checkbox (see handleToggleVerified) — the header button itself never exposes the "Ops
+  // completed" stage (no "Mark Ops Completed" label/action here); it only appears once the
+  // record is at/past the "SO approval" stage right after it, which the Verify checkbox is
+  // what actually advances it into. It is NOT a general multi-step advance: re-verifying
   // further items (or clicking the button again once already at the SO Approval stage)
-  // must not walk any further down the timeline — it only ever shows/targets these two
-  // labels. Matched loosely against the real backend wording since it's seen as both
+  // must not walk any further down the timeline — it only ever shows/targets this one
+  // label. Matched loosely against the real backend wording since it's seen as both
   // "To be sent for SO approval" and "Awaiting SO approval".
   const { opsCompletedLabel, soApprovalLabel } = useMemo(() => {
     const mapped = mapStatusTimelineResponse(daHeaderStatusTimeline);
@@ -645,6 +655,14 @@ const SalesOrderList = ({
 
   const effectiveNextDaStatusLabel = localDaStatusOverride ?? realDaActionLabel;
   const isSoApprovalDaStatus = effectiveNextDaStatusLabel != null && effectiveNextDaStatusLabel === soApprovalLabel;
+
+  // Drives the header button's visibility directly off the Verify checkbox rather than
+  // isSoApprovalDaStatus alone — the backend's status_timeline for this call may not resolve
+  // a "so approval" row yet even right after verifying (see soApprovalLabel above), which
+  // would otherwise leave the button hidden despite the user having just verified an item.
+  const hasVerifiedItems = salesOrderList.some(
+    (order) => order.status === "Verified" || localVerifiedItemIds?.has(order.id) === true
+  );
 
   // Backend's exact wording for this stage varies/is inconsistent (seen as both "To be
   // sent for SO approval" and "Awaiting SO approval"), but the button should always read
@@ -679,14 +697,14 @@ const SalesOrderList = ({
   const [paymentClientDecision, setPaymentClientDecision] = useState(null);
 
   useEffect(() => {
-    if (soApprovalEmailSent && !isSoApprovalDaStatus) {
+    if (soApprovalEmailSent && !isSoApprovalDaStatus && !hasVerifiedItems) {
       setSoApprovalEmailSent(false);
       setSoClientDecision(null);
       setInvoiceDispatched(false);
       setInvoiceClientDecision(null);
       setPaymentClientDecision(null);
     }
-  }, [isSoApprovalDaStatus, soApprovalEmailSent]);
+  }, [isSoApprovalDaStatus, hasVerifiedItems, soApprovalEmailSent]);
 
   const daActionButtonLabel =
     paymentClientDecision === "approved"
@@ -699,11 +717,7 @@ const SalesOrderList = ({
       ? "Invoice Issuance"
       : soApprovalEmailSent
       ? "Awaiting For SO Approval"
-      : isSoApprovalDaStatus
-      ? "Sent for SO Approval"
-      : effectiveNextDaStatusLabel
-      ? `Mark ${effectiveNextDaStatusLabel}`
-      : effectiveNextDaStatusLabel;
+      : "Sent for SO Approval"; // only reachable state left once isSoApprovalDaStatus gates the button's render
 
   // State for the SO Approval email modal, opened from the header action button when
   // effectiveNextDaStatusLabel is the "SO Approval" stage. Local-only for now — no backend
@@ -718,7 +732,7 @@ const SalesOrderList = ({
   const [showInvoiceIssuanceModal, setShowInvoiceIssuanceModal] = useState(false);
 
   const handleAdvanceDaStatusFromHeader = () => {
-    if (!effectiveNextDaStatusLabel) return;
+    if (!isSoApprovalDaStatus && !hasVerifiedItems) return;
     if (paymentClientDecision === "approved") return; // terminal — nothing further to do here
     if (invoiceClientDecision === "approved") return; // awaiting payment — decision is recorded via the standalone Approved/Rejected buttons
     if (invoiceDispatched) return; // awaiting — decision is recorded via the standalone Approved/Rejected buttons
@@ -727,13 +741,7 @@ const SalesOrderList = ({
       return;
     }
     if (soApprovalEmailSent) return; // awaiting — decision is recorded via the standalone Approved/Rejected buttons
-    if (isSoApprovalDaStatus) {
-      setShowSoApprovalEmailModal(true);
-      return;
-    }
-    if (!onAdvanceDaStage || isAdvancingDaStage) return;
-    setLocalDaStatusOverride(soApprovalLabel);
-    onAdvanceDaStage(effectiveNextDaStatusLabel);
+    setShowSoApprovalEmailModal(true); // only reachable state left once the button's render is gated
   };
 
   const handleCreateSoApprovalEmail = () => {
@@ -1026,37 +1034,60 @@ const SalesOrderList = ({
   };
 
   // Verifying a line item is the trigger that moves the whole DA/SO record into the
-  // approval flow — ticking the checkbox advances the real DA status to its next stage
-  // (e.g. Ops completed → Sent for SO Approval), same api/da/update_status call the header
-  // action button makes, so the header button's label updates to reflect it. Un-ticking it
-  // again reverts one stage back the same way (sends the last-done step's own label — same
+  // approval flow — ticking the checkbox calls da/da_verify_sales_line_item, which toggles
+  // the item's own status ("Verified" <-> its normal status, e.g. "Completed") and returns
+  // the new value. On success this also advances the real DA status to its next stage (e.g.
+  // Ops completed → Sent for SO Approval), same api/da/update_status call the header action
+  // button makes, so the header button's label updates to reflect it. Un-ticking it again
+  // reverts one stage back the same way (sends the last-done step's own label — same
   // mechanism DA.jsx's own Status Timeline uses for its "done" step revert). No modal/email
   // popup here either way — that's still only triggered by the header button's own click
   // (see isSoApprovalDaStatus).
-  const handleToggleVerified = (orderId) => {
-    const isBeingVerified = !verifiedItems.has(orderId);
-    setVerifiedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(orderId)) {
-        next.delete(orderId);
-      } else {
-        next.add(orderId);
-      }
-      return next;
-    });
+  const handleToggleVerified = async (order) => {
+    const orderId = order.id;
+    if (verifyingItemIds.has(orderId)) return;
 
-    // Fixed two-way toggle — always targets these same two labels, regardless of how many
-    // items get verified/un-verified or in what order. The local override is set
-    // unconditionally (not gated on isAdvancingDaStage or the backend call's outcome) so
-    // the button reflects the toggle immediately every time.
-    if (isBeingVerified) {
-      if (soApprovalLabel) {
-        setLocalDaStatusOverride(soApprovalLabel);
-        onAdvanceDaStage?.(soApprovalLabel);
+    setVerifyingItemIds((prev) => new Set(prev).add(orderId));
+    try {
+      const response = await daService.verifySalesLineItem({ so_item_id: orderId });
+      const body = response?.data;
+      if (body?.status !== "success") {
+        throw new Error(body?.message || "Failed to update the item's verification status.");
       }
-    } else if (opsCompletedLabel) {
-      setLocalDaStatusOverride(opsCompletedLabel);
-      onAdvanceDaStage?.(opsCompletedLabel);
+      const newItemStatus = body.item_status || "";
+      const isNowVerified = newItemStatus === "Verified";
+      const updatedList = salesOrderList.map((item) =>
+        item.id === orderId ? { ...item, status: newItemStatus } : item
+      );
+      handleChange("salesOrderList")({ target: { value: updatedList } });
+      setLocalItemVerified(callId, orderId, isNowVerified);
+
+      // Fixed two-way toggle — always targets these same two labels, regardless of how many
+      // items get verified/un-verified or in what order. The local override is set
+      // unconditionally (not gated on isAdvancingDaStage) so the button reflects the toggle
+      // immediately every time.
+      if (isNowVerified) {
+        if (soApprovalLabel) {
+          setLocalDaStatusOverride(soApprovalLabel);
+          onAdvanceDaStage?.(soApprovalLabel);
+        }
+      } else if (opsCompletedLabel) {
+        setLocalDaStatusOverride(opsCompletedLabel);
+        onAdvanceDaStage?.(opsCompletedLabel);
+      }
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to update the item's verification status.";
+      useAlertReducer.getState().error(msg);
+    } finally {
+      setVerifyingItemIds((prev) => {
+        const next = new Set(prev);
+        next.delete(orderId);
+        return next;
+      });
     }
   };
 
@@ -1081,11 +1112,12 @@ const SalesOrderList = ({
       next.delete(deletingItem.id);
       return next;
     });
-    setVerifiedItems((prev) => {
+    setVerifyingItemIds((prev) => {
       const next = new Set(prev);
       next.delete(deletingItem.id);
       return next;
     });
+    setLocalItemVerified(callId, deletingItem.id, false);
     setShowDeleteItemModal(false);
     setDeletingItem(null);
   };
@@ -1827,16 +1859,17 @@ const SalesOrderList = ({
         </div>
       </td>
 
-      {/* Action — DA-only: Verify checkbox (local state until a backend field exists to
-          persist it) + Delete (no backend endpoint yet, removes the item locally) */}
+      {/* Action — DA-only: Verify checkbox (persisted via da/da_verify_sales_line_item) +
+          Delete (no backend endpoint yet, removes the item locally) */}
       {isDaVerifyContext && (
         <td>
           <div className="sales-order-table-cell sales-order-action-cell">
             <input
               type="checkbox"
               className="sales-order-verify-checkbox"
-              checked={verifiedItems.has(order.id)}
-              onChange={() => handleToggleVerified(order.id)}
+              checked={order.status === "Verified" || localVerifiedItemIds?.has(order.id) === true}
+              onChange={() => handleToggleVerified(order)}
+              disabled={verifyingItemIds.has(order.id)}
               aria-label="Verify line item"
             />
             {!readOnly && (
@@ -1872,7 +1905,7 @@ const SalesOrderList = ({
             onPageChange={setCurrentPage}
             compact
           />
-          {isDaVerifyContext && effectiveNextDaStatusLabel && (
+          {isDaVerifyContext && (isSoApprovalDaStatus || hasVerifiedItems) && (
             soApprovalEmailSent && !soClientDecision ? (
               <div className="sales-order-da-status-group">
                 <span className="sales-order-da-status-button sales-order-da-status-button--label">
@@ -1952,9 +1985,7 @@ const SalesOrderList = ({
                     ? "Payment received — closed"
                     : soClientDecision === "approved"
                     ? "Open Invoice Issuance upload"
-                    : isSoApprovalDaStatus
-                    ? "Open SO Approval email"
-                    : `Move to "${effectiveNextDaStatusLabel}"`
+                    : "Open SO Approval email"
                 }
                 onClick={handleAdvanceDaStatusFromHeader}
               >
