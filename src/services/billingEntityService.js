@@ -35,6 +35,8 @@ const updateBillingEntityLogo = (formData) =>
 const updateBillingEntityDetail = (formData) =>
   Gateway.post('/billingentity/update_billing_entity_detail', formData);
 
+const getVendors = () => Gateway.get('/billingentity/getvendors');
+
 export default {
   getBillingEntities,
   getCustomerPriceList,
@@ -43,4 +45,5 @@ export default {
   getEntityDetailById,
   updateBillingEntityLogo,
   updateBillingEntityDetail,
+  getVendors,
 };

@@ -6,6 +6,7 @@ import "react-tooltip/dist/react-tooltip.css";
 import "../../../../../../design/scss/salesOrder.scss";
 import { PORT_OPTIONS_WITH_ID } from "../../../../../../shared/constants/ports";
 import salesOrderService from "../../../../../../services/salesOrderService";
+import billingEntityService from "../../../../../../services/billingEntityService";
 import callFileService from "../../../../../../services/callFileService";
 import daService from "../../../../../../services/daService";
 import { mapStatusTimelineResponse } from "../da/daStatusTimeline";
@@ -80,23 +81,12 @@ const EMPTY_NEW_ITEM_FORM = {
 
 const isThirdParty = (value) => value === 1 || value === "1" || value === true;
 
-const DUMMY_VENDORS = [
-  { code: "VEND-001", name: "Al Rashid Trading Co." },
-  { code: "VEND-002", name: "Gulf Marine Supplies" },
-  { code: "VEND-003", name: "Eastern Shipping LLC" },
-  { code: "VEND-004", name: "Red Sea Logistics" },
-  { code: "VEND-005", name: "Arabian Cargo Services" },
-  { code: "VEND-006", name: "Jubail Maritime Group" },
-  { code: "VEND-007", name: "Dammam Port Services" },
-  { code: "VEND-008", name: "Saudi Freight Solutions" },
-];
-
 // Vendor List Modal
-const VendorListModal = ({ show, onClose, onSelect }) => {
+const VendorListModal = ({ show, onClose, onSelect, vendors = [] }) => {
   const [search, setSearch] = useState("");
   if (!show) return null;
 
-  const filtered = DUMMY_VENDORS.filter(
+  const filtered = vendors.filter(
     (v) =>
       v.code.toLowerCase().includes(search.toLowerCase()) ||
       v.name.toLowerCase().includes(search.toLowerCase())
@@ -149,6 +139,12 @@ VendorListModal.propTypes = {
   show: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSelect: PropTypes.func.isRequired,
+  vendors: PropTypes.arrayOf(
+    PropTypes.shape({
+      code: PropTypes.string,
+      name: PropTypes.string,
+    })
+  ),
 };
 
 // Document List Modal — manages the documents already attached to a sales order item
@@ -559,6 +555,30 @@ const SalesOrderList = ({
 
   // State for vendor modal (row-level supplier picker)
   const [vendorModalTarget, setVendorModalTarget] = useState(null); // orderId or "new"
+  const [vendors, setVendors] = useState([]);
+
+  // Vendor list — billingentity/getvendors, [{ customer_code, customer_name }]
+  useEffect(() => {
+    let cancelled = false;
+    billingEntityService
+      .getVendors()
+      .then((response) => {
+        if (cancelled) return;
+        const rows = Array.isArray(response?.data?.data) ? response.data.data : [];
+        setVendors(
+          rows.map((v) => ({
+            code: v.customer_code != null ? String(v.customer_code) : "",
+            name: v.customer_name != null ? String(v.customer_name) : "",
+          }))
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setVendors([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // State for document modal (row-level document picker) — documents themselves come from
   // each item's own `documents` array (mapped from the API), not a shared pool.
@@ -2791,6 +2811,7 @@ const SalesOrderList = ({
         show={vendorModalTarget !== null}
         onClose={() => setVendorModalTarget(null)}
         onSelect={handleVendorSelect}
+        vendors={vendors}
       />
 
       {/* Document List Modal */}
