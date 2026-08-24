@@ -11,6 +11,9 @@ function SalesOrder({
   salesOrderApiLoading = false,
   salesOrderApiError = null,
   refreshSalesOrder,
+  daStatusRefreshToken,
+  onAdvanceDaStage,
+  isAdvancingDaStage,
 }) {
   const cardColor = "#e2e6ff";
 
@@ -30,6 +33,9 @@ function SalesOrder({
             isLoadingSalesOrder={salesOrderApiLoading}
             salesOrderError={salesOrderApiError}
             refreshSalesOrder={refreshSalesOrder}
+            daStatusRefreshToken={daStatusRefreshToken}
+            onAdvanceDaStage={onAdvanceDaStage}
+            isAdvancingDaStage={isAdvancingDaStage}
           />
         </div>
       </div>
@@ -47,6 +53,9 @@ SalesOrder.propTypes = {
   salesOrderApiLoading: PropTypes.bool,
   salesOrderApiError: PropTypes.oneOfType([PropTypes.string, PropTypes.oneOf([null])]),
   refreshSalesOrder: PropTypes.func,
+  daStatusRefreshToken: PropTypes.number,
+  onAdvanceDaStage: PropTypes.func,
+  isAdvancingDaStage: PropTypes.bool,
 };
 
 export default SalesOrder;
