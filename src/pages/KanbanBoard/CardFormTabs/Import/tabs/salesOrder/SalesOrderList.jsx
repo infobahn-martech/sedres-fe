@@ -949,6 +949,16 @@ const SalesOrderList = ({
     }
   };
 
+  // SAR has no separate rate field (implicitly 1); USD is fixed; EURO is user-entered.
+  const getConversionRate = (currency) => {
+    if (currency === "USD") return USD_TO_SAR_RATE;
+    if (currency === "EURO") return parseFloat(soEuroRate) || 0;
+    return 1;
+  };
+
+  // UI/internal value is "EURO"; the API expects the ISO code "EUR".
+  const toApiCurrency = (currency) => (currency === "EURO" ? "EUR" : currency);
+
   // Persists SO header field edits to sales_order/update_sales_order. Fired on blur or Enter
   // (no submit button) — sends only the sales_order_id plus the single field that changed.
   // Known columns (delivery_date, document_date, discount_percentage) go top-level; everything
@@ -2285,7 +2295,14 @@ const SalesOrderList = ({
               <PremiumSelect
                 className="so-header-premium-select"
                 value={soBpCurrency}
-                onChange={handleChange("soBpCurrency")}
+                onChange={(e) => {
+                  const newCurrency = e.target.value;
+                  handleChange("soBpCurrency")(e);
+                  handleUpdateSalesOrder({
+                    currency: toApiCurrency(newCurrency),
+                    conversion_rate: getConversionRate(newCurrency),
+                  });
+                }}
                 options={bpCurrencySelectOptions}
                 placeholder="—"
                 searchPlaceholder="Search currency..."
@@ -2311,6 +2328,13 @@ const SalesOrderList = ({
                   placeholder="Enter EUR → SAR rate..."
                   value={soEuroRate}
                   onChange={handleChange("soEuroRate")}
+                  onBlur={() =>
+                    handleUpdateSalesOrder({
+                      currency: toApiCurrency(soBpCurrency),
+                      conversion_rate: parseFloat(soEuroRate) || 0,
+                    })
+                  }
+                  onKeyDown={handleEnterBlur}
                   readOnly={readOnly}
                   required
                 />
@@ -2570,6 +2594,7 @@ const SalesOrderList = ({
                   placeholder="Add internal remarks..."
                   value={soRemarks}
                   onChange={handleChange("soRemarks")}
+                  onBlur={() => handleUpdateSalesOrder({ remarks: soRemarks })}
                   readOnly={readOnly}
                 />
               </div>
