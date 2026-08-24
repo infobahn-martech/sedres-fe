@@ -56,6 +56,7 @@ const GeneratePOModal = ({
 }) => {
   const [copyToOpen, setCopyToOpen] = useState(false);
   const [vendorRefNo, setVendorRefNo] = useState("");
+  const [roundingEnabled, setRoundingEnabled] = useState(false);
   const copyToRef = useRef(null);
 
   useEffect(() => {
@@ -83,7 +84,9 @@ const GeneratePOModal = ({
   );
   const subtotal = lineAmounts.reduce((sum, l) => sum + l.subtotal, 0);
   const tax = lineAmounts.reduce((sum, l) => sum + l.tax, 0);
-  const grandTotal = subtotal + tax + (parseFloat(shippingFee) || 0);
+  const preRoundingTotal = subtotal + tax + (parseFloat(shippingFee) || 0);
+  const rounding = roundingEnabled ? Math.round(preRoundingTotal) - preRoundingTotal : 0;
+  const grandTotal = preRoundingTotal + rounding;
   const discountPct = totalBeforeDiscount > 0 ? ((totalBeforeDiscount - subtotal) / totalBeforeDiscount) * 100 : 0;
 
   const handleBackdropClick = (e) => {
@@ -272,8 +275,16 @@ const GeneratePOModal = ({
                   <span>{discountPct.toFixed(2)}%</span>
                 </div>
                 <div className="so-po-doc-totals-row">
-                  <span>Rounding</span>
-                  <span>{formatCurrencySAR(0)}</span>
+                  <span className="so-po-rounding-label">
+                    <input
+                      type="checkbox"
+                      checked={roundingEnabled}
+                      onChange={(e) => setRoundingEnabled(e.target.checked)}
+                      disabled={isSubmitting}
+                    />
+                    Rounding
+                  </span>
+                  <span>{formatCurrencySAR(rounding)}</span>
                 </div>
                 <div className="so-po-doc-totals-row">
                   <span>Tax</span>

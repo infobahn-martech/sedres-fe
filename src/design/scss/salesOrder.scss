@@ -3297,6 +3297,16 @@ $so-po-blue: #1a56db;
   }
 }
 
+.so-po-rounding-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  input[type="checkbox"] {
+    cursor: pointer;
+  }
+}
+
 .so-po-doc-totals-grand {
   margin-top: 6px;
   padding: 14px 14px;
