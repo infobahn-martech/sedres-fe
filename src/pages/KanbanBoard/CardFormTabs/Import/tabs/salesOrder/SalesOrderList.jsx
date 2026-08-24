@@ -2557,6 +2557,10 @@ const SalesOrderList = ({
         const grandTotal = amountFromForm(formValues.soGrandTotal) ?? grandTotalCalc;
         const currencyLabel = soBpCurrency === "EURO" ? "EURO (€)" : soBpCurrency;
 
+        const roundingEnabled = !!formValues.soRoundingEnabled;
+        const roundingAdjustment = Math.round(grandTotal) - grandTotal;
+        const finalGrandTotal = roundingEnabled ? grandTotal + roundingAdjustment : grandTotal;
+
         return (
           <div className="so-summary-section">
             <h3 className="so-summary-section-title">Accounting Summary</h3>
@@ -2621,13 +2625,30 @@ const SalesOrderList = ({
                 <span className="so-accounting-value so-accounting-discount">− {formatCurrencySAR(totalDiscount)}</span>
               </div>
               <div className="so-accounting-row">
+                <label className="so-accounting-label so-accounting-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={roundingEnabled}
+                    onChange={(e) => handleChange("soRoundingEnabled")(e.target.checked)}
+                    disabled={readOnly}
+                    className="so-accounting-checkbox"
+                  />
+                  Rounding
+                </label>
+                <span className="so-accounting-value">
+                  {roundingEnabled
+                    ? `${roundingAdjustment >= 0 ? "+ " : "− "}${formatCurrencySAR(Math.abs(roundingAdjustment))}`
+                    : formatCurrencySAR(0)}
+                </span>
+              </div>
+              <div className="so-accounting-row">
                 <span className="so-accounting-label">Total Tax</span>
                 <span className="so-accounting-value">{formatCurrencySAR(totalTax)}</span>
               </div>
               <div className="so-accounting-divider" />
               <div className="so-accounting-row so-accounting-grand">
                 <span className="so-accounting-label">Grand Total</span>
-                <span className="so-accounting-value so-accounting-grand-value">{formatCurrencySAR(grandTotal)}</span>
+                <span className="so-accounting-value so-accounting-grand-value">{formatCurrencySAR(finalGrandTotal)}</span>
               </div>
             </div>
           </div>
