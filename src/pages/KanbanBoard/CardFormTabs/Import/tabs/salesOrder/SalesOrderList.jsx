@@ -587,6 +587,7 @@ const SalesOrderList = ({
   // State for the line item delete confirmation modal
   const [showDeleteItemModal, setShowDeleteItemModal] = useState(false);
   const [deletingItem, setDeletingItem] = useState(null);
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
 
   // api/da/status_timeline/{call_id} — same real per-call status progression shown in the
   // DA tab's Summary sub-tab (DA.jsx) — fetched here too so the header "DA Status" button
@@ -1060,37 +1061,57 @@ const SalesOrderList = ({
     }
   };
 
-  // Delete a line item — no backend endpoint yet, so this is local-only (removes from
-  // formValues.salesOrderList the same way other row edits in this file persist).
+  // Delete a line item — persisted via da/da_delete_sales_line_item (so_item_id), which
+  // soft-deletes the item on the backend (item_status: "Cancelled"). Removed from the local
+  // list on success the same way other row edits in this file update salesOrderList.
   const handleDeleteItem = (order) => {
     setDeletingItem(order);
     setShowDeleteItemModal(true);
   };
 
-  const handleConfirmDeleteItem = () => {
-    if (!deletingItem) return;
-    const updatedList = salesOrderList.filter((order) => order.id !== deletingItem.id);
-    handleChange("salesOrderList")({ target: { value: updatedList } });
-    setSelectedPoItems((prev) => {
-      const next = new Set(prev);
-      next.delete(deletingItem.id);
-      return next;
-    });
-    setSelectedWoItems((prev) => {
-      const next = new Set(prev);
-      next.delete(deletingItem.id);
-      return next;
-    });
-    setVerifiedItems((prev) => {
-      const next = new Set(prev);
-      next.delete(deletingItem.id);
-      return next;
-    });
-    setShowDeleteItemModal(false);
-    setDeletingItem(null);
+  const handleConfirmDeleteItem = async () => {
+    if (!deletingItem || isDeletingItem) return;
+    setIsDeletingItem(true);
+    try {
+      const response = await daService.deleteSalesLineItem({ so_item_id: deletingItem.id });
+      const body = response?.data;
+      if (body?.status !== "success") {
+        throw new Error(body?.message || "Failed to delete the item.");
+      }
+
+      const updatedList = salesOrderList.filter((order) => order.id !== deletingItem.id);
+      handleChange("salesOrderList")({ target: { value: updatedList } });
+      setSelectedPoItems((prev) => {
+        const next = new Set(prev);
+        next.delete(deletingItem.id);
+        return next;
+      });
+      setSelectedWoItems((prev) => {
+        const next = new Set(prev);
+        next.delete(deletingItem.id);
+        return next;
+      });
+      setVerifiedItems((prev) => {
+        const next = new Set(prev);
+        next.delete(deletingItem.id);
+        return next;
+      });
+      setShowDeleteItemModal(false);
+      setDeletingItem(null);
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to delete the item.";
+      useAlertReducer.getState().error(msg);
+    } finally {
+      setIsDeletingItem(false);
+    }
   };
 
   const handleCancelDeleteItem = () => {
+    if (isDeletingItem) return;
     setShowDeleteItemModal(false);
     setDeletingItem(null);
   };
@@ -2830,6 +2851,7 @@ const SalesOrderList = ({
         onCancel={handleCancelDeleteItem}
         onConfirm={handleConfirmDeleteItem}
         deleteText={`Are you sure you want to delete Item Code. ${deletingItem?.itemNo || ""}?`}
+        isLoading={isDeletingItem}
       />
 
       {/* SO Approval email — opened from the header action button when the DA's current
