@@ -4,7 +4,7 @@ import { FiFilePlus, FiFileText, FiClipboard, FiTool, FiCheck, FiX, FiChevronLef
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import "../../../../../../design/scss/salesOrder.scss";
-import { PORT_OPTIONS, PORT_OPTIONS_WITH_ID } from "../../../../../../shared/constants/ports";
+import { PORT_OPTIONS_WITH_ID } from "../../../../../../shared/constants/ports";
 import salesOrderService from "../../../../../../services/salesOrderService";
 import callFileService from "../../../../../../services/callFileService";
 import daService from "../../../../../../services/daService";
@@ -455,19 +455,9 @@ const SalesOrderList = ({
   const soOwner = formValues.soOwner || loggedInUserName;
   const soRemarks = formValues.soRemarks || "";
 
-  const portOptions = useMemo(() => {
-    if (!soPort || PORT_OPTIONS.includes(soPort)) return PORT_OPTIONS;
-    return [soPort, ...PORT_OPTIONS];
-  }, [soPort]);
-
   const bpCurrencySelectOptions = useMemo(
     () => BP_CURRENCY_OPTIONS.map((c) => ({ value: c, label: c === "EURO" ? "EURO (€)" : c })),
     []
-  );
-
-  const portSelectOptions = useMemo(
-    () => portOptions.map((p) => ({ value: p, label: p })),
-    [portOptions]
   );
 
   // State for accordion and form
@@ -2226,14 +2216,11 @@ const SalesOrderList = ({
             </div>
             <div className="so-header-field">
               <label className="so-header-label">Port</label>
-              <PremiumSelect
-                className="so-header-premium-select"
+              <input
+                type="text"
+                className="so-header-input so-header-input-readonly"
                 value={soPort}
-                onChange={handleChange("soPort")}
-                options={portSelectOptions}
-                placeholder="Select Port..."
-                searchPlaceholder="Search port..."
-                disabled={readOnly}
+                readOnly
               />
             </div>
             <div className="so-header-field">
