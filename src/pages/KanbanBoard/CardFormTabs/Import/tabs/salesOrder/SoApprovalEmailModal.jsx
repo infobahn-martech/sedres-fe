@@ -14,16 +14,6 @@ const MESSAGE_QUILL_TOOLBAR = [
 
 const MESSAGE_QUILL_FORMATS = ["bold", "italic", "underline", "list", "bullet", "link", "image"];
 
-const formatPreviewDate = () =>
-  new Date().toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-
 // Opened from the SO Status stepper's "To Be Sent for SO Approval" step. Built on the
 // app's common CustomModal (react-bootstrap Modal wrapper, used across ~80 other modals in
 // this codebase) instead of a bespoke backdrop, so positioning/stacking (above the card's
@@ -75,10 +65,6 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
   const renderHeader = () => (
     <div className="so-approval-email-header">
       <h1 className="modal-title">SO Approval Email</h1>
-      <div className="so-approval-email-topbar-status">
-        <span className="so-approval-email-status-dot" />
-        <span>{formatPreviewDate()}</span>
-      </div>
     </div>
   );
 

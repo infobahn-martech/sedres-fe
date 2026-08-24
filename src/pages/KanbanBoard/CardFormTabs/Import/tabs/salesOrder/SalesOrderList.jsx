@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import PropTypes from "prop-types";
-import { FiFilePlus, FiFileText, FiClipboard, FiTool, FiCheck, FiChevronLeft, FiChevronRight, FiRefreshCw, FiUpload, FiTrash2 } from "react-icons/fi";
+import { FiFilePlus, FiFileText, FiClipboard, FiTool, FiCheck, FiX, FiChevronLeft, FiChevronRight, FiRefreshCw, FiUpload, FiTrash2 } from "react-icons/fi";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import "../../../../../../design/scss/salesOrder.scss";
 import { PORT_OPTIONS, PORT_OPTIONS_WITH_ID } from "../../../../../../shared/constants/ports";
 import salesOrderService from "../../../../../../services/salesOrderService";
 import callFileService from "../../../../../../services/callFileService";
+import daService from "../../../../../../services/daService";
+import { mapStatusTimelineResponse } from "../da/daStatusTimeline";
 import useAttachmentsReducer from "../../../../../../store/AttachmentsReducer";
 import DatePickerField from "../../../shared/components/DatePickerField";
 import PremiumSelect from "../../../../../../components/form/PremiumSelect";
@@ -17,6 +19,7 @@ import WorkOrderDetailsModal from "./WorkOrderDetailsModal";
 import GeneratePOModal from "./GeneratePOModal";
 import GoodsReceiptPOModal from "./GoodsReceiptPOModal";
 import SoApprovalEmailModal from "./SoApprovalEmailModal";
+import UploadInvoiceModal from "../../../../../../components/UploadInvoiceModal";
 import CustomModal from "../../../../../../components/CustomModal";
 import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 
@@ -59,85 +62,6 @@ GroupCheckbox.propTypes = {
 
 const TAX_CODE_OPTIONS = ["15%", "5%", "0%"];
 const TYPE_OF_PO_OPTIONS = ["Inhouse", "Outhouse PO", "Multiple PO"];
-
-// Client-specific SO → Invoice → Payment status sequence, per ops-provided reference
-// (API.txt). Different clients follow different named statuses/timelines — "GENERAL" is
-// the fallback for clients without specific invoicing guidelines. Where a client has
-// multiple port/call-type variants in the reference, one representative variant is used
-// here (see comment per entry) — not yet split by port/call type. maxDays is shown as a
-// target, not enforced.
-const CLIENT_SO_STATUS_TIMELINES = {
-  GENERAL: [
-    { label: "To Be Sent for SO Approval", maxDays: "1" },
-    { label: "Awaiting SO Approval", maxDays: "3" },
-    { label: "Invoice Issuance", maxDays: "1" },
-    { label: "Invoice Dispatched", maxDays: "1" },
-    { label: "Awaiting Payment", maxDays: "Credit period" },
-    { label: "Closed Paid" },
-  ],
-  MCDERMOTT: [ // import/export/domestic — Rastanura variant
-    { label: "To Be Sent for SRF", maxDays: "1" },
-    { label: "Awaiting SRF", maxDays: "4" },
-    { label: "Invoice Issued and Send for PO", maxDays: "1" },
-    { label: "PO Received", maxDays: "7" },
-    { label: "Invoice Dispatched", maxDays: "1" },
-    { label: "Archived" },
-  ],
-  SAIPEM: [ // Domestic call-Jubail variant
-    { label: "To Be Sent for SO Approval", maxDays: "1" },
-    { label: "Awaiting SO Approval", maxDays: "3" },
-    { label: "To Be Sent for Service Entry", maxDays: "1" },
-    { label: "Awaiting Consolidated Invoice" },
-  ],
-  "L&T": [ // Domestic call-Jubail/RT variant
-    { label: "Sent for SCC Approval / SCC (Service Request Form)", maxDays: "2 days" },
-    { label: "Follow Up SCC Approval" },
-    { label: "Invoice Issued", maxDays: "3 days" },
-    { label: "Submitted", maxDays: "2 days" },
-    { label: "Closed Unpaid" },
-    { label: "Closed Paid" },
-  ],
-  "SUBSEA 7": [ // Domestic call-Jubail/RT variant
-    { label: "To Be Sent for SRT / SRT (Service Request Ticket)", maxDays: "3" },
-    { label: "Follow Up SRT Approval", maxDays: "1" },
-    { label: "Invoice Issued", maxDays: "2" },
-    { label: "Submitted", maxDays: "1" },
-    { label: "Closed Unpaid" },
-    { label: "Closed Paid" },
-  ],
-  "AL-GIHAZ": [ // (Lamprell) — Domestic/Husbandry call-Jubail/RT variant (same steps both)
-    { label: "SO Approval", maxDays: "7" },
-    { label: "Request for PO", maxDays: "7" },
-    { label: "Invoice Issued", maxDays: "4" },
-    { label: "Payment Application Form", maxDays: "7" },
-    { label: "Final Submission of Invoice" },
-    { label: "Closed Unpaid" },
-    { label: "Closed Paid" },
-  ],
-  "LAMPRELL SAUDI": [ // Domestic call /RT variant
-    { label: "SO Approval", maxDays: "2" },
-    { label: "Invoice Issued", maxDays: "1" },
-    { label: "Submitted", maxDays: "1" },
-    { label: "Closed Unpaid" },
-    { label: "Closed Paid" },
-  ],
-  "LAMPRELL UAE": [ // Domestic call-Jubail/RT variant
-    { label: "Approved SO Along with PO" },
-    { label: "Invoice Issued" },
-    { label: "Submitted" },
-    { label: "Closed Unpaid" },
-    { label: "Closed Paid" },
-  ],
-};
-
-// Matches the SO's client/billing entity name against the reference table above,
-// falling back to GENERAL when the client isn't listed.
-const resolveClientSoStatusSteps = (clientName) => {
-  const name = String(clientName || "").trim().toUpperCase();
-  if (!name) return CLIENT_SO_STATUS_TIMELINES.GENERAL;
-  const key = Object.keys(CLIENT_SO_STATUS_TIMELINES).find((k) => k !== "GENERAL" && name.includes(k));
-  return CLIENT_SO_STATUS_TIMELINES[key] || CLIENT_SO_STATUS_TIMELINES.GENERAL;
-};
 
 const EMPTY_NEW_ITEM_FORM = {
   callFile: "",
@@ -498,6 +422,9 @@ const SalesOrderList = ({
   isLoadingSalesOrder = false,
   salesOrderError = null,
   refreshSalesOrder,
+  daStatusRefreshToken,
+  onAdvanceDaStage,
+  isAdvancingDaStage = false,
 }) => {
   // Broader "this is a DA card" signal — isDAModule alone only covers the dedicated DA-desk
   // board routes; isDaCardContext also covers DA-variant/DA-board cards reached via the
@@ -614,31 +541,9 @@ const SalesOrderList = ({
   const [selectedWoItems, setSelectedWoItems] = useState(new Set());
   // Local-only for now — no backend field/endpoint yet to persist per-item verification (DA-only column).
   const [verifiedItems, setVerifiedItems] = useState(new Set());
-  // Local-only — whole-SO status stepper (SO Approval → ... → Closed Paid), steps driven
-  // by the client-specific reference table above. No backend field/endpoint yet.
-  const [soStatusStepIndex, setSoStatusStepIndex] = useState(0);
   const [showWorkOrderModal, setShowWorkOrderModal] = useState(false);
   const [isGeneratingWorkOrder, setIsGeneratingWorkOrder] = useState(false);
   const bulkActionBarRef = useRef(null);
-  // State for the email modal on the SO Status stepper's "To Be Sent for SO Approval"
-  // step. Local-only for now — no backend send endpoint yet.
-  const [showSoApprovalEmailModal, setShowSoApprovalEmailModal] = useState(false);
-  // Invoice PDF uploaded on the SO Status stepper's "Invoice Issuance" step. Local-only
-  // for now — no backend field/endpoint yet to persist it. Uploading just attaches the
-  // file — advancing to the next step happens separately via the Confirm checkbox.
-  const [invoicePdfFile, setInvoicePdfFile] = useState(null);
-  const [invoicePdfPreviewUrl, setInvoicePdfPreviewUrl] = useState(null);
-  const invoicePdfInputRef = useRef(null);
-
-  useEffect(() => {
-    if (!invoicePdfFile) {
-      setInvoicePdfPreviewUrl(null);
-      return undefined;
-    }
-    const url = URL.createObjectURL(invoicePdfFile);
-    setInvoicePdfPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [invoicePdfFile]);
 
   // State for the Work Order Details modal (sales_order/get_work_order/{wo_id}) — opened by
   // clicking a Work Order No. in the table.
@@ -673,10 +578,198 @@ const SalesOrderList = ({
   const [showDeleteItemModal, setShowDeleteItemModal] = useState(false);
   const [deletingItem, setDeletingItem] = useState(null);
 
-  // State for the "Approved" checkbox confirmation modal (Awaiting SO Approval step)
-  const [showApproveSoModal, setShowApproveSoModal] = useState(false);
-  // State for the "Confirm" checkbox confirmation modal (Invoice Issuance step)
-  const [showInvoiceConfirmModal, setShowInvoiceConfirmModal] = useState(false);
+  // api/da/status_timeline/{call_id} — same real per-call status progression shown in the
+  // DA tab's Summary sub-tab (DA.jsx) — fetched here too so the header "DA Status" button
+  // can surface the current stage's label without the DA tab having to be open. Refetches
+  // when daStatusRefreshToken bumps, same as DA.jsx's own fetch.
+  const [daHeaderStatusTimeline, setDaHeaderStatusTimeline] = useState([]);
+
+  useEffect(() => {
+    if (!isDaVerifyContext || callId == null) return undefined;
+    let cancelled = false;
+    daService.getStatusTimeline(callId)
+      .then(({ data }) => {
+        if (!cancelled) setDaHeaderStatusTimeline(Array.isArray(data?.data) ? data.data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setDaHeaderStatusTimeline([]);
+      });
+    return () => { cancelled = true; };
+  }, [isDaVerifyContext, callId, daStatusRefreshToken]);
+
+  // The header action button is a simple two-state toggle driven by the per-item Verify
+  // checkbox (see handleToggleVerified) — "Ops completed" and the DA status timeline's "SO
+  // approval" stage right after it. It is NOT a general multi-step advance: re-verifying
+  // further items (or clicking the button again once already at the SO Approval stage)
+  // must not walk any further down the timeline — it only ever shows/targets these two
+  // labels. Matched loosely against the real backend wording since it's seen as both
+  // "To be sent for SO approval" and "Awaiting SO approval".
+  const { opsCompletedLabel, soApprovalLabel } = useMemo(() => {
+    const mapped = mapStatusTimelineResponse(daHeaderStatusTimeline);
+    return {
+      opsCompletedLabel: mapped.find((step) => /ops completed/i.test(step.label))?.label ?? null,
+      soApprovalLabel: mapped.find((step) => /so approval/i.test(step.label))?.label ?? null,
+    };
+  }, [daHeaderStatusTimeline]);
+
+  // Which of the two the real fetched data currently sits on — "Ops completed" already
+  // marked done means the flow has moved past it into the SO Approval stage.
+  const isPastOpsCompleted = Array.isArray(daHeaderStatusTimeline)
+    && daHeaderStatusTimeline.some((row) => /ops completed/i.test(row?.status_name || "") && row?.state === "done");
+  const realDaActionLabel = isPastOpsCompleted ? soApprovalLabel : opsCompletedLabel;
+
+  // Local-only fallback: api/da/update_status appears to only ever mark a status_name's
+  // row "done" — same well-known backend gap as useDaLocalReachedDates elsewhere in DA (it
+  // doesn't reliably persist reached_date or promote the next row to "current" either).
+  // Sending "Ops completed" back to it after it's already done doesn't appear to actually
+  // un-mark it, so realDaActionLabel wouldn't move backward on its own. This remembers the
+  // toggle locally so the header button reflects it immediately regardless of what the
+  // backend call actually does; cleared once the real fetched data itself agrees.
+  const [localDaStatusOverride, setLocalDaStatusOverride] = useState(null);
+
+  useEffect(() => {
+    if (localDaStatusOverride && localDaStatusOverride === realDaActionLabel) {
+      setLocalDaStatusOverride(null);
+    }
+  }, [realDaActionLabel, localDaStatusOverride]);
+
+  const effectiveNextDaStatusLabel = localDaStatusOverride ?? realDaActionLabel;
+  const isSoApprovalDaStatus = effectiveNextDaStatusLabel != null && effectiveNextDaStatusLabel === soApprovalLabel;
+
+  // Backend's exact wording for this stage varies/is inconsistent (seen as both "To be
+  // sent for SO approval" and "Awaiting SO approval"), but the button should always read
+  // "Sent for SO Approval" here regardless — the api/da/update_status call underneath
+  // still uses the real backend label (effectiveNextDaStatusLabel), only the button's own
+  // text is overridden.
+  //
+  // Past that, everything below is local-only staff simulation of the client's response —
+  // the backend's status_timeline only has a single "SO approval" row with no field for any
+  // of these sub-states (sent / awaiting / approved / rejected), and there's no public
+  // client-facing link (unlike the CEO Export Approval flow) to capture a real decision yet.
+  // soApprovalEmailSent: true once the email modal's Send has fired.
+  // soClientDecision: null while awaiting, else "approved" — recorded by staff via the
+  // Approved button shown alongside the header button while awaiting. A Rejected click
+  // doesn't set this — it resets straight back to the "Sent for SO Approval" step instead
+  // (see handleRejectSoApproval), no intermediate "Redo" step to click through.
+  // invoiceDispatched / invoiceClientDecision: same pattern one step further — set once the
+  // Invoice Issuance upload completes, recording the client's response to the dispatched
+  // invoice. A Rejected click here likewise reverts straight back to "Invoice Issuance" so
+  // it can be re-uploaded.
+  // paymentClientDecision: one step further still — once the invoice itself is approved, the
+  // flow moves straight into "Awaiting Payment" (no separate dispatch action, unlike the
+  // invoice step) for the client's payment response. Approved here is the terminal "Closed
+  // Paid" state; Rejected reverts the whole cycle back to "Invoice Issuance" so a corrected
+  // invoice can be reissued.
+  // All reset once the DA record leaves the SO Approval stage (real data moves it on, or a
+  // verify toggle reverts it), so a fresh pass through this stage always starts clean.
+  const [soApprovalEmailSent, setSoApprovalEmailSent] = useState(false);
+  const [soClientDecision, setSoClientDecision] = useState(null);
+  const [invoiceDispatched, setInvoiceDispatched] = useState(false);
+  const [invoiceClientDecision, setInvoiceClientDecision] = useState(null);
+  const [paymentClientDecision, setPaymentClientDecision] = useState(null);
+
+  useEffect(() => {
+    if (soApprovalEmailSent && !isSoApprovalDaStatus) {
+      setSoApprovalEmailSent(false);
+      setSoClientDecision(null);
+      setInvoiceDispatched(false);
+      setInvoiceClientDecision(null);
+      setPaymentClientDecision(null);
+    }
+  }, [isSoApprovalDaStatus, soApprovalEmailSent]);
+
+  const daActionButtonLabel =
+    paymentClientDecision === "approved"
+      ? "Closed Paid"
+      : invoiceClientDecision === "approved"
+      ? "Awaiting Payment"
+      : invoiceDispatched
+      ? "Invoice Dispatched"
+      : soClientDecision === "approved"
+      ? "Invoice Issuance"
+      : soApprovalEmailSent
+      ? "Awaiting For SO Approval"
+      : isSoApprovalDaStatus
+      ? "Sent for SO Approval"
+      : effectiveNextDaStatusLabel;
+
+  // State for the SO Approval email modal, opened from the header action button when
+  // effectiveNextDaStatusLabel is the "SO Approval" stage. Local-only for now — no backend
+  // send endpoint yet, so sending just closes the modal (the DA status itself only advances
+  // via onAdvanceDaStage's normal click path, same as every other status).
+  const [showSoApprovalEmailModal, setShowSoApprovalEmailModal] = useState(false);
+
+  // Invoice Issuance modal — opened once staff records the client's approval. Reuses the
+  // existing UploadInvoiceModal (components/UploadInvoiceModal.jsx), same component the
+  // Vendor/Transport/Hotel portals already use for invoice upload. Local-only for now —
+  // same "no backend endpoint yet" situation as the rest of this stage.
+  const [showInvoiceIssuanceModal, setShowInvoiceIssuanceModal] = useState(false);
+
+  const handleAdvanceDaStatusFromHeader = () => {
+    if (!effectiveNextDaStatusLabel) return;
+    if (paymentClientDecision === "approved") return; // terminal — nothing further to do here
+    if (invoiceClientDecision === "approved") return; // awaiting payment — decision is recorded via the standalone Approved/Rejected buttons
+    if (invoiceDispatched) return; // awaiting — decision is recorded via the standalone Approved/Rejected buttons
+    if (soClientDecision === "approved") {
+      setShowInvoiceIssuanceModal(true);
+      return;
+    }
+    if (soApprovalEmailSent) return; // awaiting — decision is recorded via the standalone Approved/Rejected buttons
+    if (isSoApprovalDaStatus) {
+      setShowSoApprovalEmailModal(true);
+      return;
+    }
+    if (!onAdvanceDaStage || isAdvancingDaStage) return;
+    setLocalDaStatusOverride(soApprovalLabel);
+    onAdvanceDaStage(effectiveNextDaStatusLabel);
+  };
+
+  const handleCreateSoApprovalEmail = () => {
+    setShowSoApprovalEmailModal(false);
+    setSoApprovalEmailSent(true);
+  };
+
+  const handleRecordSoClientDecision = (decision) => {
+    setSoClientDecision(decision);
+  };
+
+  // Rejected — no intermediate "Redo" click, straight back to the "Sent for SO Approval" step.
+  const handleRejectSoApproval = () => {
+    setSoApprovalEmailSent(false);
+    setSoClientDecision(null);
+  };
+
+  const handleCloseInvoiceIssuanceModal = () => {
+    setShowInvoiceIssuanceModal(false);
+  };
+
+  // Local-only — no backend endpoint yet for this step (see comment block above). Marks the
+  // invoice as dispatched to the client once the upload completes.
+  const handleUploadInvoiceIssuance = async () => {
+    setInvoiceDispatched(true);
+  };
+
+  const handleRecordInvoiceClientDecision = (decision) => {
+    setInvoiceClientDecision(decision);
+  };
+
+  // Rejected — straight back to "Invoice Issuance" so the invoice can be re-uploaded.
+  const handleRejectInvoiceDispatch = () => {
+    setInvoiceDispatched(false);
+    setInvoiceClientDecision(null);
+  };
+
+  const handleRecordPaymentClientDecision = (decision) => {
+    setPaymentClientDecision(decision);
+  };
+
+  // Rejected — reverts the whole cycle back to "Invoice Issuance" so a corrected invoice can
+  // be reissued (there's no separate "dispatch payment request" step to redo instead).
+  const handleRejectPayment = () => {
+    setInvoiceDispatched(false);
+    setInvoiceClientDecision(null);
+    setPaymentClientDecision(null);
+  };
 
   const displayOrderList = Array.isArray(salesOrderList) ? salesOrderList : [];
 
@@ -902,7 +995,16 @@ const SalesOrderList = ({
     handleUpdateSalesOrder({ document_date: e.target.value });
   };
 
+  // Verifying a line item is the trigger that moves the whole DA/SO record into the
+  // approval flow — ticking the checkbox advances the real DA status to its next stage
+  // (e.g. Ops completed → Sent for SO Approval), same api/da/update_status call the header
+  // action button makes, so the header button's label updates to reflect it. Un-ticking it
+  // again reverts one stage back the same way (sends the last-done step's own label — same
+  // mechanism DA.jsx's own Status Timeline uses for its "done" step revert). No modal/email
+  // popup here either way — that's still only triggered by the header button's own click
+  // (see isSoApprovalDaStatus).
   const handleToggleVerified = (orderId) => {
+    const isBeingVerified = !verifiedItems.has(orderId);
     setVerifiedItems((prev) => {
       const next = new Set(prev);
       if (next.has(orderId)) {
@@ -912,90 +1014,20 @@ const SalesOrderList = ({
       }
       return next;
     });
-  };
 
-  // Logs each SO-process step into shared formValues.soProcessTimeline so the DA tab's
-  // Summary sub-tab (DA.jsx) can show it as a "Sales Order Activity" timeline — local-only,
-  // same as the process itself, but shared across tabs via the card's formValues.
-  const appendSoTimelineEvent = (event, itemNo) => {
-    const existing = Array.isArray(formValues.soProcessTimeline) ? formValues.soProcessTimeline : [];
-    const entry = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, event, itemNo, timestamp: new Date().toISOString() };
-    handleChange("soProcessTimeline")({ target: { value: [...existing, entry] } });
-  };
-
-  // Advances the whole-SO status stepper by one step (forward-only, one at a time —
-  // same interaction pattern as the real DA Status Timeline in the DA tab).
-  const handleAdvanceSoStatus = (steps) => {
-    setSoStatusStepIndex((prev) => {
-      if (prev >= steps.length - 1) return prev;
-      const next = prev + 1;
-      appendSoTimelineEvent(steps[next].label, null);
-      return next;
-    });
-  };
-
-  // Generic "Move to ..." step button (steps without a dedicated action, e.g. Awaiting SRF,
-  // PO Received) — these are meant to come from SAP sync, not a manual click, so this just
-  // informs the user instead of advancing the stepper.
-  const handleGenericSoStatusStepClick = () => {
-    useAlertReducer.getState().error("This status is synced from SAP and will update automatically.");
-  };
-
-  // Called from the SO Approval email modal — sending is local-only for now (no backend
-  // endpoint yet), so this just closes the modal and advances the stepper.
-  const handleCreateSoApprovalEmail = (steps) => {
-    setShowSoApprovalEmailModal(false);
-    handleAdvanceSoStatus(steps);
-  };
-
-  // DA ticks "Approved" once the SO approval response has been received — asks for
-  // confirmation first, then advances the stepper the same way the other step actions do.
-  const handleApproveSoApproval = (steps) => {
-    handleAdvanceSoStatus(steps);
-    useAlertReducer.getState().success("Sales order approval confirmed.");
-  };
-
-  const handleConfirmApproveSoModal = () => {
-    handleApproveSoApproval(resolveClientSoStatusSteps(soCustomerName));
-    setShowApproveSoModal(false);
-  };
-
-  const handleCancelApproveSoModal = () => {
-    setShowApproveSoModal(false);
-  };
-
-  // Uploading the invoice on the "Invoice Issuance" step — PDF only, local-only for now
-  // (no backend field/endpoint yet). Only attaches the file; DA advances separately via
-  // the Confirm checkbox once they've reviewed it.
-  const handleInvoicePdfSelected = (file) => {
-    if (!file) return;
-    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-    if (!isPdf) {
-      useAlertReducer.getState().error("Please upload a PDF file.");
-      return;
+    // Fixed two-way toggle — always targets these same two labels, regardless of how many
+    // items get verified/un-verified or in what order. The local override is set
+    // unconditionally (not gated on isAdvancingDaStage or the backend call's outcome) so
+    // the button reflects the toggle immediately every time.
+    if (isBeingVerified) {
+      if (soApprovalLabel) {
+        setLocalDaStatusOverride(soApprovalLabel);
+        onAdvanceDaStage?.(soApprovalLabel);
+      }
+    } else if (opsCompletedLabel) {
+      setLocalDaStatusOverride(opsCompletedLabel);
+      onAdvanceDaStage?.(opsCompletedLabel);
     }
-    setInvoicePdfFile(file);
-  };
-
-  const handleRemoveInvoicePdf = () => {
-    setInvoicePdfFile(null);
-  };
-
-  // DA confirms the attached invoice PDF is correct — asks for confirmation first, then
-  // advances the stepper the same way the other step actions do.
-  const handleConfirmInvoiceIssuance = (steps) => {
-    if (!invoicePdfFile) return;
-    handleAdvanceSoStatus(steps);
-    useAlertReducer.getState().success(`Invoice "${invoicePdfFile.name}" confirmed.`);
-  };
-
-  const handleConfirmInvoiceConfirmModal = () => {
-    handleConfirmInvoiceIssuance(resolveClientSoStatusSteps(soCustomerName));
-    setShowInvoiceConfirmModal(false);
-  };
-
-  const handleCancelInvoiceConfirmModal = () => {
-    setShowInvoiceConfirmModal(false);
   };
 
   // Delete a line item — no backend endpoint yet, so this is local-only (removes from
@@ -1986,6 +2018,98 @@ const SalesOrderList = ({
             </div>
           )}
 
+          {isDaVerifyContext && effectiveNextDaStatusLabel && (
+            soApprovalEmailSent && !soClientDecision ? (
+              <div className="sales-order-da-status-group">
+                <span className="sales-order-da-status-button sales-order-da-status-button--label">
+                  <FiClipboard />
+                  {daActionButtonLabel}
+                </span>
+                <button
+                  type="button"
+                  className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
+                  title="Record the client's approval"
+                  onClick={() => handleRecordSoClientDecision("approved")}
+                >
+                  <FiCheck /> Approved
+                </button>
+                <button
+                  type="button"
+                  className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
+                  title="Record the client's rejection and go back to Sent for SO Approval"
+                  onClick={handleRejectSoApproval}
+                >
+                  <FiX /> Rejected
+                </button>
+              </div>
+            ) : invoiceDispatched && !invoiceClientDecision ? (
+              <div className="sales-order-da-status-group">
+                <span className="sales-order-da-status-button sales-order-da-status-button--label">
+                  <FiClipboard />
+                  {daActionButtonLabel}
+                </span>
+                <button
+                  type="button"
+                  className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
+                  title="Record the client's approval of the invoice"
+                  onClick={() => handleRecordInvoiceClientDecision("approved")}
+                >
+                  <FiCheck /> Approved
+                </button>
+                <button
+                  type="button"
+                  className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
+                  title="Record the client's rejection and go back to Invoice Issuance"
+                  onClick={handleRejectInvoiceDispatch}
+                >
+                  <FiX /> Rejected
+                </button>
+              </div>
+            ) : invoiceClientDecision === "approved" && !paymentClientDecision ? (
+              <div className="sales-order-da-status-group">
+                <span className="sales-order-da-status-button sales-order-da-status-button--label">
+                  <FiClipboard />
+                  {daActionButtonLabel}
+                </span>
+                <button
+                  type="button"
+                  className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
+                  title="Record the client's payment approval"
+                  onClick={() => handleRecordPaymentClientDecision("approved")}
+                >
+                  <FiCheck /> Approved
+                </button>
+                <button
+                  type="button"
+                  className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
+                  title="Record the client's payment rejection and go back to Invoice Issuance"
+                  onClick={handleRejectPayment}
+                >
+                  <FiX /> Rejected
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="sales-order-da-status-button"
+                disabled={isAdvancingDaStage || paymentClientDecision === "approved"}
+                title={
+                  paymentClientDecision === "approved"
+                    ? "Payment received — closed"
+                    : soClientDecision === "approved"
+                    ? "Open Invoice Issuance upload"
+                    : isSoApprovalDaStatus
+                    ? "Open SO Approval email"
+                    : `Move to "${effectiveNextDaStatusLabel}"`
+                }
+                onClick={handleAdvanceDaStatusFromHeader}
+              >
+                <FiClipboard />
+                {daActionButtonLabel}
+              </button>
+            )
+          )}
+
           {!readOnly && (
             <button
               type="button"
@@ -2398,180 +2522,6 @@ const SalesOrderList = ({
         </div>
       </div>
 
-      {/* Sales Order Status — DA-only, whole-SO status checklist (SO Approval →
-          ... → Closed Paid), steps sourced from the client-specific reference table
-          (CLIENT_SO_STATUS_TIMELINES) matched against this SO's client/billing entity name.
-          Plain vertical checklist (no timeline/progress-bar visual) — each row's own action
-          advances one step at a time, same interaction pattern as the real DA Status
-          Timeline in the DA tab. Local-only for now — no backend field/endpoint yet to
-          persist the current step. */}
-      {isDaVerifyContext && (() => {
-        const steps = resolveClientSoStatusSteps(soCustomerName);
-        const currentIndex = Math.min(soStatusStepIndex, steps.length - 1);
-        return (
-          <div className="so-client-process-section">
-            <h3 className="so-client-process-title">
-              <FiClipboard className="so-client-process-title-icon" />
-              DA Status{soCustomerName ? ` — ${soCustomerName}` : ""}
-            </h3>
-            <div className="so-status-checklist">
-              {steps.map((step, index) => {
-                if (index !== currentIndex) return null;
-                const state = index < currentIndex ? "done" : index === currentIndex ? "current" : "pending";
-                const isClickable = state === "current" && index < steps.length - 1;
-                return (
-                  <div
-                    className={`so-status-check-row so-status-check-row--${state}`}
-                    key={step.label}
-                  >
-                    <div className="so-status-check-icon">
-                      {state === "done" ? <FiCheck /> : <span className="so-status-check-dot" />}
-                    </div>
-                    <div className="so-status-check-info">
-                      <span className="so-status-check-label">{step.label}</span>
-                    </div>
-                    <div className="so-status-check-action">
-                      {isClickable && step.label === "To Be Sent for SO Approval" ? (
-                        <button
-                          type="button"
-                          className="so-status-step-dot--labeled"
-                          title="Open SO Approval email"
-                          onClick={() => setShowSoApprovalEmailModal(true)}
-                        >
-                          To Be Sent for SO Approval
-                        </button>
-                      ) : isClickable && step.label === "Awaiting SO Approval" ? (
-                        <label className="so-status-step-approve-check" title={`Move to "${steps[index + 1].label}"`}>
-                          <input
-                            type="checkbox"
-                            checked={false}
-                            onChange={() => setShowApproveSoModal(true)}
-                          />
-                          <span>Approved</span>
-                        </label>
-                      ) : isClickable && step.label === "Invoice Issuance" ? (
-                        <div className="so-status-check-invoice-action">
-                          <button
-                            type="button"
-                            className="so-status-step-upload-btn"
-                            title="Upload invoice PDF"
-                            onClick={() => invoicePdfInputRef.current?.click()}
-                          >
-                            <FiUpload />
-                            <span>{invoicePdfFile ? "Replace Invoice PDF" : "Upload Invoice PDF"}</span>
-                          </button>
-                          <input
-                            ref={invoicePdfInputRef}
-                            type="file"
-                            accept="application/pdf,.pdf"
-                            className="so-status-step-upload-input-hidden"
-                            onChange={(e) => {
-                              handleInvoicePdfSelected(e.target.files?.[0]);
-                              e.target.value = "";
-                            }}
-                          />
-                          {invoicePdfFile && (
-                            <span className="so-status-step-file-name" title={invoicePdfFile.name}>
-                              <FiFileText />
-                              <span className="so-status-step-file-label">{invoicePdfFile.name}</span>
-                              {invoicePdfPreviewUrl && (
-                                <a
-                                  href={invoicePdfPreviewUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="so-status-step-file-action"
-                                  title="View invoice PDF"
-                                >
-                                  View
-                                </a>
-                              )}
-                              <button
-                                type="button"
-                                className="so-status-step-file-action so-status-step-file-action--remove"
-                                title="Remove invoice PDF"
-                                onClick={handleRemoveInvoicePdf}
-                              >
-                                ×
-                              </button>
-                            </span>
-                          )}
-                          <label
-                            className={`so-status-step-approve-check${!invoicePdfFile ? " so-status-step-approve-check--disabled" : ""}`}
-                            title={invoicePdfFile ? `Move to "${steps[index + 1].label}"` : undefined}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={false}
-                              disabled={!invoicePdfFile}
-                              onChange={() => setShowInvoiceConfirmModal(true)}
-                            />
-                            <span>Confirm</span>
-                          </label>
-                        </div>
-                      ) : isClickable ? (
-                        <button
-                          type="button"
-                          className="so-status-check-advance-btn"
-                          onClick={handleGenericSoStatusStepClick}
-                        >
-                          Move to &quot;{steps[index + 1].label}&quot;
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <SoApprovalEmailModal
-              show={showSoApprovalEmailModal}
-              onClose={() => setShowSoApprovalEmailModal(false)}
-              onCreate={() => handleCreateSoApprovalEmail(steps)}
-              soCustomerName={soCustomerName}
-            />
-            <CustomModal
-              show={showApproveSoModal}
-              closeModal={handleCancelApproveSoModal}
-              dialgName="so-approve-confirm-dialog"
-              body={
-                <div className="so-approve-confirm-body">
-                  <div className="so-approve-confirm-title">
-                    {`Are you sure you want to approve this Sales Order${soCustomerName ? ` — ${soCustomerName}` : ""}?`}
-                  </div>
-                  <div className="so-approve-confirm-actions">
-                    <button type="button" className="btn btn-secondary" onClick={handleCancelApproveSoModal}>
-                      Cancel
-                    </button>
-                    <button type="button" className="btn btn-primary" onClick={handleConfirmApproveSoModal}>
-                      Confirm
-                    </button>
-                  </div>
-                </div>
-              }
-            />
-            <CustomModal
-              show={showInvoiceConfirmModal}
-              closeModal={handleCancelInvoiceConfirmModal}
-              dialgName="so-approve-confirm-dialog"
-              body={
-                <div className="so-approve-confirm-body">
-                  <div className="so-approve-confirm-title">
-                    {`Are you sure you want to confirm invoice${invoicePdfFile ? ` "${invoicePdfFile.name}"` : ""}?`}
-                  </div>
-                  <div className="so-approve-confirm-actions">
-                    <button type="button" className="btn btn-secondary" onClick={handleCancelInvoiceConfirmModal}>
-                      Cancel
-                    </button>
-                    <button type="button" className="btn btn-primary" onClick={handleConfirmInvoiceConfirmModal}>
-                      Confirm
-                    </button>
-                  </div>
-                </div>
-              }
-            />
-          </div>
-        );
-      })()}
-
       {/* Accounting Summary — always visible at the bottom of the page */}
       {(() => {
         const amountFromForm = (v) => {
@@ -2772,6 +2722,28 @@ const SalesOrderList = ({
         onConfirm={handleConfirmDeleteItem}
         deleteText={`Are you sure you want to delete Item Code. ${deletingItem?.itemNo || ""}?`}
       />
+
+      {/* SO Approval email — opened from the header action button when the DA's current
+          real status (see currentDaStatusLabel) is the "SO Approval" stage. */}
+      {isDaVerifyContext && (
+        <SoApprovalEmailModal
+          show={showSoApprovalEmailModal}
+          onClose={() => setShowSoApprovalEmailModal(false)}
+          onCreate={handleCreateSoApprovalEmail}
+          soCustomerName={soCustomerName}
+        />
+      )}
+
+      {/* Invoice Issuance — opened from the header action button once the client's approval
+          has been recorded (see soClientDecision). */}
+      {isDaVerifyContext && (
+        <UploadInvoiceModal
+          show={showInvoiceIssuanceModal}
+          closeModal={handleCloseInvoiceIssuanceModal}
+          contextLabel={soCustomerName ? `SO — ${soCustomerName}` : undefined}
+          onUploadComplete={handleUploadInvoiceIssuance}
+        />
+      )}
     </div>
   );
 };
@@ -2788,6 +2760,9 @@ SalesOrderList.propTypes = {
   isLoadingSalesOrder: PropTypes.bool,
   salesOrderError: PropTypes.oneOfType([PropTypes.string, PropTypes.oneOf([null])]),
   refreshSalesOrder: PropTypes.func,
+  daStatusRefreshToken: PropTypes.number,
+  onAdvanceDaStage: PropTypes.func,
+  isAdvancingDaStage: PropTypes.bool,
 };
 
 export default SalesOrderList;
