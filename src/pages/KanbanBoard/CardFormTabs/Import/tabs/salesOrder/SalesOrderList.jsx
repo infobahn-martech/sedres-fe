@@ -691,6 +691,8 @@ const SalesOrderList = ({
       ? "Awaiting For SO Approval"
       : isSoApprovalDaStatus
       ? "Sent for SO Approval"
+      : effectiveNextDaStatusLabel
+      ? `Mark ${effectiveNextDaStatusLabel}`
       : effectiveNextDaStatusLabel;
 
   // State for the SO Approval email modal, opened from the header action button when
