@@ -1842,6 +1842,109 @@ const SalesOrderList = ({
             onPageChange={setCurrentPage}
             compact
           />
+          {isDaVerifyContext && effectiveNextDaStatusLabel && (
+            soApprovalEmailSent && !soClientDecision ? (
+              <div className="sales-order-da-status-group">
+                <span className="sales-order-da-status-button sales-order-da-status-button--label">
+                  <FiClipboard />
+                  {daActionButtonLabel}
+                </span>
+                <button
+                  type="button"
+                  className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
+                  title="Record the client's approval"
+                  onClick={() => handleRecordSoClientDecision("approved")}
+                >
+                  <FiCheck /> Approved
+                </button>
+                <button
+                  type="button"
+                  className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
+                  title="Record the client's rejection and go back to Sent for SO Approval"
+                  onClick={handleRejectSoApproval}
+                >
+                  <FiX /> Rejected
+                </button>
+              </div>
+            ) : invoiceDispatched && !invoiceClientDecision ? (
+              <div className="sales-order-da-status-group">
+                <span className="sales-order-da-status-button sales-order-da-status-button--label">
+                  <FiClipboard />
+                  {daActionButtonLabel}
+                </span>
+                <button
+                  type="button"
+                  className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
+                  title="Record the client's approval of the invoice"
+                  onClick={() => handleRecordInvoiceClientDecision("approved")}
+                >
+                  <FiCheck /> Approved
+                </button>
+                <button
+                  type="button"
+                  className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
+                  title="Record the client's rejection and go back to Invoice Issuance"
+                  onClick={handleRejectInvoiceDispatch}
+                >
+                  <FiX /> Rejected
+                </button>
+              </div>
+            ) : invoiceClientDecision === "approved" && !paymentClientDecision ? (
+              <div className="sales-order-da-status-group">
+                <span className="sales-order-da-status-button sales-order-da-status-button--label">
+                  <FiClipboard />
+                  {daActionButtonLabel}
+                </span>
+                <button
+                  type="button"
+                  className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
+                  title="Record the client's payment approval"
+                  onClick={() => handleRecordPaymentClientDecision("approved")}
+                >
+                  <FiCheck /> Approved
+                </button>
+                <button
+                  type="button"
+                  className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
+                  title="Record the client's payment rejection and go back to Invoice Issuance"
+                  onClick={handleRejectPayment}
+                >
+                  <FiX /> Rejected
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="sales-order-da-status-button"
+                disabled={isAdvancingDaStage || paymentClientDecision === "approved"}
+                title={
+                  paymentClientDecision === "approved"
+                    ? "Payment received — closed"
+                    : soClientDecision === "approved"
+                    ? "Open Invoice Issuance upload"
+                    : isSoApprovalDaStatus
+                    ? "Open SO Approval email"
+                    : `Move to "${effectiveNextDaStatusLabel}"`
+                }
+                onClick={handleAdvanceDaStatusFromHeader}
+              >
+                <FiClipboard />
+                {daActionButtonLabel}
+              </button>
+            )
+          )}
+
+          {!readOnly && (
+            <button
+              type="button"
+              className="sales-order-sync-sap-button"
+              onClick={handleSyncSap}
+            >
+              <FiRefreshCw />
+              Sync SAP
+            </button>
+          )}
+
           {!readOnly && (
             <div className="sales-order-add-button-wrap">
               <button
@@ -2016,109 +2119,6 @@ const SalesOrderList = ({
                 </>
               )}
             </div>
-          )}
-
-          {isDaVerifyContext && effectiveNextDaStatusLabel && (
-            soApprovalEmailSent && !soClientDecision ? (
-              <div className="sales-order-da-status-group">
-                <span className="sales-order-da-status-button sales-order-da-status-button--label">
-                  <FiClipboard />
-                  {daActionButtonLabel}
-                </span>
-                <button
-                  type="button"
-                  className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
-                  title="Record the client's approval"
-                  onClick={() => handleRecordSoClientDecision("approved")}
-                >
-                  <FiCheck /> Approved
-                </button>
-                <button
-                  type="button"
-                  className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
-                  title="Record the client's rejection and go back to Sent for SO Approval"
-                  onClick={handleRejectSoApproval}
-                >
-                  <FiX /> Rejected
-                </button>
-              </div>
-            ) : invoiceDispatched && !invoiceClientDecision ? (
-              <div className="sales-order-da-status-group">
-                <span className="sales-order-da-status-button sales-order-da-status-button--label">
-                  <FiClipboard />
-                  {daActionButtonLabel}
-                </span>
-                <button
-                  type="button"
-                  className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
-                  title="Record the client's approval of the invoice"
-                  onClick={() => handleRecordInvoiceClientDecision("approved")}
-                >
-                  <FiCheck /> Approved
-                </button>
-                <button
-                  type="button"
-                  className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
-                  title="Record the client's rejection and go back to Invoice Issuance"
-                  onClick={handleRejectInvoiceDispatch}
-                >
-                  <FiX /> Rejected
-                </button>
-              </div>
-            ) : invoiceClientDecision === "approved" && !paymentClientDecision ? (
-              <div className="sales-order-da-status-group">
-                <span className="sales-order-da-status-button sales-order-da-status-button--label">
-                  <FiClipboard />
-                  {daActionButtonLabel}
-                </span>
-                <button
-                  type="button"
-                  className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
-                  title="Record the client's payment approval"
-                  onClick={() => handleRecordPaymentClientDecision("approved")}
-                >
-                  <FiCheck /> Approved
-                </button>
-                <button
-                  type="button"
-                  className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
-                  title="Record the client's payment rejection and go back to Invoice Issuance"
-                  onClick={handleRejectPayment}
-                >
-                  <FiX /> Rejected
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="sales-order-da-status-button"
-                disabled={isAdvancingDaStage || paymentClientDecision === "approved"}
-                title={
-                  paymentClientDecision === "approved"
-                    ? "Payment received — closed"
-                    : soClientDecision === "approved"
-                    ? "Open Invoice Issuance upload"
-                    : isSoApprovalDaStatus
-                    ? "Open SO Approval email"
-                    : `Move to "${effectiveNextDaStatusLabel}"`
-                }
-                onClick={handleAdvanceDaStatusFromHeader}
-              >
-                <FiClipboard />
-                {daActionButtonLabel}
-              </button>
-            )
-          )}
-
-          {!readOnly && (
-            <button
-              type="button"
-              className="sales-order-sync-sap-button"
-              onClick={handleSyncSap}
-            >
-              <FiRefreshCw />
-              Sync SAP
-            </button>
           )}
         </div>
       </div>
