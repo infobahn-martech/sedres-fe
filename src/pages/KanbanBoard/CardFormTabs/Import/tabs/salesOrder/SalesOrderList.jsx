@@ -959,6 +959,14 @@ const SalesOrderList = ({
   // UI/internal value is "EURO"; the API expects the ISO code "EUR".
   const toApiCurrency = (currency) => (currency === "EURO" ? "EUR" : currency);
 
+  // Keeps the discount % input within 0–100 while typing.
+  const clampDiscountPercentage = (value) => {
+    if (value === "" || value == null) return "";
+    const num = parseFloat(value);
+    if (!Number.isFinite(num)) return "";
+    return String(Math.min(100, Math.max(0, num)));
+  };
+
   // Persists SO header field edits to sales_order/update_sales_order. Fired on blur or Enter
   // (no submit button) — sends only the sales_order_id plus the single field that changed.
   // Known columns (delivery_date, document_date, discount_percentage) go top-level; everything
@@ -2565,7 +2573,6 @@ const SalesOrderList = ({
         const grandTotalCalc = subtotalCalc - totalDiscountCalc + totalTaxCalc;
 
         const subtotal = amountFromForm(formValues.soSubtotal) ?? subtotalCalc;
-        const totalDiscount = amountFromForm(formValues.soTotalDiscount) ?? totalDiscountCalc;
         const totalTax = amountFromForm(formValues.soTotalTax) ?? totalTaxCalc;
         const grandTotal = amountFromForm(formValues.soGrandTotal) ?? grandTotalCalc;
         const currencyLabel = soBpCurrency === "EURO" ? "EURO (€)" : soBpCurrency;
@@ -2573,6 +2580,9 @@ const SalesOrderList = ({
         const roundingEnabled = !!formValues.soRoundingEnabled;
         const roundingAdjustment = Math.round(grandTotal) - grandTotal;
         const finalGrandTotal = roundingEnabled ? grandTotal + roundingAdjustment : grandTotal;
+
+        const headerDiscountPercentage = parseFloat(formValues.soDiscountPercentage) || 0;
+        const headerDiscountAmount = subtotal * (headerDiscountPercentage / 100);
 
         return (
           <div className="so-summary-section">
@@ -2606,38 +2616,77 @@ const SalesOrderList = ({
               </div>
               <div className="so-accounting-divider" />
               <div className="so-accounting-row">
-                <span className="so-accounting-label">Subtotal</span>
+                <span className="so-accounting-label">Total before discount</span>
                 <span className="so-accounting-value">{formatCurrencySAR(subtotal)}</span>
               </div>
               {(!readOnly || (formValues.soDiscountPercentage != null && String(formValues.soDiscountPercentage).trim() !== "")) && (
                 <div className="so-accounting-row">
                   <span className="so-accounting-label">Discount</span>
-                  {readOnly ? (
-                    <span className="so-accounting-value">
-                      {String(formValues.soDiscountPercentage).replace(/%$/, "")}%
-                    </span>
-                  ) : (
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      value={formValues.soDiscountPercentage ?? ""}
-                      onChange={handleChange("soDiscountPercentage")}
-                      onBlur={() =>
-                        handleUpdateSalesOrder({ discount_percentage: parseFloat(formValues.soDiscountPercentage) || 0 })
-                      }
-                      onKeyDown={handleEnterBlur}
-                      placeholder="0"
-                      className="so-accounting-discount-input"
-                    />
-                  )}
+                  <div className="so-accounting-discount-value-wrap">
+                    {readOnly ? (
+                      <span className="so-accounting-value">
+                        {String(formValues.soDiscountPercentage).replace(/%$/, "")}%
+                      </span>
+                    ) : (
+                      <div className="so-accounting-discount-input-wrap">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          value={formValues.soDiscountPercentage ?? ""}
+                          onChange={(e) => handleChange("soDiscountPercentage")(clampDiscountPercentage(e.target.value))}
+                          onBlur={() => {
+                            const pctNum = parseFloat(clampDiscountPercentage(formValues.soDiscountPercentage)) || 0;
+                            handleUpdateSalesOrder({ discount_percentage: pctNum });
+                          }}
+                          onKeyDown={handleEnterBlur}
+                          placeholder="0"
+                          className="so-accounting-discount-input"
+                        />
+                        <span className="so-accounting-discount-percent-sign">%</span>
+                      </div>
+                    )}
+                    {readOnly ? (
+                      <span className="so-accounting-value so-accounting-discount-amount">
+                        {formatCurrencySAR(headerDiscountAmount)}
+                      </span>
+                    ) : (
+                      <div className="so-accounting-discount-input-wrap">
+                        <span className="so-accounting-discount-currency-prefix">
+                          {toApiCurrency(soBpCurrency) || "SAR"}
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          max={subtotal || undefined}
+                          step="0.01"
+                          value={headerDiscountAmount ? Number(headerDiscountAmount.toFixed(2)) : ""}
+                          onChange={(e) => {
+                            const rawValue = e.target.value;
+                            if (rawValue === "") {
+                              handleChange("soDiscountPercentage")("");
+                              return;
+                            }
+                            const amountNum = parseFloat(rawValue);
+                            if (subtotal > 0 && Number.isFinite(amountNum)) {
+                              handleChange("soDiscountPercentage")(clampDiscountPercentage((amountNum / subtotal) * 100));
+                            }
+                          }}
+                          onBlur={() => {
+                            const pctNum = parseFloat(clampDiscountPercentage(formValues.soDiscountPercentage)) || 0;
+                            const amount = Number((subtotal * (pctNum / 100)).toFixed(2));
+                            handleUpdateSalesOrder({ total_discount: amount });
+                          }}
+                          onKeyDown={handleEnterBlur}
+                          placeholder="0.00"
+                          className="so-accounting-discount-input"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-              <div className="so-accounting-row">
-                <span className="so-accounting-label">Total Discount</span>
-                <span className="so-accounting-value so-accounting-discount">− {formatCurrencySAR(totalDiscount)}</span>
-              </div>
               <div className="so-accounting-row">
                 <label className="so-accounting-label so-accounting-checkbox-label">
                   <input
