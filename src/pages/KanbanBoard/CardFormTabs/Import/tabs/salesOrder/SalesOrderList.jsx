@@ -2629,7 +2629,11 @@ const SalesOrderList = ({
                   <input
                     type="checkbox"
                     checked={roundingEnabled}
-                    onChange={(e) => handleChange("soRoundingEnabled")(e.target.checked)}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      handleChange("soRoundingEnabled")(checked);
+                      handleUpdateSalesOrder({ rounding: checked ? 1 : 0 });
+                    }}
                     disabled={readOnly}
                     className="so-accounting-checkbox"
                   />
