@@ -2377,6 +2377,10 @@ $so-po-blue: #1a56db;
     display: flex;
     flex-direction: column;
   }
+
+  .modal-footer {
+    border-top: 0;
+  }
 }
 
 .so-approval-email-header {
@@ -2601,14 +2605,15 @@ $so-po-blue: #1a56db;
 }
 
 .so-approval-email-footer-btn {
-  font-size: 13px;
+  font-size: 14px;
+  padding: 10px 22px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
 
   svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
   }
 }
 
