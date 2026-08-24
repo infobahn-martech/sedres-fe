@@ -638,9 +638,11 @@ const SalesOrderList = ({
 
   // Backend's exact wording for this stage varies/is inconsistent (seen as both "To be
   // sent for SO approval" and "Awaiting SO approval"), but the button should always read
-  // "Sent for SO Approval" here regardless — the api/da/update_status call underneath
+  // "Send for SO Approval" here regardless — the api/da/update_status call underneath
   // still uses the real backend label (effectiveNextDaStatusLabel), only the button's own
-  // text is overridden.
+  // text is overridden. Must stay imperative ("Send", not "Sent") — this is the state
+  // shown before the email has actually gone out (soApprovalEmailSent is still false),
+  // so past tense reads as if it already happened.
   //
   // Past that, everything below is local-only staff simulation of the client's response —
   // the backend's status_timeline only has a single "SO approval" row with no field for any
@@ -649,7 +651,7 @@ const SalesOrderList = ({
   // soApprovalEmailSent: true once the email modal's Send has fired.
   // soClientDecision: null while awaiting, else "approved" — recorded by staff via the
   // Approved button shown alongside the header button while awaiting. A Rejected click
-  // doesn't set this — it resets straight back to the "Sent for SO Approval" step instead
+  // doesn't set this — it resets straight back to the "Send for SO Approval" step instead
   // (see handleRejectSoApproval), no intermediate "Redo" step to click through.
   // invoiceDispatched / invoiceClientDecision: same pattern one step further — set once the
   // Invoice Issuance upload completes, recording the client's response to the dispatched
@@ -690,7 +692,7 @@ const SalesOrderList = ({
       : soApprovalEmailSent
       ? "Awaiting For SO Approval"
       : isSoApprovalDaStatus
-      ? "Sent for SO Approval"
+      ? "Send for SO Approval"
       : effectiveNextDaStatusLabel
       ? `Mark ${effectiveNextDaStatusLabel}`
       : effectiveNextDaStatusLabel;
