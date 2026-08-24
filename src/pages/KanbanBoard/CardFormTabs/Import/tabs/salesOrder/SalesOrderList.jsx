@@ -883,7 +883,7 @@ const SalesOrderList = ({
   const formatCurrencySAR = (amount) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "SAR",
+      currency: toApiCurrency(soBpCurrency) || "SAR",
       minimumFractionDigits: 2,
     }).format(amount);
   };
