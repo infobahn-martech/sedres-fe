@@ -588,11 +588,13 @@ const SalesOrderList = ({
   }, [isDaVerifyContext, callId, daStatusRefreshToken]);
 
   // The header action button is a simple two-state toggle driven by the per-item Verify
-  // checkbox (see handleToggleVerified) — "Ops completed" and the DA status timeline's "SO
-  // approval" stage right after it. It is NOT a general multi-step advance: re-verifying
+  // checkbox (see handleToggleVerified) — the header button itself never exposes the "Ops
+  // completed" stage (no "Mark Ops Completed" label/action here); it only appears once the
+  // record is at/past the "SO approval" stage right after it, which the Verify checkbox is
+  // what actually advances it into. It is NOT a general multi-step advance: re-verifying
   // further items (or clicking the button again once already at the SO Approval stage)
-  // must not walk any further down the timeline — it only ever shows/targets these two
-  // labels. Matched loosely against the real backend wording since it's seen as both
+  // must not walk any further down the timeline — it only ever shows/targets this one
+  // label. Matched loosely against the real backend wording since it's seen as both
   // "To be sent for SO approval" and "Awaiting SO approval".
   const { opsCompletedLabel, soApprovalLabel } = useMemo(() => {
     const mapped = mapStatusTimelineResponse(daHeaderStatusTimeline);
@@ -679,11 +681,7 @@ const SalesOrderList = ({
       ? "Invoice Issuance"
       : soApprovalEmailSent
       ? "Awaiting For SO Approval"
-      : isSoApprovalDaStatus
-      ? "Sent for SO Approval"
-      : effectiveNextDaStatusLabel
-      ? `Mark ${effectiveNextDaStatusLabel}`
-      : effectiveNextDaStatusLabel;
+      : "Sent for SO Approval"; // only reachable state left once isSoApprovalDaStatus gates the button's render
 
   // State for the SO Approval email modal, opened from the header action button when
   // effectiveNextDaStatusLabel is the "SO Approval" stage. Local-only for now — no backend
@@ -707,13 +705,7 @@ const SalesOrderList = ({
       return;
     }
     if (soApprovalEmailSent) return; // awaiting — decision is recorded via the standalone Approved/Rejected buttons
-    if (isSoApprovalDaStatus) {
-      setShowSoApprovalEmailModal(true);
-      return;
-    }
-    if (!onAdvanceDaStage || isAdvancingDaStage) return;
-    setLocalDaStatusOverride(soApprovalLabel);
-    onAdvanceDaStage(effectiveNextDaStatusLabel);
+    setShowSoApprovalEmailModal(true); // only reachable state left once isSoApprovalDaStatus gates the button's render
   };
 
   const handleCreateSoApprovalEmail = () => {
@@ -1852,7 +1844,7 @@ const SalesOrderList = ({
             onPageChange={setCurrentPage}
             compact
           />
-          {isDaVerifyContext && effectiveNextDaStatusLabel && (
+          {isDaVerifyContext && isSoApprovalDaStatus && (
             soApprovalEmailSent && !soClientDecision ? (
               <div className="sales-order-da-status-group">
                 <span className="sales-order-da-status-button sales-order-da-status-button--label">
@@ -1932,9 +1924,7 @@ const SalesOrderList = ({
                     ? "Payment received — closed"
                     : soClientDecision === "approved"
                     ? "Open Invoice Issuance upload"
-                    : isSoApprovalDaStatus
-                    ? "Open SO Approval email"
-                    : `Move to "${effectiveNextDaStatusLabel}"`
+                    : "Open SO Approval email"
                 }
                 onClick={handleAdvanceDaStatusFromHeader}
               >
