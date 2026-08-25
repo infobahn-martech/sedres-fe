@@ -133,6 +133,25 @@ const useVendorReducer = create((set) => ({
       throw error;
     }
   },
+
+  isUpdatingSalesOrder: false,
+  updateSalesOrderError: '',
+
+  // UPDATE_SALES_ORDER_REQUEST / SUCCESS / FAILURE
+  updateSalesOrder: async (payload) => {
+    try {
+      set({ isUpdatingSalesOrder: true, updateSalesOrderError: '' });
+      const { data } = await salesOrderService.updateSalesOrder(payload);
+      set({ isUpdatingSalesOrder: false });
+      return data;
+    } catch (error) {
+      set({
+        updateSalesOrderError: error?.response?.data?.message ?? error.message,
+        isUpdatingSalesOrder: false,
+      });
+      throw error;
+    }
+  },
 }));
 
 export default useVendorReducer;

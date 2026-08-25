@@ -99,6 +99,7 @@ const updateSalesOrderItemAmount = (payload) => Gateway.post("sales_order/update
  * @param {string} [payload.delivery_date]
  * @param {string} [payload.document_date]
  * @param {number} [payload.discount_percentage]
+ * @param {number} [payload.total_discount]
  * @param {object} [payload.fields] - other editable SO fields, e.g. { po_number, project_name }
  */
 const updateSalesOrder = (payload) => Gateway.post("sales_order/update_sales_order", payload);

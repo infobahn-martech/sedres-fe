@@ -502,6 +502,7 @@ const SalesOrderList = ({
   const supportingDocsLibrary = useAttachmentsReducer((state) => state.supportingDocs);
   const getAllSupportingDocs = useAttachmentsReducer((state) => state.getAllSupportingDocs);
   const updateSalesOrderItemAmount = useVendorReducer((state) => state.updateSalesOrderItemAmount);
+  const updateSalesOrderReducer = useVendorReducer((state) => state.updateSalesOrder);
 
   useEffect(() => {
     getAllSupportingDocs(callId);
@@ -993,12 +994,12 @@ const SalesOrderList = ({
 
   // Persists SO header field edits to sales_order/update_sales_order. Fired on blur or Enter
   // (no submit button) — sends only the sales_order_id plus the single field that changed.
-  // Known columns (delivery_date, document_date, discount_percentage) go top-level; everything
-  // else goes under `fields`.
+  // Known columns (delivery_date, document_date, discount_percentage, total_discount) go
+  // top-level; everything else goes under `fields`.
   const handleUpdateSalesOrder = async (payloadFields) => {
     if (!formValues.salesOrderId) return;
     try {
-      await salesOrderService.updateSalesOrder({ sales_order_id: formValues.salesOrderId, ...payloadFields });
+      await updateSalesOrderReducer({ sales_order_id: formValues.salesOrderId, ...payloadFields });
       if (refreshSalesOrder) await refreshSalesOrder();
     } catch (err) {
       const msg =
