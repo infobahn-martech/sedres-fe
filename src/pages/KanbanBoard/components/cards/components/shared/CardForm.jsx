@@ -2818,6 +2818,13 @@ function CardForm({
           setDaLocalReachedDate(callId, statusName, reachedDate);
           setDaStatusRefreshToken((t) => t + 1);
 
+          // SalesOrderList's Verify checkbox / header button reuse this same handler purely
+          // to bump the DA status (see its onAdvanceDaStage calls) — they pass skipCardMove
+          // so ticking Verify doesn't also physically move the card to a different board
+          // column mid-edit (that side effect is only wanted for DA.jsx's own clickable
+          // Status Timeline, where moving the card IS the point of the click).
+          if (target?.skipCardMove) return undefined;
+
           const targetColumnId = getColumnIdFromStepLabel(statusName, columns, columnOrder);
           if (!targetColumnId) return undefined;
 

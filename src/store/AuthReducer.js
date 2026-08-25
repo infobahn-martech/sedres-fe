@@ -3,7 +3,7 @@ import authService from '../services/authService';
 import { getAuthData, removeItem, setItem, getItem } from '../shared/helpers/localStorage';
 import useAlertReducer from './AlertReducer';
 import { normalizePermissionSections } from '../shared/utils/permissions';
-import { useDaLocalReachedDates, useDaLocalLaunchHire, useDaLocalVerifiedItems, useDaLocalDeletedItems } from '../shared/store/daStore';
+import { useDaLocalReachedDates, useDaLocalLaunchHire, useDaLocalVerifiedItems } from '../shared/store/daStore';
 
 const { isLoggedIn } = getAuthData();
 
@@ -163,7 +163,6 @@ const useAuthReducer = create((set) => ({
     useDaLocalReachedDates.setState({ reachedDates: {} });
     useDaLocalLaunchHire.setState({ overrides: {} });
     useDaLocalVerifiedItems.setState({ verifiedItemIds: {} });
-    useDaLocalDeletedItems.setState({ deletedItemIds: {} });
   },
   getUserProfile: async (userId = null, skipApiCall = false) => {
     try {
