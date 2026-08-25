@@ -813,7 +813,8 @@ function StatusTimelineSection({ steps, onStepClick, isLoading, isAdvancing }) {
           const isUpNextClickable = step.state === "pending" && (prevStep?.state === "current" || prevStep?.state === "done");
           const isBackClickable = step.state === "done" && nextStep?.state === "current";
           const isClickable = Boolean(onStepClick) && !isAdvancing && (isForwardClickable || isUpNextClickable || isBackClickable);
-          const targetLabel = isForwardClickable ? nextStep.label : step.label;
+          const targetStep = isForwardClickable ? nextStep : step;
+          const targetLabel = targetStep.label;
           return (
             <div className={`da-cf-timeline-step da-cf-timeline-step--${displayState}`} key={step.key}>
               <div className="da-cf-timeline-step-marker">
@@ -822,7 +823,7 @@ function StatusTimelineSection({ steps, onStepClick, isLoading, isAdvancing }) {
                     type="button"
                     className="da-cf-timeline-step-icon da-cf-timeline-step-icon--clickable"
                     title={isBackClickable ? `Revert to "${targetLabel}"` : `Move to "${targetLabel}"`}
-                    onClick={() => onStepClick(targetLabel)}
+                    onClick={() => onStepClick({ statusId: targetStep.statusId, label: targetLabel })}
                   >
                     <Icon size={16} />
                   </button>
@@ -859,6 +860,8 @@ StatusTimelineSection.propTypes = {
   steps: PropTypes.arrayOf(
     PropTypes.shape({
       key: PropTypes.string,
+      statusId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      stickerId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
       label: PropTypes.string,
       date: PropTypes.string,
       time: PropTypes.string,

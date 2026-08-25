@@ -6,9 +6,9 @@ export const parseApiDateTime = (raw) => {
   return { date: datePart, time: timePart ? timePart.slice(0, 5) : "" };
 };
 
-// api/da/status_timeline/{call_id} rows: { status_name, sequence_order, state, reached_date }.
-// state comes back as "done" | "current" | "not_reached" — mapped to this section's
-// "done" | "current" | "pending" below.
+// api/da/status_timeline/{call_id} rows: { status_id, status_name, sticker_id,
+// sequence_order, state, reached_date }. state comes back as "done" | "current" |
+// "not_reached" — mapped to this section's "done" | "current" | "pending" below.
 const STATUS_TIMELINE_STATE_MAP = { done: "done", current: "current", not_reached: "pending" };
 
 // Shared between DA.jsx's Summary-tab Status Timeline and the Sales Order tab's header
@@ -20,6 +20,8 @@ export const mapStatusTimelineResponse = (rows) => {
       const { date, time } = parseApiDateTime(row?.reached_date);
       return {
         key: String(row?.sequence_order ?? row?.status_name ?? ""),
+        statusId: row?.status_id ?? null,
+        stickerId: row?.sticker_id ?? null,
         label: row?.status_name ?? "",
         date: date || null,
         time: time || null,

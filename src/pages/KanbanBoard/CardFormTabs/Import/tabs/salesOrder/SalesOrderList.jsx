@@ -615,11 +615,15 @@ const SalesOrderList = ({
   // must not walk any further down the timeline — it only ever shows/targets these two
   // labels. Matched loosely against the real backend wording since it's seen as both
   // "To be sent for SO approval" and "Awaiting SO approval".
-  const { opsCompletedLabel, soApprovalLabel } = useMemo(() => {
+  const { opsCompletedLabel, opsCompletedStatusId, soApprovalLabel, soApprovalStatusId } = useMemo(() => {
     const mapped = mapStatusTimelineResponse(daHeaderStatusTimeline);
+    const opsCompletedStep = mapped.find((step) => /ops completed/i.test(step.label));
+    const soApprovalStep = mapped.find((step) => /so approval/i.test(step.label));
     return {
-      opsCompletedLabel: mapped.find((step) => /ops completed/i.test(step.label))?.label ?? null,
-      soApprovalLabel: mapped.find((step) => /so approval/i.test(step.label))?.label ?? null,
+      opsCompletedLabel: opsCompletedStep?.label ?? null,
+      opsCompletedStatusId: opsCompletedStep?.statusId ?? null,
+      soApprovalLabel: soApprovalStep?.label ?? null,
+      soApprovalStatusId: soApprovalStep?.statusId ?? null,
     };
   }, [daHeaderStatusTimeline]);
 
@@ -628,6 +632,7 @@ const SalesOrderList = ({
   const isPastOpsCompleted = Array.isArray(daHeaderStatusTimeline)
     && daHeaderStatusTimeline.some((row) => /ops completed/i.test(row?.status_name || "") && row?.state === "done");
   const realDaActionLabel = isPastOpsCompleted ? soApprovalLabel : opsCompletedLabel;
+  const realDaActionStatusId = isPastOpsCompleted ? soApprovalStatusId : opsCompletedStatusId;
 
   // Local-only fallback: api/da/update_status appears to only ever mark a status_name's
   // row "done" — same well-known backend gap as useDaLocalReachedDates elsewhere in DA (it
@@ -645,6 +650,11 @@ const SalesOrderList = ({
   }, [realDaActionLabel, localDaStatusOverride]);
 
   const effectiveNextDaStatusLabel = localDaStatusOverride ?? realDaActionLabel;
+  const effectiveNextDaStatusId = localDaStatusOverride == null
+    ? realDaActionStatusId
+    : localDaStatusOverride === soApprovalLabel
+    ? soApprovalStatusId
+    : opsCompletedStatusId;
   const isSoApprovalDaStatus = effectiveNextDaStatusLabel != null && effectiveNextDaStatusLabel === soApprovalLabel;
 
   // Backend's exact wording for this stage varies/is inconsistent (seen as both "To be
@@ -734,7 +744,7 @@ const SalesOrderList = ({
     }
     if (!onAdvanceDaStage || isAdvancingDaStage) return;
     setLocalDaStatusOverride(soApprovalLabel);
-    onAdvanceDaStage(effectiveNextDaStatusLabel);
+    onAdvanceDaStage({ statusId: effectiveNextDaStatusId, label: effectiveNextDaStatusLabel });
   };
 
   const handleCreateSoApprovalEmail = () => {
@@ -1053,11 +1063,11 @@ const SalesOrderList = ({
     if (isBeingVerified) {
       if (soApprovalLabel) {
         setLocalDaStatusOverride(soApprovalLabel);
-        onAdvanceDaStage?.(soApprovalLabel);
+        onAdvanceDaStage?.({ statusId: soApprovalStatusId, label: soApprovalLabel });
       }
     } else if (opsCompletedLabel) {
       setLocalDaStatusOverride(opsCompletedLabel);
-      onAdvanceDaStage?.(opsCompletedLabel);
+      onAdvanceDaStage?.({ statusId: opsCompletedStatusId, label: opsCompletedLabel });
     }
   };
 
