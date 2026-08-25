@@ -27,6 +27,7 @@ const getWorkOrderPdf = (woId) =>
 /**
  * @param {object} payload
  * @param {Array<number>} payload.so_item_ids
+ * @param {string|number} [payload.vendor_id]
  * @param {string} [payload.vendor_ref_no]
  * @param {string} [payload.contact_person]
  * @param {string} [payload.branch]

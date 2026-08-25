@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import salesOrderService from "../../../../../../services/salesOrderService";
+import billingEntityService from "../../../../../../services/billingEntityService";
+import DatePickerField from "../../../shared/components/DatePickerField";
 
 const formatCurrencySAR = (amount) =>
   new Intl.NumberFormat("en-US", {
@@ -62,6 +64,11 @@ const GeneratePOModal = ({
   const [roundingEnabled, setRoundingEnabled] = useState(false);
   const [calculatedTotals, setCalculatedTotals] = useState(null);
   const [isCalculatingTotals, setIsCalculatingTotals] = useState(false);
+  const [vendors, setVendors] = useState([]);
+  const [isLoadingVendors, setIsLoadingVendors] = useState(false);
+  const [selectedVendorCode, setSelectedVendorCode] = useState("");
+  const [deliveryDateValue, setDeliveryDateValue] = useState(deliveryDate || "");
+  const [documentDateValue, setDocumentDateValue] = useState(documentDate || "");
   const copyToRef = useRef(null);
 
   useEffect(() => {
@@ -76,11 +83,51 @@ const GeneratePOModal = ({
   const selectedLineItems = salesOrderList.filter((item) => selectedItems.includes(item.id));
 
   const vendorCodes = [...new Set(selectedLineItems.map((item) => item.supplierCode).filter(Boolean))];
-  const vendorNames = [...new Set(selectedLineItems.map((item) => item.supplierName).filter(Boolean))];
-  const vendorCodeLabel =
-    vendorCodes.length === 0 ? "—" : vendorCodes.length === 1 ? vendorCodes[0] : `Multiple Vendors (${vendorCodes.length})`;
-  const vendorNameLabel =
-    vendorNames.length === 0 ? "—" : vendorNames.length === 1 ? vendorNames[0] : `Multiple Vendors (${vendorNames.length})`;
+
+  // Vendor list — billingentity/getvendors, [{ customer_code, customer_name }]. Pre-selects
+  // when every selected line item already shares the same supplier code.
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoadingVendors(true);
+    billingEntityService
+      .getVendors()
+      .then((response) => {
+        if (cancelled) return;
+        const rows = Array.isArray(response?.data?.data) ? response.data.data : [];
+        const list = rows.map((v) => ({
+          code: v.customer_code != null ? String(v.customer_code) : "",
+          name: v.customer_name != null ? String(v.customer_name) : "",
+        }));
+        setVendors(list);
+        if (vendorCodes.length === 1) {
+          const match = list.find((v) => v.code === vendorCodes[0]);
+          if (match) {
+            setSelectedVendorCode(match.code);
+            setVendorRefNo(match.code);
+          }
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setVendors([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingVendors(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Selected line items are fixed for the lifetime of this modal's mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const selectedVendor = vendors.find((v) => v.code === selectedVendorCode) || null;
+
+  const handleVendorChange = (e) => {
+    const code = e.target.value;
+    setSelectedVendorCode(code);
+    const match = vendors.find((v) => v.code === code);
+    setVendorRefNo(match ? match.code : "");
+  };
 
   const lineAmounts = selectedLineItems.map((item) => ({ item, ...calcLineAmounts(item) }));
   const totalBeforeDiscount = lineAmounts.reduce(
@@ -139,15 +186,15 @@ const GeneratePOModal = ({
     setCopyToOpen(false);
     // Integration point: wire to the GRN/Goods Receipt PO creation API once it is available.
     onCopyToGoodsReceipt?.({
-      vendor: vendorCodeLabel,
-      name: vendorNameLabel,
+      vendor: selectedVendor?.code || "—",
+      name: selectedVendor?.name || "—",
       contactPerson,
       currency: localCurrency,
       branch,
       branchRegNo,
       poNo: soNumber,
       postingDate,
-      documentDate,
+      documentDate: documentDateValue,
       items: lineAmounts.map(({ item, tax: lineTax, total }) => ({
         itemNo: item.itemNo,
         itemDescription: item.itemDescription,
@@ -199,14 +246,24 @@ const GeneratePOModal = ({
               <div className="so-po-fields-col">
                 <div className="so-po-field-row">
                   <span className="so-po-field-label">Vendor</span>
-                  <span className="so-po-field-value" title={vendorCodeLabel}>
-                    {vendorCodeLabel}
-                  </span>
+                  <select
+                    className="so-po-field-input"
+                    value={selectedVendorCode}
+                    onChange={handleVendorChange}
+                    disabled={isSubmitting || isLoadingVendors}
+                  >
+                    <option value="">{isLoadingVendors ? "Loading vendors..." : "Select vendor..."}</option>
+                    {vendors.map((v) => (
+                      <option key={v.code} value={v.code}>
+                        {v.code} — {v.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="so-po-field-row">
                   <span className="so-po-field-label">Name</span>
-                  <span className="so-po-field-value" title={vendorNameLabel}>
-                    {vendorNameLabel}
+                  <span className="so-po-field-value" title={selectedVendor?.name || ""}>
+                    {selectedVendor?.name || "—"}
                   </span>
                 </div>
                 <div className="so-po-field-row">
@@ -251,11 +308,23 @@ const GeneratePOModal = ({
                 </div>
                 <div className="so-po-field-row">
                   <span className="so-po-field-label">Delivery Date</span>
-                  <span className="so-po-field-value">{deliveryDate || "—"}</span>
+                  <DatePickerField
+                    dateValue={deliveryDateValue}
+                    onDateChange={(e) => setDeliveryDateValue(e.target.value)}
+                    dateFieldName="poDeliveryDate"
+                    disabled={isSubmitting}
+                    className="so-po-field-input"
+                  />
                 </div>
                 <div className="so-po-field-row">
                   <span className="so-po-field-label">Document Date</span>
-                  <span className="so-po-field-value">{documentDate || "—"}</span>
+                  <DatePickerField
+                    dateValue={documentDateValue}
+                    onDateChange={(e) => setDocumentDateValue(e.target.value)}
+                    dateFieldName="poDocumentDate"
+                    disabled={isSubmitting}
+                    className="so-po-field-input"
+                  />
                 </div>
               </div>
             </div>
@@ -272,7 +341,6 @@ const GeneratePOModal = ({
                     <th>Discount %</th>
                     <th>Tax Code</th>
                     <th>Total (LC)</th>
-                    <th>UoM Code</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -288,7 +356,6 @@ const GeneratePOModal = ({
                       <td>{item.discount ?? 0}%</td>
                       <td>{item.taxCode || "—"}</td>
                       <td className="so-po-doc-item-total">{formatCurrencySAR(total)}</td>
-                      <td>{item.uomCode || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -377,7 +444,10 @@ const GeneratePOModal = ({
             className="so-po-btn so-po-btn-generate"
             onClick={() =>
               onGenerate({
+                vendorId: selectedVendor?.code || "",
                 vendorRefNo,
+                deliveryDate: deliveryDateValue,
+                documentDate: documentDateValue,
                 discountPercentage: parseFloat(discountPercentage) || 0,
                 rounding: roundingEnabled ? 1 : 0,
               })

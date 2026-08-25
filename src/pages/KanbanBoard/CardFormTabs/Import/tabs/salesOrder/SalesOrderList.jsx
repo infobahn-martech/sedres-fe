@@ -1661,7 +1661,14 @@ const SalesOrderList = ({
     }
   };
 
-  const handleConfirmGeneratePO = async ({ vendorRefNo, discountPercentage = 0, rounding = 0 } = {}) => {
+  const handleConfirmGeneratePO = async ({
+    vendorId,
+    vendorRefNo,
+    deliveryDate,
+    documentDate,
+    discountPercentage = 0,
+    rounding = 0,
+  } = {}) => {
     if (isGeneratingPO) return;
 
     // Re-validate against the latest known item state right before calling the API —
@@ -1678,12 +1685,13 @@ const SalesOrderList = ({
 
     const payload = {
       so_item_ids: validItemIds,
+      vendor_id: vendorId || "",
       vendor_ref_no: vendorRefNo || "",
       contact_person: soContactPerson,
       branch,
       currency: soBpCurrency,
-      delivery_date: soDeliveryDate,
-      document_date: soDocumentDate,
+      delivery_date: deliveryDate || soDeliveryDate,
+      document_date: documentDate || soDocumentDate,
       discount_percentage: discountPercentage,
       rounding,
       remarks: soRemarks,
