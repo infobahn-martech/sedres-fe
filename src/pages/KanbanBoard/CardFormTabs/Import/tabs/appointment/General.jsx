@@ -2755,10 +2755,7 @@ function General({
   // the vessel billing entity for single Vessel/Taxi Tug appointments, or the tug billing entity for
   // Tug and Barge / Taxi tug and barge appointments — the barge billing entity stays independent.
   const getPrimaryBillingEntityId = () => {
-    const type = normalizeAppointmentTypeValue(
-      getFieldValue("appointmentType"),
-      isAddMode ? "" : APPOINTMENT_TYPE_TUG
-    );
+    const type = normalizeAppointmentTypeValue(getFieldValue("appointmentType"));
     return appointmentTypeShowsBargeFields(type)
       ? getFieldValue("tugBillingEntity")
       : getFieldValue("vesselBillingEntity");
@@ -4689,10 +4686,7 @@ ${body}
   const isViewMode = !isAddMode;
   const masterInputsDisabled = isDisabled || masterDataLoading;
 
-  const selectedAppointmentType = normalizeAppointmentTypeValue(
-    getFieldValue("appointmentType"),
-    isAddMode ? "" : APPOINTMENT_TYPE_TUG
-  );
+  const selectedAppointmentType = normalizeAppointmentTypeValue(getFieldValue("appointmentType"));
   const isTugAndBargeSelected = appointmentTypeShowsBargeFields(selectedAppointmentType);
   const isSingleVesselSection = appointmentTypeShowsSingleVesselSection(selectedAppointmentType);
   // "Vessel type" catalogue depends on appointment type: Taxi Tug -> tug types, Vessel -> vessel types.

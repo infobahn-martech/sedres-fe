@@ -1997,8 +1997,6 @@ function CardForm({
       appointmentAcceptanceDate: card?.appointmentAcceptanceDate || "",
       // Vessel Information
       port: String(card?.port_id ?? card?.port ?? ""),
-      // "tug" preselected in add mode; in view/edit mode an empty value lets the
-      // value resolve from the fetched call detail (appointment_type) instead.
       appointmentType: (() => {
         const raw = card?.appointmentType;
         if (Array.isArray(raw) && raw.length) {
@@ -2006,7 +2004,7 @@ function CardForm({
           if (raw.includes("tug")) return "tug";
         }
         if (typeof raw === "string" && raw.trim()) return raw.trim();
-        return isAddMode ? "tug" : "";
+        return "";
       })(),
       vesselType: String(card?.vessel_type_id ?? card?.vesselType ?? ""),
       vesselName: card?.vesselName || "",
