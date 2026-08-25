@@ -100,8 +100,8 @@ const GeneratePOModal = ({
 
   const vendorCodes = [...new Set(selectedLineItems.map((item) => item.supplierCode).filter(Boolean))];
 
-  // Vendor list — billingentity/getvendors, [{ customer_code, customer_name }]. Pre-selects
-  // when every selected line item already shares the same supplier code.
+  // Vendor list — billingentity/getvendors, [{ vendor_id, customer_code, customer_name }].
+  // Pre-selects when every selected line item already shares the same supplier code.
   useEffect(() => {
     let cancelled = false;
     setIsLoadingVendors(true);
@@ -111,6 +111,7 @@ const GeneratePOModal = ({
         if (cancelled) return;
         const rows = Array.isArray(response?.data?.data) ? response.data.data : [];
         const list = rows.map((v) => ({
+          id: v.vendor_id ?? "",
           code: v.customer_code != null ? String(v.customer_code) : "",
           name: v.customer_name != null ? String(v.customer_name) : "",
         }));
@@ -505,7 +506,7 @@ const GeneratePOModal = ({
             className="so-po-btn so-po-btn-generate"
             onClick={() =>
               onGenerate({
-                vendorId: selectedVendor?.code || "",
+                vendorId: selectedVendor?.id || "",
                 vendorRefNo,
                 deliveryDate: deliveryDateValue,
                 documentDate: documentDateValue,
