@@ -100,6 +100,14 @@ const addSoItemDocument = (formData) => Gateway.post("sales_order/add_so_item_do
 
 /**
  * @param {object} payload
+ * @param {number} payload.subtotal
+ * @param {number} payload.discount_percentage
+ * @param {number} payload.rounding - 1 to enable rounding, 0 to disable
+ */
+const calculateTotals = (payload) => Gateway.post("sales_order/calculate_totals", payload);
+
+/**
+ * @param {object} payload
  * @param {string|number} payload.sales_order_id
  * @param {string} [payload.delivery_date]
  * @param {string} [payload.document_date]
@@ -121,6 +129,7 @@ export default {
   getItemDetails,
   saveSalesOrderItem,
   addSoItemDocument,
+  calculateTotals,
   updateSalesOrderItemAmount,
   updateSalesOrder,
 };

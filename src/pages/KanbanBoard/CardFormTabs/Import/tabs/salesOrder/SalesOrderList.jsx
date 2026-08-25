@@ -1628,7 +1628,7 @@ const SalesOrderList = ({
     }
   };
 
-  const handleConfirmGeneratePO = async (vendorRefNo) => {
+  const handleConfirmGeneratePO = async ({ vendorRefNo, discountPercentage = 0, rounding = 0 } = {}) => {
     if (isGeneratingPO) return;
 
     // Re-validate against the latest known item state right before calling the API —
@@ -1643,11 +1643,6 @@ const SalesOrderList = ({
       return;
     }
 
-    const discountPercentage =
-      formValues.soDiscountPercentage != null && String(formValues.soDiscountPercentage).trim() !== ""
-        ? Number(formValues.soDiscountPercentage)
-        : 0;
-
     const payload = {
       so_item_ids: validItemIds,
       vendor_ref_no: vendorRefNo || "",
@@ -1657,7 +1652,7 @@ const SalesOrderList = ({
       delivery_date: soDeliveryDate,
       document_date: soDocumentDate,
       discount_percentage: discountPercentage,
-      rounding: 0,
+      rounding,
       remarks: soRemarks,
     };
 
@@ -2891,6 +2886,7 @@ const SalesOrderList = ({
           remarks={soRemarks}
           purchaseOrderId={lastGeneratedPurchaseOrderId}
           onCopyToGoodsReceipt={handleCopyToGoodsReceipt}
+          initialDiscountPercentage={formValues.soDiscountPercentage || 0}
         />
       )}
 

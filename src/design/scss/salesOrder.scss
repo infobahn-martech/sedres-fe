@@ -3121,6 +3121,31 @@ $so-po-blue: #1a56db;
   }
 }
 
+.so-po-doc-totals-input {
+  width: 70px;
+  min-width: 0;
+  padding: 4px 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: #ffffff;
+  border: 1px solid #d6ddfb;
+  border-radius: 6px;
+  text-align: right;
+
+  &:focus {
+    outline: none;
+    border-color: #8ea0f5;
+    box-shadow: 0 0 0 3px rgba(42, 0, 255, 0.1);
+  }
+
+  &:disabled {
+    background: var(--bg-secondary, #f6f8fc);
+    cursor: not-allowed;
+  }
+}
+
 .so-po-doc-totals-grand {
   margin-top: 6px;
   padding: 14px 14px;

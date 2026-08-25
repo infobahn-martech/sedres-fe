@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
+import salesOrderService from "../../../../../../services/salesOrderService";
 
 const formatCurrencySAR = (amount) =>
   new Intl.NumberFormat("en-US", {
@@ -53,10 +54,14 @@ const GeneratePOModal = ({
   termsAndConditions = "",
   purchaseOrderId = null,
   onCopyToGoodsReceipt,
+  initialDiscountPercentage = 0,
 }) => {
   const [copyToOpen, setCopyToOpen] = useState(false);
   const [vendorRefNo, setVendorRefNo] = useState("");
+  const [discountPercentage, setDiscountPercentage] = useState(String(initialDiscountPercentage ?? 0));
   const [roundingEnabled, setRoundingEnabled] = useState(false);
+  const [calculatedTotals, setCalculatedTotals] = useState(null);
+  const [isCalculatingTotals, setIsCalculatingTotals] = useState(false);
   const copyToRef = useRef(null);
 
   useEffect(() => {
@@ -82,12 +87,49 @@ const GeneratePOModal = ({
     (sum, l) => sum + (parseFloat(l.item.qty) || 0) * (parseFloat(l.item.unitPrice) || 0),
     0
   );
-  const subtotal = lineAmounts.reduce((sum, l) => sum + l.subtotal, 0);
-  const tax = lineAmounts.reduce((sum, l) => sum + l.tax, 0);
-  const preRoundingTotal = subtotal + tax + (parseFloat(shippingFee) || 0);
-  const rounding = roundingEnabled ? Math.round(preRoundingTotal) - preRoundingTotal : 0;
-  const grandTotal = preRoundingTotal + rounding;
-  const discountPct = totalBeforeDiscount > 0 ? ((totalBeforeDiscount - subtotal) / totalBeforeDiscount) * 100 : 0;
+  // Local, per-line fallback shown until the first sales_order/calculate_totals response
+  // arrives (or if a later call fails) — the API is the source of truth for discount/tax/
+  // rounding/grand total once it responds.
+  const localTax = lineAmounts.reduce((sum, l) => sum + l.tax, 0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      setIsCalculatingTotals(true);
+      salesOrderService
+        .calculateTotals({
+          subtotal: totalBeforeDiscount,
+          discount_percentage: parseFloat(discountPercentage) || 0,
+          rounding: roundingEnabled ? 1 : 0,
+        })
+        .then((response) => {
+          if (cancelled) return;
+          const body = response?.data;
+          if (body?.status === "success" && body?.data) {
+            setCalculatedTotals(body.data);
+          }
+        })
+        .catch(() => {
+          // Keep the last known totals on failure — the preview just won't reflect this edit.
+        })
+        .finally(() => {
+          if (!cancelled) setIsCalculatingTotals(false);
+        });
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [totalBeforeDiscount, discountPercentage, roundingEnabled]);
+
+  const totalDiscount = calculatedTotals
+    ? Number(calculatedTotals.total_discount) || 0
+    : (totalBeforeDiscount * (parseFloat(discountPercentage) || 0)) / 100;
+  const taxAmount = calculatedTotals ? Number(calculatedTotals.total_tax) || 0 : localTax;
+  const roundingAmount = calculatedTotals ? Number(calculatedTotals.rounding_rate) || 0 : 0;
+  const grandTotal = calculatedTotals
+    ? Number(calculatedTotals.grand_total) || 0
+    : totalBeforeDiscount - totalDiscount + taxAmount + roundingAmount + (parseFloat(shippingFee) || 0);
 
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget && !isSubmitting) onClose();
@@ -117,8 +159,8 @@ const GeneratePOModal = ({
         totalAmount: total,
       })),
       totalBeforeDiscount,
-      discountPct,
-      tax,
+      discountPct: parseFloat(discountPercentage) || 0,
+      tax: taxAmount,
       totalPaymentDue: grandTotal,
     });
   };
@@ -272,7 +314,19 @@ const GeneratePOModal = ({
                 </div>
                 <div className="so-po-doc-totals-row">
                   <span>Discount %</span>
-                  <span>{discountPct.toFixed(2)}%</span>
+                  <span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      className="so-po-field-input so-po-doc-totals-input"
+                      value={discountPercentage}
+                      onChange={(e) => setDiscountPercentage(e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                    %
+                  </span>
                 </div>
                 <div className="so-po-doc-totals-row">
                   <span className="so-po-rounding-label">
@@ -284,11 +338,11 @@ const GeneratePOModal = ({
                     />
                     Rounding
                   </span>
-                  <span>{formatCurrencySAR(rounding)}</span>
+                  <span>{formatCurrencySAR(roundingAmount)}</span>
                 </div>
                 <div className="so-po-doc-totals-row">
-                  <span>Tax</span>
-                  <span>{formatCurrencySAR(tax)}</span>
+                  <span>Tax{isCalculatingTotals ? " (calculating…)" : ""}</span>
+                  <span>{formatCurrencySAR(taxAmount)}</span>
                 </div>
                 {parseFloat(shippingFee) > 0 && (
                   <div className="so-po-doc-totals-row">
@@ -321,7 +375,13 @@ const GeneratePOModal = ({
           <button
             type="button"
             className="so-po-btn so-po-btn-generate"
-            onClick={() => onGenerate(vendorRefNo)}
+            onClick={() =>
+              onGenerate({
+                vendorRefNo,
+                discountPercentage: parseFloat(discountPercentage) || 0,
+                rounding: roundingEnabled ? 1 : 0,
+              })
+            }
             disabled={isSubmitting || Boolean(purchaseOrderId)}
             title={purchaseOrderId ? "This purchase order has already been submitted." : undefined}
           >
@@ -356,6 +416,7 @@ GeneratePOModal.propTypes = {
   termsAndConditions: PropTypes.string,
   purchaseOrderId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   onCopyToGoodsReceipt: PropTypes.func,
+  initialDiscountPercentage: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
 };
 
 export default GeneratePOModal;
