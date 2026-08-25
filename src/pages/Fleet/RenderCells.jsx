@@ -4,7 +4,7 @@ import moment from 'moment';
 import edit from '../../assets/images/edit.svg';
 import trash from '../../assets/images/delete.svg';
 
-export const RenderAction = ({ onEditClick, row, onDeleteClick, onStatusClick }) => {
+export const RenderAction = ({ onEditClick, row, onDeleteClick }) => {
     return (
         <>
             <Tooltip id="edit" place="top" content="Edit" />

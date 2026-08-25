@@ -40,7 +40,7 @@ function WorkflowCardIllustrationKanban({ uid = 'k' }) {
   );
 }
 
-function WorkflowCardIllustrationFlow({ uid = 'f' }) {
+function WorkflowCardIllustrationFlow() {
   return (
     <svg className="select-workflow-card-illustration" viewBox="0 0 160 120" aria-hidden>
       <rect x="18" y="22" width="124" height="76" rx="12" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="1.5" />

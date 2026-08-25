@@ -150,7 +150,7 @@ AttachmentsList.propTypes = {
   onFileInputChange: PropTypes.func.isRequired,
 };
 
-const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
+const DispatchNoteContent = ({ formValues, cardColor }) => {
   const { hasPermission } = usePermissions();
   // KANBAN_CARD > MATERIAL_MANAGEMENT per-action gates — absence of the
   // module/submodule/action in the permissions response means false (deny by
@@ -182,7 +182,6 @@ const DispatchNoteContent = ({ formValues, handleChange, cardColor }) => {
     isLoadingList,
     isLoadingDetail,
     isLoadingUpdate,
-    isLoadingPrint,
     isLoadingDelete,
   } = useDispatchNoteReducer((state) => state);
 

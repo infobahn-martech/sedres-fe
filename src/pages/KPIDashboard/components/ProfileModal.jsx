@@ -8,7 +8,7 @@ const ProfileModal = ({ show, onClose }) => {
   const profileData = useAuthReducer((state) => state.profileData);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [avatarFile, setAvatarFile] = useState(null);
+  const [, setAvatarFile] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',

@@ -49,7 +49,7 @@ export default function DriverBoard() {
   });
 
   // Control expand/shrink functionality
-  const [enableExpandShrink, setEnableExpandShrink] = useState(false);
+  const [enableExpandShrink] = useState(false);
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState(null);
@@ -517,7 +517,7 @@ export default function DriverBoard() {
       }
     }
 
-    return columnsToRender.map((item, index) => {
+    return columnsToRender.map((item) => {
       if (item.type === 'nested') {
         const isExpanded = expandedColumnId === item.column.id;
         const isShrunk = expandedColumnId !== null && expandedColumnId !== item.column.id;

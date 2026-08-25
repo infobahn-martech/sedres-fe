@@ -85,7 +85,7 @@ export function CustomFieldModal({ showModal, closeModal }) {
         }
     }, [customFieldName, fieldKey, setValue, showModal]);
 
-    const onSubmit = (data) => {
+    const onSubmit = () => {
         // You can transform data here before sending to API if needed
         closeModal();
     };

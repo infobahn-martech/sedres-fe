@@ -36,7 +36,7 @@ const GroupEmailBE = () => {
         totalCount,
     } = useGroupEmailBEReducer((state) => state);
 
-    const { getBillingEntities, billingEntities } =
+    const { getBillingEntities } =
         useBillingEntityReducer((state) => state);
 
     const [params, setParams] = useState({
@@ -46,8 +46,6 @@ const GroupEmailBE = () => {
         sortBy: "billing_entity",
         sortOrder: 1,
     });
-
-    const [filterValues, setFilterValues] = useState({ entity_id: "" });
 
     const [showGroupEmailModal, setShowGroupEmailModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -74,11 +72,6 @@ const GroupEmailBE = () => {
     }, [params]);
 
     const list = groupEmailBEs || [];
-
-    const billingEntityOptions = (billingEntities ?? []).map((be) => ({
-        value: String(be.entity_id ?? ""),
-        label: String(be.billing_entity ?? ""),
-    }));
 
     const handleOpenAdd = () => {
         if (!canAddGroupEmail) return;

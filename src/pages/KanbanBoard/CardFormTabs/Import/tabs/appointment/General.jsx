@@ -58,16 +58,6 @@ const openAppointmentEmail = (url) => {
   window.open(url, "_blank", "noopener,noreferrer");
 };
 
-const downloadAppointmentEmail = (url, fileName) => {
-  if (!url) return;
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName || "appointment-email";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-
 const splitDateTime = (value) => {
   if (!value) return { date: "", time: "" };
   const normalized = String(value).trim().replace(" ", "T");
@@ -404,7 +394,7 @@ const hasRenderableEntityFieldValue = (field, callDetailData, entityFieldValues,
   return false;
 };
 
-const AppointmentEmailFileActions = ({ fileUrl, fileName }) => {
+const AppointmentEmailFileActions = ({ fileUrl }) => {
   const urlMissing = !fileUrl || !String(fileUrl).trim();
   const unavailableTitle = "File URL not available";
 
@@ -621,7 +611,6 @@ const DocumentUpload = ({
   attachments = [],
   onAdd,
   onRemove,
-  cardColor,
   disabled = false,
   type = "",
   hasError = false,
@@ -1391,7 +1380,7 @@ const createQuillImageUploadHandler = (quillRef) => () => {
         quill.insertEmbed(range?.index ?? 0, "image", fileUrl, "user");
         quill.setSelection((range?.index ?? 0) + 1);
       }
-    } catch (error) {
+    } catch {
       notify("Image upload failed.", "error");
     }
   };
@@ -1639,113 +1628,6 @@ const formatDateTime = (date, time) => {
   const dateStr = date ? new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
   const timeStr = time || '';
   return dateStr && timeStr ? `${dateStr} at ${timeStr}` : dateStr || timeStr || "Not set";
-};
-
-// Helper function to get status date/time from card/formValues
-const getStatusDateTime = (card, formValues, statusKey) => {
-  // Map status keys to potential date/time fields in card or formValues
-  const dateTimeMap = {
-    received: { date: formValues?.receivedDate || card?.receivedDate, time: formValues?.receivedTime || card?.receivedTime },
-    expected: { date: formValues?.expectedDate || card?.expectedDate, time: formValues?.expectedTime || card?.expectedTime },
-    arrived: { date: formValues?.arrivedDate || card?.arrivedDate, time: formValues?.arrivedTime || card?.arrivedTime },
-    cleared: { date: formValues?.clearedDate || card?.clearedDate, time: formValues?.clearedTime || card?.clearedTime },
-    sailed: { date: formValues?.sailedDate || card?.sailedDate, time: formValues?.sailedTime || card?.sailedTime },
-  };
-
-  return dateTimeMap[statusKey] || { date: null, time: null };
-};
-
-// Horizontal Progress Bar Component
-const HorizontalProgressBar = ({ stages, currentStatus, accentColor, card, formValues }) => {
-  const currentIndex = stages.findIndex(stage => stage.key === currentStatus);
-  const activeIndex = currentIndex >= 0 ? currentIndex : 0;
-
-  // Calculate progress width - reach the center of the active stage dot
-  // Since dots are evenly distributed using flexbox with space-between,
-  // the line spans from first dot center (0%) to last dot center (100%)
-  // Each dot center is positioned at: (index / (totalStages - 1)) * 100
-  const calculateProgressWidth = () => {
-    if (stages.length <= 1) return 0;
-    if (activeIndex === 0) {
-      return 0;
-    }
-    if (activeIndex === stages.length - 1) {
-      return 100;
-    }
-
-    // Calculate the exact percentage to reach the center of the active dot
-    // Since dots are evenly spaced using flexbox with space-between,
-    // the center of each dot is at: (index / (stages.length - 1)) * 100
-    const dotCenterPosition = (activeIndex / (stages.length - 1)) * 100;
-
-    // Add a visual offset to ensure the green line reaches the center of the dot
-    // This accounts for:
-    // 1. Dot width (28px) - line needs to extend to dot center
-    // 2. Flexbox spacing calculations
-    // 3. Subpixel rendering differences
-    // For fewer stages (5), we need a larger offset to ensure proper connection
-    const baseOffset = stages.length <= 5 ? 3.5 : 2.5;
-    const offsetPercentage = activeIndex <= 2 ? baseOffset : baseOffset - 0.5;
-    return Math.min(dotCenterPosition + offsetPercentage, 100);
-  };
-
-  const progressWidth = calculateProgressWidth();
-
-  return (
-    <div className="job-status-progress-container" style={{ "--progress-color": "#2e7d32" }}>
-      <div className="job-status-progress-line">
-        <div
-          className="job-status-progress-fill"
-          style={{
-            width: `${progressWidth}%`,
-            transition: "width 0.5s ease"
-          }}
-        />
-      </div>
-      <div className="job-status-progress-stages">
-        {stages.map((stage, index) => {
-          const isCompleted = index < activeIndex;
-          const isActive = index === activeIndex;
-          const isPending = index > activeIndex;
-          const statusDateTime = getStatusDateTime(card, formValues, stage.key);
-          const formattedDateTime = formatDateTime(statusDateTime.date, statusDateTime.time);
-
-          return (
-            <div
-              key={stage.id}
-              className={`job-status-progress-stage ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''} ${isPending ? 'pending' : ''}`}
-            >
-              <div className="job-status-tooltip-content">
-                <div className="tooltip-description">{stage.description}</div>
-              </div>
-              <div className={`job-status-progress-dot ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''} ${isPending ? 'pending' : ''}`}>
-                {isCompleted && <span className="check-icon">✓</span>}
-                {isActive && <span className="active-dot"></span>}
-                {isPending && <span className="pending-dot"></span>}
-              </div>
-              <div className="job-status-progress-label">
-                {stage.title}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-HorizontalProgressBar.propTypes = {
-  stages: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.number.isRequired,
-    title: PropTypes.string.isRequired,
-    key: PropTypes.string.isRequired,
-    icon: PropTypes.string,
-    description: PropTypes.string,
-  })).isRequired,
-  currentStatus: PropTypes.string,
-  accentColor: PropTypes.string,
-  card: PropTypes.object,
-  formValues: PropTypes.object,
 };
 
 const normalizePreviewValue = (value) => {
@@ -2466,7 +2348,7 @@ function General({
   const [appointmentExtractionMode, setAppointmentExtractionMode] = useState("manual");
   const [isAiExtractingAppointment, setIsAiExtractingAppointment] = useState(false);
   const [isServerEmailReading, setIsServerEmailReading] = useState(false);
-  const [aiExtractionError, setAiExtractionError] = useState("");
+  const [, setAiExtractionError] = useState("");
   const [previewMessageText, setPreviewMessageText] = useState("");
   const [previewMessageEditorKey, setPreviewMessageEditorKey] = useState(0);
   const [emailPreviewData, setEmailPreviewData] = useState(null);
@@ -2493,32 +2375,6 @@ function General({
       subject: false,
     });
   }, []);
-  // MWP RENEWAL document states
-  const [appointmentEmailDocuments, setAppointmentEmailDocuments] = useState([]);
-  const [mwpCopyDocuments, setMwpCopyDocuments] = useState([]);
-  const [supportingDocuments, setSupportingDocuments] = useState([]);
-  const [fdaDispatchProofDocuments, setFdaDispatchProofDocuments] = useState([]);
-  const [copyOfSalesOrderDocuments, setCopyOfSalesOrderDocuments] = useState([]);
-  // CREW CHANGE document states
-  const [crewChangeAppointmentEmailDocuments, setCrewChangeAppointmentEmailDocuments] = useState([]);
-  const [launchHireSlipsDocuments, setLaunchHireSlipsDocuments] = useState([]);
-  const [zawilPassCopyDocuments, setZawilPassCopyDocuments] = useState([]);
-  const [cgPermitCopyDocuments, setCgPermitCopyDocuments] = useState([]);
-  const [crewSummarySheetDocuments, setCrewSummarySheetDocuments] = useState([]);
-  const [crewChangeSupportingDocuments, setCrewChangeSupportingDocuments] = useState([]);
-  const [crewChangeFdaDispatchProofDocuments, setCrewChangeFdaDispatchProofDocuments] = useState([]);
-  const [hotelInvoiceDocuments, setHotelInvoiceDocuments] = useState([]);
-  const [crewChangeCopyOfSalesOrderDocuments, setCrewChangeCopyOfSalesOrderDocuments] = useState([]);
-  const [inwardClearanceDocuments, setInwardClearanceDocuments] = useState([]);
-  const [outwardClearanceDocuments, setOutwardClearanceDocuments] = useState([]);
-  // FLEET document states
-  const [fleetAppointmentEmailDocuments, setFleetAppointmentEmailDocuments] = useState([]);
-  const [fleetCopyOfSalesOrderDocuments, setFleetCopyOfSalesOrderDocuments] = useState([]);
-  // ON STATION document states
-  const [onStationAppointmentEmailDocuments, setOnStationAppointmentEmailDocuments] = useState([]);
-  const [onStationSupportingDocuments, setOnStationSupportingDocuments] = useState([]);
-  const [onStationFdaDispatchProofDocuments, setOnStationFdaDispatchProofDocuments] = useState([]);
-  const [onStationCopyOfSalesOrderDocuments, setOnStationCopyOfSalesOrderDocuments] = useState([]);
   const [dailyReportEmailOptions, setDailyReportEmailOptions] = useState([]);
   const [dailyReportEmailLoading, setDailyReportEmailLoading] = useState(false);
   const [billingInstructionType, setBillingInstructionType] = useState("");
@@ -2585,7 +2441,7 @@ function General({
         if (!cancelled) {
           setCallDetailData(detail);
         }
-      } catch (error) {
+      } catch {
       } finally {
         if (!cancelled) {
           setCallDetailLoading(false);
@@ -2752,7 +2608,7 @@ function General({
         if (!cancelled) {
           setOperatorKpiTasks(rows);
         }
-      } catch (error) {
+      } catch {
         if (!cancelled) {
           setOperatorKpiTasks([]);
           setOperatorKpiError("Unable to load KPI tasks.");
@@ -2791,7 +2647,7 @@ function General({
         const { data } = await request;
         const list = unwrapListResponse(data);
         return { label, options: mapFn(list) };
-      } catch (e) {
+      } catch {
         return { label, options: [] };
       }
     };
@@ -2833,18 +2689,6 @@ function General({
       cancelled = true;
     };
   }, []);
-
-  // Determine current job status from card data (updated for 5 statuses)
-  const currentStatus = useMemo(() => {
-    // Map card properties to status keys
-    if (card?.sailed) return "sailed";
-    if (card?.cleared) return "cleared";
-    if (card?.arrived) return "arrived";
-    if (card?.expected) return "expected";
-    if (card?.received) return "received";
-    // Default to Received
-    return "expected";
-  }, [card]);
 
   const typeOptions = [
     { value: "Type", label: "IMPORT" },
@@ -4048,11 +3892,6 @@ ${body}
       const msgSenderDetails = msgData ? parseMsgSenderDetails(msgData) : null;
       const receivedParts = resolveMsgReceivedDateTime(msgData, extractedText);
       const filledCount = applyNonAiAppointmentFields(extracted, receivedParts, msgSenderDetails);
-      const appointmentReceivedDate = getFieldValue("appointmentReceivedDate");
-      const appointmentReceivedTime = getFieldValue("appointmentReceivedTime");
-      const appointmentReceived = getFieldValue("appointmentReceived");
-      const appointmentReceivedDateTime = getFieldValue("appointmentReceivedDateTime");
-      const appointment_received_date = getFieldValue("appointment_received_date");
       if (filledCount > 0) {
         notify("Appointment details auto-filled from uploaded email.", "success");
       } else {
@@ -4196,7 +4035,7 @@ ${body}
         const opts = normalizeEntityEmailOptions(data);
         setDailyReportEmailOptions(opts);
         return opts;
-      } catch (error) {
+      } catch {
         setDailyReportEmailOptions([]);
         return [];
       } finally {
@@ -4261,7 +4100,7 @@ ${body}
         if (!isEmailInstruction) {
           handleChange("dailyReportEmail")({ target: { value: [], name: "dailyReportEmail" } });
         }
-      } catch (error) {
+      } catch {
         setBillingInstructionType("");
         setBillingInstructionEmailOptions([]);
         handleChange("billingInstructionEmails")({ target: { value: [], name: "billingInstructionEmails" } });
@@ -4372,7 +4211,7 @@ ${body}
           handleChange(ownerKey)({ target: { value: detail.vessel_owner, name: ownerKey } });
           handleChange(managerKey)({ target: { value: detail.vessel_manager, name: managerKey } });
           handleChange(principalKey)({ target: { value: detail.vessel_principal, name: principalKey } });
-        } catch (error) {
+        } catch {
         }
       },
     [handleChange, hasSubmitted, normalizeVesselDetails]
@@ -4435,7 +4274,7 @@ ${body}
           next[idx] = match.value;
           handleChange("dailyReportEmail")({ target: { value: next, name: "dailyReportEmail" } });
         }
-      } catch (error) {
+      } catch {
       }
     },
     [getFieldValue, fetchBillingEntityEmails, handleChange]
@@ -4476,7 +4315,7 @@ ${body}
         handleChange("billingInstructions")({
           target: { value: isEmailInstruction ? "" : description, name: "billingInstructions" },
         });
-      } catch (error) {
+      } catch {
       }
     },
     [getFieldValue, handleChange, normalizeBillingInstruction]
@@ -4623,7 +4462,7 @@ ${body}
               : [];
         const sortedRows = [...rows].sort((a, b) => Number(a?.sort_order ?? 0) - Number(b?.sort_order ?? 0));
         setStageTimeObjects(sortedRows);
-      } catch (error) {
+      } catch {
         if (!cancelled) {
           setStageTimeObjects([]);
         }
@@ -4703,7 +4542,7 @@ ${body}
             return next;
           });
         }
-      } catch (error) {
+      } catch {
       } finally {
         if (etaDependentRequestIdRef.current === requestId) {
           setIsEtaDependentTimesLoading(false);
@@ -4761,7 +4600,7 @@ ${body}
           setPreviewMessageText(apiHtml);
           setPreviewMessageEditorKey((key) => key + 1);
         }
-      } catch (error) {
+      } catch {
         if (!cancelled) {
           setEmailPreviewData(null);
           setDefaultEmailAttachments([]);
@@ -4819,7 +4658,7 @@ ${body}
         const response = await callFileService.allDetailByVesselId(requestPayload);
         if (cancelled || allDetailByVesselRequestIdRef.current !== requestId) return;
         applyAllDetailByVesselResponse(response?.data);
-      } catch (error) {
+      } catch {
       }
     }, 500);
 
@@ -4963,7 +4802,7 @@ ${body}
           });
           return nextValues;
         });
-      } catch (error) {
+      } catch {
         setEntityFields([]);
         setEntityFieldValues({});
         setEntityFieldErrors({});
@@ -5033,12 +4872,6 @@ ${body}
       mappedCallDetail?.tugBillingEntity,
     ]
   );
-
-  const optionalOtherBillingEntityOptions = useMemo(() => {
-    const current = getFieldValue("otherBillingEntity");
-    const base = mergeOptionIfMissing(billingEntitySelectOptions, current);
-    return [{ value: "", label: "No Other Billing Entity" }, ...base];
-  }, [billingEntitySelectOptions, getFieldValue]);
 
   useEffect(() => {
     if (!selectedEntityId) return;

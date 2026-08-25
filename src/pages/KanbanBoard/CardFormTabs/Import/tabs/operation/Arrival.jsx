@@ -364,7 +364,7 @@ function Arrival({
         if (templateAttachments.length) {
           setReportAttachments((prev) => (prev.length ? prev : templateAttachments));
         }
-      } catch (error) {
+      } catch {
         if (cancelled) return;
       }
     };

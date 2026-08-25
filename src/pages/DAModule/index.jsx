@@ -82,25 +82,6 @@ const createDAModuleData = () => {
 export default function DAModule() {
   const [columns, setColumns] = useState(createDAModuleData());
 
-  const handleAddItem = useCallback((columnId) => {
-    setColumns((prev) =>
-      prev.map((col) => {
-        if (col.id === columnId) {
-          const newItem = {
-            id: `item-${Date.now()}-${Math.random()}`,
-            title: `New Item ${col.items.length + 1}`,
-            createdAt: new Date().toISOString(),
-          };
-          return {
-            ...col,
-            items: [...col.items, newItem],
-          };
-        }
-        return col;
-      })
-    );
-  }, []);
-
   const handleDeleteItem = useCallback((columnId, itemId) => {
     setColumns((prev) =>
       prev.map((col) => {

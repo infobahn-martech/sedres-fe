@@ -105,7 +105,7 @@ const initialNotifications = [
 ];
 
 const Notification = () => {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications] = useState(initialNotifications);
   const [viewModal, setViewModal] = useState(null);
 
   const [params, setParams] = useState({

@@ -762,7 +762,6 @@ DAFleetAssignPanel.propTypes = {
 
 function CrewListBatchwisePanel({
   batches, setBatches, activeBatchTab, setActiveBatchTab,
-  opFocusedBatch, setOpFocusedBatch, recentOps, handleOpBlur, handleOpChipClick,
   captureBatchTs, setUndoPending, vesselName, now, printLaunchSlip, bookingId,
 }) {
   const [crewPage, setCrewPage] = useState(1);
@@ -1064,7 +1063,7 @@ function DACardView({ card, userRoleId = null }) {
   const [undoPending, setUndoPending] = useState(null); // { label, resetter }
 
   // Operator name recorded with each timestamp
-  const [operatorName, setOperatorName] = useState(() => card?.requestedOperator ?? "");
+  const [operatorName] = useState(() => card?.requestedOperator ?? "");
   const [dropTsOps, setDropTsOps] = useState(() => makeTsState(STANDARD_TIMESTAMPS.map(t => t.key)));
   const [pickupTsOps, setPickupTsOps] = useState(() => makeTsState(STANDARD_TIMESTAMPS.map(t => t.key)));
 
@@ -1236,9 +1235,6 @@ function DACardView({ card, userRoleId = null }) {
   const allDone = (tsState, keys) => keys.every((k) => tsState[k] !== null);
 
   const tsKeys = STANDARD_TIMESTAMPS.map((t) => t.key);
-  const canComplete = isImmigration
-    ? batches.every((b) => b.completed)
-    : allDone(dropTs, tsKeys) && allDone(pickupTs, tsKeys);
 
   const printLaunchSlip = useCallback((tsState, tabLabel, guide, completedAt) => {
     const slip = window.open("", "_blank", "width=820,height=680");

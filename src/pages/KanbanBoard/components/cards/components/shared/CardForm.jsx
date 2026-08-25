@@ -1299,7 +1299,7 @@ TopTabs.propTypes = {
 };
 
 
-const StepsProgress = ({ totalSteps = TOTAL_STEPS, activeStep = 2, completedSteps = 1, accentColor = DEFAULT_ACCENT_COLOR, stepLabels = STEP_LABELS, onStepClick, currentStep }) => {
+const StepsProgress = ({ totalSteps = TOTAL_STEPS, activeStep = 2, completedSteps = 1, stepLabels = STEP_LABELS, onStepClick, currentStep }) => {
   // Use green colors for all progress bars (ignoring accentColor)
   const GREEN_COMPLETED = "#2e7d32"; // Dark green for completed/active steps
   const GREEN_INACTIVE = "#8bc48a"; // Light green for inactive steps
@@ -1390,7 +1390,7 @@ StepsProgress.propTypes = {
   currentStep: PropTypes.number,
 };
 
-const CardFormFooter = ({ accentColor, onUpdate, activeStep = 2, completedSteps = 1, activeTab, onStepClick, currentStep, isSimplifiedMode = false, isDriverMode = false, isGROMode = false, stepLabels = STEP_LABELS, totalSteps = TOTAL_STEPS }) => {
+const CardFormFooter = ({ accentColor, activeStep = 2, completedSteps = 1, activeTab, onStepClick, currentStep, isSimplifiedMode = false, isDriverMode = false, isGROMode = false, stepLabels = STEP_LABELS, totalSteps = TOTAL_STEPS }) => {
   const hideStepsForTab =
     activeTab === "Appointment Details" ||
     activeTab === "Export Approval";
@@ -2170,7 +2170,7 @@ function CardForm({
         if (!cancelled) {
           setCallDetailSnapshot(data?.data ?? null);
         }
-      } catch (error) {
+      } catch {
         if (!cancelled) {
           setCallDetailSnapshot(null);
         }
@@ -2583,7 +2583,7 @@ function CardForm({
       } else {
         await kanbanBoardService.getFullBoard(boardId ?? 1);
       }
-    } catch (e) {
+    } catch {
     } finally {
       if (lastDaMoveRef.current?.cardId === card?.id && moveCardToColumn) {
         moveCardToColumn(lastDaMoveRef.current.cardId, lastDaMoveRef.current.targetColumnId);

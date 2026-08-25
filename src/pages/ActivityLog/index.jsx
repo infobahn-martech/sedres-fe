@@ -15,7 +15,7 @@ const ActivityLog = () => {
     limit: 10,
     search: '',
   });
-console.log('params', params);
+
   useEffect(() => {
     getActivityLogData?.({
       search: params.searchTerm || "",

@@ -53,7 +53,7 @@ export default function CoordinatorTransport() {
     });
 
     // Control expand/shrink functionality
-    const [enableExpandShrink, setEnableExpandShrink] = useState(false);
+    const [enableExpandShrink] = useState(false);
 
     // Multi-select and trip assignment
     const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -612,7 +612,7 @@ export default function CoordinatorTransport() {
             }
         }
 
-        return columnsToRender.map((item, index) => {
+        return columnsToRender.map((item) => {
             if (item.type === 'nested') {
                 const isExpanded = expandedColumnId === item.column.id;
                 const isShrunk = expandedColumnId !== null && expandedColumnId !== item.column.id;

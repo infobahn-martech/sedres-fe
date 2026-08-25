@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import { Fragment, useEffect, useRef } from "react";
 import ChecklistItemRow from "./ChecklistItemRow";
-import { countNodeItems, countNodeCompleted } from "./checklistMappers";
+import { countNodeItems } from "./checklistMappers";
 
 const SECTION_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -27,7 +27,6 @@ const ChecklistSectionNode = ({
 }) => {
   const isSub = depth > 0;
   const total = countNodeItems(node);
-  const done = countNodeCompleted(node, itemsData);
 
   const allSelected =
     total > 0

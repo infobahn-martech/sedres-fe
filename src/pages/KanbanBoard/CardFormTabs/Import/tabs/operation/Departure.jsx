@@ -206,7 +206,7 @@ function Departure({
         if (templateAttachments.length && !currentReportAttachments.length) {
           handleChange("departureReportAttachments")({ target: { value: templateAttachments } });
         }
-      } catch (error) {
+      } catch {
         if (cancelled) return;
       }
     };

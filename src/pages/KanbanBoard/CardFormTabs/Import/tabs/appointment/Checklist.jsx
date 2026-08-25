@@ -14,7 +14,6 @@ import { parseChecklistTypeListResponse } from "./checklistTab/checklistApi";
 import { buildChecklistDataContext } from "./checklistTab/checklistContext";
 import { getPrerequisiteStateFromContext } from "./checklistTab/checklistPrerequisites";
 import {
-  buildChecklistReportLines,
   collectItemIdsUnderSectionInBlocks,
   collectTreeSectionIds,
   extractCallChecklistRows,
@@ -283,15 +282,11 @@ const getChecklistItemIdFromUiItem = (item) => {
 function Checklist({
   card,
   formValues,
-  handleChange,
-  onOpenReportPreview,
-  cardColor: propCardColor,
   isViewOnly = false,
   isDAModule = false,
   cardDetail,
   callDetailLoading = false,
 }) {
-  const cardColor = propCardColor || card?.color || "#2A00FF";
   const currentCallId = useMemo(
     () => card?.call_id ?? formValues?.call_id ?? card?.callId ?? "",
     [card?.call_id, card?.callId, formValues?.call_id]
@@ -308,7 +303,7 @@ function Checklist({
   const [savedChecklistRows, setSavedChecklistRows] = useState([]);
   const [itemsData, setItemsData] = useState({});
   const [openSections, setOpenSections] = useState({});
-  const [openTypeGroups, setOpenTypeGroups] = useState({});
+  const [, setOpenTypeGroups] = useState({});
   const [typeLoading, setTypeLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [savedLoading, setSavedLoading] = useState(false);
@@ -603,17 +598,6 @@ function Checklist({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedChecklistLookup, selectedChecklistTypeIds]);
 
-  const handleChecklistTypeChange = (event) => {
-    const next = Array.isArray(event?.target?.value) ? event.target.value.map(String) : [];
-    userChangedSelectionRef.current = true;
-    setSelectedChecklistTypeIds(next);
-    if (handleChange) {
-      handleChange("checklistType")({
-        target: { name: "checklistType", value: next },
-      });
-    }
-  };
-
   const handleItemChange = (id, nextData) => {
     setItemsData((prev) => ({ ...prev, [id]: { ...prev[id], ...nextData } }));
   };
@@ -631,10 +615,6 @@ function Checklist({
       });
       return next;
     });
-  };
-
-  const handleTypeGroupToggle = (typeId) => {
-    setOpenTypeGroups((prev) => ({ ...prev, [typeId]: !prev[typeId] }));
   };
 
   const buildChecklistSaveFormData = useCallback(() => {
@@ -719,18 +699,6 @@ function Checklist({
       setSaveLoading(false);
     }
   }, [buildChecklistSaveFormData, checklistBlocks, checklistTypeOptions, currentCallId]);
-
-  const handleOpenChecklistReport = useCallback(() => {
-    if (!onOpenReportPreview) return;
-    const lines = ["Checklist report", ""];
-    lines.push(...buildChecklistReportLines(checklistBlocks.map((b) => ({ typeName: b.typeName, tree: b.tree })), itemsData));
-    onOpenReportPreview({
-      tabName: "Check List",
-      formSectionLabel: "image.png",
-      getBody: () => lines.join("\n"),
-      getAttachments: () => [],
-    });
-  }, [onOpenReportPreview, checklistBlocks, itemsData]);
 
   const isLoading = effectiveCallDetailLoading || typeLoading || detailLoading || savedLoading;
   const hasChecklistData = checklistBlocks.some((b) => (b.tree || []).length > 0);

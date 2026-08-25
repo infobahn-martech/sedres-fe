@@ -97,7 +97,7 @@ const initialReports = [
 ];
 
 const ReportManagement = () => {
-    const [reports, setReports] = useState(initialReports);
+    const [reports] = useState(initialReports);
     const [viewModal, setViewModal] = useState(null);
 
     const [params, setParams] = useState({

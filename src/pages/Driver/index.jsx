@@ -131,7 +131,7 @@ const Driver = () => {
     ];
 
 
-    const { drivers, totalCount, fetchAllDrivers, isLoading, deleteDriver, isDeleteLoading } = useDriverReducer();
+    const { drivers, totalCount, fetchAllDrivers, deleteDriver, isDeleteLoading } = useDriverReducer();
 
     useEffect(() => {
         fetchAllDrivers({ params });

@@ -157,22 +157,6 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], ser
     ? allServices
     : allServices.filter((service) => service.id !== "LAUNCH_HIRE");
 
-  const totalServices = services.length;
-  const bookedCount = bookedServices.length;
-  const pendingCount = bookedServices.filter(
-    (service) => (service.status || "Pending") === "Pending"
-  ).length;
-  const completedCount = bookedServices.filter(
-    (service) => (service.status || "Pending") === "Completed"
-  ).length;
-
-  const dashboardSummaryCards = [
-    { label: "Total Services", value: totalServices, helper: "Available now" },
-    { label: "Booked Services", value: bookedCount, helper: "Added to workflow" },
-    { label: "Pending", value: pendingCount, helper: "Awaiting action" },
-    { label: "Completed", value: completedCount, helper: "Successfully closed" },
-  ];
-
   const bookedServicesMap = bookedServices.reduce((acc, booked) => {
     acc[booked.id] = booked;
     return acc;

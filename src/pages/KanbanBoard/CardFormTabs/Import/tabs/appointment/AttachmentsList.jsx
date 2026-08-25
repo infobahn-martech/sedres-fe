@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 /** Same upload UI as Operation tab (SABER Certificate Upload): drag-and-drop zone + file chips. */
 const AttachmentsList = ({
   attachments = [],
-  onAdd,
   onRemove,
   cardColor,
   isDragging,

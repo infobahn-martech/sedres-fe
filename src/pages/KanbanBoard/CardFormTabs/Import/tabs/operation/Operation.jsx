@@ -290,7 +290,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
         if (!cancelled) {
           setCallDetailData(detail);
         }
-      } catch (e) {
+      } catch {
         if (!cancelled) setCallDetailData(null);
       } finally {
         if (!cancelled) setCallDetailLoading(false);
@@ -349,7 +349,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
           4: mapEventFields(stage4?.data),
           5: mapEventFields(stage5?.data),
         });
-      } catch (error) {
+      } catch {
         if (!cancelled) {
           setEventTypeFieldsByStage({ 2: [], 3: [], 4: [], 5: [] });
         }
@@ -438,7 +438,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
           handleChange(`${keyPrefix}Date`)({ target: { value: datePart } });
           handleChange(`${keyPrefix}Time`)({ target: { value: normalizedTime } });
         });
-      } catch (error) {
+      } catch {
         if (cancelled) return;
       }
     };
@@ -476,7 +476,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
     // TODO: Implement link add logic
   }, []);
 
-  const handleRemoveLink = useCallback((index) => {
+  const handleRemoveLink = useCallback(() => {
     // TODO: Implement link remove logic
   }, []);
 

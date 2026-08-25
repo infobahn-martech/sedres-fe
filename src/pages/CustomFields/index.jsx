@@ -85,7 +85,7 @@ const CustomFields = () => {
             onEditClick: (row) => {
                 setShowCustomFieldModal(row);
             },
-            onDeleteClick: (row) => {
+            onDeleteClick: () => {
                 // you can store row in state if needed
                 setShowDeleteModal(true);
             },

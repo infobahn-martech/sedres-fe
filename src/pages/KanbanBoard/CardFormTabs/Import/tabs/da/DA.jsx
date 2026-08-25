@@ -146,13 +146,6 @@ const formatApiDateTime = (raw) => {
   });
 };
 
-const firstNonEmptyString = (...values) => {
-  for (const value of values) {
-    if (typeof value === "string" && value.trim()) return value;
-  }
-  return "";
-};
-
 function TileLabel({ icon, children }) {
   const Icon = icon;
   return (
@@ -1250,7 +1243,7 @@ OperationAutoSaveStatus.propTypes = {
   status: PropTypes.oneOf(["idle", "saving", "saved", "error"]),
 };
 
-function DA({ card, formValues, handleChange, daStatusRefreshToken, onAdvanceDaStage, isAdvancingDaStage }) {
+function DA({ card, formValues, daStatusRefreshToken, onAdvanceDaStage, isAdvancingDaStage }) {
   const [fieldValues, setFieldValues] = useState(makeInitialFieldState);
   // co_owner_id isn't a visible field — UserSearchField only exposes the picked user's
   // name — but api/da/save_operation_tab needs the id, so it's tracked alongside coOwners.

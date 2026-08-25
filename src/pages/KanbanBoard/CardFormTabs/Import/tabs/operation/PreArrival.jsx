@@ -368,7 +368,6 @@ function PreArrival({
   eventFields = [],
   portId,
   callTypeId,
-  vesselTypeId,
   billingEntityId,
   stageId = OPERATION_STAGE_IDS.PRE_ARRIVAL,
   canAddTimeObject = true,
@@ -393,11 +392,11 @@ function PreArrival({
   });
   const [reportAttachments, setReportAttachments] = useState([]);
   const emailPreviewFromDetailRef = useRef(false);
-  const [preArrivalDetailAssigneeHints, setPreArrivalDetailAssigneeHints] = useState({
+  const [, setPreArrivalDetailAssigneeHints] = useState({
     gro: null,
     customClearance: null,
   });
-  const [preArrivalDetailDocSkip, setPreArrivalDetailDocSkip] = useState({
+  const [, setPreArrivalDetailDocSkip] = useState({
     groUserId: null,
     customUserId: null,
     groHasDocs: false,
@@ -817,7 +816,7 @@ function PreArrival({
     }
 
     const timeObjects = (eventFields || [])
-      .map((field, index) => {
+      .map((field) => {
         const dateKey = `${field.keyPrefix}Date`;
         const timeKey = `${field.keyPrefix}Time`;
 
@@ -1022,7 +1021,7 @@ function PreArrival({
         if (templateAttachments.length) {
           setReportAttachments((prev) => (prev.length ? prev : templateAttachments));
         }
-      } catch (error) {
+      } catch {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

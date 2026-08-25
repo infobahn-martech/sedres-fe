@@ -10,7 +10,6 @@ import "../../../design/scss/prospect-modal.scss";
 import "../../../design/scss/modal-designs.scss";
 import "../../../design/scss/form-designs.scss";
 import "../../../design/scss/captain-modal.scss";
-import userIcon from "../../../assets/images/user.png";
 import PremiumSelect from "../../../components/form/PremiumSelect";
 
 export function CaptainModal({ showModal, closeModal, onSuccess }) {

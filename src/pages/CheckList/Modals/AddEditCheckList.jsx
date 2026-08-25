@@ -991,7 +991,7 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
   );
 
   // Component for Section Items
-  const SectionItems = ({ sectionIndex, items = [] }) => {
+  const SectionItems = ({ sectionIndex }) => {
     const { fields, append, remove } = useFieldArray({
       control,
       name: `sections.${sectionIndex}.items`
@@ -1127,7 +1127,7 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
   };
 
   // Component for Sub Section Items
-  const SubSectionItems = ({ sectionIndex, subSectionIndex, items = [] }) => {
+  const SubSectionItems = ({ sectionIndex, subSectionIndex }) => {
     const { fields, append, remove } = useFieldArray({
       control,
       name: `sections.${sectionIndex}.sub_sections.${subSectionIndex}.items`
@@ -1270,7 +1270,7 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
   };
 
   // Component for Sub Sections
-  const SubSections = ({ sectionIndex, subSections = [] }) => {
+  const SubSections = ({ sectionIndex }) => {
     const { fields, append, remove } = useFieldArray({
       control,
       name: `sections.${sectionIndex}.sub_sections`

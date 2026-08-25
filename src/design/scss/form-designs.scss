@@ -652,87 +652,9 @@ input[type=number] {
     z-index: 999999 !important;
 }
 
-.react-datepicker-popper {
-    z-index: 999999 !important;
-}
-
-.react-datepicker {
-    z-index: 999999 !important;
-}
-
 .preview-date-cell {
     position: relative;
     overflow: visible;
-}
-
-.premium-datepicker-calendar.react-datepicker {
-    border: 1px solid var(--border-primary);
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 18px 36px rgba(0, 35, 104, 0.2);
-    font-family: "Manrope", sans-serif;
-}
-
-.premium-datepicker-calendar .react-datepicker__header {
-    background: linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
-    border-bottom: 1px solid var(--border-primary);
-    padding-top: 12px;
-}
-
-.premium-datepicker-calendar .react-datepicker__current-month {
-    color: #0f285a;
-    font-size: 14px;
-    font-weight: 700;
-}
-
-.premium-datepicker-calendar .react-datepicker__day-name {
-    color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.premium-datepicker-calendar .react-datepicker__day {
-    color: #1c3159;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-}
-
-.premium-datepicker-calendar .react-datepicker__day:hover {
-    background-color: #e9f0ff;
-    color: #002a7a;
-}
-
-.premium-datepicker-calendar .react-datepicker__day--keyboard-selected {
-    background-color: #d9e6ff;
-    color: #00368c;
-}
-
-.premium-datepicker-calendar .react-datepicker__day--selected,
-.premium-datepicker-calendar .react-datepicker__day--in-selecting-range,
-.premium-datepicker-calendar .react-datepicker__day--in-range {
-    background: linear-gradient(180deg, #2d72ff 0%, #0047c1 100%);
-    color: #ffffff;
-    font-weight: 700;
-}
-
-.premium-datepicker-calendar .react-datepicker__day--today {
-    box-shadow: inset 0 0 0 1px #6d98ff;
-    font-weight: 700;
-}
-
-.premium-datepicker-calendar .react-datepicker__navigation-icon::before {
-    border-color: #325baf;
-    border-width: 2px 2px 0 0;
-}
-
-.premium-datepicker-calendar .react-datepicker__triangle {
-    display: none;
-
-}
-
-.premium-datepicker-calendar .react-datepicker__today-button,
-.premium-datepicker-calendar .react-datepicker__close-icon::after {
-    color: #00368c;
 }
 
 .avatar-outer {

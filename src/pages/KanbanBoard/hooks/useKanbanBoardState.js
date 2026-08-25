@@ -11,9 +11,6 @@ import kanbanBoardService from "../../../services/kanbanBoardService";
 import { findWorkflowByCardId } from "../utils/boardHelpers";
 import { reorderWorkflowsByPinState } from "../utils/workflowHelpers";
 
-const isDev =
-  typeof import.meta !== "undefined" && import.meta.env && import.meta.env.DEV;
-
 const isOperatorBoardId = (id) => String(id ?? "").toLowerCase() === "operator";
 
 /** Pinned workflows (from `is_pinned` on get_full_board) sort to the front, order preserved otherwise. */

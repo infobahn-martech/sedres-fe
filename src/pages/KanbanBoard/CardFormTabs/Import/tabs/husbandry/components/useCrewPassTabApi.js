@@ -68,7 +68,7 @@ export function useCrewPassTabApi({
       const response = await getPassRequests(callId);
       const next = extractPassRequestsFromEnvelope(response);
       setPassRequests(next);
-    } catch (err) {
+    } catch {
       setPassRequests({ cg: [], zawil: [] });
     } finally {
       setPassRequestsLoading(false);

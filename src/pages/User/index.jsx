@@ -49,19 +49,6 @@ const User = () => {
     actionKey: PERMISSION_ACTIONS.TOGGLE_STATUS,
   });
 
-  // TEMPORARY: verify permission evaluation for the logged-in user. Remove after verification.
-  useEffect(() => {
-    console.log({
-      role: profileData?.role,
-      canViewUsers,
-      canAddUser,
-      canEditUser,
-      canManagePermission,
-      canArchiveUser,
-      canToggleUserStatus,
-    });
-  }, [profileData, canViewUsers, canAddUser, canEditUser, canManagePermission, canArchiveUser, canToggleUserStatus]);
-
   const [params, setParams] = useState({
     page: 1,
     searchTerm: "",

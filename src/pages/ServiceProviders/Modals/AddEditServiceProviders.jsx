@@ -19,7 +19,7 @@ export function ServiceProviderModal({ showModal, closeModal }) {
             },
     });
 
-    const onSubmit = (data) => {
+    const onSubmit = () => {
         closeModal();
     };
 

@@ -22,15 +22,11 @@ import '../../design/scss/sidebar.scss';
 
 // Existing icons
 import dashboardIcon from '../../assets/images/icon-dashboard.svg';
-import portIcon from '../../assets/images/icon-prospect.svg';
 import workerIcon from '../../assets/images/icon-workers.svg';
 import settingsIcon from '../../assets/images/icon-settings.svg';
 
 // New menu-specific icons
-import crewIcon from '../../assets/images/icon-crew.svg';
-import inspectionIcon from '../../assets/images/icon-inspection.svg';
 import hotelIcon from '../../assets/images/icon-hotel.svg';
-import wasteIcon from '../../assets/images/icon-waste.svg';
 import materialIcon from '../../assets/images/icon-material.svg';
 import billingIcon from '../../assets/images/icon-billing.svg';
 import usersIcon from '../../assets/images/icon-users.svg';
@@ -61,7 +57,6 @@ import usePermissions from '../../shared/hooks/usePermissions';
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from '../../shared/constants/permissions';
 
 function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
-  const isVendorPortal = activePortal === 'vendor';
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { width, isMobile } = useBreakpoint();

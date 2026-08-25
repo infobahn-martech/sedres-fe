@@ -28,7 +28,7 @@ const formatFileSize = (bytes) => {
 // its own row below. Multiple crew list files can be uploaded into the same
 // movement type, so there's no Replace/Remove here — just keep uploading
 // more via the box above.
-const CrewUploadedCard = ({ upload, movementTypeLabel, onPreview }) => {
+const CrewUploadedCard = ({ upload, movementTypeLabel }) => {
   const isUploading = upload.status === "uploading";
   const isFailed = upload.status === "failed";
 

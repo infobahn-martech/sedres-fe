@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import useAlertReducer from './AlertReducer';
 import PreArrivalInfoService from '../services/preArrivalInfoService';
 
-const usePreArrivalInfoReducer = create((set, get) => ({
+const usePreArrivalInfoReducer = create((set) => ({
   isLoading: false,
   addEditLoader: false,
   errorMessage: '',
@@ -36,7 +36,7 @@ const usePreArrivalInfoReducer = create((set, get) => ({
       const { data } = await PreArrivalInfoService.getTemplateUserTypes();
       const list = data?.data ?? data ?? [];
       set({ templateUserTypes: Array.isArray(list) ? list : [] });
-    } catch (error) {
+    } catch {
       set({ templateUserTypes: [] });
     }
   },

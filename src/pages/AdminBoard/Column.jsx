@@ -12,7 +12,6 @@ import "../../design/css/common/DAColumn.css";
 function NestedColumn({ column, cards, setSelectedCard, isShrunk = false, columnHeight, onHeightChange }) {
   const columnRef = useRef(null);
   const columnColor = column.color || "#2A00FF";
-  const tooltipId = `nested-column-title-${column.id}`;
   const onHeightChangeRef = useRef(onHeightChange);
   const previousHeightRef = useRef(null);
 
@@ -192,11 +191,6 @@ function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk =
 
   // If this is a nested column parent, render nested structure
   if (isNestedColumn && subColumns && subColumns.length > 0) {
-    const totalCardCount = subColumns.reduce((sum, subCol) => {
-      const subCards = subColumnCards[subCol.id] || [];
-      return sum + subCards.length;
-    }, 0);
-
     return (
       <div
         ref={columnRef}

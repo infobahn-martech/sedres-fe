@@ -41,7 +41,7 @@ export function AddEditCustomerPricing({ showModal, closeModal, onSuccess }) {
             : {},
     });
 
-    const onSubmit = (data) => {
+    const onSubmit = () => {
         onSuccess?.();
         closeModal();
     };

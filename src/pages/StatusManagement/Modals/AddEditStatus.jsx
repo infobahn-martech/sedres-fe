@@ -31,7 +31,7 @@ export function StatusModal({ showModal, closeModal }) {
             : {},
     });
 
-    const onSubmit = (data) => {
+    const onSubmit = () => {
         closeModal();
     };
 

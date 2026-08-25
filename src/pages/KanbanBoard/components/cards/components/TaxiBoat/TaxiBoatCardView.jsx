@@ -713,7 +713,7 @@ FinalStep.propTypes = {
   onComplete:  PropTypes.func.isRequired,
 };
 
-function TimestampSummaryTable({ timestamps, tsState, jobCompletedAt, cobTime, onCaptureCob, stepsAllDone, stepBackLog, headerAction }) {
+function TimestampSummaryTable({ timestamps, tsState, jobCompletedAt, stepsAllDone, stepBackLog, headerAction }) {
   const anyDone = timestamps.some((t) => tsState[t.key] !== null);
   if (!anyDone) return null;
 
@@ -979,7 +979,6 @@ TaxiFleetAssignPanel.propTypes = {
 
 function CrewListBatchwisePanel({
   batches, setBatches, activeBatchTab, setActiveBatchTab,
-  opFocusedBatch, setOpFocusedBatch, recentOps, handleOpBlur, handleOpChipClick,
   captureBatchTs, completeBatchLeg, cancelBatchTs, setUndoPending, vesselName, now, printLaunchSlip, bookingId,
   hideStepper, crewlistToggle, onCrewlistChange,
   tripAdded, tripSubmitting, addTripOpen, setAddTripOpen,
@@ -1664,14 +1663,14 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
   const [dropStepBackLog, setDropStepBackLog] = useState([]);
   const [pickupStepBackLog, setPickupStepBackLog] = useState([]);
   const [undoPending, setUndoPending] = useState(null); // { label, resetter }
-  const [captainCrewlistOpen, setCaptainCrewlistOpen] = useState(false);
+  const [, setCaptainCrewlistOpen] = useState(false);
   // Captain default view is Movement Timestamps — the read-only item_type listing (material
   // inbound/dispatch, transport/medical/hotel crew, third-party service) is tucked behind
   // this toggle instead of showing inline, mirroring CrewListBatchwisePanel's Crewlist toggle.
   const [itemDetailsOpen, setItemDetailsOpen] = useState(false);
 
   // Operator name recorded with each timestamp
-  const [operatorName, setOperatorName] = useState(() => card?.requestedOperator ?? "");
+  const [operatorName] = useState(() => card?.requestedOperator ?? "");
   const [dropTsOps, setDropTsOps] = useState(() => makeTsState(STANDARD_TIMESTAMPS.map(t => t.key)));
   const [pickupTsOps, setPickupTsOps] = useState(() => makeTsState(STANDARD_TIMESTAMPS.map(t => t.key)));
 
@@ -2051,9 +2050,6 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
   const allDone = (tsState, keys) => keys.every((k) => tsState[k] !== null);
 
   const tsKeys = STANDARD_TIMESTAMPS.map((t) => t.key);
-  const canComplete = isImmigration
-    ? batches.every((b) => LEG_TABS.every(({ key }) => b.legs[key].completed))
-    : allDone(dropTs, tsKeys) && allDone(pickupTs, tsKeys);
 
   const printLaunchSlip = useCallback((tsState, tabLabel, guide, completedAt) => {
     const slip = window.open("", "_blank", "width=820,height=680");

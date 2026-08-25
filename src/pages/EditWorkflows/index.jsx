@@ -87,10 +87,6 @@ function EditWorkflows() {
   const canUpdateColumnColor = hasPermission({ moduleKey: PERMISSION_MODULES.KANBAN_WORKFLOW, actionKey: PERMISSION_ACTIONS.UPDATE_COLUMN_COLOR });
   const canDeleteColumn = hasPermission({ moduleKey: PERMISSION_MODULES.KANBAN_WORKFLOW, actionKey: PERMISSION_ACTIONS.DELETE_COLUMN });
 
-  const [boardName, setBoardName] = useState('Team workspace');
-  const [description, setDescription] = useState('There is no description');
-  const [defaultTemplates, setDefaultTemplates] = useState('Default template configurations: 0');
-  const [customCardId, setCustomCardId] = useState('Repeating value');
   const [showCreateWorkflowModal, setShowCreateWorkflowModal] = useState(false);
   const [hoveredColumn, setHoveredColumn] = useState(null);
   const [stackedRailMetrics, setStackedRailMetrics] = useState(null);

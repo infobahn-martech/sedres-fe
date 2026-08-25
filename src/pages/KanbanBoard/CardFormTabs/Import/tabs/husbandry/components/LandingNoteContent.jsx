@@ -365,7 +365,7 @@ const buildDispatchConvertOrders = (note, vehicleOpts = [], locationOpts = [], d
   });
 };
 
-const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
+const LandingNoteContent = ({ formValues, cardColor }) => {
   const { hasPermission } = usePermissions();
   // KANBAN_CARD > MATERIAL_MANAGEMENT per-action gates — absence of the
   // module/submodule/action in the permissions response means false (deny by
@@ -429,7 +429,7 @@ const LandingNoteContent = ({ formValues, handleChange, cardColor }) => {
         setDriverOptions(drvRows.map((r) => ({ value: String(r.driver_id ?? ""), label: String(r.driver_name ?? "") })).filter((o) => o.value));
         const trLocRows = Array.isArray(trLocRes?.data) ? trLocRes.data : trLocRes?.data?.data ?? [];
         setLocationOptions(trLocRows.map((r) => ({ value: String(r.location_id ?? ""), label: String(r.location ?? "") })).filter((o) => o.value));
-      } catch (err) {
+      } catch {
       }
     })();
     return () => { cancelled = true; };

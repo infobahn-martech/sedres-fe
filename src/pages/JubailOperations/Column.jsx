@@ -11,7 +11,6 @@ import "../../design/css/common/OperationsColumn.css";
 function NestedColumn({ column, cards, setSelectedCard, isShrunk = false, columnHeight, onHeightChange }) {
     const columnRef = useRef(null);
     const columnColor = column.color || "#2A00FF";
-    const tooltipId = `nested-column-title-${column.id}`;
     const onHeightChangeRef = useRef(onHeightChange);
     const previousHeightRef = useRef(null);
 

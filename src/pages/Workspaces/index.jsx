@@ -10,13 +10,12 @@ import ClockIcon from '../../assets/images/ClockIcon.svg';
 import filterIcon from '../../assets/images/filter.svg';
 import NewWorkspaceModal from './NewWorkspaceModal';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
-import kanbanDashboardService from '../../services/kanbanDashboardService';
 import AddBoardModal from './AddBoardModal';
 import DashboardAddItemsModal from './DashboardAddItemsModal';
 import ArchivedWorkspacesModal from './ArchivedWorkspacesModal';
 import RenameBoardModal from './RenameBoardModal';
 import RenameWorkspaceModal from './RenameWorkspaceModal';
-import { getDashboardCanvasStyle, normalizeDashboardBackground } from '../../shared/utils/dashboardBackground';
+import { normalizeDashboardBackground } from '../../shared/utils/dashboardBackground';
 import useAuthReducer from '../../store/AuthReducer';
 import { isRestrictedBoardUser } from '../../shared/helpers/restrictedBoardUser';
 import { notify } from '../../components/Toaster';
@@ -98,7 +97,6 @@ function Workspaces() {
     archiveBoard,
     changeBoardBackground,
     addEditLoader,
-    updateBoardName,
   } = useWorkSpaceReducer();
 
   const userProfile = useAuthReducer((state) => state.userProfile);
@@ -157,7 +155,6 @@ function Workspaces() {
 
   // Find the first workspace with boards to set as initially expanded
   const firstWorkspaceWithBoards = workspacesData.find((workspace) => workspace.boards?.length > 0);
-  const initialSelectedWorkspace = firstWorkspaceWithBoards ? firstWorkspaceWithBoards.id : null;
   const [filterValue, setFilterValue] = useState('');
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
 
@@ -193,10 +190,10 @@ function Workspaces() {
   const [dashboardModalSearch, setDashboardModalSearch] = useState('');
   const [dashboardModalFilterChip, setDashboardModalFilterChip] = useState(true);
   const [pendingDashboardToggleId, setPendingDashboardToggleId] = useState(null);
-  const [widgetCatalog, setWidgetCatalog] = useState([]);
-  const [widgetCatalogLoading, setWidgetCatalogLoading] = useState(false);
-  const [widgetCatalogError, setWidgetCatalogError] = useState(null);
-  const [widgetCatalogRetryKey, setWidgetCatalogRetryKey] = useState(0);
+  const [widgetCatalog] = useState([]);
+  const [widgetCatalogLoading] = useState(false);
+  const [widgetCatalogError] = useState(null);
+  const [, setWidgetCatalogRetryKey] = useState(0);
   const [backgroundSubOpen, setBackgroundSubOpen] = useState(false);
   const [isBoardColorPickerOpen, setIsBoardColorPickerOpen] = useState(false);
   const [isWallpaperGalleryOpen, setIsWallpaperGalleryOpen] = useState(false);
@@ -456,13 +453,6 @@ function Workspaces() {
     setShowDashboardItemsModal(true);
   };
 
-  const openDashboardWidgetModal = () => {
-    setDashboardItemsModalType('widget');
-    setDashboardModalSearch('');
-    setDashboardModalFilterChip(true);
-    setShowDashboardItemsModal(true);
-  };
-
   const handleDashboardModalToggle = async (itemId, nextOn) => {
     if (!currentDashboard) return;
     const dashboard_id = currentDashboard.dashboard_id;
@@ -495,11 +485,6 @@ function Workspaces() {
   };
 
   const dashboardNotFound = isDashboardView && !dashboardsLoading && !currentDashboard;
-
-  const dashboardCanvasStyle = useMemo(
-    () => getDashboardCanvasStyle(currentDashboard?.background),
-    [currentDashboard]
-  );
 
   const headerActions = (canCreateWorkspace || canDeleteWorkspace) ? (
     <div className="workspaces-header-actions">

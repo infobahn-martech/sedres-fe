@@ -16,7 +16,7 @@ export default defineConfig({
           pdf: ["pdfjs-dist"],
           dates: ["moment", "dayjs", "date-fns"],
           msal: ["@azure/msal-browser", "@azure/msal-react"],
-          bootstrap: ["bootstrap", "react-bootstrap"],
+          bootstrap: ["react-bootstrap"],
         },
       },
     },

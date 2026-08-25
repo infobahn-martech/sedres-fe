@@ -53,8 +53,6 @@ const workflowsConfig = [
   },
 ];
 
-let globalCardId = 1;
-
 const iconTypes = ["inprogress", "download", "document"];
 
 const generateCard = (workflowId, columnKey, laneId, cardId) => {
@@ -221,7 +219,6 @@ const createWorkflow = (workflowConfig) => {
       cards[generatedCardId] = cardData;
       swimlanes[DEFAULT_SWIMLANE_ID].cardMap[colKey].push(generatedCardId);
       cardSeq += 1;
-      globalCardId += 1;
     }
   }
 

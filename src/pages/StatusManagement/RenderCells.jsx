@@ -1,5 +1,4 @@
 import { Tooltip } from 'react-tooltip';
-import moment from 'moment';
 
 import edit from '../../assets/images/edit.svg';
 import trash from '../../assets/images/delete.svg';

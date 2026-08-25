@@ -6,8 +6,6 @@ import useHotelReducer from "../../../store/HotelReducer";
 import "../../../design/scss/prospect-modal.scss";
 import "../../../design/scss/modal-designs.scss";
 import "../../../design/scss/form-designs.scss";
-import userIcon from "../../../assets/images/user.png";
-import edit from "../../../assets/images/edit.svg";
 
 export function HotelModal({ showModal, closeModal, onSuccess }) {
     const { addHotel, updateHotel, isBeingUpdated } = useHotelReducer(

@@ -51,7 +51,7 @@ const initialDocuments = [
 ];
 
 function DocumentsModal({ show, onClose }) {
-  const [documents, setDocuments] = useState(initialDocuments);
+  const [documents] = useState(initialDocuments);
   const [searchQuery, setSearchQuery] = useState('');
 
   const [params, setParams] = useState({

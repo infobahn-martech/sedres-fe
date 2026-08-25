@@ -40,13 +40,6 @@ const CrewTemplate = () => {
     _id: row.template_id ?? row._id ?? row.id,
   }));
 
-  const stripHtml = (html) => {
-    if (!html) return "";
-    const tmp = document.createElement("DIV");
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || "";
-  };
-
   const cols = [
     {
       name: "Name",

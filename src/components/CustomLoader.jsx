@@ -17,7 +17,7 @@ export default function CustomLoader({ columns, limit = 10, Sl = false, expandab
               <CommonSkeleton height={SKELETON_HEIGHT} width={40} />
             </td>
           )}
-          {columns?.map(({ colClassName = '', selector, cell, contentClass, width }) => {
+          {columns?.map(({ colClassName = '', selector, cell, contentClass }) => {
             // If it's an Actions column (has cell renderer), show two smaller skeletons
             if (cell && selector === 'linksInfo') {
               return (

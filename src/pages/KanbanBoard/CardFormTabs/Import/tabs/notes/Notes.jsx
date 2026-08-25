@@ -82,7 +82,7 @@ function Notes({ card }) {
     const [managers, setManagers] = useState([]);
     const [mentionOpen, setMentionOpen] = useState(false);
     const [mentionSearch, setMentionSearch] = useState("");
-    const [selectedMentionUserIds, setSelectedMentionUserIds] = useState([]);
+    const [, setSelectedMentionUserIds] = useState([]);
     const [isManagersLoading, setIsManagersLoading] = useState(false);
     const [notes, setNotes] = useState([]);
     const [isNotesLoading, setIsNotesLoading] = useState(false);
@@ -125,7 +125,7 @@ function Notes({ card }) {
                 if (!cancelled) {
                     setManagers(mapManagersFromResponse(list));
                 }
-            } catch (error) {
+            } catch {
                 if (!cancelled) {
                     setManagers([]);
                 }

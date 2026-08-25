@@ -138,7 +138,7 @@ const KPIDashboard = () => {
                 setIsLoggingOut(false);
                 setShowSignOutModal(false);
             }, 500);
-        } catch (error) {
+        } catch {
             setIsLoggingOut(false);
         }
     };

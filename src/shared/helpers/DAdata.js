@@ -84,7 +84,6 @@ const footerShowIcons = shuffledKeys.slice(0, footerIconCount);
 // HELPER FUNCTIONS
 // ============================================
 
-let globalCardId = 1;
 
 // Icon pool
 const iconTypes = ["inprogress", "download", "document"];
@@ -100,7 +99,6 @@ const colorOptions = [
 
 // Helper function to generate a single card
 const generateCard = (workflowId, colId, cardId) => {
-  const workflow = workflowsConfig.find((w) => w.id === workflowId);
   const colorPool = Object.values(colorOptions);
 
   // Random color
@@ -254,7 +252,6 @@ const createWorkflow = (workflowConfig) => {
       cards[generatedCardId] = cardData;
       columns[colId].cardIds.push(generatedCardId);
       cardId++;
-      globalCardId++;
     }
   }
 

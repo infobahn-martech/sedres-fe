@@ -49,7 +49,7 @@ export default function AdminBoard() {
   });
 
   // Control expand/shrink functionality
-  const [enableExpandShrink, setEnableExpandShrink] = useState(false);
+  const [enableExpandShrink] = useState(false);
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState(null);
@@ -520,7 +520,7 @@ export default function AdminBoard() {
     const IMPORT_EXPORT_RT_ACCENT_COLUMNS = ["Cleared", "Inward Completed", "MWP Issued"];
     const isImportExportRt = workflow.id === "import-export-rt";
 
-    return columnsToRender.map((item, index) => {
+    return columnsToRender.map((item) => {
       const accentStyle = { backgroundColor: "rgb(65, 105, 225)" };
       const columnStyle = isImportExportRt && IMPORT_EXPORT_RT_ACCENT_COLUMNS.includes(item.column.title)
         ? accentStyle

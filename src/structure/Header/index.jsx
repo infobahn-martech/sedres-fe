@@ -27,7 +27,6 @@ import LogoutConfirmationModal from '../../components/LogoutConfirmationModal';
 import NotificationsModal from './NotificationsModal';
 import DocumentsModal from './DocumentsModal';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
-import { useThemeStore } from '../../shared/store/themeStore';
 import NavTabButton from '../../components/NavTabButton';
 import { isRestrictedBoardUser, isPortOperatorUser } from '../../shared/helpers/restrictedBoardUser';
 import { isVendorRole, getRoleId } from '../../shared/helpers/vendorDashboardRoles';
@@ -45,8 +44,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [imageError, setImageError] = useState(false);
   const { layoutView } = useLayoutView();
-  const { isDark, toggleTheme } = useThemeStore();
-  const [notificationCount, setNotificationCount] = useState(3); // Default count, can be updated with real data
+  const [notificationCount] = useState(3); // Default count, can be updated with real data
   const dropdownRef = useRef(null);
   const doLogout = useAuthReducer((state) => state.doLogout);
   const profileData = useAuthReducer((state) => state.profileData);
@@ -62,7 +60,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     try {
       const rawProfile = localStorage.getItem('userProfile');
       parsedLocalProfile = rawProfile ? JSON.parse(rawProfile) : {};
-    } catch (error) {
+    } catch {
       parsedLocalProfile = {};
     }
 

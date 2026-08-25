@@ -331,8 +331,8 @@ function Comments({ card }) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedComment, setSelectedComment] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [commentFilter, setCommentFilter] = useState("");
-    const [expandAll, setExpandAll] = useState(false);
+    const [commentFilter] = useState("");
+    const [expandAll] = useState(false);
     const [sendAsEmail, setSendAsEmail] = useState(false);
     const [emailFrom, setEmailFrom] = useState("");
     const [emailTo, setEmailTo] = useState("");

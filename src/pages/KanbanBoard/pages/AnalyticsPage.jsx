@@ -73,7 +73,6 @@ const Analytics = () => {
 
   const completionRate = ((cardStats.completed / cardStats.total) * 100).toFixed(1);
   const inProgressRate = ((cardStats.inProgress / cardStats.total) * 100).toFixed(1);
-  const pendingRate = ((cardStats.pending / cardStats.total) * 100).toFixed(1);
 
   const statsCards = [
     {

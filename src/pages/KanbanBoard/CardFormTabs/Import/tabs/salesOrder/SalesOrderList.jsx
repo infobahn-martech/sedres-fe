@@ -450,7 +450,6 @@ const SalesOrderList = ({
   handleChange,
   cardColor,
   readOnly = false,
-  showPOStatus = false,
   isDAModule = false,
   isDaCardContext = false,
   isLoadingSalesOrder = false,
@@ -466,7 +465,6 @@ const SalesOrderList = ({
   const isDaVerifyContext = isDAModule || isDaCardContext;
   const salesOrderList = formValues.salesOrderList || [];
   const billingEntity = formValues.billingEntity || "";
-  const lineItemTotal = formValues.lineItemTotal || 0;
 
   // SO Header fields (no mock defaults — values come from API via mapSalesOrderResponse or user edits)
   const soCustomerCode = formValues.soCustomerCode || "";
@@ -927,64 +925,12 @@ const SalesOrderList = ({
     return Math.round((totalBeforeTax + totalBeforeTax * taxRate) * 100) / 100;
   };
 
-  // Calculate total line item total from list if not provided
-  const calculatedLineItemTotal = lineItemTotal || displayOrderList.reduce((sum, item) => {
-    return sum + (parseFloat(item.totalAmount) || 0);
-  }, 0);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const formatTime = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   const formatCurrencySAR = (amount) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: toApiCurrency(soBpCurrency) || "SAR",
       minimumFractionDigits: 2,
     }).format(amount);
-  };
-
-  // Get PO Status color
-  const getPOStatusColor = (status) => {
-    switch (status) {
-      case "Draft":
-        return "#FFA500"; // Orange
-      case "Issued":
-        return "#4169E1"; // Royal Blue
-      case "Completed":
-        return "#008000"; // Green
-      default:
-        return "#666666"; // Gray
-    }
-  };
-
-  // Get PO Status background color (lighter version)
-  const getPOStatusBgColor = (status) => {
-    switch (status) {
-      case "Draft":
-        return "#FFF4E6"; // Light Orange
-      case "Issued":
-        return "#E6EDFF"; // Light Blue
-      case "Completed":
-        return "#E6F7E6"; // Light Green
-      default:
-        return "#F5F5F5"; // Light Gray
-    }
   };
 
   const handleFieldChange = (orderId, field, value) => {

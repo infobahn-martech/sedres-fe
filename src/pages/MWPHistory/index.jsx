@@ -5,7 +5,7 @@ import useMWPHistoryReducer from "../../store/MWPHistoryReducer";
 import "../../design/scss/pages/mwp-history/Crew.scss";
 
 const MWPHistory = () => {
-    const { fetchAllMWPHistory, mwpHistory, vessel, isLoadingGet } =
+    const { fetchAllMWPHistory, mwpHistory, isLoadingGet } =
         useMWPHistoryReducer((state) => state);
 
     useEffect(() => {

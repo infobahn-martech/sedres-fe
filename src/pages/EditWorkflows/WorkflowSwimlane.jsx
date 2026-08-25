@@ -361,20 +361,12 @@ function WorkflowSwimlane({
                 const hideNestedAddHint = deepestInCol.some((s) => isWorkflowStageChildColumn(s));
                 const stage = stagesInCol[0];
                 const limit = stage?.limit ?? 0;
-                const cardsPerRow = stage?.cardsPerRow ?? 1;
                 const limitKey = stage ? `${stage.id}-limit` : null;
-                const cardsKey = stage ? `${stage.id}-cardsPerRow` : null;
                 const isEditingLimit = editingFieldKey === limitKey;
-                const isEditingCards = editingFieldKey === cardsKey;
 
                 const saveLimit = () => {
                   const num = Math.max(0, parseInt(editValue, 10) || 0);
                   if (stage && onStageLimitChange) onStageLimitChange(workflowId, swimlane.id, stage.id, String(num));
-                  setEditingFieldKey(null);
-                };
-                const saveCardsPerRow = () => {
-                  const num = Math.max(1, parseInt(editValue, 10) || 1);
-                  if (stage && onStageCardsPerRowChange) onStageCardsPerRowChange(workflowId, swimlane.id, stage.id, String(num));
                   setEditingFieldKey(null);
                 };
 

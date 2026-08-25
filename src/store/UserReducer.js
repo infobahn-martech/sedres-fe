@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import userService from '../services/userService';
 import useAlertReducer from './AlertReducer';
-import useAuthReducer from './AuthReducer';
 
 const useUserReducer = create((set) => ({
   isLoading: false,

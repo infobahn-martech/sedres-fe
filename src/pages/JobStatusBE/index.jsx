@@ -131,7 +131,7 @@ const JobStatusBE = () => {
             onEditClick: (row) => {
                 setShowJobStatusModal(row);
             },
-            onDeleteClick: (row) => {
+            onDeleteClick: () => {
                 // setSelectedRow(row);
                 setShowDeleteModal(true);
             },

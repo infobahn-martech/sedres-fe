@@ -361,7 +361,7 @@ SendReportFullWidthView.propTypes = {
   onSend: PropTypes.func,
 };
 
-export function SendReportButton({ onClick, cardColor: _cardColor, tabName: _tabName, label = "Send Report" }) {
+export function SendReportButton({ onClick, label = "Send Report" }) {
   return (
     <button type="button" className="operation-send-report-btn" onClick={onClick} title={label}>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

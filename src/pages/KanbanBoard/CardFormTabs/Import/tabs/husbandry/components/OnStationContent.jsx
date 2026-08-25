@@ -4,41 +4,10 @@ import GroupSettingsIcon from "../../../../../../../assets/images/cv.png";
 import { FormSection, FormField, FormSelect, ReactQuillEditor } from "./Husbandry.components";
 
 const OnStationContent = ({ formValues, handleChange, cardColor }) => {
-  const [isDraggingRequestEmail, setIsDraggingRequestEmail] = useState(false);
   const [isDraggingOnStationDocuments, setIsDraggingOnStationDocuments] = useState(false);
-  const requestEmailFileInputRef = useRef(null);
   const onStationDocumentsFileInputRef = useRef(null);
 
 
-
-  const handleRequestEmailDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingRequestEmail(false);
-  };
-
-  const handleRequestEmailDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingRequestEmail(false);
-
-    const files = Array.from(e.dataTransfer.files || []);
-    if (files.length > 0) {
-      const syntheticEvent = { target: { value: files } };
-      handleChange("onStationRequestEmailDocuments")(syntheticEvent);
-    }
-  };
-
-  const handleRequestEmailBrowseClick = () => {
-    requestEmailFileInputRef.current?.click();
-  };
-
-  const handleRemoveRequestEmailFile = (index) => {
-    const files = Array.from(formValues.onStationRequestEmailDocuments || []);
-    files.splice(index, 1);
-    const syntheticEvent = { target: { value: files } };
-    handleChange("onStationRequestEmailDocuments")(syntheticEvent);
-  };
 
   // Handle file upload for On Station Documents
   const handleOnStationDocumentsFileChange = (e) => {
@@ -84,8 +53,6 @@ const OnStationContent = ({ formValues, handleChange, cardColor }) => {
   };
 
   // Get selected files
-  const requestEmailFiles = formValues.onStationRequestEmailDocuments || [];
-  const requestEmailFilesCount = requestEmailFiles.length;
   const onStationDocumentsFiles = formValues.onStationDocuments || [];
   const onStationDocumentsFilesCount = onStationDocumentsFiles.length;
 

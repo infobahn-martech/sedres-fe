@@ -173,7 +173,7 @@ CrewAvatar.propTypes = {
 };
 
 /** Crew-name cell: avatar + name, or an em-dash when there's no name. */
-export const CrewCell = ({ name, index = 0 }) => {
+export const CrewCell = ({ name }) => {
   if (!name || !String(name).trim()) {
     return <span className="crew-pass-requests-table__empty-cell">—</span>;
   }
@@ -223,7 +223,7 @@ RouteCell.propTypes = {
   to: PropTypes.string,
 };
 
-export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, onSubTabChange, onNavigateToTab, selectedActionTab = null, selectedServices = [], onBackToServiceSelection, cardColor = "#00368c", crewCount, subTabCounts = {}, materialManagementVisibleSubTabIds = null }) => {
+export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, onSubTabChange, onNavigateToTab, selectedServices = [], onBackToServiceSelection, cardColor = "#00368c", crewCount, subTabCounts = {}, materialManagementVisibleSubTabIds = null }) => {
   const hasCrewCount = typeof crewCount === "number";
   // Mobile-only: the stacked main+submenu list pushes real content far down
   // the page on phones, so it starts collapsed behind a toggle there. Has no

@@ -19,7 +19,7 @@ export function TransportPartyModal({ showModal, closeModal }) {
             },
     });
 
-    const onSubmit = (data) => {
+    const onSubmit = () => {
         closeModal();
     };
 

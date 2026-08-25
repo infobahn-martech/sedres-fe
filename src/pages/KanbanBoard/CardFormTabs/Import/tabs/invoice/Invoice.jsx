@@ -140,7 +140,7 @@ InvoiceItem.propTypes = {
   cardColor: PropTypes.string,
 };
 
-function Invoice({ card, formValues, handleChange }) {
+function Invoice({ card }) {
   const cardColor = card?.color || "#2A00FF";
 
   // Map invoice types to documents from card.invoices if available
@@ -158,7 +158,7 @@ function Invoice({ card, formValues, handleChange }) {
     }
   };
 
-  const handleDelete = (doc) => {
+  const handleDelete = () => {
     if (window.confirm(`Are you sure you want to delete this document?`)) {
       // TODO: Implement delete
     }

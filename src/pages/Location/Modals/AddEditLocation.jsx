@@ -19,7 +19,7 @@ export function LocationModal({ showModal, closeModal }) {
             },
     });
 
-    const onSubmit = (data) => {
+    const onSubmit = () => {
         closeModal();
     };
 

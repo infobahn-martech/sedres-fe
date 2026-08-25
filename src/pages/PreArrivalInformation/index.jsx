@@ -17,7 +17,7 @@ const PreArrivalInformation = () => {
 
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedRow, setSelectedRow] = useState(null);
+  const [, setSelectedRow] = useState(null);
 
   const { getTemplates, preArrivalTemplates, templateCount } =
     usePreArrivalInfoReducer((state) => state);
@@ -39,13 +39,6 @@ const PreArrivalInformation = () => {
     ...row,
     _id: row.template_id ?? row._id ?? row.id,
   }));
-
-  const stripHtml = (html) => {
-    if (!html) return "";
-    const tmp = document.createElement("DIV");
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || "";
-  };
 
   const cols = [
     {

@@ -5,17 +5,6 @@ import '../../../../design/scss/pages/kanban-board/contextMenu.scss';
 function ContextMenu({ position, onClose, onCreateCard }) {
     if (!position) return null;
 
-    const handleClick = (e) => {
-        e.stopPropagation();
-    };
-
-    const handleMenuItemClick = () => {
-        if (onCreateCard) {
-            onCreateCard();
-        }
-        onClose();
-    };
-
     // Calculate position to keep menu within viewport
     const getMenuPosition = () => {
         if (!position) return { x: 0, y: 0 };
@@ -43,8 +32,6 @@ function ContextMenu({ position, onClose, onCreateCard }) {
 
         return { x, y };
     };
-
-    const menuPosition = getMenuPosition();
 
     // Close on Escape key
     useEffect(() => {

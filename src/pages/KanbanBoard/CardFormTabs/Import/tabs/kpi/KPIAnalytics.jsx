@@ -186,7 +186,7 @@ const KPIAnalytics = ({ kpiData, cardColor }) => {
                 />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip
-                  formatter={(value, name) => [value, "Count"]}
+                  formatter={(value) => [value, "Count"]}
                   labelFormatter={(label) => {
                     const item = categoryData.find((d) => d.name === label);
                     return item ? item.fullName : label;

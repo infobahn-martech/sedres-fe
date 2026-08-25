@@ -171,40 +171,8 @@ const renderLaunchHireStepIcon = (icon) => {
   }
 };
 
-// Generate dummy inbound orders data
-const generateDummyInboundOrders = () => {
-  const packageTypes = ["Box", "Pallet", "Crate", "Bag", "Container"];
-  const descriptions = [
-    "Spare parts for vessel maintenance",
-    "Safety equipment and supplies",
-    "Food and beverage items",
-    "Technical equipment",
-    "Cleaning supplies",
-    "Medical supplies",
-    "Office supplies",
-    "Tools and hardware"
-  ];
-
-  const dummyOrders = [];
-  for (let i = 1; i <= 10; i++) {
-    const orderDate = new Date();
-    orderDate.setDate(orderDate.getDate() - Math.floor(Math.random() * 30));
-
-    dummyOrders.push({
-      id: i,
-      orderNo: `ORD-${String(i).padStart(5, '0')}`,
-      date: orderDate.toISOString().split('T')[0],
-      poDo: `PO-${String(i).padStart(4, '0')}`,
-      quantity: Math.floor(Math.random() * 100) + 1,
-      packageType: packageTypes[Math.floor(Math.random() * packageTypes.length)],
-      description: descriptions[Math.floor(Math.random() * descriptions.length)],
-    });
-  }
-  return dummyOrders;
-};
-
 // AttachmentsList Component (from Operation.jsx)
-const AttachmentsList = ({ attachments = [], onAdd, onRemove, cardColor, isDragging, onDragEnter, onDragLeave, onDragOver, onDrop, fileInputRef, onFileInputChange }) => {
+const AttachmentsList = ({ attachments = [], onRemove, cardColor, isDragging, onDragEnter, onDragLeave, onDragOver, onDrop, fileInputRef, onFileInputChange }) => {
   return (
     <div className="document-upload-wrapper">
       <div
@@ -324,7 +292,7 @@ const ReactQuillEditor = ({ value, onChange, placeholder, name = "remarks", clas
   );
 };
 
-const InboundOrdersContent = ({ formValues, handleChange, cardColor, showLaunchHire = true }) => {
+const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) => {
   const { hasPermission } = usePermissions();
   // KANBAN_CARD > MATERIAL_MANAGEMENT per-action gates — absence of the
   // module/submodule/action in the permissions response means false (deny by

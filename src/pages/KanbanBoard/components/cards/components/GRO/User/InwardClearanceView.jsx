@@ -3,7 +3,6 @@ import { FiCheckCircle, FiXCircle } from "react-icons/fi";
 import CustomModal from "../../../../../../../components/CustomModal";
 import "../../../../../../../design/scss/modal-designs.scss";
 import "../../../../../../../design/scss/prospect-modal.scss";
-import { formatGroDocumentDisplayName } from "./groCardUtils";
 import {
   TaskDocumentFilePreview,
   TaskDocumentItem,
@@ -80,7 +79,6 @@ export function DocumentActionConfirmModal({
   if (!confirmAction) return null;
 
   const isApprove = confirmAction === "approve";
-  const displayName = formatGroDocumentDisplayName(documentName ?? "");
   const rejectRemarksValid = String(confirmRemarks ?? "").trim().length > 0;
 
   const confirmSpinner = (

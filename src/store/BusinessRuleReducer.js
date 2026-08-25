@@ -24,7 +24,7 @@ const useBusinessRuleReducer = create((set) => ({
                 triggerTypes: data?.data ?? [],
                 isLoadingGet: false,
             });
-        } catch (err) {
+        } catch {
             set({ triggerTypes: [], isLoadingGet: false });
         }
     },
@@ -40,7 +40,7 @@ const useBusinessRuleReducer = create((set) => ({
                 fields: data?.data ?? [],
                 isLoadingFields: false,
             });
-        } catch (err) {
+        } catch {
             set({ fields: [], isLoadingFields: false });
         }
     },
@@ -56,7 +56,7 @@ const useBusinessRuleReducer = create((set) => ({
                 timeUnits: data?.data ?? [],
                 isLoadingTimeUnits: false,
             });
-        } catch (err) {
+        } catch {
             set({ timeUnits: [], isLoadingTimeUnits: false });
         }
     },
@@ -74,7 +74,7 @@ const useBusinessRuleReducer = create((set) => ({
                 customFields: data?.data ?? [],
                 isLoadingCustomFields: false,
             });
-        } catch (err) {
+        } catch {
             if (requestId !== customFieldsRequestId) return;
             set({ customFields: [], isLoadingCustomFields: false });
         }
@@ -98,7 +98,7 @@ const useBusinessRuleReducer = create((set) => ({
                 recipientCustomFields: data?.data ?? [],
                 isLoadingRecipientCustomFields: false,
             });
-        } catch (err) {
+        } catch {
             if (requestId !== recipientCustomFieldsRequestId) return;
             set({ recipientCustomFields: [], isLoadingRecipientCustomFields: false });
         }
@@ -115,7 +115,7 @@ const useBusinessRuleReducer = create((set) => ({
                 regularFields: data?.data ?? [],
                 isLoadingRegularFields: false,
             });
-        } catch (err) {
+        } catch {
             set({ regularFields: [], isLoadingRegularFields: false });
         }
     },
@@ -135,7 +135,7 @@ const useBusinessRuleReducer = create((set) => ({
                 thenActionTimeUnits: data?.data?.time_units ?? [],
                 isLoadingThenActionFields: false,
             });
-        } catch (err) {
+        } catch {
             set({
                 thenActionRegularFields: [], thenActionCustomFields: [], thenActionTimeUnits: [],
                 isLoadingThenActionFields: false,
@@ -156,7 +156,7 @@ const useBusinessRuleReducer = create((set) => ({
                 businessRulesCount: data?.total ?? 0,
                 isLoadingBusinessRules: false,
             });
-        } catch (err) {
+        } catch {
             set({ businessRules: [], businessRulesCount: 0, isLoadingBusinessRules: false });
         }
     },
@@ -172,7 +172,7 @@ const useBusinessRuleReducer = create((set) => ({
                 businessRuleDetails: data?.data ?? null,
                 isLoadingBusinessRuleDetails: false,
             });
-        } catch (err) {
+        } catch {
             set({ businessRuleDetails: null, isLoadingBusinessRuleDetails: false });
         }
     },
@@ -196,7 +196,7 @@ const useBusinessRuleReducer = create((set) => ({
                     : Array.isArray(data?.data?.logs) ? data.data.logs
                         : [];
             set({ executionLogs: list, isLoadingExecutionLogs: false });
-        } catch (err) {
+        } catch {
             set({ executionLogs: [], isLoadingExecutionLogs: false });
         }
     },
@@ -255,7 +255,7 @@ const useBusinessRuleReducer = create((set) => ({
                     : Array.isArray(data?.data?.history) ? data.data.history
                         : [];
             set({ businessRuleHistory: list, isLoadingBusinessRuleHistory: false });
-        } catch (err) {
+        } catch {
             set({ businessRuleHistory: [], isLoadingBusinessRuleHistory: false });
         }
     },
@@ -389,7 +389,7 @@ const useBusinessRuleReducer = create((set) => ({
                 triggerConfig: data?.data ?? null,
                 isLoadingTriggerConfig: false,
             });
-        } catch (err) {
+        } catch {
             set({ triggerConfig: null, isLoadingTriggerConfig: false });
         }
     },
@@ -406,7 +406,7 @@ const useBusinessRuleReducer = create((set) => ({
                 fieldDetailsByKey: { ...state.fieldDetailsByKey, [key]: data?.data ?? null },
                 isLoadingFieldDetails: { ...state.isLoadingFieldDetails, [key]: false },
             }));
-        } catch (err) {
+        } catch {
             set((state) => ({
                 fieldDetailsByKey: { ...state.fieldDetailsByKey, [key]: null },
                 isLoadingFieldDetails: { ...state.isLoadingFieldDetails, [key]: false },
@@ -430,7 +430,7 @@ const useBusinessRuleReducer = create((set) => ({
                 },
                 isLoadingBusinessRuleStats: false,
             });
-        } catch (err) {
+        } catch {
             set({ businessRuleStats: { available: 0, created: 0, enabled: 0, visible: 0 }, isLoadingBusinessRuleStats: false });
         }
     },
@@ -446,7 +446,7 @@ const useBusinessRuleReducer = create((set) => ({
                 linkCardActions: data?.data ?? [],
                 isLoadingLinkCardActions: false,
             });
-        } catch (err) {
+        } catch {
             set({ linkCardActions: [], isLoadingLinkCardActions: false });
         }
     },
@@ -462,7 +462,7 @@ const useBusinessRuleReducer = create((set) => ({
                 notificationSettings: data?.data ?? null,
                 isLoadingNotificationSettings: false,
             });
-        } catch (err) {
+        } catch {
             set({ notificationSettings: null, isLoadingNotificationSettings: false });
         }
     },
@@ -478,7 +478,7 @@ const useBusinessRuleReducer = create((set) => ({
         try {
             const { data } = await businessRuleService.getNotificationSettings(notificationId);
             return data?.data ?? null;
-        } catch (err) {
+        } catch {
             return null;
         }
     },
@@ -494,7 +494,7 @@ const useBusinessRuleReducer = create((set) => ({
                 linkCardActionOperators: data?.data ?? [],
                 isLoadingLinkCardActionOperators: false,
             });
-        } catch (err) {
+        } catch {
             set({ linkCardActionOperators: [], isLoadingLinkCardActionOperators: false });
         }
     },
@@ -604,7 +604,7 @@ const useBusinessRuleReducer = create((set) => ({
                 webServiceSettings: data?.data ?? null,
                 isLoadingWebServiceSettings: false,
             });
-        } catch (err) {
+        } catch {
             set({ webServiceSettings: null, isLoadingWebServiceSettings: false });
         }
     },
@@ -620,7 +620,7 @@ const useBusinessRuleReducer = create((set) => ({
         try {
             const { data } = await businessRuleService.getWebServiceSettings(webServiceId);
             return data?.data ?? null;
-        } catch (err) {
+        } catch {
             return null;
         }
     },
@@ -753,7 +753,7 @@ const useBusinessRuleReducer = create((set) => ({
                 createSubtaskSettings: data?.data ?? null,
                 isLoadingCreateSubtaskSettings: false,
             });
-        } catch (err) {
+        } catch {
             set({ createSubtaskSettings: null, isLoadingCreateSubtaskSettings: false });
         }
     },
@@ -769,7 +769,7 @@ const useBusinessRuleReducer = create((set) => ({
         try {
             const { data } = await businessRuleService.getCreateSubtaskSettings(createSubtaskId);
             return data?.data ?? null;
-        } catch (err) {
+        } catch {
             return null;
         }
     },

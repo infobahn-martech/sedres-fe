@@ -193,7 +193,7 @@ const useAuthReducer = create((set) => ({
               return;
             }
           }
-        } catch (e) {
+        } catch {
           // If parsing fails, continue to API call
         }
       }
@@ -215,7 +215,7 @@ const useAuthReducer = create((set) => ({
             if (parsed.permissions) {
               permissions = parsed.permissions;
             }
-          } catch (e) {
+          } catch {
             // Use default role if parsing fails
           }
         }
@@ -256,7 +256,7 @@ const useAuthReducer = create((set) => ({
         isProfileFetchLoading: false,
         ...derivePermissionState(profileData),
       });
-    } catch (err) {
+    } catch {
       // Always return success with fallback profile data
       const state = useAuthReducer.getState();
       const authData = state.authData || {};
@@ -268,7 +268,7 @@ const useAuthReducer = create((set) => ({
       if (cachedProfile) {
         try {
           fallbackProfileData = JSON.parse(cachedProfile);
-        } catch (e) {
+        } catch {
           // If parsing fails, create new fallback
           fallbackProfileData = {
             userid: authData.userid || userId || getItem('userid'),

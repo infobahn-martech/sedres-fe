@@ -900,7 +900,7 @@ function CustomTabAccordion({ tab, isOpen, onToggleOpen, onToggle, onRename, onR
 
 function CallTypeBuilderModal({ show, onClose }) {
     const {
-        getCallTypes, callTypes, isLoadingGet,
+        getCallTypes, callTypes,
         addCallType, updateCallType, deleteCallType,
         isBeingUpdated, isLoadingDelete,
     } = useCallTypeReducer((s) => s);
@@ -1212,9 +1212,6 @@ function CallTypeBuilderModal({ show, onClose }) {
 
     const effectivePreviewMain = allEnabledTabs.find((t) => t.id === previewActiveMain) ?? allEnabledTabs[0] ?? null;
     const allPreviewSubTabs = effectivePreviewMain?._isCustom ? [] : (effectivePreviewMain?.subTabs ?? []);
-    const enabledSubTabs = allPreviewSubTabs.filter(
-        (s) => tabConfig[effectivePreviewMain?.id]?.subTabs?.[s.id]?.enabled
-    );
     const effectivePreviewSub = allPreviewSubTabs.find((s) => s.id === previewActiveSub) ?? allPreviewSubTabs[0] ?? null;
     const isPreviewSubEnabled = effectivePreviewSub
         ? Boolean(tabConfig[effectivePreviewMain?.id]?.subTabs?.[effectivePreviewSub.id]?.enabled)

@@ -12,15 +12,6 @@ const MonthlyTasksChart = () => {
     { name: 'Email Request', value: 15, color: '#FFE100' },
   ];
 
-  const colors = {
-    'Import Call': '#0075FF',
-    'Export Call': '#4ADE80',
-    'Sailing Report': '#F87171',
-    'Outward Clearance': '#A78BFA',
-    'Vessel Inward': '#60A5FA',
-    'Email Request': '#FFE100',
-  };
-
   return (
     <div className="kpi-monthly-tasks-chart">
       <div className="kpi-monthly-tasks-chart__header">

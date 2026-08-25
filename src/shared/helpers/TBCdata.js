@@ -58,8 +58,6 @@ const workflowsConfig = [
 // HELPER FUNCTIONS
 // ============================================
 
-let globalCardId = 1;
-
 // Icon pool
 const iconTypes = ["inprogress", "download", "document"];
 
@@ -278,7 +276,6 @@ const createWorkflow = (workflowConfig) => {
             cards[generatedCardId] = cardData;
             columns[colId].cardIds.push(generatedCardId);
             cardId++;
-            globalCardId++;
         }
     }
 

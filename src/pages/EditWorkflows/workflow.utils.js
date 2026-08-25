@@ -431,7 +431,7 @@ export function getGlobalRowsForSwimlane(swimlane, boardStructure) {
  * Check if a cell (row, col) is occupied by any stage in the area.
  * For full-height single columns, all rows in that column are treated as occupied.
  */
-export function isCellOccupied(areaStages, row, col, globalRows) {
+export function isCellOccupied(areaStages, row, col) {
   const occupyingStages = areaStages.filter((s) => {
     const sCol = s.col ?? 0;
     const sSpan = s.colSpan ?? 1;
