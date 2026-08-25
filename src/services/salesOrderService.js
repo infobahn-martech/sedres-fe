@@ -94,6 +94,11 @@ const saveSalesOrderItem = (payload) => Gateway.post("sales_order/save_sales_ord
 const updateSalesOrderItemAmount = (payload) => Gateway.post("sales_order/update_sales_order_item_amount", payload);
 
 /**
+ * @param {FormData} formData - so_item_id, documents[] (one or more files)
+ */
+const addSoItemDocument = (formData) => Gateway.post("sales_order/add_so_item_document", formData);
+
+/**
  * @param {object} payload
  * @param {string|number} payload.sales_order_id
  * @param {string} [payload.delivery_date]
@@ -115,6 +120,7 @@ export default {
   getItemCodes,
   getItemDetails,
   saveSalesOrderItem,
+  addSoItemDocument,
   updateSalesOrderItemAmount,
   updateSalesOrder,
 };

@@ -151,16 +151,18 @@ VendorListModal.propTypes = {
 // Document List Modal — manages the documents already attached to a sales order item
 // (sourced from the API's per-item `documents` array) plus any newly uploaded this session.
 // No shared document library concept — each item only ever shows/edits its own files.
-const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], libraryDocs = [] }) => {
+const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], libraryDocs = [], soItemId = null, onUploadDocuments }) => {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(new Set());
   const [uploadedDocs, setUploadedDocs] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (show) {
       setSelected(new Set((initialSelected || []).map((d) => d.id)));
       setUploadedDocs([]);
       setSearch("");
+      setIsUploading(false);
     }
     // Only reset when modal opens; initialSelected is captured at open time via key on parent
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -197,14 +199,43 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], librar
     onClose();
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
     e.target.value = "";
-    if (!file) return;
-    const ext = (file.name.split(".").pop() || "").toUpperCase();
-    const newDoc = { id: `local-${Date.now()}`, name: file.name, type: ext || "FILE" };
-    setUploadedDocs((prev) => [...prev, newDoc]);
-    setSelected((prev) => new Set(prev).add(newDoc.id));
+    if (!files.length) return;
+
+    // Item already exists on the backend — upload immediately via
+    // sales_order/add_so_item_document. A not-yet-saved "new" item has no so_item_id yet,
+    // so its files stay staged locally until the item itself is saved.
+    if (soItemId && onUploadDocuments) {
+      setIsUploading(true);
+      try {
+        const uploaded = await onUploadDocuments(files);
+        setUploadedDocs((prev) => [...prev, ...uploaded]);
+        setSelected((prev) => {
+          const next = new Set(prev);
+          uploaded.forEach((d) => next.add(d.id));
+          return next;
+        });
+      } catch (err) {
+        const msg = err?.response?.data?.message || err?.message || "Failed to upload document(s).";
+        useAlertReducer.getState().error(msg);
+      } finally {
+        setIsUploading(false);
+      }
+      return;
+    }
+
+    const newDocs = files.map((file, idx) => {
+      const ext = (file.name.split(".").pop() || "").toUpperCase();
+      return { id: `local-${Date.now()}-${idx}`, name: file.name, type: ext || "FILE" };
+    });
+    setUploadedDocs((prev) => [...prev, ...newDocs]);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      newDocs.forEach((d) => next.add(d.id));
+      return next;
+    });
   };
 
   return (
@@ -227,10 +258,10 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], librar
             style={{ flex: 1, padding: "11px 16px", border: "1px solid #dde0ea", borderRadius: "8px", fontSize: "14px", boxSizing: "border-box", fontFamily: "inherit" }}
           />
           <label
-            style={{ padding: "11px 18px", fontSize: "14px", border: "1px solid #dde0ea", borderRadius: "8px", background: "#f5f6ff", color: "#2A00FF", cursor: "pointer", fontFamily: "inherit", fontWeight: "600", whiteSpace: "nowrap", flexShrink: 0 }}
+            style={{ padding: "11px 18px", fontSize: "14px", border: "1px solid #dde0ea", borderRadius: "8px", background: isUploading ? "#eceefc" : "#f5f6ff", color: "#2A00FF", cursor: isUploading ? "wait" : "pointer", fontFamily: "inherit", fontWeight: "600", whiteSpace: "nowrap", flexShrink: 0, opacity: isUploading ? 0.7 : 1 }}
           >
-            Upload New
-            <input type="file" onChange={handleFileUpload} style={{ display: "none" }} />
+            {isUploading ? "Uploading..." : "Upload New"}
+            <input type="file" multiple onChange={handleFileUpload} disabled={isUploading} style={{ display: "none" }} />
           </label>
         </div>
         <div style={{ overflowY: "auto", flex: 1, minHeight: 0, padding: "18px 24px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "12px", alignContent: "start" }}>
@@ -330,6 +361,8 @@ DocumentListModal.propTypes = {
       type: PropTypes.string,
     })
   ),
+  soItemId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  onUploadDocuments: PropTypes.func,
 };
 
 // Premium pagination control for the sales order table
@@ -1144,6 +1177,33 @@ const SalesOrderList = ({
       handleChange("salesOrderList")({ target: { value: updatedList } });
     }
     setVendorModalTarget(null);
+  };
+
+  // Uploads file(s) to sales_order/add_so_item_document for an existing line item, then
+  // refreshes so the item's server-side `documents` list stays in sync. Returns the newly
+  // uploaded docs so the modal can reflect them immediately without waiting on the refresh.
+  const handleUploadItemDocuments = async (soItemId, files) => {
+    const formData = new FormData();
+    formData.append("so_item_id", soItemId);
+    files.forEach((file) => formData.append("documents[]", file));
+
+    const response = await salesOrderService.addSoItemDocument(formData);
+    const body = response?.data;
+    if (body?.status !== "success") {
+      throw new Error(body?.message || "Failed to upload document(s).");
+    }
+    if (refreshSalesOrder) await refreshSalesOrder();
+
+    const returnedDocs = Array.isArray(body?.data) ? body.data : [];
+    return files.map((file, idx) => {
+      const ext = (file.name.split(".").pop() || "").toUpperCase();
+      const returned = returnedDocs[idx];
+      return {
+        id: returned?.id ?? returned?.document_id ?? `uploaded-${Date.now()}-${idx}`,
+        name: returned?.name ?? returned?.file_name ?? file.name,
+        type: ext || "FILE",
+      };
+    });
   };
 
   const handleDocumentSave = (documents) => {
@@ -2861,6 +2921,8 @@ const SalesOrderList = ({
         onSave={handleDocumentSave}
         initialSelected={getDocumentModalInitialSelected()}
         libraryDocs={supportingDocsLibrary}
+        soItemId={documentModalTarget !== "new" ? documentModalTarget : null}
+        onUploadDocuments={(files) => handleUploadItemDocuments(documentModalTarget, files)}
       />
 
       {/* Delete Line Item confirmation */}
