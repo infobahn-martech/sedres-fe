@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 
 // Local-only fallback for api/da/status_timeline's reached_date: api/da/update_status
 // doesn't yet persist this on the backend (confirmed via testing — the field is sent but
@@ -52,38 +51,3 @@ export const useDaLocalVerifiedItems = create((set, get) => ({
     }),
   isItemVerified: (callId, soItemId) => get().verifiedItemIds[callId]?.has(soItemId) ?? false,
 }));
-
-// Local-only fallback for Sales Order line-item deletion: da/da_delete_sales_line_item
-// soft-deletes on the backend (item_status → "Cancelled") rather than removing the row, and
-// sales_order/get_so_items_by_call sends no status/item_status field on its items at all (same
-// gap useDaLocalVerifiedItems above works around), so a deleted item still comes back in the
-// list on the next fetch with nothing to distinguish it. This remembers which so_item_ids were
-// deleted client-side per call so they can be filtered out of every subsequent load.
-// Unlike the in-memory-only stores above, this one is persisted (zustand's own `persist`
-// middleware, not a raw localStorage call in a component) — a deleted row confirmed by the
-// backend should stay gone even across a real browser refresh, not just a close/reopen of the
-// card. Sets aren't JSON-serializable on their own, hence the replacer/reviver below. Cleared
-// on logout (see AuthReducer.js) same as the other DA local-only stores; once the backend stops
-// returning cancelled items (or exposes a status field), this fallback becomes unnecessary.
-export const useDaLocalDeletedItems = create(
-  persist(
-    (set, get) => ({
-      deletedItemIds: {},
-      markItemDeleted: (callId, soItemId) =>
-        set((state) => {
-          const current = new Set(state.deletedItemIds[callId] || []);
-          current.add(soItemId);
-          return { deletedItemIds: { ...state.deletedItemIds, [callId]: current } };
-        }),
-      isItemDeleted: (callId, soItemId) => get().deletedItemIds[callId]?.has(soItemId) ?? false,
-    }),
-    {
-      name: "da-local-deleted-items",
-      storage: createJSONStorage(() => localStorage, {
-        replacer: (_key, value) => (value instanceof Set ? { __set: Array.from(value) } : value),
-        reviver: (_key, value) =>
-          value && typeof value === "object" && Array.isArray(value.__set) ? new Set(value.__set) : value,
-      }),
-    }
-  )
-);

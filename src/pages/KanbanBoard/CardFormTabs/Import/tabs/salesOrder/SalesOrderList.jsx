@@ -16,7 +16,7 @@ import DatePickerField from "../../../shared/components/DatePickerField";
 import PremiumSelect from "../../../../../../components/form/PremiumSelect";
 import useAlertReducer from "../../../../../../store/AlertReducer";
 import useAuthReducer from "../../../../../../store/AuthReducer";
-import { useDaLocalVerifiedItems, useDaLocalDeletedItems } from "../../../../../../shared/store/daStore";
+import { useDaLocalVerifiedItems } from "../../../../../../shared/store/daStore";
 import WorkOrderCreationModal from "./WorkOrderCreationModal";
 import WorkOrderDetailsModal from "./WorkOrderDetailsModal";
 import GeneratePOModal from "./GeneratePOModal";
@@ -466,15 +466,15 @@ const SalesOrderList = ({
   // generic /kanban-board/:boardId route (where a separate "DA" tab is appended instead).
   const isDaVerifyContext = isDAModule || isDaCardContext;
   const callId = card?.call_id ?? card?.callId ?? null;
-  // sales_order/get_so_items_by_call still returns items after da_delete_sales_line_item
-  // soft-deletes them (no status/item_status field to filter on — see useDaLocalDeletedItems
-  // in daStore.js), so exclude anything deleted client-side this session on top of whatever
-  // the API itself sends.
-  const localDeletedItemIds = useDaLocalDeletedItems((s) => s.deletedItemIds[callId]);
-  const markLocalItemDeleted = useDaLocalDeletedItems((s) => s.markItemDeleted);
+  // Deleted items are filtered purely from the API's own status field now — confirmed via
+  // testing that da/da_delete_sales_line_item's response and sales_order/get_so_items_by_call
+  // both reliably send item_status: "Cancelled" for a deleted row, and mapSalesOrderResponse.js
+  // already excludes "cancelled" items on every fetch (see its `items` filter). No client-side
+  // fallback needed for this — see updatedList in handleConfirmDeleteItem below for how the
+  // row disappears immediately on delete regardless.
   const salesOrderList = useMemo(
-    () => (formValues.salesOrderList || []).filter((item) => !localDeletedItemIds?.has(item.id)),
-    [formValues.salesOrderList, localDeletedItemIds]
+    () => formValues.salesOrderList || [],
+    [formValues.salesOrderList]
   );
   const billingEntity = formValues.billingEntity || "";
   const lineItemTotal = formValues.lineItemTotal || 0;
@@ -665,45 +665,76 @@ const SalesOrderList = ({
   }, [isDaVerifyContext, callId, daStatusRefreshToken]);
 
   // The header action button is a simple two-state toggle driven by the per-item Verify
-  // checkbox (see handleToggleVerified) — "Ops completed" and the DA status timeline's "SO
-  // approval" stage right after it. It is NOT a general multi-step advance: re-verifying
-  // further items (or clicking the button again once already at the SO Approval stage)
-  // must not walk any further down the timeline — it only ever shows/targets these two
-  // labels. Matched loosely against the real backend wording since it's seen as both
-  // "To be sent for SO approval" and "Awaiting SO approval".
+  // checkbox (see handleToggleVerified) — the call's real *current* status_timeline step
+  // and whatever step comes right after it in sequence_order. It is NOT a general
+  // multi-step advance: re-verifying further items (or clicking the button again once
+  // already at that next step) must not walk any further down the timeline — it only ever
+  // shows/targets these two steps.
+  //
+  // Deliberately NOT name-matched against "Ops completed" / "SO approval" text (an earlier
+  // version did, via /ops completed/i and /so approval/i) — confirmed 2026-08-25 that
+  // different calls' timelines use entirely different wording for this stage (e.g. one
+  // call's step right after "Ops completed" is "To be sent for SRF", not "SO approval" at
+  // all), so name-matching left the header button permanently hidden — even after
+  // verifying — on every call whose next step isn't literally named "SO approval".
+  // mapStatusTimelineResponse always derives a "current" row even when the backend sends
+  // none, so opsCompletedLabel below is reliably the real current step regardless.
   const { opsCompletedLabel, opsCompletedStatusId, soApprovalLabel, soApprovalStatusId } = useMemo(() => {
     const mapped = mapStatusTimelineResponse(daHeaderStatusTimeline);
-    const opsCompletedStep = mapped.find((step) => /ops completed/i.test(step.label));
-    const soApprovalStep = mapped.find((step) => /so approval/i.test(step.label));
+    const currentIdx = mapped.findIndex((step) => step.state === "current");
+    const currentStep = currentIdx >= 0 ? mapped[currentIdx] : null;
+    const nextStep = currentIdx >= 0 ? mapped[currentIdx + 1] ?? null : null;
     return {
-      opsCompletedLabel: opsCompletedStep?.label ?? null,
-      opsCompletedStatusId: opsCompletedStep?.statusId ?? null,
-      soApprovalLabel: soApprovalStep?.label ?? null,
-      soApprovalStatusId: soApprovalStep?.statusId ?? null,
+      opsCompletedLabel: currentStep?.label ?? null,
+      opsCompletedStatusId: currentStep?.statusId ?? null,
+      soApprovalLabel: nextStep?.label ?? null,
+      soApprovalStatusId: nextStep?.statusId ?? null,
     };
   }, [daHeaderStatusTimeline]);
 
-  // Which of the two the real fetched data currently sits on — "Ops completed" already
-  // marked done means the flow has moved past it into the SO Approval stage.
-  const isPastOpsCompleted = Array.isArray(daHeaderStatusTimeline)
-    && daHeaderStatusTimeline.some((row) => /ops completed/i.test(row?.status_name || "") && row?.state === "done");
-  const realDaActionLabel = isPastOpsCompleted ? soApprovalLabel : opsCompletedLabel;
-  const realDaActionStatusId = isPastOpsCompleted ? soApprovalStatusId : opsCompletedStatusId;
+  // opsCompletedLabel is already sourced from the real timeline's current row (see above),
+  // so it doubles as "where the real fetched data currently sits" — no separate
+  // done/not-done scan needed the way name-matching used to require.
+  const realDaActionLabel = opsCompletedLabel;
+  const realDaActionStatusId = opsCompletedStatusId;
 
-  // Local-only fallback: api/da/update_status appears to only ever mark a status_name's
-  // row "done" — same well-known backend gap as useDaLocalReachedDates elsewhere in DA (it
-  // doesn't reliably persist reached_date or promote the next row to "current" either).
-  // Sending "Ops completed" back to it after it's already done doesn't appear to actually
-  // un-mark it, so realDaActionLabel wouldn't move backward on its own. This remembers the
-  // toggle locally so the header button reflects it immediately regardless of what the
-  // backend call actually does; cleared once the real fetched data itself agrees.
+  // Local override for the header button's label/id, set by handleToggleVerified on every
+  // verify/un-verify. api/da/update_status DOES actually persist the advance (confirmed via
+  // testing — it's a real call, not a simulation), so once the backend timeline refetches,
+  // its "current" row catches up to match this override's value. That's exactly why
+  // visibility can't be driven by comparing labels against the refetched timeline below
+  // (isVerifiedFlowActive) — once the backend agrees, effectiveNextDaStatusLabel would equal
+  // opsCompletedLabel by definition and any such comparison would always hide the button
+  // right when verification actually succeeded.
   const [localDaStatusOverride, setLocalDaStatusOverride] = useState(null);
 
+  // Whether the header button / local SO-approval sub-flow (Send email → client decision →
+  // Invoice Issuance → payment — all client-side simulation, see the block below) should be
+  // showing at all. Deliberately a plain boolean set only by handleToggleVerified (verify →
+  // true, un-verify → false), NOT derived from comparing effectiveNextDaStatusLabel against
+  // the real timeline's current/next labels — those drift out from under any such comparison
+  // the moment the backend's update_status call (which handleToggleVerified also makes)
+  // actually persists, which it does. See localDaStatusOverride's comment above.
+  const [isVerifiedFlowActive, setIsVerifiedFlowActive] = useState(false);
+
+  // isVerifiedFlowActive only ever gets flipped on by handleToggleVerified's own click, so an
+  // item that was ALREADY verified before this component mounted (a fresh page load/card
+  // reopen, or the list simply reloading) never activates it on its own — the checkbox itself
+  // shows correctly ticked (see its checked= condition, order.status === "Verified" /
+  // localVerifiedItemIds), but the header button stayed hidden despite that. Sync it here
+  // instead: once the real timeline's next-step label is known, if any current item is
+  // already verified, activate the flow the same way a fresh verify click would. Guarded by
+  // !isVerifiedFlowActive so this never fights a user's own un-verify afterward.
   useEffect(() => {
-    if (localDaStatusOverride && localDaStatusOverride === realDaActionLabel) {
-      setLocalDaStatusOverride(null);
+    if (!isDaVerifyContext || isVerifiedFlowActive || !soApprovalLabel) return;
+    const hasVerifiedItem = salesOrderList.some(
+      (item) => item.status === "Verified" || localVerifiedItemIds?.has(item.id) === true
+    );
+    if (hasVerifiedItem) {
+      setLocalDaStatusOverride(soApprovalLabel);
+      setIsVerifiedFlowActive(true);
     }
-  }, [realDaActionLabel, localDaStatusOverride]);
+  }, [isDaVerifyContext, isVerifiedFlowActive, soApprovalLabel, salesOrderList, localVerifiedItemIds]);
 
   const effectiveNextDaStatusLabel = localDaStatusOverride ?? realDaActionLabel;
   const effectiveNextDaStatusId = localDaStatusOverride == null
@@ -711,15 +742,18 @@ const SalesOrderList = ({
     : localDaStatusOverride === soApprovalLabel
     ? soApprovalStatusId
     : opsCompletedStatusId;
-  const isSoApprovalDaStatus = effectiveNextDaStatusLabel != null && effectiveNextDaStatusLabel === soApprovalLabel;
+  // The button/sub-flow only ever represents this one specific stage transition (see the
+  // "NOT a general multi-step advance" comment above) — so whenever the flow is active at
+  // all, it IS the SO-approval stage, by definition, regardless of what the real timeline's
+  // labels currently say.
+  const isSoApprovalDaStatus = isVerifiedFlowActive;
 
-  // Backend's exact wording for this stage varies/is inconsistent (seen as both "To be
-  // sent for SO approval" and "Awaiting SO approval"), but the button should always read
-  // "Send for SO Approval" here regardless — the api/da/update_status call underneath
-  // still uses the real backend label (effectiveNextDaStatusLabel), only the button's own
-  // text is overridden. Must stay imperative ("Send", not "Sent") — this is the state
-  // shown before the email has actually gone out (soApprovalEmailSent is still false),
-  // so past tense reads as if it already happened.
+  // The button shows the real status_name for this stage (effectiveNextDaStatusLabel) —
+  // this stage's wording varies per call (seen as "SO approval", "To be sent for SRF", etc.,
+  // see the useMemo above), so a fixed "SO Approval" string would be wrong/misleading on
+  // calls using different wording. "Send for X" here is imperative — this is the state shown
+  // before the email has actually gone out (soApprovalEmailSent is still false), so a past
+  // tense would read as if it already happened.
   //
   // Past that, everything below is local-only staff simulation of the client's response —
   // the backend's status_timeline only has a single "SO approval" row with no field for any
@@ -767,9 +801,9 @@ const SalesOrderList = ({
       : soClientDecision === "approved"
       ? "Invoice Issuance"
       : soApprovalEmailSent
-      ? "Awaiting For SO Approval"
+      ? `Awaiting For ${effectiveNextDaStatusLabel}`
       : isSoApprovalDaStatus
-      ? "Send for SO Approval"
+      ? `Send for ${effectiveNextDaStatusLabel}`
       : effectiveNextDaStatusLabel
       ? `Mark ${effectiveNextDaStatusLabel}`
       : effectiveNextDaStatusLabel;
@@ -784,8 +818,9 @@ const SalesOrderList = ({
 
   // Invoice Issuance modal — opened once staff records the client's approval. Reuses the
   // existing UploadInvoiceModal (components/UploadInvoiceModal.jsx), same component the
-  // Vendor/Transport/Hotel portals already use for invoice upload. Local-only for now —
-  // same "no backend endpoint yet" situation as the rest of this stage.
+  // Vendor/Transport/Hotel portals already use for invoice upload. The upload itself persists
+  // via da/da_upload_invoice (see handleUploadInvoiceIssuance) — the client-decision states
+  // that follow it are still local-only simulation, same as the rest of this stage.
   const [showInvoiceIssuanceModal, setShowInvoiceIssuanceModal] = useState(false);
 
   const handleAdvanceDaStatusFromHeader = () => {
@@ -804,7 +839,7 @@ const SalesOrderList = ({
     }
     if (!onAdvanceDaStage || isAdvancingDaStage) return;
     setLocalDaStatusOverride(soApprovalLabel);
-    onAdvanceDaStage({ statusId: effectiveNextDaStatusId, label: effectiveNextDaStatusLabel });
+    onAdvanceDaStage({ statusId: effectiveNextDaStatusId, label: effectiveNextDaStatusLabel, skipCardMove: true });
   };
 
   // api/da/da_send_action_email — { call_id, to, subject, body, stage_document_id? } →
@@ -863,9 +898,24 @@ const SalesOrderList = ({
     setShowInvoiceIssuanceModal(false);
   };
 
-  // Local-only — no backend endpoint yet for this step (see comment block above). Marks the
-  // invoice as dispatched to the client once the upload completes.
-  const handleUploadInvoiceIssuance = async () => {
+  // Persists via da/da_upload_invoice (call_id + invoice file(s), multipart/form-data) →
+  // { status: "success", stage_document_id }. Marks the invoice as dispatched to the client
+  // once the upload completes — soClientDecision/invoiceClientDecision/paymentClientDecision
+  // that follow are still local-only simulation (see comment block above), only this upload
+  // step itself has a real backend endpoint so far.
+  const handleUploadInvoiceIssuance = async (files) => {
+    if (!callId) {
+      useAlertReducer.getState().error("No call identifier available for this card.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("call_id", callId);
+    (files || []).forEach((file) => formData.append("invoice", file));
+
+    const { data } = await daService.uploadInvoice(formData);
+    if (data?.status !== "success") {
+      throw new Error(data?.message || "Failed to upload the invoice.");
+    }
     setInvoiceDispatched(true);
   };
 
@@ -1171,15 +1221,19 @@ const SalesOrderList = ({
       // Fixed two-way toggle — always targets these same two labels, regardless of how many
       // items get verified/un-verified or in what order. The local override is set
       // unconditionally (not gated on isAdvancingDaStage or the backend call's outcome) so
-      // the button reflects the toggle immediately every time.
+      // the button reflects the toggle immediately every time. isVerifiedFlowActive is the
+      // actual visibility switch (see its declaration above) — set/cleared here alongside
+      // the override, never derived from the real timeline's labels.
       if (isNowVerified) {
         if (soApprovalLabel) {
           setLocalDaStatusOverride(soApprovalLabel);
-          onAdvanceDaStage?.({ statusId: soApprovalStatusId, label: soApprovalLabel });
+          setIsVerifiedFlowActive(true);
+          onAdvanceDaStage?.({ statusId: soApprovalStatusId, label: soApprovalLabel, skipCardMove: true });
         }
       } else if (opsCompletedLabel) {
         setLocalDaStatusOverride(opsCompletedLabel);
-        onAdvanceDaStage?.({ statusId: opsCompletedStatusId, label: opsCompletedLabel });
+        setIsVerifiedFlowActive(false);
+        onAdvanceDaStage?.({ statusId: opsCompletedStatusId, label: opsCompletedLabel, skipCardMove: true });
       }
     } catch (err) {
       const msg =
@@ -1233,7 +1287,6 @@ const SalesOrderList = ({
         return next;
       });
       setLocalItemVerified(callId, deletingItem.id, false);
-      markLocalItemDeleted(callId, deletingItem.id);
       setShowDeleteItemModal(false);
       setDeletingItem(null);
     } catch (err) {
@@ -2054,7 +2107,7 @@ const SalesOrderList = ({
             onPageChange={setCurrentPage}
             compact
           />
-          {isDaVerifyContext && effectiveNextDaStatusLabel && effectiveNextDaStatusLabel !== opsCompletedLabel && (
+          {isDaVerifyContext && isVerifiedFlowActive && effectiveNextDaStatusLabel && (
             soApprovalEmailSent && !soClientDecision ? (
               <div className="sales-order-da-status-group">
                 <span className="sales-order-da-status-button sales-order-da-status-button--label">
@@ -2135,7 +2188,7 @@ const SalesOrderList = ({
                     : soClientDecision === "approved"
                     ? "Open Invoice Issuance upload"
                     : isSoApprovalDaStatus
-                    ? "Open SO Approval email"
+                    ? `Open "${effectiveNextDaStatusLabel}" email`
                     : `Move to "${effectiveNextDaStatusLabel}"`
                 }
                 onClick={handleAdvanceDaStatusFromHeader}

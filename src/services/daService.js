@@ -24,6 +24,11 @@ const deleteSalesLineItem = (payload) => Gateway.post('/da/da_delete_sales_line_
 const verifySalesLineItem = (payload) => Gateway.post('/da/da_verify_sales_line_item', payload);
 /** @param {{ call_id: string|number, to: string, subject: string, body: string, stage_document_id?: string|number }} payload */
 const sendActionEmail = (payload) => Gateway.post('/da/da_send_action_email', payload);
+/** @param {FormData} formData - call_id + invoice file(s), multipart/form-data */
+const uploadInvoice = (formData) =>
+  Gateway.post('/da/da_upload_invoice', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 
 export default {
   getDaDetails,
@@ -41,4 +46,5 @@ export default {
   deleteSalesLineItem,
   verifySalesLineItem,
   sendActionEmail,
+  uploadInvoice,
 };
