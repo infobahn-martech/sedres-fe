@@ -16,6 +16,7 @@ import DatePickerField from "../../../shared/components/DatePickerField";
 import PremiumSelect from "../../../../../../components/form/PremiumSelect";
 import useAlertReducer from "../../../../../../store/AlertReducer";
 import useAuthReducer from "../../../../../../store/AuthReducer";
+import { useDaLocalVerifiedItems } from "../../../../../../shared/store/daStore";
 import WorkOrderCreationModal from "./WorkOrderCreationModal";
 import WorkOrderDetailsModal from "./WorkOrderDetailsModal";
 import GeneratePOModal from "./GeneratePOModal";
@@ -532,8 +533,15 @@ const SalesOrderList = ({
   // has a PO can still be selected for Work Order, and vice versa.
   const [selectedPoItems, setSelectedPoItems] = useState(new Set());
   const [selectedWoItems, setSelectedWoItems] = useState(new Set());
-  // Local-only for now — no backend field/endpoint yet to persist per-item verification (DA-only column).
-  const [verifiedItems, setVerifiedItems] = useState(new Set());
+  // Per-item verification (DA-only column) — persisted via da/da_verify_sales_line_item.
+  // The list reload endpoint (sales_order/get_so_items_by_call) has no status/item_status
+  // field on its items yet (confirmed via testing), so the mapped `status` field alone
+  // doesn't survive a page reload; useDaLocalVerifiedItems (daStore.js) is the same
+  // in-memory-only fallback pattern used elsewhere in DA until the backend adds the field.
+  // verifyingItemIds just tracks which item currently has a verify request in flight.
+  const [verifyingItemIds, setVerifyingItemIds] = useState(new Set());
+  const localVerifiedItemIds = useDaLocalVerifiedItems((s) => s.verifiedItemIds[callId]);
+  const setLocalItemVerified = useDaLocalVerifiedItems((s) => s.setItemVerified);
   const [showWorkOrderModal, setShowWorkOrderModal] = useState(false);
   const [isGeneratingWorkOrder, setIsGeneratingWorkOrder] = useState(false);
   const bulkActionBarRef = useRef(null);
@@ -1045,37 +1053,60 @@ const SalesOrderList = ({
   };
 
   // Verifying a line item is the trigger that moves the whole DA/SO record into the
-  // approval flow — ticking the checkbox advances the real DA status to its next stage
-  // (e.g. Ops completed → Sent for SO Approval), same api/da/update_status call the header
-  // action button makes, so the header button's label updates to reflect it. Un-ticking it
-  // again reverts one stage back the same way (sends the last-done step's own label — same
+  // approval flow — ticking the checkbox calls da/da_verify_sales_line_item, which toggles
+  // the item's own status ("Verified" <-> its normal status, e.g. "Completed") and returns
+  // the new value. On success this also advances the real DA status to its next stage (e.g.
+  // Ops completed → Sent for SO Approval), same api/da/update_status call the header action
+  // button makes, so the header button's label updates to reflect it. Un-ticking it again
+  // reverts one stage back the same way (sends the last-done step's own label — same
   // mechanism DA.jsx's own Status Timeline uses for its "done" step revert). No modal/email
   // popup here either way — that's still only triggered by the header button's own click
   // (see isSoApprovalDaStatus).
-  const handleToggleVerified = (orderId) => {
-    const isBeingVerified = !verifiedItems.has(orderId);
-    setVerifiedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(orderId)) {
-        next.delete(orderId);
-      } else {
-        next.add(orderId);
-      }
-      return next;
-    });
+  const handleToggleVerified = async (order) => {
+    const orderId = order.id;
+    if (verifyingItemIds.has(orderId)) return;
 
-    // Fixed two-way toggle — always targets these same two labels, regardless of how many
-    // items get verified/un-verified or in what order. The local override is set
-    // unconditionally (not gated on isAdvancingDaStage or the backend call's outcome) so
-    // the button reflects the toggle immediately every time.
-    if (isBeingVerified) {
-      if (soApprovalLabel) {
-        setLocalDaStatusOverride(soApprovalLabel);
-        onAdvanceDaStage?.({ statusId: soApprovalStatusId, label: soApprovalLabel });
+    setVerifyingItemIds((prev) => new Set(prev).add(orderId));
+    try {
+      const response = await daService.verifySalesLineItem({ so_item_id: orderId });
+      const body = response?.data;
+      if (body?.status !== "success") {
+        throw new Error(body?.message || "Failed to update the item's verification status.");
       }
-    } else if (opsCompletedLabel) {
-      setLocalDaStatusOverride(opsCompletedLabel);
-      onAdvanceDaStage?.({ statusId: opsCompletedStatusId, label: opsCompletedLabel });
+      const newItemStatus = body.item_status || "";
+      const isNowVerified = newItemStatus === "Verified";
+      const updatedList = salesOrderList.map((item) =>
+        item.id === orderId ? { ...item, status: newItemStatus } : item
+      );
+      handleChange("salesOrderList")({ target: { value: updatedList } });
+      setLocalItemVerified(callId, orderId, isNowVerified);
+
+      // Fixed two-way toggle — always targets these same two labels, regardless of how many
+      // items get verified/un-verified or in what order. The local override is set
+      // unconditionally (not gated on isAdvancingDaStage or the backend call's outcome) so
+      // the button reflects the toggle immediately every time.
+      if (isNowVerified) {
+        if (soApprovalLabel) {
+          setLocalDaStatusOverride(soApprovalLabel);
+          onAdvanceDaStage?.({ statusId: soApprovalStatusId, label: soApprovalLabel });
+        }
+      } else if (opsCompletedLabel) {
+        setLocalDaStatusOverride(opsCompletedLabel);
+        onAdvanceDaStage?.({ statusId: opsCompletedStatusId, label: opsCompletedLabel });
+      }
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to update the item's verification status.";
+      useAlertReducer.getState().error(msg);
+    } finally {
+      setVerifyingItemIds((prev) => {
+        const next = new Set(prev);
+        next.delete(orderId);
+        return next;
+      });
     }
   };
 
@@ -1109,11 +1140,12 @@ const SalesOrderList = ({
         next.delete(deletingItem.id);
         return next;
       });
-      setVerifiedItems((prev) => {
+      setVerifyingItemIds((prev) => {
         const next = new Set(prev);
         next.delete(deletingItem.id);
         return next;
       });
+      setLocalItemVerified(callId, deletingItem.id, false);
       setShowDeleteItemModal(false);
       setDeletingItem(null);
     } catch (err) {
@@ -1866,16 +1898,17 @@ const SalesOrderList = ({
         </div>
       </td>
 
-      {/* Action — DA-only: Verify checkbox (local state until a backend field exists to
-          persist it) + Delete (no backend endpoint yet, removes the item locally) */}
+      {/* Action — DA-only: Verify checkbox (persisted via da/da_verify_sales_line_item) +
+          Delete (no backend endpoint yet, removes the item locally) */}
       {isDaVerifyContext && (
         <td>
           <div className="sales-order-table-cell sales-order-action-cell">
             <input
               type="checkbox"
               className="sales-order-verify-checkbox"
-              checked={verifiedItems.has(order.id)}
-              onChange={() => handleToggleVerified(order.id)}
+              checked={order.status === "Verified" || localVerifiedItemIds?.has(order.id) === true}
+              onChange={() => handleToggleVerified(order)}
+              disabled={verifyingItemIds.has(order.id)}
               aria-label="Verify line item"
             />
             {!readOnly && (
