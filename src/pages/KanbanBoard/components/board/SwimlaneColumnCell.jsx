@@ -23,8 +23,6 @@ export default function SwimlaneColumnCell({
   onContextMenu,
   columnHeight,
   onHeightChange,
-  isClassicLayout = false,
-  isModernLayout = false,
   isDarkMode = false,
   layoutView = null,
 }) {
@@ -101,9 +99,7 @@ export default function SwimlaneColumnCell({
     return (
       <div
         ref={cellRef}
-        className={`column column--swimlane-cell column-collapsed ${
-          isClassicLayout ? "column-classic" : ""
-        } ${isModernLayout ? "column-modern" : ""} ${isDarkMode ? "column-dark" : ""}`}
+        className={`column column--swimlane-cell column-collapsed ${isDarkMode ? "column-dark" : ""}`}
         onContextMenu={handleContextMenu}
         style={{
           ...(columnHeight ? { minHeight: `${columnHeight}px` } : {}),
@@ -118,9 +114,7 @@ export default function SwimlaneColumnCell({
   return (
     <div
       ref={cellRef}
-      className={`column column--swimlane-cell ${isClassicLayout ? "column-classic" : ""} ${
-        isModernLayout ? "column-modern" : ""
-      } ${isDarkMode ? "column-dark" : ""}`}
+      className={`column column--swimlane-cell ${isDarkMode ? "column-dark" : ""}`}
       onContextMenu={handleContextMenu}
       style={{
         ...(columnHeight ? { minHeight: `${columnHeight}px` } : {}),
@@ -170,8 +164,6 @@ export default function SwimlaneColumnCell({
                   index={index}
                   setSelectedCard={setSelectedCard}
                   cardsById={cardsById}
-                  isClassicLayout={isClassicLayout}
-                  isModernLayout={isModernLayout}
                   columnTitle={column.title}
                   fixedDimensions={{ width: cardWidth }}
                 />
@@ -201,8 +193,6 @@ SwimlaneColumnCell.propTypes = {
   onContextMenu: PropTypes.func,
   columnHeight: PropTypes.number,
   onHeightChange: PropTypes.func,
-  isClassicLayout: PropTypes.bool,
-  isModernLayout: PropTypes.bool,
   isDarkMode: PropTypes.bool,
   layoutView: PropTypes.string,
 };

@@ -10,7 +10,7 @@ import usePermissions from "../../../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES } from "../../../../shared/constants/permissions";
 import "../../../../design/scss/pages/kanban-board/column.scss";
 
-function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk = false, onHeaderClick, onContextMenu, columnHeight, onHeightChange, isClassicLayout = false, isModernLayout = false, isDarkMode = false }) {
+function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk = false, onHeaderClick, onContextMenu, columnHeight, onHeightChange, isDarkMode = false }) {
   const columnRef = useRef(null);
   const lastReportedHeightRef = useRef(null);
   const columnColor = column.color || "#2A00FF";
@@ -93,12 +93,12 @@ function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk =
   return (
     <div
       ref={columnRef}
-      className={`column ${isExpanded ? 'column-expanded' : ''} ${isShrunk ? 'column-shrunk' : ''} ${isClassicLayout ? 'column-classic' : ''} ${isModernLayout ? 'column-modern' : ''} ${isDarkMode ? 'column-dark' : ''}`}
+      className={`column ${isExpanded ? 'column-expanded' : ''} ${isShrunk ? 'column-shrunk' : ''} ${isDarkMode ? 'column-dark' : ''}`}
       onContextMenu={handleContextMenu}
       style={columnHeight ? { minHeight: `${columnHeight}px` } : {}}
     >
       <div
-        className={`column-header ${isClassicLayout ? 'column-header-classic' : ''} ${isModernLayout ? 'column-header-modern' : ''} ${isDarkMode ? 'column-header-dark' : ''}`}
+        className={`column-header ${isDarkMode ? 'column-header-dark' : ''}`}
         style={{ "--column-color": columnColor }}
         onClick={onHeaderClick}
       >
@@ -115,18 +115,10 @@ function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk =
               <Tooltip id={tooltipId} place="top" />
             </>
           ) : (
-            <h2 className="column-title">
-              {isClassicLayout && wipLimit ? (
-                <>
-                  {column.title} <span className="column-wip-badge">({wipDisplay})</span>
-                </>
-              ) : (
-                displayTitle
-              )}
-            </h2>
+            <h2 className="column-title">{displayTitle}</h2>
           )}
         </div>
-        {!isShrunk && !isClassicLayout && <span className="column-count">{wipDisplay}</span>}
+        {!isShrunk && <span className="column-count">{wipDisplay}</span>}
       </div>
 
       <Droppable droppableId={column.id}>
@@ -158,8 +150,6 @@ function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk =
                   index={index}
                   setSelectedCard={setSelectedCard}
                   isShrunk={isShrunk}
-                  isClassicLayout={isClassicLayout}
-                  isModernLayout={isModernLayout}
                   columnTitle={column.title}
                 />
               )
@@ -187,8 +177,6 @@ Column.propTypes = {
   onContextMenu: PropTypes.func,
   columnHeight: PropTypes.number,
   onHeightChange: PropTypes.func,
-  isClassicLayout: PropTypes.bool,
-  isModernLayout: PropTypes.bool,
   isDarkMode: PropTypes.bool,
 };
 

@@ -1040,33 +1040,6 @@ body.app-dark-mode {
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: none;
 
-    .left-section .top-links .layout-view-label {
-      color: var(--text-muted);
-    }
-
-    .layout-view-switch {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 10px;
-      padding: 4px;
-    }
-
-    .layout-view-option {
-      color: var(--text-muted);
-      border-radius: 8px;
-      font-weight: 500;
-
-      &:hover {
-        color: #fafafa;
-        background: rgba(255, 255, 255, 0.06);
-      }
-
-      &.active {
-        background: rgba(255, 255, 255, 0.1);
-        color: #fafafa;
-        box-shadow: none;
-      }
-    }
-
     .right-section {
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.06);

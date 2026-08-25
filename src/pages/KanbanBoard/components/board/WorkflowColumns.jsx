@@ -29,8 +29,6 @@ export default function WorkflowColumns({
   onColumnHeaderClick,
   onContextMenu,
   onHeightChange,
-  isClassicLayout,
-  isModernLayout,
   isDarkMode,
   layoutView,
 }) {
@@ -75,8 +73,7 @@ export default function WorkflowColumns({
 
   return (
     <div
-      className={`kanban-container kanban-container--board-hscroll ${isClassicLayout ? "kanban-classic-layout" : ""} ${isModernLayout ? "kanban-modern-layout" : ""
-        } ${layoutView === "normal" ? "kanban-normal-layout" : ""}`}
+      className={`kanban-container kanban-container--board-hscroll ${layoutView === "normal" ? "kanban-normal-layout" : ""}`}
       key={layoutView}
     >
       <DragDropContext onDragEnd={KANBAN_DND_DISABLED ? () => {} : onDragEnd}>
@@ -117,8 +114,6 @@ export default function WorkflowColumns({
                     onHeaderClick={
                       isGrouped ? undefined : () => onColumnHeaderClick(workflow.id, firstColumn.id)
                     }
-                    isClassicLayout={isClassicLayout}
-                    isModernLayout={isModernLayout}
                     isDarkMode={isDarkMode}
                   />
                   {isGrouped && (
@@ -146,8 +141,6 @@ export default function WorkflowColumns({
                             wipDisplay={String(countCardsInColumn(workflow, colKey))}
                             isCollapsed={childIsCollapsed}
                             onHeaderClick={() => onColumnHeaderClick(workflow.id, child.id)}
-                            isClassicLayout={isClassicLayout}
-                            isModernLayout={isModernLayout}
                             isDarkMode={isDarkMode}
                           />
                         );
@@ -213,8 +206,6 @@ export default function WorkflowColumns({
                         onContextMenu={onContextMenu}
                         columnHeight={maxHeight}
                         onHeightChange={onHeightChange}
-                        isClassicLayout={isClassicLayout}
-                        isModernLayout={isModernLayout}
                         isDarkMode={isDarkMode}
                         layoutView={layoutView}
                       />

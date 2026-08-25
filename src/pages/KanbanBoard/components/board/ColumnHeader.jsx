@@ -10,8 +10,6 @@ export default function ColumnHeader({
   wipDisplay,
   isCollapsed = false,
   onHeaderClick,
-  isClassicLayout = false,
-  isModernLayout = false,
   isDarkMode = false,
 }) {
   const columnColor = column.color || "#2A00FF";
@@ -35,24 +33,14 @@ export default function ColumnHeader({
 
   return (
     <div
-      className={`column-header ${isClassicLayout ? "column-header-classic" : ""} ${
-        isModernLayout ? "column-header-modern" : ""
-      } ${isDarkMode ? "column-header-dark" : ""}`}
+      className={`column-header ${isDarkMode ? "column-header-dark" : ""}`}
       style={{ "--column-color": columnColor }}
       onClick={onHeaderClick}
     >
       <div className="column-left">
-        <h2 className="column-title">
-          {isClassicLayout && column.wipLimit ? (
-            <>
-              {column.title} <span className="column-wip-badge">({wipDisplay})</span>
-            </>
-          ) : (
-            column.title
-          )}
-        </h2>
+        <h2 className="column-title">{column.title}</h2>
       </div>
-      {!isClassicLayout && <span className="column-count">{wipDisplay}</span>}
+      <span className="column-count">{wipDisplay}</span>
     </div>
   );
 }
@@ -67,7 +55,5 @@ ColumnHeader.propTypes = {
   wipDisplay: PropTypes.string.isRequired,
   isCollapsed: PropTypes.bool,
   onHeaderClick: PropTypes.func,
-  isClassicLayout: PropTypes.bool,
-  isModernLayout: PropTypes.bool,
   isDarkMode: PropTypes.bool,
 };

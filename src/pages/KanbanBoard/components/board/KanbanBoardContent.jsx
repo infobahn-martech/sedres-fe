@@ -16,8 +16,6 @@ export default function KanbanBoardContent({
   onHeightChange,
   onToggleWorkflow,
   onAccordionMenuClick,
-  isClassicLayout,
-  isModernLayout,
   isDarkMode,
   layoutView,
 }) {
@@ -55,8 +53,6 @@ export default function KanbanBoardContent({
         onColumnHeaderClick={onColumnHeaderClick}
         onContextMenu={onContextMenu}
         onHeightChange={onHeightChange}
-        isClassicLayout={isClassicLayout}
-        isModernLayout={isModernLayout}
         isDarkMode={isDarkMode}
         layoutView={layoutView}
       />

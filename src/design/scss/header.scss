@@ -102,68 +102,6 @@
         display: none; // Hide on mobile, can be shown in mobile menu if needed
       }
 
-      .layout-view-toggle {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .layout-view-label {
-        font-family: "Manrope", sans-serif;
-        font-size: 14px;
-        color: var(--text-secondary);
-        white-space: nowrap;
-      }
-
-      .layout-view-switch {
-        display: flex;
-        background: rgba(255, 255, 255, 0.12);
-        border-radius: 8px;
-        padding: 4px;
-        gap: 2px;
-      }
-
-      .layout-view-option {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
-        border: none;
-        border-radius: 6px;
-        font-family: "Manrope", sans-serif;
-        font-size: 13px;
-        font-weight: 500;
-        color: rgba(255, 255, 255, 0.8);
-        background: transparent;
-        cursor: pointer;
-        transition: all 0.2s ease;
-
-        .layout-view-icon {
-          width: 14px;
-          height: 14px;
-          opacity: 0.85;
-        }
-
-        &:hover {
-          color: #ffffff;
-          background: rgba(255, 255, 255, 0.12);
-
-          .layout-view-icon {
-            opacity: 1;
-          }
-        }
-
-        &.active {
-          background: var(--surface-primary);
-          color: var(--color-primary-accent);
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-
-          .layout-view-icon {
-            opacity: 1;
-          }
-        }
-      }
-
       .top-link {
         font-family: "Manrope", sans-serif;
         font-size: 15px;

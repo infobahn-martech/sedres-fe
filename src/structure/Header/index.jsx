@@ -7,9 +7,6 @@ import {
   FiBell,
   FiLayout,
   FiGrid,
-  FiMenu,
-  FiSquare,
-  FiLayers,
   FiMoon,
   FiSun,
   FiBarChart2,
@@ -47,7 +44,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const { layoutView, setLayoutView } = useLayoutView();
+  const { layoutView } = useLayoutView();
   const { isDark, toggleTheme } = useThemeStore();
   const [notificationCount, setNotificationCount] = useState(3); // Default count, can be updated with real data
   const dropdownRef = useRef(null);
@@ -218,53 +215,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           onClick={() => navigate('/workspaces')}
           style={{ cursor: 'pointer' }}
         />
-
-        {!restrictedBoardUser && (pathname === '/kanban-board/operator' || pathname === '/compact') && (
-          <div className="top-links">
-            <div className="layout-view-toggle">
-              {/* <span className="layout-view-label">Layout View:</span> */}
-              <div className="layout-view-switch">
-                <NavTabButton
-                  className="layout-view-option"
-                  active={layoutView === 'classic'}
-                  onClick={() => { setLayoutView('classic'); pathname === '/compact' && navigate('/kanban-board/operator'); }}
-                  aria-pressed={layoutView === 'classic'}
-                >
-                  <FiMenu className="layout-view-icon" aria-hidden />
-                  Classic
-                </NavTabButton>
-                <NavTabButton
-                  className="layout-view-option"
-                  active={layoutView === 'modern'}
-                  onClick={() => { setLayoutView('modern'); pathname === '/compact' && navigate('/kanban-board/operator'); }}
-                  aria-pressed={layoutView === 'modern'}
-                >
-                  <FiGrid className="layout-view-icon" aria-hidden />
-                  Modern
-                </NavTabButton>
-                <NavTabButton
-                  className="layout-view-option"
-                  active={layoutView === 'normal'}
-                  onClick={() => { setLayoutView('normal'); pathname === '/compact' && navigate('/kanban-board/operator'); }}
-                  aria-pressed={layoutView === 'normal'}
-                >
-                  <FiSquare className="layout-view-icon" aria-hidden />
-                  Normal
-                </NavTabButton>
-                {/* <button
-                  type="button"
-                  className={`layout-view-option ${pathname === '/compact' ? 'active' : ''}`}
-                  onClick={() => navigate('/compact')}
-                  aria-pressed={pathname === '/compact'}
-                >
-                  <FiLayers className="layout-view-icon" aria-hidden />
-                  Compact
-                </button> */}
-              </div>
-            </div>
-          </div>
-        )}
-
 
       </div>
 

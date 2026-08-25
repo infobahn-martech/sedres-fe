@@ -39,8 +39,6 @@ export default function KanbanBoardPage() {
   const userProfile = useAuthReducer((state) => state.userProfile);
   const userRoleId = getFirstUserRoleId(userProfile);
   const { layoutView, setPageBackground } = useLayoutView();
-  const isClassicLayout = layoutView === "classic";
-  const isModernLayout = layoutView === "modern";
   const { isDark: isDarkMode } = useThemeStore();
 
   const {
@@ -339,8 +337,6 @@ export default function KanbanBoardPage() {
           onHeightChange={handleWorkflowColumnHeightChange}
           onToggleWorkflow={handleToggleWorkflow}
           onAccordionMenuClick={handleAccordionMenuClick}
-          isClassicLayout={isClassicLayout}
-          isModernLayout={isModernLayout}
           isDarkMode={isDarkMode}
           layoutView={layoutView}
         />

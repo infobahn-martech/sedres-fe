@@ -9,7 +9,7 @@ import saudimarcapLogo from "../../../../../../assets/images/saudimarcap.png";
 import saipemLogo from "../../../../../../assets/images/saipem.png";
 import lamprellLogo from "../../../../../../assets/images/lamprell.png";
 import gulfmarineLogo from "../../../../../../assets/images/gulfmarine.png";
-import { FiFileText, FiDownload, FiLoader, FiMoreHorizontal, FiTrendingUp } from "react-icons/fi";
+import { FiFileText, FiDownload, FiLoader, FiTrendingUp } from "react-icons/fi";
 import { resolveIconComponentStrict } from "../../../../../../structure/SideNav/components/DynamicIcon";
 import {
   hasText,
@@ -473,8 +473,6 @@ function ApiKanbanCardFull({
   card,
   setSelectedCard,
   cardsById,
-  isModernLayout,
-  isClassicLayout,
 }) {
   const displayTitle = getApiCardDisplayTitle(card);
   const secondary = hasText(card.billingEntity)
@@ -489,46 +487,20 @@ function ApiKanbanCardFull({
   const hasProgress = isValidProgress(card.progress);
   const showSummaryRow = hasTimeline || hasProgress;
 
-  const showHeaderRow = isModernLayout || showLogo || hasTypeIcon;
+  const showHeaderRow = showLogo || hasTypeIcon;
 
   return (
     <>
       {showHeaderRow && (
-        <div
-          className={`card-api-header ${isModernLayout ? "card-api-header--modern" : ""}`}
-        >
+        <div className="card-api-header">
           {hasTypeIcon && <ApiCardTypeIcon card={card} inline />}
-          {isModernLayout ? (
-            <>
-              {showLogo && (
-                <img
-                  src={card.entityLogo}
-                  alt=""
-                  className="card-api-logo"
-                  loading="lazy"
-                />
-              )}
-              <button
-                type="button"
-                className="card-action-menu-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedCard(card);
-                }}
-                aria-label="Actions"
-              >
-                <FiMoreHorizontal size={18} />
-              </button>
-            </>
-          ) : (
-            showLogo && (
-              <img
-                src={card.entityLogo}
-                alt=""
-                className="card-api-logo"
-                loading="lazy"
-              />
-            )
+          {showLogo && (
+            <img
+              src={card.entityLogo}
+              alt=""
+              className="card-api-logo"
+              loading="lazy"
+            />
           )}
         </div>
       )}
@@ -538,7 +510,7 @@ function ApiKanbanCardFull({
       <div className="card-title-row card-title-row--api">
         <div className="card-api-title-row">
           <h3
-            className={`card-title card-title--api card-api-title-text ${isModernLayout ? "card-title-modern" : ""}`}
+            className="card-title card-title--api card-api-title-text"
             onClick={() => setSelectedCard(card)}
             title={displayTitle || undefined}
           >
@@ -577,14 +549,6 @@ function ApiKanbanCardFull({
           </div>
         </div>
       ) : null}
-
-      {isClassicLayout && hasText(card.port) && (
-        <div className="card-mini-tags card-mini-tags--api">
-          <span className="card-mini-tag card-mini-tag-port" title="Port">
-            {card.port}
-          </span>
-        </div>
-      )}
     </>
   );
 }
@@ -596,8 +560,6 @@ function CardItem({
   cardsById,
   isShrunk = false,
   hideExtraDetails = false,
-  isClassicLayout = false,
-  isModernLayout = false,
   isDarkMode = false,
   columnTitle = "",
   fixedDimensions = null,
@@ -654,7 +616,7 @@ function CardItem({
     <Draggable draggableId={card.id} index={index} isDragDisabled={KANBAN_DND_DISABLED}>
       {(provided, snapshot) => (
         <div
-          className={`kanban-card ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isClassicLayout ? "kanban-card-classic" : ""} ${isModernLayout ? "kanban-card-modern" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""}`}
+          className={`kanban-card ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""}`}
           ref={provided.innerRef}
           {...(KANBAN_DND_DISABLED ? {} : provided.draggableProps)}
           {...(KANBAN_DND_DISABLED ? {} : provided.dragHandleProps)}
@@ -672,8 +634,6 @@ function CardItem({
                 card={card}
                 setSelectedCard={setSelectedCard}
                 cardsById={cardsById}
-                isModernLayout={isModernLayout}
-                isClassicLayout={isClassicLayout}
               />
             )
           ) : isShrunk ? (
@@ -712,17 +672,15 @@ function CardItem({
             <>
               {/* Header */}
               <div className="card-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-                {!isModernLayout && (
-                  <div
-                    className="card-header-icon"
-                    style={{ backgroundColor: cardColor }}
-                  >
-                    {card.iconType === "inprogress" && <FiLoader size={14} color="white" />}
-                    {card.iconType === "download" && <FiDownload size={14} color="white" />}
-                    {card.iconType === "document" && <FiFileText size={14} color="white" />}
-                  </div>
-                )}
-                {!isModernLayout && card.name && (() => {
+                <div
+                  className="card-header-icon"
+                  style={{ backgroundColor: cardColor }}
+                >
+                  {card.iconType === "inprogress" && <FiLoader size={14} color="white" />}
+                  {card.iconType === "download" && <FiDownload size={14} color="white" />}
+                  {card.iconType === "document" && <FiFileText size={14} color="white" />}
+                </div>
+                {card.name && (() => {
                   const tooltipId = `card-name-${card.id}`;
                   const companyIcon = getCompanyIcon(card.id, card.name, card.entityLogo);
 
@@ -758,48 +716,18 @@ function CardItem({
                     </>
                   );
                 })()}
-                {isModernLayout && (
-                  <button
-                    type="button"
-                    className="card-action-menu-btn"
-                    onClick={(e) => { e.stopPropagation(); setSelectedCard(card); }}
-                    aria-label="Actions"
-                  >
-                    <FiMoreHorizontal size={18} />
-                  </button>
-                )}
               </div>
 
               {/* Title */}
               <div className="card-title-row" style={{ position: "relative" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <h3
-                    className={`card-title ${isModernLayout ? "card-title-modern" : ""}`}
+                    className="card-title"
                     style={{ cursor: "pointer" }}
                     onClick={() => setSelectedCard(card)}
                   >
                     {card.vesselName || card.cardName || card.title}
                   </h3>
-                  {isClassicLayout && (
-                    <div className="card-mini-tags">
-                      {card.port && (
-                        <span className="card-mini-tag card-mini-tag-port" title="Port">{card.port}</span>
-                      )}
-                      {(card.priorityLevel || card.priority) && (
-                        <span
-                          className={`card-mini-tag card-mini-tag-priority ${String(card.priorityLevel || (card.priority ? 'H' : 'M')).toLowerCase() === 'l' ? 'low' :
-                            String(card.priorityLevel || '').toLowerCase() === 'm' ? 'medium' : ''
-                            }`}
-                          title="Priority"
-                        >
-                          {card.priorityLevel || (card.priority ? 'H' : 'M')}
-                        </span>
-                      )}
-                      {card.name && (
-                        <span className="card-mini-tag card-mini-tag-client" title="Client">{card.name.charAt(0)}</span>
-                      )}
-                    </div>
-                  )}
                 </div>
                 {card.user && (
                   <div
@@ -810,8 +738,8 @@ function CardItem({
                 )}
               </div>
 
-              {/* Footer-1: deadline, link; ETA only in Enroute column – hidden in Modern or when hideExtraDetails (e.g. GRO); at least one icon always shown */}
-              {!isModernLayout && !hideExtraDetails && (() => {
+              {/* Footer-1: deadline, link; ETA only in Enroute column – hidden when hideExtraDetails (e.g. GRO); at least one icon always shown */}
+              {!hideExtraDetails && (() => {
                 const hasDeadline = card.footerShowIcons?.includes("deadline");
                 const hasLink = card.footerShowIcons?.includes("link");
                 const isEnroute = (columnTitle || "").toLowerCase() === "enroute";
@@ -862,50 +790,35 @@ function CardItem({
               )}
 
               {/* Footer: time left + progress */}
-              <div className={`card-footer ${isModernLayout ? "card-footer-modern" : ""}`}>
+              <div className="card-footer">
                 <span className="card-time-left">{card?.timeLeft}</span>
-                {isModernLayout ? (
-                  <div className="footer-progress-horizontal">
-                    <div className="progress-bar-horizontal">
-                      <div
-                        className="progress-fill-horizontal"
+                <div className="footer-progress">
+                  <div className="circular-progress">
+                    <svg className="progress-svg">
+                      <circle className="bg" cx="13" cy="13" r="11.5" />
+                      <circle
+                        className="progress"
+                        cx="13"
+                        cy="13"
+                        r="11.5"
                         style={{
-                          width: `${card.progress || 0}%`,
-                          backgroundColor: "var(--card-color, #0d9488)",
+                          stroke: "#0d9488",
+                          strokeDashoffset: `calc(72 - (72 * ${card.progress || 0}) / 100)`,
                         }}
                       />
-                    </div>
-                    <span className="progress-text-horizontal">{card.progress || 0}%</span>
+                    </svg>
+                    <div className="progress-text">{card.progress || 0}%</div>
                   </div>
-                ) : (
-                  <div className="footer-progress">
-                    <div className="circular-progress">
-                      <svg className="progress-svg">
-                        <circle className="bg" cx="13" cy="13" r="11.5" />
-                        <circle
-                          className="progress"
-                          cx="13"
-                          cy="13"
-                          r="11.5"
-                          style={{
-                            stroke: "#0d9488",
-                            strokeDashoffset: `calc(72 - (72 * ${card.progress || 0}) / 100)`,
-                          }}
-                        />
-                      </svg>
-                      <div className="progress-text">{card.progress || 0}%</div>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
 
               {/* Separator only when extra-details row has content (avoids orphan line + empty padding). */}
-              {!hideExtraDetails && !isModernLayout && hasExtraDetailsIcons && (
+              {!hideExtraDetails && hasExtraDetailsIcons && (
                 <div className="card-eta-footer-separator" aria-hidden="true" />
               )}
 
               {/* Extra Details Section — same visibility as separator */}
-              {!hideExtraDetails && !isModernLayout && hasExtraDetailsIcons && (
+              {!hideExtraDetails && hasExtraDetailsIcons && (
                 <div className="card-extra-details" style={{ display: "flex", gap: "12px", alignItems: "center", justifyContent: "flex-start", padding: "8px 0" }}>
                   {/* Render transport only when BE/card payload provides it; otherwise hide */}
                   {card.transport != null && card.transport !== "" && (
@@ -1099,8 +1012,6 @@ CardItem.propTypes = {
   cardsById: PropTypes.object,
   isShrunk: PropTypes.bool,
   hideExtraDetails: PropTypes.bool,
-  isClassicLayout: PropTypes.bool,
-  isModernLayout: PropTypes.bool,
   isDarkMode: PropTypes.bool,
   columnTitle: PropTypes.string,
   fixedDimensions: PropTypes.shape({
