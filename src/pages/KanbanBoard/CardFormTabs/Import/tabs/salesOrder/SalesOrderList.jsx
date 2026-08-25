@@ -212,30 +212,30 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], librar
       style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1100, padding: "16px", boxSizing: "border-box" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: "#fff", borderRadius: "10px", width: "90%", maxWidth: "640px", maxHeight: "70vh", display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
-        <div style={{ padding: "18px 22px", borderBottom: "1px solid #eee", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#1a1a2e" }}>Select Supporting Documents</h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#888", lineHeight: 1 }}>×</button>
+      <div style={{ background: "#fff", borderRadius: "12px", width: "94%", maxWidth: "920px", maxHeight: "82vh", display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+        <div style={{ padding: "22px 28px", borderBottom: "1px solid #eee", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#1a1a2e" }}>Select Supporting Documents</h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "24px", cursor: "pointer", color: "#888", lineHeight: 1 }}>×</button>
         </div>
-        <div style={{ padding: "14px 22px", borderBottom: "1px solid #eee", flexShrink: 0, display: "flex", gap: "10px", alignItems: "center" }}>
+        <div style={{ padding: "16px 28px", borderBottom: "1px solid #eee", flexShrink: 0, display: "flex", gap: "12px", alignItems: "center" }}>
           <input
             type="text"
             placeholder="Search by document name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             autoFocus
-            style={{ flex: 1, padding: "8px 12px", border: "1px solid #dde0ea", borderRadius: "7px", fontSize: "13px", boxSizing: "border-box", fontFamily: "inherit" }}
+            style={{ flex: 1, padding: "11px 16px", border: "1px solid #dde0ea", borderRadius: "8px", fontSize: "14px", boxSizing: "border-box", fontFamily: "inherit" }}
           />
           <label
-            style={{ padding: "8px 14px", fontSize: "13px", border: "1px solid #dde0ea", borderRadius: "7px", background: "#f5f6ff", color: "#2A00FF", cursor: "pointer", fontFamily: "inherit", fontWeight: "600", whiteSpace: "nowrap", flexShrink: 0 }}
+            style={{ padding: "11px 18px", fontSize: "14px", border: "1px solid #dde0ea", borderRadius: "8px", background: "#f5f6ff", color: "#2A00FF", cursor: "pointer", fontFamily: "inherit", fontWeight: "600", whiteSpace: "nowrap", flexShrink: 0 }}
           >
             Upload New
             <input type="file" onChange={handleFileUpload} style={{ display: "none" }} />
           </label>
         </div>
-        <div style={{ overflowY: "auto", flex: 1, minHeight: 0, padding: "14px 18px", display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "10px", alignContent: "start" }}>
+        <div style={{ overflowY: "auto", flex: 1, minHeight: 0, padding: "18px 24px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "12px", alignContent: "start" }}>
           {filtered.length === 0 ? (
-            <div style={{ gridColumn: "1 / -1", padding: "24px", textAlign: "center", color: "#888", fontSize: "13px" }}>No documents found.</div>
+            <div style={{ gridColumn: "1 / -1", padding: "32px", textAlign: "center", color: "#888", fontSize: "14px" }}>No documents found.</div>
           ) : (
             filtered.map((d) => {
               const isChecked = selected.has(d.id);
@@ -246,8 +246,8 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], librar
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
-                    gap: "14px",
-                    padding: "12px 14px",
+                    gap: "16px",
+                    padding: "14px 16px",
                     border: `1px solid ${isChecked ? "#b3baff" : "#e6e9f2"}`,
                     borderRadius: "10px",
                     background: isChecked ? "#f3f4ff" : "#ffffff",
@@ -261,15 +261,15 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], librar
                     type="checkbox"
                     checked={isChecked}
                     onChange={() => toggleDocument(d.id)}
-                    style={{ width: "16px", height: "16px", cursor: "pointer", flexShrink: 0, accentColor: "#2A00FF" }}
+                    style={{ width: "17px", height: "17px", cursor: "pointer", flexShrink: 0, accentColor: "#2A00FF" }}
                   />
                   <span
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      width: "40px",
-                      height: "40px",
+                      width: "42px",
+                      height: "42px",
                       borderRadius: "9px",
                       background: "#eef1ff",
                       color: "#2A00FF",
@@ -278,8 +278,8 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], librar
                   >
                     <FiFileText size={20} />
                   </span>
-                  <span style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0, flex: 1 }}>
-                    <span style={{ fontSize: "14px", color: "#1a1a2e", fontWeight: "600", minWidth: 0, wordBreak: "break-word" }}>{d.name}</span>
+                  <span style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: 0, flex: 1 }}>
+                    <span style={{ fontSize: "14px", lineHeight: 1.4, color: "#1a1a2e", fontWeight: "600", minWidth: 0, wordBreak: "break-word" }}>{d.name}</span>
                     <span style={{ fontFamily: "monospace", fontSize: "11px", color: "#5a5f8a", background: "#f0f2ff", padding: "2px 7px", borderRadius: "4px", alignSelf: "flex-start" }}>{d.type}</span>
                   </span>
                 </label>
@@ -287,18 +287,22 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], librar
             })
           )}
         </div>
-        <div style={{ padding: "14px 22px", borderTop: "1px solid #eee", display: "flex", justifyContent: "flex-end", gap: "10px", flexShrink: 0 }}>
+        <div style={{ padding: "16px 28px", borderTop: "1px solid #eee", display: "flex", justifyContent: "flex-end", gap: "12px", flexShrink: 0 }}>
           <button
             type="button"
             onClick={onClose}
-            style={{ padding: "8px 18px", fontSize: "13px", border: "1px solid #ddd", borderRadius: "5px", background: "#f5f5f5", color: "#333", cursor: "pointer", fontFamily: "inherit" }}
+            style={{ padding: "11px 22px", fontSize: "14px", fontWeight: "600", border: "1px solid #dde0ea", borderRadius: "8px", background: "#fff", color: "#333", cursor: "pointer", fontFamily: "inherit" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#f5f6fa"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "#fff"; }}
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleSave}
-            style={{ padding: "8px 18px", fontSize: "13px", border: "none", borderRadius: "5px", background: "#00368c", color: "#fff", cursor: "pointer", fontFamily: "inherit", fontWeight: "600" }}
+            style={{ padding: "11px 22px", fontSize: "14px", border: "none", borderRadius: "8px", background: "#00368c", color: "#fff", cursor: "pointer", fontFamily: "inherit", fontWeight: "600", boxShadow: "0 4px 14px rgba(0, 54, 140, 0.32)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#002a6e"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "#00368c"; }}
           >
             Save
           </button>
