@@ -121,25 +121,32 @@ ApiCardCountBadge.propTypes = {
   label: PropTypes.string.isRequired,
 };
 
-/** Row of API service-count icons (transport/hotel/medical/material/waste) shown on full API cards. */
-function ApiCardCountIconsRow({ card, cardsById, setSelectedCard }) {
+/** Row of API service-count icons (transport/hotel/medical/material/waste) shown on full API cards.
+ *  Transport Coordinator workflow only cares about transport + linked calls — the other service
+ *  counts (hotel/medical/material/waste) belong to other workflows and are hidden here. */
+function ApiCardCountIconsRow({ card, cardsById, setSelectedCard, transportOnly = false }) {
   const hasLink = card.hasLinkedCall && Array.isArray(card.linkedCardIds) && card.linkedCardIds.length > 0;
-  const hasAny =
-    Number(card.transportCount) > 0 ||
-    Number(card.hotelCount) > 0 ||
-    Number(card.medicalCount) > 0 ||
-    Number(card.materialManagementCount) > 0 ||
-    Number(card.wasteDisposalCount) > 0 ||
-    hasLink;
+  const hasAny = transportOnly
+    ? Number(card.transportCount) > 0 || hasLink
+    : Number(card.transportCount) > 0 ||
+      Number(card.hotelCount) > 0 ||
+      Number(card.medicalCount) > 0 ||
+      Number(card.materialManagementCount) > 0 ||
+      Number(card.wasteDisposalCount) > 0 ||
+      hasLink;
   if (!hasAny) return null;
 
   return (
     <div className="card-api-count-icons-row">
       <ApiCardCountBadge IconComp={CarIcon} count={card.transportCount} label="Transport" />
-      <ApiCardCountBadge IconComp={HotelIcon} count={card.hotelCount} label="Hotel" />
-      <ApiCardCountBadge IconComp={MedicalIcon} count={card.medicalCount} label="Medical" />
-      <ApiCardCountBadge IconComp={MaterialManagementIcon} count={card.materialManagementCount} label="Material Management" />
-      <ApiCardCountBadge IconComp={WasteDisposalIcon} count={card.wasteDisposalCount} label="Waste Disposal" />
+      {!transportOnly && (
+        <>
+          <ApiCardCountBadge IconComp={HotelIcon} count={card.hotelCount} label="Hotel" />
+          <ApiCardCountBadge IconComp={MedicalIcon} count={card.medicalCount} label="Medical" />
+          <ApiCardCountBadge IconComp={MaterialManagementIcon} count={card.materialManagementCount} label="Material Management" />
+          <ApiCardCountBadge IconComp={WasteDisposalIcon} count={card.wasteDisposalCount} label="Waste Disposal" />
+        </>
+      )}
       <ApiCardLinkBadge card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} />
     </div>
   );
@@ -157,6 +164,7 @@ ApiCardCountIconsRow.propTypes = {
   }).isRequired,
   cardsById: PropTypes.object,
   setSelectedCard: PropTypes.func.isRequired,
+  transportOnly: PropTypes.bool,
 };
 
 /**
@@ -473,6 +481,7 @@ function ApiKanbanCardFull({
   card,
   setSelectedCard,
   cardsById,
+  transportOnlyIcons = false,
 }) {
   const displayTitle = getApiCardDisplayTitle(card);
   const secondary = hasText(card.billingEntity)
@@ -537,7 +546,7 @@ function ApiKanbanCardFull({
         ) : null}
       </div>
 
-      <ApiCardCountIconsRow card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} />
+      <ApiCardCountIconsRow card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} transportOnly={transportOnlyIcons} />
 
       {showSummaryRow ? (
         <div className="card-api-summary-row">
@@ -562,9 +571,11 @@ function CardItem({
   hideExtraDetails = false,
   isDarkMode = false,
   columnTitle = "",
+  workflowTitle = "",
   fixedDimensions = null,
 }) {
   const isApiCard = card.cardSource === "api";
+  const isTransportCoordinatorWorkflow = String(workflowTitle || "").trim().toLowerCase().includes("transport coordinator");
   const cardColor = card.color || "#2A00FF";
   const invoiceAmount = card.invoiceAmount != null ? Number(card.invoiceAmount) : null;
   const highlightInvoice = !!card.highlightInvoice; // 1st card (DA board): show invoice trend icon, no border pulse
@@ -634,6 +645,7 @@ function CardItem({
                 card={card}
                 setSelectedCard={setSelectedCard}
                 cardsById={cardsById}
+                transportOnlyIcons={isTransportCoordinatorWorkflow}
               />
             )
           ) : isShrunk ? (
@@ -1014,6 +1026,7 @@ CardItem.propTypes = {
   hideExtraDetails: PropTypes.bool,
   isDarkMode: PropTypes.bool,
   columnTitle: PropTypes.string,
+  workflowTitle: PropTypes.string,
   fixedDimensions: PropTypes.shape({
     width: PropTypes.number.isRequired,
     height: PropTypes.number,

@@ -25,6 +25,7 @@ export default function SwimlaneColumnCell({
   onHeightChange,
   isDarkMode = false,
   layoutView = null,
+  workflowTitle = "",
 }) {
   const { hasModule } = usePermissions();
   const canViewCards = hasModule(PERMISSION_MODULES.KANBAN_CARD);
@@ -165,6 +166,7 @@ export default function SwimlaneColumnCell({
                   setSelectedCard={setSelectedCard}
                   cardsById={cardsById}
                   columnTitle={column.title}
+                  workflowTitle={workflowTitle}
                   fixedDimensions={{ width: cardWidth }}
                 />
               )
@@ -195,4 +197,5 @@ SwimlaneColumnCell.propTypes = {
   onHeightChange: PropTypes.func,
   isDarkMode: PropTypes.bool,
   layoutView: PropTypes.string,
+  workflowTitle: PropTypes.string,
 };

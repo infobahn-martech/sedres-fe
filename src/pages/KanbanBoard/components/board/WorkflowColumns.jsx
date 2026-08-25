@@ -208,6 +208,7 @@ export default function WorkflowColumns({
                         onHeightChange={onHeightChange}
                         isDarkMode={isDarkMode}
                         layoutView={layoutView}
+                        workflowTitle={workflow.title}
                       />
                     );
                   })}
