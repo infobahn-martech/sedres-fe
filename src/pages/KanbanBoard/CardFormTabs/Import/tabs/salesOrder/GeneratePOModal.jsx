@@ -67,9 +67,13 @@ const GeneratePOModal = ({
   const [vendors, setVendors] = useState([]);
   const [isLoadingVendors, setIsLoadingVendors] = useState(false);
   const [selectedVendorCode, setSelectedVendorCode] = useState("");
+  const [vendorPickerOpen, setVendorPickerOpen] = useState(false);
+  const [vendorSearch, setVendorSearch] = useState("");
   const [deliveryDateValue, setDeliveryDateValue] = useState(deliveryDate || "");
   const [documentDateValue, setDocumentDateValue] = useState(documentDate || "");
+  const [remarksValue, setRemarksValue] = useState(remarks || "");
   const copyToRef = useRef(null);
+  const vendorPickerRef = useRef(null);
 
   useEffect(() => {
     if (!copyToOpen) return undefined;
@@ -79,6 +83,18 @@ const GeneratePOModal = ({
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [copyToOpen]);
+
+  useEffect(() => {
+    if (!vendorPickerOpen) return undefined;
+    const handleOutsideClick = (e) => {
+      if (vendorPickerRef.current && !vendorPickerRef.current.contains(e.target)) {
+        setVendorPickerOpen(false);
+        setVendorSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [vendorPickerOpen]);
 
   const selectedLineItems = salesOrderList.filter((item) => selectedItems.includes(item.id));
 
@@ -122,11 +138,17 @@ const GeneratePOModal = ({
 
   const selectedVendor = vendors.find((v) => v.code === selectedVendorCode) || null;
 
-  const handleVendorChange = (e) => {
-    const code = e.target.value;
-    setSelectedVendorCode(code);
-    const match = vendors.find((v) => v.code === code);
-    setVendorRefNo(match ? match.code : "");
+  const filteredVendors = vendors.filter(
+    (v) =>
+      v.code.toLowerCase().includes(vendorSearch.toLowerCase()) ||
+      v.name.toLowerCase().includes(vendorSearch.toLowerCase())
+  );
+
+  const handleVendorSelect = (vendor) => {
+    setSelectedVendorCode(vendor.code);
+    setVendorRefNo(vendor.code);
+    setVendorPickerOpen(false);
+    setVendorSearch("");
   };
 
   const lineAmounts = selectedLineItems.map((item) => ({ item, ...calcLineAmounts(item) }));
@@ -246,19 +268,52 @@ const GeneratePOModal = ({
               <div className="so-po-fields-col">
                 <div className="so-po-field-row">
                   <span className="so-po-field-label">Vendor</span>
-                  <select
-                    className="so-po-field-input"
-                    value={selectedVendorCode}
-                    onChange={handleVendorChange}
-                    disabled={isSubmitting || isLoadingVendors}
-                  >
-                    <option value="">{isLoadingVendors ? "Loading vendors..." : "Select vendor..."}</option>
-                    {vendors.map((v) => (
-                      <option key={v.code} value={v.code}>
-                        {v.code} — {v.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="so-po-vendor-select" ref={vendorPickerRef}>
+                    <button
+                      type="button"
+                      className="so-po-vendor-trigger"
+                      onClick={() => setVendorPickerOpen((v) => !v)}
+                      disabled={isSubmitting || isLoadingVendors}
+                    >
+                      <span className="so-po-vendor-trigger-text">
+                        {isLoadingVendors
+                          ? "Loading vendors..."
+                          : selectedVendor
+                          ? `${selectedVendor.code} — ${selectedVendor.name}`
+                          : "Select vendor..."}
+                      </span>
+                      <span className="so-po-vendor-trigger-caret">▾</span>
+                    </button>
+                    {vendorPickerOpen && (
+                      <div className="so-po-vendor-menu">
+                        <input
+                          type="text"
+                          className="so-po-vendor-search"
+                          placeholder="Search by code or name..."
+                          value={vendorSearch}
+                          onChange={(e) => setVendorSearch(e.target.value)}
+                          autoFocus
+                        />
+                        <div className="so-po-vendor-list">
+                          {filteredVendors.length === 0 ? (
+                            <div className="so-po-vendor-empty">No vendors found.</div>
+                          ) : (
+                            filteredVendors.map((v) => (
+                              <button
+                                type="button"
+                                key={v.code}
+                                className="so-po-vendor-item"
+                                onClick={() => handleVendorSelect(v)}
+                              >
+                                <span className="so-po-vendor-item-code">{v.code}</span>
+                                <span className="so-po-vendor-item-name">{v.name}</span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="so-po-field-row">
                   <span className="so-po-field-label">Name</span>
@@ -370,7 +425,13 @@ const GeneratePOModal = ({
                 </div>
                 <div className="so-po-field-row so-po-field-row-textarea">
                   <span className="so-po-field-label">Remarks</span>
-                  <textarea className="so-po-field-textarea" value={remarks || ""} readOnly />
+                  <textarea
+                    className="so-po-field-textarea"
+                    value={remarksValue}
+                    onChange={(e) => setRemarksValue(e.target.value)}
+                    placeholder="Enter remarks..."
+                    disabled={isSubmitting}
+                  />
                 </div>
               </div>
 
@@ -448,6 +509,7 @@ const GeneratePOModal = ({
                 vendorRefNo,
                 deliveryDate: deliveryDateValue,
                 documentDate: documentDateValue,
+                remarks: remarksValue,
                 discountPercentage: parseFloat(discountPercentage) || 0,
                 rounding: roundingEnabled ? 1 : 0,
               })

@@ -1666,6 +1666,7 @@ const SalesOrderList = ({
     vendorRefNo,
     deliveryDate,
     documentDate,
+    remarks,
     discountPercentage = 0,
     rounding = 0,
   } = {}) => {
@@ -1694,7 +1695,7 @@ const SalesOrderList = ({
       document_date: documentDate || soDocumentDate,
       discount_percentage: discountPercentage,
       rounding,
-      remarks: soRemarks,
+      remarks: remarks || soRemarks,
     };
 
     setIsGeneratingPO(true);
