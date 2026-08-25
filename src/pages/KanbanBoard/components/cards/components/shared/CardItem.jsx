@@ -21,14 +21,14 @@ import {
 } from "../../../../utils/cardDisplayHelpers";
 
 /** Top-left badge: dynamic Fi/Lu icon from API `cardTypeIcon` (e.g. LuRocket). */
-function ApiCardTypeIcon({ card }) {
+function ApiCardTypeIcon({ card, inline = false }) {
   const IconComponent = resolveIconComponentStrict(card.cardTypeIcon);
 
   if (!IconComponent) return null;
 
   return (
     <div
-      className="card-type-icon-badge"
+      className={`card-type-icon-badge ${inline ? "card-type-icon-badge--inline" : ""}`}
       title={card.cardTypeName}
       style={{
         backgroundColor: card.cardTypeColor || "#2563eb",
@@ -45,6 +45,7 @@ ApiCardTypeIcon.propTypes = {
     cardTypeColor: PropTypes.string,
     cardTypeName: PropTypes.string,
   }).isRequired,
+  inline: PropTypes.bool,
 };
 
 /** Badge overlapping the user-avatar's corner: dynamic Fi/Lu icon from API `blockerIcon`. */
@@ -435,6 +436,7 @@ function ApiKanbanCardShrunk({ card, setSelectedCard }) {
 
   return (
     <div className="card-content-compact card-content-compact--api">
+      {card.cardTypeIcon && <ApiCardTypeIcon card={card} />}
       <div className="card-api-title-row card-api-title-row--compact">
         <div
           className="card-title-compact card-title-compact--api card-api-title-text"
@@ -481,12 +483,13 @@ function ApiKanbanCardFull({
       ? card.name
       : "";
   const showLogo = isValidImage(card.entityLogo);
+  const hasTypeIcon = !!card.cardTypeIcon;
   const usernameInitial = getUsernameInitial(card.user);
   const hasTimeline = hasText(card.timeLeft);
   const hasProgress = isValidProgress(card.progress);
   const showSummaryRow = hasTimeline || hasProgress;
 
-  const showHeaderRow = isModernLayout || showLogo;
+  const showHeaderRow = isModernLayout || showLogo || hasTypeIcon;
 
   return (
     <>
@@ -494,6 +497,7 @@ function ApiKanbanCardFull({
         <div
           className={`card-api-header ${isModernLayout ? "card-api-header--modern" : ""}`}
         >
+          {hasTypeIcon && <ApiCardTypeIcon card={card} inline />}
           {isModernLayout ? (
             <>
               {showLogo && (
@@ -660,9 +664,6 @@ function CardItem({
             "--card-color": cardColor,
           }}
         >
-          {isApiCard && card.cardTypeIcon && (
-            <ApiCardTypeIcon card={card} />
-          )}
           {isApiCard ? (
             isShrunk ? (
               <ApiKanbanCardShrunk card={card} setSelectedCard={setSelectedCard} />
