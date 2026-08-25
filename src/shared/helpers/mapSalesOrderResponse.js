@@ -45,7 +45,15 @@ export function mapSalesOrderResponse(apiData) {
     return /^\d{4}-\d{2}-\d{2}$/.test(head) ? head : "";
   };
 
-  const items = Array.isArray(apiData.items) ? apiData.items : [];
+  // da/da_delete_sales_line_item soft-deletes on the backend (item_status → "Cancelled")
+  // rather than removing the row from this endpoint's response. This filter covers the case
+  // where the backend does start sending a status per item, but as of this writing
+  // sales_order/get_so_items_by_call sends no status/item_status field at all (same known gap
+  // useDaLocalVerifiedItems works around below), so a deleted item still reappears here on the
+  // next fetch — see useDaLocalDeletedItems (daStore.js) for the actual current fix.
+  const items = Array.isArray(apiData.items)
+    ? apiData.items.filter((item) => String(item?.status || "").trim().toLowerCase() !== "cancelled")
+    : [];
 
   const taxCodeFromApi = (item) => {
     const t = item.tax_percentage;

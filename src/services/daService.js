@@ -20,6 +20,10 @@ const advanceStage = (payload) => Gateway.post('/da/advance_stage', payload);
 const updateStatus = (payload) => Gateway.post('/da/update_status', payload);
 /** @param {{ so_item_id: string|number }} payload */
 const deleteSalesLineItem = (payload) => Gateway.post('/da/da_delete_sales_line_item', payload);
+/** @param {{ so_item_id: string|number }} payload */
+const verifySalesLineItem = (payload) => Gateway.post('/da/da_verify_sales_line_item', payload);
+/** @param {{ call_id: string|number, to: string, subject: string, body: string, stage_document_id?: string|number }} payload */
+const sendActionEmail = (payload) => Gateway.post('/da/da_send_action_email', payload);
 
 export default {
   getDaDetails,
@@ -35,4 +39,6 @@ export default {
   getStatusTimeline,
   updateStatus,
   deleteSalesLineItem,
+  verifySalesLineItem,
+  sendActionEmail,
 };
