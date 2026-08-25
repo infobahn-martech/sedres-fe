@@ -2783,15 +2783,17 @@ function CardForm({
   // current step's own label is a no-op since it's already that status). api/da/status_timeline
   // is a separate, more granular list than the board's own columns (e.g. "To be sent for SRF"
   // has no matching column), so this always calls api/da/update_status with { call_id,
-  // status_name, reached_date } — reached_date is the client's current date/time, stamping
-  // when the step was actually marked complete (the timeline row's own display of this value
-  // comes straight back from this same field, see reached_date in mapStatusTimelineResponse).
-  // When statusName *also* matches one of the board's columns (e.g. "Ops completed"), it
+  // status_id } — response is { status: true, sticker_id, status_id, status_name } on
+  // success or { status: false, message } on failure. reached_date isn't part of this
+  // contract (backend doesn't persist it), so it's stamped locally only, keyed by the step's
+  // label — the timeline row's own display of this value comes from that local fallback, see
+  // reached_date in mapStatusTimelineResponse / useDaLocalReachedDates.
+  // When the step's label *also* matches one of the board's columns (e.g. "Ops completed"), it
   // additionally calls api/da/advance_stage — same direct-match lookup the footer stepper's
   // jump-to-step uses (see handleStepClick above) — so the card's board column moves in step
   // with the timeline instead of only the timeline updating.
   const handleDaTimelineStepClick = useCallback(
-    (statusName) => {
+    (target) => {
       // Matches isDaVerifyContext (DA.jsx / SalesOrderList.jsx's header action button use
       // isDAModule || isDaCardContext to decide whether to show DA status controls at all) —
       // this guard used to check isDaCardContext alone, which silently no-op'd the click on
@@ -2799,15 +2801,17 @@ function CardForm({
       // isDAModule's route match but not flagged isDaCardContext (not boardId "3" and not an
       // explicit "da" card variant).
       if (!(isDaCardContext || isDAModule) || isAdvancingStage) return;
+      const statusId = target?.statusId;
+      const statusName = target?.label;
       const callIdRaw = card?.call_id ?? card?.callId;
       const callId = callIdRaw != null ? String(callIdRaw).trim() : "";
-      if (!callId || !statusName) return;
+      if (!callId || statusId == null || !statusName) return;
 
       const reachedDate = formatNowForApi();
       setIsAdvancingStage(true);
-      daService.updateStatus({ call_id: callId, status_name: statusName, reached_date: reachedDate })
+      daService.updateStatus({ call_id: callId, status_id: statusId })
         .then(({ data }) => {
-          if (data && typeof data === "object" && data.status === "error") {
+          if (!data?.status) {
             notify(data?.message || "Failed to move card to that stage.", "error");
             return;
           }

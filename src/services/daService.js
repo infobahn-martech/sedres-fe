@@ -16,7 +16,7 @@ const getCardStage = (callId) => Gateway.get(`/da/card/${callId}`);
 const getStatusTimeline = (callId) => Gateway.get(`/da/status_timeline/${callId}`);
 /** @param {{ call_id: string|number, column_id: string|number }} payload */
 const advanceStage = (payload) => Gateway.post('/da/advance_stage', payload);
-/** @param {{ call_id: string|number, status_name: string, reached_date?: string }} payload */
+/** @param {{ call_id: string|number, status_id: string|number }} payload */
 const updateStatus = (payload) => Gateway.post('/da/update_status', payload);
 /** @param {{ so_item_id: string|number }} payload */
 const deleteSalesLineItem = (payload) => Gateway.post('/da/da_delete_sales_line_item', payload);
