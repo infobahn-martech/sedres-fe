@@ -718,16 +718,15 @@ const SalesOrderList = ({
   // isVerifiedFlowActive only ever gets flipped on by handleToggleVerified's own click, so an
   // item that was ALREADY verified before this component mounted (a fresh page load/card
   // reopen, or the list simply reloading) never activates it on its own — the checkbox itself
-  // shows correctly ticked (see its checked= condition, order.status === "Verified" /
-  // localVerifiedItemIds), but the header button stayed hidden despite that. Sync it here
-  // instead: once the real timeline's next-step label is known, if any current item is
-  // already verified, activate the flow the same way a fresh verify click would. Guarded by
-  // !isVerifiedFlowActive so this never fights a user's own un-verify afterward.
+  // shows correctly ticked (see its checked= condition, localVerifiedItemIds — the sole source
+  // of truth, see handleToggleVerified's comment on why order.status must never be used here),
+  // but the header button stayed hidden despite that. Sync it here instead: once the real
+  // timeline's next-step label is known, if any current item is already verified, activate the
+  // flow the same way a fresh verify click would. Guarded by !isVerifiedFlowActive so this
+  // never fights a user's own un-verify afterward.
   useEffect(() => {
     if (!isDaVerifyContext || isVerifiedFlowActive || !soApprovalLabel) return;
-    const hasVerifiedItem = salesOrderList.some(
-      (item) => item.status === "Verified" || localVerifiedItemIds?.has(item.id) === true
-    );
+    const hasVerifiedItem = salesOrderList.some((item) => localVerifiedItemIds?.has(item.id) === true);
     if (hasVerifiedItem) {
       setLocalDaStatusOverride(soApprovalLabel);
       setIsVerifiedFlowActive(true);
@@ -882,12 +881,54 @@ const SalesOrderList = ({
     }
   };
 
-  const handleRecordSoClientDecision = (decision) => {
+  // api/da/da_record_client_decision — { call_id, decision: 1|0 } → { status: true, sticker_id,
+  // status_id, status_name } on success, or { status: "error" | false, message } (call_id/decision
+  // missing, or no previous/next status left in this call's sequence) on failure. Shared by all
+  // three Accept/Reject decision points below (SO approval, invoice, payment) since the endpoint
+  // is generic per call_id — the backend tracks sequence position itself.
+  const [isRecordingDaClientDecision, setIsRecordingDaClientDecision] = useState(false);
+
+  const recordDaClientDecision = async (decision) => {
+    if (!callId) {
+      useAlertReducer.getState().error("No call identifier available for this card.");
+      return null;
+    }
+    setIsRecordingDaClientDecision(true);
+    try {
+      const { data } = await daService.recordClientDecision({ call_id: callId, decision });
+      if (!data || data.status === "error" || data.status === false) {
+        useAlertReducer.getState().error(data?.message || "Failed to record the client's decision.");
+        return null;
+      }
+      if (refreshSalesOrder) refreshSalesOrder();
+      daService
+        .getStatusTimeline(callId)
+        .then(({ data: tl }) => setDaHeaderStatusTimeline(Array.isArray(tl?.data) ? tl.data : []))
+        .catch(() => {});
+      return data;
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to record the client's decision.";
+      useAlertReducer.getState().error(msg);
+      return null;
+    } finally {
+      setIsRecordingDaClientDecision(false);
+    }
+  };
+
+  const handleRecordSoClientDecision = async (decision) => {
+    const data = await recordDaClientDecision(decision === "approved" ? 1 : 0);
+    if (!data) return;
     setSoClientDecision(decision);
   };
 
   // Rejected — no intermediate "Redo" click, straight back to the "Sent for SO Approval" step.
-  const handleRejectSoApproval = () => {
+  const handleRejectSoApproval = async () => {
+    const data = await recordDaClientDecision(0);
+    if (!data) return;
     setSoApprovalEmailSent(false);
     setSoClientDecision(null);
   };
@@ -917,23 +958,31 @@ const SalesOrderList = ({
     setInvoiceDispatched(true);
   };
 
-  const handleRecordInvoiceClientDecision = (decision) => {
+  const handleRecordInvoiceClientDecision = async (decision) => {
+    const data = await recordDaClientDecision(decision === "approved" ? 1 : 0);
+    if (!data) return;
     setInvoiceClientDecision(decision);
   };
 
   // Rejected — straight back to "Invoice Issuance" so the invoice can be re-uploaded.
-  const handleRejectInvoiceDispatch = () => {
+  const handleRejectInvoiceDispatch = async () => {
+    const data = await recordDaClientDecision(0);
+    if (!data) return;
     setInvoiceDispatched(false);
     setInvoiceClientDecision(null);
   };
 
-  const handleRecordPaymentClientDecision = (decision) => {
+  const handleRecordPaymentClientDecision = async (decision) => {
+    const data = await recordDaClientDecision(decision === "approved" ? 1 : 0);
+    if (!data) return;
     setPaymentClientDecision(decision);
   };
 
   // Rejected — reverts the whole cycle back to "Invoice Issuance" so a corrected invoice can
   // be reissued (there's no separate "dispatch payment request" step to redo instead).
-  const handleRejectPayment = () => {
+  const handleRejectPayment = async () => {
+    const data = await recordDaClientDecision(0);
+    if (!data) return;
     setInvoiceDispatched(false);
     setInvoiceClientDecision(null);
     setPaymentClientDecision(null);
@@ -1143,11 +1192,23 @@ const SalesOrderList = ({
   // back the same way (sends the last-done step's own label — same mechanism DA.jsx's own
   // Status Timeline uses for its "done" step revert). No modal/email popup here either way —
   // that's still only triggered by the header button's own click (see isSoApprovalDaStatus).
+  //
+  // localVerifiedItemIds is the ONLY source of truth for the verified flag — order.status must
+  // never be written to the literal "Verified" (a past version did). Bug that caused: when a
+  // real item_status isn't returned by the backend for a given item (body.item_status falsy),
+  // the old code fell back to `order.status`, which — after an earlier verify toggle had
+  // already overwritten it to "Verified" — fed that same literal back in as if it were the
+  // item's real underlying status. Un-ticking then re-wrote order.status to "Verified" instead
+  // of clearing it, so the checkbox (checked against `order.status === "Verified" ||
+  // localVerifiedItemIds.has(id)`) stayed visually ticked even though localVerifiedItemIds had
+  // correctly flipped false and the backend call had succeeded. Only reproduced for items whose
+  // real status the backend leaves blank; items with a genuine non-empty status un-ticked fine,
+  // which is why it looked intermittent.
   const handleToggleVerified = async (order) => {
     const orderId = order.id;
     if (verifyingItemIds.has(orderId)) return;
 
-    const wasVerified = order.status === "Verified" || localVerifiedItemIds?.has(orderId) === true;
+    const wasVerified = localVerifiedItemIds?.has(orderId) === true;
 
     setVerifyingItemIds((prev) => new Set(prev).add(orderId));
     try {
@@ -1157,9 +1218,8 @@ const SalesOrderList = ({
         throw new Error(body?.message || "Failed to update the item's verification status.");
       }
       const isNowVerified = !wasVerified;
-      const underlyingStatus = body.item_status || order.status || "";
       const updatedList = salesOrderList.map((item) =>
-        item.id === orderId ? { ...item, status: isNowVerified ? "Verified" : underlyingStatus } : item
+        item.id === orderId ? { ...item, status: body.item_status || item.status || "" } : item
       );
       handleChange("salesOrderList")({ target: { value: updatedList } });
       setLocalItemVerified(callId, orderId, isNowVerified);
@@ -2024,7 +2084,7 @@ const SalesOrderList = ({
             <input
               type="checkbox"
               className="sales-order-verify-checkbox"
-              checked={order.status === "Verified" || localVerifiedItemIds?.has(order.id) === true}
+              checked={localVerifiedItemIds?.has(order.id) === true}
               onChange={() => handleToggleVerified(order)}
               disabled={verifyingItemIds.has(order.id)}
               aria-label="Verify line item"
@@ -2073,6 +2133,7 @@ const SalesOrderList = ({
                   type="button"
                   className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
                   title="Record the client's approval"
+                  disabled={isRecordingDaClientDecision}
                   onClick={() => handleRecordSoClientDecision("approved")}
                 >
                   <FiCheck /> Approved
@@ -2081,6 +2142,7 @@ const SalesOrderList = ({
                   type="button"
                   className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
                   title="Record the client's rejection and go back to Sent for SO Approval"
+                  disabled={isRecordingDaClientDecision}
                   onClick={handleRejectSoApproval}
                 >
                   <FiX /> Rejected
@@ -2096,6 +2158,7 @@ const SalesOrderList = ({
                   type="button"
                   className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
                   title="Record the client's approval of the invoice"
+                  disabled={isRecordingDaClientDecision}
                   onClick={() => handleRecordInvoiceClientDecision("approved")}
                 >
                   <FiCheck /> Approved
@@ -2104,6 +2167,7 @@ const SalesOrderList = ({
                   type="button"
                   className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
                   title="Record the client's rejection and go back to Invoice Issuance"
+                  disabled={isRecordingDaClientDecision}
                   onClick={handleRejectInvoiceDispatch}
                 >
                   <FiX /> Rejected
@@ -2119,6 +2183,7 @@ const SalesOrderList = ({
                   type="button"
                   className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
                   title="Record the client's payment approval"
+                  disabled={isRecordingDaClientDecision}
                   onClick={() => handleRecordPaymentClientDecision("approved")}
                 >
                   <FiCheck /> Approved
@@ -2127,6 +2192,7 @@ const SalesOrderList = ({
                   type="button"
                   className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
                   title="Record the client's payment rejection and go back to Invoice Issuance"
+                  disabled={isRecordingDaClientDecision}
                   onClick={handleRejectPayment}
                 >
                   <FiX /> Rejected

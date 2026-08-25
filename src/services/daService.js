@@ -29,6 +29,8 @@ const uploadInvoice = (formData) =>
   Gateway.post('/da/da_upload_invoice', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+/** @param {{ call_id: string|number, decision: 1|0 }} payload - decision: 1 = approved, 0 = rejected */
+const recordClientDecision = (payload) => Gateway.post('/da/da_record_client_decision', payload);
 
 export default {
   getDaDetails,
@@ -47,4 +49,5 @@ export default {
   verifySalesLineItem,
   sendActionEmail,
   uploadInvoice,
+  recordClientDecision,
 };
