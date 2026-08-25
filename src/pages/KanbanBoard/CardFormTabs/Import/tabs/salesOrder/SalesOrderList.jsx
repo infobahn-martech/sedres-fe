@@ -16,6 +16,7 @@ import DatePickerField from "../../../shared/components/DatePickerField";
 import PremiumSelect from "../../../../../../components/form/PremiumSelect";
 import useAlertReducer from "../../../../../../store/AlertReducer";
 import useAuthReducer from "../../../../../../store/AuthReducer";
+import { useDaLocalVerifiedItems, useDaLocalDeletedItems } from "../../../../../../shared/store/daStore";
 import WorkOrderCreationModal from "./WorkOrderCreationModal";
 import WorkOrderDetailsModal from "./WorkOrderDetailsModal";
 import GeneratePOModal from "./GeneratePOModal";
@@ -463,7 +464,17 @@ const SalesOrderList = ({
   // board routes; isDaCardContext also covers DA-variant/DA-board cards reached via the
   // generic /kanban-board/:boardId route (where a separate "DA" tab is appended instead).
   const isDaVerifyContext = isDAModule || isDaCardContext;
-  const salesOrderList = formValues.salesOrderList || [];
+  const callId = card?.call_id ?? card?.callId ?? null;
+  // sales_order/get_so_items_by_call still returns items after da_delete_sales_line_item
+  // soft-deletes them (no status/item_status field to filter on — see useDaLocalDeletedItems
+  // in daStore.js), so exclude anything deleted client-side this session on top of whatever
+  // the API itself sends.
+  const localDeletedItemIds = useDaLocalDeletedItems((s) => s.deletedItemIds[callId]);
+  const markLocalItemDeleted = useDaLocalDeletedItems((s) => s.markItemDeleted);
+  const salesOrderList = useMemo(
+    () => (formValues.salesOrderList || []).filter((item) => !localDeletedItemIds?.has(item.id)),
+    [formValues.salesOrderList, localDeletedItemIds]
+  );
   const billingEntity = formValues.billingEntity || "";
 
   // SO Header fields (no mock defaults — values come from API via mapSalesOrderResponse or user edits)
@@ -504,8 +515,6 @@ const SalesOrderList = ({
   const [isLoadingItemDetails, setIsLoadingItemDetails] = useState(false);
   const [isSavingItem, setIsSavingItem] = useState(false);
   const [itemNoError, setItemNoError] = useState("");
-
-  const callId = card?.call_id ?? card?.callId ?? null;
 
   // card_file/get_call_detail — the kanban `card` prop doesn't carry port_id/main_billing_entity_id,
   // so fetch it directly (same pattern used by Operation.jsx / General.jsx).
@@ -563,8 +572,15 @@ const SalesOrderList = ({
   // has a PO can still be selected for Work Order, and vice versa.
   const [selectedPoItems, setSelectedPoItems] = useState(new Set());
   const [selectedWoItems, setSelectedWoItems] = useState(new Set());
-  // Local-only for now — no backend field/endpoint yet to persist per-item verification (DA-only column).
-  const [verifiedItems, setVerifiedItems] = useState(new Set());
+  // Per-item verification (DA-only column) — persisted via da/da_verify_sales_line_item.
+  // The list reload endpoint (sales_order/get_so_items_by_call) has no status/item_status
+  // field on its items yet (confirmed via testing), so the mapped `status` field alone
+  // doesn't survive a page reload; useDaLocalVerifiedItems (daStore.js) is the same
+  // in-memory-only fallback pattern used elsewhere in DA until the backend adds the field.
+  // verifyingItemIds just tracks which item currently has a verify request in flight.
+  const [verifyingItemIds, setVerifyingItemIds] = useState(new Set());
+  const localVerifiedItemIds = useDaLocalVerifiedItems((s) => s.verifiedItemIds[callId]);
+  const setLocalItemVerified = useDaLocalVerifiedItems((s) => s.setItemVerified);
   const [showWorkOrderModal, setShowWorkOrderModal] = useState(false);
   const [isGeneratingWorkOrder, setIsGeneratingWorkOrder] = useState(false);
   const bulkActionBarRef = useRef(null);
@@ -697,9 +713,11 @@ const SalesOrderList = ({
 
   // Backend's exact wording for this stage varies/is inconsistent (seen as both "To be
   // sent for SO approval" and "Awaiting SO approval"), but the button should always read
-  // "Sent for SO Approval" here regardless — the api/da/update_status call underneath
+  // "Send for SO Approval" here regardless — the api/da/update_status call underneath
   // still uses the real backend label (effectiveNextDaStatusLabel), only the button's own
-  // text is overridden.
+  // text is overridden. Must stay imperative ("Send", not "Sent") — this is the state
+  // shown before the email has actually gone out (soApprovalEmailSent is still false),
+  // so past tense reads as if it already happened.
   //
   // Past that, everything below is local-only staff simulation of the client's response —
   // the backend's status_timeline only has a single "SO approval" row with no field for any
@@ -708,7 +726,7 @@ const SalesOrderList = ({
   // soApprovalEmailSent: true once the email modal's Send has fired.
   // soClientDecision: null while awaiting, else "approved" — recorded by staff via the
   // Approved button shown alongside the header button while awaiting. A Rejected click
-  // doesn't set this — it resets straight back to the "Sent for SO Approval" step instead
+  // doesn't set this — it resets straight back to the "Send for SO Approval" step instead
   // (see handleRejectSoApproval), no intermediate "Redo" step to click through.
   // invoiceDispatched / invoiceClientDecision: same pattern one step further — set once the
   // Invoice Issuance upload completes, recording the client's response to the dispatched
@@ -749,16 +767,18 @@ const SalesOrderList = ({
       : soApprovalEmailSent
       ? "Awaiting For SO Approval"
       : isSoApprovalDaStatus
-      ? "Sent for SO Approval"
+      ? "Send for SO Approval"
       : effectiveNextDaStatusLabel
       ? `Mark ${effectiveNextDaStatusLabel}`
       : effectiveNextDaStatusLabel;
 
   // State for the SO Approval email modal, opened from the header action button when
-  // effectiveNextDaStatusLabel is the "SO Approval" stage. Local-only for now — no backend
-  // send endpoint yet, so sending just closes the modal (the DA status itself only advances
-  // via onAdvanceDaStage's normal click path, same as every other status).
+  // effectiveNextDaStatusLabel is the "SO Approval" stage. Sends via api/da/da_send_action_email
+  // (see handleCreateSoApprovalEmail) — the DA status itself still only advances via
+  // onAdvanceDaStage's normal click path, same as every other status; this just triggers the
+  // real email send and refetches the timeline so any server-side change shows up.
   const [showSoApprovalEmailModal, setShowSoApprovalEmailModal] = useState(false);
+  const [isSendingSoApprovalEmail, setIsSendingSoApprovalEmail] = useState(false);
 
   // Invoice Issuance modal — opened once staff records the client's approval. Reuses the
   // existing UploadInvoiceModal (components/UploadInvoiceModal.jsx), same component the
@@ -785,9 +805,46 @@ const SalesOrderList = ({
     onAdvanceDaStage({ statusId: effectiveNextDaStatusId, label: effectiveNextDaStatusLabel });
   };
 
-  const handleCreateSoApprovalEmail = () => {
-    setShowSoApprovalEmailModal(false);
-    setSoApprovalEmailSent(true);
+  // api/da/da_send_action_email — { call_id, to, subject, body, stage_document_id? } →
+  // { status: true, sticker_id, status_id, status_name } on success, or { status: "error" |
+  // false, message } (call_id/to/subject/body missing, stage_document_id not found, or no
+  // next status left in this call's sequence) on failure. No attachment-picker is wired to
+  // stage_document_id yet, so it's omitted here.
+  const handleCreateSoApprovalEmail = async (emailData) => {
+    if (!callId) {
+      useAlertReducer.getState().error("No call identifier available for this card.");
+      return;
+    }
+    setIsSendingSoApprovalEmail(true);
+    try {
+      const { data } = await daService.sendActionEmail({
+        call_id: callId,
+        to: emailData?.to,
+        subject: emailData?.subject,
+        body: emailData?.message,
+      });
+      if (!data || data.status === "error" || data.status === false) {
+        useAlertReducer.getState().error(data?.message || "Failed to send SO approval email.");
+        return;
+      }
+      setShowSoApprovalEmailModal(false);
+      setSoApprovalEmailSent(true);
+      if (refreshSalesOrder) refreshSalesOrder();
+      daService
+        .getStatusTimeline(callId)
+        .then(({ data: tl }) => setDaHeaderStatusTimeline(Array.isArray(tl?.data) ? tl.data : []))
+        .catch(() => {});
+      useAlertReducer.getState().success(`SO approval email sent${data.status_name ? ` — ${data.status_name}` : ""}.`);
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to send SO approval email.";
+      useAlertReducer.getState().error(msg);
+    } finally {
+      setIsSendingSoApprovalEmail(false);
+    }
   };
 
   const handleRecordSoClientDecision = (decision) => {
@@ -1024,37 +1081,65 @@ const SalesOrderList = ({
   };
 
   // Verifying a line item is the trigger that moves the whole DA/SO record into the
-  // approval flow — ticking the checkbox advances the real DA status to its next stage
-  // (e.g. Ops completed → Sent for SO Approval), same api/da/update_status call the header
-  // action button makes, so the header button's label updates to reflect it. Un-ticking it
-  // again reverts one stage back the same way (sends the last-done step's own label — same
-  // mechanism DA.jsx's own Status Timeline uses for its "done" step revert). No modal/email
-  // popup here either way — that's still only triggered by the header button's own click
-  // (see isSoApprovalDaStatus).
-  const handleToggleVerified = (orderId) => {
-    const isBeingVerified = !verifiedItems.has(orderId);
-    setVerifiedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(orderId)) {
-        next.delete(orderId);
-      } else {
-        next.add(orderId);
-      }
-      return next;
-    });
+  // approval flow — ticking the checkbox calls da/da_verify_sales_line_item. Confirmed via
+  // testing that the endpoint does NOT toggle/return "Verified" in item_status — it just
+  // echoes the item's normal underlying status (e.g. "Completed") and doesn't echo
+  // so_item_id either, so the verified/unverified state can't be read from the response body.
+  // A "success" status alone means the backend toggle succeeded, so isNowVerified is derived
+  // by flipping the state we already knew locally before the call, not from item_status.
+  // On success this also advances the real DA status to its next stage (e.g. Ops completed →
+  // Sent for SO Approval), same api/da/update_status call the header action button makes, so
+  // the header button's label updates to reflect it. Un-ticking it again reverts one stage
+  // back the same way (sends the last-done step's own label — same mechanism DA.jsx's own
+  // Status Timeline uses for its "done" step revert). No modal/email popup here either way —
+  // that's still only triggered by the header button's own click (see isSoApprovalDaStatus).
+  const handleToggleVerified = async (order) => {
+    const orderId = order.id;
+    if (verifyingItemIds.has(orderId)) return;
 
-    // Fixed two-way toggle — always targets these same two labels, regardless of how many
-    // items get verified/un-verified or in what order. The local override is set
-    // unconditionally (not gated on isAdvancingDaStage or the backend call's outcome) so
-    // the button reflects the toggle immediately every time.
-    if (isBeingVerified) {
-      if (soApprovalLabel) {
-        setLocalDaStatusOverride(soApprovalLabel);
-        onAdvanceDaStage?.({ statusId: soApprovalStatusId, label: soApprovalLabel });
+    const wasVerified = order.status === "Verified" || localVerifiedItemIds?.has(orderId) === true;
+
+    setVerifyingItemIds((prev) => new Set(prev).add(orderId));
+    try {
+      const response = await daService.verifySalesLineItem({ so_item_id: orderId });
+      const body = response?.data;
+      if (body?.status !== "success") {
+        throw new Error(body?.message || "Failed to update the item's verification status.");
       }
-    } else if (opsCompletedLabel) {
-      setLocalDaStatusOverride(opsCompletedLabel);
-      onAdvanceDaStage?.({ statusId: opsCompletedStatusId, label: opsCompletedLabel });
+      const isNowVerified = !wasVerified;
+      const underlyingStatus = body.item_status || order.status || "";
+      const updatedList = salesOrderList.map((item) =>
+        item.id === orderId ? { ...item, status: isNowVerified ? "Verified" : underlyingStatus } : item
+      );
+      handleChange("salesOrderList")({ target: { value: updatedList } });
+      setLocalItemVerified(callId, orderId, isNowVerified);
+
+      // Fixed two-way toggle — always targets these same two labels, regardless of how many
+      // items get verified/un-verified or in what order. The local override is set
+      // unconditionally (not gated on isAdvancingDaStage or the backend call's outcome) so
+      // the button reflects the toggle immediately every time.
+      if (isNowVerified) {
+        if (soApprovalLabel) {
+          setLocalDaStatusOverride(soApprovalLabel);
+          onAdvanceDaStage?.({ statusId: soApprovalStatusId, label: soApprovalLabel });
+        }
+      } else if (opsCompletedLabel) {
+        setLocalDaStatusOverride(opsCompletedLabel);
+        onAdvanceDaStage?.({ statusId: opsCompletedStatusId, label: opsCompletedLabel });
+      }
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to update the item's verification status.";
+      useAlertReducer.getState().error(msg);
+    } finally {
+      setVerifyingItemIds((prev) => {
+        const next = new Set(prev);
+        next.delete(orderId);
+        return next;
+      });
     }
   };
 
@@ -1088,11 +1173,13 @@ const SalesOrderList = ({
         next.delete(deletingItem.id);
         return next;
       });
-      setVerifiedItems((prev) => {
+      setVerifyingItemIds((prev) => {
         const next = new Set(prev);
         next.delete(deletingItem.id);
         return next;
       });
+      setLocalItemVerified(callId, deletingItem.id, false);
+      markLocalItemDeleted(callId, deletingItem.id);
       setShowDeleteItemModal(false);
       setDeletingItem(null);
     } catch (err) {
@@ -1867,16 +1954,17 @@ const SalesOrderList = ({
         </div>
       </td>
 
-      {/* Action — DA-only: Verify checkbox (local state until a backend field exists to
-          persist it) + Delete (no backend endpoint yet, removes the item locally) */}
+      {/* Action — DA-only: Verify checkbox (persisted via da/da_verify_sales_line_item) +
+          Delete (no backend endpoint yet, removes the item locally) */}
       {isDaVerifyContext && (
         <td>
           <div className="sales-order-table-cell sales-order-action-cell">
             <input
               type="checkbox"
               className="sales-order-verify-checkbox"
-              checked={verifiedItems.has(order.id)}
-              onChange={() => handleToggleVerified(order.id)}
+              checked={order.status === "Verified" || localVerifiedItemIds?.has(order.id) === true}
+              onChange={() => handleToggleVerified(order)}
+              disabled={verifyingItemIds.has(order.id)}
               aria-label="Verify line item"
             />
             {!readOnly && (
@@ -1912,7 +2000,7 @@ const SalesOrderList = ({
             onPageChange={setCurrentPage}
             compact
           />
-          {isDaVerifyContext && effectiveNextDaStatusLabel && (
+          {isDaVerifyContext && effectiveNextDaStatusLabel && effectiveNextDaStatusLabel !== opsCompletedLabel && (
             soApprovalEmailSent && !soClientDecision ? (
               <div className="sales-order-da-status-group">
                 <span className="sales-order-da-status-button sales-order-da-status-button--label">
@@ -2883,6 +2971,7 @@ const SalesOrderList = ({
           show={showSoApprovalEmailModal}
           onClose={() => setShowSoApprovalEmailModal(false)}
           onCreate={handleCreateSoApprovalEmail}
+          isSubmitting={isSendingSoApprovalEmail}
           soCustomerName={soCustomerName}
         />
       )}
