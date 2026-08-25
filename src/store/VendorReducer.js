@@ -114,6 +114,25 @@ const useVendorReducer = create((set) => ({
       throw error;
     }
   },
+
+  isUpdatingSalesOrderItemAmount: false,
+  updateSalesOrderItemAmountError: '',
+
+  // UPDATE_SALES_ORDER_ITEM_AMOUNT_REQUEST / SUCCESS / FAILURE
+  updateSalesOrderItemAmount: async (payload) => {
+    try {
+      set({ isUpdatingSalesOrderItemAmount: true, updateSalesOrderItemAmountError: '' });
+      const { data } = await salesOrderService.updateSalesOrderItemAmount(payload);
+      set({ isUpdatingSalesOrderItemAmount: false });
+      return data;
+    } catch (error) {
+      set({
+        updateSalesOrderItemAmountError: error?.response?.data?.message ?? error.message,
+        isUpdatingSalesOrderItemAmount: false,
+      });
+      throw error;
+    }
+  },
 }));
 
 export default useVendorReducer;

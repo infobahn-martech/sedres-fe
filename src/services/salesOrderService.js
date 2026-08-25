@@ -89,6 +89,7 @@ const saveSalesOrderItem = (payload) => Gateway.post("sales_order/save_sales_ord
  * @param {number} payload.quantity
  * @param {number} payload.discount_percentage
  * @param {number} payload.tax_percentage
+ * @param {string|number} [payload.vendor_id]
  */
 const updateSalesOrderItemAmount = (payload) => Gateway.post("sales_order/update_sales_order_item_amount", payload);
 

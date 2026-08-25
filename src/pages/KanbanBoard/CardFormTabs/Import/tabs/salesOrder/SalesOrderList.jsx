@@ -11,6 +11,7 @@ import callFileService from "../../../../../../services/callFileService";
 import daService from "../../../../../../services/daService";
 import { mapStatusTimelineResponse } from "../da/daStatusTimeline";
 import useAttachmentsReducer from "../../../../../../store/AttachmentsReducer";
+import useVendorReducer from "../../../../../../store/VendorReducer";
 import DatePickerField from "../../../shared/components/DatePickerField";
 import PremiumSelect from "../../../../../../components/form/PremiumSelect";
 import useAlertReducer from "../../../../../../store/AlertReducer";
@@ -500,6 +501,7 @@ const SalesOrderList = ({
   // Select Supporting Documents modal, alongside whatever's already attached to the item.
   const supportingDocsLibrary = useAttachmentsReducer((state) => state.supportingDocs);
   const getAllSupportingDocs = useAttachmentsReducer((state) => state.getAllSupportingDocs);
+  const updateSalesOrderItemAmount = useVendorReducer((state) => state.updateSalesOrderItemAmount);
 
   useEffect(() => {
     getAllSupportingDocs(callId);
@@ -956,9 +958,10 @@ const SalesOrderList = ({
       quantity: parseFloat(order.qty) || 0,
       discount_percentage: parseFloat(order.discount) || 0,
       tax_percentage: parseFloat(String(order.taxCode ?? "0").replace(/%/g, "")) || 0,
+      vendor_id: order.supplierCode || "",
     };
     try {
-      await salesOrderService.updateSalesOrderItemAmount(payload);
+      await updateSalesOrderItemAmount(payload);
       if (refreshSalesOrder) await refreshSalesOrder();
     } catch (err) {
       const msg =
