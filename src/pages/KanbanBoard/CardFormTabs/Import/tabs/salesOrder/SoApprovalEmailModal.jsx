@@ -20,7 +20,11 @@ const MESSAGE_QUILL_FORMATS = ["bold", "italic", "underline", "list", "bullet", 
 // own header/footer, above everything else) is handled the same proven way as every other
 // modal in the app. Local-only for now — no backend send endpoint yet; onCreate just
 // advances the SO status.
-const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, soCustomerName = "" }) => {
+// stageLabel is the real current stage name from api/da/status_timeline (e.g. "SO approval",
+// "To be sent for SRF") — wording varies per call (see the "NOT name-matched" comment in
+// SalesOrderList.jsx), so the modal title/subject/send button must echo that real label
+// instead of a fixed "SO Approval" string that would be wrong on calls using different wording.
+const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, soCustomerName = "", stageLabel = "SO Approval" }) => {
   const [fromValue, setFromValue] = useState("operations@shipping.com");
   const [toValue, setToValue] = useState("");
   const [ccValue, setCcValue] = useState("");
@@ -32,10 +36,10 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
 
   useEffect(() => {
     if (show) {
-      setSubjectValue(`SO Approval Request${soCustomerName ? ` — ${soCustomerName}` : ""}`);
+      setSubjectValue(`${stageLabel} Request${soCustomerName ? ` — ${soCustomerName}` : ""}`);
       setToError("");
     }
-  }, [show, soCustomerName]);
+  }, [show, soCustomerName, stageLabel]);
 
   const handleFilesSelected = (fileList) => {
     const files = Array.from(fileList || []).filter((file) => file);
@@ -64,7 +68,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
 
   const renderHeader = () => (
     <div className="so-approval-email-header">
-      <h1 className="modal-title">SO Approval Email</h1>
+      <h1 className="modal-title">{stageLabel} Email</h1>
     </div>
   );
 
@@ -204,7 +208,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
         disabled={isSubmitting}
       >
         <FiSend />
-        {isSubmitting ? "Sending..." : "Send for SO Approval"}
+        {isSubmitting ? "Sending..." : `Send for ${stageLabel}`}
       </button>
     </div>
   );
@@ -227,6 +231,7 @@ SoApprovalEmailModal.propTypes = {
   onCreate: PropTypes.func,
   isSubmitting: PropTypes.bool,
   soCustomerName: PropTypes.string,
+  stageLabel: PropTypes.string,
 };
 
 export default SoApprovalEmailModal;
