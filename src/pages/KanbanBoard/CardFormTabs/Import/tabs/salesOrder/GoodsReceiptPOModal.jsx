@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
+import salesOrderService from "../../../../../../services/salesOrderService";
 
 const formatCurrencySAR = (amount) =>
   new Intl.NumberFormat("en-US", {
@@ -23,6 +24,37 @@ const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN, isSubmitti
   useEffect(() => {
     setEditableTotal((computedTotalPaymentDue || 0).toFixed(2));
   }, [computedTotalPaymentDue, show]);
+
+  // Prior receipts already generated against this PO — sales_order/get_grn_by_po — shown so the
+  // user can see what's already been received before submitting another (possibly partial) GRN.
+  const [grnHistory, setGrnHistory] = useState([]);
+  const [isLoadingGrnHistory, setIsLoadingGrnHistory] = useState(false);
+  const purchaseOrderIdForHistory = poDetails?.purchaseOrderId;
+
+  useEffect(() => {
+    if (!show || !purchaseOrderIdForHistory) {
+      setGrnHistory([]);
+      return undefined;
+    }
+    let cancelled = false;
+    setIsLoadingGrnHistory(true);
+    salesOrderService
+      .getGrnByPO(purchaseOrderIdForHistory)
+      .then((response) => {
+        if (cancelled) return;
+        const body = response?.data;
+        setGrnHistory(body?.status === "success" && Array.isArray(body?.data) ? body.data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setGrnHistory([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingGrnHistory(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [show, purchaseOrderIdForHistory]);
 
   if (!show || !poDetails) return null;
 
@@ -140,6 +172,36 @@ const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN, isSubmitti
                 </tbody>
               </table>
             </div>
+
+            {purchaseOrderId && (
+              <div className="so-po-terms">
+                <div className="so-po-terms-title">Previous Receipts</div>
+                {isLoadingGrnHistory ? (
+                  <div className="so-po-field-value">Loading…</div>
+                ) : grnHistory.length === 0 ? (
+                  <div className="so-po-field-value">No goods receipts yet.</div>
+                ) : (
+                  <table className="so-po-doc-table">
+                    <thead>
+                      <tr>
+                        <th>GRN No.</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {grnHistory.map((grn) => (
+                        <tr key={grn.grn_id}>
+                          <td>{grn.grn_number || "—"}</td>
+                          <td>{formatCurrencySAR(grn.po_amount)}</td>
+                          <td>{grn.grn_status || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
 
             <div className="so-po-bottom">
               <div className="so-po-bottom-left">

@@ -117,6 +117,12 @@ const getPurchaseOrder = (purchaseOrderId) =>
   Gateway.get(`sales_order/get_purchase_order/${encodeURIComponent(String(purchaseOrderId))}`);
 
 /**
+ * @param {string|number} purchaseOrderId
+ */
+const getGrnByPO = (purchaseOrderId) =>
+  Gateway.get(`sales_order/get_grn_by_po/${encodeURIComponent(String(purchaseOrderId))}`);
+
+/**
  * @param {object} payload
  * @param {string|number} payload.sales_order_id
  * @param {string} [payload.delivery_date]
@@ -142,6 +148,7 @@ export default {
   calculateTotals,
   getPO,
   getPurchaseOrder,
+  getGrnByPO,
   updateSalesOrderItemAmount,
   updateSalesOrder,
 };
