@@ -611,6 +611,10 @@ const SalesOrderList = ({
   // State for vendor modal (row-level supplier picker)
   const [vendorModalTarget, setVendorModalTarget] = useState(null); // orderId or "new"
   const [vendors, setVendors] = useState([]);
+  const vendorSelectOptions = useMemo(
+    () => vendors.map((v) => ({ value: v.code, label: `${v.code} — ${v.name}` })),
+    [vendors]
+  );
 
   // Vendor list — billingentity/getvendors, [{ customer_code, customer_name }]
   useEffect(() => {
@@ -2259,23 +2263,21 @@ const SalesOrderList = ({
                       </div>
                       <div className="sales-order-add-form-field">
                         <label>Supplier Code</label>
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <input
-                            type="text"
-                            value={newItemForm.supplierCode ? `${newItemForm.supplierCode} — ${newItemForm.supplierName}` : ""}
-                            readOnly
-                            placeholder="— Select vendor —"
-                            className="sales-order-add-form-input"
-                            style={{ flex: 1, cursor: "default" }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setVendorModalTarget("new")}
-                            className="sales-order-supplier-select-btn"
-                          >
-                            {newItemForm.supplierCode ? "Change" : "Select"}
-                          </button>
-                        </div>
+                        <PremiumSelect
+                          value={newItemForm.supplierCode}
+                          onChange={(e) => {
+                            const code = e.target.value;
+                            const vendor = vendors.find((v) => v.code === code);
+                            setNewItemForm((prev) => ({
+                              ...prev,
+                              supplierCode: code,
+                              supplierName: vendor?.name || "",
+                            }));
+                          }}
+                          options={vendorSelectOptions}
+                          placeholder="— Select vendor —"
+                          searchPlaceholder="Search by code or name..."
+                        />
                       </div>
                     </div>
                     <div className="sales-order-add-form-actions">
