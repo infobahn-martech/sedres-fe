@@ -1665,11 +1665,15 @@ const SalesOrderList = ({
   // sales_order/get_po itself from selectedItems, so this just seeds it with the PO's item ids
   // and its known purchaseOrderId (which also disables re-submitting).
   const handleOpenExistingPO = (order) => {
+    if (!order.poId) {
+      useAlertReducer.getState().error("No purchase order identifier available for this item.");
+      return;
+    }
     const poItems = salesOrderList.filter((o) => o.poNo === order.poNo);
     const itemIds = poItems.length > 0 ? poItems.map((o) => o.id) : [order.id];
     setGeneratePOItemIds(itemIds);
     setGeneratePOError(null);
-    setLastGeneratedPurchaseOrderId(order.poId || null);
+    setLastGeneratedPurchaseOrderId(order.poId);
     setShowGeneratePOPopup(true);
   };
 
