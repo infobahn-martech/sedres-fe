@@ -1663,7 +1663,8 @@ const renderTabContent = (
   isAdvancingDaStage,
   showLaunchHire = true,
   isDaCardContext = false,
-  refreshSalesOrder
+  refreshSalesOrder,
+  onDaStatusRefresh
 ) => {
   const commonProps = {
     card,
@@ -1685,6 +1686,7 @@ const renderTabContent = (
     isAdvancingDaStage,
     showLaunchHire,
     refreshSalesOrder,
+    onDaStatusRefresh,
   };
 
   if (isDAModule) {
@@ -2564,6 +2566,13 @@ function CardForm({
   // picker) so DA.jsx's Summary-tab Status Timeline (a separate fetch of
   // api/da/status_timeline/{call_id}) refetches immediately instead of only on next open.
   const [daStatusRefreshToken, setDaStatusRefreshToken] = useState(0);
+  // SalesOrderList's SO-approval email send / client-decision Approve-Reject buttons
+  // (da_send_action_email, da_record_client_decision) advance the real backend status
+  // outside handleDaTimelineStepClick, so they used to only refresh their own local
+  // daHeaderStatusTimeline fetch — leaving DA.jsx's Summary-tab Status Timeline stale
+  // (same api/da/status_timeline data) until the card was closed and reopened. Passed down
+  // as onDaStatusRefresh so those flows can bump the same token handleDaTimelineStepClick uses.
+  const bumpDaStatusRefreshToken = useCallback(() => setDaStatusRefreshToken((t) => t + 1), []);
   // Backend gap confirmed (2026-08-14): get_full_board still doesn't reflect a card's
   // advance_stage move — the card comes back in its pre-move column even though advance_stage
   // itself returned status:true. Remember the last successful move for THIS card in-memory
@@ -3069,7 +3078,8 @@ function CardForm({
                 isAdvancingStage,
                 showLaunchHire,
                 isDaCardContext,
-                refreshSalesOrder
+                refreshSalesOrder,
+                bumpDaStatusRefreshToken
               )}
           </>
         )}

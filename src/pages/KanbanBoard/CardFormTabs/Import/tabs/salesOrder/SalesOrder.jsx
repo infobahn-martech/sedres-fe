@@ -14,6 +14,7 @@ function SalesOrder({
   daStatusRefreshToken,
   onAdvanceDaStage,
   isAdvancingDaStage,
+  onDaStatusRefresh,
 }) {
   const cardColor = "#e2e6ff";
 
@@ -36,6 +37,7 @@ function SalesOrder({
             daStatusRefreshToken={daStatusRefreshToken}
             onAdvanceDaStage={onAdvanceDaStage}
             isAdvancingDaStage={isAdvancingDaStage}
+            onDaStatusRefresh={onDaStatusRefresh}
           />
         </div>
       </div>
@@ -56,6 +58,7 @@ SalesOrder.propTypes = {
   daStatusRefreshToken: PropTypes.number,
   onAdvanceDaStage: PropTypes.func,
   isAdvancingDaStage: PropTypes.bool,
+  onDaStatusRefresh: PropTypes.func,
 };
 
 export default SalesOrder;

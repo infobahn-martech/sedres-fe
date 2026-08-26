@@ -920,6 +920,19 @@ function SummaryPanel({ callId, statusTimeline, isLoadingStatusTimeline, onAdvan
   // wins once the backend actually returns one.
   const timelineSteps = useMemo(() => {
     const mapped = mapStatusTimelineResponse(statusTimeline);
+    // The last step in the sequence (e.g. "Closed paid") has no "next" step to advance into —
+    // mapStatusTimelineResponse's own current-derivation fallback (see its comment) would
+    // otherwise leave it marked "current" forever once reached, showing an "In progress" clock
+    // icon on a call that's actually fully closed. Promote it to "done" for display only, once
+    // it's the one actually reached — this is local to this timeline's own render, not the
+    // shared mapping helper, so it doesn't affect SalesOrderList's header-button derivation
+    // (which relies on that function's real "current" row for its own, separate logic).
+    if (mapped.length > 0) {
+      const lastIdx = mapped.length - 1;
+      if (mapped[lastIdx].state === "current") {
+        mapped[lastIdx] = { ...mapped[lastIdx], state: "done" };
+      }
+    }
     if (callId == null) return mapped;
     return mapped.map((step) => {
       if (step.state !== "done" || step.date) return step;
