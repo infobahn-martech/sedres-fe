@@ -1675,21 +1675,17 @@ const SalesOrderList = ({
         ? Number(formValues.soDiscountPercentage)
         : 0;
 
-    // Total Payment Due is editable in the GRN preview — the delta the user dialed in
-    // against the computed total is sent through as the rounding adjustment.
-    const rounding = Number.isFinite(details?.roundingAdjustment)
-      ? Math.round(details.roundingAdjustment * 100) / 100
-      : 0;
+    // Total Payment Due is editable in the GRN preview — the amount the user dialed in
+    // is sent through as-is (e.g. for a partial delivery).
+    const amount = Number.isFinite(details?.amount) ? details.amount : 0;
 
     const payload = {
       purchase_order_id: purchaseOrderId,
-      contact_person: soContactPerson,
-      due_date: soDeliveryDate,
+      amount,
       document_date: soDocumentDate,
-      buyer: soContactPerson,
-      owner: soOwner,
+      due_date: soDeliveryDate,
       discount_percentage: discountPercentage,
-      rounding,
+      rounding: 0,
       remarks: soRemarks,
     };
 

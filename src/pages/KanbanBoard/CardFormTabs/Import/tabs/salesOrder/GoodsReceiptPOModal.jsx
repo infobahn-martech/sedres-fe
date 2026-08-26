@@ -16,9 +16,8 @@ const TABS = ["Contents", "Logistics", "Accounting", "Attachments"];
 const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN, isSubmitting = false }) => {
   const computedTotalPaymentDue = poDetails?.totalPaymentDue ?? 0;
 
-  // Total Payment Due is editable — the delta from the computed total is sent to
-  // sales_order/generate_grn as `rounding` (the same adjustment concept already shown,
-  // read-only, in the Generate PO document). Resets whenever a new PO is copied in.
+  // Total Payment Due is editable — the edited value is sent to sales_order/generate_grn
+  // as `amount` (e.g. for a partial delivery). Resets whenever a new PO is copied in.
   const [editableTotal, setEditableTotal] = useState(() => (computedTotalPaymentDue || 0).toFixed(2));
 
   useEffect(() => {
@@ -48,11 +47,9 @@ const GoodsReceiptPOModal = ({ show, onClose, poDetails, onCreateGRN, isSubmitti
 
   const handleCreateGRNClick = () => {
     const finalTotal = parseFloat(editableTotal);
-    const roundingAdjustment = Number.isFinite(finalTotal) ? finalTotal - computedTotalPaymentDue : 0;
     onCreateGRN?.({
       ...poDetails,
-      totalPaymentDue: Number.isFinite(finalTotal) ? finalTotal : computedTotalPaymentDue,
-      roundingAdjustment,
+      amount: Number.isFinite(finalTotal) ? finalTotal : computedTotalPaymentDue,
     });
   };
 

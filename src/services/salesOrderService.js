@@ -43,13 +43,11 @@ const generatePO = (payload) => Gateway.post("sales_order/generate_po", payload)
 /**
  * @param {object} payload
  * @param {string|number} payload.purchase_order_id
- * @param {string} [payload.contact_person]
- * @param {string} [payload.due_date]
+ * @param {number} payload.amount
  * @param {string} [payload.document_date]
- * @param {string} [payload.buyer]
- * @param {string} [payload.owner]
+ * @param {string} [payload.due_date]
  * @param {number} [payload.discount_percentage]
- * @param {number} [payload.rounding]
+ * @param {number} [payload.rounding] - 1 to enable rounding, 0 to disable
  * @param {string} [payload.remarks]
  */
 const generateGRN = (payload) => Gateway.post("sales_order/generate_grn", payload);
