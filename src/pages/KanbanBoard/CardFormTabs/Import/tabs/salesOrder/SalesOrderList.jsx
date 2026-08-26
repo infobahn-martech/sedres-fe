@@ -770,6 +770,11 @@ const SalesOrderList = ({
   // real email send and refetches the timeline so any server-side change shows up.
   const [showSoApprovalEmailModal, setShowSoApprovalEmailModal] = useState(false);
   const [isSendingSoApprovalEmail, setIsSendingSoApprovalEmail] = useState(false);
+  // Prefills the modal's "To" field — api/da/da_action_email_draft/{call_id} →
+  // { status: "success", data: { recipient } }. Fetched right before opening the modal (see
+  // handleOpenSoApprovalEmailModal) rather than on mount, since it's only relevant once staff
+  // is actually about to send this stage's email.
+  const [draftRecipientEmail, setDraftRecipientEmail] = useState("");
 
   // Invoice Issuance modal — opened once staff records the client's approval. Reuses the
   // existing UploadInvoiceModal (components/UploadInvoiceModal.jsx), same component the
@@ -777,6 +782,24 @@ const SalesOrderList = ({
   // via da/da_upload_invoice (see handleUploadInvoiceIssuance) — the client-decision states
   // that follow it are still local-only simulation, same as the rest of this stage.
   const [showInvoiceIssuanceModal, setShowInvoiceIssuanceModal] = useState(false);
+
+  // api/da/da_action_email_draft/{call_id} — { status: "success", data: { recipient } }. Best
+  // effort: if it fails or callId is missing, the modal just opens with an empty "To" instead
+  // of blocking staff from sending the email at all.
+  const handleOpenSoApprovalEmailModal = async () => {
+    if (!callId) {
+      setShowSoApprovalEmailModal(true);
+      return;
+    }
+    try {
+      const { data } = await daService.getActionEmailDraft(callId);
+      setDraftRecipientEmail(data?.data?.recipient || "");
+    } catch {
+      setDraftRecipientEmail("");
+    } finally {
+      setShowSoApprovalEmailModal(true);
+    }
+  };
 
   const handleAdvanceDaStatusFromHeader = () => {
     if (!effectiveNextDaStatusLabel || isTerminalClosedStage || isAwaitingDecisionStage) return;
@@ -787,7 +810,7 @@ const SalesOrderList = ({
     // isSoApprovalDaStatus is the safe default for every other stage (see its declaration
     // above) — always requires the email confirmation before advancing, never a silent direct
     // advance, since there's no longer any real stage left in the sequence that should skip it.
-    setShowSoApprovalEmailModal(true);
+    handleOpenSoApprovalEmailModal();
   };
 
   // api/da/da_send_action_email — { call_id, to, subject, body, stage_document_id? } →
@@ -3003,6 +3026,7 @@ const SalesOrderList = ({
           isSubmitting={isSendingSoApprovalEmail}
           soCustomerName={soCustomerName}
           stageLabel={displayStageLabel || "SO Approval"}
+          defaultTo={draftRecipientEmail}
         />
       )}
 
