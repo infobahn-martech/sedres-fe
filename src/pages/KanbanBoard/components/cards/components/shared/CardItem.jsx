@@ -11,6 +11,8 @@ import lamprellLogo from "../../../../../../assets/images/lamprell.png";
 import gulfmarineLogo from "../../../../../../assets/images/gulfmarine.png";
 import { FiFileText, FiDownload, FiLoader, FiTrendingUp } from "react-icons/fi";
 import { resolveIconComponentStrict } from "../../../../../../structure/SideNav/components/DynamicIcon";
+import { getFirstUserRoleId } from "../../../../../../shared/helpers/groUserRoles";
+import useAuthReducer from "../../../../../../store/AuthReducer";
 import {
   hasText,
   isValidProgress,
@@ -121,10 +123,31 @@ ApiCardCountBadge.propTypes = {
   label: PropTypes.string.isRequired,
 };
 
+// DA users (role_id 22) never see the transport/hotel/medical/material/waste/link icons —
+// only the credit icon, and only when the card's credit_limit exceeds this threshold.
+const DA_ROLE_ID = "22";
+const DA_CREDIT_LIMIT_THRESHOLD = 5000;
+
 /** Row of API service-count icons (transport/hotel/medical/material/waste) shown on full API cards.
  *  Transport Coordinator workflow only cares about transport + linked calls — the other service
- *  counts (hotel/medical/material/waste) belong to other workflows and are hidden here. */
+ *  counts (hotel/medical/material/waste) belong to other workflows and are hidden here.
+ *  DA users (role_id 22) only ever see the credit icon (when credit_limit is over the threshold). */
 function ApiCardCountIconsRow({ card, cardsById, setSelectedCard, transportOnly = false }) {
+  const userProfile = useAuthReducer((state) => state.userProfile);
+  const userRoleId = getFirstUserRoleId(userProfile);
+  const isDaUser = String(userRoleId ?? "") === DA_ROLE_ID;
+
+  if (isDaUser) {
+    if (!(Number(card.creditLimit) > DA_CREDIT_LIMIT_THRESHOLD)) return null;
+    return (
+      <div className="card-api-count-icons-row">
+        <span className="card-api-count-badge" title="Credit Limit">
+          <CreditIcon size={13} color="#2563eb" />
+        </span>
+      </div>
+    );
+  }
+
   const hasLink = card.hasLinkedCall && Array.isArray(card.linkedCardIds) && card.linkedCardIds.length > 0;
   const hasAny = transportOnly
     ? Number(card.transportCount) > 0 || hasLink
@@ -154,6 +177,7 @@ function ApiCardCountIconsRow({ card, cardsById, setSelectedCard, transportOnly 
 
 ApiCardCountIconsRow.propTypes = {
   card: PropTypes.shape({
+    creditLimit: PropTypes.number,
     transportCount: PropTypes.number,
     hotelCount: PropTypes.number,
     medicalCount: PropTypes.number,
@@ -305,6 +329,13 @@ const WasteDisposalIcon = ({ size = 20, color = "#666" }) => (
     <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     <path d="M10 11V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M14 11V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const CreditIcon = ({ size = 20, color = "#666" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color }}>
+    <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
+    <path d="M2 10H22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
 
@@ -988,6 +1019,8 @@ CardItem.propTypes = {
     vesselName: PropTypes.string,
     taskName: PropTypes.string,
     taskId: PropTypes.string,
+    workflow_role_id: PropTypes.string,
+    creditLimit: PropTypes.number, // API cards (DA role 22): see ApiCardCountIconsRow
     transport: PropTypes.string,
     transportCount: PropTypes.number, // API cards: see ApiCardCountIconsRow
     hotel: PropTypes.string,

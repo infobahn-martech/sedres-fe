@@ -292,6 +292,10 @@ export function mapBoardWorkflowFromApi(workflow) {
               card.card_type_name != null && String(card.card_type_name).trim() !== ""
                 ? String(card.card_type_name).trim()
                 : null,
+            creditLimit:
+              card.credit_limit != null && String(card.credit_limit).trim() !== ""
+                ? Number(card.credit_limit)
+                : null,
             transportCount:
               card.transport_count != null && String(card.transport_count).trim() !== ""
                 ? Number(card.transport_count)
