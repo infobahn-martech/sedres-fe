@@ -111,6 +111,12 @@ const calculateTotals = (payload) => Gateway.post("sales_order/calculate_totals"
 const getPO = (soItemIds) => Gateway.post("sales_order/get_po", { so_item_ids: soItemIds });
 
 /**
+ * @param {string|number} purchaseOrderId
+ */
+const getPurchaseOrder = (purchaseOrderId) =>
+  Gateway.get(`sales_order/get_purchase_order/${encodeURIComponent(String(purchaseOrderId))}`);
+
+/**
  * @param {object} payload
  * @param {string|number} payload.sales_order_id
  * @param {string} [payload.delivery_date]
@@ -135,6 +141,7 @@ export default {
   addSoItemDocument,
   calculateTotals,
   getPO,
+  getPurchaseOrder,
   updateSalesOrderItemAmount,
   updateSalesOrder,
 };

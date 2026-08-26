@@ -97,6 +97,8 @@ export function mapSalesOrderResponse(apiData) {
     woStatus: Number(item.wo_status) || 0,
     workOrder: item.work_order?.wo_number || "",
     woId: item.work_order?.wo_id != null ? String(item.work_order.wo_id) : null,
+    poNo: item.purchase_order?.po_number || "",
+    poId: item.purchase_order?.po_id != null ? String(item.purchase_order.po_id) : null,
     status: item.status || "",
     documents: Array.isArray(item.documents) ? item.documents.map(mapDocument) : [],
   };

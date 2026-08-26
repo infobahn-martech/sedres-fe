@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import salesOrderService from "../../../../../../services/salesOrderService";
 import billingEntityService from "../../../../../../services/billingEntityService";
 import DatePickerField from "../../../shared/components/DatePickerField";
+import { calcLineAmounts } from "./poLineAmounts";
 
 const formatCurrencySAR = (amount) =>
   new Intl.NumberFormat("en-US", {
@@ -17,17 +18,6 @@ const getStatusPillColors = (status) => {
   if (s.includes("cancel")) return { color: "#b91c1c", background: "#fee2e2" };
   if (s.includes("open") || s.includes("draft")) return { color: "#1d4ed8", background: "#dbeafe" };
   return { color: "#475569", background: "#f1f5f9" };
-};
-
-const calcLineAmounts = (item) => {
-  const qty = parseFloat(item.qty) || 0;
-  const unitPrice = parseFloat(item.unitPrice) || 0;
-  const discount = parseFloat(item.discount) || 0;
-  const taxRate = (parseFloat(String(item.taxCode || "0").replace(/%/g, "")) || 0) / 100;
-  const subtotal = qty * unitPrice * (1 - discount / 100);
-  const tax = subtotal * taxRate;
-  const total = item.totalAmount ?? subtotal + tax;
-  return { subtotal, tax, total };
 };
 
 const TABS = ["Contents"];
@@ -74,6 +64,9 @@ const GeneratePOModal = ({
   const [remarksValue, setRemarksValue] = useState(remarks || "");
   const [poVendorId, setPoVendorId] = useState(null);
   const [poSummary, setPoSummary] = useState(null);
+  const [displayNumber, setDisplayNumber] = useState(soNumber);
+  const [displayStatus, setDisplayStatus] = useState(status);
+  const [displayPostingDate, setDisplayPostingDate] = useState(postingDate);
   const copyToRef = useRef(null);
   const vendorPickerRef = useRef(null);
 
@@ -127,8 +120,49 @@ const GeneratePOModal = ({
     };
   }, []);
 
-  // PO details — sales_order/get_po — authoritative vendor/dates/totals for the selected line items.
+  // PO details for a PO already generated — sales_order/get_purchase_order/{id} — the
+  // authoritative, submitted record (vendor/dates/status/totals), keyed by purchaseOrderId.
   useEffect(() => {
+    if (!purchaseOrderId) return undefined;
+    let cancelled = false;
+    salesOrderService
+      .getPurchaseOrder(purchaseOrderId)
+      .then((response) => {
+        if (cancelled) return;
+        const body = response?.data;
+        if (body?.status !== "success" || !body?.data) return;
+        const data = body.data;
+        if (data.vendor_id != null) setPoVendorId(data.vendor_id);
+        if (data.vendor_ref_no) setVendorRefNo(data.vendor_ref_no);
+        if (data.delivery_date) setDeliveryDateValue(data.delivery_date);
+        if (data.document_date) setDocumentDateValue(data.document_date);
+        if (data.remarks) setRemarksValue(data.remarks);
+        if (data.discount_percentage != null) setDiscountPercentage(String(data.discount_percentage));
+        setRoundingEnabled((Number(data.rounding) || 0) !== 0);
+        if (data.po_number) setDisplayNumber(data.po_number);
+        if (data.po_status) setDisplayStatus(data.po_status);
+        if (data.po_date) setDisplayPostingDate(data.po_date);
+        setCalculatedTotals({
+          total_discount: null,
+          total_tax: data.tax_amount,
+          rounding_rate: data.rounding,
+          grand_total: data.total_payment_due,
+        });
+      })
+      .catch(() => {
+        // Keep prop-based defaults and local calc fallback on failure.
+      });
+    return () => {
+      cancelled = true;
+    };
+    // purchaseOrderId is fixed for the lifetime of this modal's mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // PO details for a PO not yet generated — sales_order/get_po — authoritative vendor/dates/
+  // totals for the currently selected line items, used to seed the preview before submission.
+  useEffect(() => {
+    if (purchaseOrderId) return undefined;
     let cancelled = false;
     salesOrderService
       .getPO(selectedItems)
@@ -255,8 +289,8 @@ const GeneratePOModal = ({
       currency: localCurrency,
       branch,
       branchRegNo,
-      poNo: soNumber,
-      postingDate,
+      poNo: displayNumber,
+      postingDate: displayPostingDate,
       documentDate: documentDateValue,
       items: lineAmounts.map(({ item, tax: lineTax, total }) => ({
         itemNo: item.itemNo,
@@ -386,13 +420,13 @@ const GeneratePOModal = ({
               <div className="so-po-fields-col">
                 <div className="so-po-field-row">
                   <span className="so-po-field-label">No.</span>
-                  <span className="so-po-field-value">{soNumber || "—"}</span>
+                  <span className="so-po-field-value">{displayNumber || "—"}</span>
                 </div>
                 <div className="so-po-field-row">
                   <span className="so-po-field-label">Status</span>
-                  {status ? (
-                    <span className="so-po-status-pill" style={getStatusPillColors(status)}>
-                      {status}
+                  {displayStatus ? (
+                    <span className="so-po-status-pill" style={getStatusPillColors(displayStatus)}>
+                      {displayStatus}
                     </span>
                   ) : (
                     <span className="so-po-field-value">—</span>
@@ -400,7 +434,7 @@ const GeneratePOModal = ({
                 </div>
                 <div className="so-po-field-row">
                   <span className="so-po-field-label">Posting Date</span>
-                  <span className="so-po-field-value">{postingDate || "—"}</span>
+                  <span className="so-po-field-value">{displayPostingDate || "—"}</span>
                 </div>
                 <div className="so-po-field-row">
                   <span className="so-po-field-label">Delivery Date</span>

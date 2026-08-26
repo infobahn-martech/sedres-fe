@@ -1661,6 +1661,18 @@ const SalesOrderList = ({
     setGrnDetails(null);
   };
 
+  // Opens the Generate PO modal for a row that already has a PO No. — GeneratePOModal fetches
+  // sales_order/get_po itself from selectedItems, so this just seeds it with the PO's item ids
+  // and its known purchaseOrderId (which also disables re-submitting).
+  const handleOpenExistingPO = (order) => {
+    const poItems = salesOrderList.filter((o) => o.poNo === order.poNo);
+    const itemIds = poItems.length > 0 ? poItems.map((o) => o.id) : [order.id];
+    setGeneratePOItemIds(itemIds);
+    setGeneratePOError(null);
+    setLastGeneratedPurchaseOrderId(order.poId || null);
+    setShowGeneratePOPopup(true);
+  };
+
   const handleCreateGRN = async (details) => {
     if (isGeneratingGRN) return;
 
@@ -1931,7 +1943,13 @@ const SalesOrderList = ({
       <td>
         <div className="sales-order-table-cell" style={{ textAlign: "center" }}>
           {isDAModule ? (
-            order.poNo || "—"
+            order.poNo ? (
+              <button type="button" className="so-wo-number-link" onClick={() => handleOpenExistingPO(order)}>
+                {order.poNo}
+              </button>
+            ) : (
+              "—"
+            )
           ) : eligibleForPo ? (
             <input
               type="checkbox"
@@ -1940,8 +1958,12 @@ const SalesOrderList = ({
               aria-label="Select for Generate PO"
               style={{ width: "18px", height: "18px", cursor: "pointer" }}
             />
+          ) : order.poNo ? (
+            <button type="button" className="so-wo-number-link" onClick={() => handleOpenExistingPO(order)}>
+              {order.poNo}
+            </button>
           ) : (
-            order.poNo || "—"
+            "—"
           )}
         </div>
       </td>
