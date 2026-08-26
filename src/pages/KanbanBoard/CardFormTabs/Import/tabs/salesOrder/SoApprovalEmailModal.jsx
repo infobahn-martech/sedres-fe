@@ -24,7 +24,10 @@ const MESSAGE_QUILL_FORMATS = ["bold", "italic", "underline", "list", "bullet", 
 // "To be sent for SRF") — wording varies per call (see the "NOT name-matched" comment in
 // SalesOrderList.jsx), so the modal title/subject/send button must echo that real label
 // instead of a fixed "SO Approval" string that would be wrong on calls using different wording.
-const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, soCustomerName = "", stageLabel = "SO Approval" }) => {
+// defaultTo is the recipient from api/da/da_action_email_draft/{call_id} (fetched by
+// SalesOrderList right before opening this modal) — prefills "To" with the backend's own
+// suggested recipient instead of making staff type it every time; still freely editable.
+const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, soCustomerName = "", stageLabel = "SO Approval", defaultTo = "" }) => {
   const [fromValue, setFromValue] = useState("operations@shipping.com");
   const [toValue, setToValue] = useState("");
   const [ccValue, setCcValue] = useState("");
@@ -37,9 +40,10 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
   useEffect(() => {
     if (show) {
       setSubjectValue(`${stageLabel} Request${soCustomerName ? ` — ${soCustomerName}` : ""}`);
+      setToValue(defaultTo);
       setToError("");
     }
-  }, [show, soCustomerName, stageLabel]);
+  }, [show, soCustomerName, stageLabel, defaultTo]);
 
   const handleFilesSelected = (fileList) => {
     const files = Array.from(fileList || []).filter((file) => file);
@@ -232,6 +236,7 @@ SoApprovalEmailModal.propTypes = {
   isSubmitting: PropTypes.bool,
   soCustomerName: PropTypes.string,
   stageLabel: PropTypes.string,
+  defaultTo: PropTypes.string,
 };
 
 export default SoApprovalEmailModal;
