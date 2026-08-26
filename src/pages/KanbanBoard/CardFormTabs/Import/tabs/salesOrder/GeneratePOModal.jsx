@@ -72,6 +72,8 @@ const GeneratePOModal = ({
   const [deliveryDateValue, setDeliveryDateValue] = useState(deliveryDate || "");
   const [documentDateValue, setDocumentDateValue] = useState(documentDate || "");
   const [remarksValue, setRemarksValue] = useState(remarks || "");
+  const [poVendorId, setPoVendorId] = useState(null);
+  const [poSummary, setPoSummary] = useState(null);
   const copyToRef = useRef(null);
   const vendorPickerRef = useRef(null);
 
@@ -98,10 +100,7 @@ const GeneratePOModal = ({
 
   const selectedLineItems = salesOrderList.filter((item) => selectedItems.includes(item.id));
 
-  const vendorCodes = [...new Set(selectedLineItems.map((item) => item.supplierCode).filter(Boolean))];
-
-  // Vendor list — billingentity/getvendors, [{ vendor_id, customer_code, customer_name }].
-  // Pre-selects when every selected line item already shares the same supplier code.
+  // Vendor list — billingentity/getvendors, [{ vendor_id, customer_code, customer_name }] — populates the picker.
   useEffect(() => {
     let cancelled = false;
     setIsLoadingVendors(true);
@@ -116,13 +115,6 @@ const GeneratePOModal = ({
           name: v.customer_name != null ? String(v.customer_name) : "",
         }));
         setVendors(list);
-        if (vendorCodes.length === 1) {
-          const match = list.find((v) => v.code === vendorCodes[0]);
-          if (match) {
-            setSelectedVendorCode(match.code);
-            setVendorRefNo(match.code);
-          }
-        }
       })
       .catch(() => {
         if (!cancelled) setVendors([]);
@@ -133,9 +125,57 @@ const GeneratePOModal = ({
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // PO details — sales_order/get_po — authoritative vendor/dates/totals for the selected line items.
+  useEffect(() => {
+    let cancelled = false;
+    salesOrderService
+      .getPO(selectedItems)
+      .then((response) => {
+        if (cancelled) return;
+        const body = response?.data;
+        if (body?.status !== "success" || !body?.data) return;
+        const data = body.data;
+        if (data.vendor_id != null) setPoVendorId(data.vendor_id);
+        if (data.delivery_date) setDeliveryDateValue(data.delivery_date);
+        if (data.document_date) setDocumentDateValue(data.document_date);
+        if (data.summary) {
+          setPoSummary(data.summary);
+          setDiscountPercentage(String(data.summary.discount_percentage ?? 0));
+          setRoundingEnabled(Boolean(data.summary.rounding));
+        }
+      })
+      .catch(() => {
+        // Keep prop-based defaults and local calc fallback on failure.
+      });
+    return () => {
+      cancelled = true;
+    };
     // Selected line items are fixed for the lifetime of this modal's mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Pre-select the vendor once both the picker list and the PO's vendor_id are known.
+  useEffect(() => {
+    if (poVendorId == null || vendors.length === 0) return;
+    const match = vendors.find((v) => String(v.id) === String(poVendorId));
+    if (match) {
+      setSelectedVendorCode(match.code);
+      setVendorRefNo(match.code);
+    }
+  }, [poVendorId, vendors]);
+
+  // Seed totals from get_po's summary — the calculate_totals effect below refreshes them as the user edits discount/rounding.
+  useEffect(() => {
+    if (!poSummary) return;
+    setCalculatedTotals({
+      total_discount: poSummary.discount_amount,
+      total_tax: poSummary.tax_amount,
+      rounding_rate: poSummary.rounding_amount,
+      grand_total: poSummary.total_payment_due,
+    });
+  }, [poSummary]);
 
   const selectedVendor = vendors.find((v) => v.code === selectedVendorCode) || null;
 
