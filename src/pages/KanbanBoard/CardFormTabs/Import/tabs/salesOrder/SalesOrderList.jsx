@@ -750,14 +750,18 @@ const SalesOrderList = ({
 
   // The button shows the real current stage's own name (effectiveNextDaStatusLabel) — its
   // wording varies per call (seen as "SO approval", "To be sent for SRF", etc.), so a fixed
-  // string would be wrong/misleading on calls using different wording.
+  // string would be wrong/misleading on calls using different wording. For the "needs email"
+  // stage specifically, the real label already reads as "To be sent for X" — prefixing it with
+  // another "Send for" produced the grammatically doubled "Send for To be sent for SO approval",
+  // so strip that leading phrase for display only (detection above still reads the raw label).
+  const displayStageLabel = (effectiveNextDaStatusLabel || "").replace(/^to be sent for\s+/i, "") || effectiveNextDaStatusLabel;
   const daActionButtonLabel = isTerminalClosedStage
     ? "Closed Paid"
     : isRealInvoiceIssuanceStage
     ? `Send for ${soApprovalLabel || "Invoice Dispatch"}`
-    : effectiveNextDaStatusLabel
-    ? `Send for ${effectiveNextDaStatusLabel}`
-    : effectiveNextDaStatusLabel;
+    : displayStageLabel
+    ? `Send for ${displayStageLabel}`
+    : displayStageLabel;
 
   // State for the SO Approval email modal, opened from the header action button when
   // effectiveNextDaStatusLabel is the "SO Approval" stage. Sends via api/da/da_send_action_email
@@ -766,6 +770,11 @@ const SalesOrderList = ({
   // real email send and refetches the timeline so any server-side change shows up.
   const [showSoApprovalEmailModal, setShowSoApprovalEmailModal] = useState(false);
   const [isSendingSoApprovalEmail, setIsSendingSoApprovalEmail] = useState(false);
+  // Prefills the modal's "To" field — api/da/da_action_email_draft/{call_id} →
+  // { status: "success", data: { recipient } }. Fetched right before opening the modal (see
+  // handleOpenSoApprovalEmailModal) rather than on mount, since it's only relevant once staff
+  // is actually about to send this stage's email.
+  const [draftRecipientEmail, setDraftRecipientEmail] = useState("");
 
   // Invoice Issuance modal — opened once staff records the client's approval. Reuses the
   // existing UploadInvoiceModal (components/UploadInvoiceModal.jsx), same component the
@@ -773,6 +782,24 @@ const SalesOrderList = ({
   // via da/da_upload_invoice (see handleUploadInvoiceIssuance) — the client-decision states
   // that follow it are still local-only simulation, same as the rest of this stage.
   const [showInvoiceIssuanceModal, setShowInvoiceIssuanceModal] = useState(false);
+
+  // api/da/da_action_email_draft/{call_id} — { status: "success", data: { recipient } }. Best
+  // effort: if it fails or callId is missing, the modal just opens with an empty "To" instead
+  // of blocking staff from sending the email at all.
+  const handleOpenSoApprovalEmailModal = async () => {
+    if (!callId) {
+      setShowSoApprovalEmailModal(true);
+      return;
+    }
+    try {
+      const { data } = await daService.getActionEmailDraft(callId);
+      setDraftRecipientEmail(data?.data?.recipient || "");
+    } catch {
+      setDraftRecipientEmail("");
+    } finally {
+      setShowSoApprovalEmailModal(true);
+    }
+  };
 
   const handleAdvanceDaStatusFromHeader = () => {
     if (!effectiveNextDaStatusLabel || isTerminalClosedStage || isAwaitingDecisionStage) return;
@@ -783,7 +810,7 @@ const SalesOrderList = ({
     // isSoApprovalDaStatus is the safe default for every other stage (see its declaration
     // above) — always requires the email confirmation before advancing, never a silent direct
     // advance, since there's no longer any real stage left in the sequence that should skip it.
-    setShowSoApprovalEmailModal(true);
+    handleOpenSoApprovalEmailModal();
   };
 
   // api/da/da_send_action_email — { call_id, to, subject, body, stage_document_id? } →
@@ -2109,7 +2136,7 @@ const SalesOrderList = ({
                     ? "Payment received — closed"
                     : isRealInvoiceIssuanceStage
                     ? "Open Invoice Issuance upload"
-                    : `Open "${effectiveNextDaStatusLabel}" email`
+                    : `Open "${displayStageLabel}" email`
                 }
                 onClick={handleAdvanceDaStatusFromHeader}
               >
@@ -2998,7 +3025,8 @@ const SalesOrderList = ({
           onCreate={handleCreateSoApprovalEmail}
           isSubmitting={isSendingSoApprovalEmail}
           soCustomerName={soCustomerName}
-          stageLabel={effectiveNextDaStatusLabel || "SO Approval"}
+          stageLabel={displayStageLabel || "SO Approval"}
+          defaultTo={draftRecipientEmail}
         />
       )}
 
