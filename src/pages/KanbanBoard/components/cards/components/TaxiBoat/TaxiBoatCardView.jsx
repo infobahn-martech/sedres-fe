@@ -139,8 +139,8 @@ function mapBookingTimestampLeg(leg) {
 
 const STANDARD_TIMESTAMPS = [
   { key: "castOff",           label: "Cast off Time",       icon: FiFlag,       animKey: "castOff",           checkpoint: "cast_off_time"      },
-  { key: "boatAlongsideShip", label: "Boat Alongside Ship", icon: FiAnchor,     animKey: "boatAlongsideShip", showShip: true, checkpoint: "alongside_ship_time" },
-  { key: "boatCastOffShip",   label: "Boat Cast off Ship",  icon: FiNavigation, animKey: "boatCastOffShip",   showShip: true, checkpoint: "cast_off_ship_time"  },
+  { key: "boatAlongsideShip", label: "Boat Alongside Ship", icon: FiAnchor,     animKey: "boatAlongsideShip", checkpoint: "alongside_ship_time" },
+  { key: "boatCastOffShip",   label: "Boat Cast off Ship",  icon: FiNavigation, animKey: "boatCastOffShip",   checkpoint: "cast_off_ship_time"  },
   { key: "backToJetty",       label: "Back to Jetty",       icon: FiHome,       animKey: "backToJetty",       checkpoint: "back_to_jetty_time" },
 ];
 
@@ -989,7 +989,7 @@ function CrewListBatchwisePanel({
 }) {
   const [crewPage, setCrewPage] = useState(1);
   const [uploadingBatchId, setUploadingBatchId] = useState(null);
-  const [activeLeg, setActiveLeg] = useState("drop");
+  const [activeLeg, setActiveLeg] = useState("pickup");
   const [showCrewlist, setShowCrewlist] = useState(false);
   const crewlistOpen = !crewlistToggle || showCrewlist;
   const inCrewlistTab = crewlistToggle && showCrewlist;
@@ -1617,7 +1617,7 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
   const [pickupTs, setPickupTs] = useState(() =>
     makeTsState(STANDARD_TIMESTAMPS.map((t) => t.key))
   );
-  const [activeTab, setActiveTab] = useState("drop");
+  const [activeTab, setActiveTab] = useState("pickup");
   const [jobCompleted, setJobCompleted] = useState(false);
   const [jobCompletedAt, setJobCompletedAt] = useState(null);
   const [launchSlipFile, setLaunchSlipFile] = useState(null);
