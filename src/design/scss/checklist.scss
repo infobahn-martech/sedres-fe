@@ -200,6 +200,10 @@
 .cl-loading-ring-track {
   stroke: #eef0ff;
   stroke-width: 4;
+
+  [data-theme="dark"] & {
+    stroke: var(--border-primary);
+  }
 }
 
 .cl-loading-ring-arc {
@@ -303,6 +307,11 @@
   background-size: 200% 100%;
   opacity: 0;
   animation: cl-skel-fade-in 0.4s ease forwards, cl-skel-shimmer 1.4s ease-in-out infinite;
+
+  [data-theme="dark"] & {
+    background: linear-gradient(90deg, var(--surface-hover) 0%, var(--surface-primary) 50%, var(--surface-hover) 100%);
+    background-size: 200% 100%;
+  }
 }
 
 @keyframes cl-skel-shimmer {
