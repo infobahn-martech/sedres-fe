@@ -116,7 +116,7 @@
 }
 
 .comments-tab-comment-avatar-fallback {
-  color: #ffffff;
+  color: var(--text-inverse);
   font-weight: 700;
 }
 
@@ -259,7 +259,7 @@
 
 .comments-tab-save-btn:disabled {
   background: #b7c2d6;
-  color: #ffffff;
+  color: var(--text-inverse);
   cursor: not-allowed;
   box-shadow: none;
 

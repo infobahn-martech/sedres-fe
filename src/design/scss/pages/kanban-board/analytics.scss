@@ -76,7 +76,7 @@
 
           &.active {
             background: #0075FF;
-            color: #fff;
+            color: var(--text-inverse);
           }
         }
       }

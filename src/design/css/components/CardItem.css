@@ -14,7 +14,7 @@
     ),
     linear-gradient(
       145deg,
-      #ffffff 0%,
+      var(--surface-primary) 0%,
       #fbfdff 55%,
       #f3f7ff 100%
     );
@@ -79,7 +79,7 @@
 /* Invoice amount highlight (1st card only) */
 .kanban-card.card-highlight-invoice {
   border: 2px solid #f59e0b;
-  background: linear-gradient(to bottom, #fffbeb 0%, #fff 30%);
+  background: linear-gradient(to bottom, #fffbeb 0%, var(--surface-primary) 30%);
 }
 
 /* Blink animation for high-invoice cards */
@@ -527,7 +527,7 @@
 .card-header-icon-compact svg {
   width: 14px;
   height: 14px;
-  color: #ffffff;
+  color: var(--text-inverse);
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
@@ -671,7 +671,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--text-inverse);
   margin-bottom: 6px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
@@ -808,7 +808,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--text-inverse);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
@@ -941,7 +941,7 @@
   z-index: 21;
   min-width: 160px;
   max-width: 240px;
-  background: var(--bg-primary, #fff);
+  background: var(--bg-primary, var(--surface-primary));
   border: 1px solid var(--border-primary);
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);

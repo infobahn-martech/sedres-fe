@@ -494,7 +494,7 @@
     background: #00368c;
 
     .workspace-icon {
-      color: #ffffff;
+      color: var(--text-inverse);
     }
   }
 
@@ -1716,7 +1716,7 @@
 
 .workspace-form-btn-save {
   background: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   box-shadow: 0 3px 6px rgba(0, 54, 140, 0.25);
 
   &:hover:not(:disabled) {
@@ -1850,7 +1850,7 @@
   gap: 8px;
   padding: 10px 16px;
   background: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   border: none;
   border-radius: 8px;
   font: normal normal 600 14px/1.4 $font-primary;
@@ -2054,7 +2054,7 @@
 .boards-list-select-btn {
   padding: 10px 24px;
   background: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   border: none;
   border-radius: 8px;
   font: normal normal 600 14px/1.4 $font-primary;
@@ -2642,7 +2642,7 @@
 
 .add-board-form-btn-save {
   background: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   box-shadow: 0 2px 8px rgba(0, 54, 140, 0.2);
 
   &:hover:not(:disabled) {
@@ -2938,7 +2938,7 @@
   height: 32px;
   border-radius: 50%;
   background: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3175,7 +3175,7 @@
 
 .rename-board-form-btn-save {
   background: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   box-shadow: 0 2px 8px rgba(0, 54, 140, 0.2);
 
   &:hover:not(:disabled) {

@@ -181,7 +181,7 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        color: #ffffff;
+        color: var(--text-inverse);
         box-shadow: 0 4px 12px rgba(16, 29, 51, 0.28);
         transition: all 0.2s ease;
         flex-shrink: 0;

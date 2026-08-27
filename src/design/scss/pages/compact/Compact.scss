@@ -74,7 +74,7 @@
   justify-content: space-between;
   padding: 14px 20px;
   background: #00368c;
-  color: #fff;
+  color: var(--text-inverse);
   flex-shrink: 0;
 }
 
@@ -85,7 +85,7 @@
   background: none;
   border: none;
   padding: 4px;
-  color: #fff;
+  color: var(--text-inverse);
   cursor: pointer;
   margin-right: 12px;
 
@@ -115,7 +115,7 @@
   background: none;
   border: none;
   padding: 6px;
-  color: #fff;
+  color: var(--text-inverse);
   cursor: pointer;
 
   &:hover {

@@ -12,7 +12,7 @@
         height: 0;
 
         &:checked + .captain-toggle-slider {
-            background-color: #00368c;
+            background-color: var(--color-primary);
 
             &:before {
                 transform: translateX(16px);
@@ -28,7 +28,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #d1d5db;
+    background-color: var(--border-secondary);
     transition: 0.3s;
     border-radius: 20px;
 
@@ -42,7 +42,7 @@
         background-color: var(--surface-primary);
         transition: 0.3s;
         border-radius: 50%;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        box-shadow: var(--shadow-sm);
     }
 }
 

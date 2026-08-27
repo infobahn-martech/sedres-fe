@@ -1,0 +1,131 @@
+// Dark-mode overrides for third-party UI libraries that render their own
+// hardcoded light styling and aren't reachable via the semantic token system
+// alone (react-select without a custom `styles` prop, react-quill, recharts'
+// default tooltip). Scoped to [data-theme="dark"] only — zero effect in light
+// mode. `!important` is required here because these libraries set colors via
+// higher-specificity inline styles / their own generated classes.
+
+[data-theme='dark'] {
+  // react-select (raw <Select> usages without CommonSelect's custom `styles`
+  // prop). react-select's default theme generates class names ending in
+  // these suffixes regardless of whether classNamePrefix is set.
+  div[class$='-control'],
+  div[class*='-control'] {
+    background-color: var(--input-bg) !important;
+    border-color: var(--input-border) !important;
+  }
+
+  div[class$='-menu'],
+  div[class*='-menu'],
+  div[class$='-menuList'],
+  div[class*='-menuList'] {
+    background-color: var(--surface-primary) !important;
+  }
+
+  div[class$='-option'],
+  div[class*='-option'] {
+    background-color: transparent !important;
+    color: var(--text-primary) !important;
+
+    &:hover {
+      background-color: var(--hover-bg) !important;
+    }
+  }
+
+  div[class$='-singleValue'],
+  div[class*='-singleValue'],
+  div[class$='-Input'],
+  input[class*='-input'] {
+    color: var(--text-primary) !important;
+  }
+
+  div[class$='-placeholder'],
+  div[class*='-placeholder'] {
+    color: var(--input-placeholder) !important;
+  }
+
+  div[class$='-multiValue'],
+  div[class*='-multiValue'] {
+    background-color: var(--bg-secondary) !important;
+  }
+
+  div[class$='-multiValueLabel'],
+  div[class*='-multiValueLabel'] {
+    color: var(--text-primary) !important;
+  }
+
+  div[class$='-indicatorSeparator'],
+  div[class*='-indicatorSeparator'] {
+    background-color: var(--border-primary) !important;
+  }
+
+  // react-quill (quill.snow.css theme)
+  .ql-toolbar.ql-snow {
+    background-color: var(--surface-secondary) !important;
+    border-color: var(--border-primary) !important;
+
+    .ql-stroke {
+      stroke: var(--text-secondary) !important;
+    }
+
+    .ql-fill {
+      fill: var(--text-secondary) !important;
+    }
+
+    .ql-picker-label,
+    .ql-picker-item {
+      color: var(--text-secondary) !important;
+    }
+  }
+
+  .ql-container.ql-snow {
+    background-color: var(--input-bg) !important;
+    border-color: var(--border-primary) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .ql-editor {
+    color: var(--text-primary) !important;
+
+    &.ql-blank::before {
+      color: var(--input-placeholder) !important;
+    }
+  }
+
+  .ql-snow .ql-picker-options {
+    background-color: var(--surface-primary) !important;
+    border-color: var(--border-primary) !important;
+  }
+
+  // recharts default tooltip (used where no custom contentStyle is passed)
+  .recharts-default-tooltip {
+    background-color: var(--surface-primary) !important;
+    border-color: var(--border-primary) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .recharts-tooltip-item,
+  .recharts-tooltip-label {
+    color: var(--text-primary) !important;
+  }
+
+  .recharts-cartesian-axis-tick text {
+    fill: var(--text-secondary) !important;
+  }
+
+  .recharts-legend-item-text {
+    color: var(--text-secondary) !important;
+  }
+
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line {
+    stroke: var(--border-secondary) !important;
+  }
+
+  // react-loading-skeleton exposes its shimmer colors as CSS custom
+  // properties on its own root class — no !important needed here.
+  .react-loading-skeleton {
+    --base-color: var(--surface-hover);
+    --highlight-color: var(--surface-secondary);
+  }
+}

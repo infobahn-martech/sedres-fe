@@ -127,7 +127,7 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   &::placeholder {
-    color: #cbd5e1;
+    color: var(--border-primary);
   }
 
   &:hover {

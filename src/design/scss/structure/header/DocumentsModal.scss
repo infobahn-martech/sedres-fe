@@ -160,11 +160,11 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: var(--border-primary);
     border-radius: 4px;
 
     &:hover {
-      background: #94a3b8;
+      background: var(--text-muted);
     }
   }
 
@@ -208,7 +208,7 @@
 
     .tb-head {
       background-color: #00368c;
-      color: #ffffff;
+      color: var(--text-inverse);
       font-weight: 600;
       font-size: 13px;
       border-bottom: 2px solid var(--border-primary);
@@ -341,7 +341,7 @@
 
           &:hover:not(:disabled) {
             background-color: var(--bg-secondary);
-            border-color: #9ca3af;
+            border-color: var(--text-muted);
           }
 
           &:disabled {
@@ -358,14 +358,14 @@
 
         &.page-number-btn {
           background-color: #00368c;
-          color: #ffffff;
+          color: var(--text-inverse);
           border-color: #00368c;
           font-weight: 600;
           min-width: 36px;
 
           &.active {
             background-color: #00368c;
-            color: #ffffff;
+            color: var(--text-inverse);
           }
         }
       }

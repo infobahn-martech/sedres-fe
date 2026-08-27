@@ -171,7 +171,7 @@
 // Recharts customizations
 .recharts-cartesian-grid-horizontal line,
 .recharts-cartesian-grid-vertical line {
-  stroke: #e5e7eb;
+  stroke: var(--border-primary);
 }
 
 .recharts-text {

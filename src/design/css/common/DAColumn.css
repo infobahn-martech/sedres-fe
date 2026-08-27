@@ -59,7 +59,7 @@
 .nested-column-count-box .count-number {
   font-size: 12px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-inverse);
 }
 
 .nested-column-title {

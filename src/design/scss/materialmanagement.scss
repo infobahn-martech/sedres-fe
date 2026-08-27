@@ -44,7 +44,7 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-inverse);
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -81,12 +81,12 @@
 }
 
 .material-table-container::-webkit-scrollbar-thumb {
-  background: #888;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 .material-table-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--scrollbar-thumb-hover);
 }
 
 .material-table {
@@ -434,7 +434,7 @@ body .material-management-modal .modal-body {
   max-height: 70vh;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #aab4c3 #f1f5f9;
+  scrollbar-color: var(--text-muted) #f1f5f9;
 }
 
 body .material-management-modal .modal-body::-webkit-scrollbar {
@@ -447,7 +447,7 @@ body .material-management-modal .modal-body::-webkit-scrollbar-track {
 }
 
 body .material-management-modal .modal-body::-webkit-scrollbar-thumb {
-  background: #aab4c3;
+  background: var(--text-muted);
   border-radius: 999px;
 }
 
@@ -486,7 +486,7 @@ body .material-management-modal {
   button[type="submit"] {
     background-color: #00368c !important;
     border-color: #00368c !important;
-    color: #ffffff !important;
+    color: var(--text-inverse) !important;
     font-weight: 600;
     box-shadow: 0 2px 6px rgba(0, 54, 140, 0.25);
     transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
@@ -666,7 +666,7 @@ body .material-management-modal {
 
   /* Upload sub-text (file type/size hint) — operations.scss's own two
      competing .upload-sub-text rules resolve to an 11px, near-invisible
-     #999, which reads badly against the compact zone's bold 12px main
+     var(--text-muted), which reads badly against the compact zone's bold 12px main
      text. Pin it here so it's legible and consistently spaced. */
   .upload-sub-text {
     font-size: 11px !important;
@@ -1835,7 +1835,7 @@ body .material-management-modal .upload-main-text {
 
     &.pac-item-selected {
       background-color: #00368c !important;
-      color: #ffffff !important;
+      color: var(--text-inverse) !important;
     }
   }
 }

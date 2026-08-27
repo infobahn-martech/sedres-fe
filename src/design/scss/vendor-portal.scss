@@ -312,13 +312,13 @@
 
 .vendor-quick-action-btn.primary {
     background: $colorPrimary;
-    color: #fff;
+    color: var(--text-inverse);
     border-color: $colorPrimary;
 
     &:hover {
         background: #002a6e;
         border-color: #002a6e;
-        color: #fff;
+        color: var(--text-inverse);
     }
 }
 

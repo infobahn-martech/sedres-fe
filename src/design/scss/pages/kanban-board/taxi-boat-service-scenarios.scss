@@ -80,7 +80,7 @@
   transition: color 0.22s ease;
 
   &.tb-sign-mode-btn--active {
-    color: #ffffff;
+    color: var(--text-inverse);
   }
 
   &:not(.tb-sign-mode-btn--active):hover {
@@ -215,7 +215,7 @@
   border-radius: 12px;
   border: 1px solid var(--border-primary);
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: var(--border-primary) transparent;
 
   &::-webkit-scrollbar {
     width: 7px;
@@ -227,11 +227,11 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: var(--border-primary);
     border-radius: 10px;
 
     &:hover {
-      background: #94a3b8;
+      background: var(--text-muted);
     }
   }
 
@@ -548,7 +548,7 @@
   border-radius: 999px;
   border: none;
   background: #2666be;
-  color: #ffffff;
+  color: var(--text-inverse);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;

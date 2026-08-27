@@ -5,6 +5,7 @@ import { EventType } from '@azure/msal-browser';
 import router from './router';
 import { msalInstance } from './config/msalConfig';
 import { initTheme } from './shared/store/themeStore';
+import MuiThemeBridge from './shared/context/MuiThemeBridge';
 
 initTheme();
 
@@ -26,7 +27,9 @@ async function bootstrap() {
   const root = ReactDOM.createRoot(document.getElementById('root'));
   root.render(
     <MsalProvider instance={msalInstance}>
-      <RouterProvider router={router} />
+      <MuiThemeBridge>
+        <RouterProvider router={router} />
+      </MuiThemeBridge>
     </MsalProvider>
   );
 }

@@ -108,7 +108,7 @@
     &.btn-primary {
       background-color: #00368c;
       border: 1px solid #00368c;
-      color: #fff;
+      color: var(--text-inverse);
 
       &:hover {
         background-color: #002d73;
@@ -129,7 +129,7 @@
 
       &:hover {
         background-color: #00368c;
-        color: #fff;
+        color: var(--text-inverse);
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 54, 140, 0.2);
       }

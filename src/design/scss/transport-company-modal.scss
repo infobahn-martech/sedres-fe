@@ -22,26 +22,26 @@ $primary-font: "Manrope", sans-serif;
     left: 12px;
     margin: 0;
     padding: 0 6px;
-    background: $white;
-    color: $txtColor;
+    background: var(--surface-primary);
+    color: var(--text-secondary);
     z-index: 1;
   }
 
   .phone-wrapper .phone-input {
-    border: 1px solid $borderLight !important;
+    border: 1px solid var(--input-border) !important;
     border-radius: 6px !important;
     box-shadow: none !important;
   }
 
   .phone-wrapper .phone-input:focus,
   .phone-wrapper .phone-input:hover {
-    border-color: $borderLight !important;
+    border-color: var(--input-border) !important;
     box-shadow: none !important;
   }
 
   .phone-wrapper .selected-flag:focus:before,
   .phone-wrapper .selected-flag.open:before {
-    border-color: $borderLight !important;
+    border-color: var(--input-border) !important;
     box-shadow: none !important;
   }
 

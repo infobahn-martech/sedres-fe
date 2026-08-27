@@ -59,7 +59,7 @@
   &.status-commenced {
     color: #856404;
     border-color: #ffc107;
-    background-color: #fff3cd;
+    background-color: var(--text-inverse)3cd;
 
     &:hover {
       background-color: #ffe69c;
@@ -178,7 +178,7 @@
     color: #856404;
 
     &:hover {
-      background-color: #fff3cd;
+      background-color: var(--text-inverse)3cd;
     }
 
     &.selected {
@@ -223,7 +223,7 @@
   text-transform: capitalize;
 
   &.status-commenced {
-    background-color: #fff3cd;
+    background-color: var(--text-inverse)3cd;
     color: #b58b00;
   }
 

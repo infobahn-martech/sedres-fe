@@ -130,7 +130,7 @@
 .outlook-sign-in-btn {
   margin-top: 8px;
   background: $colorPrimary;
-  color: #fff;
+  color: var(--text-inverse);
   border: none;
   border-radius: 8px;
   padding: 10px 20px;
@@ -178,7 +178,7 @@
   justify-content: center;
   gap: 8px;
   background: $colorPrimary;
-  color: #fff;
+  color: var(--text-inverse);
   border: none;
   border-radius: 8px;
   padding: 10px 14px;
@@ -237,7 +237,7 @@
 
 .outlook-folder-item-badge {
   background: $colorPrimary;
-  color: #fff;
+  color: var(--text-inverse);
   font-size: 11px;
   font-weight: 700;
   border-radius: 10px;
@@ -726,7 +726,7 @@
 .new-outlook-mail-send-btn {
   border: none;
   background: $colorPrimary;
-  color: #fff;
+  color: var(--text-inverse);
   border-radius: 8px;
   padding: 9px 20px;
   font-weight: 600;

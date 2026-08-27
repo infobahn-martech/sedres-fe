@@ -9,7 +9,7 @@
 
 .ql-editor table.ql-table-better td,
 .ql-editor table.ql-table-better th {
-  border: 1px solid #999 !important;
+  border: 1px solid var(--text-muted) !important;
   padding: 6px 10px !important;
   min-width: 80px;
   height: 36px;

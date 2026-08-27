@@ -31,13 +31,13 @@
 /* Enhanced Crew Excel Upload Zone */
 .crew-excel-upload-zone {
   border: 2px dashed var(--border-primary);
-  background: linear-gradient(to bottom, #ffffff 0%, #fafbff 100%);
+  background: linear-gradient(to bottom, var(--surface-primary) 0%, #fafbff 100%);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .crew-excel-upload-zone:hover {
   border-color: var(--card-color, #2A00FF);
-  background: linear-gradient(to bottom, #f8f9ff 0%, #ffffff 100%);
+  background: linear-gradient(to bottom, #f8f9ff 0%, var(--surface-primary) 100%);
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
@@ -52,13 +52,13 @@
 
 .crew-excel-upload-zone.uploaded {
   border-color: #28a745;
-  background: linear-gradient(to bottom, #f0fdf4 0%, #ffffff 100%);
+  background: linear-gradient(to bottom, #f0fdf4 0%, var(--surface-primary) 100%);
   border-style: solid;
 }
 
 .crew-excel-upload-zone.uploaded:hover {
   border-color: #20c997;
-  background: linear-gradient(to bottom, #f0fdf4 0%, #ffffff 100%);
+  background: linear-gradient(to bottom, #f0fdf4 0%, var(--surface-primary) 100%);
 }
 
 .crew-upload-sections-container {
@@ -557,7 +557,7 @@
 .crew-header-btn--launch-hire {
   border-color: var(--card-color, #2A00FF);
   background: var(--card-color, #2A00FF);
-  color: #ffffff;
+  color: var(--text-inverse);
   margin-right: $space-3;
   box-shadow: 0 4px 12px color-mix(in srgb, var(--card-color, #2A00FF) 28%, transparent);
 }
@@ -574,7 +574,7 @@
 .crew-header-btn--select-all {
   background: #0f172a;
   border-color: #0f172a;
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 
 .crew-header-btn--select-all:hover {
@@ -627,7 +627,7 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-inverse);
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -672,7 +672,7 @@
   background: var(--surface-primary);
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: #888 #f1f1f1;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 
   [data-theme="dark"] & {
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
@@ -745,7 +745,7 @@
   padding: 0;
   border-radius: 999px;
   background:  #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   border-color: #00368c;
   box-shadow: none;
 }
@@ -771,7 +771,7 @@
 }
 
 .crew-table-container::-webkit-scrollbar-thumb {
-  background: #888;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 
   [data-theme="dark"] & {
@@ -780,7 +780,7 @@
 }
 
 .crew-table-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--scrollbar-thumb-hover);
 
   [data-theme="dark"] & {
     background: var(--scrollbar-thumb-hover);
@@ -832,7 +832,7 @@
   border-radius: 22px;
   overflow: hidden;
   border: 1px solid var(--border-primary);
-  background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
+  background: linear-gradient(180deg, var(--surface-primary) 0%, #fcfdff 100%);
   box-shadow: 0 24px 60px rgba(16, 24, 40, 0.16), 0 10px 24px rgba(16, 24, 40, 0.1);
 }
 
@@ -1095,7 +1095,7 @@
 .crew-bulk-upload-wizard__footer {
   padding: 16px 20px 18px;
   border-top: 1px solid var(--border-primary);
-  background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
+  background: linear-gradient(180deg, var(--surface-primary) 0%, #fafbff 100%);
 }
 
 .crew-wizard-stepper {
@@ -1260,7 +1260,7 @@
 .crew-wizard-btn--primary {
   border: 1px solid transparent;
   background: var(--card-color, #2A00FF);
-  color: #fff;
+  color: var(--text-inverse);
   box-shadow: 0 8px 20px rgba(42, 0, 255, 0.24);
 }
 
@@ -2150,7 +2150,7 @@
   padding: 0;
   border-radius: 20px;
   border: 1px solid var(--border-primary);
-  background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
+  background: linear-gradient(180deg, var(--surface-primary) 0%, #fcfdff 100%);
   box-shadow: 0 24px 60px rgba(16, 24, 40, 0.16), 0 10px 24px rgba(16, 24, 40, 0.1);
   max-height: 80vh;
   display: flex;
@@ -2356,7 +2356,7 @@
 .crew-service-select-modal__submit-btn {
   border: none;
   background: #4f46e5;
-  color: #ffffff;
+  color: var(--text-inverse);
   font-size: 13px;
   font-weight: 700;
   padding: 9px 20px;
@@ -2452,7 +2452,7 @@
 
 .crew-movement-radio-card--selected {
   border-color: var(--card-color, #00368c);
-  background: color-mix(in srgb, var(--card-color, #00368c) 6%, #ffffff);
+  background: color-mix(in srgb, var(--card-color, #00368c) 6%, var(--surface-primary));
 }
 
 .crew-movement-radio-card__input {
@@ -2652,7 +2652,7 @@
 .crew-list-upload-box--completed {
   border-style: solid;
   border-color: var(--card-color, #00368c);
-  background: color-mix(in srgb, var(--card-color, #00368c) 5%, #ffffff);
+  background: color-mix(in srgb, var(--card-color, #00368c) 5%, var(--surface-primary));
 }
 
 .crew-list-upload-box--failed {
@@ -2674,7 +2674,7 @@
 }
 
 .crew-list-upload-box__icon--completed {
-  color: #ffffff;
+  color: var(--text-inverse);
   background: var(--card-color, #00368c);
 }
 
@@ -2826,7 +2826,7 @@
   margin-top: 1px;
   border-radius: 8px;
   color: var(--card-color, #00368c);
-  background: color-mix(in srgb, var(--card-color, #00368c) 10%, #ffffff);
+  background: color-mix(in srgb, var(--card-color, #00368c) 10%, var(--surface-primary));
 }
 
 .crew-uploaded-card__details {
@@ -3012,7 +3012,7 @@
 }
 
 .crew-dropzone__icon--completed {
-  color: #ffffff;
+  color: var(--text-inverse);
   background: #16a34a;
 }
 
@@ -3199,12 +3199,12 @@
 
 .crew-summary-movement-filter__btn--active {
   background: var(--card-color, #00368c);
-  color: #ffffff;
+  color: var(--text-inverse);
   box-shadow: $shadow-sm;
 }
 
 .crew-summary-movement-filter__btn--active:hover {
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 
 .crew-listing-subtitle {
@@ -3584,7 +3584,7 @@
   height: 34px;
   border-radius: $radius-md;
   background: var(--card-color, #00368c);
-  color: #ffffff;
+  color: var(--text-inverse);
   flex-shrink: 0;
 }
 
@@ -3789,7 +3789,7 @@
 .crew-launch-hire-panel__btn--submit {
   background: var(--card-color, #00368c);
   border: 1px solid var(--card-color, #00368c);
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 
 .crew-launch-hire-panel__btn--submit:hover:not(:disabled) {
@@ -3875,7 +3875,7 @@
 
     &.pac-item-selected {
       background-color: #00368c !important;
-      color: #ffffff !important;
+      color: var(--text-inverse) !important;
     }
   }
 }

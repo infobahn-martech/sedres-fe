@@ -27,6 +27,7 @@ import LogoutConfirmationModal from '../../components/LogoutConfirmationModal';
 import NotificationsModal from './NotificationsModal';
 import DocumentsModal from './DocumentsModal';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
+import { useThemeStore } from '../../shared/store/themeStore';
 import NavTabButton from '../../components/NavTabButton';
 import { isRestrictedBoardUser, isPortOperatorUser } from '../../shared/helpers/restrictedBoardUser';
 import { isVendorRole, getRoleId } from '../../shared/helpers/vendorDashboardRoles';
@@ -44,6 +45,8 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [imageError, setImageError] = useState(false);
   const { layoutView } = useLayoutView();
+  const isDark = useThemeStore((state) => state.isDark);
+  const toggleTheme = useThemeStore((state) => state.toggleTheme);
   const [notificationCount] = useState(3); // Default count, can be updated with real data
   const dropdownRef = useRef(null);
   const doLogout = useAuthReducer((state) => state.doLogout);
@@ -311,7 +314,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
             </button> */}
           </>
         )}
-        {/* <Tooltip id="theme-toggle" place="bottom" content={isDark ? 'Switch to light mode' : 'Switch to dark mode'} />
+        <Tooltip id="theme-toggle" place="bottom" content={isDark ? 'Switch to light mode' : 'Switch to dark mode'} />
         <button
           type="button"
           className="icon-btn"
@@ -321,7 +324,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           data-tooltip-id="theme-toggle"
         >
           {isDark ? <FiSun /> : <FiMoon />}
-        </button> */}
+        </button>
 
         <Tooltip id="help" place="bottom" content="Help" />
         <button

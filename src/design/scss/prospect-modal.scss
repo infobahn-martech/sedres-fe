@@ -367,7 +367,7 @@ span.error.text-danger {
   border: 1px solid var(--border-primary);
   border-radius: 10px;
   padding: 0.65rem 0.75rem 0.65rem;
-  background: linear-gradient(180deg, #f9fcfd 0%, #ffffff 100%);
+  background: linear-gradient(180deg, #f9fcfd 0%, var(--surface-primary) 100%);
 }
 
 .transport-company-drivers__header {

@@ -1,8 +1,8 @@
 @import "partials/partials";
 
-$table-bg-odd: #fff;
-$table-bg-even: #f8f9fc;
-$table-border-color: #dee2e6;
+$table-bg-odd: var(--surface-primary);
+$table-bg-even: var(--bg-secondary);
+$table-border-color: var(--border-primary);
 $primary-font: "Manrope", sans-serif;
 
 /* Using unset */
@@ -276,12 +276,12 @@ body {
 
 .green-btn {
     background: #00368C;
-    color: #fff;
+    color: var(--text-inverse);
 }
 
 .red-btn {
     background: #ff3e3e;
-    color: #fff;
+    color: var(--text-inverse);
 }
 
 .custom-container {
@@ -380,7 +380,7 @@ body {
                 align-items: center;
                 background-color: #00368c;
                 margin-right: 5px;
-                color: #fff;
+                color: var(--text-inverse);
                 font-size: 12px;
             }
         }
@@ -400,7 +400,7 @@ body {
             line-height: 20px;
 
             letter-spacing: 0.07px;
-            color: #ffffff;
+            color: var(--text-inverse);
 
             .tb-head {
                 // display: flex;
@@ -480,7 +480,7 @@ body {
             &.active {
                 a {
                     background: #00368C;
-                    color: #fff;
+                    color: var(--text-inverse);
                 }
 
             }

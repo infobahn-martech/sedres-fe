@@ -16,13 +16,13 @@
   .modal-content {
     border: none;
     border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-lg);
     overflow: hidden;
     background: var(--surface-primary);
   }
 
   .modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: var(--modal-overlay);
     backdrop-filter: blur(4px);
   }
 }
@@ -119,13 +119,13 @@
   border: 1px solid var(--border-primary);
   border-radius: 8px;
   font: normal normal 400 14px/1.5 $font-primary;
-  color: $txtColor;
+  color: var(--text-secondary);
   background: var(--surface-primary);
   transition: all 0.2s ease;
 
   &:focus {
     outline: none;
-    border-color: #00368c;
+    border-color: var(--color-primary-accent);
     box-shadow: 0 0 0 3px rgba(0, 54, 140, 0.1);
   }
 
@@ -199,7 +199,7 @@
 .dashboards-td-widgets {
   padding: 14px 28px;
   font: normal normal 400 14px/1.5 $font-primary;
-  color: $txtColor;
+  color: var(--text-secondary);
 
   @media ($sm-767) {
     padding: 12px 16px;
@@ -218,7 +218,7 @@
 .dashboards-td-widgets {
   text-align: center;
   font-weight: 600;
-  color: #00368c;
+  color: var(--color-primary-accent);
 }
 
 .dashboards-empty-state {

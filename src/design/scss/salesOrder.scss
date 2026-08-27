@@ -18,7 +18,7 @@
 
 .sales-order-content-wrapper {
   padding: 0 0 14px;
-  background: linear-gradient(180deg, #fbfcff 0%, #ffffff 220px);
+  background: linear-gradient(180deg, #fbfcff 0%, var(--surface-primary) 220px);
   border-radius: 12px;
 
   [data-theme="dark"] & {
@@ -58,7 +58,7 @@
   align-items: center;
   gap: 12px;
   padding: 18px 22px 16px;
-  background: linear-gradient(180deg, #ffffff, #fbfcff);
+  background: linear-gradient(180deg, var(--surface-primary), #fbfcff);
   border-bottom: 1px solid var(--border-primary);
   position: sticky;
   top: 0;
@@ -119,7 +119,7 @@
   border-radius: 9px;
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-inverse);
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
   box-shadow: 0 3px 10px rgba(42, 0, 255, 0.28);
@@ -142,7 +142,7 @@
 }
 
 .sales-order-sync-sap-button {
-  background: #ffffff;
+  background: var(--surface-primary);
   border: 1.5px solid #2a00ff;
   padding: 9px 20px;
   border-radius: 9px;
@@ -169,7 +169,7 @@
 }
 
 .sales-order-da-status-button {
-  background: #ffffff;
+  background: var(--surface-primary);
   border: 1.5px solid #2a00ff;
   padding: 9px 20px;
   border-radius: 9px;
@@ -209,7 +209,7 @@
 }
 
 .sales-order-da-status-button--label:hover {
-  background: #ffffff;
+  background: var(--surface-primary);
   transform: none;
 }
 
@@ -231,7 +231,7 @@
   border: none;
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-inverse);
   cursor: pointer;
   white-space: nowrap;
   transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
@@ -277,8 +277,8 @@
   background: linear-gradient(
     120deg,
     rgba(42, 0, 255, 0.07),
-    #ffffff 30%,
-    #ffffff 70%,
+    var(--surface-primary) 30%,
+    var(--surface-primary) 70%,
     rgba(139, 147, 255, 0.08)
   );
   background-size: 250% 250%;
@@ -844,7 +844,7 @@
 
 .sales-order-add-form-save {
   background: linear-gradient(135deg, #2a00ff, #4c68d7);
-  color: #ffffff;
+  color: var(--text-inverse);
   box-shadow: 0 3px 10px rgba(42, 0, 255, 0.28);
 }
 
@@ -919,7 +919,7 @@
   gap: 12px;
   margin: 12px 14px 4px;
   padding: 12px 18px;
-  background: linear-gradient(180deg, #fbfcff 0%, #ffffff 100%);
+  background: linear-gradient(180deg, #fbfcff 0%, var(--surface-primary) 100%);
   border: 1px solid var(--border-primary);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
@@ -1007,7 +1007,7 @@
 .so-pagination-page.is-active {
   background: linear-gradient(135deg, #00368c, #1a56db);
   border-color: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   box-shadow: 0 3px 10px rgba(0, 54, 140, 0.32);
 }
 
@@ -1330,7 +1330,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(180deg, #ffffff, #f7f9ff);
+  background: linear-gradient(180deg, var(--surface-primary), #f7f9ff);
   box-shadow: 0 -6px 16px rgba(15, 23, 42, 0.08);
   padding: 12px 20px;
   display: flex;
@@ -1428,7 +1428,7 @@
 /* Generate Work Order — primary solid */
 .so-bulk-btn-generate-wo {
   background: linear-gradient(135deg, #00368c, #1a56db);
-  color: #ffffff;
+  color: var(--text-inverse);
   border-color: #00368c;
   box-shadow: 0 2px 8px rgba(0, 54, 140, 0.2);
 }
@@ -1579,7 +1579,7 @@
 
   &:hover {
     background: #dc2626;
-    color: #ffffff;
+    color: var(--text-inverse);
     transform: scale(1.08);
   }
 }
@@ -1900,7 +1900,7 @@
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-inverse);
   letter-spacing: -0.01em;
 }
 
@@ -1913,7 +1913,7 @@
   border: none;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
+  color: var(--text-inverse);
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
@@ -2276,7 +2276,7 @@
 
 .so-wo-btn-generate {
   background: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   box-shadow: 0 4px 14px rgba(0, 54, 140, 0.32);
 
   &:hover:not(:disabled) {
@@ -3263,7 +3263,7 @@ $so-po-blue: #1a56db;
   font-weight: 600;
   font-family: inherit;
   color: var(--text-primary);
-  background: #ffffff;
+  background: var(--surface-primary);
   border: 1px solid #d6ddfb;
   border-radius: 6px;
   text-align: right;
@@ -3284,14 +3284,14 @@ $so-po-blue: #1a56db;
   margin-top: 6px;
   padding: 14px 14px;
   background: linear-gradient(135deg, $so-po-blue, #1240a8);
-  color: #ffffff;
+  color: var(--text-inverse);
   font-size: 16px;
   font-weight: 800;
   border-radius: 10px;
   box-shadow: 0 10px 24px -10px rgba(26, 86, 219, 0.55);
 
   span:last-child {
-    color: #ffffff;
+    color: var(--text-inverse);
   }
 }
 
@@ -3313,7 +3313,7 @@ $so-po-blue: #1a56db;
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  color: var(--text-inverse);
   font-family: inherit;
   font-size: 16px;
   font-weight: 800;
@@ -3333,7 +3333,7 @@ $so-po-blue: #1a56db;
 
   &:focus {
     outline: none;
-    border-color: #ffffff;
+    border-color: var(--text-inverse);
     background: rgba(255, 255, 255, 0.2);
   }
 
@@ -3390,7 +3390,7 @@ $so-po-blue: #1a56db;
 
 .so-po-btn-generate {
   background: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   box-shadow: 0 4px 14px rgba(0, 54, 140, 0.32);
 
   &:hover:not(:disabled) {

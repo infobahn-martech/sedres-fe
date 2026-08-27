@@ -350,7 +350,7 @@
 .dispatch-launch-hire-step-num--done {
   background: #059669;
   border-color: #059669;
-  color: #fff;
+  color: var(--text-inverse);
 }
 
 // Gives Transportation its own bordered card like Launch Hire's, tinted to
@@ -385,7 +385,7 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #aab4c3 !important;
+    background: var(--text-muted) !important;
   }
 
   &::-webkit-scrollbar-thumb:hover {
@@ -427,7 +427,7 @@
 
     &.pac-item-selected {
       background-color: #00368c !important;
-      color: #ffffff !important;
+      color: var(--text-inverse) !important;
     }
   }
 }

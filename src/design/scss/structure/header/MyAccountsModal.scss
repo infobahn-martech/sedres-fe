@@ -28,7 +28,7 @@ $my-acc-input-radius: 12px;
     gap: clamp(1.5rem, 4vw, 3rem);
     border: 1px solid $my-acc-border;
     border-radius: $my-acc-radius;
-    background: linear-gradient(165deg, #ffffff 0%, $my-acc-surface 45%, #ffffff 100%);
+    background: linear-gradient(165deg, var(--surface-primary) 0%, $my-acc-surface 45%, var(--surface-primary) 100%);
     box-shadow: $my-acc-shadow;
     padding: clamp(1.75rem, 3vw, 2.75rem) clamp(1.5rem, 3vw, 2.5rem);
     position: relative;
@@ -96,7 +96,7 @@ $my-acc-input-radius: 12px;
       align-items: center;
       justify-content: center;
       background: linear-gradient(160deg, $my-acc-brand 0%, $my-acc-brand-deep 100%);
-      color: #fff;
+      color: var(--text-inverse);
       font-size: clamp(2.5rem, 6vw, 3.75rem);
       font-weight: 700;
       letter-spacing: -0.02em;
@@ -212,7 +212,7 @@ $my-acc-input-radius: 12px;
 
       &.edit-btn {
         background-color: $my-acc-brand;
-        color: #fff;
+        color: var(--text-inverse);
 
         &:hover:not(:disabled) {
           background-color: $my-acc-brand-deep;

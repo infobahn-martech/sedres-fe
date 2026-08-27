@@ -149,7 +149,7 @@ input#selectedFile {
   color: #00368c;
 
   &:hover {
-    color: #fff;
+    color: var(--text-inverse);
   }
 }
 
@@ -266,7 +266,7 @@ body .material-management-modal .modal-body {
     background: #002570;
   }
   scrollbar-width: thin;
-  scrollbar-color: #00368c #f1f1f1;
+  scrollbar-color: #00368c var(--scrollbar-track);
 }
 
 .logout-modal {

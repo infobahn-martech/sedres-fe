@@ -101,17 +101,17 @@ body .role-modal-sm.master-modal-form .modal-dialog {
   }
 
   .phone-wrapper .hospital-service-multi-select .react-select__multi-value__label {
-    color: #fff;
+    color: var(--text-inverse);
     font-size: 13px;
     font-weight: 500;
   }
 
   .phone-wrapper .hospital-service-multi-select .react-select__multi-value__remove {
-    color: #fff;
+    color: var(--text-inverse);
 
     &:hover {
       background: rgba(255, 255, 255, 0.2);
-      color: #fff;
+      color: var(--text-inverse);
     }
   }
 }

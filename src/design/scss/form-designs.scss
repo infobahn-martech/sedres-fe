@@ -250,7 +250,7 @@
 
         &:hover {
             background-color: #dc3545;
-            color: #fff;
+            color: var(--text-inverse);
         }
     }
 }
@@ -342,7 +342,7 @@
 
             &__option--is-selected {
                 background: #00368c;
-                color: #fff;
+                color: var(--text-inverse);
             }
 
             /* Keep active same as focused/selected to avoid blink on click/hold */

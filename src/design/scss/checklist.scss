@@ -1225,7 +1225,7 @@
 }
 
 .checkmark {
-  color: #ffffff;
+  color: var(--text-inverse);
   font-size: 14px;
   font-weight: bold;
   line-height: 1;
@@ -1419,7 +1419,7 @@
   padding: 8px;
 
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f1f3f5;
+  scrollbar-color: var(--border-primary) #f1f3f5;
 
   [data-theme="dark"] & {
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
@@ -1435,7 +1435,7 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: var(--border-primary);
     border-radius: 999px;
 
     [data-theme="dark"] & {
@@ -1545,7 +1545,7 @@
   padding: 22px 28px;
   border-bottom: 1px solid var(--border-primary);
   flex-shrink: 0;
-  background: linear-gradient(to bottom, #fafbfc 0%, #ffffff 100%);
+  background: linear-gradient(to bottom, var(--bg-secondary) 0%, var(--surface-primary) 100%);
 }
 
 .checklist-item-modal-header h3 {
@@ -1746,7 +1746,7 @@
 
 .checklist-file-upload-label:hover .checklist-file-upload-button {
   background: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   border-color: #00368c;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 54, 140, 0.25);
@@ -1933,7 +1933,7 @@
 .checklist-file-preview-download:hover {
   background: #00368c;
   border-color: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   transform: scale(1.1);
   box-shadow: 0 4px 12px rgba(0, 54, 140, 0.3);
 }
@@ -1973,7 +1973,7 @@
 .checklist-file-preview-close:hover {
   background: #ff4444;
   border-color: #ff4444;
-  color: #ffffff;
+  color: var(--text-inverse);
   transform: scale(1.1) rotate(90deg);
   box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
 }
@@ -2042,7 +2042,7 @@
 .checklist-file-icon-pdf-text {
   font-size: 14px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-inverse);
   letter-spacing: 1.2px;
   text-transform: uppercase;
   position: absolute;
@@ -2180,7 +2180,7 @@
 
 .checklist-btn-primary {
   background: #6674c8;
-  color: #ffffff;
+  color: var(--text-inverse);
   box-shadow: 0 2px 6px rgba(63, 79, 143, 0.3);
 }
 
@@ -2257,7 +2257,7 @@
 .checklist-item-detail-btn {
   padding: 6px 14px;
   background: var(--card-color, #2A00FF);
-  color: #ffffff;
+  color: var(--text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 12px;
@@ -3033,7 +3033,7 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
 }
 
 .cl-upload-btn--premium {
-  background: linear-gradient(135deg, #ffffff 0%, #f4f6ff 55%, #eef2ff 100%);
+  background: linear-gradient(135deg, var(--surface-primary) 0%, #f4f6ff 55%, #eef2ff 100%);
   border: 1px solid rgba(91, 87, 199, 0.42);
   box-shadow: 0 2px 10px rgba(42, 0, 255, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04);
   color: #4338ca;
@@ -3107,7 +3107,7 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   padding: 0 8px;
   border-radius: 6px;
   border: 1px solid rgba(91, 87, 199, 0.38);
-  background: linear-gradient(180deg, #ffffff 0%, #f4f6ff 100%);
+  background: linear-gradient(180deg, var(--surface-primary) 0%, #f4f6ff 100%);
   color: #4338ca;
   display: inline-flex;
   align-items: center;
@@ -3337,7 +3337,7 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   padding: 5px 6px 5px 7px;
   border-radius: 8px;
   border: 1px solid var(--border-primary);
-  background: linear-gradient(180deg, #fafbfc 0%, #f4f6f9 100%);
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, #f4f6f9 100%);
   box-sizing: border-box;
   min-height: 30px;
 }
@@ -3423,7 +3423,7 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
 }
 
 .cl-upload-view-btn:disabled {
-  color: #cbd5e1;
+  color: var(--border-primary);
   border-color: var(--border-primary);
   background: var(--surface-primary);
   cursor: not-allowed;
@@ -3727,7 +3727,7 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   border-radius: 6px;
   border: none;
   background: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   font-weight: 600;
 }
 
@@ -3779,7 +3779,7 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
 
 .checklist-inline-add-btn:hover {
   background: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 
 .checklist-compact-select.premium-select {
@@ -4261,7 +4261,7 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
 
 .checklist-remove-icon-btn:hover:not(:disabled) {
   background: #dc3545;
-  color: #ffffff;
+  color: var(--text-inverse);
   border-color: #dc3545;
 }
 
@@ -4508,7 +4508,7 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   margin-top: 14px;
   padding: 12px 0 0;
   border-top: 1px solid var(--border-primary);
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.92), #ffffff 36%);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.92), var(--surface-primary) 36%);
   box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.05);
 }
 
@@ -4684,7 +4684,7 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   width: 100%;
   overflow-x: auto;
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f1f3f5;
+  scrollbar-color: var(--border-primary) #f1f3f5;
 
   [data-theme="dark"] & {
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
@@ -4703,7 +4703,7 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: var(--border-primary);
     border-radius: 999px;
 
     [data-theme="dark"] & {

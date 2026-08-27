@@ -5,7 +5,7 @@ body .document-checklist-modal .modal-dialog {
 .document-checklist-modal .modal-content {
   border-radius: 18px;
   padding: 24px 24px 18px;
-  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.16);
+  box-shadow: var(--shadow-lg);
 }
 
 .document-checklist-modal .modal-body {
@@ -23,7 +23,7 @@ body .document-checklist-modal .modal-dialog {
   border: 1px solid var(--border-primary);
   border-radius: 12px;
   background: var(--surface-primary);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--shadow-md);
 }
 
 .document-checklist-modal .document-checklist-select-wrap .react-select-container {
@@ -53,13 +53,13 @@ body .document-checklist-modal .modal-dialog {
 }
 
 .document-checklist-modal .document-checklist-select-wrap .react-select__multi-value__label {
-  color: #0f3f87;
+  color: var(--color-primary);
   font-weight: 500;
 }
 
 .document-checklist-modal .document-checklist-select-wrap .react-select__multi-value__remove:hover {
   background: #cddfff;
-  color: #0a2f69;
+  color: var(--color-primary);
 }
 
 .document-checklist-modal .document-checklist-select-wrap .react-select__menu {

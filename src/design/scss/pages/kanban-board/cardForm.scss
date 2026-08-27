@@ -227,7 +227,7 @@
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
-  box-shadow: 0 0 0 2px #ffffff;
+  box-shadow: 0 0 0 2px var(--surface-primary);
 }
 
 .gro-card-view .gro-pass-segment:disabled {
@@ -242,16 +242,16 @@
 }
 
 .gro-card-view .gro-pass-segment--active {
-  background: #00368c !important;
-  border-color: #00368c !important;
-  color: #ffffff !important;
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--text-inverse) !important;
   box-shadow: 0 4px 14px #00368c(16, 185, 129, 0.28);
 }
 
 .gro-card-view .gro-pass-segment--popover-open {
   // background: #00368c !important;
-  border-color: #00368c !important;
-  color: #00368c !important;
+  border-color: var(--color-primary-accent) !important;
+  color: var(--color-primary-accent) !important;
   box-shadow: 0 0 0 2px #00368c(16, 185, 129, 0.2);
 }
 
@@ -276,7 +276,7 @@
   max-height: min(520px, 55vh);
   overflow: auto;
   scrollbar-width: thin;
-  scrollbar-color: #94a3b8 #eef2f7;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 .gro-card-view .gro-pass-table-scroll::-webkit-scrollbar {
@@ -285,7 +285,7 @@
 }
 
 .gro-card-view .gro-pass-table-scroll::-webkit-scrollbar-thumb {
-  background: #94a3b8;
+  background: var(--scrollbar-thumb);
   border-radius: 7px;
   border: 1px solid var(--border-primary);
 }
@@ -315,7 +315,7 @@
   letter-spacing: 0.01em;
   text-transform: none;
   color: var(--text-primary);
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  background: linear-gradient(180deg, var(--surface-secondary) 0%, var(--bg-tertiary) 100%);
   border-bottom: 1px solid var(--border-primary);
   border-left: none;
   border-right: none;
@@ -448,11 +448,11 @@
 }
 
 .gro-card-view .gro-crew-immigration-panel {
-  background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
+  background: linear-gradient(180deg, var(--surface-primary) 0%, var(--surface-secondary) 100%);
   border: 1px solid var(--border-primary);
   border-radius: 18px;
   padding: 18px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--shadow-md);
 }
 
 .gro-card-view .gro-crew-immigration-head {
@@ -495,13 +495,13 @@
 }
 
 .gro-card-view .gro-crew-change-action-btn {
-  border-color: #00368c !important;
-  color: #00368c !important;
+  border-color: var(--color-primary-accent) !important;
+  color: var(--color-primary-accent) !important;
 }
 
 .gro-card-view .gro-crew-change-action-btn:hover:not(:disabled) {
-  background: #00368c !important;
-  color: #ffffff !important;
+  background: var(--color-primary) !important;
+  color: var(--text-inverse) !important;
 }
 
 .gro-card-view .gro-crew-change-action-btn:disabled {
@@ -687,9 +687,9 @@
 }
 
 .gro-card-view .gro-crew-immigration-page-btn--active {
-  border-color: #00368c;
-  background: #00368c;
-  color: #ffffff;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--text-inverse);
 }
 
 .gro-card-view .gro-crew-immigration-file-input {
@@ -816,7 +816,7 @@
   &:hover:not(:disabled) {
     background: #1f3c88;
     border-color: #1f3c88;
-    color: #ffffff;
+    color: var(--text-inverse);
   }
 
   &:disabled {
@@ -1027,7 +1027,7 @@
   border-radius: 10px;
   border: 1px solid #00368c;
   background: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
@@ -1192,7 +1192,7 @@
 .gro-card-view .gro-stage-upload-icon-btn:hover {
   background: #00368c;
   border-color: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
   box-shadow: 0 4px 14px rgba(0, 54, 140, 0.28);
 }
 
@@ -1225,7 +1225,7 @@
 .gro-card-view .gro-crew-change-row-upload-btn:hover {
   background: #00368c;
   border-color: #00368c;
-  color: #ffffff;
+  color: var(--text-inverse);
 }
 
 .gro-card-view .gro-crew-change-row-upload-btn svg {
@@ -1759,12 +1759,12 @@
   letter-spacing: 0.04em;
   line-height: 1.2;
   border-radius: 4px;
-  color: #ffffff;
+  color: var(--text-inverse);
   pointer-events: none;
 }
 
 .gro-card-view .gro-document-preview-icon--default {
-  background: linear-gradient(160deg, #ffffff 0%, #f1f5f9 100%);
+  background: linear-gradient(160deg, var(--surface-primary) 0%, #f1f5f9 100%);
   border-color: var(--border-primary);
   color: var(--text-secondary);
 }
@@ -1856,7 +1856,7 @@
 
 .gro-card-view .gro-inline-remark-input:focus {
   outline: none;
-  border-color: #94a3b8;
+  border-color: var(--text-muted);
   box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.35);
 }
 
@@ -1876,7 +1876,7 @@
 
 .gro-card-view .gro-inline-remark-btn-cancel:hover:not(:disabled) {
   background: var(--surface-primary);
-  border-color: #9ca3af;
+  border-color: var(--text-muted);
 }
 
 .gro-card-view .gro-inline-remark-btn-submit {
@@ -1884,7 +1884,7 @@
   padding: 0 14px;
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-inverse);
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -1909,7 +1909,7 @@
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: var(--border-primary) transparent;
 }
 
 .gro-card-view .gro-document-actions::-webkit-scrollbar {
@@ -1917,7 +1917,7 @@
 }
 
 .gro-card-view .gro-document-actions::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--border-primary);
   border-radius: 4px;
 }
 
@@ -2023,7 +2023,7 @@
 .gro-card-view .gro-doc-action-btn--rejected.gro-doc-action-btn--readonly,
 .gro-card-view .gro-doc-action-btn--rejected.gro-doc-action-btn--readonly:hover,
 .gro-card-view .gro-doc-action-btn--rejected.gro-doc-action-btn--readonly:focus-visible {
-  color: #ffffff !important;
+  color: var(--text-inverse) !important;
   background: #dc2626 !important;
   border-color: #b91c1c !important;
   cursor: default;
@@ -2167,7 +2167,7 @@ body .gro-doc-action-modal .modal-dialog {
 .gro-doc-confirm-approve-btn {
   background: #047857 !important;
   border-color: #047857 !important;
-  color: #fff !important;
+  color: var(--text-inverse) !important;
 }
 
 .gro-doc-confirm-approve-btn:hover:not(:disabled) {
@@ -2226,7 +2226,7 @@ body .gro-doc-action-modal .modal-dialog {
 .gro-doc-confirm-reject-btn {
   background: #ff3e3e !important;
   border-color: #ff3e3e !important;
-  color: #fff !important;
+  color: var(--text-inverse) !important;
 }
 
 .gro-doc-confirm-reject-btn:hover:not(:disabled) {
@@ -2298,7 +2298,7 @@ body .gro-zawil-upload-modal .modal-dialog {
 .gro-zawil-upload-modal__submit.btn-common {
   background: #00368c !important;
   border-color: #00368c !important;
-  color: #fff !important;
+  color: var(--text-inverse) !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2313,7 +2313,7 @@ body .gro-zawil-upload-modal .modal-dialog {
 .gro-zawil-upload-modal__submit.btn-common:disabled {
   background: #9fb2cf !important;
   border-color: #9fb2cf !important;
-  color: #fff !important;
+  color: var(--text-inverse) !important;
   cursor: not-allowed;
 }
 

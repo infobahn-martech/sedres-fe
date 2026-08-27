@@ -39,7 +39,7 @@
 }
 
 .column-header:hover {
-  background: #e0e5ff;
+  background: var(--surface-hover);
 }
 
 
@@ -92,14 +92,14 @@
   border-radius: 6px 0 0 6px;
   width: 28px;
   height: 36px;
-  color: #fff;
+  color: var(--text-inverse);
   padding: 0;
   /* ensure no background bleed */
 }
 
 /* Number */
 .count-number {
-  color: #fff;
+  color: var(--text-inverse);
   font-weight: 600;
   font-size: 12px;
   line-height: 1;
@@ -161,5 +161,5 @@
 
 /* When a card is dragged over */
 .card-list.drag-over {
-  background: #eaf0ff;
+  background: var(--surface-hover);
 }

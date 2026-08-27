@@ -7,9 +7,9 @@
 .da-cf-panel {
   --da-ink: #1c2033;
   --da-ink-soft: #565b74;
-  --da-ink-faint: #9a9fb8;
+  --da-ink-faint: var(--text-muted);
   --da-line: #e2e4f0;
-  --da-surface: #ffffff;
+  --da-surface: var(--surface-primary);
   --da-sunken: #f5f6fb;
   --da-accent: #4338ca;
   --da-accent-soft: #edeefd;
@@ -32,7 +32,7 @@
 // to this panel only so other tabs keep their existing (transparent) scrollbar.
 .cardform-body.da-cf-panel {
   scrollbar-width: thin;
-  scrollbar-color: #c7cad8 transparent;
+  scrollbar-color: var(--border-primary) transparent;
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -43,12 +43,12 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #c7cad8;
+    background: var(--border-primary);
     border-radius: 8px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: #9a9fb8;
+    background: var(--text-muted);
   }
 }
 
@@ -174,7 +174,7 @@
   height: 36px;
   border-radius: 11px;
   color: var(--step-accent, var(--da-accent));
-  background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 14%, #ffffff);
+  background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 14%, var(--surface-primary));
   flex-shrink: 0;
 }
 
@@ -233,7 +233,7 @@
   border: none;
   border-radius: 999px;
   background: var(--da-accent);
-  color: #ffffff;
+  color: var(--text-inverse);
   font-family: inherit;
   font-size: 12.5px;
   font-weight: 700;
@@ -605,7 +605,7 @@
   height: 22px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--da-accent), #6d5bd0);
-  color: #ffffff;
+  color: var(--text-inverse);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -991,7 +991,7 @@
   width: 26px;
   height: 26px;
   border-radius: 7px;
-  background: color-mix(in srgb, var(--doc-accent, var(--da-accent)) 14%, #ffffff);
+  background: color-mix(in srgb, var(--doc-accent, var(--da-accent)) 14%, var(--surface-primary));
   color: var(--doc-accent, var(--da-accent));
   flex-shrink: 0;
 }
@@ -1165,7 +1165,7 @@ a.da-cf-file-name {
   padding: 0 5px;
   border-radius: 9px;
   background: var(--da-accent);
-  color: #fff;
+  color: var(--text-inverse);
   font-size: 11px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -1504,7 +1504,7 @@ a.da-cf-file-name {
 }
 
 .da-cf-timeline-step--done .da-cf-timeline-step-icon {
-  color: #fff;
+  color: var(--text-inverse);
   background: var(--da-accent);
   border-color: var(--da-accent);
   box-shadow: 0 3px 8px -2px color-mix(in srgb, var(--da-accent) 55%, transparent);
@@ -1771,7 +1771,7 @@ a.da-cf-file-name {
   transition: background 0.15s ease, border-color 0.15s ease;
 
   &:hover {
-    background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 10%, #ffffff);
+    background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 10%, var(--surface-primary));
     border-color: var(--step-accent, var(--da-accent));
   }
 }
@@ -1872,7 +1872,7 @@ a.da-cf-file-name {
   height: 52px;
   border-radius: 14px;
   color: var(--step-accent, var(--da-accent));
-  background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 14%, #ffffff);
+  background: color-mix(in srgb, var(--step-accent, var(--da-accent)) 14%, var(--surface-primary));
   flex-shrink: 0;
 }
 
