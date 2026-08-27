@@ -53,7 +53,7 @@ const recordTaxiboatTimestamp = (payload) =>
 const cancelTaxiboatTimestamp = (payload) =>
   Gateway.post("/launch_hire/cancel_taxiboat_timestamp", payload);
 
-// Create an intermediate launch hire trip — { booking_id, taxi_boat_id, taxiboat_captain_id, booking_datetime, location }
+// Create an intermediate launch hire trip — { booking_id, entity_id, purpose, booking_datetime }
 const createIntermediateTrip = (payload) =>
   Gateway.post("/launch_hire/create_intermediate_trip", payload);
 

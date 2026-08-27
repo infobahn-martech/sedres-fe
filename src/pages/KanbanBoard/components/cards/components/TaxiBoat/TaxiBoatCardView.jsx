@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useCTPendingCards } from "../../../../../../shared/store/ctStore";
 import { useTaxiBoatStore } from "../../../../../../shared/store/taxiBoatStore";
 import useTaxiBoatAssignmentReducer from "../../../../../../store/TaxiBoatAssignmentReducer";
+import useBillingEntityReducer from "../../../../../../store/BillingEntityReducer";
 import useAuthReducer from "../../../../../../store/AuthReducer";
 import useAlertReducer from "../../../../../../store/AlertReducer";
 import launchHireService from "../../../../../../services/launchHireService";
@@ -384,7 +385,7 @@ ConfirmDialog.propTypes = {
 function AddIntermediateTripControl({
   tripAdded, open, onToggle, onCancel, onSubmit, submitting,
   purpose, setPurpose,
-  location, setLocation,
+  entityId, setEntityId, billingEntityOptions, isLoadingBillingEntities,
   tripDate, setTripDate,
   tripTime, setTripTime,
   compact,
@@ -396,7 +397,7 @@ function AddIntermediateTripControl({
       </span>
     );
   }
-  const canSubmit = purpose.trim() && location && tripDate && tripTime && !submitting;
+  const canSubmit = purpose.trim() && entityId && tripDate && tripTime && !submitting;
   return (
     <div className="tb-add-trip-anchor">
       <button className="tb-add-trip-btn" onClick={onToggle}>
@@ -411,13 +412,14 @@ function AddIntermediateTripControl({
               <input className="tb-add-trip-input" type="text" placeholder="e.g. Material Delivery, Crew Change..." value={purpose} onChange={(e) => setPurpose(e.target.value)} />
             </div>
             <div className="tb-add-trip-field">
-              <label className="tb-add-trip-label">Location <span className="tb-add-trip-required">*</span></label>
+              <label className="tb-add-trip-label">Billing Entity <span className="tb-add-trip-required">*</span></label>
               <SearchableSelect
                 className="tb-add-trip-input"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                options={LOCATION_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
-                placeholder="Select a location"
+                value={entityId}
+                onChange={(e) => setEntityId(e.target.value)}
+                options={billingEntityOptions}
+                placeholder={isLoadingBillingEntities ? "Loading billing entities…" : "Select a billing entity"}
+                disabled={isLoadingBillingEntities}
               />
             </div>
             <div className="tb-add-trip-field">
@@ -451,8 +453,10 @@ AddIntermediateTripControl.propTypes = {
   submitting:  PropTypes.bool,
   purpose:     PropTypes.string.isRequired,
   setPurpose:  PropTypes.func.isRequired,
-  location:    PropTypes.string.isRequired,
-  setLocation: PropTypes.func.isRequired,
+  entityId:    PropTypes.string.isRequired,
+  setEntityId: PropTypes.func.isRequired,
+  billingEntityOptions:     PropTypes.array.isRequired,
+  isLoadingBillingEntities: PropTypes.bool,
   tripDate:    PropTypes.string.isRequired,
   setTripDate: PropTypes.func.isRequired,
   tripTime:    PropTypes.string.isRequired,
@@ -573,7 +577,7 @@ function TimestampStepper({ timestamps, tsState, onCapture, onComplete, jobCompl
                 <div className="tb-stepper-content">
                   <span className="tb-stepper-label tb-stepper-label--trip">Intermediate Trip</span>
                   {intermediateTrip.purpose && <span className="tb-trip-split-purpose">{intermediateTrip.purpose}</span>}
-                  {intermediateTrip.location && <span className="tb-trip-split-dest"><FaShip size={9} />{intermediateTrip.location}</span>}
+                  {intermediateTrip.billingEntity && <span className="tb-trip-split-dest"><FaShip size={9} />{intermediateTrip.billingEntity}</span>}
                 </div>
               </div>
             </li>
@@ -647,8 +651,8 @@ TimestampStepper.propTypes = {
   tsOps:           PropTypes.object,
   shipName:        PropTypes.string,
   intermediateTrip: PropTypes.shape({
-    purpose:  PropTypes.string,
-    location: PropTypes.string,
+    purpose:       PropTypes.string,
+    billingEntity: PropTypes.string,
   }),
 };
 
@@ -982,7 +986,7 @@ function CrewListBatchwisePanel({
   hideStepper, crewlistToggle, onCrewlistChange,
   tripAdded, tripSubmitting, addTripOpen, setAddTripOpen,
   addTripPurpose, setAddTripPurpose,
-  addTripLocation, setAddTripLocation,
+  addTripEntityId, setAddTripEntityId, billingEntityOptions, isLoadingBillingEntities,
   addTripDate, setAddTripDate,
   addTripTime, setAddTripTime,
   onAddTripToggle, handleAddTrip,
@@ -1048,8 +1052,10 @@ function CrewListBatchwisePanel({
               submitting={tripSubmitting}
               purpose={addTripPurpose}
               setPurpose={setAddTripPurpose}
-              location={addTripLocation}
-              setLocation={setAddTripLocation}
+              entityId={addTripEntityId}
+              setEntityId={setAddTripEntityId}
+              billingEntityOptions={billingEntityOptions}
+              isLoadingBillingEntities={isLoadingBillingEntities}
               tripDate={addTripDate}
               setTripDate={setAddTripDate}
               tripTime={addTripTime}
@@ -1331,8 +1337,10 @@ CrewListBatchwisePanel.propTypes = {
   setAddTripOpen:   PropTypes.func,
   addTripPurpose:   PropTypes.string,
   setAddTripPurpose: PropTypes.func,
-  addTripLocation:  PropTypes.string,
-  setAddTripLocation: PropTypes.func,
+  addTripEntityId:  PropTypes.string,
+  setAddTripEntityId: PropTypes.func,
+  billingEntityOptions:     PropTypes.array,
+  isLoadingBillingEntities: PropTypes.bool,
   addTripDate:      PropTypes.string,
   setAddTripDate:   PropTypes.func,
   addTripTime:      PropTypes.string,
@@ -1641,11 +1649,24 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
   const addPendingCard = useCTPendingCards((state) => state.addPendingCard);
   const [addTripOpen, setAddTripOpen] = useState(false);
   const [addTripPurpose, setAddTripPurpose] = useState("");
-  const [addTripLocation, setAddTripLocation] = useState("");
+  const [addTripEntityId, setAddTripEntityId] = useState("");
   const [addTripDate, setAddTripDate] = useState("");
   const [addTripTime, setAddTripTime] = useState("");
   const [tripAdded, setTripAdded] = useState(false);
   const [tripSubmitting, setTripSubmitting] = useState(false);
+
+  // Billing entities — /billingentity — used for the intermediate trip's Billing Entity select
+  const { billingEntities, isLoading: isLoadingBillingEntities, getBillingEntities } =
+    useBillingEntityReducer((state) => state);
+  useEffect(() => {
+    getBillingEntities({ params: {} });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const billingEntityOptions = (billingEntities ?? []).map((entity) => ({
+    value: String(entity.entity_id),
+    label: entity.billing_entity,
+  }));
+  const addTripEntityName = billingEntityOptions.find((opt) => opt.value === String(addTripEntityId))?.label ?? "";
 
   // Taxi fleet assignment
   const {
@@ -2016,43 +2037,27 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
       });
   }, [batches, notifyError]);
 
-  // create_intermediate_trip needs the fleet/captain already assigned to this booking —
-  // prefer get_taxiboat_booking_detail's confirmed assignment, falling back to the
-  // operator's live in-session selection if the booking detail hasn't loaded yet.
-  const intermediateTripTaxiBoatId = taxiboatBookingDetail?.captain?.taxi_boat_id
-    ?? taxiboatBookingDetail?.fleet?.taxi_boat_id
-    ?? selectedFleet?.taxi_boat_id ?? null;
-  const intermediateTripCaptainId = taxiboatBookingDetail?.captain?.taxiboat_captain_id
-    ?? selectedCaptainId ?? null;
-
   const handleAddTripToggle = useCallback(() => {
-    setAddTripLocation((prev) => prev || (locationEdit || (location !== "—" ? location : "")));
-    setAddTripDate((prev) => prev || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`);
-    setAddTripTime((prev) => prev || `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`);
     setAddTripOpen((open) => !open);
-  }, [locationEdit, location, now]);
+  }, []);
 
   const handleAddTrip = useCallback(() => {
-    if (!addTripPurpose.trim() || !addTripLocation || !addTripDate || !addTripTime) return;
-    if (bookingId == null || intermediateTripTaxiBoatId == null || intermediateTripCaptainId == null) {
-      notifyError("No taxi boat/captain assigned to this booking yet");
-      return;
-    }
+    if (!addTripPurpose.trim() || !addTripEntityId || !addTripDate || !addTripTime) return;
+    if (bookingId == null) return;
     setTripSubmitting(true);
     launchHireService
       .createIntermediateTrip({
-        booking_item_id: bookingId,
-        taxi_boat_id: intermediateTripTaxiBoatId,
-        taxiboat_captain_id: intermediateTripCaptainId,
+        booking_id: bookingId,
+        entity_id: addTripEntityId,
+        purpose: addTripPurpose.trim(),
         booking_datetime: buildApiDateTime(addTripDate, addTripTime),
-        location: addTripLocation,
       })
       .then(({ data }) => {
         notifySuccess(data?.message ?? "Intermediate trip added successfully");
         addPendingCard({
           id: `ct-extra-${Date.now()}`,
           typeOfService: addTripPurpose.trim(),
-          name: billingEntity,
+          name: addTripEntityName || billingEntity,
           vesselName,
           progress: 0,
           timeLeft: "",
@@ -2065,9 +2070,8 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
       })
       .finally(() => setTripSubmitting(false));
   }, [
-    addTripPurpose, addTripLocation, addTripDate, addTripTime,
-    bookingId, intermediateTripTaxiBoatId, intermediateTripCaptainId,
-    billingEntity, vesselName, addPendingCard, notifySuccess, notifyError,
+    addTripPurpose, addTripEntityId, addTripEntityName, addTripDate, addTripTime,
+    bookingId, billingEntity, vesselName, addPendingCard, notifySuccess, notifyError,
   ]);
 
   const allDone = (tsState, keys) => keys.every((k) => tsState[k] !== null);
@@ -2241,8 +2245,10 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
             setAddTripOpen={setAddTripOpen}
             addTripPurpose={addTripPurpose}
             setAddTripPurpose={setAddTripPurpose}
-            addTripLocation={addTripLocation}
-            setAddTripLocation={setAddTripLocation}
+            addTripEntityId={addTripEntityId}
+            setAddTripEntityId={setAddTripEntityId}
+            billingEntityOptions={billingEntityOptions}
+            isLoadingBillingEntities={isLoadingBillingEntities}
             addTripDate={addTripDate}
             setAddTripDate={setAddTripDate}
             addTripTime={addTripTime}
@@ -2583,8 +2589,10 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
                 submitting={tripSubmitting}
                 purpose={addTripPurpose}
                 setPurpose={setAddTripPurpose}
-                location={addTripLocation}
-                setLocation={setAddTripLocation}
+                entityId={addTripEntityId}
+                setEntityId={setAddTripEntityId}
+                billingEntityOptions={billingEntityOptions}
+                isLoadingBillingEntities={isLoadingBillingEntities}
                 tripDate={addTripDate}
                 setTripDate={setAddTripDate}
                 tripTime={addTripTime}
@@ -2601,7 +2609,7 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
                   tsState={dropTs}
                   tsOps={dropTsOps}
                   shipName={vesselName}
-                  intermediateTrip={tripAdded ? { purpose: addTripPurpose, location: addTripLocation } : undefined}
+                  intermediateTrip={tripAdded ? { purpose: addTripPurpose, billingEntity: addTripEntityName } : undefined}
                   onCapture={(key) => {
                     captureNow(setDropTs, key, setDropTsOps, operatorName);
                     recordGenericCheckpoint("drop", CHECKPOINT_BY_KEY[key]);
@@ -2639,7 +2647,7 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
                   tsState={pickupTs}
                   tsOps={pickupTsOps}
                   shipName={vesselName}
-                  intermediateTrip={tripAdded ? { purpose: addTripPurpose, location: addTripLocation } : undefined}
+                  intermediateTrip={tripAdded ? { purpose: addTripPurpose, billingEntity: addTripEntityName } : undefined}
                   onCapture={(key) => {
                     captureNow(setPickupTs, key, setPickupTsOps, operatorName);
                     recordGenericCheckpoint("pickup", CHECKPOINT_BY_KEY[key]);
