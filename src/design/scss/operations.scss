@@ -2073,6 +2073,10 @@ $send-report-optional: var(--text-muted);
     padding-top: $space-1;
     padding-bottom: $space-1;
     border-left: 2px solid rgba(0, 54, 140, 0.15);
+
+    [data-theme="dark"] & {
+      border-left-color: color-mix(in srgb, var(--color-primary-accent) 30%, transparent);
+    }
   }
 
   .op-tab {
@@ -2103,6 +2107,11 @@ $send-report-optional: var(--text-muted);
   .op-tab:hover {
     background: rgba(0, 54, 140, 0.06);
     color: $colorPrimary;
+
+    [data-theme="dark"] & {
+      background: color-mix(in srgb, var(--color-primary-accent) 12%, transparent);
+      color: var(--color-primary-accent);
+    }
   }
 
   // isolation + z-index keep each tab's background/color transition (and the
@@ -2115,6 +2124,12 @@ $send-report-optional: var(--text-muted);
     color: $colorPrimary;
     border-left-color: $colorPrimary;
     font-weight: 700;
+
+    [data-theme="dark"] & {
+      background: color-mix(in srgb, var(--color-primary-accent) 16%, transparent);
+      color: var(--color-primary-accent);
+      border-left-color: var(--color-primary-accent);
+    }
   }
 
   .op-tab:focus-visible {

@@ -724,6 +724,10 @@
 
 .checklist-table-row.checked .checklist-item-text--table {
   color: #166534;
+
+  [data-theme="dark"] & {
+    color: #4ade80;
+  }
 }
 
 .checklist-table-label {
@@ -4790,10 +4794,19 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
 .cl-excel-table .checklist-table-row.checked td {
   background: #ecfdf5;
   border-color: #a7f3d0;
+
+  [data-theme="dark"] & {
+    background: color-mix(in srgb, var(--color-success) 10%, var(--surface-primary));
+    border-color: color-mix(in srgb, var(--color-success) 35%, var(--surface-primary));
+  }
 }
 
 .cl-excel-table .checklist-table-row.checked:hover td {
   background: #dff9ee;
+
+  [data-theme="dark"] & {
+    background: color-mix(in srgb, var(--color-success) 16%, var(--surface-primary));
+  }
 }
 
 .cl-excel-table tbody tr:last-child td {
