@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useCTPendingCards } from "../../../../../../shared/store/ctStore";
 import { useTaxiBoatStore } from "../../../../../../shared/store/taxiBoatStore";
@@ -811,7 +812,7 @@ const parseToInputDate = (raw) => {
   try {
     const d = new Date(raw);
     if (!isNaN(d)) return d.toISOString().split("T")[0];
-  } catch {}
+  } catch {console.log("Error parsing date:", raw)}
   return "";
 };
 
@@ -2038,8 +2039,10 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
   }, [batches, notifyError]);
 
   const handleAddTripToggle = useCallback(() => {
+    setAddTripDate((prev) => prev || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`);
+    setAddTripTime((prev) => prev || `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`);
     setAddTripOpen((open) => !open);
-  }, []);
+  }, [now]);
 
   const handleAddTrip = useCallback(() => {
     if (!addTripPurpose.trim() || !addTripEntityId || !addTripDate || !addTripTime) return;
