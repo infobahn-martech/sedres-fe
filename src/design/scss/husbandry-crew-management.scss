@@ -375,8 +375,8 @@
   justify-content: center;
   flex-shrink: 0;
   color: var(--card-color, #{$colorPrimary});
-  background: color-mix(in srgb, var(--card-color, #{$colorPrimary}) 12%, white);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--card-color, #{$colorPrimary}) 16%, white);
+  background: color-mix(in srgb, var(--card-color, #{$colorPrimary}) 12%, var(--surface-primary));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--card-color, #{$colorPrimary}) 16%, var(--surface-primary));
 }
 
 .crew-card__heading {
@@ -557,7 +557,7 @@
 .crew-header-btn--launch-hire {
   border-color: var(--card-color, #2A00FF);
   background: var(--card-color, #2A00FF);
-  color: var(--text-inverse);
+  color: #fff;
   margin-right: $space-3;
   box-shadow: 0 4px 12px color-mix(in srgb, var(--card-color, #2A00FF) 28%, transparent);
 }
@@ -627,7 +627,7 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-inverse);
+  color: #fff;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -1260,7 +1260,7 @@
 .crew-wizard-btn--primary {
   border: 1px solid transparent;
   background: var(--card-color, #2A00FF);
-  color: var(--text-inverse);
+  color: #fff;
   box-shadow: 0 8px 20px rgba(42, 0, 255, 0.24);
 }
 
@@ -1536,7 +1536,7 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--text-secondary);
-  background: color-mix(in srgb, #7c3aed 12%, white);
+  background: color-mix(in srgb, #7c3aed 12%, var(--surface-primary));
   border-radius: $radius-pill;
   padding: 4px $space-3;
   white-space: nowrap;
@@ -2674,7 +2674,7 @@
 }
 
 .crew-list-upload-box__icon--completed {
-  color: var(--text-inverse);
+  color: #fff;
   background: var(--card-color, #00368c);
 }
 
@@ -3199,7 +3199,7 @@
 
 .crew-summary-movement-filter__btn--active {
   background: var(--card-color, #00368c);
-  color: var(--text-inverse);
+  color: #fff;
   box-shadow: $shadow-sm;
 }
 
@@ -3229,7 +3229,7 @@
   width: 100%;
   padding: 5px 8px;
   border-radius: $radius-md;
-  border: 1.5px solid color-mix(in srgb, var(--card-color, $status-in-progress-text) 45%, white);
+  border: 1.5px solid color-mix(in srgb, var(--card-color, $status-in-progress-text) 45%, var(--surface-primary));
   font-size: 12px;
   line-height: 1.4;
 }
@@ -3265,7 +3265,7 @@
   min-width: 0;
 
   .cf-multi-select-email-input {
-    border: 1.5px solid color-mix(in srgb, var(--card-color, $status-in-progress-text) 45%, white);
+    border: 1.5px solid color-mix(in srgb, var(--card-color, $status-in-progress-text) 45%, var(--surface-primary));
     border-radius: $radius-md;
     background: var(--surface-primary);
     box-shadow: none;
@@ -3305,7 +3305,7 @@
   .MuiInputBase-root {
     min-height: 0;
     border-radius: $radius-md;
-    border: 1.5px solid color-mix(in srgb, var(--card-color, $status-in-progress-text) 45%, white);
+    border: 1.5px solid color-mix(in srgb, var(--card-color, $status-in-progress-text) 45%, var(--surface-primary));
     font-size: 12px;
     padding: 5px 8px;
   }
@@ -3353,8 +3353,8 @@
 }
 
 .crew-action-btn--edit {
-  background: color-mix(in srgb, var(--card-color, $status-in-progress-text) 16%, white);
-  border: 1.5px solid color-mix(in srgb, var(--card-color, $status-in-progress-text) 55%, white);
+  background: color-mix(in srgb, var(--card-color, $status-in-progress-text) 16%, var(--surface-primary));
+  border: 1.5px solid color-mix(in srgb, var(--card-color, $status-in-progress-text) 55%, var(--surface-primary));
   color: var(--card-color, $status-in-progress-text);
 }
 
@@ -3563,8 +3563,8 @@
   gap: $space-5;
   padding: $space-4 $space-5;
   border-radius: $radius-lg;
-  background: color-mix(in srgb, var(--card-color, #00368c) 6%, white);
-  border: 1px solid color-mix(in srgb, var(--card-color, #00368c) 18%, white);
+  background: color-mix(in srgb, var(--card-color, #00368c) 6%, var(--surface-primary));
+  border: 1px solid color-mix(in srgb, var(--card-color, #00368c) 18%, var(--surface-primary));
   box-shadow: $shadow-sm;
 }
 
@@ -3584,7 +3584,7 @@
   height: 34px;
   border-radius: $radius-md;
   background: var(--card-color, #00368c);
-  color: var(--text-inverse);
+  color: #fff;
   flex-shrink: 0;
 }
 
@@ -3682,15 +3682,15 @@
 .crew-launch-hire-batch-select .cf-multiselect-tag {
   width: auto;
   max-width: 110px;
-  background: color-mix(in srgb, var(--card-color, #00368c) 8%, white);
-  border: 1px solid color-mix(in srgb, var(--card-color, #00368c) 30%, white);
+  background: color-mix(in srgb, var(--card-color, #00368c) 8%, var(--surface-primary));
+  border: 1px solid color-mix(in srgb, var(--card-color, #00368c) 30%, var(--surface-primary));
   color: var(--card-color, #00368c);
   font-size: 12px;
   padding: 3px 6px;
 }
 
 .crew-launch-hire-batch-select .cf-multiselect-tag:hover {
-  background: color-mix(in srgb, var(--card-color, #00368c) 14%, white);
+  background: color-mix(in srgb, var(--card-color, #00368c) 14%, var(--surface-primary));
   border-color: var(--card-color, #00368c);
 }
 
@@ -3702,7 +3702,7 @@
 }
 
 .crew-launch-hire-batch-select .cf-multiselect-tag-remove:hover {
-  background: color-mix(in srgb, var(--card-color, #00368c) 18%, white);
+  background: color-mix(in srgb, var(--card-color, #00368c) 18%, var(--surface-primary));
 }
 
 .crew-launch-hire-batch-select .cf-multiselect-arrow {
@@ -3716,17 +3716,17 @@
 }
 
 .crew-launch-hire-batch-select .cf-multiselect-option:hover {
-  background: color-mix(in srgb, var(--card-color, #00368c) 10%, white);
+  background: color-mix(in srgb, var(--card-color, #00368c) 10%, var(--surface-primary));
 }
 
 .crew-launch-hire-batch-select .cf-multiselect-option.selected {
-  background: color-mix(in srgb, var(--card-color, #00368c) 14%, white);
+  background: color-mix(in srgb, var(--card-color, #00368c) 14%, var(--surface-primary));
   color: var(--card-color, #00368c);
   font-weight: 600;
 }
 
 .crew-launch-hire-batch-select .cf-multiselect-option.selected:hover {
-  background: color-mix(in srgb, var(--card-color, #00368c) 20%, white);
+  background: color-mix(in srgb, var(--card-color, #00368c) 20%, var(--surface-primary));
 }
 
 // Absolutely positioned so it doesn't add to .field's flex-column height —
@@ -3789,7 +3789,7 @@
 .crew-launch-hire-panel__btn--submit {
   background: var(--card-color, #00368c);
   border: 1px solid var(--card-color, #00368c);
-  color: var(--text-inverse);
+  color: #fff;
 }
 
 .crew-launch-hire-panel__btn--submit:hover:not(:disabled) {

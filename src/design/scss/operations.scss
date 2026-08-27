@@ -1310,7 +1310,7 @@ $send-report-optional: var(--text-muted);
   align-items: center;
   justify-content: center;
   color: var(--card-color, #2A00FF);
-  background: color-mix(in srgb, var(--card-color, #2A00FF) 10%, white);
+  background: color-mix(in srgb, var(--card-color, #2A00FF) 10%, var(--surface-primary));
 }
 
 .crew-mgmt-service-box-content {
@@ -1529,7 +1529,7 @@ $send-report-optional: var(--text-muted);
 
   &:hover {
     background: var(--card-color, #00368c);
-    color: var(--text-inverse);
+    color: #fff;
     transform: translateY(-50%) scale(1.08);
     box-shadow: 0 4px 12px rgba(0, 54, 140, 0.25);
   }
@@ -1934,7 +1934,7 @@ $send-report-optional: var(--text-muted);
   justify-content: center;
   flex-shrink: 0;
   color: var(--tab-icon-color, var(--text-secondary));
-  background: color-mix(in srgb, var(--tab-icon-color, var(--text-secondary)) 15%, white);
+  background: color-mix(in srgb, var(--tab-icon-color, var(--text-secondary)) 15%, var(--surface-primary));
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -2187,7 +2187,7 @@ $send-report-optional: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 10px;
-  background: linear-gradient(90deg, #1a1a2e 0%, #4f46e5 65%);
+  background: linear-gradient(90deg, var(--text-primary) 0%, #4f46e5 65%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -5558,7 +5558,7 @@ $send-report-optional: var(--text-muted);
     &.active {
       border-color: var(--card-color, #00368c);
       background: var(--card-color, #00368c);
-      color: var(--text-inverse);
+      color: #fff;
       font-weight: 600;
     }
   }
@@ -5589,7 +5589,7 @@ $send-report-optional: var(--text-muted);
 
     &:hover {
       background: var(--card-color, #00368c);
-      color: var(--text-inverse);
+      color: #fff;
     }
   }
 
@@ -7235,7 +7235,7 @@ $send-report-optional: var(--text-muted);
 
 .reports-table-container .table.reports-table thead th {
   background: var(--card-color, #2A00FF) !important;
-  color: var(--text-inverse);
+  color: #fff;
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
@@ -7310,7 +7310,7 @@ $send-report-optional: var(--text-muted);
 
 .reports-action-btn.view:hover {
   background: var(--card-color, #2A00FF);
-  color: var(--text-inverse);
+  color: #fff;
 }
 
 .reports-action-btn.download {
@@ -7320,7 +7320,7 @@ $send-report-optional: var(--text-muted);
 
 .reports-action-btn.download:hover {
   background: var(--card-color, #2A00FF);
-  color: var(--text-inverse);
+  color: #fff;
 }
 
 .reports-table tbody tr:nth-child(even) {
@@ -7972,7 +7972,7 @@ $send-report-optional: var(--text-muted);
 
 .reports-card-action-btn.preview:hover {
   background: var(--card-color, #2A00FF);
-  color: var(--text-inverse);
+  color: #fff;
   border-color: var(--card-color, #2A00FF);
 }
 
@@ -7984,7 +7984,7 @@ $send-report-optional: var(--text-muted);
 
 .reports-card-action-btn.download:hover {
   background: var(--card-color, #2A00FF);
-  color: var(--text-inverse);
+  color: #fff;
   border-color: var(--card-color, #2A00FF);
 }
 
