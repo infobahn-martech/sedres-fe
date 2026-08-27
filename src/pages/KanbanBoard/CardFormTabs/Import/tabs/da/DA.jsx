@@ -804,7 +804,14 @@ function StatusTimelineSection({ steps, onStepClick, isLoading, isAdvancing }) {
           const nextStep = steps[index + 1];
           const isForwardClickable = step.state === "current" && Boolean(nextStep);
           const isUpNextClickable = step.state === "pending" && (prevStep?.state === "current" || prevStep?.state === "done");
-          const isBackClickable = step.state === "done" && nextStep?.state === "current";
+          // SummaryPanel's timelineSteps memo force-promotes the final step from "current" to
+          // "done" once reached (so a fully-closed DA doesn't show a permanent "In progress"
+          // clock on "Closed paid" — see the comment there). That means the step right before
+          // it never sees a literal "current" neighbor once the DA is fully closed, silently
+          // disabling revert. Treat a "done" last step as the effectively-current one too, so
+          // reverting away from "Closed paid" stays possible.
+          const nextIsForcedDoneLastStep = nextStep === steps[steps.length - 1] && nextStep?.state === "done";
+          const isBackClickable = step.state === "done" && (nextStep?.state === "current" || nextIsForcedDoneLastStep);
           const isClickable = Boolean(onStepClick) && !isAdvancing && (isForwardClickable || isUpNextClickable || isBackClickable);
           const targetStep = isForwardClickable ? nextStep : step;
           const targetLabel = targetStep.label;

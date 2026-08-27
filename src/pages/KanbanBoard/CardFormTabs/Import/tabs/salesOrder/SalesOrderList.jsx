@@ -1166,7 +1166,16 @@ const SalesOrderList = ({
     const orderId = order.id;
     if (verifyingItemIds.has(orderId)) return;
 
-    const wasVerified = localVerifiedItemIds?.has(orderId) === true;
+    // hasAdvancedPastFirstStage (the real api/da/status_timeline fetch) is the source of truth
+    // for whether the DA record has already moved past "Ops completed" — localVerifiedItemIds
+    // is session-only (see its declaration above) and resets on every reload/tab remount, so a
+    // genuinely-already-advanced DA (verified in an earlier session, or advanced via a
+    // different path — the board sticker match, DA.jsx's own Status Timeline click) used to
+    // show every checkbox unticked while the header button already read "Send for SO Approval",
+    // contradicting itself. Folding hasAdvancedPastFirstStage in here (and in the checkbox's
+    // `checked` prop below) keeps the click's forward/revert decision consistent with what's
+    // actually displayed.
+    const wasVerified = localVerifiedItemIds?.has(orderId) === true || hasAdvancedPastFirstStage;
 
     setVerifyingItemIds((prev) => new Set(prev).add(orderId));
     try {
@@ -2062,7 +2071,7 @@ const SalesOrderList = ({
             <input
               type="checkbox"
               className="sales-order-verify-checkbox"
-              checked={localVerifiedItemIds?.has(order.id) === true}
+              checked={localVerifiedItemIds?.has(order.id) === true || hasAdvancedPastFirstStage}
               onChange={() => handleToggleVerified(order)}
               disabled={verifyingItemIds.has(order.id)}
               aria-label="Verify line item"
