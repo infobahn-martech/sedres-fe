@@ -4,7 +4,7 @@
 .edit-workflows-container {
   width: 100%;
   min-height: calc(100vh - 74px);
-  background: var(--surface-primary);
+  background: var(--bg-app);
   padding: 0;
   overflow: hidden;
   display: flex;
@@ -31,7 +31,7 @@
 
 .workflows-btn-save {
   background: #00368c;
-  color: var(--text-inverse);
+  color: #fff;
   box-shadow: 0 3px 6px rgba(0, 54, 140, 0.25);
   flex: 1;
 
@@ -76,7 +76,7 @@
 
 .workflows-btn-create {
   background: #00368c;
-  color: var(--text-inverse);
+  color: #fff;
   box-shadow: 0 3px 6px rgba(0, 54, 140, 0.25);
 
   &:hover {
@@ -174,7 +174,7 @@
 
 .workflows-config-title {
   font: normal normal 600 16px/1.4 $font-primary;
-  color: $txtColor;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
 }
 
@@ -186,7 +186,7 @@
 
 .workflows-config-label {
   font: normal normal 600 13px/1.4 $font-primary;
-  color: $txtColor;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -222,7 +222,7 @@
   border: 1px solid var(--border-primary);
   border-radius: 8px;
   font: normal normal 400 14px/1.5 $font-primary;
-  color: $txtColor;
+  color: var(--text-primary);
   background: var(--surface-primary);
   transition: all 0.2s ease;
 
@@ -246,11 +246,11 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 24px 28px;
-  background: var(--surface-primary);
+  background: var(--bg-app);
 
   &--empty-workflow {
     padding-top: 20px;
-    background-color: var(--surface-primary);
+    background-color: var(--bg-app);
     background-image: radial-gradient(circle at 1px 1px, rgba(0, 54, 140, 0.06) 1px, transparent 0);
     background-size: 20px 20px;
   }
@@ -385,10 +385,11 @@
 
 .workflow-card {
   background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
   border-radius: 12px;
   padding: 24px 32px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-md);
   max-height: 85vh;
   overflow-y: auto;
   overflow-x: hidden;
@@ -580,13 +581,13 @@
 
 .workflow-title {
   font: normal normal 600 18px/1.4 $font-primary;
-  color: $txtColor;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .workflow-title-input {
   font: normal normal 600 18px/1.4 $font-primary;
-  color: $txtColor;
+  color: var(--text-primary);
   background: var(--surface-primary);
   border: 2px solid #3b82f6;
   border-radius: 6px;
@@ -1029,7 +1030,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   border: 1px solid var(--border-primary);
   background: var(--surface-primary);
   font: normal normal 600 13px/1.35 $font-primary;
-  color: $txtColor;
+  color: var(--text-primary);
   text-align: center;
   box-sizing: border-box;
   position: relative;
@@ -1092,7 +1093,7 @@ div[role="tooltip"][id^="workflow-info-"] {
 
 .workflow-swimlane-label-input {
   font: normal normal 600 13px/1.35 $font-primary;
-  color: $txtColor;
+  color: var(--text-primary);
   background: var(--surface-primary);
   border: 2px solid #3b82f6;
   border-radius: 4px;
@@ -1182,14 +1183,17 @@ div[role="tooltip"][id^="workflow-info-"] {
   padding: 6px 10px;
   border: 1px solid var(--border-primary);
   // Lane fill: inline `backgroundColor` from stage `bgColor` / picker (default matches `DEFAULT_STAGE_SWATCH_HEX`)
+  // — always a light swatch color regardless of app theme, so the text inside must stay a fixed
+  // dark color too rather than a theme token (it would otherwise flip to light-on-light in dark mode).
   background: var(--surface-primary);
+  color: #475569;
   min-height: 0;
   box-sizing: border-box;
 }
 
 .workflow-swimlane-cell-limit {
   font: normal normal 400 12px/1.4 $font-primary;
-  color: var(--text-secondary);
+  color: #475569;
   flex-shrink: 0;
   text-align: center;
   width: 100%;
@@ -1215,7 +1219,7 @@ div[role="tooltip"][id^="workflow-info-"] {
 
 .workflow-swimlane-cell-label {
   font: normal normal 400 12px/1.4 $font-primary;
-  color: var(--text-secondary);
+  color: #475569;
   flex-shrink: 0;
 }
 
@@ -1239,7 +1243,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   border: 1px solid var(--border-primary);
   border-radius: 4px;
   font: normal normal 400 12px/1.4 $font-primary;
-  color: $txtColor;
+  color: var(--text-primary);
   text-align: center;
   background: var(--surface-primary);
   box-sizing: border-box;
@@ -1329,7 +1333,7 @@ div[role="tooltip"][id^="workflow-info-"] {
 
 .workflow-column-header {
   padding: 12px 16px;
-  color: var(--text-inverse);
+  color: #fff;
   font: normal normal 600 13px/1.4 $font-primary;
   text-align: center;
   border-radius: 8px 8px 0 0;
@@ -1438,7 +1442,7 @@ div[role="tooltip"][id^="workflow-info-"] {
 
 .stage-name {
   font: normal normal 600 15px/1.35 $font-primary;
-  color: $txtColor;
+  color: var(--text-primary);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -1457,7 +1461,7 @@ div[role="tooltip"][id^="workflow-info-"] {
 
 .stage-name-input {
   font: normal normal 600 15px/1.35 $font-primary;
-  color: $txtColor;
+  color: var(--text-primary);
   text-align: center;
   width: 100%;
   padding: 4px 8px;
@@ -1536,7 +1540,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   border: 1px solid var(--border-primary);
   border-radius: 4px;
   font: normal normal 400 12px/1.4 $font-primary;
-  color: $txtColor;
+  color: var(--text-primary);
   text-align: center;
   background: var(--surface-primary);
   box-sizing: border-box;
@@ -1650,7 +1654,7 @@ div[role="tooltip"][id^="workflow-info-"] {
 
   &:hover {
     background: #10b981;
-    color: var(--text-inverse);
+    color: #fff;
     transform: scale(1.1);
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
   }
