@@ -4,7 +4,6 @@ import { useTaxiBoatStore } from "../../../../../../shared/store/taxiBoatStore";
 import useTaxiBoatAssignmentReducer from "../../../../../../store/TaxiBoatAssignmentReducer";
 import useAuthReducer from "../../../../../../store/AuthReducer";
 import useAlertReducer from "../../../../../../store/AlertReducer";
-import groService from "../../../../../../services/groService";
 import launchHireService from "../../../../../../services/launchHireService";
 import DateTimePickerField from "../../../../CardFormTabs/shared/components/DateTimePickerField";
 import SearchableSelect from "../../../../../../components/form/SearchableSelect";
@@ -1601,52 +1600,16 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
   const notifyError = useAlertReducer((s) => s.error);
   const notifySuccess = useAlertReducer((s) => s.success);
 
-  // Open Call — call_file/get_call_detail_by_id/{call_id}/{card_id}
-  const callId = card?.call_id ?? card?.callId ?? card?.id ?? null;
-  const cardId = card?.card_id ?? card?.cardId ?? card?.id ?? null;
-  const [callDetail, setCallDetail] = useState(null);
-  const [isLoadingCallDetail, setIsLoadingCallDetail] = useState(true);
-
-  useEffect(() => {
-    if (callId == null || cardId == null) { setIsLoadingCallDetail(false); return undefined; }
-    let cancelled = false;
-    setIsLoadingCallDetail(true);
-    groService.getCallDetailById(callId, cardId)
-      .then((res) => {
-        if (!cancelled) setCallDetail(res?.data?.data ?? res?.data ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setCallDetail(null);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingCallDetail(false);
-      });
-    return () => { cancelled = true; };
-  }, [callId, cardId]);
-
-  const assignedUser = callDetail?.assigned_user_name ?? card?.user ?? "—";
-  const requestedOperator = callDetail?.assigned_operator ?? card?.requestedOperator ?? "—";
-  const vesselName = callDetail?.vessel_name ?? card?.vesselName ?? "—";
-  const bookingDate = card?.bookingDate ?? "—";
-  const location = callDetail?.port ?? card?.location ?? "—";
-  const billingEntity = callDetail?.billing_entity ?? card?.name ?? "—";
-
-  // get_fleet_by_operator expects the card's vendor_id (confirmed with backend), not an
-  // operator_id — read from the raw board card payload until it's promoted by the mapper.
+  // Taxi Board only: get_call_detail / get_call_detail_by_id removed per Dany Thomas
+  // (2026-08-27) — launch_hire/get_taxiboat_booking_detail/{booking_id} is now the sole
+  // source for this card's values (vessel/billing/operator/captain/location/booking date),
+  // falling back to the raw board card only while it's loading.
   const vendorId = card?.vendor_id ?? card?.raw?.vendor_id
-    ?? callDetail?.vendor_id
     ?? (isTaxiBoatOperator ? loggedInUserId : null);
-  const bookingId = callDetail?.launch_hire_booking_id
-    ?? card?.booking_id ?? card?.raw?.booking_id ?? card?.raw?.launch_hire_booking_id
+  const bookingId = card?.booking_id ?? card?.raw?.booking_id ?? card?.raw?.launch_hire_booking_id
     ?? card?.raw?.crew_immigration_booking_id ?? card?.callId ?? card?.id ?? null;
 
   const [locationEdit, setLocationEdit] = useState(() => card?.location ?? "");
-
-  useEffect(() => {
-    if (!callDetail) return;
-    setLocationEdit(callDetail?.port ?? card?.location ?? "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [callDetail]);
 
   const [dropTs, setDropTs] = useState(() =>
     makeTsState(STANDARD_TIMESTAMPS.map((t) => t.key))
@@ -1843,6 +1806,66 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
     if (date) setBookingDateEdit(date);
     if (time) setBookingTimeEdit(time);
   }, [taxiboatBookingDetail]);
+
+  // Confirmed with backend (Dany Thomas, 2026-08-27): get_taxiboat_booking_detail is the
+  // source of truth for the summary card — bind every value it carries from here, falling
+  // back to call_file/get_call_detail_by_id or the raw board card only while it's loading
+  // (or for legacy cards with no booking yet).
+  const location = taxiboatBookingDetail?.location ?? card?.location ?? "—";
+  const bookingDate = taxiboatBookingDetail?.booking_datetime
+    ? safeFormatDate(taxiboatBookingDetail.booking_datetime)
+    : (card?.bookingDate ?? "—");
+  const vesselName = taxiboatBookingDetail?.vessel?.vessel_name ?? card?.vesselName ?? "—";
+  const billingEntity = taxiboatBookingDetail?.billing_entity?.billing_entity ?? card?.name ?? "—";
+  const requestedOperator = taxiboatBookingDetail?.operator?.name ?? card?.requestedOperator ?? "—";
+  const assignedUser = taxiboatBookingDetail?.captain?.captain_name ?? card?.user ?? "—";
+
+  // The booking may already have a confirmed fleet/captain (captain_assigned: true) from
+  // a previous session — hydrate the assignment panel from it instead of only setting
+  // fleetAssigned/assignedCaptainName after a fresh in-session assignCaptain call.
+  useEffect(() => {
+    if (isTaxiBoatCaptain || !taxiboatBookingDetail?.captain_assigned) return;
+    const bookingFleetId = taxiboatBookingDetail?.fleet?.taxi_boat_id ?? taxiboatBookingDetail?.captain?.taxi_boat_id;
+    const matchedFleet = fleets.find((f) => String(f.taxi_boat_id) === String(bookingFleetId)) ?? null;
+    if (matchedFleet) setSelectedFleet(matchedFleet);
+    setSelectedCaptainId(taxiboatBookingDetail?.captain?.taxiboat_captain_id ?? null);
+    setAssignedCaptainName(taxiboatBookingDetail?.captain?.captain_name ?? null);
+    setFleetAssigned(true);
+  }, [isTaxiBoatCaptain, taxiboatBookingDetail, fleets]);
+
+  // Single-item bookings (everything except the batchwise immigration flow) carry their
+  // launch_hire_booking_item_id at the top level of get_taxiboat_booking_detail — this is
+  // what record_taxiboat_timestamp/cancel_taxiboat_timestamp need for the Captain's Drop/
+  // Pickup checkpoint capture below.
+  const genericBookingItemId = taxiboatBookingDetail?.launch_hire_booking_item_id ?? null;
+
+  const recordGenericCheckpoint = useCallback((legKey, checkpoint) => {
+    if (genericBookingItemId == null || !checkpoint) return;
+    launchHireService
+      .recordTaxiboatTimestamp({
+        booking_item_id: genericBookingItemId,
+        trip_type: legKey === "drop" ? "Drop" : "Pickup",
+        checkpoint,
+      })
+      .catch((err) => {
+        notifyError(err?.response?.data?.message ?? err.message ?? "Failed to record timestamp");
+      });
+  }, [genericBookingItemId, notifyError]);
+
+  const cancelGenericCheckpoint = useCallback((legKey, checkpoint, reasonCode, reasonText) => {
+    if (genericBookingItemId == null || !checkpoint) return;
+    launchHireService
+      .cancelTaxiboatTimestamp({
+        booking_item_id: genericBookingItemId,
+        trip_type: legKey === "drop" ? "Drop" : "Pickup",
+        checkpoint,
+        reason_code: reasonCode,
+        reason_text: reasonText || null,
+      })
+      .catch((err) => {
+        notifyError(err?.response?.data?.message ?? err.message ?? "Failed to undo timestamp");
+      });
+  }, [genericBookingItemId, notifyError]);
 
   const rawItemType = taxiboatBookingDetail?.item_type ?? null;
   const itemType = KNOWN_ITEM_TYPES.has(rawItemType) ? rawItemType : null;
@@ -2110,10 +2133,10 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
     setTimeout(() => slip.print(), 250);
   }, [vesselName, serviceType, billingEntity, requestedOperator, location]);
 
-  // callDetail carries vessel/operator/billing info and taxiboatBookingDetail carries
-  // item_type — the scenario switch above depends on both, so render nothing scenario-
-  // specific (mock data, wrong panel) until both have settled.
-  if (isLoadingCallDetail || isLoadingBookingDetail) {
+  // taxiboatBookingDetail carries vessel/operator/billing/item_type — the scenario switch
+  // above depends on it, so render nothing scenario-specific (mock data, wrong panel)
+  // until it has settled.
+  if (isLoadingBookingDetail) {
     return (
       <div className="tb-card-view">
         <CardTabListLoading message="Loading taxi boat booking…" />
@@ -2466,7 +2489,7 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
       {showItemTypeListingContent && isThirdPartyService && (
         <ThirdPartyServiceListing
           serviceName={taxiboatBookingDetail?.service_name}
-          vesselName={taxiboatBookingDetail?.vessel_name ?? vesselName}
+          vesselName={vesselName}
         />
       )}
 
@@ -2579,8 +2602,15 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
                   tsOps={dropTsOps}
                   shipName={vesselName}
                   intermediateTrip={tripAdded ? { purpose: addTripPurpose, location: addTripLocation } : undefined}
-                  onCapture={(key) => captureNow(setDropTs, key, setDropTsOps, operatorName)}
-                  onComplete={() => { setJobCompleted(true); setJobCompletedAt(new Date().toISOString()); }}
+                  onCapture={(key) => {
+                    captureNow(setDropTs, key, setDropTsOps, operatorName);
+                    recordGenericCheckpoint("drop", CHECKPOINT_BY_KEY[key]);
+                  }}
+                  onComplete={() => {
+                    setJobCompleted(true);
+                    setJobCompletedAt(new Date().toISOString());
+                    recordGenericCheckpoint("drop", TRIP_COMPLETED_CHECKPOINT);
+                  }}
                   jobCompleted={jobCompleted}
                   canFinish={allDone(dropTs, tsKeys)}
                   now={now}
@@ -2588,6 +2618,7 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
                     label,
                     resetter: () => { setDropTs((prev) => ({ ...prev, [key]: null })); setDropTsOps((prev) => ({ ...prev, [key]: null })); setJobCompleted(false); setJobCompletedAt(null); },
                     addToLog: (reason) => setDropStepBackLog((prev) => [...prev, { step: label, reason, time: new Date().toISOString() }]),
+                    cancelApi: (reasonCode, reasonText) => cancelGenericCheckpoint("drop", CHECKPOINT_BY_KEY[key], reasonCode, reasonText),
                   })}
                 />
                 <TimestampSummaryTable
@@ -2609,8 +2640,15 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
                   tsOps={pickupTsOps}
                   shipName={vesselName}
                   intermediateTrip={tripAdded ? { purpose: addTripPurpose, location: addTripLocation } : undefined}
-                  onCapture={(key) => captureNow(setPickupTs, key, setPickupTsOps, operatorName)}
-                  onComplete={() => { setJobCompleted(true); setJobCompletedAt(new Date().toISOString()); }}
+                  onCapture={(key) => {
+                    captureNow(setPickupTs, key, setPickupTsOps, operatorName);
+                    recordGenericCheckpoint("pickup", CHECKPOINT_BY_KEY[key]);
+                  }}
+                  onComplete={() => {
+                    setJobCompleted(true);
+                    setJobCompletedAt(new Date().toISOString());
+                    recordGenericCheckpoint("pickup", TRIP_COMPLETED_CHECKPOINT);
+                  }}
                   jobCompleted={jobCompleted}
                   canFinish={allDone(pickupTs, tsKeys)}
                   now={now}
@@ -2618,6 +2656,7 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
                     label,
                     resetter: () => { setPickupTs((prev) => ({ ...prev, [key]: null })); setPickupTsOps((prev) => ({ ...prev, [key]: null })); setJobCompleted(false); setJobCompletedAt(null); },
                     addToLog: (reason) => setPickupStepBackLog((prev) => [...prev, { step: label, reason, time: new Date().toISOString() }]),
+                    cancelApi: (reasonCode, reasonText) => cancelGenericCheckpoint("pickup", CHECKPOINT_BY_KEY[key], reasonCode, reasonText),
                   })}
                 />
                 <TimestampSummaryTable
