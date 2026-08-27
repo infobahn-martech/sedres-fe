@@ -547,6 +547,10 @@
 .crew-header-btn:hover {
   background: $table-header-bg;
   border-color: var(--card-color, #2A00FF);
+
+  [data-theme="dark"] & {
+    background: var(--bg-secondary);
+  }
 }
 
 .crew-header-btn:focus-visible {
@@ -1434,6 +1438,10 @@
 .crew-list-table thead tr,
 .crew-table-scroll thead tr {
   background: $table-header-bg;
+
+  [data-theme="dark"] & {
+    background: var(--surface-secondary);
+  }
 }
 
 .crew-list-table th,
@@ -1694,6 +1702,12 @@
   border: 1px solid $border-color-default;
   color: $txtColor;
   transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+
+  [data-theme="dark"] & {
+    background: var(--surface-secondary);
+    border-color: var(--border-primary);
+    color: var(--text-primary);
+  }
 }
 
 // Transport / Hotel / Medical share one semantic system — the category icon
@@ -3172,6 +3186,10 @@
   border: 1px solid var(--border-primary);
   border-radius: $radius-pill;
   background: $table-header-bg;
+
+  [data-theme="dark"] & {
+    background: var(--bg-secondary);
+  }
 }
 
 .crew-summary-movement-filter__btn {
@@ -3204,7 +3222,7 @@
 }
 
 .crew-summary-movement-filter__btn--active:hover {
-  color: var(--text-inverse);
+  color: #fff;
 }
 
 .crew-listing-subtitle {
@@ -3784,6 +3802,10 @@
 .crew-launch-hire-panel__btn--cancel:hover:not(:disabled) {
   background: $table-header-bg;
   border-color: var(--border-primary);
+
+  [data-theme="dark"] & {
+    background: var(--bg-secondary);
+  }
 }
 
 .crew-launch-hire-panel__btn--submit {

@@ -1813,6 +1813,11 @@ $send-report-optional: var(--text-muted);
     border-right: 1px solid $border-color-default;
     padding: $space-5 $space-4;
     gap: $space-1;
+
+    [data-theme="dark"] & {
+      background: var(--bg-secondary);
+      border-right-color: var(--border-primary);
+    }
   }
 
   .op-tab-group {
@@ -1825,11 +1830,19 @@ $send-report-optional: var(--text-muted);
     color: $txtColor;
     padding: $space-3 $space-4;
     border-left: 3px solid transparent;
+
+    [data-theme="dark"] & {
+      color: var(--text-primary);
+    }
   }
 
   .op-tab:hover {
     background: rgba(0, 54, 140, 0.06);
     color: var(--card-color, #{$colorPrimary});
+
+    [data-theme="dark"] & {
+      background: color-mix(in srgb, var(--card-color, #{$colorPrimary}) 12%, transparent);
+    }
   }
 
   .op-tab.active {
@@ -1837,6 +1850,10 @@ $send-report-optional: var(--text-muted);
     color: var(--card-color, #{$colorPrimary});
     border-left-color: var(--card-color, #{$colorPrimary});
     font-weight: 600;
+
+    [data-theme="dark"] & {
+      background: color-mix(in srgb, var(--card-color, #{$colorPrimary}) 16%, transparent);
+    }
   }
 
   .op-tab:focus-visible {
@@ -1849,6 +1866,10 @@ $send-report-optional: var(--text-muted);
     padding-left: $space-3;
     border-left: 2px solid rgba(0, 54, 140, 0.15);
     gap: $space-1;
+
+    [data-theme="dark"] & {
+      border-left-color: color-mix(in srgb, var(--card-color, #{$colorPrimary}) 30%, transparent);
+    }
   }
 
   .op-tab-sub {
@@ -1856,11 +1877,19 @@ $send-report-optional: var(--text-muted);
     border-left: 2px solid transparent;
     background: transparent;
     color: $txtColor;
+
+    [data-theme="dark"] & {
+      color: var(--text-primary);
+    }
   }
 
   .op-tab-sub:hover {
     background: rgba(0, 54, 140, 0.06);
     color: var(--card-color, #{$colorPrimary});
+
+    [data-theme="dark"] & {
+      background: color-mix(in srgb, var(--card-color, #{$colorPrimary}) 12%, transparent);
+    }
   }
 
   .op-tab-sub.active {
@@ -1868,6 +1897,10 @@ $send-report-optional: var(--text-muted);
     color: var(--card-color, #{$colorPrimary});
     border-left-color: var(--card-color, #{$colorPrimary});
     font-weight: 600;
+
+    [data-theme="dark"] & {
+      background: color-mix(in srgb, var(--card-color, #{$colorPrimary}) 16%, transparent);
+    }
   }
 
   .op-tab-sub:focus-visible {
@@ -1907,12 +1940,20 @@ $send-report-optional: var(--text-muted);
 .operation-wrapper.husbandry-wrapper .op-tab-sub:hover {
   background: #e2e6ff;
   color: var(--text-primary);
+
+  [data-theme="dark"] & {
+    background: var(--surface-hover);
+  }
 }
 
 .operation-wrapper.husbandry-wrapper .op-tab-sub.active {
   background: #e2e6ff;
   color: var(--text-primary);
   font-weight: 600;
+
+  [data-theme="dark"] & {
+    background: color-mix(in srgb, var(--card-color, #{$colorPrimary}) 16%, transparent);
+  }
 }
 
 // Left-nav icon + label + count pill (Phase 1 of the Crew Management
