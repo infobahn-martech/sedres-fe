@@ -42,7 +42,7 @@
         display: flex;
         align-items: center;
         margin-left: 10px;
-        color: $txtColor !important;
+        color: var(--text-primary) !important;
         font-size: 12px;
         z-index: 0;
 

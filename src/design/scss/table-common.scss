@@ -78,8 +78,13 @@ body {
             color: #00368c;
             font: normal normal 600 22px/34px 'Manrope';
             letter-spacing: 0.1px;
-            color: #00368c;
             min-width: 300px !important;
+
+            // Brand blue reads low-contrast against dark backgrounds — swap
+            // for the lighter accent blue already used for dark-mode text.
+            [data-theme="dark"] & {
+                color: var(--color-primary-accent);
+            }
 
             @media($sm-1679) {
                 font-size: 20px;
@@ -276,12 +281,14 @@ body {
 
 .green-btn {
     background: #00368C;
-    color: var(--text-inverse);
+    // Fixed color background in both themes — var(--text-inverse) flips to
+    // near-black in dark mode and would be unreadable here.
+    color: #ffffff;
 }
 
 .red-btn {
     background: #ff3e3e;
-    color: var(--text-inverse);
+    color: #ffffff;
 }
 
 .custom-container {
@@ -380,7 +387,10 @@ body {
                 align-items: center;
                 background-color: #00368c;
                 margin-right: 5px;
-                color: var(--text-inverse);
+                // Fixed blue circle in both themes, so its text must stay
+                // fixed white too — var(--text-inverse) flips to near-black
+                // in dark mode and would go unreadable here.
+                color: #ffffff;
                 font-size: 12px;
             }
         }
@@ -400,7 +410,9 @@ body {
             line-height: 20px;
 
             letter-spacing: 0.07px;
-            color: var(--text-inverse);
+            // Header row stays fixed blue in both themes; var(--text-inverse)
+            // flips to near-black in dark mode and would be unreadable here.
+            color: #ffffff;
 
             .tb-head {
                 // display: flex;
@@ -480,7 +492,7 @@ body {
             &.active {
                 a {
                     background: #00368C;
-                    color: var(--text-inverse);
+                    color: #ffffff;
                 }
 
             }
