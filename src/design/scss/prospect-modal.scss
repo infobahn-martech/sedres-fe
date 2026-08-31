@@ -103,6 +103,8 @@ $primary-font: "Manrope", sans-serif;
 }
 
 .form-control {
+  background-color: var(--surface-primary);
+  color: var(--text-primary);
   border-color: var(--border-primary);
   font-size: 16px;
   padding: 10px;
@@ -152,6 +154,18 @@ $primary-font: "Manrope", sans-serif;
       font-size: 12px;
 
     }
+  }
+
+  // Chrome/Edge force their own white autofill background via -webkit-autofill,
+  // ignoring background-color above — this is the only way to override it.
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus,
+  &:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--text-primary);
+    -webkit-box-shadow: 0 0 0 1000px var(--surface-primary) inset;
+    box-shadow: 0 0 0 1000px var(--surface-primary) inset;
+    transition: background-color 5000s ease-in-out 0s;
   }
 }
 

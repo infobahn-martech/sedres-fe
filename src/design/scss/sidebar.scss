@@ -984,6 +984,13 @@
 // button) — separate from the per-board .kanban-sidebar-dark layoutView skin
 // above, but reuses the same dark chrome palette for visual consistency.
 [data-theme="dark"] {
+    // Default (non-kanban) sidebar — stays brand navy in light mode, but
+    // switches to the same dark chrome used by the kanban sidebar instead
+    // of keeping the blue background in dark mode.
+    .sidebar {
+        background-color: #0c0f14;
+    }
+
     .kanban-sidebar.kanban-sidebar--workspaces {
         background: #0c0f14;
         border-right: 1px solid rgba(255, 255, 255, 0.06);
