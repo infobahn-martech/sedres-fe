@@ -49,6 +49,10 @@
   font-weight: 600;
   color: #00368c;
   margin-bottom: 8px;
+
+  [data-theme="dark"] & {
+    color: var(--color-primary-accent);
+  }
 }
 
 .order-history-table-wrap {
@@ -67,6 +71,12 @@
     background: #e2e6ff !important;
     color: var(--text-primary) !important;
     white-space: nowrap;
+
+    // Pale lavender is unreadable with light dark-mode text — swap to a
+    // dark-mode-appropriate surface instead.
+    [data-theme="dark"] & {
+      background: var(--bg-secondary) !important;
+    }
   }
 
   tbody td {
@@ -100,6 +110,10 @@
   margin-bottom: 10px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--border-primary);
+
+  [data-theme="dark"] & {
+    color: var(--color-primary-accent);
+  }
 }
 
 .order-history-fields {
@@ -208,6 +222,12 @@
   color: #00368c;
   border-color: #00368c;
   animation: order-history-check-pop 0.35s ease;
+
+  [data-theme="dark"] & {
+    background: var(--bg-secondary);
+    color: var(--color-primary-accent);
+    border-color: var(--color-primary-accent);
+  }
 }
 
 .order-history-step-label {
@@ -222,6 +242,10 @@
   color: #00368c;
   font-weight: 500;
   word-break: break-word;
+
+  [data-theme="dark"] & {
+    color: var(--color-primary-accent);
+  }
 }
 
 .order-history-step-date {
