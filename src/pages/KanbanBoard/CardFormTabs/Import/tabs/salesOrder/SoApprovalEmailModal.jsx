@@ -221,6 +221,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
     <CustomModal
       show={show}
       closeModal={onClose}
+      className="so-approval-email-modal-root"
       dialgName="so-approval-email-dialog"
       header={renderHeader()}
       body={renderBody()}
