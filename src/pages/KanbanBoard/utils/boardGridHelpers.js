@@ -23,7 +23,7 @@ export const COLLAPSED_COLUMN_WIDTH = 44;
 
 /** Baseline min-height for every workflow's swimlane row, so rows look consistent board-wide
  *  even when a workflow's content is shorter than this (content can still grow it taller). */
-export const WORKFLOW_ROW_MIN_HEIGHT = 720;
+export const WORKFLOW_ROW_MIN_HEIGHT = 240;
 
 /**
  * @param {object | null | undefined} column

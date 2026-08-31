@@ -29,7 +29,7 @@ export default function SwimlaneColumnCell({
 }) {
   const { hasModule } = usePermissions();
   const canViewCards = hasModule(PERMISSION_MODULES.KANBAN_CARD);
-  const EMPTY_DROP_ZONE_MIN_HEIGHT = 720;
+  const EMPTY_DROP_ZONE_MIN_HEIGHT = 240;
   /* Only fall back to the big placeholder height when nothing else in the row sets a
      height — otherwise an empty column would stretch the whole swimlane row to 720px
      even when its siblings only need ~200px (all cells share one CSS grid row). */
@@ -44,6 +44,13 @@ export default function SwimlaneColumnCell({
   const handleContextMenu = (e) => {
     e.preventDefault();
     onContextMenu?.(e, column, laneId);
+  };
+
+  /* Ignore double-clicks that land on a card (Draggable roots render draggable="true") —
+     only opening the empty column area should trigger the add-card workflow picker. */
+  const handleDoubleClick = (e) => {
+    if (e.target.closest('[draggable="true"]')) return;
+    window.dispatchEvent(new CustomEvent("kanban:open-add-card-modal"));
   };
 
   useLayoutEffect(() => {
@@ -102,6 +109,7 @@ export default function SwimlaneColumnCell({
         ref={cellRef}
         className={`column column--swimlane-cell column-collapsed ${isDarkMode ? "column-dark" : ""}`}
         onContextMenu={handleContextMenu}
+        onDoubleClick={handleDoubleClick}
         style={{
           ...(columnHeight ? { minHeight: `${columnHeight}px` } : {}),
           ...(column.backgroundColor ? { backgroundColor: column.backgroundColor } : {}),
@@ -117,6 +125,7 @@ export default function SwimlaneColumnCell({
       ref={cellRef}
       className={`column column--swimlane-cell ${isDarkMode ? "column-dark" : ""}`}
       onContextMenu={handleContextMenu}
+      onDoubleClick={handleDoubleClick}
       style={{
         ...(columnHeight ? { minHeight: `${columnHeight}px` } : {}),
         ...(column.backgroundColor ? { backgroundColor: column.backgroundColor } : {}),

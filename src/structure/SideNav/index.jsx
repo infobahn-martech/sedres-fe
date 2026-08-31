@@ -306,6 +306,12 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     setShowSelectWorkflowModal(true);
   }, [sidebarWorkflows]);
 
+  useEffect(() => {
+    const handleOpenAddCardModal = () => beginSidebarAddCard();
+    window.addEventListener('kanban:open-add-card-modal', handleOpenAddCardModal);
+    return () => window.removeEventListener('kanban:open-add-card-modal', handleOpenAddCardModal);
+  }, [beginSidebarAddCard]);
+
   const handleAddModalContinue = useCallback(() => {
     if (addModalStep === 'workflow') {
       const w = addModalWorkflows.find(
