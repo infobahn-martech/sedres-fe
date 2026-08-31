@@ -288,6 +288,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
                       type="text"
                       className={`form-control ${errors.name ? "is-invalid" : ""}`}
                       placeholder="Name"
+                      autoComplete="off"
                       {...register("name", {
                         required: "Name is required",
                         pattern: {
@@ -319,6 +320,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
                       type="email"
                       className={`form-control ${errors.email ? "is-invalid" : ""}`}
                       placeholder="Email"
+                      autoComplete="off"
                       {...register("email", {
                         required: "Email is required",
                         pattern: {

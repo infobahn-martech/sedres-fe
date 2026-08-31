@@ -131,7 +131,7 @@
     // border: 1px solid $borderLight;
     padding: 15px 30px;
     border-radius: 12px;
-    color: $txtColor;
+    color: var(--text-primary);
     font-size: 14px;
 
     @media($sm-479) {
