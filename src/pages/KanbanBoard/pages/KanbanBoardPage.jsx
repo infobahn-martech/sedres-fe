@@ -70,6 +70,7 @@ export default function KanbanBoardPage() {
     collapsedColumns,
     toggleWorkflow,
     expandWorkflow,
+    expandOnlyWorkflow,
     collapseWorkflow,
     handleColumnHeaderClick,
   } = useWorkflowExpansion(workflows);
@@ -184,6 +185,57 @@ export default function KanbanBoardPage() {
         handleCloseAccordionMenu();
       });
   }, [accordionMenuWorkflowId, toggleWorkflowPin, handleCloseAccordionMenu]);
+
+  const handleJumpToWorkflow = useCallback(
+    (workflowId) => {
+      if (workflowId == null) return;
+      const scrollToWorkflow = () => {
+        requestAnimationFrame(() => {
+          document
+            .getElementById(`workflow-accordion-${workflowId}`)
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      };
+      const wasExpanded = Boolean(expandedWorkflows[workflowId]);
+      expandOnlyWorkflow(workflowId);
+      if (wasExpanded) {
+        scrollToWorkflow();
+        return;
+      }
+      workflowService
+        .toggleCollapseWorkflow(workflowId)
+        .then(() => {
+          scrollToWorkflow();
+        })
+        .catch((err) => {
+          const msg = err?.response?.data?.message ?? err.message ?? "Could not expand workflow.";
+          notify(msg, "error");
+        });
+    },
+    [expandedWorkflows, expandOnlyWorkflow]
+  );
+
+  useEffect(() => {
+    const handleJumpToWorkflowEvent = (e) => handleJumpToWorkflow(e?.detail?.workflowId);
+    window.addEventListener("kanban:jump-to-workflow", handleJumpToWorkflowEvent);
+    return () => window.removeEventListener("kanban:jump-to-workflow", handleJumpToWorkflowEvent);
+  }, [handleJumpToWorkflow]);
+
+  const handleWorkflowPinClick = useCallback(
+    (workflowId) => {
+      if (!workflowId) return;
+      workflowService
+        .togglePinWorkflow(workflowId)
+        .then(() => {
+          toggleWorkflowPin(workflowId);
+        })
+        .catch((err) => {
+          const msg = err?.response?.data?.message ?? err.message ?? "Could not update pin.";
+          notify(msg, "error");
+        });
+    },
+    [toggleWorkflowPin]
+  );
 
   const handleColumnContextMenu = useCallback((event, column, laneId) => {
     event.preventDefault();
@@ -330,6 +382,7 @@ export default function KanbanBoardPage() {
           expandedWorkflows={expandedWorkflows}
           collapsedColumns={collapsedColumns}
           maxColumnHeights={maxColumnHeights}
+          pinnedWorkflows={pinnedWorkflows}
           createDragEndHandler={createDragEndHandler}
           onSelectCard={handleSelectCard}
           onColumnHeaderClick={handleColumnHeaderClick}
@@ -337,6 +390,7 @@ export default function KanbanBoardPage() {
           onHeightChange={handleWorkflowColumnHeightChange}
           onToggleWorkflow={handleToggleWorkflow}
           onAccordionMenuClick={handleAccordionMenuClick}
+          onPinClick={handleWorkflowPinClick}
           isDarkMode={isDarkMode}
           layoutView={layoutView}
         />

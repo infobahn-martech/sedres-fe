@@ -607,6 +607,13 @@
     }
 }
 
+.kanban-sidebar-submenu-item--truncate {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* Responsive Kanban Sidebar */
 @media (max-width: 991px) {
     .kanban-sidebar:not(.kanban-sidebar--workspaces) {

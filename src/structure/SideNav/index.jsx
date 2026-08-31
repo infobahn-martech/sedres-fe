@@ -42,7 +42,7 @@ import {
 // 🆕 Kanban sidebar icons + tooltip
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
-import { FiPlus, FiInbox, FiFilter, FiPlusCircle, FiActivity, FiLayout, FiMail, FiSettings, FiEdit3, FiMapPin, FiLayers } from 'react-icons/fi';
+import { FiPlus, FiInbox, FiFilter, FiPlusCircle, FiActivity, FiLayout, FiMail, FiSettings, FiEdit3, FiMapPin, FiLayers, FiList } from 'react-icons/fi';
 import TaskCardModal from '../../pages/TaskCard';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
@@ -167,6 +167,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       const icons = canAddCard ? [{ id: 1, icon: FiPlus, label: 'Add' }] : [];
       if (showEditWorkflowSidebarIcon) {
         icons.push({ id: 9, icon: FiEdit3, label: 'Edit Workflow' });
+        icons.push({ id: 12, icon: FiList, label: 'Select Workflow' });
       }
       icons.push(
         { id: 10, icon: FiMapPin, label: 'On Station' },
@@ -179,6 +180,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     const icons = [];
     if (showEditWorkflowSidebarIcon) {
       icons.push({ id: 9, icon: FiEdit3, label: 'Edit Workflow' });
+      icons.push({ id: 12, icon: FiList, label: 'Select Workflow' });
     }
     icons.push(
       { id: 11, icon: FiLayers, label: 'Task' },
@@ -241,6 +243,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   const [showOnStationModal, setShowOnStationModal] = useState(false);
   const [showOutlookModal, setShowOutlookModal] = useState(false);
   const [showSelectWorkflowModal, setShowSelectWorkflowModal] = useState(false);
+  const [showSelectWorkflowSubmenu, setShowSelectWorkflowSubmenu] = useState(false);
   const [showSubTaskModal, setShowSubTaskModal] = useState(false);
   const [showCallTypeBuilderModal, setShowCallTypeBuilderModal] = useState(false);
   const [addModalStep, setAddModalStep] = useState('workflow');
@@ -272,6 +275,18 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
 
   const swimlaneContextDisplayName =
     swimlanePhaseWorkflow?.name ?? swimlanePhaseWorkflow?.title ?? '';
+
+  /* Unlike workflowOptionsForModal (add-card eligibility), jumping to a workflow has no
+     role/name restrictions — every workflow on the board is a valid navigation target. */
+  const jumpWorkflowOptions = useMemo(() => {
+    return (sidebarWorkflows || [])
+      .filter((workflow) => workflow?.id != null || workflow?.workflow_id != null)
+      .map((workflow) => ({
+        id: workflow?.id ?? workflow?.workflow_id,
+        name: workflow?.workflow_name ?? workflow?.name ?? workflow?.title ?? 'Workflow',
+        description: workflow?.description,
+      }));
+  }, [sidebarWorkflows]);
 
   const resetAddModalState = useCallback(() => {
     setAddModalStep('workflow');
@@ -362,6 +377,13 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     swimlanePhaseWorkflow,
     selectedSwimlaneId,
   ]);
+
+  const handleSelectWorkflowSubmenuItemClick = useCallback((workflowId) => {
+    window.dispatchEvent(
+      new CustomEvent('kanban:jump-to-workflow', { detail: { workflowId } })
+    );
+    setShowSelectWorkflowSubmenu(false);
+  }, []);
 
   const handleSelectWorkflowModalExited = useCallback(() => {
     const d = pendingAddCardFromWorkflowRef.current;
@@ -872,6 +894,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         setShowBoardTeamsSubmenu(false);
         setShowBusinessRulesModal(false);
         setShowOnStationModal(false);
+        setShowSelectWorkflowSubmenu(false);
         if (!newShowState) {
           setShowCardManagementSubmenu(false);
           setShowBlockersModal(false);
@@ -890,8 +913,22 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         setShowSettingsSubmenu(false);
         setShowCardManagementSubmenu(false);
         setShowOnStationModal(false);
+        setShowSelectWorkflowSubmenu(false);
         navigate(`/edit-workflow?boardId=${kanbanBoardIdForEditWorkflow}`);
         setActiveKanbanIcon(item.id);
+        return;
+      }
+
+      if (item.label === 'Select Workflow') {
+        const newShowState = !showSelectWorkflowSubmenu;
+        closeSelectWorkflowModal();
+        setShowFilterPanel(false);
+        setShowBoardTeamsSubmenu(false);
+        setShowSettingsSubmenu(false);
+        setShowCardManagementSubmenu(false);
+        setShowOnStationModal(false);
+        setShowSelectWorkflowSubmenu(newShowState);
+        if (newShowState) setActiveKanbanIcon(item.id);
         return;
       }
 
@@ -902,6 +939,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         setShowSettingsSubmenu(false);
         setShowCardManagementSubmenu(false);
         setShowOutlookModal(false);
+        setShowSelectWorkflowSubmenu(false);
         setShowOnStationModal((prev) => !prev);
         setActiveKanbanIcon(item.id);
         return;
@@ -914,6 +952,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         setShowSettingsSubmenu(false);
         setShowCardManagementSubmenu(false);
         setShowOnStationModal(false);
+        setShowSelectWorkflowSubmenu(false);
         setShowOutlookModal((prev) => !prev);
         setActiveKanbanIcon(item.id);
         return;
@@ -923,6 +962,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       if (showBoardTeamsSubmenu) setShowBoardTeamsSubmenu(false);
       if (showSettingsSubmenu) setShowSettingsSubmenu(false);
       if (showCardManagementSubmenu) setShowCardManagementSubmenu(false);
+      if (showSelectWorkflowSubmenu) setShowSelectWorkflowSubmenu(false);
       if (showOnStationModal) setShowOnStationModal(false);
       if (showOutlookModal) setShowOutlookModal(false);
       if (showBusinessRulesModal) setShowBusinessRulesModal(false);
@@ -1049,6 +1089,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
                 (item.label === 'Business rules' && showBusinessRulesModal) ||
                 (item.label === 'Card management' && showCardManagementSubmenu) ||
                 (item.label === 'Edit Workflow' && pathname.startsWith('/edit-workflow')) ||
+                (item.label === 'Select Workflow' && showSelectWorkflowSubmenu) ||
                 (item.label === 'On Station' && showOnStationModal) ||
                 (item.label === 'Outlook' && showOutlookModal) ||
                 (item.label === 'Settings' && (showSettingsSubmenu || showCardManagementSubmenu)) ||
@@ -1124,12 +1165,44 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
                       )}
                     </div>
                   )}
+
+                  {item.label === 'Select Workflow' && showSelectWorkflowSubmenu && (
+                    <div className="kanban-sidebar-submenu">
+                      {jumpWorkflowOptions.length === 0 ? (
+                        <div className="kanban-sidebar-submenu-item">No workflows found</div>
+                      ) : (
+                        jumpWorkflowOptions.map((wf) => (
+                          <div
+                            key={String(wf.id)}
+                            className="kanban-sidebar-submenu-item kanban-sidebar-submenu-item--truncate"
+                            onClick={() => handleSelectWorkflowSubmenuItemClick(wf.id)}
+                            data-tooltip-id="select-workflow-submenu-tooltip"
+                            data-tooltip-content={wf.name}
+                          >
+                            {wf.name}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
 
             <Tooltip
               id="sidebar-tooltip"
+              place="right"
+              style={{
+                backgroundColor: '#333',
+                color: '#fff',
+                fontSize: '0.85rem',
+                borderRadius: '6px',
+                padding: '6px 10px',
+                fontWeight: '500',
+              }}
+            />
+            <Tooltip
+              id="select-workflow-submenu-tooltip"
               place="right"
               style={{
                 backgroundColor: '#333',

@@ -9,6 +9,7 @@ export default function KanbanBoardContent({
   expandedWorkflows,
   collapsedColumns,
   maxColumnHeights,
+  pinnedWorkflows,
   createDragEndHandler,
   onSelectCard,
   onColumnHeaderClick,
@@ -16,6 +17,7 @@ export default function KanbanBoardContent({
   onHeightChange,
   onToggleWorkflow,
   onAccordionMenuClick,
+  onPinClick,
   isDarkMode,
   layoutView,
 }) {
@@ -40,8 +42,10 @@ export default function KanbanBoardContent({
       workflow={workflow}
       isDarkMode={isDarkMode}
       isExpanded={expandedWorkflows[workflow.id]}
+      isPinned={Boolean(pinnedWorkflows?.[workflow.id])}
       onToggle={() => onToggleWorkflow(workflow.id)}
       onMenuClick={(event) => onAccordionMenuClick(event, workflow.id)}
+      onPinClick={() => onPinClick(workflow.id)}
     >
       <WorkflowColumns
         workflow={workflow}

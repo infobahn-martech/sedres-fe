@@ -53,6 +53,20 @@ export default function useWorkflowExpansion(workflows) {
     }));
   }, []);
 
+  /* Accordion-style single-open: expand only the given workflow, collapsing every other one. */
+  const expandOnlyWorkflow = useCallback(
+    (workflowId) => {
+      setExpandedWorkflows(() => {
+        const next = {};
+        workflows.forEach((workflow) => {
+          next[workflow.id] = String(workflow.id) === String(workflowId);
+        });
+        return next;
+      });
+    },
+    [workflows]
+  );
+
   const collapseWorkflow = useCallback((workflowId) => {
     setExpandedWorkflows((prev) => ({
       ...prev,
@@ -89,6 +103,7 @@ export default function useWorkflowExpansion(workflows) {
     collapsedColumns,
     toggleWorkflow,
     expandWorkflow,
+    expandOnlyWorkflow,
     collapseWorkflow,
     handleColumnHeaderClick,
   };
