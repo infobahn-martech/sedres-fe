@@ -312,6 +312,15 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     return () => window.removeEventListener('kanban:open-add-card-modal', handleOpenAddCardModal);
   }, [beginSidebarAddCard]);
 
+  useEffect(() => {
+    const handleOpenTaskCardModal = () => {
+      closeSelectWorkflowModal();
+      setShowSubTaskModal(true);
+    };
+    window.addEventListener('kanban:open-task-card-modal', handleOpenTaskCardModal);
+    return () => window.removeEventListener('kanban:open-task-card-modal', handleOpenTaskCardModal);
+  }, [closeSelectWorkflowModal]);
+
   const handleAddModalContinue = useCallback(() => {
     if (addModalStep === 'workflow') {
       const w = addModalWorkflows.find(

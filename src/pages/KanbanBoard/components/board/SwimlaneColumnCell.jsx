@@ -50,6 +50,10 @@ export default function SwimlaneColumnCell({
      only opening the empty column area should trigger the add-card workflow picker. */
   const handleDoubleClick = (e) => {
     if (e.target.closest('[draggable="true"]')) return;
+    if (workflowTitle === "Task Workflow") {
+      window.dispatchEvent(new CustomEvent("kanban:open-task-card-modal"));
+      return;
+    }
     window.dispatchEvent(new CustomEvent("kanban:open-add-card-modal"));
   };
 
