@@ -32,6 +32,8 @@ const AUTO_SAVE_DEBOUNCE_MS = 1200;
 // sub-tab; the MWP-tagged subset is also surfaced separately inside the "MWP" sub-tab.
 const REQUIRED_DOCUMENTS_CONFIG = [
   { key: "immigration_doc", label: "Crew Immigration", icon: User },
+  { key: "inward_clearance_doc", label: "Inward Clearance", icon: CalendarCheck, accent: "#0891b2" },
+  { key: "outward_clearance_doc", label: "Outward Clearance", icon: CalendarCheck, accent: "#7c3aed" },
   { key: "mwp_doc", label: "MWP", icon: ShieldCheck, section: "mwp", accent: "#0891b2" },
   { key: "mwp_subscription_sadad", label: "MWP Subscription (SADAD)", icon: Banknote, section: "mwp", accent: "#d97706" },
   { key: "final_bayan_doc", label: "Final Bayan", icon: FileText },
@@ -144,6 +146,20 @@ const formatApiDateTime = (raw) => {
     minute: "2-digit",
     hour12: true,
   });
+};
+
+// api/da/time_objects/{call_id} rows: { stage_id, time_object_id, time_object,
+// field_key, time_object_value }. Matched by field_key first (backend convention:
+// the time_object label snake_cased), falling back to a case-insensitive label
+// match so a field_key rename on the backend doesn't silently blank the value.
+const findTimeObjectValue = (timeObjects, fieldKey, label) => {
+  const lowerLabel = label.toLowerCase();
+  const match = (Array.isArray(timeObjects) ? timeObjects : []).find((obj) => {
+    const key = String(obj?.field_key ?? "").toLowerCase();
+    const name = String(obj?.time_object ?? "").toLowerCase();
+    return key === fieldKey || name === lowerLabel;
+  });
+  return match?.time_object_value ?? null;
 };
 
 function TileLabel({ icon, children }) {
@@ -1305,6 +1321,63 @@ function DA({ card, formValues, daStatusRefreshToken, onAdvanceDaStage, isAdvanc
     return () => { cancelled = true; };
   }, [callId, daStatusRefreshToken]);
 
+  // api/da/time_objects/{call_id} — feeds the Clearance card's Inward/Outward Clearance
+  // dates. Not derived from the documents endpoints (api/da/required_documents,
+  // get_all_attachments) — those list uploaded files, not stage timestamps.
+  // Live response nests rows by stage group ({ Arrival: [...], "Post Arrival": [...],
+  // Departure: [...] }) rather than the flat array the backend spec sheet shows —
+  // flatten every group's array into one list before matching by field_key.
+  const [timeObjects, setTimeObjects] = useState([]);
+  const [isLoadingTimeObjects, setIsLoadingTimeObjects] = useState(false);
+
+  useEffect(() => {
+    if (callId == null) return undefined;
+    let cancelled = false;
+    setIsLoadingTimeObjects(true);
+    daService.getTimeObjects(callId)
+      .then(({ data }) => {
+        if (cancelled) return;
+        const payload = data?.data;
+        const flattened = Array.isArray(payload)
+          ? payload
+          : payload && typeof payload === "object"
+            ? Object.values(payload).flatMap((group) => (Array.isArray(group) ? group : []))
+            : [];
+        setTimeObjects(flattened);
+      })
+      .catch(() => {
+        if (!cancelled) setTimeObjects([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingTimeObjects(false);
+      });
+    return () => { cancelled = true; };
+  }, [callId, daStatusRefreshToken]);
+
+  // api/da/required_documents/{call_id} — read-only reference docs shown in the
+  // "Required Documents" section below (RequiredDocumentsSection). Response is an
+  // object keyed by REQUIRED_DOCUMENTS_CONFIG's `key` (e.g. immigration_doc,
+  // inward_clearance_doc), each { file_name, file_url }.
+  const [requiredDocuments, setRequiredDocuments] = useState(null);
+  const [isLoadingRequiredDocuments, setIsLoadingRequiredDocuments] = useState(false);
+
+  useEffect(() => {
+    if (callId == null) return undefined;
+    let cancelled = false;
+    setIsLoadingRequiredDocuments(true);
+    daService.getRequiredDocuments(callId)
+      .then(({ data }) => {
+        if (!cancelled) setRequiredDocuments(data?.data ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setRequiredDocuments(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingRequiredDocuments(false);
+      });
+    return () => { cancelled = true; };
+  }, [callId, daStatusRefreshToken]);
+
   // api/da/da_details/{call_id} — Owner, Co-owner, Service requester, Last moved (stage
   // entered date), Tax Invoice, SRT/PO/WBS and Invoice amount now come from this dedicated
   // endpoint rather than being guessed off operation_tab/summary_tab. assigned_operator_id
@@ -1601,8 +1674,27 @@ function DA({ card, formValues, daStatusRefreshToken, onAdvanceDaStage, isAdvanc
   };
 
   const clearanceStats = [
-    { label: "Inward Clearance", value: null, icon: CalendarCheck, accent: "#0891b2" },
-    { label: "Outward Clearance", value: null, icon: CalendarCheck, accent: "#7c3aed" },
+    {
+      label: "Inward Clearance",
+      // Confirmed live: api/da/time_objects returns this under "Arrival" as
+      // "Vessel Inward Formalities Completed" — there is no time object literally
+      // named "Inward Clearance".
+      value: isLoadingTimeObjects && !timeObjects.length
+        ? "Loading…"
+        : formatApiDateTime(findTimeObjectValue(timeObjects, "vessel_inward_formalities_completed", "Vessel Inward Formalities Completed")),
+      icon: CalendarCheck,
+      accent: "#0891b2",
+    },
+    {
+      label: "Outward Clearance",
+      // Best guess pending a call with a populated "Departure" group to confirm the
+      // exact label (every sample seen so far has Departure: []).
+      value: isLoadingTimeObjects && !timeObjects.length
+        ? "Loading…"
+        : formatApiDateTime(findTimeObjectValue(timeObjects, "vessel_outward_formalities_completed", "Vessel Outward Formalities Completed")),
+      icon: CalendarCheck,
+      accent: "#7c3aed",
+    },
   ];
 
   return (
@@ -1672,6 +1764,13 @@ function DA({ card, formValues, daStatusRefreshToken, onAdvanceDaStage, isAdvanc
             );
           })}
         </div>
+
+        <RequiredDocumentsSection
+          documents={requiredDocuments}
+          isLoading={isLoadingRequiredDocuments}
+          standalone
+          large
+        />
       </div>
     </div>
   );
