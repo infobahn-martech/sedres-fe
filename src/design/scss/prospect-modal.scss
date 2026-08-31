@@ -300,6 +300,12 @@ span.error.text-danger {
   color: #00368c;
   font-size: 20px;
   font-weight: 600;
+
+  // Brand blue reads low-contrast against dark modal backgrounds — swap for
+  // the lighter accent blue already used for dark-mode text.
+  [data-theme="dark"] & {
+    color: var(--color-primary-accent);
+  }
 }
 
 .logout-modal {
