@@ -33,9 +33,9 @@ const AUTO_SAVE_DEBOUNCE_MS = 1200;
 const REQUIRED_DOCUMENTS_CONFIG = [
   { key: "immigration_doc", label: "Crew Immigration", icon: User },
   { key: "inward_clearance_doc", label: "Inward Clearance", icon: CalendarCheck, accent: "#0891b2" },
-  { key: "outward_clearance_doc", label: "Outward Clearance", icon: CalendarCheck, accent: "#7c3aed" },
   { key: "mwp_doc", label: "MWP", icon: ShieldCheck, section: "mwp", accent: "#0891b2" },
   { key: "mwp_subscription_sadad", label: "MWP Subscription (SADAD)", icon: Banknote, section: "mwp", accent: "#d97706" },
+  { key: "outward_clearance_doc", label: "Outward Clearance", icon: CalendarCheck, accent: "#7c3aed" },
   { key: "final_bayan_doc", label: "Final Bayan", icon: FileText },
   { key: "mawani_invoice", label: "Mawani Invoice", icon: Receipt },
   { key: "ibtikar_invoice", label: "Ibtikar Invoice", icon: Receipt },
@@ -1051,6 +1051,47 @@ RequiredDocumentsSection.propTypes = {
   large: PropTypes.bool,
 };
 
+// api/da/time_objects/{call_id} rows rendered directly — each row already carries its
+// own display label (time_object) and value (time_object_value), so unlike
+// RequiredDocumentsSection above there's no fixed key/label config to map against.
+function TimeObjectsSection({ timeObjects, isLoading }) {
+  return (
+    <div className="da-cf-required-docs da-cf-required-docs--standalone da-cf-required-docs--large">
+      <div className="da-cf-required-docs-header">
+        <h5 className="da-cf-required-docs-title">Time Objects</h5>
+      </div>
+      <div className="da-cf-required-docs-grid">
+        {isLoading && !timeObjects.length ? (
+          <span className="da-cf-required-doc-status">Loading…</span>
+        ) : timeObjects.length === 0 ? (
+          <span className="da-cf-required-doc-status da-cf-required-doc-status--pending">No time objects recorded yet.</span>
+        ) : (
+          timeObjects.map((obj) => (
+            <div className="da-cf-required-doc-card" key={obj.time_object_id ?? obj.field_key}>
+              <span className="da-cf-required-doc-icon"><Clock size={15} /></span>
+              <div className="da-cf-required-doc-body">
+                <span className="da-cf-required-doc-label">{obj.time_object}</span>
+                <span className="da-cf-required-doc-status">{formatApiDateTime(obj.time_object_value) || "Not set yet"}</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+TimeObjectsSection.propTypes = {
+  timeObjects: PropTypes.arrayOf(PropTypes.shape({
+    stage_id: PropTypes.string,
+    time_object_id: PropTypes.string,
+    time_object: PropTypes.string,
+    field_key: PropTypes.string,
+    time_object_value: PropTypes.string,
+  })).isRequired,
+  isLoading: PropTypes.bool,
+};
+
 // Operations completion is a plain date (no time) — a lighter formatter than
 // formatApiDateTime so the read-only card doesn't show a spurious "00:00".
 const formatDisplayDateOnly = (isoDate) => {
@@ -1350,30 +1391,6 @@ function DA({ card, formValues, daStatusRefreshToken, onAdvanceDaStage, isAdvanc
       })
       .finally(() => {
         if (!cancelled) setIsLoadingTimeObjects(false);
-      });
-    return () => { cancelled = true; };
-  }, [callId, daStatusRefreshToken]);
-
-  // api/da/required_documents/{call_id} — read-only reference docs shown in the
-  // "Required Documents" section below (RequiredDocumentsSection). Response is an
-  // object keyed by REQUIRED_DOCUMENTS_CONFIG's `key` (e.g. immigration_doc,
-  // inward_clearance_doc), each { file_name, file_url }.
-  const [requiredDocuments, setRequiredDocuments] = useState(null);
-  const [isLoadingRequiredDocuments, setIsLoadingRequiredDocuments] = useState(false);
-
-  useEffect(() => {
-    if (callId == null) return undefined;
-    let cancelled = false;
-    setIsLoadingRequiredDocuments(true);
-    daService.getRequiredDocuments(callId)
-      .then(({ data }) => {
-        if (!cancelled) setRequiredDocuments(data?.data ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setRequiredDocuments(null);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingRequiredDocuments(false);
       });
     return () => { cancelled = true; };
   }, [callId, daStatusRefreshToken]);
@@ -1765,11 +1782,9 @@ function DA({ card, formValues, daStatusRefreshToken, onAdvanceDaStage, isAdvanc
           })}
         </div>
 
-        <RequiredDocumentsSection
-          documents={requiredDocuments}
-          isLoading={isLoadingRequiredDocuments}
-          standalone
-          large
+        <TimeObjectsSection
+          timeObjects={timeObjects}
+          isLoading={isLoadingTimeObjects}
         />
       </div>
     </div>
