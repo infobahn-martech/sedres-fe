@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle } from 'react-icons/fi';
+import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import NewStickerModal from './NewStickerModal';
 import DynamicIcon from './DynamicIcon';
@@ -52,6 +52,13 @@ const StickerIconSwatch = ({ color_code, iconKey }) => {
   );
 };
 
+const availabilityDotClass = (level) => {
+  const normalized = String(level ?? '').trim().toLowerCase();
+  if (normalized === 'global') return 'is-global';
+  if (normalized === 'auto') return 'is-auto';
+  return '';
+};
+
 const StickersModal = ({ show, onClose }) => {
   const cardStickers = useKanbanManagementReducer((s) => s.cardStickers);
   const cardStickersLoading = useKanbanManagementReducer((s) => s.cardStickersLoading);
@@ -82,12 +89,10 @@ const StickersModal = ({ show, onClose }) => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 10;
-  const [selectedItems, setSelectedItems] = useState([]);
   const [showNewStickerModal, setShowNewStickerModal] = useState(false);
   const [editingSticker, setEditingSticker] = useState(null);
 
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
-  const selectAllCheckboxRef = useRef(null);
   const actionMenuRefs = useRef({});
 
   useEffect(() => {
@@ -95,7 +100,6 @@ const StickersModal = ({ show, onClose }) => {
       setSearchValue('');
       setDebouncedSearch('');
       setCurrentPage(1);
-      setSelectedItems([]);
       return;
     }
     fetchWorkspaceBoardPickerOptions();
@@ -114,43 +118,11 @@ const StickersModal = ({ show, onClose }) => {
   }, [show, debouncedSearch, currentPage, limit, fetchKanbanCardStickers]);
 
   useEffect(() => {
-    setSelectedItems((prev) =>
-      prev.filter((id) => cardStickers.some((row) => String(row.id) === id))
-    );
-  }, [cardStickers]);
-
-  useEffect(() => {
     const serverPage = Number(cardStickersPagination?.current_page || 1);
     if (serverPage !== currentPage) {
       setCurrentPage(serverPage);
     }
   }, [cardStickersPagination?.current_page, currentPage]);
-
-  const handleCheckboxChange = (stickerId) => {
-    const id = String(stickerId);
-    setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedItems.length === cardStickers.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems(cardStickers.map((b) => String(b.id)));
-    }
-  };
-
-  const isAllSelected =
-    selectedItems.length === cardStickers.length && cardStickers.length > 0;
-  const isIndeterminate =
-    selectedItems.length > 0 && selectedItems.length < cardStickers.length;
-
-  useEffect(() => {
-    if (selectAllCheckboxRef.current) {
-      selectAllCheckboxRef.current.indeterminate = isIndeterminate;
-    }
-  }, [isIndeterminate]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -276,7 +248,10 @@ const StickersModal = ({ show, onClose }) => {
       size="xl"
     >
       <Modal.Header className="blockers-modal-header">
-        <Modal.Title className="blockers-modal-title">Stickers</Modal.Title>
+        <div className="blockers-modal-header-text">
+          <Modal.Title className="blockers-modal-title">Stickers</Modal.Title>
+          <p className="blockers-modal-subtitle">Stickers available across boards</p>
+        </div>
         <button
           type="button"
           className="blockers-modal-close"
@@ -289,13 +264,16 @@ const StickersModal = ({ show, onClose }) => {
       <Modal.Body className="blockers-modal-body tags-modal-body">
         <div className="blockers-filter-bar">
           <div className="blockers-filter-left">
-            <input
-              type="text"
-              className="blockers-filter-input"
-              placeholder="Filter"
-              value={searchValue}
-              onChange={(e) => handleSearchChange(e.target.value)}
-            />
+            <div className="blockers-filter-input-wrap">
+              <FiSearch size={16} className="blockers-filter-search-icon" />
+              <input
+                type="text"
+                className="blockers-filter-input"
+                placeholder="Filter stickers by label or board..."
+                value={searchValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
+              />
+            </div>
           </div>
           <div className="blockers-filter-right">
             <button
@@ -333,19 +311,6 @@ const StickersModal = ({ show, onClose }) => {
           <table className="blockers-table">
             <thead>
               <tr>
-                <th style={{ width: '40px' }}>
-                  <input
-                    type="checkbox"
-                    ref={selectAllCheckboxRef}
-                    checked={isAllSelected}
-                    onChange={handleSelectAll}
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      cursor: 'pointer',
-                    }}
-                  />
-                </th>
                 <th style={{ width: '50px' }}>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path
@@ -385,14 +350,14 @@ const StickersModal = ({ show, onClose }) => {
             <tbody>
               {cardStickersLoading ? (
                 <tr>
-                  <td colSpan="6" className="tags-modal-loading-cell">
+                  <td colSpan="5" className="tags-modal-loading-cell">
                     Loading stickers…
                   </td>
                 </tr>
               ) : cardStickers.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="6"
+                    colSpan="5"
                     style={{ textAlign: 'center', padding: '40px', color: '#999' }}
                   >
                     No stickers found
@@ -402,28 +367,31 @@ const StickersModal = ({ show, onClose }) => {
                 cardStickers.map((row) => (
                   <tr key={row.id}>
                     <td>
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.includes(String(row.id))}
-                        onChange={() => handleCheckboxChange(row.id)}
-                        style={{
-                          width: '18px',
-                          height: '18px',
-                          cursor: 'pointer',
-                        }}
-                      />
-                    </td>
-                    <td>
                       <StickerIconSwatch color_code={row.color_code} iconKey={row.icon} />
                     </td>
                     <td>
                       <span className="blockers-label-text">{row.label}</span>
                     </td>
                     <td>
-                      <span className="blockers-availability-text">{row.availabilityLevel}</span>
+                      <span className="blockers-availability-cell">
+                        <span className={`blockers-availability-dot ${availabilityDotClass(row.availabilityLevel)}`} />
+                        <span className={`blockers-availability-text ${availabilityDotClass(row.availabilityLevel)}`}>
+                          {row.availabilityLevel}
+                        </span>
+                      </span>
                     </td>
                     <td>
-                      <span className="blockers-boards-text">{row.boardsJoined}</span>
+                      {row.boardsRaw && row.boardsRaw.length > 0 ? (
+                        <span className="blockers-boards-cell">
+                          {row.boardsRaw.map((b) => (
+                            <span key={b.board_id} className="blockers-board-badge">
+                              {b.board_name}
+                            </span>
+                          ))}
+                        </span>
+                      ) : (
+                        <span className="blockers-boards-empty">No boards assigned</span>
+                      )}
                     </td>
                     <td>
                       <div
@@ -486,23 +454,30 @@ const StickersModal = ({ show, onClose }) => {
           </table>
         </div>
         <div className="tags-modal-pagination">
-          <button
-            type="button"
-            className="tags-modal-pagination-btn"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage <= 1 || cardStickersLoading}
-          >
-            Previous
-          </button>
-          <span className="tags-modal-pagination-page">Page {currentPage}</span>
-          <button
-            type="button"
-            className="tags-modal-pagination-btn"
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            disabled={!hasNextPage || cardStickersLoading}
-          >
-            Next
-          </button>
+          <span className="tags-modal-pagination-count">
+            {cardStickersPagination?.total != null
+              ? `${cardStickersPagination.total} sticker${Number(cardStickersPagination.total) === 1 ? '' : 's'}`
+              : `${cardStickers.length} sticker${cardStickers.length === 1 ? '' : 's'}`}
+          </span>
+          <div className="tags-modal-pagination-controls">
+            <button
+              type="button"
+              className="tags-modal-pagination-btn"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage <= 1 || cardStickersLoading}
+            >
+              Previous
+            </button>
+            <span className="tags-modal-pagination-page">Page {currentPage}</span>
+            <button
+              type="button"
+              className="tags-modal-pagination-btn"
+              onClick={() => setCurrentPage((prev) => prev + 1)}
+              disabled={!hasNextPage || cardStickersLoading}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </Modal.Body>
       <NewStickerModal
