@@ -214,17 +214,22 @@ function ApiCardLinkBadge({ card, cardsById, setSelectedCard }) {
     setShowPicker((prev) => !prev);
   };
 
+  const linkLabel =
+    linkedIds.length === 1
+      ? getApiCardDisplayTitle(cardsById?.[linkedIds[0]]) || `Card #${linkedIds[0]}`
+      : `${linkedIds.length} linked cards`;
+
   return (
     <span className="card-api-link-badge-wrap">
       <span
         className="card-api-count-badge card-api-link-badge"
         style={{ cursor: "pointer" }}
         data-tooltip-id={`link-badge-${card.id}`}
-        data-tooltip-content={linkedIds.length === 1 ? "View linked card" : "View linked cards"}
+        data-tooltip-content={linkLabel}
         onClick={handleClick}
       >
-        <LinkCardIcon size={13} color="#2563eb" />
-        <span>{linkedIds.length}</span>
+        <ArrowRightIcon size={13} color="#2563eb" />
+        <span className="card-api-link-badge-label">{linkLabel}</span>
       </span>
       <Tooltip id={`link-badge-${card.id}`} place="top" className="card-name-tooltip" />
       {showPicker && (
@@ -379,6 +384,12 @@ const LinkCardIcon = ({ size = 16, color = "#666" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color }}>
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+  </svg>
+);
+
+const ArrowRightIcon = ({ size = 16, color = "#666" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color }}>
+    <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
   </svg>
 );
 
