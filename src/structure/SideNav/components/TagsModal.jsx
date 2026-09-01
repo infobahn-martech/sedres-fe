@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle } from 'react-icons/fi';
+import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import NewTagModal, { normalizeTagAvailabilityLevel } from './NewTagModal';
 import useKanbanManagementReducer, {
@@ -15,6 +15,13 @@ const TagColorSwatch = ({ color }) => (
     aria-hidden
   />
 );
+
+const availabilityDotClass = (level) => {
+  const normalized = String(level ?? '').trim().toLowerCase();
+  if (normalized === 'global') return 'is-global';
+  if (normalized === 'auto') return 'is-auto';
+  return '';
+};
 
 const TagsModal = ({ show, onClose }) => {
   const tags = useKanbanManagementReducer((s) => s.tags);
@@ -38,12 +45,10 @@ const TagsModal = ({ show, onClose }) => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 10;
-  const [selectedItems, setSelectedItems] = useState([]);
   const [showNewTagModal, setShowNewTagModal] = useState(false);
   const [editingTag, setEditingTag] = useState(null);
 
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
-  const selectAllCheckboxRef = useRef(null);
   const actionMenuRefs = useRef({});
 
   useEffect(() => {
@@ -51,7 +56,6 @@ const TagsModal = ({ show, onClose }) => {
       setSearchValue('');
       setDebouncedSearch('');
       setCurrentPage(1);
-      setSelectedItems([]);
       return;
     }
     fetchWorkspaceBoardPickerOptions();
@@ -70,41 +74,11 @@ const TagsModal = ({ show, onClose }) => {
   }, [show, debouncedSearch, currentPage, perPage, fetchKanbanTags]);
 
   useEffect(() => {
-    setSelectedItems((prev) => prev.filter((id) => tags.some((tag) => String(tag.id) === id)));
-  }, [tags]);
-
-  useEffect(() => {
     const serverPage = Number(tagsPagination?.current_page || 1);
     if (serverPage !== currentPage) {
       setCurrentPage(serverPage);
     }
   }, [tagsPagination?.current_page, currentPage]);
-
-  const handleCheckboxChange = (tagId) => {
-    const id = String(tagId);
-    setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedItems.length === tags.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems(tags.map((b) => String(b.id)));
-    }
-  };
-
-  const isAllSelected =
-    selectedItems.length === tags.length && tags.length > 0;
-  const isIndeterminate =
-    selectedItems.length > 0 && selectedItems.length < tags.length;
-
-  useEffect(() => {
-    if (selectAllCheckboxRef.current) {
-      selectAllCheckboxRef.current.indeterminate = isIndeterminate;
-    }
-  }, [isIndeterminate]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -233,7 +207,10 @@ const TagsModal = ({ show, onClose }) => {
       size="xl"
     >
       <Modal.Header className="blockers-modal-header">
-        <Modal.Title className="blockers-modal-title">Tags</Modal.Title>
+        <div className="blockers-modal-header-text">
+          <Modal.Title className="blockers-modal-title">Tags</Modal.Title>
+          <p className="blockers-modal-subtitle">Tags available across boards</p>
+        </div>
         <button
           type="button"
           className="blockers-modal-close"
@@ -246,13 +223,16 @@ const TagsModal = ({ show, onClose }) => {
       <Modal.Body className="blockers-modal-body tags-modal-body">
         <div className="blockers-filter-bar">
           <div className="blockers-filter-left">
-            <input
-              type="text"
-              className="blockers-filter-input"
-              placeholder="Filter"
-              value={searchValue}
-              onChange={(e) => handleSearchChange(e.target.value)}
-            />
+            <div className="blockers-filter-input-wrap">
+              <FiSearch size={16} className="blockers-filter-search-icon" />
+              <input
+                type="text"
+                className="blockers-filter-input"
+                placeholder="Filter tags by label or board..."
+                value={searchValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
+              />
+            </div>
           </div>
           <div className="blockers-filter-right">
             <button
@@ -290,19 +270,6 @@ const TagsModal = ({ show, onClose }) => {
           <table className="blockers-table">
             <thead>
               <tr>
-                <th style={{ width: '40px' }}>
-                  <input
-                    type="checkbox"
-                    ref={selectAllCheckboxRef}
-                    checked={isAllSelected}
-                    onChange={handleSelectAll}
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      cursor: 'pointer',
-                    }}
-                  />
-                </th>
                 <th style={{ width: '50px' }}>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M2 4h12M2 8h12M2 12h12" stroke="#666" strokeWidth="1.5" strokeLinecap="round" />
@@ -340,13 +307,13 @@ const TagsModal = ({ show, onClose }) => {
             <tbody>
               {tagsLoading ? (
                 <tr>
-                  <td colSpan="6" className="tags-modal-loading-cell">
+                  <td colSpan="5" className="tags-modal-loading-cell">
                     Loading tags…
                   </td>
                 </tr>
               ) : tags.length === 0 ? (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
                     No tags found
                   </td>
                 </tr>
@@ -354,28 +321,31 @@ const TagsModal = ({ show, onClose }) => {
                 tags.map((tag) => (
                   <tr key={tag.id}>
                     <td>
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.includes(String(tag.id))}
-                        onChange={() => handleCheckboxChange(tag.id)}
-                        style={{
-                          width: '18px',
-                          height: '18px',
-                          cursor: 'pointer',
-                        }}
-                      />
-                    </td>
-                    <td>
                       <TagColorSwatch color={tag.color_code} />
                     </td>
                     <td>
                       <span className="blockers-label-text">{tag.label}</span>
                     </td>
                     <td>
-                      <span className="blockers-availability-text">{tag.availabilityLevel}</span>
+                      <span className="blockers-availability-cell">
+                        <span className={`blockers-availability-dot ${availabilityDotClass(tag.availabilityLevel)}`} />
+                        <span className={`blockers-availability-text ${availabilityDotClass(tag.availabilityLevel)}`}>
+                          {tag.availabilityLevel}
+                        </span>
+                      </span>
                     </td>
                     <td>
-                      <span className="blockers-boards-text">{tag.boardsJoined}</span>
+                      {tag.boardsRaw && tag.boardsRaw.length > 0 ? (
+                        <span className="blockers-boards-cell">
+                          {tag.boardsRaw.map((b) => (
+                            <span key={b.board_id} className="blockers-board-badge">
+                              {b.board_name}
+                            </span>
+                          ))}
+                        </span>
+                      ) : (
+                        <span className="blockers-boards-empty">No boards assigned</span>
+                      )}
                     </td>
                     <td>
                       <div
@@ -438,23 +408,30 @@ const TagsModal = ({ show, onClose }) => {
           </table>
         </div>
         <div className="tags-modal-pagination">
-          <button
-            type="button"
-            className="tags-modal-pagination-btn"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage <= 1 || tagsLoading}
-          >
-            Previous
-          </button>
-          <span className="tags-modal-pagination-page">Page {currentPage}</span>
-          <button
-            type="button"
-            className="tags-modal-pagination-btn"
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            disabled={!hasNextPage || tagsLoading}
-          >
-            Next
-          </button>
+          <span className="tags-modal-pagination-count">
+            {tagsPagination?.total != null
+              ? `${tagsPagination.total} tag${Number(tagsPagination.total) === 1 ? '' : 's'}`
+              : `${tags.length} tag${tags.length === 1 ? '' : 's'}`}
+          </span>
+          <div className="tags-modal-pagination-controls">
+            <button
+              type="button"
+              className="tags-modal-pagination-btn"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage <= 1 || tagsLoading}
+            >
+              Previous
+            </button>
+            <span className="tags-modal-pagination-page">Page {currentPage}</span>
+            <button
+              type="button"
+              className="tags-modal-pagination-btn"
+              onClick={() => setCurrentPage((prev) => prev + 1)}
+              disabled={!hasNextPage || tagsLoading}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </Modal.Body>
       <NewTagModal

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle } from 'react-icons/fi';
+import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import NewTypeModal from './NewTypeModal';
 import DynamicIcon from './DynamicIcon';
@@ -52,6 +52,13 @@ const TypeIconSwatch = ({ color_code, iconKey }) => {
   );
 };
 
+const availabilityDotClass = (level) => {
+  const normalized = String(level ?? '').trim().toLowerCase();
+  if (normalized === 'global') return 'is-global';
+  if (normalized === 'auto') return 'is-auto';
+  return '';
+};
+
 const TypesModal = ({ show, onClose }) => {
   const cardTypes = useKanbanManagementReducer((s) => s.cardTypes);
   const cardTypesLoading = useKanbanManagementReducer((s) => s.cardTypesLoading);
@@ -74,12 +81,10 @@ const TypesModal = ({ show, onClose }) => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 10;
-  const [selectedItems, setSelectedItems] = useState([]);
   const [showNewTypeModal, setShowNewTypeModal] = useState(false);
   const [editingType, setEditingType] = useState(null);
 
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
-  const selectAllCheckboxRef = useRef(null);
   const actionMenuRefs = useRef({});
 
   useEffect(() => {
@@ -87,7 +92,6 @@ const TypesModal = ({ show, onClose }) => {
       setSearchValue('');
       setDebouncedSearch('');
       setCurrentPage(1);
-      setSelectedItems([]);
       return;
     }
     fetchWorkspaceBoardPickerOptions();
@@ -106,43 +110,11 @@ const TypesModal = ({ show, onClose }) => {
   }, [show, debouncedSearch, currentPage, perPage, fetchKanbanCardTypes]);
 
   useEffect(() => {
-    setSelectedItems((prev) =>
-      prev.filter((id) => cardTypes.some((row) => String(row.id) === id))
-    );
-  }, [cardTypes]);
-
-  useEffect(() => {
     const serverPage = Number(cardTypesPagination?.current_page || 1);
     if (serverPage !== currentPage) {
       setCurrentPage(serverPage);
     }
   }, [cardTypesPagination?.current_page, currentPage]);
-
-  const handleCheckboxChange = (typeId) => {
-    const id = String(typeId);
-    setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedItems.length === cardTypes.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems(cardTypes.map((b) => String(b.id)));
-    }
-  };
-
-  const isAllSelected =
-    selectedItems.length === cardTypes.length && cardTypes.length > 0;
-  const isIndeterminate =
-    selectedItems.length > 0 && selectedItems.length < cardTypes.length;
-
-  useEffect(() => {
-    if (selectAllCheckboxRef.current) {
-      selectAllCheckboxRef.current.indeterminate = isIndeterminate;
-    }
-  }, [isIndeterminate]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -265,7 +237,10 @@ const TypesModal = ({ show, onClose }) => {
       size="xl"
     >
       <Modal.Header className="blockers-modal-header">
-        <Modal.Title className="blockers-modal-title">Types</Modal.Title>
+        <div className="blockers-modal-header-text">
+          <Modal.Title className="blockers-modal-title">Types</Modal.Title>
+          <p className="blockers-modal-subtitle">Card types available across boards</p>
+        </div>
         <button
           type="button"
           className="blockers-modal-close"
@@ -278,13 +253,16 @@ const TypesModal = ({ show, onClose }) => {
       <Modal.Body className="blockers-modal-body tags-modal-body">
         <div className="blockers-filter-bar">
           <div className="blockers-filter-left">
-            <input
-              type="text"
-              className="blockers-filter-input"
-              placeholder="Filter"
-              value={searchValue}
-              onChange={(e) => handleSearchChange(e.target.value)}
-            />
+            <div className="blockers-filter-input-wrap">
+              <FiSearch size={16} className="blockers-filter-search-icon" />
+              <input
+                type="text"
+                className="blockers-filter-input"
+                placeholder="Filter types by label or board..."
+                value={searchValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
+              />
+            </div>
           </div>
           <div className="blockers-filter-right">
             <button
@@ -322,19 +300,6 @@ const TypesModal = ({ show, onClose }) => {
           <table className="blockers-table">
             <thead>
               <tr>
-                <th style={{ width: '40px' }}>
-                  <input
-                    type="checkbox"
-                    ref={selectAllCheckboxRef}
-                    checked={isAllSelected}
-                    onChange={handleSelectAll}
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      cursor: 'pointer',
-                    }}
-                  />
-                </th>
                 <th style={{ width: '50px' }}>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path
@@ -374,14 +339,14 @@ const TypesModal = ({ show, onClose }) => {
             <tbody>
               {cardTypesLoading ? (
                 <tr>
-                  <td colSpan="6" className="tags-modal-loading-cell">
+                  <td colSpan="5" className="tags-modal-loading-cell">
                     Loading types…
                   </td>
                 </tr>
               ) : cardTypes.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="6"
+                    colSpan="5"
                     style={{ textAlign: 'center', padding: '40px', color: '#999' }}
                   >
                     No types found
@@ -391,28 +356,31 @@ const TypesModal = ({ show, onClose }) => {
                 cardTypes.map((row) => (
                   <tr key={row.id}>
                     <td>
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.includes(String(row.id))}
-                        onChange={() => handleCheckboxChange(row.id)}
-                        style={{
-                          width: '18px',
-                          height: '18px',
-                          cursor: 'pointer',
-                        }}
-                      />
-                    </td>
-                    <td>
                       <TypeIconSwatch color_code={row.color_code} iconKey={row.icon} />
                     </td>
                     <td>
                       <span className="blockers-label-text">{row.label}</span>
                     </td>
                     <td>
-                      <span className="blockers-availability-text">{row.availabilityLevel}</span>
+                      <span className="blockers-availability-cell">
+                        <span className={`blockers-availability-dot ${availabilityDotClass(row.availabilityLevel)}`} />
+                        <span className={`blockers-availability-text ${availabilityDotClass(row.availabilityLevel)}`}>
+                          {row.availabilityLevel}
+                        </span>
+                      </span>
                     </td>
                     <td>
-                      <span className="blockers-boards-text">{row.boardsJoined}</span>
+                      {row.boardsRaw && row.boardsRaw.length > 0 ? (
+                        <span className="blockers-boards-cell">
+                          {row.boardsRaw.map((b) => (
+                            <span key={b.board_id} className="blockers-board-badge">
+                              {b.board_name}
+                            </span>
+                          ))}
+                        </span>
+                      ) : (
+                        <span className="blockers-boards-empty">No boards assigned</span>
+                      )}
                     </td>
                     <td>
                       <div
@@ -475,23 +443,30 @@ const TypesModal = ({ show, onClose }) => {
           </table>
         </div>
         <div className="tags-modal-pagination">
-          <button
-            type="button"
-            className="tags-modal-pagination-btn"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage <= 1 || cardTypesLoading}
-          >
-            Previous
-          </button>
-          <span className="tags-modal-pagination-page">Page {currentPage}</span>
-          <button
-            type="button"
-            className="tags-modal-pagination-btn"
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            disabled={!hasNextPage || cardTypesLoading}
-          >
-            Next
-          </button>
+          <span className="tags-modal-pagination-count">
+            {cardTypesPagination?.total != null
+              ? `${cardTypesPagination.total} type${Number(cardTypesPagination.total) === 1 ? '' : 's'}`
+              : `${cardTypes.length} type${cardTypes.length === 1 ? '' : 's'}`}
+          </span>
+          <div className="tags-modal-pagination-controls">
+            <button
+              type="button"
+              className="tags-modal-pagination-btn"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage <= 1 || cardTypesLoading}
+            >
+              Previous
+            </button>
+            <span className="tags-modal-pagination-page">Page {currentPage}</span>
+            <button
+              type="button"
+              className="tags-modal-pagination-btn"
+              onClick={() => setCurrentPage((prev) => prev + 1)}
+              disabled={!hasNextPage || cardTypesLoading}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </Modal.Body>
       <NewTypeModal
