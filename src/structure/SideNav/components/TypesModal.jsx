@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import NewTypeModal from './NewTypeModal';
+import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
 import DynamicIcon from './DynamicIcon';
 import useKanbanManagementReducer, {
   isKanbanManagementRowDisabled,
@@ -86,6 +87,10 @@ const TypesModal = ({ show, onClose }) => {
 
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
   const actionMenuRefs = useRef({});
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedDeleteTypeId, setSelectedDeleteTypeId] = useState(null);
+  const [isDeletingType, setIsDeletingType] = useState(false);
 
   useEffect(() => {
     if (!show) {
@@ -180,18 +185,27 @@ const TypesModal = ({ show, onClose }) => {
   };
 
   const handleDelete = (cardTypeId) => {
-    const id = String(cardTypeId);
     setOpenActionMenuId(null);
-    if (!window.confirm('Delete this type? This cannot be undone.')) {
-      return;
+    setSelectedDeleteTypeId(String(cardTypeId));
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setSelectedDeleteTypeId(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedDeleteTypeId) return;
+    setIsDeletingType(true);
+    try {
+      await deleteKanbanCardTypeRecord(selectedDeleteTypeId, refreshParams());
+    } catch {
+      /* AlertReducer in store */
+    } finally {
+      setIsDeletingType(false);
+      closeDeleteModal();
     }
-    (async () => {
-      try {
-        await deleteKanbanCardTypeRecord(id, refreshParams());
-      } catch {
-        /* AlertReducer in store */
-      }
-    })();
   };
 
   const handleAddType = () => {
@@ -477,6 +491,15 @@ const TypesModal = ({ show, onClose }) => {
         workspaceBoardsLoading={workspaceBoardsLoading}
         onSave={handleTypeFormSave}
       />
+      {!!showDeleteModal && (
+        <DeleteConfirmationModal
+          show={showDeleteModal}
+          onCancel={closeDeleteModal}
+          onConfirm={handleConfirmDelete}
+          deleteText="Delete this type? This cannot be undone."
+          isLoading={isDeletingType}
+        />
+      )}
     </Modal>
   );
 };

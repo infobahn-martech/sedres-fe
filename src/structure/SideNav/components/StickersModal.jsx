@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import NewStickerModal from './NewStickerModal';
+import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
 import DynamicIcon from './DynamicIcon';
 import useKanbanManagementReducer, {
   isKanbanManagementRowDisabled,
@@ -94,6 +95,10 @@ const StickersModal = ({ show, onClose }) => {
 
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
   const actionMenuRefs = useRef({});
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedDeleteStickerId, setSelectedDeleteStickerId] = useState(null);
+  const [isDeletingSticker, setIsDeletingSticker] = useState(false);
 
   useEffect(() => {
     if (!show) {
@@ -188,18 +193,27 @@ const StickersModal = ({ show, onClose }) => {
   };
 
   const handleDelete = (stickerId) => {
-    const id = String(stickerId);
     setOpenActionMenuId(null);
-    if (!window.confirm('Delete this sticker? This cannot be undone.')) {
-      return;
+    setSelectedDeleteStickerId(String(stickerId));
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setSelectedDeleteStickerId(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedDeleteStickerId) return;
+    setIsDeletingSticker(true);
+    try {
+      await deleteKanbanCardStickerRecord(selectedDeleteStickerId, refreshParams());
+    } catch {
+      /* AlertReducer in store */
+    } finally {
+      setIsDeletingSticker(false);
+      closeDeleteModal();
     }
-    (async () => {
-      try {
-        await deleteKanbanCardStickerRecord(id, refreshParams());
-      } catch {
-        /* AlertReducer in store */
-      }
-    })();
   };
 
   const handleAddSticker = () => {
@@ -488,6 +502,15 @@ const StickersModal = ({ show, onClose }) => {
         workspaceBoardsLoading={workspaceBoardsLoading}
         onSave={handleStickerFormSave}
       />
+      {!!showDeleteModal && (
+        <DeleteConfirmationModal
+          show={showDeleteModal}
+          onCancel={closeDeleteModal}
+          onConfirm={handleConfirmDelete}
+          deleteText="Delete this sticker? This cannot be undone."
+          isLoading={isDeletingSticker}
+        />
+      )}
     </Modal>
   );
 };

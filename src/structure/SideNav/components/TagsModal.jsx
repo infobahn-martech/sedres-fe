@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import NewTagModal, { normalizeTagAvailabilityLevel } from './NewTagModal';
+import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
 import useKanbanManagementReducer, {
   isKanbanManagementRowDisabled,
 } from '../../../store/KanbanManagementReducer';
@@ -50,6 +51,10 @@ const TagsModal = ({ show, onClose }) => {
 
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
   const actionMenuRefs = useRef({});
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedDeleteTagId, setSelectedDeleteTagId] = useState(null);
+  const [isDeletingTag, setIsDeletingTag] = useState(false);
 
   useEffect(() => {
     if (!show) {
@@ -143,22 +148,27 @@ const TagsModal = ({ show, onClose }) => {
   };
 
   const handleDelete = (tagId) => {
-    const id = String(tagId);
     setOpenActionMenuId(null);
-    if (
-      !window.confirm(
-        'Delete this tag? This cannot be undone.'
-      )
-    ) {
-      return;
+    setSelectedDeleteTagId(String(tagId));
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setSelectedDeleteTagId(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedDeleteTagId) return;
+    setIsDeletingTag(true);
+    try {
+      await deleteKanbanTagRecord(selectedDeleteTagId, refreshParams());
+    } catch {
+      /* AlertReducer in store */
+    } finally {
+      setIsDeletingTag(false);
+      closeDeleteModal();
     }
-    (async () => {
-      try {
-        await deleteKanbanTagRecord(id, refreshParams());
-      } catch {
-        /* AlertReducer in store */
-      }
-    })();
   };
 
   const handleAddTag = () => {
@@ -442,6 +452,15 @@ const TagsModal = ({ show, onClose }) => {
         workspaceBoardsLoading={workspaceBoardsLoading}
         onSave={handleTagFormSave}
       />
+      {!!showDeleteModal && (
+        <DeleteConfirmationModal
+          show={showDeleteModal}
+          onCancel={closeDeleteModal}
+          onConfirm={handleConfirmDelete}
+          deleteText="Delete this tag? This cannot be undone."
+          isLoading={isDeletingTag}
+        />
+      )}
     </Modal>
   );
 };

@@ -213,7 +213,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
         centered
         size="xl"
       >
-        <Modal.Header className="business-rules-modal-header">
+        <Modal.Header bsPrefix="business-rules-modal-header">
           <div className="br-modal-header-left">
             {view === 'picker' && (
               <button

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import NewBlockerModal from './NewBlockerModal';
+import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
 import DynamicIcon from './DynamicIcon';
 import useKanbanManagementReducer, {
   isKanbanManagementRowDisabled,
@@ -94,6 +95,10 @@ const BlockersModal = ({ show, onClose }) => {
 
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
   const actionMenuRefs = useRef({});
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedDeleteBlockerId, setSelectedDeleteBlockerId] = useState(null);
+  const [isDeletingBlocker, setIsDeletingBlocker] = useState(false);
 
   useEffect(() => {
     if (!show) {
@@ -188,18 +193,27 @@ const BlockersModal = ({ show, onClose }) => {
   };
 
   const handleDelete = (blockerId) => {
-    const id = String(blockerId);
     setOpenActionMenuId(null);
-    if (!window.confirm('Delete this blocker? This cannot be undone.')) {
-      return;
+    setSelectedDeleteBlockerId(String(blockerId));
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setSelectedDeleteBlockerId(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedDeleteBlockerId) return;
+    setIsDeletingBlocker(true);
+    try {
+      await deleteKanbanCardBlockerRecord(selectedDeleteBlockerId, refreshParams());
+    } catch {
+      /* AlertReducer in store */
+    } finally {
+      setIsDeletingBlocker(false);
+      closeDeleteModal();
     }
-    (async () => {
-      try {
-        await deleteKanbanCardBlockerRecord(id, refreshParams());
-      } catch {
-        /* AlertReducer in store */
-      }
-    })();
   };
 
   const handleAddBlocker = () => {
@@ -492,6 +506,15 @@ const BlockersModal = ({ show, onClose }) => {
         workspaceBoardsLoading={workspaceBoardsLoading}
         onSave={handleBlockerFormSave}
       />
+      {!!showDeleteModal && (
+        <DeleteConfirmationModal
+          show={showDeleteModal}
+          onCancel={closeDeleteModal}
+          onConfirm={handleConfirmDelete}
+          deleteText="Delete this blocker? This cannot be undone."
+          isLoading={isDeletingBlocker}
+        />
+      )}
     </Modal>
   );
 };
