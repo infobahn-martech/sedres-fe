@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle, FiSearch } from 'react-icons/fi';
+import { FiX, FiPlus, FiMoreVertical, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import NewBlockerModal from './NewBlockerModal';
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
@@ -116,6 +116,7 @@ const BlockersModal = ({ show, onClose }) => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDeleteBlockerId, setSelectedDeleteBlockerId] = useState(null);
+  const [selectedDeleteBlockerLabel, setSelectedDeleteBlockerLabel] = useState('');
   const [isDeletingBlocker, setIsDeletingBlocker] = useState(false);
 
   useEffect(() => {
@@ -139,13 +140,6 @@ const BlockersModal = ({ show, onClose }) => {
     if (!show) return;
     fetchKanbanCardBlockers({ search: debouncedSearch, page: currentPage, limit });
   }, [show, debouncedSearch, currentPage, limit, fetchKanbanCardBlockers]);
-
-  useEffect(() => {
-    const serverPage = Number(cardBlockersPagination?.current_page || 1);
-    if (serverPage !== currentPage) {
-      setCurrentPage(serverPage);
-    }
-  }, [cardBlockersPagination?.current_page, currentPage]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -216,15 +210,17 @@ const BlockersModal = ({ show, onClose }) => {
     }
   };
 
-  const handleDelete = (blockerId) => {
+  const handleDelete = (blockerId, blockerLabel) => {
     setOpenActionMenuId(null);
     setSelectedDeleteBlockerId(String(blockerId));
+    setSelectedDeleteBlockerLabel(blockerLabel ?? '');
     setShowDeleteModal(true);
   };
 
   const closeDeleteModal = () => {
     setShowDeleteModal(false);
     setSelectedDeleteBlockerId(null);
+    setSelectedDeleteBlockerLabel('');
   };
 
   const handleConfirmDelete = async () => {
@@ -266,11 +262,23 @@ const BlockersModal = ({ show, onClose }) => {
   };
 
   const blockerLimit = Number(cardBlockersPagination?.limit) || limit;
-  const hasMetaLastPage = Number(cardBlockersPagination?.last_page || 0) > 0;
-  const hasNextByMeta = hasMetaLastPage
-    ? currentPage < Number(cardBlockersPagination.last_page)
-    : true;
-  const hasNextPage = hasNextByMeta && cardBlockers.length === blockerLimit;
+  // Some kanban_management list endpoints don't honor `limit`/`page` and always return
+  // the full unpaginated result set. When that happens (more rows came back than we
+  // asked for), fall back to paginating the fetched list on the client.
+  const isBackendPaginated = cardBlockers.length <= blockerLimit;
+  const pageBlockers = isBackendPaginated
+    ? cardBlockers
+    : cardBlockers.slice((currentPage - 1) * blockerLimit, currentPage * blockerLimit);
+  // `last_page` in the meta has proven unreliable on this endpoint, but `total` matches
+  // the real record count, so drive "is there a next page" off total vs. currentPage*limit
+  // instead of trusting last_page.
+  const metaTotal = Number(cardBlockersPagination?.total);
+  const hasReliableTotal = Number.isFinite(metaTotal) && metaTotal > 0;
+  const hasNextPage = isBackendPaginated
+    ? (hasReliableTotal
+      ? currentPage * blockerLimit < metaTotal
+      : cardBlockers.length === blockerLimit)
+    : currentPage * blockerLimit < cardBlockers.length;
 
   const handleSearchChange = (value) => {
     setSearchValue(value);
@@ -373,9 +381,6 @@ const BlockersModal = ({ show, onClose }) => {
                   <th>
                     <div className="blockers-th-content">
                       <span>Availability level</span>
-                      <button type="button" className="blockers-th-info-btn">
-                        <FiInfo size={14} />
-                      </button>
                     </div>
                   </th>
                   <th>
@@ -395,7 +400,7 @@ const BlockersModal = ({ show, onClose }) => {
                       Loading blockers…
                     </td>
                   </tr>
-                ) : cardBlockers.length === 0 ? (
+                ) : pageBlockers.length === 0 ? (
                   <tr>
                     <td
                       colSpan="5"
@@ -405,7 +410,7 @@ const BlockersModal = ({ show, onClose }) => {
                     </td>
                   </tr>
                 ) : (
-                  cardBlockers.map((row) => (
+                  pageBlockers.map((row) => (
                     <tr key={row.id}>
                       <td>
                         <BlockerIconSwatch color_code={row.color_code} iconKey={row.icon} />
@@ -459,7 +464,7 @@ const BlockersModal = ({ show, onClose }) => {
           </div>
           <div className="tags-modal-pagination">
             <span className="tags-modal-pagination-count">
-              {cardBlockersPagination?.total != null
+              {isBackendPaginated && cardBlockersPagination?.total != null
                 ? `${cardBlockersPagination.total} blocker${Number(cardBlockersPagination.total) === 1 ? '' : 's'}`
                 : `${cardBlockers.length} blocker${cardBlockers.length === 1 ? '' : 's'}`}
             </span>
@@ -498,7 +503,7 @@ const BlockersModal = ({ show, onClose }) => {
           show={showDeleteModal}
           onCancel={closeDeleteModal}
           onConfirm={handleConfirmDelete}
-          deleteText="Delete this blocker? This cannot be undone."
+          deleteText={`Delete blocker "${selectedDeleteBlockerLabel}"? This cannot be undone.`}
           isLoading={isDeletingBlocker}
         />
       )}
@@ -546,7 +551,7 @@ const BlockersModal = ({ show, onClose }) => {
                   <button
                     type="button"
                     className="blockers-action-menu-item blockers-action-menu-item-danger"
-                    onClick={() => handleDelete(activeRow.blocker_id ?? activeRow.id)}
+                    onClick={() => handleDelete(activeRow.blocker_id ?? activeRow.id, activeRow.label)}
                   >
                     Delete
                   </button>

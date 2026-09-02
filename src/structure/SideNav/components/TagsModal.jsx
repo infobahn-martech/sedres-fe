@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle, FiSearch } from 'react-icons/fi';
+import { FiX, FiPlus, FiMoreVertical, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import NewTagModal, { normalizeTagAvailabilityLevel } from './NewTagModal';
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
@@ -72,6 +72,7 @@ const TagsModal = ({ show, onClose }) => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDeleteTagId, setSelectedDeleteTagId] = useState(null);
+  const [selectedDeleteTagLabel, setSelectedDeleteTagLabel] = useState('');
   const [isDeletingTag, setIsDeletingTag] = useState(false);
 
   useEffect(() => {
@@ -95,13 +96,6 @@ const TagsModal = ({ show, onClose }) => {
     if (!show) return;
     fetchKanbanTags({ search: debouncedSearch, page: currentPage, per_page: perPage });
   }, [show, debouncedSearch, currentPage, perPage, fetchKanbanTags]);
-
-  useEffect(() => {
-    const serverPage = Number(tagsPagination?.current_page || 1);
-    if (serverPage !== currentPage) {
-      setCurrentPage(serverPage);
-    }
-  }, [tagsPagination?.current_page, currentPage]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -171,15 +165,17 @@ const TagsModal = ({ show, onClose }) => {
     }
   };
 
-  const handleDelete = (tagId) => {
+  const handleDelete = (tagId, tagLabel) => {
     setOpenActionMenuId(null);
     setSelectedDeleteTagId(String(tagId));
+    setSelectedDeleteTagLabel(tagLabel ?? '');
     setShowDeleteModal(true);
   };
 
   const closeDeleteModal = () => {
     setShowDeleteModal(false);
     setSelectedDeleteTagId(null);
+    setSelectedDeleteTagLabel('');
   };
 
   const handleConfirmDelete = async () => {
@@ -223,9 +219,23 @@ const TagsModal = ({ show, onClose }) => {
     }
   };
 
-  const hasMetaLastPage = Number(tagsPagination?.last_page || 0) > 0;
-  const hasNextByMeta = hasMetaLastPage ? currentPage < Number(tagsPagination.last_page) : true;
-  const hasNextPage = hasNextByMeta && tags.length === perPage;
+  // Some kanban_management list endpoints don't honor `per_page`/`page` and always
+  // return the full unpaginated result set. When that happens (more rows came back
+  // than we asked for), fall back to paginating the fetched list on the client.
+  const isBackendPaginated = tags.length <= perPage;
+  const pageTags = isBackendPaginated
+    ? tags
+    : tags.slice((currentPage - 1) * perPage, currentPage * perPage);
+  // `last_page` in the meta has proven unreliable on this endpoint, but `total` matches
+  // the real record count, so drive "is there a next page" off total vs. currentPage*limit
+  // instead of trusting last_page.
+  const metaTotal = Number(tagsPagination?.total);
+  const hasReliableTotal = Number.isFinite(metaTotal) && metaTotal > 0;
+  const hasNextPage = isBackendPaginated
+    ? (hasReliableTotal
+      ? currentPage * perPage < metaTotal
+      : tags.length === perPage)
+    : currentPage * perPage < tags.length;
 
   const handleSearchChange = (value) => {
     setSearchValue(value);
@@ -320,12 +330,6 @@ const TagsModal = ({ show, onClose }) => {
                 <th>
                   <div className="blockers-th-content">
                     <span>Availability level</span>
-                    <button
-                      type="button"
-                      className="blockers-th-info-btn"
-                    >
-                      <FiInfo size={14} />
-                    </button>
                   </div>
                 </th>
                 <th>
@@ -345,14 +349,14 @@ const TagsModal = ({ show, onClose }) => {
                     Loading tags…
                   </td>
                 </tr>
-              ) : tags.length === 0 ? (
+              ) : pageTags.length === 0 ? (
                 <tr>
                   <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
                     No tags found
                   </td>
                 </tr>
               ) : (
-                tags.map((tag) => (
+                pageTags.map((tag) => (
                   <tr key={tag.id}>
                     <td>
                       <TagColorSwatch color={tag.color_code} />
@@ -406,7 +410,7 @@ const TagsModal = ({ show, onClose }) => {
         </div>
         <div className="tags-modal-pagination">
           <span className="tags-modal-pagination-count">
-            {tagsPagination?.total != null
+            {isBackendPaginated && tagsPagination?.total != null
               ? `${tagsPagination.total} tag${Number(tagsPagination.total) === 1 ? '' : 's'}`
               : `${tags.length} tag${tags.length === 1 ? '' : 's'}`}
           </span>
@@ -444,7 +448,7 @@ const TagsModal = ({ show, onClose }) => {
           show={showDeleteModal}
           onCancel={closeDeleteModal}
           onConfirm={handleConfirmDelete}
-          deleteText="Delete this tag? This cannot be undone."
+          deleteText={`Delete tag "${selectedDeleteTagLabel}"? This cannot be undone.`}
           isLoading={isDeletingTag}
         />
       )}
@@ -492,7 +496,7 @@ const TagsModal = ({ show, onClose }) => {
                   <button
                     type="button"
                     className="blockers-action-menu-item blockers-action-menu-item-danger"
-                    onClick={() => handleDelete(activeTag.id)}
+                    onClick={() => handleDelete(activeTag.id, activeTag.label)}
                   >
                     Delete
                   </button>
