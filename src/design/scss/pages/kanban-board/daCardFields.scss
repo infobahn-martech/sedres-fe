@@ -1342,18 +1342,29 @@ a.da-cf-file-name {
 }
 
 // Inward and Outward Clearance each get their own line (1 column) instead of sitting
-// side by side, unlike Operation Details/Invoice's 2-column field grids. Spread across
-// the full stretched card height (space-between) instead of centering, so there's no
-// leftover empty gap at the bottom.
+// side by side, unlike Operation Details/Invoice's 2-column field grids. Centered
+// (with a fixed gap) in the stretched card height instead of space-between — on wider
+// rows where Operation Details/Invoice carry much more content, space-between pushed
+// the two fields apart into one large, unbalanced gap.
 .da-cf-clearance-fields {
   flex: 1;
   grid-template-columns: 1fr;
-  align-content: space-between;
+  align-content: center;
+  gap: 20px;
 }
 
 .da-cf-summary-card-value--empty {
   font-style: italic;
   color: var(--da-ink-faint);
+}
+
+// Clearance/Operation Details/Invoice row: same intermediate 2-col step as
+// .da-cf-ac-grid--3col above, so it doesn't stay squeezed at 3-up all the way down
+// to the 767px full collapse.
+@media (max-width: 991px) {
+  .da-cf-ops-grid--3col {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 // Both da-cf-ops-grid rows (Clearance/Operation Details/Invoice, and Link/Relatives)
