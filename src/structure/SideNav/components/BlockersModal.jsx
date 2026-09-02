@@ -265,12 +265,10 @@ const BlockersModal = ({ show, onClose }) => {
     }
   };
 
-  const blockerLimit = Number(cardBlockersPagination?.limit) || limit;
-  const hasMetaLastPage = Number(cardBlockersPagination?.last_page || 0) > 0;
-  const hasNextByMeta = hasMetaLastPage
-    ? currentPage < Number(cardBlockersPagination.last_page)
-    : true;
-  const hasNextPage = hasNextByMeta && cardBlockers.length === blockerLimit;
+  const hasKnownTotal = cardBlockersPagination?.total != null;
+  const hasNextPage = hasKnownTotal
+    ? currentPage * limit < Number(cardBlockersPagination.total)
+    : cardBlockers.length === limit;
 
   const handleSearchChange = (value) => {
     setSearchValue(value);

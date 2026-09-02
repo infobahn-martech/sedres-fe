@@ -257,9 +257,10 @@ const TypesModal = ({ show, onClose }) => {
     }
   };
 
-  const hasMetaLastPage = Number(cardTypesPagination?.last_page || 0) > 0;
-  const hasNextByMeta = hasMetaLastPage ? currentPage < Number(cardTypesPagination.last_page) : true;
-  const hasNextPage = hasNextByMeta && cardTypes.length === perPage;
+  const hasKnownTotal = cardTypesPagination?.total != null;
+  const hasNextPage = hasKnownTotal
+    ? currentPage * perPage < Number(cardTypesPagination.total)
+    : cardTypes.length === perPage;
 
   const handleSearchChange = (value) => {
     setSearchValue(value);

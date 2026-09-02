@@ -223,9 +223,10 @@ const TagsModal = ({ show, onClose }) => {
     }
   };
 
-  const hasMetaLastPage = Number(tagsPagination?.last_page || 0) > 0;
-  const hasNextByMeta = hasMetaLastPage ? currentPage < Number(tagsPagination.last_page) : true;
-  const hasNextPage = hasNextByMeta && tags.length === perPage;
+  const hasKnownTotal = tagsPagination?.total != null;
+  const hasNextPage = hasKnownTotal
+    ? currentPage * perPage < Number(tagsPagination.total)
+    : tags.length === perPage;
 
   const handleSearchChange = (value) => {
     setSearchValue(value);

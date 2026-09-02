@@ -265,12 +265,10 @@ const StickersModal = ({ show, onClose }) => {
     }
   };
 
-  const stickerLimit = Number(cardStickersPagination?.limit) || limit;
-  const hasMetaLastPage = Number(cardStickersPagination?.last_page || 0) > 0;
-  const hasNextByMeta = hasMetaLastPage
-    ? currentPage < Number(cardStickersPagination.last_page)
-    : true;
-  const hasNextPage = hasNextByMeta && cardStickers.length === stickerLimit;
+  const hasKnownTotal = cardStickersPagination?.total != null;
+  const hasNextPage = hasKnownTotal
+    ? currentPage * limit < Number(cardStickersPagination.total)
+    : cardStickers.length === limit;
 
   const handleSearchChange = (value) => {
     setSearchValue(value);
