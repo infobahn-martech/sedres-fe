@@ -1051,47 +1051,6 @@ RequiredDocumentsSection.propTypes = {
   large: PropTypes.bool,
 };
 
-// api/da/time_objects/{call_id} rows rendered directly — each row already carries its
-// own display label (time_object) and value (time_object_value), so unlike
-// RequiredDocumentsSection above there's no fixed key/label config to map against.
-function TimeObjectsSection({ timeObjects, isLoading }) {
-  return (
-    <div className="da-cf-required-docs da-cf-required-docs--standalone da-cf-required-docs--large">
-      <div className="da-cf-required-docs-header">
-        <h5 className="da-cf-required-docs-title">Time Objects</h5>
-      </div>
-      <div className="da-cf-required-docs-grid">
-        {isLoading && !timeObjects.length ? (
-          <span className="da-cf-required-doc-status">Loading…</span>
-        ) : timeObjects.length === 0 ? (
-          <span className="da-cf-required-doc-status da-cf-required-doc-status--pending">No time objects recorded yet.</span>
-        ) : (
-          timeObjects.map((obj) => (
-            <div className="da-cf-required-doc-card" key={obj.time_object_id ?? obj.field_key}>
-              <span className="da-cf-required-doc-icon"><Clock size={15} /></span>
-              <div className="da-cf-required-doc-body">
-                <span className="da-cf-required-doc-label">{obj.time_object}</span>
-                <span className="da-cf-required-doc-status">{formatApiDateTime(obj.time_object_value) || "Not set yet"}</span>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-TimeObjectsSection.propTypes = {
-  timeObjects: PropTypes.arrayOf(PropTypes.shape({
-    stage_id: PropTypes.string,
-    time_object_id: PropTypes.string,
-    time_object: PropTypes.string,
-    field_key: PropTypes.string,
-    time_object_value: PropTypes.string,
-  })).isRequired,
-  isLoading: PropTypes.bool,
-};
-
 // Operations completion is a plain date (no time) — a lighter formatter than
 // formatApiDateTime so the read-only card doesn't show a spurious "00:00".
 const formatDisplayDateOnly = (isoDate) => {
@@ -1781,11 +1740,6 @@ function DA({ card, formValues, daStatusRefreshToken, onAdvanceDaStage, isAdvanc
             );
           })}
         </div>
-
-        <TimeObjectsSection
-          timeObjects={timeObjects}
-          isLoading={isLoadingTimeObjects}
-        />
       </div>
     </div>
   );
