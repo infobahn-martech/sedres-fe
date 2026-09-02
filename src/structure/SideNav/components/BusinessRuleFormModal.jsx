@@ -6582,11 +6582,11 @@ function ShareWithModal({ show, onClose, permissions, onSave }) {
                 const perm = draftPermissions[user.user_id] ?? { viewer: false, editor: false };
                 return (
                   <div key={user.user_id} className="share-with-row">
-                    <span className="share-with-name">{user.name}</span>
-                    <span className="share-with-username">
+                    <span className="share-with-name">
                       <span className="share-with-avatar" aria-hidden>{getInitials(user.name)}</span>
-                      {user.username}
+                      {user.name}
                     </span>
+                    <span className="share-with-username">{user.username}</span>
                     <label className={`business-rule-form-toggle share-with-toggle${perm.editor ? ' business-rule-form-toggle--disabled' : ''}`}>
                       <input
                         type="checkbox"
@@ -12094,9 +12094,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         {(!isEditMode || activeTab === 'details') && (
           <footer className="business-rule-form-modal-footer">
             {saveError && <p className="text-danger mb-2">{saveError}</p>}
-            <p className="business-rule-form-footer-note">
-              <strong>Note:</strong> Due to their asynchronous nature, the business rules may sometimes run with a short delay. In rare cases it may take up to 30 minutes.
-            </p>
             <button
               type="button"
               className="business-rule-form-save-btn"

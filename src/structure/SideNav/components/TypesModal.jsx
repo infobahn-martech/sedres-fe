@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle, FiSearch } from 'react-icons/fi';
+import { FiX, FiPlus, FiMoreVertical, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import NewTypeModal from './NewTypeModal';
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
@@ -108,6 +108,7 @@ const TypesModal = ({ show, onClose }) => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDeleteTypeId, setSelectedDeleteTypeId] = useState(null);
+  const [selectedDeleteTypeLabel, setSelectedDeleteTypeLabel] = useState('');
   const [isDeletingType, setIsDeletingType] = useState(false);
 
   useEffect(() => {
@@ -131,13 +132,6 @@ const TypesModal = ({ show, onClose }) => {
     if (!show) return;
     fetchKanbanCardTypes({ search: debouncedSearch, page: currentPage, per_page: perPage });
   }, [show, debouncedSearch, currentPage, perPage, fetchKanbanCardTypes]);
-
-  useEffect(() => {
-    const serverPage = Number(cardTypesPagination?.current_page || 1);
-    if (serverPage !== currentPage) {
-      setCurrentPage(serverPage);
-    }
-  }, [cardTypesPagination?.current_page, currentPage]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -208,15 +202,17 @@ const TypesModal = ({ show, onClose }) => {
     }
   };
 
-  const handleDelete = (cardTypeId) => {
+  const handleDelete = (cardTypeId, cardTypeLabel) => {
     setOpenActionMenuId(null);
     setSelectedDeleteTypeId(String(cardTypeId));
+    setSelectedDeleteTypeLabel(cardTypeLabel ?? '');
     setShowDeleteModal(true);
   };
 
   const closeDeleteModal = () => {
     setShowDeleteModal(false);
     setSelectedDeleteTypeId(null);
+    setSelectedDeleteTypeLabel('');
   };
 
   const handleConfirmDelete = async () => {
@@ -257,10 +253,23 @@ const TypesModal = ({ show, onClose }) => {
     }
   };
 
-  const hasKnownTotal = cardTypesPagination?.total != null;
-  const hasNextPage = hasKnownTotal
-    ? currentPage * perPage < Number(cardTypesPagination.total)
-    : cardTypes.length === perPage;
+  // Some kanban_management list endpoints don't honor `per_page`/`page` and always
+  // return the full unpaginated result set. When that happens (more rows came back
+  // than we asked for), fall back to paginating the fetched list on the client.
+  const isBackendPaginated = cardTypes.length <= perPage;
+  const pageTypes = isBackendPaginated
+    ? cardTypes
+    : cardTypes.slice((currentPage - 1) * perPage, currentPage * perPage);
+  // `last_page` in the meta has proven unreliable on this endpoint, but `total` matches
+  // the real record count, so drive "is there a next page" off total vs. currentPage*limit
+  // instead of trusting last_page.
+  const metaTotal = Number(cardTypesPagination?.total);
+  const hasReliableTotal = Number.isFinite(metaTotal) && metaTotal > 0;
+  const hasNextPage = isBackendPaginated
+    ? (hasReliableTotal
+      ? currentPage * perPage < metaTotal
+      : cardTypes.length === perPage)
+    : currentPage * perPage < cardTypes.length;
 
   const handleSearchChange = (value) => {
     setSearchValue(value);
@@ -360,9 +369,6 @@ const TypesModal = ({ show, onClose }) => {
                 <th>
                   <div className="blockers-th-content">
                     <span>Availability level</span>
-                    <button type="button" className="blockers-th-info-btn">
-                      <FiInfo size={14} />
-                    </button>
                   </div>
                 </th>
                 <th>
@@ -382,7 +388,7 @@ const TypesModal = ({ show, onClose }) => {
                     Loading types…
                   </td>
                 </tr>
-              ) : cardTypes.length === 0 ? (
+              ) : pageTypes.length === 0 ? (
                 <tr>
                   <td
                     colSpan="5"
@@ -392,7 +398,7 @@ const TypesModal = ({ show, onClose }) => {
                   </td>
                 </tr>
               ) : (
-                cardTypes.map((row) => (
+                pageTypes.map((row) => (
                   <tr key={row.id}>
                     <td>
                       <TypeIconSwatch color_code={row.color_code} iconKey={row.icon} />
@@ -446,7 +452,7 @@ const TypesModal = ({ show, onClose }) => {
         </div>
         <div className="tags-modal-pagination">
           <span className="tags-modal-pagination-count">
-            {cardTypesPagination?.total != null
+            {isBackendPaginated && cardTypesPagination?.total != null
               ? `${cardTypesPagination.total} type${Number(cardTypesPagination.total) === 1 ? '' : 's'}`
               : `${cardTypes.length} type${cardTypes.length === 1 ? '' : 's'}`}
           </span>
@@ -484,7 +490,7 @@ const TypesModal = ({ show, onClose }) => {
           show={showDeleteModal}
           onCancel={closeDeleteModal}
           onConfirm={handleConfirmDelete}
-          deleteText="Delete this type? This cannot be undone."
+          deleteText={`Delete type "${selectedDeleteTypeLabel}"? This cannot be undone.`}
           isLoading={isDeletingType}
         />
       )}
@@ -532,7 +538,7 @@ const TypesModal = ({ show, onClose }) => {
                   <button
                     type="button"
                     className="blockers-action-menu-item blockers-action-menu-item-danger"
-                    onClick={() => handleDelete(activeRow.card_type_id ?? activeRow.id)}
+                    onClick={() => handleDelete(activeRow.card_type_id ?? activeRow.id, activeRow.label)}
                   >
                     Delete
                   </button>
