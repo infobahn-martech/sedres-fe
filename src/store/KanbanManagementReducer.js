@@ -207,7 +207,7 @@ const useKanbanManagementReducer = create((set, get) => ({
       const { data } = await kanbanManagementService.getAllKanbanTags({
         search,
         page,
-        per_page,
+        limit: per_page,
       });
       const raw =
         data?.status === 'success' && Array.isArray(data.tags) ? data.tags : [];
@@ -263,7 +263,7 @@ const useKanbanManagementReducer = create((set, get) => ({
       const { data } = await cardMangementService.getAllKanbanCardTypes({
         search,
         page,
-        per_page,
+        limit: per_page,
       });
       const raw =
         data?.status === 'success' && Array.isArray(data.card_types)
