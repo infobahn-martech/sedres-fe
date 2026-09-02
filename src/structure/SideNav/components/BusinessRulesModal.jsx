@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FiX, FiSearch, FiArrowLeft } from 'react-icons/fi';
+import { FiX, FiSearch, FiArrowLeft, FiMoreVertical } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import BusinessRuleIcon from './BusinessRuleIcon';
@@ -42,6 +42,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
   const [selectedRuleId, setSelectedRuleId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteRuleId, setDeleteRuleId] = useState(null);
+  const [deleteRuleName, setDeleteRuleName] = useState('');
   // Tracks the row last opened via Edit so it stays highlighted in the table after
   // the edit form modal closes — separate from selectedRuleId, which drives the
   // create-vs-update API call and gets cleared as soon as the form closes.
@@ -54,7 +55,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
   const {
     getBusinessRules, businessRules, businessRulesCount, isLoadingBusinessRules,
     triggerTypes, isLoadingGet, getTriggerTypes,
-    getBusinessRuleStats, businessRuleStats,
+    getBusinessRuleStats,
     createBusinessRule, isCreatingBusinessRule,
     updateBusinessRule, isUpdatingBusinessRule,
     deleteBusinessRule, isDeletingBusinessRule,
@@ -150,15 +151,16 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
     getBusinessRules({ params: { page, per_page: limit, search: searchValue || undefined, is_enabled: isEnabled } });
   };
 
-  const handleDelete = (ruleId) => {
+  const handleDelete = (ruleId, ruleName) => {
     setDeleteRuleId(ruleId);
+    setDeleteRuleName(ruleName ?? '');
     setShowDeleteModal(true);
   };
 
   const handleConfirmDelete = () => {
     deleteBusinessRule(deleteRuleId, {
       cb: () => { fetchBusinessRules(); getBusinessRuleStats(); },
-      onSettled: () => { setShowDeleteModal(false); setDeleteRuleId(null); },
+      onSettled: () => { setShowDeleteModal(false); setDeleteRuleId(null); setDeleteRuleName(''); },
     });
   };
 
@@ -241,7 +243,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
 
         <Modal.Body className="business-rules-modal-body">
           {view === 'table' ? (
-            <>
+            <div className="br-body-inner">
               <div className="br-table-toolbar">
                 <div className="br-table-toolbar-left">
                   <select
@@ -253,7 +255,9 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                     <option value="enabled">Enabled</option>
                     <option value="disabled">Disabled</option>
                   </select>
+                </div>
 
+                <div className="br-table-toolbar-right">
                   <div className="business-rules-search-wrapper br-table-search-wrap">
                     <FiSearch className="business-rules-search-icon" />
                     <input
@@ -264,31 +268,32 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                       onChange={(e) => { setSearchValue(e.target.value.trimStart()); setPage(1); }}
                     />
                   </div>
-                </div>
 
-                <button
-                  type="button"
-                  className="br-add-new-rule-btn"
-                  onClick={handleAddNewRule}
-                >
-                  Add new rule
-                </button>
+                  <button
+                    type="button"
+                    className="br-add-new-rule-btn"
+                    onClick={handleAddNewRule}
+                  >
+                    Add new rule
+                  </button>
+                </div>
               </div>
 
+              <div className="br-table-section">
               <div className="br-table-scroll">
                 <table className="br-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 44 }} />
-                      <th>ID</th>
-                      <th>NAME</th>
-                      <th>OWNER</th>
-                      <th>BOARD NAME</th>
-                      <th>EXECUTION ORDER</th>
-                      <th>TAGS</th>
-                      <th>SHARED WITH</th>
-                      <th>STATUS</th>
-                      <th style={{ width: 44 }} />
+                      <th style={{ width: 78 }} />
+                      <th style={{ width: 67 }}>ID</th>
+                      <th style={{ width: 290 }}>Name</th>
+                      <th style={{ width: 157 }}>Owner</th>
+                      <th style={{ width: 200 }}>Board name</th>
+                      <th style={{ width: 168 }}>Execution order</th>
+                      <th style={{ width: 100 }}>Tags</th>
+                      <th style={{ width: 179 }}>Shared with</th>
+                      <th style={{ width: 100 }}>Status</th>
+                      <th style={{ width: 56 }} />
                     </tr>
                   </thead>
                   <tbody>
@@ -339,6 +344,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                               <button
                                 type="button"
                                 className={`br-table-rule-name-btn${isMissingReference ? ' text-danger' : ''}`}
+                                title={name}
                                 onClick={() => { setSelectedRule(null); setSelectedRuleId(ruleId); setHighlightedRuleId(ruleId); setIsCopyMode(false); setShowFormModal(true); }}
                               >
                                 {name}
@@ -373,8 +379,8 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                               }
                             </td>
                             <td>{execOrder}</td>
-                            <td>{tags}</td>
-                            <td>{sharedWith}</td>
+                            <td title={tags}>{tags}</td>
+                            <td title={sharedWith}>{sharedWith}</td>
                             <td>
                               <span className={isMissingReference ? 'text-danger' : ''}>
                                 {statusText}
@@ -387,10 +393,11 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                                   type="button"
                                   data-bs-toggle="dropdown"
                                   aria-expanded="false"
+                                  aria-label="Action"
                                 >
-                                  &#8942;
+                                  <FiMoreVertical size={18} />
                                 </button>
-                                <ul className="dropdown-menu dropdown-menu-end">
+                                <ul className="dropdown-menu dropdown-menu-end br-table-action-menu">
                                   <li>
                                     <button
                                       className="dropdown-item"
@@ -414,7 +421,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                                     <button
                                       className="dropdown-item text-danger"
                                       type="button"
-                                      onClick={() => handleDelete(ruleId)}
+                                      onClick={() => handleDelete(ruleId, name)}
                                     >
                                       Delete
                                     </button>
@@ -429,32 +436,30 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                   </tbody>
                 </table>
               </div>
+              </div>
 
               <div className="br-table-pagination">
                 <div className="br-table-pagination-controls">
-                  <select
-                    className="br-table-page-select"
-                    value={page}
-                    onChange={(e) => setPage(Number(e.target.value))}
-                  >
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
                   <button
-                    className="br-table-page-btn"
                     type="button"
+                    className="br-table-pagination-btn"
+                    onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                    disabled={page <= 1}
+                  >
+                    Previous
+                  </button>
+                  <span className="br-table-pagination-page">Page {page}</span>
+                  <button
+                    type="button"
+                    className="br-table-pagination-btn"
                     onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
                     disabled={page >= totalPages}
                   >
-                    &gt;
+                    Next
                   </button>
                 </div>
-                <span className="br-table-count">
-                  Available business rules {businessRuleStats.available} / Created business rules {businessRuleStats.created} / Enabled business rules {businessRuleStats.enabled} / Visible business rules {businessRuleStats.visible}
-                </span>
               </div>
-            </>
+            </div>
           ) : (
             <>
             <div className="br-picker-container">
@@ -466,13 +471,6 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                   value={triggerSearch}
                   onChange={(e) => setTriggerSearch(e.target.value)}
                 />
-                <button
-                  type="button"
-                  className="br-picker-cancel-btn"
-                  onClick={handleBackToTable}
-                >
-                  Cancel
-                </button>
               </div>
 
               <div className="br-picker-grid-wrapper">
@@ -498,10 +496,6 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                   <div className="business-rules-empty-state">No rule types found</div>
                 )}
               </div>
-
-              <div className="br-picker-footer">
-                Available business rules {businessRuleStats.available} / Created business rules {businessRuleStats.created} / Enabled business rules {businessRuleStats.enabled} / Visible business rules {businessRuleStats.visible}
-              </div>
             </div>
             </>
           )}
@@ -523,8 +517,8 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
         <DeleteConfirmationModal
           show={showDeleteModal}
           isLoading={isDeletingBusinessRule}
-          deleteText="Are you sure you want to delete this business rule?"
-          onCancel={() => { setShowDeleteModal(false); setDeleteRuleId(null); }}
+          deleteText={`Delete business rule "${deleteRuleName}"? This cannot be undone.`}
+          onCancel={() => { setShowDeleteModal(false); setDeleteRuleId(null); setDeleteRuleName(''); }}
           onConfirm={handleConfirmDelete}
         />
       )}

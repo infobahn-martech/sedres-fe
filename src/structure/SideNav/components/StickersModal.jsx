@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle, FiSearch } from 'react-icons/fi';
+import { FiX, FiPlus, FiMoreVertical, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import NewStickerModal from './NewStickerModal';
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
@@ -116,6 +116,7 @@ const StickersModal = ({ show, onClose }) => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDeleteStickerId, setSelectedDeleteStickerId] = useState(null);
+  const [selectedDeleteStickerLabel, setSelectedDeleteStickerLabel] = useState('');
   const [isDeletingSticker, setIsDeletingSticker] = useState(false);
 
   useEffect(() => {
@@ -139,13 +140,6 @@ const StickersModal = ({ show, onClose }) => {
     if (!show) return;
     fetchKanbanCardStickers({ search: debouncedSearch, page: currentPage, limit });
   }, [show, debouncedSearch, currentPage, limit, fetchKanbanCardStickers]);
-
-  useEffect(() => {
-    const serverPage = Number(cardStickersPagination?.current_page || 1);
-    if (serverPage !== currentPage) {
-      setCurrentPage(serverPage);
-    }
-  }, [cardStickersPagination?.current_page, currentPage]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -216,15 +210,17 @@ const StickersModal = ({ show, onClose }) => {
     }
   };
 
-  const handleDelete = (stickerId) => {
+  const handleDelete = (stickerId, stickerLabel) => {
     setOpenActionMenuId(null);
     setSelectedDeleteStickerId(String(stickerId));
+    setSelectedDeleteStickerLabel(stickerLabel ?? '');
     setShowDeleteModal(true);
   };
 
   const closeDeleteModal = () => {
     setShowDeleteModal(false);
     setSelectedDeleteStickerId(null);
+    setSelectedDeleteStickerLabel('');
   };
 
   const handleConfirmDelete = async () => {
@@ -266,11 +262,23 @@ const StickersModal = ({ show, onClose }) => {
   };
 
   const stickerLimit = Number(cardStickersPagination?.limit) || limit;
-  const hasMetaLastPage = Number(cardStickersPagination?.last_page || 0) > 0;
-  const hasNextByMeta = hasMetaLastPage
-    ? currentPage < Number(cardStickersPagination.last_page)
-    : true;
-  const hasNextPage = hasNextByMeta && cardStickers.length === stickerLimit;
+  // Some kanban_management list endpoints don't honor `limit`/`page` and always return
+  // the full unpaginated result set. When that happens (more rows came back than we
+  // asked for), fall back to paginating the fetched list on the client.
+  const isBackendPaginated = cardStickers.length <= stickerLimit;
+  const pageStickers = isBackendPaginated
+    ? cardStickers
+    : cardStickers.slice((currentPage - 1) * stickerLimit, currentPage * stickerLimit);
+  // `last_page` in the meta has proven unreliable on this endpoint, but `total` matches
+  // the real record count, so drive "is there a next page" off total vs. currentPage*limit
+  // instead of trusting last_page.
+  const metaTotal = Number(cardStickersPagination?.total);
+  const hasReliableTotal = Number.isFinite(metaTotal) && metaTotal > 0;
+  const hasNextPage = isBackendPaginated
+    ? (hasReliableTotal
+      ? currentPage * stickerLimit < metaTotal
+      : cardStickers.length === stickerLimit)
+    : currentPage * stickerLimit < cardStickers.length;
 
   const handleSearchChange = (value) => {
     setSearchValue(value);
@@ -370,9 +378,6 @@ const StickersModal = ({ show, onClose }) => {
                 <th>
                   <div className="blockers-th-content">
                     <span>Availability level</span>
-                    <button type="button" className="blockers-th-info-btn">
-                      <FiInfo size={14} />
-                    </button>
                   </div>
                 </th>
                 <th>
@@ -392,7 +397,7 @@ const StickersModal = ({ show, onClose }) => {
                     Loading stickers…
                   </td>
                 </tr>
-              ) : cardStickers.length === 0 ? (
+              ) : pageStickers.length === 0 ? (
                 <tr>
                   <td
                     colSpan="5"
@@ -402,7 +407,7 @@ const StickersModal = ({ show, onClose }) => {
                   </td>
                 </tr>
               ) : (
-                cardStickers.map((row) => (
+                pageStickers.map((row) => (
                   <tr key={row.id}>
                     <td>
                       <StickerIconSwatch color_code={row.color_code} iconKey={row.icon} />
@@ -456,7 +461,7 @@ const StickersModal = ({ show, onClose }) => {
         </div>
         <div className="tags-modal-pagination">
           <span className="tags-modal-pagination-count">
-            {cardStickersPagination?.total != null
+            {isBackendPaginated && cardStickersPagination?.total != null
               ? `${cardStickersPagination.total} sticker${Number(cardStickersPagination.total) === 1 ? '' : 's'}`
               : `${cardStickers.length} sticker${cardStickers.length === 1 ? '' : 's'}`}
           </span>
@@ -494,7 +499,7 @@ const StickersModal = ({ show, onClose }) => {
           show={showDeleteModal}
           onCancel={closeDeleteModal}
           onConfirm={handleConfirmDelete}
-          deleteText="Delete this sticker? This cannot be undone."
+          deleteText={`Delete sticker "${selectedDeleteStickerLabel}"? This cannot be undone.`}
           isLoading={isDeletingSticker}
         />
       )}
@@ -542,7 +547,7 @@ const StickersModal = ({ show, onClose }) => {
                   <button
                     type="button"
                     className="blockers-action-menu-item blockers-action-menu-item-danger"
-                    onClick={() => handleDelete(activeRow.sticker_id ?? activeRow.id)}
+                    onClick={() => handleDelete(activeRow.sticker_id ?? activeRow.id, activeRow.label)}
                   >
                     Delete
                   </button>

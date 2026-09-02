@@ -2,8 +2,8 @@
 
 .business-rules-modal {
   .modal-dialog {
-    width: 90vw;
-    max-width: 1200px;
+    width: 94vw;
+    max-width: 1440px;
     margin: 1.5rem auto;
     max-height: calc(100vh - 3rem);
 
@@ -103,6 +103,31 @@
   flex-direction: column;
 }
 
+// Table view layout — flat, borderless: no card/panel chrome anywhere. The
+// toolbar, table, and pagination footer all sit directly on the modal body;
+// only the thin row-divider lines (see .br-table below) provide structure.
+.br-body-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+.br-table-section {
+  background: var(--surface-primary);
+  display: flex;
+  flex-direction: column;
+  // Hard fixed height (matches the picker view's .br-picker-container fix below) —
+  // keeps the modal from growing/shrinking as search/filter results change the row
+  // count (including the "No business rules found" empty state). Sized to fit the
+  // header row + a full page of 10 rows with no inner scrollbar.
+  height: 500px;
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
 .business-rules-search-section {
   padding: 24px 40px;
   border-bottom: 1px solid var(--border-primary);
@@ -120,15 +145,16 @@
   display: flex;
   flex-direction: column;
   background: var(--surface-primary);
-  flex: 1;
-  min-height: 0;
+  // Hard fixed height (not min-height/flex-grow) — guarantees the picker
+  // modal never resizes while typing a search, regardless of result count.
+  height: 520px;
+  flex: 0 0 auto;
   overflow: hidden;
 }
 
 .br-picker-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 16px 20px 0 20px;
 }
 
@@ -151,34 +177,14 @@
   }
 }
 
-.br-picker-cancel-btn {
-  background: transparent;
-  border: none;
-  color: #0056b3;
-  font: normal normal 500 13px/1.5 $font-primary;
-  cursor: pointer;
-  padding: 0;
-  
-  &:hover {
-    text-decoration: underline;
-    color: #00368c;
-  }
-}
-
 .br-picker-grid-wrapper {
   padding: 20px;
   overflow-y: auto;
-}
-
-.br-picker-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 10px 20px;
-  border-top: 1px solid var(--border-primary);
-  background: var(--surface-primary);
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+  // Fills the remaining space inside .br-picker-container's fixed height, so
+  // typing a search that filters down (or to zero) results never changes the
+  // modal's overall size — it just scrolls/re-centers within a stable box.
+  flex: 1;
+  min-height: 0;
 }
 
 .br-picker-grid {
@@ -269,7 +275,7 @@
 
 .business-rules-search-icon {
   position: absolute;
-  left: 14px;
+  left: 16px;
   color: var(--text-muted);
   width: 18px;
   height: 18px;
@@ -279,9 +285,9 @@
 
 .business-rules-search-input {
   width: 100%;
-  padding: 13px 16px 13px 44px;
+  padding: 9px 16px 9px 40px;
   border: 1px solid var(--border-primary);
-  border-radius: 8px;
+  border-radius: 999px;
   font: normal normal 400 14px/1.5 $font-primary;
   color: $txtColor;
   background: var(--surface-primary);
@@ -393,6 +399,10 @@
 }
 
 .business-rules-empty-state {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 48px 28px;
   text-align: center;
   font: normal normal 400 14px/1.5 $font-primary;
@@ -430,17 +440,26 @@
 }
 
 .br-add-new-rule-btn {
-  background: none;
+  background: var(--color-primary);
   border: none;
-  color: #2563eb;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
   white-space: nowrap;
-  padding: 0;
+  padding: 10px 20px;
   cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 54, 140, 0.28);
+  transition: all 0.2s ease;
 
   &:hover {
-    text-decoration: underline;
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 54, 140, 0.34);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }
 
@@ -450,7 +469,6 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 24px;
-  border-bottom: 1px solid var(--border-primary);
   background: var(--surface-primary);
   gap: 12px;
 
@@ -458,7 +476,6 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    flex: 1;
 
     .br-table-filter-btn {
       background-color: #2563eb;
@@ -472,7 +489,27 @@
     .br-table-status-select {
       width: auto;
       flex-shrink: 0;
+      height: 38px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-primary);
+      font-size: 14px;
+      color: var(--text-primary);
+      background-color: var(--surface-primary);
+
+      &:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(0, 54, 140, 0.08);
+      }
     }
+  }
+
+  .br-table-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    justify-content: flex-end;
 
     .br-table-search-wrap {
       flex: 1;
@@ -482,39 +519,87 @@
 }
 
 .br-table-scroll {
-  overflow-x: auto;
+  // Columns are sized (table-layout: fixed, explicit widths below) to fit within
+  // the modal, so no horizontal scrollbar is shown.
+  overflow-x: hidden;
+  // Fills .br-table-section's fixed height and scrolls vertically only if a
+  // page's rows ever exceed it (they shouldn't, at 10 rows/page), instead of
+  // growing the section (and modal) taller.
+  height: 100%;
+  overflow-y: auto;
 }
 
 .br-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.85rem;
 
+  th, td {
+    box-sizing: border-box;
+  }
+
+  th,
+  td:not(:first-child):not(:last-child) {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  // Action column (kebab -> Bootstrap dropdown-menu) must stay visible — it's
+  // positioned absolute relative to the cell and would get clipped by
+  // overflow:hidden, reintroducing the dropdown-clipping bug fixed elsewhere
+  // in these Card Management-style tables.
+  td:last-child {
+    overflow: visible;
+  }
+
+  // Board name (5th column): wrap onto multiple lines for rules with several
+  // boards instead of truncating with an ellipsis, per reference design.
+  td:nth-child(5) {
+    overflow: visible;
+    white-space: normal;
+    text-overflow: clip;
+  }
+
   thead tr {
     background: var(--surface-primary);
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 2px solid var(--border-primary);
 
     th {
-      padding: 10px 14px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      padding: 13px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: 0.3px;
       white-space: nowrap;
+      font-family: 'Manrope', sans-serif;
     }
   }
 
   tbody tr {
     border-bottom: 1px solid var(--border-primary);
+    transition: background-color 0.2s ease;
 
     &:last-child { border-bottom: none; }
-    &:hover { background: #f9fafb; }
+    &:hover { background: var(--hover-bg); }
 
     td {
-      padding: 10px 14px;
+      padding: 12px 16px;
       color: var(--text-primary);
       vertical-align: middle;
+    }
+
+    // Toggle-switch and ID columns are narrow/fixed-width — tighter padding gives
+    // the switch control room without needing to widen the column further, and
+    // keeps the ID number from crowding against it.
+    td:first-child {
+      padding: 12px 8px;
+      text-align: center;
+    }
+
+    td:nth-child(2) {
+      padding: 12px 10px;
     }
   }
 
@@ -530,6 +615,16 @@
   // Restores the pill-shaped switch look for the enabled/disabled column: a global
   // rule in form-designs.scss collapses every .form-check .form-check-input to a
   // 15x15 plain circle, which also flattens Bootstrap's .form-switch track/knob here.
+  //
+  // .form-check.form-switch also ships a 2.5em padding-left meant to be offset by a
+  // matching negative margin on the input (Bootstrap's label-spacing trick) — since
+  // that margin is zeroed below, the padding was pushing the switch ~34px past the
+  // cell's own edge and into the ID column. Zero it here so the switch sits flush.
+  .form-check.form-switch {
+    padding-left: 0;
+    display: inline-flex;
+  }
+
   .form-check.form-switch .form-check-input {
     width: 2.25em !important;
     height: 1.25em !important;
@@ -555,6 +650,16 @@
   font-weight: 500;
 }
 
+// TAGS / SHARED WITH are free-text columns that can otherwise wrap to multiple
+// lines and blow out row height inconsistently across rows — truncate instead.
+.br-table tbody td:nth-child(7),
+.br-table tbody td:nth-child(8) {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .br-table-rule-name {
   color: #1d4ed8;
   text-decoration: underline;
@@ -564,6 +669,10 @@
 
 .br-table-rule-name-btn {
   display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   background: none;
   border: none;
   margin: 0;
@@ -576,7 +685,7 @@
   font-family: inherit;
   line-height: inherit;
   text-align: left;
-  vertical-align: baseline;
+  vertical-align: middle;
 }
 
 .br-table-owner {
@@ -635,17 +744,48 @@
   background: none;
   border: none;
   color: var(--text-secondary);
-  font-size: 1.2rem;
-  padding: 2px 8px;
+  padding: 4px 8px;
   cursor: pointer;
   line-height: 1;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 
-  &:hover { color: #111827; }
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+}
+
+.br-table-action-menu {
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+  overflow: hidden;
+  padding: 0;
+  min-width: 140px;
+
+  .dropdown-item {
+    padding: 10px 16px;
+    font-size: 14px;
+    font-family: 'Manrope', sans-serif;
+
+    &.text-danger:hover {
+      background: #fee2e2;
+      color: #dc2626 !important;
+    }
+  }
 }
 
 .br-table-state {
   text-align: center;
-  padding: 48px 0;
+  vertical-align: middle;
+  // Fills the remaining space in .br-table-section's fixed 500px height (minus
+  // the ~44px header row) so "Loading..." / "No business rules found" sits
+  // centered in the box instead of pinned near the top.
+  height: 440px;
   color: var(--text-muted);
   font-size: 0.9rem;
 }
@@ -653,37 +793,55 @@
 .br-table-pagination {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 24px;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 14px 24px;
   border-top: 1px solid var(--border-primary);
   background: var(--surface-primary);
-  font-size: 0.8rem;
-  color: var(--text-secondary);
 
   .br-table-pagination-controls {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    flex-shrink: 0;
+  }
 
-    .br-table-page-select {
-      width: 60px;
-      padding: 3px 6px;
-      font-size: 0.8rem;
-      border: 1px solid var(--border-primary);
-      border-radius: 4px;
-    }
+  .br-table-pagination-btn {
+    height: 32px;
+    padding: 0 14px;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--surface-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 
-    .br-table-page-btn {
-      background: none;
-      border: none;
+    &:hover:not(:disabled) {
+      border-color: var(--color-primary);
       color: var(--text-primary);
-      font-size: 0.875rem;
-      padding: 2px 6px;
-      cursor: pointer;
-
-      &:hover { color: #2563eb; }
-      &:disabled { color: var(--border-secondary); cursor: default; }
     }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  }
+
+  .br-table-pagination-page {
+    height: 32px;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: var(--color-primary);
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
   }
 }
 
@@ -2709,7 +2867,7 @@ body .modal.business-rule-form-modal.show {
 .business-rule-form-modal-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 20px;
   padding: 18px 32px;
   border-top: 1px solid var(--border-primary);
@@ -2723,18 +2881,6 @@ body .modal.business-rule-form-modal.show {
     flex-direction: column;
     align-items: stretch;
     padding: 16px 20px;
-  }
-}
-
-.business-rule-form-footer-note {
-  margin: 0;
-  font: normal normal 400 13px/1.5 $font-primary;
-  color: var(--text-secondary);
-  max-width: 640px;
-
-  strong {
-    color: var(--text-primary);
-    font-weight: 600;
   }
 }
 
@@ -3205,7 +3351,7 @@ body .modal.card-property-match-modal.show {
   }
 }
 
-.share-with-username {
+.share-with-name {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -5342,14 +5488,6 @@ body.app-dark-mode {
   .business-rule-form-modal-body {
     background: #0c0f14;
     color: #e4e4e7;
-  }
-
-  .business-rule-form-footer-note {
-    color: var(--text-muted);
-
-    strong {
-      color: #e4e4e7;
-    }
   }
 
   .business-rule-form-modal-close {

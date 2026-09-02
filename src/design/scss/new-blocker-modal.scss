@@ -439,21 +439,22 @@
 
   .new-blocker-save-btn {
     padding: 10px 24px;
-    background: linear-gradient(135deg, #101d33 0%, #24365a 100%);
+    background: var(--color-primary);
     color: var(--text-inverse);
     border: none;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(16, 29, 51, 0.28);
+    box-shadow: 0 4px 12px rgba(0, 54, 140, 0.28);
     transition: all 0.2s ease;
     font-family: 'Manrope', sans-serif;
 
     &:hover {
-      background: linear-gradient(135deg, #0a1626 0%, #1a2a47 100%);
+      background: var(--color-primary);
+      opacity: 0.9;
       transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(16, 29, 51, 0.34), 0 0 0 3px rgba(201, 162, 39, 0.22);
+      box-shadow: 0 6px 16px rgba(0, 54, 140, 0.34);
     }
 
     &:active {
