@@ -212,15 +212,17 @@ const useKanbanManagementReducer = create((set, get) => ({
       const raw =
         data?.status === 'success' && Array.isArray(data.tags) ? data.tags : [];
       const responseMeta = data?.meta ?? data?.pagination ?? {};
-      const resolvedPerPage = Number(responseMeta?.per_page) || Number(per_page) || 10;
-      const resolvedCurrentPage = Number(responseMeta?.current_page) || Number(page) || 1;
+      const resolvedPerPage =
+        Number(responseMeta?.per_page ?? responseMeta?.limit) || Number(per_page) || 10;
+      const resolvedCurrentPage =
+        Number(responseMeta?.current_page ?? responseMeta?.page) || Number(page) || 1;
       const resolvedTotal =
         Number(responseMeta?.total) ||
         (raw.length < resolvedPerPage
           ? ((Math.max(resolvedCurrentPage, 1) - 1) * resolvedPerPage) + raw.length
           : (Math.max(resolvedCurrentPage, 1) * resolvedPerPage) + 1);
       const resolvedLastPage =
-        Number(responseMeta?.last_page) ||
+        Number(responseMeta?.last_page ?? responseMeta?.total_pages) ||
         (raw.length < resolvedPerPage ? resolvedCurrentPage : resolvedCurrentPage + 1);
       set({
         tags: raw.map(normalizeKanbanTagRowFromApi),
@@ -335,14 +337,15 @@ const useKanbanManagementReducer = create((set, get) => ({
         Number(responseMeta?.per_page) ||
         Number(limit) ||
         10;
-      const resolvedCurrentPage = Number(responseMeta?.current_page) || Number(page) || 1;
+      const resolvedCurrentPage =
+        Number(responseMeta?.current_page ?? responseMeta?.page) || Number(page) || 1;
       const resolvedTotal =
         Number(responseMeta?.total) ||
         (raw.length < resolvedLimit
           ? ((Math.max(resolvedCurrentPage, 1) - 1) * resolvedLimit) + raw.length
           : Math.max(resolvedCurrentPage, 1) * resolvedLimit + 1);
       const resolvedLastPage =
-        Number(responseMeta?.last_page) ||
+        Number(responseMeta?.last_page ?? responseMeta?.total_pages) ||
         (raw.length < resolvedLimit ? resolvedCurrentPage : resolvedCurrentPage + 1);
       set({
         cardStickers: raw.map(normalizeKanbanCardStickerRowFromApi),
@@ -401,14 +404,15 @@ const useKanbanManagementReducer = create((set, get) => ({
         Number(responseMeta?.per_page) ||
         Number(limit) ||
         10;
-      const resolvedCurrentPage = Number(responseMeta?.current_page) || Number(page) || 1;
+      const resolvedCurrentPage =
+        Number(responseMeta?.current_page ?? responseMeta?.page) || Number(page) || 1;
       const resolvedTotal =
         Number(responseMeta?.total) ||
         (raw.length < resolvedLimit
           ? ((Math.max(resolvedCurrentPage, 1) - 1) * resolvedLimit) + raw.length
           : Math.max(resolvedCurrentPage, 1) * resolvedLimit + 1);
       const resolvedLastPage =
-        Number(responseMeta?.last_page) ||
+        Number(responseMeta?.last_page ?? responseMeta?.total_pages) ||
         (raw.length < resolvedLimit ? resolvedCurrentPage : resolvedCurrentPage + 1);
       set({
         cardBlockers: raw.map(normalizeKanbanCardBlockerRowFromApi),

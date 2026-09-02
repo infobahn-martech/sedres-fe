@@ -231,31 +231,12 @@
   }
 
   .blockers-table-wrapper {
-    max-height: 440px;
-    overflow-y: auto;
+    overflow: visible;
     padding: 0;
 
     /** Tags modal only: keep body area tall enough for a handful of rows without dummy rows */
     &.blockers-table-wrapper--tags-min-body {
       min-height: 320px;
-      max-height: 440px;
-    }
-
-    &::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: var(--surface-primary);
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: #d0d0d7;
-      border-radius: 4px;
-
-      &:hover {
-        background: #b0b0b7;
-      }
     }
   }
 
