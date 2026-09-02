@@ -16,12 +16,6 @@
   }
 
   .modal-content {
-    max-height: calc(100vh - 3rem);
-    display: flex;
-    flex-direction: column;
-  }
-
-  .modal-content {
     border: none;
     border-radius: 16px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -30,6 +24,11 @@
     max-height: calc(100vh - 3rem);
     display: flex;
     flex-direction: column;
+    align-items: stretch;
+    position: relative;
+    padding: 0;
+    margin: 0;
+    width: 100%;
   }
 
 }
@@ -42,9 +41,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  align-self: stretch;
+  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
   padding: 28px 40px 24px;
-  border-bottom: 1px solid var(--border-primary);
-  background: var(--surface-primary);
+  border-bottom: none;
+  background: #00368c;
 
   @media ($sm-767) {
     padding: 20px 24px 16px;
@@ -53,7 +57,7 @@
 
 .business-rules-modal-title {
   font: normal normal 600 24px/1.3 $font-primary;
-  color: $colorPrimary;
+  color: #ffffff;
   margin: 0;
   letter-spacing: -0.02em;
 
@@ -66,25 +70,25 @@
   width: 32px;
   height: 32px;
   border: none;
-  background: var(--bg-secondary);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.85);
   transition: all 0.2s ease;
   flex-shrink: 0;
   padding: 0;
 
   &:hover {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
     transform: rotate(90deg);
   }
 
   &:focus {
-    outline: 2px solid rgba(0, 54, 140, 0.3);
+    outline: 2px solid rgba(255, 255, 255, 0.4);
     outline-offset: 2px;
   }
 }
@@ -406,7 +410,7 @@
   gap: 10px;
 
   .br-modal-back-btn {
-    background: var(--bg-secondary);
+    background: rgba(255, 255, 255, 0.08);
     border: none;
     border-radius: 50%;
     width: 32px;
@@ -414,13 +418,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-primary);
+    color: #ffffff;
     cursor: pointer;
     flex-shrink: 0;
     padding: 0;
 
     &:hover {
-      background: var(--bg-secondary);
+      background: rgba(255, 255, 255, 0.16);
     }
   }
 }
@@ -751,10 +755,14 @@ body .modal.business-rule-form-modal.show {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  align-self: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
   padding: 24px 32px 20px;
-  border-bottom: 1px solid var(--border-primary);
+  border-bottom: none;
   flex-shrink: 0;
-  background: var(--surface-primary);
+  background: #00368c;
 
   @media ($sm-767) {
     padding: 20px 20px 16px;
@@ -763,34 +771,37 @@ body .modal.business-rule-form-modal.show {
 
 .business-rule-form-modal-title {
   font: normal normal 600 22px/1.3 $font-primary;
-  color: $colorPrimary;
+  color: #ffffff;
   margin: 0;
   letter-spacing: -0.02em;
 }
 
+// All headers that use this close button (business-rule-form-modal-header +
+// card-property-match-modal-header) are navy now, so it's styled white-on-navy
+// as its base look rather than scoped per-header.
 .business-rule-form-modal-close {
   width: 32px;
   height: 32px;
   border: none;
-  background: var(--bg-secondary);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.85);
   transition: all 0.2s ease;
   flex-shrink: 0;
   padding: 0;
 
   &:hover {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
     transform: rotate(90deg);
   }
 
   &:focus-visible {
-    outline: 2px solid rgba(0, 54, 140, 0.35);
+    outline: 2px solid rgba(255, 255, 255, 0.4);
     outline-offset: 2px;
   }
 }
@@ -2789,15 +2800,19 @@ body .modal.card-property-match-modal.show {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  align-self: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
   padding: 22px 28px 16px;
-  border-bottom: 1px solid var(--border-primary);
+  border-bottom: none;
   flex-shrink: 0;
-  background: var(--surface-primary);
+  background: #00368c;
 }
 
 .card-property-match-modal-title {
   font: normal normal 600 20px/1.3 $font-primary;
-  color: $colorPrimary;
+  color: #ffffff;
   margin: 0;
   letter-spacing: -0.02em;
 }
@@ -3094,8 +3109,8 @@ body .modal.card-property-match-modal.show {
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 44px;
-  padding: 0 14px;
+  height: 46px;
+  padding: 10px 18px;
   border: 1px solid var(--border-primary);
   border-radius: 10px;
   background: var(--surface-primary);
@@ -4819,20 +4834,20 @@ $br-card-preview-accent: #1F9D6E;
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--surface-primary);
-  border: 1px solid var(--border-primary);
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: none;
   z-index: 10;
   padding: 0;
 
   &:hover {
-    background: var(--surface-primary);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
   }
 }
 
@@ -5317,14 +5332,11 @@ body.app-dark-mode {
     background: #18181b;
   }
 
-  .business-rule-form-modal-header,
+  // Header stays navy (#00368c) in dark mode too, matching the Blockers/Tags/
+  // Types/Stickers list + form modal headers, which are never theme-swapped.
   .business-rule-form-modal-footer {
     background: #18181b;
     border-color: rgba(255, 255, 255, 0.08);
-  }
-
-  .business-rule-form-modal-title {
-    color: #fafafa;
   }
 
   .business-rule-form-modal-body {
@@ -5361,29 +5373,15 @@ body.app-dark-mode {
     background: #18181b;
   }
 
-  .card-property-match-modal-header,
+  // Header stays navy (#00368c) in dark mode too, matching the Blockers/Tags/
+  // Types/Stickers list + form modal headers, which are never theme-swapped.
   .card-property-match-modal-footer {
     background: #18181b;
     border-color: rgba(255, 255, 255, 0.08);
   }
 
-  .card-property-match-modal-title {
-    color: #fafafa;
-  }
-
   .card-property-match-modal-body {
     color: #e4e4e7;
-  }
-
-  .br-floating-modal-close {
-    background: #27272a;
-    border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-muted);
-
-    &:hover {
-      background: #3f3f46;
-      color: #fafafa;
-    }
   }
 
   // Remove-parameter cancel confirm dialog

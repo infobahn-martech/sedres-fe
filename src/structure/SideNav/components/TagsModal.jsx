@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import NewTagModal, { normalizeTagAvailabilityLevel } from './NewTagModal';
+import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
 import useKanbanManagementReducer, {
   isKanbanManagementRowDisabled,
 } from '../../../store/KanbanManagementReducer';
@@ -22,6 +24,21 @@ const availabilityDotClass = (level) => {
   if (normalized === 'auto') return 'is-auto';
   return '';
 };
+
+const ACTION_MENU_GAP = 4;
+const ACTION_MENU_MIN_HEIGHT = 150;
+const ACTION_MENU_PORTAL_Z = 10700;
+
+function computeActionMenuPlacement(rect) {
+  const spaceBelow = window.innerHeight - rect.bottom - ACTION_MENU_GAP;
+  const spaceAbove = rect.top - ACTION_MENU_GAP;
+  const openUp = spaceBelow < ACTION_MENU_MIN_HEIGHT && spaceAbove > spaceBelow;
+  return {
+    right: window.innerWidth - rect.right,
+    top: openUp ? undefined : rect.bottom + ACTION_MENU_GAP,
+    bottom: openUp ? window.innerHeight - rect.top + ACTION_MENU_GAP : undefined,
+  };
+}
 
 const TagsModal = ({ show, onClose }) => {
   const tags = useKanbanManagementReducer((s) => s.tags);
@@ -49,7 +66,13 @@ const TagsModal = ({ show, onClose }) => {
   const [editingTag, setEditingTag] = useState(null);
 
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
+  const [actionMenuPlacement, setActionMenuPlacement] = useState({ top: 0, right: 0 });
   const actionMenuRefs = useRef({});
+  const actionMenuPortalRef = useRef(null);
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedDeleteTagId, setSelectedDeleteTagId] = useState(null);
+  const [isDeletingTag, setIsDeletingTag] = useState(false);
 
   useEffect(() => {
     if (!show) {
@@ -84,9 +107,10 @@ const TagsModal = ({ show, onClose }) => {
     const handleClickOutside = (event) => {
       if (openActionMenuId !== null) {
         const menuRef = actionMenuRefs.current[openActionMenuId];
-        if (menuRef && !menuRef.contains(event.target)) {
-          setOpenActionMenuId(null);
-        }
+        const t = event.target;
+        if (menuRef?.contains(t)) return;
+        if (actionMenuPortalRef.current?.contains(t)) return;
+        setOpenActionMenuId(null);
       }
     };
 
@@ -101,7 +125,12 @@ const TagsModal = ({ show, onClose }) => {
   const handleActionMenuToggle = (tagId, event) => {
     event.stopPropagation();
     const id = String(tagId);
-    setOpenActionMenuId(openActionMenuId === id ? null : id);
+    if (openActionMenuId === id) {
+      setOpenActionMenuId(null);
+      return;
+    }
+    setActionMenuPlacement(computeActionMenuPlacement(event.currentTarget.getBoundingClientRect()));
+    setOpenActionMenuId(id);
   };
 
   const refreshParams = () => ({
@@ -143,22 +172,27 @@ const TagsModal = ({ show, onClose }) => {
   };
 
   const handleDelete = (tagId) => {
-    const id = String(tagId);
     setOpenActionMenuId(null);
-    if (
-      !window.confirm(
-        'Delete this tag? This cannot be undone.'
-      )
-    ) {
-      return;
+    setSelectedDeleteTagId(String(tagId));
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setSelectedDeleteTagId(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedDeleteTagId) return;
+    setIsDeletingTag(true);
+    try {
+      await deleteKanbanTagRecord(selectedDeleteTagId, refreshParams());
+    } catch {
+      /* AlertReducer in store */
+    } finally {
+      setIsDeletingTag(false);
+      closeDeleteModal();
     }
-    (async () => {
-      try {
-        await deleteKanbanTagRecord(id, refreshParams());
-      } catch {
-        /* AlertReducer in store */
-      }
-    })();
   };
 
   const handleAddTag = () => {
@@ -362,43 +396,6 @@ const TagsModal = ({ show, onClose }) => {
                         >
                           <FiMoreVertical size={18} />
                         </button>
-                        {openActionMenuId === String(tag.id) && (
-                          <div className="blockers-action-menu">
-                            {isKanbanManagementRowDisabled(tag.status) ? (
-                              <button
-                                type="button"
-                                className="blockers-action-menu-item"
-                                onClick={() => handleEnable(tag.id)}
-                              >
-                                Enable
-                              </button>
-                            ) : (
-                              <>
-                                <button
-                                  type="button"
-                                  className="blockers-action-menu-item"
-                                  onClick={() => handleEdit(tag)}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  type="button"
-                                  className="blockers-action-menu-item"
-                                  onClick={() => handleDisable(tag.id)}
-                                >
-                                  Disable
-                                </button>
-                                <button
-                                  type="button"
-                                  className="blockers-action-menu-item blockers-action-menu-item-danger"
-                                  onClick={() => handleDelete(tag.id)}
-                                >
-                                  Delete
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -442,6 +439,69 @@ const TagsModal = ({ show, onClose }) => {
         workspaceBoardsLoading={workspaceBoardsLoading}
         onSave={handleTagFormSave}
       />
+      {!!showDeleteModal && (
+        <DeleteConfirmationModal
+          show={showDeleteModal}
+          onCancel={closeDeleteModal}
+          onConfirm={handleConfirmDelete}
+          deleteText="Delete this tag? This cannot be undone."
+          isLoading={isDeletingTag}
+        />
+      )}
+
+      {openActionMenuId !== null &&
+        (() => {
+          const activeTag = tags.find((t) => String(t.id) === openActionMenuId);
+          if (!activeTag) return null;
+          return createPortal(
+            <div
+              className="blockers-action-menu"
+              ref={actionMenuPortalRef}
+              style={{
+                position: 'fixed',
+                top: actionMenuPlacement.top,
+                bottom: actionMenuPlacement.bottom,
+                right: actionMenuPlacement.right,
+                zIndex: ACTION_MENU_PORTAL_Z,
+              }}
+            >
+              {isKanbanManagementRowDisabled(activeTag.status) ? (
+                <button
+                  type="button"
+                  className="blockers-action-menu-item"
+                  onClick={() => handleEnable(activeTag.id)}
+                >
+                  Enable
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="blockers-action-menu-item"
+                    onClick={() => handleEdit(activeTag)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="blockers-action-menu-item"
+                    onClick={() => handleDisable(activeTag.id)}
+                  >
+                    Disable
+                  </button>
+                  <button
+                    type="button"
+                    className="blockers-action-menu-item blockers-action-menu-item-danger"
+                    onClick={() => handleDelete(activeTag.id)}
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>,
+            document.body
+          );
+        })()}
     </Modal>
   );
 };

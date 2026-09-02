@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FiX, FiPlus, FiMoreVertical, FiInfo, FiAlertCircle, FiSearch } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import NewTypeModal from './NewTypeModal';
+import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
 import DynamicIcon from './DynamicIcon';
 import useKanbanManagementReducer, {
   isKanbanManagementRowDisabled,
@@ -59,6 +61,21 @@ const availabilityDotClass = (level) => {
   return '';
 };
 
+const ACTION_MENU_GAP = 4;
+const ACTION_MENU_MIN_HEIGHT = 150;
+const ACTION_MENU_PORTAL_Z = 10700;
+
+function computeActionMenuPlacement(rect) {
+  const spaceBelow = window.innerHeight - rect.bottom - ACTION_MENU_GAP;
+  const spaceAbove = rect.top - ACTION_MENU_GAP;
+  const openUp = spaceBelow < ACTION_MENU_MIN_HEIGHT && spaceAbove > spaceBelow;
+  return {
+    right: window.innerWidth - rect.right,
+    top: openUp ? undefined : rect.bottom + ACTION_MENU_GAP,
+    bottom: openUp ? window.innerHeight - rect.top + ACTION_MENU_GAP : undefined,
+  };
+}
+
 const TypesModal = ({ show, onClose }) => {
   const cardTypes = useKanbanManagementReducer((s) => s.cardTypes);
   const cardTypesLoading = useKanbanManagementReducer((s) => s.cardTypesLoading);
@@ -85,7 +102,13 @@ const TypesModal = ({ show, onClose }) => {
   const [editingType, setEditingType] = useState(null);
 
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
+  const [actionMenuPlacement, setActionMenuPlacement] = useState({ top: 0, right: 0 });
   const actionMenuRefs = useRef({});
+  const actionMenuPortalRef = useRef(null);
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedDeleteTypeId, setSelectedDeleteTypeId] = useState(null);
+  const [isDeletingType, setIsDeletingType] = useState(false);
 
   useEffect(() => {
     if (!show) {
@@ -120,9 +143,10 @@ const TypesModal = ({ show, onClose }) => {
     const handleClickOutside = (event) => {
       if (openActionMenuId !== null) {
         const menuRef = actionMenuRefs.current[openActionMenuId];
-        if (menuRef && !menuRef.contains(event.target)) {
-          setOpenActionMenuId(null);
-        }
+        const t = event.target;
+        if (menuRef?.contains(t)) return;
+        if (actionMenuPortalRef.current?.contains(t)) return;
+        setOpenActionMenuId(null);
       }
     };
 
@@ -137,7 +161,12 @@ const TypesModal = ({ show, onClose }) => {
   const handleActionMenuToggle = (typeId, event) => {
     event.stopPropagation();
     const id = String(typeId);
-    setOpenActionMenuId(openActionMenuId === id ? null : id);
+    if (openActionMenuId === id) {
+      setOpenActionMenuId(null);
+      return;
+    }
+    setActionMenuPlacement(computeActionMenuPlacement(event.currentTarget.getBoundingClientRect()));
+    setOpenActionMenuId(id);
   };
 
   const refreshParams = () => ({
@@ -180,18 +209,27 @@ const TypesModal = ({ show, onClose }) => {
   };
 
   const handleDelete = (cardTypeId) => {
-    const id = String(cardTypeId);
     setOpenActionMenuId(null);
-    if (!window.confirm('Delete this type? This cannot be undone.')) {
-      return;
+    setSelectedDeleteTypeId(String(cardTypeId));
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setSelectedDeleteTypeId(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedDeleteTypeId) return;
+    setIsDeletingType(true);
+    try {
+      await deleteKanbanCardTypeRecord(selectedDeleteTypeId, refreshParams());
+    } catch {
+      /* AlertReducer in store */
+    } finally {
+      setIsDeletingType(false);
+      closeDeleteModal();
     }
-    (async () => {
-      try {
-        await deleteKanbanCardTypeRecord(id, refreshParams());
-      } catch {
-        /* AlertReducer in store */
-      }
-    })();
   };
 
   const handleAddType = () => {
@@ -397,43 +435,6 @@ const TypesModal = ({ show, onClose }) => {
                         >
                           <FiMoreVertical size={18} />
                         </button>
-                        {openActionMenuId === String(row.id) && (
-                          <div className="blockers-action-menu">
-                            {isKanbanManagementRowDisabled(row.status) ? (
-                              <button
-                                type="button"
-                                className="blockers-action-menu-item"
-                                onClick={() => handleEnable(row.card_type_id ?? row.id)}
-                              >
-                                Enable
-                              </button>
-                            ) : (
-                              <>
-                                <button
-                                  type="button"
-                                  className="blockers-action-menu-item"
-                                  onClick={() => handleEdit(row)}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  type="button"
-                                  className="blockers-action-menu-item"
-                                  onClick={() => handleDisable(row.card_type_id ?? row.id)}
-                                >
-                                  Disable
-                                </button>
-                                <button
-                                  type="button"
-                                  className="blockers-action-menu-item blockers-action-menu-item-danger"
-                                  onClick={() => handleDelete(row.card_type_id ?? row.id)}
-                                >
-                                  Delete
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -477,6 +478,69 @@ const TypesModal = ({ show, onClose }) => {
         workspaceBoardsLoading={workspaceBoardsLoading}
         onSave={handleTypeFormSave}
       />
+      {!!showDeleteModal && (
+        <DeleteConfirmationModal
+          show={showDeleteModal}
+          onCancel={closeDeleteModal}
+          onConfirm={handleConfirmDelete}
+          deleteText="Delete this type? This cannot be undone."
+          isLoading={isDeletingType}
+        />
+      )}
+
+      {openActionMenuId !== null &&
+        (() => {
+          const activeRow = cardTypes.find((r) => String(r.id) === openActionMenuId);
+          if (!activeRow) return null;
+          return createPortal(
+            <div
+              className="blockers-action-menu"
+              ref={actionMenuPortalRef}
+              style={{
+                position: 'fixed',
+                top: actionMenuPlacement.top,
+                bottom: actionMenuPlacement.bottom,
+                right: actionMenuPlacement.right,
+                zIndex: ACTION_MENU_PORTAL_Z,
+              }}
+            >
+              {isKanbanManagementRowDisabled(activeRow.status) ? (
+                <button
+                  type="button"
+                  className="blockers-action-menu-item"
+                  onClick={() => handleEnable(activeRow.card_type_id ?? activeRow.id)}
+                >
+                  Enable
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="blockers-action-menu-item"
+                    onClick={() => handleEdit(activeRow)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="blockers-action-menu-item"
+                    onClick={() => handleDisable(activeRow.card_type_id ?? activeRow.id)}
+                  >
+                    Disable
+                  </button>
+                  <button
+                    type="button"
+                    className="blockers-action-menu-item blockers-action-menu-item-danger"
+                    onClick={() => handleDelete(activeRow.card_type_id ?? activeRow.id)}
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>,
+            document.body
+          );
+        })()}
     </Modal>
   );
 };

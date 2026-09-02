@@ -21,6 +21,22 @@ export function normalizeTagAvailabilityLevel(value) {
 }
 
 const COLOR_PICKER_PORTAL_Z = 10800;
+const BOARD_SELECTOR_PORTAL_Z = 10700;
+const BOARD_SELECTOR_GAP = 4;
+const BOARD_SELECTOR_MIN_HEIGHT = 200;
+
+function computeBoardSelectorPlacement(rect) {
+  const spaceBelow = window.innerHeight - rect.bottom - BOARD_SELECTOR_GAP;
+  const spaceAbove = rect.top - BOARD_SELECTOR_GAP;
+  const openUp = spaceBelow < BOARD_SELECTOR_MIN_HEIGHT && spaceAbove > spaceBelow;
+  return {
+    left: rect.left,
+    width: rect.width,
+    top: openUp ? undefined : rect.bottom + BOARD_SELECTOR_GAP,
+    bottom: openUp ? window.innerHeight - rect.top + BOARD_SELECTOR_GAP : undefined,
+    maxHeight: Math.max(BOARD_SELECTOR_MIN_HEIGHT, openUp ? spaceAbove : spaceBelow),
+  };
+}
 
 function boardKey(id) {
   return String(id ?? '');
@@ -56,12 +72,14 @@ const NewTagModal = ({
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
   const [colorPickerPlacement, setColorPickerPlacement] = useState({ top: 0, left: 0 });
   const [isBoardSelectorOpen, setIsBoardSelectorOpen] = useState(false);
+  const [boardSelectorPlacement, setBoardSelectorPlacement] = useState({ top: 0, left: 0, width: 0, maxHeight: 320 });
   const [boardSearch, setBoardSearch] = useState('');
   const [saveSubmitting, setSaveSubmitting] = useState(false);
 
   const colorTriggerRef = useRef(null);
   const colorPickerPopoverRef = useRef(null);
   const boardSelectorRef = useRef(null);
+  const boardsControlsRef = useRef(null);
   const addBoardBtnRef = useRef(null);
 
   const isEditMode = Boolean(editingTag?.tag_id != null && String(editingTag.tag_id) !== '');
@@ -235,6 +253,19 @@ const NewTagModal = ({
     return () => document.removeEventListener('mousedown', onDocMouseDown);
   }, [isColorPickerOpen, closeColorPicker]);
 
+  const toggleBoardSelector = () => {
+    if (isBoardSelectorOpen) {
+      setIsBoardSelectorOpen(false);
+      return;
+    }
+    if (boardsControlsRef.current) {
+      setBoardSelectorPlacement(
+        computeBoardSelectorPlacement(boardsControlsRef.current.getBoundingClientRect())
+      );
+    }
+    setIsBoardSelectorOpen(true);
+  };
+
   useEffect(() => {
     if (!isBoardSelectorOpen) return undefined;
     const onDocMouseDown = (event) => {
@@ -382,34 +413,17 @@ const NewTagModal = ({
 
           <div className="new-blocker-field new-blocker-boards-field">
             <p className="new-blocker-boards-text">The tag is applied to the following boards</p>
-            <div className="new-blocker-boards-controls">
+            <div className="new-blocker-boards-controls" ref={boardsControlsRef}>
               <button
                 ref={addBoardBtnRef}
                 type="button"
                 className="new-blocker-add-board-btn"
                 aria-label="Choose boards"
                 aria-expanded={isBoardSelectorOpen}
-                onClick={() => setIsBoardSelectorOpen((v) => !v)}
+                onClick={toggleBoardSelector}
               >
                 <FiPlus size={20} />
               </button>
-
-              {isBoardSelectorOpen && (
-                <div className="new-blocker-board-selector" ref={boardSelectorRef}>
-                  <div className="new-blocker-board-selector-header">
-                    <FiFilter size={16} className="new-blocker-board-selector-search-icon" aria-hidden />
-                    <input
-                      type="search"
-                      className="new-blocker-board-selector-search"
-                      placeholder="Filter"
-                      value={boardSearch}
-                      onChange={(e) => setBoardSearch(e.target.value)}
-                      aria-label="Filter workspaces and boards"
-                    />
-                  </div>
-                  <div className="new-blocker-board-selector-scroll">{boardSelectorBody()}</div>
-                </div>
-              )}
             </div>
 
             {sortedChips.length > 0 && (
@@ -469,6 +483,38 @@ const NewTagModal = ({
               ariaLabel="Pick tag color"
               hexInputId={isEditMode ? 'editTagColorHex' : 'newTagColorHex'}
             />
+          </div>,
+          document.body
+        )}
+
+      {isBoardSelectorOpen &&
+        createPortal(
+          <div
+            className="new-blocker-board-selector"
+            ref={boardSelectorRef}
+            style={{
+              position: 'fixed',
+              top: boardSelectorPlacement.top,
+              bottom: boardSelectorPlacement.bottom,
+              left: boardSelectorPlacement.left,
+              width: boardSelectorPlacement.width,
+              maxHeight: boardSelectorPlacement.maxHeight,
+              overflowY: 'auto',
+              zIndex: BOARD_SELECTOR_PORTAL_Z,
+            }}
+          >
+            <div className="new-blocker-board-selector-header">
+              <FiFilter size={16} className="new-blocker-board-selector-search-icon" aria-hidden />
+              <input
+                type="search"
+                className="new-blocker-board-selector-search"
+                placeholder="Filter"
+                value={boardSearch}
+                onChange={(e) => setBoardSearch(e.target.value)}
+                aria-label="Filter workspaces and boards"
+              />
+            </div>
+            <div className="new-blocker-board-selector-scroll">{boardSelectorBody()}</div>
           </div>,
           document.body
         )}
