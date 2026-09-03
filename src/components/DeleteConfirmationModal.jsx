@@ -10,19 +10,25 @@ const DeleteConfirmationModal = ({
   deleteText,
   show,
   isLoading,
+  className,
+  backdropClassName,
+  showIcon,
 }) => {
   return (
     <CustomModal
     createModal
-      className="modal change-pass fade employee-modal 
-      logout-modal"
+      className={`modal change-pass fade employee-modal
+      logout-modal${className ? ` ${className}` : ''}`}
+      backdropClassName={backdropClassName}
       show={show}
       closeModal={onCancel}
       body={
         <div className="modal-body">
-          <div className="profile-img">
-            <img src={DeleteConfirmIcon} alt="sign" />
-          </div>
+          {showIcon && (
+            <div className="profile-img">
+              <img src={DeleteConfirmIcon} alt="sign" />
+            </div>
+          )}
           <div className="popup-title">{deleteText}</div>
           <div className="two-btn logout-btn">
             <button
@@ -57,6 +63,13 @@ DeleteConfirmationModal.propTypes = {
   onConfirm: PropTypes.func,
   deleteText: PropTypes.string,
   show: PropTypes.bool,
+  className: PropTypes.string,
+  backdropClassName: PropTypes.string,
+  showIcon: PropTypes.bool,
+};
+
+DeleteConfirmationModal.defaultProps = {
+  showIcon: true,
 };
 
 export default DeleteConfirmationModal;
