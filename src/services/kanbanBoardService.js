@@ -77,7 +77,7 @@ const updateSubtask = (formData) =>
 const completeSubtask = (subtaskId, isCompleted) =>
   Gateway.post('/kanban_card/complete_subtask', { subtask_id: subtaskId, is_completed: isCompleted });
 
-/** POST multipart FormData — { card_id, comment_text, mentions (JSON array of user ids), attachment? } */
+/** POST multipart FormData — { card_id, comment_text, mentions (JSON array of user ids), send_email: 0|1, attachment? } */
 const addCardComment = (formData) =>
   Gateway.post('/kanban_card/add_card_comment', formData);
 
@@ -85,7 +85,7 @@ const addCardComment = (formData) =>
 const getCardComments = (cardId) =>
   Gateway.get(`/kanban_card/get_card_comments/${encodeURIComponent(String(cardId))}`);
 
-/** POST multipart FormData — { comment_id, comment_text, mentions (JSON array of user ids), attachment? } */
+/** POST multipart FormData — { comment_id, comment_text, mentions (JSON array of user ids), send_email: 0|1, attachment? } */
 const updateCardComment = (formData) =>
   Gateway.post('/kanban_card/update_card_comment', formData);
 

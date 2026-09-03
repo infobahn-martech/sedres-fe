@@ -553,10 +553,11 @@ function Comments({ card }) {
             }
             formData.append("comment_text", commentText);
             formData.append("mentions", JSON.stringify(selectedMentionUserIds));
+            formData.append("send_email", sendAsEmail ? "1" : "0");
             if (attachment) formData.append("attachment", attachment);
             return formData;
         },
-        [cardId, commentText, editingCommentId, selectedMentionUserIds]
+        [cardId, commentText, editingCommentId, selectedMentionUserIds, sendAsEmail]
     );
 
     const handleSave = useCallback(async () => {
