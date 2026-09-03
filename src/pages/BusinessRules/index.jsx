@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import useBusinessRuleReducer from '../../store/BusinessRuleReducer';
 import BusinessRulesModal from '../../structure/SideNav/components/BusinessRulesModal';
 import BusinessRuleFormModal from '../../structure/SideNav/components/BusinessRuleFormModal';
@@ -74,7 +74,6 @@ const BusinessRules = () => {
   const [deleteRuleId, setDeleteRuleId] = useState(null);
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [copyRuleId, setCopyRuleId] = useState(null);
-  const filterBtnRef = useRef(null);
 
   const {
     getBusinessRules, businessRules, businessRulesCount, isLoadingBusinessRules, deleteBusinessRule, isDeletingBusinessRule,
@@ -91,25 +90,6 @@ const BusinessRules = () => {
   useEffect(() => {
     fetchBusinessRules();
   }, [page, limit, searchTerm, filter]);
-
-  useEffect(() => {
-    // Popper (via Bootstrap's dropdown JS) was flipping this menu to open upward,
-    // making its caret/menu render above the "Enabled" button instead of below it,
-    // because the toolbar sits close to the top of the scrollable page content.
-    // Disabling the flip modifier pins it to always open downward.
-    const btn = filterBtnRef.current;
-    if (!btn || !window.bootstrap) return undefined;
-    const dropdown = window.bootstrap.Dropdown.getOrCreateInstance(btn, {
-      popperConfig: (defaultConfig) => ({
-        ...defaultConfig,
-        modifiers: [
-          ...defaultConfig.modifiers,
-          { name: 'flip', enabled: false },
-        ],
-      }),
-    });
-    return () => dropdown.dispose();
-  }, []);
 
   const handleToggleStatus = (ruleId) => {
     // Enabled/Disabled/All is a server-side filter (is_enabled param) - a row that just
@@ -171,7 +151,6 @@ const BusinessRules = () => {
           <div className="br-toolbar-left">
             <div className="dropdown">
               <button
-                ref={filterBtnRef}
                 className="btn btn-primary dropdown-toggle br-filter-btn"
                 type="button"
                 data-bs-toggle="dropdown"
