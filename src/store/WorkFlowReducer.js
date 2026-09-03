@@ -113,12 +113,15 @@ const useWorkFlowReducer = create((set, get) => ({
         }
     },
 
-    createWorkflow: async ({ board_id, workflow_name, role_id, cb, onSettled }) => {
+    createWorkflow: async ({ board_id, workflow_name, role_id, port_id, call_type_id, entity_id, cb, onSettled }) => {
         try {
             const { data } = await workflowService.createWorkflow({
                 board_id,
                 workflow_name,
                 role_id: role_id ?? '',
+                port_id,
+                call_type_id,
+                entity_id,
             });
             const { success } = useAlertReducer.getState();
             success(data && data.message);

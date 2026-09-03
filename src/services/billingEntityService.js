@@ -37,6 +37,8 @@ const updateBillingEntityDetail = (formData) =>
 
 const getVendors = () => Gateway.get('/billingentity/getvendors');
 
+const getAllEntity = () => Gateway.get('/billingentity/all_entity');
+
 export default {
   getBillingEntities,
   getCustomerPriceList,
@@ -46,4 +48,5 @@ export default {
   updateBillingEntityLogo,
   updateBillingEntityDetail,
   getVendors,
+  getAllEntity,
 };
