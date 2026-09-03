@@ -12,7 +12,7 @@ const FILTER_OPTIONS = [
   { label: 'Disabled', value: 'disabled' },
 ];
 
-const OWNER_NAME_LIMIT = 18;
+const OWNER_NAME_LIMIT = 6;
 
 const OwnerCell = ({ owner }) => {
   if (!owner) return <span className="br-deleted-user">Deleted user</span>;

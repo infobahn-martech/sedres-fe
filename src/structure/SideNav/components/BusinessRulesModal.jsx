@@ -10,7 +10,7 @@ import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal
 import { resolveKanbanBoardPath } from '../../../shared/helpers/kanbanBoardLink';
 import '../../../design/scss/business-rules-modal.scss';
 
-const OWNER_NAME_LIMIT = 18;
+const OWNER_NAME_LIMIT = 6;
 
 const OwnerCell = ({ owner }) => {
   if (!owner) return <span className="br-table-deleted-user">Deleted user</span>;
