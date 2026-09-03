@@ -35,8 +35,8 @@ import configIcon from '../../assets/images/icon-config.svg';
 import { useBreakpoint } from '../../shared/hooks/useWindowSize';
 import {
   buildKanbanAddCardEventDetail,
+  getEligibleWorkflowsForAdd,
   getSwimlaneOptionsFromWorkflow,
-  resolveSidebarAddCardAction,
 } from '../../shared/helpers/kanbanAddWorkflowSelection';
 
 // 🆕 Kanban sidebar icons + tooltip
@@ -302,23 +302,14 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     resetAddModalState();
   }, [resetAddModalState]);
 
+  // Clicking Add skips workflow/swimlane selection entirely and opens the card
+  // form directly, defaulting to the first eligible workflow and its first swimlane.
   const beginSidebarAddCard = useCallback(() => {
-    const resolved = resolveSidebarAddCardAction(sidebarWorkflows);
-    if (resolved.kind === 'dispatch') {
-      window.dispatchEvent(new CustomEvent('kanban:add-card', { detail: resolved.detail }));
-      return;
-    }
-    setAddModalWorkflows(resolved.workflowsForWorkflowStep ?? []);
-    if (resolved.initialStep === 'swimlane') {
-      setAddModalStep('swimlane');
-      setSwimlanePhaseWorkflow(resolved.swimlaneContextWorkflow);
-    } else {
-      setAddModalStep('workflow');
-      setSwimlanePhaseWorkflow(null);
-    }
-    setSelectedWorkflowId(null);
-    setSelectedSwimlaneId(null);
-    setShowSelectWorkflowModal(true);
+    const eligible = getEligibleWorkflowsForAdd(sidebarWorkflows);
+    const workflow = eligible[0] ?? null;
+    const lanes = workflow ? getSwimlaneOptionsFromWorkflow(workflow) : [];
+    const detail = workflow ? buildKanbanAddCardEventDetail(workflow, lanes[0] ?? null) : {};
+    window.dispatchEvent(new CustomEvent('kanban:add-card', { detail }));
   }, [sidebarWorkflows]);
 
   useEffect(() => {
