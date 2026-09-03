@@ -1,3 +1,30 @@
+.blockers-modal-backdrop {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+}
+
+// DeleteConfirmationModal (Delete/Disable) opens while this list modal is still
+// mounted behind it. Both fall under the app-wide catch-all `.modal.show { z-index:
+// 1300 }` / `.modal-backdrop.show { z-index: 1299 }` (modal-designs.scss /
+// operations.scss, bundled globally, not scoped) — so the confirm dialog's own
+// backdrop (1299) sits *below* this list modal's dialog (1300) and can't darken it.
+// Elevate both together, using the same high-specificity pattern already proven in
+// business-rules-modal.scss to beat those !important catch-alls.
+body .modal-backdrop.fade.blockers-confirm-modal-backdrop,
+body .modal-backdrop.blockers-confirm-modal-backdrop.show {
+  z-index: 1350 !important;
+  background-color: rgba(15, 23, 42, 0.6) !important;
+}
+
+body .modal.fade.blockers-confirm-modal,
+body .modal.blockers-confirm-modal.show {
+  z-index: 1351 !important;
+}
+
+body .modal.blockers-confirm-modal.show .modal-dialog {
+  z-index: 1352 !important;
+  position: relative;
+}
+
 .blockers-modal {
   .modal-dialog {
     max-width: 1250px;

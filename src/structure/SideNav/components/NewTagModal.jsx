@@ -67,6 +67,7 @@ const NewTagModal = ({
 }) => {
   const [selectedColor, setSelectedColor] = useState('#ffffff');
   const [label, setLabel] = useState('');
+  const [labelError, setLabelError] = useState(false);
   const [availability, setAvailability] = useState(TAG_AVAILABILITY_OPTIONS[0]);
   const [selectedBoards, setSelectedBoards] = useState([]);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
@@ -87,6 +88,7 @@ const NewTagModal = ({
   const resetCreateDefaults = useCallback(() => {
     setSelectedColor('#ffffff');
     setLabel('');
+    setLabelError(false);
     setAvailability(TAG_AVAILABILITY_OPTIONS[0]);
     setSelectedBoards([]);
     setIsColorPickerOpen(false);
@@ -183,6 +185,7 @@ const NewTagModal = ({
           }))
         : [];
       setSelectedBoards(boards);
+      setLabelError(false);
       setIsColorPickerOpen(false);
       setIsBoardSelectorOpen(false);
       setBoardSearch('');
@@ -194,7 +197,12 @@ const NewTagModal = ({
 
   const handleSave = async () => {
     const trimmed = label.trim();
-    if (!trimmed || !TAG_AVAILABILITY_OPTIONS.includes(availability)) return;
+    if (!trimmed) {
+      setLabelError(true);
+      return;
+    }
+    setLabelError(false);
+    if (!TAG_AVAILABILITY_OPTIONS.includes(availability)) return;
     const board_ids = selectedBoards.map((b) => b.board_id);
     const color_code = normalizeHexColor(selectedColor);
 
@@ -285,10 +293,7 @@ const NewTagModal = ({
 
   const previewHex = normalizeHexColor(selectedColor);
 
-  const canSave =
-    Boolean(label.trim()) &&
-    TAG_AVAILABILITY_OPTIONS.includes(availability) &&
-    !saveSubmitting;
+  const canSave = TAG_AVAILABILITY_OPTIONS.includes(availability) && !saveSubmitting;
 
   const modalTitle = isEditMode ? 'Edit Card Tag' : 'New Card Tag';
 
@@ -345,6 +350,7 @@ const NewTagModal = ({
       show={show}
       onHide={onClose}
       className="new-blocker-modal"
+      backdropClassName="new-blocker-modal-backdrop"
       centered
       size="md"
       dialogClassName="new-blocker-modal-dialog"
@@ -386,8 +392,12 @@ const NewTagModal = ({
                     className="new-blocker-input"
                     placeholder="Enter tag label"
                     value={label}
-                    onChange={(e) => setLabel(e.target.value)}
+                    onChange={(e) => {
+                      setLabel(e.target.value);
+                      if (labelError) setLabelError(false);
+                    }}
                   />
+                  {labelError && <span className="new-blocker-error-text">Label is required</span>}
                 </div>
                 <div className="new-blocker-field new-blocker-field-availability">
                   <label className="new-blocker-label" htmlFor="new-tag-availability-select">

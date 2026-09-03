@@ -439,7 +439,6 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                   </tbody>
                 </table>
               </div>
-              </div>
 
               <div className="br-table-pagination">
                 <span className="br-table-pagination-total">
@@ -464,6 +463,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                     Next
                   </button>
                 </div>
+              </div>
               </div>
             </div>
           ) : (
