@@ -502,7 +502,10 @@
       width: auto;
       flex-shrink: 0;
       height: 38px;
-      padding: 8px 14px;
+      // Right padding must stay wide enough to clear Bootstrap's .form-select
+      // background-image caret (positioned at "right 0.75rem center") - collapsing
+      // it to match the other sides makes the caret overlap the option text.
+      padding: 8px 2.25rem 8px 14px;
       border-radius: 8px;
       border: 1px solid var(--border-primary);
       font-size: 14px;
