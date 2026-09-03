@@ -2275,6 +2275,7 @@ EmailPreviewPanel.propTypes = {
 
 function General({
   card,
+  boardId,
   formValues,
   handleChange,
   onSave,
@@ -2942,11 +2943,14 @@ function General({
     setTimeObjectErrors({});
 
     const entityFieldsPayload = buildEntityFieldsPayload(entityFields, entityFieldValues);
-    const swimlaneId =
-      formValues?.swimlane_id ??
-      formValues?.swimlaneId ??
-      card?.swimlane_id ??
-      card?.laneId;
+    const resolvedBoardId =
+      boardId ??
+      formValues?.board_id ??
+      formValues?.boardId ??
+      card?.board_id ??
+      card?.boardId ??
+      card?.raw?.board_id ??
+      card?.raw?.boardId;
     const emailPreviewBody =
       firstNonEmptyString(previewMessageText) ||
       firstNonEmptyString(emailPreviewData?.messageHtml) ||
@@ -3022,7 +3026,7 @@ function General({
     };
     const formPayload = {
       ...formValues,
-      swimlane_id: swimlaneId,
+      board_id: resolvedBoardId,
       card_type_id:
         formValues?.card_type_id ?? card?.card_type_id ?? card?.cardTypeId ?? card?.raw?.card_type_id,
       card_tag_id:
@@ -6185,6 +6189,7 @@ ${body}
 
 General.propTypes = {
   card: PropTypes.object,
+  boardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   formValues: PropTypes.object,
   handleChange: PropTypes.func,
   onSave: PropTypes.func,

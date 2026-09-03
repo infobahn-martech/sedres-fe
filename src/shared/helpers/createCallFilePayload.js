@@ -205,7 +205,7 @@ export function buildCreateCallFileFormData(formPayload, options = {}) {
   appendStringField("owner_id", fv.owner);
   appendStringField("port_id", fv.port);
   appendStringField("call_type", fv.typeOfCall);
-  appendStringField("swimlane_id", fv.swimlane_id ?? fv.swimlaneId ?? "");
+  appendStringField("board_id", fv.board_id ?? fv.boardId ?? "");
 
   appendStringField("assigned_operator_id", fv.assignedOperator);
   appendStringField("last_port", fv.lastPort);

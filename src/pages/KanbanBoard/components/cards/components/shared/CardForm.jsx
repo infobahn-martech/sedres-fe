@@ -1664,10 +1664,12 @@ const renderTabContent = (
   showLaunchHire = true,
   isDaCardContext = false,
   refreshSalesOrder,
-  onDaStatusRefresh
+  onDaStatusRefresh,
+  boardId
 ) => {
   const commonProps = {
     card,
+    boardId,
     formValues,
     handleChange,
     isAddMode,
@@ -3086,7 +3088,8 @@ function CardForm({
                 showLaunchHire,
                 isDaCardContext,
                 refreshSalesOrder,
-                bumpDaStatusRefreshToken
+                bumpDaStatusRefreshToken,
+                resolvedBoardId
               )}
           </>
         )}
