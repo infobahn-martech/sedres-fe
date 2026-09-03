@@ -917,15 +917,12 @@
 .card-api-link-badge-wrap {
   position: relative;
   display: inline-flex;
+  flex-basis: 100%;
+  margin-top: 2px;
 }
 
 .card-api-link-badge {
   cursor: pointer;
-  color: #2563eb;
-}
-
-.card-api-link-badge:hover {
-  text-decoration: underline;
 }
 
 .card-api-link-badge-label {

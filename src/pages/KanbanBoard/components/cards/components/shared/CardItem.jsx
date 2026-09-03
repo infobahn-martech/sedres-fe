@@ -223,12 +223,11 @@ function ApiCardLinkBadge({ card, cardsById, setSelectedCard }) {
     <span className="card-api-link-badge-wrap">
       <span
         className="card-api-count-badge card-api-link-badge"
-        style={{ cursor: "pointer" }}
         data-tooltip-id={`link-badge-${card.id}`}
         data-tooltip-content={linkLabel}
         onClick={handleClick}
       >
-        <ArrowRightIcon size={13} color="#2563eb" />
+        <ArrowRightIcon size={13} color="#666" />
         <span className="card-api-link-badge-label">{linkLabel}</span>
       </span>
       <Tooltip id={`link-badge-${card.id}`} place="top" className="card-name-tooltip" />
