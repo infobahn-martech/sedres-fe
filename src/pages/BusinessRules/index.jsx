@@ -12,11 +12,14 @@ const FILTER_OPTIONS = [
   { label: 'Disabled', value: 'disabled' },
 ];
 
+const OWNER_NAME_LIMIT = 18;
+
 const OwnerCell = ({ owner }) => {
   if (!owner) return <span className="br-deleted-user">Deleted user</span>;
   const name = typeof owner === 'object' ? (owner?.name ?? owner?.username ?? '') : owner;
   const avatar = typeof owner === 'object' ? owner?.avatar : null;
   if (!name) return <span className="br-deleted-user">Deleted user</span>;
+  const displayName = name.length > OWNER_NAME_LIMIT ? `${name.slice(0, OWNER_NAME_LIMIT)}...` : name;
   return (
     <div className="br-owner">
       {avatar ? (
@@ -24,7 +27,7 @@ const OwnerCell = ({ owner }) => {
       ) : (
         <div className="br-avatar-placeholder">{name.charAt(0).toUpperCase()}</div>
       )}
-      <span>{name}</span>
+      <span title={name}>{displayName}</span>
     </div>
   );
 };
@@ -173,7 +176,7 @@ const BusinessRules = () => {
             <input
               type="text"
               className="form-control br-search-input"
-              placeholder="Filter by business rule name, ID, owner, t"
+              placeholder="Filter by business rule name, ID, owner, tags"
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
             />

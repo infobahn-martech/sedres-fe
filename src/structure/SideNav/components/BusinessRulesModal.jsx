@@ -10,11 +10,14 @@ import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal
 import { resolveKanbanBoardPath } from '../../../shared/helpers/kanbanBoardLink';
 import '../../../design/scss/business-rules-modal.scss';
 
+const OWNER_NAME_LIMIT = 18;
+
 const OwnerCell = ({ owner }) => {
   if (!owner) return <span className="br-table-deleted-user">Deleted user</span>;
   const name = typeof owner === 'object' ? (owner?.name ?? owner?.username ?? '') : owner;
   const avatar = typeof owner === 'object' ? owner?.avatar : null;
   if (!name) return <span className="br-table-deleted-user">Deleted user</span>;
+  const displayName = name.length > OWNER_NAME_LIMIT ? `${name.slice(0, OWNER_NAME_LIMIT)}...` : name;
   return (
     <div className="br-table-owner">
       {avatar ? (
@@ -22,7 +25,7 @@ const OwnerCell = ({ owner }) => {
       ) : (
         <div className="br-table-avatar-placeholder">{name.charAt(0).toUpperCase()}</div>
       )}
-      <span>{name}</span>
+      <span title={name}>{displayName}</span>
     </div>
   );
 };
@@ -263,7 +266,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                     <input
                       type="text"
                       className="business-rules-search-input"
-                      placeholder="Filter by business rule name, ID, owner, t"
+                      placeholder="Filter by business rule name, ID, owner, tags"
                       value={searchValue}
                       onChange={(e) => { setSearchValue(e.target.value.trimStart()); setPage(1); }}
                     />
@@ -439,6 +442,9 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
               </div>
 
               <div className="br-table-pagination">
+                <span className="br-table-pagination-total">
+                  Available business rules {businessRulesCount}
+                </span>
                 <div className="br-table-pagination-controls">
                   <button
                     type="button"

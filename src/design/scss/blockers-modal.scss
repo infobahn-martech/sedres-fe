@@ -88,6 +88,8 @@
   .blockers-modal-body {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
     gap: 16px;
     padding: 20px;
   }
@@ -430,6 +432,9 @@
   .tags-modal-body {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
     gap: 16px;
 
     .blockers-table-section {
@@ -441,6 +446,8 @@
 
     .blockers-table-wrapper--tags-min-body {
       flex: 1;
+      min-height: 0;
+      overflow-y: auto;
     }
 
     .tags-modal-pagination {
