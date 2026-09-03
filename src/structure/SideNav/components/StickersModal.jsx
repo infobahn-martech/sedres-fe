@@ -119,6 +119,11 @@ const StickersModal = ({ show, onClose }) => {
   const [selectedDeleteStickerLabel, setSelectedDeleteStickerLabel] = useState('');
   const [isDeletingSticker, setIsDeletingSticker] = useState(false);
 
+  const [showDisableModal, setShowDisableModal] = useState(false);
+  const [selectedDisableStickerId, setSelectedDisableStickerId] = useState(null);
+  const [selectedDisableStickerLabel, setSelectedDisableStickerLabel] = useState('');
+  const [isDisablingSticker, setIsDisablingSticker] = useState(false);
+
   useEffect(() => {
     if (!show) {
       setSearchValue('');
@@ -190,13 +195,29 @@ const StickersModal = ({ show, onClose }) => {
     setOpenActionMenuId(null);
   };
 
-  const handleDisable = async (stickerId) => {
-    const id = String(stickerId);
+  const handleDisable = (stickerId, stickerLabel) => {
     setOpenActionMenuId(null);
+    setSelectedDisableStickerId(String(stickerId));
+    setSelectedDisableStickerLabel(stickerLabel ?? '');
+    setShowDisableModal(true);
+  };
+
+  const closeDisableModal = () => {
+    setShowDisableModal(false);
+    setSelectedDisableStickerId(null);
+    setSelectedDisableStickerLabel('');
+  };
+
+  const handleConfirmDisable = async () => {
+    if (!selectedDisableStickerId) return;
+    setIsDisablingSticker(true);
     try {
-      await disableKanbanCardStickerRecord(id, refreshParams());
+      await disableKanbanCardStickerRecord(selectedDisableStickerId, refreshParams());
     } catch {
       /* AlertReducer in store */
+    } finally {
+      setIsDisablingSticker(false);
+      closeDisableModal();
     }
   };
 
@@ -286,10 +307,12 @@ const StickersModal = ({ show, onClose }) => {
   };
 
   return (
+    <>
     <Modal
-      show={show}
+      show={show && !showNewStickerModal}
       onHide={onClose}
       className="blockers-modal"
+      backdropClassName="blockers-modal-backdrop"
       centered
       size="xl"
     >
@@ -490,23 +513,6 @@ const StickersModal = ({ show, onClose }) => {
           </div>
         </div>
       </Modal.Body>
-      <NewStickerModal
-        show={showNewStickerModal}
-        onClose={closeStickerFormModal}
-        editingSticker={editingSticker}
-        workspaceBoardOptions={workspaceBoardOptions}
-        workspaceBoardsLoading={workspaceBoardsLoading}
-        onSave={handleStickerFormSave}
-      />
-      {!!showDeleteModal && (
-        <DeleteConfirmationModal
-          show={showDeleteModal}
-          onCancel={closeDeleteModal}
-          onConfirm={handleConfirmDelete}
-          deleteText={`Delete sticker "${selectedDeleteStickerLabel}"? This cannot be undone.`}
-          isLoading={isDeletingSticker}
-        />
-      )}
 
       {openActionMenuId !== null &&
         (() => {
@@ -544,7 +550,7 @@ const StickersModal = ({ show, onClose }) => {
                   <button
                     type="button"
                     className="blockers-action-menu-item"
-                    onClick={() => handleDisable(activeRow.sticker_id ?? activeRow.id)}
+                    onClick={() => handleDisable(activeRow.sticker_id ?? activeRow.id, activeRow.label)}
                   >
                     Disable
                   </button>
@@ -562,6 +568,38 @@ const StickersModal = ({ show, onClose }) => {
           );
         })()}
     </Modal>
+
+    <NewStickerModal
+      show={showNewStickerModal}
+      onClose={closeStickerFormModal}
+      editingSticker={editingSticker}
+      workspaceBoardOptions={workspaceBoardOptions}
+      workspaceBoardsLoading={workspaceBoardsLoading}
+      onSave={handleStickerFormSave}
+    />
+    {!!showDeleteModal && (
+      <DeleteConfirmationModal
+        show={showDeleteModal}
+        onCancel={closeDeleteModal}
+        onConfirm={handleConfirmDelete}
+        deleteText={`Delete sticker "${selectedDeleteStickerLabel}"? This cannot be undone.`}
+        isLoading={isDeletingSticker}
+        className="blockers-confirm-modal"
+        backdropClassName="blockers-confirm-modal-backdrop"
+      />
+    )}
+    {!!showDisableModal && (
+      <DeleteConfirmationModal
+        show={showDisableModal}
+        onCancel={closeDisableModal}
+        onConfirm={handleConfirmDisable}
+        deleteText={`Disable sticker "${selectedDisableStickerLabel}"? You can enable it again later.`}
+        isLoading={isDisablingSticker}
+        className="blockers-confirm-modal"
+        backdropClassName="blockers-confirm-modal-backdrop"
+      />
+    )}
+    </>
   );
 };
 

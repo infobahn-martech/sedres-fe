@@ -111,6 +111,11 @@ const TypesModal = ({ show, onClose }) => {
   const [selectedDeleteTypeLabel, setSelectedDeleteTypeLabel] = useState('');
   const [isDeletingType, setIsDeletingType] = useState(false);
 
+  const [showDisableModal, setShowDisableModal] = useState(false);
+  const [selectedDisableTypeId, setSelectedDisableTypeId] = useState(null);
+  const [selectedDisableTypeLabel, setSelectedDisableTypeLabel] = useState('');
+  const [isDisablingType, setIsDisablingType] = useState(false);
+
   useEffect(() => {
     if (!show) {
       setSearchValue('');
@@ -182,13 +187,29 @@ const TypesModal = ({ show, onClose }) => {
     setOpenActionMenuId(null);
   };
 
-  const handleDisable = async (cardTypeId) => {
-    const id = String(cardTypeId);
+  const handleDisable = (cardTypeId, cardTypeLabel) => {
     setOpenActionMenuId(null);
+    setSelectedDisableTypeId(String(cardTypeId));
+    setSelectedDisableTypeLabel(cardTypeLabel ?? '');
+    setShowDisableModal(true);
+  };
+
+  const closeDisableModal = () => {
+    setShowDisableModal(false);
+    setSelectedDisableTypeId(null);
+    setSelectedDisableTypeLabel('');
+  };
+
+  const handleConfirmDisable = async () => {
+    if (!selectedDisableTypeId) return;
+    setIsDisablingType(true);
     try {
-      await disableKanbanCardTypeRecord(id, refreshParams());
+      await disableKanbanCardTypeRecord(selectedDisableTypeId, refreshParams());
     } catch {
       /* AlertReducer in store */
+    } finally {
+      setIsDisablingType(false);
+      closeDisableModal();
     }
   };
 
@@ -277,10 +298,12 @@ const TypesModal = ({ show, onClose }) => {
   };
 
   return (
+    <>
     <Modal
-      show={show}
+      show={show && !showNewTypeModal}
       onHide={onClose}
       className="blockers-modal"
+      backdropClassName="blockers-modal-backdrop"
       centered
       size="xl"
     >
@@ -481,23 +504,6 @@ const TypesModal = ({ show, onClose }) => {
           </div>
         </div>
       </Modal.Body>
-      <NewTypeModal
-        show={showNewTypeModal}
-        onClose={closeTypeFormModal}
-        editingType={editingType}
-        workspaceBoardOptions={workspaceBoardOptions}
-        workspaceBoardsLoading={workspaceBoardsLoading}
-        onSave={handleTypeFormSave}
-      />
-      {!!showDeleteModal && (
-        <DeleteConfirmationModal
-          show={showDeleteModal}
-          onCancel={closeDeleteModal}
-          onConfirm={handleConfirmDelete}
-          deleteText={`Delete type "${selectedDeleteTypeLabel}"? This cannot be undone.`}
-          isLoading={isDeletingType}
-        />
-      )}
 
       {openActionMenuId !== null &&
         (() => {
@@ -535,7 +541,7 @@ const TypesModal = ({ show, onClose }) => {
                   <button
                     type="button"
                     className="blockers-action-menu-item"
-                    onClick={() => handleDisable(activeRow.card_type_id ?? activeRow.id)}
+                    onClick={() => handleDisable(activeRow.card_type_id ?? activeRow.id, activeRow.label)}
                   >
                     Disable
                   </button>
@@ -553,6 +559,38 @@ const TypesModal = ({ show, onClose }) => {
           );
         })()}
     </Modal>
+
+    <NewTypeModal
+      show={showNewTypeModal}
+      onClose={closeTypeFormModal}
+      editingType={editingType}
+      workspaceBoardOptions={workspaceBoardOptions}
+      workspaceBoardsLoading={workspaceBoardsLoading}
+      onSave={handleTypeFormSave}
+    />
+    {!!showDeleteModal && (
+      <DeleteConfirmationModal
+        show={showDeleteModal}
+        onCancel={closeDeleteModal}
+        onConfirm={handleConfirmDelete}
+        deleteText={`Delete type "${selectedDeleteTypeLabel}"? This cannot be undone.`}
+        isLoading={isDeletingType}
+        className="blockers-confirm-modal"
+        backdropClassName="blockers-confirm-modal-backdrop"
+      />
+    )}
+    {!!showDisableModal && (
+      <DeleteConfirmationModal
+        show={showDisableModal}
+        onCancel={closeDisableModal}
+        onConfirm={handleConfirmDisable}
+        deleteText={`Disable type "${selectedDisableTypeLabel}"? You can enable it again later.`}
+        isLoading={isDisablingType}
+        className="blockers-confirm-modal"
+        backdropClassName="blockers-confirm-modal-backdrop"
+      />
+    )}
+    </>
   );
 };
 

@@ -10,12 +10,15 @@ const DeleteConfirmationModal = ({
   deleteText,
   show,
   isLoading,
+  className,
+  backdropClassName,
 }) => {
   return (
     <CustomModal
     createModal
-      className="modal change-pass fade employee-modal 
-      logout-modal"
+      className={`modal change-pass fade employee-modal
+      logout-modal${className ? ` ${className}` : ''}`}
+      backdropClassName={backdropClassName}
       show={show}
       closeModal={onCancel}
       body={
@@ -57,6 +60,8 @@ DeleteConfirmationModal.propTypes = {
   onConfirm: PropTypes.func,
   deleteText: PropTypes.string,
   show: PropTypes.bool,
+  className: PropTypes.string,
+  backdropClassName: PropTypes.string,
 };
 
 export default DeleteConfirmationModal;

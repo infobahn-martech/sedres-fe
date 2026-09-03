@@ -75,6 +75,11 @@ const TagsModal = ({ show, onClose }) => {
   const [selectedDeleteTagLabel, setSelectedDeleteTagLabel] = useState('');
   const [isDeletingTag, setIsDeletingTag] = useState(false);
 
+  const [showDisableModal, setShowDisableModal] = useState(false);
+  const [selectedDisableTagId, setSelectedDisableTagId] = useState(null);
+  const [selectedDisableTagLabel, setSelectedDisableTagLabel] = useState('');
+  const [isDisablingTag, setIsDisablingTag] = useState(false);
+
   useEffect(() => {
     if (!show) {
       setSearchValue('');
@@ -145,13 +150,29 @@ const TagsModal = ({ show, onClose }) => {
     setOpenActionMenuId(null);
   };
 
-  const handleDisable = async (tagId) => {
-    const id = String(tagId);
+  const handleDisable = (tagId, tagLabel) => {
     setOpenActionMenuId(null);
+    setSelectedDisableTagId(String(tagId));
+    setSelectedDisableTagLabel(tagLabel ?? '');
+    setShowDisableModal(true);
+  };
+
+  const closeDisableModal = () => {
+    setShowDisableModal(false);
+    setSelectedDisableTagId(null);
+    setSelectedDisableTagLabel('');
+  };
+
+  const handleConfirmDisable = async () => {
+    if (!selectedDisableTagId) return;
+    setIsDisablingTag(true);
     try {
-      await disableKanbanTagRecord(id, refreshParams());
+      await disableKanbanTagRecord(selectedDisableTagId, refreshParams());
     } catch {
       /* AlertReducer in store */
+    } finally {
+      setIsDisablingTag(false);
+      closeDisableModal();
     }
   };
 
@@ -243,10 +264,12 @@ const TagsModal = ({ show, onClose }) => {
   };
 
   return (
+    <>
     <Modal
-      show={show}
+      show={show && !showNewTagModal}
       onHide={onClose}
       className="blockers-modal"
+      backdropClassName="blockers-modal-backdrop"
       centered
       size="xl"
     >
@@ -439,23 +462,6 @@ const TagsModal = ({ show, onClose }) => {
           </div>
         </div>
       </Modal.Body>
-      <NewTagModal
-        show={showNewTagModal}
-        onClose={closeTagFormModal}
-        editingTag={editingTag}
-        workspaceBoardOptions={workspaceBoardOptions}
-        workspaceBoardsLoading={workspaceBoardsLoading}
-        onSave={handleTagFormSave}
-      />
-      {!!showDeleteModal && (
-        <DeleteConfirmationModal
-          show={showDeleteModal}
-          onCancel={closeDeleteModal}
-          onConfirm={handleConfirmDelete}
-          deleteText={`Delete tag "${selectedDeleteTagLabel}"? This cannot be undone.`}
-          isLoading={isDeletingTag}
-        />
-      )}
 
       {openActionMenuId !== null &&
         (() => {
@@ -493,7 +499,7 @@ const TagsModal = ({ show, onClose }) => {
                   <button
                     type="button"
                     className="blockers-action-menu-item"
-                    onClick={() => handleDisable(activeTag.id)}
+                    onClick={() => handleDisable(activeTag.id, activeTag.label)}
                   >
                     Disable
                   </button>
@@ -511,6 +517,38 @@ const TagsModal = ({ show, onClose }) => {
           );
         })()}
     </Modal>
+
+    <NewTagModal
+      show={showNewTagModal}
+      onClose={closeTagFormModal}
+      editingTag={editingTag}
+      workspaceBoardOptions={workspaceBoardOptions}
+      workspaceBoardsLoading={workspaceBoardsLoading}
+      onSave={handleTagFormSave}
+    />
+    {!!showDeleteModal && (
+      <DeleteConfirmationModal
+        show={showDeleteModal}
+        onCancel={closeDeleteModal}
+        onConfirm={handleConfirmDelete}
+        deleteText={`Delete tag "${selectedDeleteTagLabel}"? This cannot be undone.`}
+        isLoading={isDeletingTag}
+        className="blockers-confirm-modal"
+        backdropClassName="blockers-confirm-modal-backdrop"
+      />
+    )}
+    {!!showDisableModal && (
+      <DeleteConfirmationModal
+        show={showDisableModal}
+        onCancel={closeDisableModal}
+        onConfirm={handleConfirmDisable}
+        deleteText={`Disable tag "${selectedDisableTagLabel}"? You can enable it again later.`}
+        isLoading={isDisablingTag}
+        className="blockers-confirm-modal"
+        backdropClassName="blockers-confirm-modal-backdrop"
+      />
+    )}
+    </>
   );
 };
 

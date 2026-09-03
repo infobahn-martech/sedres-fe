@@ -12,6 +12,7 @@ export default function CustomModal({
   bodyClassname,
   createModal,
   disableCenter,
+  backdropClassName,
 }) {
   return (
     <Modal
@@ -19,6 +20,7 @@ export default function CustomModal({
       dialogClassName={dialgName || ''}
       show={show}
       onHide={closeModal}
+      backdropClassName={backdropClassName}
       backdrop="static"
       centered={!disableCenter}
       enforceFocus={false}

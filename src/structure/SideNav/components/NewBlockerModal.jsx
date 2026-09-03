@@ -83,6 +83,7 @@ const NewBlockerModal = ({
   const [selectedColor, setSelectedColor] = useState('#ffffff');
   const [selectedIconKey, setSelectedIconKey] = useState('');
   const [label, setLabel] = useState('');
+  const [labelError, setLabelError] = useState(false);
   const [availability, setAvailability] = useState(TAG_AVAILABILITY_OPTIONS[0]);
   const [selectedBoards, setSelectedBoards] = useState([]);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
@@ -108,6 +109,7 @@ const NewBlockerModal = ({
     setSelectedColor('#ffffff');
     setSelectedIconKey('');
     setLabel('');
+    setLabelError(false);
     setAvailability(TAG_AVAILABILITY_OPTIONS[0]);
     setSelectedBoards([]);
     setIsColorPickerOpen(false);
@@ -203,6 +205,7 @@ const NewBlockerModal = ({
           }))
         : [];
       setSelectedBoards(boards);
+      setLabelError(false);
       setIsColorPickerOpen(false);
       setIsBoardSelectorOpen(false);
       setBoardSearch('');
@@ -215,7 +218,12 @@ const NewBlockerModal = ({
 
   const handleSave = async () => {
     const trimmed = label.trim();
-    if (!trimmed || !TAG_AVAILABILITY_OPTIONS.includes(availability)) return;
+    if (!trimmed) {
+      setLabelError(true);
+      return;
+    }
+    setLabelError(false);
+    if (!TAG_AVAILABILITY_OPTIONS.includes(availability)) return;
     const board_ids = selectedBoards.map((b) => b.board_id);
     const color_code = normalizeHexColor(selectedColor);
     const icon = (selectedIconKey || '').trim() || 'FiLayers';
@@ -321,10 +329,7 @@ const NewBlockerModal = ({
   const previewHex = normalizeHexColor(selectedColor);
   const swatchIconFg = contrastIconFg(previewHex);
 
-  const canSave =
-    Boolean(label.trim()) &&
-    TAG_AVAILABILITY_OPTIONS.includes(availability) &&
-    !saveSubmitting;
+  const canSave = TAG_AVAILABILITY_OPTIONS.includes(availability) && !saveSubmitting;
 
   const modalTitle = isEditMode ? 'Edit Card Blocker' : 'New Card Blocker';
 
@@ -386,6 +391,7 @@ const NewBlockerModal = ({
       show={show}
       onHide={onClose}
       className="new-blocker-modal"
+      backdropClassName="new-blocker-modal-backdrop"
       centered
       size="md"
       dialogClassName="new-blocker-modal-dialog"
@@ -476,8 +482,12 @@ const NewBlockerModal = ({
                 className="new-blocker-input"
                 placeholder="Enter blocker label"
                 value={label}
-                onChange={(e) => setLabel(e.target.value)}
+                onChange={(e) => {
+                  setLabel(e.target.value);
+                  if (labelError) setLabelError(false);
+                }}
               />
+              {labelError && <span className="new-blocker-error-text">Label is required</span>}
             </div>
 
             <div className="new-blocker-field new-blocker-field-availability">

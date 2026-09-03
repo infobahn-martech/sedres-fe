@@ -119,6 +119,11 @@ const BlockersModal = ({ show, onClose }) => {
   const [selectedDeleteBlockerLabel, setSelectedDeleteBlockerLabel] = useState('');
   const [isDeletingBlocker, setIsDeletingBlocker] = useState(false);
 
+  const [showDisableModal, setShowDisableModal] = useState(false);
+  const [selectedDisableBlockerId, setSelectedDisableBlockerId] = useState(null);
+  const [selectedDisableBlockerLabel, setSelectedDisableBlockerLabel] = useState('');
+  const [isDisablingBlocker, setIsDisablingBlocker] = useState(false);
+
   useEffect(() => {
     if (!show) {
       setSearchValue('');
@@ -190,13 +195,29 @@ const BlockersModal = ({ show, onClose }) => {
     setOpenActionMenuId(null);
   };
 
-  const handleDisable = async (blockerId) => {
-    const id = String(blockerId);
+  const handleDisable = (blockerId, blockerLabel) => {
     setOpenActionMenuId(null);
+    setSelectedDisableBlockerId(String(blockerId));
+    setSelectedDisableBlockerLabel(blockerLabel ?? '');
+    setShowDisableModal(true);
+  };
+
+  const closeDisableModal = () => {
+    setShowDisableModal(false);
+    setSelectedDisableBlockerId(null);
+    setSelectedDisableBlockerLabel('');
+  };
+
+  const handleConfirmDisable = async () => {
+    if (!selectedDisableBlockerId) return;
+    setIsDisablingBlocker(true);
     try {
-      await disableKanbanCardBlockerRecord(id, refreshParams());
+      await disableKanbanCardBlockerRecord(selectedDisableBlockerId, refreshParams());
     } catch {
       /* AlertReducer in store */
+    } finally {
+      setIsDisablingBlocker(false);
+      closeDisableModal();
     }
   };
 
@@ -286,10 +307,12 @@ const BlockersModal = ({ show, onClose }) => {
   };
 
   return (
+    <>
     <Modal
-      show={show}
+      show={show && !showNewBlockerModal}
       onHide={onClose}
       className="blockers-modal"
+      backdropClassName="blockers-modal-backdrop"
       centered
       size="xl"
     >
@@ -490,23 +513,6 @@ const BlockersModal = ({ show, onClose }) => {
           </div>
         </div>
       </Modal.Body>
-      <NewBlockerModal
-        show={showNewBlockerModal}
-        onClose={closeBlockerFormModal}
-        editingBlocker={editingBlocker}
-        workspaceBoardOptions={workspaceBoardOptions}
-        workspaceBoardsLoading={workspaceBoardsLoading}
-        onSave={handleBlockerFormSave}
-      />
-      {!!showDeleteModal && (
-        <DeleteConfirmationModal
-          show={showDeleteModal}
-          onCancel={closeDeleteModal}
-          onConfirm={handleConfirmDelete}
-          deleteText={`Delete blocker "${selectedDeleteBlockerLabel}"? This cannot be undone.`}
-          isLoading={isDeletingBlocker}
-        />
-      )}
 
       {openActionMenuId !== null &&
         (() => {
@@ -544,7 +550,7 @@ const BlockersModal = ({ show, onClose }) => {
                   <button
                     type="button"
                     className="blockers-action-menu-item"
-                    onClick={() => handleDisable(activeRow.blocker_id ?? activeRow.id)}
+                    onClick={() => handleDisable(activeRow.blocker_id ?? activeRow.id, activeRow.label)}
                   >
                     Disable
                   </button>
@@ -562,6 +568,38 @@ const BlockersModal = ({ show, onClose }) => {
           );
         })()}
     </Modal>
+
+    <NewBlockerModal
+      show={showNewBlockerModal}
+      onClose={closeBlockerFormModal}
+      editingBlocker={editingBlocker}
+      workspaceBoardOptions={workspaceBoardOptions}
+      workspaceBoardsLoading={workspaceBoardsLoading}
+      onSave={handleBlockerFormSave}
+    />
+    {!!showDeleteModal && (
+      <DeleteConfirmationModal
+        show={showDeleteModal}
+        onCancel={closeDeleteModal}
+        onConfirm={handleConfirmDelete}
+        deleteText={`Delete blocker "${selectedDeleteBlockerLabel}"? This cannot be undone.`}
+        isLoading={isDeletingBlocker}
+        className="blockers-confirm-modal"
+        backdropClassName="blockers-confirm-modal-backdrop"
+      />
+    )}
+    {!!showDisableModal && (
+      <DeleteConfirmationModal
+        show={showDisableModal}
+        onCancel={closeDisableModal}
+        onConfirm={handleConfirmDisable}
+        deleteText={`Disable blocker "${selectedDisableBlockerLabel}"? You can enable it again later.`}
+        isLoading={isDisablingBlocker}
+        className="blockers-confirm-modal"
+        backdropClassName="blockers-confirm-modal-backdrop"
+      />
+    )}
+    </>
   );
 };
 

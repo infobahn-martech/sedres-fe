@@ -108,9 +108,9 @@
   flex-direction: column;
 }
 
-// Table view layout — flat, borderless: no card/panel chrome anywhere. The
-// toolbar, table, and pagination footer all sit directly on the modal body;
-// only the thin row-divider lines (see .br-table below) provide structure.
+// Table view layout — the toolbar and table each sit in their own bordered
+// card panel (matching the Blockers/Stickers/Tags/Types card-management
+// modals), with the pagination footer inside the table panel.
 .br-body-inner {
   display: flex;
   flex-direction: column;
@@ -120,10 +120,18 @@
   min-height: 0;
 }
 
+.br-table-toolbar,
 .br-table-section {
   background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.br-table-section {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   // 500px is the preferred size (matches the picker view's .br-picker-container
   // fix below) — keeps the modal from growing/shrinking as search/filter results
   // change the row count (including the "No business rules found" empty state),
@@ -537,10 +545,12 @@
   // Columns are sized (table-layout: fixed, explicit widths below) to fit within
   // the modal, so no horizontal scrollbar is shown.
   overflow-x: hidden;
-  // Fills .br-table-section's fixed height and scrolls vertically only if a
-  // page's rows ever exceed it (they shouldn't, at 10 rows/page), instead of
-  // growing the section (and modal) taller.
-  height: 100%;
+  // .br-table-pagination now sits inside .br-table-section alongside this, so
+  // this fills only the remaining space above the footer (flex, not height:100%)
+  // and scrolls vertically only if a page's rows ever exceed it (they shouldn't,
+  // at 10 rows/page), instead of growing the section (and modal) taller.
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -811,6 +821,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 14px 24px;
+  flex-shrink: 0;
   border-top: 1px solid var(--border-primary);
   background: var(--surface-primary);
 
