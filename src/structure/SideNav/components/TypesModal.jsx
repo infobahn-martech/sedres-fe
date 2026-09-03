@@ -573,7 +573,7 @@ const TypesModal = ({ show, onClose }) => {
         show={showDeleteModal}
         onCancel={closeDeleteModal}
         onConfirm={handleConfirmDelete}
-        deleteText={`Delete type "${selectedDeleteTypeLabel}"? This cannot be undone.`}
+        deleteText={`Delete type “${selectedDeleteTypeLabel}”? This cannot be undone.`}
         isLoading={isDeletingType}
         className="blockers-confirm-modal"
         backdropClassName="blockers-confirm-modal-backdrop"
@@ -584,8 +584,9 @@ const TypesModal = ({ show, onClose }) => {
         show={showDisableModal}
         onCancel={closeDisableModal}
         onConfirm={handleConfirmDisable}
-        deleteText={`Disable type "${selectedDisableTypeLabel}"? You can enable it again later.`}
+        deleteText={`Disable type “${selectedDisableTypeLabel}”? You can enable it again later.`}
         isLoading={isDisablingType}
+        showIcon={false}
         className="blockers-confirm-modal"
         backdropClassName="blockers-confirm-modal-backdrop"
       />

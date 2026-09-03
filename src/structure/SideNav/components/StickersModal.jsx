@@ -582,7 +582,7 @@ const StickersModal = ({ show, onClose }) => {
         show={showDeleteModal}
         onCancel={closeDeleteModal}
         onConfirm={handleConfirmDelete}
-        deleteText={`Delete sticker "${selectedDeleteStickerLabel}"? This cannot be undone.`}
+        deleteText={`Delete sticker “${selectedDeleteStickerLabel}”? This cannot be undone.`}
         isLoading={isDeletingSticker}
         className="blockers-confirm-modal"
         backdropClassName="blockers-confirm-modal-backdrop"
@@ -593,8 +593,9 @@ const StickersModal = ({ show, onClose }) => {
         show={showDisableModal}
         onCancel={closeDisableModal}
         onConfirm={handleConfirmDisable}
-        deleteText={`Disable sticker "${selectedDisableStickerLabel}"? You can enable it again later.`}
+        deleteText={`Disable sticker “${selectedDisableStickerLabel}”? You can enable it again later.`}
         isLoading={isDisablingSticker}
+        showIcon={false}
         className="blockers-confirm-modal"
         backdropClassName="blockers-confirm-modal-backdrop"
       />

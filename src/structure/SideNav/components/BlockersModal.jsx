@@ -582,7 +582,7 @@ const BlockersModal = ({ show, onClose }) => {
         show={showDeleteModal}
         onCancel={closeDeleteModal}
         onConfirm={handleConfirmDelete}
-        deleteText={`Delete blocker "${selectedDeleteBlockerLabel}"? This cannot be undone.`}
+        deleteText={`Delete blocker “${selectedDeleteBlockerLabel}”? This cannot be undone.`}
         isLoading={isDeletingBlocker}
         className="blockers-confirm-modal"
         backdropClassName="blockers-confirm-modal-backdrop"
@@ -593,8 +593,9 @@ const BlockersModal = ({ show, onClose }) => {
         show={showDisableModal}
         onCancel={closeDisableModal}
         onConfirm={handleConfirmDisable}
-        deleteText={`Disable blocker "${selectedDisableBlockerLabel}"? You can enable it again later.`}
+        deleteText={`Disable blocker “${selectedDisableBlockerLabel}”? You can enable it again later.`}
         isLoading={isDisablingBlocker}
+        showIcon={false}
         className="blockers-confirm-modal"
         backdropClassName="blockers-confirm-modal-backdrop"
       />
