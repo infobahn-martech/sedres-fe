@@ -299,181 +299,185 @@ const TypesModal = ({ show, onClose }) => {
         </button>
       </Modal.Header>
       <Modal.Body className="blockers-modal-body tags-modal-body">
-        <div className="blockers-filter-bar">
-          <div className="blockers-filter-left">
-            <div className="blockers-filter-input-wrap">
-              <FiSearch size={16} className="blockers-filter-search-icon" />
-              <input
-                type="text"
-                className="blockers-filter-input"
-                placeholder="Filter types by label or board..."
-                value={searchValue}
-                onChange={(e) => handleSearchChange(e.target.value)}
-              />
+        <div className="blockers-toolbar-section">
+          <div className="blockers-filter-bar">
+            <div className="blockers-filter-left">
+              <div className="blockers-filter-input-wrap">
+                <FiSearch size={16} className="blockers-filter-search-icon" />
+                <input
+                  type="text"
+                  className="blockers-filter-input"
+                  placeholder="Filter types by label or board..."
+                  value={searchValue}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="blockers-filter-right">
+              <button
+                type="button"
+                className="blockers-add-btn"
+                aria-label="Add type"
+                onClick={handleAddType}
+              >
+                <FiPlus size={20} />
+              </button>
             </div>
           </div>
-          <div className="blockers-filter-right">
-            <button
-              type="button"
-              className="blockers-add-btn"
-              aria-label="Add type"
-              onClick={handleAddType}
-            >
-              <FiPlus size={20} />
-            </button>
-          </div>
+
+          {cardTypesError && (
+            <div className="tags-modal-error-banner" role="alert">
+              <FiAlertCircle size={18} aria-hidden />
+              <span className="tags-modal-error-text">{cardTypesError}</span>
+              <button
+                type="button"
+                className="tags-modal-error-retry"
+                onClick={() =>
+                  fetchKanbanCardTypes({
+                    search: debouncedSearch,
+                    page: currentPage,
+                    per_page: perPage,
+                  })
+                }
+              >
+                Retry
+              </button>
+            </div>
+          )}
         </div>
 
-        {cardTypesError && (
-          <div className="tags-modal-error-banner" role="alert">
-            <FiAlertCircle size={18} aria-hidden />
-            <span className="tags-modal-error-text">{cardTypesError}</span>
-            <button
-              type="button"
-              className="tags-modal-error-retry"
-              onClick={() =>
-                fetchKanbanCardTypes({
-                  search: debouncedSearch,
-                  page: currentPage,
-                  per_page: perPage,
-                })
-              }
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        <div className="blockers-table-wrapper blockers-table-wrapper--tags-min-body">
-          <table className="blockers-table">
-            <thead>
-              <tr>
-                <th style={{ width: '50px' }}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M2 4h12M2 8h12M2 12h12"
-                      stroke="#666"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                    <circle cx="4" cy="4" r="1" fill="#666" />
-                    <circle cx="4" cy="8" r="1" fill="#666" />
-                    <circle cx="4" cy="12" r="1" fill="#666" />
-                  </svg>
-                </th>
-                <th>
-                  <div className="blockers-th-content">
-                    <span>Label</span>
-                  </div>
-                </th>
-                <th>
-                  <div className="blockers-th-content">
-                    <span>Availability level</span>
-                  </div>
-                </th>
-                <th>
-                  <div className="blockers-th-content">
-                    <span>Boards</span>
-                  </div>
-                </th>
-                <th style={{ width: '40px' }}>
-                  <span>Action</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {cardTypesLoading ? (
+        <div className="blockers-table-section">
+          <div className="blockers-table-wrapper blockers-table-wrapper--tags-min-body">
+            <table className="blockers-table">
+              <thead>
                 <tr>
-                  <td colSpan="5" className="tags-modal-loading-cell">
-                    Loading types…
-                  </td>
+                  <th style={{ width: '50px' }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path
+                        d="M2 4h12M2 8h12M2 12h12"
+                        stroke="#666"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                      <circle cx="4" cy="4" r="1" fill="#666" />
+                      <circle cx="4" cy="8" r="1" fill="#666" />
+                      <circle cx="4" cy="12" r="1" fill="#666" />
+                    </svg>
+                  </th>
+                  <th>
+                    <div className="blockers-th-content">
+                      <span>Label</span>
+                    </div>
+                  </th>
+                  <th>
+                    <div className="blockers-th-content">
+                      <span>Availability level</span>
+                    </div>
+                  </th>
+                  <th>
+                    <div className="blockers-th-content">
+                      <span>Boards</span>
+                    </div>
+                  </th>
+                  <th style={{ width: '40px' }}>
+                    <span>Action</span>
+                  </th>
                 </tr>
-              ) : pageTypes.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="5"
-                    style={{ textAlign: 'center', padding: '40px', color: '#999' }}
-                  >
-                    No types found
-                  </td>
-                </tr>
-              ) : (
-                pageTypes.map((row) => (
-                  <tr key={row.id}>
-                    <td>
-                      <TypeIconSwatch color_code={row.color_code} iconKey={row.icon} />
-                    </td>
-                    <td>
-                      <span className="blockers-label-text">{row.label}</span>
-                    </td>
-                    <td>
-                      <span className="blockers-availability-cell">
-                        <span className={`blockers-availability-dot ${availabilityDotClass(row.availabilityLevel)}`} />
-                        <span className={`blockers-availability-text ${availabilityDotClass(row.availabilityLevel)}`}>
-                          {row.availabilityLevel}
-                        </span>
-                      </span>
-                    </td>
-                    <td>
-                      {row.boardsRaw && row.boardsRaw.length > 0 ? (
-                        <span className="blockers-boards-cell">
-                          {row.boardsRaw.map((b) => (
-                            <span key={b.board_id} className="blockers-board-badge">
-                              {b.board_name}
-                            </span>
-                          ))}
-                        </span>
-                      ) : (
-                        <span className="blockers-boards-empty">No boards assigned</span>
-                      )}
-                    </td>
-                    <td>
-                      <div
-                        ref={(el) => {
-                          actionMenuRefs.current[String(row.id)] = el;
-                        }}
-                        style={{ position: 'relative' }}
-                      >
-                        <button
-                          type="button"
-                          className="blockers-kebab-btn"
-                          aria-label="Action"
-                          onClick={(e) => handleActionMenuToggle(row.id, e)}
-                        >
-                          <FiMoreVertical size={18} />
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {cardTypesLoading ? (
+                  <tr>
+                    <td colSpan="5" className="tags-modal-loading-cell">
+                      Loading types…
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="tags-modal-pagination">
-          <span className="tags-modal-pagination-count">
-            {isBackendPaginated && cardTypesPagination?.total != null
-              ? `${cardTypesPagination.total} type${Number(cardTypesPagination.total) === 1 ? '' : 's'}`
-              : `${cardTypes.length} type${cardTypes.length === 1 ? '' : 's'}`}
-          </span>
-          <div className="tags-modal-pagination-controls">
-            <button
-              type="button"
-              className="tags-modal-pagination-btn"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage <= 1 || cardTypesLoading}
-            >
-              Previous
-            </button>
-            <span className="tags-modal-pagination-page">Page {currentPage}</span>
-            <button
-              type="button"
-              className="tags-modal-pagination-btn"
-              onClick={() => setCurrentPage((prev) => prev + 1)}
-              disabled={!hasNextPage || cardTypesLoading}
-            >
-              Next
-            </button>
+                ) : pageTypes.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="5"
+                      style={{ textAlign: 'center', padding: '40px', color: '#999' }}
+                    >
+                      No types found
+                    </td>
+                  </tr>
+                ) : (
+                  pageTypes.map((row) => (
+                    <tr key={row.id}>
+                      <td>
+                        <TypeIconSwatch color_code={row.color_code} iconKey={row.icon} />
+                      </td>
+                      <td>
+                        <span className="blockers-label-text">{row.label}</span>
+                      </td>
+                      <td>
+                        <span className="blockers-availability-cell">
+                          <span className={`blockers-availability-dot ${availabilityDotClass(row.availabilityLevel)}`} />
+                          <span className={`blockers-availability-text ${availabilityDotClass(row.availabilityLevel)}`}>
+                            {row.availabilityLevel}
+                          </span>
+                        </span>
+                      </td>
+                      <td>
+                        {row.boardsRaw && row.boardsRaw.length > 0 ? (
+                          <span className="blockers-boards-cell">
+                            {row.boardsRaw.map((b) => (
+                              <span key={b.board_id} className="blockers-board-badge">
+                                {b.board_name}
+                              </span>
+                            ))}
+                          </span>
+                        ) : (
+                          <span className="blockers-boards-empty">No boards assigned</span>
+                        )}
+                      </td>
+                      <td>
+                        <div
+                          ref={(el) => {
+                            actionMenuRefs.current[String(row.id)] = el;
+                          }}
+                          style={{ position: 'relative' }}
+                        >
+                          <button
+                            type="button"
+                            className="blockers-kebab-btn"
+                            aria-label="Action"
+                            onClick={(e) => handleActionMenuToggle(row.id, e)}
+                          >
+                            <FiMoreVertical size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="tags-modal-pagination">
+            <span className="tags-modal-pagination-count">
+              {isBackendPaginated && cardTypesPagination?.total != null
+                ? `${cardTypesPagination.total} type${Number(cardTypesPagination.total) === 1 ? '' : 's'}`
+                : `${cardTypes.length} type${cardTypes.length === 1 ? '' : 's'}`}
+            </span>
+            <div className="tags-modal-pagination-controls">
+              <button
+                type="button"
+                className="tags-modal-pagination-btn"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage <= 1 || cardTypesLoading}
+              >
+                Previous
+              </button>
+              <span className="tags-modal-pagination-page">Page {currentPage}</span>
+              <button
+                type="button"
+                className="tags-modal-pagination-btn"
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                disabled={!hasNextPage || cardTypesLoading}
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       </Modal.Body>
