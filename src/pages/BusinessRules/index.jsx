@@ -176,7 +176,7 @@ const BusinessRules = () => {
             <input
               type="text"
               className="form-control br-search-input"
-              placeholder="Filter by business rule name, ID, owner, tags"
+              placeholder="Filter by business rule name, ID, owner, board name"
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
             />
