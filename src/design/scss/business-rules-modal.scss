@@ -98,7 +98,12 @@
   background: var(--surface-primary);
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  // No outer scroll here — .br-table-section / .br-picker-container below are
+  // themselves shrinkable (flex-basis + min-height: 0) and own the only
+  // scrollbar (their inner .br-table-scroll / .br-picker-grid-wrapper), so the
+  // toolbar and pagination/footer never get pushed behind a second, outer
+  // scrollbar on short viewports.
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -119,12 +124,14 @@
   background: var(--surface-primary);
   display: flex;
   flex-direction: column;
-  // Hard fixed height (matches the picker view's .br-picker-container fix below) —
-  // keeps the modal from growing/shrinking as search/filter results change the row
-  // count (including the "No business rules found" empty state). Sized to fit the
-  // header row + a full page of 10 rows with no inner scrollbar.
-  height: 500px;
-  flex: 0 0 auto;
+  // 500px is the preferred size (matches the picker view's .br-picker-container
+  // fix below) — keeps the modal from growing/shrinking as search/filter results
+  // change the row count (including the "No business rules found" empty state),
+  // sized to fit the header row + a full page of 10 rows with no inner scrollbar.
+  // Flexible (not a hard height) so on short viewports it shrinks instead of
+  // pushing the pagination footer past the modal's own max-height — .br-table-scroll
+  // below picks up the inner scrollbar in that case.
+  flex: 1 1 500px;
   min-height: 0;
 }
 
@@ -145,10 +152,15 @@
   display: flex;
   flex-direction: column;
   background: var(--surface-primary);
-  // Hard fixed height (not min-height/flex-grow) — guarantees the picker
-  // modal never resizes while typing a search, regardless of result count.
-  height: 520px;
-  flex: 0 0 auto;
+  // 654px is the preferred size — guarantees the picker modal never resizes
+  // while typing a search, regardless of result count, matching the table
+  // view's total modal height (header + toolbar + 500px .br-table-section +
+  // pagination) so switching between "Business Rules" and "Select Rule Type"
+  // doesn't change the overall modal size. Flexible (not a hard height) so on
+  // short viewports it shrinks instead of overflowing the modal — its own
+  // .br-picker-grid-wrapper picks up the inner scrollbar in that case.
+  flex: 1 1 654px;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -793,11 +805,16 @@
 .br-table-pagination {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 12px;
   padding: 14px 24px;
   border-top: 1px solid var(--border-primary);
   background: var(--surface-primary);
+
+  .br-table-pagination-total {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
 
   .br-table-pagination-controls {
     display: flex;
@@ -967,6 +984,7 @@ body .modal.business-rule-form-modal.show {
 .business-rule-form-modal-body {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 28px 32px 32px;
