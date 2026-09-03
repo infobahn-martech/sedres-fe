@@ -3089,7 +3089,7 @@ function CardForm({
                 isDaCardContext,
                 refreshSalesOrder,
                 bumpDaStatusRefreshToken,
-                resolvedBoardId
+                boardId
               )}
           </>
         )}
