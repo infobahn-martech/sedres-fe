@@ -4,6 +4,8 @@ import { FiX, FiPlus, FiMoreVertical, FiAlertCircle, FiSearch } from 'react-icon
 import { Modal } from 'react-bootstrap';
 import NewStickerModal from './NewStickerModal';
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
+import DisableConfirmIcon from '../../../assets/images/disable.svg';
+import EnableConfirmIcon from '../../../assets/images/enable.svg';
 import DynamicIcon from './DynamicIcon';
 import useKanbanManagementReducer, {
   isKanbanManagementRowDisabled,
@@ -124,6 +126,11 @@ const StickersModal = ({ show, onClose }) => {
   const [selectedDisableStickerLabel, setSelectedDisableStickerLabel] = useState('');
   const [isDisablingSticker, setIsDisablingSticker] = useState(false);
 
+  const [showEnableModal, setShowEnableModal] = useState(false);
+  const [selectedEnableStickerId, setSelectedEnableStickerId] = useState(null);
+  const [selectedEnableStickerLabel, setSelectedEnableStickerLabel] = useState('');
+  const [isEnablingSticker, setIsEnablingSticker] = useState(false);
+
   useEffect(() => {
     if (!show) {
       setSearchValue('');
@@ -221,13 +228,29 @@ const StickersModal = ({ show, onClose }) => {
     }
   };
 
-  const handleEnable = async (stickerId) => {
-    const id = String(stickerId);
+  const handleEnable = (stickerId, stickerLabel) => {
     setOpenActionMenuId(null);
+    setSelectedEnableStickerId(String(stickerId));
+    setSelectedEnableStickerLabel(stickerLabel ?? '');
+    setShowEnableModal(true);
+  };
+
+  const closeEnableModal = () => {
+    setShowEnableModal(false);
+    setSelectedEnableStickerId(null);
+    setSelectedEnableStickerLabel('');
+  };
+
+  const handleConfirmEnable = async () => {
+    if (!selectedEnableStickerId) return;
+    setIsEnablingSticker(true);
     try {
-      await enableKanbanCardStickerRecord(id, refreshParams());
+      await enableKanbanCardStickerRecord(selectedEnableStickerId, refreshParams());
     } catch {
       /* AlertReducer in store */
+    } finally {
+      setIsEnablingSticker(false);
+      closeEnableModal();
     }
   };
 
@@ -534,7 +557,7 @@ const StickersModal = ({ show, onClose }) => {
                 <button
                   type="button"
                   className="blockers-action-menu-item"
-                  onClick={() => handleEnable(activeRow.sticker_id ?? activeRow.id)}
+                  onClick={() => handleEnable(activeRow.sticker_id ?? activeRow.id, activeRow.label)}
                 >
                   Enable
                 </button>
@@ -595,7 +618,19 @@ const StickersModal = ({ show, onClose }) => {
         onConfirm={handleConfirmDisable}
         deleteText={`Disable sticker “${selectedDisableStickerLabel}”? You can enable it again later.`}
         isLoading={isDisablingSticker}
-        showIcon={false}
+        icon={DisableConfirmIcon}
+        className="blockers-confirm-modal"
+        backdropClassName="blockers-confirm-modal-backdrop"
+      />
+    )}
+    {!!showEnableModal && (
+      <DeleteConfirmationModal
+        show={showEnableModal}
+        onCancel={closeEnableModal}
+        onConfirm={handleConfirmEnable}
+        deleteText={`Enable sticker “${selectedEnableStickerLabel}”?`}
+        isLoading={isEnablingSticker}
+        icon={EnableConfirmIcon}
         className="blockers-confirm-modal"
         backdropClassName="blockers-confirm-modal-backdrop"
       />

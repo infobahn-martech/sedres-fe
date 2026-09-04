@@ -465,14 +465,14 @@ body .modal.blockers-confirm-modal.show .modal-dialog {
     gap: 16px;
 
     .blockers-table-section {
-      flex: 1;
+      flex: 0 1 auto;
       display: flex;
       flex-direction: column;
       min-height: 0;
     }
 
     .blockers-table-wrapper--tags-min-body {
-      flex: 1;
+      flex: 0 1 auto;
       min-height: 0;
       overflow-y: auto;
     }

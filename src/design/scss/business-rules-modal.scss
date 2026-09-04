@@ -116,7 +116,7 @@
   flex-direction: column;
   gap: 16px;
   padding: 20px;
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
 }
 
@@ -132,14 +132,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  // 500px is the preferred size (matches the picker view's .br-picker-container
-  // fix below) — keeps the modal from growing/shrinking as search/filter results
-  // change the row count (including the "No business rules found" empty state),
-  // sized to fit the header row + a full page of 10 rows with no inner scrollbar.
-  // Flexible (not a hard height) so on short viewports it shrinks instead of
-  // pushing the pagination footer past the modal's own max-height — .br-table-scroll
-  // below picks up the inner scrollbar in that case.
-  flex: 1 1 500px;
+  flex: 0 1 auto;
   min-height: 0;
 }
 
@@ -160,14 +153,7 @@
   display: flex;
   flex-direction: column;
   background: var(--surface-primary);
-  // 654px is the preferred size — guarantees the picker modal never resizes
-  // while typing a search, regardless of result count, matching the table
-  // view's total modal height (header + toolbar + 500px .br-table-section +
-  // pagination) so switching between "Business Rules" and "Select Rule Type"
-  // doesn't change the overall modal size. Flexible (not a hard height) so on
-  // short viewports it shrinks instead of overflowing the modal — its own
-  // .br-picker-grid-wrapper picks up the inner scrollbar in that case.
-  flex: 1 1 654px;
+  flex: 0 1 auto;
   min-height: 0;
   overflow: hidden;
 }

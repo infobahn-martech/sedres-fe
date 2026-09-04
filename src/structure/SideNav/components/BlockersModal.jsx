@@ -4,6 +4,8 @@ import { FiX, FiPlus, FiMoreVertical, FiAlertCircle, FiSearch } from 'react-icon
 import { Modal } from 'react-bootstrap';
 import NewBlockerModal from './NewBlockerModal';
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
+import DisableConfirmIcon from '../../../assets/images/disable.svg';
+import EnableConfirmIcon from '../../../assets/images/enable.svg';
 import DynamicIcon from './DynamicIcon';
 import useKanbanManagementReducer, {
   isKanbanManagementRowDisabled,
@@ -124,6 +126,11 @@ const BlockersModal = ({ show, onClose }) => {
   const [selectedDisableBlockerLabel, setSelectedDisableBlockerLabel] = useState('');
   const [isDisablingBlocker, setIsDisablingBlocker] = useState(false);
 
+  const [showEnableModal, setShowEnableModal] = useState(false);
+  const [selectedEnableBlockerId, setSelectedEnableBlockerId] = useState(null);
+  const [selectedEnableBlockerLabel, setSelectedEnableBlockerLabel] = useState('');
+  const [isEnablingBlocker, setIsEnablingBlocker] = useState(false);
+
   useEffect(() => {
     if (!show) {
       setSearchValue('');
@@ -221,13 +228,29 @@ const BlockersModal = ({ show, onClose }) => {
     }
   };
 
-  const handleEnable = async (blockerId) => {
-    const id = String(blockerId);
+  const handleEnable = (blockerId, blockerLabel) => {
     setOpenActionMenuId(null);
+    setSelectedEnableBlockerId(String(blockerId));
+    setSelectedEnableBlockerLabel(blockerLabel ?? '');
+    setShowEnableModal(true);
+  };
+
+  const closeEnableModal = () => {
+    setShowEnableModal(false);
+    setSelectedEnableBlockerId(null);
+    setSelectedEnableBlockerLabel('');
+  };
+
+  const handleConfirmEnable = async () => {
+    if (!selectedEnableBlockerId) return;
+    setIsEnablingBlocker(true);
     try {
-      await enableKanbanCardBlockerRecord(id, refreshParams());
+      await enableKanbanCardBlockerRecord(selectedEnableBlockerId, refreshParams());
     } catch {
       /* AlertReducer in store */
+    } finally {
+      setIsEnablingBlocker(false);
+      closeEnableModal();
     }
   };
 
@@ -534,7 +557,7 @@ const BlockersModal = ({ show, onClose }) => {
                 <button
                   type="button"
                   className="blockers-action-menu-item"
-                  onClick={() => handleEnable(activeRow.blocker_id ?? activeRow.id)}
+                  onClick={() => handleEnable(activeRow.blocker_id ?? activeRow.id, activeRow.label)}
                 >
                   Enable
                 </button>
@@ -595,7 +618,19 @@ const BlockersModal = ({ show, onClose }) => {
         onConfirm={handleConfirmDisable}
         deleteText={`Disable blocker “${selectedDisableBlockerLabel}”? You can enable it again later.`}
         isLoading={isDisablingBlocker}
-        showIcon={false}
+        icon={DisableConfirmIcon}
+        className="blockers-confirm-modal"
+        backdropClassName="blockers-confirm-modal-backdrop"
+      />
+    )}
+    {!!showEnableModal && (
+      <DeleteConfirmationModal
+        show={showEnableModal}
+        onCancel={closeEnableModal}
+        onConfirm={handleConfirmEnable}
+        deleteText={`Enable blocker “${selectedEnableBlockerLabel}”?`}
+        isLoading={isEnablingBlocker}
+        icon={EnableConfirmIcon}
         className="blockers-confirm-modal"
         backdropClassName="blockers-confirm-modal-backdrop"
       />

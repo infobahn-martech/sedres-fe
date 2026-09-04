@@ -4,6 +4,8 @@ import { FiX, FiPlus, FiMoreVertical, FiAlertCircle, FiSearch } from 'react-icon
 import { Modal } from 'react-bootstrap';
 import NewTagModal, { normalizeTagAvailabilityLevel } from './NewTagModal';
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
+import DisableConfirmIcon from '../../../assets/images/disable.svg';
+import EnableConfirmIcon from '../../../assets/images/enable.svg';
 import useKanbanManagementReducer, {
   isKanbanManagementRowDisabled,
 } from '../../../store/KanbanManagementReducer';
@@ -79,6 +81,11 @@ const TagsModal = ({ show, onClose }) => {
   const [selectedDisableTagId, setSelectedDisableTagId] = useState(null);
   const [selectedDisableTagLabel, setSelectedDisableTagLabel] = useState('');
   const [isDisablingTag, setIsDisablingTag] = useState(false);
+
+  const [showEnableModal, setShowEnableModal] = useState(false);
+  const [selectedEnableTagId, setSelectedEnableTagId] = useState(null);
+  const [selectedEnableTagLabel, setSelectedEnableTagLabel] = useState('');
+  const [isEnablingTag, setIsEnablingTag] = useState(false);
 
   useEffect(() => {
     if (!show) {
@@ -176,13 +183,29 @@ const TagsModal = ({ show, onClose }) => {
     }
   };
 
-  const handleEnable = async (tagId) => {
-    const id = String(tagId);
+  const handleEnable = (tagId, tagLabel) => {
     setOpenActionMenuId(null);
+    setSelectedEnableTagId(String(tagId));
+    setSelectedEnableTagLabel(tagLabel ?? '');
+    setShowEnableModal(true);
+  };
+
+  const closeEnableModal = () => {
+    setShowEnableModal(false);
+    setSelectedEnableTagId(null);
+    setSelectedEnableTagLabel('');
+  };
+
+  const handleConfirmEnable = async () => {
+    if (!selectedEnableTagId) return;
+    setIsEnablingTag(true);
     try {
-      await enableKanbanTagRecord(id, refreshParams());
+      await enableKanbanTagRecord(selectedEnableTagId, refreshParams());
     } catch {
       /* AlertReducer in store */
+    } finally {
+      setIsEnablingTag(false);
+      closeEnableModal();
     }
   };
 
@@ -483,7 +506,7 @@ const TagsModal = ({ show, onClose }) => {
                 <button
                   type="button"
                   className="blockers-action-menu-item"
-                  onClick={() => handleEnable(activeTag.id)}
+                  onClick={() => handleEnable(activeTag.id, activeTag.label)}
                 >
                   Enable
                 </button>
@@ -544,7 +567,19 @@ const TagsModal = ({ show, onClose }) => {
         onConfirm={handleConfirmDisable}
         deleteText={`Disable tag “${selectedDisableTagLabel}”? You can enable it again later.`}
         isLoading={isDisablingTag}
-        showIcon={false}
+        icon={DisableConfirmIcon}
+        className="blockers-confirm-modal"
+        backdropClassName="blockers-confirm-modal-backdrop"
+      />
+    )}
+    {!!showEnableModal && (
+      <DeleteConfirmationModal
+        show={showEnableModal}
+        onCancel={closeEnableModal}
+        onConfirm={handleConfirmEnable}
+        deleteText={`Enable tag “${selectedEnableTagLabel}”?`}
+        isLoading={isEnablingTag}
+        icon={EnableConfirmIcon}
         className="blockers-confirm-modal"
         backdropClassName="blockers-confirm-modal-backdrop"
       />

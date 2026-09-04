@@ -13,6 +13,7 @@ const DeleteConfirmationModal = ({
   className,
   backdropClassName,
   showIcon,
+  icon,
 }) => {
   return (
     <CustomModal
@@ -26,7 +27,15 @@ const DeleteConfirmationModal = ({
         <div className="modal-body">
           {showIcon && (
             <div className="profile-img">
-              <img src={DeleteConfirmIcon} alt="sign" />
+              {icon ? (
+                typeof icon === 'string' ? (
+                  <img src={icon} alt="sign" />
+                ) : (
+                  icon
+                )
+              ) : (
+                <img src={DeleteConfirmIcon} alt="sign" />
+              )}
             </div>
           )}
           <div className="popup-title">{deleteText}</div>
@@ -66,6 +75,7 @@ DeleteConfirmationModal.propTypes = {
   className: PropTypes.string,
   backdropClassName: PropTypes.string,
   showIcon: PropTypes.bool,
+  icon: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
 };
 
 DeleteConfirmationModal.defaultProps = {
