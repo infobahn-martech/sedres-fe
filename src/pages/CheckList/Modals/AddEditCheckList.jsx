@@ -1284,13 +1284,13 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
           alignItems: "center",
           marginBottom: "16px",
           paddingBottom: "12px",
-          borderBottom: "2px solid #e2e6ff"
+          borderBottom: "2px solid var(--border-primary)"
         }}>
           <h6 style={{
             margin: 0,
             fontWeight: "700",
             fontSize: "14px",
-            color: "#1a1a1a",
+            color: "var(--text-primary)",
             display: "flex",
             alignItems: "center",
             gap: "8px"
@@ -1337,11 +1337,11 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
 
         {fields.map((subSection, subSectionIndex) => (
           <div key={subSection.id} style={{
-            border: "1px solid #e2e6ff",
+            border: "1px solid var(--border-primary)",
             borderRadius: "10px",
             padding: "0",
             marginBottom: "15px",
-            backgroundColor: "#ffffff",
+            backgroundColor: "var(--surface-primary)",
             boxShadow: "0 1px 4px rgba(0, 0, 0, 0.04)",
             overflow: "visible"
           }}
@@ -1351,8 +1351,8 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
               className="sub-section-header-row"
               style={{
                 padding: "14px 18px",
-                backgroundColor: "#fafbfc",
-                borderBottom: expandedSubSections[`${sectionIndex}-${subSectionIndex}`] ? "1px solid #e2e6ff" : "none"
+                backgroundColor: "var(--bg-secondary)",
+                borderBottom: expandedSubSections[`${sectionIndex}-${subSectionIndex}`] ? "1px solid var(--border-primary)" : "none"
               }}
             >
               <button
@@ -1363,7 +1363,7 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                   border: "none",
                   fontWeight: "700",
                   fontSize: "14px",
-                  color: "#1a1a1a",
+                  color: "var(--text-primary)",
                   cursor: "pointer",
                   textAlign: "left",
                   display: "flex",
@@ -1387,22 +1387,22 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                 <input
                   className="form-control section-header-input"
                   placeholder="Sub Section Title"
-                  style={{ borderColor: "#e2e6ff", fontSize: "14px" }}
+                  style={{ borderColor: "var(--border-primary)", fontSize: "14px" }}
                   {...register(`sections.${sectionIndex}.sub_sections.${subSectionIndex}.title`)}
                 />
-                <label style={{ fontSize: "13px", color: "#666" }}>Sub Section Title</label>
+                <label style={{ fontSize: "13px", color: "var(--text-secondary)" }}>Sub Section Title</label>
               </div>
               <div className="form-floating section-header-floating">
                 <input
                   type="number"
                   className="form-control section-header-input"
                   placeholder="Sort Order"
-                  style={{ borderColor: "#e2e6ff", fontSize: "14px" }}
+                  style={{ borderColor: "var(--border-primary)", fontSize: "14px" }}
                   {...register(`sections.${sectionIndex}.sub_sections.${subSectionIndex}.sort_order`, {
                     valueAsNumber: true
                   })}
                 />
-                <label style={{ fontSize: "13px", color: "#666" }}>Sort Order</label>
+                <label style={{ fontSize: "13px", color: "var(--text-secondary)" }}>Sort Order</label>
               </div>
               <button
                 type="button"
@@ -1646,13 +1646,13 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                 alignItems: "center",
                 marginBottom: "20px",
                 paddingBottom: "15px",
-                borderBottom: "2px solid #e2e6ff"
+                borderBottom: "2px solid var(--border-primary)"
               }}>
                 <h5 style={{
                   margin: 0,
                   fontWeight: "700",
                   fontSize: "18px",
-                  color: "#1a1a1a",
+                  color: "var(--text-primary)",
                   display: "flex",
                   alignItems: "center",
                   gap: "12px"
@@ -1697,11 +1697,11 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
 
               {sections.map((section, sectionIndex) => (
                 <div key={section.id} style={{
-                  border: "1px solid #e2e6ff",
+                  border: "1px solid var(--border-primary)",
                   borderRadius: "12px",
                   padding: "0",
                   marginBottom: "20px",
-                  backgroundColor: "#ffffff",
+                  backgroundColor: "var(--surface-primary)",
                   boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
                   overflow: "visible"
                 }}
@@ -1712,8 +1712,8 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                     className="section-header-row"
                     style={{
                       padding: "16px 20px",
-                      backgroundColor: "#f8f9ff",
-                      borderBottom: expandedSections[sectionIndex] ? "1px solid #e2e6ff" : "none"
+                      backgroundColor: "var(--bg-secondary)",
+                      borderBottom: expandedSections[sectionIndex] ? "1px solid var(--border-primary)" : "none"
                     }}
                   >
                     <button
@@ -1724,7 +1724,7 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                         border: "none",
                         fontWeight: "700",
                         fontSize: "15px",
-                        color: "#1a1a1a",
+                        color: "var(--text-primary)",
                         cursor: "pointer",
                         textAlign: "left",
                         display: "flex",
@@ -1748,22 +1748,22 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                       <input
                         className="form-control section-header-input"
                         placeholder="Section Title"
-                        style={{ borderColor: "#e2e6ff" }}
+                        style={{ borderColor: "var(--border-primary)" }}
                         {...register(`sections.${sectionIndex}.title`)}
                       />
-                      <label style={{ color: "#666" }}>Section Title</label>
+                      <label style={{ color: "var(--text-secondary)" }}>Section Title</label>
                     </div>
                     <div className="form-floating section-header-floating">
                       <input
                         type="number"
                         className="form-control section-header-input"
                         placeholder="Sort Order"
-                        style={{ borderColor: "#e2e6ff" }}
+                        style={{ borderColor: "var(--border-primary)" }}
                         {...register(`sections.${sectionIndex}.sort_order`, {
                           valueAsNumber: true
                         })}
                       />
-                      <label style={{ color: "#666" }}>Sort Order</label>
+                      <label style={{ color: "var(--text-secondary)" }}>Sort Order</label>
                     </div>
                     <button
                       type="button"
@@ -1781,7 +1781,7 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                       {/* Divider */}
                       <div style={{
                         height: "1px",
-                        backgroundColor: "#e2e6ff",
+                        backgroundColor: "var(--border-primary)",
                         margin: "4px 0 20px",
                         width: "100%"
                       }}></div>
