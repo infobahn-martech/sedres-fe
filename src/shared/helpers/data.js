@@ -316,6 +316,18 @@ export function mapBoardWorkflowFromApi(workflow) {
               card.waste_disposal != null && String(card.waste_disposal).trim() !== ""
                 ? Number(card.waste_disposal)
                 : null,
+            subtaskTotal:
+              card.subtask_total != null && String(card.subtask_total).trim() !== ""
+                ? Number(card.subtask_total)
+                : null,
+            subtaskCompleted:
+              card.subtask_completed != null && String(card.subtask_completed).trim() !== ""
+                ? Number(card.subtask_completed)
+                : null,
+            subtaskStatus:
+              card.subtask_status != null && String(card.subtask_status).trim() !== ""
+                ? String(card.subtask_status).trim()
+                : null,
             raw: card,
             cardSource: "api",
             // Task Card modal (kanban_card/create_task_card) cards always live under the

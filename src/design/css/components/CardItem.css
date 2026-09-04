@@ -918,11 +918,23 @@
   position: relative;
   display: inline-flex;
   flex-basis: 100%;
+  width: 100%;
   margin-top: 2px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-primary);
+  box-sizing: border-box;
 }
 
 .card-api-link-badge {
   cursor: pointer;
+}
+
+.card-api-subtask-badge-wrap {
+  width: 100%;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-primary);
+  box-sizing: border-box;
 }
 
 .card-api-link-badge-label {
@@ -959,13 +971,29 @@
   color: var(--text-primary);
   border-radius: 4px;
   cursor: pointer;
+}
+
+.card-api-link-picker-item:hover {
+  background: var(--bg-hover, #f1f5f9);
+}
+
+.card-api-link-picker-item-title {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.card-api-link-picker-item:hover {
-  background: var(--bg-hover, #f1f5f9);
+.card-api-link-picker-item-subtask {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary, #6c757d);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .card-api-summary-row .card-api-kpi .circular-progress {
@@ -1021,5 +1049,13 @@
 }
 
 .kanban-card-dark.kanban-card--api .card-api-summary-row {
+  border-top-color: #3a3a3a;
+}
+
+.kanban-card-dark.kanban-card--api .card-api-link-badge-wrap {
+  border-top-color: #3a3a3a;
+}
+
+.kanban-card-dark.kanban-card--api .card-api-subtask-badge-wrap {
   border-top-color: #3a3a3a;
 }

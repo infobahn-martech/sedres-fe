@@ -171,6 +171,7 @@ function ApiCardCountIconsRow({ card, cardsById, setSelectedCard, transportOnly 
         </>
       )}
       <ApiCardLinkBadge card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} />
+      <ApiCardSubtaskBadge card={card} />
     </div>
   );
 }
@@ -238,6 +239,8 @@ function ApiCardLinkBadge({ card, cardsById, setSelectedCard }) {
             {linkedIds.map((id) => {
               const target = cardsById?.[id];
               const label = target ? getApiCardDisplayTitle(target) : `Card #${id}`;
+              const subtaskTotal = Number(target?.subtaskTotal);
+              const hasSubtasks = Number.isFinite(subtaskTotal) && subtaskTotal > 0;
               return (
                 <div
                   key={id}
@@ -247,7 +250,16 @@ function ApiCardLinkBadge({ card, cardsById, setSelectedCard }) {
                     openCard(id);
                   }}
                 >
-                  {label || `Card #${id}`}
+                  <div className="card-api-link-picker-item-title">{label || `Card #${id}`}</div>
+                  {hasSubtasks && (
+                    <div className="card-api-link-picker-item-subtask">
+                      <SubtasksIcon size={11} color="#666" />
+                      <span>
+                        {target.subtaskCompleted ?? 0}/{subtaskTotal} Subtasks
+                        {target.subtaskStatus ? ` · ${target.subtaskStatus}` : ""}
+                      </span>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -265,6 +277,38 @@ ApiCardLinkBadge.propTypes = {
   }).isRequired,
   cardsById: PropTypes.object,
   setSelectedCard: PropTypes.func.isRequired,
+};
+
+/** Row under the linked-card badge showing subtask completion (e.g. "1/2 Subtasks"). */
+function ApiCardSubtaskBadge({ card }) {
+  const total = Number(card.subtaskTotal);
+  if (!Number.isFinite(total) || total <= 0) return null;
+  const completed = Number(card.subtaskCompleted) || 0;
+
+  return (
+    <span
+      className="card-api-link-badge-wrap card-api-subtask-badge-wrap"
+      data-tooltip-id={`subtask-badge-${card.id}`}
+      data-tooltip-content={card.subtaskStatus || "Subtasks"}
+    >
+      <span className="card-api-count-badge card-api-subtask-badge">
+        <SubtasksIcon size={13} color="#666" />
+        <span>
+          {completed}/{total} Subtask{total === 1 ? "" : "s"}
+        </span>
+      </span>
+      <Tooltip id={`subtask-badge-${card.id}`} place="top" className="card-name-tooltip" />
+    </span>
+  );
+}
+
+ApiCardSubtaskBadge.propTypes = {
+  card: PropTypes.shape({
+    id: PropTypes.string,
+    subtaskTotal: PropTypes.number,
+    subtaskCompleted: PropTypes.number,
+    subtaskStatus: PropTypes.string,
+  }).isRequired,
 };
 
 /** Circular KPI used in API card summary row (classic + compact). */
@@ -1061,6 +1105,9 @@ CardItem.propTypes = {
     extraDetailsShowIcons: PropTypes.arrayOf(PropTypes.string),
     hasLinkedCall: PropTypes.bool,
     linkedCardIds: PropTypes.arrayOf(PropTypes.string),
+    subtaskTotal: PropTypes.number,
+    subtaskCompleted: PropTypes.number,
+    subtaskStatus: PropTypes.string,
   }).isRequired,
   index: PropTypes.number.isRequired,
   setSelectedCard: PropTypes.func.isRequired,
