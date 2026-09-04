@@ -6611,6 +6611,17 @@ $send-report-optional: var(--text-muted);
   transform: scale(1.02);
 }
 
+// Husbandry compact upload zones (Zawil Pass / Transport / Waste Disposal / CG Pass, etc.) render
+// through .transport-upload-box; the base .document-upload-zone dark override above wasn't winning
+// there, leaving the drag-and-drop box stuck on its light gradient in dark mode.
+[data-theme="dark"] .transport-upload-box .document-upload-zone {
+  background: linear-gradient(135deg, var(--surface-primary) 0%, var(--surface-hover) 100%);
+}
+
+[data-theme="dark"] .transport-upload-box .document-upload-zone:hover {
+  background: linear-gradient(135deg, var(--surface-hover) 0%, var(--surface-secondary) 100%);
+}
+
 .file-input-hidden {
   position: absolute;
   width: 0;

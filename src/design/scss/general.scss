@@ -3132,6 +3132,8 @@
   border-radius: 6px;
   font-size: 14px;
   font-family: "Manrope", sans-serif;
+  background: var(--input-bg);
+  color: var(--text-primary);
 
   &:focus {
     outline: none;
@@ -3227,6 +3229,8 @@
     border-radius: 4px;
     font-size: 14px;
     font-family: "Manrope", sans-serif;
+    background: var(--input-bg);
+    color: var(--text-primary);
 
     &:focus {
       outline: none;
