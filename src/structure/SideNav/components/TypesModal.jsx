@@ -4,6 +4,8 @@ import { FiX, FiPlus, FiMoreVertical, FiAlertCircle, FiSearch } from 'react-icon
 import { Modal } from 'react-bootstrap';
 import NewTypeModal from './NewTypeModal';
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
+import DisableConfirmIcon from '../../../assets/images/disable.svg';
+import EnableConfirmIcon from '../../../assets/images/enable.svg';
 import DynamicIcon from './DynamicIcon';
 import useKanbanManagementReducer, {
   isKanbanManagementRowDisabled,
@@ -116,6 +118,11 @@ const TypesModal = ({ show, onClose }) => {
   const [selectedDisableTypeLabel, setSelectedDisableTypeLabel] = useState('');
   const [isDisablingType, setIsDisablingType] = useState(false);
 
+  const [showEnableModal, setShowEnableModal] = useState(false);
+  const [selectedEnableTypeId, setSelectedEnableTypeId] = useState(null);
+  const [selectedEnableTypeLabel, setSelectedEnableTypeLabel] = useState('');
+  const [isEnablingType, setIsEnablingType] = useState(false);
+
   useEffect(() => {
     if (!show) {
       setSearchValue('');
@@ -213,13 +220,29 @@ const TypesModal = ({ show, onClose }) => {
     }
   };
 
-  const handleEnable = async (cardTypeId) => {
-    const id = String(cardTypeId);
+  const handleEnable = (cardTypeId, cardTypeLabel) => {
     setOpenActionMenuId(null);
+    setSelectedEnableTypeId(String(cardTypeId));
+    setSelectedEnableTypeLabel(cardTypeLabel ?? '');
+    setShowEnableModal(true);
+  };
+
+  const closeEnableModal = () => {
+    setShowEnableModal(false);
+    setSelectedEnableTypeId(null);
+    setSelectedEnableTypeLabel('');
+  };
+
+  const handleConfirmEnable = async () => {
+    if (!selectedEnableTypeId) return;
+    setIsEnablingType(true);
     try {
-      await enableKanbanCardTypeRecord(id, refreshParams());
+      await enableKanbanCardTypeRecord(selectedEnableTypeId, refreshParams());
     } catch {
       /* AlertReducer in store */
+    } finally {
+      setIsEnablingType(false);
+      closeEnableModal();
     }
   };
 
@@ -525,7 +548,7 @@ const TypesModal = ({ show, onClose }) => {
                 <button
                   type="button"
                   className="blockers-action-menu-item"
-                  onClick={() => handleEnable(activeRow.card_type_id ?? activeRow.id)}
+                  onClick={() => handleEnable(activeRow.card_type_id ?? activeRow.id, activeRow.label)}
                 >
                   Enable
                 </button>
@@ -586,7 +609,19 @@ const TypesModal = ({ show, onClose }) => {
         onConfirm={handleConfirmDisable}
         deleteText={`Disable type “${selectedDisableTypeLabel}”? You can enable it again later.`}
         isLoading={isDisablingType}
-        showIcon={false}
+        icon={DisableConfirmIcon}
+        className="blockers-confirm-modal"
+        backdropClassName="blockers-confirm-modal-backdrop"
+      />
+    )}
+    {!!showEnableModal && (
+      <DeleteConfirmationModal
+        show={showEnableModal}
+        onCancel={closeEnableModal}
+        onConfirm={handleConfirmEnable}
+        deleteText={`Enable type “${selectedEnableTypeLabel}”?`}
+        isLoading={isEnablingType}
+        icon={EnableConfirmIcon}
         className="blockers-confirm-modal"
         backdropClassName="blockers-confirm-modal-backdrop"
       />
