@@ -919,7 +919,7 @@
   display: inline-flex;
   flex-basis: 100%;
   width: 100%;
-  margin-top: 2px;
+  margin-top: 0;
   padding-top: 6px;
   border-top: 1px solid var(--border-primary);
   box-sizing: border-box;
@@ -931,7 +931,7 @@
 
 .card-api-subtask-badge-wrap {
   width: 100%;
-  margin-top: 4px;
+  margin-top: 0;
   padding-top: 6px;
   border-top: 1px solid var(--border-primary);
   box-sizing: border-box;
