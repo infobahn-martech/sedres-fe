@@ -5,12 +5,14 @@
     width: 94vw;
     max-width: 1440px;
     margin: 1.5rem auto;
+    height: min(800px, calc(100vh - 3rem));
     max-height: calc(100vh - 3rem);
 
     @media ($sm-991) {
       width: 98vw;
       max-width: 98vw;
       margin: 1rem auto;
+      height: calc(100vh - 2rem);
       max-height: calc(100vh - 2rem);
     }
   }
@@ -21,7 +23,8 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     background: var(--surface-primary);
-    max-height: calc(100vh - 3rem);
+    height: 100%;
+    max-height: 100%;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -116,7 +119,7 @@
   flex-direction: column;
   gap: 16px;
   padding: 20px;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-height: 0;
 }
 
@@ -132,7 +135,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-height: 0;
 }
 
@@ -153,7 +156,7 @@
   display: flex;
   flex-direction: column;
   background: var(--surface-primary);
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
 }
