@@ -3745,6 +3745,37 @@ function General({
         }
       }
 
+      const isBargeAppointment = appointmentTypeShowsBargeFields(
+        normalizeAppointmentTypeValue(getFieldValue("appointmentType"))
+      );
+
+      const vesselValue = firstNonEmptyString(data.vessel_id, data.vessel_name);
+      if (vesselValue) {
+        const vesselById = allVesselOptions.find(
+          (option) => String(option?.value ?? "") === String(data.vessel_id ?? "")
+        );
+        const matchedVessel =
+          vesselById || findMatchingOption(allVesselOptions, firstNonEmptyString(data.vessel_name, data.vessel_id));
+        const vesselFieldKey = isBargeAppointment ? "tugVesselName" : "vesselName";
+        if (matchedVessel && setFieldIfEmpty(vesselFieldKey, String(matchedVessel.value ?? ""))) {
+          filledCount += 1;
+        }
+      }
+
+      const billingEntityValue = firstNonEmptyString(data.billing_entity_id, data.billing_entity);
+      if (billingEntityValue) {
+        const billingEntityById = billingEntitySelectOptions.find(
+          (option) => String(option?.value ?? "") === String(data.billing_entity_id ?? "")
+        );
+        const matchedBillingEntity =
+          billingEntityById ||
+          findMatchingOption(billingEntitySelectOptions, firstNonEmptyString(data.billing_entity, data.billing_entity_id));
+        const billingEntityFieldKey = isBargeAppointment ? "tugBillingEntity" : "vesselBillingEntity";
+        if (matchedBillingEntity && setFieldIfEmpty(billingEntityFieldKey, String(matchedBillingEntity.value ?? ""))) {
+          filledCount += 1;
+        }
+      }
+
       const subject = firstNonEmptyString(data.subject);
       const body = firstNonEmptyString(data.body, data.message, data.message_html, data.email_body);
       if (subject) {
@@ -3769,8 +3800,11 @@ function General({
     },
     [
       applyAppointmentReceivedDateTime,
+      allVesselOptions,
+      billingEntitySelectOptions,
       callTypeOptions,
       findMatchingOption,
+      getFieldValue,
       portSelectOptions,
       setFieldIfEmpty,
     ]
