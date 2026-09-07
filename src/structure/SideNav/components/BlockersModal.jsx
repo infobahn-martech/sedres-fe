@@ -337,6 +337,7 @@ const BlockersModal = ({ show, onClose }) => {
       className="blockers-modal"
       backdropClassName="blockers-modal-backdrop"
       centered
+      scrollable
       size="xl"
     >
       <Modal.Header bsPrefix="blockers-modal-header">

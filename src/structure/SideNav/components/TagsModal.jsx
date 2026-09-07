@@ -294,6 +294,7 @@ const TagsModal = ({ show, onClose }) => {
       className="blockers-modal"
       backdropClassName="blockers-modal-backdrop"
       centered
+      scrollable
       size="xl"
     >
       <Modal.Header className="blockers-modal-header">
