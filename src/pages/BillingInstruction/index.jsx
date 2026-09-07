@@ -24,6 +24,25 @@ const formatDescriptionCell = (row) => {
     return d && String(d).trim() ? d : "—";
 };
 
+// The backend get_all_billing_instruction endpoint currently ignores the
+// `search` query param, so results come back unfiltered. Filter client-side
+// as a fallback until that's fixed on the backend.
+const SEARCH_FETCH_LIMIT = 5000;
+
+const normalizeText = (v) => String(v ?? "").toLowerCase();
+
+const rowMatchesSearch = (row, term) => {
+    const emailsText = Array.isArray(row?.emails)
+        ? row.emails
+              .map((e) => (typeof e === "string" ? e : e?.email))
+              .filter(Boolean)
+              .join(" ")
+        : "";
+    return [row?.billing_entity, row?.instruction_type, row?.description, emailsText].some(
+        (field) => normalizeText(field).includes(term)
+    );
+};
+
 const BillingInstruction = () => {
     const { hasPermission } = usePermissions();
     const canAddBillingInstruction = hasPermission({
@@ -57,22 +76,38 @@ const BillingInstruction = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedRowForDelete, setSelectedRowForDelete] = useState(null);
 
+    const searchTerm = normalizeText(params.search).trim();
+
     const apiParams = useMemo(
         () => ({
             search: params.search || "",
-            page: params.page,
-            limit: params.limit,
+            // While searching, pull a larger unpaginated batch so we have
+            // the full set to filter client-side (see rowMatchesSearch above).
+            page: searchTerm ? 1 : params.page,
+            limit: searchTerm ? SEARCH_FETCH_LIMIT : params.limit,
             sortBy: params.sortBy,
             sortOrder: params.sortOrder === 1 ? "ASC" : "DESC",
         }),
-        [params]
+        [params, searchTerm]
     );
 
     useEffect(() => {
         getAllBillingInstructions({ params: apiParams });
     }, [params]);
 
-    const list = billingInstructions || [];
+    const filteredList = useMemo(() => {
+        const all = billingInstructions || [];
+        if (!searchTerm) return all;
+        return all.filter((row) => rowMatchesSearch(row, searchTerm));
+    }, [billingInstructions, searchTerm]);
+
+    const list = useMemo(() => {
+        if (!searchTerm) return filteredList;
+        const start = (params.page - 1) * params.limit;
+        return filteredList.slice(start, start + params.limit);
+    }, [filteredList, searchTerm, params.page, params.limit]);
+
+    const displayCount = searchTerm ? filteredList.length : totalCount;
 
     const handleOpenAdd = () => {
         if (!canAddBillingInstruction) return;
@@ -157,7 +192,7 @@ const BillingInstruction = () => {
                         isLoading={isLoading}
                         pagination={{ currentPage: params.page, limit: params.limit }}
                         tableClasses="px-start"
-                        count={totalCount}
+                        count={displayCount}
                         columns={cols}
                         data={list}
                         onPageChange={(currentPage) =>
