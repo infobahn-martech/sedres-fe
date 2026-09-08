@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import { Tooltip } from 'react-tooltip';
@@ -27,6 +27,7 @@ function isNodeInColumnZone(node, colStackKey) {
   return false;
 }
 import useWorkFlowReducer from '../../store/WorkFlowReducer';
+import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
 import useAlertReducer from '../../store/AlertReducer';
 import usePermissions from '../../shared/hooks/usePermissions';
 import { PERMISSION_MODULES, PERMISSION_ACTIONS } from '../../shared/constants/permissions';
@@ -73,6 +74,8 @@ function EditWorkflows() {
   } = useWorkFlowReducer();
 
   const { error: showError } = useAlertReducer();
+
+  const { workspaces, listAllWorkspaces } = useWorkSpaceReducer();
 
   const { hasPermission } = usePermissions();
   const canCreateWorkflow = hasPermission({ moduleKey: PERMISSION_MODULES.KANBAN_WORKFLOW, actionKey: PERMISSION_ACTIONS.CREATE_WORKFLOW });
@@ -123,6 +126,21 @@ function EditWorkflows() {
       getWorkflowByBoard({ boardId });
     }
   }, [searchParams, getWorkflowByBoard, boardId]);
+
+  useEffect(() => {
+    if (boardId && workspaces.length === 0) {
+      listAllWorkspaces();
+    }
+  }, [boardId, workspaces.length, listAllWorkspaces]);
+
+  const boardName = useMemo(() => {
+    if (!boardId) return '';
+    for (const ws of workspaces) {
+      const match = ws.boards?.find((b) => String(b.board_id) === String(boardId));
+      if (match) return match.board_name ?? '';
+    }
+    return '';
+  }, [workspaces, boardId]);
 
   useEffect(() => {
     if (apiWorkflows === null) {
@@ -695,15 +713,20 @@ function EditWorkflows() {
             </div>
           </div> */}
           {boardId ? (
-            <div className="workflows-toolbar-actions">
+            <div className="workflows-board-name-group">
               <button
                 type="button"
-                className="workflows-btn workflows-btn-discard workflows-btn-back--toolbar"
+                className="workflows-back-icon-btn"
                 onClick={() => navigate(`/kanban-board/${boardId}`)}
+                aria-label="Back to board"
               >
                 <FiArrowLeft aria-hidden="true" />
-                Back To Board
               </button>
+              {boardName ? <h2 className="workflows-board-name">{boardName}</h2> : null}
+            </div>
+          ) : null}
+          {boardId ? (
+            <div className="workflows-toolbar-actions">
               {!showNoWorkflowEmptyState && canCreateWorkflow ? (
                 <button
                   type="button"
