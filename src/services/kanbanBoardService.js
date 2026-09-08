@@ -16,6 +16,10 @@ const getFullBoard = (boardId) =>
 const getCardById = (cardId) =>
   Gateway.get(`/kanban_card/get_card/${encodeURIComponent(String(cardId))}`);
 
+/** @param {{ card_id: string|number, to_column_id: string|number }} payload */
+const moveCard = (payload) =>
+  Gateway.post('/kanban_card/move_card', payload);
+
 
 /** @param {{ card_id: string|number, card_color: string }} payload */
 const updateCardColor = (payload) =>
@@ -110,6 +114,7 @@ const deleteCardNote = (noteId) =>
 export default {
   getFullBoard,
   getCardById,
+  moveCard,
   updateCardColor,
   updateCardTitle,
   getCardTypesByBoard,

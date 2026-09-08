@@ -3,6 +3,7 @@ import { notify } from "../../../components/Toaster";
 import { userHasDeskStartTaskRole } from "../../../shared/helpers/groUserRoles";
 import taskCardService from "../../../services/taskCardService";
 import daService from "../../../services/daService";
+import kanbanBoardService from "../../../services/kanbanBoardService";
 import {
   findColumnByCardId,
   findLaneColumnLocationForCard,
@@ -374,7 +375,27 @@ export default function useKanbanDnD(workflows, setWorkflows, { userProfile, ref
         return;
       }
 
+      const targetColumnId = workflow.columns?.[finishColumnKey]?.id;
       setWorkflows((prev) => applyCrossColumnMove(prev, workflowId, moveParams));
+
+      try {
+        await kanbanBoardService.moveCard({ card_id: draggableId, to_column_id: targetColumnId });
+      } catch (err) {
+        setWorkflows((prev) =>
+          applyCrossColumnMove(prev, workflowId, {
+            ...moveParams,
+            src: dest,
+            dest: src,
+            startColumnKey: finishColumnKey,
+            finishColumnKey: startColumnKey,
+            sourceIndex: destination.index,
+            destinationIndex: source.index,
+            startLane: finishLane,
+            finishLane: startLane,
+          })
+        );
+        notify(dragApiErrorMessage(err, "Failed to move card."), "error");
+      }
     },
     [workflows, setWorkflows, userProfile, refetchBoard, boardId]
   );
