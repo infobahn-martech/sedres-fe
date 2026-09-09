@@ -68,10 +68,18 @@ const applyCrossColumnMove = (
     finishColumnKey,
     sourceIndex,
     destinationIndex,
-    startLane,
-    finishLane,
   }
 ) => {
+  const workflow = prevWorkflows.find((item) => item.id === workflowId);
+  if (!workflow) return prevWorkflows;
+
+  // Read lanes from prevWorkflows (the live state at update time), not a closed-over snapshot —
+  // a caller reverting a failed move passes swapped start/finish keys, and a stale snapshot would
+  // still contain the card in the "finish" list, causing it to be inserted twice.
+  const startLane = workflow.swimlanes[src.laneId];
+  const finishLane = workflow.swimlanes[dest.laneId];
+  if (!startLane?.cardMap || !finishLane?.cardMap) return prevWorkflows;
+
   const sameLane = src.laneId === dest.laneId;
   const startList = Array.from(startLane.cardMap[startColumnKey] || []);
   startList.splice(sourceIndex, 1);
@@ -81,7 +89,6 @@ const applyCrossColumnMove = (
   );
   finishList.splice(destinationIndex, 0, draggableId);
 
-  const workflow = prevWorkflows.find((item) => item.id === workflowId);
   const card = workflow?.cards?.[draggableId];
   let nextCard = card;
   if (card && (finishColumnKey !== card.columnId || dest.laneId !== card.laneId)) {
@@ -263,8 +270,6 @@ export default function useKanbanDnD(workflows, setWorkflows, { userProfile, ref
           finishColumnKey,
           sourceIndex: source.index,
           destinationIndex: destination.index,
-          startLane,
-          finishLane,
         };
 
         setWorkflows((prev) => applyCrossColumnMove(prev, workflowId, moveParams));
@@ -329,8 +334,6 @@ export default function useKanbanDnD(workflows, setWorkflows, { userProfile, ref
         finishColumnKey,
         sourceIndex: source.index,
         destinationIndex: destination.index,
-        startLane,
-        finishLane,
       };
 
       // DA board: persist the column move via advance_stage so the card's DA modal
@@ -366,8 +369,6 @@ export default function useKanbanDnD(workflows, setWorkflows, { userProfile, ref
               finishColumnKey: startColumnKey,
               sourceIndex: destination.index,
               destinationIndex: source.index,
-              startLane: finishLane,
-              finishLane: startLane,
             })
           );
           notify(dragApiErrorMessage(err, "Failed to move card to that stage."), "error");
@@ -390,8 +391,6 @@ export default function useKanbanDnD(workflows, setWorkflows, { userProfile, ref
             finishColumnKey: startColumnKey,
             sourceIndex: destination.index,
             destinationIndex: source.index,
-            startLane: finishLane,
-            finishLane: startLane,
           })
         );
         notify(dragApiErrorMessage(err, "Failed to move card."), "error");
