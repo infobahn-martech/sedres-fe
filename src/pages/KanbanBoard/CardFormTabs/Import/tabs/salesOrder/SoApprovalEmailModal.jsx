@@ -35,6 +35,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState([]);
   const [toError, setToError] = useState("");
+  const [messageError, setMessageError] = useState("");
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -42,6 +43,14 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
       setSubjectValue(`${stageLabel} Request${soCustomerName ? ` — ${soCustomerName}` : ""}`);
       setToValue(defaultTo);
       setToError("");
+      // Prefilled (not just a placeholder) — api/da/da_send_action_email requires a non-empty
+      // body and rejects the whole request otherwise ({"status":"error","message":"call_id,
+      // to, subject and body are required"}), so an empty Quill editor used to let staff submit
+      // a doomed request with no warning. Still freely editable before sending.
+      setMessage(
+        `<p>Please review and ${stageLabel.toLowerCase()}${soCustomerName ? ` for ${soCustomerName}` : ""}.</p>`
+      );
+      setMessageError("");
     }
   }, [show, soCustomerName, stageLabel, defaultTo]);
 
@@ -58,6 +67,13 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
     if (isSubmitting) return;
     if (!toValue.trim()) {
       setToError("Please enter at least one recipient.");
+      return;
+    }
+    // Quill's empty state isn't "" once touched (e.g. "<p><br></p>"), so strip tags before
+    // checking — otherwise a cleared/whitespace-only message would still pass as non-empty
+    // and hit the same backend rejection this validation exists to prevent.
+    if (!message.replace(/<[^>]*>/g, "").trim()) {
+      setMessageError("Please enter a message.");
       return;
     }
     onCreate?.({
@@ -183,12 +199,16 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
             <ReactQuill
               theme="snow"
               value={message}
-              onChange={setMessage}
+              onChange={(value) => {
+                setMessage(value);
+                if (messageError) setMessageError("");
+              }}
               modules={{ toolbar: MESSAGE_QUILL_TOOLBAR }}
               formats={MESSAGE_QUILL_FORMATS}
               placeholder="Type email content here..."
               readOnly={isSubmitting}
             />
+            {messageError && <div className="so-approval-email-field-error">{messageError}</div>}
           </div>
         </div>
       </div>

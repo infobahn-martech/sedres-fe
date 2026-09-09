@@ -13,8 +13,7 @@ import CustomModal from "../../../../../../components/CustomModal";
 import daService from "../../../../../../services/daService";
 import userService from "../../../../../../services/userService";
 import { getInitials } from "../../../../../../shared/utils/utils";
-import { useDaLocalReachedDates, useDaLocalLaunchHire } from "../../../../../../shared/store/daStore";
-import { parseApiDateTime, mapStatusTimelineResponse } from "./daStatusTimeline";
+import { useDaLocalLaunchHire } from "../../../../../../shared/store/daStore";
 import "../../../../../../design/scss/pages/kanban-board/daCardFields.scss";
 
 // Card / Appointment & Clearance / MWP / Launch Hire / Clearance Copies / Invoices,
@@ -788,115 +787,12 @@ ClearanceStatsRow.propTypes = {
   ).isRequired,
 };
 
-function StatusTimelineSection({ steps, onStepClick, isLoading, isAdvancing }) {
-  return (
-    <div className="da-cf-timeline-card">
-      <div className="da-cf-timeline-header">
-        <h3 className="da-cf-summary-section-heading da-cf-timeline-heading">
-          <Clock size={14} className="da-cf-timeline-heading-icon" />
-          DA Status Timeline
-        </h3>
-        {isLoading && steps.length === 0 && <span className="da-cf-summary-card-value--empty">Loading…</span>}
-      </div>
-      <div className="da-cf-timeline">
-        {steps.map((step, index) => {
-          const displayState = step.state;
-          const Icon = displayState === "done" ? CheckCircle2 : displayState === "current" ? Clock : CircleDashed;
-          // Three click targets:
-          // - "current" step's round moves the DA forward one stage. Sending
-          //   api/da/update_status the CURRENT step's own status_name is a no-op (it's
-          //   already that status), so this sends the *next* step's label instead.
-          // - the "up next" pending step (right after the current one) does the same
-          //   forward move — clicking the step you're moving TO also completes the
-          //   current one, since both name the same destination status. Also allowed
-          //   when the previous step is already "done" (not just "current") — e.g. a
-          //   step toggled via the header sticker/checkbox can land straight on "done"
-          //   without the timeline ever marking it "current", which would otherwise
-          //   strand the following pending step as unclickable.
-          // - a "done" step's round moves the DA back one stage, but only the step right
-          //   before the current one — reverting is one-by-one too, not a jump straight
-          //   back to an arbitrary earlier stage.
-          const prevStep = steps[index - 1];
-          const nextStep = steps[index + 1];
-          const isForwardClickable = step.state === "current" && Boolean(nextStep);
-          const isUpNextClickable = step.state === "pending" && (prevStep?.state === "current" || prevStep?.state === "done");
-          // SummaryPanel's timelineSteps memo force-promotes the final step from "current" to
-          // "done" once reached (so a fully-closed DA doesn't show a permanent "In progress"
-          // clock on "Closed paid" — see the comment there). That means the step right before
-          // it never sees a literal "current" neighbor once the DA is fully closed, silently
-          // disabling revert. Treat a "done" last step as the effectively-current one too, so
-          // reverting away from "Closed paid" stays possible.
-          const nextIsForcedDoneLastStep = nextStep === steps[steps.length - 1] && nextStep?.state === "done";
-          const isBackClickable = step.state === "done" && (nextStep?.state === "current" || nextIsForcedDoneLastStep);
-          const isClickable = Boolean(onStepClick) && !isAdvancing && (isForwardClickable || isUpNextClickable || isBackClickable);
-          const targetStep = isForwardClickable ? nextStep : step;
-          const targetLabel = targetStep.label;
-          return (
-            <div className={`da-cf-timeline-step da-cf-timeline-step--${displayState}`} key={step.key}>
-              <div className="da-cf-timeline-step-marker">
-                {isClickable ? (
-                  <button
-                    type="button"
-                    className="da-cf-timeline-step-icon da-cf-timeline-step-icon--clickable"
-                    title={isBackClickable ? `Revert to "${targetLabel}"` : `Move to "${targetLabel}"`}
-                    onClick={() => onStepClick({ statusId: targetStep.statusId, label: targetLabel })}
-                  >
-                    <Icon size={16} />
-                  </button>
-                ) : (
-                  <span className="da-cf-timeline-step-icon">
-                    <Icon size={16} />
-                  </span>
-                )}
-                {index < steps.length - 1 && (
-                  <span className="da-cf-timeline-step-connector" title={steps[index + 1].label} />
-                )}
-              </div>
-              <div className="da-cf-timeline-step-body">
-                <span className="da-cf-timeline-step-label">{step.label}</span>
-                <span className={`da-cf-timeline-status-badge da-cf-timeline-status-badge--${displayState}`}>
-                  {displayState === "done" ? "Completed" : displayState === "current" ? "In progress" : "Not reached"}
-                </span>
-                {step.state === "done" && step.date && (
-                  <span className="da-cf-timeline-step-date">
-                    <CalendarCheck size={10} className="da-cf-timeline-step-date-icon" aria-hidden />
-                    {formatDisplayDateOnly(step.date)}{step.time ? ` · ${step.time}` : ""}
-                  </span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-StatusTimelineSection.propTypes = {
-  steps: PropTypes.arrayOf(
-    PropTypes.shape({
-      key: PropTypes.string,
-      statusId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-      stickerId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-      label: PropTypes.string,
-      date: PropTypes.string,
-      time: PropTypes.string,
-      state: PropTypes.oneOf(["done", "current", "pending"]),
-    })
-  ).isRequired,
-  onStepClick: PropTypes.func,
-  isLoading: PropTypes.bool,
-  isAdvancing: PropTypes.bool,
-};
-
-// Separate from the backend-driven DA Status Timeline above — this is a local-only activity
-// log fed by the Sales Order tab's Client Approval & Invoicing process (Send SO → Upload
-// Invoice → Send Invoice → Payment), shared via formValues.soProcessTimeline. No backend
-// field/endpoint yet for any of this.
+// Local-only activity log fed by the Sales Order tab's Client Approval & Invoicing process
+// (Send SO → Upload Invoice → Send Invoice → Payment), shared via formValues.soProcessTimeline.
+// No backend field/endpoint yet for any of this.
 function SalesOrderActivitySection({ events }) {
   if (!events || events.length === 0) return null;
-  // Oldest-first, left-to-right — reads as a process flow, same direction as the
-  // step-based DA Status Timeline above it.
+  // Oldest-first, left-to-right — reads as a process flow.
   const sorted = [...events].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   return (
     <div className="da-cf-timeline-card">
@@ -934,57 +830,11 @@ SalesOrderActivitySection.propTypes = {
   ),
 };
 
-function SummaryPanel({ callId, statusTimeline, isLoadingStatusTimeline, onAdvanceDaStage, isAdvancingDaStage, soProcessTimeline }) {
-  const getLocalReachedDate = useDaLocalReachedDates((s) => s.getReachedDate);
-
-  // api/da/update_status doesn't persist reached_date yet (backend gap) — for a step that's
-  // done but has no reached_date from the API, fall back to the client's own timestamp from
-  // when it was clicked (see setDaLocalReachedDate in CardForm.jsx). The API value always
-  // wins once the backend actually returns one.
-  const timelineSteps = useMemo(() => {
-    const mapped = mapStatusTimelineResponse(statusTimeline);
-    // The last step in the sequence (e.g. "Closed paid") has no "next" step to advance into —
-    // mapStatusTimelineResponse's own current-derivation fallback (see its comment) would
-    // otherwise leave it marked "current" forever once reached, showing an "In progress" clock
-    // icon on a call that's actually fully closed. Promote it to "done" for display only, once
-    // it's the one actually reached — this is local to this timeline's own render, not the
-    // shared mapping helper, so it doesn't affect SalesOrderList's header-button derivation
-    // (which relies on that function's real "current" row for its own, separate logic).
-    if (mapped.length > 0) {
-      const lastIdx = mapped.length - 1;
-      if (mapped[lastIdx].state === "current") {
-        mapped[lastIdx] = { ...mapped[lastIdx], state: "done" };
-      }
-    }
-    if (callId == null) return mapped;
-    return mapped.map((step) => {
-      if (step.state !== "done" || step.date) return step;
-      const fallback = getLocalReachedDate(String(callId).trim(), step.label);
-      if (!fallback) return step;
-      const { date, time } = parseApiDateTime(fallback);
-      return date ? { ...step, date, time: time || null } : step;
-    });
-  }, [statusTimeline, callId, getLocalReachedDate]);
-
-  return (
-    <>
-      <StatusTimelineSection
-        steps={timelineSteps}
-        isLoading={isLoadingStatusTimeline}
-        onStepClick={onAdvanceDaStage}
-        isAdvancing={isAdvancingDaStage}
-      />
-      <SalesOrderActivitySection events={soProcessTimeline} />
-    </>
-  );
+function SummaryPanel({ soProcessTimeline }) {
+  return <SalesOrderActivitySection events={soProcessTimeline} />;
 }
 
 SummaryPanel.propTypes = {
-  callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  statusTimeline: PropTypes.array,
-  isLoadingStatusTimeline: PropTypes.bool,
-  onAdvanceDaStage: PropTypes.func,
-  isAdvancingDaStage: PropTypes.bool,
   soProcessTimeline: PropTypes.array,
 };
 
@@ -1049,15 +899,6 @@ RequiredDocumentsSection.propTypes = {
   title: PropTypes.string,
   standalone: PropTypes.bool,
   large: PropTypes.bool,
-};
-
-// Operations completion is a plain date (no time) — a lighter formatter than
-// formatApiDateTime so the read-only card doesn't show a spurious "00:00".
-const formatDisplayDateOnly = (isoDate) => {
-  if (!isoDate) return null;
-  const d = new Date(`${isoDate}T00:00:00`);
-  if (isNaN(d)) return isoDate;
-  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 };
 
 // Invoices, Fees & Certificates sub-tab — same 3 fields as before (taxInvoice, srtPoWbs,
@@ -1279,7 +1120,7 @@ OperationAutoSaveStatus.propTypes = {
   status: PropTypes.oneOf(["idle", "saving", "saved", "error"]),
 };
 
-function DA({ card, formValues, daStatusRefreshToken, onAdvanceDaStage, isAdvancingDaStage }) {
+function DA({ card, formValues, daStatusRefreshToken }) {
   const [fieldValues, setFieldValues] = useState(makeInitialFieldState);
   // co_owner_id isn't a visible field — UserSearchField only exposes the picked user's
   // name — but api/da/save_operation_tab needs the id, so it's tracked alongside coOwners.
@@ -1296,30 +1137,6 @@ function DA({ card, formValues, daStatusRefreshToken, onAdvanceDaStage, isAdvanc
   // duplicate GETs (e.g. operation_tab) for the exact same call.
   const rawCallId = card?.call_id ?? card?.callId ?? card?.id ?? null;
   const callId = rawCallId != null ? String(rawCallId) : null;
-  // api/da/status_timeline/{call_id} — real per-call status progression shown in the
-  // Summary sub-tab's Status Timeline, replacing the old hardcoded/click-driven placeholder.
-  // Also refetches when daStatusRefreshToken bumps (CardForm's footer stepper / header
-  // sticker picker just advanced this call's DA stage), so this section updates immediately
-  // instead of only on the next time the card is opened.
-  const [statusTimeline, setStatusTimeline] = useState([]);
-  const [isLoadingStatusTimeline, setIsLoadingStatusTimeline] = useState(false);
-
-  useEffect(() => {
-    if (callId == null) return undefined;
-    let cancelled = false;
-    setIsLoadingStatusTimeline(true);
-    daService.getStatusTimeline(callId)
-      .then(({ data }) => {
-        if (!cancelled) setStatusTimeline(Array.isArray(data?.data) ? data.data : []);
-      })
-      .catch(() => {
-        if (!cancelled) setStatusTimeline([]);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingStatusTimeline(false);
-      });
-    return () => { cancelled = true; };
-  }, [callId, daStatusRefreshToken]);
 
   // api/da/time_objects/{call_id} — feeds the Clearance card's Inward/Outward Clearance
   // dates. Not derived from the documents endpoints (api/da/required_documents,
@@ -1676,14 +1493,7 @@ function DA({ card, formValues, daStatusRefreshToken, onAdvanceDaStage, isAdvanc
   return (
     <div className="cardform-body da-cf-panel">
       <div className="da-cf-subtab-body">
-        <SummaryPanel
-          callId={callId}
-          statusTimeline={statusTimeline}
-          isLoadingStatusTimeline={isLoadingStatusTimeline}
-          onAdvanceDaStage={onAdvanceDaStage}
-          isAdvancingDaStage={isAdvancingDaStage}
-          soProcessTimeline={formValues?.soProcessTimeline}
-        />
+        <SummaryPanel soProcessTimeline={formValues?.soProcessTimeline} />
 
         <div className="da-cf-ops-toolbar">
           <OperationAutoSaveStatus status={operationSaveStatus} />
@@ -1750,8 +1560,6 @@ DA.propTypes = {
   formValues: PropTypes.object,
   handleChange: PropTypes.func,
   daStatusRefreshToken: PropTypes.number,
-  onAdvanceDaStage: PropTypes.func,
-  isAdvancingDaStage: PropTypes.bool,
 };
 
 export default DA;

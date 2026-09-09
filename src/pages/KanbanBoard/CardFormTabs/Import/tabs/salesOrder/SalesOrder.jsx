@@ -15,6 +15,8 @@ function SalesOrder({
   onAdvanceDaStage,
   isAdvancingDaStage,
   onDaStatusRefresh,
+  currentStep,
+  stepLabels,
 }) {
   const cardColor = "#e2e6ff";
 
@@ -38,6 +40,8 @@ function SalesOrder({
             onAdvanceDaStage={onAdvanceDaStage}
             isAdvancingDaStage={isAdvancingDaStage}
             onDaStatusRefresh={onDaStatusRefresh}
+            currentStep={currentStep}
+            stepLabels={stepLabels}
           />
         </div>
       </div>
@@ -59,6 +63,8 @@ SalesOrder.propTypes = {
   onAdvanceDaStage: PropTypes.func,
   isAdvancingDaStage: PropTypes.bool,
   onDaStatusRefresh: PropTypes.func,
+  currentStep: PropTypes.number,
+  stepLabels: PropTypes.arrayOf(PropTypes.string),
 };
 
 export default SalesOrder;
