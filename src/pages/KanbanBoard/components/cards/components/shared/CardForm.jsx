@@ -1665,7 +1665,9 @@ const renderTabContent = (
   isDaCardContext = false,
   refreshSalesOrder,
   onDaStatusRefresh,
-  boardId
+  boardId,
+  currentStep,
+  stepLabels
 ) => {
   const commonProps = {
     card,
@@ -1676,6 +1678,8 @@ const renderTabContent = (
     isSimplifiedMode,
     isDAModule,
     isDaCardContext,
+    currentStep,
+    stepLabels,
     onSave: addModeSave.onSave,
     isSavingGeneral: addModeSave.isSavingGeneral,
     hasSubmitted: addModeSave.hasSubmitted,
@@ -1845,6 +1849,19 @@ function CardForm({
   // (tab bar + "DA" tab) instead of the generic GRO fallback view.
   const isDAUser = String(userRoleId ?? "") === "22";
   const isDABoardCard = String(boardId ?? "") === "3";
+  // Port Operator (role_id "2") gets the "DA" tab + DA Status Timeline edit access
+  // on the Jubail Operations board specifically (board_id "18"), even when reached
+  // via the generic /kanban-board/:boardId route (where isDAModule's route-slug
+  // regex stays false since the URL isn't the named /kanban-board/jubail-operations
+  // path). Scoped to this one board on purpose — widening it to isDaCardContext
+  // itself would also flip the footer stepper / topbar sticker-picker handlers
+  // (handleStepClick, handleTopbarCardStickerChange) into calling the DA-only
+  // daService.advanceStage endpoint on totally unrelated boards (Hotel, MWP, GRO...)
+  // for this role, which would misfire. See TOP_TABS/ENABLED_TABS and
+  // handleDaTimelineStepClick below for where this is actually used.
+  const isJubailBoardCard = String(boardId ?? "") === "18";
+  // Port Manager (role 1) and Port Operator (role 2) both get this same scoped DA access.
+  const isPortOperatorDAAccess = isJubailBoardCard && ["1", "2"].includes(String(userRoleId ?? ""));
   // "vessel" appointment-type calls don't have GRO tasks, so a GRO Supervisor/DA
   // viewer should see the standard tab view (with Export Approval) for them —
   // every other appointment type (tug, tug_and_barge, taxi_tug_and_barge) still
@@ -2322,24 +2339,24 @@ function CardForm({
 
   const TOP_TABS = useMemo(() => {
     const base = isDAModule ? DA_TOP_TABS : (isSimplifiedMode ? SIMPLIFIED_TOP_TABS : ALL_TOP_TABS);
-    const withDAOnly = (isDAVariant || isDABoard) && !isDAModule && !isSimplifiedMode ? [...base, DA_ONLY_TAB] : base;
+    const withDAOnly = (isDAVariant || isDABoard || isPortOperatorDAAccess) && !isDAModule && !isSimplifiedMode ? [...base, DA_ONLY_TAB] : base;
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
       ? withExportTabs(withDAOnly)
       : withDAOnly;
     const withHusbandryCall = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
     return filterTabsByCardPermission(withHusbandryCall);
-  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, showExportTabs, isHusbandryCall, filterTabsByCardPermission]);
+  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, isPortOperatorDAAccess, showExportTabs, isHusbandryCall, filterTabsByCardPermission]);
 
   const ENABLED_TABS = useMemo(() => {
     const base = isDAModule ? DA_ENABLED_TABS : (isSimplifiedMode ? SIMPLIFIED_ENABLED_TABS : ALL_ENABLED_TABS);
-    const withDAOnly = (isDAVariant || isDABoard) && !isDAModule && !isSimplifiedMode ? [...base, DA_ONLY_TAB] : base;
+    const withDAOnly = (isDAVariant || isDABoard || isPortOperatorDAAccess) && !isDAModule && !isSimplifiedMode ? [...base, DA_ONLY_TAB] : base;
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
       ? withExportTabs(withDAOnly)
       : withDAOnly;
     const withHusbandry = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
     const withLockOperation = lockOperationForExport ? withHusbandry.filter((tab) => tab !== "Operation") : withHusbandry;
     return filterTabsByCardPermission(withLockOperation);
-  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, showExportTabs, isHusbandryCall, lockOperationForExport, filterTabsByCardPermission]);
+  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, isPortOperatorDAAccess, showExportTabs, isHusbandryCall, lockOperationForExport, filterTabsByCardPermission]);
 
   useEffect(() => {
     setActiveTopTab(defaultTab);
@@ -2816,7 +2833,7 @@ function CardForm({
       // DA-style department boards (Jubail Operations, Rastanura-Dammam, etc.) reached via
       // isDAModule's route match but not flagged isDaCardContext (not boardId "3" and not an
       // explicit "da" card variant).
-      if (!(isDaCardContext || isDAModule) || isAdvancingStage) return;
+      if (!(isDaCardContext || isDAModule || isPortOperatorDAAccess) || isAdvancingStage) return;
       const statusId = target?.statusId;
       const statusName = target?.label;
       const callIdRaw = card?.call_id ?? card?.callId;
@@ -2883,7 +2900,7 @@ function CardForm({
         })
         .finally(() => setIsAdvancingStage(false));
     },
-    [isDaCardContext, isDAModule, card, isAdvancingStage, columns, columnOrder, moveCardToColumn, setDaLocalReachedDate, boardId, patchCardSticker]
+    [isDaCardContext, isDAModule, isPortOperatorDAAccess, card, isAdvancingStage, columns, columnOrder, moveCardToColumn, setDaLocalReachedDate, boardId, patchCardSticker]
   );
 
   const handleTopbarColorChange = useCallback(
@@ -3086,10 +3103,16 @@ function CardForm({
                 handleDaTimelineStepClick,
                 isAdvancingStage,
                 showLaunchHire,
-                isDaCardContext,
+                // Widened (vs. the narrow isDaCardContext used by the footer stepper/sticker
+                // handlers above) so SalesOrderList's own isDaVerifyContext — which only gates
+                // its own DA-specific table Action column, decision buttons, and email/invoice
+                // modals — also picks up Port Operator's scoped Jubail DA access.
+                isDaCardContext || isPortOperatorDAAccess,
                 refreshSalesOrder,
                 bumpDaStatusRefreshToken,
-                boardId
+                boardId,
+                currentStep,
+                stepLabels
               )}
           </>
         )}

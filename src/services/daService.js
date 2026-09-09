@@ -22,8 +22,12 @@ const updateStatus = (payload) => Gateway.post('/da/update_status', payload);
 const deleteSalesLineItem = (payload) => Gateway.post('/da/da_delete_sales_line_item', payload);
 /** @param {{ so_item_id: string|number }} payload */
 const verifySalesLineItem = (payload) => Gateway.post('/da/da_verify_sales_line_item', payload);
-/** @param {{ call_id: string|number, to: string, subject: string, body: string, stage_document_id?: string|number }} payload */
-const sendActionEmail = (payload) => Gateway.post('/da/da_send_action_email', payload);
+/** @param {FormData} formData - call_id, to, subject, body, stage_document_id? — backend only
+ * reads multipart form fields for this route, rejects a JSON body as missing all of them. */
+const sendActionEmail = (formData) =>
+  Gateway.post('/da/da_send_action_email', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 /** @returns {Promise<{ data: { status: string, data: { recipient: string } } }>} */
 const getActionEmailDraft = (callId) => Gateway.get(`/da/da_action_email_draft/${callId}`);
 /** @param {FormData} formData - call_id + invoice file(s), multipart/form-data */
