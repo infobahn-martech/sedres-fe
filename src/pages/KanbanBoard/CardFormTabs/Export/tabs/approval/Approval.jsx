@@ -777,11 +777,12 @@ const createEmptyPartySection = () => ({
     // of workflow stage. Per explicit user confirmation (Permission Fix,
     // 2026-08-04): Credit Controller = role_id 22 (DA — the earlier "2" mapping
     // and the separate DA stand-in-access logic are both superseded by this),
-    // Manager = role_id 1 or 3, CEO = role_id 23 only. Not ROLE_IDS.* (used
-    // app-wide for routing, left untouched here) since that mapping doesn't
-    // match this environment's actual data.
+    // Manager = role_id 1 (absorbed the deleted Port Supervisor role 3's
+    // permissions), CEO = role_id 23 only. Not ROLE_IDS.* (used app-wide for
+    // routing, left untouched here) since that mapping doesn't match this
+    // environment's actual data.
     const isControllerRole = String(userRoleId) === "22";
-    const isManagerRole = String(userRoleId) === "1" || String(userRoleId) === "3";
+    const isManagerRole = String(userRoleId) === "1";
     const isCeoRole = String(userRoleId) === "23";
     // Vessel party image uploads are restricted to Credit Controller and CEO
     // only, per user confirmation — not Manager, unlike the section gating above.
@@ -1169,7 +1170,7 @@ const createEmptyPartySection = () => ({
                 }
               />
 
-              {/* Nobody — Controller, Manager (role_id 1 or 3), CEO, or generic
+              {/* Nobody — Controller, Manager (role_id 1), CEO, or generic
                   viewers — sees the Manager card until Credit Controller has
                   actually clicked
                   "Proceed to Manager" (workflow moved past credit_controller).

@@ -114,7 +114,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     userProfile?.user?.role_id ||
     userProfile?.data?.role_id;
   const isPortManagerRole = String(userRoleId) === '1';
-  const isPortSupervisorRole = String(userRoleId) === '3' || String(userRoleId) === '23';
+  const isPortSupervisorRole = String(userRoleId) === '23';
   const restrictedNav = isRestrictedBoardUser(userProfile);
   // Classic sidebar only renders while already on a /kanban-board/* (or /compact)
   // route for restricted nav, so the current board can be read straight from the URL.

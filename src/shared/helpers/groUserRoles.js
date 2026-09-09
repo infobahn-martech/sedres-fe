@@ -43,11 +43,10 @@ export function isCustomClearanceSupervisorRole(roleId) {
   return roleId === "5" || roleId === 5;
 }
 
-/** Port-level oversight roles — Port Manager (1), Port Supervisor (3), CEO (23) — see the same supervisor-flavored GRO card view as GRO Supervisor when opening a GRO Workflow card. */
+/** Port-level oversight roles — Port Manager (1, absorbed the deleted Port Supervisor role 3's permissions), CEO (23) — see the same supervisor-flavored GRO card view as GRO Supervisor when opening a GRO Workflow card. */
 export function isPortSupervisorRole(roleId) {
   return (
     roleId === "1" || roleId === 1 ||
-    roleId === "3" || roleId === 3 ||
     roleId === "23" || roleId === 23
   );
 }

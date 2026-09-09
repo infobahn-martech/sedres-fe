@@ -18,7 +18,7 @@ function Layout() {
     userProfile?.user?.role_id ||
     userProfile?.data?.role_id;
   const isPortManagerRole = String(userRoleId) === '1';
-  const isPortSupervisorRole = String(userRoleId) === '3' || String(userRoleId) === '23';
+  const isPortSupervisorRole = String(userRoleId) === '23';
   const hideSidebar = pathname === '/edit-workflow' || pathname === '/da-module';
   const isKanbanBoard =
     pathname === '/kanban-board/operator' ||
