@@ -37,6 +37,11 @@ const uploadInvoice = (formData) =>
   });
 /** @param {{ call_id: string|number, decision: 1|0 }} payload - decision: 1 = approved, 0 = rejected */
 const recordClientDecision = (payload) => Gateway.post('/da/da_record_client_decision', payload);
+/** @returns {Promise<{ data: { status: string, data?: { button_state: 'send'|'awaiting_approval'|'approved', last_email_sent_date: string|null, last_decision: string|null, last_decision_date: string|null }, message?: string } }>}
+ * Authoritative Sales Order operator/supervisor workflow button state — replaces the old
+ * local justApproved/justRejected/isSoApprovalEmailPendingDecision heuristics in
+ * SalesOrderList.jsx. `status: "error"` (e.g. "Call not found") on failure. */
+const getActionState = (callId) => Gateway.get(`/da/action_state/${callId}`);
 
 export default {
   getDaDetails,
@@ -57,4 +62,5 @@ export default {
   getActionEmailDraft,
   uploadInvoice,
   recordClientDecision,
+  getActionState,
 };

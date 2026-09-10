@@ -51,20 +51,3 @@ export const useDaLocalVerifiedItems = create((set, get) => ({
     }),
   isItemVerified: (callId, soItemId) => get().verifiedItemIds[callId]?.has(soItemId) ?? false,
 }));
-
-// Local-only fallback for the SO-approval decision's reject: api/da/da_record_client_decision
-// is meant to revert the call's granular status back to "To be sent for SO approval", but for
-// some calls its status_timeline keeps deriving "Awaiting SO approval" as the current step even
-// after a successful reject (see SalesOrderList.jsx's justRejectedSoApproval comment for the
-// suspected cause). In-memory only, same as the fallbacks above — cleared on a full page
-// reload (F5) by design, per this project's "no localStorage for app state" rule. Confirmed
-// via testing 2026-09-10 that an F5 refresh (not just closing/reopening the card in-app) does
-// NOT keep this override — that's expected: a real reload restarts the whole JS runtime, and
-// only the backend genuinely fixing the reject/revert can survive that. This still fixes the
-// in-app close/reopen case (no refresh), which is the more common path.
-export const useDaLocalRejectedSoApproval = create((set, get) => ({
-  rejectedCallIds: {},
-  setSoApprovalRejected: (callId, isRejected) =>
-    set((state) => ({ rejectedCallIds: { ...state.rejectedCallIds, [callId]: isRejected } })),
-  isSoApprovalRejected: (callId) => get().rejectedCallIds[callId] === true,
-}));
