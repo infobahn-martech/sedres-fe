@@ -521,7 +521,7 @@ function Workspaces() {
               />
             </svg>
           </button>
-          <Tooltip id="workspaces-delete-btn-tooltip" place="top" />
+          <Tooltip id="workspaces-delete-btn-tooltip" place="top" className="workspaces-delete-tooltip" />
         </>
       )}
     </div>

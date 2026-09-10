@@ -1926,6 +1926,13 @@
   top: 50%;
   transform: translateY(-50%);
   overflow: visible;
+  /* Decorative connector only — it visually extends into the NEXT step's own
+     clickable area (left starts past this step's circle, width runs into the
+     neighboring step-item). Without this, a click landing on that overlap
+     region can be captured by this line instead of the step circle sitting
+     visually on top of it, making clicks near a step boundary register on
+     the wrong step (or seem to miss entirely). */
+  pointer-events: none;
 }
 
 .cardform-steps-wrapper .step-item {

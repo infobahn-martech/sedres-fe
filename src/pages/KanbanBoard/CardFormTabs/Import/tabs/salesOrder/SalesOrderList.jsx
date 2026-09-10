@@ -17,6 +17,7 @@ import PremiumSelect from "../../../../../../components/form/PremiumSelect";
 import useAlertReducer from "../../../../../../store/AlertReducer";
 import useAuthReducer from "../../../../../../store/AuthReducer";
 import { useDaLocalVerifiedItems, useDaLocalRejectedSoApproval } from "../../../../../../shared/store/daStore";
+import { getFirstUserRoleId } from "../../../../../../shared/helpers/groUserRoles";
 import WorkOrderCreationModal from "./WorkOrderCreationModal";
 import WorkOrderDetailsModal from "./WorkOrderDetailsModal";
 import GeneratePOModal from "./GeneratePOModal";
@@ -466,7 +467,19 @@ const SalesOrderList = ({
   // Broader "this is a DA card" signal — isDAModule alone only covers the dedicated DA-desk
   // board routes; isDaCardContext also covers DA-variant/DA-board cards reached via the
   // generic /kanban-board/:boardId route (where a separate "DA" tab is appended instead).
-  const isDaVerifyContext = isDAModule || isDaCardContext;
+  const isDaContext = isDAModule || isDaCardContext;
+  //
+  // The Sales Order tab's header DA action button (status/advance button, SO approval
+  // email, Approve/Reject decisions) is restricted to Port Manager (role_id "1") and Port
+  // Operator (role_id "2") only, per request.
+  const userProfile = useAuthReducer((state) => state.userProfile);
+  const userRoleId = getFirstUserRoleId(userProfile);
+  const isPortManagerOrOperator = ["1", "2"].includes(String(userRoleId ?? ""));
+  const isDaVerifyContext = isDaContext && isPortManagerOrOperator;
+  // The table's own "Action" column (verify tick) is separately scoped, per request, to also
+  // include the DA desk user (role_id "22") — the header button above stays PM/PO-only.
+  const isDaRoleUser = String(userRoleId ?? "") === "22";
+  const canViewActionColumn = isDaContext && (isPortManagerOrOperator || isDaRoleUser);
   const callId = card?.call_id ?? card?.callId ?? null;
   // Deleted items are filtered purely from the API's own status field now — confirmed via
   // testing that da/da_delete_sales_line_item's response and sales_order/get_so_items_by_call
@@ -664,7 +677,9 @@ const SalesOrderList = ({
   const [daHeaderStatusTimeline, setDaHeaderStatusTimeline] = useState([]);
 
   useEffect(() => {
-    if (!isDaVerifyContext || callId == null) return undefined;
+    // canViewActionColumn (not isDaVerifyContext) — the DA role-22 verify-tick handler
+    // (handleToggleVerified) also needs this data to advance/revert the real DA stage.
+    if (!canViewActionColumn || callId == null) return undefined;
     let cancelled = false;
     daService.getStatusTimeline(callId)
       .then(({ data }) => {
@@ -674,7 +689,7 @@ const SalesOrderList = ({
         if (!cancelled) setDaHeaderStatusTimeline([]);
       });
     return () => { cancelled = true; };
-  }, [isDaVerifyContext, callId, daStatusRefreshToken]);
+  }, [canViewActionColumn, callId, daStatusRefreshToken]);
 
   // The header action button reflects and acts on the DA record's REAL current stage.
   //
@@ -2323,7 +2338,7 @@ const SalesOrderList = ({
           whole call's DA status, which used to make every OTHER untouched item look verified
           too). Each row's tick now reflects only whether the client themselves clicked THAT
           line (localVerifiedItemIds, keyed per order id). */}
-      {isDaVerifyContext && isCardAtSoApprovalColumn && (
+      {canViewActionColumn && isCardAtSoApprovalColumn && (
         <td>
           <div className="sales-order-table-cell sales-order-action-cell">
             <input
@@ -2368,6 +2383,11 @@ const SalesOrderList = ({
             compact
           />
           {isDaVerifyContext &&
+            // Hard floor: the DA header action button must never appear before the card has
+            // physically reached column 4 ("SO Sent for approval") — steps 1-3 show nothing at
+            // all, regardless of what the granular DA status-timeline fetch reports (that data
+            // is independent of the board column and can otherwise race ahead). Per request.
+            Number(currentStep) >= 4 &&
             // isCardAtSoApprovalColumn is footer/column-driven on purpose (see its own
             // declaration above) — column 4 must show its own fixed button state purely from
             // currentStep/stepLabels, never from the separate granular DA status-timeline fetch
@@ -2978,14 +2998,14 @@ const SalesOrderList = ({
                   {renderTableHeader("Third Party", "col-third-party")}
                   {renderTableHeader("Supporting Documents", "col-documents")}
                   {renderTableHeader("Supplier Code", "col-supplier")}
-                  {isDaVerifyContext && isCardAtSoApprovalColumn && renderTableHeader("Action", "col-verify")}
+                  {canViewActionColumn && isCardAtSoApprovalColumn && renderTableHeader("Action", "col-verify")}
                 </tr>
               </thead>
               <tbody>
                 {displayOrderList.length === 0 && !isLoadingSalesOrder && (
                   <tr>
                     <td
-                      colSpan={13 + (isDaVerifyContext && isCardAtSoApprovalColumn ? 1 : 0)}
+                      colSpan={13 + (canViewActionColumn && isCardAtSoApprovalColumn ? 1 : 0)}
                       style={{ padding: "28px 16px", textAlign: "center", color: "#64748b", fontSize: "14px" }}
                     >
                       No sales order line items for this call.
@@ -3020,7 +3040,7 @@ const SalesOrderList = ({
                         }}
                         style={{ cursor: "pointer", backgroundColor: isExpanded ? "rgba(42, 0, 255, 0.05)" : "#ffffff" }}
                       >
-                        <td colSpan={isDaVerifyContext && isCardAtSoApprovalColumn ? 14 : 13} style={{ padding: "12px 16px" }}>
+                        <td colSpan={canViewActionColumn && isCardAtSoApprovalColumn ? 14 : 13} style={{ padding: "12px 16px" }}>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                               {!isDAModule && (
