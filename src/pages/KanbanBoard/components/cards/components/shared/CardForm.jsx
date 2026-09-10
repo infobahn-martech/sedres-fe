@@ -2339,24 +2339,27 @@ function CardForm({
 
   const TOP_TABS = useMemo(() => {
     const base = isDAModule ? DA_TOP_TABS : (isSimplifiedMode ? SIMPLIFIED_TOP_TABS : ALL_TOP_TABS);
-    const withDAOnly = (isDAVariant || isDABoard || isPortOperatorDAAccess) && !isDAModule && !isSimplifiedMode ? [...base, DA_ONLY_TAB] : base;
+    // "DA" tab is restricted to the DA user (role 22) only — Port Manager/Port
+    // Operator (isPortOperatorDAAccess) keep their scoped DA status-timeline
+    // advance access (footer stepper/topbar sticker) on Jubail, but never the tab.
+    const withDAOnly = (isDAVariant || isDABoard) && isDAUser && !isDAModule && !isSimplifiedMode ? [...base, DA_ONLY_TAB] : base;
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
       ? withExportTabs(withDAOnly)
       : withDAOnly;
     const withHusbandryCall = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
     return filterTabsByCardPermission(withHusbandryCall);
-  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, isPortOperatorDAAccess, showExportTabs, isHusbandryCall, filterTabsByCardPermission]);
+  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, isDAUser, showExportTabs, isHusbandryCall, filterTabsByCardPermission]);
 
   const ENABLED_TABS = useMemo(() => {
     const base = isDAModule ? DA_ENABLED_TABS : (isSimplifiedMode ? SIMPLIFIED_ENABLED_TABS : ALL_ENABLED_TABS);
-    const withDAOnly = (isDAVariant || isDABoard || isPortOperatorDAAccess) && !isDAModule && !isSimplifiedMode ? [...base, DA_ONLY_TAB] : base;
+    const withDAOnly = (isDAVariant || isDABoard) && isDAUser && !isDAModule && !isSimplifiedMode ? [...base, DA_ONLY_TAB] : base;
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
       ? withExportTabs(withDAOnly)
       : withDAOnly;
     const withHusbandry = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
     const withLockOperation = lockOperationForExport ? withHusbandry.filter((tab) => tab !== "Operation") : withHusbandry;
     return filterTabsByCardPermission(withLockOperation);
-  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, isPortOperatorDAAccess, showExportTabs, isHusbandryCall, lockOperationForExport, filterTabsByCardPermission]);
+  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, isDAUser, showExportTabs, isHusbandryCall, lockOperationForExport, filterTabsByCardPermission]);
 
   useEffect(() => {
     setActiveTopTab(defaultTab);
