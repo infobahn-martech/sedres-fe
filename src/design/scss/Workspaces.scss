@@ -179,6 +179,12 @@
   }
 }
 
+// Sits right under the sticky app header, so bump above the default react-tooltip
+// z-index (999) to keep it from being covered by neighboring sticky/fixed layers.
+.workspaces-delete-tooltip.react-tooltip {
+  z-index: 4000 !important;
+}
+
 .workspaces-header-right {
   display: flex;
   align-items: center;
@@ -2661,32 +2667,50 @@
   }
 }
 
-// Archived Workspaces Modal Styles
+// Archived Workspaces Modal Styles — mirrors the Blockers modal layout
+// (blue header banner, pill search bar, card-style toolbar/table sections).
 .archived-workspaces-modal {
   .modal-dialog {
-    max-width: 900px;
-    width: 90%;
-    margin: 1.5rem auto;
+    max-width: 1250px;
+    width: 92%;
+    margin: 1rem auto;
+    height: min(800px, calc(100vh - 2rem));
+    max-height: calc(100vh - 2rem);
 
     @media ($sm-991) {
       max-width: 95%;
       width: 95%;
-      margin: 1rem auto;
+      margin: 0.75rem auto;
+      height: calc(100vh - 1.5rem);
+      max-height: calc(100vh - 1.5rem);
     }
   }
 
   .modal-content {
+    border-radius: 20px !important;
     border: none;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 16px 48px rgba(15, 23, 42, 0.18);
     overflow: hidden;
     background: var(--surface-primary);
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     padding: 0 !important; // Override global modal-content padding
+    margin: 0;
+    width: 100%;
   }
 
   .modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
+    background-color: rgba(15, 23, 42, 0.6);
+  }
+
+  // CustomModal always renders a Modal.Header even with no `header` prop passed —
+  // this modal builds its own header inside the body markup instead, so collapse
+  // the empty Bootstrap one to avoid a blank strip above it.
+  .modal-header {
+    display: none;
   }
 }
 
@@ -2695,154 +2719,150 @@
   background: var(--surface-primary);
   display: flex;
   flex-direction: column;
-  max-height: 80vh;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 16px;
 }
 
 .archived-workspaces-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 28px 20px;
-  border-bottom: 1px solid var(--border-primary);
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 20px 20px 0 0;
+  background: #00368c;
+  padding: 18px 24px;
 
-  @media ($sm-991) {
-    padding: 20px 24px 16px;
-  }
-
-  @media ($sm-767) {
-    padding: 18px 20px 14px;
+  .archived-workspaces-modal-header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 }
 
 .archived-workspaces-modal-title {
-  font: normal normal 600 24px/1.3 $font-primary;
-  color: $colorPrimary;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
   margin: 0;
-  letter-spacing: -0.02em;
+  line-height: 1.25;
+  font-family: 'Manrope', sans-serif;
+}
 
-  @media ($sm-991) {
-    font-size: 22px;
-  }
-
-  @media ($sm-767) {
-    font-size: 20px;
-  }
+.archived-workspaces-modal-subtitle {
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.62);
+  margin: 0;
+  line-height: 1.25;
 }
 
 .archived-workspaces-modal-close {
-  width: 28px;
-  height: 28px;
+  background: rgba(255, 255, 255, 0.08);
   border: none;
-  background: var(--bg-secondary);
-  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  color: var(--text-secondary);
+  border-radius: 8px;
   transition: all 0.2s ease;
   flex-shrink: 0;
-  padding: 0;
 
   &:hover {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    transform: rotate(90deg);
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
   }
 
   &:focus {
-    outline: 2px solid rgba(0, 54, 140, 0.3);
+    outline: 2px solid rgba(255, 255, 255, 0.3);
     outline-offset: 2px;
   }
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
 }
 
-.archived-workspaces-filter-section {
-  padding: 20px 28px;
-  border-bottom: 1px solid var(--border-primary);
-  flex-shrink: 0;
-
-  @media ($sm-767) {
-    padding: 16px 20px;
-  }
-}
-
-.archived-workspaces-filter-wrapper {
-  display: flex;
-  align-items: center;
+.archived-workspaces-toolbar-section {
+  flex: 0 0 auto;
+  margin: 0 20px;
   background: var(--surface-primary);
   border: 1px solid var(--border-primary);
-  border-radius: 8px;
-  padding: 10px 14px;
-  gap: 10px;
-  transition: all 0.2s ease;
-
-  &:focus-within {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    background: var(--surface-primary);
-  }
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
 }
 
-.archived-workspaces-filter-icon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
+.archived-workspaces-filter-bar {
+  display: flex;
+  align-items: center;
+  padding: 14px 24px;
+  background: var(--surface-primary);
+}
+
+.archived-workspaces-filter-input-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+}
+
+.archived-workspaces-filter-search-icon {
+  position: absolute;
+  left: 16px;
   color: var(--text-muted);
+  pointer-events: none;
 }
 
 .archived-workspaces-filter-input {
-  flex: 1;
-  border: none;
-  outline: none;
+  width: 100%;
+  padding: 9px 16px 9px 40px;
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
   font: normal normal 400 14px/1.5 $font-primary;
   color: var(--text-primary);
-  background: transparent;
+  background: var(--surface-primary);
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #00368c;
+    box-shadow: 0 0 0 3px rgba(0, 54, 140, 0.1);
+  }
 
   &::placeholder {
     color: var(--text-muted);
-    font-size: 14px;
   }
 }
 
-.archived-workspaces-filter-clear {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-secondary);
+.archived-workspaces-table-section {
+  flex: 1 1 auto;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-
-  &:hover {
-    background: #e2e6ff;
-    color: #00368c;
-  }
-
-  svg {
-    width: 14px;
-    height: 14px;
-  }
+  flex-direction: column;
+  min-height: 0;
+  margin: 0 20px 20px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
 }
 
 .archived-workspaces-table-wrapper {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
-  max-height: calc(80vh - 180px);
 }
 
 .archived-workspaces-table {
   width: 100%;
   border-collapse: collapse;
+  background: var(--surface-primary);
+
+  thead tr {
+    border-bottom: 2px solid var(--border-primary);
+  }
 }
 
 .archived-workspaces-th-workspace,
@@ -2850,41 +2870,25 @@
 .archived-workspaces-th-archived-by,
 .archived-workspaces-th-archived-at,
 .archived-workspaces-th-actions {
-  padding: 12px 28px;
+  padding: 11px 24px;
   text-align: left;
-  font: normal normal 600 13px/1.4 $font-primary;
-  color: var(--text-secondary);
-  letter-spacing: 0.05em;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.6px;
+  font-family: 'Manrope', sans-serif;
   background: var(--surface-primary);
-  border-bottom: 1px solid var(--border-primary);
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 10;
 
   @media ($sm-767) {
     padding: 10px 16px;
-    font-size: 12px;
+    font-size: 11px;
   }
 }
 
-.archived-workspaces-th-workspace {
-  width: 20%;
-}
-
-.archived-workspaces-th-board {
-  width: 30%;
-}
-
-.archived-workspaces-th-archived-by {
-  width: 25%;
-}
-
-.archived-workspaces-th-archived-at {
-  width: 20%;
-}
-
 .archived-workspaces-th-actions {
-  width: 5%;
   text-align: center;
 }
 
@@ -2895,6 +2899,10 @@
   &:hover {
     background: var(--surface-primary);
   }
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
 .archived-workspaces-td-workspace,
@@ -2902,12 +2910,13 @@
 .archived-workspaces-td-archived-by,
 .archived-workspaces-td-archived-at,
 .archived-workspaces-td-actions {
-  padding: 14px 28px;
-  font: normal normal 400 14px/1.5 $font-primary;
+  padding: 11px 24px;
+  font-size: 14px;
   color: var(--text-primary);
+  vertical-align: middle;
 
   @media ($sm-767) {
-    padding: 12px 16px;
+    padding: 10px 16px;
     font-size: 13px;
   }
 }
@@ -2976,13 +2985,6 @@
     color: #00368c;
   }
 
-  &.archived-workspaces-action-btn-delete {
-    &:hover {
-      background: #fee2e2;
-      color: #ef4444;
-    }
-  }
-
   &:focus {
     outline: 2px solid rgba(0, 54, 140, 0.3);
     outline-offset: 2px;
@@ -2999,10 +3001,27 @@
 }
 
 .archived-workspaces-empty {
-  padding: 40px 28px;
+  padding: 40px 24px;
   text-align: center;
   font: normal normal 400 14px/1.5 $font-primary;
   color: var(--text-muted);
+}
+
+.archived-workspaces-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-primary);
+  background: var(--surface-primary);
+  flex: 0 0 auto;
+}
+
+.archived-workspaces-pagination-count {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 // Rename Board Modal Styles
