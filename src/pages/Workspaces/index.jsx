@@ -502,23 +502,27 @@ function Workspaces() {
         </button>
       )}
       {canDeleteWorkspace && (
-        <button
-          type="button"
-          className="workspaces-btn workspaces-btn-delete"
-          onClick={handleDeleteWorkspace}
-          aria-label="Delete workspace"
-          title="Delete workspace"
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M2 4H14M6 4V3C6 2.44772 6.44772 2 7 2H9C9.55228 2 10 2.44772 10 3V4M13 4V13C13 13.5523 12.5523 14 12 14H4C3.44772 14 3 13.5523 3 13V4H13Z"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+        <>
+          <button
+            type="button"
+            className="workspaces-btn workspaces-btn-delete"
+            onClick={handleDeleteWorkspace}
+            aria-label="Deleted workspaces"
+            data-tooltip-id="workspaces-delete-btn-tooltip"
+            data-tooltip-content="Deleted workspaces"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M2 4H14M6 4V3C6 2.44772 6.44772 2 7 2H9C9.55228 2 10 2.44772 10 3V4M13 4V13C13 13.5523 12.5523 14 12 14H4C3.44772 14 3 13.5523 3 13V4H13Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          <Tooltip id="workspaces-delete-btn-tooltip" place="top" />
+        </>
       )}
     </div>
   ) : null;

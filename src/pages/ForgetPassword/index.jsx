@@ -93,7 +93,7 @@ function ForgetPassword() {
             </Link>
           </div>
 
-          <p className="copy">© Sedres 2025</p>
+          <p className="copy">© Sedres 2026</p>
         </div>
       </div>
     </div>
