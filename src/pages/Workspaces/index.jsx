@@ -15,6 +15,8 @@ import DashboardAddItemsModal from './DashboardAddItemsModal';
 import ArchivedWorkspacesModal from './ArchivedWorkspacesModal';
 import RenameBoardModal from './RenameBoardModal';
 import RenameWorkspaceModal from './RenameWorkspaceModal';
+import AddDashboardModal from '../../structure/SideNav/components/AddDashboardModal';
+import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 import { normalizeDashboardBackground } from '../../shared/utils/dashboardBackground';
 import useAuthReducer from '../../store/AuthReducer';
 import { isRestrictedBoardUser } from '../../shared/helpers/restrictedBoardUser';
@@ -91,6 +93,7 @@ function Workspaces() {
     removeWidgetFromDashboard,
     createWorkspace,
     createBoard,
+    createDashboard,
     renameWorkspace,
     renameBoard,
     archiveWorkspace,
@@ -198,6 +201,14 @@ function Workspaces() {
   const [isBoardColorPickerOpen, setIsBoardColorPickerOpen] = useState(false);
   const [isWallpaperGalleryOpen, setIsWallpaperGalleryOpen] = useState(false);
   const [uploadingWallpaperPresetId, setUploadingWallpaperPresetId] = useState(null);
+  const [showAddToDashboardModal, setShowAddToDashboardModal] = useState(false);
+  const [workspaceForDashboardPicker, setWorkspaceForDashboardPicker] = useState(null);
+  const [dashboardPickerSearch, setDashboardPickerSearch] = useState('');
+  const [dashboardPickerFilterChip, setDashboardPickerFilterChip] = useState(false);
+  const [pendingDashboardPickerToggleId, setPendingDashboardPickerToggleId] = useState(null);
+  const [showCreateDashboardModal, setShowCreateDashboardModal] = useState(false);
+  const [showArchiveWorkspaceModal, setShowArchiveWorkspaceModal] = useState(false);
+  const [selectedWorkspaceForArchive, setSelectedWorkspaceForArchive] = useState(null);
   const menuRef = useRef(null);
   const workspaceMenuRef = useRef(null);
   const boardWallpaperInputRef = useRef(null);
@@ -212,6 +223,19 @@ function Workspaces() {
       })),
     [widgetCatalog, dashboardWidgetIdSet]
   );
+
+  const dashboardPickerRows = useMemo(() => {
+    if (!Array.isArray(apiDashboards)) return [];
+    return apiDashboards.map((d) => ({
+      id: d.dashboard_id,
+      name: d.dashboard_name ?? 'Dashboard',
+      addedToDashboard:
+        workspaceForDashboardPicker != null &&
+        (d.workspaces ?? []).some(
+          (w) => String(w.workspace_id ?? w.id) === String(workspaceForDashboardPicker)
+        ),
+    }));
+  }, [apiDashboards, workspaceForDashboardPicker]);
 
   const filteredWorkspaces = workspacesData.filter((workspace) =>
     workspace.name.toLowerCase().includes(filterValue.toLowerCase())
@@ -370,11 +394,21 @@ function Workspaces() {
 
   const handleAddToDashboard = (workspaceId) => {
     setOpenWorkspaceMenuId(null);
-    if (!isDashboardView || !currentDashboard) return;
-    addWorkspaceToDashboard({
-      dashboard_id: currentDashboard.dashboard_id,
-      workspace_id: workspaceId,
-    });
+    if (isDashboardView && currentDashboard) {
+      addWorkspaceToDashboard({
+        dashboard_id: currentDashboard.dashboard_id,
+        workspace_id: workspaceId,
+      });
+      return;
+    }
+    // Outside a specific dashboard's view there is no implicit target
+    // dashboard, so let the user pick which dashboard(s) to add this
+    // workspace to.
+    setWorkspaceForDashboardPicker(workspaceId);
+    setDashboardPickerSearch('');
+    setDashboardPickerFilterChip(false);
+    setShowAddToDashboardModal(true);
+    listAllDashboards();
   };
 
   const handleRemoveFromDashboard = (workspaceId) => {
@@ -386,11 +420,55 @@ function Workspaces() {
     });
   };
 
+  const handleDashboardPickerToggle = async (dashboardId, nextOn) => {
+    if (workspaceForDashboardPicker == null) return;
+    const idKey = String(dashboardId);
+    setPendingDashboardPickerToggleId(idKey);
+    try {
+      if (nextOn) {
+        await addWorkspaceToDashboard({ dashboard_id: dashboardId, workspace_id: workspaceForDashboardPicker });
+      } else {
+        await removeWorkspaceFromDashboard({ dashboard_id: dashboardId, workspace_id: workspaceForDashboardPicker });
+      }
+    } finally {
+      setPendingDashboardPickerToggleId(null);
+    }
+  };
+
+  const handleDashboardPickerAddClick = () => {
+    setShowAddToDashboardModal(false);
+    setShowCreateDashboardModal(true);
+  };
+
+  const handleCreateDashboardForWorkspace = (data) => {
+    createDashboard({
+      dashboard_name: data.name,
+      cb: (newId) => {
+        setShowCreateDashboardModal(false);
+        if (newId != null && workspaceForDashboardPicker != null) {
+          addWorkspaceToDashboard({ dashboard_id: newId, workspace_id: workspaceForDashboardPicker });
+        }
+        setShowAddToDashboardModal(true);
+      },
+    });
+  };
+
   const handleArchiveWorkspace = (workspaceId) => {
     setOpenWorkspaceMenuId(null);
+    const workspace = workspacesData.find((w) => w.id === workspaceId);
+    setSelectedWorkspaceForArchive(workspace ?? { id: workspaceId });
+    setShowArchiveWorkspaceModal(true);
+  };
+
+  const handleConfirmArchiveWorkspace = () => {
+    if (!selectedWorkspaceForArchive) return;
     archiveWorkspace({
-      workspace_id: workspaceId,
-      cb: () => setSelectedWorkspace(null),
+      workspace_id: selectedWorkspaceForArchive.id,
+      cb: () => {
+        setSelectedWorkspace(null);
+        setShowArchiveWorkspaceModal(false);
+        setSelectedWorkspaceForArchive(null);
+      },
     });
   };
 
@@ -1274,6 +1352,53 @@ function Workspaces() {
           onToggle={handleDashboardModalToggle}
           onAddClick={handleDashboardModalAddClick}
           addButtonLabel={dashboardItemsModalType === 'workspace' ? 'Create workspace' : 'Add widget'}
+        />
+      )}
+
+      {!isDashboardView && (
+        <DashboardAddItemsModal
+          show={showAddToDashboardModal}
+          onClose={() => {
+            setShowAddToDashboardModal(false);
+            setWorkspaceForDashboardPicker(null);
+          }}
+          title="Add to Dashboard"
+          columnLabel="Dashboard"
+          rows={dashboardPickerRows}
+          loading={dashboardsLoading}
+          searchText={dashboardPickerSearch}
+          onSearchChange={setDashboardPickerSearch}
+          filterChipActive={dashboardPickerFilterChip}
+          onFilterChipRemove={() => setDashboardPickerFilterChip(false)}
+          onFilterToolbarClick={() => {
+            if (!dashboardPickerFilterChip) setDashboardPickerFilterChip(true);
+          }}
+          pendingToggleId={pendingDashboardPickerToggleId}
+          onToggle={handleDashboardPickerToggle}
+          onAddClick={handleDashboardPickerAddClick}
+          addButtonLabel="Create dashboard"
+        />
+      )}
+
+      <AddDashboardModal
+        show={showCreateDashboardModal}
+        onClose={() => {
+          setShowCreateDashboardModal(false);
+          setShowAddToDashboardModal(true);
+        }}
+        onSave={handleCreateDashboardForWorkspace}
+      />
+
+      {showArchiveWorkspaceModal && (
+        <DeleteConfirmationModal
+          show={showArchiveWorkspaceModal}
+          onCancel={() => {
+            setShowArchiveWorkspaceModal(false);
+            setSelectedWorkspaceForArchive(null);
+          }}
+          onConfirm={handleConfirmArchiveWorkspace}
+          deleteText={`Are you sure you want to archive "${selectedWorkspaceForArchive?.name ?? 'this workspace'}"?`}
+          isLoading={addEditLoader}
         />
       )}
     </div>
