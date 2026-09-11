@@ -586,11 +586,11 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   const handlePreviewClick = (type) => setPreviewMovementType(type);
   const handleClosePreview = () => setPreviewMovementType(null);
 
-  // Passport/Iqama dropzones — crew/upload_passport_copies + passports[], or
-  // crew/upload_iqama_copies + iqamas[]. Passport uploads also require
-  // call_id; iqama does not — same real-endpoint pattern as the Crew
-  // Summary bulk actions. Refetches crew/get_crew_list afterwards so the doc
-  // status icons reflect the real result.
+  // Passport/Iqama dropzones — crew/upload_passport_copies + passports[] +
+  // call_id, or crew/upload_iqama_copies + iqamas[] + call_id — same
+  // real-endpoint pattern as the Crew Summary bulk actions. Refetches
+  // crew/get_crew_list afterwards so the doc status icons reflect the real
+  // result.
   const handleCrewDocCopyUpload = (kind) => async (fileList) => {
     if (!canUploadDocKind[kind]) return;
     if (uploadSteps.crewList.status !== "completed") return;
@@ -603,15 +603,16 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 
     setUploadSteps((prev) => ({ ...prev, [stepKey]: { ...prev[stepKey], status: "uploading" } }));
 
+    const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
+    if (!resolvedCallId) {
+      setUploadSteps((prev) => ({ ...prev, [stepKey]: { ...prev[stepKey], status: "failed" } }));
+      notify("Unable to upload: missing call information.", "error");
+      return;
+    }
+
     const formData = new FormData();
+    formData.append("call_id", String(resolvedCallId));
     if (kind === "passport") {
-      const { resolvedCallId } = await resolveCallAndVesselIds();
-      if (!resolvedCallId) {
-        setUploadSteps((prev) => ({ ...prev, [stepKey]: { ...prev[stepKey], status: "failed" } }));
-        notify("Unable to upload: missing call information.", "error");
-        return;
-      }
-      formData.append("call_id", String(resolvedCallId));
       files.forEach((file, index) => formData.append(`passports[${index}]`, file));
     } else {
       files.forEach((file) => formData.append("iqamas[]", file));
@@ -619,7 +620,6 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 
     try {
       await uploadAction({ formData });
-      const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
       if (resolvedCallId && resolvedVesselId) {
         const list = await fetchCallCrewList({
           payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
@@ -642,15 +642,23 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   const handlePassportFiles = handleCrewDocCopyUpload("passport");
   const handleIqamaFiles = handleCrewDocCopyUpload("iqama");
 
-  // Visa — crew/upload_visa_copies + visas[]. Unlike Passport/Iqama (one call
-  // with every file batched into a single FormData), each file here gets its
-  // own API call so one file failing doesn't block the rest; refetches
-  // crew/get_crew_list once afterwards so the doc icons reflect the real
-  // result. Shared by the dropzone and the Crew Summary bulk action below.
+  // Visa — crew/upload_visa_copies + visas[] + call_id. Unlike Passport/Iqama
+  // (one call with every file batched into a single FormData), each file
+  // here gets its own API call so one file failing doesn't block the rest;
+  // refetches crew/get_crew_list once afterwards so the doc icons reflect
+  // the real result. Shared by the dropzone and the Crew Summary bulk
+  // action below.
   const uploadVisaFiles = async (files) => {
+    const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
+    if (!resolvedCallId) {
+      notify("Unable to upload: missing call information.", "error");
+      return 0;
+    }
+
     let successCount = 0;
     for (const file of files) {
       const formData = new FormData();
+      formData.append("call_id", String(resolvedCallId));
       formData.append("visas[]", file);
       try {
         await uploadVisaCopies({ formData });
@@ -660,7 +668,6 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
       }
     }
 
-    const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
     if (resolvedCallId && resolvedVesselId) {
       const list = await fetchCallCrewList({
         payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
@@ -821,9 +828,10 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     );
   };
 
-  // Visa bulk upload — crew/upload_visa_copies + visas[], one API call per
-  // selected file via the shared uploadVisaFiles helper (see handleVisaFiles
-  // above), unlike Passport/Iqama which batch every file into a single call.
+  // Visa bulk upload — crew/upload_visa_copies + visas[] + call_id, one API
+  // call per selected file via the shared uploadVisaFiles helper (see
+  // handleVisaFiles above), unlike Passport/Iqama which batch every file
+  // into a single call.
   const handleBulkVisaUpload = async (event) => {
     if (!canUploadVisa) return;
     const files = Array.from(event.target.files || []);
@@ -836,8 +844,8 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   };
 
   // Passport/Iqama bulk upload — crew/upload_passport_copies + passports[]
-  // + call_id, or crew/upload_iqama_copies + iqamas[] (no call_id). Unlike
-  // the local-only Visa override above, this hits a real endpoint, then
+  // + call_id, or crew/upload_iqama_copies + iqamas[] + call_id. Unlike the
+  // local-only Visa override above, this hits a real endpoint, then
   // refetches crew/get_crew_list so the doc status icons reflect the real
   // result.
   const handleBulkCopyUpload = (kind) => async (event) => {
@@ -850,14 +858,15 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     const uploadAction = kind === "passport" ? uploadPassportCopies : uploadIqamaCopies;
     const label = kind === "passport" ? "Passport" : "Iqama";
 
+    const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
+    if (!resolvedCallId) {
+      notify("Unable to upload: missing call information.", "error");
+      return;
+    }
+
     const formData = new FormData();
+    formData.append("call_id", String(resolvedCallId));
     if (kind === "passport") {
-      const { resolvedCallId } = await resolveCallAndVesselIds();
-      if (!resolvedCallId) {
-        notify("Unable to upload: missing call information.", "error");
-        return;
-      }
-      formData.append("call_id", String(resolvedCallId));
       files.forEach((file, index) => formData.append(`passports[${index}]`, file));
     } else {
       files.forEach((file) => formData.append("iqamas[]", file));
@@ -866,7 +875,6 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     setUploading(true);
     try {
       await uploadAction({ formData });
-      const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
       if (resolvedCallId && resolvedVesselId) {
         const list = await fetchCallCrewList({
           payload: { call_id: resolvedCallId, page: 1, limit: 1000 },

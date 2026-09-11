@@ -437,15 +437,16 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
 
     setUploadSteps((prev) => ({ ...prev, [kind]: { ...prev[kind], status: "uploading" } }));
 
+    const { resolvedCallId } = await resolveCallAndVesselIds();
+    if (!resolvedCallId) {
+      setUploadSteps((prev) => ({ ...prev, [kind]: { ...prev[kind], status: "failed" } }));
+      notify("Unable to upload: missing call information.", "error");
+      return;
+    }
+
     const formData = new FormData();
+    formData.append("call_id", String(resolvedCallId));
     if (kind === "passport") {
-      const { resolvedCallId } = await resolveCallAndVesselIds();
-      if (!resolvedCallId) {
-        setUploadSteps((prev) => ({ ...prev, [kind]: { ...prev[kind], status: "failed" } }));
-        notify("Unable to upload: missing call information.", "error");
-        return;
-      }
-      formData.append("call_id", String(resolvedCallId));
       files.forEach((file, index) => formData.append(`passports[${index}]`, file));
     } else {
       files.forEach((file) => formData.append(fileFieldName, file));
@@ -523,7 +524,8 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
 
   // Passport/Iqama/Visa bulk upload — real endpoints (crew/upload_passport_copies +
   // passports[], crew/upload_iqama_copies + iqamas[], crew/upload_visa_copies +
-  // visas[]); refetches the listing afterwards so the doc icons reflect the real result.
+  // visas[]), all now also requiring call_id; refetches the listing afterwards so
+  // the doc icons reflect the real result.
   const listingBulkUploadSetters = {
     passport: setIsUploadingPassports,
     iqama: setIsUploadingIqamas,
@@ -539,14 +541,15 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
     const setUploading = listingBulkUploadSetters[kind];
     const { uploadAction, fileFieldName, label } = docUploadConfig[kind];
 
+    const { resolvedCallId } = await resolveCallAndVesselIds();
+    if (!resolvedCallId) {
+      notify("Unable to upload: missing call information.", "error");
+      return;
+    }
+
     const formData = new FormData();
+    formData.append("call_id", String(resolvedCallId));
     if (kind === "passport") {
-      const { resolvedCallId } = await resolveCallAndVesselIds();
-      if (!resolvedCallId) {
-        notify("Unable to upload: missing call information.", "error");
-        return;
-      }
-      formData.append("call_id", String(resolvedCallId));
       files.forEach((file, index) => formData.append(`passports[${index}]`, file));
     } else {
       files.forEach((file) => formData.append(fileFieldName, file));
