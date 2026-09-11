@@ -1667,7 +1667,8 @@ const renderTabContent = (
   onDaStatusRefresh,
   boardId,
   currentStep,
-  stepLabels
+  stepLabels,
+  soActionStateResetToken
 ) => {
   const commonProps = {
     card,
@@ -1680,6 +1681,7 @@ const renderTabContent = (
     isDaCardContext,
     currentStep,
     stepLabels,
+    soActionStateResetToken,
     onSave: addModeSave.onSave,
     isSavingGeneral: addModeSave.isSavingGeneral,
     hasSubmitted: addModeSave.hasSubmitted,
@@ -2606,6 +2608,11 @@ function CardForm({
   // (no extra API call — we already have targetColumnId from the advance_stage response) so
   // handleClose can re-apply it after the close-refetch overwrites board state wholesale.
   const lastDaMoveRef = useRef(null);
+  // Bumped on every close so SalesOrderList's local-only soActionState (Column 4 "SO Sent for
+  // approval" Send/Approve/Reject state — see its own declaration) resets back to the initial
+  // "Send For SO approval" state on reopen too, not only on a full page refresh. Per request
+  // 2026-09-11 — temporary, same as soActionState no longer trusting api/da/action_state.
+  const [soActionStateResetToken, setSoActionStateResetToken] = useState(0);
 
   const handleClose = useCallback(async () => {
     if (isClosingRef.current) return;
@@ -2622,6 +2629,7 @@ function CardForm({
       if (lastDaMoveRef.current?.cardId === card?.id && moveCardToColumn) {
         moveCardToColumn(lastDaMoveRef.current.cardId, lastDaMoveRef.current.targetColumnId);
       }
+      setSoActionStateResetToken((t) => t + 1);
       close();
       isClosingRef.current = false;
       setIsClosing(false);
@@ -2839,10 +2847,96 @@ function CardForm({
       const statusName = target?.label;
       const callIdRaw = card?.call_id ?? card?.callId;
       const callId = callIdRaw != null ? String(callIdRaw).trim() : "";
-      if (!callId || statusId == null || !statusName) return;
+      if (!callId || !statusName) return;
+      // skipStatusUpdate callers (Approve/Reject) never go through the update_status branch
+      // below, which is the only place statusId is actually used — so a missing statusId (e.g.
+      // api/da/da_record_client_decision's real response omits it, same doc-mismatch already
+      // confirmed for da_send_action_email) must not block the column move here.
+      if (!target?.skipStatusUpdate && statusId == null) return;
 
       const reachedDate = formatNowForApi();
+
+      // Actually moves the card's board column (api/da/advance_stage) once the granular DA
+      // status side is settled. Split out so skipStatusUpdate below can reach it directly
+      // without going through api/da/update_status again first.
+      const moveBoardColumn = ({ forceLocalOnFailure = false } = {}) => {
+        const targetColumnId = getColumnIdFromStepLabel(statusName, columns, columnOrder);
+        if (!targetColumnId) return undefined;
+
+        // rememberForClose controls lastDaMoveRef (see its own declaration) — handleClose
+        // re-applies whatever's remembered there after its close-time board refetch, which is
+        // exactly what a REAL advance_stage success needs (backend confirmed the move but
+        // sometimes fails to persist it, so it must survive the refetch). The "invalid column"
+        // simulated move below is different — the backend never actually accepted it, so it
+        // must NOT be remembered: closing and reopening should let the refetch show the card's
+        // true (unmoved) column again, per request 2026-09-11.
+        const applyLocalMove = (rememberForClose) => {
+          setDaStatusRefreshToken((t) => t + 1);
+          if (rememberForClose) lastDaMoveRef.current = { cardId: card.id, targetColumnId };
+          if (moveCardToColumn) moveCardToColumn(card.id, targetColumnId);
+        };
+
+        return daService.advanceStage({ call_id: callId, column_id: targetColumnId })
+          .then(({ data: advanceData }) => {
+            if (!advanceData?.status) {
+              // Confirmed backend gap on multi-workflow boards (Jubail/18): advance_stage
+              // sometimes rejects an otherwise-correct column_id as "invalid column" — see
+              // open_issue_da_advance_stage_invalid_column_multi_workflow_board. Approve/Reject
+              // (forceLocalOnFailure) move the card on the board locally anyway so staff at
+              // least see it land on the right step; per request 2026-09-11.
+              if (forceLocalOnFailure) applyLocalMove(false);
+              return;
+            }
+            applyLocalMove(true);
+
+            // advance_stage's current_stage (when present) carries the stage's own sticker —
+            // reverting (the timeline's "done" round) sometimes comes back with no
+            // current_sticker_id/sticker_id, so fall back to matching a board sticker by
+            // name against the target status label ourselves (same name-match convention
+            // handleTopbarCardStickerChange already relies on for forward moves).
+            const stageStickerId =
+              advanceData.current_stage?.current_sticker_id ?? advanceData.current_stage?.sticker_id;
+            const cardIdRaw = card?.id ?? card?.card_id;
+            if ((stageStickerId == null || String(stageStickerId).trim() === "") && boardId && cardIdRaw != null) {
+              kanbanBoardService.getCardStickersByBoard(boardId)
+                .then(({ data: stickerBody }) => {
+                  const list = unwrapListFromApi(stickerBody, ["card_stickers", "stickers"]).map(normalizeBoardCardStickerRow);
+                  const match = list.find((s) => normalizeLabelForMatch(s.name) === normalizeLabelForMatch(statusName));
+                  if (match?.id) {
+                    patchCardSticker?.(String(cardIdRaw).trim(), match.id, {
+                      name: match.name,
+                      color_code: match.color_code,
+                      icon_name: match.iconKey,
+                    });
+                  }
+                })
+                .catch(() => {});
+            }
+          })
+          .catch((err) => {
+            if (forceLocalOnFailure) {
+              applyLocalMove(false);
+              return;
+            }
+            throw err;
+          });
+      };
+
       setIsAdvancingStage(true);
+
+      // SalesOrderList's Approve/Reject decision handlers (handleApproveDaClientDecision /
+      // handleRejectDaClientDecision) already advanced the granular DA status server-side via
+      // api/da/da_record_client_decision before calling this — calling api/da/update_status
+      // again here with that same (now-current) status_id was a no-op the backend rejected
+      // (data.status false, "no next status"), which silently returned before ever reaching
+      // advanceStage below, so Approve/Reject never actually moved the board column. skipStatusUpdate
+      // goes straight to the column move instead.
+      if (target?.skipStatusUpdate) {
+        Promise.resolve(moveBoardColumn({ forceLocalOnFailure: true }))
+          .finally(() => setIsAdvancingStage(false));
+        return;
+      }
+
       daService.updateStatus({ call_id: callId, status_id: statusId })
         .then(({ data }) => {
           if (!data?.status) {
@@ -2861,40 +2955,7 @@ function CardForm({
           // Status Timeline, where moving the card IS the point of the click).
           if (target?.skipCardMove) return undefined;
 
-          const targetColumnId = getColumnIdFromStepLabel(statusName, columns, columnOrder);
-          if (!targetColumnId) return undefined;
-
-          return daService.advanceStage({ call_id: callId, column_id: targetColumnId })
-            .then(({ data: advanceData }) => {
-              if (!advanceData?.status) return;
-              setDaStatusRefreshToken((t) => t + 1);
-              lastDaMoveRef.current = { cardId: card.id, targetColumnId };
-              if (moveCardToColumn) moveCardToColumn(card.id, targetColumnId);
-
-              // advance_stage's current_stage (when present) carries the stage's own sticker —
-              // reverting (the timeline's "done" round) sometimes comes back with no
-              // current_sticker_id/sticker_id, so fall back to matching a board sticker by
-              // name against the target status label ourselves (same name-match convention
-              // handleTopbarCardStickerChange already relies on for forward moves).
-              const stageStickerId =
-                advanceData.current_stage?.current_sticker_id ?? advanceData.current_stage?.sticker_id;
-              const cardIdRaw = card?.id ?? card?.card_id;
-              if ((stageStickerId == null || String(stageStickerId).trim() === "") && boardId && cardIdRaw != null) {
-                kanbanBoardService.getCardStickersByBoard(boardId)
-                  .then(({ data: stickerBody }) => {
-                    const list = unwrapListFromApi(stickerBody, ["card_stickers", "stickers"]).map(normalizeBoardCardStickerRow);
-                    const match = list.find((s) => normalizeLabelForMatch(s.name) === normalizeLabelForMatch(statusName));
-                    if (match?.id) {
-                      patchCardSticker?.(String(cardIdRaw).trim(), match.id, {
-                        name: match.name,
-                        color_code: match.color_code,
-                        icon_name: match.iconKey,
-                      });
-                    }
-                  })
-                  .catch(() => {});
-              }
-            });
+          return moveBoardColumn();
         })
         .catch((err) => {
           notify(err?.response?.data?.message || "Failed to move card to that stage.", "error");
@@ -3113,7 +3174,8 @@ function CardForm({
                 bumpDaStatusRefreshToken,
                 boardId,
                 currentStep,
-                stepLabels
+                stepLabels,
+                soActionStateResetToken
               )}
           </>
         )}
