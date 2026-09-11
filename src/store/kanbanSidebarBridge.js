@@ -4,4 +4,6 @@ import { create } from 'zustand';
 export const useKanbanSidebarBridge = create((set) => ({
   boardWorkflows: [],
   setBoardWorkflows: (list) => set({ boardWorkflows: Array.isArray(list) ? list : [] }),
+  boardId: null,
+  setBoardId: (boardId) => set({ boardId: boardId ?? null }),
 }));

@@ -2,8 +2,14 @@ import { useEffect } from 'react';
 import { useKanbanSidebarBridge } from '../../store/kanbanSidebarBridge';
 
 /** Mirrors normalized workflow fields so SideNav can apply the same add-card rules as on /operator. */
-export default function useSyncKanbanSidebarWorkflows(workflows) {
+export default function useSyncKanbanSidebarWorkflows(workflows, boardId) {
   const setBoardWorkflows = useKanbanSidebarBridge((s) => s.setBoardWorkflows);
+  const setBoardId = useKanbanSidebarBridge((s) => s.setBoardId);
+
+  useEffect(() => {
+    setBoardId(boardId ?? null);
+    return () => setBoardId(null);
+  }, [boardId, setBoardId]);
 
   useEffect(() => {
     const list = (workflows || []).map((workflow) => ({

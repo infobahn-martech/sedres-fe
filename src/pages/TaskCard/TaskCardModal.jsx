@@ -1,18 +1,34 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
 import userService from "../../services/userService";
 import taskCardService from "../../services/taskCardService";
 import useAlertReducer from "../../store/AlertReducer";
+import { useKanbanSidebarBridge } from "../../store/kanbanSidebarBridge";
 import SearchableSelect, { deriveSearchPlaceholder } from "../../components/form/SearchableSelect";
 import { Tag, Layers3, AlertTriangle, Sticker } from "lucide-react";
 import ColorPickerIcon from "../../assets/images/ColorPicker.png";
+import SedresColorPicker from "../../components/SedresColorPicker/SedresColorPicker";
+import { normalizeHexColor } from "../../components/SedresColorPicker/sedresColorPickerConstants";
+import { BOARD_META_PICKERS, unwrapListFromApi, CardMetaPickerPopover } from "../KanbanBoard/utils/cardMetaPickers";
 
+import "../../design/scss/pages/kanban-board/cardForm.scss";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/pages/taskCard.scss";
 import "../../design/scss/invoice.scss";
 import DateTimePickerField from "../KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+
+const META_PICKER_WIDTH = 272;
+// Matches $tc-green in taskCard.scss (the topbar's default background).
+const TASK_CARD_TOPBAR_DEFAULT_HEX = "#2e7d32";
+const META_PICKER_ICONS = {
+    type: { Icon: Layers3, title: "Type" },
+    tag: { Icon: Tag, title: "Tag" },
+    blocker: { Icon: AlertTriangle, title: "Blocker" },
+    sticker: { Icon: Sticker, title: "Sticker" },
+};
 
 const MENTION_TRIGGER_REGEX = /@([^\s@]*)$/;
 
@@ -78,6 +94,127 @@ function TaskCardModal({ show, onClose }) {
     const [mentionOpen, setMentionOpen] = useState(false);
     const [mentionSearch, setMentionSearch] = useState("");
     const [selectedMentionUserIds, setSelectedMentionUserIds] = useState([]);
+
+    // Tag/Type/Blocker/Sticker pickers — board-scoped, same source as CardForm's
+    // topbar pickers (see cardMetaPickers.jsx). Selections are kept locally here
+    // (there's no card yet) and sent with the create payload once "Create Task" is
+    // pressed; backend support for these fields on create_task_card isn't confirmed.
+    const boardId = useKanbanSidebarBridge((s) => s.boardId);
+    const [openPicker, setOpenPicker] = useState(null);
+    const [metaPickerFloaterStyle, setMetaPickerFloaterStyle] = useState({});
+    const [pickerLists, setPickerLists] = useState({ type: [], tag: [], blocker: [], sticker: [] });
+    const [pickerLoading, setPickerLoading] = useState({ type: false, tag: false, blocker: false, sticker: false });
+    const [selectedRows, setSelectedRows] = useState({ type: null, tag: null, blocker: null, sticker: null });
+    const metaPickerTriggerRefs = useRef({ type: null, tag: null, blocker: null, sticker: null });
+    const metaPickerFloaterWrapRef = useRef(null);
+    const metaPickerFetchRef = useRef({ type: 0, tag: 0, blocker: 0, sticker: 0 });
+
+    // Change header color — same SedresColorPicker floater CardForm's topbar uses.
+    const [topbarColor, setTopbarColor] = useState(TASK_CARD_TOPBAR_DEFAULT_HEX);
+    const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+    const [colorPickerFloaterStyle, setColorPickerFloaterStyle] = useState({});
+    const colorPickerTriggerRef = useRef(null);
+    const colorPickerFloaterWrapRef = useRef(null);
+
+    const fetchPickerList = useCallback(async (pickerKey) => {
+        const config = BOARD_META_PICKERS[pickerKey];
+        if (!config) return;
+        if (!boardId) {
+            setPickerLists((prev) => ({ ...prev, [pickerKey]: [] }));
+            return;
+        }
+        const fetchId = ++metaPickerFetchRef.current[pickerKey];
+        setPickerLoading((prev) => ({ ...prev, [pickerKey]: true }));
+        try {
+            const res = await config.fetchByBoard(boardId);
+            if (fetchId !== metaPickerFetchRef.current[pickerKey]) return;
+            const body = res?.data;
+            const list = unwrapListFromApi(body, config.listKeys).map(config.normalizeRow);
+            setPickerLists((prev) => ({ ...prev, [pickerKey]: list }));
+        } catch {
+            if (fetchId !== metaPickerFetchRef.current[pickerKey]) return;
+            setPickerLists((prev) => ({ ...prev, [pickerKey]: [] }));
+        } finally {
+            if (fetchId === metaPickerFetchRef.current[pickerKey]) {
+                setPickerLoading((prev) => ({ ...prev, [pickerKey]: false }));
+            }
+        }
+    }, [boardId]);
+
+    const handleToggleMetaPicker = (pickerKey) => (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsColorPickerOpen(false);
+        setOpenPicker((current) => {
+            const next = current === pickerKey ? null : pickerKey;
+            if (next) fetchPickerList(next);
+            return next;
+        });
+    };
+
+    const handleSelectMetaItem = (pickerKey, row) => {
+        setSelectedRows((prev) => ({ ...prev, [pickerKey]: row }));
+        setOpenPicker(null);
+    };
+
+    const handleRemoveMetaItem = (pickerKey) => {
+        setSelectedRows((prev) => ({ ...prev, [pickerKey]: null }));
+        setOpenPicker(null);
+    };
+
+    useLayoutEffect(() => {
+        if (!openPicker) return;
+        const anchor = metaPickerTriggerRefs.current[openPicker];
+        if (!anchor) return;
+        const r = anchor.getBoundingClientRect();
+        const width = META_PICKER_WIDTH;
+        const left = Math.max(16, Math.min(r.right - width, window.innerWidth - width - 16));
+        const top = Math.min(r.bottom + 8, window.innerHeight - 16);
+        setMetaPickerFloaterStyle({ position: "fixed", top, left, zIndex: 13040 });
+    }, [openPicker]);
+
+    const handleToggleColorPicker = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setOpenPicker(null);
+        setIsColorPickerOpen((open) => !open);
+    };
+
+    const handleApplyTopbarColor = (hex) => {
+        setTopbarColor(normalizeHexColor(hex, TASK_CARD_TOPBAR_DEFAULT_HEX));
+        setIsColorPickerOpen(false);
+    };
+
+    const handleCancelTopbarColor = () => {
+        setIsColorPickerOpen(false);
+    };
+
+    useLayoutEffect(() => {
+        if (!isColorPickerOpen) return;
+        const anchor = colorPickerTriggerRef.current;
+        if (!anchor) return;
+        const r = anchor.getBoundingClientRect();
+        const width = 308;
+        const left = Math.max(16, Math.min(r.right - width, window.innerWidth - width - 16));
+        const top = Math.min(r.bottom + 8, window.innerHeight - 16);
+        setColorPickerFloaterStyle({ position: "fixed", top, left, zIndex: 13040 });
+    }, [isColorPickerOpen]);
+
+    useEffect(() => {
+        if (!openPicker && !isColorPickerOpen) return;
+        const onMouseDown = (event) => {
+            if (metaPickerFloaterWrapRef.current?.contains(event.target)) return;
+            if (colorPickerFloaterWrapRef.current?.contains(event.target)) return;
+            if (colorPickerTriggerRef.current?.contains(event.target)) return;
+            for (const key of Object.keys(metaPickerTriggerRefs.current)) {
+                if (metaPickerTriggerRefs.current[key]?.contains(event.target)) return;
+            }
+            setOpenPicker(null);
+            setIsColorPickerOpen(false);
+        };
+        document.addEventListener("mousedown", onMouseDown);
+        return () => document.removeEventListener("mousedown", onMouseDown);
+    }, [openPicker, isColorPickerOpen]);
 
     useEffect(() => {
         if (!show) return;
@@ -150,6 +287,10 @@ function TaskCardModal({ show, onClose }) {
         setDueTime("");
         setTaskNameError("");
         setSelectedMentionUserIds([]);
+        setSelectedRows({ type: null, tag: null, blocker: null, sticker: null });
+        setOpenPicker(null);
+        setTopbarColor(TASK_CARD_TOPBAR_DEFAULT_HEX);
+        setIsColorPickerOpen(false);
         closeMentionDropdown();
     }, [closeMentionDropdown]);
 
@@ -177,6 +318,11 @@ function TaskCardModal({ show, onClose }) {
                 task_name: taskName,
                 assigned_to: assignUserId,
                 due_date: dueDatePayload,
+                ...(selectedRows.type?.id ? { card_type_id: selectedRows.type.id } : {}),
+                ...(selectedRows.tag?.id ? { card_tag_id: selectedRows.tag.id } : {}),
+                ...(selectedRows.blocker?.id ? { card_blocker_id: selectedRows.blocker.id } : {}),
+                ...(selectedRows.sticker?.id ? { card_sticker_id: selectedRows.sticker.id } : {}),
+                ...(topbarColor !== TASK_CARD_TOPBAR_DEFAULT_HEX ? { card_color: topbarColor } : {}),
             });
 
             const newTask = {
@@ -199,7 +345,36 @@ function TaskCardModal({ show, onClose }) {
         } finally {
             setIsSaving(false);
         }
-    }, [cardTitle, taskName, assignUserId, dueDate, dueTime, users, selectedMentionUserIds, handleReset, onClose]);
+    }, [cardTitle, taskName, assignUserId, dueDate, dueTime, users, selectedMentionUserIds, selectedRows, topbarColor, handleReset, onClose]);
+
+    const renderMetaButton = (pickerKey) => {
+        const { Icon, title } = META_PICKER_ICONS[pickerKey];
+        const selected = selectedRows[pickerKey];
+        return (
+            <button
+                key={pickerKey}
+                ref={(el) => { metaPickerTriggerRefs.current[pickerKey] = el; }}
+                type="button"
+                className="topbar-icon-btn"
+                onClick={handleToggleMetaPicker(pickerKey)}
+                title={selected ? `${title}: ${selected.name}` : title}
+                aria-label={title}
+                aria-expanded={openPicker === pickerKey}
+                aria-haspopup="listbox"
+            >
+                <Icon size={20} aria-hidden />
+                {selected && (
+                    <span
+                        className="topbar-icon-btn-selected-dot"
+                        style={{ backgroundColor: selected.color_code }}
+                        aria-hidden
+                    />
+                )}
+            </button>
+        );
+    };
+
+    const openPickerConfig = openPicker ? BOARD_META_PICKERS[openPicker] : null;
 
     if (!show) return null;
 
@@ -207,7 +382,7 @@ function TaskCardModal({ show, onClose }) {
         <div className="cardform-overlay">
             <div className="cardform-panel add-mode">
 
-                <div className="cardform-topbar tc-topbar">
+                <div className="cardform-topbar tc-topbar" style={{ backgroundColor: topbarColor }}>
                     <input
                         type="text"
                         className="cardform-title-input"
@@ -217,20 +392,20 @@ function TaskCardModal({ show, onClose }) {
                         autoFocus
                     />
                     <div className="cardform-topbar-right">
-                        <button type="button" className="topbar-icon-btn" title="Tag" aria-label="Tag">
-                            <Tag size={20} aria-hidden />
-                        </button>
-                        <button type="button" className="topbar-icon-btn" title="Type" aria-label="Type">
-                            <Layers3 size={20} aria-hidden />
-                        </button>
-                        <button type="button" className="topbar-icon-btn" title="Blocker" aria-label="Blocker">
-                            <AlertTriangle size={20} aria-hidden />
-                        </button>
-                        <button type="button" className="topbar-icon-btn" title="Sticker" aria-label="Sticker">
-                            <Sticker size={20} aria-hidden />
-                        </button>
+                        {renderMetaButton("tag")}
+                        {renderMetaButton("type")}
+                        {renderMetaButton("blocker")}
+                        {renderMetaButton("sticker")}
                         <div className="topbar-color-picker-wrapper">
-                            <button type="button" className="topbar-color-picker-label" title="Change header color" aria-label="Color Picker">
+                            <button
+                                ref={colorPickerTriggerRef}
+                                type="button"
+                                className="topbar-color-picker-label"
+                                onClick={handleToggleColorPicker}
+                                title="Change header color"
+                                aria-label="Color Picker"
+                                aria-expanded={isColorPickerOpen}
+                            >
                                 <img src={ColorPickerIcon} alt="Color Picker" className="topbar-color-picker-icon" />
                             </button>
                         </div>
@@ -347,6 +522,41 @@ function TaskCardModal({ show, onClose }) {
                 </div>
 
             </div>
+
+            {openPicker &&
+                openPickerConfig &&
+                createPortal(
+                    <CardMetaPickerPopover
+                        wrapRef={metaPickerFloaterWrapRef}
+                        header={openPickerConfig.header}
+                        floaterStyle={metaPickerFloaterStyle}
+                        loading={pickerLoading[openPicker]}
+                        items={pickerLists[openPicker] ?? []}
+                        selectedId={selectedRows[openPicker]?.id ?? null}
+                        emptyLabel={openPickerConfig.emptyLabel}
+                        hasBoardId={Boolean(boardId)}
+                        showRowIcon={openPickerConfig.showRowIcon !== false}
+                        onSelect={(row) => handleSelectMetaItem(openPicker, row)}
+                        hasSelection={Boolean(selectedRows[openPicker])}
+                        removeLabel={`Remove ${openPickerConfig.emptyLabel.slice(0, -1)}`}
+                        onRemove={() => handleRemoveMetaItem(openPicker)}
+                    />,
+                    document.body
+                )}
+
+            {isColorPickerOpen &&
+                createPortal(
+                    <div ref={colorPickerFloaterWrapRef} style={colorPickerFloaterStyle}>
+                        <SedresColorPicker
+                            ariaLabel="Pick task card header color"
+                            initialHex={topbarColor}
+                            className="kanban-dashboard-color-picker-popover--floating"
+                            onApply={handleApplyTopbarColor}
+                            onCancel={handleCancelTopbarColor}
+                        />
+                    </div>,
+                    document.body
+                )}
         </div>
     );
 }
