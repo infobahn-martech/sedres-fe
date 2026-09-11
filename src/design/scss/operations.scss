@@ -2442,6 +2442,15 @@ $send-report-optional: var(--text-muted);
   padding: 0 4px 0 0;
 }
 
+/* When a permission gate hides one of the two columns (e.g. BASIC_FIELDS
+   absent removes .operation-form-column, or PREVIEW_EMAIL absent removes
+   .operation-email-column), let the remaining column take the full width
+   instead of staying pinned to its half of the grid. */
+.operation-two-column-grid:not(:has(.operation-email-column)) .operation-form-column,
+.operation-two-column-grid:not(:has(.operation-form-column)) .operation-email-column {
+  grid-column: 1 / -1;
+}
+
 .operation-two-column-grid--split-scroll {
   height: calc(100vh - 320px);
   min-height: 500px;
