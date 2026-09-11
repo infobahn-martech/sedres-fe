@@ -587,8 +587,8 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   const handleClosePreview = () => setPreviewMovementType(null);
 
   // Passport/Iqama dropzones — crew/upload_passport_copies + passports[], or
-  // crew/upload_iqama_copies + iqamas[]. Payload is just the file array, no
-  // call_id/vessel_id/crew_ids — same real-endpoint pattern as the Crew
+  // crew/upload_iqama_copies + iqamas[]. Passport uploads also require
+  // call_id; iqama does not — same real-endpoint pattern as the Crew
   // Summary bulk actions. Refetches crew/get_crew_list afterwards so the doc
   // status icons reflect the real result.
   const handleCrewDocCopyUpload = (kind) => async (fileList) => {
@@ -605,6 +605,13 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 
     const formData = new FormData();
     if (kind === "passport") {
+      const { resolvedCallId } = await resolveCallAndVesselIds();
+      if (!resolvedCallId) {
+        setUploadSteps((prev) => ({ ...prev, [stepKey]: { ...prev[stepKey], status: "failed" } }));
+        notify("Unable to upload: missing call information.", "error");
+        return;
+      }
+      formData.append("call_id", String(resolvedCallId));
       files.forEach((file, index) => formData.append(`passports[${index}]`, file));
     } else {
       files.forEach((file) => formData.append("iqamas[]", file));
@@ -828,11 +835,11 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     setIsUploadingVisas(false);
   };
 
-  // Passport/Iqama bulk upload — crew/upload_passport_copies + passports[],
-  // or crew/upload_iqama_copies + iqamas[]. Payload is just the file array,
-  // no call_id/vessel_id/crew_ids. Unlike the local-only Visa override
-  // above, this hits a real endpoint, then refetches crew/get_crew_list so
-  // the doc status icons reflect the real result.
+  // Passport/Iqama bulk upload — crew/upload_passport_copies + passports[]
+  // + call_id, or crew/upload_iqama_copies + iqamas[] (no call_id). Unlike
+  // the local-only Visa override above, this hits a real endpoint, then
+  // refetches crew/get_crew_list so the doc status icons reflect the real
+  // result.
   const handleBulkCopyUpload = (kind) => async (event) => {
     if (!canUploadDocKind[kind]) return;
     const files = Array.from(event.target.files || []);
@@ -845,6 +852,12 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 
     const formData = new FormData();
     if (kind === "passport") {
+      const { resolvedCallId } = await resolveCallAndVesselIds();
+      if (!resolvedCallId) {
+        notify("Unable to upload: missing call information.", "error");
+        return;
+      }
+      formData.append("call_id", String(resolvedCallId));
       files.forEach((file, index) => formData.append(`passports[${index}]`, file));
     } else {
       files.forEach((file) => formData.append("iqamas[]", file));

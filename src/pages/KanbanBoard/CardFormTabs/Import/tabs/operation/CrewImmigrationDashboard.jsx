@@ -439,6 +439,13 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
 
     const formData = new FormData();
     if (kind === "passport") {
+      const { resolvedCallId } = await resolveCallAndVesselIds();
+      if (!resolvedCallId) {
+        setUploadSteps((prev) => ({ ...prev, [kind]: { ...prev[kind], status: "failed" } }));
+        notify("Unable to upload: missing call information.", "error");
+        return;
+      }
+      formData.append("call_id", String(resolvedCallId));
       files.forEach((file, index) => formData.append(`passports[${index}]`, file));
     } else {
       files.forEach((file) => formData.append(fileFieldName, file));
@@ -534,6 +541,12 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
 
     const formData = new FormData();
     if (kind === "passport") {
+      const { resolvedCallId } = await resolveCallAndVesselIds();
+      if (!resolvedCallId) {
+        notify("Unable to upload: missing call information.", "error");
+        return;
+      }
+      formData.append("call_id", String(resolvedCallId));
       files.forEach((file, index) => formData.append(`passports[${index}]`, file));
     } else {
       files.forEach((file) => formData.append(fileFieldName, file));
