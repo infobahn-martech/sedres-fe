@@ -105,7 +105,7 @@ export default function KanbanBoardPage() {
   const [accordionMenu, setAccordionMenu] = useState(null);
   const [accordionMenuWorkflowId, setAccordionMenuWorkflowId] = useState(null);
 
-  useSyncKanbanSidebarWorkflows(workflows);
+  useSyncKanbanSidebarWorkflows(workflows, selectedBoardId);
   useKanbanAddCardFromSidebar({
     setSelectedCard,
     setIsAddMode,
