@@ -17,6 +17,7 @@ function SalesOrder({
   onDaStatusRefresh,
   currentStep,
   stepLabels,
+  soActionStateResetToken,
 }) {
   const cardColor = "#e2e6ff";
 
@@ -42,6 +43,7 @@ function SalesOrder({
             onDaStatusRefresh={onDaStatusRefresh}
             currentStep={currentStep}
             stepLabels={stepLabels}
+            soActionStateResetToken={soActionStateResetToken}
           />
         </div>
       </div>
@@ -65,6 +67,7 @@ SalesOrder.propTypes = {
   onDaStatusRefresh: PropTypes.func,
   currentStep: PropTypes.number,
   stepLabels: PropTypes.arrayOf(PropTypes.string),
+  soActionStateResetToken: PropTypes.number,
 };
 
 export default SalesOrder;
