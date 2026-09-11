@@ -27,7 +27,7 @@ const MESSAGE_QUILL_FORMATS = ["bold", "italic", "underline", "list", "bullet", 
 // defaultTo is the recipient from api/da/da_action_email_draft/{call_id} (fetched by
 // SalesOrderList right before opening this modal) — prefills "To" with the backend's own
 // suggested recipient instead of making staff type it every time; still freely editable.
-const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, soCustomerName = "", stageLabel = "SO Approval", defaultTo = "" }) => {
+const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, soCustomerName = "", stageLabel = "SO Approval", actionLabel = "", defaultTo = "" }) => {
   const [fromValue, setFromValue] = useState("operations@shipping.com");
   const [toValue, setToValue] = useState("");
   const [ccValue, setCcValue] = useState("");
@@ -40,7 +40,11 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
 
   useEffect(() => {
     if (show) {
-      setSubjectValue(`${stageLabel} Request${soCustomerName ? ` — ${soCustomerName}` : ""}`);
+      // Subject always mirrors the footer step button's own action text (actionLabel, e.g.
+      // "Closed Paid", "Send for SO approval") instead of a generic "{stageLabel} Request" —
+      // the two used to drift apart (e.g. footer said "Closed Paid" while the subject read
+      // "Closed paid Request"), so this keeps them in sync for every stage.
+      setSubjectValue(`${actionLabel || stageLabel}${soCustomerName ? ` — ${soCustomerName}` : ""}`);
       setToValue(defaultTo);
       setToError("");
       // Prefilled (not just a placeholder) — api/da/da_send_action_email requires a non-empty
@@ -52,7 +56,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
       );
       setMessageError("");
     }
-  }, [show, soCustomerName, stageLabel, defaultTo]);
+  }, [show, soCustomerName, stageLabel, actionLabel, defaultTo]);
 
   const handleFilesSelected = (fileList) => {
     const files = Array.from(fileList || []).filter((file) => file);
@@ -257,6 +261,7 @@ SoApprovalEmailModal.propTypes = {
   isSubmitting: PropTypes.bool,
   soCustomerName: PropTypes.string,
   stageLabel: PropTypes.string,
+  actionLabel: PropTypes.string,
   defaultTo: PropTypes.string,
 };
 

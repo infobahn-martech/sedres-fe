@@ -9,7 +9,6 @@ import salesOrderService from "../../../../../../services/salesOrderService";
 import billingEntityService from "../../../../../../services/billingEntityService";
 import callFileService from "../../../../../../services/callFileService";
 import daService from "../../../../../../services/daService";
-import { mapStatusTimelineResponse } from "../da/daStatusTimeline";
 import useAttachmentsReducer from "../../../../../../store/AttachmentsReducer";
 import useVendorReducer from "../../../../../../store/VendorReducer";
 import DatePickerField from "../../../shared/components/DatePickerField";
@@ -670,27 +669,6 @@ const SalesOrderList = ({
   const [deletingItem, setDeletingItem] = useState(null);
   const [isDeletingItem, setIsDeletingItem] = useState(false);
 
-  // api/da/status_timeline/{call_id} — same real per-call status progression shown in the
-  // DA tab's Summary sub-tab (DA.jsx) — fetched here too so the header "DA Status" button
-  // can surface the current stage's label without the DA tab having to be open. Refetches
-  // when daStatusRefreshToken bumps, same as DA.jsx's own fetch.
-  const [daHeaderStatusTimeline, setDaHeaderStatusTimeline] = useState([]);
-
-  useEffect(() => {
-    // canViewActionColumn (not isDaVerifyContext) — the DA role-22 verify-tick handler
-    // (handleToggleVerified) also needs this data to advance/revert the real DA stage.
-    if (!canViewActionColumn || callId == null) return undefined;
-    let cancelled = false;
-    daService.getStatusTimeline(callId)
-      .then(({ data }) => {
-        if (!cancelled) setDaHeaderStatusTimeline(Array.isArray(data?.data) ? data.data : []);
-      })
-      .catch(() => {
-        if (!cancelled) setDaHeaderStatusTimeline([]);
-      });
-    return () => { cancelled = true; };
-  }, [canViewActionColumn, callId, daStatusRefreshToken]);
-
   // api/da/action_state/{call_id} — authoritative Sales Order operator/supervisor workflow
   // button state for column 4 ("SO Sent for approval"): { button_state: "send" |
   // "awaiting_approval" | "approved", last_email_sent_date, last_decision, last_decision_date }.
@@ -721,60 +699,14 @@ const SalesOrderList = ({
   // call's step right after "Ops completed" is "To be sent for SRF", not "SO approval" at
   // all), so name-matching left the header button permanently hidden — even after
   // verifying — on every call whose next step isn't literally named "SO approval".
-  // mapStatusTimelineResponse always derives a "current" row even when the backend sends
-  // none, so opsCompletedLabel below is reliably the real current step regardless.
-  const { opsCompletedLabel, opsCompletedStatusId, soApprovalLabel, soApprovalStatusId, hasAdvancedPastFirstStage } = useMemo(() => {
-    const mapped = mapStatusTimelineResponse(daHeaderStatusTimeline);
-    const currentIdx = mapped.findIndex((step) => step.state === "current");
-    const currentStep = currentIdx >= 0 ? mapped[currentIdx] : null;
-    const nextStep = currentIdx >= 0 ? mapped[currentIdx + 1] ?? null : null;
-    return {
-      opsCompletedLabel: currentStep?.label ?? null,
-      opsCompletedStatusId: currentStep?.statusId ?? null,
-      soApprovalLabel: nextStep?.label ?? null,
-      soApprovalStatusId: nextStep?.statusId ?? null,
-      // Whether the header button area should show at all — business rule: it's irrelevant
-      // until the record has moved past the very first step (verified). Derived structurally
-      // (position within THIS fetch's own sequence), not from a separate local "was it
-      // verified" flag — a local flag reset to false on every remount (switching to another
-      // tab and back to Sales Order unmounts/remounts this whole component, per CardForm's
-      // tab-switch rendering), and re-deriving it needed both a fresh fetch AND a separate
-      // Zustand verify-tracking store to agree, which raced (this fetch starts empty, so the
-      // very first render after remount always missed it) and could permanently miss it
-      // outright once the DA record reached a stage with no "next" step (soApprovalLabel null
-      // forever) — that was the actual bug: the button stayed hidden after navigating to
-      // another tab and back. Deriving it fresh from this fetch's own current-step position
-      // every time self-heals with no dependency on any other state.
-      hasAdvancedPastFirstStage: currentIdx > 0,
-    };
-  }, [daHeaderStatusTimeline]);
 
-  // Local placeholder only for the brief window before the FIRST real fetch above resolves
-  // (e.g. right after a verify click, before its refetch lands) — set by handleToggleVerified.
-  // Once real data (the card's sticker, or opsCompletedLabel) is available it always wins below
-  // (see effectiveNextDaStatusLabel), so the button can never get permanently stuck showing a
-  // stage the real DA Status Timeline has since moved away from in either direction — that was
-  // the actual bug: this override used to be treated as the permanent source of truth once set,
-  // so it drifted out of sync the moment the real timeline changed again (a later verify,
-  // decision, reject, or the timeline's own click-to-advance in DA.jsx).
-  const [localDaStatusOverride, setLocalDaStatusOverride] = useState(null);
-
-  // The card's real current stage — the card's own sticker wins when set (same flattened
-  // sticker_name field the topbar sticker pill reads, kept in sync via
-  // kanban_card/update_card_sticker — see the "status_timeline's sticker_id" note in
-  // daStatusTimeline.js), falling back to opsCompletedLabel (this component's own
-  // api/da/status_timeline fetch) and finally to the local override for the brief window
-  // before either real source has loaded yet.
-  //
-  // Exception: "AR invoice issued/Submitted to FDA" (board column 6) covers TWO distinct DA
-  // sub-stages that both live on that same column without a column move between them —
-  // "Invoice Issuance" (upload pending) then "Invoice dispatched" (awaiting the client's
-  // decision) — see isRealInvoiceIssuanceStage / isAwaitingDecisionStage below. Once that
-  // column's sticker is set, sticker_name would otherwise permanently win over
-  // opsCompletedLabel (it's checked first) and neither of those two real sub-stages could ever
-  // display or be detected again — so while on that column specifically, the granular
-  // status-timeline's own current label is used instead, since it's the only source that
-  // actually distinguishes the two.
+  // The card's real current stage — the card's own sticker (same flattened sticker_name field
+  // the topbar sticker pill reads, kept in sync via kanban_card/update_card_sticker — see the
+  // "status_timeline's sticker_id" note in daStatusTimeline.js) is now the only source; the
+  // separate api/da/status_timeline fetch this used to also fall back to (and the local
+  // override for the window before it loaded) was removed per request 2026-09-11 — it was
+  // desyncing from the board column and leaking stale labels (e.g. "Closed Paid") into the
+  // header/Subject on cards that hadn't actually reached that stage.
   const isAtArInvoiceColumn =
     Array.isArray(stepLabels) && currentStep != null && /ar invoice issued/i.test(stepLabels[currentStep - 1] || "");
   // Column-driven, same pattern as the other isAt*Column flags — while the card is physically
@@ -788,37 +720,26 @@ const SalesOrderList = ({
   // was reverted.
   const isAtOpsCompletedColumn =
     Array.isArray(stepLabels) && currentStep != null && /ops completed/i.test(stepLabels[currentStep - 1] || "");
-  // Same masking problem as isAtArInvoiceColumn, but for column 4 ("SO Sent for approval"):
-  // once the card's sticker is set to that column's own name, it would otherwise win over
-  // opsCompletedLabel's real granular wording ("To be sent for SO approval") — and
-  // daActionButtonLabel below prefixes whatever wins with "Send for ", so the column-name
-  // version produced the doubled-up "Send for SO Sent for approval" instead of the intended
-  // "Send for SO approval". Also reused by shouldShowDaActionButton further below.
+  // Same masking problem as isAtArInvoiceColumn, but for column 4 ("SO Sent for approval").
+  // Also reused by shouldShowDaActionButton further below.
   const isCardAtSoApprovalColumn =
     Array.isArray(stepLabels) && currentStep != null && /so sent for approval/i.test(stepLabels[currentStep - 1] || "");
-  // Both overrides above are additionally guarded by the granular label actually matching what
-  // that column represents (invoice-related / SO-approval-related) — a card whose board column
-  // is stuck behind its own granular status (e.g. da/advance_stage failed on an earlier move, a
-  // real backend bug — see open_issue_da_advance_stage_invalid_column_multi_workflow_board)
-  // would otherwise show a granular label from a stage far ahead of the column it's still
-  // visually sitting on, which is more misleading than just showing the column's own name.
-  const effectiveNextDaStatusLabel =
-    (isAtArInvoiceColumn && /invoice/i.test(opsCompletedLabel || "") && opsCompletedLabel) ||
-    (isCardAtSoApprovalColumn && /so approval|to be sent/i.test(opsCompletedLabel || "") && opsCompletedLabel) ||
-    formValues?.sticker_name ||
-    card?.sticker_name ||
-    opsCompletedLabel ||
-    localDaStatusOverride;
+  // api/da/status_timeline is no longer fetched here (removed per request 2026-09-11 — it was
+  // the source of a "Closed Paid" label leaking into the Subject on cards that hadn't actually
+  // reached that stage, and desynced from the board column in general). The card's own sticker
+  // is now the only source for the real current stage; verify-tick and invoice-upload no longer
+  // locally advance/revert this label (see handleToggleVerified / handleUploadInvoiceIssuance).
+  const effectiveNextDaStatusLabel = formValues?.sticker_name || card?.sticker_name;
 
   // Stage-category flags, all derived from the real current stage name above so the button's
   // content self-heals to match the DA Status Timeline whenever the real data changes —
   // forward (verify, send email, record a decision) or backward (a rejection reverts it) — the
-  // full sequence is now real api/da/status_timeline rows (Ops completed → To be sent for SO
+  // full sequence is real api/da/status_timeline rows (Ops completed → To be sent for SO
   // approval/SRF → Awaiting SO approval → Invoice Issuance → Invoice dispatched → Awaiting
-  // payment → Closed paid), so reading the current row directly replaces the old local-only
+  // payment → Closed paid), so reading the sticker directly replaces the old local-only
   // sub-flow simulation state that used to track these one click at a time.
   // "Awaiting" / "Closed" are structural/status words, not the varying approval-type noun (SO
-  // approval / SRF / etc, see the useMemo above), so matching them is safe. "Invoice dispatched"
+  // approval / SRF / etc), so matching them is safe. "Invoice dispatched"
   // is also a decision checkpoint (client acknowledging the dispatched invoice) even though its
   // name doesn't literally say "awaiting" — Approve moves it on to Awaiting payment, Reject
   // reverts to Invoice Issuance so a corrected invoice can be re-sent.
@@ -851,7 +772,7 @@ const SalesOrderList = ({
   const daActionButtonLabel = isTerminalClosedStage
     ? "Closed Paid"
     : isRealInvoiceIssuanceStage
-    ? `Send for ${soApprovalLabel || "Invoice Dispatch"}`
+    ? "Send for Invoice Dispatch"
     : displayStageLabel
     ? `Send for ${displayStageLabel}`
     : displayStageLabel;
@@ -862,9 +783,9 @@ const SalesOrderList = ({
   // (coarser-independent, sub-stage-level) status timeline says the next email to send is
   // the SO approval one. Deliberately scoped to only this one wording — NOT a general
   // footer/DA-status name-match, which is exactly the bug class the comment above this
-  // (and hasAdvancedPastFirstStage's own comment further up) already fixed once: different
-  // calls phrase other sub-stages differently, so matching those against column names would
-  // silently hide the button forever on calls whose wording doesn't line up.
+  // already fixed once: different calls phrase other sub-stages differently, so matching
+  // those against column names would silently hide the button forever on calls whose
+  // wording doesn't line up.
   const isSoApprovalActionButton =
     !isTerminalClosedStage && !isRealInvoiceIssuanceStage && !isAwaitingDecisionStage && /so approval/i.test(displayStageLabel || "");
   const shouldShowDaActionButton = !isSoApprovalActionButton || isCardAtSoApprovalColumn;
@@ -894,6 +815,15 @@ const SalesOrderList = ({
   const [showSoApprovalEmailModal, setShowSoApprovalEmailModal] = useState(false);
   const [isSendingSoApprovalEmail, setIsSendingSoApprovalEmail] = useState(false);
 
+  // The label the modal's Subject should echo. Deliberately captured explicitly per open call
+  // (see handleOpenSoApprovalEmailModal below) instead of always reading daActionButtonLabel at
+  // render time — daActionButtonLabel is driven by the granular DA status-timeline
+  // (effectiveNextDaStatusLabel), which can disagree with the board-column-driven
+  // isCardAtSoApprovalColumn/soActionState path (the same desync class already hit on column 4
+  // before). When "Send For SO approval" is the button actually clicked, the Subject must say
+  // that column's real name, not whatever the (possibly stale/desynced) granular status says.
+  const [modalActionLabel, setModalActionLabel] = useState("");
+
   // Prefills the modal's "To" field — api/da/da_action_email_draft/{call_id} →
   // { status: "success", data: { recipient } }. Fetched right before opening the modal (see
   // handleOpenSoApprovalEmailModal) rather than on mount, since it's only relevant once staff
@@ -910,7 +840,8 @@ const SalesOrderList = ({
   // api/da/da_action_email_draft/{call_id} — { status: "success", data: { recipient } }. Best
   // effort: if it fails or callId is missing, the modal just opens with an empty "To" instead
   // of blocking staff from sending the email at all.
-  const handleOpenSoApprovalEmailModal = async () => {
+  const handleOpenSoApprovalEmailModal = async (actionLabel) => {
+    setModalActionLabel(actionLabel || daActionButtonLabel);
     if (!callId) {
       setShowSoApprovalEmailModal(true);
       return;
@@ -980,10 +911,6 @@ const SalesOrderList = ({
       // longer used by this flow at all — its own header action was removed per request, so a
       // card must never be parked there with nothing to do.
       if (refreshSalesOrder) refreshSalesOrder();
-      daService
-        .getStatusTimeline(callId)
-        .then(({ data: tl }) => setDaHeaderStatusTimeline(Array.isArray(tl?.data) ? tl.data : []))
-        .catch(() => {});
       // Not calling fetchSoActionState() directly here — onDaStatusRefresh below bumps
       // daStatusRefreshToken, which the effect above already reacts to by refetching
       // action_state; calling it here too was firing the same GET twice per click.
@@ -1021,10 +948,6 @@ const SalesOrderList = ({
         return null;
       }
       if (refreshSalesOrder) refreshSalesOrder();
-      daService
-        .getStatusTimeline(callId)
-        .then(({ data: tl }) => setDaHeaderStatusTimeline(Array.isArray(tl?.data) ? tl.data : []))
-        .catch(() => {});
       // Same reasoning as handleCreateSoApprovalEmail above — onDaStatusRefresh already
       // triggers a refetch via daStatusRefreshToken, an explicit call here duplicated it.
       onDaStatusRefresh?.();
@@ -1114,12 +1037,10 @@ const SalesOrderList = ({
   // { status: "success", stage_document_id } — unlike da_send_action_email /
   // da_record_client_decision, this response carries no status_id/sticker_id, so the upload
   // itself does NOT advance the DA's real stage (confirmed against the endpoint's own
-  // contract). Without an explicit advance call the real stage stayed "Invoice Issuance" after
-  // upload, so the header kept reopening the upload modal instead of switching to Approve/
-  // Reject on "Invoice dispatched" — same gap da_verify_sales_line_item has (see
-  // handleToggleVerified), fixed the same way: call onAdvanceDaStage ourselves targeting the
-  // next real step (soApprovalStatusId/soApprovalLabel, "Invoice Issuance"'s next is "Invoice
-  // dispatched"). Then refetch the timeline so the header button reads the new real stage.
+  // contract). api/da/status_timeline (previously used to look up the next real step's
+  // statusId/label so this could advance it locally) is no longer fetched (removed per
+  // request 2026-09-11) — the real stage now only advances however the card's own sticker
+  // gets updated server-side; this no longer nudges it locally.
   const handleUploadInvoiceIssuance = async (files) => {
     if (!callId) {
       useAlertReducer.getState().error("No call identifier available for this card.");
@@ -1133,14 +1054,7 @@ const SalesOrderList = ({
     if (data?.status !== "success") {
       throw new Error(data?.message || "Failed to upload the invoice.");
     }
-    if (soApprovalLabel) {
-      onAdvanceDaStage?.({ statusId: soApprovalStatusId, label: soApprovalLabel, skipCardMove: true });
-    }
     if (refreshSalesOrder) refreshSalesOrder();
-    daService
-      .getStatusTimeline(callId)
-      .then(({ data: tl }) => setDaHeaderStatusTimeline(Array.isArray(tl?.data) ? tl.data : []))
-      .catch(() => {});
     onDaStatusRefresh?.();
   };
 
@@ -1365,12 +1279,9 @@ const SalesOrderList = ({
     if (verifyingItemIds.has(orderId)) return;
 
     // Per request 2026-09-10: each line item's tick is its own explicit client action, not a
-    // reflection of the DA record's overall advancement — folding hasAdvancedPastFirstStage in
-    // here (an earlier version did, see git history) meant that once ANY one item's click had
-    // advanced the whole call's DA status, every OTHER still-unclicked item silently started
-    // reading as "was already verified" too, so its very first click actually UN-verified it
-    // instead of verifying it. localVerifiedItemIds (session-only, per order id) is the only
-    // source of truth here now, matching the checkbox's own `checked` prop below.
+    // reflection of the DA record's overall advancement. localVerifiedItemIds (session-only,
+    // per order id) is the only source of truth here, matching the checkbox's own `checked`
+    // prop below.
     const wasVerified = localVerifiedItemIds?.has(orderId) === true;
 
     setVerifyingItemIds((prev) => new Set(prev).add(orderId));
@@ -1386,22 +1297,6 @@ const SalesOrderList = ({
       );
       handleChange("salesOrderList")({ target: { value: updatedList } });
       setLocalItemVerified(callId, orderId, isNowVerified);
-
-      // Fixed two-way toggle — always targets these same two labels, regardless of how many
-      // items get verified/un-verified or in what order. The local override is set
-      // unconditionally (not gated on isAdvancingDaStage or the backend call's outcome) so
-      // the button reflects the toggle immediately every time; the real advance/revert call
-      // below is what actually moves hasAdvancedPastFirstStage (the visibility switch, derived
-      // from the real timeline — see its declaration above), once the refetch it triggers lands.
-      if (isNowVerified) {
-        if (soApprovalLabel) {
-          setLocalDaStatusOverride(soApprovalLabel);
-          onAdvanceDaStage?.({ statusId: soApprovalStatusId, label: soApprovalLabel, skipCardMove: true });
-        }
-      } else if (opsCompletedLabel) {
-        setLocalDaStatusOverride(opsCompletedLabel);
-        onAdvanceDaStage?.({ statusId: opsCompletedStatusId, label: opsCompletedLabel, skipCardMove: true });
-      }
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -2266,11 +2161,9 @@ const SalesOrderList = ({
           button uses. Not shown at all before that (no disabled placeholder cell).
           Per request 2026-09-10: the tick itself must NOT auto-show checked just because the
           column renders (isCardAtSoApprovalColumn — always true here, since that's the render
-          gate itself, so it used to tick every row unconditionally) or because the DA record
-          has advanced overall (hasAdvancedPastFirstStage — one item's click already flips the
-          whole call's DA status, which used to make every OTHER untouched item look verified
-          too). Each row's tick now reflects only whether the client themselves clicked THAT
-          line (localVerifiedItemIds, keyed per order id). */}
+          gate itself, so it used to tick every row unconditionally). Each row's tick reflects
+          only whether the client themselves clicked THAT line (localVerifiedItemIds, keyed
+          per order id). */}
       {canViewActionColumn && isCardAtSoApprovalColumn && (
         <td>
           <div className="sales-order-table-cell sales-order-action-cell">
@@ -2323,24 +2216,24 @@ const SalesOrderList = ({
             Number(currentStep) >= 4 &&
             // isCardAtSoApprovalColumn is footer/column-driven on purpose (see its own
             // declaration above) — column 4 must show its own fixed button state purely from
-            // currentStep/stepLabels, never from the separate granular DA status-timeline fetch
-            // (hasAdvancedPastFirstStage, effectiveNextDaStatusLabel/sticker_name) — that data
-            // can race ahead of the real board column (e.g. an earlier da/advance_stage
-            // failure), which used to leak a far-future label like "Send for Invoice dispatched"
-            // onto column 4. Every other button state still requires that granular data as
-            // before. Column 5 ("SO/PO Approval Received") intentionally shows no action at
-            // all now — same as isAtOpsCompletedColumn (column 3, reconfirmed 2026-09-10: no DA
-            // button of any kind at this column, even once verified) — the "Awaiting SO
-            // Approval" decision UI that used to appear there was removed per request. Column
-            // 6's "Invoice Issuance" sub-stage ("Send for Invoice Dispatch" button, opening the
-            // upload modal) was also removed per request — isAwaitingDecisionStage further
-            // below (Invoice dispatched / Awaiting payment) still shows normally once the real
-            // stage moves past Invoice Issuance some other way.
+            // currentStep/stepLabels, never from the sticker-derived effectiveNextDaStatusLabel
+            // — that data can race ahead of the real board column (e.g. an earlier
+            // da/advance_stage failure), which used to leak a far-future label like "Send for
+            // Invoice dispatched" onto column 4. Every other button state still requires that
+            // sticker data as before. Column 5 ("SO/PO Approval Received") intentionally shows
+            // no action at all now — same as isAtOpsCompletedColumn (column 3, reconfirmed
+            // 2026-09-10: no DA button of any kind at this column, even once verified) — the
+            // "Awaiting SO Approval" decision UI that used to appear there was removed per
+            // request. Column 6's "Invoice Issuance" sub-stage ("Send for Invoice Dispatch"
+            // button, opening the upload modal) was also removed per request —
+            // isAwaitingDecisionStage further below (Invoice dispatched / Awaiting payment)
+            // still shows normally once the real stage moves past Invoice Issuance some other
+            // way.
             !isAtOpsCompletedColumn &&
             !isAtSoApprovalDecisionColumn &&
             !(isAtArInvoiceColumn && isRealInvoiceIssuanceStage) &&
             (isCardAtSoApprovalColumn ||
-              (hasAdvancedPastFirstStage && effectiveNextDaStatusLabel && shouldShowDaActionButton)) && (
+              (effectiveNextDaStatusLabel && shouldShowDaActionButton)) && (
             // Column 4's button state is fully driven by api/da/action_state's button_state now
             // (soActionState — see its declaration above) — authoritative, replacing the old
             // justApproved/justRejected/isSoApprovalEmailPendingDecision local guesswork. Every
@@ -2383,7 +2276,7 @@ const SalesOrderList = ({
                   className="sales-order-da-status-button"
                   disabled={isAdvancingDaStage}
                   title='Open "SO approval" email'
-                  onClick={handleOpenSoApprovalEmailModal}
+                  onClick={() => handleOpenSoApprovalEmailModal(stepLabels?.[currentStep - 1])}
                 >
                   <FiClipboard />
                   Send For SO approval
@@ -3314,6 +3207,7 @@ const SalesOrderList = ({
           isSubmitting={isSendingSoApprovalEmail}
           soCustomerName={soCustomerName}
           stageLabel={displayStageLabel || "SO Approval"}
+          actionLabel={modalActionLabel}
           defaultTo={draftRecipientEmail}
         />
       )}
