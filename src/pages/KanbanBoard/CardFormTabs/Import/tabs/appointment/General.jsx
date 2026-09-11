@@ -3082,7 +3082,6 @@ function General({
         console.group("Create Call File Payload");
         for (const [key, value] of formData.entries()) {
           console.log(key, value);
-          console.log(key, value);
         }
         console.groupEnd();
       }
