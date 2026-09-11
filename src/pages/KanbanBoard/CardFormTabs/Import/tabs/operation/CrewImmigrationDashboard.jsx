@@ -88,7 +88,7 @@ DocStatusIcon.propTypes = {
 // There's no per-file Replace here since crew/get_immigration_crew_list
 // only accepts call_id — it can't scope to a single upload. Delete goes
 // through crew/remove_immigration_crew_file via onDelete.
-const UploadedCrewFileCard = ({ file, onDelete, isDeleting }) => (
+const UploadedCrewFileCard = ({ file, onDelete, isDeleting, canDelete = true }) => (
   <div className="crew-uploaded-card">
     <span className="crew-uploaded-card__icon" aria-hidden="true">
       <FileIcon />
@@ -111,16 +111,18 @@ const UploadedCrewFileCard = ({ file, onDelete, isDeleting }) => (
       {file.uploaded_at && <div className="crew-uploaded-card__meta">Uploaded {file.uploaded_at}</div>}
       <span className="crew-uploaded-card__status crew-uploaded-card__status--success">Uploaded successfully</span>
     </div>
-    <button
-      type="button"
-      className="crew-action-btn crew-action-btn--delete crew-uploaded-card__delete"
-      aria-label="Delete crew list file"
-      title="Delete"
-      disabled={isDeleting}
-      onClick={() => onDelete(file)}
-    >
-      {isDeleting ? <span className="crew-action-btn__spinner" aria-hidden="true" /> : <FiTrash2 size={14} />}
-    </button>
+    {canDelete && (
+      <button
+        type="button"
+        className="crew-action-btn crew-action-btn--delete crew-uploaded-card__delete"
+        aria-label="Delete crew list file"
+        title="Delete"
+        disabled={isDeleting}
+        onClick={() => onDelete(file)}
+      >
+        {isDeleting ? <span className="crew-action-btn__spinner" aria-hidden="true" /> : <FiTrash2 size={14} />}
+      </button>
+    )}
   </div>
 );
 
@@ -133,6 +135,7 @@ UploadedCrewFileCard.propTypes = {
   }).isRequired,
   onDelete: PropTypes.func.isRequired,
   isDeleting: PropTypes.bool,
+  canDelete: PropTypes.bool,
 };
 
 // Crew Immigration — crew document intake for the Operation section.
@@ -152,6 +155,11 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
     moduleKey: PERMISSION_MODULES.KANBAN_CARD,
     submoduleKey: PERMISSION_SUBMODULES.CREW_IMMIGRATION,
     actionKey: PERMISSION_ACTIONS.UPLOAD_CREW_LIST,
+  });
+  const canDeleteUploadedCrewList = hasPermission({
+    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
+    submoduleKey: PERMISSION_SUBMODULES.CREW_IMMIGRATION,
+    actionKey: PERMISSION_ACTIONS.DELETE_UPLOADED_CREW_LIST,
   });
   const canUploadPassport = hasPermission({
     moduleKey: PERMISSION_MODULES.KANBAN_CARD,
@@ -461,6 +469,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
   // Deletes one uploaded crew list file via crew/remove_immigration_crew_file,
   // then refetches so the panel and Crew Listing table drop its crew.
   const handleConfirmDeleteFile = async () => {
+    if (!canDeleteUploadedCrewList) return;
     const file = filePendingDelete;
     const fileKey = file?.crew_excel_upload_id ?? file?.crew_file;
     if (!fileKey) return;
@@ -783,6 +792,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
                       file={file}
                       onDelete={handleDeleteFile}
                       isDeleting={deletingFileKey === (file.crew_excel_upload_id ?? file.crew_file)}
+                      canDelete={canDeleteUploadedCrewList}
                     />
                   ))}
                 </div>

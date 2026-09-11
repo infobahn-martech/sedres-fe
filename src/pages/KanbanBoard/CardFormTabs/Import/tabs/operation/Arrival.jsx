@@ -64,6 +64,7 @@ function Arrival({
   billingEntityId,
   stageId = OPERATION_STAGE_IDS.ARRIVAL,
   exportApprovalStatus,
+  canViewBasicFields = true,
   canAddTimeObject = true,
   canDeleteTimeObject = true,
   canPreviewEmail = true,
@@ -597,10 +598,11 @@ function Arrival({
         <div className="operation-tab-layout">
           <div className="arrival-form">
             <div className="operation-two-column-grid operation-two-column-grid--split-scroll">
+              {canViewBasicFields && (
               <OperationFormCard
                 className="operation-form-column"
                 topRightAction={
-                  !isViewOnly ? (
+                  canAddTimeObject ? (
                     <AdditionalTimeObjectAddButton
                       onClick={() =>
                         handleChange("arrivalAdditionalTimeObjects")({
@@ -721,6 +723,7 @@ function Arrival({
                   canDelete={canDeleteTimeObject}
                 />
               </OperationFormCard>
+              )}
               {canPreviewEmail && (
                 <OperationFormCard className="operation-email-column">
                   <OperationEmailPreviewPanel
@@ -770,6 +773,7 @@ Arrival.propTypes = {
   billingEntityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   stageId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   exportApprovalStatus: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  canViewBasicFields: PropTypes.bool,
   canAddTimeObject: PropTypes.bool,
   canDeleteTimeObject: PropTypes.bool,
   canPreviewEmail: PropTypes.bool,

@@ -223,7 +223,7 @@ RouteCell.propTypes = {
   to: PropTypes.string,
 };
 
-export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, onSubTabChange, onNavigateToTab, selectedServices = [], onBackToServiceSelection, cardColor = "#00368c", crewCount, subTabCounts = {}, materialManagementVisibleSubTabIds = null }) => {
+export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, onSubTabChange, onNavigateToTab, selectedServices = [], onBackToServiceSelection, cardColor = "#00368c", crewCount, subTabCounts = {}, materialManagementVisibleSubTabIds = null, hiddenMainTabIds = [] }) => {
   const hasCrewCount = typeof crewCount === "number";
   // Mobile-only: the stacked main+submenu list pushes real content far down
   // the page on phones, so it starts collapsed behind a toggle there. Has no
@@ -245,9 +245,10 @@ export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, on
     { id: MAIN_TABS.ADD_ON_SERVICES, label: "Add-on Services" },
   ];
 
-  const mainTabs = selectedServices.length > 0
+  const mainTabs = (selectedServices.length > 0
     ? allMainTabs.filter(tab => selectedServices.includes(tab.id))
-    : allMainTabs;
+    : allMainTabs
+  ).filter((tab) => !hiddenMainTabIds.includes(tab.id));
 
   let subTabs = [];
   if (activeMainTab === MAIN_TABS.CREW_MANAGEMENT) {
@@ -416,6 +417,8 @@ HusbandryTabs.propTypes = {
   cardColor: PropTypes.string,
   crewCount: PropTypes.number,
   subTabCounts: PropTypes.object,
+  materialManagementVisibleSubTabIds: PropTypes.arrayOf(PropTypes.string),
+  hiddenMainTabIds: PropTypes.arrayOf(PropTypes.string),
 };
 
 export const FormSection = ({ icon, title, children }) => {

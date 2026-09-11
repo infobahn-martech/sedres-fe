@@ -78,7 +78,7 @@ BackToCrewListingLink.propTypes = {
 };
 
 // Service Selection Component
-const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, showLaunchHire = true }) => {
+const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, showLaunchHire = true, hiddenServiceIds = [] }) => {
   const categories = servicesSummary?.categories || {};
   const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
@@ -153,9 +153,8 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], ser
     },
   ];
 
-  const services = showLaunchHire
-    ? allServices
-    : allServices.filter((service) => service.id !== "LAUNCH_HIRE");
+  const services = (showLaunchHire ? allServices : allServices.filter((service) => service.id !== "LAUNCH_HIRE"))
+    .filter((service) => !hiddenServiceIds.includes(service.id));
 
   const bookedServicesMap = bookedServices.reduce((acc, booked) => {
     acc[booked.id] = booked;
@@ -309,6 +308,7 @@ ServiceSelection.propTypes = {
   bookedServices: PropTypes.array,
   servicesSummary: PropTypes.object,
   showLaunchHire: PropTypes.bool,
+  hiddenServiceIds: PropTypes.arrayOf(PropTypes.string),
 };
 
 // Dummy crew data for DA module Husbandry tab
@@ -327,7 +327,21 @@ const DAMODULE_CREW_DUMMY = [
 
 // Main Husbandry Component
 function Husbandry({ card, formValues, handleChange, isDAModule = false, showLaunchHire = true }) {
-  const { hasPermission } = usePermissions();
+  const { hasPermission, hasSubmodule } = usePermissions();
+  // KANBAN_CARD > CREW_MANAGEMENT / MATERIAL_MANAGEMENT carry no VIEW action
+  // of their own — submodule presence is the gate for their Husbandry main tab.
+  const canViewCrewManagementTab = hasSubmodule(
+    PERMISSION_MODULES.KANBAN_CARD,
+    PERMISSION_SUBMODULES.CREW_MANAGEMENT
+  );
+  const canViewMaterialManagementTab = hasSubmodule(
+    PERMISSION_MODULES.KANBAN_CARD,
+    PERMISSION_SUBMODULES.MATERIAL_MANAGEMENT
+  );
+  const hiddenHusbandryMainTabIds = [
+    !canViewCrewManagementTab && MAIN_TABS.CREW_MANAGEMENT,
+    !canViewMaterialManagementTab && MAIN_TABS.MATERIAL_MANAGEMENT,
+  ].filter(Boolean);
   // KANBAN_CARD > MATERIAL_MANAGEMENT per-subtab VIEW gates — absence of the
   // module/submodule/action in the permissions response means false (deny by
   // default).
@@ -962,6 +976,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
           bookedServices={bookedServices}
           servicesSummary={servicesSummary}
           showLaunchHire={showLaunchHire}
+          hiddenServiceIds={hiddenHusbandryMainTabIds}
         />
       </div>
     );
@@ -982,6 +997,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
           cardColor={cardColor}
           crewCount={formValues?.crewCount}
           materialManagementVisibleSubTabIds={materialManagementVisibleSubTabIds}
+          hiddenMainTabIds={hiddenHusbandryMainTabIds}
           subTabCounts={{
             [MATERIAL_MANAGEMENT_SUBTABS.INBOUND_ORDERS]: inboundOrdersCount,
             [MATERIAL_MANAGEMENT_SUBTABS.LANDING_NOTE]: landingNotesCount,

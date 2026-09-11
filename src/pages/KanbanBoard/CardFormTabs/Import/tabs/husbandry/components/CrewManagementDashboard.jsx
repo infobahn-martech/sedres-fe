@@ -193,7 +193,7 @@ MovementTypeRadioCard.propTypes = {
 // on submit the selection is saved to the matching service field and the
 // existing service form is opened via onNavigateToTab.
 const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNavigateToTab }) => {
-  const { hasPermission } = usePermissions();
+  const { hasPermission, hasSubmodule } = usePermissions();
   // KANBAN_CARD > CREW_MANAGEMENT per-action gates — absence of the module/
   // submodule/action in the permissions response means false (deny by default).
   const canUploadCrewList = hasPermission({
@@ -226,11 +226,12 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     submoduleKey: PERMISSION_SUBMODULES.CREW_MANAGEMENT,
     actionKey: PERMISSION_ACTIONS.DELETE,
   });
-  const canViewCrewSummary = hasPermission({
-    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
-    submoduleKey: PERMISSION_SUBMODULES.CREW_MANAGEMENT,
-    actionKey: PERMISSION_ACTIONS.VIEW,
-  });
+  // CREW_MANAGEMENT carries no VIEW action in the permissions response —
+  // submodule presence is the view gate.
+  const canViewCrewSummary = hasSubmodule(
+    PERMISSION_MODULES.KANBAN_CARD,
+    PERMISSION_SUBMODULES.CREW_MANAGEMENT
+  );
   const canUploadDocKind = {
     passport: canUploadPassport,
     iqama: canUploadIqama,

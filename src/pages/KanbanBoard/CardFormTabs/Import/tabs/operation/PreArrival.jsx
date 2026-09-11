@@ -370,6 +370,7 @@ function PreArrival({
   callTypeId,
   billingEntityId,
   stageId = OPERATION_STAGE_IDS.PRE_ARRIVAL,
+  canViewBasicFields = true,
   canAddTimeObject = true,
   canDeleteTimeObject = true,
   canPreviewEmail = true,
@@ -1093,134 +1094,136 @@ function PreArrival({
         <div className="operation-tab-layout">
           <div className="pre-arrival-form">
             <div className="operation-two-column-grid operation-two-column-grid--split-scroll">
-              <OperationFormCard
-                className="operation-form-column"
-                topRightAction={
-                  !isViewOnly ? (
-                    <AdditionalTimeObjectAddButton
-                      onClick={() =>
-                        handleChange("preArrivalAdditionalTimeObjects")({
-                          target: {
-                            value: appendAdditionalTimeObject(formValues.preArrivalAdditionalTimeObjects),
-                          },
-                        })
-                      }
-                    />
-                  ) : null
-                }
-              >
-                <div
-                  className={`prearrival-timeobject-highlight ${formValues.weatherForecast === BAD_WEATHER && formValues.preArrivalTimeObjectsNeedRecheck
-                    ? "is-warning"
-                    : ""
-                    }`.trim()}
+              {canViewBasicFields && (
+                <OperationFormCard
+                  className="operation-form-column"
+                  topRightAction={
+                    canAddTimeObject ? (
+                      <AdditionalTimeObjectAddButton
+                        onClick={() =>
+                          handleChange("preArrivalAdditionalTimeObjects")({
+                            target: {
+                              value: appendAdditionalTimeObject(formValues.preArrivalAdditionalTimeObjects),
+                            },
+                          })
+                        }
+                      />
+                    ) : null
+                  }
                 >
-                  <DynamicDateTimeFields
-                    eventFields={eventFields}
-                    formValues={formValues}
-                    handleChange={handlePreArrivalTimeObjectChange}
-                    isViewOnly={isViewOnly}
-                  />
-                </div>
-
-                <FormField label="SABER Status">
-                  <FormSelect
-                    value={formValues.saberUtStatus || ""}
-                    onChange={handleSaberUtStatusChange}
-                    options={PRE_ARRIVAL_SABER_STATUS_OPTIONS}
-                    placeholder="Select SABER status..."
-                    disabled={isViewOnly}
-                  />
-                </FormField>
-
-                {formValues.saberUtStatus === SABER_APPLIED_BY_SEDRES && (
-                  <FormField label="SABER Certificate Upload">
-                    <SaberUploadBox
-                      files={formValues.saberUtDocumentsAttachments || []}
-                      onAddFiles={handleSaberUtAddFiles}
+                  <div
+                    className={`prearrival-timeobject-highlight ${formValues.weatherForecast === BAD_WEATHER && formValues.preArrivalTimeObjectsNeedRecheck
+                      ? "is-warning"
+                      : ""
+                      }`.trim()}
+                  >
+                    <DynamicDateTimeFields
+                      eventFields={eventFields}
+                      formValues={formValues}
+                      handleChange={handlePreArrivalTimeObjectChange}
                       isViewOnly={isViewOnly}
                     />
-                  </FormField>
-                )}
+                  </div>
 
-                <FormField label="Weather Forecast">
-                  <FormSelect
-                    value={formValues?.weatherForecast || ""}
-                    onChange={handleWeatherForecastChange}
-                    options={PRE_ARRIVAL_WEATHER_FORECAST_OPTIONS}
-                    placeholder="Select weather forecast..."
-                    disabled={isViewOnly}
-                  />
-                  {formValues.weatherForecast === BAD_WEATHER && (
-                    <div className="prearrival-windy-map">
-                      <iframe
-                        title="Windy Weather Map"
-                        width="650"
-                        height="450"
-                        src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=8&overlay=wind&product=ecmwf&level=surface&lat=27.284&lon=49.109&detailLat=29.0525682775337&detailLon=48.087158203125&marker=true"
-                        frameBorder="0"
-                      />
-                    </div>
-                  )}
-                </FormField>
-
-                <FormField label="Coordinates Type">
-                  <FormSelect
-                    value={formValues?.coordinateTypeId || ""}
-                    onChange={handleCoordinateTypeChange}
-                    options={coordinateTypeOptions}
-                    placeholder="Select coordinate type..."
-                    disabled={isViewOnly || isLoadingCoordinateTypes || isLoadingCoordinates}
-                  />
-                </FormField>
-
-                {formValues?.coordinateTypeId ? (
-                  <FormField label="Select Coordinates">
+                  <FormField label="SABER Status">
                     <FormSelect
-                      value={formValues?.preArrivalCoordinatesId || ""}
-                      onChange={handleCoordinatesSelectChange}
-                      options={coordinateOptions}
-                      placeholder={
-                        isLoadingCoordinates
-                          ? "Loading coordinates..."
-                          : coordinateOptions.length
-                            ? "Select coordinates..."
-                            : "No coordinates for this type"
-                      }
-                      disabled={
-                        isViewOnly ||
-                        isLoadingCoordinates ||
-                        coordinateOptions.length === 0
-                      }
+                      value={formValues.saberUtStatus || ""}
+                      onChange={handleSaberUtStatusChange}
+                      options={PRE_ARRIVAL_SABER_STATUS_OPTIONS}
+                      placeholder="Select SABER status..."
+                      disabled={isViewOnly}
                     />
                   </FormField>
-                ) : (
-                  !!formValues?.coordinates && (
-                    <FormField label="Coordinates">
-                      <FormInput
-                        type="text"
-                        value={formValues?.coordinates || ""}
-                        onChange={() => { }}
-                        placeholder="Coordinates will appear here..."
-                        disabled
+
+                  {formValues.saberUtStatus === SABER_APPLIED_BY_SEDRES && (
+                    <FormField label="SABER Certificate Upload">
+                      <SaberUploadBox
+                        files={formValues.saberUtDocumentsAttachments || []}
+                        onAddFiles={handleSaberUtAddFiles}
+                        isViewOnly={isViewOnly}
                       />
                     </FormField>
-                  )
-                )}
+                  )}
 
-                <AdditionalTimeObjectsFields
-                  value={formValues.preArrivalAdditionalTimeObjects || []}
-                  onChange={(next) =>
-                    handleChange("preArrivalAdditionalTimeObjects")({ target: { value: next } })
-                  }
-                  onRemoveRow={handleRemoveAdditionalTimeObject}
-                  onCommitRow={handleCommitAdditionalTimeObject}
-                  isViewOnly={isViewOnly}
-                  hideAddButton
-                  canAdd={canAddTimeObject}
-                  canDelete={canDeleteTimeObject}
-                />
-              </OperationFormCard>
+                  <FormField label="Weather Forecast">
+                    <FormSelect
+                      value={formValues?.weatherForecast || ""}
+                      onChange={handleWeatherForecastChange}
+                      options={PRE_ARRIVAL_WEATHER_FORECAST_OPTIONS}
+                      placeholder="Select weather forecast..."
+                      disabled={isViewOnly}
+                    />
+                    {formValues.weatherForecast === BAD_WEATHER && (
+                      <div className="prearrival-windy-map">
+                        <iframe
+                          title="Windy Weather Map"
+                          width="650"
+                          height="450"
+                          src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=8&overlay=wind&product=ecmwf&level=surface&lat=27.284&lon=49.109&detailLat=29.0525682775337&detailLon=48.087158203125&marker=true"
+                          frameBorder="0"
+                        />
+                      </div>
+                    )}
+                  </FormField>
+
+                  <FormField label="Coordinates Type">
+                    <FormSelect
+                      value={formValues?.coordinateTypeId || ""}
+                      onChange={handleCoordinateTypeChange}
+                      options={coordinateTypeOptions}
+                      placeholder="Select coordinate type..."
+                      disabled={isViewOnly || isLoadingCoordinateTypes || isLoadingCoordinates}
+                    />
+                  </FormField>
+
+                  {formValues?.coordinateTypeId ? (
+                    <FormField label="Select Coordinates">
+                      <FormSelect
+                        value={formValues?.preArrivalCoordinatesId || ""}
+                        onChange={handleCoordinatesSelectChange}
+                        options={coordinateOptions}
+                        placeholder={
+                          isLoadingCoordinates
+                            ? "Loading coordinates..."
+                            : coordinateOptions.length
+                              ? "Select coordinates..."
+                              : "No coordinates for this type"
+                        }
+                        disabled={
+                          isViewOnly ||
+                          isLoadingCoordinates ||
+                          coordinateOptions.length === 0
+                        }
+                      />
+                    </FormField>
+                  ) : (
+                    !!formValues?.coordinates && (
+                      <FormField label="Coordinates">
+                        <FormInput
+                          type="text"
+                          value={formValues?.coordinates || ""}
+                          onChange={() => { }}
+                          placeholder="Coordinates will appear here..."
+                          disabled
+                        />
+                      </FormField>
+                    )
+                  )}
+
+                  <AdditionalTimeObjectsFields
+                    value={formValues.preArrivalAdditionalTimeObjects || []}
+                    onChange={(next) =>
+                      handleChange("preArrivalAdditionalTimeObjects")({ target: { value: next } })
+                    }
+                    onRemoveRow={handleRemoveAdditionalTimeObject}
+                    onCommitRow={handleCommitAdditionalTimeObject}
+                    isViewOnly={isViewOnly}
+                    hideAddButton
+                    canAdd={canAddTimeObject}
+                    canDelete={canDeleteTimeObject}
+                  />
+                </OperationFormCard>
+              )}
               {canPreviewEmail && (
                 <OperationFormCard className="operation-email-column">
                   <OperationEmailPreviewPanel
@@ -1265,6 +1268,7 @@ PreArrival.propTypes = {
   vesselTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   billingEntityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   stageId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  canViewBasicFields: PropTypes.bool,
   canAddTimeObject: PropTypes.bool,
   canDeleteTimeObject: PropTypes.bool,
   canPreviewEmail: PropTypes.bool,

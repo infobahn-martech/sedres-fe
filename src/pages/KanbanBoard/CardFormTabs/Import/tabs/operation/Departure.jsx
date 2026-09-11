@@ -55,6 +55,7 @@ function Departure({
   callTypeId = "",
   billingEntityId,
   stageId = OPERATION_STAGE_IDS.DEPARTURE,
+  canViewBasicFields = true,
   canAddTimeObject = true,
   canDeleteTimeObject = true,
   canPreviewEmail = true,
@@ -459,10 +460,11 @@ function Departure({
         <div className="operation-tab-layout">
           <div className="departure-form">
             <div className="operation-two-column-grid operation-two-column-grid--split-scroll">
+              {canViewBasicFields && (
               <OperationFormCard
                 className="operation-form-column"
                 topRightAction={
-                  !isViewOnly ? (
+                  canAddTimeObject ? (
                     <AdditionalTimeObjectAddButton
                       onClick={() =>
                         handleChange("departureAdditionalTimeObjects")({
@@ -540,6 +542,7 @@ function Departure({
                   />
                 </FormField>
               </OperationFormCard>
+              )}
               {canPreviewEmail && (
                 <OperationFormCard className="operation-email-column">
                   <OperationEmailPreviewPanel
@@ -582,6 +585,7 @@ Departure.propTypes = {
   callTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   billingEntityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   stageId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  canViewBasicFields: PropTypes.bool,
   canAddTimeObject: PropTypes.bool,
   canDeleteTimeObject: PropTypes.bool,
   canPreviewEmail: PropTypes.bool,

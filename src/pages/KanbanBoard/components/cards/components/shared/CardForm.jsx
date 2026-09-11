@@ -1796,7 +1796,7 @@ function CardForm({
   initialTab,
 }) {
   const userProfile = useAuthReducer((state) => state.userProfile);
-  const { hasPermission, hasAnyPermission } = usePermissions();
+  const { hasAnyPermission, hasSubmodule } = usePermissions();
   // KANBAN_CARD top-tab visibility: absence of the module/submodule/action in the
   // permissions response means false (deny by default). "Operation" hosts Pre
   // Arrival/Arrival/Departure/Checklist/Crew Immigration, so it stays visible if
@@ -1815,24 +1815,22 @@ function CardForm({
       actionKey,
     }))
   );
-  const canViewHusbandryTab = hasPermission({
-    moduleKey: PERMISSION_MODULES.KANBAN_CARD,
-    submoduleKey: PERMISSION_SUBMODULES.HUSBANDRY,
-    actionKey: PERMISSION_ACTIONS.VIEW,
-  });
-  const canViewOperationTab = hasAnyPermission(
-    [
-      PERMISSION_SUBMODULES.PRE_ARRIVAL,
-      PERMISSION_SUBMODULES.ARRIVAL,
-      PERMISSION_SUBMODULES.DEPARTURE,
-      PERMISSION_SUBMODULES.CHECKLIST,
-      PERMISSION_SUBMODULES.CREW_IMMIGRATION,
-    ].map((submoduleKey) => ({
-      moduleKey: PERMISSION_MODULES.KANBAN_CARD,
-      submoduleKey,
-      actionKey: PERMISSION_ACTIONS.VIEW,
-    }))
+  // HUSBANDRY carries no actions of its own in the permissions response —
+  // its presence/absence as a submodule is the only view gate.
+  const canViewHusbandryTab = hasSubmodule(
+    PERMISSION_MODULES.KANBAN_CARD,
+    PERMISSION_SUBMODULES.HUSBANDRY
   );
+  // Same for PRE_ARRIVAL/ARRIVAL/DEPARTURE/CHECKLIST/CREW_IMMIGRATION — none
+  // of them carry a VIEW action, so "Operation" stays visible if the user
+  // has any one of these sub-sections in their permission response at all.
+  const canViewOperationTab = [
+    PERMISSION_SUBMODULES.PRE_ARRIVAL,
+    PERMISSION_SUBMODULES.ARRIVAL,
+    PERMISSION_SUBMODULES.DEPARTURE,
+    PERMISSION_SUBMODULES.CHECKLIST,
+    PERMISSION_SUBMODULES.CREW_IMMIGRATION,
+  ].some((submoduleKey) => hasSubmodule(PERMISSION_MODULES.KANBAN_CARD, submoduleKey));
   const filterTabsByCardPermission = useCallback(
     (tabs) =>
       tabs.filter((tab) => {

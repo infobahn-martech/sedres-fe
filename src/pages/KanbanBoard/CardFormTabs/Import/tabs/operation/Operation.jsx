@@ -147,20 +147,27 @@ async function sendOperationReportRequest(payload) {
 }
 
 function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = false, isAddMode = false }) {
-  const { hasPermission } = usePermissions();
+  const { hasPermission, hasSubmodule } = usePermissions();
   const hasCardPermission = useCallback(
     (submoduleKey, actionKey) =>
       hasPermission({ moduleKey: PERMISSION_MODULES.KANBAN_CARD, submoduleKey, actionKey }),
     [hasPermission]
   );
-  const canViewPreArrivalTab = hasCardPermission(PERMISSION_SUBMODULES.PRE_ARRIVAL, PERMISSION_ACTIONS.VIEW);
-  const canViewCrewImmigrationTab = hasCardPermission(PERMISSION_SUBMODULES.CREW_IMMIGRATION, PERMISSION_ACTIONS.VIEW);
-  const canViewArrivalTab = hasCardPermission(PERMISSION_SUBMODULES.ARRIVAL, PERMISSION_ACTIONS.VIEW);
-  const canViewDepartureTab = hasCardPermission(PERMISSION_SUBMODULES.DEPARTURE, PERMISSION_ACTIONS.VIEW);
-  const canViewChecklistTab = hasCardPermission(PERMISSION_SUBMODULES.CHECKLIST, PERMISSION_ACTIONS.VIEW);
-  const canEditPreArrival = hasCardPermission(PERMISSION_SUBMODULES.PRE_ARRIVAL, PERMISSION_ACTIONS.EDIT);
-  const canEditArrival = hasCardPermission(PERMISSION_SUBMODULES.ARRIVAL, PERMISSION_ACTIONS.EDIT);
-  const canEditDeparture = hasCardPermission(PERMISSION_SUBMODULES.DEPARTURE, PERMISSION_ACTIONS.EDIT);
+  const hasCardSubmodule = useCallback(
+    (submoduleKey) => hasSubmodule(PERMISSION_MODULES.KANBAN_CARD, submoduleKey),
+    [hasSubmodule]
+  );
+  // PRE_ARRIVAL/ARRIVAL/DEPARTURE/CHECKLIST/CREW_IMMIGRATION carry no VIEW
+  // action in the permissions response — submodule presence is the view gate.
+  const canViewPreArrivalTab = hasCardSubmodule(PERMISSION_SUBMODULES.PRE_ARRIVAL);
+  const canViewCrewImmigrationTab = hasCardSubmodule(PERMISSION_SUBMODULES.CREW_IMMIGRATION);
+  const canViewArrivalTab = hasCardSubmodule(PERMISSION_SUBMODULES.ARRIVAL);
+  const canViewDepartureTab = hasCardSubmodule(PERMISSION_SUBMODULES.DEPARTURE);
+  const canViewChecklistTab = hasCardSubmodule(PERMISSION_SUBMODULES.CHECKLIST);
+  // Editability uses BASIC_FIELDS — these submodules have no EDIT action.
+  const canEditPreArrival = hasCardPermission(PERMISSION_SUBMODULES.PRE_ARRIVAL, PERMISSION_ACTIONS.BASIC_FIELDS);
+  const canEditArrival = hasCardPermission(PERMISSION_SUBMODULES.ARRIVAL, PERMISSION_ACTIONS.BASIC_FIELDS);
+  const canEditDeparture = hasCardPermission(PERMISSION_SUBMODULES.DEPARTURE, PERMISSION_ACTIONS.BASIC_FIELDS);
   const canDeletePreArrivalTimeObject = hasCardPermission(PERMISSION_SUBMODULES.PRE_ARRIVAL, PERMISSION_ACTIONS.DELETE_NEW_TIME_OBJECT);
   const canDeleteArrivalTimeObject = hasCardPermission(PERMISSION_SUBMODULES.ARRIVAL, PERMISSION_ACTIONS.DELETE_NEW_TIME_OBJECT);
   const canDeleteDepartureTimeObject = hasCardPermission(PERMISSION_SUBMODULES.DEPARTURE, PERMISSION_ACTIONS.DELETE_NEW_TIME_OBJECT);
@@ -513,6 +520,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               billingEntityId={billingEntityId}
               stageId={OPERATION_STAGE_IDS.PRE_ARRIVAL}
               isViewOnly={isViewOnly || !canEditPreArrival}
+              canViewBasicFields={canEditPreArrival}
               canAddTimeObject={canAddPreArrivalTimeObject}
               canDeleteTimeObject={canDeletePreArrivalTimeObject}
               canPreviewEmail={canPreviewPreArrivalEmail}
@@ -528,6 +536,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               onRemoveLink={handleRemoveLink}
               onSendReport={handleSendReportRequest}
               isViewOnly={isViewOnly || !canEditArrival}
+              canViewBasicFields={canEditArrival}
               arrivalStageFields={arrivalStageFields}
               postArrivalStageFields={postArrivalStageFields}
               callId={currentCallId}
@@ -551,6 +560,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               onRemoveLink={handleRemoveLink}
               onSendReport={handleSendReportRequest}
               isViewOnly={isViewOnly || !canEditDeparture}
+              canViewBasicFields={canEditDeparture}
               eventFields={departureEventFields}
               callId={currentCallId}
               portId={preArrivalPortId}
