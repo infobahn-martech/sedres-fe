@@ -72,6 +72,7 @@ export default function KanbanBoardPage() {
     expandWorkflow,
     expandOnlyWorkflow,
     collapseWorkflow,
+    collapseAllWorkflows,
     handleColumnHeaderClick,
   } = useWorkflowExpansion(workflows);
 
@@ -92,6 +93,10 @@ export default function KanbanBoardPage() {
     [workflows]
   );
 
+  useEffect(() => {
+    setWorkflowFilterId(null);
+  }, [selectedBoardId]);
+
   useKanbanRoleAccess();
 
   useEffect(() => {
@@ -104,6 +109,16 @@ export default function KanbanBoardPage() {
   const [contextMenuLaneId, setContextMenuLaneId] = useState(null);
   const [accordionMenu, setAccordionMenu] = useState(null);
   const [accordionMenuWorkflowId, setAccordionMenuWorkflowId] = useState(null);
+  /* null = show every workflow; set from the sidebar's Select Workflow submenu to show only one. */
+  const [workflowFilterId, setWorkflowFilterId] = useState(null);
+
+  const visibleWorkflows = useMemo(
+    () =>
+      workflowFilterId == null
+        ? workflows
+        : workflows.filter((w) => String(w.id) === String(workflowFilterId)),
+    [workflows, workflowFilterId]
+  );
 
   useSyncKanbanSidebarWorkflows(workflows, selectedBoardId);
   useKanbanAddCardFromSidebar({
@@ -189,6 +204,19 @@ export default function KanbanBoardPage() {
   const handleJumpToWorkflow = useCallback(
     (workflowId) => {
       if (workflowId == null) return;
+      if (workflowId === "all") {
+        setWorkflowFilterId(null);
+        const expandedIds = workflows
+          .filter((w) => Boolean(expandedWorkflows[w.id]))
+          .map((w) => w.id);
+        collapseAllWorkflows();
+        Promise.all(expandedIds.map((id) => workflowService.toggleCollapseWorkflow(id))).catch((err) => {
+          const msg = err?.response?.data?.message ?? err.message ?? "Could not collapse workflows.";
+          notify(msg, "error");
+        });
+        return;
+      }
+      setWorkflowFilterId(workflowId);
       const scrollToWorkflow = () => {
         requestAnimationFrame(() => {
           document
@@ -212,7 +240,7 @@ export default function KanbanBoardPage() {
           notify(msg, "error");
         });
     },
-    [expandedWorkflows, expandOnlyWorkflow]
+    [expandedWorkflows, expandOnlyWorkflow, collapseAllWorkflows, workflows]
   );
 
   useEffect(() => {
@@ -375,7 +403,7 @@ export default function KanbanBoardPage() {
           </div>
         )}
         <KanbanBoardContent
-          workflows={workflows}
+          workflows={visibleWorkflows}
           cardsById={cardsById}
           boardLoading={boardLoading}
           suppressEmptyMessage={isOperatorBoard}

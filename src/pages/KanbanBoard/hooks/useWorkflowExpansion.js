@@ -74,6 +74,16 @@ export default function useWorkflowExpansion(workflows) {
     }));
   }, []);
 
+  const collapseAllWorkflows = useCallback(() => {
+    setExpandedWorkflows(() => {
+      const next = {};
+      workflows.forEach((workflow) => {
+        next[workflow.id] = false;
+      });
+      return next;
+    });
+  }, [workflows]);
+
   const handleColumnHeaderClick = useCallback(
     (workflowId, columnId) => {
       setCollapsedColumns((prev) => {
@@ -105,6 +115,7 @@ export default function useWorkflowExpansion(workflows) {
     expandWorkflow,
     expandOnlyWorkflow,
     collapseWorkflow,
+    collapseAllWorkflows,
     handleColumnHeaderClick,
   };
 }

@@ -279,13 +279,14 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   /* Unlike workflowOptionsForModal (add-card eligibility), jumping to a workflow has no
      role/name restrictions — every workflow on the board is a valid navigation target. */
   const jumpWorkflowOptions = useMemo(() => {
-    return (sidebarWorkflows || [])
+    const workflowEntries = (sidebarWorkflows || [])
       .filter((workflow) => workflow?.id != null || workflow?.workflow_id != null)
       .map((workflow) => ({
         id: workflow?.id ?? workflow?.workflow_id,
         name: workflow?.workflow_name ?? workflow?.name ?? workflow?.title ?? 'Workflow',
         description: workflow?.description,
       }));
+    return [{ id: 'all', name: 'All' }, ...workflowEntries];
   }, [sidebarWorkflows]);
 
   const resetAddModalState = useCallback(() => {
