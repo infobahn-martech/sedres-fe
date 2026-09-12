@@ -68,6 +68,16 @@
   }
 }
 
+// The app's pages scroll inside `.page-cont-wrp` (see dashboard.scss), not
+// document.body, so locking body overflow alone doesn't stop the page behind
+// the modal's backdrop from scrolling — this freezes the real container.
+body.advanced-search-modal-open {
+  .page-cont-wrp,
+  .dashboard-wrp {
+    overflow: hidden !important;
+  }
+}
+
 // Search modal — a centered, dimmed-backdrop dialog (see CustomModal usage
 // conventions in OnStationModal.scss) rather than a dropdown anchored under
 // the header's search box.

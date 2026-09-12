@@ -78,15 +78,17 @@ function AdvancedSearch() {
     }
   }, [isOpen]);
 
-  // Lock page scroll while the modal is open — the kanban board scrolls
-  // inside its own container, not the body, so react-bootstrap's built-in
-  // body scroll-lock alone doesn't stop it moving behind the backdrop.
+  // Lock page scroll while the modal is open. Every page scrolls inside its
+  // own `.page-cont-wrp` container (see dashboard.scss), not document.body,
+  // so we target that directly via a body class rather than writing to
+  // `document.body.style.overflow` — react-bootstrap's Modal already manages
+  // that same inline style internally, and fighting it over the same
+  // property caused more harm (stuck state on close) than it fixed.
   useEffect(() => {
     if (!isOpen) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.classList.add('advanced-search-modal-open');
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.classList.remove('advanced-search-modal-open');
     };
   }, [isOpen]);
 
@@ -234,7 +236,6 @@ function AdvancedSearch() {
           placeholder="Search workspaces & boards..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setIsOpen(true)}
           readOnly={isOpen}
         />
       </div>
