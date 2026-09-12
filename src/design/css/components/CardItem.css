@@ -82,6 +82,62 @@
   background: linear-gradient(to bottom, #fffbeb 0%, var(--surface-primary) 30%);
 }
 
+/* Board-level card selection (Sales Order / Generate PO action) */
+.kanban-card-select-toggle {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  z-index: 3;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.35;
+  transition: opacity 0.2s ease;
+}
+
+.kanban-card:hover .kanban-card-select-toggle,
+.kanban-card-select-toggle.is-selected {
+  opacity: 1;
+}
+
+.kanban-card-select-toggle-box {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid rgba(0, 54, 140, 0.35);
+  background: var(--surface-primary);
+  box-sizing: border-box;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.kanban-card-select-toggle.is-selected .kanban-card-select-toggle-box {
+  background: #00368c;
+  border-color: #00368c;
+  position: relative;
+}
+
+.kanban-card-select-toggle.is-selected .kanban-card-select-toggle-box::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(45deg);
+}
+
+.kanban-card.kanban-card--selected-for-action {
+  border: 2px solid #00368c;
+  box-shadow: 0 0 0 3px rgba(0, 54, 140, 0.22), 0 8px 18px rgba(15, 23, 42, 0.08);
+  background: linear-gradient(to bottom, #e8f0fc 0%, var(--surface-primary) 35%);
+}
+
 /* Blink animation for high-invoice cards */
 @keyframes blink-invoice {
 

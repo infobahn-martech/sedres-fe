@@ -10,6 +10,8 @@ import usePermissions from "../../../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES } from "../../../../shared/constants/permissions";
 import "../../../../design/scss/pages/kanban-board/column.scss";
 
+const EMPTY_SELECTED_IDS = [];
+
 /**
  * One column cell inside a swimlane row: droppable area + CSS grid for cards (cardsPerRow).
  */
@@ -26,6 +28,8 @@ export default function SwimlaneColumnCell({
   isDarkMode = false,
   layoutView = null,
   workflowTitle = "",
+  selectedActionCardIds = EMPTY_SELECTED_IDS,
+  onToggleCardSelect,
 }) {
   const { hasModule } = usePermissions();
   const canViewCards = hasModule(PERMISSION_MODULES.KANBAN_CARD);
@@ -181,6 +185,8 @@ export default function SwimlaneColumnCell({
                   columnTitle={column.title}
                   workflowTitle={workflowTitle}
                   fixedDimensions={{ width: cardWidth }}
+                  isSelectedForAction={selectedActionCardIds.includes(card.id)}
+                  onToggleSelectForAction={onToggleCardSelect}
                 />
               )
             )}
@@ -211,4 +217,6 @@ SwimlaneColumnCell.propTypes = {
   isDarkMode: PropTypes.bool,
   layoutView: PropTypes.string,
   workflowTitle: PropTypes.string,
+  selectedActionCardIds: PropTypes.arrayOf(PropTypes.string),
+  onToggleCardSelect: PropTypes.func,
 };

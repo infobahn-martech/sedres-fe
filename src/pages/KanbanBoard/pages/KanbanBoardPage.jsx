@@ -7,6 +7,7 @@ import useSyncKanbanSidebarWorkflows from "../../../shared/hooks/useSyncKanbanSi
 import useKanbanAddCardFromSidebar from "../../../shared/hooks/useKanbanAddCardFromSidebar";
 import { getAddModeCardFormWorkflow } from "../../../shared/helpers/kanbanSidebarWorkflow";
 import KanbanBoardContent from "../components/board/KanbanBoardContent";
+import SalesOrderPoModal from "../components/board/SalesOrderPoModal";
 import CardForm from "../components/cards/CardForm";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
@@ -26,6 +27,8 @@ import useAuthReducer from "../../../store/AuthReducer";
 import workflowService from "../../../services/workflowService";
 import { notify } from "../../../components/Toaster";
 import { useThemeStore } from "../../../shared/store/themeStore";
+import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
+import "../../../design/scss/pages/kanban-board/salesOrderPoModal.scss";
 export default function KanbanBoardPage() {
   const { boardId: boardIdParam } = useParams();
   const location = useLocation();
@@ -282,6 +285,43 @@ export default function KanbanBoardPage() {
   }, []);
 
   const { hasAnyPermission } = usePermissions();
+
+  /* Board-level multi-card selection for the "Sales Order / Generate PO" action — lives in a
+     shared store (see kanbanCardSelectionStore) since the trigger button lives in the global
+     header, not on this page. Kept separate from `selectedCard` above, which drives the
+     (unrelated) card-detail modal. Only ids are stored; full card data is resolved from this
+     page's own `cardsById` so the queue can never go stale relative to the live board data. */
+  const selectedCardIds = useKanbanCardSelectionStore((state) => state.selectedCardIds);
+  const isPoFlowOpen = useKanbanCardSelectionStore((state) => state.isPoFlowOpen);
+  const toggleCardSelectionId = useKanbanCardSelectionStore((state) => state.toggleCardId);
+  const removeCardSelectionId = useKanbanCardSelectionStore((state) => state.removeCardId);
+  const clearCardSelection = useKanbanCardSelectionStore((state) => state.clearSelection);
+  const closePoFlow = useKanbanCardSelectionStore((state) => state.closePoFlow);
+
+  const handleToggleCardSelection = useCallback(
+    (card) => toggleCardSelectionId(card.id),
+    [toggleCardSelectionId]
+  );
+
+  const poFlowCards = useMemo(
+    () => selectedCardIds.map((id) => cardsById[id]).filter(Boolean),
+    [selectedCardIds, cardsById]
+  );
+
+  const handleSalesOrderPoGenerated = useCallback(() => {
+    if (!isOperatorBoard) refetchBoard();
+  }, [isOperatorBoard, refetchBoard]);
+
+  const handleClosePoFlow = useCallback(() => {
+    closePoFlow();
+    clearCardSelection();
+  }, [closePoFlow, clearCardSelection]);
+
+  // Drop any selected id that disappears from the board (moved/removed by a refetch).
+  useEffect(() => {
+    const staleIds = selectedCardIds.filter((id) => !cardsById[id]);
+    staleIds.forEach((id) => removeCardSelectionId(id));
+  }, [cardsById, selectedCardIds, removeCardSelectionId]);
   const handleCreateCard = useCallback(() => {
     // ADD_CARD no longer has a VIEW action — it's gated by its granular
     // Basic fields / Email actions instead.
@@ -421,8 +461,17 @@ export default function KanbanBoardPage() {
           onPinClick={handleWorkflowPinClick}
           isDarkMode={isDarkMode}
           layoutView={layoutView}
+          selectedActionCardIds={selectedCardIds}
+          onToggleCardSelect={handleToggleCardSelection}
         />
       </div>
+
+      <SalesOrderPoModal
+        show={isPoFlowOpen && poFlowCards.length > 0}
+        cards={poFlowCards}
+        onClose={handleClosePoFlow}
+        onGenerated={handleSalesOrderPoGenerated}
+      />
 
       {selectedCard && columnsForCardForm && (
         <CardForm

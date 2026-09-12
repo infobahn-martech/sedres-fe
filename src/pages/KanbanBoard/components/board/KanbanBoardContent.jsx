@@ -20,6 +20,8 @@ export default function KanbanBoardContent({
   onPinClick,
   isDarkMode,
   layoutView,
+  selectedActionCardIds,
+  onToggleCardSelect,
 }) {
   if (!boardLoading && workflows.length === 0 && !suppressEmptyMessage) {
     return (
@@ -59,6 +61,8 @@ export default function KanbanBoardContent({
         onHeightChange={onHeightChange}
         isDarkMode={isDarkMode}
         layoutView={layoutView}
+        selectedActionCardIds={selectedActionCardIds}
+        onToggleCardSelect={onToggleCardSelect}
       />
     </WorkflowAccordion>
   ));

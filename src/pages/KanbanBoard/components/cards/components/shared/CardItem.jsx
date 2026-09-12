@@ -658,6 +658,8 @@ function CardItem({
   columnTitle = "",
   workflowTitle = "",
   fixedDimensions = null,
+  isSelectedForAction = false,
+  onToggleSelectForAction,
 }) {
   const isApiCard = card.cardSource === "api";
   const isTransportCoordinatorWorkflow = String(workflowTitle || "").trim().toLowerCase().includes("transport coordinator");
@@ -712,7 +714,7 @@ function CardItem({
     <Draggable draggableId={card.id} index={index} isDragDisabled={KANBAN_DND_DISABLED}>
       {(provided, snapshot) => (
         <div
-          className={`kanban-card ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""}`}
+          className={`kanban-card ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""}`}
           ref={provided.innerRef}
           {...(KANBAN_DND_DISABLED ? {} : provided.draggableProps)}
           {...(KANBAN_DND_DISABLED ? {} : provided.dragHandleProps)}
@@ -722,6 +724,22 @@ function CardItem({
             "--card-color": cardColor,
           }}
         >
+          {typeof onToggleSelectForAction === "function" && (
+            <button
+              type="button"
+              className={`kanban-card-select-toggle ${isSelectedForAction ? "is-selected" : ""}`}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleSelectForAction(card);
+              }}
+              aria-pressed={isSelectedForAction}
+              aria-label={isSelectedForAction ? "Deselect card" : "Select card"}
+              title={isSelectedForAction ? "Deselect card" : "Select card"}
+            >
+              <span className="kanban-card-select-toggle-box" aria-hidden="true" />
+            </button>
+          )}
           {isApiCard ? (
             isShrunk ? (
               <ApiKanbanCardShrunk card={card} setSelectedCard={setSelectedCard} />
@@ -1121,6 +1139,8 @@ CardItem.propTypes = {
     width: PropTypes.number.isRequired,
     height: PropTypes.number,
   }),
+  isSelectedForAction: PropTypes.bool,
+  onToggleSelectForAction: PropTypes.func,
 };
 
 export default CardItem;

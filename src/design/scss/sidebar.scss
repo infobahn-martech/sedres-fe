@@ -558,6 +558,34 @@
             animation: none;
         }
     }
+
+    &.kanban-sidebar-icon--disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+
+        &:hover {
+            background: transparent;
+            transform: none;
+        }
+    }
+}
+
+.kanban-sidebar-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #ff4444;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 0 0 2px #00368c;
 }
 
 
