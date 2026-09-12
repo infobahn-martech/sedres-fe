@@ -78,20 +78,6 @@ function AdvancedSearch() {
     }
   }, [isOpen]);
 
-  // Lock page scroll while the modal is open. Every page scrolls inside its
-  // own `.page-cont-wrp` container (see dashboard.scss), not document.body,
-  // so we target that directly via a body class rather than writing to
-  // `document.body.style.overflow` — react-bootstrap's Modal already manages
-  // that same inline style internally, and fighting it over the same
-  // property caused more harm (stuck state on close) than it fixed.
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    document.body.classList.add('advanced-search-modal-open');
-    return () => {
-      document.body.classList.remove('advanced-search-modal-open');
-    };
-  }, [isOpen]);
-
   // Separate outside-click handler so the filter dropdown can close on its
   // own without collapsing the whole search modal.
   useEffect(() => {
