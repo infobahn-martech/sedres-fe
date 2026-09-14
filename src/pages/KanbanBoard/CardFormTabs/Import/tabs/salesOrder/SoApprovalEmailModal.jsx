@@ -27,7 +27,7 @@ const MESSAGE_QUILL_FORMATS = ["bold", "italic", "underline", "list", "bullet", 
 // defaultTo is the recipient from api/da/da_action_email_draft/{call_id} (fetched by
 // SalesOrderList right before opening this modal) — prefills "To" with the backend's own
 // suggested recipient instead of making staff type it every time; still freely editable.
-const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, soCustomerName = "", stageLabel = "SO Approval", actionLabel = "", defaultTo = "" }) => {
+const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, soCustomerName = "", stageLabel = "SO Approval", actionLabel = "", defaultTo = "", preLoadedDocuments = [] }) => {
   const [fromValue, setFromValue] = useState("operations@shipping.com");
   const [toValue, setToValue] = useState("");
   const [ccValue, setCcValue] = useState("");
@@ -55,8 +55,10 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
         `<p>Please review and ${stageLabel.toLowerCase()}${soCustomerName ? ` for ${soCustomerName}` : ""}.</p>`
       );
       setMessageError("");
+      // Pre-load documents from verified SO line items' Supporting Documents field
+      setAttachments(preLoadedDocuments || []);
     }
-  }, [show, soCustomerName, stageLabel, actionLabel, defaultTo]);
+  }, [show, soCustomerName, stageLabel, actionLabel, defaultTo, preLoadedDocuments]);
 
   const handleFilesSelected = (fileList) => {
     const files = Array.from(fileList || []).filter((file) => file);
@@ -65,6 +67,12 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
 
   const removeAttachment = (index) => {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleOpenAttachment = (file) => {
+    const url = URL.createObjectURL(file);
+    window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   };
 
   const handleCreate = () => {
@@ -92,113 +100,118 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
 
   const renderHeader = () => (
     <div className="so-approval-email-header">
-      <h1 className="modal-title">{stageLabel} Email</h1>
+      <h5 className="modal-title m-0">New {stageLabel} Email</h5>
     </div>
   );
 
   const renderBody = () => (
     <div className="modal-body">
-      <div className="so-approval-email-card">
-        <div className="so-approval-email-meta">
-          <div className="so-approval-email-row">
-            <div className="so-approval-email-row-label">From</div>
-            <div className="so-approval-email-row-value">
-              <input
-                type="text"
-                className="so-approval-email-input"
-                value={fromValue}
-                onChange={(e) => setFromValue(e.target.value)}
-                placeholder="From email"
-                disabled={isSubmitting}
-              />
-            </div>
+      <div className="so-approval-email-compose">
+        {/* Email fields - simplified */}
+        <div className="so-approval-email-fields">
+          <div className="so-approval-email-field">
+            <label className="so-approval-email-field-label">From</label>
+            <input
+              type="text"
+              className="so-approval-email-field-input"
+              value={fromValue}
+              onChange={(e) => setFromValue(e.target.value)}
+              placeholder="sender@example.com"
+              disabled={isSubmitting}
+            />
           </div>
-          <div className="so-approval-email-row">
-            <div className="so-approval-email-row-label">To</div>
-            <div className="so-approval-email-row-value">
-              <input
-                type="text"
-                className="so-approval-email-input"
-                value={toValue}
-                onChange={(e) => {
-                  setToValue(e.target.value);
-                  if (toError) setToError("");
-                }}
-                placeholder="Recipients"
-                disabled={isSubmitting}
-              />
-              {toError && <div className="so-approval-email-field-error">{toError}</div>}
-            </div>
+          <div className="so-approval-email-field">
+            <label className="so-approval-email-field-label">To</label>
+            <input
+              type="text"
+              className="so-approval-email-field-input"
+              value={toValue}
+              onChange={(e) => {
+                setToValue(e.target.value);
+                if (toError) setToError("");
+              }}
+              placeholder="recipient@example.com"
+              disabled={isSubmitting}
+            />
+            {toError && <div className="so-approval-email-field-error">{toError}</div>}
           </div>
-          <div className="so-approval-email-row">
-            <div className="so-approval-email-row-label">Cc</div>
-            <div className="so-approval-email-row-value">
-              <input
-                type="text"
-                className="so-approval-email-input"
-                value={ccValue}
-                onChange={(e) => setCcValue(e.target.value)}
-                placeholder="Recipients"
-                disabled={isSubmitting}
-              />
-            </div>
+          <div className="so-approval-email-field">
+            <label className="so-approval-email-field-label">Cc</label>
+            <input
+              type="text"
+              className="so-approval-email-field-input"
+              value={ccValue}
+              onChange={(e) => setCcValue(e.target.value)}
+              placeholder="cc@example.com"
+              disabled={isSubmitting}
+            />
           </div>
-          <div className="so-approval-email-row">
-            <div className="so-approval-email-row-label">Subject</div>
-            <div className="so-approval-email-row-value">
-              <input
-                type="text"
-                className="so-approval-email-input"
-                value={subjectValue}
-                onChange={(e) => setSubjectValue(e.target.value)}
-                placeholder="Email subject"
-                disabled={isSubmitting}
-              />
-            </div>
-          </div>
-          <div className="so-approval-email-row so-approval-email-row--attachments">
-            <div className="so-approval-email-row-label">Attachments</div>
-            <div className="so-approval-email-row-value">
-              <div className="so-approval-email-attachments-list">
-                {attachments.map((file, index) => (
-                  <span key={`${file.name}-${index}`} className="so-approval-email-attachment-chip">
-                    <span className="so-approval-email-attachment-name">{file.name}</span>
-                    <button
-                      type="button"
-                      className="so-approval-email-attachment-remove"
-                      onClick={() => removeAttachment(index)}
-                      aria-label={`Remove ${file.name}`}
-                      disabled={isSubmitting}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-                <button
-                  type="button"
-                  className="so-approval-email-attachment-add"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isSubmitting}
-                >
-                  + Add
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  className="so-approval-email-file-input-hidden"
-                  onChange={(e) => {
-                    handleFilesSelected(e.target.files);
-                    e.target.value = "";
-                  }}
-                />
-              </div>
-            </div>
+          <div className="so-approval-email-field">
+            <label className="so-approval-email-field-label">Subject</label>
+            <input
+              type="text"
+              className="so-approval-email-field-input"
+              value={subjectValue}
+              onChange={(e) => setSubjectValue(e.target.value)}
+              placeholder="Email subject"
+              disabled={isSubmitting}
+            />
           </div>
         </div>
 
-        <div className="so-approval-email-message-section">
-          <div className="so-approval-email-message-title">Message</div>
+        {/* Attachments section */}
+        <div className="so-approval-email-attachments">
+          <div className="so-approval-email-attachments-toolbar">
+            <span className="so-approval-email-attachments-label">Attachments ({attachments.length})</span>
+            <button
+              type="button"
+              className="so-approval-email-attachments-btn"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isSubmitting}
+            >
+              + Add
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="so-approval-email-file-input-hidden"
+              onChange={(e) => {
+                handleFilesSelected(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </div>
+          {attachments.length > 0 && (
+            <div className="so-approval-email-attachments-items">
+              {attachments.map((file, index) => (
+                <div key={`${file.name}-${index}`} className="so-approval-email-attachment-item">
+                  <button
+                    type="button"
+                    className="so-approval-email-attachment-name"
+                    onClick={() => handleOpenAttachment(file)}
+                    title={`Open ${file.name}`}
+                    disabled={isSubmitting}
+                  >
+                    {file.name}
+                  </button>
+                  <button
+                    type="button"
+                    className="so-approval-email-attachment-remove"
+                    onClick={() => removeAttachment(index)}
+                    aria-label={`Remove ${file.name}`}
+                    disabled={isSubmitting}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Message area */}
+        <div className="so-approval-email-message">
           <div className="so-approval-email-quill-wrap">
             <ReactQuill
               theme="snow"
@@ -209,7 +222,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
               }}
               modules={{ toolbar: MESSAGE_QUILL_TOOLBAR }}
               formats={MESSAGE_QUILL_FORMATS}
-              placeholder="Type email content here..."
+              placeholder="Type your message..."
               readOnly={isSubmitting}
             />
             {messageError && <div className="so-approval-email-field-error">{messageError}</div>}
@@ -223,7 +236,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
     <div className="modal-footer">
       <button
         type="button"
-        className="btn btn-secondary so-approval-email-footer-btn"
+        className="btn btn-secondary"
         onClick={onClose}
         disabled={isSubmitting}
       >
@@ -231,11 +244,11 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
       </button>
       <button
         type="button"
-        className="btn btn-primary so-approval-email-footer-btn so-approval-email-footer-btn--send"
+        className="btn btn-primary"
         onClick={handleCreate}
         disabled={isSubmitting}
       >
-        <FiSend />
+        <FiSend className="me-2" />
         {isSubmitting ? "Sending..." : `Send for ${stageLabel}`}
       </button>
     </div>
@@ -263,6 +276,7 @@ SoApprovalEmailModal.propTypes = {
   stageLabel: PropTypes.string,
   actionLabel: PropTypes.string,
   defaultTo: PropTypes.string,
+  preLoadedDocuments: PropTypes.arrayOf(PropTypes.object),
 };
 
 export default SoApprovalEmailModal;
