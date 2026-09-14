@@ -603,13 +603,15 @@ const SalesOrderList = ({
   const [verifyingItemIds, setVerifyingItemIds] = useState(new Set());
   const localVerifiedItemIds = useDaLocalVerifiedItems((s) => s.verifiedItemIds[callId]);
   const setLocalItemVerified = useDaLocalVerifiedItems((s) => s.setItemVerified);
-  // Per request 2026-09-10: on column 4 ("SO Sent for approval"), the plain "Send For SO
-  // approval" button must stay hidden until staff has ticked at least one line item's Verify
-  // checkbox — it must not appear the instant the card lands on this column. Only gates that
-  // one specific button; the Awaiting-decision group (after the email's already sent) and the
-  // post-reject "Send For SO approval" override both still show regardless, since by then the
-  // SO-approval cycle has already genuinely started at least once.
-  const hasVerifiedAnyItem = localVerifiedItemIds instanceof Set && localVerifiedItemIds.size > 0;
+  // On column 4 ("SO Sent for approval"), the plain "Send For SO approval" button stays hidden
+  // until every current line item has been verified. The non-empty check prevents an empty
+  // sales-order list from passing Array.prototype.every() vacuously. Only the initial send
+  // state is gated; the Awaiting-decision, approved, and post-reject states remain available
+  // once the SO-approval cycle has started.
+  const hasVerifiedAllItems =
+    salesOrderList.length > 0 &&
+    localVerifiedItemIds instanceof Set &&
+    salesOrderList.every((item) => localVerifiedItemIds.has(item.id));
   const [showWorkOrderModal, setShowWorkOrderModal] = useState(false);
   const [isGeneratingWorkOrder, setIsGeneratingWorkOrder] = useState(false);
   const bulkActionBarRef = useRef(null);
@@ -2300,7 +2302,7 @@ const SalesOrderList = ({
                     <FiX /> Rejected
                   </button>
                 </div>
-              ) : soActionState?.button_state === "send" && hasVerifiedAnyItem ? (
+              ) : soActionState?.button_state === "send" && hasVerifiedAllItems ? (
                 <button
                   type="button"
                   className="sales-order-da-status-button"
