@@ -1,6 +1,14 @@
 // Crew Management specific styles
 // Add any custom styles here if needed
 
+.actions {
+  .send {
+    display: inline-flex;
+    align-items: center;
+    color: var(--primary);
+  }
+}
+
 .status-badge {
   display: inline-flex;
   align-items: center;
