@@ -2416,18 +2416,21 @@ $so-po-blue: #1a56db;
     height: 100%;
     display: flex;
     flex-direction: column;
+    background: var(--surface-primary);
   }
 
   .modal-body {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
+    min-height: 400px;
     display: flex;
     flex-direction: column;
+    padding: 0;
+    background: var(--surface-primary);
   }
 
   .modal-footer {
-    border-top: 0;
+    border-top: 1px solid var(--border-primary);
+    padding: 12px 16px;
+    gap: 10px;
   }
 }
 
@@ -2455,6 +2458,13 @@ $so-po-blue: #1a56db;
   flex-shrink: 0;
 }
 
+.so-approval-email-compose {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 0;
+}
+
 .so-approval-email-card {
   background: var(--surface-primary);
   border: 1px solid var(--border-primary);
@@ -2464,6 +2474,34 @@ $so-po-blue: #1a56db;
   flex-direction: column;
   flex: 1;
   min-height: 0;
+}
+
+.so-approval-email-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex-shrink: 0;
+  background: var(--surface-primary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.so-approval-email-field {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &:last-of-type {
+    border-bottom: 0;
+  }
+}
+
+.so-approval-email-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0;
 }
 
 .so-approval-email-row {
@@ -2485,17 +2523,18 @@ $so-po-blue: #1a56db;
   min-width: 0;
 }
 
-.so-approval-email-input {
+.so-approval-email-input,
+.so-approval-email-field-input {
   width: 100%;
   min-width: 0;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 4px;
   background: transparent;
   color: var(--text-primary);
   font: inherit;
   font-size: 13px;
-  line-height: 1.35;
-  padding: 4px 6px;
+  line-height: 1.4;
+  padding: 6px 8px;
   outline: none;
 
   &::placeholder {
@@ -2548,6 +2587,26 @@ $so-po-blue: #1a56db;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 200px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #2a00ff;
+  font: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-align: left;
+
+  &:hover:not(:disabled) {
+    color: #1c00b3;
+    filter: brightness(0.95);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
 }
 
 .so-approval-email-attachment-remove {
@@ -2598,12 +2657,131 @@ $so-po-blue: #1a56db;
   display: none;
 }
 
-.so-approval-email-message-section {
-  padding: 14px 16px 18px;
+.so-approval-email-attachments {
+  padding: 10px 14px;
+  flex-shrink: 0;
+  background: var(--surface-primary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.so-approval-email-attachments-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.so-approval-email-attachments-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.so-approval-email-attachments-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background: var(--bg-secondary);
+    border-color: #9ca3af;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.so-approval-email-attachments-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.so-approval-email-attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.so-approval-email-attachment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #2a00ff;
+  font: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-align: left;
+
+  &:hover:not(:disabled) {
+    color: #1c00b3;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.so-approval-email-attachment-remove,
+.so-approval-email-attachment-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    color: var(--text-primary);
+    background: rgba(15, 23, 42, 0.06);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+
+.so-approval-email-message-section,
+.so-approval-email-message {
+  padding: 12px 14px;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  background: var(--surface-primary);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .so-approval-email-message-title {
@@ -2618,16 +2796,14 @@ $so-po-blue: #1a56db;
   border-radius: 12px;
   overflow: hidden;
   background: var(--surface-primary);
-  flex: 1;
-  min-height: 0;
+  min-height: 220px;
   display: flex;
   flex-direction: column;
 
   .quill {
-    flex: 1;
-    min-height: 0;
     display: flex;
     flex-direction: column;
+    min-height: 100%;
   }
 
   .ql-toolbar {
@@ -2641,14 +2817,11 @@ $so-po-blue: #1a56db;
   .ql-container {
     border: 0;
     font-size: 13px;
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
+    overflow: hidden;
   }
 
   .ql-editor {
-    min-height: 220px;
-    height: 100%;
+    min-height: 200px;
     padding: 14px 16px;
     line-height: 1.55;
   }

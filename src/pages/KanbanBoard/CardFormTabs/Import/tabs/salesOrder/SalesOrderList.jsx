@@ -851,6 +851,10 @@ const SalesOrderList = ({
   // is actually about to send this stage's email.
   const [draftRecipientEmail, setDraftRecipientEmail] = useState("");
 
+  // Pre-loaded documents from verified SO line items' Supporting Documents field — collected
+  // when opening the modal and passed to SoApprovalEmailModal to auto-attach them.
+  const [preLoadedDocuments, setPreLoadedDocuments] = useState([]);
+
   // Invoice Issuance modal — opened once staff records the client's approval. Reuses the
   // existing UploadInvoiceModal (components/UploadInvoiceModal.jsx), same component the
   // Vendor/Transport/Hotel portals already use for invoice upload. The upload itself persists
@@ -860,9 +864,21 @@ const SalesOrderList = ({
 
   // api/da/da_action_email_draft/{call_id} — { status: "success", data: { recipient } }. Best
   // effort: if it fails or callId is missing, the modal just opens with an empty "To" instead
-  // of blocking staff from sending the email at all.
+  // of blocking staff from sending the email at all. Also collects documents from verified SO
+  // line items (Supporting Documents field) and pre-loads them as email attachments.
   const handleOpenSoApprovalEmailModal = async (actionLabel) => {
     setModalActionLabel(actionLabel || daActionButtonLabel);
+
+    // Collect documents from verified SO line items
+    const docs = [];
+    const verifiedIds = localVerifiedItemIds || new Set();
+    (salesOrderList || []).forEach((item) => {
+      if (verifiedIds.has(item.id) && item.documents && Array.isArray(item.documents)) {
+        docs.push(...item.documents);
+      }
+    });
+    setPreLoadedDocuments(docs);
+
     if (!callId) {
       setShowSoApprovalEmailModal(true);
       return;
@@ -3241,6 +3257,7 @@ const SalesOrderList = ({
           stageLabel={displayStageLabel || "SO Approval"}
           actionLabel={modalActionLabel}
           defaultTo={draftRecipientEmail}
+          preLoadedDocuments={preLoadedDocuments}
         />
       )}
 
