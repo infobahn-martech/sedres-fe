@@ -70,22 +70,22 @@ const MWPHistory = () => {
             width: "150",
             cell: ({ row }) => <RenderStatus row={row} />,
         },
-        {
-            name: "Action",
-            selector: "action",
-            tableClasses: "table-striped",
-            contentClass: "table-content",
-            sort: false,
-            thclass: "tb-head",
-            width: "100",
-            notView: true,
-            cell: ({ row }) =>
-                row?.mwp_document ? (
-                    <RenderAction row={row} onViewClick={handleViewDocument} />
-                ) : (
-                    "—"
-                ),
-        },
+        // {
+        //     name: "Action",
+        //     selector: "action",
+        //     tableClasses: "table-striped",
+        //     contentClass: "table-content",
+        //     sort: false,
+        //     thclass: "tb-head",
+        //     width: "100",
+        //     notView: true,
+        //     cell: ({ row }) =>
+        //         row?.mwp_document ? (
+        //             <RenderAction row={row} onViewClick={handleViewDocument} />
+        //         ) : (
+        //             "—"
+        //         ),
+        // },
     ];
 
     return (
