@@ -171,19 +171,19 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   const kanbanBoardIcons = useMemo(() => {
     if (kanbanFullSidebar || isPortSupervisorRole) {
       const icons = canAddCard ? [{ id: 1, icon: FiPlus, label: 'Add' }] : [];
-      if (canUseSalesOrderPoAction) {
-        icons.push({ id: 13, icon: FiShoppingCart, label: 'Sales Order / Generate PO' });
-      }
       if (showEditWorkflowSidebarIcon) {
         icons.push({ id: 9, icon: FiEdit3, label: 'Edit Workflow' });
         icons.push({ id: 12, icon: FiList, label: 'Select Workflow' });
       }
       icons.push(
         { id: 10, icon: FiMapPin, label: 'On Station' },
-        { id: 11, icon: FiLayers, label: 'Task' },
+        { id: 11, icon: FiLayers, label: 'Task' }
         // { id: 7, icon: FiMail, label: 'Outlook' },
-        { id: 8, icon: FiSettings, label: 'Settings' }
       );
+      if (canUseSalesOrderPoAction) {
+        icons.push({ id: 13, icon: FiShoppingCart, label: 'Sales Order / Generate PO' });
+      }
+      icons.push({ id: 8, icon: FiSettings, label: 'Settings' });
       return icons;
     }
     const icons = [];
