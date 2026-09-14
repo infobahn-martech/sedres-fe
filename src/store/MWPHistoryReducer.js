@@ -17,15 +17,18 @@ const useMWPHistoryReducer = create((set) => ({
       // API responses in this codebase sometimes wrap payload under `data`
       const payload = data?.data ?? data;
 
-      const rows = payload?.mwp_history ?? payload?.mwpHistory ?? [];
+      const rows = Array.isArray(payload)
+        ? payload
+        : payload?.mwp_history ?? payload?.mwpHistory ?? [];
       const historyRows = Array.isArray(rows) ? rows : [];
+      const firstRow = historyRows[0] ?? {};
 
       set({
         vessel: {
-          vessel_id: payload?.vessel_id ?? null,
-          vessel_name: payload?.vessel_name ?? null,
-          billing_entity: payload?.billing_entity ?? null,
-          imo_number: payload?.imo_number ?? null,
+          vessel_id: firstRow?.vessel_id ?? null,
+          vessel_name: firstRow?.vessel_name ?? null,
+          billing_entity: firstRow?.billing_entity ?? null,
+          imo_number: firstRow?.imo_number ?? null,
         },
         mwpHistory: historyRows,
         totalMWPHistoryCount: historyRows.length,

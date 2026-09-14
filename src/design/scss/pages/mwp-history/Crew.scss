@@ -1,3 +1,35 @@
 // Crew Management specific styles
 // Add any custom styles here if needed
 
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: #f1f2f4;
+  color: #52585f;
+
+  &.status-issued {
+    background: #e6f6ec;
+    color: #1a8f4c;
+  }
+
+  &.status-approved {
+    background: #e8f0fe;
+    color: #1a56c4;
+  }
+
+  &.status-applied {
+    background: #fff4e0;
+    color: #b5750a;
+  }
+
+  &.status-expired {
+    background: #fdecec;
+    color: #c62828;
+  }
+}
+
