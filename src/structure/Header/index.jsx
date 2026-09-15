@@ -279,6 +279,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   }, [resolvedAvatar]);
 
   return (
+    <>
     <div className={`sedres-header ${layoutView === 'dark' ? 'sedres-header-dark' : ''}`}>
 
       {/* LEFT — LOGO + NAV LINKS */}
@@ -540,6 +541,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           )}
         </div>
       </div>
+    </div>
 
       {/* My Accounts Modal */}
       {!!showMyAccountsModal && (
@@ -608,7 +610,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
         </Suspense>
       )}
 
-    </div>
+    </>
   );
 }
 
