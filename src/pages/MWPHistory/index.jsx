@@ -127,15 +127,6 @@ const MWPHistory = () => {
             cell: ({ row, selector }) => <RenderText row={row} selector={selector} />,
         },
         {
-            name: "Document",
-            selector: "mwp_document",
-            tableClasses: "table-striped",
-            contentClass: "table-content",
-            sort: false,
-            thclass: "tb-head",
-            width: "250",
-        },
-        {
             name: "Applied Date",
             selector: "applied_date",
             tableClasses: "table-striped",
