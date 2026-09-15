@@ -28,7 +28,9 @@ const sendActionEmail = (formData) =>
   Gateway.post('/da/da_send_action_email', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-/** @returns {Promise<{ data: { status: string, data: { recipient: string } } }>} */
+/** @returns {Promise<{ data: { status: string, data: { recipient: string, stage_document_id?: string|number } } }>}
+ * stage_document_id (when present) is a document the backend already holds for this stage —
+ * confirmed via a live response 2026-09-15; feed it back into sendActionEmail's FormData. */
 const getActionEmailDraft = (callId) => Gateway.get(`/da/da_action_email_draft/${callId}`);
 /** @param {FormData} formData - call_id + invoice file(s), multipart/form-data */
 const uploadInvoice = (formData) =>

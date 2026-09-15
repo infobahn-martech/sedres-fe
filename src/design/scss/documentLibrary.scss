@@ -656,6 +656,18 @@
     padding: 0;
     justify-content: center;
   }
+
+  &--primary {
+    background: #2a00ff;
+    border-color: #2a00ff;
+    color: #fff;
+
+    &:hover {
+      background: #2400e0;
+      border-color: #2400e0;
+      color: #fff;
+    }
+  }
 }
 
 .doc-lib-preview-body {
