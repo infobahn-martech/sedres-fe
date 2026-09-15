@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import "../../design/scss/header.scss";
 import {
@@ -14,6 +14,7 @@ import {
   FiActivity,
   FiTruck,
   FiNavigation,
+  FiSettings,
 } from 'react-icons/fi';
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
@@ -27,6 +28,12 @@ import LogoutConfirmationModal from '../../components/LogoutConfirmationModal';
 import NotificationsModal from './NotificationsModal';
 import DocumentsModal from './DocumentsModal';
 import AdvancedSearch from './AdvancedSearch';
+import BusinessRulesModal from '../SideNav/components/BusinessRulesModal';
+import BlockersModal from '../SideNav/components/BlockersModal';
+import StickersModal from '../SideNav/components/StickersModal';
+import TagsModal from '../SideNav/components/TagsModal';
+import TypesModal from '../SideNav/components/TypesModal';
+const CallTypeBuilderModal = lazy(() => import('../../pages/CallType/CallTypeBuilderModal'));
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import { useThemeStore } from '../../shared/store/themeStore';
 import NavTabButton from '../../components/NavTabButton';
@@ -45,11 +52,20 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [showSettingsSubmenu, setShowSettingsSubmenu] = useState(false);
+  const [showCardManagementSubmenu, setShowCardManagementSubmenu] = useState(false);
+  const [showBusinessRulesModal, setShowBusinessRulesModal] = useState(false);
+  const [showBlockersModal, setShowBlockersModal] = useState(false);
+  const [showStickersModal, setShowStickersModal] = useState(false);
+  const [showTagsModal, setShowTagsModal] = useState(false);
+  const [showTypesModal, setShowTypesModal] = useState(false);
+  const [showCallTypeBuilderModal, setShowCallTypeBuilderModal] = useState(false);
   const { layoutView } = useLayoutView();
   const isDark = useThemeStore((state) => state.isDark);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
   const [notificationCount] = useState(3); // Default count, can be updated with real data
   const dropdownRef = useRef(null);
+  const settingsDropdownRef = useRef(null);
   const doLogout = useAuthReducer((state) => state.doLogout);
   const profileData = useAuthReducer((state) => state.profileData);
   const authData = useAuthReducer((state) => state.authData);
@@ -57,6 +73,27 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const restrictedBoardUser = isRestrictedBoardUser(userProfile);
   const portOperatorUser = isPortOperatorUser(userProfile);
   const vendorDashboardUser = isVendorRole(getRoleId());
+  const userRoleId =
+    userProfile?.role_id ||
+    userProfile?.roleId ||
+    userProfile?.role?.role_id ||
+    userProfile?.user?.role_id ||
+    userProfile?.data?.role_id;
+  const isPortManagerRole = String(userRoleId) === '1';
+  const isPortSupervisorRole = String(userRoleId) === '23';
+  const showKanbanSettingsIcon =
+    !activePortal &&
+    !restrictedBoardUser &&
+    (isPortManagerRole || isPortSupervisorRole) &&
+    (pathname === '/kanban-board/operator' || pathname.startsWith('/kanban-board/') || pathname === '/compact');
+
+  const cardManagementSubmenu = [
+    { label: 'Blockers', modal: 'blockers' },
+    { label: 'Stickers', modal: 'stickers' },
+    { label: 'Tags', modal: 'tags' },
+    { label: 'Types', modal: 'types' },
+    { label: 'Templates', modal: 'templates' },
+  ];
 
   const getLoggedInUser = () => {
     let parsedLocalProfile = {};
@@ -144,6 +181,59 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showUserDropdown]);
+
+  // Close settings dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (settingsDropdownRef.current && !settingsDropdownRef.current.contains(event.target)) {
+        setShowSettingsSubmenu(false);
+        setShowCardManagementSubmenu(false);
+      }
+    };
+
+    if (showSettingsSubmenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSettingsSubmenu]);
+
+  const handleSettingsBusinessRulesClick = () => {
+    setShowSettingsSubmenu(false);
+    setShowCardManagementSubmenu(false);
+    setShowBusinessRulesModal(true);
+  };
+
+  const handleSettingsCardManagementRowClick = (e) => {
+    e.stopPropagation();
+    const next = !showCardManagementSubmenu;
+    setShowCardManagementSubmenu(next);
+    if (!next) {
+      setShowBlockersModal(false);
+      setShowStickersModal(false);
+      setShowTagsModal(false);
+      setShowTypesModal(false);
+    }
+  };
+
+  const handleCardManagementSubmenuClick = (item) => {
+    setShowCardManagementSubmenu(false);
+    setShowSettingsSubmenu(false);
+
+    setShowBlockersModal(false);
+    setShowStickersModal(false);
+    setShowTagsModal(false);
+    setShowTypesModal(false);
+    setShowCallTypeBuilderModal(false);
+
+    if (item.modal === 'blockers') setShowBlockersModal(true);
+    if (item.modal === 'stickers') setShowStickersModal(true);
+    if (item.modal === 'tags') setShowTagsModal(true);
+    if (item.modal === 'types') setShowTypesModal(true);
+    if (item.modal === 'templates') setShowCallTypeBuilderModal(true);
+  };
 
   const handleUserCircleClick = () => {
     setShowUserDropdown(!showUserDropdown);
@@ -353,6 +443,55 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
             <span className="notification-badge">{notificationCount > 99 ? '99+' : notificationCount}</span>
           )}
         </div>
+
+        {showKanbanSettingsIcon && (
+          <div className="settings-btn-wrapper" ref={settingsDropdownRef}>
+            <Tooltip id="settings" place="bottom" content="Settings" />
+            <button
+              type="button"
+              className={`icon-btn ${showSettingsSubmenu ? 'active' : ''}`}
+              aria-label="Settings"
+              onClick={() => setShowSettingsSubmenu((prev) => !prev)}
+              data-tooltip-id="settings"
+            >
+              <FiSettings />
+            </button>
+
+            {showSettingsSubmenu && (
+              <div className="settings-dropdown">
+                <button
+                  type="button"
+                  className="settings-dropdown-item"
+                  onClick={handleSettingsBusinessRulesClick}
+                >
+                  Business rules
+                </button>
+                <button
+                  type="button"
+                  className={`settings-dropdown-item settings-dropdown-item-with-submenu ${showCardManagementSubmenu ? 'submenu-open' : ''}`}
+                  onClick={handleSettingsCardManagementRowClick}
+                >
+                  Card management
+                </button>
+                {showCardManagementSubmenu && (
+                  <div className="settings-submenu">
+                    {cardManagementSubmenu.map((subItem, index) => (
+                      <button
+                        type="button"
+                        key={index}
+                        className="settings-submenu-item"
+                        onClick={() => handleCardManagementSubmenuClick(subItem)}
+                      >
+                        {subItem.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <Tooltip id="user-profile" place="bottom" content="User Profile" />
         <div className="user-circle-wrapper" ref={dropdownRef}>
           <div
@@ -441,6 +580,33 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
         show={showDocumentsModal}
         onClose={() => setShowDocumentsModal(false)}
       />}
+
+      {/* Settings: Business Rules Modal */}
+      {!!showBusinessRulesModal && (
+        <BusinessRulesModal show={showBusinessRulesModal} onClose={() => setShowBusinessRulesModal(false)} />
+      )}
+
+      {/* Settings: Card Management Modals */}
+      {!!showBlockersModal && (
+        <BlockersModal show={showBlockersModal} onClose={() => setShowBlockersModal(false)} />
+      )}
+      {!!showStickersModal && (
+        <StickersModal show={showStickersModal} onClose={() => setShowStickersModal(false)} />
+      )}
+      {!!showTagsModal && (
+        <TagsModal show={showTagsModal} onClose={() => setShowTagsModal(false)} />
+      )}
+      {!!showTypesModal && (
+        <TypesModal show={showTypesModal} onClose={() => setShowTypesModal(false)} />
+      )}
+      {showCallTypeBuilderModal && (
+        <Suspense fallback={null}>
+          <CallTypeBuilderModal
+            show={showCallTypeBuilderModal}
+            onClose={() => setShowCallTypeBuilderModal(false)}
+          />
+        </Suspense>
+      )}
 
     </div>
   );
