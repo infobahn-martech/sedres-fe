@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useLayoutView } from "../../../shared/context/LayoutViewContext";
 import { getBoardPageBackgroundStyle } from "../../../shared/utils/dashboardBackground";
 import Workspaces from "../../Workspaces";
@@ -32,6 +32,7 @@ import "../../../design/scss/pages/kanban-board/salesOrderPoModal.scss";
 export default function KanbanBoardPage() {
   const { boardId: boardIdParam } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const selectedBoardId = useMemo(() => {
     if (boardIdParam != null && boardIdParam !== "") return boardIdParam;
     const segments = location.pathname.split("/").filter(Boolean);
@@ -95,6 +96,21 @@ export default function KanbanBoardPage() {
     () => Object.assign({}, ...workflows.map((wf) => wf.cards)),
     [workflows]
   );
+
+  // Deep-link support: /kanban-board/:boardId?card=<id> (e.g. from Advanced
+  // Search) opens that card's form once its workflows have loaded, then
+  // strips the param so it doesn't reopen on a later navigation/back.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const cardId = params.get("card");
+    if (!cardId) return;
+    const card = cardsById[cardId];
+    if (!card) return;
+    handleSelectCard(card);
+    params.delete("card");
+    const nextSearch = params.toString();
+    navigate(`${location.pathname}${nextSearch ? `?${nextSearch}` : ""}`, { replace: true });
+  }, [location.search, location.pathname, cardsById, handleSelectCard, navigate]);
 
   useEffect(() => {
     setWorkflowFilterId(null);

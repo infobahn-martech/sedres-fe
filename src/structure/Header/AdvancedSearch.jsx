@@ -390,11 +390,12 @@ function AdvancedSearch() {
     navigate(`/kanban-board/${board.board_id}`);
   };
 
-  // No route currently supports deep-linking straight to a card, subtask or
-  // document, so these open the owning board — same as a board result.
+  // KanbanBoardPage opens a ?card=<id> deep link once that board's workflows
+  // have loaded. Subtasks/documents don't have an equivalent card-form tab
+  // to jump to yet, so those still just open the owning board.
   const handleSelectCard = (card) => {
     handleClose();
-    navigate(`/kanban-board/${card.boardId}`);
+    navigate(`/kanban-board/${card.boardId}?card=${card.id}`);
   };
 
   const handleSelectSubtask = (subtask) => {
