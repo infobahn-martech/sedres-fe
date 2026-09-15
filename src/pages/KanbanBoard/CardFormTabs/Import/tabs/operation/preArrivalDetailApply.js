@@ -740,9 +740,12 @@ export function applyPreArrivalGetDetailToForm({
       );
     });
 
-    // Anything that doesn't map to a known stage field (or is explicitly flagged)
-    // is an additional/custom time object.
-    const isAdditional = Boolean(to?.is_additional ?? to?.isAdditional) || !matched;
+    // Anything that doesn't map to a known stage field is an additional/custom
+    // time object. A match always wins over the API's `is_additional` flag —
+    // otherwise a core field that was ever mistakenly saved as "additional"
+    // (e.g. matched failing once because eventFields hadn't loaded yet) keeps
+    // coming back flagged that way forever, duplicating the field in the UI.
+    const isAdditional = !matched;
 
     if (isAdditional) {
       const label = String(toName).trim();
@@ -762,11 +765,13 @@ export function applyPreArrivalGetDetailToForm({
     appliedAnyTime = true;
   }
 
-  if (additionalTimeObjects.length) {
-    handleChange("preArrivalAdditionalTimeObjects")({
-      target: { value: additionalTimeObjects },
-    });
-  }
+  // Always sync (even to []): an earlier fetch that ran before `eventFields`
+  // had loaded can misclassify real stage fields as "additional" (nothing to
+  // match against yet). Only unconditionally overwriting here lets a later,
+  // correct fetch clear that stale/duplicated list instead of leaving it stuck.
+  handleChange("preArrivalAdditionalTimeObjects")({
+    target: { value: additionalTimeObjects },
+  });
 
   if (appliedAnyTime) {
     handleChange("preArrivalEtaAutofillDisabled")({ target: { value: true } });

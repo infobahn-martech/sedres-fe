@@ -582,11 +582,21 @@ function PreArrival({
     [callId, isViewOnly, eventFields, handleChange, applyDetailDocuments]
   );
 
+  // Keep a ref to the latest fetchPreArrivalDetail instead of listing it as an
+  // effect dependency below. It's recreated on every handleChange identity
+  // change (the parent form re-renders on every field edit), which was
+  // triggering a fresh get_prearrival_detail call each time instead of only
+  // when callId/isViewOnly/eventFields actually change.
+  const fetchPreArrivalDetailRef = useRef(fetchPreArrivalDetail);
+  useEffect(() => {
+    fetchPreArrivalDetailRef.current = fetchPreArrivalDetail;
+  }, [fetchPreArrivalDetail]);
+
   useEffect(() => {
     const ac = new AbortController();
-    fetchPreArrivalDetail(ac.signal);
+    fetchPreArrivalDetailRef.current(ac.signal);
     return () => ac.abort();
-  }, [callId, isViewOnly, eventFieldsApplyKey, fetchPreArrivalDetail]);
+  }, [callId, isViewOnly, eventFieldsApplyKey]);
 
   useEffect(() => {
     const needId = pendingCoordinateIdRef.current;
