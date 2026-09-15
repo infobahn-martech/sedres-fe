@@ -383,8 +383,16 @@ const SalesOrderList = ({
   // field on its items yet (confirmed via testing), so the mapped `status` field alone
   // doesn't survive a page reload; useDaLocalVerifiedItems (daStore.js) is the same
   // in-memory-only fallback pattern used elsewhere in DA until the backend adds the field.
-  // verifyingItemIds just tracks which item currently has a verify request in flight.
+  // verifyingItemIds just tracks which item currently has a verify request in flight (drives
+  // the checkbox's `disabled` prop). It's React state, so it only takes effect on the NEXT
+  // render — a fast double-click/double-fire on the same checkbox can land both events before
+  // that render commits, letting both past the `disabled` guard and firing two independent
+  // verify calls (confirmed live 2026-09-15: same so_item_id verified then immediately
+  // reverted). verifyingItemIdsRef is a synchronous companion Set checked/set at the very top
+  // of handleToggleVerified so the second of two near-simultaneous calls is blocked instantly,
+  // before React has a chance to re-render.
   const [verifyingItemIds, setVerifyingItemIds] = useState(new Set());
+  const verifyingItemIdsRef = useRef(new Set());
   const localVerifiedItemIds = useDaLocalVerifiedItems((s) => s.verifiedItemIds[callId]);
   const setLocalItemVerified = useDaLocalVerifiedItems((s) => s.setItemVerified);
   // On column 4 ("SO Sent for approval"), the plain "Send For SO approval" button stays hidden
@@ -1162,7 +1170,11 @@ const SalesOrderList = ({
   // which is why it looked intermittent.
   const handleToggleVerified = async (order) => {
     const orderId = order.id;
-    if (verifyingItemIds.has(orderId)) return;
+    // Synchronous guard (see verifyingItemIdsRef's declaration) — must be the very first thing
+    // checked/set, before any await, so a second call landing in the same tick as the first is
+    // rejected immediately rather than racing past a not-yet-rendered `disabled` checkbox.
+    if (verifyingItemIdsRef.current.has(orderId)) return;
+    verifyingItemIdsRef.current.add(orderId);
 
     // Per request 2026-09-10: each line item's tick is its own explicit client action, not a
     // reflection of the DA record's overall advancement. localVerifiedItemIds (session-only,
@@ -1205,6 +1217,7 @@ const SalesOrderList = ({
         "Failed to update the item's verification status.";
       useAlertReducer.getState().error(msg);
     } finally {
+      verifyingItemIdsRef.current.delete(orderId);
       setVerifyingItemIds((prev) => {
         const next = new Set(prev);
         next.delete(orderId);
