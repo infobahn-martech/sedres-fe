@@ -28,9 +28,11 @@ const sendActionEmail = (formData) =>
   Gateway.post('/da/da_send_action_email', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-/** @returns {Promise<{ data: { status: string, data: { recipient: string, stage_document_id?: string|number } } }>}
+/** @returns {Promise<{ data: { status: string, data: { recipient: string, stage_document_id?: string|number, document_url?: string } } }>}
  * stage_document_id (when present) is a document the backend already holds for this stage —
- * confirmed via a live response 2026-09-15; feed it back into sendActionEmail's FormData. */
+ * confirmed via a live response 2026-09-15; feed it back into sendActionEmail's FormData.
+ * document_url (added to the response 2026-09-15) is that same document's file URL — lets the
+ * pre-loaded attachment actually be opened/previewed instead of only shown by name. */
 const getActionEmailDraft = (callId) => Gateway.get(`/da/da_action_email_draft/${callId}`);
 /** @param {FormData} formData - call_id + invoice file(s), multipart/form-data */
 const uploadInvoice = (formData) =>

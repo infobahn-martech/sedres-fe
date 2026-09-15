@@ -656,9 +656,11 @@ const SalesOrderList = ({
   // this stage — confirmed via a live response carrying it (2026-09-15) even though it isn't
   // one of the SO line items' own Supporting Documents. It used to be fetched and silently
   // dropped, so staff saw "Attachments (0)" even though the backend had a real document for
-  // this stage; it's now surfaced as its own pre-loaded attachment entry (no filename/url comes
-  // back from this endpoint, so it's labelled generically) and threaded through to
-  // handleCreateSoApprovalEmail below so it's actually sent, not just shown.
+  // this stage; it's now surfaced as its own pre-loaded attachment entry and threaded through
+  // to handleCreateSoApprovalEmail below so it's actually sent, not just shown.
+  // document_url (added to the response 2026-09-15) is that same document's file URL — passed
+  // through as this entry's `url` so SoApprovalEmailModal's handleOpenAttachment can actually
+  // open/preview it instead of the name-only placeholder from before.
   const handleOpenSoApprovalEmailModal = async (actionLabel) => {
     setModalActionLabel(actionLabel || daActionButtonLabel);
 
@@ -680,8 +682,13 @@ const SalesOrderList = ({
       const { data } = await daService.getActionEmailDraft(callId);
       setDraftRecipientEmail(data?.data?.recipient || "");
       const stageDocumentId = data?.data?.stage_document_id ?? null;
+      const stageDocumentUrl = data?.data?.document_url || null;
       if (stageDocumentId != null) {
-        docs.push({ stage_document_id: stageDocumentId, name: `Attached document #${stageDocumentId}` });
+        docs.push({
+          stage_document_id: stageDocumentId,
+          name: stageDocumentUrl ? stageDocumentUrl.split("/").pop() : `Attached document #${stageDocumentId}`,
+          url: stageDocumentUrl,
+        });
       }
     } catch {
       setDraftRecipientEmail("");
