@@ -48,7 +48,11 @@ const resolveCallId = (formValues, card) =>
   card?.callId ||
   null;
 
-function DocumentLibrary({ card, formValues }) {
+// onAttachDocument is only passed when this is opened as an attachment picker (see
+// SoApprovalEmailModal's "From Document Library" option, via DocumentLibraryPickerModal) —
+// the real Document Library tab never passes it, so DocumentPreview's "Attach" button only
+// shows up in picker mode.
+function DocumentLibrary({ card, formValues, onAttachDocument }) {
   const cardColor = card?.color || "#2A00FF";
   const callId = resolveCallId(formValues, card);
 
@@ -231,7 +235,7 @@ function DocumentLibrary({ card, formValues }) {
             </section>
 
             <aside className="document-library__panel document-library__panel--preview">
-              <DocumentPreview document={selectedDocument} />
+              <DocumentPreview document={selectedDocument} onAttach={onAttachDocument} />
             </aside>
           </div>
         )}
@@ -244,6 +248,7 @@ DocumentLibrary.propTypes = {
   card: PropTypes.object,
   formValues: PropTypes.object,
   handleChange: PropTypes.func,
+  onAttachDocument: PropTypes.func,
 };
 
 export default DocumentLibrary;

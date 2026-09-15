@@ -152,7 +152,22 @@ PlaceholderPreview.propTypes = {
   type: PropTypes.string.isRequired,
 };
 
-const DocumentPreview = ({ document }) => {
+const AttachIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+    <path
+      d="M10.5 5.5L6.5 9.5C5.67157 10.3284 5.67157 11.6716 6.5 12.5C7.32843 13.3284 8.67157 13.3284 9.5 12.5L13 9C14.1046 7.89543 14.1046 6.10457 13 5C11.8954 3.89543 10.1046 3.89543 9 5L5.5 8.5"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// onAttach is only passed when DocumentLibrary is opened as an attachment picker (see
+// SoApprovalEmailModal's "From Document Library" option) — plain browsing/preview (the
+// Document Library tab) never gets it, so the button only shows up in picker mode.
+const DocumentPreview = ({ document, onAttach }) => {
   if (!document) {
     return (
       <div className="doc-lib-preview doc-lib-preview--empty">
@@ -240,6 +255,16 @@ const DocumentPreview = ({ document }) => {
             <DownloadIcon />
             <span>Download</span>
           </button>
+          {onAttach && (
+            <button
+              type="button"
+              className="doc-lib-preview-action-btn doc-lib-preview-action-btn--primary"
+              onClick={() => onAttach(document)}
+            >
+              <AttachIcon />
+              <span>Attach</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -284,6 +309,7 @@ DocumentPreview.propTypes = {
     uploadDate: PropTypes.string,
     previewUrl: PropTypes.string,
   }),
+  onAttach: PropTypes.func,
 };
 
 export default DocumentPreview;
