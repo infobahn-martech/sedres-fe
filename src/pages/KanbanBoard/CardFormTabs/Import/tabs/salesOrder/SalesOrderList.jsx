@@ -91,6 +91,20 @@ const EMPTY_NEW_ITEM_FORM = {
 
 const isThirdParty = (value) => value === 1 || value === "1" || value === true;
 
+// The two item_status values da/da_verify_sales_line_item flips a Sales Order line item
+// between: ticking the Action-column checkbox must end on "Verified", un-ticking on
+// "Completed". Compared through normalizeItemStatus so casing/padding from the API can't make
+// a correct response read as a mismatch.
+const VERIFIED_ITEM_STATUS = "Verified";
+const COMPLETED_ITEM_STATUS = "Completed";
+const normalizeItemStatus = (value) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  if (raw.toLowerCase() === VERIFIED_ITEM_STATUS.toLowerCase()) return VERIFIED_ITEM_STATUS;
+  if (raw.toLowerCase() === COMPLETED_ITEM_STATUS.toLowerCase()) return COMPLETED_ITEM_STATUS;
+  return raw;
+};
+
 // Vendor List Modal
 const VendorListModal = ({ show, onClose, onSelect, vendors = [] }) => {
   const [search, setSearch] = useState("");
@@ -379,10 +393,9 @@ const SalesOrderList = ({
   const [selectedPoItems, setSelectedPoItems] = useState(new Set());
   const [selectedWoItems, setSelectedWoItems] = useState(new Set());
   // Per-item verification (DA-only column) — persisted via da/da_verify_sales_line_item.
-  // The list reload endpoint (sales_order/get_so_items_by_call) has no status/item_status
-  // field on its items yet (confirmed via testing), so the mapped `status` field alone
-  // doesn't survive a page reload; useDaLocalVerifiedItems (daStore.js) is the same
-  // in-memory-only fallback pattern used elsewhere in DA until the backend adds the field.
+  // useDaLocalVerifiedItems (daStore.js) holds the tick per call + so_item_id; it is seeded on
+  // load from each item's own item_status (see apiVerifiedItemIds below) so the ticks survive a
+  // page reload, and is the same in-memory-only store pattern used elsewhere in DA.
   // verifyingItemIds just tracks which item currently has a verify request in flight (drives
   // the checkbox's `disabled` prop). It's React state, so it only takes effect on the NEXT
   // render — a fast double-click/double-fire on the same checkbox can land both events before
@@ -393,17 +406,54 @@ const SalesOrderList = ({
   // before React has a chance to re-render.
   const [verifyingItemIds, setVerifyingItemIds] = useState(new Set());
   const verifyingItemIdsRef = useRef(new Set());
+  // Latest known line-item list, kept so a verify toggle merges its new status into the result
+  // of a toggle that is still in flight on ANOTHER row. Building `updatedList` from the value
+  // this render closed over instead would drop that other row's new status, and the status
+  // sync below would then un-tick a row whose own call had actually succeeded.
+  const salesOrderListRef = useRef([]);
   const localVerifiedItemIds = useDaLocalVerifiedItems((s) => s.verifiedItemIds[callId]);
   const setLocalItemVerified = useDaLocalVerifiedItems((s) => s.setItemVerified);
+  // Whether a row reads as verified. Read from the session store only (per request
+  // 2026-09-10 — each tick is the client's own explicit action), never from the row's
+  // `status` field directly; the store is instead kept in sync with that status below, so the
+  // checkbox has a single source of truth in both the toggle and the load path.
+  const isItemVerified = (item) => localVerifiedItemIds?.has(item?.id) === true;
+  // Keeps the tick in step with each item's own item_status, in BOTH directions — "Verified"
+  // ticks the row, any other real status un-ticks it. That is what keeps a click to ONE
+  // da/da_verify_sales_line_item request: the endpoint only flips the status, so a checkbox
+  // that disagreed with the backend would flip the item the wrong way ("Completed" on a tick)
+  // and need a second, corrective call. Syncing only one way left exactly that gap — a row
+  // un-ticked here but still "Verified" in the list data (or the reverse) stayed out of step.
+  // Items whose status the backend leaves blank are skipped, so they keep this session's tick.
+  const apiItemStatusFlags = useMemo(
+    () =>
+      (Array.isArray(salesOrderList) ? salesOrderList : [])
+        .map((item) => [item?.id, normalizeItemStatus(item?.status)])
+        .filter(([itemId, status]) => itemId != null && status !== "")
+        .map(([itemId, status]) => [itemId, status === VERIFIED_ITEM_STATUS]),
+    [salesOrderList]
+  );
+  useEffect(() => {
+    salesOrderListRef.current = Array.isArray(salesOrderList) ? salesOrderList : [];
+  }, [salesOrderList]);
+  useEffect(() => {
+    if (!callId) return;
+    apiItemStatusFlags.forEach(([itemId, isVerified]) => {
+      // An item with a request in flight is mid-flip; its row status is whatever the previous
+      // call left behind, so syncing from it here would fight the click in progress.
+      if (verifyingItemIdsRef.current.has(itemId)) return;
+      if (useDaLocalVerifiedItems.getState().isItemVerified(callId, itemId) !== isVerified) {
+        setLocalItemVerified(callId, itemId, isVerified);
+      }
+    });
+  }, [apiItemStatusFlags, callId, setLocalItemVerified, verifyingItemIds]);
   // On column 4 ("SO Sent for approval"), the plain "Send For SO approval" button stays hidden
   // until every current line item has been verified. The non-empty check prevents an empty
   // sales-order list from passing Array.prototype.every() vacuously. Only the initial send
   // state is gated; the Awaiting-decision, approved, and post-reject states remain available
   // once the SO-approval cycle has started.
   const hasVerifiedAllItems =
-    salesOrderList.length > 0 &&
-    localVerifiedItemIds instanceof Set &&
-    salesOrderList.every((item) => localVerifiedItemIds.has(item.id));
+    salesOrderList.length > 0 && salesOrderList.every((item) => isItemVerified(item));
   const [showWorkOrderModal, setShowWorkOrderModal] = useState(false);
   const [isGeneratingWorkOrder, setIsGeneratingWorkOrder] = useState(false);
   const bulkActionBarRef = useRef(null);
@@ -1138,18 +1188,15 @@ const SalesOrderList = ({
   };
 
   // Verifying a line item is the trigger that moves the whole DA/SO record into the
-  // approval flow — ticking the checkbox calls da/da_verify_sales_line_item. Confirmed with
-  // backend 2026-09-15: the endpoint does NOT set a dedicated "Verified"/"Completed" flag
-  // directly — it reads the item's current status and advances/changes it one step per call,
-  // so a single click can land on an intermediate status instead of the intended one if the
-  // item wasn't already one step away. Reproduced live: calls with only 2 line items always
-  // landed on "Verified" in one click; calls with 3+ items left the extra (earlier-stage)
-  // items on "Completed" after one click. So the call is repeated (capped at
-  // MAX_VERIFY_ATTEMPTS) until item_status actually matches the intended target — "Verified"
-  // for a tick, "Completed" for an untick — so a single checkbox click always reaches the
-  // intended state regardless of how many backend steps that takes.
-  // A "success" status alone means the individual call succeeded, so isNowVerified is derived
-  // by flipping the state we already knew locally before the call, not from item_status.
+  // approval flow — ticking the checkbox calls da/da_verify_sales_line_item, which FLIPS the
+  // item's status server-side (Completed <-> Verified) and returns the resulting item_status.
+  // One click therefore sends exactly ONE request and nothing else: tick →
+  // { status: "success", so_item_id, item_status: "Verified" }, untick → the same with
+  // "Completed". No retry and no corrective second call — the checkbox is kept in step with
+  // the backend by apiItemStatusFlags (each item's own item_status, synced both ways), so the
+  // flip this one call performs is already the intended one. If a row is somehow still out of
+  // step, the checkbox follows the returned item_status and a message asks for another click
+  // rather than firing that second call silently.
   // On success this also advances the real DA status to its next stage (e.g. Ops completed →
   // Sent for SO Approval), same api/da/update_status call the header action button makes, so
   // the header button's label updates to reflect it. Un-ticking it again reverts one stage
@@ -1157,17 +1204,10 @@ const SalesOrderList = ({
   // Status Timeline uses for its "done" step revert). No modal/email popup here either way —
   // that's still only triggered by the header button's own click (see isSoApprovalDaStatus).
   //
-  // localVerifiedItemIds is the ONLY source of truth for the verified flag — order.status must
-  // never be written to the literal "Verified" (a past version did). Bug that caused: when a
-  // real item_status isn't returned by the backend for a given item (body.item_status falsy),
-  // the old code fell back to `order.status`, which — after an earlier verify toggle had
-  // already overwritten it to "Verified" — fed that same literal back in as if it were the
-  // item's real underlying status. Un-ticking then re-wrote order.status to "Verified" instead
-  // of clearing it, so the checkbox (checked against `order.status === "Verified" ||
-  // localVerifiedItemIds.has(id)`) stayed visually ticked even though localVerifiedItemIds had
-  // correctly flipped false and the backend call had succeeded. Only reproduced for items whose
-  // real status the backend leaves blank; items with a genuine non-empty status un-ticked fine,
-  // which is why it looked intermittent.
+  // order.status is written straight from the call's item_status here but is NOT what the
+  // checkbox reads (see isItemVerified). Never fall back to the row's previous `status` when
+  // item_status comes back blank — an earlier version did, which fed a locally-written
+  // "Verified" back in as if it were the item's real underlying status.
   const handleToggleVerified = async (order) => {
     const orderId = order.id;
     // Synchronous guard (see verifyingItemIdsRef's declaration) — must be the very first thing
@@ -1177,38 +1217,54 @@ const SalesOrderList = ({
     verifyingItemIdsRef.current.add(orderId);
 
     // Per request 2026-09-10: each line item's tick is its own explicit client action, not a
-    // reflection of the DA record's overall advancement. localVerifiedItemIds (session-only,
-    // per order id) is the only source of truth here, matching the checkbox's own `checked`
-    // prop below.
-    const wasVerified = localVerifiedItemIds?.has(orderId) === true;
-
-    const isNowVerified = !wasVerified;
-    // Tick chases "Verified"; untick chases "Completed" — same one-step-per-call backend
-    // behavior applies in both directions (confirmed with backend), so un-ticking can also
-    // land on an intermediate status after a single call.
-    const targetStatus = isNowVerified ? "Verified" : "Completed";
+    // reflection of the DA record's overall advancement — localVerifiedItemIds (session-only,
+    // per order id) backs the checkbox's own `checked` prop below and is written from the
+    // call's response.
+    // Read the current tick straight from the store rather than the value this render closed
+    // over: clicking again before React has re-rendered with the previous click's result would
+    // otherwise compute the intent from a stale tick, aim at the status the item is already on,
+    // and flip it the wrong way (which is what surfaced the "click again" message when ticking
+    // and un-ticking quickly).
+    const isNowVerified = !useDaLocalVerifiedItems.getState().isItemVerified(callId, orderId);
+    // A tick must end on "Verified", an untick on "Completed" — the flip is symmetric.
+    const targetStatus = isNowVerified ? VERIFIED_ITEM_STATUS : COMPLETED_ITEM_STATUS;
     setVerifyingItemIds((prev) => new Set(prev).add(orderId));
     try {
-      let body = null;
-      // MAX_VERIFY_ATTEMPTS is a safety cap so a real backend/data problem (item stuck on some
-      // other status forever) surfaces as an error instead of hanging the checkbox in a loop.
-      const MAX_VERIFY_ATTEMPTS = 5;
-      for (let attempt = 0; attempt < MAX_VERIFY_ATTEMPTS; attempt++) {
-        const response = await daService.verifySalesLineItem({ so_item_id: orderId });
-        body = response?.data;
-        if (body?.status !== "success") {
-          throw new Error(body?.message || "Failed to update the item's verification status.");
-        }
-        if (body.item_status === targetStatus) break;
+      // Exactly ONE request per click — no retry, no corrective second call. The checkbox and
+      // the backend are kept in step by the apiVerifiedItemIds seeding above, so the flip this
+      // call performs is already the one the click intends.
+      const response = await daService.verifySalesLineItem({ so_item_id: orderId });
+      const body = response?.data;
+      if (body?.status !== "success") {
+        throw new Error(body?.message || "Failed to update the item's verification status.");
       }
-      if (body?.item_status !== targetStatus) {
-        throw new Error(`Item did not reach ${targetStatus} status after multiple attempts — please check with backend.`);
-      }
-      const updatedList = salesOrderList.map((item) =>
-        item.id === orderId ? { ...item, status: body.item_status || item.status || "" } : item
+      // Written unconditionally (never falling back to the row's previous `status`) so a blank
+      // item_status can't leave a stale "Verified" behind on an untick.
+      const nextStatus = normalizeItemStatus(body?.item_status);
+      const updatedList = salesOrderListRef.current.map((item) =>
+        item.id === orderId ? { ...item, status: body?.item_status || "" } : item
       );
+      // Recorded before the parent re-renders so a toggle on another row that lands in the
+      // meantime merges into this result instead of overwriting it.
+      salesOrderListRef.current = updatedList;
       handleChange("salesOrderList")({ target: { value: updatedList } });
-      setLocalItemVerified(callId, orderId, isNowVerified);
+      // A blank item_status says nothing about where the item landed — fall back to what the
+      // click intended rather than silently dropping the tick.
+      setLocalItemVerified(
+        callId,
+        orderId,
+        nextStatus ? nextStatus === VERIFIED_ITEM_STATUS : isNowVerified
+      );
+      if (nextStatus && nextStatus !== targetStatus) {
+        // The row and the backend were out of step, so this single flip landed on the opposite
+        // status. The checkbox follows the backend rather than the click; say why instead of
+        // leaving it looking like the click did nothing, and let the next click do the flip.
+        useAlertReducer
+          .getState()
+          .error(
+            `Item No. ${order.itemNo || orderId} was "${body?.item_status}" on the server — click again to set it to "${targetStatus}".`
+          );
+      }
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -2085,7 +2141,7 @@ const SalesOrderList = ({
             <input
               type="checkbox"
               className="sales-order-verify-checkbox"
-              checked={localVerifiedItemIds?.has(order.id) === true}
+              checked={isItemVerified(order)}
               onChange={() => handleToggleVerified(order)}
               disabled={verifyingItemIds.has(order.id)}
               aria-label="Verify line item"

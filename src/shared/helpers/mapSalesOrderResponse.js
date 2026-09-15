@@ -45,12 +45,17 @@ export function mapSalesOrderResponse(apiData) {
     return /^\d{4}-\d{2}-\d{2}$/.test(head) ? head : "";
   };
 
+  /** An item's own status. The API has used both spellings for it — `item_status` is what
+   *  da/da_verify_sales_line_item and da/da_delete_sales_line_item return, `status` is what
+   *  the list has been read from here — so accept either rather than silently mapping "". */
+  const itemStatusOf = (item) => String(item?.item_status ?? item?.status ?? "").trim();
+
   // da/da_delete_sales_line_item soft-deletes on the backend (item_status → "Cancelled")
   // rather than removing the row from this endpoint's response — confirmed via testing that
   // this endpoint reliably sends a status per item, so filtering it out here is enough on its
   // own (no client-side fallback needed for deleted items).
   const items = Array.isArray(apiData.items)
-    ? apiData.items.filter((item) => String(item?.status || "").trim().toLowerCase() !== "cancelled")
+    ? apiData.items.filter((item) => itemStatusOf(item).toLowerCase() !== "cancelled")
     : [];
 
   const taxCodeFromApi = (item) => {
@@ -107,7 +112,7 @@ export function mapSalesOrderResponse(apiData) {
         null;
       return raw != null ? String(raw) : null;
     })(),
-    status: item.status || "",
+    status: itemStatusOf(item),
     documents: Array.isArray(item.documents) ? item.documents.map(mapDocument) : [],
   };
   });
