@@ -1130,11 +1130,17 @@ const SalesOrderList = ({
   };
 
   // Verifying a line item is the trigger that moves the whole DA/SO record into the
-  // approval flow — ticking the checkbox calls da/da_verify_sales_line_item. Confirmed via
-  // testing that the endpoint does NOT toggle/return "Verified" in item_status — it just
-  // echoes the item's normal underlying status (e.g. "Completed") and doesn't echo
-  // so_item_id either, so the verified/unverified state can't be read from the response body.
-  // A "success" status alone means the backend toggle succeeded, so isNowVerified is derived
+  // approval flow — ticking the checkbox calls da/da_verify_sales_line_item. Confirmed with
+  // backend 2026-09-15: the endpoint does NOT set a dedicated "Verified" flag directly — it
+  // reads the item's current status and advances/changes it one step per call, so a single
+  // tick can land on an intermediate status (e.g. "Completed") instead of "Verified" if the
+  // item wasn't already at the step right before "Verified". Reproduced live: calls with only
+  // 2 line items always landed on "Verified" in one click; calls with 3+ items left the extra
+  // (earlier-stage) items on "Completed" after one click. So on tick, the call is repeated
+  // (capped at MAX_VERIFY_ATTEMPTS) until item_status actually comes back "Verified" — a
+  // single checkbox click should always fully verify the item regardless of how many backend
+  // steps that takes. Un-ticking only needs one call (there's no further state to reach).
+  // A "success" status alone means the individual call succeeded, so isNowVerified is derived
   // by flipping the state we already knew locally before the call, not from item_status.
   // On success this also advances the real DA status to its next stage (e.g. Ops completed →
   // Sent for SO Approval), same api/da/update_status call the header action button makes, so
@@ -1164,14 +1170,27 @@ const SalesOrderList = ({
     // prop below.
     const wasVerified = localVerifiedItemIds?.has(orderId) === true;
 
+    const isNowVerified = !wasVerified;
     setVerifyingItemIds((prev) => new Set(prev).add(orderId));
     try {
-      const response = await daService.verifySalesLineItem({ so_item_id: orderId });
-      const body = response?.data;
-      if (body?.status !== "success") {
-        throw new Error(body?.message || "Failed to update the item's verification status.");
+      let body = null;
+      // Only ticking (not un-ticking) needs to chase the item all the way to "Verified" —
+      // see the comment above. MAX_VERIFY_ATTEMPTS is a safety cap so a real backend/data
+      // problem (item stuck on some other status forever) surfaces as an error instead of
+      // hanging the checkbox in a loop.
+      const MAX_VERIFY_ATTEMPTS = 5;
+      const attempts = isNowVerified ? MAX_VERIFY_ATTEMPTS : 1;
+      for (let attempt = 0; attempt < attempts; attempt++) {
+        const response = await daService.verifySalesLineItem({ so_item_id: orderId });
+        body = response?.data;
+        if (body?.status !== "success") {
+          throw new Error(body?.message || "Failed to update the item's verification status.");
+        }
+        if (!isNowVerified || body.item_status === "Verified") break;
       }
-      const isNowVerified = !wasVerified;
+      if (isNowVerified && body?.item_status !== "Verified") {
+        throw new Error("Item did not reach Verified status after multiple attempts — please check with backend.");
+      }
       const updatedList = salesOrderList.map((item) =>
         item.id === orderId ? { ...item, status: body.item_status || item.status || "" } : item
       );
