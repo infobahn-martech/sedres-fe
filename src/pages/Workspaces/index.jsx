@@ -179,23 +179,6 @@ function Workspaces() {
     return [...known, ...appended].map((id) => byId.get(id)).filter(Boolean);
   }, [workspacesData, workspaceOrderIds]);
 
-  // Same local, session-only reorder approach as workspaces, but per-board
-  // and keyed by workspace id (no backend endpoint to persist board order
-  // either).
-  const [boardOrderByWorkspace, setBoardOrderByWorkspace] = useState({});
-
-  const getOrderedBoards = (workspace) => {
-    const boards = workspace.boards ?? [];
-    const orderIds = boardOrderByWorkspace[workspace.id];
-    if (!orderIds || orderIds.length === 0) return boards;
-    const byId = new Map(boards.map((b) => [b.id, b]));
-    const currentIdSet = new Set(byId.keys());
-    const known = orderIds.filter((id) => currentIdSet.has(id));
-    const knownSet = new Set(known);
-    const appended = boards.map((b) => b.id).filter((id) => !knownSet.has(id));
-    return [...known, ...appended].map((id) => byId.get(id)).filter(Boolean);
-  };
-
   const listLoading = isDashboardView ? dashboardsLoading : workspacesLoading;
 
   useEffect(() => {
@@ -324,29 +307,6 @@ function Workspaces() {
     setWorkspaceOrderIds(
       effectiveOrder.map((id) => (filteredIdSet.has(id) ? newFilteredOrder[cursor++] : id))
     );
-  };
-
-  // Board draggables live inside a per-workspace Droppable with
-  // droppableId `boards-${workspaceId}`, so the source tells us which
-  // workspace's board order to update.
-  const handleBoardDragEnd = (result) => {
-    const { source, destination } = result;
-    if (!destination || source.index === destination.index) return;
-    const workspaceId = source.droppableId.replace('boards-', '');
-    const workspace = orderedWorkspacesData.find((w) => String(w.id) === workspaceId);
-    if (!workspace) return;
-    const nextOrder = getOrderedBoards(workspace).map((b) => b.id);
-    const [moved] = nextOrder.splice(source.index, 1);
-    nextOrder.splice(destination.index, 0, moved);
-    setBoardOrderByWorkspace((prev) => ({ ...prev, [workspace.id]: nextOrder }));
-  };
-
-  const handleDragEnd = (result) => {
-    if (result.type === 'board') {
-      handleBoardDragEnd(result);
-    } else {
-      handleWorkspaceDragEnd(result);
-    }
   };
 
   const handleAddWorkspace = () => {
@@ -721,7 +681,7 @@ function Workspaces() {
           )}
         </div>
       ) : (
-        <DragDropContext onDragEnd={handleDragEnd}>
+        <DragDropContext onDragEnd={handleWorkspaceDragEnd}>
           <Droppable droppableId="workspaces-list" type="workspace">
             {(workspacesDroppableProvided) => (
               <div
@@ -977,22 +937,13 @@ function Workspaces() {
             </div>
 
             {selectedWorkspace === workspace.id && workspace.boards?.length > 0 && (
-              <Droppable droppableId={`boards-${workspace.id}`} type="board">
-                {(boardsDroppableProvided) => (
-                <div
-                  className="workspace-boards"
-                  ref={boardsDroppableProvided.innerRef}
-                  {...boardsDroppableProvided.droppableProps}
-                >
-                {getOrderedBoards(workspace).map((board, boardIndex) => {
+                <div className="workspace-boards">
+                {workspace.boards.map((board) => {
                   const boardMenuBackground = normalizeDashboardBackground(board.background);
                   return (
-                  <Draggable key={board.id} draggableId={`board-${board.id}`} index={boardIndex}>
-                    {(boardDraggableProvided, boardDraggableSnapshot) => (
                   <div
-                    ref={boardDraggableProvided.innerRef}
-                    {...boardDraggableProvided.draggableProps}
-                    className={`board-card ${canManageBoardMenu && openMenuId === board.id ? 'menu-open' : ''} ${boardDraggableSnapshot.isDragging ? 'dragging' : ''}`}
+                    key={board.id}
+                    className={`board-card ${canManageBoardMenu && openMenuId === board.id ? 'menu-open' : ''}`}
                     onClick={() => {
                       setIsNavigating(true);
                       navigate(`/kanban-board/${board.id}`);
@@ -1000,17 +951,6 @@ function Workspaces() {
                     style={{ cursor: 'pointer' }}
                   >
                     <div className="board-card-header">
-                      <button
-                        type="button"
-                        className="board-move-btn"
-                        aria-label="Drag to reorder board"
-                        onClick={(e) => e.stopPropagation()}
-                        {...boardDraggableProvided.dragHandleProps}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M7 5L10 2L13 5M13 15L10 18L7 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </button>
                       {canManageBoardMenu ? (
                         <div className="board-menu-wrapper" ref={openMenuId === board.id ? menuRef : null}>
                           <button
@@ -1280,14 +1220,9 @@ function Workspaces() {
                       </div>
                     </div>
                   </div>
-                    )}
-                  </Draggable>
                   );
                 })}
-                {boardsDroppableProvided.placeholder}
                 </div>
-                )}
-              </Droppable>
             )}
           </div>
                 )}
