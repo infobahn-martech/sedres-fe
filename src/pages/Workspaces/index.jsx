@@ -684,7 +684,11 @@ function Workspaces() {
         <DragDropContext onDragEnd={handleWorkspaceDragEnd}>
           <Droppable droppableId="workspaces-list">
             {(workspacesDroppableProvided) => (
-              <div ref={workspacesDroppableProvided.innerRef} {...workspacesDroppableProvided.droppableProps}>
+              <div
+                className="workspaces-list-droppable"
+                ref={workspacesDroppableProvided.innerRef}
+                {...workspacesDroppableProvided.droppableProps}
+              >
                 {filteredWorkspaces.map((workspace, workspaceIndex) => {
           const hasOpenBoardMenu = workspace.boards?.some((b) => b.id === openMenuId);
           return (

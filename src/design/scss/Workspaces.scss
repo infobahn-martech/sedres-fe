@@ -312,6 +312,19 @@
   }
 }
 
+// Wraps the draggable workspace cards inside .workspaces-list — needs the
+// same flex + gap as its parent since it sits between .workspaces-list and
+// the .workspace-card elements, otherwise the cards render flush together.
+.workspaces-list-droppable {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  @media ($sm-767) {
+    gap: 12px;
+  }
+}
+
 // Empty State
 .workspaces-empty-state {
   display: flex;
