@@ -73,6 +73,9 @@ GroupCheckbox.propTypes = {
 
 const TAX_CODE_OPTIONS = ["15%", "5%", "0%"];
 const TYPE_OF_PO_OPTIONS = ["Inhouse", "Outhouse PO", "Multiple PO"];
+// { value, label } shapes for the Add Item form's PremiumSelect fields
+const TAX_CODE_SELECT_OPTIONS = TAX_CODE_OPTIONS.map((t) => ({ value: t, label: t }));
+const TYPE_OF_PO_SELECT_OPTIONS = TYPE_OF_PO_OPTIONS.map((t) => ({ value: t, label: t }));
 
 const EMPTY_NEW_ITEM_FORM = {
   callFile: "",
@@ -487,6 +490,18 @@ const SalesOrderList = ({
     () => vendors.map((v) => ({ value: v.code, label: `${v.code} — ${v.name}` })),
     [vendors]
   );
+
+  // get_item_codes can return the same item_code under several tariff rows; show each code once
+  // (first occurrence wins, same row handleItemCodeSelect resolves via find).
+  const itemCodeSelectOptions = useMemo(() => {
+    const seen = new Set();
+    return itemCodeOptions.reduce((acc, o) => {
+      if (!o?.item_code || seen.has(o.item_code)) return acc;
+      seen.add(o.item_code);
+      acc.push({ value: o.item_code, label: o.item_code });
+      return acc;
+    }, []);
+  }, [itemCodeOptions]);
 
   // Vendor list — billingentity/getvendors, [{ customer_code, customer_name }]
   useEffect(() => {
@@ -2342,24 +2357,23 @@ const SalesOrderList = ({
                     <div className="sales-order-add-form-grid">
                       <div className="sales-order-add-form-field">
                         <label>Item Code <span style={{ color: "#e53935" }}>*</span></label>
-                        <select
+                        <PremiumSelect
                           value={newItemForm.itemNo}
                           onChange={(e) => handleItemCodeSelect(e.target.value)}
-                          className="sales-order-add-form-input"
-                          disabled={!portId || isLoadingItemCodes || isLoadingItemDetails}
-                          required
-                        >
-                          <option value="">
-                            {!portId
+                          options={itemCodeSelectOptions}
+                          placeholder={
+                            !portId
                               ? "Select Port first..."
                               : isLoadingItemCodes
                               ? "Loading item codes..."
-                              : "Select Item Code..."}
-                          </option>
-                          {itemCodeOptions.map((o) => (
-                            <option key={o.tariff_id} value={o.item_code}>{o.item_code}</option>
-                          ))}
-                        </select>
+                              : "Select Item Code..."
+                          }
+                          searchPlaceholder="Search item code..."
+                          disabled={!portId || isLoadingItemCodes || isLoadingItemDetails}
+                          hasError={Boolean(itemNoError)}
+                          className="so-add-form-select"
+                          menuClassName="so-add-form-select-menu"
+                        />
                         {itemNoError && (
                           <span className="sales-order-add-form-error">{itemNoError}</span>
                         )}
@@ -2414,28 +2428,25 @@ const SalesOrderList = ({
                       </div>
                       <div className="sales-order-add-form-field">
                         <label>Tax Code</label>
-                        <select
+                        <PremiumSelect
                           value={newItemForm.taxCode}
                           onChange={(e) => handleFormChange("taxCode", e.target.value)}
-                          className="sales-order-add-form-input"
-                        >
-                          {TAX_CODE_OPTIONS.map((t) => (
-                            <option key={t} value={t}>{t}</option>
-                          ))}
-                        </select>
+                          options={TAX_CODE_SELECT_OPTIONS}
+                          placeholder="Select tax code..."
+                          className="so-add-form-select"
+                          menuClassName="so-add-form-select-menu"
+                        />
                       </div>
                       <div className="sales-order-add-form-field">
                         <label>Type of PO</label>
-                        <select
+                        <PremiumSelect
                           value={newItemForm.typeOfPo}
                           onChange={(e) => handleFormChange("typeOfPo", e.target.value)}
-                          className="sales-order-add-form-input"
-                        >
-                          <option value="">— Select —</option>
-                          {TYPE_OF_PO_OPTIONS.map((t) => (
-                            <option key={t} value={t}>{t}</option>
-                          ))}
-                        </select>
+                          options={TYPE_OF_PO_SELECT_OPTIONS}
+                          placeholder="— Select —"
+                          className="so-add-form-select"
+                          menuClassName="so-add-form-select-menu"
+                        />
                       </div>
                       <div className="sales-order-add-form-field">
                         <label>Supporting Documents</label>
@@ -2459,6 +2470,8 @@ const SalesOrderList = ({
                           options={vendorSelectOptions}
                           placeholder="— Select vendor —"
                           searchPlaceholder="Search by code or name..."
+                          className="so-add-form-select"
+                          menuClassName="so-add-form-select-menu"
                         />
                       </div>
                     </div>
