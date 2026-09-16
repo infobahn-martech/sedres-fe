@@ -40,18 +40,25 @@ function highlightMatch(text, query) {
 
 // Fetches search results per-board (there's no endpoint that searches across
 // all boards at once) for whichever category is enabled, scoped to the
-// selected Board/Owner/Status filters, and caches them by board id + filter
-// combination so re-typing or flipping filters back and forth doesn't
-// re-fetch data already loaded. Returns the raw cache (so callers can depend
-// on it, e.g. in a useMemo) plus a getter that hides the filter key.
-function useBoardSearchCache({ enabled, hasQuery, isOpen, workspaces, fetchBoard, boardId, ownerId, status }) {
+// selected Board/Owner/Status filters plus the current query text, and
+// caches them by board id + filter + query combination so flipping filters
+// back and forth doesn't re-fetch data already loaded for that exact query.
+// The query itself is debounced (not sent to the API, which has no text
+// param) so every distinct search term still re-fetches fresh data, without
+// firing a request per keystroke. Returns the raw cache (so callers can
+// depend on it, e.g. in a useMemo) plus a getter that hides the filter key.
+const SEARCH_DEBOUNCE_MS = 300;
+
+function useBoardSearchCache({ enabled, query, isOpen, workspaces, fetchBoard, boardId, ownerId, status }) {
   const [cache, setCache] = useState({});
   const [loading, setLoading] = useState(false);
   const inFlight = useRef(new Set());
-  const filterSuffix = `${ownerId || ''}::${status || ''}`;
+  const trimmedQuery = (query || '').trim().toLowerCase();
+  const hasQuery = trimmedQuery.length > 0;
+  const filterSuffix = `${ownerId || ''}::${status || ''}::${trimmedQuery}`;
 
   useEffect(() => {
-    if (!isOpen || !enabled || !hasQuery) return;
+    if (!isOpen || !enabled || !hasQuery) return undefined;
 
     const targetBoardIds = boardId
       ? [boardId]
@@ -61,28 +68,32 @@ function useBoardSearchCache({ enabled, hasQuery, isOpen, workspaces, fetchBoard
       const key = `${id}::${filterSuffix}`;
       return !(key in cache) && !inFlight.current.has(key);
     });
-    if (missing.length === 0) return;
+    if (missing.length === 0) return undefined;
 
-    missing.forEach((id) => inFlight.current.add(`${id}::${filterSuffix}`));
-    setLoading(true);
+    const timer = setTimeout(() => {
+      missing.forEach((id) => inFlight.current.add(`${id}::${filterSuffix}`));
+      setLoading(true);
 
-    Promise.all(
-      missing.map((id) =>
-        fetchBoard(id, { owner_id: ownerId || undefined, status: status || undefined })
-          .then((res) => ({ id, items: res?.data?.data || [] }))
-          .catch(() => ({ id, items: [] }))
-      )
-    ).then((entries) => {
-      setCache((prev) => {
-        const next = { ...prev };
-        entries.forEach(({ id, items }) => {
-          next[`${id}::${filterSuffix}`] = items;
+      Promise.all(
+        missing.map((id) =>
+          fetchBoard(id, { owner_id: ownerId || undefined, status: status || undefined })
+            .then((res) => ({ id, items: res?.data?.data || [] }))
+            .catch(() => ({ id, items: [] }))
+        )
+      ).then((entries) => {
+        setCache((prev) => {
+          const next = { ...prev };
+          entries.forEach(({ id, items }) => {
+            next[`${id}::${filterSuffix}`] = items;
+          });
+          return next;
         });
-        return next;
+        missing.forEach((id) => inFlight.current.delete(`${id}::${filterSuffix}`));
+        setLoading(false);
       });
-      missing.forEach((id) => inFlight.current.delete(`${id}::${filterSuffix}`));
-      setLoading(false);
-    });
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
   }, [isOpen, enabled, hasQuery, workspaces, cache, fetchBoard, boardId, ownerId, status, filterSuffix]);
 
   const getItems = (id) => cache[`${id}::${filterSuffix}`] || [];
@@ -241,7 +252,7 @@ function AdvancedSearch() {
   // scoped to the Board/Owner/Status chip filters.
   const [cardCache, getCardItems, cardsLoading] = useBoardSearchCache({
     enabled: searchCardDetails,
-    hasQuery,
+    query,
     isOpen,
     workspaces,
     fetchBoard: kanbanBoardService.searchCardDetails,
@@ -251,7 +262,7 @@ function AdvancedSearch() {
   });
   const [subtaskCache, getSubtaskItems, subtasksLoading] = useBoardSearchCache({
     enabled: extraPlaces.Subtasks,
-    hasQuery,
+    query,
     isOpen,
     workspaces,
     fetchBoard: kanbanBoardService.searchSubtasks,
@@ -261,7 +272,7 @@ function AdvancedSearch() {
   });
   const [documentCache, getDocumentItems, documentsLoading] = useBoardSearchCache({
     enabled: extraPlaces.Docs,
-    hasQuery,
+    query,
     isOpen,
     workspaces,
     fetchBoard: kanbanBoardService.searchDocuments,
