@@ -100,6 +100,7 @@ function Workspaces() {
     archiveWorkspace,
     archiveBoard,
     changeBoardBackground,
+    reorderWorkspace,
     addEditLoader,
   } = useWorkSpaceReducer();
 
@@ -162,10 +163,9 @@ function Workspaces() {
   const [filterValue, setFilterValue] = useState('');
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
 
-  // Local drag-and-drop order for workspace cards. There is no backend
-  // endpoint to persist workspace order, so this only reorders the list for
-  // the current session. workspaceOrderIds only holds ids the user has
-  // actually reordered; workspaces not yet touched fall back to API order
+  // Local drag-and-drop order for workspace cards, persisted to the backend
+  // via reorderWorkspace on drop. workspaceOrderIds only holds ids the user
+  // has actually reordered; workspaces not yet touched fall back to API order
   // (merged in below), so a fresh list renders correctly with no flicker
   // before any drag has happened.
   const [workspaceOrderIds, setWorkspaceOrderIds] = useState([]);
@@ -304,9 +304,9 @@ function Workspaces() {
     // the first drag and would otherwise drop every id that hasn't been
     // explicitly reordered yet.
     const effectiveOrder = orderedWorkspacesData.map((w) => w.id);
-    setWorkspaceOrderIds(
-      effectiveOrder.map((id) => (filteredIdSet.has(id) ? newFilteredOrder[cursor++] : id))
-    );
+    const nextOrder = effectiveOrder.map((id) => (filteredIdSet.has(id) ? newFilteredOrder[cursor++] : id));
+    setWorkspaceOrderIds(nextOrder);
+    reorderWorkspace({ workspace_ids: nextOrder });
   };
 
   const handleAddWorkspace = () => {

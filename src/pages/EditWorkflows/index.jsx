@@ -70,6 +70,7 @@ function EditWorkflows() {
     renameWorkflowColumn,
     updateWorkflowColumn,
     removeWorkflowColumn,
+    reorderWorkflows,
     workflows: apiWorkflows,
     isLoading,
   } = useWorkFlowReducer();
@@ -679,12 +680,13 @@ function EditWorkflows() {
   const handleWorkflowDragEnd = (result) => {
     const { source, destination } = result;
     if (!destination || source.index === destination.index) return;
-    setWorkflows((prev) => {
-      const next = Array.from(prev);
-      const [moved] = next.splice(source.index, 1);
-      next.splice(destination.index, 0, moved);
-      return next;
-    });
+    const next = Array.from(workflows);
+    const [moved] = next.splice(source.index, 1);
+    next.splice(destination.index, 0, moved);
+    setWorkflows(next);
+    if (boardId) {
+      reorderWorkflows({ workflow_ids: next.map((w) => w.id) });
+    }
   };
 
   const showNoWorkflowEmptyState = Boolean(boardId) && !isLoading && workflows.length === 0;

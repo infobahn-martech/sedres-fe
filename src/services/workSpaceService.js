@@ -52,6 +52,9 @@ const changeBoardBackground = (boardId, data) =>
 const removeBoardBackground = (boardId) =>
   Gateway.post(`/kanban_board/remove_background/${boardId}`);
 
+const reorderWorkspace = (data) =>
+  Gateway.post('/kanban_workspace/reorder_workspace', data);
+
 export default {
   createWorkspace,
   listAllWorkspaces,
@@ -64,4 +67,5 @@ export default {
   archiveBoard,
   changeBoardBackground,
   removeBoardBackground,
+  reorderWorkspace,
 };

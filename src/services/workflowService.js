@@ -51,6 +51,9 @@ const updateWorkflowColumn = (columnId, data) =>
 const removeWorkflowColumn = (columnId) =>
     Gateway.post(`/kanban_workflow/remove_workflow_column/${columnId}`, { column_id: columnId });
 
+const reorderWorkflows = (data) =>
+    Gateway.post('/kanban_workflow/reorder_workflows', data);
+
 export default {
     getWorkflowByBoard,
     renameWorkflow,
@@ -69,4 +72,5 @@ export default {
     renameWorkflowColumn,
     updateWorkflowColumn,
     removeWorkflowColumn,
+    reorderWorkflows,
 };

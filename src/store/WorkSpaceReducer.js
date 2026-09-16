@@ -338,6 +338,16 @@ const useWorkSpaceReducer = create((set, get) => ({
       error(err?.response?.data?.message ?? err.message ?? 'Failed to remove workspace from dashboard');
     }
   },
+  // No success toast/refetch: reorder is a passive drag outcome, applied optimistically.
+  reorderWorkspace: async ({ workspace_ids, cb }) => {
+    try {
+      await workSpaceService.reorderWorkspace({ workspace_ids });
+      cb && cb();
+    } catch (err) {
+      const { error } = useAlertReducer.getState();
+      error(err?.response?.data?.message ?? err.message ?? 'Failed to reorder workspaces');
+    }
+  },
   addWidgetToDashboard: async ({ dashboard_id, widget_id, cb }) => {
     try {
       const { data } = await kanbanDashboardService.addWidgetToDashboard(dashboard_id, { widget_id });

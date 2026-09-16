@@ -291,6 +291,22 @@ const useWorkFlowReducer = create((set, get) => ({
             onSettled && onSettled();
         }
     },
+
+    // No success toast: reorder is a passive drag outcome, not an explicit user action.
+    reorderWorkflows: async ({ workflow_ids, cb, onSettled }) => {
+        try {
+            await workflowService.reorderWorkflows({ workflow_ids });
+            cb && cb();
+        } catch (err) {
+            set({
+                errorMessage: err?.response?.data?.message ?? err.message,
+            });
+            const { error } = useAlertReducer.getState();
+            error(err?.response?.data?.message ?? err.message);
+        } finally {
+            onSettled && onSettled();
+        }
+    },
 }));
 
 export default useWorkFlowReducer;
