@@ -144,8 +144,6 @@
 }
 
 .kanban-card.kanban-card--selected-for-action {
-  border: 2px solid #00368c;
-  box-shadow: 0 0 0 3px rgba(0, 54, 140, 0.22), 0 8px 18px rgba(15, 23, 42, 0.08);
   background: linear-gradient(to bottom, #e8f0fc 0%, var(--surface-primary) 35%);
 }
 
