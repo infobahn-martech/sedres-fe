@@ -683,8 +683,19 @@ const SalesOrderList = ({
   // here — a decision always moves the card off it), so this is footer/column-driven rather
   // than text-matched against the granular DA status wording, same reasoning as
   // isCardAtSoApprovalColumn above.
+  // Position-driven (same pattern as isAtColumnAfterOpsCompleted): whichever column comes
+  // immediately after "SO Sent for approval" in THIS card's own workflow, regardless of its
+  // name. Only the Supervisor/Operator workflow literally names it "SO/PO Approval Received" —
+  // on the other workflows Approve moved the card one column on to a differently-named column,
+  // so the "Approved" label flashed on column 4 and then vanished the moment the column changed
+  // (reported 2026-09-16). The old name match is kept as a fallback for any workflow where
+  // that column isn't directly after "SO Sent for approval".
+  const soSentForApprovalStepIndex = Array.isArray(stepLabels)
+    ? stepLabels.findIndex((label) => /so sent for approval/i.test(label || ""))
+    : -1;
   const isAtSoApprovalDecisionColumn =
-    Array.isArray(stepLabels) && currentStep != null && /so\s*\/?\s*po approval received/i.test(stepLabels[currentStep - 1] || "");
+    (soSentForApprovalStepIndex !== -1 && currentStep != null && currentStep === soSentForApprovalStepIndex + 2) ||
+    (Array.isArray(stepLabels) && currentStep != null && /so\s*\/?\s*po approval received/i.test(stepLabels[currentStep - 1] || ""));
 
   // State for the SO Approval email modal, opened from the header action button when
   // effectiveNextDaStatusLabel is the "SO Approval" stage. Sends via api/da/da_send_action_email
