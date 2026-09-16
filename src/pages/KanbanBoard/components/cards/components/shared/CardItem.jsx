@@ -715,6 +715,18 @@ function CardItem({
           {(typeof onToggleSelectForAction === "function" ||
             (isApiCard && !isShrunk && topRowUsernameInitial)) && (
             <div className="kanban-card-top-row">
+              {isApiCard && !isShrunk && topRowUsernameInitial ? (
+                <span className="card-api-avatar-wrap">
+                  <span
+                    className="card-api-user-avatar"
+                    title={hasText(card.user) ? String(card.user).trim() : undefined}
+                    aria-hidden
+                  >
+                    {topRowUsernameInitial}
+                  </span>
+                  <ApiCardBlockerBadge card={card} />
+                </span>
+              ) : null}
               {typeof onToggleSelectForAction === "function" && (
                 <button
                   type="button"
@@ -731,18 +743,6 @@ function CardItem({
                   <span className="kanban-card-select-toggle-box" aria-hidden="true" />
                 </button>
               )}
-              {isApiCard && !isShrunk && topRowUsernameInitial ? (
-                <span className="card-api-avatar-wrap">
-                  <span
-                    className="card-api-user-avatar"
-                    title={hasText(card.user) ? String(card.user).trim() : undefined}
-                    aria-hidden
-                  >
-                    {topRowUsernameInitial}
-                  </span>
-                  <ApiCardBlockerBadge card={card} />
-                </span>
-              ) : null}
             </div>
           )}
           {isApiCard ? (
