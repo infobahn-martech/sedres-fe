@@ -15,6 +15,12 @@ const MESSAGE_QUILL_TOOLBAR = [
 
 const MESSAGE_QUILL_FORMATS = ["bold", "italic", "underline", "list", "bullet", "link", "image"];
 
+// Standard Sedres wording for the SO approval request body (per ops team), same for every stage.
+const DEFAULT_MESSAGE_HTML =
+  "<p>Greetings from Sedres.</p>" +
+  "<p><br></p>" +
+  "<p>Please find the attached Sales orders with supporting documents. Kindly review our sales order and confirm so we can submit our final invoice.</p>";
+
 // Opened from the SO Status stepper's "To Be Sent for SO Approval" step. Built on the
 // app's common CustomModal (react-bootstrap Modal wrapper, used across ~80 other modals in
 // this codebase) instead of a bespoke backdrop, so positioning/stacking (above the card's
@@ -70,9 +76,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
       // body and rejects the whole request otherwise ({"status":"error","message":"call_id,
       // to, subject and body are required"}), so an empty Quill editor used to let staff submit
       // a doomed request with no warning. Still freely editable before sending.
-      setMessage(
-        `<p>Please review and ${stageLabel.toLowerCase()}${soCustomerName ? ` for ${soCustomerName}` : ""}.</p>`
-      );
+      setMessage(DEFAULT_MESSAGE_HTML);
       setMessageError("");
       // Pre-load documents from verified SO line items' Supporting Documents field
       setAttachments(preLoadedDocuments || []);

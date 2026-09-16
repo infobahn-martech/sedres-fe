@@ -810,6 +810,50 @@
   color: #e53935;
 }
 
+/* Add Item form dropdowns (Item Code, Tax Code, Type of PO, Supplier Code) use the shared
+   PremiumSelect — size the control like the other .sales-order-add-form-input fields and
+   keep the (body-portaled) options list compact so it fits laptop-height viewports. */
+.sales-order-add-form-field .so-add-form-select.cf-searchable-select .cf-multi-select-email-input {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-primary);
+  border-radius: 7px;
+  box-shadow: none;
+}
+
+.sales-order-add-form-field .so-add-form-select.cf-searchable-select .cf-multi-select-email-input:focus-within {
+  border-color: #b3baff;
+  box-shadow: 0 0 0 2px rgba(226, 230, 255, 0.6);
+}
+
+.sales-order-add-form-field .so-add-form-select.cf-searchable-select.is-invalid .cf-multi-select-email-input {
+  border-color: #e53935;
+}
+
+.sales-order-add-form-field .so-add-form-select.cf-searchable-select .cf-multi-select-placeholder,
+.sales-order-add-form-field .so-add-form-select.cf-searchable-select .cf-multi-select-selected-value,
+.sales-order-add-form-field .so-add-form-select.cf-searchable-select .cf-searchable-select-input {
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.cf-multi-select-dropdown.so-add-form-select-menu {
+  max-height: min(240px, 32vh);
+  border-radius: 7px;
+}
+
+.cf-multi-select-dropdown.so-add-form-select-menu .cf-multi-select-option {
+  padding: 7px 10px;
+  font-size: 13px;
+  line-height: 20px;
+  min-height: auto;
+}
+
+.cf-multi-select-dropdown.so-add-form-select-menu .cf-multi-select-no-results {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
 .sales-order-add-form-actions {
   display: flex;
   justify-content: flex-end;
