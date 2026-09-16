@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
 import { FiLayers, FiImage, FiChevronRight } from 'react-icons/fi';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import '../../design/scss/Workspaces.scss';
 import GroupIcon from '../../assets/images/Group.svg';
 import AnalyticsIcon from '../../assets/images/analytics 1.svg';
@@ -161,6 +162,23 @@ function Workspaces() {
   const [filterValue, setFilterValue] = useState('');
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
 
+  // Local drag-and-drop order for workspace cards. There is no backend
+  // endpoint to persist workspace order, so this only reorders the list for
+  // the current session. workspaceOrderIds only holds ids the user has
+  // actually reordered; workspaces not yet touched fall back to API order
+  // (merged in below), so a fresh list renders correctly with no flicker
+  // before any drag has happened.
+  const [workspaceOrderIds, setWorkspaceOrderIds] = useState([]);
+
+  const orderedWorkspacesData = useMemo(() => {
+    const byId = new Map(workspacesData.map((w) => [w.id, w]));
+    const currentIdSet = new Set(byId.keys());
+    const known = workspaceOrderIds.filter((id) => currentIdSet.has(id));
+    const knownSet = new Set(known);
+    const appended = workspacesData.map((w) => w.id).filter((id) => !knownSet.has(id));
+    return [...known, ...appended].map((id) => byId.get(id)).filter(Boolean);
+  }, [workspacesData, workspaceOrderIds]);
+
   const listLoading = isDashboardView ? dashboardsLoading : workspacesLoading;
 
   useEffect(() => {
@@ -237,7 +255,7 @@ function Workspaces() {
     }));
   }, [apiDashboards, workspaceForDashboardPicker]);
 
-  const filteredWorkspaces = workspacesData.filter((workspace) =>
+  const filteredWorkspaces = orderedWorkspacesData.filter((workspace) =>
     workspace.name.toLowerCase().includes(filterValue.toLowerCase())
   );
 
@@ -267,6 +285,28 @@ function Workspaces() {
     if (workspace.boards?.length > 0) {
       setSelectedWorkspace(selectedWorkspace === workspace.id ? null : workspace.id);
     }
+  };
+
+  // Reorders workspaceOrderIds by permuting only the ids currently visible in
+  // filteredWorkspaces (in their new order), leaving any filtered-out ids in
+  // their existing slots — so dragging still works correctly while a filter
+  // is active.
+  const handleWorkspaceDragEnd = (result) => {
+    const { source, destination } = result;
+    if (!destination || source.index === destination.index) return;
+    const newFilteredOrder = filteredWorkspaces.map((w) => w.id);
+    const [moved] = newFilteredOrder.splice(source.index, 1);
+    newFilteredOrder.splice(destination.index, 0, moved);
+    const filteredIdSet = new Set(newFilteredOrder);
+    let cursor = 0;
+    // Base the merge on the full effective order (orderedWorkspacesData), not
+    // the raw workspaceOrderIds state, since that state starts empty before
+    // the first drag and would otherwise drop every id that hasn't been
+    // explicitly reordered yet.
+    const effectiveOrder = orderedWorkspacesData.map((w) => w.id);
+    setWorkspaceOrderIds(
+      effectiveOrder.map((id) => (filteredIdSet.has(id) ? newFilteredOrder[cursor++] : id))
+    );
   };
 
   const handleAddWorkspace = () => {
@@ -641,17 +681,35 @@ function Workspaces() {
           )}
         </div>
       ) : (
-        filteredWorkspaces.map((workspace) => {
+        <DragDropContext onDragEnd={handleWorkspaceDragEnd}>
+          <Droppable droppableId="workspaces-list">
+            {(workspacesDroppableProvided) => (
+              <div ref={workspacesDroppableProvided.innerRef} {...workspacesDroppableProvided.droppableProps}>
+                {filteredWorkspaces.map((workspace, workspaceIndex) => {
           const hasOpenBoardMenu = workspace.boards?.some((b) => b.id === openMenuId);
           return (
+          <Draggable key={workspace.id} draggableId={String(workspace.id)} index={workspaceIndex}>
+            {(workspaceDraggableProvided, workspaceDraggableSnapshot) => (
           <div
-            key={workspace.id}
+            ref={workspaceDraggableProvided.innerRef}
+            {...workspaceDraggableProvided.draggableProps}
             id={`workspace-row-${workspace.id}`}
-            className={`workspace-card ${selectedWorkspace === workspace.id ? 'expanded' : ''} ${workspace.boards?.length === 0 ? 'no-boards' : ''} ${openWorkspaceMenuId === workspace.id || hasOpenBoardMenu ? 'menu-open' : ''}`}
+            className={`workspace-card ${selectedWorkspace === workspace.id ? 'expanded' : ''} ${workspace.boards?.length === 0 ? 'no-boards' : ''} ${openWorkspaceMenuId === workspace.id || hasOpenBoardMenu ? 'menu-open' : ''} ${workspaceDraggableSnapshot.isDragging ? 'dragging' : ''}`}
             onClick={() => handleWorkspaceClick(workspace)}
           >
             <div className="workspace-card-header">
               <div className="workspace-card-title">
+                <button
+                  type="button"
+                  className="workspace-move-btn"
+                  aria-label="Drag to reorder workspace"
+                  onClick={(e) => e.stopPropagation()}
+                  {...workspaceDraggableProvided.dragHandleProps}
+                >
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7 5L10 2L13 5M13 15L10 18L7 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
                 <div className="workspace-icon-wrapper">
                   <WorkspaceBarChartIcon className="workspace-icon" />
                 </div>
@@ -1163,8 +1221,15 @@ function Workspaces() {
               </div>
             )}
           </div>
+                )}
+              </Draggable>
           );
-        })
+                })}
+                {workspacesDroppableProvided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       )}
       <input
         ref={boardWallpaperInputRef}
