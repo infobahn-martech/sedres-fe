@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import CustomModal from '../../components/CustomModal';
+import { FiX } from 'react-icons/fi';
+import { Modal } from 'react-bootstrap';
+import '../../design/scss/structure/side-nav/AddDashboardModal.scss';
 import '../../design/scss/Workspaces.scss';
 
 const RenameWorkspaceModal = ({ show, onClose, onSave, currentName, isSaving = false }) => {
@@ -11,7 +13,8 @@ const RenameWorkspaceModal = ({ show, onClose, onSave, currentName, isSaving = f
     }
   }, [show, currentName]);
 
-  const handleSave = () => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
     if (workspaceName.trim() && workspaceName !== currentName) {
       onSave(workspaceName.trim());
     } else {
@@ -25,74 +28,66 @@ const RenameWorkspaceModal = ({ show, onClose, onSave, currentName, isSaving = f
   };
 
   return (
-    <CustomModal
+    <Modal
       show={show}
-      closeModal={handleClose}
-      className="rename-board-modal"
-      dialgName="rename-board-modal-dialog"
-      createModal={false}
-      body={
-        <div className="rename-board-modal-content">
-          <div className="rename-board-modal-header">
-            <h2 className="rename-board-modal-title">Rename Workspace</h2>
-            <button
-              type="button"
-              className="rename-board-modal-close"
-              onClick={handleClose}
-              aria-label="Close"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M15 5L5 15M5 5L15 15"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <div className="rename-board-form">
-            <div className="rename-board-form-field">
-              <label className="rename-board-form-label">Workspace name</label>
-              <input
-                type="text"
-                className="rename-board-form-input"
-                placeholder="Enter workspace name"
-                value={workspaceName}
-                onChange={(e) => setWorkspaceName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSave();
-                  }
-                }}
-                autoFocus
-              />
-            </div>
-
-            <div className="rename-board-form-actions">
-              <button
-                type="button"
-                className="rename-board-form-btn rename-board-form-btn-cancel"
-                onClick={handleClose}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="rename-board-form-btn rename-board-form-btn-save"
-                onClick={handleSave}
-                disabled={!workspaceName.trim() || isSaving}
-              >
-                {isSaving ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-          </div>
+      onHide={handleClose}
+      className="add-dashboard-modal board-rename-modal"
+      centered
+      backdrop="static"
+      backdropClassName="add-dashboard-modal-backdrop"
+      dialogClassName="add-dashboard-modal-dialog"
+      contentClassName="add-dashboard-modal-content"
+    >
+      <form onSubmit={handleSubmit} className="add-dashboard-form">
+        <div className="add-dashboard-modal-header">
+          <h2 className="add-dashboard-modal-title" id="rename-workspace-modal-title">
+            Rename Workspace
+          </h2>
+          <button
+            type="button"
+            className="add-dashboard-modal-close"
+            onClick={handleClose}
+            aria-label="Close"
+          >
+            <FiX size={22} strokeWidth={2} />
+          </button>
         </div>
-      }
-    />
+
+        <div className="add-dashboard-modal-body">
+          <label htmlFor="renameWorkspaceName" className="add-dashboard-label">
+            Workspace name
+          </label>
+          <input
+            type="text"
+            id="renameWorkspaceName"
+            className="add-dashboard-input"
+            placeholder="Enter workspace name"
+            value={workspaceName}
+            onChange={(e) => setWorkspaceName(e.target.value)}
+            required
+            autoFocus
+          />
+        </div>
+
+        <div className="add-dashboard-modal-footer">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="add-dashboard-btn add-dashboard-btn--text"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="add-dashboard-btn add-dashboard-btn--text"
+            disabled={!workspaceName.trim() || isSaving}
+          >
+            {isSaving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 };
 
 export default RenameWorkspaceModal;
-
