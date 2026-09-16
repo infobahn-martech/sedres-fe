@@ -408,7 +408,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
             </button> */}
           </>
         )}
-        <Tooltip id="theme-toggle" place="bottom" content={isDark ? 'Switch to light mode' : 'Switch to dark mode'} />
+        {/* <Tooltip id="theme-toggle" place="bottom" content={isDark ? 'Switch to light mode' : 'Switch to dark mode'} />
         <button
           type="button"
           className="icon-btn"
@@ -418,7 +418,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           data-tooltip-id="theme-toggle"
         >
           {isDark ? <FiSun /> : <FiMoon />}
-        </button>
+        </button> */}
 
         <Tooltip id="help" place="bottom" content="Help" />
         <button
