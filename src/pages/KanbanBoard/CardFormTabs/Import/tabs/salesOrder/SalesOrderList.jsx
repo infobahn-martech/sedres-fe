@@ -488,6 +488,18 @@ const SalesOrderList = ({
     [vendors]
   );
 
+  // get_item_codes can return the same item_code under several tariff rows; show each code once
+  // (first occurrence wins, same row handleItemCodeSelect resolves via find).
+  const itemCodeSelectOptions = useMemo(() => {
+    const seen = new Set();
+    return itemCodeOptions.reduce((acc, o) => {
+      if (!o?.item_code || seen.has(o.item_code)) return acc;
+      seen.add(o.item_code);
+      acc.push({ value: o.item_code, label: o.item_code });
+      return acc;
+    }, []);
+  }, [itemCodeOptions]);
+
   // Vendor list — billingentity/getvendors, [{ customer_code, customer_name }]
   useEffect(() => {
     let cancelled = false;
@@ -2342,24 +2354,21 @@ const SalesOrderList = ({
                     <div className="sales-order-add-form-grid">
                       <div className="sales-order-add-form-field">
                         <label>Item Code <span style={{ color: "#e53935" }}>*</span></label>
-                        <select
+                        <PremiumSelect
                           value={newItemForm.itemNo}
                           onChange={(e) => handleItemCodeSelect(e.target.value)}
-                          className="sales-order-add-form-input"
-                          disabled={!portId || isLoadingItemCodes || isLoadingItemDetails}
-                          required
-                        >
-                          <option value="">
-                            {!portId
+                          options={itemCodeSelectOptions}
+                          placeholder={
+                            !portId
                               ? "Select Port first..."
                               : isLoadingItemCodes
                               ? "Loading item codes..."
-                              : "Select Item Code..."}
-                          </option>
-                          {itemCodeOptions.map((o) => (
-                            <option key={o.tariff_id} value={o.item_code}>{o.item_code}</option>
-                          ))}
-                        </select>
+                              : "Select Item Code..."
+                          }
+                          searchPlaceholder="Search item code..."
+                          disabled={!portId || isLoadingItemCodes || isLoadingItemDetails}
+                          hasError={Boolean(itemNoError)}
+                        />
                         {itemNoError && (
                           <span className="sales-order-add-form-error">{itemNoError}</span>
                         )}
