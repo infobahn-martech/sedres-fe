@@ -497,7 +497,6 @@ export default function KanbanBoardPage() {
           moveCardToColumn={moveCardToColumn}
           columns={columnsForCardForm}
           columnOrder={columnOrderForCardForm}
-          workflowTitle={addModeCardWorkflow?.title}
           currentColumn={isAddMode ? null : findCardColumn(selectedCard.id)}
           isAddMode={isAddMode}
           variant={selectedCard?.cardVariant ?? resolveCardFormVariant(selectedCard?.workflow_role_id, userRoleId)}

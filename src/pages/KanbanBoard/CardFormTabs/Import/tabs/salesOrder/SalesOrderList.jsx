@@ -270,7 +270,6 @@ const SalesOrderList = ({
   currentStep,
   stepLabels,
   soActionStateResetToken,
-  workflowTitle,
 }) => {
   // Broader "this is a DA card" signal — isDAModule alone only covers the dedicated DA-desk
   // board routes; isDaCardContext also covers DA-variant/DA-board cards reached via the
@@ -2222,34 +2221,24 @@ const SalesOrderList = ({
     );
   };
 
-  // The approval email upload is linked to the default Supervisor/Operator workflow ONLY, per
-  // request 2026-09-16 — other workflows on the same multi-workflow board (SIPEM etc.) must
-  // not get it even if they name their columns the same way. Matched on the card's own
-  // workflow title (see workflowTitle prop, threaded from KanbanBoardPage's
-  // addModeCardWorkflow) the same way CardItem's isTransportCoordinatorWorkflow does.
-  const isSupervisorOperatorWorkflow = /supervisor.*operator/i.test(String(workflowTitle || ""));
-
   // "Approved" header state shared by column 4 (api/da/action_state "approved") and column 5
-  // ("SO/PO Approval Received") — the static label plus, on the Supervisor/Operator workflow
-  // only, the "Upload Approval Email" button that opens the drag-and-drop upload modal (see
-  // handleUploadApprovalEmail).
+  // ("SO/PO Approval Received") — the static label plus the "Upload Approval Email" button that
+  // opens the drag-and-drop upload modal (see handleUploadApprovalEmail).
   const renderApprovedWithEmailUpload = () => (
     <div className="sales-order-da-status-group">
       <span className="sales-order-da-status-button sales-order-da-status-button--label">
         <FiCheck />
         Approved
       </span>
-      {isSupervisorOperatorWorkflow && (
-        <button
-          type="button"
-          className="sales-order-da-status-button"
-          title="Upload the client's SO approval email"
-          onClick={() => setShowApprovalEmailUploadModal(true)}
-        >
-          <FiUpload />
-          Upload Approval Email
-        </button>
-      )}
+      <button
+        type="button"
+        className="sales-order-da-status-button"
+        title="Upload the client's SO approval email"
+        onClick={() => setShowApprovalEmailUploadModal(true)}
+      >
+        <FiUpload />
+        Upload Approval Email
+      </button>
     </div>
   );
 
@@ -3271,7 +3260,7 @@ const SalesOrderList = ({
 
       {/* SO approval email upload — opened from the "Upload Approval Email" button next to the
           "Approved" label (see renderApprovedWithEmailUpload). */}
-      {isDaVerifyContext && isSupervisorOperatorWorkflow && (
+      {isDaVerifyContext && (
         <UploadInvoiceModal
           show={showApprovalEmailUploadModal}
           closeModal={handleCloseApprovalEmailUploadModal}
@@ -3317,7 +3306,6 @@ SalesOrderList.propTypes = {
   currentStep: PropTypes.number,
   stepLabels: PropTypes.arrayOf(PropTypes.string),
   soActionStateResetToken: PropTypes.number,
-  workflowTitle: PropTypes.string,
 };
 
 export default SalesOrderList;

@@ -1668,8 +1668,7 @@ const renderTabContent = (
   boardId,
   currentStep,
   stepLabels,
-  soActionStateResetToken,
-  workflowTitle
+  soActionStateResetToken
 ) => {
   const commonProps = {
     card,
@@ -1683,7 +1682,6 @@ const renderTabContent = (
     currentStep,
     stepLabels,
     soActionStateResetToken,
-    workflowTitle,
     onSave: addModeSave.onSave,
     isSavingGeneral: addModeSave.isSavingGeneral,
     hasSubmitted: addModeSave.hasSubmitted,
@@ -1786,7 +1784,6 @@ function CardForm({
   moveCardToColumn,
   columns,
   columnOrder,
-  workflowTitle,
   currentColumn,
   isAddMode = false,
   variant = "default",
@@ -3178,8 +3175,7 @@ function CardForm({
                 boardId,
                 currentStep,
                 stepLabels,
-                soActionStateResetToken,
-                workflowTitle
+                soActionStateResetToken
               )}
           </>
         )}
@@ -3235,9 +3231,6 @@ CardForm.propTypes = {
   isAddMode: PropTypes.bool,
   variant: PropTypes.oneOf(["default", "driver", "hotel", "mwp", "gro", "custom", "taxi-boat"]),
   boardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  // Title of the workflow (swimlane group) this card belongs to — "Supervisor/Operator",
-  // "SIPEM", etc. on multi-workflow boards; SalesOrderList gates workflow-specific UI on it.
-  workflowTitle: PropTypes.string,
   onBoardRefresh: PropTypes.func,
   patchCardColor: PropTypes.func,
   patchCardTitle: PropTypes.func,
