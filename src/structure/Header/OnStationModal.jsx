@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import CustomModal from '../../components/CustomModal';
 import { debounce } from 'lodash';
 import { Tooltip } from 'react-tooltip';
@@ -8,69 +8,74 @@ import '../../design/scss/structure/header/OnStationModal.scss';
 
 const getRowId = (row) => row?.call_id ?? row?._id;
 
-// Helper component for truncated text with tooltip (falls back to "-" when empty)
-const TruncatedCell = ({ text, maxLength = 30, tooltipId }) => {
+// Single shared tooltip rendered at the modal root (outside the scrolling table
+// wrapper) so it is never clipped by overflow or covered by the sticky thead.
+const ON_STATION_TOOLTIP_ID = 'on-station-tooltip';
+
+// Helper component for truncated text with tooltip (falls back to "-" when empty).
+// Truncation is done by CSS ellipsis; the tooltip is attached only when the text
+// actually overflows its cell, not based on a character count.
+const TruncatedCell = ({ text }) => {
+    const ref = useRef(null);
+    const [isTruncated, setIsTruncated] = useState(false);
+
+    useLayoutEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        setIsTruncated(el.scrollWidth > el.clientWidth);
+    }, [text]);
+
     if (!text) return <span>-</span>;
-    const isTruncated = text.length > maxLength;
-    const displayText = isTruncated ? text.substring(0, maxLength) + '...' : text;
 
     return (
-        <>
-            <span
-                data-tooltip-id={isTruncated ? tooltipId : undefined}
-                data-tooltip-content={isTruncated ? text : undefined}
-                className="on-station-truncated-text"
-            >
-                {displayText}
-            </span>
-            {isTruncated && <Tooltip id={tooltipId} place="top" />}
-        </>
+        <span
+            ref={ref}
+            data-tooltip-id={isTruncated ? ON_STATION_TOOLTIP_ID : undefined}
+            data-tooltip-content={isTruncated ? text : undefined}
+            className="on-station-truncated-text"
+        >
+            {text}
+        </span>
     );
 };
 
 // On Station enable/disable switch (pill toggle, row-wise loading state)
-const OnStationSwitch = ({ isEnabled, loading, onChange, tooltipId }) => (
-    <>
-        <button
-            type="button"
-            role="switch"
-            aria-checked={isEnabled}
-            aria-label={isEnabled ? 'Disable On Station' : 'Enable On Station'}
-            className={`on-station-pill-toggle${isEnabled ? ' on-station-pill-toggle--on' : ''}`}
-            disabled={loading}
-            onClick={loading ? undefined : onChange}
-            data-tooltip-id={tooltipId}
-            data-tooltip-content={loading ? 'Processing...' : isEnabled ? 'Enabled' : 'Disabled'}
-        >
-            <span className="on-station-pill-toggle__thumb" />
-        </button>
-        <Tooltip id={tooltipId} place="top" />
-    </>
+const OnStationSwitch = ({ isEnabled, loading, onChange }) => (
+    <button
+        type="button"
+        role="switch"
+        aria-checked={isEnabled}
+        aria-label={isEnabled ? 'Disable On Station' : 'Enable On Station'}
+        className={`on-station-pill-toggle${isEnabled ? ' on-station-pill-toggle--on' : ''}`}
+        disabled={loading}
+        onClick={loading ? undefined : onChange}
+        data-tooltip-id={ON_STATION_TOOLTIP_ID}
+        data-tooltip-content={loading ? 'Processing...' : isEnabled ? 'Enabled' : 'Disabled'}
+    >
+        <span className="on-station-pill-toggle__thumb" />
+    </button>
 );
 
 // Helper for Action buttons (icon-only with tooltip, row-wise loading spinner)
-const ActionButton = ({ icon: Icon, disabled, loading, tooltip, onClick, tooltipId }) => {
+const ActionButton = ({ icon: Icon, disabled, loading, tooltip, onClick }) => {
     const isDisabled = disabled || loading;
 
     return (
-        <>
-            <button
-                type="button"
-                className={`on-station-action-btn${isDisabled ? ' on-station-action-btn--disabled' : ''}`}
-                disabled={isDisabled}
-                onClick={isDisabled ? undefined : onClick}
-                data-tooltip-id={tooltipId}
-                data-tooltip-content={loading ? 'Processing...' : tooltip}
-                aria-label={tooltip}
-            >
-                {loading ? (
-                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
-                ) : (
-                    <Icon size={16} />
-                )}
-            </button>
-            <Tooltip id={tooltipId} place="top" />
-        </>
+        <button
+            type="button"
+            className={`on-station-action-btn${isDisabled ? ' on-station-action-btn--disabled' : ''}`}
+            disabled={isDisabled}
+            onClick={isDisabled ? undefined : onClick}
+            data-tooltip-id={ON_STATION_TOOLTIP_ID}
+            data-tooltip-content={loading ? 'Processing...' : tooltip}
+            aria-label={tooltip}
+        >
+            {loading ? (
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+            ) : (
+                <Icon size={16} />
+            )}
+        </button>
     );
 };
 
@@ -136,6 +141,7 @@ function OnStationModal({ show, onClose }) {
             createModal={false}
             body={
                 <div className="on-station-modal-content">
+                    <Tooltip id={ON_STATION_TOOLTIP_ID} place="top" className="on-station-tooltip" />
                     {/* Header */}
                     <div className="on-station-modal-header">
                         <div className="on-station-modal-header-text">
@@ -231,16 +237,16 @@ function OnStationModal({ show, onClose }) {
                                             return (
                                                 <tr key={rowId}>
                                                     <td>
-                                                        <TruncatedCell text={row.vessel_name} tooltipId={`vessel-${rowId}`} />
+                                                        <TruncatedCell text={row.vessel_name} />
                                                     </td>
                                                     <td>
-                                                        <TruncatedCell text={row.billing_entity} tooltipId={`client-${rowId}`} />
+                                                        <TruncatedCell text={row.billing_entity} />
                                                     </td>
                                                     <td>
-                                                        <TruncatedCell text={row.vessel_owner} tooltipId={`owner-${rowId}`} />
+                                                        <TruncatedCell text={row.vessel_owner} />
                                                     </td>
                                                     <td>
-                                                        <TruncatedCell text={row.vessel_manager} tooltipId={`manager-${rowId}`} />
+                                                        <TruncatedCell text={row.vessel_manager} />
                                                     </td>
                                                     <td>{row.import_custom_clearance_date ?? '-'}</td>
                                                     <td>{row.export_atd ?? '-'}</td>
@@ -248,7 +254,6 @@ function OnStationModal({ show, onClose }) {
                                                         <OnStationSwitch
                                                             isEnabled={isEnabled}
                                                             loading={!!loading.toggle}
-                                                            tooltipId={`switch-${rowId}`}
                                                             onChange={() => toggleOnStation({ call_id: rowId, is_enabled: !isEnabled })}
                                                         />
                                                     </td>
@@ -259,7 +264,6 @@ function OnStationModal({ show, onClose }) {
                                                                 disabled={btn1Disabled}
                                                                 loading={loading.createSalesOrder}
                                                                 tooltip={btn1Tooltip}
-                                                                tooltipId={`so-${rowId}`}
                                                                 onClick={() => createSalesOrder({ call_id: rowId, on_station_id: onStationId })}
                                                             />
                                                             <ActionButton
@@ -267,7 +271,6 @@ function OnStationModal({ show, onClose }) {
                                                                 disabled={btn2Disabled}
                                                                 loading={loading.convertTaxInvoice}
                                                                 tooltip={btn2Tooltip}
-                                                                tooltipId={`inv-${rowId}`}
                                                                 onClick={() => convertToTaxInvoice({ call_id: rowId, sales_order_id: salesOrderId })}
                                                             />
                                                             <ActionButton
@@ -275,7 +278,6 @@ function OnStationModal({ show, onClose }) {
                                                                 disabled={btn3Disabled}
                                                                 loading={loading.sendTaxInvoice}
                                                                 tooltip={btn3Tooltip}
-                                                                tooltipId={`sum-${rowId}`}
                                                                 onClick={() => sendTaxInvoice({ call_id: rowId, tax_invoice_id: taxInvoiceId })}
                                                             />
                                                         </div>

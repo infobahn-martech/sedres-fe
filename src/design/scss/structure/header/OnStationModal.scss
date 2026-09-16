@@ -417,3 +417,12 @@
   color: #ffffff;
   white-space: nowrap;
 }
+
+// Shared react-tooltip rendered at the modal root; keep it above the sticky
+// thead and on one line so long labels (e.g. "Sales Order: SO-123") don't wrap.
+.on-station-tooltip.react-tooltip {
+  z-index: 1100;
+  max-width: 320px;
+  white-space: nowrap;
+  font-size: 12px;
+}
