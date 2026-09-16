@@ -4,21 +4,44 @@ import CustomModal from '../../components/CustomModal';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
 import '../../design/scss/Workspaces.scss';
 
+const PAGE_LIMIT = 10;
+
+// Backend has used several keys for the archiving user; some return a nested user object
+const resolveArchivedBy = (row) => {
+  const raw =
+    row.archived_by_name ??
+    row.archive_by_name ??
+    row.archived_by_user ??
+    row.archived_by ??
+    row.archive_by ??
+    row.user_name ??
+    row.user ??
+    '';
+  if (raw && typeof raw === 'object') {
+    return raw.name ?? raw.user_name ?? raw.full_name ?? raw.username ?? raw.email ?? '';
+  }
+  return raw == null ? '' : String(raw);
+};
+
 // Map API response (snake_case) to UI shape
 // workspace_id: from API or fallback to archive_log_id if backend uses it for unarchive lookup
-const mapArchiveLogItem = (row) => ({
-  id: row.archive_log_id,
-  board_id: row.board_id ?? row.boardId ?? row.archive_log_id,
-  workspace_id: row.workspace_id ?? row.workspaceId ?? row.archive_log_id,
-  workspace: row.workspace_name ?? '',
-  board: row.board_name ?? '',
-  archivedBy: row.archive_by ?? '',
-  archivedByAvatar: (row.archive_by ?? '').charAt(0).toUpperCase() || '?',
-  archivedAt: row.archived_at ?? '',
-});
+const mapArchiveLogItem = (row) => {
+  const archivedBy = resolveArchivedBy(row);
+  return {
+    id: row.archive_log_id,
+    board_id: row.board_id ?? row.boardId ?? row.archive_log_id,
+    workspace_id: row.workspace_id ?? row.workspaceId ?? row.archive_log_id,
+    workspace: row.workspace_name ?? '',
+    board: row.board_name ?? '',
+    archivedBy,
+    archivedByAvatar: archivedBy.trim().charAt(0).toUpperCase() || '?',
+    archivedAt: row.archived_at ?? '',
+  };
+};
 
 const ArchivedWorkspacesModal = ({ show, onClose }) => {
   const [filterValue, setFilterValue] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const {
     archiveLog,
     archiveLogLoading,
@@ -33,9 +56,28 @@ const ArchivedWorkspacesModal = ({ show, onClose }) => {
       item.workspace.toLowerCase().includes(filterValue.toLowerCase()) ||
       item.board.toLowerCase().includes(filterValue.toLowerCase())
   );
+  const totalItems = filteredItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_LIMIT));
+  const safePage = Math.min(currentPage, totalPages);
+  const pageItems = filteredItems.slice((safePage - 1) * PAGE_LIMIT, safePage * PAGE_LIMIT);
+
   useEffect(() => {
-    if (show) fetchWorkspaceArchiveLog();
+    if (show) {
+      setFilterValue('');
+      setCurrentPage(1);
+      fetchWorkspaceArchiveLog();
+    }
   }, [show, fetchWorkspaceArchiveLog]);
+
+  const handleFilterChange = (e) => {
+    setFilterValue(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handlePage = (pageNum) => {
+    if (pageNum < 1 || pageNum > totalPages || pageNum === safePage) return;
+    setCurrentPage(pageNum);
+  };
 
   const handleUnarchive = (id) => {
     if (id == null || id === '') return;
@@ -80,7 +122,7 @@ const ArchivedWorkspacesModal = ({ show, onClose }) => {
                   className="archived-workspaces-filter-input"
                   placeholder="Filter"
                   value={filterValue}
-                  onChange={(e) => setFilterValue(e.target.value)}
+                  onChange={handleFilterChange}
                 />
               </div>
             </div>
@@ -113,7 +155,7 @@ const ArchivedWorkspacesModal = ({ show, onClose }) => {
                       </td>
                     </tr>
                   ) : (
-                    filteredItems.map((item) => (
+                    pageItems.map((item) => (
                       <tr key={item.id} className="archived-workspaces-row">
                         <td className="archived-workspaces-td-workspace">{item.workspace}</td>
                         <td className="archived-workspaces-td-board">
@@ -162,8 +204,27 @@ const ArchivedWorkspacesModal = ({ show, onClose }) => {
             </div>
             <div className="archived-workspaces-pagination">
               <span className="archived-workspaces-pagination-count">
-                {filteredItems.length} item{filteredItems.length === 1 ? '' : 's'}
+                {`${totalItems} item${totalItems === 1 ? '' : 's'}`}
               </span>
+              <div className="archived-workspaces-pagination-controls">
+                <button
+                  type="button"
+                  className="archived-workspaces-pagination-btn"
+                  onClick={() => handlePage(safePage - 1)}
+                  disabled={safePage <= 1 || archiveLogLoading}
+                >
+                  Previous
+                </button>
+                <span className="archived-workspaces-pagination-page">Page {safePage}</span>
+                <button
+                  type="button"
+                  className="archived-workspaces-pagination-btn"
+                  onClick={() => handlePage(safePage + 1)}
+                  disabled={safePage >= totalPages || archiveLogLoading}
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
         </div>

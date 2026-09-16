@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import '../../design/scss/structure/side-nav/AddDashboardModal.scss';
+import '../../design/scss/EditWorkflows.scss';
 import workflowService from '../../services/workflowService';
 import portService from '../../services/portService';
 import billingEntityService from '../../services/billingEntityService';
@@ -177,7 +178,7 @@ const CreateWorkflowModal = ({ show, onClose, onSave, isSaving = false }) => {
     <Modal
       show={show}
       onHide={handleClose}
-      className="add-dashboard-modal"
+      className="add-dashboard-modal create-workflow-modal"
       centered
       backdrop="static"
       backdropClassName="add-dashboard-modal-backdrop"

@@ -1795,3 +1795,33 @@ div[role="tooltip"][id^="workflow-info-"] {
     margin-left: 0;
   }
 }
+
+// New workflow modal reuses the AddDashboard modal styles, whose labels are muted grey
+// and whose text input placeholder (border-colour, 15px) doesn't match the PremiumSelect
+// placeholder (text-muted, 13px); align labels to primary text and every input text /
+// placeholder / value to one colour and one 13px size.
+.create-workflow-modal {
+  .add-dashboard-label {
+    color: var(--text-primary);
+  }
+
+  .add-dashboard-input {
+    font-size: 0.8125rem;
+
+    &::placeholder {
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+    }
+  }
+
+  .add-dashboard-premium-select {
+    .cf-multi-select-placeholder {
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+    }
+
+    .cf-multi-select-selected-value {
+      font-size: 0.8125rem;
+    }
+  }
+}
