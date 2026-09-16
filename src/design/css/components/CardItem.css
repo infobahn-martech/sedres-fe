@@ -896,11 +896,9 @@
   color: var(--text-primary);
   margin: 0 0 4px 0;
   line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
-  word-break: break-word;
+  text-overflow: ellipsis;
 }
 
 .card-api-summary-row {
