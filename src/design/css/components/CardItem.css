@@ -82,14 +82,21 @@
   background: linear-gradient(to bottom, #fffbeb 0%, var(--surface-primary) 30%);
 }
 
-/* Row above the card content: board-level selection checkbox + (API cards) user avatar */
+/* Row above the card content: card type icon (left) + selection checkbox / user avatar (right) */
 .kanban-card-top-row {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 6px;
   width: 100%;
   margin-bottom: 4px;
+}
+
+.kanban-card-top-row-left,
+.kanban-card-top-row-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .kanban-card-select-toggle {

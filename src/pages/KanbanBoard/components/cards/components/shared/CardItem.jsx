@@ -575,26 +575,20 @@ function ApiKanbanCardFull({
       ? card.name
       : "";
   const showLogo = isValidImage(card.entityLogo);
-  const hasTypeIcon = !!card.cardTypeIcon;
   const hasTimeline = hasText(card.timeLeft);
   const hasProgress = isValidProgress(card.progress);
   const showSummaryRow = hasTimeline || hasProgress;
 
-  const showHeaderRow = showLogo || hasTypeIcon;
-
   return (
     <>
-      {showHeaderRow && (
+      {showLogo && (
         <div className="card-api-header">
-          {hasTypeIcon && <ApiCardTypeIcon card={card} inline />}
-          {showLogo && (
-            <img
-              src={card.entityLogo}
-              alt=""
-              className="card-api-logo"
-              loading="lazy"
-            />
-          )}
+          <img
+            src={card.entityLogo}
+            alt=""
+            className="card-api-logo"
+            loading="lazy"
+          />
         </div>
       )}
 
@@ -713,36 +707,43 @@ function CardItem({
           }}
         >
           {(typeof onToggleSelectForAction === "function" ||
-            (isApiCard && !isShrunk && topRowUsernameInitial)) && (
+            (isApiCard && !isShrunk && (topRowUsernameInitial || card.cardTypeIcon))) && (
             <div className="kanban-card-top-row">
-              {isApiCard && !isShrunk && topRowUsernameInitial ? (
-                <span className="card-api-avatar-wrap">
-                  <span
-                    className="card-api-user-avatar"
-                    title={hasText(card.user) ? String(card.user).trim() : undefined}
-                    aria-hidden
-                  >
-                    {topRowUsernameInitial}
+              <div className="kanban-card-top-row-left">
+                {isApiCard && !isShrunk && card.cardTypeIcon ? (
+                  <ApiCardTypeIcon card={card} inline />
+                ) : null}
+              </div>
+              <div className="kanban-card-top-row-right">
+                {isApiCard && !isShrunk && topRowUsernameInitial ? (
+                  <span className="card-api-avatar-wrap">
+                    <span
+                      className="card-api-user-avatar"
+                      title={hasText(card.user) ? String(card.user).trim() : undefined}
+                      aria-hidden
+                    >
+                      {topRowUsernameInitial}
+                    </span>
+                    <ApiCardBlockerBadge card={card} />
                   </span>
-                  <ApiCardBlockerBadge card={card} />
-                </span>
-              ) : null}
-              {typeof onToggleSelectForAction === "function" && (
-                <button
-                  type="button"
-                  className={`kanban-card-select-toggle ${isSelectedForAction ? "is-selected" : ""}`}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleSelectForAction(card);
-                  }}
-                  aria-pressed={isSelectedForAction}
-                  aria-label={isSelectedForAction ? "Deselect card" : "Select card"}
-                  title={isSelectedForAction ? "Deselect card" : "Select card"}
-                >
-                  <span className="kanban-card-select-toggle-box" aria-hidden="true" />
-                </button>
-              )}
+                ) : null}
+                {typeof onToggleSelectForAction === "function" && (
+                  <button
+                    type="button"
+                    className={`kanban-card-select-toggle ${isSelectedForAction ? "is-selected" : ""}`}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleSelectForAction(card);
+                    }}
+                    aria-pressed={isSelectedForAction}
+                    aria-label={isSelectedForAction ? "Deselect card" : "Select card"}
+                    title={isSelectedForAction ? "Deselect card" : "Select card"}
+                  >
+                    <span className="kanban-card-select-toggle-box" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
             </div>
           )}
           {isApiCard ? (
