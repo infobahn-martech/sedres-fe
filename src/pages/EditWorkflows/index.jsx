@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { FiArrowLeft } from 'react-icons/fi';
+import { FiArrowLeft, FiChevronDown } from 'react-icons/fi';
 import { Tooltip } from 'react-tooltip';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import '../../design/scss/EditWorkflows.scss';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 import CreateWorkflowModal from './CreateWorkflowModal';
@@ -99,6 +100,7 @@ function EditWorkflows() {
   const [editingStageName, setEditingStageName] = useState('');
   const [workflows, setWorkflows] = useState(DEFAULT_WORKFLOWS);
   const [mutationTargets, setMutationTargets] = useState({});
+  const [collapsedWorkflowIds, setCollapsedWorkflowIds] = useState({});
   const [createWorkflowSaving, setCreateWorkflowSaving] = useState(false);
   const [deleteModal, setDeleteModal] = useState(null);
   const mutationInflightRef = useRef(new Set());
@@ -668,6 +670,23 @@ function EditWorkflows() {
     });
   };
 
+  const handleToggleCollapseWorkflow = (workflowId) => {
+    setCollapsedWorkflowIds((prev) => ({ ...prev, [workflowId]: !prev[workflowId] }));
+    setHoveredColumn(null);
+    setStackedRailMetrics(null);
+  };
+
+  const handleWorkflowDragEnd = (result) => {
+    const { source, destination } = result;
+    if (!destination || source.index === destination.index) return;
+    setWorkflows((prev) => {
+      const next = Array.from(prev);
+      const [moved] = next.splice(source.index, 1);
+      next.splice(destination.index, 0, moved);
+      return next;
+    });
+  };
+
   const showNoWorkflowEmptyState = Boolean(boardId) && !isLoading && workflows.length === 0;
 
   return (
@@ -775,13 +794,26 @@ function EditWorkflows() {
         ) : workflows.length === 0 ? (
           <div className="workflows-empty">No workflow found. Add boardId to the URL to load a workflow.</div>
         ) : (
-          workflows.map((workflow) => {
+          <DragDropContext onDragEnd={handleWorkflowDragEnd}>
+            <Droppable droppableId="workflows-list">
+              {(droppableProvided) => (
+                <div ref={droppableProvided.innerRef} {...droppableProvided.droppableProps}>
+                  {workflows.map((workflow, workflowIndex) => {
             const workflowIsDisabled = workflow.is_active == 0;
             const wfMutationPending = Boolean(mutationTargets[`wf:${workflow.id}`]);
+            const isCollapsed = Boolean(collapsedWorkflowIds[workflow.id]);
             return (
-              <div
+              <Draggable
                 key={workflow.id}
-                className={`workflow-card${workflowIsDisabled ? ' workflow-card--disabled' : ''}`}
+                draggableId={String(workflow.id)}
+                index={workflowIndex}
+                isDragDisabled={workflowIsDisabled || wfMutationPending}
+              >
+                {(draggableProvided, draggableSnapshot) => (
+              <div
+                ref={draggableProvided.innerRef}
+                {...draggableProvided.draggableProps}
+                className={`workflow-card${workflowIsDisabled ? ' workflow-card--disabled' : ''}${draggableSnapshot.isDragging ? ' workflow-card--dragging' : ''}`}
               >
                 <div className="workflow-header workflow-header--mutation-host">
                   <div className="workflow-header-left">
@@ -789,10 +821,26 @@ function EditWorkflows() {
                       <h3 className="workflow-title">{workflow.name}</h3>
                     ) : (
                       <>
-                        <button className="workflow-move-btn" type="button" disabled={wfMutationPending}>
+                        <button
+                          className="workflow-move-btn"
+                          type="button"
+                          disabled={wfMutationPending}
+                          aria-label="Drag to reorder workflow"
+                          {...(draggableProvided.dragHandleProps || {})}
+                        >
                           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M7 5L10 2L13 5M13 15L10 18L7 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
+                        </button>
+                        <button
+                          type="button"
+                          className={`workflow-collapse-btn${isCollapsed ? ' workflow-collapse-btn--collapsed' : ''}`}
+                          disabled={wfMutationPending}
+                          onClick={() => handleToggleCollapseWorkflow(workflow.id)}
+                          aria-label={isCollapsed ? 'Expand workflow' : 'Collapse workflow'}
+                          aria-expanded={!isCollapsed}
+                        >
+                          <FiChevronDown aria-hidden="true" />
                         </button>
                         {editingWorkflowId === workflow.id ? (
                           <input
@@ -879,7 +927,7 @@ function EditWorkflows() {
                   ) : null}
                 </div>
 
-                {!workflowIsDisabled ? (
+                {!workflowIsDisabled && !isCollapsed ? (
                   <div className="workflow-board">
                     <WorkflowBoard
                       workflow={workflow}
@@ -912,8 +960,15 @@ function EditWorkflows() {
                   </div>
                 ) : null}
               </div>
+                )}
+              </Draggable>
             );
-          })
+                  })}
+                  {droppableProvided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
         )}
       </div>
 
