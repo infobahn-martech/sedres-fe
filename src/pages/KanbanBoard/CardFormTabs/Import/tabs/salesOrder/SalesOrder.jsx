@@ -18,6 +18,7 @@ function SalesOrder({
   currentStep,
   stepLabels,
   soActionStateResetToken,
+  workflowTitle,
 }) {
   const cardColor = "#e2e6ff";
 
@@ -44,6 +45,7 @@ function SalesOrder({
             currentStep={currentStep}
             stepLabels={stepLabels}
             soActionStateResetToken={soActionStateResetToken}
+            workflowTitle={workflowTitle}
           />
         </div>
       </div>
@@ -68,6 +70,7 @@ SalesOrder.propTypes = {
   currentStep: PropTypes.number,
   stepLabels: PropTypes.arrayOf(PropTypes.string),
   soActionStateResetToken: PropTypes.number,
+  workflowTitle: PropTypes.string,
 };
 
 export default SalesOrder;
