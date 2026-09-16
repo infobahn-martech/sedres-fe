@@ -82,14 +82,18 @@
   background: linear-gradient(to bottom, #fffbeb 0%, var(--surface-primary) 30%);
 }
 
-/* Board-level card selection (Sales Order / Generate PO action) */
+/* Row above the card content: board-level selection checkbox + (API cards) user avatar */
+.kanban-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
 .kanban-card-select-toggle {
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  z-index: 3;
-  width: 18px;
-  height: 18px;
+  display: flex;
   padding: 0;
   border: none;
   background: transparent;

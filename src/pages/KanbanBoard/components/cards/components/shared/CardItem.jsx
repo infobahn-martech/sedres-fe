@@ -576,7 +576,6 @@ function ApiKanbanCardFull({
       : "";
   const showLogo = isValidImage(card.entityLogo);
   const hasTypeIcon = !!card.cardTypeIcon;
-  const usernameInitial = getUsernameInitial(card.user);
   const hasTimeline = hasText(card.timeLeft);
   const hasProgress = isValidProgress(card.progress);
   const showSummaryRow = hasTimeline || hasProgress;
@@ -610,18 +609,6 @@ function ApiKanbanCardFull({
           >
             {displayTitle}
           </h3>
-          {usernameInitial ? (
-            <span className="card-api-avatar-wrap">
-              <span
-                className="card-api-user-avatar"
-                title={hasText(card.user) ? String(card.user).trim() : undefined}
-                aria-hidden
-              >
-                {usernameInitial}
-              </span>
-              <ApiCardBlockerBadge card={card} />
-            </span>
-          ) : null}
         </div>
         <ApiCardTaskLine card={card} />
         {hasText(secondary) ? (
@@ -662,6 +649,7 @@ function CardItem({
   onToggleSelectForAction,
 }) {
   const isApiCard = card.cardSource === "api";
+  const topRowUsernameInitial = isApiCard && !isShrunk ? getUsernameInitial(card.user) : null;
   const isTransportCoordinatorWorkflow = String(workflowTitle || "").trim().toLowerCase().includes("transport coordinator");
   const cardColor = card.color || "#2A00FF";
   const invoiceAmount = card.invoiceAmount != null ? Number(card.invoiceAmount) : null;
@@ -724,21 +712,38 @@ function CardItem({
             "--card-color": cardColor,
           }}
         >
-          {typeof onToggleSelectForAction === "function" && (
-            <button
-              type="button"
-              className={`kanban-card-select-toggle ${isSelectedForAction ? "is-selected" : ""}`}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleSelectForAction(card);
-              }}
-              aria-pressed={isSelectedForAction}
-              aria-label={isSelectedForAction ? "Deselect card" : "Select card"}
-              title={isSelectedForAction ? "Deselect card" : "Select card"}
-            >
-              <span className="kanban-card-select-toggle-box" aria-hidden="true" />
-            </button>
+          {(typeof onToggleSelectForAction === "function" ||
+            (isApiCard && !isShrunk && topRowUsernameInitial)) && (
+            <div className="kanban-card-top-row">
+              {typeof onToggleSelectForAction === "function" && (
+                <button
+                  type="button"
+                  className={`kanban-card-select-toggle ${isSelectedForAction ? "is-selected" : ""}`}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleSelectForAction(card);
+                  }}
+                  aria-pressed={isSelectedForAction}
+                  aria-label={isSelectedForAction ? "Deselect card" : "Select card"}
+                  title={isSelectedForAction ? "Deselect card" : "Select card"}
+                >
+                  <span className="kanban-card-select-toggle-box" aria-hidden="true" />
+                </button>
+              )}
+              {isApiCard && !isShrunk && topRowUsernameInitial ? (
+                <span className="card-api-avatar-wrap">
+                  <span
+                    className="card-api-user-avatar"
+                    title={hasText(card.user) ? String(card.user).trim() : undefined}
+                    aria-hidden
+                  >
+                    {topRowUsernameInitial}
+                  </span>
+                  <ApiCardBlockerBadge card={card} />
+                </span>
+              ) : null}
+            </div>
           )}
           {isApiCard ? (
             isShrunk ? (
