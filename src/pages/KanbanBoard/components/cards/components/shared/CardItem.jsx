@@ -581,17 +581,6 @@ function ApiKanbanCardFull({
 
   return (
     <>
-      {showLogo && (
-        <div className="card-api-header">
-          <img
-            src={card.entityLogo}
-            alt=""
-            className="card-api-logo"
-            loading="lazy"
-          />
-        </div>
-      )}
-
       <ApiCardStickerBadge card={card} />
 
       <div className="card-title-row card-title-row--api">
@@ -603,6 +592,14 @@ function ApiKanbanCardFull({
           >
             {displayTitle}
           </h3>
+          {showLogo && (
+            <img
+              src={card.entityLogo}
+              alt=""
+              className="card-api-logo"
+              loading="lazy"
+            />
+          )}
         </div>
         <ApiCardTaskLine card={card} />
         {hasText(secondary) ? (

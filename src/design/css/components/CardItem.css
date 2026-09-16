@@ -761,24 +761,9 @@
   padding-top: 10px;
 }
 
-.card-api-header {
-  display: flex;
-  justify-content: flex-end;
-  align-items: flex-start;
-  min-height: 0;
-  margin: 0 0 6px 0;
-  width: 100%;
-}
-
-.card-api-header--modern {
-  justify-content: flex-end;
-  align-items: center;
-  gap: 8px;
-}
-
 .card-api-logo {
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   object-fit: contain;
   border-radius: 4px;
   flex-shrink: 0;
