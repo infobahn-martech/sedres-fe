@@ -2715,6 +2715,27 @@
   }
 }
 
+// Unarchive DeleteConfirmationModal opens while the Archived Workspaces list modal is still
+// mounted behind it. Both fall under the app-wide catch-all `.modal.show { z-index: 1300 }` /
+// `.modal-backdrop.show { z-index: 1299 }`, so the confirm dialog's backdrop would sit below
+// the list modal and can't darken it. Elevate both together, same pattern as
+// blockers-modal.scss's .blockers-confirm-modal.
+body .modal-backdrop.fade.archived-workspaces-confirm-modal-backdrop,
+body .modal-backdrop.archived-workspaces-confirm-modal-backdrop.show {
+  z-index: 1350 !important;
+  background-color: rgba(15, 23, 42, 0.6) !important;
+}
+
+body .modal.fade.archived-workspaces-confirm-modal,
+body .modal.archived-workspaces-confirm-modal.show {
+  z-index: 1351 !important;
+}
+
+body .modal.archived-workspaces-confirm-modal.show .modal-dialog {
+  z-index: 1352 !important;
+  position: relative;
+}
+
 // Archived Workspaces Modal Styles — mirrors the Blockers modal layout
 // (blue header banner, pill search bar, card-style toolbar/table sections).
 .archived-workspaces-modal {

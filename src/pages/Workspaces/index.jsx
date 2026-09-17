@@ -227,6 +227,8 @@ function Workspaces() {
   const [showCreateDashboardModal, setShowCreateDashboardModal] = useState(false);
   const [showArchiveWorkspaceModal, setShowArchiveWorkspaceModal] = useState(false);
   const [selectedWorkspaceForArchive, setSelectedWorkspaceForArchive] = useState(null);
+  const [showArchiveBoardModal, setShowArchiveBoardModal] = useState(false);
+  const [selectedBoardForArchive, setSelectedBoardForArchive] = useState(null);
   const menuRef = useRef(null);
   const workspaceMenuRef = useRef(null);
   const boardWallpaperInputRef = useRef(null);
@@ -559,9 +561,21 @@ function Workspaces() {
     navigate(`/edit-workflow?boardId=${boardId}`);
   };
 
-  const handleArchiveBoard = (boardId) => {
+  const handleArchiveBoard = (board) => {
     setOpenMenuId(null);
-    archiveBoard({ board_id: boardId });
+    setSelectedBoardForArchive(board);
+    setShowArchiveBoardModal(true);
+  };
+
+  const handleConfirmArchiveBoard = () => {
+    if (!selectedBoardForArchive) return;
+    archiveBoard({
+      board_id: selectedBoardForArchive.id,
+      cb: () => {
+        setShowArchiveBoardModal(false);
+        setSelectedBoardForArchive(null);
+      },
+    });
   };
 
   const openDashboardWorkspaceModal = () => {
@@ -1167,7 +1181,7 @@ function Workspaces() {
                                 className="board-context-menu-item"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleArchiveBoard(board.id);
+                                  handleArchiveBoard(board);
                                 }}
                               >
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1467,6 +1481,19 @@ function Workspaces() {
           }}
           onConfirm={handleConfirmArchiveWorkspace}
           deleteText={`Are you sure you want to archive "${selectedWorkspaceForArchive?.name ?? 'this workspace'}"?`}
+          isLoading={addEditLoader}
+        />
+      )}
+
+      {showArchiveBoardModal && (
+        <DeleteConfirmationModal
+          show={showArchiveBoardModal}
+          onCancel={() => {
+            setShowArchiveBoardModal(false);
+            setSelectedBoardForArchive(null);
+          }}
+          onConfirm={handleConfirmArchiveBoard}
+          deleteText={`Are you sure you want to archive "${selectedBoardForArchive?.name ?? 'this board'}"?`}
           isLoading={addEditLoader}
         />
       )}
