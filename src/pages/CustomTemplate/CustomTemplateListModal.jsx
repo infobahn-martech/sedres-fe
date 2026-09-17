@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { FiSearch, FiChevronRight, FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
+import {
+    FiSearch, FiChevronRight, FiEdit2, FiTrash2, FiPlus,
+    FiType, FiAlignLeft, FiHash, FiCalendar, FiClock,
+    FiChevronDown, FiCheckSquare, FiDisc, FiPaperclip,
+} from "react-icons/fi";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import CustomTemplateBuilderModal from "./CustomTemplateBuilderModal";
 import "../../design/css/common/CardForm.css";
@@ -19,6 +23,19 @@ const FIELD_TYPE_LABELS = {
     checkbox: "Checkbox",
     radio: "Radio Button",
     file: "File",
+};
+
+const FIELD_TYPE_ICONS = {
+    text: FiType,
+    textarea: FiAlignLeft,
+    number: FiHash,
+    date: FiCalendar,
+    time: FiClock,
+    datetime: FiCalendar,
+    dropdown: FiChevronDown,
+    checkbox: FiCheckSquare,
+    radio: FiDisc,
+    file: FiPaperclip,
 };
 
 const DUMMY_TEMPLATES = [
@@ -166,12 +183,18 @@ function TemplateListCard({ template, isActive, onSelect, onDelete }) {
 }
 
 function FieldPreviewCard({ field }) {
+    const Icon = FIELD_TYPE_ICONS[field.type] ?? FiType;
     return (
         <div className="ctl-preview-field-card">
-            <span className="ctl-preview-field-label">{field.label}</span>
-            <div className="ctl-preview-field-meta">
-                <span className="ctl-preview-field-badge">{FIELD_TYPE_LABELS[field.type] ?? field.type}</span>
-                {field.required && <span className="ctl-preview-field-required">Required</span>}
+            <span className="ctl-preview-field-icon">
+                <Icon size={15} />
+            </span>
+            <div className="ctl-preview-field-content">
+                <span className="ctl-preview-field-label">{field.label}</span>
+                <div className="ctl-preview-field-meta">
+                    <span className="ctl-preview-field-badge">{FIELD_TYPE_LABELS[field.type] ?? field.type}</span>
+                    {field.required && <span className="ctl-preview-field-required">Required</span>}
+                </div>
             </div>
         </div>
     );
@@ -233,10 +256,9 @@ function CustomTemplateListModal({ show, onClose }) {
 
     return (
         <>
-            {!builderOpen && (
-                <div className="cardform-overlay ct-modal-overlay">
+            <div className="cardform-overlay ct-modal-overlay">
                     <div className="cardform-panel">
-                        <div className="cardform-topbar ct-modal-topbar">
+                        <div className="cardform-topbar ctl-modal-topbar">
                             <div>
                                 <span className="ctl-topbar-title">Custom Templates List</span>
                             </div>
@@ -339,15 +361,16 @@ function CustomTemplateListModal({ show, onClose }) {
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+            </div>
 
             {builderOpen && (
-                <CustomTemplateBuilderModal
-                    show={builderOpen}
-                    onClose={() => setBuilderOpen(false)}
-                    initialTemplate={builderInitialTemplate}
-                />
+                <div className="ctl-nested-builder">
+                    <CustomTemplateBuilderModal
+                        show={builderOpen}
+                        onClose={() => setBuilderOpen(false)}
+                        initialTemplate={builderInitialTemplate}
+                    />
+                </div>
             )}
 
             {!!deleteRequestId && (

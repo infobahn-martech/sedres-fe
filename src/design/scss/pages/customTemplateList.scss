@@ -3,6 +3,17 @@
 // Builder's footer (ctm-footer/ctm-save-btn) for visual parity. Everything here
 // is scoped with the `ctl-` prefix so it never collides with either.
 
+.ctl-modal-topbar {
+  background-color: #00368c;
+}
+
+// When "Create Custom Template" / "Edit Template" is triggered from the list, the
+// builder opens as a modal stacked on top of the list (not replacing it) — bump
+// its overlay above the list's own (ct-modal-overlay z-index: 1350).
+.ctl-nested-builder .ctm-modal-overlay {
+  z-index: 1360;
+}
+
 .ctl-topbar-title {
   color: var(--text-inverse);
   font-weight: 700;
@@ -297,7 +308,7 @@
 
 .ctl-preview-fields-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 12px;
 }
 
@@ -306,6 +317,32 @@
   border-radius: 8px;
   background: var(--surface-primary);
   padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: #a9c2e8;
+    box-shadow: 0 2px 8px rgba(0, 54, 140, 0.08);
+  }
+}
+
+.ctl-preview-field-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: #eaf0fb;
+  color: #00368c;
+}
+
+.ctl-preview-field-content {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -320,34 +357,32 @@
 .ctl-preview-field-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .ctl-preview-field-badge {
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
   padding: 2px 8px;
   border-radius: 4px;
   background: #eaf0fb;
   color: #00368c;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
 }
 
 .ctl-preview-field-required {
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
   padding: 2px 8px;
   border-radius: 4px;
   background: #fdecec;
   color: #c62828;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
 }
 
 // The delete-template confirmation is a react-bootstrap Modal, which defaults to
