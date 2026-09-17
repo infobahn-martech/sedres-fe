@@ -991,7 +991,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   justify-content: center;
   pointer-events: none;
   z-index: 5;
-  border: 1px solid #59d38c;
+  border: none;
   background: var(--surface-primary);
   border-radius: 0;
   box-sizing: border-box;
@@ -1047,11 +1047,13 @@ div[role="tooltip"][id^="workflow-info-"] {
 .workflow-insertion-rail-left {
   left: 0;
   width: 22px;
+  border-right: 1px solid #59d38c;
 }
 
 .workflow-insertion-rail-right {
   right: 0;
   width: 22px;
+  border-left: 1px solid #59d38c;
 }
 
 // Add-grid insertion row: thin horizontal bar in swimlane column only (LIVE), visible on hover, no layout break
