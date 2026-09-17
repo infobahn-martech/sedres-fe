@@ -282,6 +282,40 @@
   }
 }
 
+// Secondary row: sub-tabs of a top-level tab (e.g. Operation > Pre Arrival / Arrival / Departure).
+.ctl-preview-subtabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: -8px 0 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--border-primary);
+  flex-shrink: 0;
+}
+
+.ctl-preview-subtab-pill {
+  padding: 5px 12px;
+  border-radius: 16px;
+  border: 1.5px solid var(--border-primary);
+  background: var(--surface-secondary, #f4f6fb);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: #a9c2e8;
+  }
+
+  &.is-active {
+    border-color: #00368c;
+    background: #eaf0fb;
+    color: #00368c;
+  }
+}
+
 .ctl-preview-fields-scroll {
   flex: 1;
   min-height: 0;

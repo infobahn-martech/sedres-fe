@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
     FiSearch, FiChevronRight, FiEdit2, FiTrash2, FiPlus,
     FiType, FiAlignLeft, FiHash, FiCalendar, FiClock,
-    FiChevronDown, FiCheckSquare, FiDisc, FiPaperclip,
+    FiChevronDown, FiCheckSquare, FiDisc, FiPaperclip, FiMail,
 } from "react-icons/fi";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import CustomTemplateBuilderModal from "./CustomTemplateBuilderModal";
@@ -22,7 +22,8 @@ const FIELD_TYPE_LABELS = {
     dropdown: "Dropdown",
     checkbox: "Checkbox",
     radio: "Radio Button",
-    file: "File",
+    file: "File Upload",
+    email: "Email",
 };
 
 const FIELD_TYPE_ICONS = {
@@ -36,124 +37,163 @@ const FIELD_TYPE_ICONS = {
     checkbox: FiCheckSquare,
     radio: FiDisc,
     file: FiPaperclip,
+    email: FiMail,
 };
+
+// Appointment Details is identical across all three call types, matching the
+// real Sedres Appointment Details tab (General.jsx) at /kanban-board/:id.
+const buildAppointmentDetailsTab = () => ({
+    name: "Appointment Details",
+    fields: [
+        { label: "Owner", type: "dropdown", required: false },
+        { label: "Appointment Email", type: "file", required: false },
+        { label: "Appointment Type", type: "dropdown", required: true },
+        { label: "Appointment Received", type: "datetime", required: true },
+        { label: "Call Type", type: "dropdown", required: true },
+        { label: "Port", type: "dropdown", required: true },
+        { label: "Expected Time of Arrival", type: "datetime", required: true },
+        { label: "Expected Time of Departure", type: "datetime", required: false },
+        { label: "Last Port", type: "text", required: false },
+        { label: "Vessel Type", type: "dropdown", required: false },
+        { label: "Vessel Name", type: "text", required: true },
+        { label: "Billing Entity", type: "dropdown", required: true },
+        { label: "Vessel Owner", type: "text", required: false },
+        { label: "Vessel Charterer", type: "text", required: false },
+        { label: "Vessel Manager", type: "text", required: false },
+        { label: "Checklist", type: "dropdown", required: false },
+        { label: "Assigned Operator", type: "dropdown", required: false },
+        { label: "Service Requestor Name", type: "text", required: false },
+        { label: "Service Requestor Email", type: "email", required: false },
+        { label: "Daily Report Emails", type: "text", required: false },
+        { label: "Billing Instructions", type: "textarea", required: false },
+    ],
+});
+
+// Tabs not detailed in the dummy data still appear (for the 9-tab count / tab row)
+// but carry no fields yet.
+const buildTrailingEmptyTabs = () => [
+    { name: "Husbandry", fields: [] },
+    { name: "Sales Order", fields: [] },
+    { name: "Reports", fields: [] },
+    { name: "Document Library", fields: [] },
+    { name: "Comments", fields: [] },
+    { name: "Subtasks", fields: [] },
+    { name: "Notes", fields: [] },
+];
 
 const DUMMY_TEMPLATES = [
     {
         id: "tpl-import-call",
         name: "Import Call",
-        billingEntityLabel: "Sedres UAE",
+        billingEntityLabel: "General",
         tabs: [
+            buildAppointmentDetailsTab(),
             {
-                name: "General Information",
-                fields: [
-                    { label: "Call Reference", type: "text", required: true },
-                    { label: "Port", type: "dropdown", required: true },
-                    { label: "ETA", type: "datetime", required: true },
-                    { label: "Vessel Agent", type: "text", required: false },
+                name: "Operation",
+                subTabs: [
+                    {
+                        name: "Pre Arrival",
+                        fields: [
+                            { label: "Expected Time of Arrival", type: "datetime", required: false },
+                            { label: "Expected Commencement of Custom Inspection", type: "datetime", required: false },
+                            { label: "Expected Commencement of Immigration Clearance for Crew", type: "datetime", required: false },
+                            { label: "Expected Completion of Inward Clearance", type: "datetime", required: false },
+                            { label: "SABER Status", type: "dropdown", required: false },
+                            { label: "Weather Forecast", type: "dropdown", required: false },
+                            { label: "Coordinates Type", type: "dropdown", required: false },
+                        ],
+                    },
+                    {
+                        name: "Crew Immigration",
+                        fields: [
+                            { label: "Crew Immigration Commenced", type: "datetime", required: false },
+                            { label: "Crew Immigration Completed", type: "datetime", required: false },
+                            { label: "Crew Immigration Status", type: "dropdown", required: false },
+                        ],
+                    },
+                    {
+                        name: "Arrival",
+                        fields: [
+                            { label: "Actual Time of Arrival", type: "datetime", required: false },
+                            { label: "Custom Inspection Commenced", type: "datetime", required: false },
+                            { label: "Custom Inspection Completed", type: "datetime", required: false },
+                            { label: "Custom Clearance Time", type: "text", required: false },
+                            { label: "Vessel Inward Formalities Completed", type: "datetime", required: false },
+                            { label: "Custom Inspection Status", type: "dropdown", required: false },
+                            { label: "Inward Clearance", type: "dropdown", required: false },
+                        ],
+                    },
+                    {
+                        name: "Departure",
+                        fields: [
+                            { label: "Email Requested Accept", type: "checkbox", required: false },
+                            { label: "Outward Clearance Delivered", type: "datetime", required: false },
+                            { label: "Next Port", type: "text", required: false },
+                            { label: "Attachments", type: "file", required: false },
+                        ],
+                    },
+                    {
+                        name: "Check List",
+                        fields: [
+                            { label: "Checklist Completion Status", type: "dropdown", required: false },
+                        ],
+                    },
                 ],
             },
-            {
-                name: "Vessel Details",
-                fields: [
-                    { label: "Vessel Name", type: "text", required: true },
-                    { label: "IMO Number", type: "text", required: true },
-                    { label: "Flag", type: "dropdown", required: false },
-                    { label: "Gross Tonnage", type: "number", required: false },
-                ],
-            },
-            {
-                name: "Cargo Details",
-                fields: [
-                    { label: "Cargo Type", type: "dropdown", required: true },
-                    { label: "Cargo Quantity", type: "number", required: false },
-                    { label: "Discharge Port", type: "dropdown", required: false },
-                ],
-            },
-            {
-                name: "Documents",
-                fields: [
-                    { label: "Manifest Upload", type: "file", required: false },
-                    { label: "Bill of Lading", type: "file", required: false },
-                    { label: "Remarks", type: "textarea", required: false },
-                ],
-            },
+            ...buildTrailingEmptyTabs(),
         ],
     },
     {
         id: "tpl-export-call",
         name: "Export Call",
-        billingEntityLabel: "Sedres UAE",
+        billingEntityLabel: "General",
         tabs: [
+            buildAppointmentDetailsTab(),
             {
-                name: "General Information",
-                fields: [
-                    { label: "Export Reference", type: "text", required: true },
-                    { label: "Port", type: "dropdown", required: true },
-                    { label: "ETD", type: "datetime", required: true },
-                    { label: "Vessel Agent", type: "text", required: false },
+                name: "Operation",
+                subTabs: [
+                    { name: "Pre Arrival", fields: [] },
+                    { name: "Crew Immigration", fields: [] },
+                    { name: "Arrival", fields: [] },
+                    {
+                        name: "Departure",
+                        fields: [
+                            { label: "Expected Time of Departure", type: "datetime", required: false },
+                            { label: "Email Requested Accept", type: "checkbox", required: false },
+                            { label: "Outward Clearance Delivered", type: "datetime", required: false },
+                            { label: "Next Port", type: "text", required: false },
+                            { label: "Departure Attachments", type: "file", required: false },
+                            { label: "Vessel Outward Formalities Completed", type: "datetime", required: false },
+                        ],
+                    },
+                    { name: "Check List", fields: [] },
                 ],
             },
-            {
-                name: "Vessel Details",
-                fields: [
-                    { label: "Vessel Name", type: "text", required: true },
-                    { label: "IMO Number", type: "text", required: true },
-                    { label: "Flag", type: "dropdown", required: false },
-                ],
-            },
-            {
-                name: "Cargo Details",
-                fields: [
-                    { label: "Cargo Type", type: "dropdown", required: true },
-                    { label: "Cargo Quantity", type: "number", required: false },
-                    { label: "Loading Port", type: "dropdown", required: false },
-                    { label: "Destination Port", type: "dropdown", required: false },
-                ],
-            },
-            {
-                name: "Documents",
-                fields: [
-                    { label: "Shipping Instructions", type: "file", required: false },
-                    { label: "Cargo Manifest", type: "file", required: false },
-                    { label: "Remarks", type: "textarea", required: false },
-                ],
-            },
+            ...buildTrailingEmptyTabs(),
         ],
     },
     {
-        id: "tpl-port-agency-call",
-        name: "Port Agency Call",
-        billingEntityLabel: "Sedres KSA",
+        id: "tpl-domestic-call",
+        name: "Domestic Call",
+        billingEntityLabel: "General",
         tabs: [
+            buildAppointmentDetailsTab(),
             {
-                name: "General Information",
+                name: "Operation",
                 fields: [
-                    { label: "Call Reference", type: "text", required: true },
-                    { label: "Port", type: "dropdown", required: true },
-                    { label: "ETA", type: "datetime", required: true },
-                    { label: "Agent", type: "text", required: false },
-                ],
-            },
-            {
-                name: "Vessel Details",
-                fields: [
-                    { label: "Vessel Name", type: "text", required: true },
-                    { label: "IMO Number", type: "text", required: true },
-                ],
-            },
-            {
-                name: "Cargo Details",
-                fields: [
-                    { label: "Cargo Type", type: "dropdown", required: false },
-                ],
-            },
-            {
-                name: "Documents",
-                fields: [
+                    { label: "Expected Time of Arrival", type: "datetime", required: false },
+                    { label: "Actual Time of Arrival", type: "datetime", required: false },
+                    { label: "Expected Time of Departure", type: "datetime", required: false },
+                    { label: "Actual Time of Departure", type: "datetime", required: false },
+                    { label: "Port", type: "dropdown", required: false },
+                    { label: "Next Port", type: "text", required: false },
+                    { label: "Vessel Name", type: "text", required: false },
+                    { label: "Assigned Operator", type: "dropdown", required: false },
+                    { label: "Attachments", type: "file", required: false },
                     { label: "Remarks", type: "textarea", required: false },
                 ],
             },
+            ...buildTrailingEmptyTabs(),
         ],
     },
 ];
@@ -205,6 +245,7 @@ function CustomTemplateListModal({ show, onClose }) {
     const [templates, setTemplates] = useState(DUMMY_TEMPLATES);
     const [selectedId, setSelectedId] = useState(DUMMY_TEMPLATES[0]?.id ?? null);
     const [activeTabIndex, setActiveTabIndex] = useState(0);
+    const [activeSubTabIndex, setActiveSubTabIndex] = useState(0);
     const [deleteRequestId, setDeleteRequestId] = useState(null);
     const [builderOpen, setBuilderOpen] = useState(false);
     const [builderInitialTemplate, setBuilderInitialTemplate] = useState(null);
@@ -214,10 +255,19 @@ function CustomTemplateListModal({ show, onClose }) {
     );
     const selectedTemplate = templates.find((t) => t.id === selectedId) ?? null;
     const activeTab = selectedTemplate?.tabs?.[activeTabIndex] ?? null;
+    const hasSubTabs = Array.isArray(activeTab?.subTabs);
+    const activeSubTab = hasSubTabs ? (activeTab.subTabs[activeSubTabIndex] ?? activeTab.subTabs[0]) : null;
+    const fieldsToShow = hasSubTabs ? (activeSubTab?.fields ?? []) : (activeTab?.fields ?? []);
 
     const handleSelectTemplate = (id) => {
         setSelectedId(id);
         setActiveTabIndex(0);
+        setActiveSubTabIndex(0);
+    };
+
+    const handleSelectTab = (idx) => {
+        setActiveTabIndex(idx);
+        setActiveSubTabIndex(0);
     };
 
     const handleConfirmDelete = () => {
@@ -239,9 +289,14 @@ function CustomTemplateListModal({ show, onClose }) {
         setBuilderInitialTemplate({
             name: selectedTemplate.name,
             billingEntityId: "",
+            // The builder only supports flat fields per tab (no nested sub-tabs),
+            // so a tab like Operation with subTabs gets its sub-tab fields flattened.
             tabs: selectedTemplate.tabs.map((tab) => ({
                 name: tab.name,
-                fields: tab.fields.map((f) => ({
+                fields: (Array.isArray(tab.subTabs)
+                    ? tab.subTabs.flatMap((sub) => sub.fields ?? [])
+                    : (tab.fields ?? [])
+                ).map((f) => ({
                     label: f.label,
                     type: f.type,
                     required: f.required,
@@ -322,17 +377,32 @@ function CustomTemplateListModal({ show, onClose }) {
                                                     key={tab.name}
                                                     type="button"
                                                     className={`ctl-preview-tab-pill ${idx === activeTabIndex ? "is-active" : ""}`}
-                                                    onClick={() => setActiveTabIndex(idx)}
+                                                    onClick={() => handleSelectTab(idx)}
                                                 >
                                                     {tab.name}
                                                 </button>
                                             ))}
                                         </div>
 
+                                        {hasSubTabs && (
+                                            <div className="ctl-preview-subtabs">
+                                                {activeTab.subTabs.map((sub, idx) => (
+                                                    <button
+                                                        key={sub.name}
+                                                        type="button"
+                                                        className={`ctl-preview-subtab-pill ${idx === activeSubTabIndex ? "is-active" : ""}`}
+                                                        onClick={() => setActiveSubTabIndex(idx)}
+                                                    >
+                                                        {sub.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
                                         <div className="ctl-preview-fields-scroll">
-                                            {activeTab && activeTab.fields.length > 0 ? (
+                                            {fieldsToShow.length > 0 ? (
                                                 <div className="ctl-preview-fields-grid">
-                                                    {activeTab.fields.map((field, idx) => (
+                                                    {fieldsToShow.map((field, idx) => (
                                                         <FieldPreviewCard key={idx} field={field} />
                                                     ))}
                                                 </div>
