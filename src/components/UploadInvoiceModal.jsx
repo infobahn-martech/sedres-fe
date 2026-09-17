@@ -1,7 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
 import CustomModal from './CustomModal';
 
-function UploadInvoiceModal({ show, closeModal, orderNo, contextLabel, onUploadComplete }) {
+// title / fieldLabel / accept / formatsHint / inputId default to the original invoice-upload
+// wording so existing callers are unchanged; SalesOrderList's SO approval email upload passes
+// its own. inputId must be unique per mounted instance (the drop zone clicks it by id).
+function UploadInvoiceModal({
+    show,
+    closeModal,
+    orderNo,
+    contextLabel,
+    onUploadComplete,
+    title = 'Upload Invoice',
+    fieldLabel = 'Attach invoices',
+    accept = '.pdf,.jpg,.jpeg,.jpe',
+    formatsHint = 'PDF, JPG, JPEG',
+    inputId = 'upload-invoice-input',
+}) {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -55,7 +69,7 @@ function UploadInvoiceModal({ show, closeModal, orderNo, contextLabel, onUploadC
         );
     }, [selectedFiles]);
 
-    const renderHeader = () => <h1 className="modal-title">Upload Invoice</h1>;
+    const renderHeader = () => <h1 className="modal-title">{title}</h1>;
 
     const renderBody = () => (
         <div className="modal-body">
@@ -64,7 +78,7 @@ function UploadInvoiceModal({ show, closeModal, orderNo, contextLabel, onUploadC
                     <div className="col-md-12 mb-lg-3 mb-sm-0">
                         <div className="d-flex align-items-center justify-content-between mb-2">
                             <label className="form-label mb-0">
-                                Attach invoices <span className="text-danger">*</span>
+                                {fieldLabel} <span className="text-danger">*</span>
                             </label>
                             <small className="text-muted">{contextLabel || `Order: ${orderNo}`}</small>
                         </div>
@@ -88,22 +102,22 @@ function UploadInvoiceModal({ show, closeModal, orderNo, contextLabel, onUploadC
                                     setIsDragging(false);
                                     handleAddFiles(e.dataTransfer?.files);
                                 }}
-                                onClick={() => document.getElementById('upload-invoice-input').click()}
+                                onClick={() => document.getElementById(inputId).click()}
                                 role="button"
                                 tabIndex={0}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
                                         e.preventDefault();
-                                        document.getElementById('upload-invoice-input').click();
+                                        document.getElementById(inputId).click();
                                     }
                                 }}
                             >
                                 <input
-                                    id="upload-invoice-input"
+                                    id={inputId}
                                     type="file"
                                     className="d-none"
                                     multiple
-                                    accept=".pdf,.jpg,.jpeg,.jpe"
+                                    accept={accept}
                                     onChange={(e) => handleAddFiles(e.target?.files)}
                                 />
 
@@ -120,7 +134,7 @@ function UploadInvoiceModal({ show, closeModal, orderNo, contextLabel, onUploadC
                                             {isDragging ? 'Drop your files here' : 'Drag and drop your files here'}
                                         </span>
                                         <span className="file-drop-zone__hint">or click to browse</span>
-                                        <span className="file-drop-zone__formats">PDF, JPG, JPEG</span>
+                                        <span className="file-drop-zone__formats">{formatsHint}</span>
                                     </>
                                 )}
                             </div>
@@ -149,7 +163,7 @@ function UploadInvoiceModal({ show, closeModal, orderNo, contextLabel, onUploadC
                 disabled={isUploading}
                 onClick={async () => {
                     if (!selectedFiles.length) {
-                        setError('Please select at least one invoice file');
+                        setError('Please select at least one file');
                         return;
                     }
 
