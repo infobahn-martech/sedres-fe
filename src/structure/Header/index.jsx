@@ -35,6 +35,7 @@ import TagsModal from '../SideNav/components/TagsModal';
 import TypesModal from '../SideNav/components/TypesModal';
 const CallTypeBuilderModal = lazy(() => import('../../pages/CallType/CallTypeBuilderModal'));
 const CustomTemplateBuilderModal = lazy(() => import('../../pages/CustomTemplate/CustomTemplateBuilderModal'));
+const CustomTemplateListModal = lazy(() => import('../../pages/CustomTemplate/CustomTemplateListModal'));
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import { useThemeStore } from '../../shared/store/themeStore';
 import NavTabButton from '../../components/NavTabButton';
@@ -62,6 +63,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [showTypesModal, setShowTypesModal] = useState(false);
   const [showCallTypeBuilderModal, setShowCallTypeBuilderModal] = useState(false);
   const [showCustomTemplateModal, setShowCustomTemplateModal] = useState(false);
+  const [showTemplatesListModal, setShowTemplatesListModal] = useState(false);
   const { layoutView } = useLayoutView();
   const isDark = useThemeStore((state) => state.isDark);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
@@ -232,12 +234,14 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     setShowTypesModal(false);
     setShowCallTypeBuilderModal(false);
     setShowCustomTemplateModal(false);
+    setShowTemplatesListModal(false);
 
     if (item.modal === 'blockers') setShowBlockersModal(true);
     if (item.modal === 'stickers') setShowStickersModal(true);
     if (item.modal === 'tags') setShowTagsModal(true);
     if (item.modal === 'types') setShowTypesModal(true);
     if (item.modal === 'templates') setShowCallTypeBuilderModal(true);
+    if (item.modal === 'templates list') setShowTemplatesListModal(true);
     if (item.modal === 'custom templates') setShowCustomTemplateModal(true);
   };
 
@@ -621,6 +625,15 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           <CustomTemplateBuilderModal
             show={showCustomTemplateModal}
             onClose={() => setShowCustomTemplateModal(false)}
+          />
+        </Suspense>
+      )}
+
+      {showTemplatesListModal && (
+        <Suspense fallback={null}>
+          <CustomTemplateListModal
+            show={showTemplatesListModal}
+            onClose={() => setShowTemplatesListModal(false)}
           />
         </Suspense>
       )}

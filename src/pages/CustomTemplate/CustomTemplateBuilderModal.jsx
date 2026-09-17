@@ -29,6 +29,21 @@ const createBlankField = () => ({ id: makeId("field"), label: "", type: "text", 
 
 const buildDefaultTabs = () => [{ id: makeId("tab"), name: "General", fields: [createBlankField()] }];
 
+const buildTabsFromTemplate = (template) => {
+    if (!template?.tabs?.length) return buildDefaultTabs();
+    return template.tabs.map((tab) => ({
+        id: makeId("tab"),
+        name: tab.name,
+        fields: (tab.fields ?? []).map((f) => ({
+            id: makeId("field"),
+            label: f.label ?? "",
+            type: f.type ?? "text",
+            required: Boolean(f.required),
+            options: f.options ? [...f.options] : [],
+        })),
+    }));
+};
+
 function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption }) {
     const options = field.options ?? [];
     return (
@@ -137,16 +152,17 @@ function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOv
     );
 }
 
-function CustomTemplateBuilderModal({ show, onClose }) {
+function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
     const { getBillingEntities, billingEntities, isLoading: billingLoading } = useBillingEntityReducer((s) => s);
     const { success } = useAlertReducer((s) => s);
+    const isEditMode = Boolean(initialTemplate);
 
-    const [templateName, setTemplateName] = useState("");
+    const [templateName, setTemplateName] = useState(() => initialTemplate?.name ?? "");
     const [nameTouched, setNameTouched] = useState(false);
-    const [billingEntity, setBillingEntity] = useState("");
+    const [billingEntity, setBillingEntity] = useState(() => initialTemplate?.billingEntityId ?? "");
     const [entityTouched, setEntityTouched] = useState(false);
 
-    const [tabs, setTabs] = useState(buildDefaultTabs);
+    const [tabs, setTabs] = useState(() => buildTabsFromTemplate(initialTemplate));
     const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id);
     const [addingTab, setAddingTab] = useState(false);
     const [newTabName, setNewTabName] = useState("");
@@ -171,11 +187,11 @@ function CustomTemplateBuilderModal({ show, onClose }) {
     }, [show, billingEntities, billingLoading, getBillingEntities]);
 
     const resetState = () => {
-        setTemplateName("");
+        setTemplateName(initialTemplate?.name ?? "");
         setNameTouched(false);
-        setBillingEntity("");
+        setBillingEntity(initialTemplate?.billingEntityId ?? "");
         setEntityTouched(false);
-        const defaultTabs = buildDefaultTabs();
+        const defaultTabs = buildTabsFromTemplate(initialTemplate);
         setTabs(defaultTabs);
         setActiveTabId(defaultTabs[0].id);
         setAddingTab(false);
@@ -326,7 +342,7 @@ function CustomTemplateBuilderModal({ show, onClose }) {
         setNameTouched(true);
         setEntityTouched(true);
         if (!canSave) return;
-        success("Custom template saved successfully");
+        success(isEditMode ? "Custom template updated successfully" : "Custom template saved successfully");
         resetState();
         onClose();
     };
@@ -339,7 +355,7 @@ function CustomTemplateBuilderModal({ show, onClose }) {
                 <div className="cardform-panel">
                     <div className="cardform-topbar ctm-modal-topbar">
                         <div>
-                            <span className="ctm-topbar-title">Create Custom Template</span>
+                            <span className="ctm-topbar-title">{isEditMode ? "Edit Custom Template" : "Create Custom Template"}</span>
                         </div>
                         <div className="cardform-topbar-right">
                             <button type="button" className="cardform-close-btn" onClick={handleClose}>✕</button>
@@ -510,7 +526,7 @@ function CustomTemplateBuilderModal({ show, onClose }) {
                                 Cancel
                             </button>
                             <button type="button" className="ctm-save-btn" disabled={!canSave} onClick={handleSave}>
-                                Save Template
+                                {isEditMode ? "Update Template" : "Save Template"}
                             </button>
                         </div>
                     </div>
