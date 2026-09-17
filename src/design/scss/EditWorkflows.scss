@@ -713,21 +713,45 @@
 }
 
 .workflow-info-tooltip {
-  max-width: 200px !important;
+  max-width: 220px !important;
   font-size: 12px !important;
   line-height: 1.5 !important;
-  padding: 8px 12px !important;
+  padding: 10px 14px !important;
   text-align: left !important;
   word-wrap: break-word !important;
   z-index: 9999 !important;
+  border-radius: 8px !important;
+  opacity: 1 !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.28) !important;
+  --rt-color-dark: #111827;
 
-  div {
-    margin-bottom: 4px;
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 
-    &:last-child {
-      margin-bottom: 0;
+    > div:first-child {
+      font-weight: 700;
+      color: #fff;
+    }
+
+    > div:last-child {
+      color: rgba(255, 255, 255, 0.72);
     }
   }
+}
+
+.workflow-stage-name-tooltip {
+  max-width: 240px !important;
+  font: normal normal 600 12px/1.4 $font-primary !important;
+  padding: 6px 10px !important;
+  text-align: center !important;
+  word-wrap: break-word !important;
+  z-index: 9999 !important;
+  border-radius: 6px !important;
+  opacity: 1 !important;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.22) !important;
+  --rt-color-dark: #111827;
 }
 
 // Ensure tooltip appears above all workflow elements

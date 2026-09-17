@@ -974,6 +974,13 @@ function EditWorkflows() {
         )}
       </div>
 
+      <Tooltip
+        id="workflow-stage-name-tooltip"
+        place="top"
+        className="workflow-stage-name-tooltip"
+        positionStrategy="fixed"
+      />
+
       <CreateWorkflowModal
         show={showCreateWorkflowModal}
         onClose={() => setShowCreateWorkflowModal(false)}

@@ -270,7 +270,8 @@ function WorkflowStageCard({
             ) : (
               <span
                 className="stage-name"
-                title={stage.name}
+                data-tooltip-id="workflow-stage-name-tooltip"
+                data-tooltip-content={stage.name}
                 onClick={() => !columnBusy && onStartEditStage(stageColumnKey, stage.name)}
                 style={{ cursor: columnBusy ? 'default' : 'pointer' }}
               >
