@@ -551,6 +551,7 @@ const SalesOrderList = ({
   // alone wasn't enough to catch that case, only an actual page refresh (a real fresh mount).
   useEffect(() => {
     setSoActionState(SO_ACTION_STATE_DEFAULT);
+    setIsApprovalEmailUploaded(false);
   }, [callId, soActionStateResetToken]);
 
   // The header action button reflects and acts on the DA record's REAL current stage.
@@ -735,6 +736,12 @@ const SalesOrderList = ({
   // api/da/action_state reporting "approved", or the card sitting on column 5). Same
   // UploadInvoiceModal drag-and-drop component as Invoice Issuance above, with its own wording.
   const [showApprovalEmailUploadModal, setShowApprovalEmailUploadModal] = useState(false);
+
+  // Whether the client's SO approval email has been uploaded for this card (see
+  // handleUploadApprovalEmail) — the "Approved" label only shows once it has been. Local-only
+  // and per-session, same as soActionState: da/da_upload_approval_email's response carries no
+  // readable flag to hydrate this from, so it's reset together with soActionState below.
+  const [isApprovalEmailUploaded, setIsApprovalEmailUploaded] = useState(false);
 
   // api/da/da_action_email_draft/{call_id} — { status: "success", data: { recipient,
   // stage_document_id? } }. Best effort: if it fails or callId is missing, the modal just opens
@@ -1007,24 +1014,21 @@ const SalesOrderList = ({
     setShowApprovalEmailUploadModal(false);
   };
 
-  // Persists via da/da_upload_approval_email (call_id + approval_email file(s),
-  // multipart/form-data) — same shape as handleUploadInvoiceIssuance below. Purely a document
-  // upload: it doesn't advance the DA stage or touch soActionState. Throws on failure so
-  // UploadInvoiceModal keeps itself open and shows the error inline.
+  // TEMPORARY (per request 2026-09-17): static/local-only until the backend upload route
+  // exists — the assumed da/da_upload_approval_email (daService.uploadApprovalEmail) currently
+  // fails with a network error, so nothing is sent yet. Only flips isApprovalEmailUploaded so
+  // the header swaps the upload button for the "Approved" label (see
+  // renderApprovedWithEmailUpload). Once the API is confirmed, post call_id + approval_email
+  // file(s) as multipart/form-data here, same shape as handleUploadInvoiceIssuance below.
   const handleUploadApprovalEmail = async (files) => {
     if (!callId) {
       useAlertReducer.getState().error("No call identifier available for this card.");
       return;
     }
-    const formData = new FormData();
-    formData.append("call_id", callId);
-    (files || []).forEach((file) => formData.append("approval_email", file));
-
-    const { data } = await daService.uploadApprovalEmail(formData);
-    if (data?.status !== "success") {
-      throw new Error(data?.message || "Failed to upload the approval email.");
+    if (!(files || []).length) {
+      throw new Error("Please select at least one file.");
     }
-    if (refreshSalesOrder) refreshSalesOrder();
+    setIsApprovalEmailUploaded(true);
     useAlertReducer.getState().success("Approval email uploaded.");
   };
 
@@ -2222,14 +2226,16 @@ const SalesOrderList = ({
   };
 
   // "Approved" header state shared by column 4 (api/da/action_state "approved") and column 5
-  // ("SO/PO Approval Received") — the static label plus the "Upload Approval Email" button that
-  // opens the drag-and-drop upload modal (see handleUploadApprovalEmail).
-  const renderApprovedWithEmailUpload = () => (
-    <div className="sales-order-da-status-group">
+  // ("SO/PO Approval Received"). Per request 2026-09-17 this is a two-step state: first only
+  // the "Upload Approval Email" button (opens the drag-and-drop upload modal, see
+  // handleUploadApprovalEmail); once the upload succeeds it becomes the static "Approved" label.
+  const renderApprovedWithEmailUpload = () =>
+    isApprovalEmailUploaded ? (
       <span className="sales-order-da-status-button sales-order-da-status-button--label">
         <FiCheck />
         Approved
       </span>
+    ) : (
       <button
         type="button"
         className="sales-order-da-status-button"
@@ -2239,8 +2245,7 @@ const SalesOrderList = ({
         <FiUpload />
         Upload Approval Email
       </button>
-    </div>
-  );
+    );
 
   return (
     <div className="cardform-left-full sales-order-content-wrapper" style={{ "--card-color": cardColor }}>
@@ -3258,8 +3263,8 @@ const SalesOrderList = ({
         />
       )}
 
-      {/* SO approval email upload — opened from the "Upload Approval Email" button next to the
-          "Approved" label (see renderApprovedWithEmailUpload). */}
+      {/* SO approval email upload — opened from the "Upload Approval Email" button; a successful
+          upload swaps that button for the "Approved" label (see renderApprovedWithEmailUpload). */}
       {isDaVerifyContext && (
         <UploadInvoiceModal
           show={showApprovalEmailUploadModal}
