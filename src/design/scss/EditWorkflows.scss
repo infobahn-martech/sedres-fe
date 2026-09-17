@@ -1300,12 +1300,18 @@ div[role="tooltip"][id^="workflow-info-"] {
   justify-content: center;
   gap: 6px;
   cursor: default;
+  width: 100%;
 }
 
 .workflow-swimlane-cell-label {
   font: normal normal 400 12px/1.4 $font-primary;
   color: #475569;
-  flex-shrink: 0;
+  flex: 0 0 88px;
+  width: 88px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 // Fixed-size slot to prevent layout shift when switching between text and input
@@ -1486,7 +1492,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   // background: var(--surface-primary);
   border: 1px solid var(--border-primary);
   border-radius: 0 0 8px 8px;
-  padding: 12px 22px 16px;
+  padding: 12px 14px 16px;
   min-height: 108px;
   min-width: 0;
   width: 100%;
@@ -1591,10 +1597,16 @@ div[role="tooltip"][id^="workflow-info-"] {
   justify-content: center;
   gap: 6px;
   cursor: default;
+  width: 100%;
 }
 
 .stage-detail-label {
-  flex-shrink: 0;
+  flex: 0 0 88px;
+  width: 88px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 // Fixed-size slot to prevent layout shift when switching between text and input
