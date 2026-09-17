@@ -356,6 +356,7 @@ function CustomTemplateBuilderModal({ show, onClose }) {
                                     placeholder={billingLoading ? "Loading..." : "Select billing entity"}
                                     hasError={isEntityInvalid}
                                     disabled={billingLoading}
+                                    className="ctm-billing-select"
                                     menuPortalTarget={document.body}
                                     menuPlacement="auto"
                                 />
@@ -476,8 +477,8 @@ function CustomTemplateBuilderModal({ show, onClose }) {
                             </div>
                         )}
 
-                        <button type="button" className="ctm-add-field-btn" onClick={handleAddField}>
-                            <FiPlus size={14} /> Add Field
+                        <button type="button" className="ctm-add-field-btn" onClick={handleAddField} aria-label="Add field" title="Add field">
+                            <FiPlus size={16} />
                         </button>
                     </div>
 

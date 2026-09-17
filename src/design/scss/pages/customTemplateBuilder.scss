@@ -28,16 +28,16 @@
   z-index: 1350;
 
   .cardform-panel {
-    width: 94%;
-    max-width: 1080px;
-    max-height: calc(100vh - 2.5rem);
-    height: 90%;
+    width: 96%;
+    max-width: 1360px;
+    max-height: calc(100vh - 2rem);
+    height: 92%;
     display: flex;
     flex-direction: column;
 
     @media (max-width: 767px) {
-      width: 96%;
-      max-height: calc(100vh - 2rem);
+      width: 97%;
+      max-height: calc(100vh - 1.5rem);
     }
   }
 }
@@ -77,6 +77,24 @@
 
   .cf-field {
     margin-bottom: 0;
+  }
+
+  // SearchableSelect's trigger box relies on a faint inset shadow for definition,
+  // which is invisible on this modal's white background — give it the same
+  // resting/focus border as the Template Name .cf-input so the two fields match.
+  .ctm-billing-select .cf-multi-select-email-input {
+    border-color: var(--border-primary);
+    box-shadow: none;
+
+    &:hover {
+      border-color: var(--border-primary);
+      box-shadow: none;
+    }
+
+    &:focus-within {
+      border-color: #6d5ef5;
+      box-shadow: 0 0 0 3px rgba(109, 94, 245, 0.16);
+    }
   }
 }
 
@@ -223,14 +241,14 @@
 .ctm-add-field-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   background: #00368c;
   border: none;
   color: var(--text-inverse);
   border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 600;
+  padding: 0;
   cursor: pointer;
   transition: background 0.15s, box-shadow 0.15s;
 
