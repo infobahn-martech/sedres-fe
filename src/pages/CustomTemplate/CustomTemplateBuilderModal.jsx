@@ -25,7 +25,9 @@ const OPTIONS_FIELD_TYPES = new Set(["dropdown", "radio"]);
 
 const makeId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-const buildDefaultTabs = () => [{ id: makeId("tab"), name: "General", fields: [] }];
+const createBlankField = () => ({ id: makeId("field"), label: "", type: "text", required: false, options: [] });
+
+const buildDefaultTabs = () => [{ id: makeId("tab"), name: "General", fields: [createBlankField()] }];
 
 function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption }) {
     const options = field.options ?? [];
@@ -59,7 +61,7 @@ function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption
     );
 }
 
-function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddOption, onUpdateOption, onRemoveOption }) {
+function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddField, onAddOption, onUpdateOption, onRemoveOption }) {
     const showOptions = OPTIONS_FIELD_TYPES.has(field.type);
     return (
         <div
@@ -108,6 +110,15 @@ function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOv
                     onClick={() => onRequestDelete(field.id)}
                 >
                     <FiTrash2 size={15} />
+                </button>
+                <button
+                    type="button"
+                    className="ctm-field-add-btn"
+                    aria-label="Add field"
+                    title="Add field"
+                    onClick={() => onAddField(index)}
+                >
+                    <FiPlus size={15} />
                 </button>
             </div>
 
@@ -186,7 +197,7 @@ function CustomTemplateBuilderModal({ show, onClose }) {
             setAddingTab(false);
             return;
         }
-        const tab = { id: makeId("tab"), name: trimmed, fields: [] };
+        const tab = { id: makeId("tab"), name: trimmed, fields: [createBlankField()] };
         setTabs((prev) => [...prev, tab]);
         setActiveTabId(tab.id);
         setAddingTab(false);
@@ -222,10 +233,15 @@ function CustomTemplateBuilderModal({ show, onClose }) {
     };
 
     const handleAddField = () => {
-        updateActiveTabFields((fields) => [
-            ...fields,
-            { id: makeId("field"), label: "", type: "text", required: false, options: [] },
-        ]);
+        updateActiveTabFields((fields) => [...fields, createBlankField()]);
+    };
+
+    const handleAddFieldAfter = (index) => {
+        updateActiveTabFields((fields) => {
+            const next = [...fields];
+            next.splice(index + 1, 0, createBlankField());
+            return next;
+        });
     };
 
     const handleUpdateField = (fieldId, key, value) => {
@@ -451,7 +467,12 @@ function CustomTemplateBuilderModal({ show, onClose }) {
                         </div>
 
                         {activeTab && activeTab.fields.length === 0 && (
-                            <p className="ctm-fields-empty">No fields added yet. Add fields to capture the required information.</p>
+                            <div className="ctm-fields-empty">
+                                <p>No fields added yet. Add fields to capture the required information.</p>
+                                <button type="button" className="ctm-add-field-btn" onClick={handleAddField} aria-label="Add field" title="Add field">
+                                    <FiPlus size={16} />
+                                </button>
+                            </div>
                         )}
 
                         {activeTab && activeTab.fields.length > 0 && (
@@ -469,6 +490,7 @@ function CustomTemplateBuilderModal({ show, onClose }) {
                                         onDragEnd={handleDragEnd}
                                         onUpdate={handleUpdateField}
                                         onRequestDelete={handleRequestDeleteField}
+                                        onAddField={handleAddFieldAfter}
                                         onAddOption={handleAddOption}
                                         onUpdateOption={handleUpdateOption}
                                         onRemoveOption={handleRemoveOption}
@@ -476,10 +498,6 @@ function CustomTemplateBuilderModal({ show, onClose }) {
                                 ))}
                             </div>
                         )}
-
-                        <button type="button" className="ctm-add-field-btn" onClick={handleAddField} aria-label="Add field" title="Add field">
-                            <FiPlus size={16} />
-                        </button>
                     </div>
 
                     <div className="ctm-footer">

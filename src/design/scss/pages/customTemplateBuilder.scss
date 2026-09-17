@@ -229,13 +229,20 @@
 }
 
 .ctm-fields-empty {
-  text-align: center;
-  padding: 28px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 22px 16px;
   border: 1.5px dashed var(--border-primary);
   border-radius: 8px;
   color: var(--text-muted);
   font-size: 13px;
   margin-bottom: 14px;
+
+  p {
+    margin: 0;
+  }
 }
 
 .ctm-add-field-btn {
@@ -283,7 +290,7 @@
 
 .ctm-field-row-top {
   display: grid;
-  grid-template-columns: auto 2fr 1.3fr auto auto;
+  grid-template-columns: auto 2fr 1.3fr auto auto auto;
   align-items: center;
   gap: 10px;
 
@@ -421,6 +428,24 @@
   &:hover {
     color: #ef4444;
     background: rgba(239, 68, 68, 0.08);
+  }
+}
+
+.ctm-field-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    color: #00368c;
+    background: rgba(0, 54, 140, 0.08);
   }
 }
 
