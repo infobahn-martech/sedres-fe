@@ -992,7 +992,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   pointer-events: none;
   z-index: 5;
   border: none;
-  background: var(--surface-primary);
+  background: rgba(66, 175, 73, 0.1);
   border-radius: 0;
   box-sizing: border-box;
 
@@ -1007,7 +1007,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   top: 0;
   bottom: 0;
   width: 22px;
-  border-right: 1px solid rgba(89, 211, 140, 0.55);
+  border-right: 2px solid #42af49;
 }
 
 .workflow-stage-box .workflow-insertion-rail-right {
@@ -1015,7 +1015,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   top: 0;
   bottom: 0;
   width: 22px;
-  border-left: 1px solid rgba(89, 211, 140, 0.55);
+  border-left: 2px solid #42af49;
 }
 
 .workflow-stage-box .workflow-insertion-rail-bottom {
@@ -1023,7 +1023,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   right: 0;
   bottom: 0;
   height: 22px;
-  border-top: 1px solid rgba(89, 211, 140, 0.55);
+  border-top: 2px solid #42af49;
 }
 
 .workflow-stage-box .workflow-insertion-rail-bottom.bottom-add-grid.disabled {
@@ -1047,13 +1047,13 @@ div[role="tooltip"][id^="workflow-info-"] {
 .workflow-insertion-rail-left {
   left: 0;
   width: 22px;
-  border-right: 1px solid rgba(89, 211, 140, 0.55);
+  border-right: 2px solid #42af49;
 }
 
 .workflow-insertion-rail-right {
   right: 0;
   width: 22px;
-  border-left: 1px solid rgba(89, 211, 140, 0.55);
+  border-left: 2px solid #42af49;
 }
 
 // Add-grid insertion row: thin horizontal bar in swimlane column only (LIVE), visible on hover, no layout break
@@ -1162,7 +1162,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(66, 175, 73, 0.2);
+  background: rgba(66, 175, 73, 0.1);
   border: none;
   cursor: pointer;
   padding: 0;
@@ -1176,7 +1176,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   }
 
   &:hover {
-    background: rgba(66, 175, 73, 0.35);
+    background: rgba(66, 175, 73, 0.18);
   }
 }
 
