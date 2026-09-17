@@ -42,6 +42,25 @@
   }
 }
 
+// The delete-field confirmation is a react-bootstrap Modal, which defaults to a
+// much lower z-index (~1050-1060) than this raw-overlay modal's 1350 — without
+// this override it mounts visually behind the panel and appears unresponsive.
+body .modal-backdrop.fade.ctm-delete-confirm-backdrop,
+body .modal-backdrop.ctm-delete-confirm-backdrop.show {
+  z-index: 1450 !important;
+  background-color: rgba(15, 23, 42, 0.6) !important;
+}
+
+body .modal.fade.ctm-delete-confirm-modal,
+body .modal.ctm-delete-confirm-modal.show {
+  z-index: 1451 !important;
+}
+
+body .modal.ctm-delete-confirm-modal.show .modal-dialog {
+  z-index: 1452 !important;
+  position: relative;
+}
+
 .ctm-modal-topbar {
   background-color: #00368c;
 }
@@ -362,11 +381,9 @@
 }
 
 .ctm-toggle-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .ctm-toggle {
@@ -451,34 +468,56 @@
 
 // ── Options list (Dropdown / Radio Button field types) ────────────────────────
 .ctm-field-options {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--border-primary);
+  margin-top: 12px;
   margin-left: 44px;
+  padding: 14px 16px;
+  background: #f4f8fd;
+  border: 1px solid #e1e9f7;
+  border-radius: 8px;
 
   @media (max-width: 640px) {
     margin-left: 0;
   }
 }
 
+.ctm-field-options-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
 .ctm-field-options-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin: 0 0 8px;
+  color: var(--text-secondary);
+  margin: 0;
 }
 
 .ctm-option-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.ctm-option-index {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #dce8fa;
+  color: #00368c;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .ctm-option-input {
-  height: 30px;
+  height: 32px;
   flex: 1;
   border: 1.5px solid var(--border-primary);
   border-radius: 6px;
@@ -488,9 +527,35 @@
   background: var(--surface-primary);
   outline: none;
   min-width: 0;
+  transition: border-color 0.15s, box-shadow 0.15s;
 
   &:focus {
+    box-shadow: 0 0 0 3px rgba(0, 54, 140, 0.12);
     border-color: #00368c;
+  }
+}
+
+.ctm-option-del-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover:not(:disabled) {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 }
 
@@ -498,7 +563,8 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  background: none;
+  flex-shrink: 0;
+  background: var(--surface-primary);
   border: 1.5px dashed #93b4e0;
   color: #00368c;
   border-radius: 6px;

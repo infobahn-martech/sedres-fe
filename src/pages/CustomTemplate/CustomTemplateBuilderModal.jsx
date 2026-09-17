@@ -33,9 +33,15 @@ function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption
     const options = field.options ?? [];
     return (
         <div className="ctm-field-options">
-            <p className="ctm-field-options-label">Options</p>
+            <div className="ctm-field-options-header">
+                <p className="ctm-field-options-label">Options</p>
+                <button type="button" className="ctm-add-option-btn" onClick={onAddOption}>
+                    <FiPlus size={12} /> Add Option
+                </button>
+            </div>
             {options.map((opt, idx) => (
                 <div key={idx} className="ctm-option-row">
+                    <span className="ctm-option-index">{idx + 1}</span>
                     <input
                         type="text"
                         className="ctm-option-input"
@@ -45,7 +51,7 @@ function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption
                     />
                     <button
                         type="button"
-                        className="ctm-field-del-btn"
+                        className="ctm-option-del-btn"
                         aria-label="Remove option"
                         onClick={() => onRemoveOption(idx)}
                         disabled={options.length <= 1}
@@ -54,9 +60,6 @@ function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption
                     </button>
                 </div>
             ))}
-            <button type="button" className="ctm-add-option-btn" onClick={onAddOption}>
-                <FiPlus size={12} /> Add Option
-            </button>
         </div>
     );
 }
@@ -520,6 +523,8 @@ function CustomTemplateBuilderModal({ show, onClose }) {
                     onCancel={() => setDeleteFieldRequest(null)}
                     onConfirm={handleConfirmDeleteField}
                     deleteText="Delete this field? This cannot be undone."
+                    className="ctm-delete-confirm-modal"
+                    backdropClassName="ctm-delete-confirm-backdrop"
                 />
             )}
         </>
