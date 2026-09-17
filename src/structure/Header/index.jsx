@@ -96,9 +96,9 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     { label: 'Stickers', modal: 'stickers' },
     { label: 'Tags', modal: 'tags' },
     { label: 'Types', modal: 'types' },
-    { label: 'Templates', modal: 'templates' },
-    { label: 'Templates List', modal: 'templates list' },
-    { label: 'Custom Templates', modal: 'custom templates' },
+    // { label: 'Templates', modal: 'templates' },
+    { label: 'Custom Templates', modal: 'templates list' },
+    // { label: 'Custom Templates', modal: 'custom templates' },
   ];
 
   const getLoggedInUser = () => {
