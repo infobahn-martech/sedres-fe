@@ -93,6 +93,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     { label: 'Tags', modal: 'tags' },
     { label: 'Types', modal: 'types' },
     { label: 'Templates', modal: 'templates' },
+    { label: 'Custom Templates', modal: 'custom templates' },
   ];
 
   const getLoggedInUser = () => {
