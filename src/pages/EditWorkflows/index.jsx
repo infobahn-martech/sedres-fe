@@ -106,10 +106,6 @@ function EditWorkflows() {
   const [deleteModal, setDeleteModal] = useState(null);
   const mutationInflightRef = useRef(new Set());
   const boardId = searchParams.get('boardId');
-  const contentScrollRef = useRef(null);
-  const autoScrollElRef = useRef(null);
-  const autoScrollFrameRef = useRef(null);
-  const dragPointerYRef = useRef(null);
 
   const clearMutationKey = useCallback((key) => {
     mutationInflightRef.current.delete(key);
@@ -681,61 +677,7 @@ function EditWorkflows() {
     setStackedRailMetrics(null);
   };
 
-  const stopWorkflowAutoScroll = useCallback(() => {
-    if (autoScrollFrameRef.current) {
-      cancelAnimationFrame(autoScrollFrameRef.current);
-      autoScrollFrameRef.current = null;
-    }
-    dragPointerYRef.current = null;
-    window.removeEventListener('mousemove', handleDragPointerMove);
-    window.removeEventListener('touchmove', handleDragPointerMove);
-  }, []);
-
-  function handleDragPointerMove(e) {
-    const point = e.touches?.[0] ?? e;
-    dragPointerYRef.current = point.clientY;
-  }
-
-  function findScrollableAncestor(startEl) {
-    let el = startEl;
-    while (el) {
-      const style = window.getComputedStyle(el);
-      const canScrollY = /(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight + 1;
-      if (canScrollY) return el;
-      el = el.parentElement;
-    }
-    return document.scrollingElement || document.documentElement;
-  }
-
-  const runWorkflowAutoScroll = useCallback(() => {
-    const container = autoScrollElRef.current;
-    const pointerY = dragPointerYRef.current;
-    if (container && pointerY != null) {
-      const rect = container.getBoundingClientRect();
-      const edgeSize = 80;
-      const maxSpeed = 18;
-      const distFromTop = pointerY - rect.top;
-      const distFromBottom = rect.bottom - pointerY;
-      if (distFromTop < edgeSize) {
-        container.scrollTop -= Math.ceil(((edgeSize - distFromTop) / edgeSize) * maxSpeed);
-      } else if (distFromBottom < edgeSize) {
-        container.scrollTop += Math.ceil(((edgeSize - distFromBottom) / edgeSize) * maxSpeed);
-      }
-    }
-    autoScrollFrameRef.current = requestAnimationFrame(runWorkflowAutoScroll);
-  }, []);
-
-  const handleWorkflowDragStart = useCallback(() => {
-    autoScrollElRef.current = findScrollableAncestor(contentScrollRef.current);
-    window.addEventListener('mousemove', handleDragPointerMove);
-    window.addEventListener('touchmove', handleDragPointerMove);
-    autoScrollFrameRef.current = requestAnimationFrame(runWorkflowAutoScroll);
-  }, [runWorkflowAutoScroll]);
-
-  useEffect(() => stopWorkflowAutoScroll, [stopWorkflowAutoScroll]);
-
   const handleWorkflowDragEnd = (result) => {
-    stopWorkflowAutoScroll();
     const { source, destination } = result;
     if (!destination || source.index === destination.index) return;
     const next = Array.from(workflows);
@@ -752,7 +694,6 @@ function EditWorkflows() {
   return (
     <div className="edit-workflows-container">
       <div
-        ref={contentScrollRef}
         className={`workflows-content${showNoWorkflowEmptyState ? ' workflows-content--empty-workflow' : ''}`}
       >
         <div className="workflows-page-toolbar">
@@ -855,7 +796,7 @@ function EditWorkflows() {
         ) : workflows.length === 0 ? (
           <div className="workflows-empty">No workflow found. Add boardId to the URL to load a workflow.</div>
         ) : (
-          <DragDropContext onDragStart={handleWorkflowDragStart} onDragEnd={handleWorkflowDragEnd}>
+          <DragDropContext onDragEnd={handleWorkflowDragEnd}>
             <Droppable droppableId="workflows-list">
               {(droppableProvided) => (
                 <div ref={droppableProvided.innerRef} {...droppableProvided.droppableProps}>
