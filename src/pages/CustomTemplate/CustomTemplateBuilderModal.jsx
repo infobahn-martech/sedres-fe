@@ -128,15 +128,14 @@ function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOv
                     value={field.label}
                     onChange={(e) => onUpdate(field.id, "label", e.target.value)}
                 />
-                <select
+                <SearchableSelect
                     className="ctm-field-type-select"
                     value={field.type}
                     onChange={(e) => onUpdate(field.id, "type", e.target.value)}
-                >
-                    {FIELD_TYPES.map((ft) => (
-                        <option key={ft.value} value={ft.value}>{ft.label}</option>
-                    ))}
-                </select>
+                    options={FIELD_TYPES}
+                    menuPortalTarget={document.body}
+                    menuPlacement="auto"
+                />
                 <label className="ctm-toggle-wrap">
                     <span className="ctm-toggle-label">Required</span>
                     <span className="ctm-toggle">

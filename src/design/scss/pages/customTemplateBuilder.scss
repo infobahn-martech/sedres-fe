@@ -439,21 +439,36 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   }
 }
 
+// Field Type is a SearchableSelect (custom-styled options) rather than a native
+// <select>, whose dropdown list the OS renders and CSS can't touch — override its
+// trigger box down to the same 34px row height as the other inline inputs here.
 .ctm-field-type-select {
-  height: 34px;
-  border: 1.5px solid var(--border-primary);
-  border-radius: 6px;
-  padding: 0 8px;
-  font-size: 13px;
-  color: var(--text-primary);
-  background: var(--surface-primary);
-  outline: none;
   min-width: 0;
   width: 100%;
-  transition: border-color 0.15s;
 
-  &:focus {
-    border-color: #00368c;
+  .cf-multi-select-email-input {
+    min-height: 34px;
+    height: 34px;
+    border: 1.5px solid var(--border-primary);
+    border-radius: 6px;
+    padding: 0 8px;
+    background: var(--surface-primary);
+
+    &:hover {
+      border-color: var(--border-primary);
+      box-shadow: none;
+    }
+
+    &:focus-within {
+      border-color: #00368c;
+      box-shadow: 0 0 0 3px rgba(0, 54, 140, 0.12);
+    }
+  }
+
+  .cf-multi-select-selected-value,
+  .cf-multi-select-placeholder,
+  .cf-searchable-select-input {
+    font-size: 13px;
   }
 }
 
