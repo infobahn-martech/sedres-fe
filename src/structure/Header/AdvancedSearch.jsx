@@ -76,7 +76,7 @@ function useBoardSearchCache({ enabled, query, isOpen, workspaces, fetchBoard, b
 
       Promise.all(
         missing.map((id) =>
-          fetchBoard(id, { owner_id: ownerId || undefined, status: status || undefined })
+          fetchBoard(id, { owner_id: ownerId || undefined, status: status || undefined, search: trimmedQuery })
             .then((res) => ({ id, items: res?.data?.data || [] }))
             .catch(() => ({ id, items: [] }))
         )
@@ -94,7 +94,7 @@ function useBoardSearchCache({ enabled, query, isOpen, workspaces, fetchBoard, b
     }, SEARCH_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [isOpen, enabled, hasQuery, workspaces, cache, fetchBoard, boardId, ownerId, status, filterSuffix]);
+  }, [isOpen, enabled, hasQuery, workspaces, cache, fetchBoard, boardId, ownerId, status, filterSuffix, trimmedQuery]);
 
   const getItems = (id) => cache[`${id}::${filterSuffix}`] || [];
 
@@ -303,49 +303,43 @@ function AdvancedSearch() {
           matchedBoards.push({ ...board, workspaceName: ws.workspace_name });
         }
 
+        // Card/subtask/document text matching is done server-side via the
+        // `search` param, so results from the cache are used as-is.
         getCardItems(board.board_id).forEach((card) => {
-          if (card.title?.toLowerCase().includes(trimmed)) {
-            matchedCards.push({
-              id: card.card_id,
-              title: card.title,
-              boardId: board.board_id,
-              boardName: card.board_name || board.board_name,
-              workspaceName: ws.workspace_name,
-              stageName: card.stage_name,
-              statusTitle: card.column_name,
-            });
-          }
+          matchedCards.push({
+            id: card.card_id,
+            title: card.title,
+            boardId: board.board_id,
+            boardName: card.board_name || board.board_name,
+            workspaceName: ws.workspace_name,
+            stageName: card.stage_name,
+            statusTitle: card.column_name,
+          });
         });
 
         getSubtaskItems(board.board_id).forEach((subtask) => {
-          const haystack = `${subtask.description || ''} ${subtask.card_title || ''}`.toLowerCase();
-          if (haystack.includes(trimmed)) {
-            matchedSubtasks.push({
-              id: subtask.subtask_id,
-              description: subtask.description,
-              cardTitle: subtask.card_title,
-              boardId: board.board_id,
-              boardName: subtask.board_name || board.board_name,
-              workspaceName: ws.workspace_name,
-              isCompleted: !!subtask.is_completed,
-              assignedToName: subtask.assigned_to_name,
-            });
-          }
+          matchedSubtasks.push({
+            id: subtask.subtask_id,
+            description: subtask.description,
+            cardTitle: subtask.card_title,
+            boardId: board.board_id,
+            boardName: subtask.board_name || board.board_name,
+            workspaceName: ws.workspace_name,
+            isCompleted: !!subtask.is_completed,
+            assignedToName: subtask.assigned_to_name,
+          });
         });
 
         getDocumentItems(board.board_id).forEach((doc) => {
-          const haystack = `${doc.document_name || ''} ${doc.file_name || ''} ${doc.card_title || ''}`.toLowerCase();
-          if (haystack.includes(trimmed)) {
-            matchedDocuments.push({
-              id: doc.call_task_document_id,
-              documentName: doc.document_name,
-              cardTitle: doc.card_title,
-              boardId: board.board_id,
-              boardName: doc.board_name || board.board_name,
-              workspaceName: ws.workspace_name,
-              uploadedByName: doc.uploaded_by_name,
-            });
-          }
+          matchedDocuments.push({
+            id: doc.call_task_document_id,
+            documentName: doc.document_name,
+            cardTitle: doc.card_title,
+            boardId: board.board_id,
+            boardName: doc.board_name || board.board_name,
+            workspaceName: ws.workspace_name,
+            uploadedByName: doc.uploaded_by_name,
+          });
         });
       });
     });
