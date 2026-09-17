@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { debounce } from "lodash";
 import CommonHeader from "../../components/CommonHeader";
 import CustomTable from "../../components/customTable";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
@@ -55,19 +56,24 @@ const BillingEntity = () => {
   } = useBillingEntityReducer((state) => state);
 
   const fetchBillingEntities = useCallback(() => {
-    const apiParams = {
-      page: params.page,
-      limit: params.limit,
-      ...(params.searchTerm && { search: params.searchTerm }),
-      ...(params.sortBy && { sort_by: params.sortBy }),
-      ...(params.sortOrder != null && { sort_order: params.sortOrder }),
-    };
-    getBillingEntities({ params: apiParams });
+    getBillingEntities({ params });
   }, [getBillingEntities, params]);
 
   useEffect(() => {
     fetchBillingEntities();
   }, [fetchBillingEntities]);
+
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((value) => {
+        setParams((prev) => ({ ...prev, searchTerm: value, page: 1, limit: 10 }));
+      }, 500),
+    []
+  );
+
+  useEffect(() => {
+    return () => debouncedSearch.cancel();
+  }, [debouncedSearch]);
 
   const renderLogoCell = ({ row }) => {
     const logoUrl = resolveLogoUrl(
@@ -112,7 +118,21 @@ const BillingEntity = () => {
       thclass: "tb-head",
       contentClass: "table-content",
     },
-       {
+    {
+      name: "Contact Name",
+      selector: "contact_name",
+      width: "200",
+      thclass: "tb-head",
+      contentClass: "table-content",
+    },
+    {
+      name: "Phone Number",
+      selector: "phone_number",
+      width: "180",
+      thclass: "tb-head",
+      contentClass: "table-content",
+    },
+    {
       name: "Balance",
       selector: "balance",
       sort: true,
@@ -161,9 +181,7 @@ const BillingEntity = () => {
             <CommonHeader
               tableTitle="Billing Accounts"
               isAddEnabled={false}
-              setSearch={(e) =>
-                setParams((prev) => ({ ...prev, searchTerm: e, page: 1, limit: 10 }))
-              }
+              setSearch={(value) => debouncedSearch(value)}
               exportTitle="Export"
               exportLoader={false}
             />
