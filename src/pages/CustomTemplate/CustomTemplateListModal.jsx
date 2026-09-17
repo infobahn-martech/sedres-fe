@@ -158,9 +158,9 @@ const DUMMY_TEMPLATES = [
                     {
                         name: "Departure",
                         fields: [
-                            { label: "Expected Time of Departure", type: "datetime", required: false },
-                            { label: "Email Requested Accept", type: "checkbox", required: false },
-                            { label: "Outward Clearance Delivered", type: "datetime", required: false },
+                            { label: "Expected Time of Departure", type: "datetime", required: true },
+                            { label: "Email Requested Accept", type: "file", required: false },
+                            { label: "Outward Clearance Delivered", type: "dropdown", required: false },
                             { label: "Next Port", type: "text", required: false },
                             { label: "Departure Attachments", type: "file", required: false },
                             { label: "Vessel Outward Formalities Completed", type: "datetime", required: false },
@@ -180,17 +180,34 @@ const DUMMY_TEMPLATES = [
             buildAppointmentDetailsTab(),
             {
                 name: "Operation",
-                fields: [
-                    { label: "Expected Time of Arrival", type: "datetime", required: false },
-                    { label: "Actual Time of Arrival", type: "datetime", required: false },
-                    { label: "Expected Time of Departure", type: "datetime", required: false },
-                    { label: "Actual Time of Departure", type: "datetime", required: false },
-                    { label: "Port", type: "dropdown", required: false },
-                    { label: "Next Port", type: "text", required: false },
-                    { label: "Vessel Name", type: "text", required: false },
-                    { label: "Assigned Operator", type: "dropdown", required: false },
-                    { label: "Attachments", type: "file", required: false },
-                    { label: "Remarks", type: "textarea", required: false },
+                subTabs: [
+                    {
+                        name: "Pre Arrival",
+                        fields: [
+                            { label: "Expected Time of Arrival", type: "datetime", required: false },
+                            { label: "Port", type: "dropdown", required: false },
+                        ],
+                    },
+                    { name: "Crew Immigration", fields: [] },
+                    {
+                        name: "Arrival",
+                        fields: [
+                            { label: "Actual Time of Arrival", type: "datetime", required: false },
+                            { label: "Vessel Name", type: "text", required: false },
+                            { label: "Assigned Operator", type: "dropdown", required: false },
+                        ],
+                    },
+                    {
+                        name: "Departure",
+                        fields: [
+                            { label: "Expected Time of Departure", type: "datetime", required: false },
+                            { label: "Actual Time of Departure", type: "datetime", required: false },
+                            { label: "Next Port", type: "text", required: false },
+                            { label: "Attachments", type: "file", required: false },
+                            { label: "Remarks", type: "textarea", required: false },
+                        ],
+                    },
+                    { name: "Check List", fields: [] },
                 ],
             },
             ...buildTrailingEmptyTabs(),
@@ -284,23 +301,24 @@ function CustomTemplateListModal({ show, onClose }) {
         setBuilderOpen(true);
     };
 
+    const mapEditField = (f) => ({
+        label: f.label,
+        type: f.type,
+        required: f.required,
+        options: f.options ?? [],
+    });
+
     const handleEditClick = () => {
         if (!selectedTemplate) return;
         setBuilderInitialTemplate({
             name: selectedTemplate.name,
             billingEntityId: "",
-            // The builder only supports flat fields per tab (no nested sub-tabs),
-            // so a tab like Operation with subTabs gets its sub-tab fields flattened.
             tabs: selectedTemplate.tabs.map((tab) => ({
                 name: tab.name,
-                fields: (Array.isArray(tab.subTabs)
-                    ? tab.subTabs.flatMap((sub) => sub.fields ?? [])
-                    : (tab.fields ?? [])
-                ).map((f) => ({
-                    label: f.label,
-                    type: f.type,
-                    required: f.required,
-                    options: f.options ?? [],
+                fields: (tab.fields ?? []).map(mapEditField),
+                subTabs: (tab.subTabs ?? []).map((sub) => ({
+                    name: sub.name,
+                    fields: (sub.fields ?? []).map(mapEditField),
                 })),
             })),
         });

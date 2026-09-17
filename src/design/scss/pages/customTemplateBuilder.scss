@@ -28,8 +28,8 @@
   z-index: 1350;
 
   .cardform-panel {
-    width: 96%;
-    max-width: 1360px;
+    width: 98%;
+    max-width: 1720px;
     max-height: calc(100vh - 2rem);
     height: 92%;
     display: flex;
@@ -237,6 +237,91 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+// ── Subtabs row (Level 2, e.g. Operation > Pre Arrival / Arrival / Departure) ──
+.ctm-subtabs-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: -6px 0 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--border-primary);
+}
+
+.ctm-subtab-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 16px;
+  border: 1.5px solid var(--border-primary);
+  background: var(--surface-secondary, #f4f6fb);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: #a9c2e8;
+  }
+
+  &.is-active {
+    border-color: #00368c;
+    background: #eaf0fb;
+
+    .ctm-tab-pill-name {
+      color: #00368c;
+      font-weight: 700;
+    }
+  }
+
+  .ctm-tab-pill-name {
+    font-size: 12px;
+  }
+}
+
+.ctm-add-subtab-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1.5px dashed #93b4e0;
+  color: #00368c;
+  border-radius: 16px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: #00368c;
+    background: #eaf0fb;
+  }
+}
+
+// Compact "Add Subtab" affordance shown when a main tab has no subtabs yet.
+.ctm-add-subtab-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #00368c;
+  padding: 0;
+  margin: -6px 0 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.ctm-add-subtab-inline-standalone {
+  margin: -6px 0 16px;
 }
 
 // ── Fields section ────────────────────────────────────────────────────────────

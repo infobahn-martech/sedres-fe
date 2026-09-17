@@ -23,23 +23,50 @@ const FIELD_TYPES = [
 
 const OPTIONS_FIELD_TYPES = new Set(["dropdown", "radio"]);
 
+// Level 1 of the template structure — mirrors the real Sedres card's top-level tabs.
+// A main tab optionally owns Level 2 sub-tabs (e.g. Operation > Pre Arrival); fields
+// live on the sub-tab when any exist, otherwise directly on the main tab.
+const MAIN_TAB_NAMES = [
+    "Appointment Details",
+    "Operation",
+    "Husbandry",
+    "Sales Order",
+    "Reports",
+    "Document Library",
+    "Comments",
+    "Subtasks",
+    "Notes",
+];
+
 const makeId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const createBlankField = () => ({ id: makeId("field"), label: "", type: "text", required: false, options: [] });
 
-const buildDefaultTabs = () => [{ id: makeId("tab"), name: "General", fields: [createBlankField()] }];
+const mapTemplateField = (f) => ({
+    id: makeId("field"),
+    label: f.label ?? "",
+    type: f.type ?? "text",
+    required: Boolean(f.required),
+    options: f.options ? [...f.options] : [],
+});
+
+const buildDefaultTabs = () => MAIN_TAB_NAMES.map((name) => ({
+    id: makeId("tab"),
+    name,
+    fields: [createBlankField()],
+    subTabs: [],
+}));
 
 const buildTabsFromTemplate = (template) => {
     if (!template?.tabs?.length) return buildDefaultTabs();
     return template.tabs.map((tab) => ({
         id: makeId("tab"),
         name: tab.name,
-        fields: (tab.fields ?? []).map((f) => ({
-            id: makeId("field"),
-            label: f.label ?? "",
-            type: f.type ?? "text",
-            required: Boolean(f.required),
-            options: f.options ? [...f.options] : [],
+        fields: (tab.fields ?? []).map(mapTemplateField),
+        subTabs: (tab.subTabs ?? []).map((sub) => ({
+            id: makeId("subtab"),
+            name: sub.name,
+            fields: (sub.fields ?? []).map(mapTemplateField),
         })),
     }));
 };
@@ -164,10 +191,16 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
 
     const [tabs, setTabs] = useState(() => buildTabsFromTemplate(initialTemplate));
     const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id);
+    const [activeSubTabId, setActiveSubTabId] = useState(() => tabs[0]?.subTabs?.[0]?.id ?? null);
     const [addingTab, setAddingTab] = useState(false);
     const [newTabName, setNewTabName] = useState("");
     const [editingTabId, setEditingTabId] = useState(null);
     const [editingTabName, setEditingTabName] = useState("");
+
+    const [addingSubTab, setAddingSubTab] = useState(false);
+    const [newSubTabName, setNewSubTabName] = useState("");
+    const [editingSubTabId, setEditingSubTabId] = useState(null);
+    const [editingSubTabName, setEditingSubTabName] = useState("");
 
     const [dragIndex, setDragIndex] = useState(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -179,6 +212,11 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
     }));
 
     const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
+    const hasSubTabs = Boolean(activeTab?.subTabs?.length);
+    const activeSubTab = hasSubTabs
+        ? (activeTab.subTabs.find((s) => s.id === activeSubTabId) ?? activeTab.subTabs[0])
+        : null;
+    const activeFields = hasSubTabs ? (activeSubTab?.fields ?? []) : (activeTab?.fields ?? []);
 
     useEffect(() => {
         if (show && billingEntities === null && !billingLoading) {
@@ -194,15 +232,36 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
         const defaultTabs = buildTabsFromTemplate(initialTemplate);
         setTabs(defaultTabs);
         setActiveTabId(defaultTabs[0].id);
+        setActiveSubTabId(defaultTabs[0].subTabs?.[0]?.id ?? null);
         setAddingTab(false);
         setNewTabName("");
         setEditingTabId(null);
         setEditingTabName("");
+        setAddingSubTab(false);
+        setNewSubTabName("");
+        setEditingSubTabId(null);
+        setEditingSubTabName("");
         setDeleteFieldRequest(null);
     };
 
-    const updateActiveTabFields = (updater) => {
-        setTabs((prev) => prev.map((t) => (t.id === activeTabId ? { ...t, fields: updater(t.fields) } : t)));
+    // Writes to the currently active fields scope — the active sub-tab's fields
+    // when the active main tab has any, otherwise the main tab's own fields.
+    const updateFieldsScope = (updater) => {
+        setTabs((prev) => prev.map((t) => {
+            if (t.id !== activeTabId) return t;
+            if (t.subTabs?.length) {
+                return {
+                    ...t,
+                    subTabs: t.subTabs.map((s) => (s.id === activeSubTabId ? { ...s, fields: updater(s.fields) } : s)),
+                };
+            }
+            return { ...t, fields: updater(t.fields) };
+        }));
+    };
+
+    const handleSelectTab = (tab) => {
+        setActiveTabId(tab.id);
+        setActiveSubTabId(tab.subTabs?.[0]?.id ?? null);
     };
 
     const handleAddTabClick = () => {
@@ -216,9 +275,10 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
             setAddingTab(false);
             return;
         }
-        const tab = { id: makeId("tab"), name: trimmed, fields: [createBlankField()] };
+        const tab = { id: makeId("tab"), name: trimmed, fields: [createBlankField()], subTabs: [] };
         setTabs((prev) => [...prev, tab]);
         setActiveTabId(tab.id);
+        setActiveSubTabId(null);
         setAddingTab(false);
         setNewTabName("");
     };
@@ -246,17 +306,76 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
         if (tabs.length <= 1) return;
         setTabs((prev) => {
             const next = prev.filter((t) => t.id !== tabId);
-            if (activeTabId === tabId) setActiveTabId(next[0]?.id);
+            if (activeTabId === tabId) {
+                setActiveTabId(next[0]?.id);
+                setActiveSubTabId(next[0]?.subTabs?.[0]?.id ?? null);
+            }
             return next;
         });
     };
 
+    const handleAddSubTabClick = () => {
+        setAddingSubTab(true);
+        setNewSubTabName("");
+    };
+
+    const handleConfirmAddSubTab = () => {
+        const trimmed = newSubTabName.trim();
+        if (!trimmed) {
+            setAddingSubTab(false);
+            return;
+        }
+        const sub = { id: makeId("subtab"), name: trimmed, fields: [createBlankField()] };
+        setTabs((prev) => prev.map((t) => (
+            t.id === activeTabId ? { ...t, subTabs: [...(t.subTabs ?? []), sub] } : t
+        )));
+        setActiveSubTabId(sub.id);
+        setAddingSubTab(false);
+        setNewSubTabName("");
+    };
+
+    const handleCancelAddSubTab = () => {
+        setAddingSubTab(false);
+        setNewSubTabName("");
+    };
+
+    const handleStartRenameSubTab = (sub) => {
+        setEditingSubTabId(sub.id);
+        setEditingSubTabName(sub.name);
+    };
+
+    const handleConfirmRenameSubTab = () => {
+        const trimmed = editingSubTabName.trim();
+        if (trimmed) {
+            setTabs((prev) => prev.map((t) => (
+                t.id === activeTabId
+                    ? { ...t, subTabs: t.subTabs.map((s) => (s.id === editingSubTabId ? { ...s, name: trimmed } : s)) }
+                    : t
+            )));
+        }
+        setEditingSubTabId(null);
+        setEditingSubTabName("");
+    };
+
+    const handleDeleteSubTab = (subTabId) => {
+        setTabs((prev) => prev.map((t) => {
+            if (t.id !== activeTabId) return t;
+            const nextSubTabs = (t.subTabs ?? []).filter((s) => s.id !== subTabId);
+            return { ...t, subTabs: nextSubTabs };
+        }));
+        setActiveSubTabId((prev) => {
+            if (prev !== subTabId) return prev;
+            const remaining = (activeTab?.subTabs ?? []).filter((s) => s.id !== subTabId);
+            return remaining[0]?.id ?? null;
+        });
+    };
+
     const handleAddField = () => {
-        updateActiveTabFields((fields) => [...fields, createBlankField()]);
+        updateFieldsScope((fields) => [...fields, createBlankField()]);
     };
 
     const handleAddFieldAfter = (index) => {
-        updateActiveTabFields((fields) => {
+        updateFieldsScope((fields) => {
             const next = [...fields];
             next.splice(index + 1, 0, createBlankField());
             return next;
@@ -264,7 +383,7 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
     };
 
     const handleUpdateField = (fieldId, key, value) => {
-        updateActiveTabFields((fields) => fields.map((f) => {
+        updateFieldsScope((fields) => fields.map((f) => {
             if (f.id !== fieldId) return f;
             const next = { ...f, [key]: value };
             if (key === "type" && OPTIONS_FIELD_TYPES.has(value) && (!next.options || next.options.length === 0)) {
@@ -275,27 +394,36 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
     };
 
     const handleRequestDeleteField = (fieldId) => {
-        setDeleteFieldRequest({ tabId: activeTabId, fieldId });
+        setDeleteFieldRequest({ tabId: activeTabId, subTabId: hasSubTabs ? activeSubTab?.id : null, fieldId });
     };
 
     const handleConfirmDeleteField = () => {
         if (!deleteFieldRequest) return;
-        setTabs((prev) => prev.map((t) => (
-            t.id === deleteFieldRequest.tabId
-                ? { ...t, fields: t.fields.filter((f) => f.id !== deleteFieldRequest.fieldId) }
-                : t
-        )));
+        setTabs((prev) => prev.map((t) => {
+            if (t.id !== deleteFieldRequest.tabId) return t;
+            if (deleteFieldRequest.subTabId) {
+                return {
+                    ...t,
+                    subTabs: t.subTabs.map((s) => (
+                        s.id === deleteFieldRequest.subTabId
+                            ? { ...s, fields: s.fields.filter((f) => f.id !== deleteFieldRequest.fieldId) }
+                            : s
+                    )),
+                };
+            }
+            return { ...t, fields: t.fields.filter((f) => f.id !== deleteFieldRequest.fieldId) };
+        }));
         setDeleteFieldRequest(null);
     };
 
     const handleAddOption = (fieldId) => {
-        updateActiveTabFields((fields) => fields.map((f) => (
+        updateFieldsScope((fields) => fields.map((f) => (
             f.id === fieldId ? { ...f, options: [...(f.options ?? []), `Option ${(f.options?.length ?? 0) + 1}`] } : f
         )));
     };
 
     const handleUpdateOption = (fieldId, idx, value) => {
-        updateActiveTabFields((fields) => fields.map((f) => {
+        updateFieldsScope((fields) => fields.map((f) => {
             if (f.id !== fieldId) return f;
             const nextOptions = [...(f.options ?? [])];
             nextOptions[idx] = value;
@@ -304,7 +432,7 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
     };
 
     const handleRemoveOption = (fieldId, idx) => {
-        updateActiveTabFields((fields) => fields.map((f) => (
+        updateFieldsScope((fields) => fields.map((f) => (
             f.id === fieldId ? { ...f, options: (f.options ?? []).filter((_, i) => i !== idx) } : f
         )));
     };
@@ -320,7 +448,7 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
             handleDragEnd();
             return;
         }
-        updateActiveTabFields((fields) => {
+        updateFieldsScope((fields) => {
             const next = [...fields];
             const [moved] = next.splice(dragIndex, 1);
             next.splice(dropIndex, 0, moved);
@@ -428,7 +556,7 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
                                     <div
                                         key={tab.id}
                                         className={`ctm-tab-pill ${activeTabId === tab.id ? "is-active" : ""}`}
-                                        onClick={() => setActiveTabId(tab.id)}
+                                        onClick={() => handleSelectTab(tab)}
                                     >
                                         <span className="ctm-tab-pill-name">{tab.name}</span>
                                         <button
@@ -481,11 +609,115 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
                             )}
                         </div>
 
+                        {activeTab && (hasSubTabs ? (
+                            <div className="ctm-subtabs-row">
+                                {activeTab.subTabs.map((sub) => (
+                                    editingSubTabId === sub.id ? (
+                                        <div key={sub.id} className="ctm-add-tab-inline">
+                                            <input
+                                                type="text"
+                                                className="ctm-tab-name-input"
+                                                value={editingSubTabName}
+                                                autoFocus
+                                                onChange={(e) => setEditingSubTabName(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") handleConfirmRenameSubTab();
+                                                    if (e.key === "Escape") setEditingSubTabId(null);
+                                                }}
+                                            />
+                                            <button type="button" className="ctm-tab-icon-btn" onClick={handleConfirmRenameSubTab} aria-label="Confirm rename">
+                                                <FiCheck size={14} />
+                                            </button>
+                                            <button type="button" className="ctm-tab-icon-btn" onClick={() => setEditingSubTabId(null)} aria-label="Cancel rename">
+                                                <FiX size={14} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div
+                                            key={sub.id}
+                                            className={`ctm-subtab-pill ${activeSubTabId === sub.id ? "is-active" : ""}`}
+                                            onClick={() => setActiveSubTabId(sub.id)}
+                                        >
+                                            <span className="ctm-tab-pill-name">{sub.name}</span>
+                                            <button
+                                                type="button"
+                                                className="ctm-tab-icon-btn"
+                                                aria-label="Rename subtab"
+                                                onClick={(e) => { e.stopPropagation(); handleStartRenameSubTab(sub); }}
+                                            >
+                                                <FiEdit2 size={11} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="ctm-tab-icon-btn ctm-tab-delete-btn"
+                                                aria-label="Delete subtab"
+                                                onClick={(e) => { e.stopPropagation(); handleDeleteSubTab(sub.id); }}
+                                            >
+                                                <FiTrash2 size={11} />
+                                            </button>
+                                        </div>
+                                    )
+                                ))}
+
+                                {addingSubTab ? (
+                                    <div className="ctm-add-tab-inline">
+                                        <input
+                                            type="text"
+                                            className="ctm-tab-name-input"
+                                            placeholder="Subtab name"
+                                            value={newSubTabName}
+                                            autoFocus
+                                            onChange={(e) => setNewSubTabName(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") handleConfirmAddSubTab();
+                                                if (e.key === "Escape") handleCancelAddSubTab();
+                                            }}
+                                        />
+                                        <button type="button" className="ctm-tab-icon-btn" onClick={handleConfirmAddSubTab} aria-label="Confirm add subtab">
+                                            <FiCheck size={14} />
+                                        </button>
+                                        <button type="button" className="ctm-tab-icon-btn" onClick={handleCancelAddSubTab} aria-label="Cancel add subtab">
+                                            <FiX size={14} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button type="button" className="ctm-add-subtab-btn" onClick={handleAddSubTabClick}>
+                                        <FiPlus size={12} /> Add Subtab
+                                    </button>
+                                )}
+                            </div>
+                        ) : addingSubTab ? (
+                            <div className="ctm-add-tab-inline ctm-add-subtab-inline-standalone">
+                                <input
+                                    type="text"
+                                    className="ctm-tab-name-input"
+                                    placeholder="Subtab name"
+                                    value={newSubTabName}
+                                    autoFocus
+                                    onChange={(e) => setNewSubTabName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") handleConfirmAddSubTab();
+                                        if (e.key === "Escape") handleCancelAddSubTab();
+                                    }}
+                                />
+                                <button type="button" className="ctm-tab-icon-btn" onClick={handleConfirmAddSubTab} aria-label="Confirm add subtab">
+                                    <FiCheck size={14} />
+                                </button>
+                                <button type="button" className="ctm-tab-icon-btn" onClick={handleCancelAddSubTab} aria-label="Cancel add subtab">
+                                    <FiX size={14} />
+                                </button>
+                            </div>
+                        ) : (
+                            <button type="button" className="ctm-add-subtab-link" onClick={handleAddSubTabClick}>
+                                <FiPlus size={12} /> Add Subtab
+                            </button>
+                        ))}
+
                         <div className="ctm-fields-header">
                             <p className="ctm-section-title" style={{ margin: 0 }}>Fields</p>
                         </div>
 
-                        {activeTab && activeTab.fields.length === 0 && (
+                        {activeFields.length === 0 && (
                             <div className="ctm-fields-empty">
                                 <p>No fields added yet. Add fields to capture the required information.</p>
                                 <button type="button" className="ctm-add-field-btn" onClick={handleAddField} aria-label="Add field" title="Add field">
@@ -494,9 +726,9 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
                             </div>
                         )}
 
-                        {activeTab && activeTab.fields.length > 0 && (
+                        {activeFields.length > 0 && (
                             <div className="ctm-fields-list">
-                                {activeTab.fields.map((field, index) => (
+                                {activeFields.map((field, index) => (
                                     <FieldCard
                                         key={field.id}
                                         field={field}
