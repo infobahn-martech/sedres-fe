@@ -1007,7 +1007,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   top: 0;
   bottom: 0;
   width: 22px;
-  border-right: 1px solid #59d38c;
+  border-right: 1px solid rgba(89, 211, 140, 0.55);
 }
 
 .workflow-stage-box .workflow-insertion-rail-right {
@@ -1015,7 +1015,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   top: 0;
   bottom: 0;
   width: 22px;
-  border-left: 1px solid #59d38c;
+  border-left: 1px solid rgba(89, 211, 140, 0.55);
 }
 
 .workflow-stage-box .workflow-insertion-rail-bottom {
@@ -1023,7 +1023,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   right: 0;
   bottom: 0;
   height: 22px;
-  border-top: 1px solid #59d38c;
+  border-top: 1px solid rgba(89, 211, 140, 0.55);
 }
 
 .workflow-stage-box .workflow-insertion-rail-bottom.bottom-add-grid.disabled {
@@ -1047,13 +1047,13 @@ div[role="tooltip"][id^="workflow-info-"] {
 .workflow-insertion-rail-left {
   left: 0;
   width: 22px;
-  border-right: 1px solid #59d38c;
+  border-right: 1px solid rgba(89, 211, 140, 0.55);
 }
 
 .workflow-insertion-rail-right {
   right: 0;
   width: 22px;
-  border-left: 1px solid #59d38c;
+  border-left: 1px solid rgba(89, 211, 140, 0.55);
 }
 
 // Add-grid insertion row: thin horizontal bar in swimlane column only (LIVE), visible on hover, no layout break
