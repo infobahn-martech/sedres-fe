@@ -1252,7 +1252,7 @@ function CallTypeBuilderModal({ show, onClose }) {
                 {/* Top bar */}
                 <div className="cardform-topbar ct-modal-topbar">
                     <div>
-                        <span className="ct-topbar-title">CALL TYPE BUILDER</span>
+                        <span className="ct-topbar-title">Call Type Builder</span>
                     </div>
                     <div className="cardform-topbar-right">
                         <button type="button" className="cardform-close-btn" onClick={onClose}>✕</button>
@@ -1269,8 +1269,6 @@ function CallTypeBuilderModal({ show, onClose }) {
 
                         {/* Saved templates list */}
                         <div className="ct-saved-section">
-                            <div className="ct-saved-header">
-                            </div>
                             <div className="ct-saved-list">
                                 {list.map((ct) => (
                                     <div
@@ -2267,6 +2265,13 @@ function CallTypeBuilderModal({ show, onClose }) {
                                         </div>
                                     </>
                                 )}
+                            </div>
+                        )}
+
+                        {allEnabledTabs.length === 0 && (
+                            <div className="ct-preview-empty">
+                                <FiPlus size={28} />
+                                <p>Select tabs on the left to preview the card template here.</p>
                             </div>
                         )}
                     </div>
