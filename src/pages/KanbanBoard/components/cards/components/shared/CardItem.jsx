@@ -9,7 +9,7 @@ import saudimarcapLogo from "../../../../../../assets/images/saudimarcap.png";
 import saipemLogo from "../../../../../../assets/images/saipem.png";
 import lamprellLogo from "../../../../../../assets/images/lamprell.png";
 import gulfmarineLogo from "../../../../../../assets/images/gulfmarine.png";
-import { FiFileText, FiDownload, FiLoader, FiTrendingUp } from "react-icons/fi";
+import { FiFileText, FiDownload, FiLoader, FiTrendingUp, FiCopy, FiCheck } from "react-icons/fi";
 import { resolveIconComponentStrict } from "../../../../../../structure/SideNav/components/DynamicIcon";
 import { getFirstUserRoleId } from "../../../../../../shared/helpers/groUserRoles";
 import useAuthReducer from "../../../../../../store/AuthReducer";
@@ -308,6 +308,46 @@ ApiCardSubtaskBadge.propTypes = {
     subtaskTotal: PropTypes.number,
     subtaskCompleted: PropTypes.number,
     subtaskStatus: PropTypes.string,
+  }).isRequired,
+};
+
+/** Sales order number row shown above the KPI summary row, with a click-to-copy icon. */
+function ApiCardSalesOrderRow({ card }) {
+  const [copied, setCopied] = useState(false);
+  if (!hasText(card.salesOrderNo)) return null;
+
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(card.salesOrderNo).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  return (
+    <div className="card-api-sales-order-row">
+      <span className="card-api-sales-order-label" title={card.salesOrderNo}>
+        {card.salesOrderNo}
+      </span>
+      <span
+        className="card-api-sales-order-copy"
+        data-tooltip-id={`sales-order-copy-${card.id}`}
+        data-tooltip-content={copied ? "Copied!" : "Copy"}
+        onClick={handleCopy}
+        role="button"
+        aria-label="Copy sales order number"
+      >
+        {copied ? <FiCheck size={12} /> : <FiCopy size={12} />}
+      </span>
+      <Tooltip id={`sales-order-copy-${card.id}`} place="top" className="card-name-tooltip" />
+    </div>
+  );
+}
+
+ApiCardSalesOrderRow.propTypes = {
+  card: PropTypes.shape({
+    id: PropTypes.string,
+    salesOrderNo: PropTypes.string,
   }).isRequired,
 };
 
@@ -610,6 +650,8 @@ function ApiKanbanCardFull({
       </div>
 
       <ApiCardCountIconsRow card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} transportOnly={transportOnlyIcons} />
+
+      <ApiCardSalesOrderRow card={card} />
 
       {showSummaryRow ? (
         <div className="card-api-summary-row">
@@ -1129,6 +1171,7 @@ CardItem.propTypes = {
     subtaskTotal: PropTypes.number,
     subtaskCompleted: PropTypes.number,
     subtaskStatus: PropTypes.string,
+    salesOrderNo: PropTypes.string,
   }).isRequired,
   index: PropTypes.number.isRequired,
   setSelectedCard: PropTypes.func.isRequired,

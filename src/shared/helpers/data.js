@@ -238,6 +238,10 @@ export function mapBoardWorkflowFromApi(workflow) {
             color: perCardColor ?? stageColor,
             cardName: card.card_name || "",
             billingEntity: card.billing_entity || "",
+            salesOrderNo:
+              card.sales_order_no != null && String(card.sales_order_no).trim() !== ""
+                ? String(card.sales_order_no).trim()
+                : "",
             card_type_id:
               card.card_type_id != null && String(card.card_type_id).trim() !== ""
                 ? String(card.card_type_id)
