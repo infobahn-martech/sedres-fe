@@ -34,6 +34,7 @@ import StickersModal from '../SideNav/components/StickersModal';
 import TagsModal from '../SideNav/components/TagsModal';
 import TypesModal from '../SideNav/components/TypesModal';
 const CallTypeBuilderModal = lazy(() => import('../../pages/CallType/CallTypeBuilderModal'));
+const CustomTemplateBuilderModal = lazy(() => import('../../pages/CustomTemplate/CustomTemplateBuilderModal'));
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import { useThemeStore } from '../../shared/store/themeStore';
 import NavTabButton from '../../components/NavTabButton';
@@ -60,6 +61,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [showTagsModal, setShowTagsModal] = useState(false);
   const [showTypesModal, setShowTypesModal] = useState(false);
   const [showCallTypeBuilderModal, setShowCallTypeBuilderModal] = useState(false);
+  const [showCustomTemplateModal, setShowCustomTemplateModal] = useState(false);
   const { layoutView } = useLayoutView();
   const isDark = useThemeStore((state) => state.isDark);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
@@ -228,12 +230,14 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     setShowTagsModal(false);
     setShowTypesModal(false);
     setShowCallTypeBuilderModal(false);
+    setShowCustomTemplateModal(false);
 
     if (item.modal === 'blockers') setShowBlockersModal(true);
     if (item.modal === 'stickers') setShowStickersModal(true);
     if (item.modal === 'tags') setShowTagsModal(true);
     if (item.modal === 'types') setShowTypesModal(true);
     if (item.modal === 'templates') setShowCallTypeBuilderModal(true);
+    if (item.modal === 'custom templates') setShowCustomTemplateModal(true);
   };
 
   const handleUserCircleClick = () => {
@@ -607,6 +611,15 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           <CallTypeBuilderModal
             show={showCallTypeBuilderModal}
             onClose={() => setShowCallTypeBuilderModal(false)}
+          />
+        </Suspense>
+      )}
+
+      {showCustomTemplateModal && (
+        <Suspense fallback={null}>
+          <CustomTemplateBuilderModal
+            show={showCustomTemplateModal}
+            onClose={() => setShowCustomTemplateModal(false)}
           />
         </Suspense>
       )}

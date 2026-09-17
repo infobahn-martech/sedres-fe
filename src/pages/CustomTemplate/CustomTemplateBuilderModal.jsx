@@ -1,0 +1,510 @@
+import { useEffect, useState } from "react";
+import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX, FiMenu } from "react-icons/fi";
+import SearchableSelect from "../../components/form/SearchableSelect";
+import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
+import useBillingEntityReducer from "../../store/BillingEntityReducer";
+import useAlertReducer from "../../store/AlertReducer";
+import "../../design/css/common/CardForm.css";
+import "../../design/scss/general.scss";
+import "../../design/scss/pages/customTemplateBuilder.scss";
+
+const FIELD_TYPES = [
+    { value: "text", label: "Text" },
+    { value: "textarea", label: "Text Area" },
+    { value: "number", label: "Number" },
+    { value: "date", label: "Date" },
+    { value: "time", label: "Time" },
+    { value: "datetime", label: "Date & Time" },
+    { value: "dropdown", label: "Dropdown" },
+    { value: "checkbox", label: "Checkbox" },
+    { value: "radio", label: "Radio Button" },
+    { value: "file", label: "File Upload" },
+];
+
+const OPTIONS_FIELD_TYPES = new Set(["dropdown", "radio"]);
+
+const makeId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const buildDefaultTabs = () => [{ id: makeId("tab"), name: "General", fields: [] }];
+
+function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption }) {
+    const options = field.options ?? [];
+    return (
+        <div className="ctm-field-options">
+            <p className="ctm-field-options-label">Options</p>
+            {options.map((opt, idx) => (
+                <div key={idx} className="ctm-option-row">
+                    <input
+                        type="text"
+                        className="ctm-option-input"
+                        placeholder={`Option ${idx + 1}`}
+                        value={opt}
+                        onChange={(e) => onUpdateOption(idx, e.target.value)}
+                    />
+                    <button
+                        type="button"
+                        className="ctm-field-del-btn"
+                        aria-label="Remove option"
+                        onClick={() => onRemoveOption(idx)}
+                        disabled={options.length <= 1}
+                    >
+                        <FiX size={14} />
+                    </button>
+                </div>
+            ))}
+            <button type="button" className="ctm-add-option-btn" onClick={onAddOption}>
+                <FiPlus size={12} /> Add Option
+            </button>
+        </div>
+    );
+}
+
+function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddOption, onUpdateOption, onRemoveOption }) {
+    const showOptions = OPTIONS_FIELD_TYPES.has(field.type);
+    return (
+        <div
+            className={`ctm-field-card ${isDragging ? "is-dragging" : ""} ${isDragOver ? "is-drag-over" : ""}`}
+            draggable
+            onDragStart={() => onDragStart(index)}
+            onDragOver={(e) => { e.preventDefault(); onDragOver(index); }}
+            onDrop={(e) => { e.preventDefault(); onDrop(index); }}
+            onDragEnd={onDragEnd}
+        >
+            <div className="ctm-field-row-top">
+                <span className="ctm-field-drag-handle" title="Drag to reorder">
+                    <FiMenu size={14} />
+                </span>
+                <input
+                    type="text"
+                    className="ctm-field-label-input"
+                    placeholder="Field label"
+                    value={field.label}
+                    onChange={(e) => onUpdate(field.id, "label", e.target.value)}
+                />
+                <select
+                    className="ctm-field-type-select"
+                    value={field.type}
+                    onChange={(e) => onUpdate(field.id, "type", e.target.value)}
+                >
+                    {FIELD_TYPES.map((ft) => (
+                        <option key={ft.value} value={ft.value}>{ft.label}</option>
+                    ))}
+                </select>
+                <label className="ctm-toggle-wrap">
+                    <span className="ctm-toggle-label">Required</span>
+                    <span className="ctm-toggle">
+                        <input
+                            type="checkbox"
+                            checked={field.required}
+                            onChange={(e) => onUpdate(field.id, "required", e.target.checked)}
+                        />
+                        <span className="ctm-toggle-slider" />
+                    </span>
+                </label>
+                <button
+                    type="button"
+                    className="ctm-field-del-btn"
+                    aria-label="Delete field"
+                    onClick={() => onRequestDelete(field.id)}
+                >
+                    <FiTrash2 size={15} />
+                </button>
+            </div>
+
+            {showOptions && (
+                <FieldOptionsEditor
+                    field={field}
+                    onAddOption={() => onAddOption(field.id)}
+                    onUpdateOption={(idx, val) => onUpdateOption(field.id, idx, val)}
+                    onRemoveOption={(idx) => onRemoveOption(field.id, idx)}
+                />
+            )}
+        </div>
+    );
+}
+
+function CustomTemplateBuilderModal({ show, onClose }) {
+    const { getBillingEntities, billingEntities, isLoading: billingLoading } = useBillingEntityReducer((s) => s);
+    const { success } = useAlertReducer((s) => s);
+
+    const [templateName, setTemplateName] = useState("");
+    const [nameTouched, setNameTouched] = useState(false);
+    const [billingEntity, setBillingEntity] = useState("");
+    const [entityTouched, setEntityTouched] = useState(false);
+
+    const [tabs, setTabs] = useState(buildDefaultTabs);
+    const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id);
+    const [addingTab, setAddingTab] = useState(false);
+    const [newTabName, setNewTabName] = useState("");
+    const [editingTabId, setEditingTabId] = useState(null);
+    const [editingTabName, setEditingTabName] = useState("");
+
+    const [dragIndex, setDragIndex] = useState(null);
+    const [dragOverIndex, setDragOverIndex] = useState(null);
+    const [deleteFieldRequest, setDeleteFieldRequest] = useState(null);
+
+    const billingEntityOptions = (billingEntities ?? []).map((be) => ({
+        value: String(be._id ?? be.entity_id ?? ""),
+        label: String(be.name ?? be.billing_entity ?? ""),
+    }));
+
+    const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
+
+    useEffect(() => {
+        if (show && billingEntities === null && !billingLoading) {
+            getBillingEntities({ params: { page: 1, limit: 1000 } });
+        }
+    }, [show, billingEntities, billingLoading, getBillingEntities]);
+
+    const resetState = () => {
+        setTemplateName("");
+        setNameTouched(false);
+        setBillingEntity("");
+        setEntityTouched(false);
+        const defaultTabs = buildDefaultTabs();
+        setTabs(defaultTabs);
+        setActiveTabId(defaultTabs[0].id);
+        setAddingTab(false);
+        setNewTabName("");
+        setEditingTabId(null);
+        setEditingTabName("");
+        setDeleteFieldRequest(null);
+    };
+
+    const updateActiveTabFields = (updater) => {
+        setTabs((prev) => prev.map((t) => (t.id === activeTabId ? { ...t, fields: updater(t.fields) } : t)));
+    };
+
+    const handleAddTabClick = () => {
+        setAddingTab(true);
+        setNewTabName("");
+    };
+
+    const handleConfirmAddTab = () => {
+        const trimmed = newTabName.trim();
+        if (!trimmed) {
+            setAddingTab(false);
+            return;
+        }
+        const tab = { id: makeId("tab"), name: trimmed, fields: [] };
+        setTabs((prev) => [...prev, tab]);
+        setActiveTabId(tab.id);
+        setAddingTab(false);
+        setNewTabName("");
+    };
+
+    const handleCancelAddTab = () => {
+        setAddingTab(false);
+        setNewTabName("");
+    };
+
+    const handleStartRenameTab = (tab) => {
+        setEditingTabId(tab.id);
+        setEditingTabName(tab.name);
+    };
+
+    const handleConfirmRenameTab = () => {
+        const trimmed = editingTabName.trim();
+        if (trimmed) {
+            setTabs((prev) => prev.map((t) => (t.id === editingTabId ? { ...t, name: trimmed } : t)));
+        }
+        setEditingTabId(null);
+        setEditingTabName("");
+    };
+
+    const handleDeleteTab = (tabId) => {
+        if (tabs.length <= 1) return;
+        setTabs((prev) => {
+            const next = prev.filter((t) => t.id !== tabId);
+            if (activeTabId === tabId) setActiveTabId(next[0]?.id);
+            return next;
+        });
+    };
+
+    const handleAddField = () => {
+        updateActiveTabFields((fields) => [
+            ...fields,
+            { id: makeId("field"), label: "", type: "text", required: false, options: [] },
+        ]);
+    };
+
+    const handleUpdateField = (fieldId, key, value) => {
+        updateActiveTabFields((fields) => fields.map((f) => {
+            if (f.id !== fieldId) return f;
+            const next = { ...f, [key]: value };
+            if (key === "type" && OPTIONS_FIELD_TYPES.has(value) && (!next.options || next.options.length === 0)) {
+                next.options = ["Option 1"];
+            }
+            return next;
+        }));
+    };
+
+    const handleRequestDeleteField = (fieldId) => {
+        setDeleteFieldRequest({ tabId: activeTabId, fieldId });
+    };
+
+    const handleConfirmDeleteField = () => {
+        if (!deleteFieldRequest) return;
+        setTabs((prev) => prev.map((t) => (
+            t.id === deleteFieldRequest.tabId
+                ? { ...t, fields: t.fields.filter((f) => f.id !== deleteFieldRequest.fieldId) }
+                : t
+        )));
+        setDeleteFieldRequest(null);
+    };
+
+    const handleAddOption = (fieldId) => {
+        updateActiveTabFields((fields) => fields.map((f) => (
+            f.id === fieldId ? { ...f, options: [...(f.options ?? []), `Option ${(f.options?.length ?? 0) + 1}`] } : f
+        )));
+    };
+
+    const handleUpdateOption = (fieldId, idx, value) => {
+        updateActiveTabFields((fields) => fields.map((f) => {
+            if (f.id !== fieldId) return f;
+            const nextOptions = [...(f.options ?? [])];
+            nextOptions[idx] = value;
+            return { ...f, options: nextOptions };
+        }));
+    };
+
+    const handleRemoveOption = (fieldId, idx) => {
+        updateActiveTabFields((fields) => fields.map((f) => (
+            f.id === fieldId ? { ...f, options: (f.options ?? []).filter((_, i) => i !== idx) } : f
+        )));
+    };
+
+    const handleDragStart = (index) => setDragIndex(index);
+    const handleDragOver = (index) => setDragOverIndex(index);
+    const handleDragEnd = () => {
+        setDragIndex(null);
+        setDragOverIndex(null);
+    };
+    const handleDrop = (dropIndex) => {
+        if (dragIndex === null || dragIndex === dropIndex) {
+            handleDragEnd();
+            return;
+        }
+        updateActiveTabFields((fields) => {
+            const next = [...fields];
+            const [moved] = next.splice(dragIndex, 1);
+            next.splice(dropIndex, 0, moved);
+            return next;
+        });
+        handleDragEnd();
+    };
+
+    const isNameInvalid = nameTouched && !templateName.trim();
+    const isEntityInvalid = entityTouched && !billingEntity;
+    const canSave = Boolean(templateName.trim()) && Boolean(billingEntity);
+
+    const handleClose = () => {
+        resetState();
+        onClose();
+    };
+
+    const handleSave = () => {
+        setNameTouched(true);
+        setEntityTouched(true);
+        if (!canSave) return;
+        success("Custom template saved successfully");
+        resetState();
+        onClose();
+    };
+
+    if (!show) return null;
+
+    return (
+        <>
+            <div className="cardform-overlay ctm-modal-overlay">
+                <div className="cardform-panel">
+                    <div className="cardform-topbar ctm-modal-topbar">
+                        <div>
+                            <span className="ctm-topbar-title">Create Custom Template</span>
+                        </div>
+                        <div className="cardform-topbar-right">
+                            <button type="button" className="cardform-close-btn" onClick={handleClose}>✕</button>
+                        </div>
+                    </div>
+
+                    <div className="ctm-body">
+                        <div className="ctm-top-grid">
+                            <div className="cf-field">
+                                <label>
+                                    Template Name <span className="text-danger">*</span>
+                                </label>
+                                <div className="cf-input">
+                                    <input
+                                        type="text"
+                                        placeholder="Enter template name"
+                                        value={templateName}
+                                        onChange={(e) => setTemplateName(e.target.value)}
+                                        onBlur={() => setNameTouched(true)}
+                                    />
+                                </div>
+                                {isNameInvalid && <span className="cf-field-error">Template name is required</span>}
+                            </div>
+
+                            <div className="cf-field">
+                                <label>
+                                    Billing Entity <span className="text-danger">*</span>
+                                </label>
+                                <SearchableSelect
+                                    value={billingEntity}
+                                    onChange={(e) => { setBillingEntity(e.target.value); setEntityTouched(true); }}
+                                    options={billingEntityOptions}
+                                    placeholder={billingLoading ? "Loading..." : "Select billing entity"}
+                                    hasError={isEntityInvalid}
+                                    disabled={billingLoading}
+                                    menuPortalTarget={document.body}
+                                    menuPlacement="auto"
+                                />
+                                {isEntityInvalid && <span className="cf-field-error">Billing entity is required</span>}
+                            </div>
+                        </div>
+
+                        <p className="ctm-section-title">Template Structure</p>
+                        <p className="ctm-section-subtext">Create tabs and add custom fields for this template.</p>
+
+                        <div className="ctm-tabs-row">
+                            {tabs.map((tab) => (
+                                editingTabId === tab.id ? (
+                                    <div key={tab.id} className="ctm-add-tab-inline">
+                                        <input
+                                            type="text"
+                                            className="ctm-tab-name-input"
+                                            value={editingTabName}
+                                            autoFocus
+                                            onChange={(e) => setEditingTabName(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") handleConfirmRenameTab();
+                                                if (e.key === "Escape") setEditingTabId(null);
+                                            }}
+                                        />
+                                        <button type="button" className="ctm-tab-icon-btn" onClick={handleConfirmRenameTab} aria-label="Confirm rename">
+                                            <FiCheck size={14} />
+                                        </button>
+                                        <button type="button" className="ctm-tab-icon-btn" onClick={() => setEditingTabId(null)} aria-label="Cancel rename">
+                                            <FiX size={14} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div
+                                        key={tab.id}
+                                        className={`ctm-tab-pill ${activeTabId === tab.id ? "is-active" : ""}`}
+                                        onClick={() => setActiveTabId(tab.id)}
+                                    >
+                                        <span className="ctm-tab-pill-name">{tab.name}</span>
+                                        <button
+                                            type="button"
+                                            className="ctm-tab-icon-btn"
+                                            aria-label="Rename tab"
+                                            onClick={(e) => { e.stopPropagation(); handleStartRenameTab(tab); }}
+                                        >
+                                            <FiEdit2 size={12} />
+                                        </button>
+                                        {tabs.length > 1 && (
+                                            <button
+                                                type="button"
+                                                className="ctm-tab-icon-btn ctm-tab-delete-btn"
+                                                aria-label="Delete tab"
+                                                onClick={(e) => { e.stopPropagation(); handleDeleteTab(tab.id); }}
+                                            >
+                                                <FiTrash2 size={12} />
+                                            </button>
+                                        )}
+                                    </div>
+                                )
+                            ))}
+
+                            {addingTab ? (
+                                <div className="ctm-add-tab-inline">
+                                    <input
+                                        type="text"
+                                        className="ctm-tab-name-input"
+                                        placeholder="Tab name"
+                                        value={newTabName}
+                                        autoFocus
+                                        onChange={(e) => setNewTabName(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") handleConfirmAddTab();
+                                            if (e.key === "Escape") handleCancelAddTab();
+                                        }}
+                                    />
+                                    <button type="button" className="ctm-tab-icon-btn" onClick={handleConfirmAddTab} aria-label="Confirm add tab">
+                                        <FiCheck size={14} />
+                                    </button>
+                                    <button type="button" className="ctm-tab-icon-btn" onClick={handleCancelAddTab} aria-label="Cancel add tab">
+                                        <FiX size={14} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <button type="button" className="ctm-add-tab-btn" onClick={handleAddTabClick}>
+                                    <FiPlus size={13} /> Add Tab
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="ctm-fields-header">
+                            <p className="ctm-section-title" style={{ margin: 0 }}>Fields</p>
+                        </div>
+
+                        {activeTab && activeTab.fields.length === 0 && (
+                            <p className="ctm-fields-empty">No fields added yet. Add fields to capture the required information.</p>
+                        )}
+
+                        {activeTab && activeTab.fields.length > 0 && (
+                            <div className="ctm-fields-list">
+                                {activeTab.fields.map((field, index) => (
+                                    <FieldCard
+                                        key={field.id}
+                                        field={field}
+                                        index={index}
+                                        isDragging={dragIndex === index}
+                                        isDragOver={dragOverIndex === index && dragIndex !== index}
+                                        onDragStart={handleDragStart}
+                                        onDragOver={handleDragOver}
+                                        onDrop={handleDrop}
+                                        onDragEnd={handleDragEnd}
+                                        onUpdate={handleUpdateField}
+                                        onRequestDelete={handleRequestDeleteField}
+                                        onAddOption={handleAddOption}
+                                        onUpdateOption={handleUpdateOption}
+                                        onRemoveOption={handleRemoveOption}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        <button type="button" className="ctm-add-field-btn" onClick={handleAddField}>
+                            <FiPlus size={14} /> Add Field
+                        </button>
+                    </div>
+
+                    <div className="ctm-footer">
+                        <span className="ctm-required-note">* Required fields</span>
+                        <div className="ctm-footer-actions">
+                            <button type="button" className="btn-common close" onClick={handleClose}>
+                                Cancel
+                            </button>
+                            <button type="button" className="ctm-save-btn" disabled={!canSave} onClick={handleSave}>
+                                Save Template
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {!!deleteFieldRequest && (
+                <DeleteConfirmationModal
+                    show={!!deleteFieldRequest}
+                    onCancel={() => setDeleteFieldRequest(null)}
+                    onConfirm={handleConfirmDeleteField}
+                    deleteText="Delete this field? This cannot be undone."
+                />
+            )}
+        </>
+    );
+}
+
+export default CustomTemplateBuilderModal;
