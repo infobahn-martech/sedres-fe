@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { FiX, FiSearch } from 'react-icons/fi';
 import CustomModal from '../../components/CustomModal';
+import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
+import UnarchiveConfirmIcon from '../../assets/images/unarchive.svg';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
 import '../../design/scss/Workspaces.scss';
 
@@ -42,6 +44,8 @@ const mapArchiveLogItem = (row) => {
 const ArchivedWorkspacesModal = ({ show, onClose }) => {
   const [filterValue, setFilterValue] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showUnarchiveModal, setShowUnarchiveModal] = useState(false);
+  const [selectedItemForUnarchive, setSelectedItemForUnarchive] = useState(null);
   const {
     archiveLog,
     archiveLogLoading,
@@ -79,16 +83,32 @@ const ArchivedWorkspacesModal = ({ show, onClose }) => {
     setCurrentPage(pageNum);
   };
 
-  const handleUnarchive = (id) => {
-    if (id == null || id === '') return;
+  const handleUnarchive = (item) => {
+    if (item?.board_id == null || item.board_id === '') return;
+    setSelectedItemForUnarchive(item);
+    setShowUnarchiveModal(true);
+  };
+
+  const handleCancelUnarchive = () => {
+    setShowUnarchiveModal(false);
+    setSelectedItemForUnarchive(null);
+  };
+
+  const handleConfirmUnarchive = () => {
+    if (!selectedItemForUnarchive) return;
     unarchiveWorkspace({
-      board_id: id,
-      cb: () => { onClose(); fetchWorkspaceArchiveLog() },
+      board_id: selectedItemForUnarchive.board_id,
+      cb: () => {
+        handleCancelUnarchive();
+        onClose();
+        fetchWorkspaceArchiveLog();
+      },
     });
   };
 
 
   return (
+    <>
     <CustomModal
       show={show}
       closeModal={onClose}
@@ -181,7 +201,7 @@ const ArchivedWorkspacesModal = ({ show, onClose }) => {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handleUnarchive(item.board_id);
+                                handleUnarchive(item);
                               }}
                             >
                               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -230,6 +250,21 @@ const ArchivedWorkspacesModal = ({ show, onClose }) => {
         </div>
       }
     />
+
+    {showUnarchiveModal && (
+      <DeleteConfirmationModal
+        show={showUnarchiveModal}
+        onCancel={handleCancelUnarchive}
+        onConfirm={handleConfirmUnarchive}
+        deleteText={`Are you sure you want to unarchive "${selectedItemForUnarchive?.board || 'this board'}"?`}
+        isLoading={addEditLoader}
+        showIcon
+        icon={UnarchiveConfirmIcon}
+        className="archived-workspaces-confirm-modal"
+        backdropClassName="archived-workspaces-confirm-modal-backdrop"
+      />
+    )}
+    </>
   );
 };
 
