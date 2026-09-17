@@ -35,16 +35,14 @@ const useBillingEntityReducer = create((set) => ({
       const raw = data?.data ?? data ?? [];
       const list = (Array.isArray(raw) ? raw : []).map((row) => ({
         ...row,
-        _id: row._id ?? row.id,
-        name: row.name,
-        customerId: row.customer_id ?? row.customerId,
-        vatNo: row.vat_no ?? row.vatNo,
-        phoneNumber: row.phone_number ?? row.phoneNumber,
-        email: row.email,
-        contactPerson: row.contact_person ?? row.contactPerson,
+        _id: row._id ?? row.entity_id ?? row.id,
+        entity_id: row.entity_id ?? row.id,
+        customer_code: row.customer_code ?? '',
+        billing_entity: row.billing_entity ?? '',
+        phone_number: row.phone_number ?? '',
+        contact_name: row.contact_name ?? '',
+        entity_logo: row.entity_logo ?? '',
         credit_limit: row.credit_limit ?? row.creditLimit ?? null,
-        createdAt: row.created_at ?? row.createdAt,
-        updatedAt: row.updated_at ?? row.updatedAt,
       }));
       const total =
         data?.pagination?.total ??
