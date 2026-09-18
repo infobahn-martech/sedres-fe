@@ -72,6 +72,15 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   letter-spacing: 0.02em;
 }
 
+// Live preview topbar — same blue as the modal's own topbar instead of the
+// shared .ct-preview-topbar green (used elsewhere, e.g. Call Type Builder).
+// min-height keeps the bar's height stable even before a template name is
+// typed, when the title span has no text to size the row by.
+.ctm-preview-topbar {
+  background: #00368c;
+  min-height: 40.5px;
+}
+
 .ctm-body {
   flex: 1;
   min-height: 0;
@@ -370,7 +379,7 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
 .ctm-fields-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 18px;
 }
 
@@ -378,7 +387,7 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   border: 1.5px solid var(--border-primary);
   border-radius: 8px;
   background: var(--surface-primary);
-  padding: 12px;
+  padding: 14px;
   transition: border-color 0.15s, opacity 0.15s;
 
   &.is-dragging {
@@ -575,9 +584,11 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
 }
 
 // ── Options list (Dropdown / Radio Button field types) ────────────────────────
+// margin-left matches .ctm-field-row-sub's padding-left so the options box
+// lines up under the label input above it, not the drag handle.
 .ctm-field-options {
   margin-top: 12px;
-  margin-left: 44px;
+  margin-left: 30px;
   padding: 14px 16px;
   background: #f4f8fd;
   border: 1px solid #e1e9f7;

@@ -7,18 +7,31 @@
   background-color: #00368c;
 }
 
-// When "Create Custom Template" / "Edit Template" is triggered from the list, the
-// builder opens as a modal stacked on top of the list (not replacing it) — bump
-// its overlay above the list's own (ct-modal-overlay z-index: 1350).
-.ctl-nested-builder .ctm-modal-overlay {
-  z-index: 1360;
-}
-
 .ctl-topbar-title {
   color: var(--text-inverse);
   font-weight: 700;
   font-size: 14px;
   letter-spacing: 0.02em;
+}
+
+// Back arrow shown before the title when the modal is showing the
+// Create/Edit Template builder instead of the list — returns to the list.
+.ctl-topbar-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-inverse);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.16);
+  }
 }
 
 // ── Left panel: create button + search + template list ───────────────────────
@@ -204,6 +217,12 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+// Selected-template preview topbar — same blue as the modal's own topbar
+// instead of the shared .ct-preview-topbar green.
+.ctl-preview-topbar {
+  background: #00368c;
 }
 
 // Billing entity, shown inline after the template name in the preview's topbar.

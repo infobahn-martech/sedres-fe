@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { FiSearch, FiChevronRight, FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
+import { FiSearch, FiChevronRight, FiEdit2, FiTrash2, FiPlus, FiArrowLeft } from "react-icons/fi";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
-import CustomTemplateBuilderModal from "./CustomTemplateBuilderModal";
+import { TemplateBuilderBody } from "./CustomTemplateBuilderModal";
 import TemplateFieldPreview from "./TemplateFieldPreview";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/general.scss";
@@ -216,7 +216,10 @@ function CustomTemplateListModal({ show, onClose }) {
     const [activeTabIndex, setActiveTabIndex] = useState(0);
     const [activeSubTabIndex, setActiveSubTabIndex] = useState(0);
     const [deleteRequestId, setDeleteRequestId] = useState(null);
-    const [builderOpen, setBuilderOpen] = useState(false);
+    // 'list' shows the template list + preview; 'create'/'edit' reuse this same
+    // modal panel to show the builder form + preview instead of stacking a
+    // second modal on top.
+    const [viewMode, setViewMode] = useState("list");
     const [builderInitialTemplate, setBuilderInitialTemplate] = useState(null);
 
     const filteredTemplates = templates.filter((t) =>
@@ -250,8 +253,10 @@ function CustomTemplateListModal({ show, onClose }) {
 
     const handleCreateClick = () => {
         setBuilderInitialTemplate(null);
-        setBuilderOpen(true);
+        setViewMode("create");
     };
+
+    const handleBackToList = () => setViewMode("list");
 
     const mapEditField = (f) => ({
         label: f.label,
@@ -274,10 +279,14 @@ function CustomTemplateListModal({ show, onClose }) {
                 })),
             })),
         });
-        setBuilderOpen(true);
+        setViewMode("edit");
     };
 
     if (!show) return null;
+
+    const topbarTitle = viewMode === "list"
+        ? "Custom Templates List"
+        : (viewMode === "edit" ? "Edit Custom Template" : "Create Custom Template");
 
     return (
         <>
@@ -285,130 +294,145 @@ function CustomTemplateListModal({ show, onClose }) {
                     <div className="cardform-panel">
                         <div className="cardform-topbar ctl-modal-topbar">
                             <div>
-                                <span className="ctl-topbar-title">Custom Templates List</span>
+                                {viewMode !== "list" && (
+                                    <button
+                                        type="button"
+                                        className="ctl-topbar-back-btn"
+                                        aria-label="Back to template list"
+                                        title="Back to template list"
+                                        onClick={handleBackToList}
+                                    >
+                                        <FiArrowLeft size={16} />
+                                    </button>
+                                )}
+                                <span className="ctl-topbar-title">{topbarTitle}</span>
                             </div>
                             <div className="cardform-topbar-right">
-                                <button type="button" className="cardform-close-btn" onClick={onClose}>✕</button>
+                                <button
+                                    type="button"
+                                    className="cardform-close-btn"
+                                    onClick={viewMode === "list" ? onClose : handleBackToList}
+                                >
+                                    ✕
+                                </button>
                             </div>
                         </div>
 
-                        <div className="ct-split-body">
-                            <div className="ct-split-left">
-                                <div className="ctl-left-top">
-                                    <button type="button" className="ctl-create-btn" onClick={handleCreateClick}>
-                                        <FiPlus size={14} /> Create Custom Template
-                                    </button>
-                                    <div className="ctl-search-box">
-                                        <FiSearch size={14} className="ctl-search-icon" />
-                                        <input
-                                            type="text"
-                                            placeholder="Search templates"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                        />
+                        {viewMode === "list" ? (
+                            <div className="ct-split-body">
+                                <div className="ct-split-left">
+                                    <div className="ctl-left-top">
+                                        <button type="button" className="ctl-create-btn" onClick={handleCreateClick}>
+                                            <FiPlus size={14} /> Create Custom Template
+                                        </button>
+                                        <div className="ctl-search-box">
+                                            <FiSearch size={14} className="ctl-search-icon" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search templates"
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="ct-split-scroll-area">
+                                        <div className="ctl-template-list">
+                                            {filteredTemplates.length === 0 ? (
+                                                <p className="ctl-list-empty">No templates found.</p>
+                                            ) : (
+                                                filteredTemplates.map((tpl) => (
+                                                    <TemplateListCard
+                                                        key={tpl.id}
+                                                        template={tpl}
+                                                        isActive={tpl.id === selectedId}
+                                                        onSelect={() => handleSelectTemplate(tpl.id)}
+                                                        onDelete={() => setDeleteRequestId(tpl.id)}
+                                                    />
+                                                ))
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="ct-split-scroll-area">
-                                    <div className="ctl-template-list">
-                                        {filteredTemplates.length === 0 ? (
-                                            <p className="ctl-list-empty">No templates found.</p>
-                                        ) : (
-                                            filteredTemplates.map((tpl) => (
-                                                <TemplateListCard
-                                                    key={tpl.id}
-                                                    template={tpl}
-                                                    isActive={tpl.id === selectedId}
-                                                    onSelect={() => handleSelectTemplate(tpl.id)}
-                                                    onDelete={() => setDeleteRequestId(tpl.id)}
-                                                />
-                                            ))
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="ct-split-right ctl-preview-panel">
-                                {selectedTemplate ? (
-                                        // Live preview — reuses the real kanban card's own shell
-                                        // (cardform-topbar/tabs, operation-wrapper/left/right) so the
-                                        // template previews pixel-identical to the actual card.
-                                        <div className="ct-preview-modal">
-                                            <div className="cardform-topbar ct-preview-topbar">
-                                                <span className="cardform-title">
-                                                    {selectedTemplate.name}
-                                                    <span className="ctl-preview-topbar-entity"> · Billing Entity: {selectedTemplate.billingEntityLabel}</span>
-                                                </span>
-                                                <div className="cardform-topbar-right">
-                                                    <button type="button" className="ctl-preview-edit-btn" onClick={handleEditClick}>
-                                                        <FiEdit2 size={13} /> Edit Template
-                                                    </button>
+                                <div className="ct-split-right ctl-preview-panel">
+                                    {selectedTemplate ? (
+                                            // Live preview — reuses the real kanban card's own shell
+                                            // (cardform-topbar/tabs, operation-wrapper/left/right) so the
+                                            // template previews pixel-identical to the actual card.
+                                            <div className="ct-preview-modal">
+                                                <div className="cardform-topbar ct-preview-topbar ctl-preview-topbar">
+                                                    <span className="cardform-title">
+                                                        {selectedTemplate.name}
+                                                        <span className="ctl-preview-topbar-entity"> · Billing Entity: {selectedTemplate.billingEntityLabel}</span>
+                                                    </span>
+                                                    <div className="cardform-topbar-right">
+                                                        <button type="button" className="ctl-preview-edit-btn" onClick={handleEditClick}>
+                                                            <FiEdit2 size={13} /> Edit Template
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <div className="cardform-tabs">
-                                                {selectedTemplate.tabs.map((tab, idx) => (
-                                                    <button
-                                                        key={tab.name}
-                                                        type="button"
-                                                        className={`tab ${idx === activeTabIndex ? "active" : ""}`}
-                                                        onClick={() => handleSelectTab(idx)}
-                                                    >
-                                                        {tab.name}
-                                                    </button>
-                                                ))}
-                                            </div>
+                                                <div className="cardform-tabs">
+                                                    {selectedTemplate.tabs.map((tab, idx) => (
+                                                        <button
+                                                            key={tab.name}
+                                                            type="button"
+                                                            className={`tab ${idx === activeTabIndex ? "active" : ""}`}
+                                                            onClick={() => handleSelectTab(idx)}
+                                                        >
+                                                            {tab.name}
+                                                        </button>
+                                                    ))}
+                                                </div>
 
-                                            <div className="operation-wrapper">
-                                                <div className="operation-content-container">
-                                                    {hasSubTabs && (
-                                                        <div className="operation-left">
-                                                            {activeTab.subTabs.map((sub, idx) => (
-                                                                <button
-                                                                    key={sub.name}
-                                                                    type="button"
-                                                                    className={`op-tab ${idx === activeSubTabIndex ? "active" : ""}`}
-                                                                    onClick={() => setActiveSubTabIndex(idx)}
-                                                                >
-                                                                    {sub.name}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    )}
-
-                                                    <div className="operation-right">
-                                                        {fieldsToShow.length > 0 ? (
-                                                            <div className="ct-preview-custom-fields-grid">
-                                                                {fieldsToShow.map((field, idx) => (
-                                                                    <TemplateFieldPreview key={idx} field={field} />
+                                                <div className="operation-wrapper">
+                                                    <div className="operation-content-container">
+                                                        {hasSubTabs && (
+                                                            <div className="operation-left">
+                                                                {activeTab.subTabs.map((sub, idx) => (
+                                                                    <button
+                                                                        key={sub.name}
+                                                                        type="button"
+                                                                        className={`op-tab ${idx === activeSubTabIndex ? "active" : ""}`}
+                                                                        onClick={() => setActiveSubTabIndex(idx)}
+                                                                    >
+                                                                        {sub.name}
+                                                                    </button>
                                                                 ))}
                                                             </div>
-                                                        ) : (
-                                                            <p className="ct-summary-no-fields">No fields in this tab.</p>
                                                         )}
+
+                                                        <div className="operation-right">
+                                                            {fieldsToShow.length > 0 ? (
+                                                                <div className="ct-preview-custom-fields-grid">
+                                                                    {fieldsToShow.map((field, idx) => (
+                                                                        <TemplateFieldPreview key={idx} field={field} />
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <p className="ct-summary-no-fields">No fields in this tab.</p>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
+                                    ) : (
+                                        <div className="ct-preview-empty">
+                                            <p>Select a template from the list to preview its structure.</p>
                                         </div>
-                                ) : (
-                                    <div className="ct-preview-empty">
-                                        <p>Select a template from the list to preview its structure.</p>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        ) : (
+                            <TemplateBuilderBody
+                                key={viewMode === "edit" ? (selectedTemplate?.id ?? "edit") : "create"}
+                                initialTemplate={builderInitialTemplate}
+                                onClose={handleBackToList}
+                            />
+                        )}
                     </div>
             </div>
-
-            {builderOpen && (
-                <div className="ctl-nested-builder">
-                    <CustomTemplateBuilderModal
-                        show={builderOpen}
-                        onClose={() => setBuilderOpen(false)}
-                        initialTemplate={builderInitialTemplate}
-                    />
-                </div>
-            )}
 
             {!!deleteRequestId && (
                 <DeleteConfirmationModal

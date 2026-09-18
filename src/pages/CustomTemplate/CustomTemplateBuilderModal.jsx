@@ -56,7 +56,7 @@ const mapTemplateField = (f) => ({
 const buildDefaultTabs = () => MAIN_TAB_NAMES.map((name) => ({
     id: makeId("tab"),
     name,
-    fields: [createBlankField()],
+    fields: [],
     subTabs: [],
 }));
 
@@ -185,7 +185,10 @@ function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOv
     );
 }
 
-function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
+// Builder form + live preview, with no overlay/topbar of its own — the caller
+// (either the standalone modal below, or CustomTemplateListModal reusing its
+// own single panel) owns the surrounding chrome and decides what onClose does.
+function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const { getBillingEntities, billingEntities, isLoading: billingLoading } = useBillingEntityReducer((s) => s);
     const { success } = useAlertReducer((s) => s);
     const isEditMode = Boolean(initialTemplate);
@@ -229,10 +232,10 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
     const previewFields = activeFields.map((f) => ({ ...f, label: f.label.trim() || "Untitled Field" }));
 
     useEffect(() => {
-        if (show && billingEntities === null && !billingLoading) {
+        if (billingEntities === null && !billingLoading) {
             getBillingEntities({ params: { page: 1, limit: 1000 } });
         }
-    }, [show, billingEntities, billingLoading, getBillingEntities]);
+    }, [billingEntities, billingLoading, getBillingEntities]);
 
     const resetState = () => {
         setTemplateName(initialTemplate?.name ?? "");
@@ -485,25 +488,12 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
         onClose();
     };
 
-    if (!show) return null;
-
     return (
         <>
-            <div className="cardform-overlay ctm-modal-overlay">
-                <div className="cardform-panel">
-                    <div className="cardform-topbar ctm-modal-topbar">
-                        <div>
-                            <span className="ctm-topbar-title">{isEditMode ? "Edit Custom Template" : "Create Custom Template"}</span>
-                        </div>
-                        <div className="cardform-topbar-right">
-                            <button type="button" className="cardform-close-btn" onClick={handleClose}>✕</button>
-                        </div>
-                    </div>
-
-                    <div className="ct-split-body">
-                    <div className="ct-split-left">
-                    <div className="ct-split-scroll-area">
-                    <div className="ctm-body">
+            <div className="ct-split-body">
+            <div className="ct-split-left">
+            <div className="ct-split-scroll-area">
+            <div className="ctm-body">
                         <div className="ctm-top-grid">
                             <div className="cf-field">
                                 <label>
@@ -771,9 +761,9 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
                         template previews pixel-identical to the actual card. */}
                     <div className="ct-split-right">
                         <div className="ct-preview-modal">
-                            <div className="cardform-topbar ct-preview-topbar">
+                            <div className="cardform-topbar ct-preview-topbar ctm-preview-topbar">
                                 <span className="cardform-title">
-                                    {templateName.trim() || "Untitled Template"}
+                                    {templateName.trim()}
                                     {billingEntityLabel && (
                                         <span className="ctl-preview-topbar-entity"> · Billing Entity: {billingEntityLabel}</span>
                                     )}
@@ -838,8 +828,6 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
                             </button>
                         </div>
                     </div>
-                </div>
-            </div>
 
             {!!deleteFieldRequest && (
                 <DeleteConfirmationModal
@@ -855,4 +843,30 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
     );
 }
 
+// Standalone modal — used directly (outside the templates list), owns its own
+// overlay/topbar and simply closes on cancel/save.
+function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
+    const isEditMode = Boolean(initialTemplate);
+
+    if (!show) return null;
+
+    return (
+        <div className="cardform-overlay ctm-modal-overlay">
+            <div className="cardform-panel">
+                <div className="cardform-topbar ctm-modal-topbar">
+                    <div>
+                        <span className="ctm-topbar-title">{isEditMode ? "Edit Custom Template" : "Create Custom Template"}</span>
+                    </div>
+                    <div className="cardform-topbar-right">
+                        <button type="button" className="cardform-close-btn" onClick={onClose}>✕</button>
+                    </div>
+                </div>
+
+                <TemplateBuilderBody initialTemplate={initialTemplate} onClose={onClose} />
+            </div>
+        </div>
+    );
+}
+
 export default CustomTemplateBuilderModal;
+export { TemplateBuilderBody };
