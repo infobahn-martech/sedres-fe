@@ -1,30 +1,13 @@
 import { useState } from "react";
-import {
-    FiSearch, FiChevronRight, FiEdit2, FiTrash2, FiPlus,
-    FiType, FiAlignLeft, FiHash, FiCalendar, FiClock,
-    FiChevronDown, FiCheckSquare, FiDisc, FiPaperclip, FiMail,
-} from "react-icons/fi";
+import { FiSearch, FiChevronRight, FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import CustomTemplateBuilderModal from "./CustomTemplateBuilderModal";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/general.scss";
+import "../../design/scss/operations.scss";
 import "../../design/scss/pages/callTypeBuilder.scss";
 import "../../design/scss/pages/customTemplateBuilder.scss";
 import "../../design/scss/pages/customTemplateList.scss";
-
-const FIELD_TYPE_ICONS = {
-    text: FiType,
-    textarea: FiAlignLeft,
-    number: FiHash,
-    date: FiCalendar,
-    time: FiClock,
-    datetime: FiCalendar,
-    dropdown: FiChevronDown,
-    checkbox: FiCheckSquare,
-    radio: FiDisc,
-    file: FiPaperclip,
-    email: FiMail,
-};
 
 // Appointment Details is identical across all three call types, matching the
 // real Sedres Appointment Details tab (General.jsx) at /kanban-board/:id.
@@ -225,61 +208,89 @@ function TemplateListCard({ template, isActive, onSelect, onDelete }) {
     );
 }
 
-function FieldControlPreview({ field }) {
+// Renders a template field the same way the live kanban card renders it
+// (cf-field/cf-input, matching Call Type Builder's own live-preview fields)
+// so the template preview is pixel-identical to the real card.
+function TemplateFieldPreview({ field }) {
+    const label = field.label;
+    const requiredMark = field.required && <span className="text-danger">*</span>;
+
     switch (field.type) {
         case "textarea":
-            return <textarea className="ctl-preview-field-control" rows={2} disabled />;
-        case "dropdown":
             return (
-                <select className="ctl-preview-field-control" disabled defaultValue="">
-                    <option value="">Select...</option>
-                </select>
+                <div className="cf-field ct-preview-span-full">
+                    <label>{label}{requiredMark}</label>
+                    <textarea className="ct-preview-textarea-mock" rows={3} placeholder="Enter text..." />
+                </div>
             );
         case "checkbox":
             return (
-                <label className="ctl-preview-field-inline-control">
-                    <input type="checkbox" disabled /> Yes
-                </label>
+                <div className="cf-field ct-preview-span-full">
+                    <label className="ct-preview-check-mock">
+                        <input type="checkbox" />
+                        <span>{label}{requiredMark}</span>
+                    </label>
+                </div>
             );
-        case "radio":
+        case "radio": {
+            const options = field.options?.length ? field.options : ["Option 1", "Option 2"];
             return (
-                <label className="ctl-preview-field-inline-control">
-                    <input type="radio" disabled /> Option
-                </label>
+                <div className="cf-field ct-preview-span-full">
+                    <label>{label}{requiredMark}</label>
+                    <div className="ct-preview-radio-mock">
+                        {options.map((opt, i) => (
+                            <label key={i} className="ct-preview-radio-option">
+                                <input type="radio" />
+                                <span>{opt}</span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+        case "dropdown":
+            return (
+                <div className="cf-field">
+                    <label>{label}{requiredMark}</label>
+                    <div className="cf-input ct-preview-select-input">
+                        <input type="text" placeholder="Select option..." />
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </div>
+                </div>
             );
         case "file":
-            return <input type="file" className="ctl-preview-field-control" disabled />;
+            return (
+                <div className="cf-field">
+                    <label>{label}{requiredMark}</label>
+                    <div className="ct-preview-file-zone">Choose file...</div>
+                </div>
+            );
         case "date":
-            return <input type="date" className="ctl-preview-field-control" disabled />;
         case "time":
-            return <input type="time" className="ctl-preview-field-control" disabled />;
         case "datetime":
-            return <input type="datetime-local" className="ctl-preview-field-control" disabled />;
-        case "number":
-            return <input type="number" className="ctl-preview-field-control" placeholder="0" disabled />;
-        case "email":
-            return <input type="email" className="ctl-preview-field-control" placeholder="name@example.com" disabled />;
+            return (
+                <div className="cf-field">
+                    <label>{label}{requiredMark}</label>
+                    <div className="cf-input">
+                        <input type={field.type === "datetime" ? "datetime-local" : field.type} />
+                    </div>
+                </div>
+            );
         default:
-            return <input type="text" className="ctl-preview-field-control" disabled />;
+            return (
+                <div className="cf-field">
+                    <label>{label}{requiredMark}</label>
+                    <div className="cf-input">
+                        <input
+                            type={field.type === "number" ? "number" : field.type === "email" ? "email" : "text"}
+                            placeholder={label}
+                        />
+                    </div>
+                </div>
+            );
     }
-}
-
-function FieldPreviewCard({ field }) {
-    const Icon = FIELD_TYPE_ICONS[field.type] ?? FiType;
-    return (
-        <div className="ctl-preview-field-card">
-            <span className="ctl-preview-field-icon">
-                <Icon size={15} />
-            </span>
-            <div className="ctl-preview-field-content">
-                <span className="ctl-preview-field-label">
-                    {field.label}
-                    {field.required && <span className="ctl-preview-field-asterisk">*</span>}
-                </span>
-                <FieldControlPreview field={field} />
-            </div>
-        </div>
-    );
 }
 
 function CustomTemplateListModal({ show, onClose }) {
@@ -403,74 +414,71 @@ function CustomTemplateListModal({ show, onClose }) {
 
                             <div className="ct-split-right ctl-preview-panel">
                                 {selectedTemplate ? (
-                                    <>
-                                        <div className="ctl-preview-header">
-                                            <div>
-                                                <h2 className="ctl-preview-title">{selectedTemplate.name}</h2>
-                                                <p className="ctl-preview-entity">Billing Entity: {selectedTemplate.billingEntityLabel}</p>
+                                        // Live preview — reuses the real kanban card's own shell
+                                        // (cardform-topbar/tabs, operation-wrapper/left/right) so the
+                                        // template previews pixel-identical to the actual card.
+                                        <div className="ct-preview-modal">
+                                            <div className="cardform-topbar ct-preview-topbar">
+                                                <span className="cardform-title">
+                                                    {selectedTemplate.name}
+                                                    <span className="ctl-preview-topbar-entity"> · Billing Entity: {selectedTemplate.billingEntityLabel}</span>
+                                                </span>
+                                                <div className="cardform-topbar-right">
+                                                    <button type="button" className="ctl-preview-edit-btn" onClick={handleEditClick}>
+                                                        <FiEdit2 size={13} /> Edit Template
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <button type="button" className="ctl-edit-btn" onClick={handleEditClick}>
-                                                <FiEdit2 size={13} /> Edit Template
-                                            </button>
-                                        </div>
 
-                                        <div className="ctl-preview-tabs">
-                                            {selectedTemplate.tabs.map((tab, idx) => (
-                                                <button
-                                                    key={tab.name}
-                                                    type="button"
-                                                    className={`ctl-preview-tab-pill ${idx === activeTabIndex ? "is-active" : ""}`}
-                                                    onClick={() => handleSelectTab(idx)}
-                                                >
-                                                    {tab.name}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {hasSubTabs && (
-                                            <div className="ctl-preview-subtabs">
-                                                {activeTab.subTabs.map((sub, idx) => (
+                                            <div className="cardform-tabs">
+                                                {selectedTemplate.tabs.map((tab, idx) => (
                                                     <button
-                                                        key={sub.name}
+                                                        key={tab.name}
                                                         type="button"
-                                                        className={`ctl-preview-subtab-pill ${idx === activeSubTabIndex ? "is-active" : ""}`}
-                                                        onClick={() => setActiveSubTabIndex(idx)}
+                                                        className={`tab ${idx === activeTabIndex ? "active" : ""}`}
+                                                        onClick={() => handleSelectTab(idx)}
                                                     >
-                                                        {sub.name}
+                                                        {tab.name}
                                                     </button>
                                                 ))}
                                             </div>
-                                        )}
 
-                                        <div className="ctl-preview-fields-scroll">
-                                            {fieldsToShow.length > 0 ? (
-                                                <div className="ctl-preview-fields-grid">
-                                                    {fieldsToShow.map((field, idx) => (
-                                                        <FieldPreviewCard key={idx} field={field} />
-                                                    ))}
+                                            <div className="operation-wrapper">
+                                                <div className="operation-content-container">
+                                                    {hasSubTabs && (
+                                                        <div className="operation-left">
+                                                            {activeTab.subTabs.map((sub, idx) => (
+                                                                <button
+                                                                    key={sub.name}
+                                                                    type="button"
+                                                                    className={`op-tab ${idx === activeSubTabIndex ? "active" : ""}`}
+                                                                    onClick={() => setActiveSubTabIndex(idx)}
+                                                                >
+                                                                    {sub.name}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="operation-right">
+                                                        {fieldsToShow.length > 0 ? (
+                                                            <div className="ct-preview-custom-fields-grid">
+                                                                {fieldsToShow.map((field, idx) => (
+                                                                    <TemplateFieldPreview key={idx} field={field} />
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <p className="ct-summary-no-fields">No fields in this tab.</p>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            ) : (
-                                                <p className="ctl-preview-empty">No fields in this tab.</p>
-                                            )}
+                                            </div>
                                         </div>
-                                    </>
                                 ) : (
                                     <div className="ct-preview-empty">
                                         <p>Select a template from the list to preview its structure.</p>
                                     </div>
                                 )}
-                            </div>
-                        </div>
-
-                        <div className="ctm-footer">
-                            <span className="ctm-required-note">{templates.length} template{templates.length === 1 ? "" : "s"}</span>
-                            <div className="ctm-footer-actions">
-                                <button type="button" className="btn-common close" onClick={onClose}>
-                                    Cancel
-                                </button>
-                                <button type="button" className="ctm-save-btn" onClick={onClose}>
-                                    Close
-                                </button>
                             </div>
                         </div>
                     </div>
