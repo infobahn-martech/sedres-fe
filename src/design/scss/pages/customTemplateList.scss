@@ -391,35 +391,32 @@
   color: var(--text-primary);
 }
 
-.ctl-preview-field-meta {
-  display: flex;
+.ctl-preview-field-asterisk {
+  color: #c62828;
+  margin-left: 3px;
+}
+
+.ctl-preview-field-control {
+  width: 100%;
+  border: 1px solid var(--border-primary);
+  border-radius: 5px;
+  background: var(--surface-secondary, #f7f9fc);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  padding: 6px 8px;
+  resize: none;
+
+  &[type="file"] {
+    padding: 4px 8px;
+  }
+}
+
+.ctl-preview-field-inline-control {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: nowrap;
-}
-
-.ctl-preview-field-badge {
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: #eaf0fb;
-  color: #00368c;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.ctl-preview-field-required {
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: #fdecec;
-  color: #c62828;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--text-muted);
 }
 
 // The delete-template confirmation is a react-bootstrap Modal, which defaults to

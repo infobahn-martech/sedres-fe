@@ -12,20 +12,6 @@ import "../../design/scss/pages/callTypeBuilder.scss";
 import "../../design/scss/pages/customTemplateBuilder.scss";
 import "../../design/scss/pages/customTemplateList.scss";
 
-const FIELD_TYPE_LABELS = {
-    text: "Text",
-    textarea: "Text Area",
-    number: "Number",
-    date: "Date",
-    time: "Time",
-    datetime: "Date & Time",
-    dropdown: "Dropdown",
-    checkbox: "Checkbox",
-    radio: "Radio Button",
-    file: "File Upload",
-    email: "Email",
-};
-
 const FIELD_TYPE_ICONS = {
     text: FiType,
     textarea: FiAlignLeft,
@@ -239,6 +225,45 @@ function TemplateListCard({ template, isActive, onSelect, onDelete }) {
     );
 }
 
+function FieldControlPreview({ field }) {
+    switch (field.type) {
+        case "textarea":
+            return <textarea className="ctl-preview-field-control" rows={2} disabled />;
+        case "dropdown":
+            return (
+                <select className="ctl-preview-field-control" disabled defaultValue="">
+                    <option value="">Select...</option>
+                </select>
+            );
+        case "checkbox":
+            return (
+                <label className="ctl-preview-field-inline-control">
+                    <input type="checkbox" disabled /> Yes
+                </label>
+            );
+        case "radio":
+            return (
+                <label className="ctl-preview-field-inline-control">
+                    <input type="radio" disabled /> Option
+                </label>
+            );
+        case "file":
+            return <input type="file" className="ctl-preview-field-control" disabled />;
+        case "date":
+            return <input type="date" className="ctl-preview-field-control" disabled />;
+        case "time":
+            return <input type="time" className="ctl-preview-field-control" disabled />;
+        case "datetime":
+            return <input type="datetime-local" className="ctl-preview-field-control" disabled />;
+        case "number":
+            return <input type="number" className="ctl-preview-field-control" placeholder="0" disabled />;
+        case "email":
+            return <input type="email" className="ctl-preview-field-control" placeholder="name@example.com" disabled />;
+        default:
+            return <input type="text" className="ctl-preview-field-control" disabled />;
+    }
+}
+
 function FieldPreviewCard({ field }) {
     const Icon = FIELD_TYPE_ICONS[field.type] ?? FiType;
     return (
@@ -247,11 +272,11 @@ function FieldPreviewCard({ field }) {
                 <Icon size={15} />
             </span>
             <div className="ctl-preview-field-content">
-                <span className="ctl-preview-field-label">{field.label}</span>
-                <div className="ctl-preview-field-meta">
-                    <span className="ctl-preview-field-badge">{FIELD_TYPE_LABELS[field.type] ?? field.type}</span>
-                    {field.required && <span className="ctl-preview-field-required">Required</span>}
-                </div>
+                <span className="ctl-preview-field-label">
+                    {field.label}
+                    {field.required && <span className="ctl-preview-field-asterisk">*</span>}
+                </span>
+                <FieldControlPreview field={field} />
             </div>
         </div>
     );
