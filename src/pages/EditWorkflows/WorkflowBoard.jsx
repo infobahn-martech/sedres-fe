@@ -60,19 +60,23 @@ function WorkflowBoard({
       <div className="workflow-board-headers-row">
         <div className="workflow-board-label-spacer" aria-hidden="true" />
         <div className="workflow-board-headers">
-          {boardStructure.map(({ area, cols }) => (
-            <div
-              key={area}
-              className="workflow-board-area-header"
-              style={{
-                width: cols * stageCellWidth + Math.max(0, cols - 1) * stageGap,
-                ...getWorkflowAreaHeaderStyles(area),
-              }}
-              title={area}
-            >
-              {area}
-            </div>
-          ))}
+          {boardStructure.map(({ area, cols }) => {
+            const areaInfo = workflow.areaMeta?.[area];
+            const label = areaInfo?.label ?? area;
+            return (
+              <div
+                key={area}
+                className="workflow-board-area-header"
+                style={{
+                  width: cols * stageCellWidth + Math.max(0, cols - 1) * stageGap,
+                  ...getWorkflowAreaHeaderStyles(areaInfo?.color),
+                }}
+                title={label}
+              >
+                {label}
+              </div>
+            );
+          })}
         </div>
       </div>
       {/* Single shared stage row (LIVE: one row of stage cards, then swimlane rows below) */}

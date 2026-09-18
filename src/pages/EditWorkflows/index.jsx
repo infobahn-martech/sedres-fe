@@ -37,12 +37,18 @@ const DEFAULT_WORKFLOWS = [
   {
     id: 1,
     name: 'Default Workflow',
+    areaOrder: ['REQUESTED AREA', 'IN PROGRESS AREA', 'DONE AREA', 'READY TO ARCHIVE AREA'],
+    areaMeta: {
+      'REQUESTED AREA': { label: 'Requested', color: '#1976d2' },
+      'IN PROGRESS AREA': { label: 'In Progress', color: '#fb8c00' },
+      'DONE AREA': { label: 'Done', color: '#43a047' },
+      'READY TO ARCHIVE AREA': { label: 'Ready to Archive', color: '#7b1fa2' },
+    },
     swimlanes: [
       {
         id: 1,
         name: 'Default Swimlane',
         stages: [
-          // { id: 1, name: 'Backlog', area: 'BACKLOG AREA', limit: 0, cardsPerRow: 1, row: 0, col: 0, colSpan: 1 },
           { id: 1, name: 'Requested', area: 'REQUESTED AREA', limit: 0, cardsPerRow: 1, row: 0, col: 0, colSpan: 1 },
           { id: 2, name: 'In Progress', area: 'IN PROGRESS AREA', limit: 0, cardsPerRow: 1, row: 0, col: 0, colSpan: 1 },
           { id: 3, name: 'Done', area: 'DONE AREA', limit: 0, cardsPerRow: 1, row: 0, col: 0, colSpan: 1 },

@@ -3,29 +3,12 @@
  * All functions are immutable and side-effect free.
  */
 
-export const AREA_ORDER = [
-  // 'BACKLOG AREA',
-  'REQUESTED AREA',
-  'IN PROGRESS AREA',
-  'DONE AREA',
-  'READY TO ARCHIVE AREA',
-];
-
-/** Fixed area banner colors — never tied to the stage color picker. Keys match `area` strings. */
-export const WORKFLOW_AREA_HEADER_BACKGROUND = {
-  'REQUESTED AREA': '#1976d2',
-  'IN PROGRESS AREA': '#fb8c00',
-  'DONE AREA': '#43a047',
-  'READY TO ARCHIVE AREA': '#7b1fa2',
-};
-
 /**
- * Inline styles for `.workflow-board-area-header` only (picker does not affect these).
+ * Inline styles for `.workflow-board-area-header` only, driven by the API stage's own `color_code`.
  */
-export function getWorkflowAreaHeaderStyles(area) {
-  const backgroundColor = WORKFLOW_AREA_HEADER_BACKGROUND[area];
-  if (backgroundColor) {
-    return { backgroundColor, color: '#ffffff' };
+export function getWorkflowAreaHeaderStyles(colorCode) {
+  if (colorCode) {
+    return { backgroundColor: colorCode, color: '#ffffff' };
   }
   return { backgroundColor: '#e5e7eb', color: '#374151' };
 }
@@ -37,14 +20,34 @@ const DEFAULT_SWIMLANE_ID = 'default';
 const DEFAULT_SWIMLANE_NAME = 'Default Swimlane';
 
 /**
- * Map API stage to internal area.
- * Uses is_archive_stage, is_done_stage, then stage_order.
+ * Map API stage to its internal area key. Each API workflow stage is its own board area —
+ * the header label/color come from that stage's own `stage_name`/`color_code` (see
+ * `buildAreaOrderAndMetaFromApiStages`), never from a fixed bucket.
  */
 function getAreaForApiStage(apiStage) {
-  if (apiStage.is_archive_stage === '1') return 'READY TO ARCHIVE AREA';
-  if (apiStage.is_done_stage === '1') return 'DONE AREA';
-  const order = parseInt(apiStage.stage_order, 10) || 0;
-  return AREA_ORDER[Math.max(0, order - 1)] ?? AREA_ORDER[0];
+  return `stage-${apiStage?.stage_id ?? ''}`;
+}
+
+/**
+ * Build the ordered list of area keys and their header label/color, straight from the API stages
+ * (sorted by `stage_order`). Attached to the workflow as `areaOrder` / `areaMeta`.
+ */
+function buildAreaOrderAndMetaFromApiStages(apiStages = []) {
+  const sortedStages = [...apiStages].sort(
+    (a, b) => (parseInt(a.stage_order, 10) || 0) - (parseInt(b.stage_order, 10) || 0)
+  );
+  const order = [];
+  const meta = {};
+  sortedStages.forEach((apiStage) => {
+    const area = getAreaForApiStage(apiStage);
+    if (area in meta) return;
+    order.push(area);
+    meta[area] = {
+      label: apiStage?.stage_name ?? area,
+      color: sanitizeSwimlaneColorCode(apiStage?.color_code),
+    };
+  });
+  return { order, meta };
 }
 
 /**
@@ -267,11 +270,15 @@ function normalizeSingleWorkflow(workflow, idx = 0) {
       ? transformApiSwimlanes(apiSwimlanes, apiStages, workflowId)
       : [createDefaultSwimlaneFromStages(apiStages, workflowId)];
 
+  const { order: areaOrder, meta: areaMeta } = buildAreaOrderAndMetaFromApiStages(apiStages);
+
   return {
     id: workflowId,
     name: workflowName,
     swimlanes: normalizedSwimlanes,
     is_active: normalizeIsActive(workflow?.is_active),
+    areaOrder,
+    areaMeta,
   };
 }
 
@@ -357,7 +364,7 @@ export function duplicateSwimlane(workflow, sourceSwimlane) {
 /**
  * Build board column structure: { area, cols: number }[] - horizontal columns per area.
  */
-export function getBoardColumnStructure(workflow, areaOrder = AREA_ORDER) {
+export function getBoardColumnStructure(workflow, areaOrder = workflow?.areaOrder ?? []) {
   const colsPerArea = {};
   areaOrder.forEach((area) => {
     let maxCols = 0;
