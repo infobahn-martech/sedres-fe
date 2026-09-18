@@ -84,15 +84,13 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
 }
 
 // ── Top fields: Template Name + Billing Entity ───────────────────────────────
+// Single column — this now sits in the builder's 420px-wide left panel
+// (ct-split-left), where two side-by-side fields would be too cramped.
 .ctm-top-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 14px;
   margin-bottom: 20px;
-
-  @media (max-width: 560px) {
-    grid-template-columns: 1fr;
-  }
 
   .cf-field {
     margin-bottom: 0;
@@ -392,20 +390,26 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   }
 }
 
+// Two stacked rows rather than one wide row — this now lives in the builder's
+// fixed 420px left panel (ct-split-left), which is too narrow for a single
+// row of label/type/required/delete/add controls.
 .ctm-field-row-top {
-  display: grid;
-  grid-template-columns: auto 2fr 1.3fr auto auto auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ctm-field-row-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ctm-field-row-sub {
+  display: flex;
   align-items: center;
   gap: 10px;
-
-  @media (max-width: 640px) {
-    grid-template-columns: auto 1fr;
-    row-gap: 8px;
-
-    .ctm-field-type-select {
-      grid-column: 2 / 3;
-    }
-  }
+  padding-left: 30px;
 }
 
 .ctm-field-drag-handle {
@@ -415,6 +419,7 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   color: var(--text-muted);
   cursor: grab;
   padding: 4px;
+  flex-shrink: 0;
 
   &:active {
     cursor: grabbing;
@@ -430,8 +435,8 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   color: var(--text-primary);
   background: var(--surface-primary);
   outline: none;
+  flex: 1;
   min-width: 0;
-  width: 100%;
   transition: border-color 0.15s;
 
   &:focus {
@@ -443,8 +448,8 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
 // <select>, whose dropdown list the OS renders and CSS can't touch — override its
 // trigger box down to the same 34px row height as the other inline inputs here.
 .ctm-field-type-select {
+  flex: 1;
   min-width: 0;
-  width: 100%;
 
   .cf-multi-select-email-input {
     min-height: 34px;
@@ -478,6 +483,7 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .ctm-toggle-label {
@@ -540,6 +546,7 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   cursor: pointer;
   padding: 6px;
   border-radius: 4px;
+  flex-shrink: 0;
   transition: color 0.15s, background 0.15s;
 
   &:hover {
@@ -558,6 +565,7 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   cursor: pointer;
   padding: 6px;
   border-radius: 4px;
+  flex-shrink: 0;
   transition: color 0.15s, background 0.15s;
 
   &:hover {

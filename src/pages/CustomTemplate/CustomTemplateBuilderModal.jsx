@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX, FiMenu } from "react-icons/fi";
 import SearchableSelect from "../../components/form/SearchableSelect";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
+import TemplateFieldPreview from "./TemplateFieldPreview";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
 import useAlertReducer from "../../store/AlertReducer";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/general.scss";
+import "../../design/scss/operations.scss";
+import "../../design/scss/pages/callTypeBuilder.scss";
 import "../../design/scss/pages/customTemplateBuilder.scss";
 
 const FIELD_TYPES = [
@@ -118,52 +121,56 @@ function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOv
             onDragEnd={onDragEnd}
         >
             <div className="ctm-field-row-top">
-                <span className="ctm-field-drag-handle" title="Drag to reorder">
-                    <FiMenu size={14} />
-                </span>
-                <input
-                    type="text"
-                    className="ctm-field-label-input"
-                    placeholder="Field label"
-                    value={field.label}
-                    onChange={(e) => onUpdate(field.id, "label", e.target.value)}
-                />
-                <SearchableSelect
-                    className="ctm-field-type-select"
-                    value={field.type}
-                    onChange={(e) => onUpdate(field.id, "type", e.target.value)}
-                    options={FIELD_TYPES}
-                    menuPortalTarget={document.body}
-                    menuPlacement="auto"
-                />
-                <label className="ctm-toggle-wrap">
-                    <span className="ctm-toggle-label">Required</span>
-                    <span className="ctm-toggle">
-                        <input
-                            type="checkbox"
-                            checked={field.required}
-                            onChange={(e) => onUpdate(field.id, "required", e.target.checked)}
-                        />
-                        <span className="ctm-toggle-slider" />
+                <div className="ctm-field-row-main">
+                    <span className="ctm-field-drag-handle" title="Drag to reorder">
+                        <FiMenu size={14} />
                     </span>
-                </label>
-                <button
-                    type="button"
-                    className="ctm-field-del-btn"
-                    aria-label="Delete field"
-                    onClick={() => onRequestDelete(field.id)}
-                >
-                    <FiTrash2 size={15} />
-                </button>
-                <button
-                    type="button"
-                    className="ctm-field-add-btn"
-                    aria-label="Add field"
-                    title="Add field"
-                    onClick={() => onAddField(index)}
-                >
-                    <FiPlus size={15} />
-                </button>
+                    <input
+                        type="text"
+                        className="ctm-field-label-input"
+                        placeholder="Field label"
+                        value={field.label}
+                        onChange={(e) => onUpdate(field.id, "label", e.target.value)}
+                    />
+                    <button
+                        type="button"
+                        className="ctm-field-del-btn"
+                        aria-label="Delete field"
+                        onClick={() => onRequestDelete(field.id)}
+                    >
+                        <FiTrash2 size={15} />
+                    </button>
+                    <button
+                        type="button"
+                        className="ctm-field-add-btn"
+                        aria-label="Add field"
+                        title="Add field"
+                        onClick={() => onAddField(index)}
+                    >
+                        <FiPlus size={15} />
+                    </button>
+                </div>
+                <div className="ctm-field-row-sub">
+                    <SearchableSelect
+                        className="ctm-field-type-select"
+                        value={field.type}
+                        onChange={(e) => onUpdate(field.id, "type", e.target.value)}
+                        options={FIELD_TYPES}
+                        menuPortalTarget={document.body}
+                        menuPlacement="auto"
+                    />
+                    <label className="ctm-toggle-wrap">
+                        <span className="ctm-toggle-label">Required</span>
+                        <span className="ctm-toggle">
+                            <input
+                                type="checkbox"
+                                checked={field.required}
+                                onChange={(e) => onUpdate(field.id, "required", e.target.checked)}
+                            />
+                            <span className="ctm-toggle-slider" />
+                        </span>
+                    </label>
+                </div>
             </div>
 
             {showOptions && (
@@ -209,6 +216,7 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
         value: String(be._id ?? be.entity_id ?? ""),
         label: String(be.name ?? be.billing_entity ?? ""),
     }));
+    const billingEntityLabel = billingEntityOptions.find((o) => o.value === billingEntity)?.label ?? "";
 
     const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
     const hasSubTabs = Boolean(activeTab?.subTabs?.length);
@@ -216,6 +224,9 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
         ? (activeTab.subTabs.find((s) => s.id === activeSubTabId) ?? activeTab.subTabs[0])
         : null;
     const activeFields = hasSubTabs ? (activeSubTab?.fields ?? []) : (activeTab?.fields ?? []);
+    // Live preview mirrors the real card, so blank-label fields still being typed
+    // get a placeholder rather than rendering with no label at all.
+    const previewFields = activeFields.map((f) => ({ ...f, label: f.label.trim() || "Untitled Field" }));
 
     useEffect(() => {
         if (show && billingEntities === null && !billingLoading) {
@@ -489,6 +500,9 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
                         </div>
                     </div>
 
+                    <div className="ct-split-body">
+                    <div className="ct-split-left">
+                    <div className="ct-split-scroll-area">
                     <div className="ctm-body">
                         <div className="ctm-top-grid">
                             <div className="cf-field">
@@ -748,6 +762,69 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
                                 ))}
                             </div>
                         )}
+                    </div>
+                    </div>
+                    </div>
+
+                    {/* Live preview — reuses the real kanban card's own shell
+                        (cardform-topbar/tabs, operation-wrapper/left/right) so the
+                        template previews pixel-identical to the actual card. */}
+                    <div className="ct-split-right">
+                        <div className="ct-preview-modal">
+                            <div className="cardform-topbar ct-preview-topbar">
+                                <span className="cardform-title">
+                                    {templateName.trim() || "Untitled Template"}
+                                    {billingEntityLabel && (
+                                        <span className="ctl-preview-topbar-entity"> · Billing Entity: {billingEntityLabel}</span>
+                                    )}
+                                </span>
+                            </div>
+
+                            <div className="cardform-tabs">
+                                {tabs.map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        className={`tab ${tab.id === activeTabId ? "active" : ""}`}
+                                        onClick={() => handleSelectTab(tab)}
+                                    >
+                                        {tab.name}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="operation-wrapper">
+                                <div className="operation-content-container">
+                                    {hasSubTabs && (
+                                        <div className="operation-left">
+                                            {activeTab.subTabs.map((sub) => (
+                                                <button
+                                                    key={sub.id}
+                                                    type="button"
+                                                    className={`op-tab ${sub.id === activeSubTabId ? "active" : ""}`}
+                                                    onClick={() => setActiveSubTabId(sub.id)}
+                                                >
+                                                    {sub.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="operation-right">
+                                        {previewFields.length > 0 ? (
+                                            <div className="ct-preview-custom-fields-grid">
+                                                {previewFields.map((field) => (
+                                                    <TemplateFieldPreview key={field.id} field={field} />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="ct-summary-no-fields">No fields yet — add fields on the left.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     </div>
 
                     <div className="ctm-footer">
