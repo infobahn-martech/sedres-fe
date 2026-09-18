@@ -1398,6 +1398,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   justify-content: center;
   box-sizing: border-box;
   border: 1px solid rgba(71, 85, 105, 0.25);
+  font-size: 12px;
   font-weight: 600;
   transition: background 0.15s ease, border-color 0.15s ease;
 
@@ -1764,6 +1765,8 @@ div[role="tooltip"][id^="workflow-info-"] {
 }
 
 .stage-action-color-swatch {
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
 }
 
