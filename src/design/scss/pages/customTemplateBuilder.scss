@@ -76,9 +76,9 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
 // shared .ct-preview-topbar green (used elsewhere, e.g. Call Type Builder).
 // min-height keeps the bar's height stable even before a template name is
 // typed, when the title span has no text to size the row by.
-.ctm-preview-topbar {
-  background: #00368c;
-  min-height: 40.5px;
+.ct-preview-topbar.ctm-preview-topbar {
+  background: #00386c;
+  min-height: 40px;
 }
 
 .ctm-body {
