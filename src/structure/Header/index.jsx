@@ -88,8 +88,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const showKanbanSettingsIcon =
     !activePortal &&
     !restrictedBoardUser &&
-    (isPortManagerRole || isPortSupervisorRole) &&
-    (pathname === '/kanban-board/operator' || pathname.startsWith('/kanban-board/') || pathname === '/compact');
+    (isPortManagerRole || isPortSupervisorRole);
 
   const cardManagementSubmenu = [
     { label: 'Blockers', modal: 'blockers' },
