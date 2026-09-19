@@ -30,6 +30,8 @@ export default function SwimlaneColumnCell({
   workflowTitle = "",
   selectedActionCardIds = EMPTY_SELECTED_IDS,
   onToggleCardSelect,
+  onCardSelectDragStart,
+  onCardSelectDragEnter,
 }) {
   const { hasModule } = usePermissions();
   const canViewCards = hasModule(PERMISSION_MODULES.KANBAN_CARD);
@@ -187,6 +189,8 @@ export default function SwimlaneColumnCell({
                   fixedDimensions={{ width: cardWidth }}
                   isSelectedForAction={selectedActionCardIds.includes(card.id)}
                   onToggleSelectForAction={onToggleCardSelect}
+                  onSelectDragStart={onCardSelectDragStart}
+                  onSelectDragEnter={onCardSelectDragEnter}
                 />
               )
             )}
@@ -219,4 +223,6 @@ SwimlaneColumnCell.propTypes = {
   workflowTitle: PropTypes.string,
   selectedActionCardIds: PropTypes.arrayOf(PropTypes.string),
   onToggleCardSelect: PropTypes.func,
+  onCardSelectDragStart: PropTypes.func,
+  onCardSelectDragEnter: PropTypes.func,
 };

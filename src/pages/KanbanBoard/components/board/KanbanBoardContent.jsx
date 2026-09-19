@@ -22,6 +22,8 @@ export default function KanbanBoardContent({
   layoutView,
   selectedActionCardIds,
   onToggleCardSelect,
+  onCardSelectDragStart,
+  onCardSelectDragEnter,
 }) {
   if (!boardLoading && workflows.length === 0 && !suppressEmptyMessage) {
     return (
@@ -63,6 +65,8 @@ export default function KanbanBoardContent({
         layoutView={layoutView}
         selectedActionCardIds={selectedActionCardIds}
         onToggleCardSelect={onToggleCardSelect}
+        onCardSelectDragStart={onCardSelectDragStart}
+        onCardSelectDragEnter={onCardSelectDragEnter}
       />
     </WorkflowAccordion>
   ));

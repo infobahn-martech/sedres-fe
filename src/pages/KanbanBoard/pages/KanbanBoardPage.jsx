@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useLayoutView } from "../../../shared/context/LayoutViewContext";
 import { getBoardPageBackgroundStyle } from "../../../shared/utils/dashboardBackground";
@@ -310,6 +310,7 @@ export default function KanbanBoardPage() {
   const selectedCardIds = useKanbanCardSelectionStore((state) => state.selectedCardIds);
   const isPoFlowOpen = useKanbanCardSelectionStore((state) => state.isPoFlowOpen);
   const toggleCardSelectionId = useKanbanCardSelectionStore((state) => state.toggleCardId);
+  const setCardSelectionId = useKanbanCardSelectionStore((state) => state.setCardSelected);
   const removeCardSelectionId = useKanbanCardSelectionStore((state) => state.removeCardId);
   const clearCardSelection = useKanbanCardSelectionStore((state) => state.clearSelection);
   const closePoFlow = useKanbanCardSelectionStore((state) => state.closePoFlow);
@@ -318,6 +319,40 @@ export default function KanbanBoardPage() {
     (card) => toggleCardSelectionId(card.id),
     [toggleCardSelectionId]
   );
+
+  /* Click-and-drag "paint" selection (Excel-style): mousedown on a card's checkbox flips it and
+     starts a drag; every other card the pointer then enters is set to match that same target
+     state, so a single drag can select or deselect a whole run of cards. `isDraggingRef`/
+     `dragValueRef` are refs (not state) since they only need to be read from event handlers and
+     must never trigger a re-render mid-drag. */
+  const isDraggingRef = useRef(false);
+  const dragValueRef = useRef(false);
+
+  const handleCardSelectDragStart = useCallback(
+    (card) => {
+      const nextSelected = !selectedCardIds.includes(card.id);
+      isDraggingRef.current = true;
+      dragValueRef.current = nextSelected;
+      setCardSelectionId(card.id, nextSelected);
+    },
+    [selectedCardIds, setCardSelectionId]
+  );
+
+  const handleCardSelectDragEnter = useCallback(
+    (card) => {
+      if (!isDraggingRef.current) return;
+      setCardSelectionId(card.id, dragValueRef.current);
+    },
+    [setCardSelectionId]
+  );
+
+  useEffect(() => {
+    const endDrag = () => {
+      isDraggingRef.current = false;
+    };
+    window.addEventListener("mouseup", endDrag);
+    return () => window.removeEventListener("mouseup", endDrag);
+  }, []);
 
   const poFlowCards = useMemo(
     () => selectedCardIds.map((id) => cardsById[id]).filter(Boolean),
@@ -479,6 +514,8 @@ export default function KanbanBoardPage() {
           layoutView={layoutView}
           selectedActionCardIds={selectedCardIds}
           onToggleCardSelect={handleToggleCardSelection}
+          onCardSelectDragStart={handleCardSelectDragStart}
+          onCardSelectDragEnter={handleCardSelectDragEnter}
         />
       </div>
 

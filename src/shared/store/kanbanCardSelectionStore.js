@@ -17,6 +17,19 @@ const useKanbanCardSelectionStore = create((set, get) => ({
         : [...state.selectedCardIds, id],
     })),
 
+  /* Idempotent set (vs. toggleCardId) — needed for click-and-drag "paint" selection, where the
+     same card can be re-entered mid-drag and must not flip back to its previous state. */
+  setCardSelected: (id, isSelected) =>
+    set((state) => {
+      const alreadySelected = state.selectedCardIds.includes(id);
+      if (alreadySelected === isSelected) return state;
+      return {
+        selectedCardIds: isSelected
+          ? [...state.selectedCardIds, id]
+          : state.selectedCardIds.filter((existingId) => existingId !== id),
+      };
+    }),
+
   removeCardId: (id) =>
     set((state) => ({
       selectedCardIds: state.selectedCardIds.filter((existingId) => existingId !== id),

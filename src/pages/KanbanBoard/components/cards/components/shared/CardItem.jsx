@@ -680,6 +680,8 @@ function CardItem({
   fixedDimensions = null,
   isSelectedForAction = false,
   onToggleSelectForAction,
+  onSelectDragStart,
+  onSelectDragEnter,
 }) {
   const isApiCard = card.cardSource === "api";
   const topRowUsernameInitial = isApiCard && !isShrunk ? getUsernameInitial(card.user) : null;
@@ -739,6 +741,9 @@ function CardItem({
           ref={provided.innerRef}
           {...(KANBAN_DND_DISABLED ? {} : provided.draggableProps)}
           {...(KANBAN_DND_DISABLED ? {} : provided.dragHandleProps)}
+          onMouseEnter={
+            typeof onSelectDragEnter === "function" ? () => onSelectDragEnter(card) : undefined
+          }
           style={{
             ...fixedBoardSizeStyle,
             ...(KANBAN_DND_DISABLED ? {} : provided.draggableProps.style),
@@ -770,11 +775,19 @@ function CardItem({
                   <button
                     type="button"
                     className={`kanban-card-select-toggle ${isSelectedForAction ? "is-selected" : ""}`}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
+                    onMouseDown={(e) => {
+                      // Stops the card's own drag-handle from starting a reorder-drag, then
+                      // starts a select-drag instead (see onMouseEnter on the card root above,
+                      // which "paints" every card the pointer passes over next).
                       e.stopPropagation();
-                      onToggleSelectForAction(card);
+                      e.preventDefault();
+                      if (typeof onSelectDragStart === "function") {
+                        onSelectDragStart(card);
+                      } else {
+                        onToggleSelectForAction(card);
+                      }
                     }}
+                    onClick={(e) => e.stopPropagation()}
                     aria-pressed={isSelectedForAction}
                     aria-label={isSelectedForAction ? "Deselect card" : "Select card"}
                     title={isSelectedForAction ? "Deselect card" : "Select card"}
@@ -1187,6 +1200,8 @@ CardItem.propTypes = {
   }),
   isSelectedForAction: PropTypes.bool,
   onToggleSelectForAction: PropTypes.func,
+  onSelectDragStart: PropTypes.func,
+  onSelectDragEnter: PropTypes.func,
 };
 
 export default CardItem;

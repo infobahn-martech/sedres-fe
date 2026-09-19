@@ -33,6 +33,8 @@ export default function WorkflowColumns({
   layoutView,
   selectedActionCardIds,
   onToggleCardSelect,
+  onCardSelectDragStart,
+  onCardSelectDragEnter,
 }) {
   const collapsedColumnIds = collapsedColumns[workflow.id] ?? EMPTY_COLLAPSED_SET;
   const maxHeight = Math.max(maxColumnHeights[workflow.id] || 0, WORKFLOW_ROW_MIN_HEIGHT);
@@ -213,6 +215,8 @@ export default function WorkflowColumns({
                         workflowTitle={workflow.title}
                         selectedActionCardIds={selectedActionCardIds}
                         onToggleCardSelect={onToggleCardSelect}
+                        onCardSelectDragStart={onCardSelectDragStart}
+                        onCardSelectDragEnter={onCardSelectDragEnter}
                       />
                     );
                   })}
