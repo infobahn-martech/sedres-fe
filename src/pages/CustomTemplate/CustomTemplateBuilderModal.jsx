@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX, FiMenu } from "react-icons/fi";
 import SearchableSelect from "../../components/form/SearchableSelect";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import TemplateFieldPreview from "./TemplateFieldPreview";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
-import useAlertReducer from "../../store/AlertReducer";
+import useCallTypeReducer from "../../store/CallTypeReducer";
+import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/general.scss";
 import "../../design/scss/operations.scss";
@@ -69,6 +70,7 @@ const createBlankField = () => ({
 
 const mapTemplateField = (f) => ({
     id: makeId("field"),
+    fieldId: f.fieldId ?? f.field_id ?? null,
     label: f.label ?? "",
     type: f.type ?? "text",
     required: Boolean(f.required),
@@ -79,6 +81,7 @@ const mapTemplateField = (f) => ({
 
 const buildDefaultTabs = () => MAIN_TAB_NAMES.map((name) => ({
     id: makeId("tab"),
+    tabId: null,
     name,
     fields: [],
     subTabs: [],
@@ -88,14 +91,32 @@ const buildTabsFromTemplate = (template) => {
     if (!template?.tabs?.length) return buildDefaultTabs();
     return template.tabs.map((tab) => ({
         id: makeId("tab"),
+        tabId: tab.tabId ?? tab.tab_id ?? null,
         name: tab.name,
         fields: (tab.fields ?? []).map(mapTemplateField),
         subTabs: (tab.subTabs ?? []).map((sub) => ({
             id: makeId("subtab"),
+            tabId: sub.tabId ?? sub.tab_id ?? null,
             name: sub.name,
             fields: (sub.fields ?? []).map(mapTemplateField),
         })),
     }));
+};
+
+// The field-type API's type_key naming isn't guaranteed to match this file's local
+// type values (e.g. "dropdown" here vs. a possible "select" server-side), so field
+// types are resolved by type_key first and fall back to matching on the label text
+// (which the API's type_label mirrors exactly, e.g. "Dropdown").
+const FIELD_TYPE_LABEL_BY_VALUE = Object.fromEntries(FIELD_TYPES.map((t) => [t.value, t.label.toLowerCase()]));
+
+const buildFieldTypeIdResolver = (apiFieldTypes) => {
+    const byKey = new Map();
+    const byLabel = new Map();
+    (apiFieldTypes ?? []).forEach((ft) => {
+        if (ft.type_key) byKey.set(String(ft.type_key).toLowerCase(), ft.field_type_id);
+        if (ft.type_label) byLabel.set(String(ft.type_label).toLowerCase(), ft.field_type_id);
+    });
+    return (value) => byKey.get(value) ?? byLabel.get(FIELD_TYPE_LABEL_BY_VALUE[value] ?? "") ?? null;
 };
 
 function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption }) {
@@ -279,13 +300,17 @@ function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOv
 // own single panel) owns the surrounding chrome and decides what onClose does.
 function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const { getBillingEntities, billingEntities, isLoading: billingLoading } = useBillingEntityReducer((s) => s);
-    const { success } = useAlertReducer((s) => s);
+    const { getCallTypes, callTypes, isLoadingGet: callTypesLoading } = useCallTypeReducer((s) => s);
+    const { getFieldTypes, fieldTypes, saveCardTemplate, isSaving } = useFormTemplateReducer((s) => s);
     const isEditMode = Boolean(initialTemplate);
 
     const [templateName, setTemplateName] = useState(() => initialTemplate?.name ?? "");
     const [nameTouched, setNameTouched] = useState(false);
     const [billingEntity, setBillingEntity] = useState(() => initialTemplate?.billingEntityId ?? "");
     const [entityTouched, setEntityTouched] = useState(false);
+    const [callTypeId, setCallTypeId] = useState(() => initialTemplate?.callTypeId ?? initialTemplate?.call_type_id ?? "");
+    const [callTypeTouched, setCallTypeTouched] = useState(false);
+    const [templateId] = useState(() => initialTemplate?.templateId ?? initialTemplate?.template_id ?? null);
 
     const [tabs, setTabs] = useState(() => buildTabsFromTemplate(initialTemplate));
     const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id);
@@ -310,6 +335,13 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     }));
     const billingEntityLabel = billingEntityOptions.find((o) => o.value === billingEntity)?.label ?? "";
 
+    const callTypeOptions = (callTypes ?? []).map((ct) => ({
+        value: String(ct.call_type_id ?? ""),
+        label: String(ct.call_type_name ?? ""),
+    }));
+
+    const resolveFieldTypeId = useMemo(() => buildFieldTypeIdResolver(fieldTypes), [fieldTypes]);
+
     const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
     const hasSubTabs = Boolean(activeTab?.subTabs?.length);
     const activeSubTab = hasSubTabs
@@ -326,11 +358,25 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         }
     }, [billingEntities, billingLoading, getBillingEntities]);
 
+    useEffect(() => {
+        if (!callTypes?.length && !callTypesLoading) {
+            getCallTypes({});
+        }
+    }, [callTypes, callTypesLoading, getCallTypes]);
+
+    useEffect(() => {
+        if (fieldTypes === null) {
+            getFieldTypes();
+        }
+    }, [fieldTypes, getFieldTypes]);
+
     const resetState = () => {
         setTemplateName(initialTemplate?.name ?? "");
         setNameTouched(false);
         setBillingEntity(initialTemplate?.billingEntityId ?? "");
         setEntityTouched(false);
+        setCallTypeId(initialTemplate?.callTypeId ?? initialTemplate?.call_type_id ?? "");
+        setCallTypeTouched(false);
         const defaultTabs = buildTabsFromTemplate(initialTemplate);
         setTabs(defaultTabs);
         setActiveTabId(defaultTabs[0].id);
@@ -576,20 +622,80 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     const isNameInvalid = nameTouched && !templateName.trim();
     const isEntityInvalid = entityTouched && !billingEntity;
-    const canSave = Boolean(templateName.trim()) && Boolean(billingEntity);
+    const isCallTypeInvalid = callTypeTouched && !callTypeId;
+    const canSave = Boolean(templateName.trim()) && Boolean(billingEntity) && Boolean(callTypeId);
 
     const handleClose = () => {
         resetState();
         onClose();
     };
 
+    const buildFieldPayload = (field, index) => {
+        const payload = {
+            field_type_id: resolveFieldTypeId(field.type),
+            field_label: field.label.trim(),
+            is_required: field.required ? 1 : 0,
+            display_order: index + 1,
+        };
+        if (field.fieldId) payload.field_id = field.fieldId;
+        if (OPTIONS_FIELD_TYPES.has(field.type)) {
+            payload.option_source = field.type === "dropdown" && field.optionsSource === "master" ? "master" : "static";
+            if (payload.option_source === "master") {
+                payload.master_module = field.masterModule;
+            } else {
+                payload.options = (field.options ?? []).map((opt, i) => ({
+                    option_label: opt,
+                    option_value: opt.trim().toLowerCase().replace(/\s+/g, "_"),
+                    display_order: i + 1,
+                }));
+            }
+        }
+        return payload;
+    };
+
+    const buildTabPayload = (tab, tabIndex) => {
+        const payload = {
+            tab_label: tab.name,
+            is_system: MAIN_TAB_NAMES.includes(tab.name) ? 1 : 0,
+            display_order: tabIndex + 1,
+            fields: tab.subTabs?.length ? [] : tab.fields.map(buildFieldPayload),
+        };
+        if (tab.tabId) payload.tab_id = tab.tabId;
+        if (tab.subTabs?.length) {
+            payload.subtabs = tab.subTabs.map((sub, subIndex) => {
+                const subPayload = {
+                    tab_label: sub.name,
+                    display_order: subIndex + 1,
+                    fields: sub.fields.map(buildFieldPayload),
+                };
+                if (sub.tabId) subPayload.tab_id = sub.tabId;
+                return subPayload;
+            });
+        }
+        return payload;
+    };
+
     const handleSave = () => {
         setNameTouched(true);
         setEntityTouched(true);
+        setCallTypeTouched(true);
         if (!canSave) return;
-        success(isEditMode ? "Custom template updated successfully" : "Custom template saved successfully");
-        resetState();
-        onClose();
+
+        const payload = {
+            call_type_id: Number(callTypeId),
+            billing_entity_id: Number(billingEntity),
+            template_name: templateName.trim(),
+            tabs: tabs.map(buildTabPayload),
+        };
+        if (templateId) payload.template_id = templateId;
+
+        saveCardTemplate({
+            payload,
+            cb: () => {
+                resetState();
+                onClose();
+            },
+        });
     };
 
     return (
@@ -631,6 +737,24 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                     menuPlacement="auto"
                                 />
                                 {isEntityInvalid && <span className="cf-field-error">Billing entity is required</span>}
+                            </div>
+
+                            <div className="cf-field">
+                                <label>
+                                    Call Type <span className="text-danger">*</span>
+                                </label>
+                                <SearchableSelect
+                                    value={callTypeId}
+                                    onChange={(e) => { setCallTypeId(e.target.value); setCallTypeTouched(true); }}
+                                    options={callTypeOptions}
+                                    placeholder={callTypesLoading ? "Loading..." : "Select call type"}
+                                    hasError={isCallTypeInvalid}
+                                    disabled={callTypesLoading}
+                                    className="ctm-billing-select"
+                                    menuPortalTarget={document.body}
+                                    menuPlacement="auto"
+                                />
+                                {isCallTypeInvalid && <span className="cf-field-error">Call type is required</span>}
                             </div>
                         </div>
 
@@ -929,8 +1053,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                             <button type="button" className="btn-common close" onClick={handleClose}>
                                 Cancel
                             </button>
-                            <button type="button" className="ctm-save-btn" disabled={!canSave} onClick={handleSave}>
-                                {isEditMode ? "Update Template" : "Save Template"}
+                            <button type="button" className="ctm-save-btn" disabled={!canSave || isSaving} onClick={handleSave}>
+                                {isSaving ? "Saving..." : (isEditMode ? "Update Template" : "Save Template")}
                             </button>
                         </div>
                     </div>
