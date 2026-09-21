@@ -16,7 +16,9 @@ const useFormTemplateReducer = create((set) => ({
       set({ fieldTypes: data?.data ?? [], isLoadingFieldTypes: false });
     } catch (error) {
       const { error: showError } = useAlertReducer.getState();
-      set({ fieldTypes: [], isLoadingFieldTypes: false });
+      // Leave fieldTypes as null (rather than []) on failure so the next mount
+      // retries instead of getting stuck with a permanently empty type list.
+      set({ isLoadingFieldTypes: false });
       showError(error?.response?.data?.message ?? error?.message ?? 'Failed to fetch field types');
     }
   },

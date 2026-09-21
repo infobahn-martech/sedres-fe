@@ -11,21 +11,6 @@ import "../../design/scss/operations.scss";
 import "../../design/scss/pages/callTypeBuilder.scss";
 import "../../design/scss/pages/customTemplateBuilder.scss";
 
-const FIELD_TYPES = [
-    { value: "text", label: "Text" },
-    { value: "textarea", label: "Text Area" },
-    { value: "number", label: "Number" },
-    { value: "date", label: "Date" },
-    { value: "time", label: "Time" },
-    { value: "datetime", label: "Date & Time" },
-    { value: "dropdown", label: "Dropdown" },
-    { value: "checkbox", label: "Checkbox" },
-    { value: "radio", label: "Radio Button" },
-    { value: "file", label: "File Upload" },
-];
-
-const OPTIONS_FIELD_TYPES = new Set(["dropdown", "radio"]);
-
 const MASTER_MODULES = [
     { value: "vessel_types", label: "Vessel Types" },
     { value: "barge_types", label: "Barge Types" },
@@ -102,20 +87,37 @@ const buildTabsFromTemplate = (template) => {
     }));
 };
 
-// The field-type API's type_key naming isn't guaranteed to match this file's local
-// type values (e.g. "dropdown" here vs. a possible "select" server-side), so field
-// types are resolved by type_key first and fall back to matching on the label text
-// (which the API's type_label mirrors exactly, e.g. "Dropdown").
-const FIELD_TYPE_LABEL_BY_VALUE = Object.fromEntries(FIELD_TYPES.map((t) => [t.value, t.label.toLowerCase()]));
-
+// Field types now come entirely from the field_types API — no local static list.
+// field.type is the API's own type_key (lowercased), so resolving a field's
+// field_type_id for save is a direct lookup.
 const buildFieldTypeIdResolver = (apiFieldTypes) => {
-    const byKey = new Map();
-    const byLabel = new Map();
-    (apiFieldTypes ?? []).forEach((ft) => {
-        if (ft.type_key) byKey.set(String(ft.type_key).toLowerCase(), ft.field_type_id);
-        if (ft.type_label) byLabel.set(String(ft.type_label).toLowerCase(), ft.field_type_id);
+    const byKey = new Map((apiFieldTypes ?? []).map((ft) => [String(ft.type_key ?? "").toLowerCase(), ft.field_type_id]));
+    return (value) => byKey.get(value) ?? null;
+};
+
+// The type-select's option list mirrors the API's active field types, in its
+// display_order.
+const buildFieldTypeOptions = (apiFieldTypes) => [...(apiFieldTypes ?? [])]
+    .filter((ft) => Boolean(ft.is_active))
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+    .map((ft) => ({ value: String(ft.type_key ?? "").toLowerCase(), label: ft.type_label ?? ft.type_key }));
+
+// Types that support an options list (dropdown, radio, ...) are flagged by the
+// API's has_options rather than a hardcoded set of type keys.
+const buildOptionsFieldTypeSet = (apiFieldTypes) => new Set(
+    (apiFieldTypes ?? []).filter((ft) => Boolean(ft.has_options)).map((ft) => String(ft.type_key ?? "").toLowerCase())
+);
+
+// Among the options-capable types, "Dropdown" is the one that additionally offers
+// a Master Data options source (vs. manual-only, e.g. Radio). The API doesn't
+// carry a separate flag for that, so it's identified by key/label instead.
+const buildDropdownTypeKey = (apiFieldTypes) => {
+    const match = (apiFieldTypes ?? []).find((ft) => {
+        const key = String(ft.type_key ?? "").toLowerCase();
+        const label = String(ft.type_label ?? "").toLowerCase();
+        return key === "select" || key === "dropdown" || label.includes("dropdown");
     });
-    return (value) => byKey.get(value) ?? byLabel.get(FIELD_TYPE_LABEL_BY_VALUE[value] ?? "") ?? null;
+    return match ? String(match.type_key ?? "").toLowerCase() : "dropdown";
 };
 
 function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption }) {
@@ -206,9 +208,9 @@ function OptionsSourceEditor({ field, onSetSource, onSetMasterModule, onAddOptio
     );
 }
 
-function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddField, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
-    const showManualOptions = field.type === "radio";
-    const showOptionsSource = field.type === "dropdown";
+function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, optionsFieldTypes, dropdownTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddField, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
+    const showOptionsSource = field.type === dropdownTypeKey;
+    const showManualOptions = !showOptionsSource && optionsFieldTypes.has(field.type);
     return (
         <div
             className={`ctm-field-card ${isDragging ? "is-dragging" : ""} ${isDragOver ? "is-drag-over" : ""}`}
@@ -253,7 +255,9 @@ function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOv
                         className="ctm-field-type-select"
                         value={field.type}
                         onChange={(e) => onUpdate(field.id, "type", e.target.value)}
-                        options={FIELD_TYPES}
+                        options={fieldTypeOptions}
+                        placeholder={fieldTypesLoading ? "Loading..." : "Select type..."}
+                        disabled={fieldTypesLoading}
                         menuPortalTarget={document.body}
                         menuPlacement="auto"
                     />
@@ -300,7 +304,7 @@ function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOv
 function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const { getBillingEntities, billingEntities, isLoading: billingLoading } = useBillingEntityReducer((s) => s);
     const {
-        getFieldTypes, fieldTypes,
+        getFieldTypes, fieldTypes, isLoadingFieldTypes,
         getCallTypes, callTypes, isLoadingCallTypes: callTypesLoading,
         saveCardTemplate, isSaving,
     } = useFormTemplateReducer((s) => s);
@@ -343,6 +347,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     }));
 
     const resolveFieldTypeId = useMemo(() => buildFieldTypeIdResolver(fieldTypes), [fieldTypes]);
+    const fieldTypeOptions = useMemo(() => buildFieldTypeOptions(fieldTypes), [fieldTypes]);
+    const optionsFieldTypes = useMemo(() => buildOptionsFieldTypeSet(fieldTypes), [fieldTypes]);
+    const dropdownTypeKey = useMemo(() => buildDropdownTypeKey(fieldTypes), [fieldTypes]);
 
     const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
     const hasSubTabs = Boolean(activeTab?.subTabs?.length);
@@ -536,10 +543,10 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         updateFieldsScope((fields) => fields.map((f) => {
             if (f.id !== fieldId) return f;
             const next = { ...f, [key]: value };
-            if (key === "type" && OPTIONS_FIELD_TYPES.has(value) && (!next.options || next.options.length === 0)) {
+            if (key === "type" && optionsFieldTypes.has(value) && (!next.options || next.options.length === 0)) {
                 next.options = ["Option 1"];
             }
-            if (key === "type" && value === "dropdown" && !next.optionsSource) {
+            if (key === "type" && value === dropdownTypeKey && !next.optionsSource) {
                 next.optionsSource = "manual";
             }
             return next;
@@ -640,8 +647,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             display_order: index + 1,
         };
         if (field.fieldId) payload.field_id = field.fieldId;
-        if (OPTIONS_FIELD_TYPES.has(field.type)) {
-            payload.option_source = field.type === "dropdown" && field.optionsSource === "master" ? "master" : "static";
+        if (optionsFieldTypes.has(field.type)) {
+            payload.option_source = field.type === dropdownTypeKey && field.optionsSource === "master" ? "master" : "static";
             if (payload.option_source === "master") {
                 payload.master_module = field.masterModule;
             } else {
@@ -966,6 +973,10 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         key={field.id}
                                         field={field}
                                         index={index}
+                                        fieldTypeOptions={fieldTypeOptions}
+                                        fieldTypesLoading={isLoadingFieldTypes}
+                                        optionsFieldTypes={optionsFieldTypes}
+                                        dropdownTypeKey={dropdownTypeKey}
                                         isDragging={dragIndex === index}
                                         isDragOver={dragOverIndex === index && dragIndex !== index}
                                         onDragStart={handleDragStart}
