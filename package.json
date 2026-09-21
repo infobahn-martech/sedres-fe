@@ -3,7 +3,11 @@
   "homepage": "https://infobahn-martech.github.io/sedres-fe/",
   "scripts": {
     "dev": "vite",
+    "dev:old": "vite --mode old",
+    "dev:marine": "vite --mode marine",
     "build": "vite build",
+    "build:old": "vite build --mode old",
+    "build:marine": "vite build --mode marine",
     "preview": "vite preview",
     "predeploy": "npm run build && cp dist/index.html dist/404.html",
     "deploy": "gh-pages -d dist -b gh-pages --dotfiles"
