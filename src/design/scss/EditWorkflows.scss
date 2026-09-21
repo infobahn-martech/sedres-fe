@@ -979,9 +979,42 @@ div[role="tooltip"][id^="workflow-info-"] {
   }
 }
 
-.workflow-area-col-stack .workflow-insertion-rail {
+// Unified insertion frame for a hovered stacked column: one absolute overlay running from
+// the hovered card's top (stackedRailMetrics.top) to the bottom of the column stack,
+// split into left/middle/right zones via CSS grid so the side rails stay continuous while
+// the card in the middle cell remains untouched and fully clickable.
+.workflow-stacked-rail-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 22px;
+  box-sizing: border-box;
   z-index: 3;
+}
+
+.workflow-stacked-rail-cell {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: auto;
+  background: rgba(66, 175, 73, 0.1);
+}
+
+.workflow-stacked-rail-cell-left {
+  border-right: 2px solid #42af49;
+}
+
+.workflow-stacked-rail-cell-right {
+  border-left: 2px solid #42af49;
+}
+
+// Middle cell has no rail styling and never intercepts pointer events - the stage card
+// underneath stays in the centre, untouched and fully clickable.
+.workflow-stacked-rail-cell-middle {
+  pointer-events: none;
 }
 
 // Row-aware insertion rails (vertical + horizontal) - embedded rectangular slots inside box
@@ -1042,19 +1075,6 @@ div[role="tooltip"][id^="workflow-info-"] {
     background: transparent;
     stroke: var(--text-muted);
   }
-}
-
-// Stacked rails - in col-stack (height from inline style)
-.workflow-insertion-rail-left {
-  left: 0;
-  width: 16px;
-  border-right: 2px solid #42af49;
-}
-
-.workflow-insertion-rail-right {
-  right: 0;
-  width: 16px;
-  border-left: 2px solid #42af49;
 }
 
 // Add-grid insertion row: thin horizontal bar in swimlane column only (LIVE), visible on hover, no layout break
@@ -1526,6 +1546,7 @@ div[role="tooltip"][id^="workflow-info-"] {
   min-width: 0;
   width: 100%;
   flex: 1;
+  box-sizing: border-box;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -1808,7 +1829,8 @@ div[role="tooltip"][id^="workflow-info-"] {
 }
 
 // Add Column Buttons - rail style (fills slot, grey plus icon)
-.workflow-insertion-rail .workflow-column-add-btn {
+.workflow-insertion-rail .workflow-column-add-btn,
+.workflow-stacked-rail-cell .workflow-column-add-btn {
   position: static;
   width: 100%;
   height: 100%;
@@ -1846,7 +1868,9 @@ div[role="tooltip"][id^="workflow-info-"] {
 
 .workflow-insertion-rail .workflow-column-add-left,
 .workflow-insertion-rail .workflow-column-add-right,
-.workflow-insertion-rail .workflow-column-add-below {
+.workflow-insertion-rail .workflow-column-add-below,
+.workflow-stacked-rail-cell .workflow-column-add-left,
+.workflow-stacked-rail-cell .workflow-column-add-right {
   left: auto;
   right: auto;
   top: auto;

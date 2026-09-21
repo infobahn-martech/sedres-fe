@@ -88,13 +88,12 @@ function WorkflowAreaGrid({
             }}
           >
             {showStackedRails && stackedRailMetrics && canAddColumns && (
-              <>
+              <div
+                className="workflow-stacked-rail-overlay"
+                style={{ top: stackedRailMetrics.top }}
+              >
                 <div
-                  className="workflow-insertion-rail workflow-insertion-rail-left"
-                  style={{
-                    top: stackedRailMetrics.top,
-                    height: stackedRailMetrics.height,
-                  }}
+                  className="workflow-stacked-rail-cell workflow-stacked-rail-cell-left"
                   onMouseLeave={(e) =>
                     onStageMouseLeave?.(e, hoveredColumn, colStackKey)
                   }
@@ -128,12 +127,9 @@ function WorkflowAreaGrid({
                     </svg>
                   </button>
                 </div>
+                <div className="workflow-stacked-rail-cell-middle" aria-hidden="true" />
                 <div
-                  className="workflow-insertion-rail workflow-insertion-rail-right"
-                  style={{
-                    top: stackedRailMetrics.top,
-                    height: stackedRailMetrics.height,
-                  }}
+                  className="workflow-stacked-rail-cell workflow-stacked-rail-cell-right"
                   onMouseLeave={(e) =>
                     onStageMouseLeave?.(e, hoveredColumn, colStackKey)
                   }
@@ -167,7 +163,7 @@ function WorkflowAreaGrid({
                     </svg>
                   </button>
                 </div>
-              </>
+              </div>
             )}
           </div>
         );
