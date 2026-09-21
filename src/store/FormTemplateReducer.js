@@ -5,6 +5,8 @@ import useAlertReducer from './AlertReducer';
 const useFormTemplateReducer = create((set) => ({
   isLoadingFieldTypes: false,
   fieldTypes: null,
+  isLoadingCallTypes: false,
+  callTypes: null,
   isSaving: false,
 
   getFieldTypes: async () => {
@@ -16,6 +18,18 @@ const useFormTemplateReducer = create((set) => ({
       const { error: showError } = useAlertReducer.getState();
       set({ fieldTypes: [], isLoadingFieldTypes: false });
       showError(error?.response?.data?.message ?? error?.message ?? 'Failed to fetch field types');
+    }
+  },
+
+  getCallTypes: async () => {
+    try {
+      set({ isLoadingCallTypes: true });
+      const { data } = await formTemplateService.getCallTypes();
+      set({ callTypes: data?.data ?? [], isLoadingCallTypes: false });
+    } catch (error) {
+      const { error: showError } = useAlertReducer.getState();
+      set({ callTypes: [], isLoadingCallTypes: false });
+      showError(error?.response?.data?.message ?? error?.message ?? 'Failed to fetch call types');
     }
   },
 

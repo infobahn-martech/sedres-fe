@@ -4,7 +4,6 @@ import SearchableSelect from "../../components/form/SearchableSelect";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import TemplateFieldPreview from "./TemplateFieldPreview";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
-import useCallTypeReducer from "../../store/CallTypeReducer";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/general.scss";
@@ -300,8 +299,11 @@ function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOv
 // own single panel) owns the surrounding chrome and decides what onClose does.
 function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const { getBillingEntities, billingEntities, isLoading: billingLoading } = useBillingEntityReducer((s) => s);
-    const { getCallTypes, callTypes, isLoadingGet: callTypesLoading } = useCallTypeReducer((s) => s);
-    const { getFieldTypes, fieldTypes, saveCardTemplate, isSaving } = useFormTemplateReducer((s) => s);
+    const {
+        getFieldTypes, fieldTypes,
+        getCallTypes, callTypes, isLoadingCallTypes: callTypesLoading,
+        saveCardTemplate, isSaving,
+    } = useFormTemplateReducer((s) => s);
     const isEditMode = Boolean(initialTemplate);
 
     const [templateName, setTemplateName] = useState(() => initialTemplate?.name ?? "");
@@ -337,7 +339,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     const callTypeOptions = (callTypes ?? []).map((ct) => ({
         value: String(ct.call_type_id ?? ""),
-        label: String(ct.call_type_name ?? ""),
+        label: String(ct.call_type ?? ""),
     }));
 
     const resolveFieldTypeId = useMemo(() => buildFieldTypeIdResolver(fieldTypes), [fieldTypes]);
@@ -359,10 +361,10 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     }, [billingEntities, billingLoading, getBillingEntities]);
 
     useEffect(() => {
-        if (!callTypes?.length && !callTypesLoading) {
-            getCallTypes({});
+        if (callTypes === null) {
+            getCallTypes();
         }
-    }, [callTypes, callTypesLoading, getCallTypes]);
+    }, [callTypes, getCallTypes]);
 
     useEffect(() => {
         if (fieldTypes === null) {
