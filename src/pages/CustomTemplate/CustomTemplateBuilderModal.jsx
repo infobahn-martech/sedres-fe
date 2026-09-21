@@ -87,6 +87,11 @@ const buildTabsFromTemplate = (template) => {
     }));
 };
 
+// The API sends is_active/has_options as "0"/"1" strings (not booleans), where
+// Boolean("0") is true — so flags must be compared against the string/number
+// forms rather than coerced with Boolean().
+const isFlagTrue = (v) => v === true || v === 1 || v === "1";
+
 // Field types now come entirely from the field_types API — no local static list.
 // field.type is the API's own type_key (lowercased), so resolving a field's
 // field_type_id for save is a direct lookup.
@@ -98,14 +103,14 @@ const buildFieldTypeIdResolver = (apiFieldTypes) => {
 // The type-select's option list mirrors the API's active field types, in its
 // display_order.
 const buildFieldTypeOptions = (apiFieldTypes) => [...(apiFieldTypes ?? [])]
-    .filter((ft) => Boolean(ft.is_active))
+    .filter((ft) => isFlagTrue(ft.is_active))
     .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
     .map((ft) => ({ value: String(ft.type_key ?? "").toLowerCase(), label: ft.type_label ?? ft.type_key }));
 
 // Types that support an options list (dropdown, radio, ...) are flagged by the
 // API's has_options rather than a hardcoded set of type keys.
 const buildOptionsFieldTypeSet = (apiFieldTypes) => new Set(
-    (apiFieldTypes ?? []).filter((ft) => Boolean(ft.has_options)).map((ft) => String(ft.type_key ?? "").toLowerCase())
+    (apiFieldTypes ?? []).filter((ft) => isFlagTrue(ft.has_options)).map((ft) => String(ft.type_key ?? "").toLowerCase())
 );
 
 // Among the options-capable types, "Dropdown" is the one that additionally offers
