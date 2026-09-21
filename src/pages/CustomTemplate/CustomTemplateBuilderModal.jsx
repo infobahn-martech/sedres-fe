@@ -42,6 +42,11 @@ const MAIN_TAB_NAMES = [
 
 const makeId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+// The API sends flags like is_active/has_options/is_required as "0"/"1" strings
+// (not booleans), where Boolean("0") is true — so they must be compared against
+// the string/number forms rather than coerced with Boolean().
+const isFlagTrue = (v) => v === true || v === 1 || v === "1";
+
 const createBlankField = () => ({
     id: makeId("field"),
     label: "",
@@ -52,15 +57,33 @@ const createBlankField = () => ({
     masterModule: "",
 });
 
-const mapTemplateField = (f) => ({
-    id: makeId("field"),
-    fieldId: f.fieldId ?? f.field_id ?? null,
-    label: f.label ?? "",
-    type: f.type ?? "text",
-    required: Boolean(f.required),
-    options: f.options ? [...f.options] : [],
-    optionsSource: f.optionsSource ?? "manual",
-    masterModule: f.masterModule ?? "",
+// Accepts either this file's own internal field shape (label/type/required/
+// options/optionsSource/masterModule) or the raw form_template API shape
+// (field_label/type_key/is_required/option_source/master_key/options as
+// {option_label, ...} objects), so a template fetched straight from the API
+// can be handed to the builder as-is.
+const mapTemplateField = (f) => {
+    const rawOptions = f.options ?? [];
+    return {
+        id: makeId("field"),
+        fieldId: f.fieldId ?? f.field_id ?? null,
+        label: f.label ?? f.field_label ?? "",
+        type: f.type ?? f.type_key ?? "text",
+        required: isFlagTrue(f.required ?? f.is_required),
+        options: rawOptions.map((opt) => (typeof opt === "string" ? opt : (opt?.option_label ?? ""))),
+        optionsSource: f.optionsSource ?? (f.option_source === "master" ? "master" : "manual"),
+        masterModule: f.masterModule ?? f.master_key ?? "",
+    };
+};
+
+// initialTemplate may be this file's own shape (name/billingEntityId/...) or the
+// raw form_template/{id} API detail response (template_name/billing_entity_id/...).
+const toIdString = (v) => (v === null || v === undefined ? "" : String(v));
+const getTemplateSeed = (template) => ({
+    name: template?.name ?? template?.template_name ?? "",
+    billingEntity: toIdString(template?.billingEntityId ?? template?.billing_entity_id),
+    callTypeId: toIdString(template?.callTypeId ?? template?.call_type_id),
+    templateId: template?.templateId ?? template?.template_id ?? null,
 });
 
 const buildDefaultTabs = () => MAIN_TAB_NAMES.map((name) => ({
@@ -71,26 +94,23 @@ const buildDefaultTabs = () => MAIN_TAB_NAMES.map((name) => ({
     subTabs: [],
 }));
 
+// Same dual-shape acceptance as mapTemplateField, for a tab/subtab's own name
+// (name vs. tab_label) and its list of subtabs (subTabs vs. the API's subtabs).
 const buildTabsFromTemplate = (template) => {
     if (!template?.tabs?.length) return buildDefaultTabs();
     return template.tabs.map((tab) => ({
         id: makeId("tab"),
         tabId: tab.tabId ?? tab.tab_id ?? null,
-        name: tab.name,
+        name: tab.name ?? tab.tab_label ?? "",
         fields: (tab.fields ?? []).map(mapTemplateField),
-        subTabs: (tab.subTabs ?? []).map((sub) => ({
+        subTabs: (tab.subTabs ?? tab.subtabs ?? []).map((sub) => ({
             id: makeId("subtab"),
             tabId: sub.tabId ?? sub.tab_id ?? null,
-            name: sub.name,
+            name: sub.name ?? sub.tab_label ?? "",
             fields: (sub.fields ?? []).map(mapTemplateField),
         })),
     }));
 };
-
-// The API sends is_active/has_options as "0"/"1" strings (not booleans), where
-// Boolean("0") is true — so flags must be compared against the string/number
-// forms rather than coerced with Boolean().
-const isFlagTrue = (v) => v === true || v === 1 || v === "1";
 
 // Field types now come entirely from the field_types API — no local static list.
 // field.type is the API's own type_key (lowercased), so resolving a field's
@@ -315,13 +335,13 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     } = useFormTemplateReducer((s) => s);
     const isEditMode = Boolean(initialTemplate);
 
-    const [templateName, setTemplateName] = useState(() => initialTemplate?.name ?? "");
+    const [templateName, setTemplateName] = useState(() => getTemplateSeed(initialTemplate).name);
     const [nameTouched, setNameTouched] = useState(false);
-    const [billingEntity, setBillingEntity] = useState(() => initialTemplate?.billingEntityId ?? "");
+    const [billingEntity, setBillingEntity] = useState(() => getTemplateSeed(initialTemplate).billingEntity);
     const [entityTouched, setEntityTouched] = useState(false);
-    const [callTypeId, setCallTypeId] = useState(() => initialTemplate?.callTypeId ?? initialTemplate?.call_type_id ?? "");
+    const [callTypeId, setCallTypeId] = useState(() => getTemplateSeed(initialTemplate).callTypeId);
     const [callTypeTouched, setCallTypeTouched] = useState(false);
-    const [templateId] = useState(() => initialTemplate?.templateId ?? initialTemplate?.template_id ?? null);
+    const [templateId] = useState(() => getTemplateSeed(initialTemplate).templateId);
 
     const [tabs, setTabs] = useState(() => buildTabsFromTemplate(initialTemplate));
     const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id);
@@ -385,11 +405,12 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     }, [fieldTypes, getFieldTypes]);
 
     const resetState = () => {
-        setTemplateName(initialTemplate?.name ?? "");
+        const seed = getTemplateSeed(initialTemplate);
+        setTemplateName(seed.name);
         setNameTouched(false);
-        setBillingEntity(initialTemplate?.billingEntityId ?? "");
+        setBillingEntity(seed.billingEntity);
         setEntityTouched(false);
-        setCallTypeId(initialTemplate?.callTypeId ?? initialTemplate?.call_type_id ?? "");
+        setCallTypeId(seed.callTypeId);
         setCallTypeTouched(false);
         const defaultTabs = buildTabsFromTemplate(initialTemplate);
         setTabs(defaultTabs);
@@ -651,7 +672,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             is_required: field.required ? 1 : 0,
             display_order: index + 1,
         };
-        if (field.fieldId) payload.field_id = field.fieldId;
+        if (field.fieldId) payload.field_id = Number(field.fieldId);
         if (optionsFieldTypes.has(field.type)) {
             payload.option_source = field.type === dropdownTypeKey && field.optionsSource === "master" ? "master" : "static";
             if (payload.option_source === "master") {
@@ -674,7 +695,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             display_order: tabIndex + 1,
             fields: tab.subTabs?.length ? [] : tab.fields.map(buildFieldPayload),
         };
-        if (tab.tabId) payload.tab_id = tab.tabId;
+        if (tab.tabId) payload.tab_id = Number(tab.tabId);
         if (tab.subTabs?.length) {
             payload.subtabs = tab.subTabs.map((sub, subIndex) => {
                 const subPayload = {
@@ -682,7 +703,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                     display_order: subIndex + 1,
                     fields: sub.fields.map(buildFieldPayload),
                 };
-                if (sub.tabId) subPayload.tab_id = sub.tabId;
+                if (sub.tabId) subPayload.tab_id = Number(sub.tabId);
                 return subPayload;
             });
         }
@@ -701,7 +722,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             template_name: templateName.trim(),
             tabs: tabs.map(buildTabPayload),
         };
-        if (templateId) payload.template_id = templateId;
+        if (templateId) payload.template_id = Number(templateId);
 
         saveCardTemplate({
             payload,
@@ -1117,4 +1138,4 @@ function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
 }
 
 export default CustomTemplateBuilderModal;
-export { TemplateBuilderBody };
+export { TemplateBuilderBody, buildTabsFromTemplate };
