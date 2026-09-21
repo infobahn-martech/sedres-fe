@@ -699,6 +699,95 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   }
 }
 
+// ── Options Source (Dropdown field type: Manual vs Master Data) ──────────────
+.ctm-options-source {
+  margin-top: 12px;
+  margin-left: 30px;
+  padding: 14px 16px;
+  background: #f4f8fd;
+  border: 1px solid #e1e9f7;
+  border-radius: 8px;
+
+  // Nested manual-options box already carries its own margin-left/background;
+  // reset those here so it doesn't double-indent inside this wrapper.
+  .ctm-field-options {
+    margin-top: 10px;
+    margin-left: 0;
+  }
+
+  @media (max-width: 640px) {
+    margin-left: 0;
+  }
+}
+
+.ctm-options-source-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 8px 0 4px;
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ctm-options-source-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  text-align: left;
+  background: var(--surface-primary);
+  border: 1.5px solid var(--border-primary);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: #a9c2e8;
+  }
+
+  &.is-active {
+    border-color: #00368c;
+    background: #eaf0fb;
+
+    .ctm-options-source-card-title {
+      color: #00368c;
+    }
+  }
+}
+
+.ctm-options-source-card-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ctm-options-source-card-desc {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.ctm-master-module-picker {
+  margin-top: 12px;
+}
+
+.ctm-master-module-select {
+  margin-top: 6px;
+}
+
+.ctm-master-module-info {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  background: #eaf0fb;
+  border: 1px solid #cfe0f7;
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: #00368c;
+}
+
 // ── Footer ────────────────────────────────────────────────────────────────────
 .ctm-footer {
   flex-shrink: 0;

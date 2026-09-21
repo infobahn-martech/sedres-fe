@@ -39,18 +39,21 @@ function TemplateFieldPreview({ field }) {
                 </div>
             );
         }
-        case "dropdown":
+        case "dropdown": {
+            const usesMasterData = field.optionsSource === "master" && field.masterModule;
+            const placeholder = usesMasterData ? `Select ${label.trim().toLowerCase()}...` : "Select option...";
             return (
                 <div className="cf-field">
                     <label>{label}{requiredMark}</label>
                     <div className="cf-input ct-preview-select-input">
-                        <input type="text" placeholder="Select option..." />
+                        <input type="text" placeholder={placeholder} />
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <polyline points="6 9 12 15 18 9" />
                         </svg>
                     </div>
                 </div>
             );
+        }
         case "file":
             return (
                 <div className="cf-field">

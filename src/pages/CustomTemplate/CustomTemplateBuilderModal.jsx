@@ -26,6 +26,20 @@ const FIELD_TYPES = [
 
 const OPTIONS_FIELD_TYPES = new Set(["dropdown", "radio"]);
 
+const MASTER_MODULES = [
+    { value: "vessel_types", label: "Vessel Types" },
+    { value: "barge_types", label: "Barge Types" },
+    { value: "tug_types", label: "Tug Types" },
+    { value: "billing_entities", label: "Billing Entities" },
+    { value: "ports", label: "Ports" },
+    { value: "countries", label: "Countries" },
+];
+
+const OPTIONS_SOURCE_CARDS = [
+    { value: "manual", title: "Manual Options", desc: "Add your own options for this field" },
+    { value: "master", title: "Master Data", desc: "Use options from an existing master module" },
+];
+
 // Level 1 of the template structure — mirrors the real Sedres card's top-level tabs.
 // A main tab optionally owns Level 2 sub-tabs (e.g. Operation > Pre Arrival); fields
 // live on the sub-tab when any exist, otherwise directly on the main tab.
@@ -43,7 +57,15 @@ const MAIN_TAB_NAMES = [
 
 const makeId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-const createBlankField = () => ({ id: makeId("field"), label: "", type: "text", required: false, options: [] });
+const createBlankField = () => ({
+    id: makeId("field"),
+    label: "",
+    type: "text",
+    required: false,
+    options: [],
+    optionsSource: "manual",
+    masterModule: "",
+});
 
 const mapTemplateField = (f) => ({
     id: makeId("field"),
@@ -51,6 +73,8 @@ const mapTemplateField = (f) => ({
     type: f.type ?? "text",
     required: Boolean(f.required),
     options: f.options ? [...f.options] : [],
+    optionsSource: f.optionsSource ?? "manual",
+    masterModule: f.masterModule ?? "",
 });
 
 const buildDefaultTabs = () => MAIN_TAB_NAMES.map((name) => ({
@@ -109,8 +133,62 @@ function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption
     );
 }
 
-function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddField, onAddOption, onUpdateOption, onRemoveOption }) {
-    const showOptions = OPTIONS_FIELD_TYPES.has(field.type);
+// Dropdown-only: lets the user choose between typing options manually and
+// sourcing them from an existing master module (e.g. Vessel Types).
+function OptionsSourceEditor({ field, onSetSource, onSetMasterModule, onAddOption, onUpdateOption, onRemoveOption }) {
+    const source = field.optionsSource ?? "manual";
+    return (
+        <div className="ctm-options-source">
+            <p className="ctm-field-options-label">Options Source</p>
+            <div className="ctm-options-source-cards">
+                {OPTIONS_SOURCE_CARDS.map((card) => (
+                    <button
+                        key={card.value}
+                        type="button"
+                        className={`ctm-options-source-card ${source === card.value ? "is-active" : ""}`}
+                        onClick={() => onSetSource(card.value)}
+                    >
+                        <span className="ctm-options-source-card-title">{card.title}</span>
+                        <span className="ctm-options-source-card-desc">{card.desc}</span>
+                    </button>
+                ))}
+            </div>
+
+            {source === "manual" && (
+                <FieldOptionsEditor
+                    field={field}
+                    onAddOption={onAddOption}
+                    onUpdateOption={onUpdateOption}
+                    onRemoveOption={onRemoveOption}
+                />
+            )}
+
+            {source === "master" && (
+                <div className="ctm-master-module-picker">
+                    <p className="ctm-field-options-label">Select Master Module</p>
+                    <SearchableSelect
+                        className="ctm-master-module-select"
+                        value={field.masterModule ?? ""}
+                        onChange={(e) => onSetMasterModule(e.target.value)}
+                        options={MASTER_MODULES}
+                        placeholder="Select module..."
+                        menuPortalTarget={document.body}
+                        menuPlacement="auto"
+                    />
+                    {field.masterModule && (
+                        <p className="ctm-master-module-info">
+                            Options are automatically managed from the selected master module.
+                        </p>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddField, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
+    const showManualOptions = field.type === "radio";
+    const showOptionsSource = field.type === "dropdown";
     return (
         <div
             className={`ctm-field-card ${isDragging ? "is-dragging" : ""} ${isDragOver ? "is-drag-over" : ""}`}
@@ -173,9 +251,20 @@ function FieldCard({ field, index, isDragging, isDragOver, onDragStart, onDragOv
                 </div>
             </div>
 
-            {showOptions && (
+            {showManualOptions && (
                 <FieldOptionsEditor
                     field={field}
+                    onAddOption={() => onAddOption(field.id)}
+                    onUpdateOption={(idx, val) => onUpdateOption(field.id, idx, val)}
+                    onRemoveOption={(idx) => onRemoveOption(field.id, idx)}
+                />
+            )}
+
+            {showOptionsSource && (
+                <OptionsSourceEditor
+                    field={field}
+                    onSetSource={(source) => onSetOptionsSource(field.id, source)}
+                    onSetMasterModule={(mod) => onSetMasterModule(field.id, mod)}
                     onAddOption={() => onAddOption(field.id)}
                     onUpdateOption={(idx, val) => onUpdateOption(field.id, idx, val)}
                     onRemoveOption={(idx) => onRemoveOption(field.id, idx)}
@@ -402,8 +491,23 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             if (key === "type" && OPTIONS_FIELD_TYPES.has(value) && (!next.options || next.options.length === 0)) {
                 next.options = ["Option 1"];
             }
+            if (key === "type" && value === "dropdown" && !next.optionsSource) {
+                next.optionsSource = "manual";
+            }
             return next;
         }));
+    };
+
+    const handleSetOptionsSource = (fieldId, source) => {
+        updateFieldsScope((fields) => fields.map((f) => (
+            f.id === fieldId ? { ...f, optionsSource: source } : f
+        )));
+    };
+
+    const handleSetMasterModule = (fieldId, masterModule) => {
+        updateFieldsScope((fields) => fields.map((f) => (
+            f.id === fieldId ? { ...f, masterModule } : f
+        )));
     };
 
     const handleRequestDeleteField = (fieldId) => {
@@ -748,6 +852,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         onAddOption={handleAddOption}
                                         onUpdateOption={handleUpdateOption}
                                         onRemoveOption={handleRemoveOption}
+                                        onSetOptionsSource={handleSetOptionsSource}
+                                        onSetMasterModule={handleSetMasterModule}
                                     />
                                 ))}
                             </div>
