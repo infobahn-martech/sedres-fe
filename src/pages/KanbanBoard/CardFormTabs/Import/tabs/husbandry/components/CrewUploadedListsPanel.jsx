@@ -8,7 +8,7 @@ const FileIcon = () => (
 );
 
 const EmptyIcon = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
     <path d="M13 2v7h7" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
     <path d="M9 13h6M9 16.5h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -38,7 +38,7 @@ const CrewUploadedCard = ({ upload, movementTypeLabel }) => {
         <FileIcon />
       </span>
       <div className="crew-uploaded-card__details">
-        <span className="crew-uploaded-card__title">{movementTypeLabel} Crew List</span>
+        <span className="crew-uploaded-card__title">{movementTypeLabel}</span>
         <div className="crew-uploaded-card__filename" title={upload.name}>{upload.name}</div>
         <div className="crew-uploaded-card__meta">
           {upload.crewCount} crew member{upload.crewCount === 1 ? "" : "s"}
@@ -55,7 +55,6 @@ const CrewUploadedCard = ({ upload, movementTypeLabel }) => {
           <span className="crew-uploaded-card__status crew-uploaded-card__status--success">Uploaded successfully</span>
         )}
       </div>
-      <span className="crew-uploaded-card__badge">{movementTypeLabel}</span>
     </div>
   );
 };
@@ -74,10 +73,9 @@ CrewUploadedCard.propTypes = {
   onPreview: PropTypes.func.isRequired,
 };
 
-// Right-side "Uploaded Crew Lists" panel — the single place Sign On / Sign
-// Off upload state is shown. Renders an empty state until at least one
-// movement type has an uploaded file, then a compact stacked card per
-// uploaded type (never an empty card for a type that hasn't been uploaded).
+// Right-side "Uploaded Crew Lists" panel — the single place crew list
+// upload state is shown. Renders an empty state until at least one crew
+// list has been uploaded, then a compact stacked card per upload.
 const CrewUploadedListsPanel = ({ movementTypeOptions, crewUploads, cardColor, onPreview }) => {
   const uploadedOptions = movementTypeOptions.filter((option) => crewUploads[option.value]);
 
@@ -91,7 +89,7 @@ const CrewUploadedListsPanel = ({ movementTypeOptions, crewUploads, cardColor, o
           </span>
           <span className="crew-uploaded-lists-panel__empty-title">No crew lists uploaded yet</span>
           <span className="crew-uploaded-lists-panel__empty-subtitle">
-            Select Sign On or Sign Off, then upload a crew list.
+            Upload a crew list to get started.
           </span>
         </div>
       ) : (

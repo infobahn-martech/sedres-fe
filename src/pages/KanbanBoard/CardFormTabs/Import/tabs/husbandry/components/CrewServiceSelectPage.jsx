@@ -204,7 +204,6 @@ const CrewServiceSelectPage = ({
                             <div className="crew-table-cell crew-name-cell" title={row.crewName}>
                               <span className="crew-name-info">
                                 <span className="crew-name-text">{row.crewName}</span>
-                                <span className="crew-name-id">{`ID · ${String(row.crewId).padStart(5, "0")}`}</span>
                               </span>
                             </div>
                           </td>

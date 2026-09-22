@@ -82,6 +82,15 @@ const MOVEMENT_TYPE_OPTIONS = [
   { value: "Sign Off", label: "Sign Off", hint: "Leaving the vessel" },
 ];
 
+// The crew list upload UI no longer exposes Sign On/Sign Off as a choice
+// (uploads are always tagged "Sign On" internally, see `movementType`
+// below), so its own labels/badges stay generic rather than naming it.
+const CREW_LIST_LABEL = "Crew List";
+const CREW_LIST_DISPLAY_OPTIONS = MOVEMENT_TYPE_OPTIONS.map((option) => ({
+  ...option,
+  label: CREW_LIST_LABEL,
+}));
+
 const getCrewOptionId = (crew, index) =>
   String(crew?.crew_change_id ?? crew?.crew_id ?? crew?.id ?? index);
 
@@ -567,18 +576,17 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     setSummarySelectedIds([]);
     setSummaryRefreshTick((tick) => tick + 1);
 
-    const movementTypeLabel = MOVEMENT_TYPE_OPTIONS.find((opt) => opt.value === targetType)?.label || "";
     setUploadHistory((prev) => [
       ...prev,
       {
         id: `${Date.now()}-${files[files.length - 1].name}`,
         name: files[files.length - 1].name,
-        movementTypeLabel,
+        movementTypeLabel: CREW_LIST_LABEL,
         crewCount: idsForThisType.length,
         uploadedAt: new Date().toISOString(),
       },
     ]);
-    notify(`${movementTypeLabel} crew list uploaded — ${idsForThisType.length} crew member(s) loaded.`, "success");
+    notify(`Crew list uploaded — ${idsForThisType.length} crew member(s) loaded.`, "success");
   };
 
   const handlePreviewClick = (type) => setPreviewMovementType(type);
@@ -1115,7 +1123,6 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     );
   }
 
-  const selectedMovementTypeLabel = MOVEMENT_TYPE_OPTIONS.find((opt) => opt.value === movementType)?.label || "";
   const crewListStatus = crewUploads[movementType]?.status || "pending";
 
   return (
@@ -1133,7 +1140,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
                   {canUploadCrewList && (
                     <CrewListUploadBox
                       movementType={movementType}
-                      movementTypeLabel={selectedMovementTypeLabel}
+                      movementTypeLabel={CREW_LIST_LABEL}
                       status={crewListStatus}
                       onSelectFile={handleCrewListFiles}
                     />
@@ -1151,7 +1158,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 
             <div className="crew-uploaded-panels-row">
               <CrewUploadedListsPanel
-                movementTypeOptions={MOVEMENT_TYPE_OPTIONS}
+                movementTypeOptions={CREW_LIST_DISPLAY_OPTIONS}
                 crewUploads={crewUploads}
                 cardColor={cardColor}
                 onPreview={handlePreviewClick}
@@ -1160,41 +1167,43 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
             </div>
           </div>
 
-          <div className="crew-mgmt-service-grid">
-            {CREW_SERVICE_CARDS.map((card) => {
-              const assignedCount = selectedServiceCrewMap[card.tabName]?.length || 0;
-              const isAssigned = assignedCount > 0;
-              const isDisabled = crewWithIds.length === 0;
+          {summarySelectedIds.length > 0 && (
+            <div className="crew-mgmt-service-grid">
+              {CREW_SERVICE_CARDS.map((card) => {
+                const assignedCount = selectedServiceCrewMap[card.tabName]?.length || 0;
+                const isAssigned = assignedCount > 0;
+                const isDisabled = crewWithIds.length === 0;
 
-              return (
-                <button
-                  key={card.id}
-                  type="button"
-                  className={`crew-mgmt-service-box${isDisabled ? " crew-mgmt-service-box--disabled" : ""}`}
-                  onClick={() => handleServiceCardClick(card)}
-                  disabled={isDisabled}
-                  title={isDisabled ? "Upload a crew list to enable this service." : undefined}
-                  style={{ "--card-color": cardColor }}
-                >
-                  {isAssigned && (
-                    <span
-                      className="crew-mgmt-service-box-badge booked-status-completed"
-                      aria-label={`${card.label} status: Completed`}
-                    >
-                      Completed
-                    </span>
-                  )}
-                  <div className="crew-mgmt-service-box-icon">
-                    <HusbIcon id={card.id} />
-                  </div>
-                  <div className="crew-mgmt-service-box-content">
-                    <span className="crew-mgmt-service-box-label">{card.label}</span>
-                    <span className="crew-mgmt-service-box-count">{assignedCount} Crew Assigned</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                return (
+                  <button
+                    key={card.id}
+                    type="button"
+                    className={`crew-mgmt-service-box${isDisabled ? " crew-mgmt-service-box--disabled" : ""}`}
+                    onClick={() => handleServiceCardClick(card)}
+                    disabled={isDisabled}
+                    title={isDisabled ? "Upload a crew list to enable this service." : undefined}
+                    style={{ "--card-color": cardColor }}
+                  >
+                    {isAssigned && (
+                      <span
+                        className="crew-mgmt-service-box-badge booked-status-completed"
+                        aria-label={`${card.label} status: Completed`}
+                      >
+                        Completed
+                      </span>
+                    )}
+                    <div className="crew-mgmt-service-box-icon">
+                      <HusbIcon id={card.id} />
+                    </div>
+                    <div className="crew-mgmt-service-box-content">
+                      <span className="crew-mgmt-service-box-label">{card.label}</span>
+                      <span className="crew-mgmt-service-box-count">{assignedCount} Crew Assigned</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="crew-mgmt-summary-section">
@@ -1410,7 +1419,6 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
                               <div className="crew-table-cell crew-name-cell" title={row.crewName}>
                                 <span className="crew-name-info">
                                   <span className="crew-name-text">{row.crewName}</span>
-                                  <span className="crew-name-id">{`ID · ${String(row.crewId).padStart(5, "0")}`}</span>
                                 </span>
                               </div>
                             )}

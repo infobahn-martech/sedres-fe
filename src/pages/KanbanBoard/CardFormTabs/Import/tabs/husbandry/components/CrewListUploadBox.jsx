@@ -84,7 +84,7 @@ const CrewListUploadBox = ({
       subtitle = "Tap to try again";
       Icon = WarningIcon;
     } else {
-      title = `Upload ${movementTypeLabel} Crew List`;
+      title = `Upload ${movementTypeLabel}`;
       subtitle = "Excel or CSV — multiple files supported";
     }
   }

@@ -2405,6 +2405,7 @@
 .crew-mgmt-hero-row {
   display: grid;
   grid-template-columns: minmax(0, 0.4fr) minmax(420px, 0.6fr);
+  align-items: start;
   gap: 24px;
 }
 
@@ -2542,6 +2543,24 @@
   gap: 12px;
 }
 
+// Crew Management (not Crew Immigration's stacked batches, see below) puts
+// the Crew List upload box and the Passport/Iqama/Visa dropzones on one row
+// instead of stacking them, so the hero-left column's height matches the
+// Uploaded Crew Lists/Today's History panels beside it.
+.crew-mgmt-hero-middle:not(.crew-immigration-batches) .crew-mgmt-crewlist-block {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.crew-mgmt-hero-middle:not(.crew-immigration-batches) .crew-mgmt-crewlist-block > .crew-list-upload-box {
+  flex: 1 1 240px;
+}
+
+.crew-mgmt-hero-middle:not(.crew-immigration-batches) .crew-mgmt-crewlist-block > .crew-upload-dropzones {
+  flex: 1.2 1 280px;
+}
+
 /* ==========================================================
    CREW IMMIGRATION — batch-based crew list upload (see
    CrewImmigrationDashboard.jsx). Stacks the same crewlist-block markup used
@@ -2634,6 +2653,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-height: 60px;
+  max-height: 60px;
   padding: 12px 14px;
   border-radius: 12px;
   border: 1.5px dashed var(--border-primary);
@@ -2732,18 +2753,16 @@
    for Sign On / Sign Off upload state, see CrewUploadedListsPanel.jsx)
    ========================================================== */
 
-// display:flex column so the panel (a grid item that now stretches to the
-// left column's height, see .crew-mgmt-hero-row) can hand that extra height
-// down to its empty/stack content instead of leaving blank space beneath a
-// short card.
 // Wraps the "Uploaded Crew Lists" panel and its "Today's History" twin
-// (see CrewTodayHistoryPanel.jsx) so they split the same space evenly
-// instead of one panel taking the full hero-row column.
+// (see CrewTodayHistoryPanel.jsx) so they split the same space evenly.
+// Sized to its own content (not stretched to match the left column, see
+// .crew-mgmt-hero-row's align-items: start) so the panels stay close to the
+// Crew List upload row's height instead of towering over it.
 .crew-uploaded-panels-row {
   display: flex;
+  align-items: start;
   gap: 16px;
   min-width: 0;
-  height: 100%;
 }
 
 .crew-uploaded-panels-row > .crew-uploaded-lists-panel {
@@ -2756,9 +2775,8 @@
   width: 100%;
   max-width: none;
   min-width: 0;
-  height: 100%;
-  max-height: 250px;
-  padding: 14px 16px;
+  max-height: 220px;
+  padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid var(--border-primary);
   background: var(--surface-primary);
@@ -2778,9 +2796,8 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 4px;
-  flex: 1;
-  padding: 22px 10px;
+  gap: 3px;
+  padding: 10px;
   border-radius: 10px;
   border: 1px dashed var(--border-primary);
   background: var(--surface-primary);
@@ -2790,9 +2807,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  margin-bottom: 4px;
+  width: 26px;
+  height: 26px;
+  margin-bottom: 2px;
   border-radius: 50%;
   color: var(--text-muted);
   background: var(--bg-secondary);
@@ -2835,10 +2852,10 @@
 .crew-uploaded-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  column-gap: 12px;
+  column-gap: 10px;
   row-gap: 8px;
   align-items: start;
-  padding: 12px;
+  padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid var(--border-primary);
   background: var(--surface-primary);
@@ -2849,8 +2866,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   margin-top: 1px;
   border-radius: 8px;
   color: var(--card-color, #00368c);
@@ -2860,7 +2877,7 @@
 .crew-uploaded-card__details {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
 }
 
@@ -2982,6 +2999,8 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  min-height: 60px;
+  max-height: 60px;
   padding: 10px 8px;
   border-radius: 12px;
   border: 1.5px dashed var(--border-primary);
@@ -3100,6 +3119,10 @@
   .crew-uploaded-panels-row {
     flex-direction: column;
     height: auto;
+  }
+
+  .crew-mgmt-hero-middle:not(.crew-immigration-batches) .crew-mgmt-crewlist-block {
+    flex-direction: column;
   }
 }
 
