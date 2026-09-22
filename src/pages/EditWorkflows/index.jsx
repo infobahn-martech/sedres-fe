@@ -847,7 +847,7 @@ function EditWorkflows() {
                             <div>This workflow contains {workflow.swimlanes.length} swimlane(s) with multiple stages for organizing your work.</div>
                           </div>
                         </Tooltip>
-                        <button
+                        {/* <button
                           className="workflow-info-btn"
                           type="button"
                           disabled={wfMutationPending}
@@ -857,7 +857,7 @@ function EditWorkflows() {
                             <circle cx="9" cy="9" r="8" stroke="currentColor" strokeWidth="1.5" fill="none" />
                             <path d="M9 6V9M9 12H9.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                           </svg>
-                        </button>
+                        </button> */}
                       </>
                     )}
                   </div>

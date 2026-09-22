@@ -9,7 +9,6 @@ import CrewUploadDropzones from "./CrewUploadDropzones";
 import CrewUploadedListsPanel from "./CrewUploadedListsPanel";
 import CrewUploadPreviewModal from "./CrewUploadPreviewModal";
 import LaunchHireInlineForm from "./LaunchHireInlineForm";
-import DatePickerField from "../../../../shared/components/DatePickerField";
 import useCrewReducer from "../../../../../../../store/CrewReducer";
 import useCommonReducer from "../../../../../../../store/CommonReducer";
 import useLaunchHireServiceReducer from "../../../../../../../store/LaunchHireServiceReducer";
@@ -55,6 +54,22 @@ const CREW_SERVICE_CARDS = [
     label: "Hotel",
     description: "Book crew accommodation and manage hotel stay arrangements.",
     crewField: "hotelSelectedCrew",
+    hasServiceForm: true,
+  },
+  {
+    id: CREW_MANAGEMENT_SUBTABS.CG_PASS,
+    tabName: "cgPass",
+    label: "CG Pass",
+    description: "Request Coast Guard pass clearance for crew.",
+    crewField: "cgPassSelectedCrew",
+    hasServiceForm: true,
+  },
+  {
+    id: CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS,
+    tabName: "zawilPass",
+    label: "Zawil Pass",
+    description: "Request Zawil pass clearance for crew.",
+    crewField: "zawilPassSelectedCrew",
     hasServiceForm: true,
   },
 ];
@@ -159,32 +174,6 @@ ServiceStatusIcon.propTypes = {
   label: PropTypes.string.isRequired,
 };
 
-// Compact radio card for choosing the crew list's movement type — the whole
-// card (not just the native radio) is clickable via the wrapping <label>.
-const MovementTypeRadioCard = ({ option, checked, onSelect }) => (
-  <label className={`crew-movement-radio-card${checked ? " crew-movement-radio-card--selected" : ""}`}>
-    <input
-      type="radio"
-      className="crew-movement-radio-card__input"
-      name="crew-movement-type"
-      value={option.value}
-      checked={checked}
-      onChange={() => onSelect(option.value)}
-    />
-    <span className="crew-movement-radio-card__radio" aria-hidden="true" />
-    <span className="crew-movement-radio-card__text">
-      <span className="crew-movement-radio-card__label">{option.label}</span>
-      <span className="crew-movement-radio-card__hint">{option.hint}</span>
-    </span>
-  </label>
-);
-
-MovementTypeRadioCard.propTypes = {
-  option: PropTypes.shape({ value: PropTypes.string, label: PropTypes.string, hint: PropTypes.string }).isRequired,
-  checked: PropTypes.bool,
-  onSelect: PropTypes.func.isRequired,
-};
-
 // Crew Management landing view — hero (movement type selection + crew list
 // upload in the middle, "Uploaded Crew Lists" preview panel on the right —
 // the single source of truth for Sign On/Sign Off upload state),
@@ -252,7 +241,9 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     Array.isArray(formValues?.crewList) ? formValues.crewList : []
   );
   const [uploadSteps, setUploadSteps] = useState(INITIAL_UPLOAD_STEPS);
-  const [movementType, setMovementType] = useState("");
+  // Crew list uploads from this dashboard are always tagged "Sign On" — the
+  // Sign On/Sign Off picker was removed so upload happens directly.
+  const movementType = MOVEMENT_TYPE_OPTIONS[0].value;
   // Per-movement-type upload state — { Sign On: {...} | null, Sign Off: {...} | null }.
   // Each entry: { name, size, movementType, status, crewCount, crewIds }.
   const [crewUploads, setCrewUploads] = useState({ "Sign On": null, "Sign Off": null });
@@ -479,10 +470,6 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     summaryRefreshTick,
   ]);
 
-  const handleCrewListBlocked = () => {
-    notify("Select a movement type before uploading the crew list.", "error");
-  };
-
   // Accepts one or more crew list files for the currently-selected movement
   // type — all files are sent together in one crew/import_crew_ai call via
   // repeated files[] fields, so multiple crew list files can be uploaded
@@ -490,10 +477,6 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   const handleCrewListFiles = async (fileList, targetType = movementType) => {
     const files = Array.isArray(fileList) ? fileList : Array.from(fileList || []);
     if (files.length === 0) return;
-    if (!targetType) {
-      handleCrewListBlocked();
-      return;
-    }
     if (crewUploads[targetType]?.status === "uploading") return;
 
     setUploadSteps((prev) => ({ ...prev, crewList: { ...prev.crewList, status: "uploading" } }));
@@ -704,7 +687,30 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     }));
   };
 
+  // Saves the crew selection against the service and goes straight to the
+  // request step — the service's own form for services that have one
+  // (Transport/Medical/Hotel/CG Pass/Zawil Pass), or a submission
+  // confirmation for ones that don't yet.
+  const assignCrewToService = (card, crewIds) => {
+    handleChange(card.crewField)({ target: { value: crewIds } });
+    setSelectedServiceCrewMap((prev) => ({ ...prev, [card.tabName]: crewIds }));
+
+    if (card.hasServiceForm) {
+      onNavigateToTab?.(card.tabName);
+    } else {
+      notify(`${card.label} request submitted.`, "success");
+    }
+  };
+
+  // Crew already checked off in the Crew Summary table goes straight to the
+  // service's form — no separate "Select Crew" page. Otherwise fall back to
+  // that page so crew can be picked first.
   const handleServiceCardClick = (card) => {
+    if (summarySelectedIds.length > 0) {
+      assignCrewToService(card, summarySelectedIds);
+      setSummarySelectedIds([]);
+      return;
+    }
     setSelectedServiceForCrew(card);
     // Default to "all crew selected" the first time a service is opened;
     // re-opening it later restores whatever was picked last.
@@ -719,20 +725,9 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     setSelectedCrewIds([]);
   };
 
-  // Submitting the crew selection goes straight to the request step — the
-  // service's own form for services that have one (Transport/Medical/
-  // Hotel), or a submission confirmation for ones that don't yet.
   const handleSubmitCrewSelection = () => {
     if (!selectedServiceForCrew || selectedCrewIds.length === 0) return;
-    handleChange(selectedServiceForCrew.crewField)({ target: { value: selectedCrewIds } });
-    setSelectedServiceCrewMap((prev) => ({ ...prev, [selectedServiceForCrew.tabName]: selectedCrewIds }));
-
-    if (selectedServiceForCrew.hasServiceForm) {
-      onNavigateToTab?.(selectedServiceForCrew.tabName);
-    } else {
-      notify(`${selectedServiceForCrew.label} request submitted.`, "success");
-    }
-
+    assignCrewToService(selectedServiceForCrew, selectedCrewIds);
     setShowCrewSelectView(false);
     setSelectedServiceForCrew(null);
     setSelectedCrewIds([]);
@@ -1097,7 +1092,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   }
 
   const selectedMovementTypeLabel = MOVEMENT_TYPE_OPTIONS.find((opt) => opt.value === movementType)?.label || "";
-  const crewListStatus = movementType ? crewUploads[movementType]?.status || "pending" : "pending";
+  const crewListStatus = crewUploads[movementType]?.status || "pending";
 
   return (
     <div className="husbandry-service-selection" style={{ "--card-color": cardColor }}>
@@ -1110,24 +1105,6 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
               </div>
 
               <div className="crew-mgmt-hero-middle">
-                <div className="crew-movement-select-block">
-                  <div className="crew-movement-radio-group">
-                    {MOVEMENT_TYPE_OPTIONS.map((option) => (
-                      <MovementTypeRadioCard
-                        key={option.value}
-                        option={option}
-                        checked={movementType === option.value}
-                        onSelect={setMovementType}
-                      />
-                    ))}
-                  </div>
-                  {!movementType && (
-                    <p className="crew-movement-helper-text">
-                      Select a movement type before uploading the crew list.
-                    </p>
-                  )}
-                </div>
-
                 <div className="crew-mgmt-crewlist-block">
                   {canUploadCrewList && (
                     <CrewListUploadBox
@@ -1135,7 +1112,6 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
                       movementTypeLabel={selectedMovementTypeLabel}
                       status={crewListStatus}
                       onSelectFile={handleCrewListFiles}
-                      onBlocked={handleCrewListBlocked}
                     />
                   )}
                   <CrewUploadDropzones
@@ -1371,9 +1347,6 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
                         />
                       </th>
                       <th><span className="crew-th">Crew name</span></th>
-                      <th><span className="crew-th">Date of birth</span></th>
-                      <th><span className="crew-th">Nationality</span></th>
-                      <th><span className="crew-th">Rank</span></th>
                       <th><span className="crew-th">Movement type</span></th>
                       <th><span className="crew-th">Passport / Iqama</span></th>
                       <th><span className="crew-th">Visa</span></th>
@@ -1413,50 +1386,6 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
                                   <span className="crew-name-id">{`ID · ${String(row.crewId).padStart(5, "0")}`}</span>
                                 </span>
                               </div>
-                            )}
-                          </td>
-                          <td>
-                            {isEditing ? (
-                              <DatePickerField
-                                dateValue={editDraft?.dateOfBirth ?? ""}
-                                onDateChange={handleEditFieldChange("dateOfBirth")}
-                                dateFieldName="dateOfBirth"
-                                placeholder="Select DOB"
-                                maxDate={new Date()}
-                                className="crew-edit-date-field"
-                              />
-                            ) : (
-                              <div className="crew-table-cell" title={row.dateOfBirth}>{row.dateOfBirth || "-"}</div>
-                            )}
-                          </td>
-                          <td>
-                            {isEditing ? (
-                              <select
-                                className="crew-edit-input crew-edit-select"
-                                value={editDraft?.nationality ?? ""}
-                                onChange={handleEditFieldChange("nationality")}
-                              >
-                                <option value="">Select nationality</option>
-                                {nationalityOptions.map((option) => (
-                                  <option key={option.value} value={option.value}>
-                                    {option.label}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <div className="crew-table-cell" title={row.nationality}>{row.nationality}</div>
-                            )}
-                          </td>
-                          <td>
-                            {isEditing ? (
-                              <input
-                                type="text"
-                                className="crew-edit-input"
-                                value={editDraft?.rank ?? ""}
-                                onChange={handleEditFieldChange("rank")}
-                              />
-                            ) : (
-                              <div className="crew-table-cell" title={row.rank}>{row.rank}</div>
                             )}
                           </td>
                           <td>

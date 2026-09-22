@@ -1256,12 +1256,12 @@ $send-report-optional: var(--text-muted);
    ========================================================== */
 
 // Bottom row of the Crew Management hero (see .crew-mgmt-hero-row above it)
-// — Transport/Medical/Hotel fill the same width as the top row above via a
-// fixed 3-column grid, so there's no leftover empty track.
+// — Transport/Medical/Hotel/CG Pass/Zawil Pass all fill one row via a fixed
+// 5-column grid, so there's no leftover empty track.
 .crew-mgmt-service-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid rgba(0, 54, 140, 0.1);
@@ -1271,14 +1271,14 @@ $send-report-optional: var(--text-muted);
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-height: 72px;
   max-height: 92px;
   border-radius: 14px;
   border: 1px solid var(--border-primary);
   background: var(--surface-primary);
   box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
-  padding: 12px 14px;
+  padding: 12px;
   text-align: left;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -1344,6 +1344,12 @@ $send-report-optional: var(--text-muted);
   right: 8px;
   font-size: 9px;
   padding: 2px 8px;
+}
+
+@media (max-width: 1200px) {
+  .crew-mgmt-service-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 992px) {
