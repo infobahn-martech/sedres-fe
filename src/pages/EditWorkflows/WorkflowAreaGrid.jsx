@@ -50,11 +50,12 @@ function WorkflowAreaGrid({
       className="workflow-area-block workflow-area-block-grid"
       style={{
         width: blockWidth,
-        minHeight: globalRows * 108 + (globalRows - 1) * stageGap,
+        minHeight: globalRows * 108,
         display: 'grid',
         gridTemplateColumns: `repeat(${cols}, minmax(${stageCellWidth}px, 1fr))`,
         gridTemplateRows: `repeat(${globalRows}, minmax(108px, 1fr))`,
-        gap: `var(--stage-gap, ${stageGap}px)`,
+        columnGap: `var(--stage-gap, ${stageGap}px)`,
+        rowGap: 0,
       }}
     >
       {/* Col-stacks: structural background per column, behind stages. When a column has more
