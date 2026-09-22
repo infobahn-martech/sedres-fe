@@ -55,7 +55,7 @@ function WorkflowAreaGrid({
         gridTemplateColumns: `repeat(${cols}, minmax(${stageCellWidth}px, 1fr))`,
         gridTemplateRows: `repeat(${globalRows}, minmax(108px, 1fr))`,
         columnGap: `var(--stage-gap, ${stageGap}px)`,
-        rowGap: 0,
+        rowGap: 4,
       }}
     >
       {/* Col-stacks: structural background per column, behind stages. When a column has more
