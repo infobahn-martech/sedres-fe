@@ -7,6 +7,7 @@ import CrewServiceSelectPage from "./CrewServiceSelectPage";
 import CrewListUploadBox from "./CrewListUploadBox";
 import CrewUploadDropzones from "./CrewUploadDropzones";
 import CrewUploadedListsPanel from "./CrewUploadedListsPanel";
+import CrewTodayHistoryPanel from "./CrewTodayHistoryPanel";
 import CrewUploadPreviewModal from "./CrewUploadPreviewModal";
 import LaunchHireInlineForm from "./LaunchHireInlineForm";
 import useCrewReducer from "../../../../../../../store/CrewReducer";
@@ -247,6 +248,10 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   // Per-movement-type upload state — { Sign On: {...} | null, Sign Off: {...} | null }.
   // Each entry: { name, size, movementType, status, crewCount, crewIds }.
   const [crewUploads, setCrewUploads] = useState({ "Sign On": null, "Sign Off": null });
+  // Session-only feed of every crew list uploaded today — shown beside the
+  // "Uploaded Crew Lists" panel (see CrewTodayHistoryPanel). Not persisted
+  // server-side, so it resets on reload.
+  const [uploadHistory, setUploadHistory] = useState([]);
   const [previewMovementType, setPreviewMovementType] = useState(null);
 
   const [selectedServiceForCrew, setSelectedServiceForCrew] = useState(null);
@@ -563,6 +568,16 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     setSummaryRefreshTick((tick) => tick + 1);
 
     const movementTypeLabel = MOVEMENT_TYPE_OPTIONS.find((opt) => opt.value === targetType)?.label || "";
+    setUploadHistory((prev) => [
+      ...prev,
+      {
+        id: `${Date.now()}-${files[files.length - 1].name}`,
+        name: files[files.length - 1].name,
+        movementTypeLabel,
+        crewCount: idsForThisType.length,
+        uploadedAt: new Date().toISOString(),
+      },
+    ]);
     notify(`${movementTypeLabel} crew list uploaded — ${idsForThisType.length} crew member(s) loaded.`, "success");
   };
 
@@ -792,6 +807,15 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     ? crewSummaryRows.filter((row) => row.movementTypeValue === previewMovementType)
     : [];
   const previewMovementTypeLabel = MOVEMENT_TYPE_OPTIONS.find((opt) => opt.value === previewMovementType)?.label || "";
+
+  // Newest first, restricted to entries uploaded on today's calendar date.
+  const todaysUploadHistory = useMemo(() => {
+    const todayKey = new Date().toDateString();
+    return uploadHistory
+      .filter((entry) => new Date(entry.uploadedAt).toDateString() === todayKey)
+      .slice()
+      .reverse();
+  }, [uploadHistory]);
 
   const totalSummaryItems = summaryTotal;
   const startSummaryItem = totalSummaryItems === 0 ? 0 : (effectiveSummaryPage - 1) * SUMMARY_PAGE_SIZE + 1;
@@ -1125,12 +1149,15 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
               </div>
             </div>
 
-            <CrewUploadedListsPanel
-              movementTypeOptions={MOVEMENT_TYPE_OPTIONS}
-              crewUploads={crewUploads}
-              cardColor={cardColor}
-              onPreview={handlePreviewClick}
-            />
+            <div className="crew-uploaded-panels-row">
+              <CrewUploadedListsPanel
+                movementTypeOptions={MOVEMENT_TYPE_OPTIONS}
+                crewUploads={crewUploads}
+                cardColor={cardColor}
+                onPreview={handlePreviewClick}
+              />
+              <CrewTodayHistoryPanel entries={todaysUploadHistory} cardColor={cardColor} />
+            </div>
           </div>
 
           <div className="crew-mgmt-service-grid">

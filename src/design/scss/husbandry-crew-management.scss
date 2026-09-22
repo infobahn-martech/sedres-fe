@@ -2736,6 +2736,20 @@
 // left column's height, see .crew-mgmt-hero-row) can hand that extra height
 // down to its empty/stack content instead of leaving blank space beneath a
 // short card.
+// Wraps the "Uploaded Crew Lists" panel and its "Today's History" twin
+// (see CrewTodayHistoryPanel.jsx) so they split the same space evenly
+// instead of one panel taking the full hero-row column.
+.crew-uploaded-panels-row {
+  display: flex;
+  gap: 16px;
+  min-width: 0;
+  height: 100%;
+}
+
+.crew-uploaded-panels-row > .crew-uploaded-lists-panel {
+  flex: 1 1 0;
+}
+
 .crew-uploaded-lists-panel {
   display: flex;
   flex-direction: column;
@@ -3081,6 +3095,11 @@
 
   .crew-uploaded-card__actions {
     gap: 14px;
+  }
+
+  .crew-uploaded-panels-row {
+    flex-direction: column;
+    height: auto;
   }
 }
 
