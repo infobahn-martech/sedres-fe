@@ -11,7 +11,6 @@ function WorkflowBoard({
   stageCellWidth = STAGE_CELL_WIDTH,
   stageGap = STAGE_GAP,
   hoveredColumn,
-  stackedRailMetrics,
   editingStageId,
   editingStageName,
   onStageMouseEnter,
@@ -98,7 +97,6 @@ function WorkflowBoard({
                 stageCellWidth={stageCellWidth}
                 stageGap={stageGap}
                 hoveredColumn={hoveredColumn}
-                stackedRailMetrics={stackedRailMetrics}
                 editingStageId={editingStageId}
                 editingStageName={editingStageName}
                 onStageMouseEnter={onStageMouseEnter}
@@ -134,7 +132,6 @@ function WorkflowBoard({
           stageGap={stageGap}
           contentRowOnly
           hoveredColumn={hoveredColumn}
-          stackedRailMetrics={stackedRailMetrics}
           editingStageId={editingStageId}
           editingStageName={editingStageName}
           onStageMouseEnter={onStageMouseEnter}

@@ -23,7 +23,6 @@ function WorkflowAreaGrid({
   stageCellWidth = STAGE_CELL_WIDTH,
   stageGap = STAGE_GAP,
   hoveredColumn,
-  stackedRailMetrics,
   editingStageId,
   editingStageName,
   onStageMouseEnter,
@@ -58,114 +57,19 @@ function WorkflowAreaGrid({
         gap: `var(--stage-gap, ${stageGap}px)`,
       }}
     >
-      {/* Col-stacks for rail positioning (behind stages) */}
+      {/* Col-stacks: structural background per column, behind stages */}
       {Array.from({ length: cols }, (_, colIdx) => {
-        const stagesInCol = getStagesInColumn(swimlane, area, colIdx);
-        const isSingle = stagesInCol.length <= 1;
         const colStackKey = getColStackKey(workflowId, swimlane.id, area, colIdx);
-        const showStackedRails = !isSingle && stackedRailMetrics?.colStackKey === colStackKey;
-        const stackedStageKey =
-          showStackedRails && stackedRailMetrics
-            ? getColumnKey(
-                stackedRailMetrics.workflowId,
-                stackedRailMetrics.swimlaneId,
-                stackedRailMetrics.stageId
-              )
-            : null;
-        const stackedRailBusy = Boolean(stackedStageKey && mutationTargets[stackedStageKey]);
-        const stackedColSpan =
-          showStackedRails && stackedRailMetrics?.colSpan ? stackedRailMetrics.colSpan : 1;
-        const colStackGridColumn =
-          stackedColSpan > 1 ? `${colIdx + 1} / span ${stackedColSpan}` : `${colIdx + 1}`;
         return (
           <div
             key={`col-${area}-${colIdx}`}
-            className={`workflow-area-col-stack${showStackedRails ? ' workflow-area-col-stack--stacked-rails' : ''}`}
+            className="workflow-area-col-stack"
             data-col-stack-key={colStackKey}
             style={{
-              gridColumn: colStackGridColumn,
+              gridColumn: `${colIdx + 1}`,
               gridRow: `1 / span ${globalRows}`,
             }}
-          >
-            {showStackedRails && stackedRailMetrics && canAddColumns && (
-              <div
-                className="workflow-stacked-rail-overlay"
-                style={{ top: stackedRailMetrics.top }}
-              >
-                <div
-                  className="workflow-stacked-rail-cell workflow-stacked-rail-cell-left"
-                  onMouseLeave={(e) =>
-                    onStageMouseLeave?.(e, hoveredColumn, colStackKey)
-                  }
-                >
-                  <button
-                    className="workflow-column-add-btn workflow-column-add-left"
-                    type="button"
-                    disabled={stackedRailBusy}
-                    onClick={() =>
-                      onAddColumnLeft(
-                        stackedRailMetrics.workflowId,
-                        stackedRailMetrics.swimlaneId,
-                        stackedRailMetrics.stageId
-                      )
-                    }
-                    title={`Add a new column before ${stackedRailMetrics.stageName || ''}`}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M8 3V13M3 8H13"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
-                <div className="workflow-stacked-rail-cell-middle" aria-hidden="true" />
-                <div
-                  className="workflow-stacked-rail-cell workflow-stacked-rail-cell-right"
-                  onMouseLeave={(e) =>
-                    onStageMouseLeave?.(e, hoveredColumn, colStackKey)
-                  }
-                >
-                  <button
-                    className="workflow-column-add-btn workflow-column-add-right"
-                    type="button"
-                    disabled={stackedRailBusy}
-                    onClick={() =>
-                      onAddColumnRight(
-                        stackedRailMetrics.workflowId,
-                        stackedRailMetrics.swimlaneId,
-                        stackedRailMetrics.stageId
-                      )
-                    }
-                    title={`Add a new column after ${stackedRailMetrics.stageName || ''}`}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M8 3V13M3 8H13"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          />
         );
       })}
       {/* Empty placeholder cells for unoccupied grid positions */}

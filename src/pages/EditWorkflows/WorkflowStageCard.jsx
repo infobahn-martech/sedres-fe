@@ -41,7 +41,7 @@ function WorkflowStageCard({
   canUpdateColumnColor,
   canDeleteColumn,
 }) {
-  const showInlineAddButtons = isSingleInCol;
+  const showInlineAddButtons = true;
   const isStacked = !isSingleInCol;
 
   const [editingField, setEditingField] = useState(null);

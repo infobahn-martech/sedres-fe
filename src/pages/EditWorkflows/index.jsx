@@ -8,7 +8,6 @@ import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 import CreateWorkflowModal from './CreateWorkflowModal';
 import WorkflowBoard from './WorkflowBoard';
 import {
-  getColStackKey,
   getColumnKey,
   buildCreateWorkflowColumnPayload,
   removeStage,
@@ -100,7 +99,6 @@ function EditWorkflows() {
 
   const [showCreateWorkflowModal, setShowCreateWorkflowModal] = useState(false);
   const [hoveredColumn, setHoveredColumn] = useState(null);
-  const [stackedRailMetrics, setStackedRailMetrics] = useState(null);
   const [editingWorkflowId, setEditingWorkflowId] = useState(null);
   const [editingWorkflowName, setEditingWorkflowName] = useState('');
   const [editingStageId, setEditingStageId] = useState(null);
@@ -159,72 +157,30 @@ function EditWorkflows() {
     const normalizedWorkflows = normalizeWorkflowData(apiWorkflows);
     setWorkflows(normalizedWorkflows);
     setHoveredColumn(null);
-    setStackedRailMetrics(null);
   }, [apiWorkflows]);
 
   useEffect(() => {
     const clearHover = () => {
       setHoveredColumn(null);
-      setStackedRailMetrics(null);
     };
     window.addEventListener('scroll', clearHover, true);
     return () => window.removeEventListener('scroll', clearHover, true);
   }, []);
 
-  const handleStageBoxMouseEnter = (
-    e,
-    stageColumnKey,
-    workflowId,
-    swimlaneId,
-    stageId,
-    stageName,
-    isStacked,
-    area,
-    stageCol,
-    stageColSpan
-  ) => {
+  const handleStageBoxMouseEnter = (e, stageColumnKey) => {
     setHoveredColumn(stageColumnKey);
-    if (isStacked && area != null && stageCol != null) {
-      const areaBlock = e.currentTarget.closest('.workflow-area-block');
-      const stageWrapper = e.currentTarget.closest('.workflow-stage-wrapper');
-      const colStackKey = getColStackKey(workflowId, swimlaneId, area, stageCol);
-      const colStack = areaBlock?.querySelector(`[data-col-stack-key="${colStackKey}"]`);
-      if (colStack && stageWrapper) {
-        const colRect = colStack.getBoundingClientRect();
-        const stageRect = stageWrapper.getBoundingClientRect();
-        setStackedRailMetrics({
-          colStackKey,
-          stageId,
-          stageName,
-          workflowId,
-          swimlaneId,
-          top: stageRect.top - colRect.top,
-          height: colRect.bottom - stageRect.top,
-          colSpan: stageColSpan ?? 1,
-        });
-      } else {
-        setStackedRailMetrics(null);
-      }
-    } else if (!isStacked) {
-      setStackedRailMetrics(null);
-    }
   };
 
   const handleStageBoxMouseLeave = (e, stageColumnKey, colStackKey) => {
     const rt = e.relatedTarget;
     if (isNodeInColumnZone(rt, colStackKey)) return;
     setHoveredColumn((prev) => (prev === stageColumnKey ? null : prev));
-    setStackedRailMetrics((prev) => {
-      if (!prev || prev.colStackKey !== colStackKey) return prev;
-      return null;
-    });
   };
 
   const runCreateWorkflowColumn = (workflowId, swimlaneId, stageId, action) => {
     const stageKey = getColumnKey(workflowId, swimlaneId, stageId);
     if (!startMutation(stageKey, 'adding-column')) return;
     setHoveredColumn(null);
-    setStackedRailMetrics(null);
     if (!boardId) {
       clearMutationKey(stageKey);
       showError('Open a board (boardId in URL) to add columns.');
@@ -680,7 +636,6 @@ function EditWorkflows() {
   const handleToggleCollapseWorkflow = (workflowId) => {
     setCollapsedWorkflowIds((prev) => ({ ...prev, [workflowId]: !prev[workflowId] }));
     setHoveredColumn(null);
-    setStackedRailMetrics(null);
   };
 
   const handleWorkflowDragEnd = (result) => {
@@ -941,7 +896,6 @@ function EditWorkflows() {
                       workflow={workflow}
                       mutationTargets={mutationTargets}
                       hoveredColumn={hoveredColumn}
-                      stackedRailMetrics={stackedRailMetrics}
                       editingStageId={editingStageId}
                       editingStageName={editingStageName}
                       onStageMouseEnter={handleStageBoxMouseEnter}

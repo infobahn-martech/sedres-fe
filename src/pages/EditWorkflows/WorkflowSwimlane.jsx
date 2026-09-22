@@ -29,7 +29,6 @@ function WorkflowSwimlane({
   stageGap = STAGE_GAP,
   contentRowOnly = false,
   hoveredColumn,
-  stackedRailMetrics,
   editingStageId,
   editingStageName,
   onStageMouseEnter,
@@ -453,7 +452,6 @@ function WorkflowSwimlane({
               stageCellWidth={stageCellWidth}
               stageGap={stageGap}
               hoveredColumn={hoveredColumn}
-              stackedRailMetrics={stackedRailMetrics}
               editingStageId={editingStageId}
               editingStageName={editingStageName}
               onStageMouseEnter={onStageMouseEnter}
