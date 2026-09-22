@@ -21,6 +21,7 @@ function WorkflowStageCard({
   isStageHovered,
   showAddSubcolumn,
   isSingleInCol,
+  usesParentStackRail,
   mutationState,
   editingStageId,
   editingStageName,
@@ -41,7 +42,7 @@ function WorkflowStageCard({
   canUpdateColumnColor,
   canDeleteColumn,
 }) {
-  const showInlineAddButtons = true;
+  const showInlineAddButtons = !usesParentStackRail;
   const isStacked = !isSingleInCol;
 
   const [editingField, setEditingField] = useState(null);

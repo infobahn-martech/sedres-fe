@@ -57,19 +57,74 @@ function WorkflowAreaGrid({
         gap: `var(--stage-gap, ${stageGap}px)`,
       }}
     >
-      {/* Col-stacks: structural background per column, behind stages */}
+      {/* Col-stacks: structural background per column, behind stages. When a column has more
+          than one stage, hovering the top (parent) stage shows a rail overlay spanning the
+          whole stack; hovering a child stage instead shows inline rails on that child card. */}
       {Array.from({ length: cols }, (_, colIdx) => {
         const colStackKey = getColStackKey(workflowId, swimlane.id, area, colIdx);
+        const stagesInCol = getStagesInColumn(swimlane, area, colIdx);
+        const hasStack = stagesInCol.length > 1;
+        const sortedStagesInCol = hasStack
+          ? [...stagesInCol].sort((a, b) => (a.row ?? 0) - (b.row ?? 0))
+          : [];
+        const topStage = hasStack ? sortedStagesInCol[0] : null;
+        const topStageStableId = topStage
+          ? topStage.id ?? `${topStage.stageId ?? 'stage'}-${topStage.columnId ?? 'column'}-${topStage.row ?? 0}-${topStage.col ?? 0}`
+          : null;
+        const topStageColumnKey = topStage
+          ? getColumnKey(workflowId, swimlane.id, topStageStableId)
+          : null;
+        const showStackedRails = hasStack && hoveredColumn === topStageColumnKey;
+        const stackedRailBusy = Boolean(topStageColumnKey && mutationTargets[topStageColumnKey]);
+
         return (
           <div
             key={`col-${area}-${colIdx}`}
-            className="workflow-area-col-stack"
+            className={`workflow-area-col-stack${showStackedRails ? ' workflow-area-col-stack--stacked-rails' : ''}`}
             data-col-stack-key={colStackKey}
             style={{
               gridColumn: `${colIdx + 1}`,
               gridRow: `1 / span ${globalRows}`,
             }}
-          />
+          >
+            {showStackedRails && canAddColumns && (
+              <div className="workflow-stacked-rail-overlay">
+                <div
+                  className="workflow-stacked-rail-cell workflow-stacked-rail-cell-left"
+                  onMouseLeave={(e) => onStageMouseLeave?.(e, hoveredColumn, colStackKey)}
+                >
+                  <button
+                    className="workflow-column-add-btn workflow-column-add-left"
+                    type="button"
+                    disabled={stackedRailBusy}
+                    onClick={() => onAddColumnLeft(workflowId, swimlane.id, topStageStableId)}
+                    title={`Add a new column before ${topStage?.name || ''}`}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M8 3V13M3 8H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="workflow-stacked-rail-cell-middle" aria-hidden="true" />
+                <div
+                  className="workflow-stacked-rail-cell workflow-stacked-rail-cell-right"
+                  onMouseLeave={(e) => onStageMouseLeave?.(e, hoveredColumn, colStackKey)}
+                >
+                  <button
+                    className="workflow-column-add-btn workflow-column-add-right"
+                    type="button"
+                    disabled={stackedRailBusy}
+                    onClick={() => onAddColumnRight(workflowId, swimlane.id, topStageStableId)}
+                    title={`Add a new column after ${topStage?.name || ''}`}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M8 3V13M3 8H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         );
       })}
       {/* Empty placeholder cells for unoccupied grid positions */}
@@ -135,6 +190,7 @@ function WorkflowAreaGrid({
               isStageHovered={isStageHovered}
               showAddSubcolumn={showAddSubcolumn}
               isSingleInCol={isSingleInCol}
+              usesParentStackRail={isTopStackedCard}
               mutationState={columnMutationState}
               editingStageId={editingStageId}
               editingStageName={editingStageName}

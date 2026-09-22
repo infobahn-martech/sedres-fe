@@ -959,7 +959,9 @@ div[role="tooltip"][id^="workflow-info-"] {
   }
 }
 
-// Vertical stack within one col of an area - structural background behind stage cards
+// Vertical stack within one col of an area - structural background behind stage cards.
+// Layering: col-stack--stacked-rails sits above stage grid items (z-index 3 > 2) but uses
+// pointer-events: none so card area passes through; rails use pointer-events: auto.
 .workflow-area-col-stack {
   display: flex;
   flex-direction: column;
@@ -970,6 +972,50 @@ div[role="tooltip"][id^="workflow-info-"] {
   align-items: stretch;
   position: relative;
   z-index: 0;
+
+  &.workflow-area-col-stack--stacked-rails {
+    z-index: 3;
+    pointer-events: none;
+  }
+}
+
+// Unified insertion frame for a hovered parent+children column stack: one absolute overlay
+// spanning the whole stack (top:0 to bottom:0), split into left/middle/right zones via CSS
+// grid so the side rails stay continuous while the cards in the middle cell remain untouched
+// and fully clickable.
+.workflow-stacked-rail-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 22px;
+  box-sizing: border-box;
+  z-index: 3;
+}
+
+.workflow-stacked-rail-cell {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  background: rgba(66, 175, 73, 0.1);
+}
+
+.workflow-stacked-rail-cell-left {
+  border-right: 2px solid #42af49;
+}
+
+.workflow-stacked-rail-cell-right {
+  border-left: 2px solid #42af49;
+}
+
+// Middle cell has no rail styling and never intercepts pointer events - the stage cards
+// underneath stay in the centre, untouched and fully clickable.
+.workflow-stacked-rail-cell-middle {
+  pointer-events: none;
 }
 
 // Row-aware insertion rails (vertical + horizontal) - embedded rectangular slots inside box
@@ -1784,7 +1830,8 @@ div[role="tooltip"][id^="workflow-info-"] {
 }
 
 // Add Column Buttons - rail style (fills slot, grey plus icon)
-.workflow-insertion-rail .workflow-column-add-btn {
+.workflow-insertion-rail .workflow-column-add-btn,
+.workflow-stacked-rail-cell .workflow-column-add-btn {
   position: static;
   width: 100%;
   height: 100%;
@@ -1822,7 +1869,9 @@ div[role="tooltip"][id^="workflow-info-"] {
 
 .workflow-insertion-rail .workflow-column-add-left,
 .workflow-insertion-rail .workflow-column-add-right,
-.workflow-insertion-rail .workflow-column-add-below {
+.workflow-insertion-rail .workflow-column-add-below,
+.workflow-stacked-rail-cell .workflow-column-add-left,
+.workflow-stacked-rail-cell .workflow-column-add-right {
   left: auto;
   right: auto;
   top: auto;
