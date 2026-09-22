@@ -2398,15 +2398,23 @@
    column).
    ========================================================== */
 
-// Left (title + movement/upload controls) | Uploaded Crew Lists — a fixed
-// 40/60 2-column grid. Row items stretch (default align-items) so the
-// Uploaded Crew Lists panel always matches the left column's height instead
-// of sitting short with blank space below it.
+// Left (title + crew list/dropzones) | Uploaded Crew Lists — a fixed 40/60
+// 2-column grid. align-items: start lets each column size to its own
+// (now compact) content instead of both stretching to match the taller one.
 .crew-mgmt-hero-row {
   display: grid;
   grid-template-columns: minmax(0, 0.4fr) minmax(420px, 0.6fr);
   align-items: start;
   gap: 24px;
+}
+
+// .husbandry-service-hero's own padding (28px 32px, see operations.scss) is
+// sized for its other, taller uses (e.g. Crew Management's service-card
+// grid). Both Crew Management and Crew Immigration now often render only
+// this compact row inside it, so trim the bottom padding here rather than
+// leaving a large gap between the row and the card's bottom edge.
+.husbandry-service-hero:has(> .crew-mgmt-hero-row:only-child) {
+  padding-bottom: 16px;
 }
 
 .crew-mgmt-hero-left {
@@ -2543,21 +2551,21 @@
   gap: 12px;
 }
 
-// Crew Management (not Crew Immigration's stacked batches, see below) puts
-// the Crew List upload box and the Passport/Iqama/Visa dropzones on one row
-// instead of stacking them, so the hero-left column's height matches the
-// Uploaded Crew Lists/Today's History panels beside it.
-.crew-mgmt-hero-middle:not(.crew-immigration-batches) .crew-mgmt-crewlist-block {
+// Both Crew Management and Crew Immigration put the Crew List upload box
+// and the Passport/Iqama/Visa dropzones on one row instead of stacking
+// them, so the hero-left column's height matches the Uploaded Crew Lists
+// panel(s) beside it.
+.crew-mgmt-hero-middle .crew-mgmt-crewlist-block {
   flex-direction: row;
   flex-wrap: wrap;
   align-items: stretch;
 }
 
-.crew-mgmt-hero-middle:not(.crew-immigration-batches) .crew-mgmt-crewlist-block > .crew-list-upload-box {
+.crew-mgmt-hero-middle .crew-mgmt-crewlist-block > .crew-list-upload-box {
   flex: 1 1 240px;
 }
 
-.crew-mgmt-hero-middle:not(.crew-immigration-batches) .crew-mgmt-crewlist-block > .crew-upload-dropzones {
+.crew-mgmt-hero-middle .crew-mgmt-crewlist-block > .crew-upload-dropzones {
   flex: 1.2 1 280px;
 }
 
@@ -2775,6 +2783,7 @@
   width: 100%;
   max-width: none;
   min-width: 0;
+  min-height: 150px;
   max-height: 220px;
   padding: 12px 14px;
   border-radius: 14px;
@@ -2797,6 +2806,7 @@
   justify-content: center;
   text-align: center;
   gap: 3px;
+  flex: 1;
   padding: 10px;
   border-radius: 10px;
   border: 1px dashed var(--border-primary);
@@ -3121,7 +3131,7 @@
     height: auto;
   }
 
-  .crew-mgmt-hero-middle:not(.crew-immigration-batches) .crew-mgmt-crewlist-block {
+  .crew-mgmt-hero-middle .crew-mgmt-crewlist-block {
     flex-direction: column;
   }
 }
