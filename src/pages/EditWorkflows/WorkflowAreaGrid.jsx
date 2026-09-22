@@ -76,7 +76,14 @@ function WorkflowAreaGrid({
         const topStageColumnKey = topStage
           ? getColumnKey(workflowId, swimlane.id, topStageStableId)
           : null;
-        const showStackedRails = hasStack && hoveredColumn === topStageColumnKey;
+
+        // getStagesInColumn() returns the same (colSpan-wide) parent stage for every column it
+        // covers, so gate the overlay to the parent's own starting column only - otherwise a
+        // colSpan > 1 parent renders one duplicate overlay per covered column.
+        const topStageColumnStart = topStage?.col ?? colIdx;
+        const topStageColSpan = Math.max(1, topStage?.colSpan ?? 1);
+        const isStackStartColumn = hasStack && colIdx === topStageColumnStart;
+        const showStackedRails = isStackStartColumn && hoveredColumn === topStageColumnKey;
         const stackedRailBusy = Boolean(topStageColumnKey && mutationTargets[topStageColumnKey]);
 
         return (
@@ -85,7 +92,9 @@ function WorkflowAreaGrid({
             className={`workflow-area-col-stack${showStackedRails ? ' workflow-area-col-stack--stacked-rails' : ''}`}
             data-col-stack-key={colStackKey}
             style={{
-              gridColumn: `${colIdx + 1}`,
+              gridColumn: showStackedRails
+                ? `${topStageColumnStart + 1} / span ${topStageColSpan}`
+                : `${colIdx + 1}`,
               gridRow: `1 / span ${globalRows}`,
             }}
           >
