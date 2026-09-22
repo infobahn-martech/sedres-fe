@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import SedresColorPicker from '../../components/SedresColorPicker/SedresColorPicker';
 import { normalizeHexColor } from '../../components/SedresColorPicker/sedresColorPickerConstants';
 import {
+  getAreaBlockWidth,
   getGlobalRowsForSwimlane,
   getStagesInColumn,
   isWorkflowStageChildColumn,
@@ -344,7 +345,7 @@ function WorkflowSwimlane({
       </div>
       <div className="workflow-swimlane-content-row">
         {boardStructure.map(({ area, cols }) => {
-          const blockWidth = cols * stageCellWidth + Math.max(0, cols - 1) * stageGap;
+          const blockWidth = getAreaBlockWidth(cols, stageCellWidth, stageGap);
           return (
             <div
               key={area}

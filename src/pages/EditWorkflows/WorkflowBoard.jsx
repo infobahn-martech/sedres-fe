@@ -1,4 +1,4 @@
-import { getBoardColumnStructure, getGlobalRowsForSwimlane, getWorkflowAreaHeaderStyles } from './workflow.utils';
+import { getAreaBlockWidth, getBoardColumnStructure, getGlobalRowsForSwimlane, getWorkflowAreaHeaderStyles } from './workflow.utils';
 import WorkflowSwimlane from './WorkflowSwimlane';
 import WorkflowAreaGrid, { STAGE_CELL_WIDTH, STAGE_GAP } from './WorkflowAreaGrid';
 
@@ -67,7 +67,7 @@ function WorkflowBoard({
                 key={area}
                 className="workflow-board-area-header"
                 style={{
-                  width: cols * stageCellWidth + Math.max(0, cols - 1) * stageGap,
+                  width: getAreaBlockWidth(cols, stageCellWidth, stageGap),
                   ...getWorkflowAreaHeaderStyles(areaInfo?.color),
                 }}
                 title={label}

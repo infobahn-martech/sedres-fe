@@ -384,6 +384,16 @@ export function getBoardColumnStructure(workflow, areaOrder = workflow?.areaOrde
 }
 
 /**
+ * Shared column-block width for board headers, stage grids, and swimlane content rows, so the
+ * three always render pixel-aligned for a given area. One column is always exactly
+ * `stageCellWidth`; each additional column adds its own width plus one gap.
+ */
+export function getAreaBlockWidth(cols, stageCellWidth, stageGap) {
+  const count = Math.max(1, cols ?? 1);
+  return count * stageCellWidth + Math.max(0, count - 1) * stageGap;
+}
+
+/**
  * Build per-area matrix: { row: { col: stage } } - stage at (row, col).
  */
 export function getAreaMatrix(swimlane, area) {
@@ -667,10 +677,28 @@ export function insertColumnRight(stages, targetStageId, newId, newStageName = '
 
 /**
  * Remove a stage by id from a swimlane.
+ * Renumbers remaining stages' `col` in the same area so no gap is left where the removed
+ * column stood - an unclosed gap would otherwise inflate getBoardColumnStructure's cols
+ * count (col + colSpan) for that area, widening its rail past a true single column.
  * Returns new stages array (immutable).
  */
 export function removeStage(stages, stageId) {
-  return stages.filter((s) => s.id !== stageId);
+  const removed = stages.find((s) => s.id === stageId);
+  const filtered = stages.filter((s) => s.id !== stageId);
+  if (!removed) return filtered;
+
+  const area = removed.area;
+  const removedCol = removed.col ?? 0;
+  const removedSpan = removed.colSpan ?? 1;
+
+  return filtered.map((s) => {
+    if (s.area !== area) return s;
+    const sCol = s.col ?? 0;
+    if (sCol > removedCol) {
+      return { ...s, col: sCol - removedSpan };
+    }
+    return s;
+  });
 }
 
 /**

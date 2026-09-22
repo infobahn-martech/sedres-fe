@@ -1,4 +1,5 @@
 import {
+  getAreaBlockWidth,
   getStagesInColumn,
   getColStackKey,
   isCellOccupied,
@@ -43,7 +44,7 @@ function WorkflowAreaGrid({
   canUpdateColumnColor,
   canDeleteColumn,
 }) {
-  const blockWidth = cols * stageCellWidth + Math.max(0, cols - 1) * stageGap;
+  const blockWidth = getAreaBlockWidth(cols, stageCellWidth, stageGap);
 
   return (
     <div
