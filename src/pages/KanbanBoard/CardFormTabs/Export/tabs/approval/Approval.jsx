@@ -781,8 +781,10 @@ const createEmptyPartySection = () => ({
     // permissions), CEO = role_id 23 only. Not ROLE_IDS.* (used app-wide for
     // routing, left untouched here) since that mapping doesn't match this
     // environment's actual data.
+    // DA (22) additionally granted Manager-section access per explicit user
+    // confirmation (2026-09-23) — DA now gets the same permissions as role 1.
     const isControllerRole = String(userRoleId) === "22";
-    const isManagerRole = String(userRoleId) === "1";
+    const isManagerRole = String(userRoleId) === "1" || String(userRoleId) === "22";
     const isCeoRole = String(userRoleId) === "23";
     // Vessel party image uploads are restricted to Credit Controller and CEO
     // only, per user confirmation — not Manager, unlike the section gating above.

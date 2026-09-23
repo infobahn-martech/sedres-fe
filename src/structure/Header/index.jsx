@@ -85,10 +85,13 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     userProfile?.data?.role_id;
   const isPortManagerRole = String(userRoleId) === '1';
   const isPortSupervisorRole = String(userRoleId) === '23';
+  // DA (22) granted the same settings-icon access as Port Manager, per
+  // explicit user confirmation (2026-09-23).
+  const isDARole = String(userRoleId) === '22';
   const showKanbanSettingsIcon =
     !activePortal &&
     !restrictedBoardUser &&
-    (isPortManagerRole || isPortSupervisorRole);
+    (isPortManagerRole || isPortSupervisorRole || isDARole);
 
   const cardManagementSubmenu = [
     { label: 'Blockers', modal: 'blockers' },

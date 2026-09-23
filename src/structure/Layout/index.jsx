@@ -19,6 +19,9 @@ function Layout() {
     userProfile?.data?.role_id;
   const isPortManagerRole = String(userRoleId) === '1';
   const isPortSupervisorRole = String(userRoleId) === '23';
+  // DA (22) granted the same Kanban sidebar rail as Port Manager, per
+  // explicit user confirmation (2026-09-23).
+  const isDARole = String(userRoleId) === '22';
   const hideSidebar = pathname === '/edit-workflow' || pathname === '/da-module';
   const isKanbanBoard =
     pathname === '/kanban-board/operator' ||
@@ -30,7 +33,7 @@ function Layout() {
     pathname === '/kanban-board/operator' ||
     pathname.startsWith('/kanban-board/') ||
     pathname === '/compact';
-  const kanbanFullWidth = isKanbanIconSidebarRoute && !isPortManagerRole && !isPortSupervisorRole;
+  const kanbanFullWidth = isKanbanIconSidebarRoute && !isPortManagerRole && !isPortSupervisorRole && !isDARole;
   const isVendorPortal = pathname.startsWith('/vendor-portal');
   const isMedicalPortal = pathname.startsWith('/medical-portal');
   const isTransportPortal = pathname.startsWith('/transport-portal');

@@ -5,8 +5,10 @@ import {
   normalizeRoleId,
 } from './groUserRoles';
 
-/** Sedres desk roles — limited board/workspace access (includes Taxi Boat Operator 20, Taxi Boat Captain 21, DA 22) */
-export const SEDRES_RESTRICTED_ROLE_IDS = new Set(['4', '5', '6', '8', '9', '10', '19', '20', '21', '22']);
+/** Sedres desk roles — limited board/workspace access (includes Taxi Boat Operator 20, Taxi Boat Captain 21).
+ * DA (22) removed per explicit user confirmation (2026-09-23) — DA now gets the
+ * same unrestricted workspaces/header access as role 1 (Port Manager). */
+export const SEDRES_RESTRICTED_ROLE_IDS = new Set(['4', '5', '6', '8', '9', '10', '19', '20', '21']);
 
 function isSedresRestrictedBoardRoleId(roleId) {
   const normalized = normalizeRoleId(roleId);
@@ -20,6 +22,9 @@ export const PORT_OPERATOR_ROLE_ID = '2';
 
 /** Port Manager — full Kanban sidebar (Add, On Station, Edit Workflow, Outlook, Settings) */
 export const KANBAN_FULL_SIDEBAR_ROLE_ID = '1';
+
+/** DA — granted the same full Kanban sidebar as Port Manager, per explicit user confirmation (2026-09-23) */
+export const DA_ROLE_ID = '22';
 
 /** Fallback landing path for restricted users when a route isn't allowed — not a specific board. */
 export const RESTRICTED_USER_FALLBACK_PATH = '/workspaces';
@@ -92,7 +97,7 @@ export function isPortOperatorUser(user) {
  */
 export function hasKanbanFullSidebar(user) {
   for (const id of collectRoleIdCandidatesFromUser(user)) {
-    if (id === KANBAN_FULL_SIDEBAR_ROLE_ID) return true;
+    if (id === KANBAN_FULL_SIDEBAR_ROLE_ID || id === DA_ROLE_ID) return true;
   }
 
   try {
@@ -100,7 +105,7 @@ export function hasKanbanFullSidebar(user) {
     if (raw) {
       const parsed = JSON.parse(raw);
       for (const id of collectRoleIdCandidatesFromUser(parsed)) {
-        if (id === KANBAN_FULL_SIDEBAR_ROLE_ID) return true;
+        if (id === KANBAN_FULL_SIDEBAR_ROLE_ID || id === DA_ROLE_ID) return true;
       }
     }
   } catch {
@@ -108,7 +113,7 @@ export function hasKanbanFullSidebar(user) {
   }
 
   const storedRole = toRoleIdString(getItem('role_id'));
-  if (storedRole === KANBAN_FULL_SIDEBAR_ROLE_ID) return true;
+  if (storedRole === KANBAN_FULL_SIDEBAR_ROLE_ID || storedRole === DA_ROLE_ID) return true;
 
   return false;
 }
