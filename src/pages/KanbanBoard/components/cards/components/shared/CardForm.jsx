@@ -1833,14 +1833,6 @@ function CardForm({
     PERMISSION_SUBMODULES.CHECKLIST,
     PERMISSION_SUBMODULES.CREW_IMMIGRATION,
   ].some((submoduleKey) => hasSubmodule(PERMISSION_MODULES.KANBAN_CARD, submoduleKey));
-  // "DA" tab visibility comes from the backend permission payload
-  // (getuserdetail -> permissions.sections), never from role_id: whoever the backend
-  // grants KANBAN_CARD:DA gets the tab. Same presence-is-the-gate shape as
-  // CHECKLIST/HUSBANDRY.
-  const canViewDATab = hasSubmodule(
-    PERMISSION_MODULES.KANBAN_CARD,
-    PERMISSION_SUBMODULES.DA
-  );
   const filterTabsByCardPermission = useCallback(
     (tabs) =>
       tabs.filter((tab) => {
@@ -1980,9 +1972,12 @@ function CardForm({
   // Enable DA mode only for explicit DA routes, not generic /kanban-board/:boardId.
   const isDAModule = /^\/kanban-board\/(centralized-da-desk|jubail-operations|rastanura-dammam-operations|coordinator-transport|ras-tanura-operations)$/.test(location.pathname);
 
-  // "DA" tab is shown purely on the backend permission key - no board or workflow
-  // hardcoding here. Whoever the backend grants KANBAN_CARD:DA sees the tab; where
-  // it applies is decided backend-side when the permission is assigned.
+  // "DA" tab visibility is backend-driven, never role_id: get_full_board returns a
+  // per-card da_board flag (1 = enabled). Read from the mapped card, falling back to
+  // the raw API card for entry points that pass one straight through. Backend sends
+  // it as a number, so compare as a string to tolerate 1 and "1" alike.
+  const canViewDATab =
+    String(card?.da_board ?? card?.raw?.da_board ?? "").trim() === "1";
   const showDAOnlyTab = !isDAModule && !isSimplifiedMode && canViewDATab;
 
 

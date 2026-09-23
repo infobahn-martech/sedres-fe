@@ -208,6 +208,9 @@ export function mapBoardWorkflowFromApi(workflow) {
             workflow_id: wfId,
             workflow_role_id: workflowRoleId,
             workflow_name: title,
+            // get_full_board per-card flag: 1 enables the card modal's "DA" tab.
+            // Carried through raw (backend sends 1 / "1") and interpreted at the use site.
+            da_board: card.da_board ?? null,
             title: card.card_name || "",
             name: card.billing_entity || "",
             user: card.username || "",
