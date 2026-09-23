@@ -722,6 +722,10 @@ const SalesOrderList = ({
   // is actually about to send this stage's email.
   const [draftRecipientEmail, setDraftRecipientEmail] = useState("");
 
+  // Prefills the modal's "Cc" field from the same draft response (data.cc) — the backend owns
+  // the cc list for this stage just like the recipient; empty string when it sends none.
+  const [draftCcEmail, setDraftCcEmail] = useState("");
+
   // Pre-loaded documents from verified SO line items' Supporting Documents field — collected
   // when opening the modal and passed to SoApprovalEmailModal to auto-attach them.
   const [preLoadedDocuments, setPreLoadedDocuments] = useState([]);
@@ -787,6 +791,7 @@ const SalesOrderList = ({
     try {
       const { data } = await daService.getActionEmailDraft(callId);
       setDraftRecipientEmail(data?.data?.recipient || "");
+      setDraftCcEmail(data?.data?.cc || "");
       const stageDocumentId = data?.data?.stage_document_id ?? null;
       const stageDocumentUrl = data?.data?.document_url || null;
       if (stageDocumentId != null) {
@@ -798,6 +803,7 @@ const SalesOrderList = ({
       }
     } catch {
       setDraftRecipientEmail("");
+      setDraftCcEmail("");
     } finally {
       setPreLoadedDocuments(docs);
       setShowSoApprovalEmailModal(true);
@@ -868,6 +874,7 @@ const SalesOrderList = ({
       const formData = new FormData();
       formData.append("call_id", callId);
       formData.append("to", emailData?.to ?? "");
+      formData.append("cc", emailData?.cc ?? "");
       formData.append("subject", emailData?.subject ?? "");
       formData.append("body", emailData?.message ?? "");
       if (stageDocumentEntry) formData.append("stage_document_id", stageDocumentEntry.stage_document_id);
@@ -3324,6 +3331,7 @@ const SalesOrderList = ({
           stageLabel={displayStageLabel || "SO Approval"}
           actionLabel={modalActionLabel}
           defaultTo={draftRecipientEmail}
+          defaultCc={draftCcEmail}
           preLoadedDocuments={preLoadedDocuments}
           callId={callId}
         />
