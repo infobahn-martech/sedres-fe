@@ -1848,6 +1848,11 @@ function CardForm({
   // Centralized DA Desk board (board_id "3") they should get the normal DA card view
   // (tab bar + "DA" tab) instead of the generic GRO fallback view.
   const isDAUser = String(userRoleId ?? "") === "22";
+  // Export Manager (role 1) also gets the "DA" tab, but only on the DA Hub board
+  // and only for its "Default DA Workflow" cards — the DA desk hands those calls to
+  // the Export Manager; every other workflow on that board (and every other board)
+  // stays DA-user-only. See isExportManagerDATabAccess / showDAOnlyTab below.
+  const isExportManagerUser = String(userRoleId ?? "") === "1";
   const isDABoardCard = String(boardId ?? "") === "3";
   // Port Operator (role_id "2") gets the "DA" tab + DA Status Timeline edit access
   // on the Jubail Operations board specifically (board_id "18"), even when reached
@@ -1979,6 +1984,27 @@ function CardForm({
 
   // Enable DA mode only for explicit DA routes, not generic /kanban-board/:boardId.
   const isDAModule = /^\/kanban-board\/(centralized-da-desk|jubail-operations|rastanura-dammam-operations|coordinator-transport|ras-tanura-operations)$/.test(location.pathname);
+
+  // DA Hub is its own board (board_id "17") - separate from the older Centralized
+  // DA Desk board_id "3" that isDABoard / isDaCardContext still refer to, so it gets
+  // its own check rather than widening isDABoard (which would also flip the DA status
+  // handlers on for every role on this board).
+  const isDAHubBoard = String(boardId ?? "") === "17";
+  // Card workflow name comes from get_full_board (mapBoardWorkflowFromApi sets
+  // workflow_name per card), so the DA Hub's "Default DA Workflow" cards can be told
+  // apart from the other workflows sharing that board.
+  const isDefaultDaWorkflowCard =
+    String(card?.workflow_name ?? "").trim().toLowerCase() === "default da workflow";
+  const isExportManagerDATabAccess =
+    isDAHubBoard && isExportManagerUser && isDefaultDaWorkflowCard;
+  // "DA" tab audience: the DA user (role 22) on DA cards/board, plus the Export
+  // Manager on DA Hub "Default DA Workflow" cards. Port Manager/Port Operator
+  // (isPortOperatorDAAccess) keep their scoped DA status-timeline advance access
+  // on Jubail, but never the tab.
+  const showDAOnlyTab =
+    !isDAModule &&
+    !isSimplifiedMode &&
+    (((isDAVariant || isDABoard) && isDAUser) || isExportManagerDATabAccess);
 
 
   const defaultTab = isDAModule ? "General" : (isSimplifiedMode ? "General" : "Appointment Details");
@@ -2339,27 +2365,24 @@ function CardForm({
 
   const TOP_TABS = useMemo(() => {
     const base = isDAModule ? DA_TOP_TABS : (isSimplifiedMode ? SIMPLIFIED_TOP_TABS : ALL_TOP_TABS);
-    // "DA" tab is restricted to the DA user (role 22) only — Port Manager/Port
-    // Operator (isPortOperatorDAAccess) keep their scoped DA status-timeline
-    // advance access (footer stepper/topbar sticker) on Jubail, but never the tab.
-    const withDAOnly = (isDAVariant || isDABoard) && isDAUser && !isDAModule && !isSimplifiedMode ? [...base, DA_ONLY_TAB] : base;
+    const withDAOnly = showDAOnlyTab ? [...base, DA_ONLY_TAB] : base;
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
       ? withExportTabs(withDAOnly)
       : withDAOnly;
     const withHusbandryCall = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
     return filterTabsByCardPermission(withHusbandryCall);
-  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, isDAUser, showExportTabs, isHusbandryCall, filterTabsByCardPermission]);
+  }, [isDAModule, isSimplifiedMode, showDAOnlyTab, showExportTabs, isHusbandryCall, filterTabsByCardPermission]);
 
   const ENABLED_TABS = useMemo(() => {
     const base = isDAModule ? DA_ENABLED_TABS : (isSimplifiedMode ? SIMPLIFIED_ENABLED_TABS : ALL_ENABLED_TABS);
-    const withDAOnly = (isDAVariant || isDABoard) && isDAUser && !isDAModule && !isSimplifiedMode ? [...base, DA_ONLY_TAB] : base;
+    const withDAOnly = showDAOnlyTab ? [...base, DA_ONLY_TAB] : base;
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
       ? withExportTabs(withDAOnly)
       : withDAOnly;
     const withHusbandry = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
     const withLockOperation = lockOperationForExport ? withHusbandry.filter((tab) => tab !== "Operation") : withHusbandry;
     return filterTabsByCardPermission(withLockOperation);
-  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, isDAUser, showExportTabs, isHusbandryCall, lockOperationForExport, filterTabsByCardPermission]);
+  }, [isDAModule, isSimplifiedMode, showDAOnlyTab, showExportTabs, isHusbandryCall, lockOperationForExport, filterTabsByCardPermission]);
 
   useEffect(() => {
     setActiveTopTab(defaultTab);
