@@ -552,6 +552,8 @@ const SalesOrderList = ({
   useEffect(() => {
     setSoActionState(SO_ACTION_STATE_DEFAULT);
     setIsApprovalEmailUploaded(false);
+    setApprovedByInput("");
+    setApprovedByName("");
   }, [callId, soActionStateResetToken]);
 
   // The header action button reflects and acts on the DA record's REAL current stage.
@@ -742,6 +744,13 @@ const SalesOrderList = ({
   // and per-session, same as soActionState: da/da_upload_approval_email's response carries no
   // readable flag to hydrate this from, so it's reset together with soActionState below.
   const [isApprovalEmailUploaded, setIsApprovalEmailUploaded] = useState(false);
+
+  // "Approved by" header field shown in place of the old static "Approved" label once the
+  // approval email has been uploaded (per request 2026-09-23): the typed name is committed with
+  // the tick button and wiped with the clear button. Local-only and per-session, same as
+  // isApprovalEmailUploaded above — no backend field exists for it yet.
+  const [approvedByInput, setApprovedByInput] = useState("");
+  const [approvedByName, setApprovedByName] = useState("");
 
   // api/da/da_action_email_draft/{call_id} — { status: "success", data: { recipient,
   // stage_document_id? } }. Best effort: if it fails or callId is missing, the modal just opens
@@ -2228,13 +2237,70 @@ const SalesOrderList = ({
   // "Approved" header state shared by column 4 (api/da/action_state "approved") and column 5
   // ("SO/PO Approval Received"). Per request 2026-09-17 this is a two-step state: first only
   // the "Upload Approval Email" button (opens the drag-and-drop upload modal, see
-  // handleUploadApprovalEmail); once the upload succeeds it becomes the static "Approved" label.
+  // handleUploadApprovalEmail); once the upload succeeds it becomes the "Approved by" field,
+  // where staff type in who approved the SO and commit it with the tick (per request
+  // 2026-09-23, replacing the old static "Approved" label).
+  const handleChangeApprovedBy = (event) => {
+    setApprovedByInput(event.target.value);
+    setApprovedByName("");
+  };
+
+  const handleConfirmApprovedBy = () => {
+    const name = approvedByInput.trim();
+    if (!name) {
+      useAlertReducer.getState().error("Please enter who approved this.");
+      return;
+    }
+    setApprovedByInput(name);
+    setApprovedByName(name);
+    useAlertReducer.getState().success("Approved by recorded.");
+  };
+
+  const handleClearApprovedBy = () => {
+    setApprovedByInput("");
+    setApprovedByName("");
+  };
+
   const renderApprovedWithEmailUpload = () =>
     isApprovalEmailUploaded ? (
-      <span className="sales-order-da-status-button sales-order-da-status-button--label">
-        <FiCheck />
-        Approved
-      </span>
+      <div className="sales-order-da-approved-by">
+        {approvedByName ? (
+          <span className="sales-order-da-approved-by-confirmed">
+            <FiCheck />
+            Approved by {approvedByName}
+          </span>
+        ) : (
+          <>
+            <label className="sales-order-da-approved-by-label" htmlFor="sales-order-da-approved-by">
+              Approved by
+            </label>
+            <input
+              id="sales-order-da-approved-by"
+              type="text"
+              className="sales-order-da-approved-by-input"
+              placeholder="Enter name..."
+              value={approvedByInput}
+              onChange={handleChangeApprovedBy}
+            />
+            <button
+              type="button"
+              className="sales-order-da-approved-by-btn sales-order-da-approved-by-btn--confirm"
+              title="Confirm the approver name"
+              onClick={handleConfirmApprovedBy}
+            >
+              <FiCheck />
+            </button>
+          </>
+        )}
+        <button
+          type="button"
+          className="sales-order-da-approved-by-btn sales-order-da-approved-by-btn--clear"
+          title="Clear the approver name"
+          onClick={handleClearApprovedBy}
+        >
+          <FiX />
+        </button>
+      </div>
     ) : (
       <button
         type="button"
