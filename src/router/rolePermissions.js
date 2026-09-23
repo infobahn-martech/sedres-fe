@@ -18,7 +18,8 @@ export const ROLE_IDS = {
 export const SUPER_ADMIN_API_ROLE_ID = "7";
 
 /** DA (role_id 22 in this environment's actual data, not ROLE_IDS.*); bypasses
- * routePermissions the same as SUPER_ADMIN/VENDOR, per explicit user confirmation. */
+ * routePermissions the same as SUPER_ADMIN/VENDOR — DA is granted the same
+ * unrestricted access as role 1 (Port Manager), per explicit user confirmation. */
 const DA_API_ROLE_ID = "22";
 
 const hasUnrestrictedRouteAccess = (userRoleId) =>

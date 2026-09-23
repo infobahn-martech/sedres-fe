@@ -31,7 +31,7 @@ import {
 } from "../../../../../../shared/constants/permissions";
 
 // Import Tab Components
-import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Reports, KPI, Comments, Subtasks, Notes, DA } from "../../../../CardFormTabs/Import";
+import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Reports, KPI, Comments, Subtasks, Notes } from "../../../../CardFormTabs/Import";
 import { Approval } from "../../../../CardFormTabs/Export";
 import { DEFAULT_PRE_ARRIVAL_DOCUMENT_HANDLING } from "../../../../CardFormTabs/Import/tabs/operation/preArrivalDocumentHandling";
 import { isExportCall } from "../../../../CardFormTabs/shared/utils/callTypes";
@@ -59,10 +59,6 @@ const ALL_TOP_TABS = [
 ];
 
 const ALL_ENABLED_TABS = ["Appointment Details", "Operation", "Husbandry", "Sales Order", "Reports", "Document Library", "Comments", "Subtasks", "Notes"];
-
-// "DA" tab is only appended for cardVariant === "da" cards (e.g. MV Atlantic Star),
-// not the shared ALL_TOP_TABS used by every other default-tab-bar card.
-const DA_ONLY_TAB = "DA";
 
 const EXPORT_ONLY_TABS = ["Export Approval"];
 
@@ -1768,8 +1764,6 @@ const renderTabContent = (
         return <Subtasks {...commonProps} />;
       case "Notes":
         return <Notes {...commonProps} />;
-      case "DA":
-        return <DA {...commonProps} />;
       default:
         return <General {...commonProps} />;
     }
@@ -1844,25 +1838,20 @@ function CardForm({
     [canViewAppointmentDetailsTab, canViewOperationTab, canViewHusbandryTab]
   );
   const userRoleId = getFirstUserRoleId(userProfile);
-  // DA (22) shares the GRO Supervisor view for GRO-workflow cards, but on their own
-  // Centralized DA Desk board (board_id "3") they should get the normal DA card view
-  // (tab bar + "DA" tab) instead of the generic GRO fallback view.
-  const isDAUser = String(userRoleId ?? "") === "22";
-  const isDABoardCard = String(boardId ?? "") === "3";
-  // Port Operator (role_id "2") gets the "DA" tab + DA Status Timeline edit access
-  // on the Jubail Operations board specifically (board_id "18"), even when reached
+  // Port Operator (role_id "2") gets DA Status Timeline edit access on the
+  // Jubail Operations board specifically (board_id "18"), even when reached
   // via the generic /kanban-board/:boardId route (where isDAModule's route-slug
   // regex stays false since the URL isn't the named /kanban-board/jubail-operations
   // path). Scoped to this one board on purpose — widening it to isDaCardContext
   // itself would also flip the footer stepper / topbar sticker-picker handlers
   // (handleStepClick, handleTopbarCardStickerChange) into calling the DA-only
   // daService.advanceStage endpoint on totally unrelated boards (Hotel, MWP, GRO...)
-  // for this role, which would misfire. See TOP_TABS/ENABLED_TABS and
-  // handleDaTimelineStepClick below for where this is actually used.
+  // for this role, which would misfire. See handleDaTimelineStepClick below for
+  // where this is actually used.
   const isJubailBoardCard = String(boardId ?? "") === "18";
   // Port Manager (role 1) and Port Operator (role 2) both get this same scoped DA access.
   const isPortOperatorDAAccess = isJubailBoardCard && ["1", "2"].includes(String(userRoleId ?? ""));
-  // "vessel" appointment-type calls don't have GRO tasks, so a GRO Supervisor/DA
+  // "vessel" appointment-type calls don't have GRO tasks, so a GRO Supervisor
   // viewer should see the standard tab view (with Export Approval) for them —
   // every other appointment type (tug, tug_and_barge, taxi_tug_and_barge) still
   // gets the GRO card view. This needs to be known before effectiveVariant is
@@ -1870,9 +1859,7 @@ function CardForm({
   // callDetailSnapshot (which loads after this point).
   const isGroSupervisorRoleViewer =
     isGROSupervisorRole(userRoleId) || isGROSupervisorRole(Number(userRoleId));
-  // The DA Desk board case never takes the "gro" branch regardless of appointment
-  // type (see effectiveVariant below), so it doesn't need this fetch or its loading state.
-  const needsGroViewAppointmentTypeCheck = isGroSupervisorRoleViewer && !(isDAUser && isDABoardCard);
+  const needsGroViewAppointmentTypeCheck = isGroSupervisorRoleViewer;
   const [groViewAppointmentType, setGroViewAppointmentType] = useState(null);
   const [isGroViewCallTypeLoading, setIsGroViewCallTypeLoading] = useState(false);
   useEffect(() => {
@@ -1905,13 +1892,12 @@ function CardForm({
   }, [show, isAddMode, needsGroViewAppointmentTypeCheck, card?.call_id, card?.callId]);
   const isVesselAppointmentForGroView = String(groViewAppointmentType ?? "").trim() === "vessel";
   // While the appointment type is still loading, hold off rendering either the GRO
-  // view or the tab view — otherwise a GRO-role/DA viewer briefly sees the wrong one
+  // view or the tab view — otherwise a GRO-role viewer briefly sees the wrong one
   // flash before this resolves and the real view swaps in.
   const isDecidingGroExportView = needsGroViewAppointmentTypeCheck && isGroViewCallTypeLoading;
   const effectiveVariant = (() => {
     if (
       (isGROSupervisorRole(userRoleId) || isGROSupervisorRole(Number(userRoleId))) &&
-      !(isDAUser && isDABoardCard) &&
       !isVesselAppointmentForGroView
     ) {
       return "gro";
@@ -2339,27 +2325,22 @@ function CardForm({
 
   const TOP_TABS = useMemo(() => {
     const base = isDAModule ? DA_TOP_TABS : (isSimplifiedMode ? SIMPLIFIED_TOP_TABS : ALL_TOP_TABS);
-    // "DA" tab is restricted to the DA user (role 22) only — Port Manager/Port
-    // Operator (isPortOperatorDAAccess) keep their scoped DA status-timeline
-    // advance access (footer stepper/topbar sticker) on Jubail, but never the tab.
-    const withDAOnly = (isDAVariant || isDABoard) && isDAUser && !isDAModule && !isSimplifiedMode ? [...base, DA_ONLY_TAB] : base;
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
-      ? withExportTabs(withDAOnly)
-      : withDAOnly;
+      ? withExportTabs(base)
+      : base;
     const withHusbandryCall = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
     return filterTabsByCardPermission(withHusbandryCall);
-  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, isDAUser, showExportTabs, isHusbandryCall, filterTabsByCardPermission]);
+  }, [isDAModule, isSimplifiedMode, showExportTabs, isHusbandryCall, filterTabsByCardPermission]);
 
   const ENABLED_TABS = useMemo(() => {
     const base = isDAModule ? DA_ENABLED_TABS : (isSimplifiedMode ? SIMPLIFIED_ENABLED_TABS : ALL_ENABLED_TABS);
-    const withDAOnly = (isDAVariant || isDABoard) && isDAUser && !isDAModule && !isSimplifiedMode ? [...base, DA_ONLY_TAB] : base;
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
-      ? withExportTabs(withDAOnly)
-      : withDAOnly;
+      ? withExportTabs(base)
+      : base;
     const withHusbandry = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
     const withLockOperation = lockOperationForExport ? withHusbandry.filter((tab) => tab !== "Operation") : withHusbandry;
     return filterTabsByCardPermission(withLockOperation);
-  }, [isDAModule, isSimplifiedMode, isDAVariant, isDABoard, isDAUser, showExportTabs, isHusbandryCall, lockOperationForExport, filterTabsByCardPermission]);
+  }, [isDAModule, isSimplifiedMode, showExportTabs, isHusbandryCall, lockOperationForExport, filterTabsByCardPermission]);
 
   useEffect(() => {
     setActiveTopTab(defaultTab);

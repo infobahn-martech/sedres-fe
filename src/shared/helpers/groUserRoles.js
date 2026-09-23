@@ -25,13 +25,10 @@ export function isMWPUserRole(roleId) {
   return roleId === "10" || roleId === 10;
 }
 
-// DA (22) is included here at the user's request — DA should see everything
-// GRO Supervisor (6) sees (forced "gro" card variant + supervisor-flavored GRO view).
 export function isGROSupervisorRole(roleId) {
   return (
     roleId === "6" || roleId === 6 ||
-    roleId === "8" || roleId === 8 ||
-    roleId === "22" || roleId === 22
+    roleId === "8" || roleId === 8
   );
 }
 
@@ -43,7 +40,7 @@ export function isCustomClearanceSupervisorRole(roleId) {
   return roleId === "5" || roleId === 5;
 }
 
-/** Port-level oversight roles — Port Manager (1, absorbed the deleted Port Supervisor role 3's permissions), CEO (23), DA (22, granted the same permissions as role 1 per explicit user confirmation 2026-09-23) — see the same supervisor-flavored GRO card view as GRO Supervisor when opening a GRO Workflow card. */
+/** Port-level oversight roles — Port Manager (1, absorbed the deleted Port Supervisor role 3's permissions), CEO (23), DA (22, granted the same permissions as role 1 per explicit user confirmation) — see the same supervisor-flavored GRO card view as GRO Supervisor when opening a GRO Workflow card. */
 export function isPortSupervisorRole(roleId) {
   return (
     roleId === "1" || roleId === 1 ||

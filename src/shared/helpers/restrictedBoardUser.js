@@ -6,8 +6,10 @@ import {
 } from './groUserRoles';
 
 /** Sedres desk roles — limited board/workspace access (includes Taxi Boat Operator 20, Taxi Boat Captain 21).
- * DA (22) removed per explicit user confirmation (2026-09-23) — DA now gets the
- * same unrestricted workspaces/header access as role 1 (Port Manager). */
+ * DA (22) removed per explicit user confirmation — DA now gets the same
+ * unrestricted workspaces/header access as role 1 (Port Manager). Route access
+ * to kanban boards is instead covered via hasUnrestrictedRouteAccess in
+ * rolePermissions.js, so removing DA here doesn't break board navigation. */
 export const SEDRES_RESTRICTED_ROLE_IDS = new Set(['4', '5', '6', '8', '9', '10', '19', '20', '21']);
 
 function isSedresRestrictedBoardRoleId(roleId) {
@@ -23,7 +25,7 @@ export const PORT_OPERATOR_ROLE_ID = '2';
 /** Port Manager — full Kanban sidebar (Add, On Station, Edit Workflow, Outlook, Settings) */
 export const KANBAN_FULL_SIDEBAR_ROLE_ID = '1';
 
-/** DA — granted the same full Kanban sidebar as Port Manager, per explicit user confirmation (2026-09-23) */
+/** DA — granted the same full Kanban sidebar as Port Manager, per explicit user confirmation */
 export const DA_ROLE_ID = '22';
 
 /** Fallback landing path for restricted users when a route isn't allowed — not a specific board. */

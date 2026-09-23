@@ -111,7 +111,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   const isPortManagerRole = String(userRoleId) === '1';
   const isPortSupervisorRole = String(userRoleId) === '23';
   // DA (22) granted the same Kanban sidebar rail as Port Manager, per
-  // explicit user confirmation (2026-09-23).
+  // explicit user confirmation.
   const isDARole = String(userRoleId) === '22';
   const restrictedNav = isRestrictedBoardUser(userProfile);
   // Classic sidebar only renders while already on a /kanban-board/* (or /compact)

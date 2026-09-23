@@ -86,7 +86,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const isPortManagerRole = String(userRoleId) === '1';
   const isPortSupervisorRole = String(userRoleId) === '23';
   // DA (22) granted the same settings-icon access as Port Manager, per
-  // explicit user confirmation (2026-09-23).
+  // explicit user confirmation.
   const isDARole = String(userRoleId) === '22';
   const showKanbanSettingsIcon =
     !activePortal &&

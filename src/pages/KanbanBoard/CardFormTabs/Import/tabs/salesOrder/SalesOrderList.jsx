@@ -273,7 +273,7 @@ const SalesOrderList = ({
 }) => {
   // Broader "this is a DA card" signal — isDAModule alone only covers the dedicated DA-desk
   // board routes; isDaCardContext also covers DA-variant/DA-board cards reached via the
-  // generic /kanban-board/:boardId route (where a separate "DA" tab is appended instead).
+  // generic /kanban-board/:boardId route.
   const isDaContext = isDAModule || isDaCardContext;
   //
   // The Sales Order tab's header DA action button (status/advance button, SO approval

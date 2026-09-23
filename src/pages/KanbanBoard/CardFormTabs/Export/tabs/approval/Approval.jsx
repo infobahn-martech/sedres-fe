@@ -775,15 +775,16 @@ const createEmptyPartySection = () => ({
     // Each role owns exactly one section — Credit Controller, Manager (OFM), CEO.
     // Every other role gets all three sections locked (view-only), regardless
     // of workflow stage. Per explicit user confirmation (Permission Fix,
-    // 2026-08-04): Credit Controller = role_id 22 (DA — the earlier "2" mapping
-    // and the separate DA stand-in-access logic are both superseded by this),
-    // Manager = role_id 1 (absorbed the deleted Port Supervisor role 3's
-    // permissions), CEO = role_id 23 only. Not ROLE_IDS.* (used app-wide for
-    // routing, left untouched here) since that mapping doesn't match this
-    // environment's actual data.
+    // 2026-08-04): Manager = role_id 1 (absorbed the deleted Port Supervisor
+    // role 3's permissions), CEO = role_id 23 only. Not ROLE_IDS.* (used
+    // app-wide for routing, left untouched here) since that mapping doesn't
+    // match this environment's actual data.
+    // Credit Controller is no longer assigned to any role_id — the role-22
+    // (DA) check that previously owned this section was removed per explicit
+    // user confirmation; the section now stays locked for every role.
+    const isControllerRole = false;
     // DA (22) additionally granted Manager-section access per explicit user
-    // confirmation (2026-09-23) — DA now gets the same permissions as role 1.
-    const isControllerRole = String(userRoleId) === "22";
+    // confirmation — DA now gets the same permissions as role 1.
     const isManagerRole = String(userRoleId) === "1" || String(userRoleId) === "22";
     const isCeoRole = String(userRoleId) === "23";
     // Vessel party image uploads are restricted to Credit Controller and CEO
@@ -806,10 +807,8 @@ const createEmptyPartySection = () => ({
     // already on hold, since re-clicking it is a no-op.
     const isCeoStageUsable = stageActive.ceo || isOnHold;
 
-    // Credit Controller (role_id 22) edits this section up to the point it has
-    // acted — once creditControllerApproved or the stage has moved on
-    // (!stageActive.credit_controller), the existing fieldsDisabled/hideActions
-    // checks below lock it. Every other role stays view-only.
+    // Credit Controller section is locked (view-only) for every role — see
+    // isControllerRole above.
     const canEditCreditControllerSection = isControllerRole;
 
     // "Approved" doesn't advance the effective stage (only "proceed_to_*"
