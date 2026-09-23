@@ -67,10 +67,6 @@ export function mapBoardWorkflowFromApi(workflow) {
   const title = workflow.workflow_name || "Untitled Workflow";
   const isTaskWorkflow = title === "Task Workflow";
   const workflowRoleId = workflow.role_id ?? null;
-  // get_full_board marks each board's default workflow with is_default "1" — carried
-  // onto every card below so consumers can identify it by backend key rather than by
-  // matching the display name (which renames break).
-  const workflowIsDefault = String(workflow.is_default ?? "") === "1";
   const boardId =
     workflow.board_id != null && workflow.board_id !== "" ? String(workflow.board_id) : undefined;
 
@@ -212,7 +208,6 @@ export function mapBoardWorkflowFromApi(workflow) {
             workflow_id: wfId,
             workflow_role_id: workflowRoleId,
             workflow_name: title,
-            workflow_is_default: workflowIsDefault,
             title: card.card_name || "",
             name: card.billing_entity || "",
             user: card.username || "",

@@ -61,7 +61,7 @@ const ALL_TOP_TABS = [
 const ALL_ENABLED_TABS = ["Appointment Details", "Operation", "Husbandry", "Sales Order", "Reports", "Document Library", "Comments", "Subtasks", "Notes"];
 
 // "DA" tab is appended to the default tab bar only for viewers the backend grants
-// KANBAN_CARD:DA, on DA Hub "Default DA Workflow" cards - see showDAOnlyTab.
+// KANBAN_CARD:DA - see showDAOnlyTab.
 const DA_ONLY_TAB = "DA";
 
 const EXPORT_ONLY_TABS = ["Export Approval"];
@@ -1980,21 +1980,10 @@ function CardForm({
   // Enable DA mode only for explicit DA routes, not generic /kanban-board/:boardId.
   const isDAModule = /^\/kanban-board\/(centralized-da-desk|jubail-operations|rastanura-dammam-operations|coordinator-transport|ras-tanura-operations)$/.test(location.pathname);
 
-  // DA Hub board (board_id "17"). KANBAN_CARD:DA is granted per user, not per
-  // board, so the tab stays scoped to this board's DA workflow rather than showing
-  // on every card the permission holder opens anywhere in the app.
-  const isDAHubBoard = String(boardId ?? "") === "17";
-  // Board 17 carries two workflows ("DA Supervisor" and "Default DA Workflow");
-  // only the default one gets the tab. Keyed off get_full_board's own is_default
-  // flag (mapBoardWorkflowFromApi carries it onto each card) rather than matching
-  // the workflow's display name, which a rename would silently break.
-  const isDefaultDaWorkflowCard = card?.workflow_is_default === true;
-  const showDAOnlyTab =
-    !isDAModule &&
-    !isSimplifiedMode &&
-    isDAHubBoard &&
-    isDefaultDaWorkflowCard &&
-    canViewDATab;
+  // "DA" tab is shown purely on the backend permission key - no board or workflow
+  // hardcoding here. Whoever the backend grants KANBAN_CARD:DA sees the tab; where
+  // it applies is decided backend-side when the permission is assigned.
+  const showDAOnlyTab = !isDAModule && !isSimplifiedMode && canViewDATab;
 
 
   const defaultTab = isDAModule ? "General" : (isSimplifiedMode ? "General" : "Appointment Details");
