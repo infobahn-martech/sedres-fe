@@ -3785,3 +3785,80 @@ $so-po-blue: #1a56db;
     padding-right: 18px;
   }
 }
+
+// "Approved by" capture shown in the SO list header once the client's SO approval email has
+// been uploaded (replaces the old static "Approved" label) — name field plus confirm/clear
+// icon buttons.
+.sales-order-da-approved-by {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid var(--border-primary);
+  border-radius: 9px;
+  background: var(--surface-primary);
+}
+
+.sales-order-da-approved-by-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.sales-order-da-approved-by-input {
+  width: 150px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-primary);
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--surface-secondary);
+}
+
+.sales-order-da-approved-by-input:focus {
+  outline: none;
+  border-color: #2e9e2e;
+}
+
+// Committed state: the typed name is shown back as a plain "Approved by <name>" label with
+// only the clear button beside it.
+.sales-order-da-approved-by-confirmed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2e9e2e;
+  white-space: nowrap;
+}
+
+.sales-order-da-approved-by-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  color: var(--text-inverse);
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.sales-order-da-approved-by-btn--confirm {
+  background: #2e9e2e;
+}
+
+.sales-order-da-approved-by-btn--confirm:hover {
+  background: #278a27;
+}
+
+.sales-order-da-approved-by-btn--clear {
+  background: #d64545;
+}
+
+.sales-order-da-approved-by-btn--clear:hover {
+  background: #c13a3a;
+}
