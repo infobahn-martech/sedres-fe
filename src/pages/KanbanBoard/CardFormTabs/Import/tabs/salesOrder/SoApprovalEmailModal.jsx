@@ -44,6 +44,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState([]);
   const [toError, setToError] = useState("");
+  const [subjectError, setSubjectError] = useState("");
   const [messageError, setMessageError] = useState("");
   // "From Document Library" — lets staff also attach a document straight from the call's real
   // Document Library tab (folder tree + preview, api/attachments/get_all_attachments) instead
@@ -75,6 +76,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
       setToValue(defaultTo);
       setCcValue(defaultCc);
       setToError("");
+      setSubjectError("");
       // Prefilled (not just a placeholder) — api/da/da_send_action_email requires a non-empty
       // body and rejects the whole request otherwise ({"status":"error","message":"call_id,
       // to, subject and body are required"}), so an empty Quill editor used to let staff submit
@@ -120,6 +122,14 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
     if (isSubmitting) return;
     if (!toValue.trim()) {
       setToError("Please enter at least one recipient.");
+      return;
+    }
+    // Subject is prefilled from the stage's action label, but staff can clear it — and
+    // api/da/da_send_action_email rejects the whole request then ({"status":"error",
+    // "message":"call_id, to, subject and body are required"}), same as an empty body.
+    // Caught here so it fails inline instead of as a toast after a pointless round trip.
+    if (!subjectValue.trim()) {
+      setSubjectError("Please enter a subject.");
       return;
     }
     // Quill's empty state isn't "" once touched (e.g. "<p><br></p>"), so strip tags before
@@ -193,10 +203,14 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
               type="text"
               className="so-approval-email-field-input"
               value={subjectValue}
-              onChange={(e) => setSubjectValue(e.target.value)}
+              onChange={(e) => {
+                setSubjectValue(e.target.value);
+                if (subjectError) setSubjectError("");
+              }}
               placeholder="Email subject"
               disabled={isSubmitting}
             />
+            {subjectError && <div className="so-approval-email-field-error">{subjectError}</div>}
           </div>
         </div>
 
