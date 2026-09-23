@@ -38,6 +38,7 @@ export const PERMISSION_SUBMODULES = {
   DEPARTURE: "DEPARTURE",
   CHECKLIST: "CHECKLIST",
   HUSBANDRY: "HUSBANDRY",
+  DA: "DA",
   CREW_MANAGEMENT: "CREW_MANAGEMENT",
   MATERIAL_MANAGEMENT: "MATERIAL_MANAGEMENT",
   PERMISSIONS: "PERMISSIONS",
@@ -240,6 +241,11 @@ export const PERMISSIONS = {
       },
       HUSBANDRY: {
         key: PERMISSION_SUBMODULES.HUSBANDRY,
+      },
+      // Same shape as CHECKLIST/HUSBANDRY - no actions, presence of the
+      // submodule is itself the view gate for the card modal's "DA" tab.
+      DA: {
+        key: PERMISSION_SUBMODULES.DA,
       },
       CREW_MANAGEMENT: {
         key: PERMISSION_SUBMODULES.CREW_MANAGEMENT,
