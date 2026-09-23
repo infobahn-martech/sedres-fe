@@ -1984,11 +1984,11 @@ function CardForm({
   // board, so the tab stays scoped to this board's DA workflow rather than showing
   // on every card the permission holder opens anywhere in the app.
   const isDAHubBoard = String(boardId ?? "") === "17";
-  // Card workflow name comes from get_full_board (mapBoardWorkflowFromApi sets
-  // workflow_name per card), so the DA Hub's "Default DA Workflow" cards can be
-  // told apart from the other workflows sharing that board.
-  const isDefaultDaWorkflowCard =
-    String(card?.workflow_name ?? "").trim().toLowerCase() === "default da workflow";
+  // Board 17 carries two workflows ("DA Supervisor" and "Default DA Workflow");
+  // only the default one gets the tab. Keyed off get_full_board's own is_default
+  // flag (mapBoardWorkflowFromApi carries it onto each card) rather than matching
+  // the workflow's display name, which a rename would silently break.
+  const isDefaultDaWorkflowCard = card?.workflow_is_default === true;
   const showDAOnlyTab =
     !isDAModule &&
     !isSimplifiedMode &&
