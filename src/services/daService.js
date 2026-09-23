@@ -22,13 +22,14 @@ const updateStatus = (payload) => Gateway.post('/da/update_status', payload);
 const deleteSalesLineItem = (payload) => Gateway.post('/da/da_delete_sales_line_item', payload);
 /** @param {{ so_item_id: string|number }} payload */
 const verifySalesLineItem = (payload) => Gateway.post('/da/da_verify_sales_line_item', payload);
-/** @param {FormData} formData - call_id, to, subject, body, stage_document_id? — backend only
+/** @param {FormData} formData - call_id, to, cc, subject, body, stage_document_id?,
+ * attachments[]? — cc comes from getActionEmailDraft's `cc` and is editable in the modal. Backend only
  * reads multipart form fields for this route, rejects a JSON body as missing all of them. */
 const sendActionEmail = (formData) =>
   Gateway.post('/da/da_send_action_email', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-/** @returns {Promise<{ data: { status: string, data: { recipient: string, stage_document_id?: string|number, document_url?: string } } }>}
+/** @returns {Promise<{ data: { status: string, data: { recipient: string, cc?: string, stage_document_id?: string|number, document_url?: string } } }>}
  * stage_document_id (when present) is a document the backend already holds for this stage —
  * confirmed via a live response 2026-09-15; feed it back into sendActionEmail's FormData.
  * document_url (added to the response 2026-09-15) is that same document's file URL — lets the

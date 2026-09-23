@@ -34,7 +34,9 @@ const DEFAULT_MESSAGE_HTML =
 // defaultTo is the recipient from api/da/da_action_email_draft/{call_id} (fetched by
 // SalesOrderList right before opening this modal) — prefills "To" with the backend's own
 // suggested recipient instead of making staff type it every time; still freely editable.
-const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, soCustomerName = "", stageLabel = "SO Approval", actionLabel = "", defaultTo = "", preLoadedDocuments = [], callId = null }) => {
+// defaultCc is that same draft response's `cc` — the backend owns this stage's cc list too,
+// so it prefills "Cc" the same way (empty when the backend sends none); also editable.
+const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, soCustomerName = "", stageLabel = "SO Approval", actionLabel = "", defaultTo = "", defaultCc = "", preLoadedDocuments = [], callId = null }) => {
   const [fromValue, setFromValue] = useState("operations@shipping.com");
   const [toValue, setToValue] = useState("");
   const [ccValue, setCcValue] = useState("");
@@ -71,6 +73,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
       // "Closed paid Request"), so this keeps them in sync for every stage.
       setSubjectValue(`${actionLabel || stageLabel}${soCustomerName ? ` — ${soCustomerName}` : ""}`);
       setToValue(defaultTo);
+      setCcValue(defaultCc);
       setToError("");
       // Prefilled (not just a placeholder) — api/da/da_send_action_email requires a non-empty
       // body and rejects the whole request otherwise ({"status":"error","message":"call_id,
@@ -81,7 +84,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
       // Pre-load documents from verified SO line items' Supporting Documents field
       setAttachments(preLoadedDocuments || []);
     }
-  }, [show, soCustomerName, stageLabel, actionLabel, defaultTo, preLoadedDocuments]);
+  }, [show, soCustomerName, stageLabel, actionLabel, defaultTo, defaultCc, preLoadedDocuments]);
 
   const handleFilesSelected = (fileList) => {
     const files = Array.from(fileList || []).filter((file) => file);
@@ -354,6 +357,7 @@ SoApprovalEmailModal.propTypes = {
   stageLabel: PropTypes.string,
   actionLabel: PropTypes.string,
   defaultTo: PropTypes.string,
+  defaultCc: PropTypes.string,
   preLoadedDocuments: PropTypes.arrayOf(PropTypes.object),
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
