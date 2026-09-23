@@ -480,7 +480,7 @@ const BOARD_META_PICKERS = {
   tag: {
     header: "Card tag",
     emptyLabel: "tags",
-    showRowIcon: false,
+    showRowIcon: true,
     showTopbarDynamicIcon: false,
     resolveSelectedId: resolveCardTagIdFromCard,
     listKeys: ["card_tags", "tags"],
@@ -552,7 +552,7 @@ const CardMetaPickerSwatch = ({ colorCode, iconKey }) => {
   const fg = contrastIconFg(colorCode);
   return (
     <span className="cardform-type-picker-row-icon" style={{ backgroundColor: colorCode }} aria-hidden>
-      <DynamicIcon iconKey={iconKey} size={14} color={fg} />
+      {iconKey ? <DynamicIcon iconKey={iconKey} size={14} color={fg} /> : null}
     </span>
   );
 };
