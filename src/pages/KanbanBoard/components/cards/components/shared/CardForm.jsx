@@ -31,7 +31,7 @@ import {
 } from "../../../../../../shared/constants/permissions";
 
 // Import Tab Components
-import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Reports, KPI, Comments, Subtasks, Notes } from "../../../../CardFormTabs/Import";
+import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Reports, KPI, Comments, Subtasks, Notes, DA } from "../../../../CardFormTabs/Import";
 import { Approval } from "../../../../CardFormTabs/Export";
 import { DEFAULT_PRE_ARRIVAL_DOCUMENT_HANDLING } from "../../../../CardFormTabs/Import/tabs/operation/preArrivalDocumentHandling";
 import { isExportCall } from "../../../../CardFormTabs/shared/utils/callTypes";
@@ -59,6 +59,10 @@ const ALL_TOP_TABS = [
 ];
 
 const ALL_ENABLED_TABS = ["Appointment Details", "Operation", "Husbandry", "Sales Order", "Reports", "Document Library", "Comments", "Subtasks", "Notes"];
+
+// "DA" tab is appended to the default tab bar only for viewers the backend grants
+// KANBAN_CARD:DA - see showDAOnlyTab.
+const DA_ONLY_TAB = "DA";
 
 const EXPORT_ONLY_TABS = ["Export Approval"];
 
@@ -1764,6 +1768,8 @@ const renderTabContent = (
         return <Subtasks {...commonProps} />;
       case "Notes":
         return <Notes {...commonProps} />;
+      case "DA":
+        return <DA {...commonProps} />;
       default:
         return <General {...commonProps} />;
     }
@@ -1965,6 +1971,14 @@ function CardForm({
 
   // Enable DA mode only for explicit DA routes, not generic /kanban-board/:boardId.
   const isDAModule = /^\/kanban-board\/(centralized-da-desk|jubail-operations|rastanura-dammam-operations|coordinator-transport|ras-tanura-operations)$/.test(location.pathname);
+
+  // "DA" tab visibility is backend-driven, never role_id: get_full_board returns a
+  // per-card da_board flag (1 = enabled). Read from the mapped card, falling back to
+  // the raw API card for entry points that pass one straight through. Backend sends
+  // it as a number, so compare as a string to tolerate 1 and "1" alike.
+  const canViewDATab =
+    String(card?.da_board ?? card?.raw?.da_board ?? "").trim() === "1";
+  const showDAOnlyTab = !isDAModule && !isSimplifiedMode && canViewDATab;
 
 
   const defaultTab = isDAModule ? "General" : (isSimplifiedMode ? "General" : "Appointment Details");
@@ -2325,22 +2339,24 @@ function CardForm({
 
   const TOP_TABS = useMemo(() => {
     const base = isDAModule ? DA_TOP_TABS : (isSimplifiedMode ? SIMPLIFIED_TOP_TABS : ALL_TOP_TABS);
+    const withDAOnly = showDAOnlyTab ? [...base, DA_ONLY_TAB] : base;
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
-      ? withExportTabs(base)
-      : base;
+      ? withExportTabs(withDAOnly)
+      : withDAOnly;
     const withHusbandryCall = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
     return filterTabsByCardPermission(withHusbandryCall);
-  }, [isDAModule, isSimplifiedMode, showExportTabs, isHusbandryCall, filterTabsByCardPermission]);
+  }, [isDAModule, isSimplifiedMode, showDAOnlyTab, showExportTabs, isHusbandryCall, filterTabsByCardPermission]);
 
   const ENABLED_TABS = useMemo(() => {
     const base = isDAModule ? DA_ENABLED_TABS : (isSimplifiedMode ? SIMPLIFIED_ENABLED_TABS : ALL_ENABLED_TABS);
+    const withDAOnly = showDAOnlyTab ? [...base, DA_ONLY_TAB] : base;
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
-      ? withExportTabs(base)
-      : base;
+      ? withExportTabs(withDAOnly)
+      : withDAOnly;
     const withHusbandry = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
     const withLockOperation = lockOperationForExport ? withHusbandry.filter((tab) => tab !== "Operation") : withHusbandry;
     return filterTabsByCardPermission(withLockOperation);
-  }, [isDAModule, isSimplifiedMode, showExportTabs, isHusbandryCall, lockOperationForExport, filterTabsByCardPermission]);
+  }, [isDAModule, isSimplifiedMode, showDAOnlyTab, showExportTabs, isHusbandryCall, lockOperationForExport, filterTabsByCardPermission]);
 
   useEffect(() => {
     setActiveTopTab(defaultTab);
