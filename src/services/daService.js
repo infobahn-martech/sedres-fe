@@ -40,11 +40,11 @@ const uploadInvoice = (formData) =>
   Gateway.post('/da/da_upload_invoice', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-/** @param {FormData} formData - call_id + approval_email file(s), multipart/form-data. Stores the
- * client's SO approval email once the decision has been recorded as approved. Route name is
- * assumed (mirrors da_upload_invoice) — not yet confirmed against a deployed backend route. */
-const uploadApprovalEmail = (formData) =>
-  Gateway.post('/da/da_upload_approval_email', formData, {
+/** @param {FormData} formData - call_id + proof file(s), multipart/form-data.
+ * @returns {Promise<{ data: { status: 'success', stage_document_id: number } | { status: 'error', message: string } }>}
+ * Stores the client's SO approval proof once the decision has been recorded as approved. */
+const uploadSoApprovalProof = (formData) =>
+  Gateway.post('/da/da_upload_so_approval_proof', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 /** @param {{ call_id: string|number, decision: 1|0 }} payload - decision: 1 = approved, 0 = rejected */
@@ -73,7 +73,7 @@ export default {
   sendActionEmail,
   getActionEmailDraft,
   uploadInvoice,
-  uploadApprovalEmail,
+  uploadSoApprovalProof,
   recordClientDecision,
   getActionState,
 };

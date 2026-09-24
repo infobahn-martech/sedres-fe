@@ -4,6 +4,8 @@ import CustomModal from './CustomModal';
 // title / fieldLabel / accept / formatsHint / inputId default to the original invoice-upload
 // wording so existing callers are unchanged; SalesOrderList's SO approval email upload passes
 // its own. inputId must be unique per mounted instance (the drop zone clicks it by id).
+// allowEmptyUpload lets a caller submit with no file so the backend's own validation message
+// is shown in the modal (SO approval proof); it stays false for every existing caller.
 function UploadInvoiceModal({
     show,
     closeModal,
@@ -15,6 +17,7 @@ function UploadInvoiceModal({
     accept = '.pdf,.jpg,.jpeg,.jpe',
     formatsHint = 'PDF, JPG, JPEG',
     inputId = 'upload-invoice-input',
+    allowEmptyUpload = false,
 }) {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
@@ -162,7 +165,7 @@ function UploadInvoiceModal({
                 className="btn btn-primary"
                 disabled={isUploading}
                 onClick={async () => {
-                    if (!selectedFiles.length) {
+                    if (!allowEmptyUpload && !selectedFiles.length) {
                         setError('Please select at least one file');
                         return;
                     }
