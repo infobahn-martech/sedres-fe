@@ -250,25 +250,29 @@ export default function SalesOrderPoModal({ show, cards = [], onClose, onGenerat
         }
       />
 
-      <GeneratePOModal
-        show={showGeneratePOModal}
-        onClose={() => !isSubmitting && setShowGeneratePOModal(false)}
-        onGenerate={handleGeneratePO}
-        isSubmitting={isSubmitting}
-        error={submitError}
-        selectedItems={activeEligibleItems.map((item) => item.id)}
-        salesOrderList={activeMapped?.salesOrderList || []}
-        soNumber={activeMapped?.soSoNo}
-        status={activeMapped?.soStatus}
-        postingDate={activeMapped?.soPostingDate}
-        deliveryDate={activeMapped?.soDeliveryDate}
-        documentDate={activeMapped?.soDocumentDate}
-        branch={activeMapped?.branch}
-        contactPerson={activeMapped?.soContactPerson}
-        localCurrency={activeMapped?.soBpCurrency}
-        owner={activeMapped?.soOwner}
-        initialDiscountPercentage={activeMapped?.soDiscountPercentage || 0}
-      />
+      {/* Mounted only while open: GeneratePOModal fetches getvendors/get_po/calculate_totals on
+          mount, so keeping it always mounted fired those calls on board load with no items. */}
+      {showGeneratePOModal && (
+        <GeneratePOModal
+          show={showGeneratePOModal}
+          onClose={() => !isSubmitting && setShowGeneratePOModal(false)}
+          onGenerate={handleGeneratePO}
+          isSubmitting={isSubmitting}
+          error={submitError}
+          selectedItems={activeEligibleItems.map((item) => item.id)}
+          salesOrderList={activeMapped?.salesOrderList || []}
+          soNumber={activeMapped?.soSoNo}
+          status={activeMapped?.soStatus}
+          postingDate={activeMapped?.soPostingDate}
+          deliveryDate={activeMapped?.soDeliveryDate}
+          documentDate={activeMapped?.soDocumentDate}
+          branch={activeMapped?.branch}
+          contactPerson={activeMapped?.soContactPerson}
+          localCurrency={activeMapped?.soBpCurrency}
+          owner={activeMapped?.soOwner}
+          initialDiscountPercentage={activeMapped?.soDiscountPercentage || 0}
+        />
+      )}
     </>
   );
 }
