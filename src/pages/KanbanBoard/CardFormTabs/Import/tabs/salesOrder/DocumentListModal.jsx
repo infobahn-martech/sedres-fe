@@ -86,7 +86,7 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], librar
 
     const newDocs = files.map((file, idx) => {
       const ext = (file.name.split(".").pop() || "").toUpperCase();
-      return { id: `local-${Date.now()}-${idx}`, name: file.name, type: ext || "FILE" };
+      return { id: `local-${Date.now()}-${idx}`, name: file.name, type: ext || "FILE", file };
     });
     setUploadedDocs((prev) => [...prev, ...newDocs]);
     setSelected((prev) => {

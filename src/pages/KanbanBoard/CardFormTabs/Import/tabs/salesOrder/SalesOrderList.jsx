@@ -1642,19 +1642,36 @@ const SalesOrderList = ({
     }
     if (isSavingItem) return;
 
-    const payload = {
-      call_id: callId,
-      tariff_id: newItemForm.tariffId,
-      quantity: parseFloat(newItemForm.qty) || 1,
-      type_PO: newItemForm.typeOfPo || "",
-      supporting_docu: (newItemForm.documents || []).map((d) => d.name).join(", "),
-      vendor_id: newItemForm.supplierCode || "",
-      discount: parseFloat(newItemForm.discount) || 0,
-    };
-
     setIsSavingItem(true);
     try {
-      const response = await salesOrderService.saveSalesOrderItem(payload);
+      // sales_order/save_sales_order_item — multipart/form-data: { call_id, tariff_id, quantity,
+      // documents[], vendor_id, discount_percentage }. Files picked from the device are staged
+      // with their File (DocumentListModal); library docs only carry a url, so they're fetched
+      // into Files here, same as handleCreateSoApprovalEmail does for its library attachments.
+      const documentFiles = [];
+      for (const doc of newItemForm.documents || []) {
+        if (doc.file instanceof File) {
+          documentFiles.push(doc.file);
+        } else if (doc.url) {
+          try {
+            const res = await fetch(doc.url);
+            const blob = await res.blob();
+            documentFiles.push(new File([blob], doc.name, { type: blob.type }));
+          } catch {
+            useAlertReducer.getState().error(`Couldn't attach "${doc.name}" — saving without it.`);
+          }
+        }
+      }
+
+      const formData = new FormData();
+      formData.append("call_id", callId);
+      formData.append("tariff_id", newItemForm.tariffId);
+      formData.append("quantity", parseFloat(newItemForm.qty) || 1);
+      documentFiles.forEach((file) => formData.append("documents[]", file));
+      formData.append("vendor_id", newItemForm.supplierCode || "");
+      formData.append("discount_percentage", parseFloat(newItemForm.discount) || 0);
+
+      const response = await salesOrderService.saveSalesOrderItem(formData);
       const body = response?.data;
       if (body?.status !== "success") {
         throw new Error(body?.message || "Failed to save sales order item.");
