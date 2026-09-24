@@ -18,6 +18,22 @@ const derivePermissionState = (profileData) => ({
   permissionMap: normalizePermissionSections(profileData?.permissions?.sections),
 });
 
+// Shared in-flight getUserDetail request so concurrent callers (login() and
+// PrivateRoutes' mount effect) reuse one network call instead of duplicating it.
+let pendingProfileRequest = null;
+
+const fetchUserDetailOnce = (userId) => {
+  if (pendingProfileRequest?.userId === userId) return pendingProfileRequest.promise;
+  const request = {
+    userId,
+    promise: authService.getUserDetail(userId).finally(() => {
+      if (pendingProfileRequest === request) pendingProfileRequest = null;
+    }),
+  };
+  pendingProfileRequest = request;
+  return request.promise;
+};
+
 const useAuthReducer = create((set) => ({
   authData: null,
   userProfile: null,
@@ -240,7 +256,7 @@ const useAuthReducer = create((set) => ({
       }
 
       // Always use getUserDetail endpoint (only if not skipping)
-      const response = await authService.getUserDetail(finalUserId);
+      const response = await fetchUserDetailOnce(finalUserId);
       const profileData = response.data?.data || response.data;
 
       // Save to localStorage for future refresh scenarios

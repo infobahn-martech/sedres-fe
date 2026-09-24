@@ -3,6 +3,19 @@ import useAlertReducer from './AlertReducer';
 import workSpaceService from '../services/workSpaceService';
 import kanbanDashboardService from '../services/kanbanDashboardService';
 
+// Shared in-flight list_all_dashboard request so concurrent callers (SideNav
+// panel and the dashboard page mounting together) reuse one network call.
+let pendingDashboardsRequest = null;
+
+const fetchDashboardsOnce = () => {
+  if (!pendingDashboardsRequest) {
+    pendingDashboardsRequest = kanbanDashboardService.listAllDashboards().finally(() => {
+      pendingDashboardsRequest = null;
+    });
+  }
+  return pendingDashboardsRequest;
+};
+
 const useWorkSpaceReducer = create((set, get) => ({
   isLoading: false,
   workspacesFetched: false,
@@ -45,7 +58,7 @@ const useWorkSpaceReducer = create((set, get) => ({
   listAllDashboards: async () => {
     try {
       set({ dashboardsLoading: true });
-      const { data } = await kanbanDashboardService.listAllDashboards();
+      const { data } = await fetchDashboardsOnce();
       const raw = data?.status === 'success' ? data.data ?? [] : [];
       const dashboards = Array.isArray(raw) ? raw : [];
       set({ dashboards, dashboardsLoading: false });
