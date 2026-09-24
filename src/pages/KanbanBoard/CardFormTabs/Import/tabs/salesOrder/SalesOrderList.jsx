@@ -2595,7 +2595,7 @@ const SalesOrderList = ({
                           <span className="sales-order-add-form-error">{itemNoError}</span>
                         )}
                       </div>
-                      <div className="sales-order-add-form-field" style={{ gridColumn: "span 2" }}>
+                      <div className="sales-order-add-form-field">
                         <label>Item Description <span style={{ color: "#e53935" }}>*</span></label>
                         <input
                           type="text"
