@@ -264,6 +264,7 @@ const SalesOrderList = ({
   isLoadingSalesOrder = false,
   salesOrderError = null,
   refreshSalesOrder,
+  daStatusRefreshToken,
   onAdvanceDaStage,
   isAdvancingDaStage = false,
   onDaStatusRefresh,
@@ -537,24 +538,46 @@ const SalesOrderList = ({
 
   // Column 4 ("SO Sent for approval") button state: { button_state: "send" |
   // "awaiting_approval" | "approved", last_email_sent_date, last_decision, last_decision_date }.
-  // Per request 2026-09-11: no longer round-tripped through api/da/action_state at all — that
-  // endpoint's persisted button_state can't yet be trusted (reopening the card could show a
-  // stale/desynced state), so this is reset to the plain "send" starting point every time the
-  // card opens (see the reset effect below) and from then on is updated only locally, by
-  // handleCreateSoApprovalEmail / handleApproveDaClientDecision / handleRejectDaClientDecision
-  // below, for the current session only. Temporary — revisit once the backend's persistence for
-  // this is confirmed reliable.
+  // Hydrated from api/da/action_state/{call_id} again (restored per request 2026-09-24 — the
+  // 2026-09-11 local-only/per-session version is gone), so reopening a card shows the state the
+  // backend actually persisted. The local setSoActionState calls in handleCreateSoApprovalEmail /
+  // handleApproveDaClientDecision / handleRejectDaClientDecision below stay as optimistic
+  // updates until the refetch below confirms them. Falls back to SO_ACTION_STATE_DEFAULT
+  // ("send") whenever the fetch fails or the call isn't found.
   const [soActionState, setSoActionState] = useState(SO_ACTION_STATE_DEFAULT);
+  // Whether the client's approval was recorded in THIS session (handleApproveDaClientDecision
+  // below) — see effectiveSoButtonState for why a persisted "approved" alone isn't enough.
+  const [didApproveSoInSession, setDidApproveSoInSession] = useState(false);
+
+  const fetchSoActionState = useCallback(() => {
+    if (!callId) return;
+    daService
+      .getActionState(callId)
+      .then(({ data }) =>
+        setSoActionState(data?.status === "success" ? data.data ?? SO_ACTION_STATE_DEFAULT : SO_ACTION_STATE_DEFAULT)
+      )
+      .catch(() => setSoActionState(SO_ACTION_STATE_DEFAULT));
+  }, [callId]);
 
   // soActionStateResetToken is bumped by CardForm's handleClose on every close (see there) —
   // closing and reopening the SAME card doesn't necessarily remount this component, so callId
   // alone wasn't enough to catch that case, only an actual page refresh (a real fresh mount).
+  // Resets to the default first so the previous card's state never shows while the fetch below
+  // is still in flight.
   useEffect(() => {
     setSoActionState(SO_ACTION_STATE_DEFAULT);
+    setDidApproveSoInSession(false);
     setIsApprovalEmailUploaded(false);
     setApprovedByInput("");
     setApprovedByName("");
   }, [callId, soActionStateResetToken]);
+
+  // daStatusRefreshToken is bumped by onDaStatusRefresh after every action below, so the
+  // authoritative button_state is refetched once per action instead of being called by hand.
+  useEffect(() => {
+    if (!canViewActionColumn) return;
+    fetchSoActionState();
+  }, [canViewActionColumn, callId, daStatusRefreshToken, soActionStateResetToken, fetchSoActionState]);
 
   // The header action button reflects and acts on the DA record's REAL current stage.
   //
@@ -589,6 +612,22 @@ const SalesOrderList = ({
   // Also reused by shouldShowDaActionButton further below.
   const isCardAtSoApprovalColumn =
     Array.isArray(stepLabels) && currentStep != null && /so sent for approval/i.test(stepLabels[currentStep - 1] || "");
+  // What column 4's header action actually renders from (see the header action block below).
+  //
+  // api/da/action_state can report button_state "approved" for a call that is still physically
+  // sitting on column 4 — recording an approval moves the card ON to column 5 ("SO/PO Approval
+  // Received"), which renders the Approved/Upload-Approval-Email UI through its own
+  // isAtSoApprovalDecisionColumn branch, so an "approved" reading while the card is still on
+  // column 4 is a leftover from an earlier cycle of the same call, not this one. Trusting it
+  // there replaced the "Send For SO approval" action with the Upload Approval Email UI on cards
+  // that had only just arrived at the column (reported 2026-09-24). Only an approval recorded in
+  // this session (didApproveSoInSession) keeps the card showing Approved on column 4, and that's
+  // purely to avoid a flash while the column move is still in flight. "awaiting_approval" is
+  // trusted as persisted — that's the state worth surviving a card reopen.
+  const effectiveSoButtonState =
+    isCardAtSoApprovalColumn && soActionState?.button_state === "approved" && !didApproveSoInSession
+      ? "send"
+      : soActionState?.button_state;
   // The Sales Order tab's own "Action" column (Verify + Delete, further below) needs a
   // different, column-POSITION-driven flag rather than isCardAtSoApprovalColumn's text match —
   // each department/client swimlane on the multi-workflow board runs its own column set (see
@@ -886,9 +925,10 @@ const SalesOrderList = ({
         return;
       }
       setShowSoApprovalEmailModal(false);
-      // soActionState is local-only now (see its declaration above) — this is the only place
-      // that sets it to "awaiting_approval", no refetch to race against.
+      // Optimistic — the action_state refetch triggered by onDaStatusRefresh below confirms it;
+      // this just avoids a flash back to "Send For SO approval" while that refetch is in flight.
       setSoActionState((prev) => ({ ...prev, button_state: "awaiting_approval" }));
+      setDidApproveSoInSession(false);
       // Deliberately NOT moving the board column here (no onAdvanceDaStage call) — sending the
       // SO approval email keeps the card on "SO Sent for approval" (column 4) itself; the
       // Awaiting-decision UI shows right there too (see isCardAtSoApprovalColumn + soActionState
@@ -931,8 +971,9 @@ const SalesOrderList = ({
         return null;
       }
       if (refreshSalesOrder) refreshSalesOrder();
-      // Bumps daStatusRefreshToken for DA.jsx's Summary-tab Status Timeline (api/da/status_timeline)
-      // to refetch — unrelated to soActionState, which is local-only now (see its declaration above).
+      // Bumps daStatusRefreshToken, which both DA.jsx's Summary-tab Status Timeline
+      // (api/da/status_timeline) and the soActionState effect above react to by refetching —
+      // no explicit fetchSoActionState() here, that fired the same GET twice per click.
       onDaStatusRefresh?.();
       return data;
     } catch (err) {
@@ -969,6 +1010,7 @@ const SalesOrderList = ({
       // correct this shortly; this just avoids a flash back to Approve/Reject while that
       // refetch is still in flight and the column hasn't moved on yet.
       setSoActionState((prev) => ({ ...prev, button_state: "approved" }));
+      setDidApproveSoInSession(true);
       useAlertReducer.getState().success("Approved successfully.");
       // Per request 2026-09-11: move exactly ONE column forward (whatever immediately follows
       // the card's current column), not straight to a hardcoded "AR invoice issued" match —
@@ -1010,6 +1052,7 @@ const SalesOrderList = ({
       // Optimistic — fetchSoActionState() inside recordDaClientDecision above will confirm/
       // correct this shortly.
       setSoActionState((prev) => ({ ...prev, button_state: "send" }));
+      setDidApproveSoInSession(false);
     }
     if (data && wasInvoiceDispatchedStage) setShowInvoiceIssuanceModal(true);
     if (data && wasSoApprovalDecisionColumn) {
@@ -1030,22 +1073,32 @@ const SalesOrderList = ({
     setShowApprovalEmailUploadModal(false);
   };
 
-  // TEMPORARY (per request 2026-09-17): static/local-only until the backend upload route
-  // exists — the assumed da/da_upload_approval_email (daService.uploadApprovalEmail) currently
-  // fails with a network error, so nothing is sent yet. Only flips isApprovalEmailUploaded so
-  // the header swaps the upload button for the "Approved" label (see
-  // renderApprovedWithEmailUpload). Once the API is confirmed, post call_id + approval_email
-  // file(s) as multipart/form-data here, same shape as handleUploadInvoiceIssuance below.
+  // Persists via da/da_upload_so_approval_proof (call_id + proof file(s), multipart/form-data)
+  // -> { status: "success", stage_document_id } on success, or { status: "error", message } when
+  // the call has no sales order. Like da_upload_invoice the response carries no
+  // status_id/sticker_id, so the upload does not advance the DA's real stage — it only flips
+  // isApprovalEmailUploaded so the header swaps the upload button for the "Approved" label
+  // (see renderApprovedWithEmailUpload).
+  // Submitting with no file is allowed on purpose (UploadInvoiceModal's allowEmptyUpload) so the
+  // backend's own "No sales order found for this call" message is what the modal shows.
   const handleUploadApprovalEmail = async (files) => {
     if (!callId) {
       useAlertReducer.getState().error("No call identifier available for this card.");
       return;
     }
-    if (!(files || []).length) {
-      throw new Error("Please select at least one file.");
+    const formData = new FormData();
+    formData.append("call_id", callId);
+    (files || []).forEach((file) => formData.append("proof", file));
+
+    const { data } = await daService.uploadSoApprovalProof(formData);
+    if (data?.status !== "success") {
+      throw new Error(data?.message || "Failed to upload the approval proof.");
     }
+
     setIsApprovalEmailUploaded(true);
-    useAlertReducer.getState().success("Approval email uploaded.");
+    useAlertReducer.getState().success("Approval proof uploaded.");
+    if (refreshSalesOrder) refreshSalesOrder();
+    onDaStatusRefresh?.();
   };
 
   // Persists via da/da_upload_invoice (call_id + invoice file(s), multipart/form-data) →
@@ -2359,17 +2412,18 @@ const SalesOrderList = ({
             (isCardAtSoApprovalColumn ||
               isAtSoApprovalDecisionColumn ||
               (effectiveNextDaStatusLabel && shouldShowDaActionButton)) && (
-            // Column 4's button state is fully driven by api/da/action_state's button_state now
-            // (soActionState — see its declaration above) — authoritative, replacing the old
+            // Column 4's button state is driven by api/da/action_state's button_state now, via
+            // effectiveSoButtonState (see its declaration above, which is where a stale persisted
+            // "approved" is discounted at this column) — replacing the old
             // justApproved/justRejected/isSoApprovalEmailPendingDecision local guesswork. Every
             // other column still uses the granular DA status-timeline (isAwaitingDecisionStage /
             // daActionButtonLabel) as before.
             isAtSoApprovalDecisionColumn ? (
               renderApprovedWithEmailUpload()
             ) : isCardAtSoApprovalColumn ? (
-              soActionState?.button_state === "approved" ? (
+              effectiveSoButtonState === "approved" ? (
                 renderApprovedWithEmailUpload()
-              ) : soActionState?.button_state === "awaiting_approval" ? (
+              ) : effectiveSoButtonState === "awaiting_approval" ? (
                 <div className="sales-order-da-status-group">
                   <span className="sales-order-da-status-button sales-order-da-status-button--label">
                     <FiClipboard />
@@ -2394,7 +2448,7 @@ const SalesOrderList = ({
                     <FiX /> Rejected
                   </button>
                 </div>
-              ) : soActionState?.button_state === "send" && hasVerifiedAllItems ? (
+              ) : effectiveSoButtonState === "send" && hasVerifiedAllItems ? (
                 <button
                   type="button"
                   className="sales-order-da-status-button"
@@ -3345,6 +3399,7 @@ const SalesOrderList = ({
           closeModal={handleCloseApprovalEmailUploadModal}
           contextLabel={soCustomerName ? `SO — ${soCustomerName}` : undefined}
           onUploadComplete={handleUploadApprovalEmail}
+          allowEmptyUpload
           title="Upload Approval Email"
           fieldLabel="Attach approval email"
           accept=".pdf,.eml,.msg,.jpg,.jpeg,.png"
@@ -3384,6 +3439,7 @@ SalesOrderList.propTypes = {
   onDaStatusRefresh: PropTypes.func,
   currentStep: PropTypes.number,
   stepLabels: PropTypes.arrayOf(PropTypes.string),
+  daStatusRefreshToken: PropTypes.number,
   soActionStateResetToken: PropTypes.number,
 };
 
