@@ -1677,32 +1677,14 @@ const SalesOrderList = ({
         throw new Error(body?.message || "Failed to save sales order item.");
       }
 
-      const currentList = salesOrderList.length > 0 ? salesOrderList : [];
-      const maxId = currentList.length > 0 ? Math.max(...currentList.map((item) => item.id || 0)) : 0;
-
-      const newItem = {
-        id: body.so_item_id ?? maxId + 1,
-        callFile: newItemForm.callFile || null,
-        itemNo: newItemForm.itemNo,
-        itemDescription: newItemForm.itemDescription,
-        qty: parseFloat(newItemForm.qty) || 1,
-        unitPrice: parseFloat(newItemForm.unitPrice) || 0,
-        discount: parseFloat(newItemForm.discount) || 0,
-        taxCode: newItemForm.taxCode || "15%",
-        typeOfPo: newItemForm.typeOfPo || "",
-        supplierCode: newItemForm.supplierCode || "",
-        supplierName: newItemForm.supplierName || "",
-        documents: newItemForm.documents || [],
-        poStatus: "Draft",
-        workOrder: "",
-      };
-      newItem.totalAmount = calcRowTotal(newItem);
-
-      handleChange("salesOrderList")({ target: { value: [...currentList, newItem] } });
       useAlertReducer.getState().success("Sales order item saved successfully.");
-
       setIsAccordionOpen(false);
       setNewItemForm(EMPTY_NEW_ITEM_FORM);
+
+      // Re-fetch sales_order/get_so_items_by_call/{call_id} so the new row (its real so_item_id,
+      // uploaded documents, totals and SO header totals) comes from the server rather than a
+      // locally-built copy.
+      if (refreshSalesOrder) await refreshSalesOrder();
     } catch (err) {
       const msg =
         err?.response?.data?.message ||

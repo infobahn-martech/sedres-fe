@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { FiFileText } from "react-icons/fi";
+import { FiFileText, FiSearch, FiUploadCloud, FiUpload, FiX, FiCheck, FiPaperclip } from "react-icons/fi";
 import useAlertReducer from "../../../../../../store/AlertReducer";
+import "../../../../../../design/scss/salesOrder.scss";
 
 // Document List Modal — manages the documents already attached to a sales order item
 // (sourced from the API's per-item `documents` array) plus any newly uploaded this session.
@@ -14,6 +15,7 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], librar
   const [selected, setSelected] = useState(new Set());
   const [uploadedDocs, setUploadedDocs] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (show) {
@@ -21,6 +23,7 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], librar
       setUploadedDocs([]);
       setSearch("");
       setIsUploading(false);
+      setIsDragging(false);
     }
     // Only reset when modal opens; initialSelected is captured at open time via key on parent
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -57,9 +60,29 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], librar
     onClose();
   };
 
-  const handleFileUpload = async (e) => {
+  const handleFileUpload = (e) => {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
+    handleFiles(files);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (isUploading) return;
+    handleFiles(Array.from(e.dataTransfer?.files || []));
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false);
+  };
+
+  const handleFiles = async (files) => {
     if (!files.length) return;
 
     // Item already exists on the backend — upload immediately via
@@ -96,105 +119,118 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], librar
     });
   };
 
+  const selectedCount = selected.size;
+
   return (
     <div
-      style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1100, padding: "16px", boxSizing: "border-box" }}
+      className="so-doc-modal-overlay"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: "#fff", borderRadius: "12px", width: "94%", maxWidth: "920px", maxHeight: "82vh", display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
-        <div style={{ padding: "22px 28px", borderBottom: "1px solid #eee", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#1a1a2e" }}>Select Supporting Documents</h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "24px", cursor: "pointer", color: "#888", lineHeight: 1 }}>×</button>
+      <div className="so-doc-modal" role="dialog" aria-modal="true" aria-labelledby="so-doc-modal-title">
+        <div className="so-doc-modal-header">
+          <span className="so-doc-modal-header-icon">
+            <FiPaperclip />
+          </span>
+          <div className="so-doc-modal-heading">
+            <h3 id="so-doc-modal-title" className="so-doc-modal-title">Select Supporting Documents</h3>
+            <p className="so-doc-modal-subtitle">Pick from this call&apos;s documents or upload new files.</p>
+          </div>
+          <button type="button" className="so-doc-modal-close" onClick={onClose} aria-label="Close">
+            <FiX />
+          </button>
         </div>
-        <div style={{ padding: "16px 28px", borderBottom: "1px solid #eee", flexShrink: 0, display: "flex", gap: "12px", alignItems: "center" }}>
-          <input
-            type="text"
-            placeholder="Search by document name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            autoFocus
-            style={{ flex: 1, padding: "11px 16px", border: "1px solid #dde0ea", borderRadius: "8px", fontSize: "14px", boxSizing: "border-box", fontFamily: "inherit" }}
-          />
-          <label
-            style={{ padding: "11px 18px", fontSize: "14px", border: "1px solid #dde0ea", borderRadius: "8px", background: isUploading ? "#eceefc" : "#f5f6ff", color: "#2A00FF", cursor: isUploading ? "wait" : "pointer", fontFamily: "inherit", fontWeight: "600", whiteSpace: "nowrap", flexShrink: 0, opacity: isUploading ? 0.7 : 1 }}
-          >
+
+        <div className="so-doc-modal-toolbar">
+          <div className="so-doc-modal-search">
+            <FiSearch className="so-doc-modal-search-icon" />
+            <input
+              type="text"
+              placeholder="Search by document name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              autoFocus
+            />
+            {search && (
+              <button type="button" className="so-doc-modal-search-clear" onClick={() => setSearch("")} aria-label="Clear search">
+                <FiX />
+              </button>
+            )}
+          </div>
+          <label className={`so-doc-modal-upload-btn${isUploading ? " is-uploading" : ""}`}>
+            <FiUpload />
             {isUploading ? "Uploading..." : "Upload New"}
-            <input type="file" multiple onChange={handleFileUpload} disabled={isUploading} style={{ display: "none" }} />
+            <input type="file" multiple onChange={handleFileUpload} disabled={isUploading} hidden />
           </label>
         </div>
-        <div style={{ overflowY: "auto", flex: 1, minHeight: 0, padding: "18px 24px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "12px", alignContent: "start" }}>
+
+        <div
+          className={`so-doc-modal-body${isDragging ? " is-dragging" : ""}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           {filtered.length === 0 ? (
-            <div style={{ gridColumn: "1 / -1", padding: "32px", textAlign: "center", color: "#888", fontSize: "14px" }}>No documents found.</div>
+            search ? (
+              <div className="so-doc-modal-empty">
+                <FiSearch className="so-doc-modal-empty-icon" />
+                <span className="so-doc-modal-empty-title">No documents match &quot;{search}&quot;</span>
+                <span className="so-doc-modal-empty-hint">Try a different name or upload a new file.</span>
+              </div>
+            ) : (
+              <label className="so-doc-modal-dropzone">
+                <FiUploadCloud className="so-doc-modal-dropzone-icon" />
+                <span className="so-doc-modal-empty-title">No documents yet</span>
+                <span className="so-doc-modal-empty-hint">
+                  Drag &amp; drop files here, or <span className="so-doc-modal-link">browse</span> to upload
+                </span>
+                <input type="file" multiple onChange={handleFileUpload} disabled={isUploading} hidden />
+              </label>
+            )
           ) : (
-            filtered.map((d) => {
-              const isChecked = selected.has(d.id);
-              return (
-                <label
-                  key={d.id}
-                  style={{
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "16px",
-                    padding: "14px 16px",
-                    border: `1px solid ${isChecked ? "#b3baff" : "#e6e9f2"}`,
-                    borderRadius: "10px",
-                    background: isChecked ? "#f3f4ff" : "#ffffff",
-                    boxShadow: isChecked ? "0 2px 8px rgba(42, 0, 255, 0.08)" : "0 1px 3px rgba(15, 23, 42, 0.05)",
-                    transition: "border-color 0.15s, background 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => { if (!isChecked) e.currentTarget.style.background = "#f7f8ff"; }}
-                  onMouseLeave={(e) => { if (!isChecked) e.currentTarget.style.background = "#ffffff"; }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => toggleDocument(d.id)}
-                    style={{ width: "17px", height: "17px", cursor: "pointer", flexShrink: 0, accentColor: "#2A00FF" }}
-                  />
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "42px",
-                      height: "42px",
-                      borderRadius: "9px",
-                      background: "#eef1ff",
-                      color: "#2A00FF",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <FiFileText size={20} />
-                  </span>
-                  <span style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: 0, flex: 1 }}>
-                    <span style={{ fontSize: "14px", lineHeight: 1.4, color: "#1a1a2e", fontWeight: "600", minWidth: 0, wordBreak: "break-word" }}>{d.name}</span>
-                    <span style={{ fontFamily: "monospace", fontSize: "11px", color: "#5a5f8a", background: "#f0f2ff", padding: "2px 7px", borderRadius: "4px", alignSelf: "flex-start" }}>{d.type}</span>
-                  </span>
-                </label>
-              );
-            })
+            <div className="so-doc-modal-list">
+              {filtered.map((d) => {
+                const isChecked = selected.has(d.id);
+                return (
+                  <label key={d.id} className={`so-doc-modal-item${isChecked ? " is-selected" : ""}`}>
+                    <input
+                      type="checkbox"
+                      className="so-doc-modal-item-checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleDocument(d.id)}
+                    />
+                    <span className="so-doc-modal-item-icon">
+                      <FiFileText />
+                    </span>
+                    <span className="so-doc-modal-item-name" title={d.name}>{d.name}</span>
+                    {d.type && <span className="so-doc-modal-item-type">{d.type}</span>}
+                    <span className="so-doc-modal-item-check" aria-hidden="true">
+                      <FiCheck />
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          {isDragging && (
+            <div className="so-doc-modal-drop-overlay">
+              <FiUploadCloud />
+              Drop files to upload
+            </div>
           )}
         </div>
-        <div style={{ padding: "16px 28px", borderTop: "1px solid #eee", display: "flex", justifyContent: "flex-end", gap: "12px", flexShrink: 0 }}>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{ padding: "11px 22px", fontSize: "14px", fontWeight: "600", border: "1px solid #dde0ea", borderRadius: "8px", background: "#fff", color: "#333", cursor: "pointer", fontFamily: "inherit" }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "#f5f6fa"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "#fff"; }}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            style={{ padding: "11px 22px", fontSize: "14px", border: "none", borderRadius: "8px", background: "#00368c", color: "#fff", cursor: "pointer", fontFamily: "inherit", fontWeight: "600", boxShadow: "0 4px 14px rgba(0, 54, 140, 0.32)" }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "#002a6e"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "#00368c"; }}
-          >
-            Save
-          </button>
+
+        <div className="so-doc-modal-footer">
+          <span className="so-doc-modal-count">
+            {selectedCount > 0 ? `${selectedCount} document${selectedCount > 1 ? "s" : ""} selected` : "No documents selected"}
+          </span>
+          <div className="so-doc-modal-actions">
+            <button type="button" className="sales-order-add-form-cancel" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="button" className="sales-order-add-form-save" onClick={handleSave} disabled={isUploading}>
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>
