@@ -1,0 +1,81 @@
+/* Batch grouping inside a swimlane column cell ("Batch UI Test" board) */
+
+.card-list.card-list--batched {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px;
+}
+
+.batch-group {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch; /* card-list sets align-items: start inline — keep batches full width when collapsed */
+  background: #eef3fa;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.batch-group__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: #e6eef9;
+  color: #1f2937;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: #dde7f6;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: -2px;
+  }
+}
+
+.batch-group__chevron {
+  flex-shrink: 0;
+  color: #334155;
+  transition: transform 0.2s ease;
+}
+
+.batch-group--collapsed .batch-group__chevron {
+  transform: rotate(-90deg);
+}
+
+.batch-group__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-group__badge {
+  flex-shrink: 0;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: #d6e4f7;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.batch-group__cards {
+  display: grid;
+  gap: 8px;
+  padding: 6px;
+  justify-content: center;
+  align-items: start;
+}

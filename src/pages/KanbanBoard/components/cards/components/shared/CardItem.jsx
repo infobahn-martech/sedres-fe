@@ -652,6 +652,7 @@ function CardItem({
   onToggleSelectForAction,
   onSelectDragStart,
   onSelectDragEnter,
+  isDragDisabled = false,
 }) {
   const isApiCard = card.cardSource === "api";
   const topRowUsernameInitial = isApiCard && !isShrunk ? getUsernameInitial(card.user) : null;
@@ -704,7 +705,7 @@ function CardItem({
     (Array.isArray(ed) && ed.includes("launch"));
 
   return (
-    <Draggable draggableId={card.id} index={index} isDragDisabled={KANBAN_DND_DISABLED}>
+    <Draggable draggableId={card.id} index={index} isDragDisabled={KANBAN_DND_DISABLED || isDragDisabled}>
       {(provided, snapshot) => (
         <div
           className={`kanban-card ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""}`}
@@ -1172,6 +1173,7 @@ CardItem.propTypes = {
   onToggleSelectForAction: PropTypes.func,
   onSelectDragStart: PropTypes.func,
   onSelectDragEnter: PropTypes.func,
+  isDragDisabled: PropTypes.bool,
 };
 
 export default CardItem;

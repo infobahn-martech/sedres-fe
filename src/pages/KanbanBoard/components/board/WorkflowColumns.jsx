@@ -9,6 +9,11 @@ import {
   getColumnHeaderGroups,
 } from "../../utils/columnHelpers";
 import {
+  isBatchUiTestWorkflow,
+  getBatchUiTestBatches,
+  countBatchUiTestCards,
+} from "../../utils/batchUiTestData";
+import {
   BOARD_COLUMN_GAP_PX,
   WORKFLOW_ROW_MIN_HEIGHT,
   getBoardGridTemplateColumns,
@@ -44,6 +49,13 @@ export default function WorkflowColumns({
     : ["lane-default"];
 
   const shouldShowSwimlaneTitle = swimlaneOrder.length > 1;
+
+  /* "Batch UI Test" board renders grouped preview batches (first lane only) instead of API cards */
+  const isBatchUiTest = isBatchUiTestWorkflow(workflow);
+  const getColumnCount = (colKey) =>
+    isBatchUiTest
+      ? countBatchUiTestCards(workflow.columns[colKey])
+      : countCardsInColumn(workflow, colKey);
 
   /* Outer board grid: one track per column, collapsed columns get a fixed narrow track
      (see getColumnWidth / getBoardGridTemplateColumns) */
@@ -100,7 +112,7 @@ export default function WorkflowColumns({
 
               const isCollapsed = !isGrouped && collapsedColumnIds.has(firstColumn.id);
               const cardCount = group.colKeys.reduce(
-                (sum, k) => sum + countCardsInColumn(workflow, k),
+                (sum, k) => sum + getColumnCount(k),
                 0
               );
               const wipDisplay = String(cardCount);
@@ -142,7 +154,7 @@ export default function WorkflowColumns({
                           <ColumnHeader
                             key={child.id}
                             column={child}
-                            wipDisplay={String(countCardsInColumn(workflow, colKey))}
+                            wipDisplay={String(getColumnCount(colKey))}
                             isCollapsed={childIsCollapsed}
                             onHeaderClick={() => onColumnHeaderClick(workflow.id, child.id)}
                             isDarkMode={isDarkMode}
@@ -217,6 +229,11 @@ export default function WorkflowColumns({
                         onToggleCardSelect={onToggleCardSelect}
                         onCardSelectDragStart={onCardSelectDragStart}
                         onCardSelectDragEnter={onCardSelectDragEnter}
+                        batches={
+                          isBatchUiTest && laneId === swimlaneOrder[0]
+                            ? getBatchUiTestBatches(column)
+                            : undefined
+                        }
                       />
                     );
                   })}
