@@ -1,0 +1,40 @@
+/* Small action button on the right of a column header (e.g. Backlog batch action) */
+
+.column-header .column-action {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: 6px;
+  padding: 0;
+  border: 1px solid #dde6f2;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #3b4a68;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+
+  &:hover {
+    background: #eaf1fb;
+    color: #0a57c2;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #0a57c2;
+    outline-offset: 1px;
+  }
+}
+
+.column-header-dark .column-action {
+  border-color: #3a4a68;
+  background: transparent;
+  color: #c7d5ea;
+
+  &:hover {
+    background: #22334f;
+    color: #ffffff;
+  }
+}

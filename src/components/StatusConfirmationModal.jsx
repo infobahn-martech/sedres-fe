@@ -10,6 +10,7 @@ const StatusConfirmationModal = ({
     statusText,
     show,
     isLoading,
+    icon = DeleteConfirmIcon,
 }) => {
     return (
         <CustomModal
@@ -21,7 +22,7 @@ const StatusConfirmationModal = ({
             body={
                 <div className="modal-body">
                     <div className="profile-img">
-                        <img src={DeleteConfirmIcon} alt="sign" />
+                        <img src={icon} alt="" />
                     </div>
                     <div className="popup-title">{statusText}</div>
                     <div className="two-btn logout-btn">
@@ -57,6 +58,8 @@ StatusConfirmationModal.propTypes = {
     onConfirm: PropTypes.func,
     statusText: PropTypes.string,
     show: PropTypes.bool,
+    isLoading: PropTypes.bool,
+    icon: PropTypes.string,
 };
 
 export default StatusConfirmationModal;

@@ -19,10 +19,28 @@ import {
   getBoardGridTemplateColumns,
   getColumnWidth,
 } from "../../utils/boardGridHelpers";
+import { BACKLOG_SEED_CARDS } from "../../utils/backlogSeedCards";
+import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "../../../../design/scss/pages/kanban-board/swimlaneBoard.scss";
 
 const EMPTY_COLLAPSED_SET = new Set();
+
+/* Batch action lives on the Backlog column of the SAIPEM workflow only (SNAMPROGETTI is the
+   name it is being renamed from, so both are accepted while that rename lands). */
+const BATCH_ACTION_WORKFLOWS = ["SAIPEM", "SNAMPROGETTI"];
+const BATCH_ACTION_COLUMN = "backlog";
+
+const isBatchWorkflow = (workflow) => {
+  const workflowTitle = String(workflow?.title ?? "").trim().toUpperCase();
+  return BATCH_ACTION_WORKFLOWS.some((name) => workflowTitle.includes(name));
+};
+
+const isBacklogColumn = (column) =>
+  String(column?.title ?? "").trim().toLowerCase() === BATCH_ACTION_COLUMN;
+
+const hasBatchAction = (workflow, ...columns) =>
+  isBatchWorkflow(workflow) && columns.some(isBacklogColumn);
 
 export default function WorkflowColumns({
   workflow,
@@ -32,6 +50,8 @@ export default function WorkflowColumns({
   onSelectCard,
   cardsById,
   onColumnHeaderClick,
+  onColumnBatchAction,
+  onBatchSendSeRequest,
   onContextMenu,
   onHeightChange,
   isDarkMode,
@@ -44,18 +64,85 @@ export default function WorkflowColumns({
   const collapsedColumnIds = collapsedColumns[workflow.id] ?? EMPTY_COLLAPSED_SET;
   const maxHeight = Math.max(maxColumnHeights[workflow.id] || 0, WORKFLOW_ROW_MIN_HEIGHT);
 
-  const swimlaneOrder = workflow.swimlaneOrder?.length
-    ? workflow.swimlaneOrder
-    : ["lane-default"];
+  const swimlaneOrder = useMemo(
+    () => (workflow.swimlaneOrder?.length ? workflow.swimlaneOrder : ["lane-default"]),
+    [workflow.swimlaneOrder]
+  );
 
   const shouldShowSwimlaneTitle = swimlaneOrder.length > 1;
 
   /* "Batch UI Test" board renders grouped preview batches (first lane only) instead of API cards */
   const isBatchUiTest = isBatchUiTestWorkflow(workflow);
-  const getColumnCount = (colKey) =>
-    isBatchUiTest
-      ? countBatchUiTestCards(workflow.columns[colKey])
-      : countCardsInColumn(workflow, colKey);
+  /* Cards of the batch board's first lane, with the static Backlog stand-ins added and any
+     card a batch has moved drawn in its new column instead. */
+  const columnByCardId = useBatchMoveStore((state) => state.columnByCardId);
+  const batchByCardId = useBatchMoveStore((state) => state.batchByCardId);
+
+  const batchLaneCardsByColumn = useMemo(() => {
+    if (!isBatchWorkflow(workflow)) return null;
+    const laneId = swimlaneOrder[0];
+    const byColumn = {};
+    const relocated = [];
+
+    workflow.columnOrder.forEach((colKey) => {
+      byColumn[colKey] = [];
+      const seedCards = isBacklogColumn(workflow.columns[colKey]) ? BACKLOG_SEED_CARDS : [];
+      [...getSwimlaneColumnCards(workflow, laneId, colKey), ...seedCards].forEach((card) => {
+        const target = columnByCardId[card.id];
+        if (target && target !== colKey) relocated.push({ card, target });
+        else byColumn[colKey].push(card);
+      });
+    });
+
+    relocated.forEach(({ card, target }) => byColumn[target]?.push(card));
+    return byColumn;
+  }, [workflow, swimlaneOrder, columnByCardId]);
+
+  /* A column whose cards carry a batch renders them as groups (loose cards first, headerless),
+     the same shape the "Batch UI Test" board uses. */
+  const getBatchesForColumn = (colKey) => {
+    const cards = batchLaneCardsByColumn?.[colKey];
+    if (!cards?.length) return undefined;
+
+    const loose = [];
+    const byNumber = new Map();
+    cards.forEach((card) => {
+      const batchNumber = batchByCardId[card.id];
+      if (!batchNumber) {
+        loose.push(card);
+        return;
+      }
+      if (!byNumber.has(batchNumber)) byNumber.set(batchNumber, []);
+      byNumber.get(batchNumber).push(card);
+    });
+    if (byNumber.size === 0) return undefined;
+
+    const batches = [];
+    if (loose.length > 0) {
+      batches.push({
+        id: `${colKey}-loose`,
+        title: "",
+        isUngrouped: true,
+        usesBoardSelection: true,
+        cards: loose,
+      });
+    }
+    byNumber.forEach((batchCards, batchNumber) => {
+      batches.push({
+        id: `${colKey}-${batchNumber}`,
+        title: batchNumber,
+        usesBoardSelection: true,
+        cards: batchCards,
+      });
+    });
+    return batches;
+  };
+
+  const getColumnCount = (colKey) => {
+    if (isBatchUiTest) return countBatchUiTestCards(workflow.columns[colKey]);
+    if (batchLaneCardsByColumn) return batchLaneCardsByColumn[colKey]?.length ?? 0;
+    return countCardsInColumn(workflow, colKey);
+  };
 
   /* Outer board grid: one track per column, collapsed columns get a fixed narrow track
      (see getColumnWidth / getBoardGridTemplateColumns) */
@@ -131,6 +218,18 @@ export default function WorkflowColumns({
                       isGrouped ? undefined : () => onColumnHeaderClick(workflow.id, firstColumn.id)
                     }
                     isDarkMode={isDarkMode}
+                    actionLabel="Batch"
+                    onActionClick={
+                      hasBatchAction(workflow, displayColumn, firstColumn)
+                        ? () =>
+                            onColumnBatchAction({
+                              nextColumnKey:
+                                workflow.columnOrder[
+                                  workflow.columnOrder.indexOf(group.colKeys[0]) + 1
+                                ] ?? null,
+                            })
+                        : undefined
+                    }
                   />
                   {isGrouped && (
                     <div
@@ -207,7 +306,10 @@ export default function WorkflowColumns({
                 <div className="kanban-swimlane__columns" style={boardRowGridStyle}>
                   {workflow.columnOrder.map((colKey) => {
                     const column = workflow.columns[colKey];
-                    const cards = getSwimlaneColumnCards(workflow, laneId, colKey);
+                    const cards =
+                      batchLaneCardsByColumn && laneId === swimlaneOrder[0]
+                        ? batchLaneCardsByColumn[colKey]
+                        : getSwimlaneColumnCards(workflow, laneId, colKey);
                     const isCollapsed = collapsedColumnIds.has(column.id);
 
                     return (
@@ -226,13 +328,16 @@ export default function WorkflowColumns({
                         layoutView={layoutView}
                         workflowTitle={workflow.title}
                         selectedActionCardIds={selectedActionCardIds}
+                        onBatchSendSeRequest={onBatchSendSeRequest}
                         onToggleCardSelect={onToggleCardSelect}
                         onCardSelectDragStart={onCardSelectDragStart}
                         onCardSelectDragEnter={onCardSelectDragEnter}
                         batches={
                           isBatchUiTest && laneId === swimlaneOrder[0]
                             ? getBatchUiTestBatches(column)
-                            : undefined
+                            : batchLaneCardsByColumn && laneId === swimlaneOrder[0]
+                              ? getBatchesForColumn(colKey)
+                              : undefined
                         }
                       />
                     );

@@ -9,6 +9,10 @@ import { getAddModeCardFormWorkflow } from "../../../shared/helpers/kanbanSideba
 import KanbanBoardContent from "../components/board/KanbanBoardContent";
 import SalesOrderPoModal from "../components/board/SalesOrderPoModal";
 import CardForm from "../components/cards/CardForm";
+import StatusConfirmationModal from "../../../components/StatusConfirmationModal";
+import confirmTickIcon from "../../../assets/images/toast-success.svg";
+import SoApprovalEmailModal from "../CardFormTabs/Import/tabs/salesOrder/SoApprovalEmailModal";
+import { isBacklogSeedCardId, NEXT_BATCH_NUMBER } from "../utils/backlogSeedCards";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -28,6 +32,7 @@ import workflowService from "../../../services/workflowService";
 import { notify } from "../../../components/Toaster";
 import { useThemeStore } from "../../../shared/store/themeStore";
 import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
+import useBatchMoveStore from "../../../shared/store/batchMoveStore";
 import "../../../design/scss/pages/kanban-board/salesOrderPoModal.scss";
 export default function KanbanBoardPage() {
   const { boardId: boardIdParam } = useParams();
@@ -315,6 +320,43 @@ export default function KanbanBoardPage() {
   const clearCardSelection = useKanbanCardSelectionStore((state) => state.clearSelection);
   const closePoFlow = useKanbanCardSelectionStore((state) => state.closePoFlow);
 
+  /* Backlog column batch icon (SAIPEM board): confirm the batch built from the ticked cards. */
+  const [showBatchConfirmModal, setShowBatchConfirmModal] = useState(false);
+  /* Column the batch moves its cards to — the one after Backlog on the board. */
+  const [selectedBatchTargetColumn, setSelectedBatchTargetColumn] = useState(null);
+  const moveCardsToColumn = useBatchMoveStore((state) => state.moveCardsToColumn);
+
+  const handleColumnBatchAction = useCallback(
+    ({ nextColumnKey }) => {
+      if (selectedCardIds.length === 0) return;
+      setSelectedBatchTargetColumn(nextColumnKey);
+      setShowBatchConfirmModal(true);
+    },
+    [selectedCardIds]
+  );
+
+  const handleCloseBatchConfirm = useCallback(() => setShowBatchConfirmModal(false), []);
+
+  /* "Sent for SE creation" on a batch group header opens the email draft for that batch. */
+  const [showSeRequestEmailModal, setShowSeRequestEmailModal] = useState(false);
+  const [selectedSeRequestBatch, setSelectedSeRequestBatch] = useState(null);
+
+  const handleBatchSendSeRequest = useCallback((batch) => {
+    setSelectedSeRequestBatch(batch);
+    setShowSeRequestEmailModal(true);
+  }, []);
+
+  const handleCloseSeRequestEmail = useCallback(() => {
+    setShowSeRequestEmailModal(false);
+    setSelectedSeRequestBatch(null);
+  }, []);
+
+  const handleConfirmBatch = useCallback(() => {
+    moveCardsToColumn(selectedCardIds, selectedBatchTargetColumn, NEXT_BATCH_NUMBER);
+    setShowBatchConfirmModal(false);
+    clearCardSelection();
+  }, [moveCardsToColumn, selectedCardIds, selectedBatchTargetColumn, clearCardSelection]);
+
   const handleToggleCardSelection = useCallback(
     (card) => toggleCardSelectionId(card.id),
     [toggleCardSelectionId]
@@ -370,7 +412,10 @@ export default function KanbanBoardPage() {
 
   // Drop any selected id that disappears from the board (moved/removed by a refetch).
   useEffect(() => {
-    const staleIds = selectedCardIds.filter((id) => !cardsById[id]);
+    /* Static Backlog cards are never in `cardsById`, so they are never stale. */
+    const staleIds = selectedCardIds.filter(
+      (id) => !cardsById[id] && !isBacklogSeedCardId(id)
+    );
     staleIds.forEach((id) => removeCardSelectionId(id));
   }, [cardsById, selectedCardIds, removeCardSelectionId]);
   const handleCreateCard = useCallback(() => {
@@ -505,6 +550,8 @@ export default function KanbanBoardPage() {
           createDragEndHandler={createDragEndHandler}
           onSelectCard={handleSelectCard}
           onColumnHeaderClick={handleColumnHeaderClick}
+          onColumnBatchAction={handleColumnBatchAction}
+          onBatchSendSeRequest={handleBatchSendSeRequest}
           onContextMenu={handleColumnContextMenu}
           onHeightChange={handleWorkflowColumnHeightChange}
           onToggleWorkflow={handleToggleWorkflow}
@@ -524,6 +571,25 @@ export default function KanbanBoardPage() {
         cards={poFlowCards}
         onClose={handleClosePoFlow}
         onGenerated={handleSalesOrderPoGenerated}
+      />
+
+      <StatusConfirmationModal
+        show={showBatchConfirmModal}
+        statusText={`Create batch ${NEXT_BATCH_NUMBER} with the ${selectedCardIds.length} selected ${
+          selectedCardIds.length === 1 ? "card" : "cards"
+        }?`}
+        icon={confirmTickIcon}
+        onCancel={handleCloseBatchConfirm}
+        onConfirm={handleConfirmBatch}
+      />
+
+      <SoApprovalEmailModal
+        show={showSeRequestEmailModal}
+        onClose={handleCloseSeRequestEmail}
+        onCreate={handleCloseSeRequestEmail}
+        stageLabel="SE Creation"
+        actionLabel="Sent for SE creation"
+        soCustomerName={selectedSeRequestBatch?.title ?? ""}
       />
 
       {selectedCard && columnsForCardForm && (
