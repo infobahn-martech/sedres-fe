@@ -741,13 +741,6 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
       case CREW_MANAGEMENT_SUBTABS.TRANSPORT:
         return (
           <>
-            <BackToCrewListingLink
-              cardColor={cardColor}
-              onClick={() => {
-                setActiveSubTab(CREW_MANAGEMENT_SUBTABS.CREW);
-                setSelectedActionTab(null);
-              }}
-            />
             <TransportContent
               formValues={formValues}
               handleChange={handleChange}
@@ -789,13 +782,6 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
       case CREW_MANAGEMENT_SUBTABS.HOTEL:
         return (
           <>
-            <BackToCrewListingLink
-              cardColor={cardColor}
-              onClick={() => {
-                setActiveSubTab(CREW_MANAGEMENT_SUBTABS.CREW);
-                setSelectedActionTab(null);
-              }}
-            />
             <HotelContent
               formValues={formValues}
               handleChange={handleChange}
@@ -807,13 +793,6 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
       case CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE:
         return (
           <>
-            <BackToCrewListingLink
-              cardColor={cardColor}
-              onClick={() => {
-                setActiveSubTab(CREW_MANAGEMENT_SUBTABS.CREW);
-                setSelectedActionTab(null);
-              }}
-            />
             <MedicalServiceContent
               formValues={formValues}
               handleChange={handleChange}

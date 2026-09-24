@@ -309,11 +309,19 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
     };
   }, [isAddMode, currentCallId]);
 
+  // Key the stage fields were last loaded for — PreArrival waits for this to match the
+  // current key before fetching get_prearrival_detail, so it doesn't fetch once with empty
+  // fields and again when get_stage_time_objects resolves.
+  const eventFieldsKey = `${preArrivalPortId ?? ""}|${preArrivalCallTypeId ?? ""}|${currentCallId ?? ""}`;
+  const [eventFieldsLoadedKey, setEventFieldsLoadedKey] = useState(null);
+  const eventFieldsReady = !callDetailLoading && eventFieldsLoadedKey === eventFieldsKey;
+
   useEffect(() => {
     let cancelled = false;
 
     if (!preArrivalPortId || !preArrivalCallTypeId) {
       setEventTypeFieldsByStage({ 2: [], 3: [], 4: [], 5: [] });
+      setEventFieldsLoadedKey(eventFieldsKey);
       return () => {
         cancelled = true;
       };
@@ -356,9 +364,11 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
           4: mapEventFields(stage4?.data),
           5: mapEventFields(stage5?.data),
         });
+        setEventFieldsLoadedKey(eventFieldsKey);
       } catch {
         if (!cancelled) {
           setEventTypeFieldsByStage({ 2: [], 3: [], 4: [], 5: [] });
+          setEventFieldsLoadedKey(eventFieldsKey);
         }
       }
     };
@@ -368,6 +378,8 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
     return () => {
       cancelled = true;
     };
+    // eventFieldsKey is derived from exactly these three deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preArrivalPortId, preArrivalCallTypeId, currentCallId]);
 
   const preArrivalEventFields = eventTypeFieldsByStage[2] || [];
@@ -514,6 +526,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               onAddLink={handleAddLink}
               onRemoveLink={handleRemoveLink}
               eventFields={preArrivalEventFields}
+              eventFieldsReady={eventFieldsReady}
               portId={preArrivalPortId}
               callTypeId={preArrivalCallTypeId}
               vesselTypeId={preArrivalVesselTypeId}

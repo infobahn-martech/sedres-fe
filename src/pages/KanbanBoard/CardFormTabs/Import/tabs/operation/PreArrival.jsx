@@ -366,6 +366,7 @@ function PreArrival({
   cardColor,
   isViewOnly = false,
   eventFields = [],
+  eventFieldsReady = true,
   portId,
   callTypeId,
   billingEntityId,
@@ -593,10 +594,11 @@ function PreArrival({
   }, [fetchPreArrivalDetail]);
 
   useEffect(() => {
+    if (!eventFieldsReady) return undefined;
     const ac = new AbortController();
     fetchPreArrivalDetailRef.current(ac.signal);
     return () => ac.abort();
-  }, [callId, isViewOnly, eventFieldsApplyKey]);
+  }, [callId, isViewOnly, eventFieldsApplyKey, eventFieldsReady]);
 
   useEffect(() => {
     const needId = pendingCoordinateIdRef.current;
@@ -1273,6 +1275,7 @@ PreArrival.propTypes = {
   onRemoveLink: PropTypes.func,
   isViewOnly: PropTypes.bool,
   eventFields: PropTypes.array,
+  eventFieldsReady: PropTypes.bool,
   portId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   callTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   vesselTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
