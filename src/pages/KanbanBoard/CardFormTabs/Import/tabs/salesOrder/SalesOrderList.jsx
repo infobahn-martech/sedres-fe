@@ -755,6 +755,7 @@ const SalesOrderList = ({
   // isApprovalEmailUploaded above — no backend field exists for it yet.
   const [approvedByInput, setApprovedByInput] = useState("");
   const [approvedByName, setApprovedByName] = useState("");
+  const [isRecordingApprovedBy, setIsRecordingApprovedBy] = useState(false);
 
   // api/da/da_action_email_draft/{call_id} — { status: "success", data: { recipient,
   // stage_document_id? } }. Best effort: if it fails or callId is missing, the modal just opens
@@ -2252,15 +2253,39 @@ const SalesOrderList = ({
     setApprovedByName("");
   };
 
-  const handleConfirmApprovedBy = () => {
+  // Persists via da/da_record_approved_by (call_id + approved_by) -> { status: "success" }.
+  // The backend rejects it with "No approval proof uploaded yet for this call" until the
+  // approval proof exists for the same call, so the confirmed name is only shown on success.
+  const handleConfirmApprovedBy = async () => {
     const name = approvedByInput.trim();
     if (!name) {
       useAlertReducer.getState().error("Please enter who approved this.");
       return;
     }
-    setApprovedByInput(name);
-    setApprovedByName(name);
-    useAlertReducer.getState().success("Approved by recorded.");
+    if (!callId) {
+      useAlertReducer.getState().error("No call identifier available for this card.");
+      return;
+    }
+    setIsRecordingApprovedBy(true);
+    try {
+      const { data } = await daService.recordApprovedBy({ call_id: callId, approved_by: name });
+      if (!data || data.status === "error" || data.status === false) {
+        useAlertReducer.getState().error(data?.message || "Failed to record who approved this.");
+        return;
+      }
+      setApprovedByInput(name);
+      setApprovedByName(name);
+      useAlertReducer.getState().success("Approved by recorded.");
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to record who approved this.";
+      useAlertReducer.getState().error(msg);
+    } finally {
+      setIsRecordingApprovedBy(false);
+    }
   };
 
   const handleClearApprovedBy = () => {
@@ -2288,25 +2313,28 @@ const SalesOrderList = ({
               placeholder="Enter name..."
               value={approvedByInput}
               onChange={handleChangeApprovedBy}
+              disabled={isRecordingApprovedBy}
             />
             <button
               type="button"
               className="sales-order-da-approved-by-btn sales-order-da-approved-by-btn--confirm"
               title="Confirm the approver name"
               onClick={handleConfirmApprovedBy}
+              disabled={isRecordingApprovedBy}
             >
               <FiCheck />
             </button>
+            <button
+              type="button"
+              className="sales-order-da-approved-by-btn sales-order-da-approved-by-btn--clear"
+              title="Clear the approver name"
+              onClick={handleClearApprovedBy}
+              disabled={isRecordingApprovedBy}
+            >
+              <FiX />
+            </button>
           </>
         )}
-        <button
-          type="button"
-          className="sales-order-da-approved-by-btn sales-order-da-approved-by-btn--clear"
-          title="Clear the approver name"
-          onClick={handleClearApprovedBy}
-        >
-          <FiX />
-        </button>
       </div>
     ) : (
       <button
