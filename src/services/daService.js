@@ -54,6 +54,11 @@ const recordClientDecision = (payload) => Gateway.post('/da/da_record_client_dec
  * local justApproved/justRejected/isSoApprovalEmailPendingDecision heuristics in
  * SalesOrderList.jsx. `status: "error"` (e.g. "Call not found") on failure. */
 const getActionState = (callId) => Gateway.get(`/da/action_state/${callId}`);
+/** @param {{ call_id: string|number, approved_by: string }} payload
+ * @returns {Promise<{ data: { status: 'success' } | { status: 'error', message: string } }>}
+ * Records who approved the SO. Errors with "No approval proof uploaded yet for this call"
+ * until the approval proof has been uploaded for the same call. */
+const recordApprovedBy = (payload) => Gateway.post('/da/da_record_approved_by', payload);
 
 export default {
   getDaDetails,
@@ -76,4 +81,5 @@ export default {
   uploadSoApprovalProof,
   recordClientDecision,
   getActionState,
+  recordApprovedBy,
 };
