@@ -13,6 +13,8 @@ export default function KanbanBoardContent({
   createDragEndHandler,
   onSelectCard,
   onColumnHeaderClick,
+  onColumnBatchAction,
+  onBatchSendSeRequest,
   onContextMenu,
   onHeightChange,
   onToggleWorkflow,
@@ -59,6 +61,8 @@ export default function KanbanBoardContent({
         onSelectCard={onSelectCard}
         cardsById={cardsById}
         onColumnHeaderClick={onColumnHeaderClick}
+        onColumnBatchAction={onColumnBatchAction}
+        onBatchSendSeRequest={onBatchSendSeRequest}
         onContextMenu={onContextMenu}
         onHeightChange={onHeightChange}
         isDarkMode={isDarkMode}

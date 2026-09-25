@@ -17,27 +17,66 @@
   overflow: hidden;
 }
 
+/* Loose cards: same grid, none of the group chrome */
+.batch-group.batch-group--loose {
+  border-color: transparent;
+  background: transparent;
+}
+
 .batch-group__header {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
   padding: 10px 12px;
-  border: none;
   background: #e6eef9;
   color: #1f2937;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
   transition: background-color 0.15s ease;
 
   &:hover {
     background: #dde7f6;
   }
+}
+
+.batch-group__toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 
   &:focus-visible {
     outline: 2px solid #3b82f6;
-    outline-offset: -2px;
+    outline-offset: 2px;
+  }
+}
+
+.batch-group__action {
+  flex-shrink: 0;
+  padding: 3px 12px;
+  border: 1px solid #2563eb;
+  border-radius: 999px;
+  background: transparent;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+
+  &:hover {
+    border-color: #1a4bb8;
+    color: #1a4bb8;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
   }
 }
 
