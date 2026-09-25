@@ -452,58 +452,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
             </div>
           </div>
 
-          {/* ===== Phone + Address ===== */}
-          <div className="mb-lg-3 mb-sm-0">
-            <div className="row g-3">
-              <div className="col-lg-6 col-sm-12">
-                <div className="form-field">
-                  <div className="phone-wrapper">
-                    <label className="phone-label">Phone</label>
-
-                    <Controller
-                      name="phone"
-                      control={control}
-                      rules={{
-                        validate: (value) => {
-                          if (!value) return true;
-                          const digits = (value || "").replace(/\D/g, "");
-                          return digits.length >= 7 || "Enter a valid phone number";
-                        },
-                      }}
-                      render={({ field }) => (
-                        <PhoneInput
-                          {...field}
-                          country="sa"
-                          enableSearch
-                          inputClass="phone-input"
-                          buttonClass="phone-flag"
-                        />
-                      )}
-                    />
-                  </div>
-                  {errors.phone && (
-                    <span className="field-error">
-                      {errors.phone.message}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="col-lg-6 col-sm-12">
-                <div className="form-field">
-                  <div className="form-floating desig-inp">
-                    <textarea
-                      className="form-control address-textarea"
-                      placeholder="Address"
-                      {...register("address")}
-                    />
-                    <label>Address</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ===== Board + Workflow ===== */}
+              {/* ===== Board + Workflow ===== */}
           <div className="mb-lg-3 mb-sm-0">
             <div className="row g-3">
               <div className="col-lg-6 col-sm-12">
@@ -602,6 +551,59 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
               </div>
             </div>
           </div>
+
+          {/* ===== Phone + Address ===== */}
+          <div className="mb-lg-3 mb-sm-0">
+            <div className="row g-3">
+              <div className="col-lg-6 col-sm-12">
+                <div className="form-field">
+                  <div className="phone-wrapper">
+                    <label className="phone-label">Phone</label>
+
+                    <Controller
+                      name="phone"
+                      control={control}
+                      rules={{
+                        validate: (value) => {
+                          if (!value) return true;
+                          const digits = (value || "").replace(/\D/g, "");
+                          return digits.length >= 7 || "Enter a valid phone number";
+                        },
+                      }}
+                      render={({ field }) => (
+                        <PhoneInput
+                          {...field}
+                          country="sa"
+                          enableSearch
+                          inputClass="phone-input"
+                          buttonClass="phone-flag"
+                        />
+                      )}
+                    />
+                  </div>
+                  {errors.phone && (
+                    <span className="field-error">
+                      {errors.phone.message}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="col-lg-6 col-sm-12">
+                <div className="form-field">
+                  <div className="form-floating desig-inp">
+                    <textarea
+                      className="form-control address-textarea"
+                      placeholder="Address"
+                      {...register("address")}
+                    />
+                    <label>Address</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+      
         </form>
       </div>
     </div>
