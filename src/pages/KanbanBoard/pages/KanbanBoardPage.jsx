@@ -10,7 +10,7 @@ import KanbanBoardContent from "../components/board/KanbanBoardContent";
 import CardForm from "../components/cards/CardForm";
 import StatusConfirmationModal from "../../../components/StatusConfirmationModal";
 import confirmTickIcon from "../../../assets/images/toast-success.svg";
-import SoApprovalEmailModal from "../CardFormTabs/Import/tabs/salesOrder/SoApprovalEmailModal";
+import SeCreationEmailModal from "../components/board/SeCreationEmailModal";
 import { isBacklogSeedCardId, NEXT_BATCH_NUMBER } from "../utils/backlogSeedCards";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
@@ -556,13 +556,11 @@ export default function KanbanBoardPage() {
         onConfirm={handleConfirmBatch}
       />
 
-      <SoApprovalEmailModal
+      <SeCreationEmailModal
         show={showSeRequestEmailModal}
         onClose={handleCloseSeRequestEmail}
-        onCreate={handleCloseSeRequestEmail}
-        stageLabel="SE Creation"
-        actionLabel="Sent for SE creation"
-        soCustomerName={selectedSeRequestBatch?.title ?? ""}
+        onSend={handleCloseSeRequestEmail}
+        batchTitle={selectedSeRequestBatch?.title ?? ""}
       />
 
       {selectedCard && columnsForCardForm && (
