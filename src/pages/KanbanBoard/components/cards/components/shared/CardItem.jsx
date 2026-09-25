@@ -80,7 +80,7 @@ ApiCardBlockerBadge.propTypes = {
 function ApiCardStickerBadge({ card }) {
   const IconComponent = resolveIconComponentStrict(card.stickerIcon);
 
-  if (!IconComponent) return null;
+  if (!IconComponent || card.isExportApprovalCard) return null;
 
   return (
     <div className="card-api-sticker-row" title={card.stickerName}>
@@ -100,6 +100,7 @@ ApiCardStickerBadge.propTypes = {
     stickerIcon: PropTypes.string,
     stickerColor: PropTypes.string,
     stickerName: PropTypes.string,
+    isExportApprovalCard: PropTypes.bool,
   }).isRequired,
 };
 
