@@ -11,8 +11,16 @@ import userIcon from "../../../assets/images/DummyProPic.avif";
 import edit from "../../../assets/images/edit.svg";
 import useUserReducer from "../../../store/UserReducer";
 import useRoleReducer from "../../../store/RoleReducer";
-import usePortReducer from "../../../store/PortReducer";
+import useWorkSpaceReducer from "../../../store/WorkSpaceReducer";
+import useWorkFlowReducer from "../../../store/WorkFlowReducer";
 import Gateway from "../../../gateway/gateway";
+
+// Accepts an array, a comma-separated string, or a single id and returns string ids
+const toIdArray = (value) => {
+  if (value == null || value === "") return [];
+  const list = Array.isArray(value) ? value : String(value).split(",");
+  return list.map((id) => String(id).trim()).filter(Boolean);
+};
 
 export function UserModal({ showModal, closeModal, onSuccess }) {
   const [profileImage, setProfileImage] = useState(null);
@@ -36,12 +44,15 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
       username: "",
       email: "",
       roleid: "",
-      port_id: "",
+      board_ids: [],
+      workflow_ids: [],
       address: "",
     },
   });
 
   const watchedUsername = watch("username");
+  const watchedBoardIds = watch("board_ids");
+  const boardIdsKey = (watchedBoardIds || []).join(",");
 
   const { createUser, updateUser, addEditLoader } = useUserReducer(
     (state) => state
@@ -49,9 +60,11 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
   const { fetchRoles, roles, isLoading: isLoadingRoles } = useRoleReducer(
     (state) => state
   );
-  const { getPorts, ports, isLoading: isLoadingPorts } = usePortReducer(
+  const { workspaces, listAllWorkspaces } = useWorkSpaceReducer(
     (state) => state
   );
+  const { boardsWorkflows, isLoadingBoardsWorkflows, getWorkflowsByBoards } =
+    useWorkFlowReducer((state) => state);
 
   // --- helpers ---
   const roleOptions = useMemo(() => {
@@ -67,27 +80,39 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
     [roleOptions]
   );
 
-  const portOptions = useMemo(() => {
-    return (ports || []).map((port) => {
-      const id = port?.port_id ?? port?._id ?? port?.id;
-      const name = port?.port ?? port?.name ?? port?.port_name ?? "";
+  const boardSelectOptions = useMemo(
+    () =>
+      (workspaces || []).flatMap((w) =>
+        (w.boards ?? []).map((b) => ({
+          value: String(b.board_id),
+          label: b.board_name,
+        }))
+      ),
+    [workspaces]
+  );
+
+  // With several boards selected, suffix the board name so same-named workflows stay distinguishable
+  const workflowSelectOptions = useMemo(() => {
+    if (!boardIdsKey) return [];
+    const multipleBoards = boardIdsKey.includes(",");
+    return (boardsWorkflows || []).map((wf) => {
+      const boardLabel = boardSelectOptions.find((b) => b.value === wf.board_id)?.label;
       return {
-        id: String(id ?? ""),
-        name,
+        value: String(wf.workflow_id),
+        label: multipleBoards && boardLabel
+          ? `${wf.workflow_name} (${boardLabel})`
+          : wf.workflow_name,
       };
     });
-  }, [ports]);
+  }, [boardIdsKey, boardsWorkflows, boardSelectOptions]);
 
-  const isPortsReady = !isLoadingPorts && portOptions.length > 0;
-  const portSelectOptions = useMemo(
-    () => portOptions.map((port) => ({ value: port.id, label: port.name })),
-    [portOptions]
-  );
+  const isWorkflowsReady =
+    !!boardIdsKey && !isLoadingBoardsWorkflows && workflowSelectOptions.length > 0;
 
   // Fetch roles when modal opens
   useEffect(() => {
     fetchRoles({ params: { page: 1, limit: 100 } });
-    getPorts({ params: { page: 1, limit: 1000 } });
+    if (!workspaces?.length) listAllWorkspaces();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -101,7 +126,8 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
         phone: showModal?.phone || "",
         address: showModal?.address || "",
         roleid: "", // ✅ keep empty first, set after roles loaded
-        port_id: "",
+        board_ids: [],
+        workflow_ids: [],
       });
 
       setProfileImagePreview(showModal?.avatar_path || userIcon);
@@ -113,7 +139,8 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
         username: "",
         email: "",
         roleid: "",
-        port_id: "",
+        board_ids: [],
+        workflow_ids: [],
         address: "",
       });
 
@@ -140,21 +167,39 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
     }
   }, [showModal?.user_id, showModal?.role_id, isRolesReady, roleOptions, setValue, getValues]);
 
+  // Pre-fill boards on edit once boards are loaded
   useEffect(() => {
     if (!showModal?.user_id) return;
-    if (!isPortsReady) return;
 
-    const incomingPortId = String(showModal?.port_id || "");
-    if (!incomingPortId) return;
+    const incomingBoardIds = toIdArray(showModal?.board_ids).filter((id) =>
+      boardSelectOptions.some((b) => b.value === id)
+    );
+    if (!incomingBoardIds.length) return;
 
-    const exists = portOptions.some((p) => p.id === incomingPortId);
-    if (!exists) return;
-
-    const current = String(getValues("port_id") || "");
-    if (current !== incomingPortId) {
-      setValue("port_id", incomingPortId, { shouldValidate: true });
+    if ((getValues("board_ids") || []).join(",") !== incomingBoardIds.join(",")) {
+      setValue("board_ids", incomingBoardIds, { shouldValidate: true });
     }
-  }, [showModal?.user_id, showModal?.port_id, isPortsReady, portOptions, setValue, getValues]);
+  }, [showModal?.user_id, showModal?.board_ids, boardSelectOptions, setValue, getValues]);
+
+  // Load workflows for all selected boards
+  useEffect(() => {
+    getWorkflowsByBoards({ boardIds: boardIdsKey ? boardIdsKey.split(",") : [] });
+  }, [boardIdsKey, getWorkflowsByBoards]);
+
+  // Pre-fill workflows on edit once the boards' workflows are loaded
+  useEffect(() => {
+    if (!showModal?.user_id) return;
+    if (!isWorkflowsReady) return;
+
+    const incomingWorkflowIds = toIdArray(showModal?.workflow_ids).filter((id) =>
+      workflowSelectOptions.some((w) => w.value === id)
+    );
+    if (!incomingWorkflowIds.length) return;
+
+    if ((getValues("workflow_ids") || []).join(",") !== incomingWorkflowIds.join(",")) {
+      setValue("workflow_ids", incomingWorkflowIds, { shouldValidate: true });
+    }
+  }, [showModal?.user_id, showModal?.workflow_ids, isWorkflowsReady, workflowSelectOptions, setValue, getValues]);
 
   useEffect(() => {
     const usernameInput = (watchedUsername || "").trim();
@@ -209,7 +254,8 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
       formData.append("phone", data.phone);
       formData.append("address", data.address || "");
       formData.append("roleid", data.roleid);
-      formData.append("port_id", data.port_id);
+      (data.board_ids || []).forEach((id) => formData.append("board_ids[]", id));
+      (data.workflow_ids || []).forEach((id) => formData.append("workflow_ids[]", id));
 
       if (profileImage) {
         formData.append("profileimg", profileImage);
@@ -406,7 +452,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
             </div>
           </div>
 
-          {/* ===== Phone + Port ===== */}
+          {/* ===== Phone + Address ===== */}
           <div className="mb-lg-3 mb-sm-0">
             <div className="row g-3">
               <div className="col-lg-6 col-sm-12">
@@ -444,22 +490,57 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
               </div>
               <div className="col-lg-6 col-sm-12">
                 <div className="form-field">
+                  <div className="form-floating desig-inp">
+                    <textarea
+                      className="form-control address-textarea"
+                      placeholder="Address"
+                      {...register("address")}
+                    />
+                    <label>Address</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ===== Board + Workflow ===== */}
+          <div className="mb-lg-3 mb-sm-0">
+            <div className="row g-3">
+              <div className="col-lg-6 col-sm-12">
+                <div className="form-field">
                   <div className="phone-wrapper">
-                    <label className="phone-label">Port</label>
+                    <label className="phone-label">Board</label>
                     <Controller
-                      name="port_id"
+                      name="board_ids"
                       control={control}
                       render={({ field }) => (
                         <PremiumSelect
-                          value={field.value != null ? String(field.value) : ""}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          options={portSelectOptions}
+                          isMulti
+                          className="premium-select--multi"
+                          value={field.value || []}
+                          onChange={(e) => {
+                            const nextBoardIds = e.target.value;
+                            field.onChange(nextBoardIds);
+                            // Drop workflows that belonged to a deselected board
+                            const keptWorkflowIds = new Set(
+                              boardsWorkflows
+                                .filter((wf) => nextBoardIds.includes(wf.board_id))
+                                .map((wf) => String(wf.workflow_id))
+                            );
+                            setValue(
+                              "workflow_ids",
+                              (getValues("workflow_ids") || []).filter((id) =>
+                                keptWorkflowIds.has(id)
+                              )
+                            );
+                          }}
+                          options={boardSelectOptions}
                           placeholder={
-                            isLoadingPorts ? "Loading ports..." : "Select Port"
+                            boardSelectOptions.length ? "Select Boards" : "Loading boards..."
                           }
-                          searchPlaceholder="Search port..."
-                          disabled={!isPortsReady}
-                          hasError={Boolean(errors.port_id)}
+                          searchPlaceholder="Search board..."
+                          disabled={!boardSelectOptions.length}
+                          hasError={Boolean(errors.board_ids)}
                           menuPortalTarget={
                             typeof document !== "undefined"
                               ? document.body
@@ -470,29 +551,53 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
                       )}
                     />
                   </div>
-                  {errors.port_id && (
+                  {errors.board_ids && (
                     <span className="field-error">
-                      {errors.port_id.message}
+                      {errors.board_ids.message}
                     </span>
                   )}
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* ===== Address ===== */}
-          <div className="mb-lg-3 mb-sm-0">
-            <div className="row g-3">
-              <div className="col-12">
+              <div className="col-lg-6 col-sm-12">
                 <div className="form-field">
-                  <div className="form-floating desig-inp">
-                    <textarea
-                      className="form-control address-textarea"
-                      placeholder="Address"
-                      {...register("address")}
+                  <div className="phone-wrapper">
+                    <label className="phone-label">Workflow</label>
+                    <Controller
+                      name="workflow_ids"
+                      control={control}
+                      render={({ field }) => (
+                        <PremiumSelect
+                          isMulti
+                          className="premium-select--multi"
+                          value={field.value || []}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          options={workflowSelectOptions}
+                          placeholder={
+                            !boardIdsKey
+                              ? "Select a board first"
+                              : isLoadingBoardsWorkflows
+                                ? "Loading workflows..."
+                                : "Select Workflows"
+                          }
+                          searchPlaceholder="Search workflow..."
+                          disabled={!isWorkflowsReady}
+                          hasError={Boolean(errors.workflow_ids)}
+                          menuPortalTarget={
+                            typeof document !== "undefined"
+                              ? document.body
+                              : undefined
+                          }
+                          menuClassName="user-modal-premium-select-menu"
+                        />
+                      )}
                     />
-                    <label>Address</label>
                   </div>
+                  {errors.workflow_ids && (
+                    <span className="field-error">
+                      {errors.workflow_ids.message}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

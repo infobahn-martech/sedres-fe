@@ -484,6 +484,31 @@ body .user-modal-sm .modal-dialog {
     position: relative;
   }
 
+  /* Multi-selects (Board / Workflow): grow with tags instead of the fixed 52px, capped at ~3 rows */
+  .premium-select--multi {
+    height: auto;
+
+    .cf-multi-select-email-input {
+      height: auto;
+      min-height: 52px;
+      padding-top: 14px;
+      padding-bottom: 10px;
+    }
+
+    .cf-multi-select-email-tags {
+      min-width: 0;
+    }
+
+    .cf-ms-tags-list {
+      max-height: 76px;
+      overflow-y: auto;
+    }
+
+    .cf-ms-tag {
+      max-width: 100%;
+    }
+  }
+
   /*
     Inline dropdown only (inside .cf-multi-select-email). Portal target = body —
     menus use fixed positioning from JS; see .cf-multi-select-dropdown.user-modal-premium-select-menu below.

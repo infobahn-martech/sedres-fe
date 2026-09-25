@@ -35,6 +35,39 @@ const useWorkFlowReducer = create((set, get) => ({
         }
     },
 
+    boardsWorkflows: [],
+    isLoadingBoardsWorkflows: false,
+    boardsWorkflowsRequestId: 0,
+
+    // Flat list of workflows (tagged with board_id) across several boards — used by
+    // multi-board pickers. Stale responses from an older selection are ignored.
+    getWorkflowsByBoards: async ({ boardIds }) => {
+        const requestId = get().boardsWorkflowsRequestId + 1;
+        set({ boardsWorkflowsRequestId: requestId });
+
+        if (!boardIds?.length) {
+            set({ boardsWorkflows: [], isLoadingBoardsWorkflows: false });
+            return;
+        }
+
+        set({ isLoadingBoardsWorkflows: true });
+        const lists = await Promise.all(
+            boardIds.map((boardId) =>
+                workflowService
+                    .getWorkflowByBoard(boardId)
+                    .then(({ data }) => {
+                        const source = data?.status === 'success' ? data?.data : data;
+                        const list = Array.isArray(source) ? source : source ? [source] : [];
+                        return list.map((wf) => ({ ...wf, board_id: String(boardId) }));
+                    })
+                    .catch(() => [])
+            )
+        );
+
+        if (get().boardsWorkflowsRequestId !== requestId) return;
+        set({ boardsWorkflows: lists.flat(), isLoadingBoardsWorkflows: false });
+    },
+
     getWorkflowByBoard: async ({ boardId, silent = false }) => {
         try {
             if (!silent) {
