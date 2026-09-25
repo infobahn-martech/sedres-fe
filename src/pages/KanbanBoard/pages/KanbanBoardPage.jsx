@@ -7,7 +7,6 @@ import useSyncKanbanSidebarWorkflows from "../../../shared/hooks/useSyncKanbanSi
 import useKanbanAddCardFromSidebar from "../../../shared/hooks/useKanbanAddCardFromSidebar";
 import { getAddModeCardFormWorkflow } from "../../../shared/helpers/kanbanSidebarWorkflow";
 import KanbanBoardContent from "../components/board/KanbanBoardContent";
-import SalesOrderPoModal from "../components/board/SalesOrderPoModal";
 import CardForm from "../components/cards/CardForm";
 import StatusConfirmationModal from "../../../components/StatusConfirmationModal";
 import confirmTickIcon from "../../../assets/images/toast-success.svg";
@@ -34,7 +33,6 @@ import { notify } from "../../../components/Toaster";
 import { useThemeStore } from "../../../shared/store/themeStore";
 import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
-import "../../../design/scss/pages/kanban-board/salesOrderPoModal.scss";
 export default function KanbanBoardPage() {
   const { boardId: boardIdParam } = useParams();
   const location = useLocation();
@@ -308,18 +306,14 @@ export default function KanbanBoardPage() {
 
   const { hasAnyPermission } = usePermissions();
 
-  /* Board-level multi-card selection for the "Sales Order / Generate PO" action — lives in a
-     shared store (see kanbanCardSelectionStore) since the trigger button lives in the global
-     header, not on this page. Kept separate from `selectedCard` above, which drives the
-     (unrelated) card-detail modal. Only ids are stored; full card data is resolved from this
-     page's own `cardsById` so the queue can never go stale relative to the live board data. */
+  /* Board-level multi-card selection (see kanbanCardSelectionStore). Kept separate from
+     `selectedCard` above, which drives the (unrelated) card-detail modal. Only ids are stored;
+     full card data is resolved from this page's own `cardsById`. */
   const selectedCardIds = useKanbanCardSelectionStore((state) => state.selectedCardIds);
-  const isPoFlowOpen = useKanbanCardSelectionStore((state) => state.isPoFlowOpen);
   const toggleCardSelectionId = useKanbanCardSelectionStore((state) => state.toggleCardId);
   const setCardSelectionId = useKanbanCardSelectionStore((state) => state.setCardSelected);
   const removeCardSelectionId = useKanbanCardSelectionStore((state) => state.removeCardId);
   const clearCardSelection = useKanbanCardSelectionStore((state) => state.clearSelection);
-  const closePoFlow = useKanbanCardSelectionStore((state) => state.closePoFlow);
 
   /* Backlog column batch icon (SAIPEM board): confirm the batch built from the ticked cards. */
   const [showBatchConfirmModal, setShowBatchConfirmModal] = useState(false);
@@ -453,20 +447,6 @@ export default function KanbanBoardPage() {
     window.addEventListener("mouseup", endDrag);
     return () => window.removeEventListener("mouseup", endDrag);
   }, []);
-
-  const poFlowCards = useMemo(
-    () => selectedCardIds.map((id) => cardsById[id]).filter(Boolean),
-    [selectedCardIds, cardsById]
-  );
-
-  const handleSalesOrderPoGenerated = useCallback(() => {
-    if (!isOperatorBoard) refetchBoard();
-  }, [isOperatorBoard, refetchBoard]);
-
-  const handleClosePoFlow = useCallback(() => {
-    closePoFlow();
-    clearCardSelection();
-  }, [closePoFlow, clearCardSelection]);
 
   // Drop any selected id that disappears from the board (moved/removed by a refetch).
   useEffect(() => {
@@ -620,13 +600,6 @@ export default function KanbanBoardPage() {
           onCardSelectDragEnter={handleCardSelectDragEnter}
         />
       </div>
-
-      <SalesOrderPoModal
-        show={isPoFlowOpen && poFlowCards.length > 0}
-        cards={poFlowCards}
-        onClose={handleClosePoFlow}
-        onGenerated={handleSalesOrderPoGenerated}
-      />
 
       <StatusConfirmationModal
         show={showBatchConfirmModal}

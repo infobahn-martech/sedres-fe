@@ -36,12 +36,11 @@ import {
 // 🆕 Kanban sidebar icons + tooltip
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
-import { FiPlus, FiInbox, FiFilter, FiPlusCircle, FiActivity, FiLayout, FiMail, FiEdit3, FiMapPin, FiLayers, FiList, FiShoppingCart } from 'react-icons/fi';
+import { FiPlus, FiInbox, FiFilter, FiPlusCircle, FiActivity, FiLayout, FiMail, FiEdit3, FiMapPin, FiLayers, FiList } from 'react-icons/fi';
 import TaskCardModal from '../../pages/TaskCard';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
 import useAuthReducer from '../../store/AuthReducer';
-import useKanbanCardSelectionStore from '../../shared/store/kanbanCardSelectionStore';
 import { useKanbanSidebarBridge } from '../../store/kanbanSidebarBridge';
 import { ROUTE_PATHS } from '../../router/paths';
 import {
@@ -152,11 +151,6 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       actionKey,
     }))
   );
-  const { hasModule } = usePermissions();
-  const canUseSalesOrderPoAction = hasModule(PERMISSION_MODULES.KANBAN_CARD);
-  const selectedCardCount = useKanbanCardSelectionStore((state) => state.selectedCardIds.length);
-  const openCardPoFlow = useKanbanCardSelectionStore((state) => state.openPoFlow);
-  const clearCardSelection = useKanbanCardSelectionStore((state) => state.clearSelection);
 
   const boardRouteMatchForEditWorkflow = pathname.match(/^\/kanban-board\/([^/]+)$/);
   const kanbanBoardIdForEditWorkflow = boardRouteMatchForEditWorkflow?.[1] ?? null;
@@ -177,15 +171,9 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         { id: 11, icon: FiLayers, label: 'Task' }
         // { id: 7, icon: FiMail, label: 'Outlook' },
       );
-      if (canUseSalesOrderPoAction) {
-        icons.push({ id: 13, icon: FiShoppingCart, label: 'Sales Order / Generate PO' });
-      }
       return icons;
     }
     const icons = [];
-    if (canUseSalesOrderPoAction) {
-      icons.push({ id: 13, icon: FiShoppingCart, label: 'Sales Order / Generate PO' });
-    }
     if (showEditWorkflowSidebarIcon) {
       icons.push({ id: 9, icon: FiEdit3, label: 'Edit Workflow' });
       icons.push({ id: 12, icon: FiList, label: 'Select Workflow' });
@@ -195,7 +183,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       { id: 7, icon: FiMail, label: 'Outlook' }
     );
     return icons;
-  }, [showEditWorkflowSidebarIcon, kanbanFullSidebar, isPortSupervisorRole, canAddCard, canUseSalesOrderPoAction]);
+  }, [showEditWorkflowSidebarIcon, kanbanFullSidebar, isPortSupervisorRole, canAddCard]);
 
   const restrictedKanbanStripIcons = useMemo(
     () =>
@@ -780,13 +768,6 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         }
       }
 
-      if (item.label === 'Sales Order / Generate PO') {
-        if (selectedCardCount === 0) return;
-        openCardPoFlow();
-        setActiveKanbanIcon(item.id);
-        return;
-      }
-
       if (item.label === 'Filter') {
         const newShowState = !showFilterPanel;
         closeSelectWorkflowModal();
@@ -939,33 +920,16 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
                 (item.label === 'Add' && showSelectWorkflowModal) ||
                 (item.label === 'Task' && showSubTaskModal);
 
-              const isPoAction = item.label === 'Sales Order / Generate PO';
-              const isPoActionDisabled = isPoAction && selectedCardCount === 0;
-
               return (
                 <div key={item.id} style={{ position: 'relative' }}>
                   <div
-                    className={`kanban-sidebar-icon ${isActive ? 'active' : ''} ${isPoActionDisabled ? 'kanban-sidebar-icon--disabled' : ''}`}
+                    className={`kanban-sidebar-icon ${isActive ? 'active' : ''}`}
                     onClick={() => handleIconClick(item)}
                     data-tooltip-id="sidebar-tooltip"
-                    data-tooltip-content={isPoAction && selectedCardCount > 0 ? `${item.label} (${selectedCardCount} selected)` : item.label}
+                    data-tooltip-content={item.label}
                   >
                     <Icon size={22} />
                   </div>
-
-                  {isPoAction && selectedCardCount > 0 && (
-                    <span
-                      className="kanban-sidebar-badge"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        clearCardSelection();
-                      }}
-                      data-tooltip-id="sidebar-tooltip"
-                      data-tooltip-content="Clear selection"
-                    >
-                      {selectedCardCount}
-                    </span>
-                  )}
 
                   {item.label === 'Board teams' && showBoardTeamsSubmenu && (
                     <div className="kanban-sidebar-submenu">
