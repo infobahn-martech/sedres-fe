@@ -22,8 +22,38 @@ const DEFAULT_MESSAGE_HTML =
   "<p><br></p>" +
   "<p>Please find the attached Sales Orders with supporting documents. Kindly review our sales order and confirm so we can submit our final invoice.</p>";
 
+const escapeHtml = (text) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// The draft body is plain text with "\n" line breaks; Quill needs one paragraph per line.
+const plainTextToHtml = (text) =>
+  text
+    .split("\n")
+    .map((line) => (line.trim() ? `<p>${escapeHtml(line)}</p>` : "<p><br></p>"))
+    .join("");
+
+const getFileNameFromUrl = (url) => {
+  const name = url.split("?")[0].split("/").pop();
+  try {
+    return decodeURIComponent(name);
+  } catch {
+    return name;
+  }
+};
+
 // Opened from a batch group's "Sent for SE creation" action on the Kanban board.
-const SeCreationEmailModal = ({ show, onClose, onSend, isSubmitting = false, batchTitle = "", defaultTo = "", defaultCc = "" }) => {
+const SeCreationEmailModal = ({
+  show,
+  onClose,
+  onSend,
+  isSubmitting = false,
+  batchTitle = "",
+  defaultTo = "",
+  defaultCc = "",
+  defaultSubject = "",
+  defaultBody = "",
+  documentUrl = "",
+}) => {
   const [toValue, setToValue] = useState("");
   const [ccValue, setCcValue] = useState("");
   const [subjectValue, setSubjectValue] = useState("");
@@ -35,11 +65,11 @@ const SeCreationEmailModal = ({ show, onClose, onSend, isSubmitting = false, bat
     if (!show) return;
     setToValue(defaultTo);
     setCcValue(defaultCc);
-    setSubjectValue(`Sent for SE Creation${batchTitle ? ` — ${batchTitle}` : ""}`);
-    setMessage(DEFAULT_MESSAGE_HTML);
+    setSubjectValue(defaultSubject || `Sent for SE Creation${batchTitle ? ` — ${batchTitle}` : ""}`);
+    setMessage(defaultBody ? plainTextToHtml(defaultBody) : DEFAULT_MESSAGE_HTML);
     setAttachments([]);
     setErrors({});
-  }, [show, batchTitle, defaultTo, defaultCc]);
+  }, [show, batchTitle, defaultTo, defaultCc, defaultSubject, defaultBody]);
 
   const clearError = (field) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -158,7 +188,7 @@ const SeCreationEmailModal = ({ show, onClose, onSend, isSubmitting = false, bat
         <div className="se-email-attachments__toolbar">
           <span className="se-email-attachments__label">
             <FiPaperclip className="se-email-attachments__clip" />
-            Attachments ({attachments.length})
+            Attachments ({attachments.length + (documentUrl ? 1 : 0)})
           </span>
           <label className={`se-email-attachments__add${isSubmitting ? " se-email-attachments__add--disabled" : ""}`}>
             <FiPlus />
@@ -175,8 +205,21 @@ const SeCreationEmailModal = ({ show, onClose, onSend, isSubmitting = false, bat
             />
           </label>
         </div>
-        {attachments.length > 0 && (
+        {(documentUrl || attachments.length > 0) && (
           <div className="se-email-attachments__items">
+            {documentUrl && (
+              <div className="se-email-attachments__item">
+                <a
+                  href={documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="se-email-attachments__name"
+                  title={`Open ${getFileNameFromUrl(documentUrl)}`}
+                >
+                  {getFileNameFromUrl(documentUrl)}
+                </a>
+              </div>
+            )}
             {attachments.map((file, index) => (
               <div key={`${file.name}-${index}`} className="se-email-attachments__item">
                 <button
@@ -254,6 +297,9 @@ SeCreationEmailModal.propTypes = {
   batchTitle: PropTypes.string,
   defaultTo: PropTypes.string,
   defaultCc: PropTypes.string,
+  defaultSubject: PropTypes.string,
+  defaultBody: PropTypes.string,
+  documentUrl: PropTypes.string,
 };
 
 export default SeCreationEmailModal;

@@ -11,7 +11,6 @@ import CardForm from "../components/cards/CardForm";
 import StatusConfirmationModal from "../../../components/StatusConfirmationModal";
 import confirmTickIcon from "../../../assets/images/toast-success.svg";
 import SeCreationEmailModal from "../components/board/SeCreationEmailModal";
-import { getNextBatchNumber } from "../utils/batchNumber";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -33,6 +32,7 @@ import { notify } from "../../../components/Toaster";
 import { useThemeStore } from "../../../shared/store/themeStore";
 import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
+
 export default function KanbanBoardPage() {
   const { boardId: boardIdParam } = useParams();
   const location = useLocation();
@@ -320,12 +320,7 @@ export default function KanbanBoardPage() {
   /* Column the batch moves its cards to — the one after Backlog on the board. */
   const [selectedBatchTargetColumn, setSelectedBatchTargetColumn] = useState(null);
   const moveCardsToColumn = useBatchMoveStore((state) => state.moveCardsToColumn);
-  const batchByCardId = useBatchMoveStore((state) => state.batchByCardId);
   const [isCreatingBatch, setIsCreatingBatch] = useState(false);
-  const nextBatchNumber = useMemo(
-    () => getNextBatchNumber(Object.values(batchByCardId)),
-    [batchByCardId]
-  );
 
   const handleColumnBatchAction = useCallback(
     ({ nextColumnKey }) => {
@@ -341,19 +336,42 @@ export default function KanbanBoardPage() {
   /* "Sent for SE creation" on a batch group header opens the email draft for that batch. */
   const [showSeRequestEmailModal, setShowSeRequestEmailModal] = useState(false);
   const [selectedSeRequestBatch, setSelectedSeRequestBatch] = useState(null);
+  const [seRequestEmailDraft, setSeRequestEmailDraft] = useState(null);
+  const batchIdByNumber = useBatchMoveStore((state) => state.batchIdByNumber);
 
-  const handleBatchSendSeRequest = useCallback((batch) => {
-    setSelectedSeRequestBatch(batch);
-    setShowSeRequestEmailModal(true);
-  }, []);
+  /* Opens the email prefilled from the backend draft for the batch. */
+  const handleBatchSendSeRequest = useCallback(
+    async (batch) => {
+      const batchId = batchIdByNumber[batch?.title];
+      if (!batchId) {
+        notify("Batch not found", "error");
+        return;
+      }
+      let data;
+      try {
+        ({ data } = await daService.getSeCreationEmailDraft(batchId));
+      } catch (error) {
+        data = error?.response?.data;
+      }
+      if (data?.status !== "success" || !data?.data) {
+        notify(data?.message || "Failed to load SE creation email draft", "error");
+        return;
+      }
+      setSeRequestEmailDraft(data.data);
+      setSelectedSeRequestBatch(batch);
+      setShowSeRequestEmailModal(true);
+    },
+    [batchIdByNumber]
+  );
 
   const handleCloseSeRequestEmail = useCallback(() => {
     setShowSeRequestEmailModal(false);
     setSelectedSeRequestBatch(null);
+    setSeRequestEmailDraft(null);
   }, []);
 
-  /* Creates the batch on the backend from the ticked cards' calls. A batch number already taken
-     (e.g. after a refresh cleared the local batches) is retried with the next sequence. */
+  /* Creates the batch on the backend from the ticked cards' calls. The backend issues the batch
+     number (e.g. Sep_26_Batch1) and returns it as batch_number. */
   const handleConfirmBatch = useCallback(async () => {
     const batchCards = selectedCardIds
       .map((id) => cardsById[id])
@@ -365,45 +383,35 @@ export default function KanbanBoardPage() {
     }
 
     const callIds = batchCards.map((card) => Number(card.callId));
-    const usedNumbers = Object.values(batchByCardId);
     setIsCreatingBatch(true);
     try {
-      for (let attempt = 0; attempt < 5; attempt += 1) {
-        const batchNo = getNextBatchNumber(usedNumbers);
-        let data;
-        try {
-          ({ data } = await daService.createHubBatch({ call_ids: callIds, batch_no: batchNo }));
-        } catch (error) {
-          data = error?.response?.data;
-        }
-
-        if (data?.status === true) {
-          moveCardsToColumn(
-            batchCards.map((card) => card.id),
-            selectedBatchTargetColumn,
-            data.batch_number || batchNo
-          );
-          notify(`Batch ${data.batch_number || batchNo} created`, "success");
-          setShowBatchConfirmModal(false);
-          clearCardSelection();
-          return;
-        }
-
-        const message = data?.message || "Failed to create batch";
-        if (!/already exists/i.test(message)) {
-          notify(message, "error");
-          return;
-        }
-        usedNumbers.push(batchNo);
+      let data;
+      try {
+        ({ data } = await daService.createHubBatch({ call_ids: callIds }));
+      } catch (error) {
+        data = error?.response?.data;
       }
-      notify("Could not find a free batch number, please try again", "error");
+
+      if (data?.status !== true) {
+        notify(data?.message || "Failed to create batch", "error");
+        return;
+      }
+
+      moveCardsToColumn(
+        batchCards.map((card) => card.id),
+        selectedBatchTargetColumn,
+        data.batch_number,
+        data.batch_id
+      );
+      notify(`Batch ${data.batch_number} created`, "success");
+      setShowBatchConfirmModal(false);
+      clearCardSelection();
     } finally {
       setIsCreatingBatch(false);
     }
   }, [
     selectedCardIds,
     cardsById,
-    batchByCardId,
     moveCardsToColumn,
     selectedBatchTargetColumn,
     clearCardSelection,
@@ -603,7 +611,7 @@ export default function KanbanBoardPage() {
 
       <StatusConfirmationModal
         show={showBatchConfirmModal}
-        statusText={`Create batch ${nextBatchNumber} with the ${selectedCardIds.length} selected ${
+        statusText={`Create a batch with the ${selectedCardIds.length} selected ${
           selectedCardIds.length === 1 ? "card" : "cards"
         }?`}
         icon={confirmTickIcon}
@@ -616,7 +624,12 @@ export default function KanbanBoardPage() {
         show={showSeRequestEmailModal}
         onClose={handleCloseSeRequestEmail}
         onSend={handleCloseSeRequestEmail}
-        batchTitle={selectedSeRequestBatch?.title ?? ""}
+        batchTitle={seRequestEmailDraft?.batch_number || selectedSeRequestBatch?.title || ""}
+        defaultTo={seRequestEmailDraft?.recipient ?? ""}
+        defaultCc={seRequestEmailDraft?.cc ?? ""}
+        defaultSubject={seRequestEmailDraft?.subject ?? ""}
+        defaultBody={seRequestEmailDraft?.body ?? ""}
+        documentUrl={seRequestEmailDraft?.document_url ?? ""}
       />
 
       {selectedCard && columnsForCardForm && (
