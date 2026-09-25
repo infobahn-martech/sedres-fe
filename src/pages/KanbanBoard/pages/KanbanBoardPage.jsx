@@ -12,7 +12,7 @@ import CardForm from "../components/cards/CardForm";
 import StatusConfirmationModal from "../../../components/StatusConfirmationModal";
 import confirmTickIcon from "../../../assets/images/toast-success.svg";
 import SoApprovalEmailModal from "../CardFormTabs/Import/tabs/salesOrder/SoApprovalEmailModal";
-import { isBacklogSeedCardId, NEXT_BATCH_NUMBER } from "../utils/backlogSeedCards";
+import { getNextBatchNumber } from "../utils/batchNumber";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -29,6 +29,7 @@ import { resolveCardFormVariant } from "../../../shared/helpers/cardFormVariant"
 import { getFirstUserRoleId } from "../../../shared/helpers/groUserRoles";
 import useAuthReducer from "../../../store/AuthReducer";
 import workflowService from "../../../services/workflowService";
+import daService from "../../../services/daService";
 import { notify } from "../../../components/Toaster";
 import { useThemeStore } from "../../../shared/store/themeStore";
 import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
@@ -325,6 +326,12 @@ export default function KanbanBoardPage() {
   /* Column the batch moves its cards to — the one after Backlog on the board. */
   const [selectedBatchTargetColumn, setSelectedBatchTargetColumn] = useState(null);
   const moveCardsToColumn = useBatchMoveStore((state) => state.moveCardsToColumn);
+  const batchByCardId = useBatchMoveStore((state) => state.batchByCardId);
+  const [isCreatingBatch, setIsCreatingBatch] = useState(false);
+  const nextBatchNumber = useMemo(
+    () => getNextBatchNumber(Object.values(batchByCardId)),
+    [batchByCardId]
+  );
 
   const handleColumnBatchAction = useCallback(
     ({ nextColumnKey }) => {
@@ -351,11 +358,62 @@ export default function KanbanBoardPage() {
     setSelectedSeRequestBatch(null);
   }, []);
 
-  const handleConfirmBatch = useCallback(() => {
-    moveCardsToColumn(selectedCardIds, selectedBatchTargetColumn, NEXT_BATCH_NUMBER);
-    setShowBatchConfirmModal(false);
-    clearCardSelection();
-  }, [moveCardsToColumn, selectedCardIds, selectedBatchTargetColumn, clearCardSelection]);
+  /* Creates the batch on the backend from the ticked cards' calls. A batch number already taken
+     (e.g. after a refresh cleared the local batches) is retried with the next sequence. */
+  const handleConfirmBatch = useCallback(async () => {
+    const batchCards = selectedCardIds
+      .map((id) => cardsById[id])
+      .filter((card) => card?.callId);
+    if (batchCards.length === 0) {
+      notify("Select at least one card with a call to create a batch", "error");
+      setShowBatchConfirmModal(false);
+      return;
+    }
+
+    const callIds = batchCards.map((card) => Number(card.callId));
+    const usedNumbers = Object.values(batchByCardId);
+    setIsCreatingBatch(true);
+    try {
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const batchNo = getNextBatchNumber(usedNumbers);
+        let data;
+        try {
+          ({ data } = await daService.createHubBatch({ call_ids: callIds, batch_no: batchNo }));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+
+        if (data?.status === true) {
+          moveCardsToColumn(
+            batchCards.map((card) => card.id),
+            selectedBatchTargetColumn,
+            data.batch_number || batchNo
+          );
+          notify(`Batch ${data.batch_number || batchNo} created`, "success");
+          setShowBatchConfirmModal(false);
+          clearCardSelection();
+          return;
+        }
+
+        const message = data?.message || "Failed to create batch";
+        if (!/already exists/i.test(message)) {
+          notify(message, "error");
+          return;
+        }
+        usedNumbers.push(batchNo);
+      }
+      notify("Could not find a free batch number, please try again", "error");
+    } finally {
+      setIsCreatingBatch(false);
+    }
+  }, [
+    selectedCardIds,
+    cardsById,
+    batchByCardId,
+    moveCardsToColumn,
+    selectedBatchTargetColumn,
+    clearCardSelection,
+  ]);
 
   const handleToggleCardSelection = useCallback(
     (card) => toggleCardSelectionId(card.id),
@@ -412,10 +470,7 @@ export default function KanbanBoardPage() {
 
   // Drop any selected id that disappears from the board (moved/removed by a refetch).
   useEffect(() => {
-    /* Static Backlog cards are never in `cardsById`, so they are never stale. */
-    const staleIds = selectedCardIds.filter(
-      (id) => !cardsById[id] && !isBacklogSeedCardId(id)
-    );
+    const staleIds = selectedCardIds.filter((id) => !cardsById[id]);
     staleIds.forEach((id) => removeCardSelectionId(id));
   }, [cardsById, selectedCardIds, removeCardSelectionId]);
   const handleCreateCard = useCallback(() => {
@@ -575,12 +630,13 @@ export default function KanbanBoardPage() {
 
       <StatusConfirmationModal
         show={showBatchConfirmModal}
-        statusText={`Create batch ${NEXT_BATCH_NUMBER} with the ${selectedCardIds.length} selected ${
+        statusText={`Create batch ${nextBatchNumber} with the ${selectedCardIds.length} selected ${
           selectedCardIds.length === 1 ? "card" : "cards"
         }?`}
         icon={confirmTickIcon}
         onCancel={handleCloseBatchConfirm}
         onConfirm={handleConfirmBatch}
+        isLoading={isCreatingBatch}
       />
 
       <SoApprovalEmailModal

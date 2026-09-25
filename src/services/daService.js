@@ -59,6 +59,11 @@ const getActionState = (callId) => Gateway.get(`/da/action_state/${callId}`);
  * Records who approved the SO. Errors with "No approval proof uploaded yet for this call"
  * until the approval proof has been uploaded for the same call. */
 const recordApprovedBy = (payload) => Gateway.post('/da/da_record_approved_by', payload);
+/** @param {{ call_ids: number[], batch_no: string }} payload
+ * @returns {Promise<{ data: { status: true, batch_id: number, batch_number: string }
+ *   | { status: false|'error', message: string } }>}
+ * Fails when batch_no already exists or the calls span more than one category (Crewing/Port Call). */
+const createHubBatch = (payload) => Gateway.post('/da/create_hub_batch', payload);
 
 export default {
   getDaDetails,
@@ -82,4 +87,5 @@ export default {
   recordClientDecision,
   getActionState,
   recordApprovedBy,
+  createHubBatch,
 };
