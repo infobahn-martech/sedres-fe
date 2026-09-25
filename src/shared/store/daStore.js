@@ -51,3 +51,18 @@ export const useDaLocalVerifiedItems = create((set, get) => ({
     }),
   isItemVerified: (callId, soItemId) => get().verifiedItemIds[callId]?.has(soItemId) ?? false,
 }));
+
+// Local-only fallback for the Sales Order tab's SO-approval progress: da/da_upload_so_approval_proof
+// and da/da_record_approved_by persist server-side, but api/da/action_state (the only read-back)
+// has no field for either, and no field telling a current-cycle "approved" from a leftover one
+// (see SalesOrderList's effectiveSoButtonState). This remembers them per call so closing and
+// reopening a card resumes where it was left instead of starting over. Same in-memory-only
+// pattern as useDaLocalReachedDates above — cleared on full page reload by design; once
+// action_state returns these fields, that value takes priority over this fallback.
+export const useDaLocalSoApproval = create((set) => ({
+  soApproval: {},
+  setSoApprovalField: (callId, key, value) =>
+    set((state) => ({
+      soApproval: { ...state.soApproval, [callId]: { ...state.soApproval[callId], [key]: value } },
+    })),
+}));

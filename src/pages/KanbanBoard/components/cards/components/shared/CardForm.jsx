@@ -2605,10 +2605,9 @@ function CardForm({
   // (no extra API call — we already have targetColumnId from the advance_stage response) so
   // handleClose can re-apply it after the close-refetch overwrites board state wholesale.
   const lastDaMoveRef = useRef(null);
-  // Bumped on every close so SalesOrderList's local-only soActionState (Column 4 "SO Sent for
-  // approval" Send/Approve/Reject state — see its own declaration) resets back to the initial
-  // "Send For SO approval" state on reopen too, not only on a full page refresh. Per request
-  // 2026-09-11 — temporary, same as soActionState no longer trusting api/da/action_state.
+  // Bumped on every close so SalesOrderList refetches its soActionState (Column 4 "SO Sent for
+  // approval" Send/Approve/Reject state — see its own declaration) from api/da/action_state on
+  // reopen too, not only on a full page refresh.
   const [soActionStateResetToken, setSoActionStateResetToken] = useState(0);
 
   const handleClose = useCallback(async () => {
@@ -2653,8 +2652,9 @@ function CardForm({
     const targetColumnId = getColumnIdFromStepLabel(stepLabel, columns, columnOrder);
     if (!targetColumnId) return;
 
-    // DA cards persist via api/da/advance_stage; other boards still move locally only
-    // (no generic "move card" endpoint exists elsewhere in the app today).
+    // DA cards persist via api/da/advance_stage; other boards via kanban_card/move_card, the
+    // same endpoint the board's drag-and-drop uses (useKanbanDnD), so the move survives the
+    // board refetch handleClose runs.
     if (isDaCardContext) {
       const callIdRaw = card?.call_id ?? card?.callId;
       const callId = callIdRaw != null ? String(callIdRaw).trim() : "";
@@ -2678,8 +2678,17 @@ function CardForm({
       return;
     }
 
+    if (isAdvancingStage) return;
+    const previousColumnId = currentColumn?.id;
     if (moveCardToColumn) moveCardToColumn(card.id, targetColumnId);
-  }, [moveCardToColumn, card?.id, card?.call_id, card?.callId, columns, columnOrder, currentStep, isDaCardContext, isAdvancingStage, validateGroCardBeforeAction]);
+    setIsAdvancingStage(true);
+    kanbanBoardService.moveCard({ card_id: card.id, to_column_id: targetColumnId })
+      .catch((err) => {
+        if (moveCardToColumn && previousColumnId) moveCardToColumn(card.id, previousColumnId);
+        notify(err?.response?.data?.message || "Failed to move card to that stage.", "error");
+      })
+      .finally(() => setIsAdvancingStage(false));
+  }, [moveCardToColumn, card?.id, card?.call_id, card?.callId, columns, columnOrder, currentStep, currentColumn?.id, isDaCardContext, isAdvancingStage, validateGroCardBeforeAction]);
 
   // Non-GRO: topbar tracks card.color when it changes (visual only).
   useEffect(() => {
