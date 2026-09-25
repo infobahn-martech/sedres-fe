@@ -330,3 +330,58 @@
 .modal-dialog.custom-mod .modal-footer {
     padding-bottom: 0px;
 }
+// Always-expanded permission columns
+.addPermissions {
+    .permColumns {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 24px 40px;
+
+        @media($sm-991) {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        @media($sm-579) {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    .permColumn-title {
+        margin: 0 0 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-primary);
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .permRow {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 5px 0;
+
+        &--nested {
+            padding-left: 26px;
+        }
+
+        .form-check-input {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            cursor: pointer;
+
+            &:checked {
+                background-color: #1a6cf0;
+                border-color: #1a6cf0;
+            }
+        }
+
+        label {
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+    }
+}

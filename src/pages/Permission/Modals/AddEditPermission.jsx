@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import CustomModal from "../../../components/CustomModal";
-import icon from "../../../assets/images/icon-chevToggle.svg";
 import usePermissionReducer from "../../../store/PermissionReducer";
 import useAlertReducer from "../../../store/AlertReducer";
 import "../../../design/scss/add-permissions.scss";
@@ -259,30 +258,12 @@ export function PermissionModal({
   // Check if a permission is selected
   const isPermissionSelected = (permissionId) => selectedPermissions.has(Number(permissionId));
 
-  // Handle section-level toggle (select/deselect all children)
-  const handleSectionToggle = (section, checked) => {
-    const permissionIds = [];
-
-    // Collect all permission IDs from this section
-    if (section.items && section.items.length > 0) {
-      section.items.forEach((item) => {
-        permissionIds.push(Number(item.permissionId || item.id));
-      });
-    }
-
-    if (section.subSections && section.subSections.length > 0) {
-      section.subSections.forEach((sub) => {
-        permissionIds.push(Number(sub.permissionId || sub.id));
-        if (sub.items && sub.items.length > 0) {
-          sub.items.forEach((item) => {
-            permissionIds.push(Number(item.permissionId || item.id));
-          });
-        }
-      });
-    }
-
-    // Also include the section itself
-    permissionIds.push(Number(section.permissionId || section.id));
+  // Toggle a sub-module together with all of its actions
+  const handleSubToggle = (sub, checked) => {
+    const permissionIds = [
+      Number(sub.permissionId || sub.id),
+      ...(sub.items ?? []).map((item) => Number(item.permissionId || item.id)),
+    ];
 
     setSelectedPermissions((prev) => {
       const newSet = new Set(prev);
@@ -295,234 +276,70 @@ export function PermissionModal({
   };
 
   // -------------------------------------------
-  //  RENDER TOP LEVEL MENU
+  //  Single checkbox row
   // -------------------------------------------
-  const renderTopLevel = (section) => {
-    const hasSub = section.subSections && section.subSections.length > 0;
-    const hasItems = section.items && section.items.length > 0;
-    const collapseId = `permission_${section.id}_items`;
-    const subCollapseId = `permission_${section.id}_sub`;
-    const toggleId = buildToggleId(section.id);
-    const sectionPermissionId = section.permissionId || section.id;
-    const isSectionSelected =
-      isPermissionSelected(sectionPermissionId) ||
-      (hasItems &&
-        section.items.some((item) =>
-          isPermissionSelected(item.permissionId || item.id)
-        )) ||
-      (hasSub &&
-        section.subSections.some(
-          (sub) =>
-            isPermissionSelected(sub.permissionId || sub.id) ||
-            (sub.items &&
-              sub.items.some((item) =>
-                isPermissionSelected(item.permissionId || item.id)
-              ))
-        ));
+  const renderCheckRow = ({ id, title, checked, onChange, nested = false }) => (
+    <div className={`permRow${nested ? " permRow--nested" : ""}`} key={id}>
+      <input
+        type="checkbox"
+        className="form-check-input"
+        id={id}
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <label htmlFor={id}>{title}</label>
+    </div>
+  );
 
-    return (
-      <div className="permCheck-item" key={section.id}>
-        <div className="permCheckWrp">
-          <div className="title">{section.title}</div>
-
-          <span className="toggleSwitch">
-            <span className="togglerCheckbox">
-              <input
-                type="checkbox"
-                id={toggleId}
-                checked={isSectionSelected}
-                onChange={(e) => handleSectionToggle(section, e.target.checked)}
-              />
-              <label htmlFor={toggleId} className="checkLabel" />
-            </span>
-          </span>
-
-          <button
-            type="button"
-            className="btn btn-toggle"
-            {...(hasSub || hasItems
-              ? {
-                "data-bs-toggle": "collapse",
-                "data-bs-target": [hasItems && `#${collapseId}`, hasSub && `#${subCollapseId}`]
-                  .filter(Boolean)
-                  .join(", "),
-                "aria-expanded": "false",
-                "aria-controls": [hasItems && collapseId, hasSub && subCollapseId]
-                  .filter(Boolean)
-                  .join(" "),
-              }
-              : {})}
-          >
-            <img src={icon} alt="down" />
-          </button>
-        </div>
-
-        {/* DIRECT ITEMS (Dashboard Case) */}
-        {hasItems && (
-          <div className="collapse" id={collapseId}>
-            <div className="permcheck-subitems row">
-              {section.items.map((item) => renderDirectItem(section, item))}
-            </div>
-          </div>
-        )}
-
-        {/* SUB-SECTIONS (User Management etc.) */}
-        {hasSub && (
-          <div className="permCheck-inner">
-            <div className="collapse" id={subCollapseId}>
-              <div className="permInnerItems">
-                {section.subSections.map((sub) => renderSubLevel(section, sub))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
+  const renderActionRow = (idParts, item, nested) => {
+    const itemPermissionId = item.permissionId || item.id;
+    return renderCheckRow({
+      id: buildToggleId(...idParts, item.id),
+      title: item.title,
+      checked: isPermissionSelected(itemPermissionId),
+      onChange: (checked) => handlePermissionChange(itemPermissionId, checked),
+      nested,
+    });
   };
 
   // -------------------------------------------
-  //  Render Level 2 (Submenu)
+  //  Render Level 2 (sub-module + indented actions)
   // -------------------------------------------
   const renderSubLevel = (section, sub) => {
     const hasItems = sub.items && sub.items.length > 0;
-    const collapseId = `permission_${section.id}_${sub.id}`;
-    const toggleId = buildToggleId(section.id, sub.id);
-    const subPermissionId = sub.permissionId || sub.id;
     const isSubSelected =
-      isPermissionSelected(subPermissionId) ||
+      isPermissionSelected(sub.permissionId || sub.id) ||
       (hasItems &&
         sub.items.some((item) =>
           isPermissionSelected(item.permissionId || item.id)
         ));
 
-    // Handle sub-section toggle
-    const handleSubToggle = (checked) => {
-      const permissionIds = [Number(subPermissionId)];
-      if (sub.items && sub.items.length > 0) {
-        sub.items.forEach((item) => {
-          permissionIds.push(Number(item.permissionId || item.id));
-        });
-      }
-
-      setSelectedPermissions((prev) => {
-        const newSet = new Set(prev);
-        permissionIds.forEach((id) => {
-          if (checked) newSet.add(id);
-          else newSet.delete(id);
-        });
-        return newSet;
-      });
-    };
-
     return (
-      <div className="permCheck-item level_2" key={sub.id}>
-        <div className="permCheckWrp">
-          <div className="title">{sub.title}</div>
-
-          <span className="toggleSwitch">
-            <span className="togglerCheckbox">
-              <input
-                type="checkbox"
-                id={toggleId}
-                checked={isSubSelected}
-                onChange={(e) => handleSubToggle(e.target.checked)}
-              />
-              <label htmlFor={toggleId} className="checkLabel" />
-            </span>
-          </span>
-
-          {hasItems && (
-            <button
-              className="btn btn-toggle"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target={`#${collapseId}`}
-            >
-              <img src={icon} alt="down" />
-            </button>
+      <div className="permGroup" key={sub.id}>
+        {renderCheckRow({
+          id: buildToggleId(section.id, sub.id),
+          title: sub.title,
+          checked: isSubSelected,
+          onChange: (checked) => handleSubToggle(sub, checked),
+        })}
+        {hasItems &&
+          sub.items.map((item) =>
+            renderActionRow([section.id, sub.id], item, true)
           )}
-        </div>
-
-        {hasItems && (
-          <div className="collapse" id={collapseId}>
-            <div className="permcheck-subitems row">
-              {sub.items.map((item) => renderItem(section, sub, item))}
-            </div>
-          </div>
-        )}
       </div>
     );
   };
 
   // -------------------------------------------
-  //  Render Dashboard direct items
+  //  Render Level 1 (column)
   // -------------------------------------------
-  const renderDirectItem = (section, item) => {
-    const toggleId = buildToggleId(section.id, item.id);
-    const itemPermissionId = item.permissionId || item.id;
-    const isItemSelected = isPermissionSelected(itemPermissionId);
-
-    return (
-      <div className="col-xl-4 col-md-6" key={item.id}>
-        <div className="permCheckWrp">
-          <div className="title">{item.title}</div>
-
-          <span className="toggleSwitch">
-            <span className="togglerCheckbox">
-              <input
-                type="checkbox"
-                id={toggleId}
-                checked={isItemSelected}
-                onChange={(e) =>
-                  handlePermissionChange(itemPermissionId, e.target.checked)
-                }
-              />
-              <label htmlFor={toggleId} className="checkLabel" />
-            </span>
-          </span>
-
-          <button className="btn btn-toggle" type="button">
-            <img src={icon} alt="down" />
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  // -------------------------------------------
-  //  Render Item (List / Add / Edit...)
-  // -------------------------------------------
-  const renderItem = (section, sub, item) => {
-    const toggleId = buildToggleId(section.id, sub.id, item.id);
-    const itemPermissionId = item.permissionId || item.id;
-    const isItemSelected = isPermissionSelected(itemPermissionId);
-
-    return (
-      <div className="col-xl-4 col-md-6" key={item.id}>
-        <div className="permCheckWrp">
-          <div className="title">{item.title}</div>
-
-          <span className="toggleSwitch">
-            <span className="togglerCheckbox">
-              <input
-                type="checkbox"
-                id={toggleId}
-                checked={isItemSelected}
-                onChange={(e) =>
-                  handlePermissionChange(itemPermissionId, e.target.checked)
-                }
-              />
-              <label htmlFor={toggleId} className="checkLabel" />
-            </span>
-          </span>
-
-          <button className="btn btn-toggle" type="button">
-            <img src={icon} alt="down" />
-          </button>
-        </div>
-      </div>
-    );
-  };
+  const renderTopLevel = (section) => (
+    <div className="permColumn" key={section.id}>
+      <h6 className="permColumn-title">{section.title}</h6>
+      {section.items?.map((item) => renderActionRow([section.id], item, false))}
+      {section.subSections?.map((sub) => renderSubLevel(section, sub))}
+    </div>
+  );
 
   // -------------------------------------------
   //  Body
@@ -588,7 +405,9 @@ export function PermissionModal({
 
           {/* Render dynamic sections */}
           {!isLoadingPermissions && PERMISSION_SECTIONS.length > 0 && (
-            PERMISSION_SECTIONS.map((section) => renderTopLevel(section))
+            <div className="permColumns">
+              {PERMISSION_SECTIONS.map((section) => renderTopLevel(section))}
+            </div>
           )}
 
           {/* Empty state */}
