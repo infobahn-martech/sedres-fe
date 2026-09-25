@@ -12,8 +12,10 @@ const useBatchMoveStore = create((set) => ({
   columnByCardId: {},
   /** { [cardId]: batchNumber } — what the card is grouped under in its new column. */
   batchByCardId: {},
+  /** { [batchNumber]: batchId } — backend id from create_hub_batch, used for the SE email draft. */
+  batchIdByNumber: {},
 
-  moveCardsToColumn: (cardIds, columnKey, batchNumber) =>
+  moveCardsToColumn: (cardIds, columnKey, batchNumber, batchId) =>
     set((state) => {
       if (!cardIds?.length || !columnKey) return state;
       const columnByCardId = { ...state.columnByCardId };
@@ -22,10 +24,12 @@ const useBatchMoveStore = create((set) => ({
         columnByCardId[cardId] = columnKey;
         if (batchNumber) batchByCardId[cardId] = batchNumber;
       });
-      return { columnByCardId, batchByCardId };
+      const batchIdByNumber =
+        batchNumber && batchId ? { ...state.batchIdByNumber, [batchNumber]: batchId } : state.batchIdByNumber;
+      return { columnByCardId, batchByCardId, batchIdByNumber };
     }),
 
-  clearMoves: () => set({ columnByCardId: {}, batchByCardId: {} }),
+  clearMoves: () => set({ columnByCardId: {}, batchByCardId: {}, batchIdByNumber: {} }),
 }));
 
 export default useBatchMoveStore;
