@@ -19,7 +19,6 @@ import {
   getBoardGridTemplateColumns,
   getColumnWidth,
 } from "../../utils/boardGridHelpers";
-import { BACKLOG_SEED_CARDS } from "../../utils/backlogSeedCards";
 import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "../../../../design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -73,8 +72,8 @@ export default function WorkflowColumns({
 
   /* "Batch UI Test" board renders grouped preview batches (first lane only) instead of API cards */
   const isBatchUiTest = isBatchUiTestWorkflow(workflow);
-  /* Cards of the batch board's first lane, with the static Backlog stand-ins added and any
-     card a batch has moved drawn in its new column instead. */
+  /* Cards of the batch board's first lane, with any card a batch has moved drawn in its new
+     column instead. */
   const columnByCardId = useBatchMoveStore((state) => state.columnByCardId);
   const batchByCardId = useBatchMoveStore((state) => state.batchByCardId);
 
@@ -86,8 +85,7 @@ export default function WorkflowColumns({
 
     workflow.columnOrder.forEach((colKey) => {
       byColumn[colKey] = [];
-      const seedCards = isBacklogColumn(workflow.columns[colKey]) ? BACKLOG_SEED_CARDS : [];
-      [...getSwimlaneColumnCards(workflow, laneId, colKey), ...seedCards].forEach((card) => {
+      getSwimlaneColumnCards(workflow, laneId, colKey).forEach((card) => {
         const target = columnByCardId[card.id];
         if (target && target !== colKey) relocated.push({ card, target });
         else byColumn[colKey].push(card);

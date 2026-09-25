@@ -88,7 +88,7 @@ export default function BatchGroup({
               columnTitle={columnTitle}
               workflowTitle={workflowTitle}
               fixedDimensions={{ width: cardWidth }}
-              isDragDisabled={!isBoardBatch || Boolean(card.isStatic)}
+              isDragDisabled={!isBoardBatch}
               isSelectedForAction={selectedIds.includes(card.id)}
               onToggleSelectForAction={toggleSelect}
             />

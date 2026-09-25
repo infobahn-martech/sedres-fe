@@ -215,7 +215,6 @@ export default function SwimlaneColumnCell({
                   columnTitle={column.title}
                   workflowTitle={workflowTitle}
                   fixedDimensions={{ width: cardWidth }}
-                  isDragDisabled={Boolean(card.isStatic)}
                   isSelectedForAction={selectedActionCardIds.includes(card.id)}
                   onToggleSelectForAction={onToggleCardSelect}
                   onSelectDragStart={onCardSelectDragStart}
