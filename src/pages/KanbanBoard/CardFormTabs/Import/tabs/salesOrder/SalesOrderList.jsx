@@ -15,7 +15,7 @@ import DatePickerField from "../../../shared/components/DatePickerField";
 import PremiumSelect from "../../../../../../components/form/PremiumSelect";
 import useAlertReducer from "../../../../../../store/AlertReducer";
 import useAuthReducer from "../../../../../../store/AuthReducer";
-import { useDaLocalVerifiedItems } from "../../../../../../shared/store/daStore";
+import { useDaLocalSoApproval, useDaLocalVerifiedItems } from "../../../../../../shared/store/daStore";
 import { getFirstUserRoleId } from "../../../../../../shared/helpers/groUserRoles";
 import WorkOrderCreationModal from "./WorkOrderCreationModal";
 import WorkOrderDetailsModal from "./WorkOrderDetailsModal";
@@ -545,9 +545,17 @@ const SalesOrderList = ({
   // updates until the refetch below confirms them. Falls back to SO_ACTION_STATE_DEFAULT
   // ("send") whenever the fetch fails or the call isn't found.
   const [soActionState, setSoActionState] = useState(SO_ACTION_STATE_DEFAULT);
+  // SO-approval progress kept per call in useDaLocalSoApproval (daStore.js) so a close + reopen
+  // of the same card resumes where it was left — action_state has no field for any of these.
+  const soApprovalProgress = useDaLocalSoApproval((s) => s.soApproval[callId]);
+  const setSoApprovalField = useDaLocalSoApproval((s) => s.setSoApprovalField);
   // Whether the client's approval was recorded in THIS session (handleApproveDaClientDecision
   // below) — see effectiveSoButtonState for why a persisted "approved" alone isn't enough.
-  const [didApproveSoInSession, setDidApproveSoInSession] = useState(false);
+  const didApproveSoInSession = soApprovalProgress?.didApproveSoInSession === true;
+  const setDidApproveSoInSession = useCallback(
+    (value) => setSoApprovalField(callId, "didApproveSoInSession", value),
+    [callId, setSoApprovalField]
+  );
 
   const fetchSoActionState = useCallback(() => {
     if (!callId) return;
@@ -563,13 +571,11 @@ const SalesOrderList = ({
   // closing and reopening the SAME card doesn't necessarily remount this component, so callId
   // alone wasn't enough to catch that case, only an actual page refresh (a real fresh mount).
   // Resets to the default first so the previous card's state never shows while the fetch below
-  // is still in flight.
+  // is still in flight. The useDaLocalSoApproval progress is deliberately NOT reset here, so the
+  // card resumes where it was left; only the uncommitted "Approved by" input is re-seeded.
   useEffect(() => {
     setSoActionState(SO_ACTION_STATE_DEFAULT);
-    setDidApproveSoInSession(false);
-    setIsApprovalEmailUploaded(false);
-    setApprovedByInput("");
-    setApprovedByName("");
+    setApprovedByInput(useDaLocalSoApproval.getState().soApproval[callId]?.approvedByName ?? "");
   }, [callId, soActionStateResetToken]);
 
   // daStatusRefreshToken is bumped by onDaStatusRefresh after every action below, so the
@@ -783,17 +789,19 @@ const SalesOrderList = ({
   const [showApprovalEmailUploadModal, setShowApprovalEmailUploadModal] = useState(false);
 
   // Whether the client's SO approval email has been uploaded for this card (see
-  // handleUploadApprovalEmail) — the "Approved" label only shows once it has been. Local-only
-  // and per-session, same as soActionState: da/da_upload_approval_email's response carries no
-  // readable flag to hydrate this from, so it's reset together with soActionState below.
-  const [isApprovalEmailUploaded, setIsApprovalEmailUploaded] = useState(false);
+  // handleUploadApprovalEmail) — the "Approved" label only shows once it has been. Kept per call
+  // in useDaLocalSoApproval (see soApprovalProgress above): api/da/action_state carries no
+  // readable flag to hydrate this from.
+  const isApprovalEmailUploaded = soApprovalProgress?.isApprovalEmailUploaded === true;
+  const setIsApprovalEmailUploaded = (value) => setSoApprovalField(callId, "isApprovalEmailUploaded", value);
 
   // "Approved by" header field shown in place of the old static "Approved" label once the
   // approval email has been uploaded (per request 2026-09-23): the typed name is committed with
-  // the tick button and wiped with the clear button. Local-only and per-session, same as
-  // isApprovalEmailUploaded above — no backend field exists for it yet.
-  const [approvedByInput, setApprovedByInput] = useState("");
-  const [approvedByName, setApprovedByName] = useState("");
+  // the tick button and wiped with the clear button. The committed name is kept per call in
+  // useDaLocalSoApproval, same as isApprovalEmailUploaded above — no backend field to read it back.
+  const [approvedByInput, setApprovedByInput] = useState(soApprovalProgress?.approvedByName ?? "");
+  const approvedByName = soApprovalProgress?.approvedByName ?? "";
+  const setApprovedByName = (value) => setSoApprovalField(callId, "approvedByName", value);
   const [isRecordingApprovedBy, setIsRecordingApprovedBy] = useState(false);
 
   // api/da/da_action_email_draft/{call_id} — { status: "success", data: { recipient,
