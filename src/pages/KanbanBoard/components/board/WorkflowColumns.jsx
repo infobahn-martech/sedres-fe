@@ -98,8 +98,11 @@ export default function WorkflowColumns({
 
   /* A column whose cards carry a batch renders them as groups (loose cards first, headerless),
      the same shape the "Batch UI Test" board uses. */
-  const getBatchesForColumn = (colKey) => {
-    const cards = batchLaneCardsByColumn?.[colKey];
+  const getBatchesForColumn = (colKey, laneId) => {
+    const cards =
+      batchLaneCardsByColumn && laneId === swimlaneOrder[0]
+        ? batchLaneCardsByColumn[colKey]
+        : getSwimlaneColumnCards(workflow, laneId, colKey);
     if (!cards?.length) return undefined;
 
     const loose = [];
@@ -118,7 +121,7 @@ export default function WorkflowColumns({
     const batches = [];
     if (loose.length > 0) {
       batches.push({
-        id: `${colKey}-loose`,
+        id: `${laneId}-${colKey}-loose`,
         title: "",
         isUngrouped: true,
         usesBoardSelection: true,
@@ -127,7 +130,7 @@ export default function WorkflowColumns({
     }
     byNumber.forEach((batchCards, batchNumber) => {
       batches.push({
-        id: `${colKey}-${batchNumber}`,
+        id: `${laneId}-${colKey}-${batchNumber}`,
         title: batchNumber,
         usesBoardSelection: true,
         cards: batchCards,
@@ -333,9 +336,7 @@ export default function WorkflowColumns({
                         batches={
                           isBatchUiTest && laneId === swimlaneOrder[0]
                             ? getBatchUiTestBatches(column)
-                            : batchLaneCardsByColumn && laneId === swimlaneOrder[0]
-                              ? getBatchesForColumn(colKey)
-                              : undefined
+                            : getBatchesForColumn(colKey, laneId)
                         }
                       />
                     );

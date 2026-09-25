@@ -29,6 +29,21 @@ const useBatchMoveStore = create((set) => ({
       return { columnByCardId, batchByCardId, batchIdByNumber };
     }),
 
+  /** Replaces the grouping with da/batches, which is fetched alongside every board load. */
+  setBatches: (batches) =>
+    set(() => {
+      const batchByCardId = {};
+      const batchIdByNumber = {};
+      (Array.isArray(batches) ? batches : []).forEach((batch) => {
+        if (!batch?.batch_number) return;
+        if (batch.batch_id != null) batchIdByNumber[batch.batch_number] = batch.batch_id;
+        (batch.card_ids || []).forEach((cardId) => {
+          batchByCardId[String(cardId)] = batch.batch_number;
+        });
+      });
+      return { batchByCardId, batchIdByNumber };
+    }),
+
   clearMoves: () => set({ columnByCardId: {}, batchByCardId: {}, batchIdByNumber: {} }),
 }));
 
