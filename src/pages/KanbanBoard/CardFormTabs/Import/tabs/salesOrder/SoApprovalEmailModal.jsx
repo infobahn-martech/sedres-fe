@@ -83,7 +83,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
       // a doomed request with no warning. Still freely editable before sending.
       setMessage(DEFAULT_MESSAGE_HTML);
       setMessageError("");
-      // Pre-load documents from verified SO line items' Supporting Documents field
+      // Pre-load the stage document (sales order) from api/da/da_action_email_draft
       setAttachments(preLoadedDocuments || []);
     }
   }, [show, soCustomerName, stageLabel, actionLabel, defaultTo, defaultCc, preLoadedDocuments]);
@@ -104,8 +104,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
     setAttachments((prev) => (prev.some((a) => a?.id === doc.id) ? prev : [...prev, doc]));
   };
 
-  // Pre-loaded entries (SO line items' Supporting Documents, or the stage document from
-  // api/da/da_action_email_draft) are plain { name, url? } objects, not browser Files —
+  // Pre-loaded entries (the stage document from api/da/da_action_email_draft) are plain { name, url? } objects, not browser Files —
   // URL.createObjectURL only accepts a Blob, so it would throw for these. Open their own url
   // when one is known; otherwise there's nothing to preview from the frontend alone.
   const handleOpenAttachment = (file) => {
@@ -238,11 +237,10 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
                       button's onClick + fileInputRef.current.click() only ever added one file
                       even after Ctrl-selecting several and clicking Open (reported 2026-09-15) —
                       switched to the browser's native label-for-input association (no
-                      JS-triggered .click()) instead. */}
-                  <label
-                    className="so-approval-email-add-menu-item"
-                    onClick={() => setShowAddMenu(false)}
-                  >
+                      JS-triggered .click()) instead. The menu is closed from onChange, not the
+                      label's onClick — closing on click unmounted this input before the picker
+                      returned, so onChange never fired and nothing got attached. */}
+                  <label className="so-approval-email-add-menu-item">
                     Upload from device
                     <input
                       type="file"
@@ -252,6 +250,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
                       onChange={(e) => {
                         handleFilesSelected(e.target.files);
                         e.target.value = "";
+                        setShowAddMenu(false);
                       }}
                     />
                   </label>
