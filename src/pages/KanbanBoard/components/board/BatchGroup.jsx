@@ -6,6 +6,7 @@ import "../../../../design/scss/pages/kanban-board/batch-group.scss";
 
 const noop = () => {};
 const EMPTY_SELECTED_IDS = [];
+const AWAITING_SE_COLUMN_PATTERN = /^awaiting\s+(for\s+)?se$/i;
 
 /**
  * Collapsible group of cards inside a column cell ("Batch UI Test" preview).
@@ -32,6 +33,8 @@ export default function BatchGroup({
   /* Batches the board builds join its own selection and card clicks; the "Batch UI Test"
      preview keeps its own, since its cards are not in the board's data. */
   const isBoardBatch = Boolean(batch.usesBoardSelection);
+  /* Batches already emailed for SE creation sit in "Awaiting SE" (live title "Awaiting for SE"). */
+  const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   const selectedIds = isBoardBatch ? selectedActionCardIds : previewSelectedIds;
   const toggleSelect = isBoardBatch
     ? onToggleCardSelect
@@ -58,7 +61,11 @@ export default function BatchGroup({
             <span className="batch-group__title">{batch.title}</span>
           </button>
 
-          {isBoardBatch ? (
+          {isBoardBatch && isAwaitingSeColumn ? (
+            <button type="button" className="batch-group__action">
+              Upload SE Approval
+            </button>
+          ) : isBoardBatch ? (
             <button
               type="button"
               className="batch-group__action"
