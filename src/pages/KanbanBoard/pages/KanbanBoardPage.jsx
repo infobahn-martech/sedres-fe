@@ -370,6 +370,53 @@ export default function KanbanBoardPage() {
     setSeRequestEmailDraft(null);
   }, []);
 
+  /* Sends the SE creation email via da_send_action_email. The endpoint takes a single call_id,
+     so the batch's first card with a call is used. */
+  const [isSendingSeRequestEmail, setIsSendingSeRequestEmail] = useState(false);
+
+  const handleSendSeRequestEmail = useCallback(
+    async (emailData) => {
+      const callId = (selectedSeRequestBatch?.cards || [])
+        .map((card) => card?.callId ?? cardsById[card?.id]?.callId)
+        .find(Boolean);
+      if (!callId) {
+        notify("No call found for this batch", "error");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("call_id", callId);
+      formData.append("to", emailData?.to ?? "");
+      formData.append("cc", emailData?.cc ?? "");
+      formData.append("subject", emailData?.subject ?? "");
+      formData.append("body", emailData?.message ?? "");
+      if (seRequestEmailDraft?.stage_document_id != null) {
+        formData.append("stage_document_id", seRequestEmailDraft.stage_document_id);
+      }
+      (emailData?.attachments || []).forEach((file) => formData.append("attachments[]", file));
+
+      setIsSendingSeRequestEmail(true);
+      try {
+        let data;
+        try {
+          ({ data } = await daService.sendActionEmail(formData));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+        if (!data || data.status === "error" || data.status === false) {
+          notify(data?.message || "Failed to send SE creation email", "error");
+          return;
+        }
+        notify(data.message || "Email sent successfully", "success");
+        handleCloseSeRequestEmail();
+        refetchBoard?.();
+      } finally {
+        setIsSendingSeRequestEmail(false);
+      }
+    },
+    [selectedSeRequestBatch, seRequestEmailDraft, cardsById, handleCloseSeRequestEmail, refetchBoard]
+  );
+
   /* Creates the batch on the backend from the ticked cards' calls. The backend issues the batch
      number (e.g. Sep_26_Batch1) and returns it as batch_number. */
   const handleConfirmBatch = useCallback(async () => {
@@ -623,7 +670,8 @@ export default function KanbanBoardPage() {
       <SeCreationEmailModal
         show={showSeRequestEmailModal}
         onClose={handleCloseSeRequestEmail}
-        onSend={handleCloseSeRequestEmail}
+        onSend={handleSendSeRequestEmail}
+        isSubmitting={isSendingSeRequestEmail}
         batchTitle={seRequestEmailDraft?.batch_number || selectedSeRequestBatch?.title || ""}
         defaultTo={seRequestEmailDraft?.recipient ?? ""}
         defaultCc={seRequestEmailDraft?.cc ?? ""}
