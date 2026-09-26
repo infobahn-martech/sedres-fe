@@ -771,8 +771,8 @@ const SalesOrderList = ({
   // the cc list for this stage just like the recipient; empty string when it sends none.
   const [draftCcEmail, setDraftCcEmail] = useState("");
 
-  // Pre-loaded documents from verified SO line items' Supporting Documents field — collected
-  // when opening the modal and passed to SoApprovalEmailModal to auto-attach them.
+  // Pre-loaded attachments passed to SoApprovalEmailModal — only the backend's stage document
+  // (the sales order itself) from da_action_email_draft.
   const [preLoadedDocuments, setPreLoadedDocuments] = useState([]);
 
   // Invoice Issuance modal — opened once staff records the client's approval. Reuses the
@@ -806,9 +806,9 @@ const SalesOrderList = ({
 
   // api/da/da_action_email_draft/{call_id} — { status: "success", data: { recipient,
   // stage_document_id? } }. Best effort: if it fails or callId is missing, the modal just opens
-  // with an empty "To" instead of blocking staff from sending the email at all. Also collects
-  // documents from verified SO line items (Supporting Documents field) and pre-loads them as
-  // email attachments.
+  // with an empty "To" instead of blocking staff from sending the email at all. Line items'
+  // Supporting Documents are NOT pre-attached — the sales order document already contains them;
+  // staff adds any extra files via the modal's "+ Add".
   //
   // stage_document_id (when present) is a document the backend already generated/holds for
   // this stage — confirmed via a live response carrying it (2026-09-15) even though it isn't
@@ -822,14 +822,7 @@ const SalesOrderList = ({
   const handleOpenSoApprovalEmailModal = async (actionLabel) => {
     setModalActionLabel(actionLabel || daActionButtonLabel);
 
-    // Collect documents from verified SO line items
     const docs = [];
-    const verifiedIds = localVerifiedItemIds || new Set();
-    (salesOrderList || []).forEach((item) => {
-      if (verifiedIds.has(item.id) && item.documents && Array.isArray(item.documents)) {
-        docs.push(...item.documents);
-      }
-    });
 
     if (!callId) {
       setPreLoadedDocuments(docs);
