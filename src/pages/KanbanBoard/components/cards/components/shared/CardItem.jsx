@@ -655,6 +655,12 @@ function CardItem({
   isDragDisabled = false,
 }) {
   const isApiCard = card.cardSource === "api";
+  // is_export_approval_card is true while export approval is still pending, so no tick.
+  // false or a missing key (other boards) keeps the tick.
+  const exportApprovalFlag = card.raw?.is_export_approval_card ?? card.is_export_approval_card;
+  const isExportApprovalPending = ["true", "1"].includes(String(exportApprovalFlag));
+  const canSelectForAction =
+    typeof onToggleSelectForAction === "function" && !isExportApprovalPending;
   const topRowUsernameInitial = isApiCard && !isShrunk ? getUsernameInitial(card.user) : null;
   const isTransportCoordinatorWorkflow = String(workflowTitle || "").trim().toLowerCase().includes("transport coordinator");
   const cardColor = card.color || "#2A00FF";
@@ -713,7 +719,9 @@ function CardItem({
           {...(KANBAN_DND_DISABLED ? {} : provided.draggableProps)}
           {...(KANBAN_DND_DISABLED ? {} : provided.dragHandleProps)}
           onMouseEnter={
-            typeof onSelectDragEnter === "function" ? () => onSelectDragEnter(card) : undefined
+            canSelectForAction && typeof onSelectDragEnter === "function"
+              ? () => onSelectDragEnter(card)
+              : undefined
           }
           style={{
             ...fixedBoardSizeStyle,
@@ -721,7 +729,7 @@ function CardItem({
             "--card-color": cardColor,
           }}
         >
-          {(typeof onToggleSelectForAction === "function" ||
+          {(canSelectForAction ||
             (isApiCard && !isShrunk && (topRowUsernameInitial || card.cardTypeIcon))) && (
             <div className="kanban-card-top-row">
               <div className="kanban-card-top-row-left">
@@ -742,7 +750,7 @@ function CardItem({
                     <ApiCardBlockerBadge card={card} />
                   </span>
                 ) : null}
-                {typeof onToggleSelectForAction === "function" && (
+                {canSelectForAction && (
                   <button
                     type="button"
                     className={`kanban-card-select-toggle ${isSelectedForAction ? "is-selected" : ""}`}
