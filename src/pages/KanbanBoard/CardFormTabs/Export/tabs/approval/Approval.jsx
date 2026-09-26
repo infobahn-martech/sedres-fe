@@ -104,6 +104,15 @@
     return currentIndex > stageIndex;
   };
 
+// role_ids allowed to edit each Export Approval section. Update only this map
+// when role assignments change. Credit Controller = DA (22),
+// Manager = Port Manager (1) or Port Operator (2), CEO = 23.
+const EXPORT_APPROVAL_SECTION_ROLES = Object.freeze({
+  creditController: ["22"],
+  manager: ["1", "2"],
+  ceo: ["23"],
+});
+
 const createEmptyPartySection = () => ({
   details: "",
   vesselCountUnderAgency: "",
@@ -605,7 +614,7 @@ const createEmptyPartySection = () => ({
     hideActions: PropTypes.bool,
   };
 
-  function PartySectionCard({ title, fields, values, onChange, imageFiles, onImageFilesChange, imagesDisabled, showImageUpload = true }) {
+  function PartySectionCard({ title, fields, values, onChange, imageFiles, onImageFilesChange, imagesDisabled, fieldsDisabled = false, showImageUpload = true }) {
     return (
       <section className="approval-form-card approval-party-card">
         <h3 className="form-group-title">{title}</h3>
@@ -616,6 +625,7 @@ const createEmptyPartySection = () => ({
               onChange={(e) => onChange("details", e.target.value)}
               placeholder={fields.detailsPlaceholder}
               rows={3}
+              disabled={fieldsDisabled}
             />
           </FormField>
           <FormField label={fields.vesselCountLabel}>
@@ -623,6 +633,7 @@ const createEmptyPartySection = () => ({
               value={values.vesselCountUnderAgency}
               onChange={(e) => onChange("vesselCountUnderAgency", e.target.value)}
               placeholder={fields.vesselCountPlaceholder}
+              readOnly={fieldsDisabled}
             />
           </FormField>
           <FormField label={fields.outstandingLabel}>
@@ -630,6 +641,7 @@ const createEmptyPartySection = () => ({
               value={values.outstandingBalanceSoa}
               onChange={(e) => onChange("outstandingBalanceSoa", e.target.value)}
               placeholder={fields.outstandingPlaceholder}
+              readOnly={fieldsDisabled}
             />
           </FormField>
           <FormField label={fields.latestPaymentLabel}>
@@ -637,6 +649,7 @@ const createEmptyPartySection = () => ({
               value={values.latestPayment}
               onChange={(e) => onChange("latestPayment", e.target.value)}
               placeholder={fields.latestPaymentPlaceholder}
+              readOnly={fieldsDisabled}
             />
           </FormField>
           <FormField label={fields.latestPaymentDateLabel}>
@@ -648,6 +661,7 @@ const createEmptyPartySection = () => ({
                 onChange("latestPaymentTime", value.time);
               }}
               placeholder="Select date and time"
+              disabled={fieldsDisabled}
             />
           </FormField>
           {showImageUpload ? (
@@ -691,6 +705,7 @@ const createEmptyPartySection = () => ({
     imageFiles: PropTypes.arrayOf(PropTypes.instanceOf(File)).isRequired,
     onImageFilesChange: PropTypes.func.isRequired,
     imagesDisabled: PropTypes.bool,
+    fieldsDisabled: PropTypes.bool,
     showImageUpload: PropTypes.bool,
   };
 
@@ -772,24 +787,20 @@ const createEmptyPartySection = () => ({
     );
 
     const userRoleId = useAuthReducer((state) => state.profileData?.role?.role_id);
-    // Each role owns exactly one section — Credit Controller, Manager (OFM), CEO.
-    // Every other role gets all three sections locked (view-only), regardless
-    // of workflow stage. Per explicit user confirmation (Permission Fix,
-    // 2026-08-04): Manager = role_id 1 (absorbed the deleted Port Supervisor
-    // role 3's permissions), CEO = role_id 23 only. Not ROLE_IDS.* (used
-    // app-wide for routing, left untouched here) since that mapping doesn't
-    // match this environment's actual data.
-    // Credit Controller is no longer assigned to any role_id — the role-22
-    // (DA) check that previously owned this section was removed per explicit
-    // user confirmation; the section now stays locked for every role.
-    const isControllerRole = false;
-    // DA (22) additionally granted Manager-section access per explicit user
-    // confirmation — DA now gets the same permissions as role 1.
-    const isManagerRole = String(userRoleId) === "1" || String(userRoleId) === "22";
-    const isCeoRole = String(userRoleId) === "23";
+    // Each section is editable only by the role_ids listed in
+    // EXPORT_APPROVAL_SECTION_ROLES; every other role gets it locked
+    // (view-only), regardless of workflow stage.
+    const roleKey = String(userRoleId);
+    const isControllerRole = EXPORT_APPROVAL_SECTION_ROLES.creditController.includes(roleKey);
+    const isManagerRole = EXPORT_APPROVAL_SECTION_ROLES.manager.includes(roleKey);
+    const isCeoRole = EXPORT_APPROVAL_SECTION_ROLES.ceo.includes(roleKey);
     // Vessel party image uploads are restricted to Credit Controller and CEO
     // only, per user confirmation — not Manager, unlike the section gating above.
     const canEditPartyImages = isControllerRole || isCeoRole;
+    // Branch and the vessel party fields autosave on every change, and the
+    // backend rejects that save for roles without access ("You do not have
+    // access to do this"), so they are editable by the Credit Controller only.
+    const canEditSharedDetails = isControllerRole;
 
     // CEO's "On Hold" action records ceo.status as "on_hold" — read directly
     // off that section instead of workflow.current_stage, which the backend
@@ -807,8 +818,10 @@ const createEmptyPartySection = () => ({
     // already on hold, since re-clicking it is a no-op.
     const isCeoStageUsable = stageActive.ceo || isOnHold;
 
-    // Credit Controller section is locked (view-only) for every role — see
-    // isControllerRole above.
+    // Credit Controller edits this section up to the point it has acted — once
+    // creditControllerApproved or the stage has moved on
+    // (!stageActive.credit_controller), the fieldsDisabled/hideActions checks
+    // below lock it.
     const canEditCreditControllerSection = isControllerRole;
 
     // "Approved" doesn't advance the effective stage (only "proceed_to_*"
@@ -941,8 +954,10 @@ const createEmptyPartySection = () => ({
         skipNextAutoSaveRef.current = false;
         return;
       }
+      if (!canEditSharedDetails) return;
       debouncedAutoSave();
     }, [
+      canEditSharedDetails,
       basicDetails,
       vesselOwner,
       vesselPrincipal,
@@ -1037,7 +1052,7 @@ const createEmptyPartySection = () => ({
                     onChange={(e) => handleBasicChange("branch", e.target.value)}
                     options={branchOptions}
                     placeholder={loadingBranches ? "Loading..." : "Select branch..."}
-                    disabled={loadingBranches}
+                    disabled={loadingBranches || !canEditSharedDetails}
                   />
                 </FormField>
                 <FormField label="Vessel Name">
@@ -1085,6 +1100,7 @@ const createEmptyPartySection = () => ({
                 imageFiles={vesselOwnerImages}
                 onImageFilesChange={setVesselOwnerImages}
                 imagesDisabled={!canEditPartyImages}
+                fieldsDisabled={!canEditSharedDetails}
                 showImageUpload={false}
               />
 
@@ -1096,6 +1112,7 @@ const createEmptyPartySection = () => ({
                 imageFiles={vesselPrincipalImages}
                 onImageFilesChange={setVesselPrincipalImages}
                 imagesDisabled={!canEditPartyImages}
+                fieldsDisabled={!canEditSharedDetails}
                 showImageUpload={false}
               />
 
@@ -1107,6 +1124,7 @@ const createEmptyPartySection = () => ({
                 imageFiles={vesselChartererImages}
                 onImageFilesChange={setVesselChartererImages}
                 imagesDisabled={!canEditPartyImages}
+                fieldsDisabled={!canEditSharedDetails}
                 showImageUpload={false}
               />
             </div>
@@ -1171,7 +1189,7 @@ const createEmptyPartySection = () => ({
                 }
               />
 
-              {/* Nobody — Controller, Manager (role_id 1), CEO, or generic
+              {/* Nobody — Controller, Manager, CEO, or generic
                   viewers — sees the Manager card until Credit Controller has
                   actually clicked
                   "Proceed to Manager" (workflow moved past credit_controller).
