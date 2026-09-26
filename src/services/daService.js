@@ -70,6 +70,10 @@ const createHubBatch = (payload) => Gateway.post('/da/create_hub_batch', payload
  *   | { status: 'error', message: string } }>}
  * Prefilled "Sent for SE creation" email for a hub batch. Errors with "Batch not found" for an unknown batch_id. */
 const getSeCreationEmailDraft = (batchId) => Gateway.get(`/da/se_creation_email_draft/${batchId}`);
+/** @returns {Promise<{ data: { status: 'success', data: Array<{ batch_id: number, batch_number: string,
+ *   category: string, card_ids: number[] }> } | { status: 'error', message: string } }>}
+ * Every hub batch created so far, with the cards grouped under it. */
+const getBatches = () => Gateway.get('/da/batches');
 
 export default {
   getDaDetails,
@@ -94,5 +98,6 @@ export default {
   getActionState,
   recordApprovedBy,
   createHubBatch,
+  getBatches,
   getSeCreationEmailDraft,
 };

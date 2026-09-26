@@ -8,10 +8,22 @@ import {
   extractFullBoardBackground,
 } from "../../../shared/helpers/kanbanBoardApiMapper";
 import kanbanBoardService from "../../../services/kanbanBoardService";
+import daService from "../../../services/daService";
+import useBatchMoveStore from "../../../shared/store/batchMoveStore";
 import { findWorkflowByCardId } from "../utils/boardHelpers";
 import { reorderWorkflowsByPinState } from "../utils/workflowHelpers";
 
 const isOperatorBoardId = (id) => String(id ?? "").toLowerCase() === "operator";
+
+/* Batch grouping for the board's cards (matched by card_id). Runs alongside every
+   get_full_board call; a failure leaves the board ungrouped. */
+const loadBatches = () =>
+  daService
+    .getBatches()
+    .then(({ data }) => {
+      if (data?.status === "success") useBatchMoveStore.getState().setBatches(data.data);
+    })
+    .catch(() => {});
 
 /** Pinned workflows (from `is_pinned` on get_full_board) sort to the front, order preserved otherwise. */
 const sortByPinState = (mapped) => {
@@ -43,6 +55,7 @@ export default function useKanbanBoardState(selectedBoardId) {
     setBoardLoading(true);
     setBoardLoadError(null);
     try {
+      loadBatches();
       const res = await kanbanBoardService.getFullBoard(selectedBoardId);
       const payload = res?.data;
       const mapped = sortByPinState(mapFullBoardApiResponse(payload));
@@ -90,6 +103,7 @@ export default function useKanbanBoardState(selectedBoardId) {
 
     (async () => {
       try {
+        loadBatches();
         const res = await kanbanBoardService.getFullBoard(selectedBoardId);
         const payload = res?.data;
         const mapped = sortByPinState(mapFullBoardApiResponse(payload));
