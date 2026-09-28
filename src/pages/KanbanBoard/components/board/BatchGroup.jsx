@@ -23,6 +23,7 @@ export default function BatchGroup({
   onToggleCardSelect,
   setSelectedCard,
   onSendSeRequest,
+  onUploadSeApproval,
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -50,7 +51,11 @@ export default function BatchGroup({
           </button>
 
           {isAwaitingSeColumn ? (
-            <button type="button" className="batch-group__action">
+            <button
+              type="button"
+              className="batch-group__action"
+              onClick={() => onUploadSeApproval?.(batch)}
+            >
               Upload SE Approval
             </button>
           ) : (
@@ -105,4 +110,5 @@ BatchGroup.propTypes = {
   onToggleCardSelect: PropTypes.func,
   setSelectedCard: PropTypes.func,
   onSendSeRequest: PropTypes.func,
+  onUploadSeApproval: PropTypes.func,
 };
