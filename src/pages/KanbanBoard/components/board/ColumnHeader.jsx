@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
@@ -38,9 +39,17 @@ export default function ColumnHeader({
   isDarkMode = false,
   actionLabel,
   onActionClick,
+  selectAll,
 }) {
+  const selectAllRef = useRef(null);
   const columnColor = column.color || "#2A00FF";
   const tooltipId = `column-title-${column.id}`;
+
+  /* indeterminate has no HTML attribute; it can only be set on the DOM node. Runs every render
+     so a checkbox remounted after collapse/expand picks the state back up. */
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = Boolean(selectAll?.isIndeterminate);
+  });
 
   if (isCollapsed) {
     return (
@@ -68,6 +77,20 @@ export default function ColumnHeader({
         <h2 className="column-title">{column.title}</h2>
       </div>
       <span className="column-count">{wipDisplay}</span>
+      {/* The header itself collapses the column, so the checkbox click must not bubble to it. */}
+      {selectAll && (
+        <input
+          ref={selectAllRef}
+          type="checkbox"
+          className="column-select-all"
+          checked={selectAll.isChecked}
+          disabled={selectAll.isDisabled}
+          onChange={selectAll.onChange}
+          onClick={(e) => e.stopPropagation()}
+          aria-label="Select all cards"
+          title="Select all cards"
+        />
+      )}
       {typeof onActionClick === "function" && (
         <button
           type="button"
@@ -102,4 +125,10 @@ ColumnHeader.propTypes = {
   isDarkMode: PropTypes.bool,
   actionLabel: PropTypes.string,
   onActionClick: PropTypes.func,
+  selectAll: PropTypes.shape({
+    isChecked: PropTypes.bool.isRequired,
+    isIndeterminate: PropTypes.bool,
+    isDisabled: PropTypes.bool,
+    onChange: PropTypes.func.isRequired,
+  }),
 };

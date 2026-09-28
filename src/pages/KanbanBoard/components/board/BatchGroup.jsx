@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { FiChevronDown } from "react-icons/fi";
 import CardItem from "../cards/CardItem";
@@ -22,12 +22,14 @@ export default function BatchGroup({
   workflowTitle,
   selectedActionCardIds = EMPTY_SELECTED_IDS,
   onToggleCardSelect,
+  onSelectAllCards,
   setSelectedCard,
   onSendSeRequest,
   onUploadSeApproval,
   onUploadInvoice,
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const selectAllRef = useRef(null);
 
   /* Loose cards render as a plain grid: no header, never collapsed. */
   const isUngrouped = Boolean(batch.isUngrouped);
@@ -35,6 +37,17 @@ export default function BatchGroup({
   const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches whose SE approval is back sit in "SE Received" and move on to invoicing. */
   const isSeReceivedColumn = SE_RECEIVED_COLUMN_PATTERN.test((columnTitle ?? "").trim());
+
+  /* Header checkbox ticks every card in this batch (with a call) at once, or clears them. */
+  const batchCardIds = batch.cards.filter((card) => card?.callId).map((card) => card.id);
+  const selectedCount = batchCardIds.filter((id) => selectedActionCardIds.includes(id)).length;
+  const isAllSelected = batchCardIds.length > 0 && selectedCount === batchCardIds.length;
+  const isPartlySelected = selectedCount > 0 && !isAllSelected;
+
+  /* indeterminate has no HTML attribute; it can only be set on the DOM node. */
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = isPartlySelected;
+  });
 
   return (
     <div
@@ -44,6 +57,18 @@ export default function BatchGroup({
     >
       {!isUngrouped && (
         <div className="batch-group__header">
+          {typeof onSelectAllCards === "function" && (
+            <input
+              ref={selectAllRef}
+              type="checkbox"
+              className="batch-group__select-all"
+              checked={isAllSelected}
+              disabled={batchCardIds.length === 0}
+              onChange={() => onSelectAllCards(batchCardIds, selectedCount === 0)}
+              aria-label={`Select all cards in ${batch.title}`}
+              title="Select all cards"
+            />
+          )}
           <button
             type="button"
             className="batch-group__toggle"
@@ -120,6 +145,7 @@ BatchGroup.propTypes = {
   workflowTitle: PropTypes.string,
   selectedActionCardIds: PropTypes.arrayOf(PropTypes.string),
   onToggleCardSelect: PropTypes.func,
+  onSelectAllCards: PropTypes.func,
   setSelectedCard: PropTypes.func,
   onSendSeRequest: PropTypes.func,
   onUploadSeApproval: PropTypes.func,
