@@ -2027,6 +2027,72 @@ body .material-management-modal {
   color: var(--text-secondary);
 }
 
+// Crew Management breakdown — horizontal bars under the donut legend.
+.husbandry-dashboard-breakdown {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-primary);
+}
+
+.husbandry-dashboard-breakdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.husbandry-dashboard-breakdown-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.husbandry-dashboard-breakdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.husbandry-dashboard-breakdown-item {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.husbandry-dashboard-breakdown-name {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.husbandry-dashboard-breakdown-track {
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--breakdown-color, #00368c) 12%, var(--surface-primary));
+  overflow: hidden;
+}
+
+.husbandry-dashboard-breakdown-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--breakdown-color, #00368c);
+  transition: width 0.4s ease;
+}
+
+.husbandry-dashboard-breakdown-value {
+  text-align: right;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
 .husbandry-dashboard-history {
   list-style: none;
   margin: 0;

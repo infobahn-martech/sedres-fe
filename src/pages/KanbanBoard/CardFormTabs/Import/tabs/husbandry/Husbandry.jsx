@@ -80,6 +80,16 @@ BackToCrewListingLink.propTypes = {
   onClick: PropTypes.func.isRequired,
 };
 
+// Crew Management services that open their own form directly from the
+// dashboard (same set as the Crew Management left-nav).
+const CREW_DIRECT_SERVICES = [
+  { id: CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS, label: "Zawil Pass", summary: "Zawil pass requests for crew movement." },
+  { id: CREW_MANAGEMENT_SUBTABS.CG_PASS, label: "CG Pass", summary: "Coast Guard pass requests for crew." },
+  { id: CREW_MANAGEMENT_SUBTABS.TRANSPORT, label: "Transport", summary: "Crew transport bookings and transfers." },
+  { id: CREW_MANAGEMENT_SUBTABS.HOTEL, label: "Hotel", summary: "Crew hotel accommodation bookings." },
+  { id: CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE, label: "Medical", summary: "Medical appointments and crew welfare." },
+];
+
 // Static dashboard data — replace with API values once the endpoints exist.
 const SERVICE_DISTRIBUTION_STATIC = [
   { name: "Crew Management", value: 8, color: "#2563eb" },
@@ -91,12 +101,24 @@ const SERVICE_DISTRIBUTION_STATIC = [
   { name: "Add-on Services", value: 1, color: "#059669" },
 ];
 
+// Split of the Crew Management total above across its direct services.
+const CREW_SERVICE_BREAKDOWN_STATIC = {
+  [CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS]: 2,
+  [CREW_MANAGEMENT_SUBTABS.CG_PASS]: 1,
+  [CREW_MANAGEMENT_SUBTABS.TRANSPORT]: 3,
+  [CREW_MANAGEMENT_SUBTABS.HOTEL]: 1,
+  [CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE]: 1,
+};
+
 const SERVICE_HISTORY_STATIC = [
-  { id: 1, service: "Crew Management", action: "Transport request created for 4 crew", user: "Dany Thomas", time: "Today, 10:42 AM", status: "Pending", color: "#2563eb" },
-  { id: 2, service: "Material Management", action: "Inbound order #IO-2031 received", user: "Operations", time: "Today, 09:15 AM", status: "Completed", color: "#0d9488" },
-  { id: 3, service: "Waste Disposal", action: "Disposal request submitted", user: "Port Agent", time: "Yesterday, 05:30 PM", status: "In Progress", color: "#d97706" },
-  { id: 4, service: "Crew Management", action: "Hotel booking confirmed for 2 crew", user: "Dany Thomas", time: "Yesterday, 02:10 PM", status: "Completed", color: "#2563eb" },
-  { id: 5, service: "MWP Renewal", action: "Renewal request raised", user: "Operations", time: "26 Sep, 11:05 AM", status: "Cancelled", color: "#7c3aed" },
+  { id: 1, service: "Zawil Pass", action: "Zawil pass issued for 2 crew", user: "Operations", time: "Today, 11:20 AM", status: "Completed", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS] },
+  { id: 2, service: "Transport", action: "Transport request created for 4 crew", user: "Dany Thomas", time: "Today, 10:42 AM", status: "Pending", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.TRANSPORT] },
+  { id: 3, service: "Material Management", action: "Inbound order #IO-2031 received", user: "Operations", time: "Today, 09:15 AM", status: "Completed", color: "#0d9488" },
+  { id: 4, service: "CG Pass", action: "CG pass application submitted for 1 crew", user: "Port Agent", time: "Today, 08:50 AM", status: "Pending", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.CG_PASS] },
+  { id: 5, service: "Medical", action: "Medical appointment booked for 1 crew", user: "Operations", time: "Yesterday, 06:15 PM", status: "In Progress", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE] },
+  { id: 6, service: "Waste Disposal", action: "Disposal request submitted", user: "Port Agent", time: "Yesterday, 05:30 PM", status: "In Progress", color: "#d97706" },
+  { id: 7, service: "Hotel", action: "Hotel booking confirmed for 2 crew", user: "Dany Thomas", time: "Yesterday, 02:10 PM", status: "Completed", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.HOTEL] },
+  { id: 8, service: "MWP Renewal", action: "Renewal request raised", user: "Operations", time: "26 Sep, 11:05 AM", status: "Cancelled", color: "#7c3aed" },
 ];
 
 const HISTORY_STATUS_CLASS = {
@@ -109,6 +131,9 @@ const HISTORY_STATUS_CLASS = {
 // Dashboard columns 2 & 3: request distribution donut + recent activity history.
 const ServiceInsights = () => {
   const total = SERVICE_DISTRIBUTION_STATIC.reduce((sum, item) => sum + item.value, 0);
+  const crewBreakdownValues = Object.values(CREW_SERVICE_BREAKDOWN_STATIC);
+  const crewBreakdownTotal = crewBreakdownValues.reduce((sum, value) => sum + value, 0);
+  const crewBreakdownMax = Math.max(...crewBreakdownValues);
 
   return (
     <>
@@ -152,6 +177,34 @@ const ServiceInsights = () => {
             </li>
           ))}
         </ul>
+
+        <div className="husbandry-dashboard-breakdown">
+          <div className="husbandry-dashboard-breakdown-header">
+            <span className="husbandry-dashboard-breakdown-title">Crew Management breakdown</span>
+            <span className="husbandry-dashboard-panel-meta">{crewBreakdownTotal} requests</span>
+          </div>
+          <ul className="husbandry-dashboard-breakdown-list">
+            {CREW_DIRECT_SERVICES.map((service) => {
+              const value = CREW_SERVICE_BREAKDOWN_STATIC[service.id] || 0;
+              return (
+                <li
+                  key={service.id}
+                  className="husbandry-dashboard-breakdown-item"
+                  style={{ "--breakdown-color": TAB_ICON_COLORS[service.id] }}
+                >
+                  <span className="husbandry-dashboard-breakdown-name">{service.label}</span>
+                  <span className="husbandry-dashboard-breakdown-track">
+                    <span
+                      className="husbandry-dashboard-breakdown-fill"
+                      style={{ width: `${crewBreakdownMax ? (value / crewBreakdownMax) * 100 : 0}%` }}
+                    />
+                  </span>
+                  <span className="husbandry-dashboard-breakdown-value">{value}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </section>
 
       <section className="husbandry-dashboard-panel">
@@ -180,16 +233,6 @@ const ServiceInsights = () => {
     </>
   );
 };
-
-// Crew Management services that open their own form directly from the
-// dashboard (same set as the Crew Management left-nav).
-const CREW_DIRECT_SERVICES = [
-  { id: CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS, label: "Zawil Pass", summary: "Zawil pass requests for crew movement." },
-  { id: CREW_MANAGEMENT_SUBTABS.CG_PASS, label: "CG Pass", summary: "Coast Guard pass requests for crew." },
-  { id: CREW_MANAGEMENT_SUBTABS.TRANSPORT, label: "Transport", summary: "Crew transport bookings and transfers." },
-  { id: CREW_MANAGEMENT_SUBTABS.HOTEL, label: "Hotel", summary: "Crew hotel accommodation bookings." },
-  { id: CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE, label: "Medical", summary: "Medical appointments and crew welfare." },
-];
 
 // Service Selection Component
 const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, showLaunchHire = true, hiddenServiceIds = [] }) => {
