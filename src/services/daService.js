@@ -74,6 +74,14 @@ const getSeCreationEmailDraft = (batchId) => Gateway.get(`/da/se_creation_email_
  *   category: string, card_ids: number[] }> } | { status: 'error', message: string } }>}
  * Every hub batch created so far, with the cards grouped under it. */
 const getBatches = () => Gateway.get('/da/batches');
+/** @param {FormData} formData - batch_id + se_approval (single file), multipart/form-data.
+ * @returns {Promise<{ data: { status: 'success', stage_document_id: number, document_url: string }
+ *   | { status: 'error', message: string } }>}
+ * Errors if the SE Creation email has not been sent for the batch yet. */
+const uploadSeApproval = (formData) =>
+  Gateway.post('/da/upload_se_approval', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 
 export default {
   getDaDetails,
@@ -100,4 +108,5 @@ export default {
   createHubBatch,
   getBatches,
   getSeCreationEmailDraft,
+  uploadSeApproval,
 };
