@@ -4,9 +4,10 @@
 
 // Root-scoped so it outranks Bootstrap's .modal-dialog max-width at larger breakpoints.
 .se-email-modal-root .se-email-dialog {
-  --bs-modal-width: 1480px;
-  max-width: 1480px;
-  width: 96vw;
+  --bs-modal-width: 90vw;
+  max-width: 90vw;
+  width: 90vw;
+  margin: 32px auto;
 
   // Global prospect-modal.scss pads every .modal-content, which would inset the header.
   .modal-content {
@@ -90,7 +91,7 @@
   // ---------------------------------------------------------------- Body
   .se-email-body {
     padding: 24px 32px;
-    max-height: 80vh;
+    max-height: calc(100vh - 230px);
     overflow-y: auto;
   }
 
@@ -284,7 +285,7 @@
     }
 
     .ql-editor {
-      min-height: 250px;
+      min-height: 38vh;
       padding: 16px;
       color: var(--text-primary, #0f172a);
     }
