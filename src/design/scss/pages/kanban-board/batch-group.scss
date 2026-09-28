@@ -1,4 +1,4 @@
-/* Batch grouping inside a swimlane column cell ("Batch UI Test" board) */
+/* Batch grouping inside a swimlane column cell */
 
 .card-list.card-list--batched {
   display: flex;
@@ -98,17 +98,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.batch-group__badge {
-  flex-shrink: 0;
-  padding: 3px 12px;
-  border-radius: 999px;
-  background: #d6e4f7;
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.4;
 }
 
 .batch-group__cards {

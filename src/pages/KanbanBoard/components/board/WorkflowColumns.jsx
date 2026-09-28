@@ -9,11 +9,6 @@ import {
   getColumnHeaderGroups,
 } from "../../utils/columnHelpers";
 import {
-  isBatchUiTestWorkflow,
-  getBatchUiTestBatches,
-  countBatchUiTestCards,
-} from "../../utils/batchUiTestData";
-import {
   BOARD_COLUMN_GAP_PX,
   WORKFLOW_ROW_MIN_HEIGHT,
   getBoardGridTemplateColumns,
@@ -70,8 +65,6 @@ export default function WorkflowColumns({
 
   const shouldShowSwimlaneTitle = swimlaneOrder.length > 1;
 
-  /* "Batch UI Test" board renders grouped preview batches (first lane only) instead of API cards */
-  const isBatchUiTest = isBatchUiTestWorkflow(workflow);
   /* Cards of the batch board's first lane, with any card a batch has moved drawn in its new
      column instead. */
   const columnByCardId = useBatchMoveStore((state) => state.columnByCardId);
@@ -96,8 +89,7 @@ export default function WorkflowColumns({
     return byColumn;
   }, [workflow, swimlaneOrder, columnByCardId]);
 
-  /* A column whose cards carry a batch renders them as groups (loose cards first, headerless),
-     the same shape the "Batch UI Test" board uses. */
+  /* A column whose cards carry a batch renders them as groups (loose cards first, headerless). */
   const getBatchesForColumn = (colKey, laneId) => {
     const cards =
       batchLaneCardsByColumn && laneId === swimlaneOrder[0]
@@ -124,7 +116,6 @@ export default function WorkflowColumns({
         id: `${laneId}-${colKey}-loose`,
         title: "",
         isUngrouped: true,
-        usesBoardSelection: true,
         cards: loose,
       });
     }
@@ -132,7 +123,6 @@ export default function WorkflowColumns({
       batches.push({
         id: `${laneId}-${colKey}-${batchNumber}`,
         title: batchNumber,
-        usesBoardSelection: true,
         cards: batchCards,
       });
     });
@@ -140,7 +130,6 @@ export default function WorkflowColumns({
   };
 
   const getColumnCount = (colKey) => {
-    if (isBatchUiTest) return countBatchUiTestCards(workflow.columns[colKey]);
     if (batchLaneCardsByColumn) return batchLaneCardsByColumn[colKey]?.length ?? 0;
     return countCardsInColumn(workflow, colKey);
   };
@@ -333,11 +322,7 @@ export default function WorkflowColumns({
                         onToggleCardSelect={onToggleCardSelect}
                         onCardSelectDragStart={onCardSelectDragStart}
                         onCardSelectDragEnter={onCardSelectDragEnter}
-                        batches={
-                          isBatchUiTest && laneId === swimlaneOrder[0]
-                            ? getBatchUiTestBatches(column)
-                            : getBatchesForColumn(colKey, laneId)
-                        }
+                        batches={getBatchesForColumn(colKey, laneId)}
                       />
                     );
                   })}

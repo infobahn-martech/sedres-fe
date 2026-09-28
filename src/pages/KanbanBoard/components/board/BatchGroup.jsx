@@ -9,7 +9,7 @@ const EMPTY_SELECTED_IDS = [];
 const AWAITING_SE_COLUMN_PATTERN = /^awaiting\s+(for\s+)?se$/i;
 
 /**
- * Collapsible group of cards inside a column cell ("Batch UI Test" preview).
+ * Collapsible group of cards inside a column cell.
  * `startIndex` keeps Draggable indices contiguous across batches in the same Droppable.
  */
 export default function BatchGroup({
@@ -25,23 +25,11 @@ export default function BatchGroup({
   onSendSeRequest,
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [previewSelectedIds, setPreviewSelectedIds] = useState([]);
-  const cardCount = batch.cards.length;
 
   /* Loose cards render as a plain grid: no header, never collapsed. */
   const isUngrouped = Boolean(batch.isUngrouped);
-  /* Batches the board builds join its own selection and card clicks; the "Batch UI Test"
-     preview keeps its own, since its cards are not in the board's data. */
-  const isBoardBatch = Boolean(batch.usesBoardSelection);
   /* Batches already emailed for SE creation sit in "Awaiting SE" (live title "Awaiting for SE"). */
   const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
-  const selectedIds = isBoardBatch ? selectedActionCardIds : previewSelectedIds;
-  const toggleSelect = isBoardBatch
-    ? onToggleCardSelect
-    : (card) =>
-        setPreviewSelectedIds((prev) =>
-          prev.includes(card.id) ? prev.filter((id) => id !== card.id) : [...prev, card.id]
-        );
 
   return (
     <div
@@ -61,11 +49,11 @@ export default function BatchGroup({
             <span className="batch-group__title">{batch.title}</span>
           </button>
 
-          {isBoardBatch && isAwaitingSeColumn ? (
+          {isAwaitingSeColumn ? (
             <button type="button" className="batch-group__action">
               Upload SE Approval
             </button>
-          ) : isBoardBatch ? (
+          ) : (
             <button
               type="button"
               className="batch-group__action"
@@ -73,10 +61,6 @@ export default function BatchGroup({
             >
               Sent for SE creation
             </button>
-          ) : (
-            <span className="batch-group__badge">
-              {cardCount} {cardCount === 1 ? "card" : "cards"}
-            </span>
           )}
         </div>
       )}
@@ -91,13 +75,12 @@ export default function BatchGroup({
               key={card.id}
               card={card}
               index={startIndex + i}
-              setSelectedCard={isBoardBatch ? (setSelectedCard ?? noop) : noop}
+              setSelectedCard={setSelectedCard ?? noop}
               columnTitle={columnTitle}
               workflowTitle={workflowTitle}
               fixedDimensions={{ width: cardWidth }}
-              isDragDisabled={!isBoardBatch}
-              isSelectedForAction={selectedIds.includes(card.id)}
-              onToggleSelectForAction={toggleSelect}
+              isSelectedForAction={selectedActionCardIds.includes(card.id)}
+              onToggleSelectForAction={onToggleCardSelect}
             />
           ))}
         </div>
@@ -112,7 +95,6 @@ BatchGroup.propTypes = {
     title: PropTypes.string.isRequired,
     cards: PropTypes.arrayOf(PropTypes.object).isRequired,
     isUngrouped: PropTypes.bool,
-    usesBoardSelection: PropTypes.bool,
   }).isRequired,
   startIndex: PropTypes.number.isRequired,
   perRow: PropTypes.number.isRequired,
