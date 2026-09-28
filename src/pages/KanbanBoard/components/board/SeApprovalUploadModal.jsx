@@ -8,8 +8,17 @@ const ACCEPTED_FILE_TYPES = ".pdf,.eml,.msg,.jpg,.jpeg,.png";
 const ACCEPTED_FORMATS_HINT = "PDF, EML, MSG, JPG, PNG";
 const FILE_INPUT_ID = "se-approval-upload-input";
 
-// Opened from a batch group's "Upload SE Approval" action on the Kanban board.
-const SeApprovalUploadModal = ({ show, onClose, onUpload, isSubmitting = false, batchTitle = "" }) => {
+// Opened from a batch group's "Upload SE Approval" / "Upload Invoice" action on the Kanban board.
+const SeApprovalUploadModal = ({
+  show,
+  onClose,
+  onUpload,
+  isSubmitting = false,
+  batchTitle = "",
+  title = "Upload SE Approval",
+  subtitle = "Attach the service entry approval for this batch",
+  submitLabel = "Upload SE Approval",
+}) => {
   const [files, setFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
@@ -57,8 +66,8 @@ const SeApprovalUploadModal = ({ show, onClose, onUpload, isSubmitting = false, 
         <FiUploadCloud />
       </span>
       <div className="se-approval-header__text">
-        <h5 className="se-approval-header__title">Upload SE Approval</h5>
-        <p className="se-approval-header__subtitle">Attach the service entry approval for this batch</p>
+        <h5 className="se-approval-header__title">{title}</h5>
+        <p className="se-approval-header__subtitle">{subtitle}</p>
       </div>
       <button
         type="button"
@@ -172,7 +181,7 @@ const SeApprovalUploadModal = ({ show, onClose, onUpload, isSubmitting = false, 
       </button>
       <button type="button" className="se-approval-footer__upload" onClick={handleUpload} disabled={isSubmitting}>
         <FiUpload />
-        {isSubmitting ? "Uploading..." : "Upload SE Approval"}
+        {isSubmitting ? "Uploading..." : submitLabel}
       </button>
     </div>
   );
@@ -196,6 +205,9 @@ SeApprovalUploadModal.propTypes = {
   onUpload: PropTypes.func,
   isSubmitting: PropTypes.bool,
   batchTitle: PropTypes.string,
+  title: PropTypes.string,
+  subtitle: PropTypes.string,
+  submitLabel: PropTypes.string,
 };
 
 export default SeApprovalUploadModal;
