@@ -113,7 +113,6 @@ const ServiceInsights = () => {
       <section className="husbandry-dashboard-panel">
         <header className="husbandry-dashboard-panel-header">
           <h3 className="husbandry-dashboard-panel-title">Requests by Service</h3>
-          <span className="husbandry-dashboard-panel-meta">This call</span>
         </header>
         <div className="husbandry-dashboard-chart">
           <ResponsiveContainer width="100%" height={200}>
