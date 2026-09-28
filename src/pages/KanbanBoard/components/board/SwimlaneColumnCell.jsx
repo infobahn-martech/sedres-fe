@@ -32,6 +32,7 @@ export default function SwimlaneColumnCell({
   workflowTitle = "",
   selectedActionCardIds = EMPTY_SELECTED_IDS,
   onBatchSendSeRequest,
+  onBatchUploadSeApproval,
   onToggleCardSelect,
   onCardSelectDragStart,
   onCardSelectDragEnter,
@@ -188,6 +189,7 @@ export default function SwimlaneColumnCell({
                 onToggleCardSelect={onToggleCardSelect}
                 setSelectedCard={setSelectedCard}
                 onSendSeRequest={onBatchSendSeRequest}
+                onUploadSeApproval={onBatchUploadSeApproval}
               />
             ))}
             {canViewCards && !hasBatches && cards.map((card, index) =>
@@ -251,6 +253,7 @@ SwimlaneColumnCell.propTypes = {
   workflowTitle: PropTypes.string,
   selectedActionCardIds: PropTypes.arrayOf(PropTypes.string),
   onBatchSendSeRequest: PropTypes.func,
+  onBatchUploadSeApproval: PropTypes.func,
   onToggleCardSelect: PropTypes.func,
   onCardSelectDragStart: PropTypes.func,
   onCardSelectDragEnter: PropTypes.func,

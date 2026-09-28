@@ -15,6 +15,7 @@ export default function KanbanBoardContent({
   onColumnHeaderClick,
   onColumnBatchAction,
   onBatchSendSeRequest,
+  onBatchUploadSeApproval,
   onContextMenu,
   onHeightChange,
   onToggleWorkflow,
@@ -63,6 +64,7 @@ export default function KanbanBoardContent({
         onColumnHeaderClick={onColumnHeaderClick}
         onColumnBatchAction={onColumnBatchAction}
         onBatchSendSeRequest={onBatchSendSeRequest}
+        onBatchUploadSeApproval={onBatchUploadSeApproval}
         onContextMenu={onContextMenu}
         onHeightChange={onHeightChange}
         isDarkMode={isDarkMode}

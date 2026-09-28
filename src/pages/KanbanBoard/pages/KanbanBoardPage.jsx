@@ -11,6 +11,7 @@ import CardForm from "../components/cards/CardForm";
 import StatusConfirmationModal from "../../../components/StatusConfirmationModal";
 import confirmTickIcon from "../../../assets/images/toast-success.svg";
 import SeCreationEmailModal from "../components/board/SeCreationEmailModal";
+import SeApprovalUploadModal from "../components/board/SeApprovalUploadModal";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -417,6 +418,21 @@ export default function KanbanBoardPage() {
     [selectedSeRequestBatch, seRequestEmailDraft, cardsById, handleCloseSeRequestEmail, refetchBoard]
   );
 
+  /* "Upload SE Approval" on an "Awaiting SE" batch header opens the upload modal for that batch.
+     UI only for now: no backend route exists yet to persist the SE approval file. */
+  const [showSeApprovalUploadModal, setShowSeApprovalUploadModal] = useState(false);
+  const [selectedSeApprovalBatch, setSelectedSeApprovalBatch] = useState(null);
+
+  const handleBatchUploadSeApproval = useCallback((batch) => {
+    setSelectedSeApprovalBatch(batch);
+    setShowSeApprovalUploadModal(true);
+  }, []);
+
+  const handleCloseSeApprovalUpload = useCallback(() => {
+    setShowSeApprovalUploadModal(false);
+    setSelectedSeApprovalBatch(null);
+  }, []);
+
   /* Creates the batch on the backend from the ticked cards' calls. The backend issues the batch
      number (e.g. Sep_26_Batch1) and returns it as batch_number. */
   const handleConfirmBatch = useCallback(async () => {
@@ -649,6 +665,7 @@ export default function KanbanBoardPage() {
           onColumnHeaderClick={handleColumnHeaderClick}
           onColumnBatchAction={handleColumnBatchAction}
           onBatchSendSeRequest={handleBatchSendSeRequest}
+          onBatchUploadSeApproval={handleBatchUploadSeApproval}
           onContextMenu={handleColumnContextMenu}
           onHeightChange={handleWorkflowColumnHeightChange}
           onToggleWorkflow={handleToggleWorkflow}
@@ -685,6 +702,12 @@ export default function KanbanBoardPage() {
         defaultSubject={seRequestEmailDraft?.subject ?? ""}
         defaultBody={seRequestEmailDraft?.body ?? ""}
         documentUrl={seRequestEmailDraft?.document_url ?? ""}
+      />
+
+      <SeApprovalUploadModal
+        show={showSeApprovalUploadModal}
+        onClose={handleCloseSeApprovalUpload}
+        batchTitle={selectedSeApprovalBatch?.title ?? ""}
       />
 
       {selectedCard && columnsForCardForm && (
