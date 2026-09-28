@@ -339,7 +339,6 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], ser
         <div className="husbandry-dashboard-layout">
         <section className="husbandry-dashboard-panel husbandry-dashboard-services">
         <header className="husbandry-dashboard-services-header">
-          <p className="husbandry-service-hero-eyebrow">Husbandry Dashboard</p>
           <h3 className="husbandry-dashboard-panel-title">What services do you need?</h3>
           <p className="husbandry-dashboard-services-subtitle">
             Select a service to initiate requests and monitor progress.
@@ -378,16 +377,6 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], ser
                   <span className="husbandry-service-option-label">{service.label}</span>
                   <p className="husbandry-service-option-summary">{service.summary}</p>
                 </div>
-                {isBooked && (
-                  <div className="husbandry-service-option-booking">
-                    {bookedEntry.subService && (
-                      <span className="husbandry-service-option-sub">{bookedEntry.subService}</span>
-                    )}
-                    <p className="husbandry-service-option-booking-summary">
-                      {service.bookedSummary}
-                    </p>
-                  </div>
-                )}
                 {service.footerBadges?.length > 0 && (
                   <div className="husbandry-service-option-footer">
                     {service.footerBadges.map((badge) => (
