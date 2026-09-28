@@ -1609,7 +1609,7 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
   const notifyError = useAlertReducer((s) => s.error);
   const notifySuccess = useAlertReducer((s) => s.success);
 
-  // Taxi Board only: get_call_detail / get_call_detail_by_id removed per Dany Thomas
+  // Taxi Board only: get_call_detail / get_call_detail_by_id removed per Shalman
   // (2026-08-27) — launch_hire/get_taxiboat_booking_detail/{booking_id} is now the sole
   // source for this card's values (vessel/billing/operator/captain/location/booking date),
   // falling back to the raw board card only while it's loading.
@@ -1829,7 +1829,7 @@ function TaxiBoatCardView({ card, userRoleId = null }) {
     if (time) setBookingTimeEdit(time);
   }, [taxiboatBookingDetail]);
 
-  // Confirmed with backend (Dany Thomas, 2026-08-27): get_taxiboat_booking_detail is the
+  // Confirmed with backend (Shalman, 2026-08-27): get_taxiboat_booking_detail is the
   // source of truth for the summary card — bind every value it carries from here, falling
   // back to call_file/get_call_detail_by_id or the raw board card only while it's loading
   // (or for legacy cards with no booking yet).

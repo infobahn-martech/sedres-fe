@@ -112,12 +112,12 @@ const CREW_SERVICE_BREAKDOWN_STATIC = {
 
 const SERVICE_HISTORY_STATIC = [
   { id: 1, service: "Zawil Pass", action: "Zawil pass issued for 2 crew", user: "Operations", time: "Today, 11:20 AM", status: "Completed", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS] },
-  { id: 2, service: "Transport", action: "Transport request created for 4 crew", user: "Dany Thomas", time: "Today, 10:42 AM", status: "Pending", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.TRANSPORT] },
+  { id: 2, service: "Transport", action: "Transport request created for 4 crew", user: "Shalman", time: "Today, 10:42 AM", status: "Pending", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.TRANSPORT] },
   { id: 3, service: "Material Management", action: "Inbound order #IO-2031 received", user: "Operations", time: "Today, 09:15 AM", status: "Completed", color: "#0d9488" },
   { id: 4, service: "CG Pass", action: "CG pass application submitted for 1 crew", user: "Port Agent", time: "Today, 08:50 AM", status: "Pending", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.CG_PASS] },
   { id: 5, service: "Medical", action: "Medical appointment booked for 1 crew", user: "Operations", time: "Yesterday, 06:15 PM", status: "In Progress", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE] },
   { id: 6, service: "Waste Disposal", action: "Disposal request submitted", user: "Port Agent", time: "Yesterday, 05:30 PM", status: "In Progress", color: "#d97706" },
-  { id: 7, service: "Hotel", action: "Hotel booking confirmed for 2 crew", user: "Dany Thomas", time: "Yesterday, 02:10 PM", status: "Completed", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.HOTEL] },
+  { id: 7, service: "Hotel", action: "Hotel booking confirmed for 2 crew", user: "Shalman", time: "Yesterday, 02:10 PM", status: "Completed", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.HOTEL] },
   { id: 8, service: "MWP Renewal", action: "Renewal request raised", user: "Operations", time: "26 Sep, 11:05 AM", status: "Cancelled", color: "#7c3aed" },
 ];
 
