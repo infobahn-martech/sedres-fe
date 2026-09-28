@@ -76,7 +76,7 @@ export default function BatchGroup({
               className="batch-group__action"
               onClick={() => onSendSeRequest?.(batch)}
             >
-              Sent for SE creation
+              Send For SE creation
             </button>
           )}
         </div>

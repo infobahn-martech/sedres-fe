@@ -18,6 +18,7 @@ const SeApprovalUploadModal = ({
   title = "Upload SE Approval",
   subtitle = "Attach the service entry approval for this batch",
   submitLabel = "Upload SE Approval",
+  multiple = true,
 }) => {
   const [files, setFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -33,7 +34,7 @@ const SeApprovalUploadModal = ({
   const handleFilesSelected = (fileList) => {
     const selected = Array.from(fileList || []).filter(Boolean);
     if (!selected.length) return;
-    setFiles((prev) => [...prev, ...selected]);
+    setFiles((prev) => (multiple ? [...prev, ...selected] : selected.slice(0, 1)));
     setError("");
   };
 
@@ -121,7 +122,7 @@ const SeApprovalUploadModal = ({
         <input
           id={FILE_INPUT_ID}
           type="file"
-          multiple
+          multiple={multiple}
           className="d-none"
           accept={ACCEPTED_FILE_TYPES}
           disabled={isSubmitting}
@@ -208,6 +209,7 @@ SeApprovalUploadModal.propTypes = {
   title: PropTypes.string,
   subtitle: PropTypes.string,
   submitLabel: PropTypes.string,
+  multiple: PropTypes.bool,
 };
 
 export default SeApprovalUploadModal;

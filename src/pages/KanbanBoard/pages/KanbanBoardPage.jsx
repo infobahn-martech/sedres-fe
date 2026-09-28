@@ -334,7 +334,7 @@ export default function KanbanBoardPage() {
 
   const handleCloseBatchConfirm = useCallback(() => setShowBatchConfirmModal(false), []);
 
-  /* "Sent for SE creation" on a batch group header opens the email draft for that batch. */
+  /* "Send For SE creation" on a batch group header opens the email draft for that batch. */
   const [showSeRequestEmailModal, setShowSeRequestEmailModal] = useState(false);
   const [selectedSeRequestBatch, setSelectedSeRequestBatch] = useState(null);
   const [seRequestEmailDraft, setSeRequestEmailDraft] = useState(null);
@@ -418,10 +418,10 @@ export default function KanbanBoardPage() {
     [selectedSeRequestBatch, seRequestEmailDraft, cardsById, handleCloseSeRequestEmail, refetchBoard]
   );
 
-  /* "Upload SE Approval" on an "Awaiting SE" batch header opens the upload modal for that batch.
-     UI only for now: no backend route exists yet to persist the SE approval file. */
+  /* "Upload SE Approval" on an "Awaiting SE" batch header opens the upload modal for that batch. */
   const [showSeApprovalUploadModal, setShowSeApprovalUploadModal] = useState(false);
   const [selectedSeApprovalBatch, setSelectedSeApprovalBatch] = useState(null);
+  const [isUploadingSeApproval, setIsUploadingSeApproval] = useState(false);
 
   const handleBatchUploadSeApproval = useCallback((batch) => {
     setSelectedSeApprovalBatch(batch);
@@ -432,6 +432,41 @@ export default function KanbanBoardPage() {
     setShowSeApprovalUploadModal(false);
     setSelectedSeApprovalBatch(null);
   }, []);
+
+  /* Stores the SE approval file against the batch via da/upload_se_approval (single file). */
+  const handleUploadSeApproval = useCallback(
+    async (files) => {
+      const batchId = batchIdByNumber[selectedSeApprovalBatch?.title];
+      if (!batchId) {
+        notify("Batch not found", "error");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("batch_id", batchId);
+      formData.append("se_approval", files[0]);
+
+      setIsUploadingSeApproval(true);
+      try {
+        let data;
+        try {
+          ({ data } = await daService.uploadSeApproval(formData));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+        if (data?.status !== "success") {
+          notify(data?.message || "Failed to upload SE approval", "error");
+          return;
+        }
+        notify(data.message || "SE approval uploaded successfully", "success");
+        handleCloseSeApprovalUpload();
+        refetchBoard?.();
+      } finally {
+        setIsUploadingSeApproval(false);
+      }
+    },
+    [batchIdByNumber, selectedSeApprovalBatch, handleCloseSeApprovalUpload, refetchBoard]
+  );
 
   /* "Upload Invoice" on an "SE Received" batch header opens the upload modal for that batch.
      UI only for now: no backend route exists yet to persist the invoice file. */
@@ -723,7 +758,10 @@ export default function KanbanBoardPage() {
       <SeApprovalUploadModal
         show={showSeApprovalUploadModal}
         onClose={handleCloseSeApprovalUpload}
+        onUpload={handleUploadSeApproval}
+        isSubmitting={isUploadingSeApproval}
         batchTitle={selectedSeApprovalBatch?.title ?? ""}
+        multiple={false}
       />
 
       <SeApprovalUploadModal

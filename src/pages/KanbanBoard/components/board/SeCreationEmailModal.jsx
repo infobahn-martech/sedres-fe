@@ -41,7 +41,7 @@ const getFileNameFromUrl = (url) => {
   }
 };
 
-// Opened from a batch group's "Sent for SE creation" action on the Kanban board.
+// Opened from a batch group's "Send For SE creation" action on the Kanban board.
 const SeCreationEmailModal = ({
   show,
   onClose,
