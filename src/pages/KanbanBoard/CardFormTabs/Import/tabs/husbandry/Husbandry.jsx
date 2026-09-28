@@ -816,6 +816,10 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
     }
   }, [activeMainTab]);
 
+  const handleGoToCrewTab = useCallback(() => {
+    handleSubTabChange(CREW_MANAGEMENT_SUBTABS.CREW);
+  }, [handleSubTabChange]);
+
   // Handle navigation from CrewContent when crew is selected and action is chosen
   const handleNavigateToTab = useCallback((tabName) => {
     // Ensure we're on the Crew Management main tab
@@ -926,6 +930,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
               handleChange={handleChange}
               cardColor={cardColor}
               onRequestCountChange={handleTransportRequestCount}
+              onGoToCrew={handleGoToCrewTab}
             />
           </>
         );
@@ -937,6 +942,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
             cardColor={cardColor}
             card={card}
             onRequestCountChange={handleCgPassRequestCount}
+            onGoToCrew={handleGoToCrewTab}
           />
         );
       case CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS:
@@ -947,6 +953,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
             cardColor={cardColor}
             card={card}
             onRequestCountChange={handleZawilPassRequestCount}
+            onGoToCrew={handleGoToCrewTab}
           />
         );
       case CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE:
@@ -967,6 +974,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
               handleChange={handleChange}
               cardColor={cardColor}
               onRequestCountChange={handleHotelRequestCount}
+              onGoToCrew={handleGoToCrewTab}
             />
           </>
         );
@@ -978,6 +986,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
               handleChange={handleChange}
               cardColor={cardColor}
               onRequestCountChange={handleMedicalRequestCount}
+              onGoToCrew={handleGoToCrewTab}
             />
           </>
         );

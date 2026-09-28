@@ -9,7 +9,7 @@ import ChecklistMultiSelect from "../../appointment/checklistTab/ChecklistMultiS
 import "../../../../../../../design/scss/checklist.scss";
 
 /** Multi-select of crew for a call, auto-populated from the crew roster. Reports selected crew_change_ids via onChange. */
-const CrewSelectionField = ({ callId, selected, onChange, accent = "purple" }) => {
+const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onGoToCrew }) => {
   const [crewOptions, setCrewOptions] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -55,6 +55,27 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple" }) =
           }
           disabled={loading || crewOptions.length === 0}
         />
+        {!loading && crewOptions.length === 0 && onGoToCrew && (
+          <div style={{ marginTop: 6, fontSize: 12, color: "#64748b" }}>
+            No crew uploaded yet.{" "}
+            <button
+              type="button"
+              onClick={onGoToCrew}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                color: "var(--card-color, #2563eb)",
+                fontWeight: 600,
+                textDecoration: "underline",
+                cursor: "pointer",
+                fontSize: 12,
+              }}
+            >
+              Upload crew list
+            </button>
+          </div>
+        )}
       </FormField>
     </FormGroup>
   );
@@ -65,6 +86,7 @@ CrewSelectionField.propTypes = {
   selected: PropTypes.array,
   onChange: PropTypes.func.isRequired,
   accent: PropTypes.oneOf(["blue", "teal", "purple", "amber", "rose", "slate", "green", "pink"]),
+  onGoToCrew: PropTypes.func,
 };
 
 export default CrewSelectionField;

@@ -35,7 +35,7 @@ const MEDICAL_REQUEST_COLUMNS = [
   { key: "document", header: "Document", type: "document" },
 ];
 
-const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestCountChange }) => {
+const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestCountChange, onGoToCrew }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isDraggingEmail, setIsDraggingEmail] = useState(false);
   const fileInputRef = useRef(null);
@@ -415,6 +415,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
                   selected={formValues.medicalServiceSelectedCrew || []}
                   onChange={(ids) => handleChange("medicalServiceSelectedCrew")({ target: { value: ids } })}
                   accent={MEDICAL_ACCENT}
+                  onGoToCrew={onGoToCrew}
                 />
 
                 <FormGroup icon="medicalService" label="Care Details" accent={MEDICAL_ACCENT}>
@@ -554,6 +555,7 @@ MedicalServiceContent.propTypes = {
   handleChange: PropTypes.func.isRequired,
   cardColor: PropTypes.string,
   onRequestCountChange: PropTypes.func,
+  onGoToCrew: PropTypes.func,
 };
 
 export default MedicalServiceContent;

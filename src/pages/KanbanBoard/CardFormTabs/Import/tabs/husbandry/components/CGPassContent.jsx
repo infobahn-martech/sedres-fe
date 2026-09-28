@@ -19,7 +19,7 @@ const REQUEST_EMAIL_ACCEPT_ATTR = ".msg,.eml,.pdf,.doc,.docx";
 const REQUEST_EMAIL_EXT_RE = /\.(msg|eml|pdf|doc|docx)$/i;
 const CG_PASS_ACCENT = SERVICE_ACCENT[CREW_MANAGEMENT_SUBTABS.CG_PASS];
 
-const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCountChange }) => {
+const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCountChange, onGoToCrew }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isDraggingEmail, setIsDraggingEmail] = useState(false);
   const fileInputRef = useRef(null);
@@ -216,6 +216,7 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
                     selected={formValues.cgPassSelectedCrew || []}
                     onChange={(ids) => handleChange("cgPassSelectedCrew")({ target: { value: ids } })}
                     accent={CG_PASS_ACCENT}
+                    onGoToCrew={onGoToCrew}
                   />
 
                   <FormGroup icon="folder" label="Documents *" accent={CG_PASS_ACCENT}>
@@ -291,6 +292,7 @@ CGPassContent.propTypes = {
   cardColor: PropTypes.string,
   card: PropTypes.object,
   onRequestCountChange: PropTypes.func,
+  onGoToCrew: PropTypes.func,
 };
 
 export default CGPassContent;

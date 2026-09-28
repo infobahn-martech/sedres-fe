@@ -57,7 +57,7 @@ const unwrapApiList = (axiosData) => {
   return [];
 };
 
-const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChange }) => {
+const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChange, onGoToCrew }) => {
   const requestEmailInputRef = useRef(null);
   const documentsInputRef = useRef(null);
   const [isDraggingEmail, setIsDraggingEmail] = useState(false);
@@ -425,6 +425,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
                   selected={formValues.hotelSelectedCrew || []}
                   onChange={(ids) => handleChange("hotelSelectedCrew")({ target: { value: ids } })}
                   accent={HOTEL_ACCENT}
+                  onGoToCrew={onGoToCrew}
                 />
 
                 <FormGroup icon="calendar" label="Stay Details" accent={HOTEL_ACCENT}>
@@ -583,6 +584,7 @@ HotelContent.propTypes = {
   handleChange: PropTypes.func.isRequired,
   cardColor: PropTypes.string,
   onRequestCountChange: PropTypes.func,
+  onGoToCrew: PropTypes.func,
 };
 
 export default HotelContent;

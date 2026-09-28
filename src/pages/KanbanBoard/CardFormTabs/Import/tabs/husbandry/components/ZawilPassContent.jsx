@@ -19,7 +19,7 @@ const REQUEST_EMAIL_ACCEPT_ATTR = ".msg,.eml,.pdf,.doc,.docx";
 const REQUEST_EMAIL_EXT_RE = /\.(msg|eml|pdf|doc|docx)$/i;
 const ZAWIL_PASS_ACCENT = SERVICE_ACCENT[CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS];
 
-const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequestCountChange }) => {
+const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequestCountChange, onGoToCrew }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isDraggingEmail, setIsDraggingEmail] = useState(false);
   const fileInputRef = useRef(null);
@@ -216,6 +216,7 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
                     selected={formValues.zawilPassSelectedCrew || []}
                     onChange={(ids) => handleChange("zawilPassSelectedCrew")({ target: { value: ids } })}
                     accent={ZAWIL_PASS_ACCENT}
+                    onGoToCrew={onGoToCrew}
                   />
 
                   <FormGroup icon="folder" label="Documents *" accent={ZAWIL_PASS_ACCENT}>
@@ -291,6 +292,7 @@ ZawilPassContent.propTypes = {
   cardColor: PropTypes.string,
   card: PropTypes.object,
   onRequestCountChange: PropTypes.func,
+  onGoToCrew: PropTypes.func,
 };
 
 export default ZawilPassContent;
