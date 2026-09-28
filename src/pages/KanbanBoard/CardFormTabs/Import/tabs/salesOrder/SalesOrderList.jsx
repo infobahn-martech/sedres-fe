@@ -789,18 +789,20 @@ const SalesOrderList = ({
   const [showApprovalEmailUploadModal, setShowApprovalEmailUploadModal] = useState(false);
 
   // Whether the client's SO approval email has been uploaded for this card (see
-  // handleUploadApprovalEmail) — the "Approved" label only shows once it has been. Kept per call
-  // in useDaLocalSoApproval (see soApprovalProgress above): api/da/action_state carries no
-  // readable flag to hydrate this from.
-  const isApprovalEmailUploaded = soApprovalProgress?.isApprovalEmailUploaded === true;
+  // handleUploadApprovalEmail) — the "Approved" label only shows once it has been. Read back from
+  // api/da/action_state's approval_proof_uploaded so a page refresh resumes on the "Approved by"
+  // field; useDaLocalSoApproval covers the gap until the refetch after an upload lands.
+  const isApprovalEmailUploaded =
+    soApprovalProgress?.isApprovalEmailUploaded === true ||
+    [true, 1, "1", "true"].includes(soActionState?.approval_proof_uploaded);
   const setIsApprovalEmailUploaded = (value) => setSoApprovalField(callId, "isApprovalEmailUploaded", value);
 
   // "Approved by" header field shown in place of the old static "Approved" label once the
   // approval email has been uploaded (per request 2026-09-23): the typed name is committed with
-  // the tick button and wiped with the clear button. The committed name is kept per call in
-  // useDaLocalSoApproval, same as isApprovalEmailUploaded above — no backend field to read it back.
+  // the tick button and wiped with the clear button. The committed name is read back from
+  // api/da/action_state's approved_by, with useDaLocalSoApproval as the same fallback as above.
   const [approvedByInput, setApprovedByInput] = useState(soApprovalProgress?.approvedByName ?? "");
-  const approvedByName = soApprovalProgress?.approvedByName ?? "";
+  const approvedByName = soApprovalProgress?.approvedByName || soActionState?.approved_by || "";
   const setApprovedByName = (value) => setSoApprovalField(callId, "approvedByName", value);
   const [isRecordingApprovedBy, setIsRecordingApprovedBy] = useState(false);
 
