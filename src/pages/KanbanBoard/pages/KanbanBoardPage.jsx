@@ -444,13 +444,20 @@ export default function KanbanBoardPage() {
         return;
       }
 
+      /* The backend picks the target column by category (Crewing/Port Call) and returns it as
+         column_id; column keys on the board are String(column_id). */
       moveCardsToColumn(
         batchCards.map((card) => card.id),
-        selectedBatchTargetColumn,
+        data.column_id != null ? String(data.column_id) : selectedBatchTargetColumn,
         data.batch_number,
         data.batch_id
       );
-      notify(`Batch ${data.batch_number} created`, "success");
+      notify(
+        data.column_name
+          ? `Batch ${data.batch_number} created and moved to ${data.column_name}`
+          : `Batch ${data.batch_number} created`,
+        "success"
+      );
       setShowBatchConfirmModal(false);
       clearCardSelection();
     } finally {
