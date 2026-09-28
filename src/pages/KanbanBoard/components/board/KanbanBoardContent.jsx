@@ -26,6 +26,7 @@ export default function KanbanBoardContent({
   layoutView,
   selectedActionCardIds,
   onToggleCardSelect,
+  onSelectAllCards,
   onCardSelectDragStart,
   onCardSelectDragEnter,
 }) {
@@ -73,6 +74,7 @@ export default function KanbanBoardContent({
         layoutView={layoutView}
         selectedActionCardIds={selectedActionCardIds}
         onToggleCardSelect={onToggleCardSelect}
+        onSelectAllCards={onSelectAllCards}
         onCardSelectDragStart={onCardSelectDragStart}
         onCardSelectDragEnter={onCardSelectDragEnter}
       />
