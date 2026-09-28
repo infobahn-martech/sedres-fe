@@ -11,6 +11,8 @@ import {
   CREW_MANAGEMENT_SUBTABS,
   MATERIAL_MANAGEMENT_SUBTABS,
   LAUNCH_HIRE_SUBTABS,
+  TAB_ICON_COLORS,
+  TAB_ICON_PATHS,
 } from "./components/Husbandry.constants";
 
 // Import shared components
@@ -179,8 +181,18 @@ const ServiceInsights = () => {
   );
 };
 
+// Crew Management services that open their own form directly from the
+// dashboard (same set as the Crew Management left-nav).
+const CREW_DIRECT_SERVICES = [
+  { id: CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS, label: "Zawil Pass", summary: "Zawil pass requests for crew movement." },
+  { id: CREW_MANAGEMENT_SUBTABS.CG_PASS, label: "CG Pass", summary: "Coast Guard pass requests for crew." },
+  { id: CREW_MANAGEMENT_SUBTABS.TRANSPORT, label: "Transport", summary: "Crew transport bookings and transfers." },
+  { id: CREW_MANAGEMENT_SUBTABS.HOTEL, label: "Hotel", summary: "Crew hotel accommodation bookings." },
+  { id: CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE, label: "Medical", summary: "Medical appointments and crew welfare." },
+];
+
 // Service Selection Component
-const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, showLaunchHire = true, hiddenServiceIds = [] }) => {
+const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, showLaunchHire = true, hiddenServiceIds = [] }) => {
   const categories = servicesSummary?.categories || {};
   const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
@@ -197,6 +209,13 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], ser
       ],
       bookedSummary: "Coordinate crew movement, accommodation and welfare services.",
     },
+    ...CREW_DIRECT_SERVICES.map((service) => ({
+      ...service,
+      parentId: MAIN_TABS.CREW_MANAGEMENT,
+      iconPath: TAB_ICON_PATHS[service.id],
+      accent: TAB_ICON_COLORS[service.id],
+      footerBadges: [`Requests: ${num(crewServiceCounts[service.id])}`],
+    })),
     {
       id: MAIN_TABS.MATERIAL_MANAGEMENT,
       label: "Material Management",
@@ -256,7 +275,7 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], ser
   ];
 
   const services = (showLaunchHire ? allServices : allServices.filter((service) => service.id !== "LAUNCH_HIRE"))
-    .filter((service) => !hiddenServiceIds.includes(service.id));
+    .filter((service) => !hiddenServiceIds.includes(service.id) && !hiddenServiceIds.includes(service.parentId));
 
   const bookedServicesMap = bookedServices.reduce((acc, booked) => {
     acc[booked.id] = booked;
@@ -370,7 +389,13 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], ser
                   </span>
                 )}
                 <div className="husbandry-service-option-icon">
-                  {getServiceIcon(service.icon)}
+                  {service.iconPath ? (
+                    <svg width="48" height="48" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d={service.iconPath} stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : (
+                    getServiceIcon(service.icon)
+                  )}
                 </div>
                 <div className="husbandry-service-option-content">
                   <span className="husbandry-service-option-label">{service.label}</span>
@@ -402,6 +427,7 @@ ServiceSelection.propTypes = {
   cardColor: PropTypes.string,
   bookedServices: PropTypes.array,
   servicesSummary: PropTypes.object,
+  crewServiceCounts: PropTypes.object,
   showLaunchHire: PropTypes.bool,
   hiddenServiceIds: PropTypes.arrayOf(PropTypes.string),
 };
@@ -617,25 +643,41 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
   }, [activeMainTab, activeSubTab, materialManagementVisibleSubTabIds]);
 
   const handleServiceSelect = useCallback((tab) => {
+    const crewDirectService = CREW_DIRECT_SERVICES.find((service) => service.id === tab);
+    const bookedId = crewDirectService ? MAIN_TABS.CREW_MANAGEMENT : tab;
+
     setServiceSelected(true);
     setSelectedActionTab(null); // Reset selected action
 
     // Add or update booked service
     setBookedServices(prev => {
-      const existing = prev.find(bs => bs.id === tab);
+      const existing = prev.find(bs => bs.id === bookedId);
       if (existing) {
         // Service already booked, update it
-        return prev.map(bs => bs.id === tab ? { ...bs, status: bs.status || "Pending" } : bs);
+        return prev.map(bs => bs.id === bookedId
+          ? { ...bs, status: bs.status || "Pending", subService: crewDirectService?.label ?? bs.subService }
+          : bs);
       } else {
         // New service booking
         const newService = {
-          id: tab,
+          id: bookedId,
           status: "Pending",
-          subService: null,
+          subService: crewDirectService?.label ?? null,
         };
         return [...prev, newService];
       }
     });
+
+    // Crew Management sub-service (Zawil Pass, CG Pass, Transport, Hotel,
+    // Medical) — open Crew Management directly on that service's form.
+    if (crewDirectService) {
+      setIsLaunchHireMode(false);
+      setSelectedServices([MAIN_TABS.CREW_MANAGEMENT]);
+      setActiveMainTab(MAIN_TABS.CREW_MANAGEMENT);
+      setActiveSubTab(tab);
+      setSelectedActionTab(tab);
+      return;
+    }
 
     // Handle "LAUNCH_HIRE" selection - render the Launch Hire booking form directly
     if (tab === "LAUNCH_HIRE") {
@@ -998,6 +1040,19 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
     }
   };
 
+  // Each service badge shows the number of requests already saved for this
+  // call, as fetched from its own API. Until that fetch resolves
+  // (requestCounts entry still null), fall back to the crew currently picked
+  // in the pending form. Shared by the dashboard rows and the left-nav.
+  const selectedCrewCount = (field) => (Array.isArray(formValues?.[field]) ? formValues[field].length : 0);
+  const crewServiceCounts = {
+    [CREW_MANAGEMENT_SUBTABS.TRANSPORT]: requestCounts[CREW_MANAGEMENT_SUBTABS.TRANSPORT] ?? selectedCrewCount("selectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.HOTEL]: requestCounts[CREW_MANAGEMENT_SUBTABS.HOTEL] ?? selectedCrewCount("hotelSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE]: requestCounts[CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE] ?? selectedCrewCount("medicalServiceSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.CG_PASS]: requestCounts[CREW_MANAGEMENT_SUBTABS.CG_PASS] ?? selectedCrewCount("cgPassSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS]: requestCounts[CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS] ?? selectedCrewCount("zawilPassSelectedCrew"),
+  };
+
   // DA module Husbandry: crew table only (no Booked Services)
   if (isDAModule) {
     return (
@@ -1049,6 +1104,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
           cardColor={cardColor}
           bookedServices={bookedServices}
           servicesSummary={servicesSummary}
+          crewServiceCounts={crewServiceCounts}
           showLaunchHire={showLaunchHire}
           hiddenServiceIds={hiddenHusbandryMainTabIds}
         />
@@ -1077,17 +1133,9 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
             [MATERIAL_MANAGEMENT_SUBTABS.LANDING_NOTE]: landingNotesCount,
             [MATERIAL_MANAGEMENT_SUBTABS.DISPATCH_NOTE]: dispatchNotesCount,
             [LAUNCH_HIRE_SUBTABS.INBOUND_ORDERS]: inboundOrdersCount,
-            // Each service badge shows the number of requests already saved
-            // for this call, as fetched from its own API. Until that tab has
-            // been opened at least once (requestCounts entry still null),
-            // fall back to the crew currently picked in the pending form.
-            [CREW_MANAGEMENT_SUBTABS.TRANSPORT]: requestCounts[CREW_MANAGEMENT_SUBTABS.TRANSPORT] ?? (Array.isArray(formValues?.selectedCrew) ? formValues.selectedCrew.length : 0),
-            [CREW_MANAGEMENT_SUBTABS.HOTEL]: requestCounts[CREW_MANAGEMENT_SUBTABS.HOTEL] ?? (Array.isArray(formValues?.hotelSelectedCrew) ? formValues.hotelSelectedCrew.length : 0),
-            [CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE]: requestCounts[CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE] ?? (Array.isArray(formValues?.medicalServiceSelectedCrew) ? formValues.medicalServiceSelectedCrew.length : 0),
-            [CREW_MANAGEMENT_SUBTABS.CG_PASS]: requestCounts[CREW_MANAGEMENT_SUBTABS.CG_PASS] ?? (Array.isArray(formValues?.cgPassSelectedCrew) ? formValues.cgPassSelectedCrew.length : 0),
-            [CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS]: requestCounts[CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS] ?? (Array.isArray(formValues?.zawilPassSelectedCrew) ? formValues.zawilPassSelectedCrew.length : 0),
-            crewChange: Array.isArray(formValues?.crewChangeSelectedCrew) ? formValues.crewChangeSelectedCrew.length : 0,
-            portPass: Array.isArray(formValues?.portPassSelectedCrew) ? formValues.portPassSelectedCrew.length : 0,
+            ...crewServiceCounts,
+            crewChange: selectedCrewCount("crewChangeSelectedCrew"),
+            portPass: selectedCrewCount("portPassSelectedCrew"),
           }}
         />
         <div className="operation-right">

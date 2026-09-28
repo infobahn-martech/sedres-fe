@@ -1799,16 +1799,24 @@ body .material-management-modal {
   animation: husbandry-fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.husbandry-dashboard-services-header {
-  margin-bottom: 14px;
+// Services column scrolls on its own; the header stays pinned above the list.
+.husbandry-dashboard-services {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 240px);
+  min-height: 420px;
+}
 
-  .husbandry-dashboard-panel-title {
-    margin-top: 4px;
-  }
+.husbandry-dashboard-services-header {
+  flex-shrink: 0;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .husbandry-dashboard-services-subtitle {
   margin: 4px 0 0;
+  padding-left: 12px;
   font-size: 12px;
   line-height: 1.5;
   color: var(--text-secondary);
@@ -1817,9 +1825,29 @@ body .material-management-modal {
 // Service cards rendered as compact rows inside the first column.
 .husbandry-service-selection .husbandry-dashboard-services {
   .husbandry-service-options {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     grid-template-columns: 1fr;
+    // Rows must size to their content — with a fixed-height scroll box, `auto`
+    // rows would otherwise shrink to fit and squash the cards.
+    grid-auto-rows: max-content;
+    align-content: start;
     gap: 10px;
-    padding: 0;
+    // Room for the hover lift / focus ring so they aren't clipped by the scroll box.
+    padding: 4px 6px 4px 2px;
+    margin: -4px -6px -4px -2px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-primary) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-primary);
+      border-radius: 999px;
+    }
   }
 
   .husbandry-service-option {
@@ -1898,11 +1926,29 @@ body .material-management-modal {
   margin-bottom: 12px;
 }
 
+// Section heading with an accent bar so each column's title stands out.
 .husbandry-dashboard-panel-title {
+  position: relative;
   margin: 0;
-  font-size: 15px;
+  padding-left: 12px;
+  font-size: 16px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--card-color, #00368c);
+
+  [data-theme="dark"] & {
+    color: var(--text-primary);
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 2px;
+    bottom: 2px;
+    width: 4px;
+    border-radius: 999px;
+    background: var(--card-color, #00368c);
+  }
 }
 
 .husbandry-dashboard-panel-meta {
