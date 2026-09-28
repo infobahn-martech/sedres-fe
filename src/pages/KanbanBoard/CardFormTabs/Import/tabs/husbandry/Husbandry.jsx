@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import PropTypes from "prop-types";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import "../../../../../../design/scss/operations.scss";
 import "../../../../../../design/scss/table-common.scss";
 import "../../../../../../design/scss/materialmanagement.scss";
@@ -75,6 +76,108 @@ const BackToCrewListingLink = ({ cardColor, onClick }) => (
 BackToCrewListingLink.propTypes = {
   cardColor: PropTypes.string,
   onClick: PropTypes.func.isRequired,
+};
+
+// Static dashboard data — replace with API values once the endpoints exist.
+const SERVICE_DISTRIBUTION_STATIC = [
+  { name: "Crew Management", value: 8, color: "#2563eb" },
+  { name: "Material Management", value: 2, color: "#0d9488" },
+  { name: "Waste Disposal", value: 3, color: "#d97706" },
+  { name: "Launch Hire", value: 2, color: "#0891b2" },
+  { name: "MWP Renewal", value: 1, color: "#7c3aed" },
+  { name: "Third-Party Services", value: 2, color: "#e11d48" },
+  { name: "Add-on Services", value: 1, color: "#059669" },
+];
+
+const SERVICE_HISTORY_STATIC = [
+  { id: 1, service: "Crew Management", action: "Transport request created for 4 crew", user: "Dany Thomas", time: "Today, 10:42 AM", status: "Pending", color: "#2563eb" },
+  { id: 2, service: "Material Management", action: "Inbound order #IO-2031 received", user: "Operations", time: "Today, 09:15 AM", status: "Completed", color: "#0d9488" },
+  { id: 3, service: "Waste Disposal", action: "Disposal request submitted", user: "Port Agent", time: "Yesterday, 05:30 PM", status: "In Progress", color: "#d97706" },
+  { id: 4, service: "Crew Management", action: "Hotel booking confirmed for 2 crew", user: "Dany Thomas", time: "Yesterday, 02:10 PM", status: "Completed", color: "#2563eb" },
+  { id: 5, service: "MWP Renewal", action: "Renewal request raised", user: "Operations", time: "26 Sep, 11:05 AM", status: "Cancelled", color: "#7c3aed" },
+];
+
+const HISTORY_STATUS_CLASS = {
+  "Pending": "is-pending",
+  "In Progress": "is-progress",
+  "Completed": "is-completed",
+  "Cancelled": "is-cancelled",
+};
+
+// Dashboard columns 2 & 3: request distribution donut + recent activity history.
+const ServiceInsights = () => {
+  const total = SERVICE_DISTRIBUTION_STATIC.reduce((sum, item) => sum + item.value, 0);
+
+  return (
+    <>
+      <section className="husbandry-dashboard-panel">
+        <header className="husbandry-dashboard-panel-header">
+          <h3 className="husbandry-dashboard-panel-title">Requests by Service</h3>
+          <span className="husbandry-dashboard-panel-meta">This call</span>
+        </header>
+        <div className="husbandry-dashboard-chart">
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie
+                data={SERVICE_DISTRIBUTION_STATIC}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={60}
+                outerRadius={88}
+                paddingAngle={2}
+                stroke="none"
+              >
+                {SERVICE_DISTRIBUTION_STATIC.map((item) => (
+                  <Cell key={item.name} fill={item.color} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value, name) => [value, name]} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="husbandry-dashboard-chart-center">
+            <span className="husbandry-dashboard-chart-total">{total}</span>
+            <span className="husbandry-dashboard-chart-label">Total</span>
+          </div>
+        </div>
+        <ul className="husbandry-dashboard-legend">
+          {SERVICE_DISTRIBUTION_STATIC.map((item) => (
+            <li key={item.name} className="husbandry-dashboard-legend-item">
+              <span className="husbandry-dashboard-legend-dot" style={{ background: item.color }} />
+              <span className="husbandry-dashboard-legend-name">{item.name}</span>
+              <span className="husbandry-dashboard-legend-value">{item.value}</span>
+              <span className="husbandry-dashboard-legend-pct">
+                {Math.round((item.value / total) * 100)}%
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="husbandry-dashboard-panel">
+        <header className="husbandry-dashboard-panel-header">
+          <h3 className="husbandry-dashboard-panel-title">Recent History</h3>
+          <span className="husbandry-dashboard-panel-meta">{SERVICE_HISTORY_STATIC.length} updates</span>
+        </header>
+        <ol className="husbandry-dashboard-history">
+          {SERVICE_HISTORY_STATIC.map((entry) => (
+            <li key={entry.id} className="husbandry-dashboard-history-item" style={{ "--history-accent": entry.color }}>
+              <span className="husbandry-dashboard-history-marker" />
+              <div className="husbandry-dashboard-history-body">
+                <div className="husbandry-dashboard-history-top">
+                  <span className="husbandry-dashboard-history-service">{entry.service}</span>
+                  <span className={`husbandry-dashboard-history-status ${HISTORY_STATUS_CLASS[entry.status] || "is-pending"}`}>
+                    {entry.status}
+                  </span>
+                </div>
+                <p className="husbandry-dashboard-history-action">{entry.action}</p>
+                <span className="husbandry-dashboard-history-meta">{entry.user} · {entry.time}</span>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </>
+  );
 };
 
 // Service Selection Component
@@ -233,14 +336,15 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], ser
   return (
     <div className="husbandry-service-selection" style={{ "--card-color": cardColor }}>
       <div className="husbandry-service-selection-content">
-        <div className="husbandry-service-hero">
+        <div className="husbandry-dashboard-layout">
+        <section className="husbandry-dashboard-panel husbandry-dashboard-services">
+        <header className="husbandry-dashboard-services-header">
           <p className="husbandry-service-hero-eyebrow">Husbandry Dashboard</p>
-          <h2 className="husbandry-service-selection-title">What services do you need?</h2>
-          <p className="husbandry-service-hero-subtitle">
-            Select a service to initiate requests, monitor progress and keep vessel support activities in one place.
+          <h3 className="husbandry-dashboard-panel-title">What services do you need?</h3>
+          <p className="husbandry-dashboard-services-subtitle">
+            Select a service to initiate requests and monitor progress.
           </p>
-        </div>
-
+        </header>
         <div className="husbandry-service-options">
           {services.map((service, index) => {
             const bookedEntry = bookedServicesMap[service.id];
@@ -296,6 +400,9 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], ser
               </button>
             );
           })}
+        </div>
+        </section>
+        <ServiceInsights />
         </div>
       </div>
     </div>
