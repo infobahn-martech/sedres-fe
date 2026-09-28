@@ -1,8 +1,31 @@
 import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
-import { FiGrid } from "react-icons/fi";
 import "react-tooltip/dist/react-tooltip.css";
 import "../../../../design/scss/pages/kanban-board/columnAction.scss";
+
+/* Batch action icon: mirrors a batch group on the board, a title bar with four cards under it. */
+function BatchCardsIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="2" y="2" width="20" height="20" rx="3" />
+      <path d="M2 7.5h20M5.5 4.75h5" />
+      <rect x="5" y="10.5" width="6" height="4" rx="1" />
+      <rect x="13" y="10.5" width="6" height="4" rx="1" />
+      <rect x="5" y="16" width="6" height="4" rx="1" />
+      <rect x="13" y="16" width="6" height="4" rx="1" />
+    </svg>
+  );
+}
 
 /**
  * Single column title bar (workflow stage). Rendered once per column in the top header row.
@@ -58,7 +81,7 @@ export default function ColumnHeader({
           data-tooltip-content={actionLabel}
           aria-label={actionLabel}
         >
-          <FiGrid size={14} aria-hidden />
+          <BatchCardsIcon />
         </button>
       )}
       {typeof onActionClick === "function" && <Tooltip id={tooltipId} place="top" />}
