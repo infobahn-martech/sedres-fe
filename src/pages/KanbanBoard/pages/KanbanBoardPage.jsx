@@ -433,6 +433,21 @@ export default function KanbanBoardPage() {
     setSelectedSeApprovalBatch(null);
   }, []);
 
+  /* "Upload Invoice" on an "SE Received" batch header opens the upload modal for that batch.
+     UI only for now: no backend route exists yet to persist the invoice file. */
+  const [showInvoiceUploadModal, setShowInvoiceUploadModal] = useState(false);
+  const [selectedInvoiceBatch, setSelectedInvoiceBatch] = useState(null);
+
+  const handleBatchUploadInvoice = useCallback((batch) => {
+    setSelectedInvoiceBatch(batch);
+    setShowInvoiceUploadModal(true);
+  }, []);
+
+  const handleCloseInvoiceUpload = useCallback(() => {
+    setShowInvoiceUploadModal(false);
+    setSelectedInvoiceBatch(null);
+  }, []);
+
   /* Creates the batch on the backend from the ticked cards' calls. The backend issues the batch
      number (e.g. Sep_26_Batch1) and returns it as batch_number. */
   const handleConfirmBatch = useCallback(async () => {
@@ -666,6 +681,7 @@ export default function KanbanBoardPage() {
           onColumnBatchAction={handleColumnBatchAction}
           onBatchSendSeRequest={handleBatchSendSeRequest}
           onBatchUploadSeApproval={handleBatchUploadSeApproval}
+          onBatchUploadInvoice={handleBatchUploadInvoice}
           onContextMenu={handleColumnContextMenu}
           onHeightChange={handleWorkflowColumnHeightChange}
           onToggleWorkflow={handleToggleWorkflow}
@@ -708,6 +724,15 @@ export default function KanbanBoardPage() {
         show={showSeApprovalUploadModal}
         onClose={handleCloseSeApprovalUpload}
         batchTitle={selectedSeApprovalBatch?.title ?? ""}
+      />
+
+      <SeApprovalUploadModal
+        show={showInvoiceUploadModal}
+        onClose={handleCloseInvoiceUpload}
+        batchTitle={selectedInvoiceBatch?.title ?? ""}
+        title="Upload Invoice"
+        subtitle="Attach the invoice for this batch"
+        submitLabel="Upload Invoice"
       />
 
       {selectedCard && columnsForCardForm && (

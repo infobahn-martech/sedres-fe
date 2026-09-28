@@ -47,6 +47,7 @@ export default function WorkflowColumns({
   onColumnBatchAction,
   onBatchSendSeRequest,
   onBatchUploadSeApproval,
+  onBatchUploadInvoice,
   onContextMenu,
   onHeightChange,
   isDarkMode,
@@ -321,6 +322,7 @@ export default function WorkflowColumns({
                         selectedActionCardIds={selectedActionCardIds}
                         onBatchSendSeRequest={onBatchSendSeRequest}
                         onBatchUploadSeApproval={onBatchUploadSeApproval}
+                        onBatchUploadInvoice={onBatchUploadInvoice}
                         onToggleCardSelect={onToggleCardSelect}
                         onCardSelectDragStart={onCardSelectDragStart}
                         onCardSelectDragEnter={onCardSelectDragEnter}

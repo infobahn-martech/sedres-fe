@@ -7,6 +7,7 @@ import "../../../../design/scss/pages/kanban-board/batch-group.scss";
 const noop = () => {};
 const EMPTY_SELECTED_IDS = [];
 const AWAITING_SE_COLUMN_PATTERN = /^awaiting\s+(for\s+)?se$/i;
+const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
 
 /**
  * Collapsible group of cards inside a column cell.
@@ -24,6 +25,7 @@ export default function BatchGroup({
   setSelectedCard,
   onSendSeRequest,
   onUploadSeApproval,
+  onUploadInvoice,
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -31,6 +33,8 @@ export default function BatchGroup({
   const isUngrouped = Boolean(batch.isUngrouped);
   /* Batches already emailed for SE creation sit in "Awaiting SE" (live title "Awaiting for SE"). */
   const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
+  /* Batches whose SE approval is back sit in "SE Received" and move on to invoicing. */
+  const isSeReceivedColumn = SE_RECEIVED_COLUMN_PATTERN.test((columnTitle ?? "").trim());
 
   return (
     <div
@@ -57,6 +61,14 @@ export default function BatchGroup({
               onClick={() => onUploadSeApproval?.(batch)}
             >
               Upload SE Approval
+            </button>
+          ) : isSeReceivedColumn ? (
+            <button
+              type="button"
+              className="batch-group__action"
+              onClick={() => onUploadInvoice?.(batch)}
+            >
+              Upload Invoice
             </button>
           ) : (
             <button
@@ -111,4 +123,5 @@ BatchGroup.propTypes = {
   setSelectedCard: PropTypes.func,
   onSendSeRequest: PropTypes.func,
   onUploadSeApproval: PropTypes.func,
+  onUploadInvoice: PropTypes.func,
 };
