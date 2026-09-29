@@ -26,6 +26,23 @@ function isNodeInColumnZone(node, colStackKey) {
   }
   return false;
 }
+
+// Must match `zoom` on .workflows-content in EditWorkflows.scss
+const WORKFLOWS_ZOOM = 0.8;
+
+// dnd measures zoomed (screen) px but applies inline styles inside the zoomed container, so scale them back
+function getZoomCorrectedDragStyle(style) {
+  if (!style) return style;
+  const unzoom = (v) => (typeof v === 'number' ? v / WORKFLOWS_ZOOM : v);
+  return {
+    ...style,
+    width: unzoom(style.width),
+    height: unzoom(style.height),
+    top: unzoom(style.top),
+    left: unzoom(style.left),
+    transform: style.transform?.replace(/(-?\d*\.?\d+)px/g, (_, n) => `${parseFloat(n) / WORKFLOWS_ZOOM}px`),
+  };
+}
 import useWorkFlowReducer from '../../store/WorkFlowReducer';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
 import useAlertReducer from '../../store/AlertReducer';
@@ -776,6 +793,7 @@ function EditWorkflows() {
               <div
                 ref={draggableProvided.innerRef}
                 {...draggableProvided.draggableProps}
+                style={getZoomCorrectedDragStyle(draggableProvided.draggableProps.style)}
                 className={`workflow-card${workflowIsDisabled ? ' workflow-card--disabled' : ''}${draggableSnapshot.isDragging ? ' workflow-card--dragging' : ''}`}
               >
                 <div className="workflow-header workflow-header--mutation-host">
