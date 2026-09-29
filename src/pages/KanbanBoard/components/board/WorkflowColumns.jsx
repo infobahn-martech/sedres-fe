@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
-import { KANBAN_DND_DISABLED, MAX_BATCH_CARDS } from "../../../../shared/constants/kanbanConfig";
+import { KANBAN_DND_DISABLED } from "../../../../shared/constants/kanbanConfig";
 import ColumnHeader from "./ColumnHeader";
 import SwimlaneColumnCell from "./SwimlaneColumnCell";
 import {
@@ -54,7 +54,6 @@ export default function WorkflowColumns({
   layoutView,
   selectedActionCardIds,
   onToggleCardSelect,
-  onSelectAllCards,
   onCardSelectDragStart,
   onCardSelectDragEnter,
 }) {
@@ -130,33 +129,6 @@ export default function WorkflowColumns({
       });
     });
     return batches;
-  };
-
-  /* Ids of every batchable card (has a call) in the given columns, across all lanes. */
-  const getBatchableCardIds = (colKeys) =>
-    colKeys.flatMap((colKey) =>
-      swimlaneOrder.flatMap((laneId) =>
-        batchLaneCardsByColumn && laneId === swimlaneOrder[0]
-          ? batchLaneCardsByColumn[colKey] ?? []
-          : getSwimlaneColumnCards(workflow, laneId, colKey)
-      )
-    )
-      .filter((card) => card?.callId)
-      .map((card) => card.id);
-
-  /* Backlog header checkbox: ticked once the column's batchable cards are selected up to the
-     batch limit; clicking it while anything is ticked clears the column instead. */
-  const getSelectAllProps = (colKeys) => {
-    if (typeof onSelectAllCards !== "function") return undefined;
-    const cardIds = getBatchableCardIds(colKeys);
-    const selectedCount = cardIds.filter((id) => selectedActionCardIds?.includes(id)).length;
-    const isChecked = cardIds.length > 0 && selectedCount === Math.min(cardIds.length, MAX_BATCH_CARDS);
-    return {
-      isChecked,
-      isDisabled: cardIds.length === 0,
-      isIndeterminate: selectedCount > 0 && !isChecked,
-      onChange: () => onSelectAllCards(cardIds, selectedCount === 0),
-    };
   };
 
   const getColumnCount = (colKey) => {
@@ -248,11 +220,6 @@ export default function WorkflowColumns({
                                   workflow.columnOrder.indexOf(group.colKeys[0]) + 1
                                 ] ?? null,
                             })
-                        : undefined
-                    }
-                    selectAll={
-                      hasBatchAction(workflow, displayColumn, firstColumn)
-                        ? getSelectAllProps(group.colKeys)
                         : undefined
                     }
                   />
@@ -357,7 +324,6 @@ export default function WorkflowColumns({
                         onBatchUploadSeApproval={onBatchUploadSeApproval}
                         onBatchUploadInvoice={onBatchUploadInvoice}
                         onToggleCardSelect={onToggleCardSelect}
-                        onSelectAllCards={onSelectAllCards}
                         onCardSelectDragStart={onCardSelectDragStart}
                         onCardSelectDragEnter={onCardSelectDragEnter}
                         batches={getBatchesForColumn(colKey, laneId)}
