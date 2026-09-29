@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import dayjs from "dayjs";
 import { FiCalendar, FiChevronLeft, FiChevronRight, FiX } from "react-icons/fi";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const VIEWPORT_GUTTER = 16;
 const VALUE_FORMAT = "YYYY-MM-DD";
 const DISPLAY_FORMAT = "DD MMM YYYY";
 
@@ -69,7 +70,24 @@ const DateRangePicker = ({ from, to, onChange }) => {
   const [activeField, setActiveField] = useState("from");
   const [hoverDay, setHoverDay] = useState(null);
   const [viewMonth, setViewMonth] = useState(() => (toDay(from) ?? dayjs()).startOf("month"));
+  const [popoverOffset, setPopoverOffset] = useState(0);
   const rootRef = useRef(null);
+  const popoverRef = useRef(null);
+
+  // Open from the trigger's left edge; shift left only as far as needed to stay on screen,
+  // but never past the dashboard content's left edge (so it can't slide under the side nav).
+  useLayoutEffect(() => {
+    if (!isOpen) return undefined;
+    const position = () => {
+      const triggerRect = rootRef.current.getBoundingClientRect();
+      const containerLeft = rootRef.current.closest(".dashboard-container")?.getBoundingClientRect().left ?? 0;
+      const overflow = triggerRect.left + popoverRef.current.offsetWidth - (window.innerWidth - VIEWPORT_GUTTER);
+      setPopoverOffset(-Math.min(Math.max(overflow, 0), triggerRect.left - containerLeft));
+    };
+    position();
+    window.addEventListener("resize", position);
+    return () => window.removeEventListener("resize", position);
+  }, [isOpen]);
 
   const fromDay = toDay(from);
   const toDayValue = toDay(to);
@@ -153,7 +171,13 @@ const DateRangePicker = ({ from, to, onChange }) => {
       </button>
 
       {isOpen && (
-        <div className="drp-popover" role="dialog" aria-label="Select date range">
+        <div
+          ref={popoverRef}
+          className="drp-popover"
+          style={{ left: popoverOffset }}
+          role="dialog"
+          aria-label="Select date range"
+        >
           <div className="drp-fields">
             {renderField("from", fromDay, "Select starting date...")}
             <span className="drp-fields-sep">-</span>
