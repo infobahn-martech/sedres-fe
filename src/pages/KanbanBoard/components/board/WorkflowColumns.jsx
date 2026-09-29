@@ -16,7 +16,7 @@ import {
 } from "../../utils/boardGridHelpers";
 import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import useExportApprovalStatusStore from "../../../../shared/store/exportApprovalStatusStore";
-import { hasExportApprovalFlag } from "../../utils/cardHelpers";
+import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "../../../../design/scss/pages/kanban-board/swimlaneBoard.scss";
 
@@ -76,14 +76,15 @@ export default function WorkflowColumns({
 
   const loadExportApprovalStatuses = useExportApprovalStatusStore((state) => state.loadStatuses);
 
-  /* get_full_board leaves is_export_approval_card out for some Backlog cards, so their export
-     approval state is read from the call detail instead (re-read on every board load). */
+  /* get_full_board leaves is_export_approval_card out for some Backlog cards, and sends true for
+     non-Export calls too, so those cards' export approval state is read from the call detail
+     (re-read on every board load). */
   useEffect(() => {
     if (!isBatchWorkflow(workflow)) return;
     const callIds = workflow.columnOrder
       .filter((colKey) => isBacklogColumn(workflow.columns[colKey]))
       .flatMap((colKey) => swimlaneOrder.flatMap((laneId) => getSwimlaneColumnCards(workflow, laneId, colKey)))
-      .filter((card) => card?.callId && !hasExportApprovalFlag(card))
+      .filter((card) => card?.callId && needsExportApprovalCheck(card))
       .map((card) => card.callId);
     if (callIds.length) loadExportApprovalStatuses([...new Set(callIds)]);
   }, [workflow, swimlaneOrder, loadExportApprovalStatuses]);
