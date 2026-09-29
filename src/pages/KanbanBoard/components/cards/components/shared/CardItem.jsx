@@ -19,6 +19,8 @@ import {
   getApiCardTaskName,
   getUsernameInitial,
 } from "../../../../utils/cardDisplayHelpers";
+import { isExportApprovalPendingCard } from "../../../../utils/cardHelpers";
+import useExportApprovalStatusStore from "../../../../../../shared/store/exportApprovalStatusStore";
 
 /** Top-left badge: dynamic Fi/Lu icon from API `cardTypeIcon` (e.g. LuRocket). */
 function ApiCardTypeIcon({ card, inline = false }) {
@@ -655,10 +657,8 @@ function CardItem({
   isDragDisabled = false,
 }) {
   const isApiCard = card.cardSource === "api";
-  // is_export_approval_card is true while export approval is still pending, so no tick.
-  // false or a missing key (other boards) keeps the tick.
-  const exportApprovalFlag = card.raw?.is_export_approval_card ?? card.is_export_approval_card;
-  const isExportApprovalPending = ["true", "1"].includes(String(exportApprovalFlag));
+  const exportApprovalStatusByCallId = useExportApprovalStatusStore((state) => state.statusByCallId);
+  const isExportApprovalPending = isExportApprovalPendingCard(card, exportApprovalStatusByCallId);
   const canSelectForAction =
     typeof onToggleSelectForAction === "function" && !isExportApprovalPending;
   const topRowUsernameInitial = isApiCard && !isShrunk ? getUsernameInitial(card.user) : null;
