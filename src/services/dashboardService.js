@@ -4,72 +4,85 @@
 // once BE ships the endpoint — response shape below matches the agreed contract.
 
 const MOCK_OVERVIEW = {
-  stats: [
-    { key: "total_vessels", label: "Total Vessels", value: 142, change_percent: 12, trend: "up" },
-    { key: "active_crew", label: "Active Crew", value: 1234, change_percent: 8, trend: "up" },
-    { key: "completed_jobs", label: "Completed Jobs", value: 856, change_percent: 15, trend: "up" },
-    { key: "revenue", label: "Revenue", value: 2400000, change_percent: 22, trend: "up" },
+  summary: {
+    total_vessels_imported: 142,
+    total_vessels_exported: 128,
+    total_crew_change_ytd: 1234,
+    vessels_in_agency: 37,
+  },
+
+  // Port-wise vessel lists. `direction`: import | export | domestic.
+  vessels: [
+    { id: 1, name: "MV Gulf Pioneer", port: "jubail", direction: "import", client: "Saipem", eta: "2026-09-28", status: "berthed" },
+    { id: 2, name: "MV Arabian Star", port: "rt", direction: "import", client: "Aramco", eta: "2026-09-30", status: "arrived" },
+    { id: 3, name: "MT Red Sea Spirit", port: "dammam", direction: "import", client: "McDermott", eta: "2026-10-02", status: "expected" },
+    { id: 4, name: "MV Ocean Grace", port: "jubail", direction: "import", client: "NMDC", eta: "2026-09-25", status: "customs_clearance" },
+    { id: 5, name: "MV Khaleej Trader", port: "rt", direction: "export", client: "Aramco", eta: "2026-09-29", status: "loading" },
+    { id: 6, name: "MV Desert Falcon", port: "jubail", direction: "export", client: "Saipem", eta: "2026-10-01", status: "expected" },
+    { id: 7, name: "MT Coral Wave", port: "dammam", direction: "export", client: "L&T", eta: "2026-09-27", status: "sailed" },
+    { id: 8, name: "Tug Al Jubail 3", port: "jubail", direction: "domestic", client: "Saipem", eta: "2026-09-29", status: "berthed" },
+    { id: 9, name: "AHTS Najm", port: "jubail", direction: "domestic", client: "NMDC", eta: "2026-09-30", status: "expected" },
+    { id: 10, name: "Barge RT-12", port: "rt", direction: "domestic", client: "Aramco", eta: "2026-09-28", status: "arrived" },
+    { id: 11, name: "Crew Boat Sadaf", port: "rt", direction: "domestic", client: "McDermott", eta: "2026-10-03", status: "expected" },
   ],
 
-  vessel_traffic: [
-    { month: "Jan", month_number: 1, arrivals: 45, departures: 38 },
-    { month: "Feb", month_number: 2, arrivals: 52, departures: 45 },
-    { month: "Mar", month_number: 3, arrivals: 48, departures: 42 },
-    { month: "Apr", month_number: 4, arrivals: 61, departures: 55 },
-    { month: "May", month_number: 5, arrivals: 55, departures: 48 },
-    { month: "Jun", month_number: 6, arrivals: 67, departures: 60 },
-    { month: "Jul", month_number: 7, arrivals: 72, departures: 65 },
-    { month: "Aug", month_number: 8, arrivals: 68, departures: 62 },
-    { month: "Sep", month_number: 9, arrivals: 75, departures: 70 },
-    { month: "Oct", month_number: 10, arrivals: 80, departures: 75 },
-    { month: "Nov", month_number: 11, arrivals: 85, departures: 78 },
-    { month: "Dec", month_number: 12, arrivals: 90, departures: 82 },
+  crew_changes: [
+    { id: 1, vessel: "MV Gulf Pioneer", port: "jubail", date: "2026-09-29", on_signers: 6, off_signers: 5, status: "in_progress" },
+    { id: 2, vessel: "MV Arabian Star", port: "rt", date: "2026-10-01", on_signers: 4, off_signers: 4, status: "scheduled" },
+    { id: 3, vessel: "MV Ocean Grace", port: "jubail", date: "2026-09-26", on_signers: 8, off_signers: 7, status: "completed" },
+    { id: 4, vessel: "MV Khaleej Trader", port: "rt", date: "2026-10-04", on_signers: 3, off_signers: 3, status: "scheduled" },
   ],
 
-  services_by_type: [
-    { key: "transport", name: "Transport", value: 320 },
-    { key: "medical", name: "Medical", value: 180 },
-    { key: "hotel", name: "Hotel", value: 245 },
-    { key: "launch_hire", name: "Launch Hire", value: 150 },
-    { key: "warehouse", name: "Warehouse", value: 195 },
-    { key: "customs", name: "Customs", value: 220 },
+  crew_change_trend: [
+    { month: "Jan", count: 118 },
+    { month: "Feb", count: 124 },
+    { month: "Mar", count: 131 },
+    { month: "Apr", count: 142 },
+    { month: "May", count: 128 },
+    { month: "Jun", count: 150 },
+    { month: "Jul", count: 139 },
+    { month: "Aug", count: 147 },
+    { month: "Sep", count: 155 },
   ],
 
-  job_status: [
-    { key: "completed", name: "Completed", value: 450 },
-    { key: "in_progress", name: "In Progress", value: 300 },
-    { key: "pending", name: "Pending", value: 150 },
-    { key: "on_hold", name: "On Hold", value: 100 },
+  branches: [
+    { key: "jubail", name: "Jubail" },
+    { key: "dammam", name: "Dammam" },
+    { key: "rt", name: "Ras Tanura" },
   ],
 
-  service_requests_trend: [
-    { month: "Jan", month_number: 1, requests: 285 },
-    { month: "Feb", month_number: 2, requests: 310 },
-    { month: "Mar", month_number: 3, requests: 295 },
-    { month: "Apr", month_number: 4, requests: 340 },
-    { month: "May", month_number: 5, requests: 325 },
-    { month: "Jun", month_number: 6, requests: 380 },
-    { month: "Jul", month_number: 7, requests: 395 },
-    { month: "Aug", month_number: 8, requests: 375 },
-    { month: "Sep", month_number: 9, requests: 410 },
-    { month: "Oct", month_number: 10, requests: 435 },
-    { month: "Nov", month_number: 11, requests: 450 },
-    { month: "Dec", month_number: 12, requests: 475 },
+  revenue_by_branch: [
+    { month: "Jan", jubail: 182000, dammam: 124000, rt: 96000 },
+    { month: "Feb", jubail: 191000, dammam: 131000, rt: 101000 },
+    { month: "Mar", jubail: 205000, dammam: 128000, rt: 108000 },
+    { month: "Apr", jubail: 214000, dammam: 139000, rt: 112000 },
+    { month: "May", jubail: 208000, dammam: 145000, rt: 118000 },
+    { month: "Jun", jubail: 226000, dammam: 151000, rt: 121000 },
+    { month: "Jul", jubail: 238000, dammam: 149000, rt: 127000 },
+    { month: "Aug", jubail: 245000, dammam: 158000, rt: 133000 },
+    { month: "Sep", jubail: 257000, dammam: 164000, rt: 139000 },
   ],
 
-  revenue_trend: [
-    { month: "Jan", month_number: 1, revenue: 180000, expenses: 120000 },
-    { month: "Feb", month_number: 2, revenue: 195000, expenses: 125000 },
-    { month: "Mar", month_number: 3, revenue: 210000, expenses: 130000 },
-    { month: "Apr", month_number: 4, revenue: 225000, expenses: 135000 },
-    { month: "May", month_number: 5, revenue: 240000, expenses: 140000 },
-    { month: "Jun", month_number: 6, revenue: 255000, expenses: 145000 },
-    { month: "Jul", month_number: 7, revenue: 270000, expenses: 150000 },
-    { month: "Aug", month_number: 8, revenue: 285000, expenses: 155000 },
-    { month: "Sep", month_number: 9, revenue: 300000, expenses: 160000 },
-    { month: "Oct", month_number: 10, revenue: 315000, expenses: 165000 },
-    { month: "Nov", month_number: 11, revenue: 330000, expenses: 170000 },
-    { month: "Dec", month_number: 12, revenue: 345000, expenses: 175000 },
+  revenue_offshore_marine: [
+    { month: "Jan", revenue: 312000 },
+    { month: "Feb", revenue: 298000 },
+    { month: "Mar", revenue: 335000 },
+    { month: "Apr", revenue: 351000 },
+    { month: "May", revenue: 344000 },
+    { month: "Jun", revenue: 372000 },
+    { month: "Jul", revenue: 389000 },
+    { month: "Aug", revenue: 381000 },
+    { month: "Sep", revenue: 402000 },
+  ],
+
+  open_sales_orders: [
+    { id: 1, so_number: "SO-24081", client: "Saipem", created_on: "2026-07-14", amount: 48500 },
+    { id: 2, so_number: "SO-24102", client: "Aramco", created_on: "2026-08-02", amount: 126000 },
+    { id: 3, so_number: "SO-24155", client: "NMDC", created_on: "2026-08-21", amount: 32750 },
+    { id: 4, so_number: "SO-24190", client: "Saipem", created_on: "2026-09-05", amount: 71200 },
+    { id: 5, so_number: "SO-24211", client: "McDermott", created_on: "2026-09-12", amount: 18900 },
+    { id: 6, so_number: "SO-24236", client: "L&T", created_on: "2026-09-20", amount: 54300 },
+    { id: 7, so_number: "SO-24248", client: "Aramco", created_on: "2026-09-24", amount: 89400 },
   ],
 };
 

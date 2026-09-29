@@ -30,7 +30,7 @@
 // Stats Cards Grid
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
 
@@ -73,6 +73,12 @@
     width: 24px;
     height: 24px;
   }
+
+  &--blue { color: #2a78d6; background: rgba(42, 120, 214, 0.12); }
+  &--green { color: #1baf7a; background: rgba(27, 175, 122, 0.12); }
+  &--violet { color: #6d5dd3; background: rgba(109, 93, 211, 0.12); }
+  &--amber { color: #d98f00; background: rgba(237, 161, 0, 0.14); }
+  &--red { color: #d03b3b; background: rgba(208, 59, 59, 0.12); }
 }
 
 .stat-info {
@@ -89,40 +95,8 @@
 .stat-value {
   font: normal normal 600 28px/1.2 'Manrope', sans-serif;
   color: var(--text-primary);
-  margin: 0 0 8px 0;
-}
-
-.stat-change {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font: normal normal 500 13px/1.5 'Manrope', sans-serif;
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  &.up {
-    color: #10b981;
-
-    svg {
-      color: #10b981;
-    }
-  }
-
-  &.down {
-    color: #ef4444;
-
-    svg {
-      color: #ef4444;
-    }
-  }
-
-  .stat-period {
-    color: var(--text-muted);
-    font-weight: 400;
-  }
+  margin: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 // Charts Grid
@@ -146,6 +120,7 @@
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border: 1px solid var(--border-primary);
+  min-width: 0;
 
   &.chart-card-full {
     grid-column: 1 / -1;
@@ -170,6 +145,228 @@
     color: var(--text-secondary);
     margin: 0;
   }
+
+  &--row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+// Filters
+.dash-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.dash-select {
+  height: 36px;
+  min-width: 160px;
+  padding: 0 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font: normal normal 500 14px/1 'Manrope', sans-serif;
+  cursor: pointer;
+
+  &:focus {
+    outline: 2px solid #2a78d6;
+    outline-offset: 1px;
+  }
+}
+
+.dash-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font: normal normal 500 14px/1.4 'Manrope', sans-serif;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: #00368c;
+    cursor: pointer;
+  }
+}
+
+// Tabs
+.dash-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-primary);
+  margin-bottom: 12px;
+  overflow-x: auto;
+}
+
+.dash-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  color: var(--text-secondary);
+  font: normal normal 500 14px/1.4 'Manrope', sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &.active {
+    color: #00368c;
+    border-bottom-color: #00368c;
+    font-weight: 600;
+
+    [data-theme="dark"] & {
+      color: #3b82f6;
+      border-bottom-color: #3b82f6;
+    }
+  }
+}
+
+.dash-tab-count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--border-primary);
+  color: var(--text-primary);
+  font-size: 12px;
+  text-align: center;
+}
+
+// Tables
+.dash-table-wrp {
+  overflow-x: auto;
+}
+
+.dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: normal normal 400 14px/1.4 'Manrope', sans-serif;
+  color: var(--text-primary);
+
+  th,
+  td {
+    padding: 12px;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  th {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    color: var(--text-secondary);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:hover {
+    background: rgba(0, 54, 140, 0.04);
+  }
+
+  .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dash-table-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 24px;
+  }
+}
+
+.dash-table-strong {
+  font-weight: 600;
+}
+
+// Status badges — tone is always paired with a text label
+.dash-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font: normal normal 600 12px/1.4 'Manrope', sans-serif;
+  white-space: nowrap;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  &--neutral { background: rgba(107, 114, 128, 0.14); color: var(--text-secondary); }
+  &--info { background: rgba(42, 120, 214, 0.14); color: #1c5cab; }
+  &--warning { background: rgba(250, 178, 25, 0.2); color: #8a5a00; }
+  &--success { background: rgba(12, 163, 12, 0.14); color: #006300; }
+  &--critical { background: rgba(208, 59, 59, 0.14); color: #b02a2a; }
+
+  [data-theme="dark"] & {
+    &--info { color: #86b6ef; }
+    &--warning { color: #fab219; }
+    &--success { color: #4cc94c; }
+    &--critical { color: #f08080; }
+  }
+}
+
+// Sales order summary
+.so-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 240px));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.so-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-primary);
+  border-left: 4px solid #2a78d6;
+
+  &--alert {
+    border-left-color: #d03b3b;
+  }
+}
+
+.so-summary-label {
+  font: normal normal 500 13px/1.4 'Manrope', sans-serif;
+  color: var(--text-secondary);
+}
+
+.so-summary-value {
+  font: normal normal 600 24px/1.2 'Manrope', sans-serif;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.so-summary-sub {
+  font: normal normal 500 13px/1.4 'Manrope', sans-serif;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.so-overdue {
+  margin-left: 8px;
 }
 
 // Recharts customizations

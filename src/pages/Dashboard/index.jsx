@@ -4,58 +4,95 @@ import {
   Line,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  AreaChart,
-  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Cell,
 } from "recharts";
-import { FiTrendingUp, FiUsers, FiCheckCircle, FiActivity, FiDollarSign } from "react-icons/fi";
+import {
+  FiDownload,
+  FiUpload,
+  FiUsers,
+  FiAnchor,
+  FiFileText,
+  FiAlertTriangle,
+} from "react-icons/fi";
 import dashboardService from "../../services/dashboardService";
 import { useThemeStore } from "../../shared/store/themeStore";
 import "../../design/scss/dashboard.scss";
 import "../../design/scss/pages/dashboard/dashboard-content.scss";
 
-// Presentation metadata keyed by the stable `key` BE returns — API never sends icons/colors.
-const STAT_META = {
-  total_vessels: { icon: <FiActivity />, color: "#00368c" },
-  active_crew: { icon: <FiUsers />, color: "#10b981" },
-  completed_jobs: { icon: <FiCheckCircle />, color: "#3b82f6" },
-  revenue: { icon: <FiDollarSign />, color: "#f59e0b" },
+const PORT_LABELS = {
+  jubail: "Jubail",
+  rt: "Ras Tanura",
+  dammam: "Dammam",
 };
 
-const SERVICE_COLORS = {
-  transport: "#00368c",
-  medical: "#10b981",
-  hotel: "#3b82f6",
-  launch_hire: "#f59e0b",
-  warehouse: "#8b5cf6",
-  customs: "#ef4444",
+// Tabs of the port-wise vessel list. Domestic tabs are pinned to a port.
+const VESSEL_TABS = [
+  { key: "import", label: "Import", direction: "import" },
+  { key: "export", label: "Export", direction: "export" },
+  { key: "domestic_jubail", label: "Domestic · Jubail", direction: "domestic", port: "jubail" },
+  { key: "domestic_rt", label: "Domestic · RT", direction: "domestic", port: "rt" },
+];
+
+// Status → label + badge tone. Tone is always paired with the text label, never color alone.
+const STATUS_META = {
+  expected: { label: "Expected", tone: "neutral" },
+  arrived: { label: "Arrived", tone: "info" },
+  berthed: { label: "Berthed", tone: "info" },
+  customs_clearance: { label: "Customs Clearance", tone: "warning" },
+  loading: { label: "Loading", tone: "warning" },
+  sailed: { label: "Sailed", tone: "success" },
+  scheduled: { label: "Scheduled", tone: "neutral" },
+  in_progress: { label: "In Progress", tone: "warning" },
+  completed: { label: "Completed", tone: "success" },
 };
 
-const JOB_STATUS_COLORS = {
-  completed: "#10b981",
-  in_progress: "#3b82f6",
-  pending: "#f59e0b",
-  on_hold: "#ef4444",
+// Categorical series colors (fixed order, validated for CVD separation per theme).
+const SERIES_COLORS = {
+  light: ["#2a78d6", "#eb6834", "#1baf7a"],
+  dark: ["#3987e5", "#d95926", "#199e70"],
 };
 
-const formatStatValue = (key, value) => {
-  if (key === "revenue") {
-    return value >= 1_000_000 ? `$${(value / 1_000_000).toFixed(1)}M` : `$${value.toLocaleString()}`;
-  }
-  return value.toLocaleString();
+const OVERDUE_DAYS = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const formatCurrency = (value) => `$${value.toLocaleString()}`;
+
+const formatCompactCurrency = (value) => {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `$${Math.round(value / 1_000)}K`;
+  return `$${value}`;
 };
+
+const formatDate = (iso) =>
+  new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+
+const StatusBadge = ({ status }) => {
+  const meta = STATUS_META[status] ?? { label: status, tone: "neutral" };
+  return <span className={`dash-badge dash-badge--${meta.tone}`}>{meta.label}</span>;
+};
+
+const EmptyRow = ({ colSpan, text }) => (
+  <tr>
+    <td colSpan={colSpan} className="dash-table-empty">
+      {text}
+    </td>
+  </tr>
+);
 
 const Dashboard = () => {
   const [overview, setOverview] = useState(null);
+  const [vesselTab, setVesselTab] = useState(VESSEL_TABS[0].key);
+  const [vesselPort, setVesselPort] = useState("all");
+  const [soClient, setSoClient] = useState("all");
+  const [soOverdueOnly, setSoOverdueOnly] = useState(false);
+
   const isDark = useThemeStore((state) => state.isDark);
+  const seriesColors = SERIES_COLORS[isDark ? "dark" : "light"];
   const chartGridColor = isDark ? "#293548" : "#e5e7eb";
   const chartAxisColor = isDark ? "#8f9aaa" : "#6b7280";
   const chartTooltipStyle = {
@@ -75,218 +112,359 @@ const Dashboard = () => {
     };
   }, []);
 
-  const stats = useMemo(
+  const activeTab = VESSEL_TABS.find((tab) => tab.key === vesselTab);
+
+  const vesselRows = useMemo(
     () =>
-      (overview?.stats ?? []).map((stat) => ({
-        title: stat.label,
-        value: formatStatValue(stat.key, stat.value),
-        change: `${stat.change_percent > 0 ? "+" : ""}${stat.change_percent}%`,
-        trend: stat.trend,
-        icon: STAT_META[stat.key]?.icon,
-        color: STAT_META[stat.key]?.color,
-      })),
+      (overview?.vessels ?? []).filter((v) => {
+        if (v.direction !== activeTab.direction) return false;
+        if (activeTab.port) return v.port === activeTab.port;
+        return vesselPort === "all" || v.port === vesselPort;
+      }),
+    [overview, activeTab, vesselPort]
+  );
+
+  const vesselTabCounts = useMemo(
+    () =>
+      VESSEL_TABS.reduce((acc, tab) => {
+        acc[tab.key] = (overview?.vessels ?? []).filter(
+          (v) => v.direction === tab.direction && (!tab.port || v.port === tab.port)
+        ).length;
+        return acc;
+      }, {}),
     [overview]
   );
 
-  const vesselData = overview?.vessel_traffic ?? [];
-  const revenueData = overview?.revenue_trend ?? [];
-  const serviceRequestsData = overview?.service_requests_trend ?? [];
+  const salesOrders = useMemo(() => {
+    const today = Date.now();
+    return (overview?.open_sales_orders ?? []).map((so) => {
+      const ageDays = Math.floor((today - new Date(so.created_on).getTime()) / DAY_MS);
+      return { ...so, ageDays, isOverdue: ageDays > OVERDUE_DAYS };
+    });
+  }, [overview]);
 
-  const serviceData = useMemo(
-    () => (overview?.services_by_type ?? []).map((s) => ({ ...s, color: SERVICE_COLORS[s.key] })),
-    [overview]
+  const soClients = useMemo(
+    () => [...new Set(salesOrders.map((so) => so.client))].sort(),
+    [salesOrders]
   );
 
-  const jobStatusData = useMemo(
-    () => (overview?.job_status ?? []).map((s) => ({ ...s, color: JOB_STATUS_COLORS[s.key] })),
-    [overview]
+  const filteredSalesOrders = useMemo(
+    () =>
+      salesOrders.filter(
+        (so) => (soClient === "all" || so.client === soClient) && (!soOverdueOnly || so.isOverdue)
+      ),
+    [salesOrders, soClient, soOverdueOnly]
   );
+
+  const soTotals = useMemo(() => {
+    const byClient = salesOrders.filter((so) => soClient === "all" || so.client === soClient);
+    const overdue = byClient.filter((so) => so.isOverdue);
+    return {
+      openCount: byClient.length,
+      openValue: byClient.reduce((sum, so) => sum + so.amount, 0),
+      overdueCount: overdue.length,
+      overdueValue: overdue.reduce((sum, so) => sum + so.amount, 0),
+    };
+  }, [salesOrders, soClient]);
 
   if (!overview) {
     return <div className="dashboard-container">Loading dashboard...</div>;
   }
 
+  const { summary } = overview;
+  const allOverdueCount = salesOrders.filter((so) => so.isOverdue).length;
+
+  const stats = [
+    { title: "Total Vessels Imported", value: summary.total_vessels_imported, icon: <FiDownload />, tone: "blue" },
+    { title: "Total Vessels Exported", value: summary.total_vessels_exported, icon: <FiUpload />, tone: "green" },
+    { title: "Total Crew Change YTD", value: summary.total_crew_change_ytd, icon: <FiUsers />, tone: "violet" },
+    { title: "Vessels Currently in Agency", value: summary.vessels_in_agency, icon: <FiAnchor />, tone: "blue" },
+    { title: "Open Sales Orders", value: salesOrders.length, icon: <FiFileText />, tone: "amber" },
+    { title: `Sales Orders > ${OVERDUE_DAYS} Days`, value: allOverdueCount, icon: <FiAlertTriangle />, tone: "red" },
+  ];
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h2 className="dashboard-title">Dashboard</h2>
-        <p className="dashboard-subtitle">Welcome back! Here's what's happening today.</p>
+        <p className="dashboard-subtitle">Vessels, crew changes, revenue and open sales orders at a glance.</p>
       </div>
 
-      {/* Stats Cards */}
+      {/* Summary tiles */}
       <div className="stats-grid">
-        {stats.map((stat, index) => (
-          <div key={index} className="stat-card">
+        {stats.map((stat) => (
+          <div key={stat.title} className="stat-card">
             <div className="stat-card-content">
-              <div className="stat-icon" style={{ color: stat.color }}>
-                {stat.icon}
-              </div>
+              <div className={`stat-icon stat-icon--${stat.tone}`}>{stat.icon}</div>
               <div className="stat-info">
                 <p className="stat-title">{stat.title}</p>
-                <h3 className="stat-value">{stat.value}</h3>
-                <div className={`stat-change ${stat.trend}`}>
-                  <FiTrendingUp />
-                  <span>{stat.change}</span>
-                  <span className="stat-period">vs last month</span>
-                </div>
+                <h3 className="stat-value">{stat.value.toLocaleString()}</h3>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Charts Grid */}
       <div className="charts-grid">
-        {/* Line Chart - Vessel Arrivals */}
+        {/* Port-wise vessel list */}
+        <div className="chart-card chart-card-full">
+          <div className="chart-header chart-header--row">
+            <div>
+              <h3 className="chart-title">Vessels by Port</h3>
+              <p className="chart-subtitle">Import, export and domestic vessels with current status</p>
+            </div>
+            {!activeTab.port && (
+              <select
+                className="dash-select"
+                value={vesselPort}
+                onChange={(e) => setVesselPort(e.target.value)}
+                aria-label="Filter by port"
+              >
+                <option value="all">All Ports</option>
+                {Object.entries(PORT_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div className="" role="tablist">
+            {VESSEL_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={vesselTab === tab.key}
+                className={`dash-tab ${vesselTab === tab.key ? "active" : ""}`}
+                onClick={() => setVesselTab(tab.key)}
+              >
+                {tab.label}
+                <span className="dash-tab-count">{vesselTabCounts[tab.key]}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="dash-table-wrp">
+            <table className="dash-table">
+              <thead>
+                <tr>
+                  <th>Vessel</th>
+                  <th>Port</th>
+                  <th>Client</th>
+                  <th>{activeTab.direction === "export" ? "ETD" : "ETA"}</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vesselRows.length === 0 ? (
+                  <EmptyRow colSpan={5} text="No vessels found" />
+                ) : (
+                  vesselRows.map((v) => (
+                    <tr key={v.id}>
+                      <td className="dash-table-strong">{v.name}</td>
+                      <td>{PORT_LABELS[v.port]}</td>
+                      <td>{v.client}</td>
+                      <td>{formatDate(v.eta)}</td>
+                      <td>
+                        <StatusBadge status={v.status} />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Crew changes list */}
         <div className="chart-card">
           <div className="chart-header">
-            <h3 className="chart-title">Vessel Arrivals & Departures</h3>
-            <p className="chart-subtitle">Monthly overview</p>
+            <h3 className="chart-title">Crew Changes</h3>
+            <p className="chart-subtitle">Recent and upcoming crew changes</p>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={vesselData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+          <div className="dash-table-wrp">
+            <table className="dash-table">
+              <thead>
+                <tr>
+                  <th>Vessel</th>
+                  <th>Port</th>
+                  <th>Date</th>
+                  <th className="num">On / Off</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {overview.crew_changes.length === 0 ? (
+                  <EmptyRow colSpan={5} text="No crew changes" />
+                ) : (
+                  overview.crew_changes.map((cc) => (
+                    <tr key={cc.id}>
+                      <td className="dash-table-strong">{cc.vessel}</td>
+                      <td>{PORT_LABELS[cc.port]}</td>
+                      <td>{formatDate(cc.date)}</td>
+                      <td className="num">
+                        {cc.on_signers} / {cc.off_signers}
+                      </td>
+                      <td>
+                        <StatusBadge status={cc.status} />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Crew change trend */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3 className="chart-title">Crew Change per Month</h3>
+            <p className="chart-subtitle">Year to date · {summary.total_crew_change_ytd.toLocaleString()} total</p>
+          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={overview.crew_change_trend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
               <XAxis dataKey="month" stroke={chartAxisColor} />
               <YAxis stroke={chartAxisColor} />
-              <Tooltip
-                contentStyle={chartTooltipStyle}
-              />
+              <Tooltip contentStyle={chartTooltipStyle} cursor={{ fill: chartGridColor, opacity: 0.4 }} />
+              <Bar dataKey="count" name="Crew Changes" fill={seriesColors[0]} radius={[4, 4, 0, 0]} maxBarSize={36} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Monthly revenue — branch wise */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3 className="chart-title">Monthly Revenue · Branch Wise</h3>
+            <p className="chart-subtitle">Revenue per branch, year to date</p>
+          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={overview.revenue_by_branch} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
+              <XAxis dataKey="month" stroke={chartAxisColor} />
+              <YAxis stroke={chartAxisColor} tickFormatter={formatCompactCurrency} />
+              <Tooltip contentStyle={chartTooltipStyle} formatter={formatCurrency} />
               <Legend />
-              <Line
-                type="monotone"
-                dataKey="arrivals"
-                stroke="#00368c"
-                strokeWidth={3}
-                name="Arrivals"
-                dot={{ fill: "#00368c", r: 4 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="departures"
-                stroke="#10b981"
-                strokeWidth={3}
-                name="Departures"
-                dot={{ fill: "#10b981", r: 4 }}
-              />
+              {overview.branches.map((branch, index) => (
+                <Line
+                  key={branch.key}
+                  type="monotone"
+                  dataKey={branch.key}
+                  name={branch.name}
+                  stroke={seriesColors[index]}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: seriesColors[index] }}
+                  activeDot={{ r: 5 }}
+                />
+              ))}
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Bar Chart - Services */}
+        {/* Monthly revenue — offshore marine */}
         <div className="chart-card">
           <div className="chart-header">
-            <h3 className="chart-title">Services by Type</h3>
-            <p className="chart-subtitle">Total services rendered</p>
+            <h3 className="chart-title">Monthly Revenue · Offshore Marine</h3>
+            <p className="chart-subtitle">Offshore marine revenue, year to date</p>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={serviceData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
-              <XAxis dataKey="name" stroke={chartAxisColor} />
-              <YAxis stroke={chartAxisColor} />
-              <Tooltip
-                contentStyle={chartTooltipStyle}
-              />
-              <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-                {serviceData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Pie Chart - Job Status */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3 className="chart-title">Job Status Distribution</h3>
-            <p className="chart-subtitle">Current job breakdown</p>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={jobStatusData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {jobStatusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={chartTooltipStyle}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Bar Chart - Monthly Service Requests */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3 className="chart-title">Monthly Service Requests</h3>
-            <p className="chart-subtitle">Service requests trend</p>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={serviceRequestsData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={overview.revenue_offshore_marine} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
               <XAxis dataKey="month" stroke={chartAxisColor} />
-              <YAxis stroke={chartAxisColor} />
+              <YAxis stroke={chartAxisColor} tickFormatter={formatCompactCurrency} />
               <Tooltip
                 contentStyle={chartTooltipStyle}
+                formatter={formatCurrency}
+                cursor={{ fill: chartGridColor, opacity: 0.4 }}
               />
-              <Bar dataKey="requests" radius={[8, 8, 0, 0]} fill="#8b5cf6" />
+              <Bar dataKey="revenue" name="Revenue" fill={seriesColors[0]} radius={[4, 4, 0, 0]} maxBarSize={36} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Area Chart - Revenue */}
+        {/* Open sales orders */}
         <div className="chart-card chart-card-full">
-          <div className="chart-header">
-            <h3 className="chart-title">Revenue & Expenses Trend</h3>
-            <p className="chart-subtitle">Monthly financial overview</p>
+          <div className="chart-header chart-header--row">
+            <div>
+              <h3 className="chart-title">Open Sales Orders</h3>
+              <p className="chart-subtitle">Orders not yet invoiced, by client</p>
+            </div>
+            <div className="dash-filters">
+              <label className="dash-checkbox">
+                <input
+                  type="checkbox"
+                  checked={soOverdueOnly}
+                  onChange={(e) => setSoOverdueOnly(e.target.checked)}
+                />
+                Beyond {OVERDUE_DAYS} days only
+              </label>
+              <select
+                className="dash-select"
+                value={soClient}
+                onChange={(e) => setSoClient(e.target.value)}
+                aria-label="Filter by client"
+              >
+                <option value="all">All Clients</option>
+                {soClients.map((client) => (
+                  <option key={client} value={client}>
+                    {client}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={revenueData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <defs>
-                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#00368c" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#00368c" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
-              <XAxis dataKey="month" stroke={chartAxisColor} />
-              <YAxis stroke={chartAxisColor} />
-              <Tooltip
-                contentStyle={chartTooltipStyle}
-                formatter={(value) => `$${value.toLocaleString()}`}
-              />
-              <Legend />
-              <Area
-                type="monotone"
-                dataKey="revenue"
-                stroke="#00368c"
-                fillOpacity={1}
-                fill="url(#colorRevenue)"
-                name="Revenue"
-              />
-              <Area
-                type="monotone"
-                dataKey="expenses"
-                stroke="#ef4444"
-                fillOpacity={1}
-                fill="url(#colorExpenses)"
-                name="Expenses"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+
+          <div className="so-summary">
+            <div className="so-summary-item">
+              <span className="so-summary-label">Open Orders</span>
+              <span className="so-summary-value">{soTotals.openCount}</span>
+              <span className="so-summary-sub">{formatCurrency(soTotals.openValue)}</span>
+            </div>
+            <div className="so-summary-item so-summary-item--alert">
+              <span className="so-summary-label">Beyond {OVERDUE_DAYS} Days</span>
+              <span className="so-summary-value">{soTotals.overdueCount}</span>
+              <span className="so-summary-sub">{formatCurrency(soTotals.overdueValue)}</span>
+            </div>
+          </div>
+
+          <div className="dash-table-wrp">
+            <table className="dash-table">
+              <thead>
+                <tr>
+                  <th>SO Number</th>
+                  <th>Client</th>
+                  <th>Created On</th>
+                  <th className="num">Age (days)</th>
+                  <th className="num">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredSalesOrders.length === 0 ? (
+                  <EmptyRow colSpan={5} text="No open sales orders" />
+                ) : (
+                  filteredSalesOrders.map((so) => (
+                    <tr key={so.id}>
+                      <td className="dash-table-strong">{so.so_number}</td>
+                      <td>{so.client}</td>
+                      <td>{formatDate(so.created_on)}</td>
+                      <td className="num">
+                        {so.ageDays}
+                        {so.isOverdue && (
+                          <span className="dash-badge dash-badge--critical so-overdue">
+                            <FiAlertTriangle /> Overdue
+                          </span>
+                        )}
+                      </td>
+                      <td className="num">{formatCurrency(so.amount)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
