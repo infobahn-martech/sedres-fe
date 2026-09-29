@@ -6,9 +6,12 @@ import "../../../../design/scss/pages/kanban-board/seApprovalUploadModal.scss";
 
 const ACCEPTED_FILE_TYPES = ".pdf,.eml,.msg,.jpg,.jpeg,.png";
 const ACCEPTED_FORMATS_HINT = "PDF, EML, MSG, JPG, PNG";
-const FILE_INPUT_ID = "se-approval-upload-input";
+const DEFAULT_FIELD_NAME = "files";
+
+const buildEmptyFiles = (fields) => Object.fromEntries(fields.map((field) => [field.name, []]));
 
 // Opened from a batch group's "Upload SE Approval" / "Upload Invoice" action on the Kanban board.
+// Renders one dropzone per entry in `fields`; without `fields` it is a single attachments dropzone.
 const SeApprovalUploadModal = ({
   show,
   onClose,
@@ -19,27 +22,48 @@ const SeApprovalUploadModal = ({
   subtitle = "Attach the service entry approval for this batch",
   submitLabel = "Upload SE Approval",
   multiple = true,
+  fields,
 }) => {
-  const [files, setFiles] = useState([]);
-  const [isDragging, setIsDragging] = useState(false);
+  const uploadFields = fields ?? [
+    {
+      name: DEFAULT_FIELD_NAME,
+      accept: ACCEPTED_FILE_TYPES,
+      formatsHint: ACCEPTED_FORMATS_HINT,
+      multiple,
+    },
+  ];
+  const hasMultipleFields = uploadFields.length > 1;
+
+  const [filesByField, setFilesByField] = useState(() => buildEmptyFiles(uploadFields));
+  const [draggingField, setDraggingField] = useState("");
+  const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!show) return;
-    setFiles([]);
-    setIsDragging(false);
+    setFilesByField(buildEmptyFiles(uploadFields));
+    setDraggingField("");
+    setErrors({});
     setError("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show, batchTitle]);
 
-  const handleFilesSelected = (fileList) => {
+  const handleFilesSelected = (field, fileList) => {
     const selected = Array.from(fileList || []).filter(Boolean);
     if (!selected.length) return;
-    setFiles((prev) => (multiple ? [...prev, ...selected] : selected.slice(0, 1)));
+    setFilesByField((prev) => ({
+      ...prev,
+      [field.name]: field.multiple ? [...(prev[field.name] ?? []), ...selected] : selected.slice(0, 1),
+    }));
+    setErrors((prev) => ({ ...prev, [field.name]: "" }));
     setError("");
   };
 
-  const removeFile = (index) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
+  const removeFile = (fieldName, index) => {
+    setFilesByField((prev) => ({
+      ...prev,
+      [fieldName]: (prev[fieldName] ?? []).filter((_, i) => i !== index),
+    }));
   };
 
   const handleOpenFile = (file) => {
@@ -48,17 +72,29 @@ const SeApprovalUploadModal = ({
     setTimeout(() => URL.revokeObjectURL(url), 100);
   };
 
-  const openFilePicker = () => {
-    if (!isSubmitting) document.getElementById(FILE_INPUT_ID)?.click();
+  const getInputId = (fieldName) => `se-approval-upload-input-${fieldName}`;
+
+  const openFilePicker = (fieldName) => {
+    if (!isSubmitting) document.getElementById(getInputId(fieldName))?.click();
   };
 
   const handleUpload = () => {
     if (isSubmitting) return;
-    if (!files.length) {
+    const fieldErrors = {};
+    uploadFields.forEach((field) => {
+      if (field.required && !filesByField[field.name]?.length) {
+        fieldErrors[field.name] = `Please select the ${field.label ?? "file"}.`;
+      }
+    });
+    if (Object.keys(fieldErrors).length) {
+      setErrors(fieldErrors);
+      return;
+    }
+    if (!uploadFields.some((field) => filesByField[field.name]?.length)) {
       setError("Please select at least one file.");
       return;
     }
-    onUpload?.(files);
+    onUpload?.(fields ? filesByField : filesByField[DEFAULT_FIELD_NAME]);
   };
 
   const renderHeader = () => (
@@ -82,6 +118,114 @@ const SeApprovalUploadModal = ({
     </div>
   );
 
+  const renderField = (field) => {
+    const files = filesByField[field.name] ?? [];
+    const isDragging = draggingField === field.name;
+    const fieldError = errors[field.name] || (!hasMultipleFields ? error : "");
+
+    return (
+      <div key={field.name} className="se-approval-field">
+        {field.label && (
+          <span className="se-approval-field__label">
+            {field.label}
+            {field.required && <span className="se-approval-field__required">*</span>}
+          </span>
+        )}
+
+        <div
+          className={`se-approval-dropzone${isDragging ? " se-approval-dropzone--active" : ""}${
+            fieldError ? " se-approval-dropzone--error" : ""
+          }${hasMultipleFields ? " se-approval-dropzone--compact" : ""}`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDraggingField(field.name);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            setDraggingField("");
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDraggingField("");
+            if (!isSubmitting) handleFilesSelected(field, e.dataTransfer?.files);
+          }}
+          onClick={() => openFilePicker(field.name)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openFilePicker(field.name);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+        >
+          <input
+            id={getInputId(field.name)}
+            type="file"
+            multiple={Boolean(field.multiple)}
+            className="d-none"
+            accept={field.accept}
+            disabled={isSubmitting}
+            onChange={(e) => {
+              handleFilesSelected(field, e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <FiUploadCloud className="se-approval-dropzone__icon" />
+          <span className="se-approval-dropzone__text">
+            {isDragging ? "Drop your files here" : "Drag and drop your files here"}
+          </span>
+          <span className="se-approval-dropzone__hint">or click to browse</span>
+          <span className="se-approval-dropzone__formats">{field.formatsHint}</span>
+        </div>
+        {fieldError && <div className="se-approval-dropzone__error">{fieldError}</div>}
+
+        {field.multiple ? (
+          <div className="se-approval-attachments">
+            <span className="se-approval-attachments__label">
+              <FiPaperclip className="se-approval-attachments__clip" />
+              Attachments ({files.length})
+            </span>
+            {renderFileItems(field.name, files)}
+          </div>
+        ) : (
+          <div className="se-approval-attachments se-approval-attachments--inline">
+            {renderFileItems(field.name, files)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Single-file fields skip the "Attachments (n)" panel and just show the picked file under the dropzone.
+  const renderFileItems = (fieldName, files) =>
+    files.length > 0 && (
+      <div className="se-approval-attachments__items">
+        {files.map((file, index) => (
+          <div key={`${file.name}-${index}`} className="se-approval-attachments__item">
+            <button
+              type="button"
+              className="se-approval-attachments__name"
+              onClick={() => handleOpenFile(file)}
+              title={`Open ${file.name}`}
+              disabled={isSubmitting}
+            >
+              {file.name}
+            </button>
+            <button
+              type="button"
+              className="se-approval-attachments__remove"
+              onClick={() => removeFile(fieldName, index)}
+              aria-label={`Remove ${file.name}`}
+              disabled={isSubmitting}
+            >
+              <FiX />
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+
   const renderBody = () => (
     <div className="modal-body se-approval-body">
       <div className="se-approval-batch">
@@ -92,86 +236,8 @@ const SeApprovalUploadModal = ({
         </span>
       </div>
 
-      <div
-        className={`se-approval-dropzone${isDragging ? " se-approval-dropzone--active" : ""}${
-          error ? " se-approval-dropzone--error" : ""
-        }`}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={(e) => {
-          e.preventDefault();
-          setIsDragging(false);
-        }}
-        onDrop={(e) => {
-          e.preventDefault();
-          setIsDragging(false);
-          if (!isSubmitting) handleFilesSelected(e.dataTransfer?.files);
-        }}
-        onClick={openFilePicker}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            openFilePicker();
-          }
-        }}
-        role="button"
-        tabIndex={0}
-      >
-        <input
-          id={FILE_INPUT_ID}
-          type="file"
-          multiple={multiple}
-          className="d-none"
-          accept={ACCEPTED_FILE_TYPES}
-          disabled={isSubmitting}
-          onChange={(e) => {
-            handleFilesSelected(e.target.files);
-            e.target.value = "";
-          }}
-        />
-        <FiUploadCloud className="se-approval-dropzone__icon" />
-        <span className="se-approval-dropzone__text">
-          {isDragging ? "Drop your files here" : "Drag and drop your files here"}
-        </span>
-        <span className="se-approval-dropzone__hint">or click to browse</span>
-        <span className="se-approval-dropzone__formats">{ACCEPTED_FORMATS_HINT}</span>
-      </div>
-      {error && <div className="se-approval-dropzone__error">{error}</div>}
-
-      <div className="se-approval-attachments">
-        <span className="se-approval-attachments__label">
-          <FiPaperclip className="se-approval-attachments__clip" />
-          Attachments ({files.length})
-        </span>
-        {files.length > 0 && (
-          <div className="se-approval-attachments__items">
-            {files.map((file, index) => (
-              <div key={`${file.name}-${index}`} className="se-approval-attachments__item">
-                <button
-                  type="button"
-                  className="se-approval-attachments__name"
-                  onClick={() => handleOpenFile(file)}
-                  title={`Open ${file.name}`}
-                  disabled={isSubmitting}
-                >
-                  {file.name}
-                </button>
-                <button
-                  type="button"
-                  className="se-approval-attachments__remove"
-                  onClick={() => removeFile(index)}
-                  aria-label={`Remove ${file.name}`}
-                  disabled={isSubmitting}
-                >
-                  <FiX />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {uploadFields.map(renderField)}
+      {hasMultipleFields && error && <div className="se-approval-dropzone__error">{error}</div>}
     </div>
   );
 
@@ -210,6 +276,16 @@ SeApprovalUploadModal.propTypes = {
   subtitle: PropTypes.string,
   submitLabel: PropTypes.string,
   multiple: PropTypes.bool,
+  fields: PropTypes.arrayOf(
+    PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      label: PropTypes.string,
+      accept: PropTypes.string,
+      formatsHint: PropTypes.string,
+      required: PropTypes.bool,
+      multiple: PropTypes.bool,
+    })
+  ),
 };
 
 export default SeApprovalUploadModal;

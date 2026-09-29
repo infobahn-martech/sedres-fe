@@ -14,6 +14,13 @@ const useBatchMoveStore = create((set) => ({
   batchByCardId: {},
   /** { [batchNumber]: batchId } — backend id from create_hub_batch, used for the SE email draft. */
   batchIdByNumber: {},
+  /** { [batchId]: true } — batches whose SE document is already uploaded, so later uploads may skip it. */
+  seDocumentUploadedByBatchId: {},
+
+  markSeDocumentUploaded: (batchId) =>
+    set((state) => ({
+      seDocumentUploadedByBatchId: { ...state.seDocumentUploadedByBatchId, [batchId]: true },
+    })),
 
   moveCardsToColumn: (cardIds, columnKey, batchNumber, batchId) =>
     set((state) => {
@@ -44,7 +51,8 @@ const useBatchMoveStore = create((set) => ({
       return { batchByCardId, batchIdByNumber };
     }),
 
-  clearMoves: () => set({ columnByCardId: {}, batchByCardId: {}, batchIdByNumber: {} }),
+  clearMoves: () =>
+    set({ columnByCardId: {}, batchByCardId: {}, batchIdByNumber: {}, seDocumentUploadedByBatchId: {} }),
 }));
 
 export default useBatchMoveStore;
