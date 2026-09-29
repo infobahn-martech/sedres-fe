@@ -386,20 +386,19 @@ export default function KanbanBoardPage() {
     setSeRequestEmailDraft(null);
   }, []);
 
-  /* Sends the SE creation email via da_send_action_email. The endpoint takes a single call_id,
-     so the batch's first card with a call is used. */
+  /* Sends the SE creation email for the batch via da/send_se_creation_email, with the ticked cards' call ids. */
   const [isSendingSeRequestEmail, setIsSendingSeRequestEmail] = useState(false);
 
   const handleSendSeRequestEmail = useCallback(
     async (emailData) => {
-      const [callId] = getBatchCallIds(selectedSeRequestBatch);
-      if (!callId) {
-        notify("No call found for this batch", "error");
+      const batchId = seRequestEmailDraft?.batch_id ?? batchIdByNumber[selectedSeRequestBatch?.title];
+      if (!batchId) {
+        notify("Batch not found", "error");
         return;
       }
 
       const formData = new FormData();
-      formData.append("call_id", callId);
+      formData.append("batch_id", batchId);
       formData.append("to", emailData?.to ?? "");
       formData.append("cc", emailData?.cc ?? "");
       formData.append("subject", emailData?.subject ?? "");
@@ -407,17 +406,21 @@ export default function KanbanBoardPage() {
       if (seRequestEmailDraft?.stage_document_id != null) {
         formData.append("stage_document_id", seRequestEmailDraft.stage_document_id);
       }
+      const callIds = getBatchCallIds(selectedSeRequestBatch);
+      if (callIds.length) {
+        formData.append("call_ids", callIds.join(","));
+      }
       (emailData?.attachments || []).forEach((file) => formData.append("attachments[]", file));
 
       setIsSendingSeRequestEmail(true);
       try {
         let data;
         try {
-          ({ data } = await daService.sendActionEmail(formData));
+          ({ data } = await daService.sendSeCreationEmail(formData));
         } catch (error) {
           data = error?.response?.data;
         }
-        if (!data || data.status === "error" || data.status === false) {
+        if (data?.status !== "success") {
           notify(data?.message || "Failed to send SE creation email", "error");
           return;
         }
@@ -428,7 +431,14 @@ export default function KanbanBoardPage() {
         setIsSendingSeRequestEmail(false);
       }
     },
-    [selectedSeRequestBatch, seRequestEmailDraft, getBatchCallIds, handleCloseSeRequestEmail, refetchBoard]
+    [
+      selectedSeRequestBatch,
+      seRequestEmailDraft,
+      batchIdByNumber,
+      getBatchCallIds,
+      handleCloseSeRequestEmail,
+      refetchBoard,
+    ]
   );
 
   /* "Upload SE Approval" on an "Awaiting SE" batch header opens the upload modal for that batch. */

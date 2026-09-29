@@ -86,6 +86,14 @@ const uploadSeApproval = (formData) =>
   Gateway.post('/da/upload_se_approval', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+/** @param {FormData} formData - batch_id, to, subject, body, cc?, stage_document_id?, call_ids? (ticked
+ * cards, sent as call_ids=43,55), attachments[]?, multipart/form-data.
+ * @returns {Promise<{ data: { status: 'success', message: string, email_log_id: number, batch_id: number,
+ *   call_ids: number[] } | { status: 'error', message: string } }>} */
+const sendSeCreationEmail = (formData) =>
+  Gateway.post('/da/send_se_creation_email', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 
 export default {
   getDaDetails,
@@ -113,4 +121,5 @@ export default {
   getBatches,
   getSeCreationEmailDraft,
   uploadSeApproval,
+  sendSeCreationEmail,
 };
