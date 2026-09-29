@@ -35,6 +35,21 @@ export default function BatchGroup({
   const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches whose SE approval is back sit in "SE Received" and move on to invoicing. */
   const isSeReceivedColumn = SE_RECEIVED_COLUMN_PATTERN.test((columnTitle ?? "").trim());
+  /* Batches still to be sent for SE creation start with every card ticked. Unticks are kept per
+     batch, apart from the board-wide selection used to create batches in Backlog. */
+  const isSendSeBatch = !isUngrouped && !isAwaitingSeColumn && !isSeReceivedColumn;
+  const [seUntickedCardIds, setSeUntickedCardIds] = useState([]);
+
+  const toggleSeCardTick = (card) =>
+    setSeUntickedCardIds((prev) =>
+      prev.includes(card.id) ? prev.filter((id) => id !== card.id) : [...prev, card.id]
+    );
+
+  const handleSendSeRequest = () =>
+    onSendSeRequest?.({
+      ...batch,
+      cards: batch.cards.filter((card) => !seUntickedCardIds.includes(card.id)),
+    });
 
   return (
     <div
@@ -74,7 +89,7 @@ export default function BatchGroup({
             <button
               type="button"
               className="batch-group__action"
-              onClick={() => onSendSeRequest?.(batch)}
+              onClick={handleSendSeRequest}
             >
               Send For SE creation
             </button>
@@ -96,8 +111,12 @@ export default function BatchGroup({
               columnTitle={columnTitle}
               workflowTitle={workflowTitle}
               fixedDimensions={{ width: cardWidth }}
-              isSelectedForAction={selectedActionCardIds.includes(card.id)}
-              onToggleSelectForAction={onToggleCardSelect}
+              isSelectedForAction={
+                isSendSeBatch
+                  ? !seUntickedCardIds.includes(card.id)
+                  : selectedActionCardIds.includes(card.id)
+              }
+              onToggleSelectForAction={isSendSeBatch ? toggleSeCardTick : onToggleCardSelect}
             />
           ))}
         </div>
