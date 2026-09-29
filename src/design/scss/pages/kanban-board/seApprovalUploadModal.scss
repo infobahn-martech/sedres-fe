@@ -124,6 +124,25 @@
     }
   }
 
+  .se-approval-field {
+    & + .se-approval-field {
+      margin-top: 20px;
+    }
+
+    &__label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    &__required {
+      margin-left: 2px;
+      color: #dc2626;
+    }
+  }
+
   .se-approval-dropzone {
     display: flex;
     flex-direction: column;
@@ -148,6 +167,16 @@
 
     &--error {
       border-color: #dc2626;
+    }
+
+    // Two dropzones in one modal: keep each short so both fit without scrolling.
+    &--compact {
+      padding: 16px;
+
+      .se-approval-dropzone__icon {
+        margin-bottom: 2px;
+        font-size: 24px;
+      }
     }
 
     &__icon {
@@ -185,6 +214,13 @@
     padding: 14px 20px;
     background: #eaf2fd;
     border-radius: 8px;
+
+    // Single-file field: just the picked file chip, no panel around it.
+    &--inline {
+      margin-top: 0;
+      padding: 0;
+      background: transparent;
+    }
 
     &__label {
       display: flex;
