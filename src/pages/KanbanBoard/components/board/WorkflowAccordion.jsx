@@ -13,19 +13,26 @@ export default function WorkflowAccordion({
   const titleRef = useRef(null);
 
   // The board scrolls horizontally on `.main-layout` (not a sticky-compatible ancestor),
-  // so offset the title by scrollLeft to keep it pinned at the left while expanded.
+  // so offset the title by scrollLeft to keep it centred in the visible area while expanded.
   useEffect(() => {
     const title = titleRef.current;
+    const row = title?.parentElement;
     const scroller = title?.closest(".main-layout");
-    if (!title || !scroller || !isExpanded) return undefined;
+    if (!title || !row || !scroller || !isExpanded) return undefined;
 
     const syncTitle = () => {
-      title.style.transform = `translateX(${scroller.scrollLeft}px)`;
+      const rowLeft =
+        row.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft;
+      const visibleWidth = scroller.clientWidth - rowLeft;
+      const centreOffset = Math.max(0, (visibleWidth - title.offsetWidth) / 2);
+      title.style.transform = `translateX(${scroller.scrollLeft + centreOffset}px)`;
     };
     syncTitle();
     scroller.addEventListener("scroll", syncTitle, { passive: true });
+    window.addEventListener("resize", syncTitle);
     return () => {
       scroller.removeEventListener("scroll", syncTitle);
+      window.removeEventListener("resize", syncTitle);
       title.style.transform = "";
     };
   }, [isExpanded]);
