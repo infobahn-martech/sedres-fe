@@ -456,10 +456,34 @@ export default function KanbanBoardPage() {
     setSelectedSeApprovalBatch(null);
   }, []);
 
-  /* Stores the SE approval file against the batch via da/upload_se_approval (single file). */
+  const seDocumentUploadedByBatchId = useBatchMoveStore((state) => state.seDocumentUploadedByBatchId);
+  const markSeDocumentUploaded = useBatchMoveStore((state) => state.markSeDocumentUploaded);
+  const selectedSeApprovalBatchId = batchIdByNumber[selectedSeApprovalBatch?.title];
+
+  /* SE excel sheet is required on a batch's first upload; the approval email can follow later. */
+  const seApprovalUploadFields = useMemo(
+    () => [
+      {
+        name: "se_document",
+        label: "SE Document",
+        accept: ".xlsx,.xls",
+        formatsHint: "XLSX, XLS",
+        required: !seDocumentUploadedByBatchId[selectedSeApprovalBatchId],
+      },
+      {
+        name: "se_approval_email",
+        label: "SE Approval Email",
+        accept: ".msg,.eml",
+        formatsHint: "MSG, EML",
+      },
+    ],
+    [seDocumentUploadedByBatchId, selectedSeApprovalBatchId]
+  );
+
+  /* Stores the SE document and/or approval email against the batch via da/upload_se_approval. */
   const handleUploadSeApproval = useCallback(
-    async (files) => {
-      const batchId = batchIdByNumber[selectedSeApprovalBatch?.title];
+    async ({ se_document: seDocument, se_approval_email: seApprovalEmail }) => {
+      const batchId = selectedSeApprovalBatchId;
       if (!batchId) {
         notify("Batch not found", "error");
         return;
@@ -467,7 +491,8 @@ export default function KanbanBoardPage() {
 
       const formData = new FormData();
       formData.append("batch_id", batchId);
-      formData.append("se_approval", files[0]);
+      if (seDocument?.[0]) formData.append("se_document", seDocument[0]);
+      if (seApprovalEmail?.[0]) formData.append("se_approval_email", seApprovalEmail[0]);
 
       setIsUploadingSeApproval(true);
       try {
@@ -481,6 +506,7 @@ export default function KanbanBoardPage() {
           notify(data?.message || "Failed to upload SE approval", "error");
           return;
         }
+        if (seDocument?.[0]) markSeDocumentUploaded(batchId);
         notify(data.message || "SE approval uploaded successfully", "success");
         handleCloseSeApprovalUpload();
         refetchBoard?.();
@@ -488,7 +514,7 @@ export default function KanbanBoardPage() {
         setIsUploadingSeApproval(false);
       }
     },
-    [batchIdByNumber, selectedSeApprovalBatch, handleCloseSeApprovalUpload, refetchBoard]
+    [selectedSeApprovalBatchId, markSeDocumentUploaded, handleCloseSeApprovalUpload, refetchBoard]
   );
 
   /* "Upload Invoice" on an "SE Received" batch header opens the upload modal for that batch.
@@ -784,7 +810,8 @@ export default function KanbanBoardPage() {
         onUpload={handleUploadSeApproval}
         isSubmitting={isUploadingSeApproval}
         batchTitle={selectedSeApprovalBatch?.title ?? ""}
-        multiple={false}
+        subtitle="Attach the SE document and approval email for this batch"
+        fields={seApprovalUploadFields}
       />
 
       <SeApprovalUploadModal
