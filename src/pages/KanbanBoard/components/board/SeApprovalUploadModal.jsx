@@ -18,6 +18,7 @@ const SeApprovalUploadModal = ({
   onUpload,
   isSubmitting = false,
   batchTitle = "",
+  selectedCardCount,
   title = "Upload SE Approval",
   subtitle = "Attach the service entry approval for this batch",
   submitLabel = "Upload SE Approval",
@@ -234,6 +235,11 @@ const SeApprovalUploadModal = ({
         <span className="se-approval-batch__title" title={batchTitle}>
           {batchTitle || "-"}
         </span>
+        {selectedCardCount > 0 && (
+          <span className="se-approval-batch__count">
+            {selectedCardCount} {selectedCardCount === 1 ? "card" : "cards"} selected
+          </span>
+        )}
       </div>
 
       {uploadFields.map(renderField)}
@@ -272,6 +278,7 @@ SeApprovalUploadModal.propTypes = {
   onUpload: PropTypes.func,
   isSubmitting: PropTypes.bool,
   batchTitle: PropTypes.string,
+  selectedCardCount: PropTypes.number,
   title: PropTypes.string,
   subtitle: PropTypes.string,
   submitLabel: PropTypes.string,

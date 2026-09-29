@@ -1,5 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
+import { FiUploadCloud } from "react-icons/fi";
+import { MdCallMerge } from "react-icons/md";
 import { KANBAN_DND_DISABLED } from "../../../../shared/constants/kanbanConfig";
 import ColumnHeader from "./ColumnHeader";
 import SwimlaneColumnCell from "./SwimlaneColumnCell";
@@ -38,6 +40,19 @@ const isBacklogColumn = (column) =>
 const hasBatchAction = (workflow, ...columns) =>
   isBatchWorkflow(workflow) && columns.some(isBacklogColumn);
 
+/* Invoice actions on SAIPEM column headers, shown only while a card in that column is ticked:
+   "Upload Invoice" on "SE Received", "Merge Invoice" on "AR Invoices Issued". */
+const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
+const AR_INVOICES_ISSUED_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
+
+const getInvoiceAction = (workflow, column) => {
+  if (!isBatchWorkflow(workflow)) return null;
+  const title = String(column?.title ?? "").trim();
+  if (SE_RECEIVED_COLUMN_PATTERN.test(title)) return "upload";
+  if (AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "merge";
+  return null;
+};
+
 export default function WorkflowColumns({
   workflow,
   collapsedColumns,
@@ -50,6 +65,8 @@ export default function WorkflowColumns({
   onBatchSendSeRequest,
   onBatchUploadSeApproval,
   onBatchUploadInvoice,
+  onColumnUploadInvoice,
+  onColumnMergeInvoice,
   onContextMenu,
   onHeightChange,
   isDarkMode,
@@ -107,6 +124,14 @@ export default function WorkflowColumns({
     relocated.forEach(({ card, target }) => byColumn[target]?.push(card));
     return byColumn;
   }, [workflow, swimlaneOrder, columnByCardId]);
+
+  /* Cards of a column across every lane, as drawn on the board (batch moves applied). */
+  const getColumnCards = (colKey) =>
+    swimlaneOrder.flatMap((laneId) =>
+      batchLaneCardsByColumn && laneId === swimlaneOrder[0]
+        ? batchLaneCardsByColumn[colKey] ?? []
+        : getSwimlaneColumnCards(workflow, laneId, colKey)
+    );
 
   /* A column whose cards carry a batch renders them as groups (loose cards first, headerless). */
   const getBatchesForColumn = (colKey, laneId) => {
@@ -212,6 +237,10 @@ export default function WorkflowColumns({
                 0
               );
               const wipDisplay = String(cardCount);
+              const invoiceAction = isGrouped ? null : getInvoiceAction(workflow, firstColumn);
+              const invoiceCards = invoiceAction
+                ? getColumnCards(group.colKeys[0]).filter((card) => selectedActionCardIds?.includes(card.id))
+                : [];
 
               return (
                 <div
@@ -227,9 +256,29 @@ export default function WorkflowColumns({
                       isGrouped ? undefined : () => onColumnHeaderClick(workflow.id, firstColumn.id)
                     }
                     isDarkMode={isDarkMode}
-                    actionLabel="Batch"
+                    actionLabel={
+                      invoiceCards.length > 0
+                        ? invoiceAction === "merge"
+                          ? "Merge Invoice"
+                          : "Upload Invoice"
+                        : "Batch"
+                    }
+                    actionIcon={
+                      invoiceCards.length > 0 ? (
+                        invoiceAction === "merge" ? (
+                          <MdCallMerge size={16} aria-hidden />
+                        ) : (
+                          <FiUploadCloud size={16} aria-hidden />
+                        )
+                      ) : undefined
+                    }
                     onActionClick={
-                      hasBatchAction(workflow, displayColumn, firstColumn)
+                      invoiceCards.length > 0
+                        ? () =>
+                            invoiceAction === "merge"
+                              ? onColumnMergeInvoice?.(invoiceCards)
+                              : onColumnUploadInvoice?.(invoiceCards)
+                        : hasBatchAction(workflow, displayColumn, firstColumn)
                         ? () =>
                             onColumnBatchAction({
                               nextColumnKey:

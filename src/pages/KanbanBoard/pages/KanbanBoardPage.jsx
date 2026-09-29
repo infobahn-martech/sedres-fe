@@ -532,6 +532,71 @@ export default function KanbanBoardPage() {
     setSelectedInvoiceBatch(null);
   }, []);
 
+  const batchByCardId = useBatchMoveStore((state) => state.batchByCardId);
+
+  /* The same upload from the "SE Received" column header, for the cards ticked in that column
+     (loose cards have no batch header to carry the button). */
+  const handleColumnUploadInvoice = useCallback(
+    (cards) => {
+      if (!cards?.length) return;
+      const batchNumbers = [...new Set(cards.map((card) => batchByCardId[card.id]).filter(Boolean))];
+      handleBatchUploadInvoice({ id: "se-received-selection", title: batchNumbers.join(", "), cards });
+    },
+    [batchByCardId, handleBatchUploadInvoice]
+  );
+
+  const handleUploadInvoices = useCallback(
+    (files) => {
+      const cardCount = selectedInvoiceBatch?.cards?.length ?? 0;
+      notify(
+        `${files.length} ${files.length === 1 ? "invoice" : "invoices"} attached for ${cardCount} ${
+          cardCount === 1 ? "card" : "cards"
+        }`,
+        "info"
+      );
+      (selectedInvoiceBatch?.cards ?? []).forEach((card) => removeCardSelectionId(card.id));
+      handleCloseInvoiceUpload();
+    },
+    [selectedInvoiceBatch, removeCardSelectionId, handleCloseInvoiceUpload]
+  );
+
+  /* "Merge Invoice" on the "AR Invoices Issued" column header opens a bulk upload for the ticked
+     cards of that column. UI only for now: no backend route exists yet to persist the invoices. */
+  const [showMergeInvoiceModal, setShowMergeInvoiceModal] = useState(false);
+  const [selectedMergeInvoiceCards, setSelectedMergeInvoiceCards] = useState([]);
+
+  const handleColumnMergeInvoice = useCallback((cards) => {
+    if (!cards?.length) return;
+    setSelectedMergeInvoiceCards(cards);
+    setShowMergeInvoiceModal(true);
+  }, []);
+
+  const handleCloseMergeInvoice = useCallback(() => {
+    setShowMergeInvoiceModal(false);
+    setSelectedMergeInvoiceCards([]);
+  }, []);
+
+  const handleMergeInvoices = useCallback(
+    (files) => {
+      const cardCount = selectedMergeInvoiceCards.length;
+      notify(
+        `${files.length} ${files.length === 1 ? "invoice" : "invoices"} attached for ${cardCount} ${
+          cardCount === 1 ? "card" : "cards"
+        }`,
+        "info"
+      );
+      selectedMergeInvoiceCards.forEach((card) => removeCardSelectionId(card.id));
+      handleCloseMergeInvoice();
+    },
+    [selectedMergeInvoiceCards, removeCardSelectionId, handleCloseMergeInvoice]
+  );
+
+  const mergeInvoiceBatchTitle = useMemo(
+    () =>
+      [...new Set(selectedMergeInvoiceCards.map((card) => batchByCardId[card.id]).filter(Boolean))].join(", "),
+    [selectedMergeInvoiceCards, batchByCardId]
+  );
+
   /* Creates the batch on the backend from the ticked cards' calls. The backend issues the batch
      number (e.g. Sep_26_Batch1) and returns it as batch_number. */
   const handleConfirmBatch = useCallback(async () => {
@@ -766,6 +831,8 @@ export default function KanbanBoardPage() {
           onBatchSendSeRequest={handleBatchSendSeRequest}
           onBatchUploadSeApproval={handleBatchUploadSeApproval}
           onBatchUploadInvoice={handleBatchUploadInvoice}
+          onColumnUploadInvoice={handleColumnUploadInvoice}
+          onColumnMergeInvoice={handleColumnMergeInvoice}
           onContextMenu={handleColumnContextMenu}
           onHeightChange={handleWorkflowColumnHeightChange}
           onToggleWorkflow={handleToggleWorkflow}
@@ -817,10 +884,23 @@ export default function KanbanBoardPage() {
       <SeApprovalUploadModal
         show={showInvoiceUploadModal}
         onClose={handleCloseInvoiceUpload}
+        onUpload={handleUploadInvoices}
         batchTitle={selectedInvoiceBatch?.title ?? ""}
+        selectedCardCount={selectedInvoiceBatch?.cards?.length ?? 0}
         title="Upload Invoice"
-        subtitle="Attach the invoice for this batch"
+        subtitle="Attach the invoices for the selected cards"
         submitLabel="Upload Invoice"
+      />
+
+      <SeApprovalUploadModal
+        show={showMergeInvoiceModal}
+        onClose={handleCloseMergeInvoice}
+        onUpload={handleMergeInvoices}
+        batchTitle={mergeInvoiceBatchTitle}
+        selectedCardCount={selectedMergeInvoiceCards.length}
+        title="Merge Invoice"
+        subtitle="Attach the invoices for the selected cards"
+        submitLabel="Upload Invoices"
       />
 
       {selectedCard && columnsForCardForm && (
