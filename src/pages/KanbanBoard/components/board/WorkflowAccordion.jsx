@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 export default function WorkflowAccordion({
   workflow,
   isDarkMode,
@@ -8,6 +10,26 @@ export default function WorkflowAccordion({
   onPinClick,
   children,
 }) {
+  const titleRef = useRef(null);
+
+  // The board scrolls horizontally on `.main-layout` (not a sticky-compatible ancestor),
+  // so offset the title by scrollLeft to keep it pinned at the left while expanded.
+  useEffect(() => {
+    const title = titleRef.current;
+    const scroller = title?.closest(".main-layout");
+    if (!title || !scroller || !isExpanded) return undefined;
+
+    const syncTitle = () => {
+      title.style.transform = `translateX(${scroller.scrollLeft}px)`;
+    };
+    syncTitle();
+    scroller.addEventListener("scroll", syncTitle, { passive: true });
+    return () => {
+      scroller.removeEventListener("scroll", syncTitle);
+      title.style.transform = "";
+    };
+  }, [isExpanded]);
+
   return (
     <div
       key={workflow.id}
@@ -17,9 +39,9 @@ export default function WorkflowAccordion({
       <div className="kanban-accordion-header" onClick={onToggle}>
         <div
           className="kanban-accordion-title-row"
-          style={{ flex: 1, justifyContent: "center" }}
+          style={{ flex: 1, justifyContent: isExpanded ? "flex-start" : "center" }}
         >
-          <h2 className="kanban-accordion-title" style={{ fontWeight: 700 }}>
+          <h2 ref={titleRef} className="kanban-accordion-title" style={{ fontWeight: 700 }}>
             {workflow.title}
           </h2>
         </div>
