@@ -57,6 +57,15 @@ const SERIES_COLORS = {
   dark: ["#3987e5", "#d95926", "#199e70"],
 };
 
+// Period filter for monthly charts — `months: null` keeps the full year to date.
+const PERIOD_OPTIONS = [
+  { value: "ytd", label: "Year to Date", months: null },
+  { value: "6m", label: "Last 6 Months", months: 6 },
+  { value: "3m", label: "Last 3 Months", months: 3 },
+];
+
+const PORT_OPTIONS = Object.entries(PORT_LABELS).map(([value, label]) => ({ value, label }));
+
 const OVERDUE_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -76,6 +85,27 @@ const StatusBadge = ({ status }) => {
   return <span className={`dash-badge dash-badge--${meta.tone}`}>{meta.label}</span>;
 };
 
+const FilterSelect = ({ value, onChange, label, allLabel, options }) => (
+  <select className="dash-select" value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
+    {allLabel && <option value="all">{allLabel}</option>}
+    {options.map((option) => (
+      <option key={option.value} value={option.value}>
+        {option.label}
+      </option>
+    ))}
+  </select>
+);
+
+const uniqueOptions = (values, labelFor = (v) => v) =>
+  [...new Set(values)].sort().map((value) => ({ value, label: labelFor(value) }));
+
+const matches = (filter, value) => filter === "all" || filter === value;
+
+const sliceByPeriod = (data, period) => {
+  const months = PERIOD_OPTIONS.find((option) => option.value === period)?.months;
+  return months ? data.slice(-months) : data;
+};
+
 const EmptyRow = ({ colSpan, text }) => (
   <tr>
     <td colSpan={colSpan} className="dash-table-empty">
@@ -88,6 +118,14 @@ const Dashboard = () => {
   const [overview, setOverview] = useState(null);
   const [vesselTab, setVesselTab] = useState(VESSEL_TABS[0].key);
   const [vesselPort, setVesselPort] = useState("all");
+  const [vesselClient, setVesselClient] = useState("all");
+  const [vesselStatus, setVesselStatus] = useState("all");
+  const [crewPort, setCrewPort] = useState("all");
+  const [crewStatus, setCrewStatus] = useState("all");
+  const [crewPeriod, setCrewPeriod] = useState("ytd");
+  const [revenueBranch, setRevenueBranch] = useState("all");
+  const [revenuePeriod, setRevenuePeriod] = useState("ytd");
+  const [offshorePeriod, setOffshorePeriod] = useState("ytd");
   const [soClient, setSoClient] = useState("all");
   const [soOverdueOnly, setSoOverdueOnly] = useState(false);
 
@@ -114,15 +152,57 @@ const Dashboard = () => {
 
   const activeTab = VESSEL_TABS.find((tab) => tab.key === vesselTab);
 
+  // Vessels in the active tab, before the card's port/client/status filters.
+  const tabVessels = useMemo(
+    () =>
+      (overview?.vessels ?? []).filter(
+        (v) => v.direction === activeTab.direction && (!activeTab.port || v.port === activeTab.port)
+      ),
+    [overview, activeTab]
+  );
+
   const vesselRows = useMemo(
     () =>
-      (overview?.vessels ?? []).filter((v) => {
-        if (v.direction !== activeTab.direction) return false;
-        if (activeTab.port) return v.port === activeTab.port;
-        return vesselPort === "all" || v.port === vesselPort;
-      }),
-    [overview, activeTab, vesselPort]
+      tabVessels.filter(
+        (v) =>
+          (activeTab.port || matches(vesselPort, v.port)) &&
+          matches(vesselClient, v.client) &&
+          matches(vesselStatus, v.status)
+      ),
+    [tabVessels, activeTab, vesselPort, vesselClient, vesselStatus]
   );
+
+  const vesselClientOptions = useMemo(
+    () => uniqueOptions((overview?.vessels ?? []).map((v) => v.client)),
+    [overview]
+  );
+
+  const vesselStatusOptions = useMemo(
+    () => uniqueOptions(tabVessels.map((v) => v.status), (s) => STATUS_META[s]?.label ?? s),
+    [tabVessels]
+  );
+
+  const crewRows = useMemo(
+    () =>
+      (overview?.crew_changes ?? []).filter(
+        (cc) => matches(crewPort, cc.port) && matches(crewStatus, cc.status)
+      ),
+    [overview, crewPort, crewStatus]
+  );
+
+  const crewStatusOptions = useMemo(
+    () =>
+      uniqueOptions(
+        (overview?.crew_changes ?? []).map((cc) => cc.status),
+        (s) => STATUS_META[s]?.label ?? s
+      ),
+    [overview]
+  );
+
+  const handleVesselTabChange = (key) => {
+    setVesselTab(key);
+    setVesselStatus("all");
+  };
 
   const vesselTabCounts = useMemo(
     () =>
@@ -143,21 +223,21 @@ const Dashboard = () => {
     });
   }, [overview]);
 
-  const soClients = useMemo(
-    () => [...new Set(salesOrders.map((so) => so.client))].sort(),
+  const soClientOptions = useMemo(
+    () => uniqueOptions(salesOrders.map((so) => so.client)),
     [salesOrders]
   );
 
   const filteredSalesOrders = useMemo(
     () =>
       salesOrders.filter(
-        (so) => (soClient === "all" || so.client === soClient) && (!soOverdueOnly || so.isOverdue)
+        (so) => matches(soClient, so.client) && (!soOverdueOnly || so.isOverdue)
       ),
     [salesOrders, soClient, soOverdueOnly]
   );
 
   const soTotals = useMemo(() => {
-    const byClient = salesOrders.filter((so) => soClient === "all" || so.client === soClient);
+    const byClient = salesOrders.filter((so) => matches(soClient, so.client));
     const overdue = byClient.filter((so) => so.isOverdue);
     return {
       openCount: byClient.length,
@@ -173,6 +253,8 @@ const Dashboard = () => {
 
   const { summary } = overview;
   const allOverdueCount = salesOrders.filter((so) => so.isOverdue).length;
+  const crewTrend = sliceByPeriod(overview.crew_change_trend, crewPeriod);
+  const branchOptions = overview.branches.map((b) => ({ value: b.key, label: b.name }));
 
   const stats = [
     { title: "Total Vessels Imported", value: summary.total_vessels_imported, icon: <FiDownload />, tone: "blue" },
@@ -213,21 +295,31 @@ const Dashboard = () => {
               <h3 className="chart-title">Vessels by Port</h3>
               <p className="chart-subtitle">Import, export and domestic vessels with current status</p>
             </div>
-            {!activeTab.port && (
-              <select
-                className="dash-select"
-                value={vesselPort}
-                onChange={(e) => setVesselPort(e.target.value)}
-                aria-label="Filter by port"
-              >
-                <option value="all">All Ports</option>
-                {Object.entries(PORT_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            )}
+            <div className="dash-filters">
+              {!activeTab.port && (
+                <FilterSelect
+                  value={vesselPort}
+                  onChange={setVesselPort}
+                  label="Filter by port"
+                  allLabel="All Ports"
+                  options={PORT_OPTIONS}
+                />
+              )}
+              <FilterSelect
+                value={vesselClient}
+                onChange={setVesselClient}
+                label="Filter by client"
+                allLabel="All Clients"
+                options={vesselClientOptions}
+              />
+              <FilterSelect
+                value={vesselStatus}
+                onChange={setVesselStatus}
+                label="Filter by status"
+                allLabel="All Statuses"
+                options={vesselStatusOptions}
+              />
+            </div>
           </div>
 
           <div className="" role="tablist">
@@ -238,7 +330,7 @@ const Dashboard = () => {
                 role="tab"
                 aria-selected={vesselTab === tab.key}
                 className={`dash-tab ${vesselTab === tab.key ? "active" : ""}`}
-                onClick={() => setVesselTab(tab.key)}
+                onClick={() => handleVesselTabChange(tab.key)}
               >
                 {tab.label}
                 <span className="dash-tab-count">{vesselTabCounts[tab.key]}</span>
@@ -280,9 +372,27 @@ const Dashboard = () => {
 
         {/* Crew changes list */}
         <div className="chart-card">
-          <div className="chart-header">
-            <h3 className="chart-title">Crew Changes</h3>
-            <p className="chart-subtitle">Recent and upcoming crew changes</p>
+          <div className="chart-header chart-header--row">
+            <div>
+              <h3 className="chart-title">Crew Changes</h3>
+              <p className="chart-subtitle">Recent and upcoming crew changes</p>
+            </div>
+            <div className="dash-filters">
+              <FilterSelect
+                value={crewPort}
+                onChange={setCrewPort}
+                label="Filter by port"
+                allLabel="All Ports"
+                options={PORT_OPTIONS}
+              />
+              <FilterSelect
+                value={crewStatus}
+                onChange={setCrewStatus}
+                label="Filter by status"
+                allLabel="All Statuses"
+                options={crewStatusOptions}
+              />
+            </div>
           </div>
           <div className="dash-table-wrp">
             <table className="dash-table">
@@ -296,10 +406,10 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {overview.crew_changes.length === 0 ? (
+                {crewRows.length === 0 ? (
                   <EmptyRow colSpan={5} text="No crew changes" />
                 ) : (
-                  overview.crew_changes.map((cc) => (
+                  crewRows.map((cc) => (
                     <tr key={cc.id}>
                       <td className="dash-table-strong">{cc.vessel}</td>
                       <td>{PORT_LABELS[cc.port]}</td>
@@ -320,12 +430,17 @@ const Dashboard = () => {
 
         {/* Crew change trend */}
         <div className="chart-card">
-          <div className="chart-header">
-            <h3 className="chart-title">Crew Change per Month</h3>
-            <p className="chart-subtitle">Year to date · {summary.total_crew_change_ytd.toLocaleString()} total</p>
+          <div className="chart-header chart-header--row">
+            <div>
+              <h3 className="chart-title">Crew Change per Month</h3>
+              <p className="chart-subtitle">
+                {crewTrend.reduce((sum, m) => sum + m.count, 0).toLocaleString()} crew changes in period
+              </p>
+            </div>
+            <FilterSelect value={crewPeriod} onChange={setCrewPeriod} label="Filter by period" options={PERIOD_OPTIONS} />
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={overview.crew_change_trend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <BarChart data={crewTrend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
               <XAxis dataKey="month" stroke={chartAxisColor} />
               <YAxis stroke={chartAxisColor} />
@@ -337,41 +452,73 @@ const Dashboard = () => {
 
         {/* Monthly revenue — branch wise */}
         <div className="chart-card">
-          <div className="chart-header">
-            <h3 className="chart-title">Monthly Revenue · Branch Wise</h3>
-            <p className="chart-subtitle">Revenue per branch, year to date</p>
+          <div className="chart-header chart-header--row">
+            <div>
+              <h3 className="chart-title">Monthly Revenue · Branch Wise</h3>
+              <p className="chart-subtitle">Revenue per branch</p>
+            </div>
+            <div className="dash-filters">
+              <FilterSelect
+                value={revenueBranch}
+                onChange={setRevenueBranch}
+                label="Filter by branch"
+                allLabel="All Branches"
+                options={branchOptions}
+              />
+              <FilterSelect
+                value={revenuePeriod}
+                onChange={setRevenuePeriod}
+                label="Filter by period"
+                options={PERIOD_OPTIONS}
+              />
+            </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={overview.revenue_by_branch} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+            <LineChart
+              data={sliceByPeriod(overview.revenue_by_branch, revenuePeriod)}
+              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
               <XAxis dataKey="month" stroke={chartAxisColor} />
               <YAxis stroke={chartAxisColor} tickFormatter={formatCompactCurrency} />
               <Tooltip contentStyle={chartTooltipStyle} formatter={formatCurrency} />
               <Legend />
-              {overview.branches.map((branch, index) => (
-                <Line
-                  key={branch.key}
-                  type="monotone"
-                  dataKey={branch.key}
-                  name={branch.name}
-                  stroke={seriesColors[index]}
-                  strokeWidth={2}
-                  dot={{ r: 3, fill: seriesColors[index] }}
-                  activeDot={{ r: 5 }}
-                />
-              ))}
+              {/* Color stays tied to the branch's position in the full list, so filtering never repaints a line. */}
+              {overview.branches.map(
+                (branch, index) =>
+                  matches(revenueBranch, branch.key) && (
+                    <Line
+                      key={branch.key}
+                      type="monotone"
+                      dataKey={branch.key}
+                      name={branch.name}
+                      stroke={seriesColors[index]}
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: seriesColors[index] }}
+                      activeDot={{ r: 5 }}
+                    />
+                  )
+              )}
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         {/* Monthly revenue — offshore marine */}
         <div className="chart-card">
-          <div className="chart-header">
-            <h3 className="chart-title">Monthly Revenue · Offshore Marine</h3>
-            <p className="chart-subtitle">Offshore marine revenue, year to date</p>
+          <div className="chart-header chart-header--row">
+            <div>
+              <h3 className="chart-title">Monthly Revenue · Offshore Marine</h3>
+              <p className="chart-subtitle">Offshore marine revenue</p>
+            </div>
+            <FilterSelect
+              value={offshorePeriod}
+              onChange={setOffshorePeriod}
+              label="Filter by period"
+              options={PERIOD_OPTIONS}
+            />
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={overview.revenue_offshore_marine} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+            <BarChart data={sliceByPeriod(overview.revenue_offshore_marine, offshorePeriod)} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
               <XAxis dataKey="month" stroke={chartAxisColor} />
               <YAxis stroke={chartAxisColor} tickFormatter={formatCompactCurrency} />
@@ -401,19 +548,13 @@ const Dashboard = () => {
                 />
                 Beyond {OVERDUE_DAYS} days only
               </label>
-              <select
-                className="dash-select"
+              <FilterSelect
                 value={soClient}
-                onChange={(e) => setSoClient(e.target.value)}
-                aria-label="Filter by client"
-              >
-                <option value="all">All Clients</option>
-                {soClients.map((client) => (
-                  <option key={client} value={client}>
-                    {client}
-                  </option>
-                ))}
-              </select>
+                onChange={setSoClient}
+                label="Filter by client"
+                allLabel="All Clients"
+                options={soClientOptions}
+              />
             </div>
           </div>
 
