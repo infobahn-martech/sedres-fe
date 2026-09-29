@@ -10,30 +10,43 @@ export default function WorkflowAccordion({
   onPinClick,
   children,
 }) {
+  const headerRef = useRef(null);
   const titleRef = useRef(null);
+  const actionsRef = useRef(null);
 
-  // The board scrolls horizontally on `.main-layout` (not a sticky-compatible ancestor),
-  // so offset the title by scrollLeft to keep it centred in the visible area while expanded.
+  // The board scrolls horizontally on `.main-layout` (not a sticky-compatible ancestor), so while
+  // expanded, offset the title (centred) and actions (right edge) to stay in the visible area.
   useEffect(() => {
+    const header = headerRef.current;
     const title = titleRef.current;
+    const actions = actionsRef.current;
     const row = title?.parentElement;
-    const scroller = title?.closest(".main-layout");
-    if (!title || !row || !scroller || !isExpanded) return undefined;
+    const scroller = header?.closest(".main-layout");
+    if (!header || !title || !actions || !row || !scroller || !isExpanded) return undefined;
 
-    const syncTitle = () => {
-      const rowLeft =
-        row.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft;
-      const visibleWidth = scroller.clientWidth - rowLeft;
-      const centreOffset = Math.max(0, (visibleWidth - title.offsetWidth) / 2);
-      title.style.transform = `translateX(${scroller.scrollLeft + centreOffset}px)`;
+    let actionsX = 0;
+
+    const syncHeader = () => {
+      const { scrollLeft, clientWidth } = scroller;
+      const toContentX = (x) => x - scroller.getBoundingClientRect().left + scrollLeft;
+
+      const rowLeft = toContentX(row.getBoundingClientRect().left);
+      const centreOffset = Math.max(0, (clientWidth - rowLeft - title.offsetWidth) / 2);
+      title.style.transform = `translateX(${scrollLeft + centreOffset}px)`;
+
+      const actionsRight = toContentX(actions.getBoundingClientRect().right) - actionsX;
+      const rightGap = toContentX(header.getBoundingClientRect().right) - actionsRight;
+      actionsX = Math.min(0, scrollLeft + clientWidth - rightGap - actionsRight);
+      actions.style.transform = `translateX(${actionsX}px)`;
     };
-    syncTitle();
-    scroller.addEventListener("scroll", syncTitle, { passive: true });
-    window.addEventListener("resize", syncTitle);
+    syncHeader();
+    scroller.addEventListener("scroll", syncHeader, { passive: true });
+    window.addEventListener("resize", syncHeader);
     return () => {
-      scroller.removeEventListener("scroll", syncTitle);
-      window.removeEventListener("resize", syncTitle);
+      scroller.removeEventListener("scroll", syncHeader);
+      window.removeEventListener("resize", syncHeader);
       title.style.transform = "";
+      actions.style.transform = "";
     };
   }, [isExpanded]);
 
@@ -43,7 +56,7 @@ export default function WorkflowAccordion({
       id={`workflow-accordion-${workflow.id}`}
       className={`kanban-accordion ${isDarkMode ? "kanban-dark-mode" : ""}`}
     >
-      <div className="kanban-accordion-header" onClick={onToggle}>
+      <div ref={headerRef} className="kanban-accordion-header" onClick={onToggle}>
         <div
           className="kanban-accordion-title-row"
           style={{ flex: 1, justifyContent: isExpanded ? "flex-start" : "center" }}
@@ -52,7 +65,7 @@ export default function WorkflowAccordion({
             {workflow.title}
           </h2>
         </div>
-        <div className="kanban-accordion-actions">
+        <div ref={actionsRef} className="kanban-accordion-actions">
           <button
             type="button"
             className={`accordion-menu-button accordion-pin-button ${isPinned ? "accordion-pin-button--active" : ""}`}
