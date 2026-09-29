@@ -65,11 +65,15 @@ const recordApprovedBy = (payload) => Gateway.post('/da/da_record_approved_by', 
  * The backend issues batch_number itself. Fails when the calls span more than one category (Crewing/Port Call). */
 const createHubBatch = (payload) => Gateway.post('/da/create_hub_batch', payload);
 /** @param {string|number} batchId
+ * @param {Array<string|number>} [callIds] - calls of the batch's cards, sent as call_ids=110,111
  * @returns {Promise<{ data: { status: 'success', data: { batch_id: number, batch_number: string, category: string,
- *   recipient: string, cc: string, subject: string, body: string, stage_document_id: number, document_url: string } }
- *   | { status: 'error', message: string } }>}
+ *   recipient: string, cc: string, subject: string, body: string, call_ids: number[], stage_document_id: number,
+ *   document_url: string } } | { status: 'error', message: string } }>}
  * Prefilled "Sent for SE creation" email for a hub batch. Errors with "Batch not found" for an unknown batch_id. */
-const getSeCreationEmailDraft = (batchId) => Gateway.get(`/da/se_creation_email_draft/${batchId}`);
+const getSeCreationEmailDraft = (batchId, callIds = []) =>
+  Gateway.get(`/da/se_creation_email_draft/${batchId}`, {
+    params: callIds.length ? { call_ids: callIds.join(",") } : undefined,
+  });
 /** @returns {Promise<{ data: { status: 'success', data: Array<{ batch_id: number, batch_number: string,
  *   category: string, card_ids: number[] }> } | { status: 'error', message: string } }>}
  * Every hub batch created so far, with the cards grouped under it. */

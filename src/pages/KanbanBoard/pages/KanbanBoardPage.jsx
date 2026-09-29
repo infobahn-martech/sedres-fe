@@ -340,7 +340,17 @@ export default function KanbanBoardPage() {
   const [seRequestEmailDraft, setSeRequestEmailDraft] = useState(null);
   const batchIdByNumber = useBatchMoveStore((state) => state.batchIdByNumber);
 
-  /* Opens the email prefilled from the backend draft for the batch. */
+  /* Unique call ids of the batch's cards. */
+  const getBatchCallIds = useCallback(
+    (batch) => [
+      ...new Set(
+        (batch?.cards || []).map((card) => card?.callId ?? cardsById[card?.id]?.callId).filter(Boolean)
+      ),
+    ],
+    [cardsById]
+  );
+
+  /* Opens the email prefilled from the backend draft for the batch's ticked cards. */
   const handleBatchSendSeRequest = useCallback(
     async (batch) => {
       const batchId = batchIdByNumber[batch?.title];
@@ -348,9 +358,14 @@ export default function KanbanBoardPage() {
         notify("Batch not found", "error");
         return;
       }
+      const callIds = getBatchCallIds(batch);
+      if (callIds.length === 0) {
+        notify("Select at least one card to send for SE creation", "error");
+        return;
+      }
       let data;
       try {
-        ({ data } = await daService.getSeCreationEmailDraft(batchId));
+        ({ data } = await daService.getSeCreationEmailDraft(batchId, callIds));
       } catch (error) {
         data = error?.response?.data;
       }
@@ -362,7 +377,7 @@ export default function KanbanBoardPage() {
       setSelectedSeRequestBatch(batch);
       setShowSeRequestEmailModal(true);
     },
-    [batchIdByNumber]
+    [batchIdByNumber, getBatchCallIds]
   );
 
   const handleCloseSeRequestEmail = useCallback(() => {
@@ -377,9 +392,7 @@ export default function KanbanBoardPage() {
 
   const handleSendSeRequestEmail = useCallback(
     async (emailData) => {
-      const callId = (selectedSeRequestBatch?.cards || [])
-        .map((card) => card?.callId ?? cardsById[card?.id]?.callId)
-        .find(Boolean);
+      const [callId] = getBatchCallIds(selectedSeRequestBatch);
       if (!callId) {
         notify("No call found for this batch", "error");
         return;
@@ -415,7 +428,7 @@ export default function KanbanBoardPage() {
         setIsSendingSeRequestEmail(false);
       }
     },
-    [selectedSeRequestBatch, seRequestEmailDraft, cardsById, handleCloseSeRequestEmail, refetchBoard]
+    [selectedSeRequestBatch, seRequestEmailDraft, getBatchCallIds, handleCloseSeRequestEmail, refetchBoard]
   );
 
   /* "Upload SE Approval" on an "Awaiting SE" batch header opens the upload modal for that batch. */
