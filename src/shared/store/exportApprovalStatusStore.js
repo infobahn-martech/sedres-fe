@@ -1,10 +1,13 @@
 import { create } from "zustand";
 import callFileService from "../../services/callFileService";
+import { isExportCallType } from "../../pages/KanbanBoard/CardFormTabs/shared/utils/callTypes";
 
 /**
- * Export approval state per call, for board cards whose get_full_board payload has no
- * is_export_approval_card key. Read from the call detail's export_approval_status
- * ("1" = approved). Values: "loading" | "approved" | "pending" | "unknown" (request failed).
+ * Export approval state per call, read from the call detail for board cards whose
+ * get_full_board is_export_approval_card key is missing or true. Only Export calls go through
+ * export approval, so any other call type (e.g. Husbandry) is "not_export"; an Export call reads
+ * export_approval_status ("1" = approved).
+ * Values: "loading" | "approved" | "pending" | "not_export" | "unknown" (request failed).
  */
 const useExportApprovalStatusStore = create((set, get) => ({
   statusByCallId: {},
@@ -19,10 +22,11 @@ const useExportApprovalStatusStore = create((set, get) => ({
       callFileService
         .getCallDetail(callId)
         .then(({ data }) => {
-          const isApproved = String(data?.data?.export_approval_status ?? "") === "1";
-          set((state) => ({
-            statusByCallId: { ...state.statusByCallId, [callId]: isApproved ? "approved" : "pending" },
-          }));
+          const callDetail = data?.data;
+          let status = "pending";
+          if (!isExportCallType(callDetail?.call_type_id)) status = "not_export";
+          else if (String(callDetail?.export_approval_status ?? "") === "1") status = "approved";
+          set((state) => ({ statusByCallId: { ...state.statusByCallId, [callId]: status } }));
         })
         .catch(() => {
           set((state) => ({ statusByCallId: { ...state.statusByCallId, [callId]: "unknown" } }));
