@@ -180,6 +180,240 @@
   }
 }
 
+// Date range picker
+.drp {
+  position: relative;
+}
+
+.drp-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  background: var(--surface-primary);
+  color: var(--text-muted);
+  font: normal normal 500 14px/1 'Manrope', sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &.has-value {
+    color: var(--text-primary);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: var(--text-secondary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #2a78d6;
+    outline-offset: 1px;
+  }
+}
+
+.drp-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1050;
+  width: 640px;
+  max-width: calc(100vw - 32px);
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-primary);
+  background: var(--surface-primary);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+}
+
+.drp-fields {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.drp-fields-sep {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.drp-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 12px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: var(--border-primary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &.is-active {
+    border-color: var(--text-primary);
+    background: var(--surface-primary);
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary);
+    font: normal normal 500 14px/1 'Manrope', sans-serif;
+    cursor: pointer;
+
+    &::placeholder {
+      color: var(--text-muted);
+    }
+  }
+}
+
+.drp-field-clear {
+  display: flex;
+  padding: 4px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.drp-calendars {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.drp-nav {
+  position: absolute;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--border-primary);
+  }
+
+  &--prev {
+    left: 0;
+  }
+
+  &--next {
+    right: 0;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.drp-month-title {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  font: normal normal 600 15px/1 'Manrope', sans-serif;
+  color: var(--text-primary);
+}
+
+.drp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 2px;
+}
+
+.drp-weekday {
+  padding: 8px 0;
+  text-align: center;
+  text-transform: uppercase;
+  font: normal normal 500 12px/1 'Manrope', sans-serif;
+  color: var(--text-secondary);
+}
+
+.drp-day {
+  position: relative;
+  height: 38px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text-primary);
+  font: normal normal 500 14px/1 'Manrope', sans-serif;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--border-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #2a78d6;
+    outline-offset: -2px;
+  }
+
+  &.is-today {
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  &.in-range {
+    border-radius: 0;
+    background: rgba(0, 54, 140, 0.1);
+
+    [data-theme="dark"] & {
+      background: rgba(59, 130, 246, 0.18);
+    }
+  }
+
+  &.is-start,
+  &.is-end {
+    background: #00368c;
+    color: #fff;
+
+    [data-theme="dark"] & {
+      background: #3b82f6;
+    }
+  }
+
+  &.is-start.has-range {
+    border-radius: 8px 0 0 8px;
+  }
+
+  &.is-end:not(.is-start) {
+    border-radius: 0 8px 8px 0;
+  }
+}
+
 .dash-checkbox {
   display: inline-flex;
   align-items: center;

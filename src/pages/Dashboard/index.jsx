@@ -20,6 +20,7 @@ import {
   FiAlertTriangle,
 } from "react-icons/fi";
 import dashboardService from "../../services/dashboardService";
+import DateRangePicker from "./DateRangePicker";
 import { useThemeStore } from "../../shared/store/themeStore";
 import "../../design/scss/dashboard.scss";
 import "../../design/scss/pages/dashboard/dashboard-content.scss";
@@ -62,7 +63,10 @@ const PERIOD_OPTIONS = [
   { value: "ytd", label: "Year to Date", months: null },
   { value: "6m", label: "Last 6 Months", months: 6 },
   { value: "3m", label: "Last 3 Months", months: 3 },
+  { value: "custom", label: "Custom Range", months: null },
 ];
+
+const DEFAULT_PERIOD = { period: "ytd", from: "", to: "" };
 
 const PORT_OPTIONS = Object.entries(PORT_LABELS).map(([value, label]) => ({ value, label }));
 
@@ -101,10 +105,30 @@ const uniqueOptions = (values, labelFor = (v) => v) =>
 
 const matches = (filter, value) => filter === "all" || filter === value;
 
-const sliceByPeriod = (data, period) => {
+// Monthly rows carry `period` as YYYY-MM; a custom range keeps every month it touches.
+const filterByPeriod = (data, { period, from, to }) => {
+  if (period === "custom") {
+    const fromMonth = from.slice(0, 7);
+    const toMonth = to.slice(0, 7);
+    return data.filter((row) => (!fromMonth || row.period >= fromMonth) && (!toMonth || row.period <= toMonth));
+  }
   const months = PERIOD_OPTIONS.find((option) => option.value === period)?.months;
   return months ? data.slice(-months) : data;
 };
+
+const PeriodFilter = ({ value, onChange }) => (
+  <>
+    <FilterSelect
+      value={value.period}
+      onChange={(period) => onChange({ ...value, period })}
+      label="Filter by period"
+      options={PERIOD_OPTIONS}
+    />
+    {value.period === "custom" && (
+      <DateRangePicker from={value.from} to={value.to} onChange={(range) => onChange({ ...value, ...range })} />
+    )}
+  </>
+);
 
 const EmptyRow = ({ colSpan, text }) => (
   <tr>
@@ -122,10 +146,10 @@ const Dashboard = () => {
   const [vesselStatus, setVesselStatus] = useState("all");
   const [crewPort, setCrewPort] = useState("all");
   const [crewStatus, setCrewStatus] = useState("all");
-  const [crewPeriod, setCrewPeriod] = useState("ytd");
+  const [crewPeriod, setCrewPeriod] = useState(DEFAULT_PERIOD);
   const [revenueBranch, setRevenueBranch] = useState("all");
-  const [revenuePeriod, setRevenuePeriod] = useState("ytd");
-  const [offshorePeriod, setOffshorePeriod] = useState("ytd");
+  const [revenuePeriod, setRevenuePeriod] = useState(DEFAULT_PERIOD);
+  const [offshorePeriod, setOffshorePeriod] = useState(DEFAULT_PERIOD);
   const [soClient, setSoClient] = useState("all");
   const [soOverdueOnly, setSoOverdueOnly] = useState(false);
 
@@ -253,7 +277,7 @@ const Dashboard = () => {
 
   const { summary } = overview;
   const allOverdueCount = salesOrders.filter((so) => so.isOverdue).length;
-  const crewTrend = sliceByPeriod(overview.crew_change_trend, crewPeriod);
+  const crewTrend = filterByPeriod(overview.crew_change_trend, crewPeriod);
   const branchOptions = overview.branches.map((b) => ({ value: b.key, label: b.name }));
 
   const stats = [
@@ -437,7 +461,9 @@ const Dashboard = () => {
                 {crewTrend.reduce((sum, m) => sum + m.count, 0).toLocaleString()} crew changes in period
               </p>
             </div>
-            <FilterSelect value={crewPeriod} onChange={setCrewPeriod} label="Filter by period" options={PERIOD_OPTIONS} />
+            <div className="dash-filters">
+              <PeriodFilter value={crewPeriod} onChange={setCrewPeriod} />
+            </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={crewTrend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -465,17 +491,12 @@ const Dashboard = () => {
                 allLabel="All Branches"
                 options={branchOptions}
               />
-              <FilterSelect
-                value={revenuePeriod}
-                onChange={setRevenuePeriod}
-                label="Filter by period"
-                options={PERIOD_OPTIONS}
-              />
+              <PeriodFilter value={revenuePeriod} onChange={setRevenuePeriod} />
             </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart
-              data={sliceByPeriod(overview.revenue_by_branch, revenuePeriod)}
+              data={filterByPeriod(overview.revenue_by_branch, revenuePeriod)}
               margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
@@ -510,15 +531,12 @@ const Dashboard = () => {
               <h3 className="chart-title">Monthly Revenue · Offshore Marine</h3>
               <p className="chart-subtitle">Offshore marine revenue</p>
             </div>
-            <FilterSelect
-              value={offshorePeriod}
-              onChange={setOffshorePeriod}
-              label="Filter by period"
-              options={PERIOD_OPTIONS}
-            />
+            <div className="dash-filters">
+              <PeriodFilter value={offshorePeriod} onChange={setOffshorePeriod} />
+            </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={sliceByPeriod(overview.revenue_offshore_marine, offshorePeriod)} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+            <BarChart data={filterByPeriod(overview.revenue_offshore_marine, offshorePeriod)} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
               <XAxis dataKey="month" stroke={chartAxisColor} />
               <YAxis stroke={chartAxisColor} tickFormatter={formatCompactCurrency} />
