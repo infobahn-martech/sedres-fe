@@ -38,18 +38,3 @@
     color: #ffffff;
   }
 }
-
-/* Backlog "select all cards" checkbox, sits just before the batch action button */
-.column-header .column-select-all {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  margin: 0 0 0 6px;
-  accent-color: #0a57c2;
-  cursor: pointer;
-}
-
-.column-header .column-select-all:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
