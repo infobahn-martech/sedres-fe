@@ -122,6 +122,16 @@
       font-weight: 500;
       color: var(--text-primary, #0f172a);
     }
+
+    &__count {
+      flex-shrink: 0;
+      margin-left: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e8eef9;
+      font-weight: 600;
+      color: #00368c;
+    }
   }
 
   .se-approval-field {

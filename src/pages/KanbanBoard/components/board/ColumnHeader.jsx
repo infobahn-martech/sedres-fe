@@ -37,6 +37,7 @@ export default function ColumnHeader({
   onHeaderClick,
   isDarkMode = false,
   actionLabel,
+  actionIcon,
   onActionClick,
 }) {
   const columnColor = column.color || "#2A00FF";
@@ -81,7 +82,7 @@ export default function ColumnHeader({
           data-tooltip-content={actionLabel}
           aria-label={actionLabel}
         >
-          <BatchCardsIcon />
+          {actionIcon ?? <BatchCardsIcon />}
         </button>
       )}
       {typeof onActionClick === "function" && <Tooltip id={tooltipId} place="top" />}
@@ -101,5 +102,6 @@ ColumnHeader.propTypes = {
   onHeaderClick: PropTypes.func,
   isDarkMode: PropTypes.bool,
   actionLabel: PropTypes.string,
+  actionIcon: PropTypes.node,
   onActionClick: PropTypes.func,
 };
