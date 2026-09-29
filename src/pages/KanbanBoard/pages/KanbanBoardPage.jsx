@@ -33,7 +33,6 @@ import { notify } from "../../../components/Toaster";
 import { useThemeStore } from "../../../shared/store/themeStore";
 import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
-import { MAX_BATCH_CARDS } from "../../../shared/constants/kanbanConfig";
 
 export default function KanbanBoardPage() {
   const { boardId: boardIdParam } = useParams();
@@ -538,38 +537,9 @@ export default function KanbanBoardPage() {
     clearCardSelection,
   ]);
 
-  /* A batch holds at most MAX_BATCH_CARDS cards, so selection stops there. Read from the store
-     directly so rapid drag-paint events never see a stale count. */
-  const canSelectMoreCards = useCallback(() => {
-    if (useKanbanCardSelectionStore.getState().selectedCardIds.length < MAX_BATCH_CARDS) return true;
-    notify(`A batch can have at most ${MAX_BATCH_CARDS} cards`, "warning");
-    return false;
-  }, []);
-
   const handleToggleCardSelection = useCallback(
-    (card) => {
-      if (!selectedCardIds.includes(card.id) && !canSelectMoreCards()) return;
-      toggleCardSelectionId(card.id);
-    },
-    [selectedCardIds, canSelectMoreCards, toggleCardSelectionId]
-  );
-
-  /* Backlog header checkbox: ticks the column's cards up to the batch limit, or clears them. */
-  const handleSelectAllCards = useCallback(
-    (cardIds, shouldSelect) => {
-      if (!shouldSelect) {
-        cardIds.forEach((id) => setCardSelectionId(id, false));
-        return;
-      }
-      const alreadySelected = useKanbanCardSelectionStore.getState().selectedCardIds;
-      const freeSlots = MAX_BATCH_CARDS - alreadySelected.length;
-      const toSelect = cardIds.filter((id) => !alreadySelected.includes(id));
-      toSelect.slice(0, Math.max(freeSlots, 0)).forEach((id) => setCardSelectionId(id, true));
-      if (toSelect.length > freeSlots) {
-        notify(`Only ${MAX_BATCH_CARDS} cards can be selected for a batch`, "warning");
-      }
-    },
-    [setCardSelectionId]
+    (card) => toggleCardSelectionId(card.id),
+    [toggleCardSelectionId]
   );
 
   /* Click-and-drag "paint" selection (Excel-style): mousedown on a card's checkbox flips it and
@@ -583,27 +553,19 @@ export default function KanbanBoardPage() {
   const handleCardSelectDragStart = useCallback(
     (card) => {
       const nextSelected = !selectedCardIds.includes(card.id);
-      if (nextSelected && !canSelectMoreCards()) return;
       isDraggingRef.current = true;
       dragValueRef.current = nextSelected;
       setCardSelectionId(card.id, nextSelected);
     },
-    [selectedCardIds, canSelectMoreCards, setCardSelectionId]
+    [selectedCardIds, setCardSelectionId]
   );
 
   const handleCardSelectDragEnter = useCallback(
     (card) => {
       if (!isDraggingRef.current) return;
-      if (dragValueRef.current) {
-        const { selectedCardIds: currentIds } = useKanbanCardSelectionStore.getState();
-        if (!currentIds.includes(card.id) && !canSelectMoreCards()) {
-          isDraggingRef.current = false;
-          return;
-        }
-      }
       setCardSelectionId(card.id, dragValueRef.current);
     },
-    [canSelectMoreCards, setCardSelectionId]
+    [setCardSelectionId]
   );
 
   useEffect(() => {
@@ -764,7 +726,6 @@ export default function KanbanBoardPage() {
           layoutView={layoutView}
           selectedActionCardIds={selectedCardIds}
           onToggleCardSelect={handleToggleCardSelection}
-          onSelectAllCards={handleSelectAllCards}
           onCardSelectDragStart={handleCardSelectDragStart}
           onCardSelectDragEnter={handleCardSelectDragEnter}
         />
