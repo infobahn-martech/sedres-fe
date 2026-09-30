@@ -12,7 +12,10 @@ const deleteWorkflow = (workflowId) =>
 const disableWorkflow = (workflowId) =>
     Gateway.post(`/kanban_workflow/enable_disable_workflow/${workflowId}`, { workflow_id: workflowId });
 
-const togglePinWorkflow = (workflowId) =>
+const duplicateWorkflow = (workflowId) =>
+    Gateway.post(`/kanban_workflow/duplicate_workflow/${workflowId}`, { workflow_id: workflowId });
+
+const togglePinWorkflow =(workflowId) =>
     Gateway.post(`/kanban_workflow/toggle_pin_workflow/${workflowId}`, { workflow_id: workflowId });
 
 const toggleCollapseWorkflow = (workflowId) =>
@@ -59,6 +62,7 @@ export default {
     renameWorkflow,
     deleteWorkflow,
     disableWorkflow,
+    duplicateWorkflow,
     createWorkflow,
     togglePinWorkflow,
     toggleCollapseWorkflow,

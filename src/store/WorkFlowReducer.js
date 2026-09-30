@@ -146,6 +146,23 @@ const useWorkFlowReducer = create((set, get) => ({
         }
     },
 
+    duplicateWorkflow: async ({ workflow_id, cb, onSettled }) => {
+        try {
+            const { data } = await workflowService.duplicateWorkflow(workflow_id);
+            const { success } = useAlertReducer.getState();
+            success(data?.message || 'Workflow copied successfully.');
+            cb && cb(data);
+        } catch (err) {
+            set({
+                errorMessage: err?.response?.data?.message ?? err.message,
+            });
+            const { error } = useAlertReducer.getState();
+            error(err?.response?.data?.message ?? err.message);
+        } finally {
+            onSettled && onSettled();
+        }
+    },
+
     createWorkflow: async ({ board_id, workflow_name, role_id, port_id, call_type_id, entity_id, cb, onSettled }) => {
         try {
             const { data } = await workflowService.createWorkflow({

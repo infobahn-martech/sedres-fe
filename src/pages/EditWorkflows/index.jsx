@@ -83,6 +83,7 @@ function EditWorkflows() {
     renameWorkflow,
     deleteWorkflow,
     disableWorkflow,
+    duplicateWorkflow,
     createWorkflow,
     createSwimlane,
     renameSwimlane,
@@ -561,6 +562,16 @@ function EditWorkflows() {
     });
   };
 
+  const handleCopyWorkflow = (workflowId) => {
+    const wfKey = `wf:${workflowId}`;
+    if (!startMutation(wfKey, 'copy')) return;
+    duplicateWorkflow({
+      workflow_id: workflowId,
+      cb: refetchBoardWorkflows,
+      onSettled: () => clearMutationKey(wfKey),
+    });
+  };
+
   const handleAddSwimlane = (workflowId, insertAtIndex, swimlaneName = 'New Swimlane') => {
     const k = `swimlane-add:${workflowId}:${insertAtIndex}`;
     if (!startMutation(k, true)) return;
@@ -880,6 +891,16 @@ function EditWorkflows() {
                     )}
                   </div>
                   <div className="workflow-header-right">
+                    {canCreateWorkflow ? (
+                      <button
+                        type="button"
+                        className="workflow-action-link"
+                        disabled={wfMutationPending}
+                        onClick={() => handleCopyWorkflow(workflow.id)}
+                      >
+                        Copy
+                      </button>
+                    ) : null}
                     {canDeleteWorkflow ? (
                       <button
                         type="button"
