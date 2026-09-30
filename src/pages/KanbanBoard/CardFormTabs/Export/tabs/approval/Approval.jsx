@@ -1024,11 +1024,16 @@ const createEmptyPartySection = () => ({
                 On Hold by CEO — approval is paused until CEO resumes it
               </div>
             ) : null}
-            <section className="approval-form-card approval-section--full">
-              <div className="approval-section-header">
-                <h3 className="form-group-title">Basic Details</h3>
-                <AutoSaveStatus status={saveStatus} />
-              </div>
+            <div className="approval-columns">
+            <section className="approval-column">
+              <header className="approval-column-header">
+                <div className="approval-column-header-row">
+                  <h3 className="approval-column-title">Basic Details</h3>
+                  <AutoSaveStatus status={saveStatus} />
+                </div>
+                <p className="approval-column-subtitle">Vessel call and billing information.</p>
+              </header>
+              <div className="approval-column-body">
               <div className="approval-fields-grid approval-basic-fields-grid">
                 <FormField label="Date">
                   <FormInput
@@ -1089,9 +1094,15 @@ const createEmptyPartySection = () => ({
                   />
                 </FormField>
               </div>
+              </div>
             </section>
 
-            <div className="approval-party-cards-row">
+            <section className="approval-column">
+              <header className="approval-column-header">
+                <h3 className="approval-column-title">Vessel Parties</h3>
+                <p className="approval-column-subtitle">Owner, principal/manager and charterer credit details.</p>
+              </header>
+              <div className="approval-column-body">
               <PartySectionCard
                 title="Vessel Owner's"
                 fields={VESSEL_OWNER_FIELDS}
@@ -1127,9 +1138,15 @@ const createEmptyPartySection = () => ({
                 fieldsDisabled={!canEditSharedDetails}
                 showImageUpload={false}
               />
-            </div>
+              </div>
+            </section>
 
-            <div className="approval-action-cards-row">
+            <section className="approval-column">
+              <header className="approval-column-header">
+                <h3 className="approval-column-title">Approvals</h3>
+                <p className="approval-column-subtitle">Credit Controller, Manager and CEO sign-off.</p>
+              </header>
+              <div className="approval-column-body">
               <ApprovalCard
                 title="Remarks / Recommendation"
                 commentsLabel={
@@ -1341,6 +1358,8 @@ const createEmptyPartySection = () => ({
                   hideActions={!isCeoRole || ceoApproved}
                 />
               ) : null}
+              </div>
+            </section>
             </div>
           </div>
         </div>
