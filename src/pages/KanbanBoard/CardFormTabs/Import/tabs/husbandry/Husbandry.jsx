@@ -40,6 +40,8 @@ import useInboundOrderReducer from "../../../../../../store/InboundOrderReducer"
 import useLandingNoteReducer from "../../../../../../store/LandingNoteReducer";
 import useDispatchNoteReducer from "../../../../../../store/DispatchNoteReducer";
 import callFileService from "../../../../../../services/callFileService";
+import salesOrderService from "../../../../../../services/salesOrderService";
+import { mapSalesOrderResponse } from "../../../../../../shared/helpers/mapSalesOrderResponse";
 import transportContentService, { extractTransportRequestsFromEnvelope } from "../../../../../../services/transportContentService";
 import hotelService, { extractHotelRequestsFromEnvelope } from "../../../../../../services/hotelService";
 import hospitalService, { extractMedicalRequestsFromEnvelope } from "../../../../../../services/hospitalService";
@@ -128,8 +130,63 @@ const HISTORY_STATUS_CLASS = {
   "Cancelled": "is-cancelled",
 };
 
+const toAmount = (value) => {
+  if (value == null || String(value).trim() === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+};
+
+const formatAmount = (value, currency) => {
+  const formatted = (value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return currency ? `${currency} ${formatted}` : formatted;
+};
+
+// Sales Order totals for this call, shown under the Crew Management breakdown.
+const SalesOrderPricing = ({ salesOrder }) => {
+  const itemCount = salesOrder?.salesOrderList?.length || 0;
+  const currency = salesOrder?.soBpCurrency || "";
+  const subtotal = toAmount(salesOrder?.soSubtotal) ?? salesOrder?.lineItemTotal ?? 0;
+  const rows = [
+    { label: "Subtotal", value: subtotal },
+    { label: "Discount", value: toAmount(salesOrder?.soTotalDiscount) ?? 0, isNegative: true },
+    { label: "Tax", value: toAmount(salesOrder?.soTotalTax) ?? 0 },
+  ];
+  const grandTotal = toAmount(salesOrder?.soGrandTotal) ?? rows[0].value - rows[1].value + rows[2].value;
+
+  return (
+    <div className="husbandry-dashboard-breakdown husbandry-dashboard-pricing">
+      <div className="husbandry-dashboard-breakdown-header">
+        <span className="husbandry-dashboard-breakdown-title">Sales Order Pricing</span>
+        <span className="husbandry-dashboard-panel-meta">
+          {salesOrder?.soSoNo ? `SO ${salesOrder.soSoNo} · ` : ""}{itemCount} {itemCount === 1 ? "item" : "items"}
+        </span>
+      </div>
+      {itemCount === 0 ? (
+        <p className="husbandry-dashboard-pricing-empty">No sales order items for this call yet.</p>
+      ) : (
+        <dl className="husbandry-dashboard-pricing-list">
+          {rows.map((row) => (
+            <div key={row.label} className="husbandry-dashboard-pricing-row">
+              <dt>{row.label}</dt>
+              <dd>{row.isNegative && row.value > 0 ? "− " : ""}{formatAmount(row.value, currency)}</dd>
+            </div>
+          ))}
+          <div className="husbandry-dashboard-pricing-row is-total">
+            <dt>Grand Total</dt>
+            <dd>{formatAmount(grandTotal, currency)}</dd>
+          </div>
+        </dl>
+      )}
+    </div>
+  );
+};
+
+SalesOrderPricing.propTypes = {
+  salesOrder: PropTypes.object,
+};
+
 // Dashboard columns 2 & 3: request distribution donut + recent activity history.
-const ServiceInsights = () => {
+const ServiceInsights = ({ salesOrder }) => {
   const total = SERVICE_DISTRIBUTION_STATIC.reduce((sum, item) => sum + item.value, 0);
   const crewBreakdownValues = Object.values(CREW_SERVICE_BREAKDOWN_STATIC);
   const crewBreakdownTotal = crewBreakdownValues.reduce((sum, value) => sum + value, 0);
@@ -205,6 +262,8 @@ const ServiceInsights = () => {
             })}
           </ul>
         </div>
+
+        <SalesOrderPricing salesOrder={salesOrder} />
       </section>
 
       <section className="husbandry-dashboard-panel">
@@ -234,8 +293,12 @@ const ServiceInsights = () => {
   );
 };
 
+ServiceInsights.propTypes = {
+  salesOrder: PropTypes.object,
+};
+
 // Service Selection Component
-const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, showLaunchHire = true, hiddenServiceIds = [] }) => {
+const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, showLaunchHire = true, hiddenServiceIds = [], salesOrder = null }) => {
   const categories = servicesSummary?.categories || {};
   const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
@@ -458,7 +521,7 @@ const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], ser
           })}
         </div>
         </section>
-        <ServiceInsights />
+        <ServiceInsights salesOrder={salesOrder} />
         </div>
       </div>
     </div>
@@ -473,6 +536,7 @@ ServiceSelection.propTypes = {
   crewServiceCounts: PropTypes.object,
   showLaunchHire: PropTypes.bool,
   hiddenServiceIds: PropTypes.arrayOf(PropTypes.string),
+  salesOrder: PropTypes.object,
 };
 
 // Dummy crew data for DA module Husbandry tab
@@ -554,6 +618,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
   ] : []);
   const cardColor = "#00368c"; // Fixed color for all buttons, effects, and backgrounds
   const [servicesSummary, setServicesSummary] = useState(null);
+  const [salesOrder, setSalesOrder] = useState(null);
 
   // Booking counts reported by each service tab from its own API fetch —
   // reflects actual saved requests, not just the crew picked in the pending form.
@@ -669,6 +734,19 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
       })
       .catch(() => {
         // Non-critical: dashboard badges just fall back to 0 counts.
+      });
+
+    salesOrderService
+      .getSoItemsByCall(callId)
+      .then((response) => {
+        if (cancelled) return;
+        const body = response?.data;
+        if (body?.status === "success" && body?.data) {
+          setSalesOrder(mapSalesOrderResponse(body.data));
+        }
+      })
+      .catch(() => {
+        // Non-critical: pricing panel shows its empty state.
       });
 
     return () => {
@@ -1159,6 +1237,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
           crewServiceCounts={crewServiceCounts}
           showLaunchHire={showLaunchHire}
           hiddenServiceIds={hiddenHusbandryMainTabIds}
+          salesOrder={salesOrder}
         />
       </div>
     );

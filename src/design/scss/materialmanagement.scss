@@ -1800,10 +1800,12 @@ body .material-management-modal {
 }
 
 // Services column scrolls on its own; the header stays pinned above the list.
+// `contain: size` keeps its long list from driving the row height, so the row
+// is sized by the insights columns and this panel stretches to match them.
 .husbandry-dashboard-services {
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 240px);
+  contain: size;
   min-height: 420px;
 }
 
@@ -2093,6 +2095,58 @@ body .material-management-modal {
   color: var(--text-primary);
 }
 
+// Sales Order pricing summary — sits under the Crew Management breakdown.
+.husbandry-dashboard-pricing-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.husbandry-dashboard-pricing-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.husbandry-dashboard-pricing-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+
+  dt {
+    font-weight: 400;
+    color: var(--text-secondary);
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  &.is-total {
+    margin-top: 4px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: color-mix(in srgb, #00368c 8%, var(--surface-primary));
+
+    dt,
+    dd {
+      font-weight: 700;
+      color: #00368c;
+    }
+
+    dd {
+      font-size: 15px;
+    }
+  }
+}
+
 .husbandry-dashboard-history {
   list-style: none;
   margin: 0;
@@ -2196,8 +2250,11 @@ body .material-management-modal {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  // Full-width row of its own here — nothing to match, so cap it instead.
   .husbandry-dashboard-services {
     grid-column: 1 / -1;
+    contain: none;
+    max-height: calc(100vh - 240px);
   }
 }
 
