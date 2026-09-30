@@ -3,6 +3,7 @@ import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX, FiMenu } from "react-icons/fi"
 import SearchableSelect from "../../components/form/SearchableSelect";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import TemplateFieldPreview from "./TemplateFieldPreview";
+import { buildFieldGrid, resolveFieldLayout } from "./templateFieldGrid";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import "../../design/css/common/CardForm.css";
@@ -55,6 +56,8 @@ const createBlankField = () => ({
     options: [],
     optionsSource: "manual",
     masterModule: "",
+    gridRow: null,
+    gridCol: null,
 });
 
 // Accepts either this file's own internal field shape (label/type/required/
@@ -73,6 +76,8 @@ const mapTemplateField = (f) => {
         options: rawOptions.map((opt) => (typeof opt === "string" ? opt : (opt?.option_label ?? ""))),
         optionsSource: f.optionsSource ?? (f.option_source === "master" ? "master" : "manual"),
         masterModule: f.masterModule ?? f.master_key ?? "",
+        gridRow: f.gridRow ?? f.grid_row ?? null,
+        gridCol: f.gridCol ?? f.grid_col ?? null,
     };
 };
 
@@ -349,6 +354,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     const [dragIndex, setDragIndex] = useState(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
+    const [dragOverCell, setDragOverCell] = useState(null);
     const [deleteFieldRequest, setDeleteFieldRequest] = useState(null);
 
     const billingEntityOptions = (billingEntities ?? []).map((be) => ({
@@ -633,6 +639,24 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const handleDragEnd = () => {
         setDragIndex(null);
         setDragOverIndex(null);
+        setDragOverCell(null);
+    };
+    // Preview-grid drop: moves the dragged field into the cell, swapping with
+    // whatever field already sits there. Every field's resolved cell is written
+    // back so auto-placed fields keep their spot from here on.
+    const handleDropOnCell = (row, col) => {
+        if (dragIndex === null) return;
+        updateFieldsScope((fields) => {
+            const layout = resolveFieldLayout(fields);
+            const targetIndex = layout.findIndex((c) => c.row === row && c.col === col);
+            return fields.map((f, i) => {
+                let cell = layout[i];
+                if (i === dragIndex) cell = { row, col };
+                else if (i === targetIndex) cell = layout[dragIndex];
+                return { ...f, gridRow: cell.row, gridCol: cell.col };
+            });
+        });
+        handleDragEnd();
     };
     const handleDrop = (dropIndex) => {
         if (dragIndex === null || dragIndex === dropIndex) {
@@ -681,12 +705,21 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         return payload;
     };
 
+    const buildFieldsPayload = (fields) => {
+        const layout = resolveFieldLayout(fields);
+        return fields.map((field, index) => ({
+            ...buildFieldPayload(field, index),
+            grid_row: layout[index].row,
+            grid_col: layout[index].col,
+        }));
+    };
+
     const buildTabPayload = (tab, tabIndex) => {
         const payload = {
             tab_label: tab.name,
             is_system: MAIN_TAB_NAMES.includes(tab.name) ? 1 : 0,
             display_order: tabIndex + 1,
-            fields: tab.subTabs?.length ? [] : tab.fields.map(buildFieldPayload),
+            fields: tab.subTabs?.length ? [] : buildFieldsPayload(tab.fields),
         };
         if (tab.tabId) payload.tab_id = Number(tab.tabId);
         if (tab.subTabs?.length) {
@@ -694,7 +727,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                 const subPayload = {
                     tab_label: sub.name,
                     display_order: subIndex + 1,
-                    fields: sub.fields.map(buildFieldPayload),
+                    fields: buildFieldsPayload(sub.fields),
                 };
                 if (sub.tabId) subPayload.tab_id = Number(sub.tabId);
                 return subPayload;
@@ -1069,22 +1102,38 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                     <div className="operation-right">
                                         {previewFields.length > 0 ? (
                                             <div className="ct-preview-custom-fields-grid">
-                                                {/* Shares drag state with the left field list (same order), so a
-                                                    field can be repositioned from either side. */}
-                                                {previewFields.map((field, index) => (
-                                                    <div
-                                                        key={field.id}
-                                                        className={`ctm-preview-drag-item ${dragIndex === index ? "is-dragging" : ""} ${dragOverIndex === index && dragIndex !== index ? "is-drag-over" : ""}`}
-                                                        draggable
-                                                        title="Drag to reposition"
-                                                        onDragStart={() => handleDragStart(index)}
-                                                        onDragOver={(e) => { e.preventDefault(); handleDragOver(index); }}
-                                                        onDrop={(e) => { e.preventDefault(); handleDrop(index); }}
-                                                        onDragEnd={handleDragEnd}
-                                                    >
-                                                        <TemplateFieldPreview field={field} />
-                                                    </div>
-                                                ))}
+                                                {/* Shares dragIndex with the left field list, so a field can be
+                                                    dragged from either side onto any cell, empty or occupied. */}
+                                                {buildFieldGrid(previewFields, dragIndex !== null ? 1 : 0).map(({ row, col, key, index }) => {
+                                                    const dropProps = {
+                                                        onDragOver: (e) => { e.preventDefault(); setDragOverCell(key); },
+                                                        onDrop: (e) => { e.preventDefault(); handleDropOnCell(row, col); },
+                                                    };
+                                                    const isOver = dragOverCell === key && dragIndex !== index;
+                                                    if (index === null) {
+                                                        return (
+                                                            <div
+                                                                key={key}
+                                                                className={`ctm-preview-empty-cell ${dragIndex !== null ? "is-drop-target" : ""} ${isOver ? "is-drag-over" : ""}`}
+                                                                {...dropProps}
+                                                            />
+                                                        );
+                                                    }
+                                                    const field = previewFields[index];
+                                                    return (
+                                                        <div
+                                                            key={field.id}
+                                                            className={`ctm-preview-drag-item ${dragIndex === index ? "is-dragging" : ""} ${isOver ? "is-drag-over" : ""}`}
+                                                            draggable
+                                                            title="Drag to reposition"
+                                                            onDragStart={() => handleDragStart(index)}
+                                                            onDragEnd={handleDragEnd}
+                                                            {...dropProps}
+                                                        >
+                                                            <TemplateFieldPreview field={field} />
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         ) : (
                                             <p className="ct-summary-no-fields">No fields yet — add fields on the left.</p>

@@ -434,6 +434,25 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   }
 }
 
+// A gap in the preview grid. Stretches to its row's height (min = one field)
+// so deliberate gaps keep their space; outlined only while a field is dragged.
+.ctm-preview-empty-cell {
+  align-self: stretch;
+  min-height: 62px;
+  border: 1.5px dashed transparent;
+  border-radius: 8px;
+  transition: border-color 0.15s, background 0.15s;
+
+  &.is-drop-target {
+    border-color: var(--border-primary);
+  }
+
+  &.is-drag-over {
+    border-color: #00368c;
+    background: rgba(0, 54, 140, 0.05);
+  }
+}
+
 // Two stacked rows rather than one wide row — this now lives in the builder's
 // fixed 420px left panel (ct-split-left), which is too narrow for a single
 // row of label/type/required/delete/add controls.

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FiSearch, FiChevronRight, FiEdit2, FiTrash2, FiPlus, FiArrowLeft } from "react-icons/fi";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import { TemplateBuilderBody, buildTabsFromTemplate } from "./CustomTemplateBuilderModal";
+import { buildFieldGrid } from "./templateFieldGrid";
 import TemplateFieldPreview from "./TemplateFieldPreview";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import "../../design/css/common/CardForm.css";
@@ -255,8 +256,10 @@ function CustomTemplateListModal({ show, onClose }) {
                                                         <div className="operation-right">
                                                             {fieldsToShow.length > 0 ? (
                                                                 <div className="ct-preview-custom-fields-grid">
-                                                                    {fieldsToShow.map((field, idx) => (
-                                                                        <TemplateFieldPreview key={idx} field={field} />
+                                                                    {buildFieldGrid(fieldsToShow).map(({ key, index }) => (
+                                                                        index === null
+                                                                            ? <div key={key} className="ctm-preview-empty-cell" />
+                                                                            : <TemplateFieldPreview key={key} field={fieldsToShow[index]} />
                                                                     ))}
                                                                 </div>
                                                             ) : (
