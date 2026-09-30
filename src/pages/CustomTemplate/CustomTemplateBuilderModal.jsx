@@ -233,7 +233,7 @@ function OptionsSourceEditor({ field, onSetSource, onSetMasterModule, onAddOptio
     );
 }
 
-function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, optionsFieldTypes, dropdownTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddField, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
+function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, optionsFieldTypes, dropdownTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
     const showOptionsSource = field.type === dropdownTypeKey;
     const showManualOptions = !showOptionsSource && optionsFieldTypes.has(field.type);
     return (
@@ -264,15 +264,6 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, optionsF
                         onClick={() => onRequestDelete(field.id)}
                     >
                         <FiTrash2 size={15} />
-                    </button>
-                    <button
-                        type="button"
-                        className="ctm-field-add-btn"
-                        aria-label="Add field"
-                        title="Add field"
-                        onClick={() => onAddField(index)}
-                    >
-                        <FiPlus size={15} />
                     </button>
                 </div>
                 <div className="ctm-field-row-sub">
@@ -554,15 +545,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     };
 
     const handleAddField = () => {
-        updateFieldsScope((fields) => [...fields, createBlankField()]);
-    };
-
-    const handleAddFieldAfter = (index) => {
-        updateFieldsScope((fields) => {
-            const next = [...fields];
-            next.splice(index + 1, 0, createBlankField());
-            return next;
-        });
+        updateFieldsScope((fields) => [createBlankField(), ...fields]);
     };
 
     const handleUpdateField = (fieldId, key, value) => {
@@ -637,6 +620,16 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     const handleDragStart = (index) => setDragIndex(index);
     const handleDragOver = (index) => setDragOverIndex(index);
+    // Native HTML5 drag doesn't auto-scroll inner overflow containers, so nudge
+    // the scroll area when a dragged field nears its top/bottom edge.
+    const handleScrollAreaDragOver = (e) => {
+        if (dragIndex === null) return;
+        const area = e.currentTarget;
+        const { top, bottom } = area.getBoundingClientRect();
+        const edge = 60;
+        if (e.clientY > bottom - edge) area.scrollTop += 12;
+        else if (e.clientY < top + edge) area.scrollTop -= 12;
+    };
     const handleDragEnd = () => {
         setDragIndex(null);
         setDragOverIndex(null);
@@ -737,7 +730,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         <>
             <div className="ct-split-body">
             <div className="ct-split-left">
-            <div className="ct-split-scroll-area">
+            <div className="ct-split-scroll-area" onDragOver={handleScrollAreaDragOver}>
             <div className="ctm-body">
                         <div className="ctm-top-grid">
                             <div className="cf-field">
@@ -981,6 +974,11 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
                         <div className="ctm-fields-header">
                             <p className="ctm-section-title" style={{ margin: 0 }}>Fields</p>
+                            {activeFields.length > 0 && (
+                                <button type="button" className="ctm-add-field-btn ctm-add-field-btn--sm" onClick={handleAddField} aria-label="Add field" title="Add field">
+                                    <FiPlus size={14} />
+                                </button>
+                            )}
                         </div>
 
                         {activeFields.length === 0 && (
@@ -1011,7 +1009,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         onDragEnd={handleDragEnd}
                                         onUpdate={handleUpdateField}
                                         onRequestDelete={handleRequestDeleteField}
-                                        onAddField={handleAddFieldAfter}
                                         onAddOption={handleAddOption}
                                         onUpdateOption={handleUpdateOption}
                                         onRemoveOption={handleRemoveOption}
@@ -1072,8 +1069,21 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                     <div className="operation-right">
                                         {previewFields.length > 0 ? (
                                             <div className="ct-preview-custom-fields-grid">
-                                                {previewFields.map((field) => (
-                                                    <TemplateFieldPreview key={field.id} field={field} />
+                                                {/* Shares drag state with the left field list (same order), so a
+                                                    field can be repositioned from either side. */}
+                                                {previewFields.map((field, index) => (
+                                                    <div
+                                                        key={field.id}
+                                                        className={`ctm-preview-drag-item ${dragIndex === index ? "is-dragging" : ""} ${dragOverIndex === index && dragIndex !== index ? "is-drag-over" : ""}`}
+                                                        draggable
+                                                        title="Drag to reposition"
+                                                        onDragStart={() => handleDragStart(index)}
+                                                        onDragOver={(e) => { e.preventDefault(); handleDragOver(index); }}
+                                                        onDrop={(e) => { e.preventDefault(); handleDrop(index); }}
+                                                        onDragEnd={handleDragEnd}
+                                                    >
+                                                        <TemplateFieldPreview field={field} />
+                                                    </div>
                                                 ))}
                                             </div>
                                         ) : (

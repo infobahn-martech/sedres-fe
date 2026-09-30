@@ -374,6 +374,11 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
     background: #002a6e;
     box-shadow: 0 2px 8px rgba(0, 54, 140, 0.25);
   }
+
+  &--sm {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 .ctm-fields-list {
@@ -396,6 +401,36 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
 
   &.is-drag-over {
     border-color: #00368c;
+  }
+}
+
+// Draggable cell wrapping each live-preview field. Children ignore pointer
+// events so grabbing the input area starts a drag instead of focusing it.
+.ctm-preview-drag-item {
+  min-width: 0;
+  padding: 4px;
+  margin: -4px;
+  border: 1.5px dashed transparent;
+  border-radius: 8px;
+  cursor: grab;
+  transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+
+  > * {
+    pointer-events: none;
+  }
+
+  &:hover {
+    border-color: var(--border-primary);
+  }
+
+  &.is-dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+  }
+
+  &.is-drag-over {
+    border-color: #00368c;
+    background: rgba(0, 54, 140, 0.05);
   }
 }
 
@@ -564,24 +599,6 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   }
 }
 
-.ctm-field-add-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 4px;
-  flex-shrink: 0;
-  transition: color 0.15s, background 0.15s;
-
-  &:hover {
-    color: #00368c;
-    background: rgba(0, 54, 140, 0.08);
-  }
-}
 
 // ── Options list (Dropdown / Radio Button field types) ────────────────────────
 // margin-left matches .ctm-field-row-sub's padding-left so the options box
