@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { FiChevronDown } from "react-icons/fi";
 import CardItem from "../cards/CardItem";
@@ -44,6 +44,18 @@ export default function BatchGroup({
      The tick is read-only: it reflects the backend's se_review, not a user choice. */
   const seApprovedByCardId = useBatchMoveStore((state) => state.seApprovedByCardId);
   const isSeReviewBatch = !isUngrouped && isAwaitingSeColumn;
+  /* Once the batch's SE upload is done, "Review and Move" replaces "Upload SE Approval". */
+  const batchId = useBatchMoveStore((state) => state.batchIdByNumber[batch.title]);
+  const isSeUploadDone = useBatchMoveStore((state) => Boolean(state.seReviewByBatchId[batchId]));
+  const openSeReviewMoveModal = useBatchMoveStore((state) => state.openSeReviewMoveModal);
+  const loadSeReview = useBatchMoveStore((state) => state.loadSeReview);
+
+  /* The SE upload's result only lives in memory, so after a reload it is read back per batch. */
+  useEffect(() => {
+    if (!isSeReviewBatch || batchId == null || isSeUploadDone) return;
+    loadSeReview(batchId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSeReviewBatch, batchId, loadSeReview]);
 
   const getIsSelectedForAction = (card) => {
     if (isSendSeBatch) return !seUntickedCardIds.includes(card.id);
@@ -86,7 +98,15 @@ export default function BatchGroup({
             <span className="batch-group__title">{batch.title}</span>
           </button>
 
-          {isAwaitingSeColumn ? (
+          {isAwaitingSeColumn && isSeUploadDone ? (
+            <button
+              type="button"
+              className="batch-group__action"
+              onClick={() => openSeReviewMoveModal({ ...batch, batchId })}
+            >
+              Review and Move
+            </button>
+          ) : isAwaitingSeColumn ? (
             <button
               type="button"
               className="batch-group__action"

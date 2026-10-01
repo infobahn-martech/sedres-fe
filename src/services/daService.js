@@ -95,6 +95,21 @@ const sendSeCreationEmail = (formData) =>
   Gateway.post('/da/send_se_creation_email', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+/** @param {string|number} batchId
+ * @returns {Promise<{ data: { status: 'success', data: { batch_id: number, batch_number: string,
+ *   cards: Array<{ call_id: number, card_id: number, approved: boolean, sales_orders: Array<{
+ *   sales_order_id: number, sales_order_no: string, approved: boolean, wo_number: string|null,
+ *   se_numbers: string[], project_split: string|null }> }> } } | { status: 'error', message: string } }>}
+ * The batch's sales orders with their SE approval, WO, SE numbers and project split. */
+const getSeApprovalLines = (batchId) => Gateway.get(`/da/se_approval_lines/${batchId}`);
+/** @param {{ batch_id: number, cards: Array<{ call_id: number, card_id: number, sales_orders: Array<{
+ *   sales_order_no: string, wo_number: string|null, se_numbers: string[], project_split: string|null }> }> }} payload
+ *   - the batch's SE-approved cards only.
+ * @returns {Promise<{ data: { status: 'success', data: { moved_to_se_received: Array<{ call_id: number,
+ *   card_id: number }>, returned_to_backlog: Array<{ call_id: number, card_id: number }> } }
+ *   | { status: 'error', message: string } }>}
+ * Moves the sent cards to "SE Received"; the batch's other cards go back to Backlog. */
+const confirmSeApproval = (payload) => Gateway.post('/da/confirm_se_approval', payload);
 
 export default {
   getDaDetails,
@@ -123,4 +138,6 @@ export default {
   getSeCreationEmailDraft,
   uploadSeApproval,
   sendSeCreationEmail,
+  getSeApprovalLines,
+  confirmSeApproval,
 };
