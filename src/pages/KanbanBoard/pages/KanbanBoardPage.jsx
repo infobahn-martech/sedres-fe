@@ -458,6 +458,7 @@ export default function KanbanBoardPage() {
 
   const seDocumentUploadedByBatchId = useBatchMoveStore((state) => state.seDocumentUploadedByBatchId);
   const markSeDocumentUploaded = useBatchMoveStore((state) => state.markSeDocumentUploaded);
+  const setSeReviewCards = useBatchMoveStore((state) => state.setSeReviewCards);
   const selectedSeApprovalBatchId = batchIdByNumber[selectedSeApprovalBatch?.title];
 
   /* SE excel sheet is required on a batch's first upload; the approval email can follow later. */
@@ -507,6 +508,7 @@ export default function KanbanBoardPage() {
           return;
         }
         if (seDocument?.[0]) markSeDocumentUploaded(batchId);
+        setSeReviewCards(data.data?.se_review?.cards);
         notify(data.message || "SE approval uploaded successfully", "success");
         handleCloseSeApprovalUpload();
         refetchBoard?.();
@@ -514,7 +516,13 @@ export default function KanbanBoardPage() {
         setIsUploadingSeApproval(false);
       }
     },
-    [selectedSeApprovalBatchId, markSeDocumentUploaded, handleCloseSeApprovalUpload, refetchBoard]
+    [
+      selectedSeApprovalBatchId,
+      markSeDocumentUploaded,
+      setSeReviewCards,
+      handleCloseSeApprovalUpload,
+      refetchBoard,
+    ]
   );
 
   /* "Upload Invoice" on an "SE Received" batch header opens the upload modal for that batch.

@@ -2,6 +2,7 @@ import { useState } from "react";
 import PropTypes from "prop-types";
 import { FiChevronDown } from "react-icons/fi";
 import CardItem from "../cards/CardItem";
+import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import "../../../../design/scss/pages/kanban-board/batch-group.scss";
 
 const noop = () => {};
@@ -39,6 +40,22 @@ export default function BatchGroup({
      batch, apart from the board-wide selection used to create batches in Backlog. */
   const isSendSeBatch = !isUngrouped && !isAwaitingSeColumn && !isSeReceivedColumn;
   const [seUntickedCardIds, setSeUntickedCardIds] = useState([]);
+  /* "Awaiting SE" batches tick (and turn green) the cards the uploaded SE approval covers.
+     The tick is read-only: it reflects the backend's se_review, not a user choice. */
+  const seApprovedByCardId = useBatchMoveStore((state) => state.seApprovedByCardId);
+  const isSeReviewBatch = !isUngrouped && isAwaitingSeColumn;
+
+  const getIsSelectedForAction = (card) => {
+    if (isSendSeBatch) return !seUntickedCardIds.includes(card.id);
+    if (isSeReviewBatch) return Boolean(seApprovedByCardId[String(card.id)]);
+    return selectedActionCardIds.includes(card.id);
+  };
+
+  const getToggleSelectForAction = () => {
+    if (isSendSeBatch) return toggleSeCardTick;
+    if (isSeReviewBatch) return noop;
+    return onToggleCardSelect;
+  };
 
   const toggleSeCardTick = (card) =>
     setSeUntickedCardIds((prev) =>
@@ -55,7 +72,7 @@ export default function BatchGroup({
     <div
       className={`batch-group ${isUngrouped ? "batch-group--loose" : ""} ${
         isExpanded ? "" : "batch-group--collapsed"
-      }`}
+      } ${isSeReviewBatch ? "batch-group--se-review" : ""}`}
     >
       {!isUngrouped && (
         <div className="batch-group__header">
@@ -111,12 +128,8 @@ export default function BatchGroup({
               columnTitle={columnTitle}
               workflowTitle={workflowTitle}
               fixedDimensions={{ width: cardWidth }}
-              isSelectedForAction={
-                isSendSeBatch
-                  ? !seUntickedCardIds.includes(card.id)
-                  : selectedActionCardIds.includes(card.id)
-              }
-              onToggleSelectForAction={isSendSeBatch ? toggleSeCardTick : onToggleCardSelect}
+              isSelectedForAction={getIsSelectedForAction(card)}
+              onToggleSelectForAction={getToggleSelectForAction()}
             />
           ))}
         </div>

@@ -16,6 +16,18 @@ const useBatchMoveStore = create((set) => ({
   batchIdByNumber: {},
   /** { [batchId]: true } — batches whose SE document is already uploaded, so later uploads may skip it. */
   seDocumentUploadedByBatchId: {},
+  /** { [cardId]: bool } — per-card SE approval from da/upload_se_approval's se_review.cards. */
+  seApprovedByCardId: {},
+
+  setSeReviewCards: (cards) =>
+    set((state) => {
+      const seApprovedByCardId = { ...state.seApprovedByCardId };
+      (Array.isArray(cards) ? cards : []).forEach((card) => {
+        if (card?.card_id == null) return;
+        seApprovedByCardId[String(card.card_id)] = Boolean(card.approved);
+      });
+      return { seApprovedByCardId };
+    }),
 
   markSeDocumentUploaded: (batchId) =>
     set((state) => ({
@@ -52,7 +64,13 @@ const useBatchMoveStore = create((set) => ({
     }),
 
   clearMoves: () =>
-    set({ columnByCardId: {}, batchByCardId: {}, batchIdByNumber: {}, seDocumentUploadedByBatchId: {} }),
+    set({
+      columnByCardId: {},
+      batchByCardId: {},
+      batchIdByNumber: {},
+      seDocumentUploadedByBatchId: {},
+      seApprovedByCardId: {},
+    }),
 }));
 
 export default useBatchMoveStore;
