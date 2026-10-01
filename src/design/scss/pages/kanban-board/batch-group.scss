@@ -108,12 +108,9 @@
   align-items: start;
 }
 
-/* "Awaiting SE" batch: cards approved in the uploaded SE approval show green with a read-only tick */
+/* "Awaiting SE" batch: cards approved in the uploaded SE approval show green with a tick the user
+   can untick (back to a plain card) */
 .batch-group--se-review {
-  .kanban-card-select-toggle {
-    cursor: default;
-  }
-
   .kanban-card.kanban-card--selected-for-action {
     border-color: #22c55e;
     background: linear-gradient(to bottom, #dcfce7 0%, #f0fdf4 100%);

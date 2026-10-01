@@ -39,6 +39,9 @@ const useBatchMoveStore = create((set, get) => ({
   seDocumentUploadedByBatchId: {},
   /** { [cardId]: bool } — per-card SE approval from da/upload_se_approval's se_review.cards. */
   seApprovedByCardId: {},
+  /** { [cardId]: true } — SE-approved cards the user unticked (the SE review is AI-detected and can be
+   * wrong); they show as plain cards and are left out of the confirm. */
+  seUntickedByCardId: {},
   /** { [batchId]: se_review } — da/upload_se_approval's se_review; its presence means the SE upload is done. */
   seReviewByBatchId: {},
   showSeReviewMoveModal: false,
@@ -47,18 +50,32 @@ const useBatchMoveStore = create((set, get) => ({
   isSeReviewLoading: false,
   isConfirmingSeReview: false,
 
-  setSeReview: (seReview) =>
+  /** `resetUnticks` drops the user's unticks for the batch's cards, for a fresh SE upload. */
+  setSeReview: (seReview, { resetUnticks = false } = {}) =>
     set((state) => {
       const seApprovedByCardId = { ...state.seApprovedByCardId };
+      const seUntickedByCardId = { ...state.seUntickedByCardId };
       (Array.isArray(seReview?.cards) ? seReview.cards : []).forEach((card) => {
         if (card?.card_id == null) return;
         seApprovedByCardId[String(card.card_id)] = Boolean(card.approved);
+        if (resetUnticks) delete seUntickedByCardId[String(card.card_id)];
       });
       const seReviewByBatchId =
         seReview?.batch_id != null
           ? { ...state.seReviewByBatchId, [seReview.batch_id]: seReview }
           : state.seReviewByBatchId;
-      return { seApprovedByCardId, seReviewByBatchId };
+      return { seApprovedByCardId, seUntickedByCardId, seReviewByBatchId };
+    }),
+
+  /** Unticks an SE-approved card, or ticks it back. Cards the SE review did not approve stay unticked. */
+  toggleSeReviewCard: (cardId) =>
+    set((state) => {
+      const key = String(cardId);
+      if (!state.seApprovedByCardId[key]) return state;
+      const seUntickedByCardId = { ...state.seUntickedByCardId };
+      if (seUntickedByCardId[key]) delete seUntickedByCardId[key];
+      else seUntickedByCardId[key] = true;
+      return { seUntickedByCardId };
     }),
 
   /** Refreshes a batch's se_review from da/se_approval_lines. Returns the error message on failure. */
@@ -83,9 +100,10 @@ const useBatchMoveStore = create((set, get) => ({
   /** Sends the batch's SE-approved cards (with their approved SOs) to da/confirm_se_approval.
    * Returns { errorMessage } on failure, or { result } with moved_to_se_received / returned_to_backlog. */
   confirmSeReview: async (batchId) => {
-    const seReview = get().seReviewByBatchId[batchId];
+    const { seReviewByBatchId, seUntickedByCardId } = get();
+    const seReview = seReviewByBatchId[batchId];
     const cards = (seReview?.cards ?? [])
-      .filter((card) => card?.approved)
+      .filter((card) => card?.approved && !seUntickedByCardId[String(card.card_id)])
       .map((card) => ({
         call_id: card.call_id,
         card_id: card.card_id,
@@ -115,10 +133,14 @@ const useBatchMoveStore = create((set, get) => ({
          let the board draw them where it now says they are. */
       set((state) => {
         const columnByCardId = { ...state.columnByCardId };
+        const seUntickedByCardId = { ...state.seUntickedByCardId };
         const seReviewByBatchId = { ...state.seReviewByBatchId };
-        (seReview?.cards ?? []).forEach((card) => delete columnByCardId[String(card?.card_id)]);
+        (seReview?.cards ?? []).forEach((card) => {
+          delete columnByCardId[String(card?.card_id)];
+          delete seUntickedByCardId[String(card?.card_id)];
+        });
         delete seReviewByBatchId[batchId];
-        return { columnByCardId, seReviewByBatchId };
+        return { columnByCardId, seUntickedByCardId, seReviewByBatchId };
       });
       return { result: data.data };
     } finally {
@@ -171,6 +193,7 @@ const useBatchMoveStore = create((set, get) => ({
       batchIdByNumber: {},
       seDocumentUploadedByBatchId: {},
       seApprovedByCardId: {},
+      seUntickedByCardId: {},
       seReviewByBatchId: {},
       showSeReviewMoveModal: false,
       selectedSeReviewBatch: null,

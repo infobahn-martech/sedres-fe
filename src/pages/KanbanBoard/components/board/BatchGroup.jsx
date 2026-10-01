@@ -40,9 +40,11 @@ export default function BatchGroup({
      batch, apart from the board-wide selection used to create batches in Backlog. */
   const isSendSeBatch = !isUngrouped && !isAwaitingSeColumn && !isSeReceivedColumn;
   const [seUntickedCardIds, setSeUntickedCardIds] = useState([]);
-  /* "Awaiting SE" batches tick (and turn green) the cards the uploaded SE approval covers.
-     The tick is read-only: it reflects the backend's se_review, not a user choice. */
+  /* "Awaiting SE" batches tick (and turn green) the cards the uploaded SE approval covers. The SE
+     review is AI-detected, so the user may untick a wrongly approved card back to a plain card. */
   const seApprovedByCardId = useBatchMoveStore((state) => state.seApprovedByCardId);
+  const seUntickedByCardId = useBatchMoveStore((state) => state.seUntickedByCardId);
+  const toggleSeReviewCard = useBatchMoveStore((state) => state.toggleSeReviewCard);
   const isSeReviewBatch = !isUngrouped && isAwaitingSeColumn;
   /* Once the batch's SE upload is done, "Review and Move" replaces "Upload SE Approval". */
   const batchId = useBatchMoveStore((state) => state.batchIdByNumber[batch.title]);
@@ -59,13 +61,15 @@ export default function BatchGroup({
 
   const getIsSelectedForAction = (card) => {
     if (isSendSeBatch) return !seUntickedCardIds.includes(card.id);
-    if (isSeReviewBatch) return Boolean(seApprovedByCardId[String(card.id)]);
+    if (isSeReviewBatch) {
+      return Boolean(seApprovedByCardId[String(card.id)]) && !seUntickedByCardId[String(card.id)];
+    }
     return selectedActionCardIds.includes(card.id);
   };
 
   const getToggleSelectForAction = () => {
     if (isSendSeBatch) return toggleSeCardTick;
-    if (isSeReviewBatch) return noop;
+    if (isSeReviewBatch) return (card) => toggleSeReviewCard(card.id);
     return onToggleCardSelect;
   };
 

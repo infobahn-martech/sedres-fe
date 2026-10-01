@@ -509,7 +509,7 @@ export default function KanbanBoardPage() {
           return;
         }
         if (seDocument?.[0]) markSeDocumentUploaded(batchId);
-        setSeReview(data.data?.se_review);
+        setSeReview(data.data?.se_review, { resetUnticks: true });
         notify(data.message || "SE approval uploaded successfully", "success");
         handleCloseSeApprovalUpload();
         refetchBoard?.();
