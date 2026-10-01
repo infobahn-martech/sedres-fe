@@ -31,7 +31,7 @@ function CommonFilter({
   }
 
   return (
-    <div className="collapse show" id="filtersInputs" style={{}}>
+    <div className="collapse show" id="filtersInputs" >
       <div className="filters-inputs-wrp">
         <div className="row w-100">
           {filters.map((filter) => (
