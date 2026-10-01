@@ -988,6 +988,20 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
     // Keep booked services when going back
   }, []);
 
+  // Crew sub-services with their own form — every other Crew Management
+  // subtab falls back to the dashboard, which renders its own back link.
+  const isCrewServiceView =
+    activeMainTab === MAIN_TABS.CREW_MANAGEMENT &&
+    [
+      CREW_MANAGEMENT_SUBTABS.TRANSPORT,
+      CREW_MANAGEMENT_SUBTABS.CG_PASS,
+      CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS,
+      CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE,
+      CREW_MANAGEMENT_SUBTABS.HOTEL,
+      CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE,
+    ].includes(activeSubTab);
+  const isCrewDashboardView = activeMainTab === MAIN_TABS.CREW_MANAGEMENT && !isCrewServiceView;
+
   const renderCrewManagementContent = () => {
     switch (activeSubTab) {
       case CREW_MANAGEMENT_SUBTABS.CREW:
@@ -1258,7 +1272,6 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
             onNavigateToTab={handleSidebarSubTabNavigate}
             selectedActionTab={selectedActionTab}
             selectedServices={selectedServices}
-            onBackToServiceSelection={handleBackToServiceSelection}
             cardColor={cardColor}
             crewCount={formValues?.crewCount}
             materialManagementVisibleSubTabIds={materialManagementVisibleSubTabIds}
@@ -1275,6 +1288,19 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
           />
         )}
         <div className="operation-right">
+          {!isCrewDashboardView && (
+            <button
+              type="button"
+              className="husbandry-back-link-small husbandry-content-back-link"
+              onClick={handleBackToServiceSelection}
+              style={{ "--card-color": cardColor }}
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span>What services do you need?</span>
+            </button>
+          )}
           {activeMainTab === "LAUNCH_HIRE" && renderLaunchHireContent()}
           {activeMainTab === MAIN_TABS.CREW_MANAGEMENT &&
             renderCrewManagementContent()}

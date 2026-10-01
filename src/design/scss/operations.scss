@@ -10152,3 +10152,18 @@ a.operation-task-document-name--link {
     padding-left: 14px;
   }
 }
+// Back link rendered above each Husbandry service view (Husbandry.jsx) —
+// flush-left variant of the sidebar back link.
+.husbandry-content-back-link {
+  align-self: flex-start;
+  width: auto;
+  flex-shrink: 0;
+  padding: 2px 0;
+  // .operation-right has no padding — match the service cards' own inset.
+  margin: 12px 32px 0;
+
+  &:hover {
+    background: transparent;
+    text-decoration: underline;
+  }
+}
