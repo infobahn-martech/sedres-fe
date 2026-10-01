@@ -114,7 +114,7 @@
 
   const TRANSPORT_ACCENT = SERVICE_ACCENT[CREW_MANAGEMENT_SUBTABS.TRANSPORT];
 
-  const TransportContent = ({ formValues, handleChange, cardColor, onRequestCountChange, onGoToCrew }) => {
+  const TransportContent = ({ formValues, handleChange, cardColor, onRequestCountChange, onGoToCrew, crewUploadMode = false }) => {
     const requestEmailInputRef = useRef(null);
     const documentsInputRef = useRef(null);
     const [isDraggingEmail, setIsDraggingEmail] = useState(false);
@@ -448,6 +448,7 @@
                     onChange={(ids) => handleChange("selectedCrew")({ target: { value: ids } })}
                     accent={TRANSPORT_ACCENT}
                     onGoToCrew={onGoToCrew}
+                    uploadMode={crewUploadMode}
                   />
 
                   <FormGroup icon="calendar" label="Pickup Date Time" accent={TRANSPORT_ACCENT}>
@@ -605,6 +606,7 @@
     cardColor: PropTypes.string,
     onRequestCountChange: PropTypes.func,
     onGoToCrew: PropTypes.func,
+    crewUploadMode: PropTypes.bool,
   };
 
   export default TransportContent;

@@ -608,6 +608,10 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
   );
   const [selectedActionTab, setSelectedActionTab] = useState(null);
   const [isLaunchHireMode, setIsLaunchHireMode] = useState(false);
+  // True when a crew service (Transport, Hotel, ...) was opened straight from
+  // the service overview rather than from the Crew Management dashboard —
+  // its form then uploads a crew list instead of selecting existing crew.
+  const [crewServiceFromOverview, setCrewServiceFromOverview] = useState(false);
   // Initialize with dummy booked services for view-only mode (only for DA routes)
   const [bookedServices, setBookedServices] = useState(isDAModule ? [
     { id: MAIN_TABS.CREW_MANAGEMENT, status: "In Progress", subService: "Transport" },
@@ -792,6 +796,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
     // Crew Management sub-service (Zawil Pass, CG Pass, Transport, Hotel,
     // Medical) — open Crew Management directly on that service's form.
     if (crewDirectService) {
+      setCrewServiceFromOverview(true);
       setIsLaunchHireMode(false);
       setSelectedServices([MAIN_TABS.CREW_MANAGEMENT]);
       setActiveMainTab(MAIN_TABS.CREW_MANAGEMENT);
@@ -895,11 +900,13 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
   }, [activeMainTab]);
 
   const handleGoToCrewTab = useCallback(() => {
+    setCrewServiceFromOverview(false);
     handleSubTabChange(CREW_MANAGEMENT_SUBTABS.CREW);
   }, [handleSubTabChange]);
 
   // Handle navigation from CrewContent when crew is selected and action is chosen
   const handleNavigateToTab = useCallback((tabName) => {
+    setCrewServiceFromOverview(false);
     // Ensure we're on the Crew Management main tab
     if (activeMainTab !== MAIN_TABS.CREW_MANAGEMENT) {
       setActiveMainTab(MAIN_TABS.CREW_MANAGEMENT);
@@ -1024,6 +1031,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
               cardColor={cardColor}
               onRequestCountChange={handleTransportRequestCount}
               onGoToCrew={handleGoToCrewTab}
+              crewUploadMode={crewServiceFromOverview}
             />
           </>
         );
@@ -1036,6 +1044,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
             card={card}
             onRequestCountChange={handleCgPassRequestCount}
             onGoToCrew={handleGoToCrewTab}
+              crewUploadMode={crewServiceFromOverview}
           />
         );
       case CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS:
@@ -1047,6 +1056,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
             card={card}
             onRequestCountChange={handleZawilPassRequestCount}
             onGoToCrew={handleGoToCrewTab}
+              crewUploadMode={crewServiceFromOverview}
           />
         );
       case CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE:
@@ -1068,6 +1078,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
               cardColor={cardColor}
               onRequestCountChange={handleHotelRequestCount}
               onGoToCrew={handleGoToCrewTab}
+              crewUploadMode={crewServiceFromOverview}
             />
           </>
         );
@@ -1080,6 +1091,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
               cardColor={cardColor}
               onRequestCountChange={handleMedicalRequestCount}
               onGoToCrew={handleGoToCrewTab}
+              crewUploadMode={crewServiceFromOverview}
             />
           </>
         );
@@ -1263,7 +1275,8 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
   return (
     <div className="operation-wrapper husbandry-wrapper" style={{ "--card-color": cardColor }}>
       <div className="operation-content-container">
-        {activeMainTab !== MAIN_TABS.CREW_MANAGEMENT && (
+        {/* Sidebar only where it switches sub-tabs; every other service is full width. */}
+        {(activeMainTab === MAIN_TABS.MATERIAL_MANAGEMENT || activeMainTab === "LAUNCH_HIRE") && (
           <HusbandryTabs
             activeMainTab={activeMainTab}
             activeSubTab={activeSubTab}
@@ -1292,13 +1305,15 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
             <button
               type="button"
               className="husbandry-back-link-small husbandry-content-back-link"
-              onClick={handleBackToServiceSelection}
+              onClick={isCrewServiceView && !crewServiceFromOverview ? handleGoToCrewTab : handleBackToServiceSelection}
               style={{ "--card-color": cardColor }}
             >
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <span>What services do you need?</span>
+              <span>
+                {isCrewServiceView && !crewServiceFromOverview ? "Back to Crew Management" : "What services do you need?"}
+              </span>
             </button>
           )}
           {activeMainTab === "LAUNCH_HIRE" && renderLaunchHireContent()}

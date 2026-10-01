@@ -3965,3 +3965,18 @@
     }
   }
 }
+
+// Crew List upload mode of CrewSelectionField (service opened from the
+// service overview) — upload box spans the field, summary line below.
+.cf-field-full .crew-list-upload-box {
+  width: 100%;
+}
+
+.husb-crew-upload-summary {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
