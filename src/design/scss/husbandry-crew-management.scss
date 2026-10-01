@@ -2426,6 +2426,18 @@
 
 .crew-mgmt-hero-text {
   min-width: 0;
+
+  // Sidebar back-link style, re-aligned flush with the title.
+  .husbandry-back-link-small {
+    width: auto;
+    padding: 2px 0;
+    margin: -6px 0 2px;
+
+    &:hover {
+      background: transparent;
+      text-decoration: underline;
+    }
+  }
 }
 
 .crew-mgmt-hero-middle {

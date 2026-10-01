@@ -191,7 +191,7 @@ ServiceStatusIcon.propTypes = {
 // opens a "Select Crew" popup fed by the crew list already uploaded here;
 // on submit the selection is saved to the matching service field and the
 // existing service form is opened via onNavigateToTab.
-const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNavigateToTab }) => {
+const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNavigateToTab, onBackToServiceSelection }) => {
   const { hasPermission, hasSubmodule } = usePermissions();
   // KANBAN_CARD > CREW_MANAGEMENT per-action gates — absence of the module/
   // submodule/action in the permissions response means false (deny by default).
@@ -1132,6 +1132,17 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
           <div className="crew-mgmt-hero-row">
             <div className="crew-mgmt-hero-left">
               <div className="crew-mgmt-hero-text">
+                {onBackToServiceSelection && (
+                  <button
+                    type="button"
+                    className="husbandry-back-link-small"
+                    onClick={onBackToServiceSelection}
+                    style={{ "--card-color": cardColor }}
+                  >
+                    <FiChevronLeft size={12} aria-hidden="true" />
+                    <span>What services do you need?</span>
+                  </button>
+                )}
                 <h2 className="husbandry-service-selection-title">Crew Management</h2>
               </div>
 
@@ -1560,6 +1571,7 @@ CrewManagementDashboard.propTypes = {
   handleChange: PropTypes.func.isRequired,
   cardColor: PropTypes.string,
   onNavigateToTab: PropTypes.func,
+  onBackToServiceSelection: PropTypes.func,
 };
 
 export default CrewManagementDashboard;

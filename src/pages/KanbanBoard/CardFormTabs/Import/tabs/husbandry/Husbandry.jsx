@@ -998,6 +998,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
             cardColor={cardColor}
             onNavigateToTab={handleNavigateToTab}
             launchHireOnly={isLaunchHireMode}
+            onBackToServiceSelection={handleBackToServiceSelection}
           />
         );
       case CREW_MANAGEMENT_SUBTABS.TRANSPORT:
@@ -1078,6 +1079,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
             cardColor={cardColor}
             onNavigateToTab={handleNavigateToTab}
             launchHireOnly={isLaunchHireMode}
+            onBackToServiceSelection={handleBackToServiceSelection}
           />
         );
       default:
@@ -1088,6 +1090,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
             cardColor={cardColor}
             onNavigateToTab={handleNavigateToTab}
             launchHireOnly={isLaunchHireMode}
+            onBackToServiceSelection={handleBackToServiceSelection}
           />
         );
     }
@@ -1246,29 +1249,31 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
   return (
     <div className="operation-wrapper husbandry-wrapper" style={{ "--card-color": cardColor }}>
       <div className="operation-content-container">
-        <HusbandryTabs
-          activeMainTab={activeMainTab}
-          activeSubTab={activeSubTab}
-          onMainTabChange={handleMainTabChange}
-          onSubTabChange={handleSubTabChange}
-          onNavigateToTab={handleSidebarSubTabNavigate}
-          selectedActionTab={selectedActionTab}
-          selectedServices={selectedServices}
-          onBackToServiceSelection={handleBackToServiceSelection}
-          cardColor={cardColor}
-          crewCount={formValues?.crewCount}
-          materialManagementVisibleSubTabIds={materialManagementVisibleSubTabIds}
-          hiddenMainTabIds={hiddenHusbandryMainTabIds}
-          subTabCounts={{
-            [MATERIAL_MANAGEMENT_SUBTABS.INBOUND_ORDERS]: inboundOrdersCount,
-            [MATERIAL_MANAGEMENT_SUBTABS.LANDING_NOTE]: landingNotesCount,
-            [MATERIAL_MANAGEMENT_SUBTABS.DISPATCH_NOTE]: dispatchNotesCount,
-            [LAUNCH_HIRE_SUBTABS.INBOUND_ORDERS]: inboundOrdersCount,
-            ...crewServiceCounts,
-            crewChange: selectedCrewCount("crewChangeSelectedCrew"),
-            portPass: selectedCrewCount("portPassSelectedCrew"),
-          }}
-        />
+        {activeMainTab !== MAIN_TABS.CREW_MANAGEMENT && (
+          <HusbandryTabs
+            activeMainTab={activeMainTab}
+            activeSubTab={activeSubTab}
+            onMainTabChange={handleMainTabChange}
+            onSubTabChange={handleSubTabChange}
+            onNavigateToTab={handleSidebarSubTabNavigate}
+            selectedActionTab={selectedActionTab}
+            selectedServices={selectedServices}
+            onBackToServiceSelection={handleBackToServiceSelection}
+            cardColor={cardColor}
+            crewCount={formValues?.crewCount}
+            materialManagementVisibleSubTabIds={materialManagementVisibleSubTabIds}
+            hiddenMainTabIds={hiddenHusbandryMainTabIds}
+            subTabCounts={{
+              [MATERIAL_MANAGEMENT_SUBTABS.INBOUND_ORDERS]: inboundOrdersCount,
+              [MATERIAL_MANAGEMENT_SUBTABS.LANDING_NOTE]: landingNotesCount,
+              [MATERIAL_MANAGEMENT_SUBTABS.DISPATCH_NOTE]: dispatchNotesCount,
+              [LAUNCH_HIRE_SUBTABS.INBOUND_ORDERS]: inboundOrdersCount,
+              ...crewServiceCounts,
+              crewChange: selectedCrewCount("crewChangeSelectedCrew"),
+              portPass: selectedCrewCount("portPassSelectedCrew"),
+            }}
+          />
+        )}
         <div className="operation-right">
           {activeMainTab === "LAUNCH_HIRE" && renderLaunchHireContent()}
           {activeMainTab === MAIN_TABS.CREW_MANAGEMENT &&
