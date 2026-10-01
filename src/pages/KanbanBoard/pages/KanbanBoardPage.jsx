@@ -12,6 +12,7 @@ import StatusConfirmationModal from "../../../components/StatusConfirmationModal
 import confirmTickIcon from "../../../assets/images/toast-success.svg";
 import SeCreationEmailModal from "../components/board/SeCreationEmailModal";
 import SeApprovalUploadModal from "../components/board/SeApprovalUploadModal";
+import SeReviewMoveModal from "../components/board/SeReviewMoveModal";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -458,7 +459,7 @@ export default function KanbanBoardPage() {
 
   const seDocumentUploadedByBatchId = useBatchMoveStore((state) => state.seDocumentUploadedByBatchId);
   const markSeDocumentUploaded = useBatchMoveStore((state) => state.markSeDocumentUploaded);
-  const setSeReviewCards = useBatchMoveStore((state) => state.setSeReviewCards);
+  const setSeReview = useBatchMoveStore((state) => state.setSeReview);
   const selectedSeApprovalBatchId = batchIdByNumber[selectedSeApprovalBatch?.title];
 
   /* SE excel sheet is required on a batch's first upload; the approval email can follow later. */
@@ -508,7 +509,7 @@ export default function KanbanBoardPage() {
           return;
         }
         if (seDocument?.[0]) markSeDocumentUploaded(batchId);
-        setSeReviewCards(data.data?.se_review?.cards);
+        setSeReview(data.data?.se_review, { resetUnticks: true });
         notify(data.message || "SE approval uploaded successfully", "success");
         handleCloseSeApprovalUpload();
         refetchBoard?.();
@@ -519,7 +520,7 @@ export default function KanbanBoardPage() {
     [
       selectedSeApprovalBatchId,
       markSeDocumentUploaded,
-      setSeReviewCards,
+      setSeReview,
       handleCloseSeApprovalUpload,
       refetchBoard,
     ]
@@ -888,6 +889,8 @@ export default function KanbanBoardPage() {
         subtitle="Attach the SE document and approval email for this batch"
         fields={seApprovalUploadFields}
       />
+
+      <SeReviewMoveModal onConfirmed={refetchBoard} />
 
       <SeApprovalUploadModal
         show={showInvoiceUploadModal}

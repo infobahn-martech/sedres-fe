@@ -1,0 +1,71 @@
+// "Review and Move" modal, opened from an "Awaiting SE" batch once its SE upload is done.
+// Reuses the Upload SE Approval modal shell (se-approval-*); only the approved SO table lives here,
+// styled after the Blockers/Stickers modal table.
+
+// Wider than the upload modal so all four columns fit on one line.
+.se-review-move-modal-root .se-approval-dialog {
+  --bs-modal-width: 1000px;
+  max-width: 1000px;
+}
+
+.se-approval-modal-root .se-approval-dialog .se-review-table {
+  min-height: 360px;
+  max-height: 60vh;
+  overflow-y: auto;
+  border: 1px solid var(--border-primary, #e2e8f0);
+  border-radius: 10px;
+
+  &__grid {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    background: var(--surface-primary, #ffffff);
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--surface-primary, #ffffff);
+
+      tr {
+        border-bottom: 2px solid var(--border-primary, #e2e8f0);
+      }
+
+      th {
+        padding: 11px 24px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-primary, #0f172a);
+        letter-spacing: 0.6px;
+        font-family: "Manrope", sans-serif;
+        background: var(--surface-primary, #ffffff);
+      }
+    }
+
+    tbody {
+      tr {
+        border-bottom: 1px solid var(--border-primary, #e2e8f0);
+
+        &:last-child {
+          border-bottom: none;
+        }
+      }
+
+      td {
+        padding: 11px 24px;
+        font-size: 14px;
+        color: var(--text-primary, #0f172a);
+        vertical-align: middle;
+        overflow-wrap: anywhere;
+        // project_split can hold several line-separated splits.
+        white-space: pre-line;
+
+        &.se-review-table__empty {
+          text-align: center;
+          color: #64748b;
+        }
+      }
+    }
+  }
+}
