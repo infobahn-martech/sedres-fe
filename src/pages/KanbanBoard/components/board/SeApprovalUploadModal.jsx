@@ -22,6 +22,7 @@ const SeApprovalUploadModal = ({
   title = "Upload SE Approval",
   subtitle = "Attach the service entry approval for this batch",
   submitLabel = "Upload SE Approval",
+  submittingLabel = "Uploading...",
   multiple = true,
   fields,
 }) => {
@@ -254,7 +255,7 @@ const SeApprovalUploadModal = ({
       </button>
       <button type="button" className="se-approval-footer__upload" onClick={handleUpload} disabled={isSubmitting}>
         <FiUpload />
-        {isSubmitting ? "Uploading..." : submitLabel}
+        {isSubmitting ? submittingLabel : submitLabel}
       </button>
     </div>
   );
@@ -282,6 +283,7 @@ SeApprovalUploadModal.propTypes = {
   title: PropTypes.string,
   subtitle: PropTypes.string,
   submitLabel: PropTypes.string,
+  submittingLabel: PropTypes.string,
   multiple: PropTypes.bool,
   fields: PropTypes.arrayOf(
     PropTypes.shape({

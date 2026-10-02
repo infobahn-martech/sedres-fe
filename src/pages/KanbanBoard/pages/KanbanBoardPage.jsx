@@ -13,6 +13,7 @@ import confirmTickIcon from "../../../assets/images/toast-success.svg";
 import SeCreationEmailModal from "../components/board/SeCreationEmailModal";
 import SeApprovalUploadModal from "../components/board/SeApprovalUploadModal";
 import SeReviewMoveModal from "../components/board/SeReviewMoveModal";
+import ArInvoiceReviewModal from "../components/board/ArInvoiceReviewModal";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -34,6 +35,22 @@ import { notify } from "../../../components/Toaster";
 import { useThemeStore } from "../../../shared/store/themeStore";
 import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
+import useArInvoiceReviewStore from "../../../shared/store/arInvoiceReviewStore";
+
+/* "SE Received" bulk invoice upload: PDFs only. da/upload_ar_invoices takes max_files_per_request
+   (20) files per call, so larger uploads are sent in chunks of that size, one after another. */
+const AR_INVOICE_FIELD_NAME = "invoices";
+const AR_INVOICE_FILES_PER_REQUEST = 20;
+/* How many unmatched file names the warning lists before summarising the rest. */
+const AR_INVOICE_NOT_PLACED_PREVIEW = 5;
+const arInvoiceUploadFields = [
+  {
+    name: AR_INVOICE_FIELD_NAME,
+    accept: ".pdf",
+    formatsHint: "PDF",
+    multiple: true,
+  },
+];
 
 export default function KanbanBoardPage() {
   const { boardId: boardIdParam } = useParams();
@@ -526,8 +543,7 @@ export default function KanbanBoardPage() {
     ]
   );
 
-  /* "Upload Invoice" on an "SE Received" batch header opens the upload modal for that batch.
-     UI only for now: no backend route exists yet to persist the invoice file. */
+  /* "Upload Invoice" on an "SE Received" batch header opens the upload modal for that batch. */
   const [showInvoiceUploadModal, setShowInvoiceUploadModal] = useState(false);
   const [selectedInvoiceBatch, setSelectedInvoiceBatch] = useState(null);
 
@@ -554,19 +570,105 @@ export default function KanbanBoardPage() {
     [batchByCardId, handleBatchUploadInvoice]
   );
 
+  const [isUploadingInvoices, setIsUploadingInvoices] = useState(false);
+  const openArInvoiceReviewModal = useArInvoiceReviewStore((state) => state.openArInvoiceReviewModal);
+
+  /* Bulk AR invoice upload for the ticked cards: the backend matches each PDF to a card's sales
+     order. Files go in chunks of AR_INVOICE_FILES_PER_REQUEST; each response carries the latest
+     state of every card, so the last one wins per card, and unmatched files are collected. */
+  const [invoiceUploadProgress, setInvoiceUploadProgress] = useState(null);
+
   const handleUploadInvoices = useCallback(
-    (files) => {
-      const cardCount = selectedInvoiceBatch?.cards?.length ?? 0;
-      notify(
-        `${files.length} ${files.length === 1 ? "invoice" : "invoices"} attached for ${cardCount} ${
-          cardCount === 1 ? "card" : "cards"
-        }`,
-        "info"
-      );
-      (selectedInvoiceBatch?.cards ?? []).forEach((card) => removeCardSelectionId(card.id));
-      handleCloseInvoiceUpload();
+    async ({ [AR_INVOICE_FIELD_NAME]: invoices = [] }) => {
+      const cards = selectedInvoiceBatch?.cards ?? [];
+      const callIds = getBatchCallIds(selectedInvoiceBatch);
+      if (!callIds.length) {
+        notify("The selected cards have no call to upload invoices for", "error");
+        return;
+      }
+
+      const chunks = [];
+      for (let start = 0; start < invoices.length; start += AR_INVOICE_FILES_PER_REQUEST) {
+        chunks.push(invoices.slice(start, start + AR_INVOICE_FILES_PER_REQUEST));
+      }
+
+      const reviewCardById = {};
+      const notPlacedFiles = [];
+      let receivedCount = 0;
+      let failedMessage = null;
+
+      setIsUploadingInvoices(true);
+      setInvoiceUploadProgress({ done: 0, total: invoices.length });
+      try {
+        for (const chunk of chunks) {
+          const formData = new FormData();
+          formData.append("call_ids", callIds.join(","));
+          formData.append("card_ids", cards.map((card) => card.id).join(","));
+          chunk.forEach((file) => formData.append("invoices[]", file));
+
+          let data;
+          try {
+            ({ data } = await daService.uploadArInvoices(formData));
+          } catch (error) {
+            data = error?.response?.data;
+          }
+          if (data?.status !== "success") {
+            failedMessage = data?.message || "Failed to upload invoices";
+            break;
+          }
+          receivedCount += data.data?.received_files?.length ?? chunk.length;
+          notPlacedFiles.push(...(data.data?.not_placed_files ?? []));
+          (data.data?.cards ?? []).forEach((card) => {
+            reviewCardById[String(card.card_id)] = card;
+          });
+          setInvoiceUploadProgress((prev) => ({ ...prev, done: prev.done + chunk.length }));
+        }
+
+        if (!receivedCount) {
+          notify(failedMessage || "Failed to upload invoices", "error");
+          return;
+        }
+        if (failedMessage) {
+          notify(
+            `Uploaded ${receivedCount} of ${invoices.length} invoices, then stopped: ${failedMessage}`,
+            "error"
+          );
+        } else {
+          notify(
+            `${receivedCount} ${receivedCount === 1 ? "invoice" : "invoices"} uploaded successfully`,
+            "success"
+          );
+        }
+        if (notPlacedFiles.length) {
+          const preview = notPlacedFiles.slice(0, AR_INVOICE_NOT_PLACED_PREVIEW).join(", ");
+          const restCount = notPlacedFiles.length - AR_INVOICE_NOT_PLACED_PREVIEW;
+          notify(
+            `${notPlacedFiles.length} ${
+              notPlacedFiles.length === 1 ? "file" : "files"
+            } not matched to any sales order: ${preview}${restCount > 0 ? ` and ${restCount} more` : ""}`,
+            "warn"
+          );
+        }
+        cards.forEach((card) => removeCardSelectionId(card.id));
+        handleCloseInvoiceUpload();
+        /* The response lists every SE Received card; the review covers only the ones uploaded for. */
+        openArInvoiceReviewModal(
+          cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean)
+        );
+        refetchBoard?.();
+      } finally {
+        setIsUploadingInvoices(false);
+        setInvoiceUploadProgress(null);
+      }
     },
-    [selectedInvoiceBatch, removeCardSelectionId, handleCloseInvoiceUpload]
+    [
+      selectedInvoiceBatch,
+      getBatchCallIds,
+      removeCardSelectionId,
+      handleCloseInvoiceUpload,
+      openArInvoiceReviewModal,
+      refetchBoard,
+    ]
   );
 
   /* "Merge Invoice" on the "AR Invoices Issued" column header opens a bulk upload for the ticked
@@ -896,12 +998,21 @@ export default function KanbanBoardPage() {
         show={showInvoiceUploadModal}
         onClose={handleCloseInvoiceUpload}
         onUpload={handleUploadInvoices}
+        isSubmitting={isUploadingInvoices}
+        submittingLabel={
+          invoiceUploadProgress
+            ? `Uploading ${invoiceUploadProgress.done} / ${invoiceUploadProgress.total}...`
+            : undefined
+        }
         batchTitle={selectedInvoiceBatch?.title ?? ""}
         selectedCardCount={selectedInvoiceBatch?.cards?.length ?? 0}
         title="Upload Invoice"
         subtitle="Attach the invoices for the selected cards"
         submitLabel="Upload Invoice"
+        fields={arInvoiceUploadFields}
       />
+
+      <ArInvoiceReviewModal onConfirmed={refetchBoard} />
 
       <SeApprovalUploadModal
         show={showMergeInvoiceModal}

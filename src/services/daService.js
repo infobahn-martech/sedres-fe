@@ -111,6 +111,30 @@ const getSeApprovalLines = (batchId) => Gateway.get(`/da/se_approval_lines/${bat
  * Moves the sent cards to "SE Received"; the batch's other cards go back to Backlog. */
 const confirmSeApproval = (payload) => Gateway.post('/da/confirm_se_approval', payload);
 
+/** @param {FormData} formData - call_ids, card_ids (ticked SE Received cards, comma separated), invoices[]
+ * (invoice PDFs, max 20 per request), multipart/form-data.
+ * @returns {Promise<{ data: { status: 'success', data: { received_files: string[], max_files_per_request: number,
+ *   not_placed_files: string[], cards: { call_id: number, card_id: number, ready: boolean,
+ *   sales_orders: { sales_order_id: number, sales_order_no: string, invoice: object|null }[] }[] } }
+ *   | { status: 'error', message: string } }>}
+ * Bulk AR invoice upload: the backend matches each PDF to a card's sales order. */
+const uploadArInvoices = (formData) =>
+  Gateway.post('/da/upload_ar_invoices', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+/** @returns {Promise<{ data: { status: 'success', data: { call_id: number, card_id: number, ready: boolean,
+ *   sales_orders: { sales_order_id: number, sales_order_no: string, wo_number: string, se_numbers: string[],
+ *   invoice: object|null }[] } } | { status: 'error', message: string } }>}
+ * Per-card AR invoice review: which sales orders have an invoice placed on them. */
+const getArInvoiceReview = (callId) => Gateway.get('/da/ar_invoice_review', { params: { call_id: callId } });
+
+/** @param {{ cards: { call_id: number, card_id: number, sales_orders: { sales_order_no: string, invoice_id: number,
+ *   invoice_no?: string, tax_details?: { tax_percent: number, net: number, tax: number, gross: number }[] }[] }[] }} payload
+ * Confirms the reviewed AR invoices (ticked cards only, every sales order of each); the confirmed cards move to
+ * "AR Invoices Issued". invoice_no and tax_details are optional overrides: left out, the values as read are used. */
+const confirmArInvoices = (payload) => Gateway.post('/da/confirm_ar_invoices', payload);
+
 export default {
   getDaDetails,
   saveDaDetails,
@@ -140,4 +164,7 @@ export default {
   sendSeCreationEmail,
   getSeApprovalLines,
   confirmSeApproval,
+  uploadArInvoices,
+  getArInvoiceReview,
+  confirmArInvoices,
 };
