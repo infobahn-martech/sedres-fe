@@ -117,6 +117,27 @@ const confirmSeApproval = (payload) => Gateway.post('/da/confirm_se_approval', p
  * Merges the cards' confirmed AR invoices into one PDF and moves the cards on to the consolidated column. Fails
  * when an invoice is missing, the cards are not in "AR Invoices Issued", or the invoices are in different currencies. */
 const mergeArInvoices = (payload) => Gateway.post('/da/merge_ar_invoices', payload);
+/** @param {{ cards: Array<{ call_id: number, card_id: number }>, inv_no: string }} payload - the ticked
+ *   "Consolidated" cards and the consolidated invoice number.
+ * @returns {Promise<{ data: { status: 'success', data: { submission_id: number, zip_url: string } }
+ *   | { status: 'error', message: string } }>}
+ * Builds the cards' submission documents into one zip; submission_id is what the final submission email is sent for. */
+const createSubmissionDocuments = (payload) => Gateway.post('/da/create_submission_documents', payload);
+/** @returns {Promise<{ data: { status: 'success', data: { to: string, cc: string, subject: string, body: string,
+ *   attachments: Array<{ stage_document_id: number, name: string, url: string }>,
+ *   merged_invoices: { sent_as: string, size_mb: number, url: string } } } | { status: 'error', message: string } }>}
+ * Prefilled final submission email. Errors once the submission is stale: "Create the documents first" (the cards
+ * were grouped differently since), "Submission N is already submitted", or the cards have left "Consolidated". */
+const getSubmissionEmailDraft = (submissionId) => Gateway.get(`/da/submission_email_draft/${submissionId}`);
+/** @param {FormData} formData - submission_id, to (comma separated), cc?, subject, body, signed_letter (1 file),
+ *   consolidated_invoice (1 Excel file), approved_se_sheet[]?, approved_se_copies[]?, multipart/form-data.
+ * @returns {Promise<{ data: { status: 'success', data: { moved_to_submitted: Array<{ call_id: number,
+ *   card_id: number }> } } | { status: 'error', message: string } }>}
+ * Sends the final submission email; the cards move to "Submitted Invoices". */
+const sendSubmissionEmail = (formData) =>
+  Gateway.post('/da/send_submission_email', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 
 /** @param {FormData} formData - call_ids, card_ids (ticked SE Received cards, comma separated), invoices[]
  * (invoice PDFs, max 20 per request), multipart/form-data.
@@ -177,4 +198,7 @@ export default {
   getArInvoiceReview,
   confirmArInvoices,
   mergeArInvoices,
+  createSubmissionDocuments,
+  getSubmissionEmailDraft,
+  sendSubmissionEmail,
 };

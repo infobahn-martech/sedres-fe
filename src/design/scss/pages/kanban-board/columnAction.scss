@@ -1,5 +1,12 @@
 /* Small action button on the right of a column header (e.g. Backlog batch action) */
 
+/* Holds the header's action button(s), so two buttons still sit together on the right. */
+.column-header .column-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
 .column-header .column-action {
   display: flex;
   flex-shrink: 0;

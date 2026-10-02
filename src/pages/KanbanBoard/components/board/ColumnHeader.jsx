@@ -29,6 +29,7 @@ function BatchCardsIcon() {
 
 /**
  * Single column title bar (workflow stage). Rendered once per column in the top header row.
+ * `secondaryAction` ({ label, icon, onClick }) adds a second button before the main action.
  */
 export default function ColumnHeader({
   column,
@@ -39,9 +40,11 @@ export default function ColumnHeader({
   actionLabel,
   actionIcon,
   onActionClick,
+  secondaryAction,
 }) {
   const columnColor = column.color || "#2A00FF";
   const tooltipId = `column-title-${column.id}`;
+  const secondaryTooltipId = `column-secondary-action-${column.id}`;
 
   if (isCollapsed) {
     return (
@@ -70,22 +73,41 @@ export default function ColumnHeader({
       </div>
       <span className="column-count">{wipDisplay}</span>
       {typeof onActionClick === "function" && (
-        <button
-          type="button"
-          className="column-action"
-          onClick={(e) => {
-            /* The header itself collapses the column — keep that off this button. */
-            e.stopPropagation();
-            onActionClick(column);
-          }}
-          data-tooltip-id={tooltipId}
-          data-tooltip-content={actionLabel}
-          aria-label={actionLabel}
-        >
-          {actionIcon ?? <BatchCardsIcon />}
-        </button>
+        /* One flex item, so the header's space-between layout keeps the buttons on the right. */
+        <div className="column-actions">
+          {secondaryAction && (
+            <button
+              type="button"
+              className="column-action"
+              onClick={(e) => {
+                e.stopPropagation();
+                secondaryAction.onClick(column);
+              }}
+              data-tooltip-id={secondaryTooltipId}
+              data-tooltip-content={secondaryAction.label}
+              aria-label={secondaryAction.label}
+            >
+              {secondaryAction.icon}
+            </button>
+          )}
+          <button
+            type="button"
+            className="column-action"
+            onClick={(e) => {
+              /* The header itself collapses the column — keep that off this button. */
+              e.stopPropagation();
+              onActionClick(column);
+            }}
+            data-tooltip-id={tooltipId}
+            data-tooltip-content={actionLabel}
+            aria-label={actionLabel}
+          >
+            {actionIcon ?? <BatchCardsIcon />}
+          </button>
+        </div>
       )}
       {typeof onActionClick === "function" && <Tooltip id={tooltipId} place="top" />}
+      {typeof onActionClick === "function" && secondaryAction && <Tooltip id={secondaryTooltipId} place="top" />}
     </div>
   );
 }
@@ -104,4 +126,9 @@ ColumnHeader.propTypes = {
   actionLabel: PropTypes.string,
   actionIcon: PropTypes.node,
   onActionClick: PropTypes.func,
+  secondaryAction: PropTypes.shape({
+    label: PropTypes.string.isRequired,
+    icon: PropTypes.node.isRequired,
+    onClick: PropTypes.func.isRequired,
+  }),
 };

@@ -19,6 +19,8 @@ export default function KanbanBoardContent({
   onBatchUploadInvoice,
   onColumnUploadInvoice,
   onColumnMergeInvoice,
+  onColumnPrepareSubmission,
+  onColumnSendFinalSubmission,
   onContextMenu,
   onHeightChange,
   onToggleWorkflow,
@@ -71,6 +73,8 @@ export default function KanbanBoardContent({
         onBatchUploadInvoice={onBatchUploadInvoice}
         onColumnUploadInvoice={onColumnUploadInvoice}
         onColumnMergeInvoice={onColumnMergeInvoice}
+        onColumnPrepareSubmission={onColumnPrepareSubmission}
+        onColumnSendFinalSubmission={onColumnSendFinalSubmission}
         onContextMenu={onContextMenu}
         onHeightChange={onHeightChange}
         isDarkMode={isDarkMode}
