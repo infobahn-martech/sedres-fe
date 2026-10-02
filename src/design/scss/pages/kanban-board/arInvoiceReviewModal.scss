@@ -3,18 +3,17 @@
 // here, styled after the "Review and Move" table. One row per sales order, editable cells, with the
 // invoice's "Tax Details" block underneath.
 
-// Full screen (16px gutter) so large uploads show as many rows as possible; the table fills the space
-// between header and footer and scrolls inside it. Both root classes sit on the same element, which
-// outranks the shared Upload SE Approval sizing in seApprovalUploadModal.scss.
+// Sized to its rows up to the viewport height (32px gutter), so a few invoices leave no empty space and
+// large uploads scroll inside the table between header and footer. Both root classes sit on the same
+// element, which outranks the shared Upload SE Approval sizing in seApprovalUploadModal.scss.
 .se-approval-modal-root.ar-invoice-review-modal-root .se-approval-dialog {
-  --bs-modal-width: calc(100vw - 32px);
-  width: calc(100vw - 32px);
-  max-width: calc(100vw - 32px);
-  height: calc(100vh - 32px);
-  margin: 16px auto;
+  --bs-modal-width: min(1000px, calc(100vw - 32px));
+  width: min(1000px, calc(100vw - 32px));
+  max-width: min(1000px, calc(100vw - 32px));
+  margin: 32px auto;
 
   .modal-content {
-    height: 100%;
+    max-height: calc(100vh - 64px);
     display: flex;
     flex-direction: column;
   }
@@ -112,8 +111,28 @@
     }
   }
 
+  // Reads as plain text like the SE / SO cells; the box only shows on hover and while editing.
+  // The negative margin lines the text up with the column's other cells.
   .ar-invoice-review__input {
     width: 200px;
+    height: 30px;
+    margin-left: -9px;
+    padding: 2px 8px;
+    font-size: 14px;
+    color: inherit;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+
+    &:hover:not(:disabled) {
+      border-color: var(--border-primary, #e2e8f0);
+    }
+
+    &:focus {
+      border-color: #86b7fe;
+      background: var(--surface-primary, #ffffff);
+      box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+    }
   }
 
   // The currency sits right-aligned over the Tax % / Net / Tax / Gross columns, as on the invoice.

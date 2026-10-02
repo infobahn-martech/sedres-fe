@@ -171,6 +171,16 @@ const useBatchMoveStore = create((set, get) => ({
       return { columnByCardId, batchByCardId, batchIdByNumber };
     }),
 
+  /** Drops the local column overrides of cards the backend has since moved, so the board draws them
+   * where get_full_board now says they are. */
+  clearCardColumns: (cardIds) =>
+    set((state) => {
+      if (!cardIds?.length) return state;
+      const columnByCardId = { ...state.columnByCardId };
+      cardIds.forEach((cardId) => delete columnByCardId[String(cardId)]);
+      return { columnByCardId };
+    }),
+
   /** Replaces the grouping with da/batches, which is fetched alongside every board load. */
   setBatches: (batches) =>
     set(() => {

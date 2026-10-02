@@ -26,12 +26,14 @@ const COLUMNS = [
 
 const EDITABLE_COLUMNS = COLUMNS.filter((column) => column.editable);
 /* The invoice's tax details: one line per tax rate, each on its own row under the sales order
-   (0% first), laid out like the invoice's own block. Every cell is editable. */
+   (0% first), laid out like the invoice's own block. Every cell is editable.
+   Hidden for now on request: restore the fields below, the SAR header rows and the tax-line split in
+   renderCardRows to bring them back. With no fields, tax_details is never sent. */
 const TAX_FIELDS = [
-  { name: "tax_percent", label: "Tax %" },
-  { name: "net", label: "Net" },
-  { name: "tax", label: "Tax" },
-  { name: "gross", label: "Gross" },
+  // { name: "tax_percent", label: "Tax %" },
+  // { name: "net", label: "Net" },
+  // { name: "tax", label: "Tax" },
+  // { name: "gross", label: "Gross" },
 ];
 
 /* The card tick comes before the configured columns, the tax columns after them. */
@@ -243,6 +245,7 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
           setFieldValue(getSalesOrderKey(card, salesOrder), column.name, e.target.value)
         }
         disabled={isConfirming}
+        title="Click to edit"
         aria-label={`${column.label} for ${salesOrder.sales_order_no}`}
       />
     );
@@ -272,7 +275,9 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
   const renderCardRows = (card) => {
     const salesOrders = card.sales_orders?.length ? card.sales_orders : [null];
     const rows = salesOrders.flatMap((salesOrder) => {
-      const lines = salesOrder?.invoice ? getTaxLines(salesOrder) : [];
+      /* Tax details hidden for now: one row per sales order. */
+      const lines = [];
+      // const lines = salesOrder?.invoice ? getTaxLines(salesOrder) : [];
       return lines.length
         ? lines.map((_, lineIndex) => ({ salesOrder, lines, lineIndex }))
         : [{ salesOrder, lines, lineIndex: 0 }];
@@ -364,17 +369,19 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
                   {column.label}
                 </th>
               ))}
+              {/* Tax details hidden for now.
               <th colSpan={TAX_FIELDS.length} className="ar-invoice-review__tax-group">
                 SAR
-              </th>
+              </th> */}
             </tr>
+            {/* Tax details hidden for now.
             <tr>
               {TAX_FIELDS.map(({ name, label }) => (
                 <th key={name} className="ar-invoice-review__tax-head">
                   {label}
                 </th>
               ))}
-            </tr>
+            </tr> */}
           </thead>
           <tbody>
             {cards.length ? (
