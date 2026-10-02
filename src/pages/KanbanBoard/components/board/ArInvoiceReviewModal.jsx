@@ -4,6 +4,7 @@ import { FiCheck, FiFileText, FiLayers, FiX } from "react-icons/fi";
 import CustomModal from "../../../../components/CustomModal";
 import useArInvoiceReviewStore from "../../../../shared/store/arInvoiceReviewStore";
 import { notify } from "../../../../components/Toaster";
+import MaterialTablePagination from "../../CardFormTabs/Import/tabs/husbandry/components/MaterialTablePagination";
 import "../../../../design/scss/pages/kanban-board/seApprovalUploadModal.scss";
 import "../../../../design/scss/pages/kanban-board/arInvoiceReviewModal.scss";
 
@@ -42,6 +43,9 @@ const formatAmount = (value) =>
     ? value
     : Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+/* Cards per page in the review table, matching da/ar_invoice_review's page size. */
+const REVIEW_PAGE_SIZE = 20;
+
 const getSalesOrderKey = (card, salesOrder) =>
   `${card.card_id}:${salesOrder.sales_order_id ?? salesOrder.sales_order_no}`;
 
@@ -72,12 +76,14 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
   const [taxEditsByKey, setTaxEditsByKey] = useState({});
   /* The tax cell being typed in shows its raw number; every other cell shows the invoice format. */
   const [focusedTaxCell, setFocusedTaxCell] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (!show) return;
     setUncheckedCardIds({});
     setEditsByKey({});
     setTaxEditsByKey({});
+    setCurrentPage(1);
     fetchArInvoiceReview().then((errorMessage) => {
       if (errorMessage) notify(errorMessage, "error");
     });
@@ -104,6 +110,11 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
     }));
 
   const checkedCards = cards.filter(isCardChecked);
+
+  /* Ticks, edits and Confirm cover every page; only the rows shown are paged. */
+  const totalPages = Math.max(1, Math.ceil(cards.length / REVIEW_PAGE_SIZE));
+  const page = Math.min(currentPage, totalPages);
+  const pageCards = cards.slice((page - 1) * REVIEW_PAGE_SIZE, page * REVIEW_PAGE_SIZE);
 
   /* Header tick: selects / clears every card that can be confirmed, for large uploads. */
   const readyCards = cards.filter((card) => card.ready);
@@ -367,7 +378,7 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
           </thead>
           <tbody>
             {cards.length ? (
-              cards.map((card) => (
+              pageCards.map((card) => (
                 <Fragment key={card.card_id ?? card.call_id}>{renderCardRows(card)}</Fragment>
               ))
             ) : (
@@ -380,6 +391,13 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
           </tbody>
         </table>
       </div>
+
+      <MaterialTablePagination
+        page={page}
+        total={cards.length}
+        limit={REVIEW_PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 

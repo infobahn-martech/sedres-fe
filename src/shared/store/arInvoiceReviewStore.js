@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import daService from "../../services/daService";
 
-/* A review of 300+ cards is fetched a few calls at a time instead of all at once. */
+/* da/ar_invoice_review lists every SE Received card, a page at a time; after page 1 the remaining
+   pages are fetched a few calls at a time. */
+const REVIEW_PER_PAGE = 20;
 const REVIEW_CONCURRENCY = 6;
 
 /* Keeps the upload's invoice where da/ar_invoice_review has none, and adds the review's SE/WO numbers. */
@@ -26,7 +28,7 @@ const mergeReviewCard = (card, review) => {
 
 /**
  * "SE Received" AR invoice review popup, opened after a bulk da/upload_ar_invoices upload.
- * Seeded with the upload response's cards, then refreshed per card from da/ar_invoice_review.
+ * Seeded with the upload response's cards, then refreshed from da/ar_invoice_review's paged list.
  */
 const useArInvoiceReviewStore = create((set, get) => ({
   showArInvoiceReviewModal: false,
@@ -47,44 +49,52 @@ const useArInvoiceReviewStore = create((set, get) => ({
       isArInvoiceReviewLoading: false,
     }),
 
-  /** Resolves to an error message when no card's review could be loaded, otherwise null. */
+  /** Resolves to an error message when a review page could not be loaded, otherwise null. */
   fetchArInvoiceReview: async () => {
-    const callIds = get()
-      .selectedArInvoiceReviewCards.map((card) => card.call_id)
-      .filter((callId) => callId != null);
-    if (!callIds.length) return null;
+    if (!get().selectedArInvoiceReviewCards.length) return null;
+
+    const fetchPage = async (page) => {
+      let data;
+      try {
+        ({ data } = await daService.getArInvoiceReview({ page, per_page: REVIEW_PER_PAGE }));
+      } catch (error) {
+        data = error?.response?.data;
+      }
+      return data?.status === "success"
+        ? data.data
+        : { errorMessage: data?.message || "Failed to load the invoice review" };
+    };
 
     set({ isArInvoiceReviewLoading: true });
-    const results = [];
-    for (let start = 0; start < callIds.length; start += REVIEW_CONCURRENCY) {
-      const batch = callIds.slice(start, start + REVIEW_CONCURRENCY);
-      results.push(
-        ...(await Promise.allSettled(batch.map((callId) => daService.getArInvoiceReview(callId))))
-      );
+    const firstPage = await fetchPage(1);
+    if (!get().showArInvoiceReviewModal) return null;
+    if (firstPage.errorMessage) {
+      set({ isArInvoiceReviewLoading: false });
+      return firstPage.errorMessage;
+    }
+
+    const pages = [firstPage];
+    const totalPages = Number(firstPage.pagination?.total_pages) || 1;
+    const remainingPages = Array.from({ length: totalPages - 1 }, (_, index) => index + 2);
+    for (let start = 0; start < remainingPages.length; start += REVIEW_CONCURRENCY) {
+      const batch = remainingPages.slice(start, start + REVIEW_CONCURRENCY);
+      pages.push(...(await Promise.all(batch.map(fetchPage))));
       if (!get().showArInvoiceReviewModal) return null;
     }
-    const reviewByCallId = {};
-    let errorMessage = null;
-    results.forEach((result, index) => {
-      const data =
-        result.status === "fulfilled" ? result.value?.data : result.reason?.response?.data;
-      if (data?.status === "success" && data.data) {
-        reviewByCallId[String(callIds[index])] = data.data;
-      } else {
-        errorMessage = errorMessage || data?.message;
-      }
-    });
 
-    if (!get().showArInvoiceReviewModal) return null;
+    const reviewByCardId = {};
+    pages.forEach((page) =>
+      (page.cards ?? []).forEach((card) => {
+        reviewByCardId[String(card.card_id)] = card;
+      })
+    );
     set((state) => ({
       isArInvoiceReviewLoading: false,
       selectedArInvoiceReviewCards: state.selectedArInvoiceReviewCards.map((card) =>
-        mergeReviewCard(card, reviewByCallId[String(card.call_id)])
+        mergeReviewCard(card, reviewByCardId[String(card.card_id)])
       ),
     }));
-    return Object.keys(reviewByCallId).length
-      ? null
-      : errorMessage || "Failed to load the invoice review";
+    return pages.find((page) => page.errorMessage)?.errorMessage ?? null;
   },
 
   isConfirmingArInvoices: false,

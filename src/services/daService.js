@@ -123,11 +123,13 @@ const uploadArInvoices = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
-/** @returns {Promise<{ data: { status: 'success', data: { call_id: number, card_id: number, ready: boolean,
- *   sales_orders: { sales_order_id: number, sales_order_no: string, wo_number: string, se_numbers: string[],
- *   invoice: object|null }[] } } | { status: 'error', message: string } }>}
- * Per-card AR invoice review: which sales orders have an invoice placed on them. */
-const getArInvoiceReview = (callId) => Gateway.get('/da/ar_invoice_review', { params: { call_id: callId } });
+/** @param {{ page: number, per_page: number }} params
+ * @returns {Promise<{ data: { status: 'success', data: { cards: { call_id: number, card_id: number, ready: boolean,
+ *   sales_orders: { sales_order_id: number, sales_order_no: string, invoice: object|null }[] }[],
+ *   pagination: { page: number, per_page: number, total_cards: number, total_pages: number } } }
+ *   | { status: 'error', message: string } }>}
+ * AR invoice review of every "SE Received" card, paged: which sales orders have an invoice placed on them. */
+const getArInvoiceReview = (params) => Gateway.get('/da/ar_invoice_review', { params });
 
 /** @param {{ cards: { call_id: number, card_id: number, sales_orders: { sales_order_no: string, invoice_id: number,
  *   invoice_no?: string, tax_details?: { tax_percent: number, net: number, tax: number, gross: number }[] }[] }[] }} payload
