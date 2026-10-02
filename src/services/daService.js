@@ -110,6 +110,13 @@ const getSeApprovalLines = (batchId) => Gateway.get(`/da/se_approval_lines/${bat
  *   | { status: 'error', message: string } }>}
  * Moves the sent cards to "SE Received"; the batch's other cards go back to Backlog. */
 const confirmSeApproval = (payload) => Gateway.post('/da/confirm_se_approval', payload);
+/** @param {{ cards: Array<{ call_id: number, card_id: number }> }} payload - the ticked "AR Invoices Issued" cards.
+ * @returns {Promise<{ data: { status: 'success', data: { submission_id: number,
+ *   moved_to_consolidated: Array<{ call_id: number, card_id: number, invoice_no: string }>, invoice_count: number,
+ *   merged_page_count: number, merged_url: string } } | { status: 'error', message: string } }>}
+ * Merges the cards' confirmed AR invoices into one PDF and moves the cards on to the consolidated column. Fails
+ * when an invoice is missing, the cards are not in "AR Invoices Issued", or the invoices are in different currencies. */
+const mergeArInvoices = (payload) => Gateway.post('/da/merge_ar_invoices', payload);
 
 /** @param {FormData} formData - call_ids, card_ids (ticked SE Received cards, comma separated), invoices[]
  * (invoice PDFs, max 20 per request), multipart/form-data.
@@ -169,4 +176,5 @@ export default {
   uploadArInvoices,
   getArInvoiceReview,
   confirmArInvoices,
+  mergeArInvoices,
 };

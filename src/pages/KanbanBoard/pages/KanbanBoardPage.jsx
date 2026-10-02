@@ -32,6 +32,7 @@ import useAuthReducer from "../../../store/AuthReducer";
 import workflowService from "../../../services/workflowService";
 import daService from "../../../services/daService";
 import { notify } from "../../../components/Toaster";
+import { downloadFile } from "../../../shared/utils/utils";
 import { useThemeStore } from "../../../shared/store/themeStore";
 import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
@@ -332,22 +333,24 @@ export default function KanbanBoardPage() {
   const toggleCardSelectionId = useKanbanCardSelectionStore((state) => state.toggleCardId);
   const setCardSelectionId = useKanbanCardSelectionStore((state) => state.setCardSelected);
   const removeCardSelectionId = useKanbanCardSelectionStore((state) => state.removeCardId);
-  const clearCardSelection = useKanbanCardSelectionStore((state) => state.clearSelection);
 
   /* Backlog column batch icon (SAIPEM board): confirm the batch built from the ticked cards. */
   const [showBatchConfirmModal, setShowBatchConfirmModal] = useState(false);
   /* Column the batch moves its cards to — the one after Backlog on the board. */
   const [selectedBatchTargetColumn, setSelectedBatchTargetColumn] = useState(null);
+  /* The cards ticked in Backlog; ticks in other columns (e.g. the invoice columns) stay out. */
+  const [selectedBatchCardIds, setSelectedBatchCardIds] = useState([]);
   const moveCardsToColumn = useBatchMoveStore((state) => state.moveCardsToColumn);
   const [isCreatingBatch, setIsCreatingBatch] = useState(false);
 
   const handleColumnBatchAction = useCallback(
-    ({ nextColumnKey }) => {
-      if (selectedCardIds.length === 0) return;
+    ({ nextColumnKey, cardIds = [] }) => {
+      if (cardIds.length === 0) return;
+      setSelectedBatchCardIds(cardIds);
       setSelectedBatchTargetColumn(nextColumnKey);
       setShowBatchConfirmModal(true);
     },
-    [selectedCardIds]
+    []
   );
 
   const handleCloseBatchConfirm = useCallback(() => setShowBatchConfirmModal(false), []);
@@ -357,6 +360,7 @@ export default function KanbanBoardPage() {
   const [selectedSeRequestBatch, setSelectedSeRequestBatch] = useState(null);
   const [seRequestEmailDraft, setSeRequestEmailDraft] = useState(null);
   const batchIdByNumber = useBatchMoveStore((state) => state.batchIdByNumber);
+  const clearCardColumns = useBatchMoveStore((state) => state.clearCardColumns);
 
   /* Unique call ids of the batch's cards. */
   const getBatchCallIds = useCallback(
@@ -443,6 +447,9 @@ export default function KanbanBoardPage() {
           return;
         }
         notify(data.message || "Email sent successfully", "success");
+        /* The backend moves the batch on; a column override left from creating it would keep
+           drawing the cards in the old column. */
+        clearCardColumns((selectedSeRequestBatch?.cards ?? []).map((card) => card.id));
         handleCloseSeRequestEmail();
         refetchBoard?.();
       } finally {
@@ -454,6 +461,7 @@ export default function KanbanBoardPage() {
       seRequestEmailDraft,
       batchIdByNumber,
       getBatchCallIds,
+      clearCardColumns,
       handleCloseSeRequestEmail,
       refetchBoard,
     ]
@@ -671,47 +679,80 @@ export default function KanbanBoardPage() {
     ]
   );
 
-  /* "Merge Invoice" on the "AR Invoices Issued" column header opens a bulk upload for the ticked
-     cards of that column. UI only for now: no backend route exists yet to persist the invoices. */
-  const [showMergeInvoiceModal, setShowMergeInvoiceModal] = useState(false);
-  const [selectedMergeInvoiceCards, setSelectedMergeInvoiceCards] = useState([]);
+  /* "Merge Invoice" on the "AR Invoices Issued" column header merges the ticked cards' confirmed
+     AR invoices into one PDF via da/merge_ar_invoices, then shows the merged file in a new window. */
+  const [isMergingInvoices, setIsMergingInvoices] = useState(false);
 
-  const handleColumnMergeInvoice = useCallback((cards) => {
-    if (!cards?.length) return;
-    setSelectedMergeInvoiceCards(cards);
-    setShowMergeInvoiceModal(true);
-  }, []);
+  const handleColumnMergeInvoice = useCallback(
+    async (cards) => {
+      if (!cards?.length || isMergingInvoices) return;
+      const mergeCards = cards
+        .filter((card) => card.callId)
+        .map((card) => ({ call_id: Number(card.callId), card_id: Number(card.id) }));
+      if (!mergeCards.length) {
+        notify("The selected cards have no call to merge invoices for", "error");
+        return;
+      }
 
-  const handleCloseMergeInvoice = useCallback(() => {
-    setShowMergeInvoiceModal(false);
-    setSelectedMergeInvoiceCards([]);
-  }, []);
+      /* Opened while still inside the click so the browser does not block it as a popup; the merged
+         PDF is loaded into it once the response arrives. */
+      const mergedWindow = window.open("", "_blank");
+      if (mergedWindow) {
+        mergedWindow.opener = null;
+        mergedWindow.document.title = "Merge Invoice";
+        mergedWindow.document.body.textContent = "Merging invoices...";
+      }
 
-  const handleMergeInvoices = useCallback(
-    (files) => {
-      const cardCount = selectedMergeInvoiceCards.length;
-      notify(
-        `${files.length} ${files.length === 1 ? "invoice" : "invoices"} attached for ${cardCount} ${
-          cardCount === 1 ? "card" : "cards"
-        }`,
-        "info"
-      );
-      selectedMergeInvoiceCards.forEach((card) => removeCardSelectionId(card.id));
-      handleCloseMergeInvoice();
+      setIsMergingInvoices(true);
+      try {
+        let data;
+        try {
+          ({ data } = await daService.mergeArInvoices({ cards: mergeCards }));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+        if (data?.status !== "success" || !data.data?.merged_url) {
+          mergedWindow?.close();
+          notify(data?.message || "Failed to merge invoices", "error");
+          return;
+        }
+        const { invoice_count: invoiceCount, merged_page_count: pageCount, merged_url: mergedUrl } =
+          data.data ?? {};
+        notify(
+          `${invoiceCount ?? mergeCards.length} ${invoiceCount === 1 ? "invoice" : "invoices"} merged${
+            pageCount ? ` (${pageCount} ${pageCount === 1 ? "page" : "pages"})` : ""
+          }`,
+          "success"
+        );
+        /* Downloads the merged PDF, then shows it in the new tab. The file sits on another origin, so it
+           is fetched as a blob first: a plain download link to it would only navigate. While the uploads
+           folder sends no CORS header the fetch fails, and the new tab alone shows the file. */
+        try {
+          const response = await fetch(mergedUrl);
+          if (response.ok) {
+            downloadFile({
+              link: URL.createObjectURL(await response.blob()),
+              fileName: decodeURIComponent(mergedUrl.split("/").pop()) || "Merged_Invoices.pdf",
+            });
+          }
+        } catch {
+          /* The new tab below still shows the merged PDF. */
+        }
+        if (mergedWindow) mergedWindow.location.href = mergedUrl;
+        else window.open(mergedUrl, "_blank", "noopener,noreferrer");
+        cards.forEach((card) => removeCardSelectionId(card.id));
+        refetchBoard?.();
+      } finally {
+        setIsMergingInvoices(false);
+      }
     },
-    [selectedMergeInvoiceCards, removeCardSelectionId, handleCloseMergeInvoice]
-  );
-
-  const mergeInvoiceBatchTitle = useMemo(
-    () =>
-      [...new Set(selectedMergeInvoiceCards.map((card) => batchByCardId[card.id]).filter(Boolean))].join(", "),
-    [selectedMergeInvoiceCards, batchByCardId]
+    [isMergingInvoices, removeCardSelectionId, refetchBoard]
   );
 
   /* Creates the batch on the backend from the ticked cards' calls. The backend issues the batch
      number (e.g. Sep_26_Batch1) and returns it as batch_number. */
   const handleConfirmBatch = useCallback(async () => {
-    const batchCards = selectedCardIds
+    const batchCards = selectedBatchCardIds
       .map((id) => cardsById[id])
       .filter((card) => card?.callId);
     if (batchCards.length === 0) {
@@ -750,16 +791,16 @@ export default function KanbanBoardPage() {
         "success"
       );
       setShowBatchConfirmModal(false);
-      clearCardSelection();
+      selectedBatchCardIds.forEach((id) => removeCardSelectionId(id));
     } finally {
       setIsCreatingBatch(false);
     }
   }, [
-    selectedCardIds,
+    selectedBatchCardIds,
     cardsById,
     moveCardsToColumn,
     selectedBatchTargetColumn,
-    clearCardSelection,
+    removeCardSelectionId,
   ]);
 
   const handleToggleCardSelection = useCallback(
@@ -960,8 +1001,8 @@ export default function KanbanBoardPage() {
 
       <StatusConfirmationModal
         show={showBatchConfirmModal}
-        statusText={`Create a batch with the ${selectedCardIds.length} selected ${
-          selectedCardIds.length === 1 ? "card" : "cards"
+        statusText={`Create a batch with the ${selectedBatchCardIds.length} selected ${
+          selectedBatchCardIds.length === 1 ? "card" : "cards"
         }?`}
         icon={confirmTickIcon}
         onCancel={handleCloseBatchConfirm}
@@ -1013,17 +1054,6 @@ export default function KanbanBoardPage() {
       />
 
       <ArInvoiceReviewModal onConfirmed={refetchBoard} />
-
-      <SeApprovalUploadModal
-        show={showMergeInvoiceModal}
-        onClose={handleCloseMergeInvoice}
-        onUpload={handleMergeInvoices}
-        batchTitle={mergeInvoiceBatchTitle}
-        selectedCardCount={selectedMergeInvoiceCards.length}
-        title="Merge Invoice"
-        subtitle="Attach the invoices for the selected cards"
-        submitLabel="Upload Invoices"
-      />
 
       {selectedCard && columnsForCardForm && (
         <CardForm

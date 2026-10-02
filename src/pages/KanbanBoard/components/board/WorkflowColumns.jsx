@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { FiUploadCloud } from "react-icons/fi";
 import { MdCallMerge } from "react-icons/md";
@@ -17,6 +17,7 @@ import {
   getColumnWidth,
 } from "../../utils/boardGridHelpers";
 import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
+import useKanbanCardSelectionStore from "../../../../shared/store/kanbanCardSelectionStore";
 import useExportApprovalStatusStore from "../../../../shared/store/exportApprovalStatusStore";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
@@ -132,6 +133,32 @@ export default function WorkflowColumns({
         ? batchLaneCardsByColumn[colKey] ?? []
         : getSwimlaneColumnCards(workflow, laneId, colKey)
     );
+
+  /* "SE Received" and "AR Invoices Issued" cards start ticked, ready for "Upload Invoice" / "Merge
+     Invoice". Each card is ticked only the first time it shows up in that column, so a card the user
+     unticks stays unticked across board refetches, and is ticked again once it moves on to the next one. */
+  const setCardSelected = useKanbanCardSelectionStore((state) => state.setCardSelected);
+  const autoTickedCardIdsRef = useRef(new Set());
+
+  useEffect(() => {
+    if (!isBatchWorkflow(workflow)) return;
+    workflow.columnOrder
+      .filter((colKey) => getInvoiceAction(workflow, workflow.columns[colKey]))
+      .forEach((colKey) =>
+        swimlaneOrder
+          .flatMap((laneId) =>
+            batchLaneCardsByColumn && laneId === swimlaneOrder[0]
+              ? batchLaneCardsByColumn[colKey] ?? []
+              : getSwimlaneColumnCards(workflow, laneId, colKey)
+          )
+          .forEach((card) => {
+            const tickKey = `${colKey}:${card?.id}`;
+            if (!card?.id || autoTickedCardIdsRef.current.has(tickKey)) return;
+            autoTickedCardIdsRef.current.add(tickKey);
+            setCardSelected(card.id, true);
+          })
+      );
+  }, [workflow, swimlaneOrder, batchLaneCardsByColumn, setCardSelected]);
 
   /* A column whose cards carry a batch renders them as groups (loose cards first, headerless). */
   const getBatchesForColumn = (colKey, laneId) => {
@@ -281,6 +308,11 @@ export default function WorkflowColumns({
                         : hasBatchAction(workflow, displayColumn, firstColumn)
                         ? () =>
                             onColumnBatchAction({
+                              /* Only Backlog's ticks: other columns keep cards ticked too. */
+                              cardIds: group.colKeys
+                                .flatMap(getColumnCards)
+                                .filter((card) => selectedActionCardIds?.includes(card.id))
+                                .map((card) => card.id),
                               nextColumnKey:
                                 workflow.columnOrder[
                                   workflow.columnOrder.indexOf(group.colKeys[0]) + 1
