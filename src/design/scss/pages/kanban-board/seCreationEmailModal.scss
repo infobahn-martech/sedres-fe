@@ -266,6 +266,202 @@
     }
   }
 
+  // Final submission email: one slot per file, all on one line. A slot reads as a small drop target while
+  // empty and turns green once its file is in; a missing required file turns it red.
+  .se-email-slots {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 10px;
+    margin-top: 14px;
+
+    @media (max-width: 1199.98px) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-auto-flow: row;
+    }
+
+    @media (max-width: 767.98px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .se-email-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    min-height: 124px;
+    padding: 14px;
+    background: #ffffff;
+    border: 1px solid #d5e3f7;
+    border-radius: 10px;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+
+    &:hover {
+      border-color: #9dbcec;
+      box-shadow: 0 2px 8px rgba(11, 79, 196, 0.08);
+    }
+
+    &__head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    &__icon {
+      display: flex;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      font-size: 17px;
+      color: #0b4fc4;
+      background: #eaf2fd;
+      border-radius: 8px;
+    }
+
+    &__text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    &__label,
+    &__hint {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__label {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.3;
+      color: #0f172a;
+    }
+
+    &__required {
+      margin-left: 2px;
+      color: #dc2626;
+    }
+
+    &__hint {
+      margin-top: 2px;
+      font-size: 11px;
+      line-height: 1.3;
+      color: #64748b;
+    }
+
+    // The first file row / the picker sits on the slot's bottom edge, so every slot lines up.
+    & > .se-email-slot__head + .se-email-slot__file,
+    & > .se-email-slot__head + .se-email-slot__pick {
+      margin-top: auto;
+    }
+
+    &__file {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      padding: 6px 6px 6px 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+
+    &__file-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 0;
+      font-size: 12px;
+      text-align: left;
+      color: #0b4fc4;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    &__file-remove {
+      display: flex;
+      flex-shrink: 0;
+      align-items: center;
+      padding: 2px;
+      font-size: 13px;
+      color: #64748b;
+      background: transparent;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+
+      &:hover {
+        color: #dc2626;
+        background: #fee2e2;
+      }
+    }
+
+    &__pick {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 36px;
+      margin: 0;
+      font-size: 12px;
+      font-weight: 600;
+      color: #0b4fc4;
+      background: #f5f9ff;
+      border: 1px dashed #9dbcec;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+
+      &:hover {
+        background: #eaf2fd;
+      }
+
+      &--disabled {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+    }
+
+    &__error {
+      font-size: 11px;
+      line-height: 1.3;
+      color: #dc2626;
+    }
+
+    &--filled {
+      border-color: #bbe5c8;
+
+      .se-email-slot__icon {
+        color: #15803d;
+        background: #dcfce7;
+      }
+    }
+
+    &--error {
+      border-color: #fca5a5;
+
+      .se-email-slot__icon {
+        color: #dc2626;
+        background: #fee2e2;
+      }
+    }
+  }
+
   .se-email-message {
     .quill {
       border: 1px solid #cbd5e1;
@@ -376,4 +572,11 @@
       padding: 12px 16px;
     }
   }
+}
+
+// "Create Submission Documents" (SubmissionDocumentsModal) has one field, so it sits narrower.
+.se-email-modal-root.submission-documents-modal-root .se-email-dialog {
+  --bs-modal-width: min(520px, calc(100vw - 32px));
+  max-width: min(520px, calc(100vw - 32px));
+  width: min(520px, calc(100vw - 32px));
 }

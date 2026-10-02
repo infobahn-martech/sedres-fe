@@ -14,6 +14,7 @@ import SeCreationEmailModal from "../components/board/SeCreationEmailModal";
 import SeApprovalUploadModal from "../components/board/SeApprovalUploadModal";
 import SeReviewMoveModal from "../components/board/SeReviewMoveModal";
 import ArInvoiceReviewModal from "../components/board/ArInvoiceReviewModal";
+import SubmissionDocumentsModal from "../components/board/SubmissionDocumentsModal";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -51,6 +52,13 @@ const arInvoiceUploadFields = [
     formatsHint: "PDF",
     multiple: true,
   },
+];
+/* The files da/send_submission_email takes on top of the documents the draft already attaches. */
+const FINAL_SUBMISSION_FILE_FIELDS = [
+  { name: "signed_letter", label: "Signed covering letter", required: true },
+  { name: "consolidated_invoice", label: "Consolidated invoice (Excel)", required: true, accept: ".xlsx,.xls" },
+  { name: "approved_se_sheet", label: "Approved SE sheet", multiple: true },
+  { name: "approved_se_copies", label: "Copies of approved SEs", multiple: true },
 ];
 
 export default function KanbanBoardPage() {
@@ -749,6 +757,171 @@ export default function KanbanBoardPage() {
     [isMergingInvoices, removeCardSelectionId, refetchBoard]
   );
 
+  /* "Consolidated" column: "Create Submission Documents" builds the ticked cards' documents into a zip via
+     da/create_submission_documents and keeps the returned submission_id against the cards, which turns the
+     column action into "Send For Final Submission" (the email drafted by da/submission_email_draft). */
+  const submissionIdByCardId = useBatchMoveStore((state) => state.submissionIdByCardId);
+  const setSubmissionId = useBatchMoveStore((state) => state.setSubmissionId);
+  const clearSubmissionId = useBatchMoveStore((state) => state.clearSubmissionId);
+  const [showSubmissionDocumentsModal, setShowSubmissionDocumentsModal] = useState(false);
+  const [selectedSubmissionDocumentsCards, setSelectedSubmissionDocumentsCards] = useState([]);
+  const [isCreatingSubmissionDocuments, setIsCreatingSubmissionDocuments] = useState(false);
+  const [showFinalSubmissionEmailModal, setShowFinalSubmissionEmailModal] = useState(false);
+  const [selectedFinalSubmission, setSelectedFinalSubmission] = useState(null);
+  const [isLoadingFinalSubmissionDraft, setIsLoadingFinalSubmissionDraft] = useState(false);
+  const [isSendingFinalSubmission, setIsSendingFinalSubmission] = useState(false);
+
+  const handleColumnPrepareSubmission = useCallback((cards) => {
+    if (!cards?.length) return;
+    setSelectedSubmissionDocumentsCards(cards);
+    setShowSubmissionDocumentsModal(true);
+  }, []);
+
+  const handleCloseSubmissionDocuments = useCallback(() => {
+    if (isCreatingSubmissionDocuments) return;
+    setShowSubmissionDocumentsModal(false);
+    setSelectedSubmissionDocumentsCards([]);
+  }, [isCreatingSubmissionDocuments]);
+
+  const handleCreateSubmissionDocuments = useCallback(
+    async (invoiceNo) => {
+      const submissionCards = selectedSubmissionDocumentsCards
+        .filter((card) => card.callId)
+        .map((card) => ({ call_id: Number(card.callId), card_id: Number(card.id) }));
+      if (!submissionCards.length) {
+        notify("The selected cards have no call to create submission documents for", "error");
+        return;
+      }
+
+      setIsCreatingSubmissionDocuments(true);
+      try {
+        let data;
+        try {
+          ({ data } = await daService.createSubmissionDocuments({ cards: submissionCards, inv_no: invoiceNo }));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+        const { submission_id: submissionId, zip_url: zipUrl } = data?.data ?? {};
+        if (data?.status !== "success" || submissionId == null) {
+          notify(data?.message || "Failed to create submission documents", "error");
+          return;
+        }
+        setSubmissionId(
+          submissionCards.map((card) => card.card_id),
+          submissionId
+        );
+        /* A zip is always downloaded, so a plain link to it saves the file without leaving the board. */
+        if (zipUrl) {
+          downloadFile({ link: zipUrl, fileName: decodeURIComponent(zipUrl.split("/").pop()) || "Submission_Documents.zip" });
+        }
+        notify("Submission documents created", "success");
+        setShowSubmissionDocumentsModal(false);
+        setSelectedSubmissionDocumentsCards([]);
+      } finally {
+        setIsCreatingSubmissionDocuments(false);
+      }
+    },
+    [selectedSubmissionDocumentsCards, setSubmissionId]
+  );
+
+  const handleColumnSendFinalSubmission = useCallback(
+    async (cards) => {
+      if (!cards?.length || isLoadingFinalSubmissionDraft) return;
+      const submissionIds = [...new Set(cards.map((card) => submissionIdByCardId[String(card.id)]))];
+      if (submissionIds.length > 1) {
+        notify("The ticked cards belong to different submissions. Tick one submission's cards at a time.", "error");
+        return;
+      }
+      const [submissionId] = submissionIds;
+
+      setIsLoadingFinalSubmissionDraft(true);
+      try {
+        let data;
+        try {
+          ({ data } = await daService.getSubmissionEmailDraft(submissionId));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+        if (data?.status !== "success") {
+          /* A stale submission (cards regrouped, already submitted, or moved on) has to be created again. */
+          clearSubmissionId(submissionId);
+          notify(data?.message || "Failed to load the final submission email", "error");
+          refetchBoard?.();
+          return;
+        }
+        setSelectedFinalSubmission({ submissionId, cards, draft: data.data ?? {} });
+        setShowFinalSubmissionEmailModal(true);
+      } finally {
+        setIsLoadingFinalSubmissionDraft(false);
+      }
+    },
+    [isLoadingFinalSubmissionDraft, submissionIdByCardId, clearSubmissionId, refetchBoard]
+  );
+
+  const handleCloseFinalSubmissionEmail = useCallback(() => {
+    if (isSendingFinalSubmission) return;
+    setShowFinalSubmissionEmailModal(false);
+    setSelectedFinalSubmission(null);
+  }, [isSendingFinalSubmission]);
+
+  const handleSendFinalSubmissionEmail = useCallback(
+    async ({ to, cc, subject, message, fieldFiles }) => {
+      if (!selectedFinalSubmission) return;
+      const { submissionId, cards } = selectedFinalSubmission;
+      const formData = new FormData();
+      formData.append("submission_id", submissionId);
+      formData.append("to", to);
+      if (cc?.trim()) formData.append("cc", cc);
+      formData.append("subject", subject);
+      formData.append("body", message);
+      (fieldFiles?.signed_letter ?? []).forEach((file) => formData.append("signed_letter", file));
+      (fieldFiles?.consolidated_invoice ?? []).forEach((file) => formData.append("consolidated_invoice", file));
+      (fieldFiles?.approved_se_sheet ?? []).forEach((file) => formData.append("approved_se_sheet[]", file));
+      (fieldFiles?.approved_se_copies ?? []).forEach((file) => formData.append("approved_se_copies[]", file));
+
+      setIsSendingFinalSubmission(true);
+      try {
+        let data;
+        try {
+          ({ data } = await daService.sendSubmissionEmail(formData));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+        if (data?.status !== "success") {
+          notify(data?.message || "Failed to send the final submission email", "error");
+          return;
+        }
+        const movedCount = data.data?.moved_to_submitted?.length ?? cards.length;
+        notify(
+          `Final submission sent. ${movedCount} ${movedCount === 1 ? "card" : "cards"} moved to Submitted Invoices`,
+          "success"
+        );
+        clearSubmissionId(submissionId);
+        cards.forEach((card) => removeCardSelectionId(card.id));
+        setShowFinalSubmissionEmailModal(false);
+        setSelectedFinalSubmission(null);
+        refetchBoard?.();
+      } finally {
+        setIsSendingFinalSubmission(false);
+      }
+    },
+    [selectedFinalSubmission, clearSubmissionId, removeCardSelectionId, refetchBoard]
+  );
+
+  const finalSubmissionDraft = selectedFinalSubmission?.draft;
+  /* The merged invoices PDF (the draft's merged_invoices file) is shown on its own "Merged invoices" row. */
+  const finalSubmissionDocuments = useMemo(
+    () =>
+      (finalSubmissionDraft?.attachments ?? [])
+        .filter((attachment) => attachment?.url)
+        .map((attachment) =>
+          attachment.url === finalSubmissionDraft?.merged_invoices?.url || /^merged_invoices/i.test(attachment.name ?? "")
+            ? { ...attachment, label: "Merged invoices" }
+            : attachment
+        ),
+    [finalSubmissionDraft]
+  );
+
   /* Creates the batch on the backend from the ticked cards' calls. The backend issues the batch
      number (e.g. Sep_26_Batch1) and returns it as batch_number. */
   const handleConfirmBatch = useCallback(async () => {
@@ -985,6 +1158,8 @@ export default function KanbanBoardPage() {
           onBatchUploadInvoice={handleBatchUploadInvoice}
           onColumnUploadInvoice={handleColumnUploadInvoice}
           onColumnMergeInvoice={handleColumnMergeInvoice}
+          onColumnPrepareSubmission={handleColumnPrepareSubmission}
+          onColumnSendFinalSubmission={handleColumnSendFinalSubmission}
           onContextMenu={handleColumnContextMenu}
           onHeightChange={handleWorkflowColumnHeightChange}
           onToggleWorkflow={handleToggleWorkflow}
@@ -1021,6 +1196,31 @@ export default function KanbanBoardPage() {
         defaultSubject={seRequestEmailDraft?.subject ?? ""}
         defaultBody={seRequestEmailDraft?.body ?? ""}
         documentUrl={seRequestEmailDraft?.document_url ?? ""}
+      />
+
+      <SubmissionDocumentsModal
+        show={showSubmissionDocumentsModal}
+        onClose={handleCloseSubmissionDocuments}
+        onCreate={handleCreateSubmissionDocuments}
+        isSubmitting={isCreatingSubmissionDocuments}
+        cardCount={selectedSubmissionDocumentsCards.length}
+      />
+
+      <SeCreationEmailModal
+        show={showFinalSubmissionEmailModal}
+        onClose={handleCloseFinalSubmissionEmail}
+        onSend={handleSendFinalSubmissionEmail}
+        isSubmitting={isSendingFinalSubmission}
+        defaultTo={finalSubmissionDraft?.to ?? ""}
+        defaultCc={finalSubmissionDraft?.cc ?? ""}
+        defaultSubject={finalSubmissionDraft?.subject ?? ""}
+        defaultBody={finalSubmissionDraft?.body ?? ""}
+        documents={finalSubmissionDocuments}
+        fileFields={FINAL_SUBMISSION_FILE_FIELDS}
+        title="Final Submission Email"
+        subtitle="Send the submission documents to the client"
+        sendLabel="Send for Final Submission"
+        subjectPrefix="INV Submission"
       />
 
       <SeApprovalUploadModal

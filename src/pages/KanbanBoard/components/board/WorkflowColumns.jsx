@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
-import { FiUploadCloud } from "react-icons/fi";
+import { FiDownload, FiSend, FiUploadCloud } from "react-icons/fi";
 import { MdCallMerge } from "react-icons/md";
 import { KANBAN_DND_DISABLED } from "../../../../shared/constants/kanbanConfig";
 import ColumnHeader from "./ColumnHeader";
@@ -42,16 +42,26 @@ const hasBatchAction = (workflow, ...columns) =>
   isBatchWorkflow(workflow) && columns.some(isBacklogColumn);
 
 /* Invoice actions on SAIPEM column headers, shown only while a card in that column is ticked:
-   "Upload Invoice" on "SE Received", "Merge Invoice" on "AR Invoices Issued". */
+   "Upload Invoice" on "SE Received", "Merge Invoice" on "AR Invoices Issued", and on "Consolidated"
+   "Create Submission Documents", then "Send For Final Submission" once those cards' documents exist. */
 const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
 const AR_INVOICES_ISSUED_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
+const CONSOLIDATED_COLUMN_PATTERN = /^consolidated\b/i;
 
 const getInvoiceAction = (workflow, column) => {
   if (!isBatchWorkflow(workflow)) return null;
   const title = String(column?.title ?? "").trim();
   if (SE_RECEIVED_COLUMN_PATTERN.test(title)) return "upload";
   if (AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "merge";
+  if (CONSOLIDATED_COLUMN_PATTERN.test(title)) return "submission";
   return null;
+};
+
+const INVOICE_ACTION_BUTTONS = {
+  upload: { label: "Upload Invoice", icon: <FiUploadCloud size={16} aria-hidden /> },
+  merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
+  prepareSubmission: { label: "Create Submission Documents", icon: <FiDownload size={16} aria-hidden /> },
+  finalSubmission: { label: "Send For Final Submission", icon: <FiSend size={16} aria-hidden /> },
 };
 
 export default function WorkflowColumns({
@@ -68,6 +78,8 @@ export default function WorkflowColumns({
   onBatchUploadInvoice,
   onColumnUploadInvoice,
   onColumnMergeInvoice,
+  onColumnPrepareSubmission,
+  onColumnSendFinalSubmission,
   onContextMenu,
   onHeightChange,
   isDarkMode,
@@ -91,6 +103,7 @@ export default function WorkflowColumns({
      column instead. */
   const columnByCardId = useBatchMoveStore((state) => state.columnByCardId);
   const batchByCardId = useBatchMoveStore((state) => state.batchByCardId);
+  const submissionIdByCardId = useBatchMoveStore((state) => state.submissionIdByCardId);
 
   const loadExportApprovalStatuses = useExportApprovalStatusStore((state) => state.loadStatuses);
 
@@ -268,6 +281,41 @@ export default function WorkflowColumns({
               const invoiceCards = invoiceAction
                 ? getColumnCards(group.colKeys[0]).filter((card) => selectedActionCardIds?.includes(card.id))
                 : [];
+              /* "Consolidated": ticked cards with created documents get "Send For Final Submission", the
+                 rest "Create Submission Documents"; a mix of both shows the two buttons side by side. */
+              const submissionReadyCards =
+                invoiceAction === "submission"
+                  ? invoiceCards.filter((card) => submissionIdByCardId[String(card.id)] != null)
+                  : [];
+              const submissionPendingCards =
+                invoiceAction === "submission"
+                  ? invoiceCards.filter((card) => submissionIdByCardId[String(card.id)] == null)
+                  : [];
+              const invoiceButton =
+                invoiceAction === "submission"
+                  ? submissionPendingCards.length
+                    ? "prepareSubmission"
+                    : "finalSubmission"
+                  : invoiceAction;
+              const invoiceButtonCards =
+                invoiceAction === "submission"
+                  ? submissionPendingCards.length
+                    ? submissionPendingCards
+                    : submissionReadyCards
+                  : invoiceCards;
+              const secondaryAction =
+                submissionPendingCards.length && submissionReadyCards.length
+                  ? {
+                      ...INVOICE_ACTION_BUTTONS.finalSubmission,
+                      onClick: () => onColumnSendFinalSubmission?.(submissionReadyCards),
+                    }
+                  : undefined;
+              const invoiceActionHandlers = {
+                upload: onColumnUploadInvoice,
+                merge: onColumnMergeInvoice,
+                prepareSubmission: onColumnPrepareSubmission,
+                finalSubmission: onColumnSendFinalSubmission,
+              };
 
               return (
                 <div
@@ -283,28 +331,12 @@ export default function WorkflowColumns({
                       isGrouped ? undefined : () => onColumnHeaderClick(workflow.id, firstColumn.id)
                     }
                     isDarkMode={isDarkMode}
-                    actionLabel={
-                      invoiceCards.length > 0
-                        ? invoiceAction === "merge"
-                          ? "Merge Invoice"
-                          : "Upload Invoice"
-                        : "Batch"
-                    }
-                    actionIcon={
-                      invoiceCards.length > 0 ? (
-                        invoiceAction === "merge" ? (
-                          <MdCallMerge size={16} aria-hidden />
-                        ) : (
-                          <FiUploadCloud size={16} aria-hidden />
-                        )
-                      ) : undefined
-                    }
+                    actionLabel={invoiceCards.length > 0 ? INVOICE_ACTION_BUTTONS[invoiceButton].label : "Batch"}
+                    actionIcon={invoiceCards.length > 0 ? INVOICE_ACTION_BUTTONS[invoiceButton].icon : undefined}
+                    secondaryAction={secondaryAction}
                     onActionClick={
                       invoiceCards.length > 0
-                        ? () =>
-                            invoiceAction === "merge"
-                              ? onColumnMergeInvoice?.(invoiceCards)
-                              : onColumnUploadInvoice?.(invoiceCards)
+                        ? () => invoiceActionHandlers[invoiceButton]?.(invoiceButtonCards)
                         : hasBatchAction(workflow, displayColumn, firstColumn)
                         ? () =>
                             onColumnBatchAction({

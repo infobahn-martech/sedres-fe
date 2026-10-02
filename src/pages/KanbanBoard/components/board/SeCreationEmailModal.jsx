@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { FiMail, FiPaperclip, FiPlus, FiSend, FiX } from "react-icons/fi";
+import { FiCheck, FiFileText, FiMail, FiPaperclip, FiPlus, FiSend, FiUploadCloud, FiX } from "react-icons/fi";
 import CustomModal from "../../../../components/CustomModal";
 import "../../../../design/scss/pages/kanban-board/seCreationEmailModal.scss";
 
@@ -16,6 +16,8 @@ const MESSAGE_QUILL_TOOLBAR = [
 const MESSAGE_QUILL_FORMATS = ["bold", "italic", "underline", "list", "bullet", "link", "image"];
 
 const DEFAULT_FROM = "operations@shipping.com";
+
+const EMPTY_LIST = [];
 
 const DEFAULT_MESSAGE_HTML =
   "<p>Greetings from Sedres.</p>" +
@@ -41,7 +43,11 @@ const getFileNameFromUrl = (url) => {
   }
 };
 
-// Opened from a batch group's "Send For SE creation" action on the Kanban board.
+// Opened from a batch group's "Send For SE creation" action on the Kanban board, and from the
+// "Consolidated" column's "Send For Final Submission" (with its own title / subject / send label).
+// `documents` lists files the backend already holds for the email (opened, not re-sent; one with a `label`
+// gets its own labelled row, like the pickers); `fileFields`
+// replaces "Add files" with one labelled picker per file the send route takes.
 const SeCreationEmailModal = ({
   show,
   onClose,
@@ -53,23 +59,31 @@ const SeCreationEmailModal = ({
   defaultSubject = "",
   defaultBody = "",
   documentUrl = "",
+  title = "New SE Creation Email",
+  subtitle = "Compose sales order confirmation",
+  sendLabel = "Send for SE Creation",
+  subjectPrefix = "Sent for SE Creation",
+  documents = EMPTY_LIST,
+  fileFields = null,
 }) => {
   const [toValue, setToValue] = useState("");
   const [ccValue, setCcValue] = useState("");
   const [subjectValue, setSubjectValue] = useState("");
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState([]);
+  const [fieldFiles, setFieldFiles] = useState({});
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (!show) return;
     setToValue(defaultTo);
     setCcValue(defaultCc);
-    setSubjectValue(defaultSubject || `Sent for SE Creation${batchTitle ? ` — ${batchTitle}` : ""}`);
+    setSubjectValue(defaultSubject || `${subjectPrefix}${batchTitle ? ` — ${batchTitle}` : ""}`);
     setMessage(defaultBody ? plainTextToHtml(defaultBody) : DEFAULT_MESSAGE_HTML);
     setAttachments([]);
+    setFieldFiles({});
     setErrors({});
-  }, [show, batchTitle, defaultTo, defaultCc, defaultSubject, defaultBody]);
+  }, [show, batchTitle, defaultTo, defaultCc, defaultSubject, defaultBody, subjectPrefix]);
 
   const clearError = (field) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -84,6 +98,29 @@ const SeCreationEmailModal = ({
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleFieldFilesSelected = (field, fileList) => {
+    const files = Array.from(fileList || []).filter(Boolean);
+    if (!files.length) return;
+    setFieldFiles((prev) => ({
+      ...prev,
+      [field.name]: field.multiple ? [...(prev[field.name] ?? []), ...files] : files.slice(0, 1),
+    }));
+    clearError(`file_${field.name}`);
+  };
+
+  const removeFieldFile = (fieldName, index) => {
+    setFieldFiles((prev) => ({ ...prev, [fieldName]: (prev[fieldName] ?? []).filter((_, i) => i !== index) }));
+  };
+
+  const unlabelledDocuments = documents.filter((document) => !document.label);
+  const labelledDocuments = documents.filter((document) => document.label);
+
+  const attachmentCount =
+    attachments.length +
+    documents.length +
+    (documentUrl ? 1 : 0) +
+    Object.values(fieldFiles).reduce((sum, files) => sum + files.length, 0);
+
   const handleOpenAttachment = (file) => {
     const url = URL.createObjectURL(file);
     window.open(url, "_blank");
@@ -97,6 +134,11 @@ const SeCreationEmailModal = ({
     if (!subjectValue.trim()) nextErrors.subject = "Please enter a subject.";
     // Quill keeps markup like "<p><br></p>" when cleared, so check the text content only.
     if (!message.replace(/<[^>]*>/g, "").trim()) nextErrors.message = "Please enter a message.";
+    (fileFields ?? []).forEach((field) => {
+      if (field.required && !fieldFiles[field.name]?.length) {
+        nextErrors[`file_${field.name}`] = `Please attach the ${field.label.toLowerCase()}.`;
+      }
+    });
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
       return;
@@ -108,6 +150,7 @@ const SeCreationEmailModal = ({
       subject: subjectValue,
       message,
       attachments,
+      fieldFiles,
     });
   };
 
@@ -117,8 +160,8 @@ const SeCreationEmailModal = ({
         <FiMail />
       </span>
       <div className="se-email-header__text">
-        <h5 className="se-email-header__title">New SE Creation Email</h5>
-        <p className="se-email-header__subtitle">Compose sales order confirmation</p>
+        <h5 className="se-email-header__title">{title}</h5>
+        <p className="se-email-header__subtitle">{subtitle}</p>
       </div>
       <button
         type="button"
@@ -188,25 +231,40 @@ const SeCreationEmailModal = ({
         <div className="se-email-attachments__toolbar">
           <span className="se-email-attachments__label">
             <FiPaperclip className="se-email-attachments__clip" />
-            Attachments ({attachments.length + (documentUrl ? 1 : 0)})
+            Attachments ({attachmentCount})
           </span>
-          <label className={`se-email-attachments__add${isSubmitting ? " se-email-attachments__add--disabled" : ""}`}>
-            <FiPlus />
-            Add files
-            <input
-              type="file"
-              multiple
-              className="d-none"
-              disabled={isSubmitting}
-              onChange={(e) => {
-                handleFilesSelected(e.target.files);
-                e.target.value = "";
-              }}
-            />
-          </label>
+          {!fileFields && (
+            <label className={`se-email-attachments__add${isSubmitting ? " se-email-attachments__add--disabled" : ""}`}>
+              <FiPlus />
+              Add files
+              <input
+                type="file"
+                multiple
+                className="d-none"
+                disabled={isSubmitting}
+                onChange={(e) => {
+                  handleFilesSelected(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          )}
         </div>
-        {(documentUrl || attachments.length > 0) && (
+        {(documentUrl || unlabelledDocuments.length > 0 || attachments.length > 0) && (
           <div className="se-email-attachments__items">
+            {unlabelledDocuments.map((document) => (
+              <div key={document.url} className="se-email-attachments__item">
+                <a
+                  href={document.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="se-email-attachments__name"
+                  title={`Open ${document.name}`}
+                >
+                  {document.name}
+                </a>
+              </div>
+            ))}
             {documentUrl && (
               <div className="se-email-attachments__item">
                 <a
@@ -244,6 +302,100 @@ const SeCreationEmailModal = ({
             ))}
           </div>
         )}
+        {(labelledDocuments.length > 0 || fileFields?.length > 0) && (
+          <div className="se-email-slots">
+            {labelledDocuments.map((document) => (
+              <div key={document.url} className="se-email-slot se-email-slot--filled">
+                <div className="se-email-slot__head">
+                  <span className="se-email-slot__icon">
+                    <FiFileText />
+                  </span>
+                  <div className="se-email-slot__text">
+                    <span className="se-email-slot__label" title={document.label}>
+                      {document.label}
+                    </span>
+                    <span className="se-email-slot__hint">Included automatically</span>
+                  </div>
+                </div>
+                <a
+                  href={document.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="se-email-slot__file"
+                  title={`Open ${document.name}`}
+                >
+                  <span className="se-email-slot__file-name">{document.name}</span>
+                </a>
+              </div>
+            ))}
+            {(fileFields ?? []).map((field) => {
+              const files = fieldFiles[field.name] ?? [];
+              const error = errors[`file_${field.name}`];
+              const canPick = field.multiple || files.length === 0;
+              return (
+                <div
+                  key={field.name}
+                  className={`se-email-slot${files.length ? " se-email-slot--filled" : ""}${
+                    error ? " se-email-slot--error" : ""
+                  }`}
+                >
+                  <div className="se-email-slot__head">
+                    <span className="se-email-slot__icon">{files.length ? <FiCheck /> : <FiUploadCloud />}</span>
+                    <div className="se-email-slot__text">
+                      <span className="se-email-slot__label" title={field.label}>
+                        {field.label}
+                        {field.required && <span className="se-email-slot__required">*</span>}
+                      </span>
+                      <span className="se-email-slot__hint">
+                        {field.required ? "Required" : "Optional"} · {field.multiple ? "1 or more files" : "1 file"}
+                      </span>
+                    </div>
+                  </div>
+                  {files.map((file, index) => (
+                    <div key={`${file.name}-${index}`} className="se-email-slot__file">
+                      <button
+                        type="button"
+                        className="se-email-slot__file-name"
+                        onClick={() => handleOpenAttachment(file)}
+                        title={`Open ${file.name}`}
+                        disabled={isSubmitting}
+                      >
+                        {file.name}
+                      </button>
+                      <button
+                        type="button"
+                        className="se-email-slot__file-remove"
+                        onClick={() => removeFieldFile(field.name, index)}
+                        aria-label={`Remove ${file.name}`}
+                        disabled={isSubmitting}
+                      >
+                        <FiX />
+                      </button>
+                    </div>
+                  ))}
+                  {canPick && (
+                    <label className={`se-email-slot__pick${isSubmitting ? " se-email-slot__pick--disabled" : ""}`}>
+                      <FiPlus />
+                      {files.length ? "Add more" : "Choose file"}
+                      <input
+                        type="file"
+                        multiple={field.multiple}
+                        accept={field.accept}
+                        className="d-none"
+                        disabled={isSubmitting}
+                        onChange={(e) => {
+                          handleFieldFilesSelected(field, e.target.files);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  )}
+                  {error && <div className="se-email-slot__error">{error}</div>}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="se-email-message">
@@ -271,7 +423,7 @@ const SeCreationEmailModal = ({
       </button>
       <button type="button" className="se-email-footer__send" onClick={handleSend} disabled={isSubmitting}>
         <FiSend />
-        {isSubmitting ? "Sending..." : "Send for SE Creation"}
+        {isSubmitting ? "Sending..." : sendLabel}
       </button>
     </div>
   );
@@ -300,6 +452,22 @@ SeCreationEmailModal.propTypes = {
   defaultSubject: PropTypes.string,
   defaultBody: PropTypes.string,
   documentUrl: PropTypes.string,
+  title: PropTypes.string,
+  subtitle: PropTypes.string,
+  sendLabel: PropTypes.string,
+  subjectPrefix: PropTypes.string,
+  documents: PropTypes.arrayOf(
+    PropTypes.shape({ name: PropTypes.string, url: PropTypes.string, label: PropTypes.string })
+  ),
+  fileFields: PropTypes.arrayOf(
+    PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      label: PropTypes.string.isRequired,
+      required: PropTypes.bool,
+      multiple: PropTypes.bool,
+      accept: PropTypes.string,
+    })
+  ),
 };
 
 export default SeCreationEmailModal;

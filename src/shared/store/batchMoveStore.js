@@ -28,6 +28,27 @@ const hasSeUpload = (seReview) =>
       )
   );
 
+/* A "Consolidated" card's submission_id from da/create_submission_documents is kept in browser storage, so
+   "Send For Final Submission" is still offered after a reload; the board data does not carry it. */
+const SUBMISSION_ID_STORAGE_KEY = "sedres-da-submission-id-by-card";
+
+const readStoredSubmissionIds = () => {
+  try {
+    const stored = JSON.parse(localStorage.getItem(SUBMISSION_ID_STORAGE_KEY) || "{}");
+    return stored && typeof stored === "object" ? stored : {};
+  } catch {
+    return {};
+  }
+};
+
+const storeSubmissionIds = (submissionIdByCardId) => {
+  try {
+    localStorage.setItem(SUBMISSION_ID_STORAGE_KEY, JSON.stringify(submissionIdByCardId));
+  } catch {
+    /* Without storage the ids only last until a reload. */
+  }
+};
+
 const useBatchMoveStore = create((set, get) => ({
   /** { [cardId]: columnKey } */
   columnByCardId: {},
@@ -44,6 +65,9 @@ const useBatchMoveStore = create((set, get) => ({
   seUntickedByCardId: {},
   /** { [batchId]: se_review } — da/upload_se_approval's se_review; its presence means the SE upload is done. */
   seReviewByBatchId: {},
+  /** { [cardId]: submissionId } — "Consolidated" cards whose submission documents are created, so the column
+   * offers "Send For Final Submission" for them. Survives a reload (see readStoredSubmissionIds). */
+  submissionIdByCardId: readStoredSubmissionIds(),
   showSeReviewMoveModal: false,
   /** The batch whose "Review and Move" popup is open. */
   selectedSeReviewBatch: null,
@@ -179,6 +203,27 @@ const useBatchMoveStore = create((set, get) => ({
       const columnByCardId = { ...state.columnByCardId };
       cardIds.forEach((cardId) => delete columnByCardId[String(cardId)]);
       return { columnByCardId };
+    }),
+
+  setSubmissionId: (cardIds, submissionId) =>
+    set((state) => {
+      if (!cardIds?.length || submissionId == null) return state;
+      const submissionIdByCardId = { ...state.submissionIdByCardId };
+      cardIds.forEach((cardId) => {
+        submissionIdByCardId[String(cardId)] = submissionId;
+      });
+      storeSubmissionIds(submissionIdByCardId);
+      return { submissionIdByCardId };
+    }),
+
+  /** Drops a submission once it is sent or has gone stale, so its cards offer "Create documents" again. */
+  clearSubmissionId: (submissionId) =>
+    set((state) => {
+      const submissionIdByCardId = Object.fromEntries(
+        Object.entries(state.submissionIdByCardId).filter(([, id]) => String(id) !== String(submissionId))
+      );
+      storeSubmissionIds(submissionIdByCardId);
+      return { submissionIdByCardId };
     }),
 
   /** Replaces the grouping with da/batches, which is fetched alongside every board load. */
