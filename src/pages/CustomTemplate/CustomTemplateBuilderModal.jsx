@@ -4,7 +4,6 @@ import SearchableSelect from "../../components/form/SearchableSelect";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import TemplateFieldPreview from "./TemplateFieldPreview";
 import { buildFieldGrid, resolveFieldLayout } from "./templateFieldGrid";
-import useBillingEntityReducer from "../../store/BillingEntityReducer";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/general.scss";
@@ -81,12 +80,11 @@ const mapTemplateField = (f) => {
     };
 };
 
-// initialTemplate may be this file's own shape (name/billingEntityId/...) or the
-// raw form_template/{id} API detail response (template_name/billing_entity_id/...).
+// initialTemplate may be this file's own shape (name/callTypeId/...) or the
+// raw form_template/{id} API detail response (template_name/call_type_id/...).
 const toIdString = (v) => (v === null || v === undefined ? "" : String(v));
 const getTemplateSeed = (template) => ({
     name: template?.name ?? template?.template_name ?? "",
-    billingEntity: toIdString(template?.billingEntityId ?? template?.billing_entity_id),
     callTypeId: toIdString(template?.callTypeId ?? template?.call_type_id),
     templateId: template?.templateId ?? template?.template_id ?? null,
 });
@@ -323,7 +321,6 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, optionsF
 // (either the standalone modal below, or CustomTemplateListModal reusing its
 // own single panel) owns the surrounding chrome and decides what onClose does.
 function TemplateBuilderBody({ initialTemplate = null, onClose }) {
-    const { getBillingEntities, billingEntities, isLoading: billingLoading } = useBillingEntityReducer((s) => s);
     const {
         getFieldTypes, fieldTypes, isLoadingFieldTypes,
         getCallTypes, callTypes, isLoadingCallTypes: callTypesLoading,
@@ -333,8 +330,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     const [templateName, setTemplateName] = useState(() => getTemplateSeed(initialTemplate).name);
     const [nameTouched, setNameTouched] = useState(false);
-    const [billingEntity, setBillingEntity] = useState(() => getTemplateSeed(initialTemplate).billingEntity);
-    const [entityTouched, setEntityTouched] = useState(false);
     const [callTypeId, setCallTypeId] = useState(() => getTemplateSeed(initialTemplate).callTypeId);
     const [callTypeTouched, setCallTypeTouched] = useState(false);
     const [templateId] = useState(() => getTemplateSeed(initialTemplate).templateId);
@@ -357,12 +352,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const [dragOverCell, setDragOverCell] = useState(null);
     const [deleteFieldRequest, setDeleteFieldRequest] = useState(null);
 
-    const billingEntityOptions = (billingEntities ?? []).map((be) => ({
-        value: String(be._id ?? be.entity_id ?? ""),
-        label: String(be.name ?? be.billing_entity ?? ""),
-    }));
-    const billingEntityLabel = billingEntityOptions.find((o) => o.value === billingEntity)?.label ?? "";
-
     const callTypeOptions = (callTypes ?? []).map((ct) => ({
         value: String(ct.call_type_id ?? ""),
         label: String(ct.call_type ?? ""),
@@ -384,12 +373,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const previewFields = activeFields.map((f) => ({ ...f, label: f.label.trim() || "Untitled Field" }));
 
     useEffect(() => {
-        if (billingEntities === null && !billingLoading) {
-            getBillingEntities({ params: { page: 1, limit: 1000 } });
-        }
-    }, [billingEntities, billingLoading, getBillingEntities]);
-
-    useEffect(() => {
         if (callTypes === null) {
             getCallTypes();
         }
@@ -405,8 +388,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         const seed = getTemplateSeed(initialTemplate);
         setTemplateName(seed.name);
         setNameTouched(false);
-        setBillingEntity(seed.billingEntity);
-        setEntityTouched(false);
         setCallTypeId(seed.callTypeId);
         setCallTypeTouched(false);
         const defaultTabs = buildTabsFromTemplate(initialTemplate);
@@ -673,9 +654,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     };
 
     const isNameInvalid = nameTouched && !templateName.trim();
-    const isEntityInvalid = entityTouched && !billingEntity;
     const isCallTypeInvalid = callTypeTouched && !callTypeId;
-    const canSave = Boolean(templateName.trim()) && Boolean(billingEntity) && Boolean(callTypeId);
+    const canSave = Boolean(templateName.trim()) && Boolean(callTypeId);
 
     const handleClose = () => {
         resetState();
@@ -738,13 +718,11 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     const handleSave = () => {
         setNameTouched(true);
-        setEntityTouched(true);
         setCallTypeTouched(true);
         if (!canSave) return;
 
         const payload = {
             call_type_id: Number(callTypeId),
-            billing_entity_id: Number(billingEntity),
             template_name: templateName.trim(),
             tabs: tabs.map(buildTabPayload),
         };
@@ -780,24 +758,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                     />
                                 </div>
                                 {isNameInvalid && <span className="cf-field-error">Template name is required</span>}
-                            </div>
-
-                            <div className="cf-field">
-                                <label>
-                                    Billing Entity <span className="text-danger">*</span>
-                                </label>
-                                <SearchableSelect
-                                    value={billingEntity}
-                                    onChange={(e) => { setBillingEntity(e.target.value); setEntityTouched(true); }}
-                                    options={billingEntityOptions}
-                                    placeholder={billingLoading ? "Loading..." : "Select billing entity"}
-                                    hasError={isEntityInvalid}
-                                    disabled={billingLoading}
-                                    className="ctm-billing-select"
-                                    menuPortalTarget={document.body}
-                                    menuPlacement="auto"
-                                />
-                                {isEntityInvalid && <span className="cf-field-error">Billing entity is required</span>}
                             </div>
 
                             <div className="cf-field">
@@ -1063,9 +1023,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                             <div className="cardform-topbar ct-preview-topbar ctm-preview-topbar">
                                 <span className="cardform-title">
                                     {templateName.trim()}
-                                    {billingEntityLabel && (
-                                        <span className="ctl-preview-topbar-entity"> · Billing Entity: {billingEntityLabel}</span>
-                                    )}
                                 </span>
                             </div>
 

@@ -12,13 +12,12 @@ import "../../design/scss/pages/callTypeBuilder.scss";
 import "../../design/scss/pages/customTemplateBuilder.scss";
 import "../../design/scss/pages/customTemplateList.scss";
 
-// Normalizes a raw form_template/list item (template_name/billing_entity/tab_count,
-// tabs in the API's own tab_label/field_label/... shape) into the shape this
-// modal's list/preview UI and TemplateFieldPreview already render.
+// Normalizes a raw form_template/list item (template_name/tab_count, tabs in
+// the API's own tab_label/field_label/... shape) into the shape this modal's
+// list/preview UI and TemplateFieldPreview already render.
 const normalizeTemplateSummary = (tpl) => ({
     id: tpl.templateId ?? tpl.template_id,
     name: tpl.name ?? tpl.template_name ?? "",
-    billingEntityLabel: tpl.billingEntityLabel ?? tpl.billing_entity ?? "General",
     tabCount: tpl.tabCount ?? tpl.tab_count ?? tpl.tabs?.length ?? 0,
     tabs: buildTabsFromTemplate(tpl),
 });
@@ -31,7 +30,7 @@ function TemplateListCard({ template, isActive, onSelect, onDelete }) {
             <div className="ctl-template-card-body">
                 <span className="ctl-template-name">{template.name}</span>
                 <span className="ctl-template-meta">
-                    {template.billingEntityLabel} · {tabCount} tab{tabCount === 1 ? "" : "s"}
+                    {tabCount} tab{tabCount === 1 ? "" : "s"}
                 </span>
             </div>
             <button
@@ -214,7 +213,6 @@ function CustomTemplateListModal({ show, onClose }) {
                                                 <div className="cardform-topbar ct-preview-topbar ctl-preview-topbar">
                                                     <span className="cardform-title">
                                                         {selectedTemplate.name}
-                                                        <span className="ctl-preview-topbar-entity"> · Billing Entity: {selectedTemplate.billingEntityLabel}</span>
                                                     </span>
                                                     <div className="cardform-topbar-right">
                                                         <button type="button" className="ctl-preview-edit-btn" onClick={handleEditClick}>
