@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { FiDownload, FiFileText, FiX } from "react-icons/fi";
+import { FiDownload, FiX } from "react-icons/fi";
 import CustomModal from "../../../../components/CustomModal";
-import "../../../../design/scss/pages/kanban-board/seCreationEmailModal.scss";
+import "../../../../design/scss/blockers-modal.scss";
+import "../../../../design/scss/pages/kanban-board/seReviewMoveModal.scss";
 
 // Opened from the "Consolidated" column's "Create Submission Documents" action: takes the consolidated
-// invoice number the submission documents are built under. Reuses the SE creation email modal's styling.
+// invoice number the submission documents are built under. Same Blockers-style CustomModal shell as
+// Review and Move / Invoice Review (blockers-modal-* + se-review-move-* classes).
 const SubmissionDocumentsModal = ({ show, onClose, onCreate, isSubmitting = false, cardCount = 0 }) => {
   const [invoiceNo, setInvoiceNo] = useState("");
   const [error, setError] = useState("");
@@ -26,60 +28,58 @@ const SubmissionDocumentsModal = ({ show, onClose, onCreate, isSubmitting = fals
   };
 
   const renderHeader = () => (
-    <div className="se-email-header">
-      <span className="se-email-header__icon">
-        <FiFileText />
-      </span>
-      <div className="se-email-header__text">
-        <h5 className="se-email-header__title">Create Submission Documents</h5>
-        <p className="se-email-header__subtitle">
+    <div className="blockers-modal-header">
+      <div className="blockers-modal-header-text">
+        <h5 className="blockers-modal-title">Create Submission Documents</h5>
+        <p className="blockers-modal-subtitle">
           {cardCount} {cardCount === 1 ? "card" : "cards"} selected
         </p>
       </div>
       <button
         type="button"
-        className="se-email-header__close"
+        className="blockers-modal-close"
         onClick={onClose}
         disabled={isSubmitting}
         aria-label="Close"
       >
-        <FiX />
+        <FiX size={20} />
       </button>
     </div>
   );
 
   const renderBody = () => (
-    <div className="modal-body se-email-body">
-      <div className="se-email-field">
-        <label className="se-email-field__label">Invoice No</label>
-        <div className="se-email-field__control">
-          <input
-            type="text"
-            className="se-email-field__input"
-            value={invoiceNo}
-            onChange={(e) => {
-              setInvoiceNo(e.target.value);
-              if (error) setError("");
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleCreate();
-            }}
-            placeholder="e.g. SA26-00124926"
-            disabled={isSubmitting}
-          />
-          {error && <div className="se-email-field__error">{error}</div>}
-        </div>
+    <div className="blockers-toolbar-section">
+      <div className="submission-documents-field">
+        <label className="submission-documents-field__label" htmlFor="submission-documents-invoice-no">
+          Invoice No <span className="text-danger">*</span>
+        </label>
+        <input
+          id="submission-documents-invoice-no"
+          type="text"
+          className={`form-control submission-documents-field__input${error ? " is-invalid" : ""}`}
+          value={invoiceNo}
+          onChange={(e) => {
+            setInvoiceNo(e.target.value);
+            if (error) setError("");
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleCreate();
+          }}
+          placeholder="e.g. SA26-00124926"
+          disabled={isSubmitting}
+        />
+        {error && <div className="submission-documents-field__error">{error}</div>}
       </div>
     </div>
   );
 
   const renderFooter = () => (
-    <div className="modal-footer se-email-footer">
-      <button type="button" className="se-email-footer__cancel" onClick={onClose} disabled={isSubmitting}>
+    <div className="modal-footer se-review-move-footer">
+      <button type="button" className="btn btn-outline" onClick={onClose} disabled={isSubmitting}>
         Cancel
       </button>
-      <button type="button" className="se-email-footer__send" onClick={handleCreate} disabled={isSubmitting}>
-        <FiDownload />
+      <button type="button" className="btn btn-primary" onClick={handleCreate} disabled={isSubmitting}>
+        <FiDownload className="me-2" />
         {isSubmitting ? "Creating..." : "Create Documents"}
       </button>
     </div>
@@ -89,8 +89,10 @@ const SubmissionDocumentsModal = ({ show, onClose, onCreate, isSubmitting = fals
     <CustomModal
       show={show}
       closeModal={onClose}
-      className="se-email-modal-root submission-documents-modal-root"
-      dialgName="se-email-dialog"
+      className="blockers-modal se-review-move-modal submission-documents-modal"
+      backdropClassName="blockers-modal-backdrop"
+      createModal
+      bodyClassname="blockers-modal-body"
       header={renderHeader()}
       body={renderBody()}
       footer={renderFooter()}

@@ -1,11 +1,12 @@
 import { Fragment, useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { FiCheck, FiFileText, FiLayers, FiX } from "react-icons/fi";
+import { FiCheck, FiLayers, FiX } from "react-icons/fi";
 import CustomModal from "../../../../components/CustomModal";
 import useArInvoiceReviewStore from "../../../../shared/store/arInvoiceReviewStore";
 import { notify } from "../../../../components/Toaster";
 import MaterialTablePagination from "../../CardFormTabs/Import/tabs/husbandry/components/MaterialTablePagination";
-import "../../../../design/scss/pages/kanban-board/seApprovalUploadModal.scss";
+import "../../../../design/scss/blockers-modal.scss";
+import "../../../../design/scss/pages/kanban-board/seReviewMoveModal.scss";
 import "../../../../design/scss/pages/kanban-board/arInvoiceReviewModal.scss";
 
 /*
@@ -204,29 +205,6 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
     onConfirmed?.();
   };
 
-  const renderHeader = () => (
-    <div className="se-approval-header">
-      <span className="se-approval-header__icon">
-        <FiFileText />
-      </span>
-      <div className="se-approval-header__text">
-        <h5 className="se-approval-header__title">Invoice Review</h5>
-        <p className="se-approval-header__subtitle">
-          Check the invoices, then confirm the ticked cards
-        </p>
-      </div>
-      <button
-        type="button"
-        className="se-approval-header__close"
-        onClick={onClose}
-        disabled={isConfirming}
-        aria-label="Close"
-      >
-        <FiX />
-      </button>
-    </div>
-  );
-
   const renderCell = (card, salesOrder, column) => {
     if (!column.editable) return column.getValue(salesOrder) || "-";
     if (!salesOrder.invoice) {
@@ -313,7 +291,7 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
             </td>
           )}
           {!salesOrder && (
-            <td colSpan={COLUMN_COUNT - 1} className="se-review-table__empty">
+            <td colSpan={COLUMN_COUNT - 1} className="ar-invoice-review__empty">
               No sales orders
             </td>
           )}
@@ -336,19 +314,22 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
   };
 
   const renderBody = () => (
-    <div className="modal-body se-approval-body">
-      <div className="se-approval-batch">
-        <FiLayers className="se-approval-batch__icon" />
-        <span className="se-approval-batch__caption">Cards:</span>
-        <span className="se-approval-batch__title">{cards.length}</span>
-        <span className="se-approval-batch__count">
-          {checkedCards.length} selected
-          {isLoading ? " (refreshing...)" : ""}
-        </span>
+    <>
+      <div className="blockers-toolbar-section">
+        <div className="se-review-move-batch">
+          <FiLayers className="se-review-move-batch__icon" />
+          <span className="se-review-move-batch__caption">Cards:</span>
+          <span className="se-review-move-batch__title">{cards.length}</span>
+          <span className="se-review-move-batch__count">
+            {checkedCards.length} selected
+            {isLoading ? " (refreshing...)" : ""}
+          </span>
+        </div>
       </div>
 
-      <div className="se-review-table">
-        <table className="se-review-table__grid">
+      <div className="blockers-table-section">
+        <div className="blockers-table-wrapper">
+        <table className="blockers-table ar-invoice-review__grid">
           <thead>
             <tr>
               <th rowSpan={2} className="ar-invoice-review__card-head">
@@ -390,41 +371,57 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
               ))
             ) : (
               <tr>
-                <td colSpan={COLUMN_COUNT} className="se-review-table__empty">
+                <td colSpan={COLUMN_COUNT} className="ar-invoice-review__empty">
                   {isLoading ? "Loading..." : "No cards to review"}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
+        </div>
 
-      <MaterialTablePagination
-        page={page}
-        total={cards.length}
-        limit={REVIEW_PAGE_SIZE}
-        onPageChange={setCurrentPage}
-      />
+        <div className="ar-invoice-review__pagination">
+          <MaterialTablePagination
+            page={page}
+            total={cards.length}
+            limit={REVIEW_PAGE_SIZE}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      </div>
+    </>
+  );
+
+  const renderHeader = () => (
+    <div className="blockers-modal-header">
+      <div className="blockers-modal-header-text">
+        <h5 className="blockers-modal-title">Invoice Review</h5>
+        <p className="blockers-modal-subtitle">Check the invoices, then confirm the ticked cards</p>
+      </div>
+      <button
+        type="button"
+        className="blockers-modal-close"
+        onClick={onClose}
+        disabled={isConfirming}
+        aria-label="Close"
+      >
+        <FiX size={20} />
+      </button>
     </div>
   );
 
   const renderFooter = () => (
-    <div className="modal-footer se-approval-footer">
-      <button
-        type="button"
-        className="se-approval-footer__cancel"
-        onClick={onClose}
-        disabled={isConfirming}
-      >
+    <div className="modal-footer se-review-move-footer">
+      <button type="button" className="btn btn-outline" onClick={onClose} disabled={isConfirming}>
         Close
       </button>
       <button
         type="button"
-        className="se-approval-footer__upload"
+        className="btn btn-primary"
         onClick={handleConfirm}
         disabled={isConfirming || isLoading || !checkedCards.length}
       >
-        <FiCheck />
+        <FiCheck className="me-2" />
         {isConfirming ? "Confirming..." : `Confirm (${checkedCards.length})`}
       </button>
     </div>
@@ -434,8 +431,10 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
     <CustomModal
       show={show}
       closeModal={onClose}
-      className="se-approval-modal-root ar-invoice-review-modal-root"
-      dialgName="se-approval-dialog"
+      className="blockers-modal se-review-move-modal ar-invoice-review-modal"
+      backdropClassName="blockers-modal-backdrop"
+      createModal
+      bodyClassname="blockers-modal-body"
       header={renderHeader()}
       body={renderBody()}
       footer={renderFooter()}

@@ -1,95 +1,87 @@
 // "Invoice Review" modal, opened after an "SE Received" bulk invoice upload.
-// Reuses the Upload SE Approval modal shell (se-approval-*); only the sales order review table lives
-// here, styled after the "Review and Move" table. One row per sales order, editable cells, with the
-// invoice's "Tax Details" block underneath.
+// Reuses the Blockers modal shell (blockers-modal.scss) plus the Review and Move header/batch/footer
+// pieces (seReviewMoveModal.scss); only the sales order review table cells live here. One row per
+// sales order, editable cells, with the invoice's "Tax Details" block underneath.
 
-// Sized to its rows up to the viewport height (32px gutter), so a few invoices leave no empty space and
-// large uploads scroll inside the table between header and footer. Both root classes sit on the same
-// element, which outranks the shared Upload SE Approval sizing in seApprovalUploadModal.scss.
-.se-approval-modal-root.ar-invoice-review-modal-root .se-approval-dialog {
-  --bs-modal-width: min(1000px, calc(100vw - 32px));
-  width: min(1000px, calc(100vw - 32px));
-  max-width: min(1000px, calc(100vw - 32px));
-  margin: 32px auto;
+// Same size and type as the Blockers modal (blockers-modal.scss), undoing the compact sizing that
+// seReviewMoveModal.scss gives Review and Move / Submission Documents; long tables scroll inside.
+.blockers-modal.se-review-move-modal.ar-invoice-review-modal {
+  .modal-dialog {
+    max-width: 1250px;
+    width: 92%;
+    height: min(800px, calc(100vh - 2rem));
+    max-height: calc(100vh - 2rem);
 
-  .modal-content {
-    max-height: calc(100vh - 64px);
-    display: flex;
-    flex-direction: column;
+    @media (max-width: 991px) {
+      max-width: 95%;
+      width: 95%;
+      height: calc(100vh - 1.5rem);
+      max-height: calc(100vh - 1.5rem);
+    }
   }
 
-  .se-approval-body {
-    flex: 1;
-    min-height: 0;
-    max-height: none;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  .modal-content {
+    height: 100%;
+    max-height: 100%;
+  }
+
+  .blockers-modal-header {
+    padding: 18px 24px;
+
+    .blockers-modal-title {
+      font-size: 20px;
+    }
+
+    .blockers-modal-subtitle {
+      font-size: 13px;
+    }
+  }
+
+  .blockers-table {
+    thead th {
+      font-size: 12px;
+    }
+
+    tbody td {
+      font-size: 14px;
+    }
+  }
+
+  .se-review-move-footer .btn {
+    font-size: 14px;
+  }
+
+  .ar-invoice-review__pagination {
+    flex: 0 0 auto;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border-primary, #e2e8f0);
   }
 }
 
-.ar-invoice-review-modal-root .se-approval-dialog .se-review-table {
-  flex: 1;
-  min-height: 0;
-  max-height: none;
+.blockers-modal.se-review-move-modal.ar-invoice-review-modal .blockers-table-wrapper {
   // Scrolls sideways instead of squeezing the columns as more fields are added.
   overflow: auto;
-  border: 1px solid var(--border-primary, #e2e8f0);
-  border-radius: 10px;
 
-  &__grid {
-    width: 100%;
+  .ar-invoice-review__grid {
     min-width: 720px;
-    // seReviewMoveModal.scss fixes the column widths for every se-review-table; size to content here.
-    table-layout: auto;
-    border-collapse: collapse;
-    background: var(--surface-primary, #ffffff);
 
-    thead {
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      background: var(--surface-primary, #ffffff);
-
-      tr {
-        border-bottom: 2px solid var(--border-primary, #e2e8f0);
-      }
-
-      th {
-        padding: 11px 14px;
-        text-align: left;
-        font-size: 12px;
-        font-weight: 700;
-        color: var(--text-primary, #0f172a);
-        letter-spacing: 0.6px;
-        white-space: nowrap;
-        font-family: "Manrope", sans-serif;
-        background: var(--surface-primary, #ffffff);
-      }
+    thead th,
+    tbody td {
+      padding-left: 14px;
+      padding-right: 14px;
+      white-space: nowrap;
     }
 
-    tbody {
-      tr {
-        border-bottom: 1px solid var(--border-primary, #e2e8f0);
+    // Only the checkbox column is centred; the last column is plain text.
+    thead th:last-child,
+    tbody td:last-child {
+      text-align: left;
+    }
 
-        &:last-child {
-          border-bottom: none;
-        }
-      }
-
-      td {
-        padding: 9px 14px;
-        font-size: 14px;
-        color: var(--text-primary, #0f172a);
-        vertical-align: middle;
-        white-space: nowrap;
-        overflow-wrap: normal;
-      }
-
-      .se-review-table__empty {
-        text-align: center;
-        color: #64748b;
-      }
+    .ar-invoice-review__empty {
+      padding: 40px;
+      text-align: center;
+      color: var(--text-muted);
     }
   }
 
@@ -136,7 +128,7 @@
   }
 
   // The currency sits right-aligned over the Tax % / Net / Tax / Gross columns, as on the invoice.
-  .se-review-table__grid thead th.ar-invoice-review__tax-group {
+  .ar-invoice-review__grid thead th.ar-invoice-review__tax-group {
     padding-bottom: 4px;
     text-align: right;
     font-weight: 600;
@@ -145,7 +137,7 @@
     background: var(--surface-secondary, #f8fafc);
   }
 
-  .se-review-table__grid thead th.ar-invoice-review__tax-head {
+  .ar-invoice-review__grid thead th.ar-invoice-review__tax-head {
     padding-top: 4px;
     font-size: 11px;
     font-weight: 600;
@@ -159,7 +151,7 @@
   }
 
   // The first row's first header cells are row-spanned, so the second row only holds the tax heads.
-  .se-review-table__grid thead tr:first-child {
+  .ar-invoice-review__grid thead tr:first-child {
     border-bottom: 1px solid var(--border-primary, #e2e8f0);
   }
 
@@ -177,7 +169,7 @@
 
   // Lines of the same sales order are split by a dotted rule, as on the invoice; only the tax
   // cells carry it, the row-spanned Invoice No / SE / SO cells stay whole.
-  .se-review-table__grid tbody tr.ar-invoice-review__row--has-next-line {
+  .ar-invoice-review__grid tbody tr.ar-invoice-review__row--has-next-line {
     border-bottom: none;
 
     .ar-invoice-review__tax-cell {
