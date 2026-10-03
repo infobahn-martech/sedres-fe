@@ -70,12 +70,56 @@
   }
 }
 
-// Review and Move on the Blockers modal shell (blockers-modal.scss): a shorter dialog than the
-// Blockers list, plain left-aligned columns, the batch info row and a Close/Confirm footer.
+// Review and Move on the Blockers modal shell (blockers-modal.scss): content-height dialog, plain left-aligned columns, the batch info row and a Close/Confirm footer.
 .blockers-modal.se-review-move-modal {
+  // Common modal height: sized to its content (blockers-modal.scss fixes it at 800px), capped at
+  // the viewport so long tables scroll inside the table section.
   .modal-dialog {
     max-width: 1000px;
-    height: min(620px, calc(100vh - 2rem));
+    height: auto;
+  }
+
+  .modal-content {
+    height: auto;
+    max-height: calc(100vh - 2rem);
+  }
+
+  // Smaller type than the Blockers list modal (20px title / 14px rows) for these compact dialogs.
+  .blockers-modal-header {
+    padding: 14px 20px;
+
+    .blockers-modal-title {
+      font-size: 16px;
+    }
+
+    .blockers-modal-subtitle {
+      font-size: 12px;
+    }
+  }
+
+  .blockers-table {
+    thead th {
+      font-size: 11px;
+    }
+
+    tbody td {
+      font-size: 13px;
+    }
+  }
+
+  .se-review-move-footer .btn {
+    font-size: 13px;
+  }
+
+  // CustomModal wraps the header in Bootstrap's .modal-header; the blue .blockers-modal-header
+  // inside it carries all the styling, so the wrapper is reset to a plain container.
+  .modal-header {
+    display: block;
+    flex: 0 0 auto;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
   }
 
   .blockers-table {
@@ -140,5 +184,42 @@
     gap: 12px;
     padding: 14px 20px;
     border-top: 1px solid var(--border-primary);
+  }
+}
+
+// Create Submission Documents: same shell, one field, so a narrower dialog.
+.blockers-modal.se-review-move-modal.submission-documents-modal {
+  .modal-dialog {
+    max-width: 560px;
+  }
+
+  .submission-documents-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px 24px 20px;
+
+    &__label {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    &__input {
+      height: 38px;
+      font-size: 13px;
+      border-radius: 8px;
+
+      &::placeholder {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+    }
+
+    &__error {
+      font-size: 12px;
+      color: #dc2626;
+    }
   }
 }
