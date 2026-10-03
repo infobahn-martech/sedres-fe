@@ -3,8 +3,54 @@
 // pieces (seReviewMoveModal.scss); only the sales order review table cells live here. One row per
 // sales order, editable cells, with the invoice's "Tax Details" block underneath.
 
-// Same content-based height as Review and Move (seReviewMoveModal.scss); long tables scroll inside.
+// Same size and type as the Blockers modal (blockers-modal.scss), undoing the compact sizing that
+// seReviewMoveModal.scss gives Review and Move / Submission Documents; long tables scroll inside.
 .blockers-modal.se-review-move-modal.ar-invoice-review-modal {
+  .modal-dialog {
+    max-width: 1250px;
+    width: 92%;
+    height: min(800px, calc(100vh - 2rem));
+    max-height: calc(100vh - 2rem);
+
+    @media (max-width: 991px) {
+      max-width: 95%;
+      width: 95%;
+      height: calc(100vh - 1.5rem);
+      max-height: calc(100vh - 1.5rem);
+    }
+  }
+
+  .modal-content {
+    height: 100%;
+    max-height: 100%;
+  }
+
+  .blockers-modal-header {
+    padding: 18px 24px;
+
+    .blockers-modal-title {
+      font-size: 20px;
+    }
+
+    .blockers-modal-subtitle {
+      font-size: 13px;
+    }
+  }
+
+  .blockers-table {
+    thead th {
+      font-size: 12px;
+    }
+
+    tbody td {
+      font-size: 14px;
+    }
+  }
+
+  .se-review-move-footer .btn {
+    font-size: 14px;
+  }
+
   .ar-invoice-review__pagination {
     flex: 0 0 auto;
     padding: 10px 16px;
