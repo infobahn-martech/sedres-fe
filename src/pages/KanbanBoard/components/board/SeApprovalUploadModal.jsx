@@ -12,6 +12,9 @@ const buildEmptyFiles = (fields) => Object.fromEntries(fields.map((field) => [fi
 
 // Opened from a batch group's "Upload SE Approval" / "Upload Invoice" action on the Kanban board.
 // Renders one dropzone per entry in `fields`; without `fields` it is a single attachments dropzone.
+// contextCaption labels the batchTitle row (SO approval email upload passes "Sales order:").
+// allowEmptyUpload lets a caller submit with no file so the backend's own validation message is
+// shown via submitError (SO approval proof); both stay off for the batch callers.
 const SeApprovalUploadModal = ({
   show,
   onClose,
@@ -25,6 +28,9 @@ const SeApprovalUploadModal = ({
   submittingLabel = "Uploading...",
   multiple = true,
   fields,
+  contextCaption = "Batch:",
+  allowEmptyUpload = false,
+  submitError = "",
 }) => {
   const uploadFields = fields ?? [
     {
@@ -92,7 +98,7 @@ const SeApprovalUploadModal = ({
       setErrors(fieldErrors);
       return;
     }
-    if (!uploadFields.some((field) => filesByField[field.name]?.length)) {
+    if (!allowEmptyUpload && !uploadFields.some((field) => filesByField[field.name]?.length)) {
       setError("Please select at least one file.");
       return;
     }
@@ -232,7 +238,7 @@ const SeApprovalUploadModal = ({
     <div className="modal-body se-approval-body">
       <div className="se-approval-batch">
         <FiLayers className="se-approval-batch__icon" />
-        <span className="se-approval-batch__caption">Batch:</span>
+        <span className="se-approval-batch__caption">{contextCaption}</span>
         <span className="se-approval-batch__title" title={batchTitle}>
           {batchTitle || "-"}
         </span>
@@ -245,6 +251,7 @@ const SeApprovalUploadModal = ({
 
       {uploadFields.map(renderField)}
       {hasMultipleFields && error && <div className="se-approval-dropzone__error">{error}</div>}
+      {submitError && <div className="se-approval-dropzone__error">{submitError}</div>}
     </div>
   );
 
@@ -265,7 +272,7 @@ const SeApprovalUploadModal = ({
       show={show}
       closeModal={onClose}
       className="se-approval-modal-root"
-      dialgName="se-approval-dialog"
+      dialgName={`se-approval-dialog${hasMultipleFields ? " se-approval-dialog--wide" : ""}`}
       header={renderHeader()}
       body={renderBody()}
       footer={renderFooter()}
@@ -295,6 +302,9 @@ SeApprovalUploadModal.propTypes = {
       multiple: PropTypes.bool,
     })
   ),
+  contextCaption: PropTypes.string,
+  allowEmptyUpload: PropTypes.bool,
+  submitError: PropTypes.string,
 };
 
 export default SeApprovalUploadModal;

@@ -3,7 +3,7 @@ import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import "../../../../design/scss/pages/kanban-board/columnAction.scss";
 
-/* Batch action icon: mirrors a batch group on the board, a title bar with four cards under it. */
+/* Batch action icon: a hierarchy (one box branching into two), the batch grouping its cards. */
 function BatchCardsIcon() {
   return (
     <svg
@@ -17,12 +17,10 @@ function BatchCardsIcon() {
       strokeLinejoin="round"
       aria-hidden
     >
-      <rect x="2" y="2" width="20" height="20" rx="3" />
-      <path d="M2 7.5h20M5.5 4.75h5" />
-      <rect x="5" y="10.5" width="6" height="4" rx="1" />
-      <rect x="13" y="10.5" width="6" height="4" rx="1" />
-      <rect x="5" y="16" width="6" height="4" rx="1" />
-      <rect x="13" y="16" width="6" height="4" rx="1" />
+      <rect x="9" y="2" width="6" height="6" rx="1.5" />
+      <rect x="2" y="16" width="6" height="6" rx="1.5" />
+      <rect x="16" y="16" width="6" height="6" rx="1.5" />
+      <path d="M12 8v4M5 16v-4h14v4" />
     </svg>
   );
 }

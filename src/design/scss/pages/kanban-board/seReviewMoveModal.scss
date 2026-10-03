@@ -69,3 +69,76 @@
     }
   }
 }
+
+// Review and Move on the Blockers modal shell (blockers-modal.scss): a shorter dialog than the
+// Blockers list, plain left-aligned columns, the batch info row and a Close/Confirm footer.
+.blockers-modal.se-review-move-modal {
+  .modal-dialog {
+    max-width: 1000px;
+    height: min(620px, calc(100vh - 2rem));
+  }
+
+  .blockers-table {
+    thead th,
+    tbody td {
+      &:first-child,
+      &:last-child {
+        text-align: left;
+      }
+    }
+
+    .se-review-move-empty {
+      padding: 40px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+  }
+
+  .se-review-move-batch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 14px 24px;
+    font-size: 13px;
+
+    &__icon {
+      flex-shrink: 0;
+      color: var(--text-secondary);
+    }
+
+    &__caption {
+      flex-shrink: 0;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    &__title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    &__count {
+      flex-shrink: 0;
+      margin-left: 4px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: #e8eef9;
+      font-size: 12px;
+      font-weight: 600;
+      color: #00368c;
+    }
+  }
+
+  .se-review-move-footer {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border-primary);
+  }
+}

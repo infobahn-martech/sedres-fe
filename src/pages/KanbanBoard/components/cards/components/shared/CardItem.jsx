@@ -723,6 +723,9 @@ function CardItem({
               ? () => onSelectDragEnter(card)
               : undefined
           }
+          data-select-card-id={
+            canSelectForAction && typeof onSelectDragEnter === "function" ? card.id : undefined
+          }
           style={{
             ...fixedBoardSizeStyle,
             ...(KANBAN_DND_DISABLED ? {} : provided.draggableProps.style),

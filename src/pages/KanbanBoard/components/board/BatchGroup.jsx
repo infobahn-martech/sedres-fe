@@ -23,6 +23,8 @@ export default function BatchGroup({
   workflowTitle,
   selectedActionCardIds = EMPTY_SELECTED_IDS,
   onToggleCardSelect,
+  onCardSelectDragStart,
+  onCardSelectDragEnter,
   setSelectedCard,
   onSendSeRequest,
   onUploadSeApproval,
@@ -40,7 +42,8 @@ export default function BatchGroup({
      batch, apart from the board-wide selection used to create batches in Backlog. */
   const isSendSeBatch = !isUngrouped && !isAwaitingSeColumn && !isSeReceivedColumn;
   const [seUntickedCardIds, setSeUntickedCardIds] = useState([]);
-  /* "Awaiting SE" batches tick (and turn green) the cards the uploaded SE approval covers. The SE
+  /* "Awaiting SE" batches start with every card ticked, and the user may untick cards before the SE
+     upload. Once it is done, the cards the SE approval covers are ticked (and turn green); the SE
      review is AI-detected, so the user may untick a wrongly approved card back to a plain card. */
   const seApprovedByCardId = useBatchMoveStore((state) => state.seApprovedByCardId);
   const seUntickedByCardId = useBatchMoveStore((state) => state.seUntickedByCardId);
@@ -62,16 +65,21 @@ export default function BatchGroup({
   const getIsSelectedForAction = (card) => {
     if (isSendSeBatch) return !seUntickedCardIds.includes(card.id);
     if (isSeReviewBatch) {
-      return Boolean(seApprovedByCardId[String(card.id)]) && !seUntickedByCardId[String(card.id)];
+      const isSeUnticked = Boolean(seUntickedByCardId[String(card.id)]);
+      if (!isSeUploadDone) return !isSeUnticked;
+      return Boolean(seApprovedByCardId[String(card.id)]) && !isSeUnticked;
     }
     return selectedActionCardIds.includes(card.id);
   };
 
   const getToggleSelectForAction = () => {
     if (isSendSeBatch) return toggleSeCardTick;
-    if (isSeReviewBatch) return (card) => toggleSeReviewCard(card.id);
+    if (isSeReviewBatch) return (card) => toggleSeReviewCard(card.id, { isSeUploadDone });
     return onToggleCardSelect;
   };
+
+  /* Drag-select only drives the board-wide selection; the per-batch SE ticks stay click-only. */
+  const isBoardSelection = !isSendSeBatch && !isSeReviewBatch;
 
   const toggleSeCardTick = (card) =>
     setSeUntickedCardIds((prev) =>
@@ -88,7 +96,7 @@ export default function BatchGroup({
     <div
       className={`batch-group ${isUngrouped ? "batch-group--loose" : ""} ${
         isExpanded ? "" : "batch-group--collapsed"
-      } ${isSeReviewBatch ? "batch-group--se-review" : ""}`}
+      } ${isSeReviewBatch && isSeUploadDone ? "batch-group--se-review" : ""}`}
     >
       {!isUngrouped && (
         <div className="batch-group__header">
@@ -154,6 +162,8 @@ export default function BatchGroup({
               fixedDimensions={{ width: cardWidth }}
               isSelectedForAction={getIsSelectedForAction(card)}
               onToggleSelectForAction={getToggleSelectForAction()}
+              onSelectDragStart={isBoardSelection ? onCardSelectDragStart : undefined}
+              onSelectDragEnter={isBoardSelection ? onCardSelectDragEnter : undefined}
             />
           ))}
         </div>
@@ -176,6 +186,8 @@ BatchGroup.propTypes = {
   workflowTitle: PropTypes.string,
   selectedActionCardIds: PropTypes.arrayOf(PropTypes.string),
   onToggleCardSelect: PropTypes.func,
+  onCardSelectDragStart: PropTypes.func,
+  onCardSelectDragEnter: PropTypes.func,
   setSelectedCard: PropTypes.func,
   onSendSeRequest: PropTypes.func,
   onUploadSeApproval: PropTypes.func,

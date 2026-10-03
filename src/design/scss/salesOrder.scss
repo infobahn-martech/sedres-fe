@@ -2512,6 +2512,68 @@ $so-po-blue: #1a56db;
   }
 }
 
+// SoApprovalEmailModal reuses the Upload SE Approval modal shell (se-approval-* in
+// seApprovalUploadModal.scss); only the email-specific sizing and pieces live here.
+// Doubled root class so this outranks seApprovalUploadModal.scss's 760px max-width, which
+// loads after this file with the same specificity.
+.se-approval-modal-root.so-approval-email-se-root .se-approval-dialog {
+  --bs-modal-width: 1200px;
+  max-width: 1200px;
+  width: 96vw;
+  height: 92vh;
+  margin: 4vh auto;
+
+  // Full-height shell: only the body scrolls, footer stays pinned at the bottom.
+  .modal-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-header,
+  .se-approval-footer {
+    flex-shrink: 0;
+  }
+
+  .se-approval-body {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .so-approval-email-input-box {
+    height: 40px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .so-approval-email-attachments-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .so-approval-email-attachments-btn {
+    background: #ffffff;
+  }
+
+  .so-approval-email-message-field {
+    margin-top: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 260px;
+  }
+
+  .so-approval-email-quill-wrap {
+    min-height: 200px;
+    border-radius: 10px;
+  }
+}
+
 .so-approval-email-header {
   display: flex;
   align-items: center;

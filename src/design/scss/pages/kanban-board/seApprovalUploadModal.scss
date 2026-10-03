@@ -8,6 +8,12 @@
   max-width: 760px;
   width: 96vw;
 
+  // Multi-field upload (Upload SE Approval): wider so the compact dropzone rows breathe.
+  &.se-approval-dialog--wide {
+    --bs-modal-width: 960px;
+    max-width: 960px;
+  }
+
   // Global prospect-modal.scss pads every .modal-content, which would inset the header.
   .modal-content {
     padding: 0;
@@ -179,13 +185,30 @@
       border-color: #dc2626;
     }
 
-    // Two dropzones in one modal: keep each short so both fit without scrolling.
+    // Two dropzones in one modal: a single 56px row (icon, text, hint, formats side by side)
+    // so both fit without scrolling.
     &--compact {
-      padding: 16px;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 56px;
+      padding: 8px 16px;
 
       .se-approval-dropzone__icon {
-        margin-bottom: 2px;
-        font-size: 24px;
+        margin-bottom: 0;
+        margin-right: 4px;
+        font-size: 20px;
+      }
+
+      .se-approval-dropzone__text {
+        font-size: 13px;
+      }
+
+      .se-approval-dropzone__formats {
+        margin-top: 0;
+        margin-left: 6px;
+        padding-left: 8px;
+        border-left: 1px solid #cbd5e1;
       }
     }
 

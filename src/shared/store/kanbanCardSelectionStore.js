@@ -28,6 +28,10 @@ const useKanbanCardSelectionStore = create((set) => ({
       };
     }),
 
+  /* Replaces the whole selection — used by the board's rubber-band drag-select, which recomputes
+     the full set on every pointer move. */
+  setSelectedCardIds: (ids) => set({ selectedCardIds: ids }),
+
   removeCardId: (id) =>
     set((state) => ({
       selectedCardIds: state.selectedCardIds.filter((existingId) => existingId !== id),

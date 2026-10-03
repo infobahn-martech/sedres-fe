@@ -4,6 +4,7 @@ import { userHasDeskStartTaskRole } from "../../../shared/helpers/groUserRoles";
 import taskCardService from "../../../services/taskCardService";
 import daService from "../../../services/daService";
 import kanbanBoardService from "../../../services/kanbanBoardService";
+import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
 import {
   findColumnByCardId,
   findLaneColumnLocationForCard,
@@ -205,6 +206,26 @@ const ensureCardInColumn = (
   return nextWorkflows;
 };
 
+/**
+ * Other ticked cards that should follow a dragged card to another column: only when the dragged card
+ * is itself ticked, and only the ticked cards in the same column it is dragged from (columns such as
+ * "SE Received" tick their cards on their own, so ticks elsewhere on the board must not come along).
+ * Each keeps its own swimlane. Returns [{ cardId, laneId, columnKey, index }] (their current spot).
+ */
+const getCompanionCards = (workflow, draggableId, startColumnKey) => {
+  const { selectedCardIds } = useKanbanCardSelectionStore.getState();
+  if (!selectedCardIds.includes(draggableId)) return [];
+  return selectedCardIds
+    .filter((cardId) => cardId !== draggableId && workflow.cards?.[cardId])
+    .map((cardId) => {
+      const location = findLaneColumnLocationForCard(workflow, cardId);
+      if (location?.columnKey !== startColumnKey) return null;
+      const index = (workflow.swimlanes[location.laneId]?.cardMap?.[location.columnKey] || []).indexOf(cardId);
+      return { cardId, ...location, index };
+    })
+    .filter(Boolean);
+};
+
 export default function useKanbanDnD(workflows, setWorkflows, { userProfile, refetchBoard, boardId } = {}) {
   const findCardColumn = useCallback(
     (cardId) => findColumnByCardId(workflows, cardId),
@@ -261,6 +282,51 @@ export default function useKanbanDnD(workflows, setWorkflows, { userProfile, ref
         !sameColumn &&
         isTodoToInProgressMove(workflow, startColumnKey, finishColumnKey);
 
+      /* Moves the other ticked cards along with the dragged one: optimistic move first, then
+         `persistMove(cardId)` (the same API the dragged card uses); a failed card goes back. */
+      const companionCards = sameColumn ? [] : getCompanionCards(workflow, draggableId, startColumnKey);
+      const moveCompanionCards = async (persistMove) => {
+        if (!companionCards.length) return;
+        setWorkflows((prev) =>
+          companionCards.reduce(
+            (next, companion, i) =>
+              ensureCardInColumn(
+                next,
+                workflowId,
+                companion.cardId,
+                finishColumnKey,
+                companion.laneId,
+                companion.laneId === dest.laneId ? destination.index + 1 + i : Number.MAX_SAFE_INTEGER
+              ),
+            prev
+          )
+        );
+        const results = await Promise.allSettled(
+          companionCards.map((companion) => persistMove(companion.cardId))
+        );
+        const failed = companionCards.filter((_, i) => results[i].status === "rejected");
+        if (!failed.length) return;
+        setWorkflows((prev) =>
+          failed.reduce(
+            (next, companion) =>
+              ensureCardInColumn(
+                next,
+                workflowId,
+                companion.cardId,
+                companion.columnKey,
+                companion.laneId,
+                companion.index
+              ),
+            prev
+          )
+        );
+        const firstError = results.find((settled) => settled.status === "rejected")?.reason;
+        notify(
+          dragApiErrorMessage(firstError, `Failed to move ${failed.length} of the selected cards.`),
+          "error"
+        );
+      };
+
       if (shouldStartTask) {
         const moveParams = {
           src,
@@ -273,10 +339,14 @@ export default function useKanbanDnD(workflows, setWorkflows, { userProfile, ref
         };
 
         setWorkflows((prev) => applyCrossColumnMove(prev, workflowId, moveParams));
+        const companionsMoved = moveCompanionCards((cardId) =>
+          taskCardService.startTask(cardId, workflow.cards?.[cardId]?.taskId ?? "")
+        );
 
         try {
           const taskId = workflow.cards?.[draggableId]?.taskId ?? "";
           await taskCardService.startTask(draggableId, taskId);
+          await companionsMoved;
           if (refetchBoard) {
             await refetchBoard();
           }
@@ -353,6 +423,13 @@ export default function useKanbanDnD(workflows, setWorkflows, { userProfile, ref
         }
 
         setWorkflows((prev) => applyCrossColumnMove(prev, workflowId, moveParams));
+        moveCompanionCards(async (cardId) => {
+          const companionCard = workflow.cards?.[cardId];
+          const companionCallId = String(companionCard?.call_id ?? companionCard?.callId ?? "").trim();
+          if (!companionCallId) throw new Error("Could not move a selected card: missing call reference.");
+          const { data } = await daService.advanceStage({ call_id: companionCallId, column_id: targetColumnId });
+          if (!data?.status) throw new Error(data?.message || "Failed to move card to that stage.");
+        });
 
         try {
           const { data } = await daService.advanceStage({ call_id: callId, column_id: targetColumnId });
@@ -378,6 +455,7 @@ export default function useKanbanDnD(workflows, setWorkflows, { userProfile, ref
 
       const targetColumnId = workflow.columns?.[finishColumnKey]?.id;
       setWorkflows((prev) => applyCrossColumnMove(prev, workflowId, moveParams));
+      moveCompanionCards((cardId) => kanbanBoardService.moveCard({ card_id: cardId, to_column_id: targetColumnId }));
 
       try {
         await kanbanBoardService.moveCard({ card_id: draggableId, to_column_id: targetColumnId });

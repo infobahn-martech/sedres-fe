@@ -188,6 +188,8 @@ export default function SwimlaneColumnCell({
                 workflowTitle={workflowTitle}
                 selectedActionCardIds={selectedActionCardIds}
                 onToggleCardSelect={onToggleCardSelect}
+                onCardSelectDragStart={onCardSelectDragStart}
+                onCardSelectDragEnter={onCardSelectDragEnter}
                 setSelectedCard={setSelectedCard}
                 onSendSeRequest={onBatchSendSeRequest}
                 onUploadSeApproval={onBatchUploadSeApproval}
