@@ -24,6 +24,7 @@ import GoodsReceiptPOModal from "./GoodsReceiptPOModal";
 import SoApprovalEmailModal from "./SoApprovalEmailModal";
 import DocumentListModal from "./DocumentListModal";
 import UploadInvoiceModal from "../../../../../../components/UploadInvoiceModal";
+import SeApprovalUploadModal from "../../../../components/board/SeApprovalUploadModal";
 import CustomModal from "../../../../../../components/CustomModal";
 import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 
@@ -785,8 +786,11 @@ const SalesOrderList = ({
   // SO approval email upload modal — opened from the "Upload Approval Email" button shown next
   // to the "Approved" label once the client's SO approval has been recorded (column 4 with
   // api/da/action_state reporting "approved", or the card sitting on column 5). Same
-  // UploadInvoiceModal drag-and-drop component as Invoice Issuance above, with its own wording.
+  // Uses the Upload SE Approval modal shell (SeApprovalUploadModal), so the submitting flag and
+  // the backend's error message are owned here.
   const [showApprovalEmailUploadModal, setShowApprovalEmailUploadModal] = useState(false);
+  const [isApprovalEmailUploading, setIsApprovalEmailUploading] = useState(false);
+  const [approvalEmailUploadError, setApprovalEmailUploadError] = useState("");
 
   // Whether the client's SO approval email has been uploaded for this card (see
   // handleUploadApprovalEmail) — the "Approved" label only shows once it has been. Read back from
@@ -1075,6 +1079,22 @@ const SalesOrderList = ({
 
   const handleCloseApprovalEmailUploadModal = () => {
     setShowApprovalEmailUploadModal(false);
+    setApprovalEmailUploadError("");
+  };
+
+  const handleSubmitApprovalEmailUpload = async (files) => {
+    setIsApprovalEmailUploading(true);
+    setApprovalEmailUploadError("");
+    try {
+      await handleUploadApprovalEmail(files);
+      handleCloseApprovalEmailUploadModal();
+    } catch (err) {
+      setApprovalEmailUploadError(
+        err?.response?.data?.message || err?.message || "Upload failed. Please try again."
+      );
+    } finally {
+      setIsApprovalEmailUploading(false);
+    }
   };
 
   // Persists via da/da_upload_so_approval_proof (call_id + proof file(s), multipart/form-data)
@@ -1083,7 +1103,7 @@ const SalesOrderList = ({
   // status_id/sticker_id, so the upload does not advance the DA's real stage — it only flips
   // isApprovalEmailUploaded so the header swaps the upload button for the "Approved" label
   // (see renderApprovedWithEmailUpload).
-  // Submitting with no file is allowed on purpose (UploadInvoiceModal's allowEmptyUpload) so the
+  // Submitting with no file is allowed on purpose (SeApprovalUploadModal's allowEmptyUpload) so the
   // backend's own "No sales order found for this call" message is what the modal shows.
   const handleUploadApprovalEmail = async (files) => {
     if (!callId) {
@@ -3424,17 +3444,18 @@ const SalesOrderList = ({
       {/* SO approval email upload — opened from the "Upload Approval Email" button; a successful
           upload swaps that button for the "Approved" label (see renderApprovedWithEmailUpload). */}
       {isDaVerifyContext && (
-        <UploadInvoiceModal
+        <SeApprovalUploadModal
           show={showApprovalEmailUploadModal}
-          closeModal={handleCloseApprovalEmailUploadModal}
-          contextLabel={soCustomerName ? `SO — ${soCustomerName}` : undefined}
-          onUploadComplete={handleUploadApprovalEmail}
+          onClose={handleCloseApprovalEmailUploadModal}
+          onUpload={handleSubmitApprovalEmailUpload}
+          isSubmitting={isApprovalEmailUploading}
+          submitError={approvalEmailUploadError}
           allowEmptyUpload
+          batchTitle={soCustomerName}
+          contextCaption="Sales order:"
           title="Upload Approval Email"
-          fieldLabel="Attach approval email"
-          accept=".pdf,.eml,.msg,.jpg,.jpeg,.png"
-          formatsHint="PDF, EML, MSG, JPG, PNG"
-          inputId="upload-approval-email-input"
+          subtitle="Attach the client's SO approval email for this call"
+          submitLabel="Upload Approval Email"
         />
       )}
 

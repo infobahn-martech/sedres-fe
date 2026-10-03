@@ -23,6 +23,7 @@ import useWorkflowPinning from "../hooks/useWorkflowPinning";
 import useColumnHeights from "../hooks/useColumnHeights";
 import useKanbanDnD from "../hooks/useKanbanDnD";
 import useKanbanRoleAccess from "../hooks/useKanbanRoleAccess";
+import useKanbanMarqueeSelect from "../hooks/useKanbanMarqueeSelect";
 import usePermissions from "../../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../shared/constants/permissions";
 import { createNewCardDraft } from "../utils/cardHelpers";
@@ -38,6 +39,7 @@ import { useThemeStore } from "../../../shared/store/themeStore";
 import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
 import useArInvoiceReviewStore from "../../../shared/store/arInvoiceReviewStore";
+import "../../../design/scss/pages/kanban-board/marquee-select.scss";
 
 /* "SE Received" bulk invoice upload: PDFs only. da/upload_ar_invoices takes max_files_per_request
    (20) files per call, so larger uploads are sent in chunks of that size, one after another. */
@@ -341,6 +343,7 @@ export default function KanbanBoardPage() {
   const toggleCardSelectionId = useKanbanCardSelectionStore((state) => state.toggleCardId);
   const setCardSelectionId = useKanbanCardSelectionStore((state) => state.setCardSelected);
   const removeCardSelectionId = useKanbanCardSelectionStore((state) => state.removeCardId);
+  const setSelectedCardIds = useKanbanCardSelectionStore((state) => state.setSelectedCardIds);
 
   /* Backlog column batch icon (SAIPEM board): confirm the batch built from the ticked cards. */
   const [showBatchConfirmModal, setShowBatchConfirmModal] = useState(false);
@@ -369,6 +372,7 @@ export default function KanbanBoardPage() {
   const [seRequestEmailDraft, setSeRequestEmailDraft] = useState(null);
   const batchIdByNumber = useBatchMoveStore((state) => state.batchIdByNumber);
   const clearCardColumns = useBatchMoveStore((state) => state.clearCardColumns);
+  const clearSeUnticks = useBatchMoveStore((state) => state.clearSeUnticks);
 
   /* Unique call ids of the batch's cards. */
   const getBatchCallIds = useCallback(
@@ -457,7 +461,10 @@ export default function KanbanBoardPage() {
         notify(data.message || "Email sent successfully", "success");
         /* The backend moves the batch on; a column override left from creating it would keep
            drawing the cards in the old column. */
-        clearCardColumns((selectedSeRequestBatch?.cards ?? []).map((card) => card.id));
+        const sentCardIds = (selectedSeRequestBatch?.cards ?? []).map((card) => card.id);
+        clearCardColumns(sentCardIds);
+        /* The batch lands in "Awaiting SE" with every card ticked. */
+        clearSeUnticks(sentCardIds);
         handleCloseSeRequestEmail();
         refetchBoard?.();
       } finally {
@@ -470,6 +477,7 @@ export default function KanbanBoardPage() {
       batchIdByNumber,
       getBatchCallIds,
       clearCardColumns,
+      clearSeUnticks,
       handleCloseSeRequestEmail,
       refetchBoard,
     ]
@@ -542,7 +550,7 @@ export default function KanbanBoardPage() {
           return;
         }
         if (seDocument?.[0]) markSeDocumentUploaded(batchId);
-        setSeReview(data.data?.se_review, { resetUnticks: true });
+        setSeReview(data.data?.se_review);
         notify(data.message || "SE approval uploaded successfully", "success");
         handleCloseSeApprovalUpload();
         refetchBoard?.();
@@ -1015,6 +1023,11 @@ export default function KanbanBoardPage() {
     return () => window.removeEventListener("mouseup", endDrag);
   }, []);
 
+  const { marqueeRef, handleMarqueeMouseDown } = useKanbanMarqueeSelect({
+    selectedCardIds,
+    onSelectionChange: setSelectedCardIds,
+  });
+
   // Drop any selected id that disappears from the board (moved/removed by a refetch).
   useEffect(() => {
     const staleIds = selectedCardIds.filter((id) => !cardsById[id]);
@@ -1123,7 +1136,8 @@ export default function KanbanBoardPage() {
           {boardLoadError}
         </div>
       )}
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative" }} onMouseDown={handleMarqueeMouseDown}>
+        <div ref={marqueeRef} className="kanban-marquee-select" aria-hidden="true" />
         {boardLoading && !isOperatorBoard && (
           <div
             aria-busy="true"

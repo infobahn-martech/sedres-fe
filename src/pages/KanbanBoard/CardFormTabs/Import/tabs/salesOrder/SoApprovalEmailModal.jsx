@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { FiSend } from "react-icons/fi";
+import { FiMail, FiPaperclip, FiSend, FiX } from "react-icons/fi";
 import CustomModal from "../../../../../../components/CustomModal";
 import DocumentLibraryPickerModal from "./DocumentLibraryPickerModal";
+import "../../../../../../design/scss/pages/kanban-board/seApprovalUploadModal.scss";
 
 const MESSAGE_QUILL_TOOLBAR = [
   ["bold", "italic", "underline"],
@@ -149,192 +150,201 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
   };
 
   const renderHeader = () => (
-    <div className="so-approval-email-header">
-      <h5 className="modal-title m-0">New {stageLabel} Email</h5>
+    <div className="se-approval-header">
+      <span className="se-approval-header__icon">
+        <FiMail />
+      </span>
+      <div className="se-approval-header__text">
+        <h5 className="se-approval-header__title">New {stageLabel} Email</h5>
+        <p className="se-approval-header__subtitle">Send the sales order to the client for approval</p>
+      </div>
+      <button
+        type="button"
+        className="se-approval-header__close"
+        onClick={onClose}
+        disabled={isSubmitting}
+        aria-label="Close"
+      >
+        <FiX />
+      </button>
+    </div>
+  );
+
+  const renderTextField = ({ label, value, onChange, placeholder, error, required = false }) => (
+    <div className="col-12">
+      <div className="se-approval-field">
+        <label className="se-approval-field__label">
+          {label}
+          {required && <span className="se-approval-field__required">*</span>}
+        </label>
+        <input
+          type="text"
+          className={`form-control so-approval-email-input-box${error ? " is-invalid" : ""}`}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          disabled={isSubmitting}
+        />
+        {error && <div className="se-approval-dropzone__error">{error}</div>}
+      </div>
     </div>
   );
 
   const renderBody = () => (
-    <div className="modal-body">
-      <div className="so-approval-email-compose">
-        {/* Email fields - simplified */}
-        <div className="so-approval-email-fields">
-          <div className="so-approval-email-field">
-            <label className="so-approval-email-field-label">From</label>
-            <input
-              type="text"
-              className="so-approval-email-field-input"
-              value={fromValue}
-              onChange={(e) => setFromValue(e.target.value)}
-              placeholder="sender@example.com"
-              disabled={isSubmitting}
-            />
-          </div>
-          <div className="so-approval-email-field">
-            <label className="so-approval-email-field-label">To</label>
-            <input
-              type="text"
-              className="so-approval-email-field-input"
-              value={toValue}
-              onChange={(e) => {
-                setToValue(e.target.value);
-                if (toError) setToError("");
-              }}
-              placeholder="recipient@example.com"
-              disabled={isSubmitting}
-            />
-            {toError && <div className="so-approval-email-field-error">{toError}</div>}
-          </div>
-          <div className="so-approval-email-field">
-            <label className="so-approval-email-field-label">Cc</label>
-            <input
-              type="text"
-              className="so-approval-email-field-input"
-              value={ccValue}
-              onChange={(e) => setCcValue(e.target.value)}
-              placeholder="cc@example.com"
-              disabled={isSubmitting}
-            />
-          </div>
-          <div className="so-approval-email-field">
-            <label className="so-approval-email-field-label">Subject</label>
-            <input
-              type="text"
-              className="so-approval-email-field-input"
-              value={subjectValue}
-              onChange={(e) => {
-                setSubjectValue(e.target.value);
-                if (subjectError) setSubjectError("");
-              }}
-              placeholder="Email subject"
-              disabled={isSubmitting}
-            />
-            {subjectError && <div className="so-approval-email-field-error">{subjectError}</div>}
-          </div>
-        </div>
+    <div className="modal-body se-approval-body">
+      <div className="row g-3">
+        {renderTextField({
+          label: "From",
+          value: fromValue,
+          onChange: (e) => setFromValue(e.target.value),
+          placeholder: "sender@example.com",
+        })}
+        {renderTextField({
+          label: "To",
+          value: toValue,
+          onChange: (e) => {
+            setToValue(e.target.value);
+            if (toError) setToError("");
+          },
+          placeholder: "recipient@example.com",
+          error: toError,
+          required: true,
+        })}
+        {renderTextField({
+          label: "Cc",
+          value: ccValue,
+          onChange: (e) => setCcValue(e.target.value),
+          placeholder: "cc@example.com",
+        })}
+        {renderTextField({
+          label: "Subject",
+          value: subjectValue,
+          onChange: (e) => {
+            setSubjectValue(e.target.value);
+            if (subjectError) setSubjectError("");
+          },
+          placeholder: "Email subject",
+          error: subjectError,
+          required: true,
+        })}
+      </div>
 
-        {/* Attachments section */}
-        <div className="so-approval-email-attachments">
-          <div className="so-approval-email-attachments-toolbar">
-            <span className="so-approval-email-attachments-label">Attachments ({attachments.length})</span>
-            <div className="so-approval-email-add-attachment">
-              <button
-                type="button"
-                ref={addMenuTriggerRef}
-                className={`so-approval-email-attachments-btn${isSubmitting ? " so-approval-email-attachments-btn--disabled" : ""}`}
-                onClick={() => setShowAddMenu((prev) => !prev)}
-                disabled={isSubmitting}
-                aria-haspopup="menu"
-                aria-expanded={showAddMenu}
-              >
-                + Add
-              </button>
-              {showAddMenu && (
-                <div className="so-approval-email-add-menu" ref={addMenuPanelRef} role="menu">
-                  {/* A <label> wrapping the hidden input (not a button + ref.click()) — the same
-                      pattern SalesOrderList's own "Upload New" (DocumentListModal) uses, where
-                      multi-select is confirmed working. Triggering the native picker via a
-                      button's onClick + fileInputRef.current.click() only ever added one file
-                      even after Ctrl-selecting several and clicking Open (reported 2026-09-15) —
-                      switched to the browser's native label-for-input association (no
-                      JS-triggered .click()) instead. The menu is closed from onChange, not the
-                      label's onClick — closing on click unmounted this input before the picker
-                      returned, so onChange never fired and nothing got attached. */}
-                  <label className="so-approval-email-add-menu-item">
-                    Upload from device
-                    <input
-                      type="file"
-                      multiple
-                      className="so-approval-email-file-input-hidden"
-                      disabled={isSubmitting}
-                      onChange={(e) => {
-                        handleFilesSelected(e.target.files);
-                        e.target.value = "";
-                        setShowAddMenu(false);
-                      }}
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    className="so-approval-email-add-menu-item"
-                    onClick={() => {
+      <div className="se-approval-attachments">
+        <div className="so-approval-email-attachments-toolbar">
+          <span className="se-approval-attachments__label">
+            <FiPaperclip className="se-approval-attachments__clip" />
+            Attachments ({attachments.length})
+          </span>
+          <div className="so-approval-email-add-attachment">
+            <button
+              type="button"
+              ref={addMenuTriggerRef}
+              className={`so-approval-email-attachments-btn${isSubmitting ? " so-approval-email-attachments-btn--disabled" : ""}`}
+              onClick={() => setShowAddMenu((prev) => !prev)}
+              disabled={isSubmitting}
+              aria-haspopup="menu"
+              aria-expanded={showAddMenu}
+            >
+              + Add
+            </button>
+            {showAddMenu && (
+              <div className="so-approval-email-add-menu" ref={addMenuPanelRef} role="menu">
+                {/* A <label> wrapping the hidden input (not a button + ref.click()) — the same
+                    pattern SalesOrderList's own "Upload New" (DocumentListModal) uses, where
+                    multi-select is confirmed working. Triggering the native picker via a
+                    button's onClick + fileInputRef.current.click() only ever added one file
+                    even after Ctrl-selecting several and clicking Open (reported 2026-09-15) —
+                    switched to the browser's native label-for-input association (no
+                    JS-triggered .click()) instead. The menu is closed from onChange, not the
+                    label's onClick — closing on click unmounted this input before the picker
+                    returned, so onChange never fired and nothing got attached. */}
+                <label className="so-approval-email-add-menu-item">
+                  Upload from device
+                  <input
+                    type="file"
+                    multiple
+                    className="so-approval-email-file-input-hidden"
+                    disabled={isSubmitting}
+                    onChange={(e) => {
+                      handleFilesSelected(e.target.files);
+                      e.target.value = "";
                       setShowAddMenu(false);
-                      setShowLibraryPicker(true);
                     }}
-                  >
-                    From Document Library
-                  </button>
-                </div>
-              )}
-            </div>
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="so-approval-email-add-menu-item"
+                  onClick={() => {
+                    setShowAddMenu(false);
+                    setShowLibraryPicker(true);
+                  }}
+                >
+                  From Document Library
+                </button>
+              </div>
+            )}
           </div>
-          {attachments.length > 0 && (
-            <div className="so-approval-email-attachments-items">
-              {attachments.map((file, index) => (
-                <div key={`${file.name}-${index}`} className="so-approval-email-attachment-item">
-                  <button
-                    type="button"
-                    className="so-approval-email-attachment-name"
-                    onClick={() => handleOpenAttachment(file)}
-                    title={`Open ${file.name}`}
-                    disabled={isSubmitting}
-                  >
-                    {file.name}
-                  </button>
-                  <button
-                    type="button"
-                    className="so-approval-email-attachment-remove"
-                    onClick={() => removeAttachment(index)}
-                    aria-label={`Remove ${file.name}`}
-                    disabled={isSubmitting}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
+        {attachments.length > 0 && (
+          <div className="se-approval-attachments__items">
+            {attachments.map((file, index) => (
+              <div key={`${file.name}-${index}`} className="se-approval-attachments__item">
+                <button
+                  type="button"
+                  className="se-approval-attachments__name"
+                  onClick={() => handleOpenAttachment(file)}
+                  title={`Open ${file.name}`}
+                  disabled={isSubmitting}
+                >
+                  {file.name}
+                </button>
+                <button
+                  type="button"
+                  className="se-approval-attachments__remove"
+                  onClick={() => removeAttachment(index)}
+                  aria-label={`Remove ${file.name}`}
+                  disabled={isSubmitting}
+                >
+                  <FiX />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-        {/* Message area */}
-        <div className="so-approval-email-message">
-          <div className="so-approval-email-quill-wrap">
-            <ReactQuill
-              theme="snow"
-              value={message}
-              onChange={(value) => {
-                setMessage(value);
-                if (messageError) setMessageError("");
-              }}
-              modules={{ toolbar: MESSAGE_QUILL_TOOLBAR }}
-              formats={MESSAGE_QUILL_FORMATS}
-              placeholder="Type your message..."
-              readOnly={isSubmitting}
-            />
-            {messageError && <div className="so-approval-email-field-error">{messageError}</div>}
-          </div>
+      <div className="se-approval-field so-approval-email-message-field">
+        <label className="se-approval-field__label">
+          Message
+          <span className="se-approval-field__required">*</span>
+        </label>
+        <div className="so-approval-email-quill-wrap">
+          <ReactQuill
+            theme="snow"
+            value={message}
+            onChange={(value) => {
+              setMessage(value);
+              if (messageError) setMessageError("");
+            }}
+            modules={{ toolbar: MESSAGE_QUILL_TOOLBAR }}
+            formats={MESSAGE_QUILL_FORMATS}
+            placeholder="Type your message..."
+            readOnly={isSubmitting}
+          />
         </div>
+        {messageError && <div className="se-approval-dropzone__error">{messageError}</div>}
       </div>
     </div>
   );
 
   const renderFooter = () => (
-    <div className="modal-footer">
-      <button
-        type="button"
-        className="btn btn-secondary"
-        onClick={onClose}
-        disabled={isSubmitting}
-      >
+    <div className="modal-footer se-approval-footer">
+      <button type="button" className="se-approval-footer__cancel" onClick={onClose} disabled={isSubmitting}>
         Cancel
       </button>
-      <button
-        type="button"
-        className="btn btn-primary"
-        onClick={handleCreate}
-        disabled={isSubmitting}
-      >
-        <FiSend className="me-2" />
+      <button type="button" className="se-approval-footer__upload" onClick={handleCreate} disabled={isSubmitting}>
+        <FiSend />
         {isSubmitting ? "Sending..." : `Send for ${stageLabel}`}
       </button>
     </div>
@@ -345,8 +355,8 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
       <CustomModal
         show={show}
         closeModal={onClose}
-        className="so-approval-email-modal-root"
-        dialgName="so-approval-email-dialog"
+        className="se-approval-modal-root so-approval-email-se-root"
+        dialgName="se-approval-dialog"
         header={renderHeader()}
         body={renderBody()}
         footer={renderFooter()}

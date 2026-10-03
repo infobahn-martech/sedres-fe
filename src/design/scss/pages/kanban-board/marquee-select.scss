@@ -1,0 +1,19 @@
+/* Rubber-band drag-select box on the Kanban board (see useKanbanMarqueeSelect) */
+.kanban-marquee-select {
+  position: fixed;
+  display: none;
+  z-index: 1050;
+  pointer-events: none;
+  border: 1px solid #00368c;
+  border-radius: 2px;
+  background: rgba(0, 54, 140, 0.12);
+
+  &.is-active {
+    display: block;
+  }
+}
+
+body.kanban-marquee-selecting {
+  user-select: none;
+  cursor: crosshair;
+}
