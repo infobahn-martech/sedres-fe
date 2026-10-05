@@ -150,6 +150,7 @@ const Dashboard = () => {
   const [revenueBranch, setRevenueBranch] = useState("all");
   const [revenuePeriod, setRevenuePeriod] = useState(DEFAULT_PERIOD);
   const [offshorePeriod, setOffshorePeriod] = useState(DEFAULT_PERIOD);
+  const [revenueYear, setRevenueYear] = useState(null);
   const [soClient, setSoClient] = useState("all");
   const [soOverdueOnly, setSoOverdueOnly] = useState(false);
 
@@ -279,6 +280,22 @@ const Dashboard = () => {
   const allOverdueCount = salesOrders.filter((so) => so.isOverdue).length;
   const crewTrend = filterByPeriod(overview.crew_change_trend, crewPeriod);
   const branchOptions = overview.branches.map((b) => ({ value: b.key, label: b.name }));
+
+  // Years present in either revenue series; defaults to the latest one.
+  const revenueYearOptions = uniqueOptions(
+    [...overview.revenue_by_branch, ...overview.revenue_offshore_marine].map((row) => row.period.slice(0, 4))
+  );
+  const selectedRevenueYear = revenueYear ?? revenueYearOptions.at(-1)?.value ?? "";
+  const inRevenueYear = (row) => row.period.startsWith(selectedRevenueYear);
+  const branchRevenueTotals = overview.branches.map((branch) => ({
+    ...branch,
+    total: overview.revenue_by_branch.filter(inRevenueYear).reduce((sum, row) => sum + (row[branch.key] ?? 0), 0),
+  }));
+  const offshoreRevenueTotal = overview.revenue_offshore_marine
+    .filter(inRevenueYear)
+    .reduce((sum, row) => sum + row.revenue, 0);
+  const totalRevenue = branchRevenueTotals.reduce((sum, branch) => sum + branch.total, offshoreRevenueTotal);
+  const revenueShare = (value) => (totalRevenue ? `${Math.round((value / totalRevenue) * 100)}% of total` : "—");
 
   const stats = [
     { title: "Total Vessels Imported", value: summary.total_vessels_imported, icon: <FiDownload />, tone: "blue" },
@@ -474,6 +491,43 @@ const Dashboard = () => {
               <Bar dataKey="count" name="Crew Changes" fill={seriesColors[0]} radius={[4, 4, 0, 0]} maxBarSize={36} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* Total revenue — yearly */}
+        <div className="chart-card chart-card-full">
+          <div className="chart-header chart-header--row">
+            <div>
+              <h3 className="chart-title">Total Revenue</h3>
+              <p className="chart-subtitle">Branch and offshore marine revenue for the selected year</p>
+            </div>
+            <div className="dash-filters">
+              <FilterSelect
+                value={selectedRevenueYear}
+                onChange={setRevenueYear}
+                label="Filter by year"
+                options={revenueYearOptions}
+              />
+            </div>
+          </div>
+          <div className="so-summary">
+            <div className="so-summary-item">
+              <span className="so-summary-label">Total Revenue</span>
+              <span className="so-summary-value">{formatCurrency(totalRevenue)}</span>
+              <span className="so-summary-sub">{selectedRevenueYear}</span>
+            </div>
+            {branchRevenueTotals.map((branch) => (
+              <div key={branch.key} className="so-summary-item">
+                <span className="so-summary-label">{branch.name}</span>
+                <span className="so-summary-value">{formatCurrency(branch.total)}</span>
+                <span className="so-summary-sub">{revenueShare(branch.total)}</span>
+              </div>
+            ))}
+            <div className="so-summary-item">
+              <span className="so-summary-label">Offshore Marine</span>
+              <span className="so-summary-value">{formatCurrency(offshoreRevenueTotal)}</span>
+              <span className="so-summary-sub">{revenueShare(offshoreRevenueTotal)}</span>
+            </div>
+          </div>
         </div>
 
         {/* Monthly revenue — branch wise */}
