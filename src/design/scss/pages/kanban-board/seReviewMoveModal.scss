@@ -70,45 +70,26 @@
   }
 }
 
-// Review and Move on the Blockers modal shell (blockers-modal.scss): content-height dialog, plain left-aligned columns, the batch info row and a Close/Confirm footer.
+// Review and Move on the Blockers modal shell (blockers-modal.scss): same size and type as the
+// Blockers modal, plain left-aligned columns, the batch info row and a Close/Confirm footer.
 .blockers-modal.se-review-move-modal {
-  // Common modal height: sized to its content (blockers-modal.scss fixes it at 800px), capped at
-  // the viewport so long tables scroll inside the table section.
   .modal-dialog {
-    max-width: 1000px;
-    height: auto;
+    max-width: 1250px;
+    width: 92%;
+    height: min(800px, calc(100vh - 2rem));
+    max-height: calc(100vh - 2rem);
+
+    @media (max-width: 991px) {
+      max-width: 95%;
+      width: 95%;
+      height: calc(100vh - 1.5rem);
+      max-height: calc(100vh - 1.5rem);
+    }
   }
 
   .modal-content {
-    height: auto;
-    max-height: calc(100vh - 2rem);
-  }
-
-  // Smaller type than the Blockers list modal (20px title / 14px rows) for these compact dialogs.
-  .blockers-modal-header {
-    padding: 14px 20px;
-
-    .blockers-modal-title {
-      font-size: 16px;
-    }
-
-    .blockers-modal-subtitle {
-      font-size: 12px;
-    }
-  }
-
-  .blockers-table {
-    thead th {
-      font-size: 11px;
-    }
-
-    tbody td {
-      font-size: 13px;
-    }
-  }
-
-  .se-review-move-footer .btn {
-    font-size: 13px;
+    height: 100%;
+    max-height: 100%;
   }
 
   // CustomModal wraps the header in Bootstrap's .modal-header; the blue .blockers-modal-header
@@ -187,10 +168,33 @@
   }
 }
 
-// Create Submission Documents: same shell, one field, so a narrower dialog.
+// Create Submission Documents: same shell, one field, so a narrower content-height dialog with
+// smaller type than the Blockers modal.
 .blockers-modal.se-review-move-modal.submission-documents-modal {
   .modal-dialog {
     max-width: 560px;
+    height: auto;
+  }
+
+  .modal-content {
+    height: auto;
+    max-height: calc(100vh - 2rem);
+  }
+
+  .blockers-modal-header {
+    padding: 14px 20px;
+
+    .blockers-modal-title {
+      font-size: 16px;
+    }
+
+    .blockers-modal-subtitle {
+      font-size: 12px;
+    }
+  }
+
+  .se-review-move-footer .btn {
+    font-size: 13px;
   }
 
   .submission-documents-field {
