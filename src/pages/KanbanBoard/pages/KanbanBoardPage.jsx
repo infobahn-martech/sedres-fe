@@ -584,12 +584,18 @@ export default function KanbanBoardPage() {
   const batchByCardId = useBatchMoveStore((state) => state.batchByCardId);
 
   /* The same upload from the "SE Received" column header, for the cards ticked in that column
-     (loose cards have no batch header to carry the button). */
+     (loose cards have no batch header to carry the button). McDermott's "Issue AR Invoice" uses it
+     too, with its workflowId: its invoice review is read per workflow. */
   const handleColumnUploadInvoice = useCallback(
-    (cards) => {
+    (cards, { workflowId = null } = {}) => {
       if (!cards?.length) return;
       const batchNumbers = [...new Set(cards.map((card) => batchByCardId[card.id]).filter(Boolean))];
-      handleBatchUploadInvoice({ id: "se-received-selection", title: batchNumbers.join(", "), cards });
+      handleBatchUploadInvoice({
+        id: "se-received-selection",
+        title: batchNumbers.join(", "),
+        cards,
+        workflowId,
+      });
     },
     [batchByCardId, handleBatchUploadInvoice]
   );
@@ -677,7 +683,8 @@ export default function KanbanBoardPage() {
         handleCloseInvoiceUpload();
         /* The response lists every SE Received card; the review covers only the ones uploaded for. */
         openArInvoiceReviewModal(
-          cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean)
+          cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
+          { workflowId: selectedInvoiceBatch?.workflowId ?? null }
         );
         refetchBoard?.();
       } finally {

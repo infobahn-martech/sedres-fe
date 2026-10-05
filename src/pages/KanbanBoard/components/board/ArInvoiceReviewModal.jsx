@@ -25,7 +25,11 @@ const COLUMNS = [
   { name: "sales_order_no", label: "SO", getValue: (salesOrder) => salesOrder.sales_order_no },
 ];
 
-const EDITABLE_COLUMNS = COLUMNS.filter((column) => column.editable);
+/* McDermott "Issue AR Invoice" review: SO, then Invoice No. */
+const MCDERMOTT_COLUMN_ORDER = ["sales_order_no", "invoice_no"];
+const MCDERMOTT_COLUMNS = MCDERMOTT_COLUMN_ORDER.map((name) =>
+  COLUMNS.find((column) => column.name === name)
+);
 /* The invoice's tax details: one line per tax rate, each on its own row under the sales order
    (0% first), laid out like the invoice's own block. Every cell is editable.
    Hidden for now on request: restore the fields below, the SAR header rows and the tax-line split in
@@ -36,9 +40,6 @@ const TAX_FIELDS = [
   // { name: "tax", label: "Tax" },
   // { name: "gross", label: "Gross" },
 ];
-
-/* The card tick comes before the configured columns, the tax columns after them. */
-const COLUMN_COUNT = COLUMNS.length + TAX_FIELDS.length + 1;
 
 /* Invoice-style amount, e.g. 14,067.97; anything non-numeric is shown as typed. */
 const formatAmount = (value) =>
@@ -60,7 +61,8 @@ const getTaxLines = (salesOrder) =>
 
 // Opened after an "SE Received" bulk invoice upload. One editable row per sales order with the
 // invoice placed on it and its tax details alongside, refreshed from da/ar_invoice_review on open. Confirm
-// sends the ticked cards to da/confirm_ar_invoices, which moves them to "AR Invoices Issued".
+// sends the ticked cards to da/confirm_ar_invoices, which moves them to "AR Invoices Issued"
+// (McDermott "Issue AR Invoice": back to Backlog).
 const ArInvoiceReviewModal = ({ onConfirmed }) => {
   const show = useArInvoiceReviewStore((state) => state.showArInvoiceReviewModal);
   const cards = useArInvoiceReviewStore((state) => state.selectedArInvoiceReviewCards);
@@ -69,6 +71,14 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
   const fetchArInvoiceReview = useArInvoiceReviewStore((state) => state.fetchArInvoiceReview);
   const isConfirming = useArInvoiceReviewStore((state) => state.isConfirmingArInvoices);
   const confirmArInvoices = useArInvoiceReviewStore((state) => state.confirmArInvoices);
+  const workflowId = useArInvoiceReviewStore((state) => state.selectedArInvoiceReviewWorkflowId);
+
+  /* A workflow id means the McDermott review; SAIPEM's has none. */
+  const isMcDermottReview = workflowId != null;
+  const columns = isMcDermottReview ? MCDERMOTT_COLUMNS : COLUMNS;
+  const editableColumns = columns.filter((column) => column.editable);
+  /* The card tick comes before the configured columns, the tax columns after them. */
+  const columnCount = columns.length + TAX_FIELDS.length + 1;
 
   /* Cards with every invoice placed start ticked; only the user's own unticks are tracked so a
      review refresh keeps them. */
@@ -135,7 +145,7 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
     const key = getSalesOrderKey(card, salesOrder);
     const edits = editsByKey[key] ?? {};
     const changed = {};
-    EDITABLE_COLUMNS.forEach(({ name }) => {
+    editableColumns.forEach(({ name }) => {
       if (edits[name] == null) return;
       const value = String(edits[name]).trim();
       if (value !== String(salesOrder.invoice?.[name] ?? "")) changed[name] = value;
@@ -196,9 +206,14 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
       notify(errorMessage, "error");
       return;
     }
-    const movedCount = result?.moved_to_ar_invoices_issued?.length ?? confirmPayload.length;
+    /* McDermott: confirmed cards go back to Backlog; cards still missing invoices stay put. */
+    const movedCount =
+      (isMcDermottReview ? result?.moved_to_backlog : result?.moved_to_ar_invoices_issued)
+        ?.length ?? confirmPayload.length;
     notify(
-      `${movedCount} ${movedCount === 1 ? "card" : "cards"} moved to AR Invoices Issued`,
+      `${movedCount} ${movedCount === 1 ? "card" : "cards"} moved to ${
+        isMcDermottReview ? "Backlog" : "AR Invoices Issued"
+      }`,
       "success"
     );
     onClose();
@@ -291,13 +306,13 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
             </td>
           )}
           {!salesOrder && (
-            <td colSpan={COLUMN_COUNT - 1} className="ar-invoice-review__empty">
+            <td colSpan={columnCount - 1} className="ar-invoice-review__empty">
               No sales orders
             </td>
           )}
           {salesOrder &&
             lineIndex === 0 &&
-            COLUMNS.map((column) => (
+            columns.map((column) => (
               <td key={column.name} rowSpan={lineCount}>
                 {renderCell(card, salesOrder, column)}
               </td>
@@ -345,7 +360,7 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
                   aria-label="Select all cards"
                 />
               </th>
-              {COLUMNS.map((column) => (
+              {columns.map((column) => (
                 <th key={column.name} rowSpan={2}>
                   {column.label}
                 </th>
@@ -371,7 +386,7 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
               ))
             ) : (
               <tr>
-                <td colSpan={COLUMN_COUNT} className="ar-invoice-review__empty">
+                <td colSpan={columnCount} className="ar-invoice-review__empty">
                   {isLoading ? "Loading..." : "No cards to review"}
                 </td>
               </tr>

@@ -48,9 +48,19 @@ const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
 const AR_INVOICES_ISSUED_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
 const CONSOLIDATED_COLUMN_PATTERN = /^consolidated\b/i;
 
+/* McDermott DA: "Upload Invoice" on "Issue AR Invoice" for the cards the user ticks (no auto-tick). */
+const MCDERMOTT_WORKFLOW = "MCDERMOTT";
+const ISSUE_AR_INVOICE_COLUMN_PATTERN = /^issue\s+ar\s+invoices?$/i;
+
+const isMcDermottWorkflow = (workflow) =>
+  String(workflow?.title ?? "").trim().toUpperCase().includes(MCDERMOTT_WORKFLOW);
+
 const getInvoiceAction = (workflow, column) => {
-  if (!isBatchWorkflow(workflow)) return null;
   const title = String(column?.title ?? "").trim();
+  if (isMcDermottWorkflow(workflow)) {
+    return ISSUE_AR_INVOICE_COLUMN_PATTERN.test(title) ? "issueArInvoice" : null;
+  }
+  if (!isBatchWorkflow(workflow)) return null;
   if (SE_RECEIVED_COLUMN_PATTERN.test(title)) return "upload";
   if (AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "merge";
   if (CONSOLIDATED_COLUMN_PATTERN.test(title)) return "submission";
@@ -59,6 +69,7 @@ const getInvoiceAction = (workflow, column) => {
 
 const INVOICE_ACTION_BUTTONS = {
   upload: { label: "Upload Invoice", icon: <FiUploadCloud size={16} aria-hidden /> },
+  issueArInvoice: { label: "Upload Invoices", icon: <FiUploadCloud size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
   prepareSubmission: { label: "Create Submission Documents", icon: <FiDownload size={16} aria-hidden /> },
   finalSubmission: { label: "Send For Final Submission", icon: <FiSend size={16} aria-hidden /> },
@@ -312,6 +323,8 @@ export default function WorkflowColumns({
                   : undefined;
               const invoiceActionHandlers = {
                 upload: onColumnUploadInvoice,
+                issueArInvoice: (cards) =>
+                  onColumnUploadInvoice?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 merge: onColumnMergeInvoice,
                 prepareSubmission: onColumnPrepareSubmission,
                 finalSubmission: onColumnSendFinalSubmission,
