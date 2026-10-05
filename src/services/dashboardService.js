@@ -75,6 +75,15 @@ const MOCK_OVERVIEW = {
     { month: "Sep", period: "2026-09", revenue: 402000 },
   ],
 
+  // Yearly revenue totals per branch + offshore marine (current year is year to date).
+  revenue_by_year: [
+    { year: "2026", jubail: 1966000, dammam: 1289000, rt: 1055000, offshore: 3184000 },
+    { year: "2025", jubail: 2484000, dammam: 1612000, rt: 1298000, offshore: 3905000 },
+    { year: "2024", jubail: 2215000, dammam: 1487000, rt: 1176000, offshore: 3542000 },
+    { year: "2023", jubail: 1938000, dammam: 1321000, rt: 1043000, offshore: 3187000 },
+    { year: "2022", jubail: 1702000, dammam: 1165000, rt: 912000, offshore: 2864000 },
+  ],
+
   open_sales_orders: [
     { id: 1, so_number: "SO-24081", client: "Saipem", created_on: "2026-07-14", amount: 48500 },
     { id: 2, so_number: "SO-24102", client: "Aramco", created_on: "2026-08-02", amount: 126000 },

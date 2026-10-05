@@ -281,19 +281,12 @@ const Dashboard = () => {
   const crewTrend = filterByPeriod(overview.crew_change_trend, crewPeriod);
   const branchOptions = overview.branches.map((b) => ({ value: b.key, label: b.name }));
 
-  // Years present in either revenue series; defaults to the latest one.
-  const revenueYearOptions = uniqueOptions(
-    [...overview.revenue_by_branch, ...overview.revenue_offshore_marine].map((row) => row.period.slice(0, 4))
-  );
-  const selectedRevenueYear = revenueYear ?? revenueYearOptions.at(-1)?.value ?? "";
-  const inRevenueYear = (row) => row.period.startsWith(selectedRevenueYear);
-  const branchRevenueTotals = overview.branches.map((branch) => ({
-    ...branch,
-    total: overview.revenue_by_branch.filter(inRevenueYear).reduce((sum, row) => sum + (row[branch.key] ?? 0), 0),
-  }));
-  const offshoreRevenueTotal = overview.revenue_offshore_marine
-    .filter(inRevenueYear)
-    .reduce((sum, row) => sum + row.revenue, 0);
+  // Year options newest first; defaults to the latest year.
+  const revenueYearOptions = uniqueOptions(overview.revenue_by_year.map((row) => row.year)).reverse();
+  const selectedRevenueYear = revenueYear ?? revenueYearOptions[0]?.value ?? "";
+  const yearRevenue = overview.revenue_by_year.find((row) => row.year === selectedRevenueYear) ?? {};
+  const branchRevenueTotals = overview.branches.map((branch) => ({ ...branch, total: yearRevenue[branch.key] ?? 0 }));
+  const offshoreRevenueTotal = yearRevenue.offshore ?? 0;
   const totalRevenue = branchRevenueTotals.reduce((sum, branch) => sum + branch.total, offshoreRevenueTotal);
   const revenueShare = (value) => (totalRevenue ? `${Math.round((value / totalRevenue) * 100)}% of total` : "—");
 
