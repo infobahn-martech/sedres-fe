@@ -35,11 +35,20 @@ const isBatchWorkflow = (workflow) => {
   return BATCH_ACTION_WORKFLOWS.some((name) => workflowTitle.includes(name));
 };
 
+/* McDermott DA creates batches from Backlog the same way; the backend moves them to its PO request
+   column. The SAIPEM invoice/SE steps after Backlog stay SAIPEM-only (isBatchWorkflow). */
+const BATCH_CREATE_WORKFLOWS = [...BATCH_ACTION_WORKFLOWS, "MCDERMOTT"];
+
+const isBatchCreateWorkflow = (workflow) => {
+  const workflowTitle = String(workflow?.title ?? "").trim().toUpperCase();
+  return BATCH_CREATE_WORKFLOWS.some((name) => workflowTitle.includes(name));
+};
+
 const isBacklogColumn = (column) =>
   String(column?.title ?? "").trim().toLowerCase() === BATCH_ACTION_COLUMN;
 
 const hasBatchAction = (workflow, ...columns) =>
-  isBatchWorkflow(workflow) && columns.some(isBacklogColumn);
+  isBatchCreateWorkflow(workflow) && columns.some(isBacklogColumn);
 
 /* Invoice actions on SAIPEM column headers, shown only while a card in that column is ticked:
    "Upload Invoice" on "SE Received", "Merge Invoice" on "AR Invoices Issued", and on "Consolidated"
@@ -122,7 +131,7 @@ export default function WorkflowColumns({
      non-Export calls too, so those cards' export approval state is read from the call detail
      (re-read on every board load). */
   useEffect(() => {
-    if (!isBatchWorkflow(workflow)) return;
+    if (!isBatchCreateWorkflow(workflow)) return;
     const callIds = workflow.columnOrder
       .filter((colKey) => isBacklogColumn(workflow.columns[colKey]))
       .flatMap((colKey) => swimlaneOrder.flatMap((laneId) => getSwimlaneColumnCards(workflow, laneId, colKey)))
@@ -132,7 +141,7 @@ export default function WorkflowColumns({
   }, [workflow, swimlaneOrder, loadExportApprovalStatuses]);
 
   const batchLaneCardsByColumn = useMemo(() => {
-    if (!isBatchWorkflow(workflow)) return null;
+    if (!isBatchCreateWorkflow(workflow)) return null;
     const laneId = swimlaneOrder[0];
     const byColumn = {};
     const relocated = [];
