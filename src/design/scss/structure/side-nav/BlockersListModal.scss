@@ -1,0 +1,19 @@
+// Blockers list modal: Business Rules modal size (business-rules-modal.scss) on the shared
+// blockers-modal shell. Scoped to .blockers-list-modal so Stickers/Tags/Types keep their size.
+.blockers-modal.blockers-list-modal {
+  .modal-dialog {
+    width: 94vw;
+    max-width: 1440px;
+    margin: 1.5rem auto;
+    height: min(800px, calc(100vh - 3rem));
+    max-height: calc(100vh - 3rem);
+
+    @media (max-width: 991px) {
+      width: 98vw;
+      max-width: 98vw;
+      margin: 1rem auto;
+      height: calc(100vh - 2rem);
+      max-height: calc(100vh - 2rem);
+    }
+  }
+}
