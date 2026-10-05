@@ -59,7 +59,7 @@ const getActionState = (callId) => Gateway.get(`/da/action_state/${callId}`);
  * Records who approved the SO. Errors with "No approval proof uploaded yet for this call"
  * until the approval proof has been uploaded for the same call. */
 const recordApprovedBy = (payload) => Gateway.post('/da/da_record_approved_by', payload);
-/** @param {{ call_ids: number[] }} payload
+/** @param {{ cards: Array<{ call_id: number, card_id: number }> }} payload
  * @returns {Promise<{ data: { status: true, batch_id: number, batch_number: string }
  *   | { status: false|'error', message: string } }>}
  * The backend issues batch_number itself. Fails when the calls span more than one category (Crewing/Port Call). */

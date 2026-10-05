@@ -930,7 +930,7 @@ export default function KanbanBoardPage() {
     [finalSubmissionDraft]
   );
 
-  /* Creates the batch on the backend from the ticked cards' calls. The backend issues the batch
+  /* Creates the batch on the backend from the ticked Backlog cards. The backend issues the batch
      number (e.g. Sep_26_Batch1) and returns it as batch_number. */
   const handleConfirmBatch = useCallback(async () => {
     const batchCards = selectedBatchCardIds
@@ -942,12 +942,12 @@ export default function KanbanBoardPage() {
       return;
     }
 
-    const callIds = batchCards.map((card) => Number(card.callId));
+    const cards = batchCards.map((card) => ({ call_id: Number(card.callId), card_id: Number(card.id) }));
     setIsCreatingBatch(true);
     try {
       let data;
       try {
-        ({ data } = await daService.createHubBatch({ call_ids: callIds }));
+        ({ data } = await daService.createHubBatch({ cards }));
       } catch (error) {
         data = error?.response?.data;
       }

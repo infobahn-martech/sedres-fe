@@ -9,6 +9,8 @@ const noop = () => {};
 const EMPTY_SELECTED_IDS = [];
 const AWAITING_SE_COLUMN_PATTERN = /^awaiting\s+(for\s+)?se$/i;
 const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
+/* McDermott batches skip SAIPEM's SE steps, so their header has no SE actions. */
+const MCDERMOTT_WORKFLOW_PATTERN = /mcdermott/i;
 
 /**
  * Collapsible group of cards inside a column cell.
@@ -34,13 +36,14 @@ export default function BatchGroup({
 
   /* Loose cards render as a plain grid: no header, never collapsed. */
   const isUngrouped = Boolean(batch.isUngrouped);
+  const isSeFlowBatch = !isUngrouped && !MCDERMOTT_WORKFLOW_PATTERN.test(workflowTitle ?? "");
   /* Batches already emailed for SE creation sit in "Awaiting SE" (live title "Awaiting for SE"). */
   const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches whose SE approval is back sit in "SE Received" and move on to invoicing. */
   const isSeReceivedColumn = SE_RECEIVED_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches still to be sent for SE creation start with every card ticked. Unticks are kept per
      batch, apart from the board-wide selection used to create batches in Backlog. */
-  const isSendSeBatch = !isUngrouped && !isAwaitingSeColumn && !isSeReceivedColumn;
+  const isSendSeBatch = isSeFlowBatch && !isAwaitingSeColumn && !isSeReceivedColumn;
   const [seUntickedCardIds, setSeUntickedCardIds] = useState([]);
   /* "Awaiting SE" batches start with every card ticked, and the user may untick cards before the SE
      upload. Once it is done, the cards the SE approval covers are ticked (and turn green); the SE
@@ -48,7 +51,7 @@ export default function BatchGroup({
   const seApprovedByCardId = useBatchMoveStore((state) => state.seApprovedByCardId);
   const seUntickedByCardId = useBatchMoveStore((state) => state.seUntickedByCardId);
   const toggleSeReviewCard = useBatchMoveStore((state) => state.toggleSeReviewCard);
-  const isSeReviewBatch = !isUngrouped && isAwaitingSeColumn;
+  const isSeReviewBatch = isSeFlowBatch && isAwaitingSeColumn;
   /* Once the batch's SE upload is done, "Review and Move" replaces "Upload SE Approval". */
   const batchId = useBatchMoveStore((state) => state.batchIdByNumber[batch.title]);
   const isSeUploadDone = useBatchMoveStore((state) => Boolean(state.seReviewByBatchId[batchId]));
@@ -110,7 +113,7 @@ export default function BatchGroup({
             <span className="batch-group__title">{batch.title}</span>
           </button>
 
-          {isAwaitingSeColumn && isSeUploadDone ? (
+          {!isSeFlowBatch ? null : isAwaitingSeColumn && isSeUploadDone ? (
             <button
               type="button"
               className="batch-group__action"
