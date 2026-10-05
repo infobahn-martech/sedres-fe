@@ -27,36 +27,46 @@ const mergeReviewCard = (card, review) => {
 };
 
 /**
- * "SE Received" AR invoice review popup, opened after a bulk da/upload_ar_invoices upload.
+ * AR invoice review popup, opened after a bulk da/upload_ar_invoices upload: SAIPEM "SE Received",
+ * or McDermott "Issue AR Invoice" (which must send its workflow_id to da/ar_invoice_review).
  * Seeded with the upload response's cards, then refreshed from da/ar_invoice_review's paged list.
  */
 const useArInvoiceReviewStore = create((set, get) => ({
   showArInvoiceReviewModal: false,
   /** [{ call_id, card_id, ready, sales_orders: [{ sales_order_no, se_numbers, invoice }] }] */
   selectedArInvoiceReviewCards: [],
+  /** The McDermott workflow the review is for; null for SAIPEM. */
+  selectedArInvoiceReviewWorkflowId: null,
   isArInvoiceReviewLoading: false,
 
-  openArInvoiceReviewModal: (cards) =>
+  openArInvoiceReviewModal: (cards, { workflowId = null } = {}) =>
     set({
       showArInvoiceReviewModal: true,
       selectedArInvoiceReviewCards: Array.isArray(cards) ? cards : [],
+      selectedArInvoiceReviewWorkflowId: workflowId,
     }),
 
   closeArInvoiceReviewModal: () =>
     set({
       showArInvoiceReviewModal: false,
       selectedArInvoiceReviewCards: [],
+      selectedArInvoiceReviewWorkflowId: null,
       isArInvoiceReviewLoading: false,
     }),
 
   /** Resolves to an error message when a review page could not be loaded, otherwise null. */
   fetchArInvoiceReview: async () => {
     if (!get().selectedArInvoiceReviewCards.length) return null;
+    const workflowId = get().selectedArInvoiceReviewWorkflowId;
 
     const fetchPage = async (page) => {
       let data;
       try {
-        ({ data } = await daService.getArInvoiceReview({ page, per_page: REVIEW_PER_PAGE }));
+        ({ data } = await daService.getArInvoiceReview({
+          ...(workflowId != null && { workflow_id: workflowId }),
+          page,
+          per_page: REVIEW_PER_PAGE,
+        }));
       } catch (error) {
         data = error?.response?.data;
       }
