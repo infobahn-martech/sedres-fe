@@ -22,6 +22,28 @@
   }
 }
 
+// Add/Edit Business Rule form: same box as the Business Rules list modal. That modal is centered,
+// so Bootstrap's modal-dialog-centered min-height (100% - 2 x 1.75rem) sets its real height; this
+// form isn't centered, so it gets that height directly. The selector repeats business-rules-modal.scss's
+// body/.modal/.show chain so it outranks that file's near full-screen size.
+body .modal.fade.business-rule-form-modal.business-rule-form-list-modal,
+body .modal.business-rule-form-modal.business-rule-form-list-modal.show {
+  .modal-dialog {
+    width: 98vw;
+    max-width: 1800px;
+    margin: 1.5rem auto;
+    height: calc(100vh - 3.5rem);
+    max-height: calc(100vh - 3.5rem);
+
+    @media (max-width: 991px) {
+      max-width: 98vw;
+      margin: 1rem auto;
+      height: calc(100vh - 2rem);
+      max-height: calc(100vh - 2rem);
+    }
+  }
+}
+
 // New Card Blocker / Sticker / Tag / Type forms (opened from the list modals' "+"): same size as
 // the list modals; the body scrolls and the footer stays at the bottom. Scoped to their own
 // classes, since new-blocker-modal.scss is shared.

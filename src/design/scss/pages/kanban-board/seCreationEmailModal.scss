@@ -3,14 +3,14 @@
 // Split into dialog shell, header, body and footer sections, all scoped to .se-email-dialog.
 
 // Root-scoped so it outranks Bootstrap's .modal-dialog max-width at larger breakpoints.
-// Same size as the Business Rules modal (business-rules-modal.scss); the body scrolls inside.
+// Same size as the Add Business Rule form (side-nav/BlockersListModal.scss); the body scrolls inside.
 .se-email-modal-root .se-email-dialog {
-  --bs-modal-width: 1440px;
-  width: 94vw;
-  max-width: 1440px;
+  --bs-modal-width: 1800px;
+  width: 98vw;
+  max-width: 1800px;
   margin: 1.5rem auto;
-  height: min(800px, calc(100vh - 3rem));
-  max-height: calc(100vh - 3rem);
+  height: calc(100vh - 3.5rem);
+  max-height: calc(100vh - 3.5rem);
 
   @media (max-width: 991px) {
     width: 98vw;

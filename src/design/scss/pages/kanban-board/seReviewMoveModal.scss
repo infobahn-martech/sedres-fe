@@ -70,16 +70,16 @@
   }
 }
 
-// Review and Move on the Blockers modal shell (blockers-modal.scss): Business Rules modal size
-// (business-rules-modal.scss), Blockers type, plain left-aligned columns, the batch info row and a
-// Close/Confirm footer.
+// Review and Move on the Blockers modal shell (blockers-modal.scss): Add Business Rule form size
+// (side-nav/BlockersListModal.scss), Blockers type, plain left-aligned columns, the batch info row
+// and a Close/Confirm footer.
 .blockers-modal.se-review-move-modal {
   .modal-dialog {
-    width: 94vw;
-    max-width: 1440px;
+    width: 98vw;
+    max-width: 1800px;
     margin: 1.5rem auto;
-    height: min(800px, calc(100vh - 3rem));
-    max-height: calc(100vh - 3rem);
+    height: calc(100vh - 3.5rem);
+    max-height: calc(100vh - 3.5rem);
 
     @media (max-width: 991px) {
       width: 98vw;
