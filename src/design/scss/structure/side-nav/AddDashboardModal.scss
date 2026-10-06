@@ -208,3 +208,14 @@
     }
   }
 }
+
+.add-dashboard-modal.stage-decision-modal {
+  .modal-dialog.add-dashboard-modal-dialog {
+    max-width: 640px;
+  }
+
+  .stage-decision-textarea {
+    min-height: 160px;
+    resize: vertical;
+  }
+}

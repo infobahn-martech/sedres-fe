@@ -407,8 +407,9 @@ function WorkflowStageCard({
             <button
               className="stage-action-icon stage-action-icon-decision"
               type="button"
-              title="Add decision"
-              aria-label="Add decision"
+              aria-label={decision ? `Description: ${decision}` : 'Add description'}
+              data-tooltip-id="workflow-stage-name-tooltip"
+              data-tooltip-content={decision || 'Add description'}
               onClick={(e) => {
                 e.stopPropagation();
                 setIsDecisionModalOpen(true);
