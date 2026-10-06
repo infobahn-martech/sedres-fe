@@ -9,14 +9,15 @@ import DynamicIcon from './DynamicIcon';
 import IconPicker from './IconPicker';
 import { TAG_AVAILABILITY_OPTIONS, normalizeTagAvailabilityLevel } from './NewTagModal';
 import '../../../design/scss/new-blocker-modal.scss';
+import '../../../design/scss/structure/side-nav/BlockersListModal.scss';
 
 const COLOR_PICKER_PORTAL_Z = 10800;
 const BOARD_SELECTOR_PORTAL_Z = 10700;
 const BOARD_SELECTOR_GAP = 4;
 const BOARD_SELECTOR_MIN_HEIGHT = 200;
 
-function computeBoardSelectorPlacement(rect) {
-  const spaceBelow = window.innerHeight - rect.bottom - BOARD_SELECTOR_GAP;
+function computeBoardSelectorPlacement(rect, boundsBottom = window.innerHeight) {
+  const spaceBelow = boundsBottom - rect.bottom - BOARD_SELECTOR_GAP;
   const spaceAbove = rect.top - BOARD_SELECTOR_GAP;
   const openUp = spaceBelow < BOARD_SELECTOR_MIN_HEIGHT && spaceAbove > spaceBelow;
   return {
@@ -99,6 +100,7 @@ const NewStickerModal = ({
   const boardsControlsRef = useRef(null);
   const addBoardBtnRef = useRef(null);
   const iconPickerRef = useRef(null);
+  const modalBodyRef = useRef(null);
 
   const isEditMode = Boolean(
     editingSticker?.sticker_id != null && String(editingSticker.sticker_id) !== ''
@@ -290,8 +292,12 @@ const NewStickerModal = ({
       return;
     }
     if (boardsControlsRef.current) {
+      /* Fill the space down to the modal body's bottom, so the list stops above the footer. */
       setBoardSelectorPlacement(
-        computeBoardSelectorPlacement(boardsControlsRef.current.getBoundingClientRect())
+        computeBoardSelectorPlacement(
+          boardsControlsRef.current.getBoundingClientRect(),
+          modalBodyRef.current?.getBoundingClientRect().bottom
+        )
       );
     }
     setIsBoardSelectorOpen(true);
@@ -389,7 +395,7 @@ const NewStickerModal = ({
     <Modal
       show={show}
       onHide={onClose}
-      className="new-blocker-modal"
+      className="new-blocker-modal new-card-sticker-modal"
       backdropClassName="new-blocker-modal-backdrop"
       centered
       size="md"
@@ -401,7 +407,7 @@ const NewStickerModal = ({
           <FiX size={20} />
         </button>
       </Modal.Header>
-      <Modal.Body className="new-blocker-modal-body">
+      <Modal.Body className="new-blocker-modal-body" ref={modalBodyRef}>
         <div className="new-blocker-form">
           <div className="new-blocker-row-fields">
             <div className="new-blocker-field">
@@ -588,7 +594,7 @@ const NewStickerModal = ({
       {isBoardSelectorOpen &&
         createPortal(
           <div
-            className="new-blocker-board-selector"
+            className="new-blocker-board-selector new-card-sticker-board-selector"
             ref={boardSelectorRef}
             style={{
               position: 'fixed',

@@ -6,6 +6,7 @@ import PropTypes from 'prop-types';
 import SedresColorPicker from '../../../components/SedresColorPicker/SedresColorPicker';
 import { normalizeHexColor } from '../../../components/SedresColorPicker/sedresColorPickerConstants';
 import '../../../design/scss/new-blocker-modal.scss';
+import '../../../design/scss/structure/side-nav/BlockersListModal.scss';
 
 /** Values sent to kanban_management APIs */
 export const TAG_AVAILABILITY_OPTIONS = ['On-demand', 'Auto', 'Global'];
@@ -25,8 +26,8 @@ const BOARD_SELECTOR_PORTAL_Z = 10700;
 const BOARD_SELECTOR_GAP = 4;
 const BOARD_SELECTOR_MIN_HEIGHT = 200;
 
-function computeBoardSelectorPlacement(rect) {
-  const spaceBelow = window.innerHeight - rect.bottom - BOARD_SELECTOR_GAP;
+function computeBoardSelectorPlacement(rect, boundsBottom = window.innerHeight) {
+  const spaceBelow = boundsBottom - rect.bottom - BOARD_SELECTOR_GAP;
   const spaceAbove = rect.top - BOARD_SELECTOR_GAP;
   const openUp = spaceBelow < BOARD_SELECTOR_MIN_HEIGHT && spaceAbove > spaceBelow;
   return {
@@ -82,6 +83,7 @@ const NewTagModal = ({
   const boardSelectorRef = useRef(null);
   const boardsControlsRef = useRef(null);
   const addBoardBtnRef = useRef(null);
+  const modalBodyRef = useRef(null);
 
   const isEditMode = Boolean(editingTag?.tag_id != null && String(editingTag.tag_id) !== '');
 
@@ -267,8 +269,12 @@ const NewTagModal = ({
       return;
     }
     if (boardsControlsRef.current) {
+      /* Fill the space down to the modal body's bottom, so the list stops above the footer. */
       setBoardSelectorPlacement(
-        computeBoardSelectorPlacement(boardsControlsRef.current.getBoundingClientRect())
+        computeBoardSelectorPlacement(
+          boardsControlsRef.current.getBoundingClientRect(),
+          modalBodyRef.current?.getBoundingClientRect().bottom
+        )
       );
     }
     setIsBoardSelectorOpen(true);
@@ -349,7 +355,7 @@ const NewTagModal = ({
     <Modal
       show={show}
       onHide={onClose}
-      className="new-blocker-modal"
+      className="new-blocker-modal new-card-tag-modal"
       backdropClassName="new-blocker-modal-backdrop"
       centered
       size="md"
@@ -361,7 +367,7 @@ const NewTagModal = ({
           <FiX size={20} />
         </button>
       </Modal.Header>
-      <Modal.Body className="new-blocker-modal-body">
+      <Modal.Body className="new-blocker-modal-body" ref={modalBodyRef}>
         <div className="new-blocker-form">
           <div className="new-blocker-row-fields">
             <div className="new-blocker-field">
@@ -500,7 +506,7 @@ const NewTagModal = ({
       {isBoardSelectorOpen &&
         createPortal(
           <div
-            className="new-blocker-board-selector"
+            className="new-blocker-board-selector new-card-tag-board-selector"
             ref={boardSelectorRef}
             style={{
               position: 'fixed',

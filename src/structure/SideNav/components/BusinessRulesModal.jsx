@@ -9,6 +9,7 @@ import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
 import { resolveKanbanBoardPath } from '../../../shared/helpers/kanbanBoardLink';
 import '../../../design/scss/business-rules-modal.scss';
+import '../../../design/scss/structure/side-nav/BlockersListModal.scss';
 
 const OWNER_NAME_LIMIT = 6;
 
@@ -213,7 +214,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
       <Modal
         show={show && !showFormModal}
         onHide={onClose}
-        className="business-rules-modal"
+        className="business-rules-modal business-rules-list-modal"
         backdropClassName="business-rules-modal-backdrop"
         centered
         size="xl"
