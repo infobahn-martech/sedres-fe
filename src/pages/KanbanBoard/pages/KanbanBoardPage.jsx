@@ -483,6 +483,93 @@ export default function KanbanBoardPage() {
     ]
   );
 
+  /* "Request PO" on a McDermott "Ready for PO Request" batch header opens the PO request email draft. */
+  const [showPoRequestEmailModal, setShowPoRequestEmailModal] = useState(false);
+  const [selectedPoRequestBatch, setSelectedPoRequestBatch] = useState(null);
+  const [poRequestEmailDraft, setPoRequestEmailDraft] = useState(null);
+  const [isSendingPoRequest, setIsSendingPoRequest] = useState(false);
+
+  const handleBatchRequestPo = useCallback(
+    async (batch) => {
+      const batchId = batchIdByNumber[batch?.title];
+      if (!batchId) {
+        notify("Batch not found", "error");
+        return;
+      }
+      let data;
+      try {
+        ({ data } = await daService.getPoRequestDraft(batchId));
+      } catch (error) {
+        data = error?.response?.data;
+      }
+      if (data?.status !== "success" || !data?.data) {
+        notify(data?.message || "Failed to load PO request email draft", "error");
+        return;
+      }
+      setPoRequestEmailDraft(data.data);
+      setSelectedPoRequestBatch(batch);
+      setShowPoRequestEmailModal(true);
+    },
+    [batchIdByNumber]
+  );
+
+  const handleClosePoRequestEmail = useCallback(() => {
+    setShowPoRequestEmailModal(false);
+    setSelectedPoRequestBatch(null);
+    setPoRequestEmailDraft(null);
+  }, []);
+
+  /* Sends the PO request via da/send_po_request; the backend moves the batch's cards to "Requested PO". */
+  const handleSendPoRequestEmail = useCallback(
+    async (emailData) => {
+      const batchId = poRequestEmailDraft?.batch_id ?? batchIdByNumber[selectedPoRequestBatch?.title];
+      if (!batchId) {
+        notify("Batch not found", "error");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("batch_id", batchId);
+      if (poRequestEmailDraft?.stage_document_id != null) {
+        formData.append("stage_document_id", poRequestEmailDraft.stage_document_id);
+      }
+      formData.append("to", emailData?.to ?? "");
+      formData.append("cc", emailData?.cc ?? "");
+      formData.append("subject", emailData?.subject ?? "");
+      formData.append("body", emailData?.message ?? "");
+      (emailData?.attachments || []).forEach((file) => formData.append("attachments[]", file));
+
+      setIsSendingPoRequest(true);
+      try {
+        let data;
+        try {
+          ({ data } = await daService.sendPoRequest(formData));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+        if (data?.status !== "success") {
+          notify(data?.message || "Failed to send PO request", "error");
+          return;
+        }
+        notify(data.message || "PO request sent successfully", "success");
+        /* A column override left from creating the batch would keep drawing the cards in the old column. */
+        clearCardColumns((selectedPoRequestBatch?.cards ?? []).map((card) => card.id));
+        handleClosePoRequestEmail();
+        refetchBoard?.();
+      } finally {
+        setIsSendingPoRequest(false);
+      }
+    },
+    [
+      poRequestEmailDraft,
+      selectedPoRequestBatch,
+      batchIdByNumber,
+      clearCardColumns,
+      handleClosePoRequestEmail,
+      refetchBoard,
+    ]
+  );
+
   /* "Upload SE Approval" on an "Awaiting SE" batch header opens the upload modal for that batch. */
   const [showSeApprovalUploadModal, setShowSeApprovalUploadModal] = useState(false);
   const [selectedSeApprovalBatch, setSelectedSeApprovalBatch] = useState(null);
@@ -1177,6 +1264,7 @@ export default function KanbanBoardPage() {
           onBatchSendSeRequest={handleBatchSendSeRequest}
           onBatchUploadSeApproval={handleBatchUploadSeApproval}
           onBatchUploadInvoice={handleBatchUploadInvoice}
+          onBatchRequestPo={handleBatchRequestPo}
           onColumnUploadInvoice={handleColumnUploadInvoice}
           onColumnMergeInvoice={handleColumnMergeInvoice}
           onColumnPrepareSubmission={handleColumnPrepareSubmission}
@@ -1217,6 +1305,23 @@ export default function KanbanBoardPage() {
         defaultSubject={seRequestEmailDraft?.subject ?? ""}
         defaultBody={seRequestEmailDraft?.body ?? ""}
         documentUrl={seRequestEmailDraft?.document_url ?? ""}
+      />
+
+      <SeCreationEmailModal
+        show={showPoRequestEmailModal}
+        onClose={handleClosePoRequestEmail}
+        onSend={handleSendPoRequestEmail}
+        isSubmitting={isSendingPoRequest}
+        batchTitle={poRequestEmailDraft?.batch_number || selectedPoRequestBatch?.title || ""}
+        defaultTo={poRequestEmailDraft?.to ?? ""}
+        defaultCc={poRequestEmailDraft?.cc ?? ""}
+        defaultSubject={poRequestEmailDraft?.subject ?? ""}
+        defaultBody={poRequestEmailDraft?.body ?? ""}
+        documentUrl={poRequestEmailDraft?.document_url ?? ""}
+        title="PO Request Email"
+        subtitle="Request the purchase order for this batch"
+        sendLabel="Send PO Request"
+        subjectPrefix="Request for PO"
       />
 
       <SubmissionDocumentsModal

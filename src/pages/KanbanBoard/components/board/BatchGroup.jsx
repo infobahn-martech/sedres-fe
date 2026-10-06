@@ -11,6 +11,7 @@ const AWAITING_SE_COLUMN_PATTERN = /^awaiting\s+(for\s+)?se$/i;
 const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
 /* McDermott batches skip SAIPEM's SE steps, so their header has no SE actions. */
 const MCDERMOTT_WORKFLOW_PATTERN = /mcdermott/i;
+const READY_FOR_PO_REQUEST_COLUMN_PATTERN = /^ready\s+for\s+po\s+request$/i;
 
 /**
  * Collapsible group of cards inside a column cell.
@@ -31,12 +32,18 @@ export default function BatchGroup({
   onSendSeRequest,
   onUploadSeApproval,
   onUploadInvoice,
+  onRequestPo,
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
 
   /* Loose cards render as a plain grid: no header, never collapsed. */
   const isUngrouped = Boolean(batch.isUngrouped);
   const isSeFlowBatch = !isUngrouped && !MCDERMOTT_WORKFLOW_PATTERN.test(workflowTitle ?? "");
+  /* McDermott batches in "Ready for PO Request" send the PO request email from the header. */
+  const isPoRequestBatch =
+    !isUngrouped &&
+    !isSeFlowBatch &&
+    READY_FOR_PO_REQUEST_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches already emailed for SE creation sit in "Awaiting SE" (live title "Awaiting for SE"). */
   const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches whose SE approval is back sit in "SE Received" and move on to invoicing. */
@@ -113,7 +120,15 @@ export default function BatchGroup({
             <span className="batch-group__title">{batch.title}</span>
           </button>
 
-          {!isSeFlowBatch ? null : isAwaitingSeColumn && isSeUploadDone ? (
+          {isPoRequestBatch ? (
+            <button
+              type="button"
+              className="batch-group__action"
+              onClick={() => onRequestPo?.(batch)}
+            >
+              Request PO
+            </button>
+          ) : !isSeFlowBatch ? null : isAwaitingSeColumn && isSeUploadDone ? (
             <button
               type="button"
               className="batch-group__action"
@@ -195,4 +210,5 @@ BatchGroup.propTypes = {
   onSendSeRequest: PropTypes.func,
   onUploadSeApproval: PropTypes.func,
   onUploadInvoice: PropTypes.func,
+  onRequestPo: PropTypes.func,
 };
