@@ -9,6 +9,8 @@ import useCrewReducer from "../../../../../../../store/CrewReducer";
 import { notify } from "../../../../../../../components/Toaster";
 import { FormGroup, FormField } from "./Husbandry.components";
 import CrewListUploadBox from "./CrewListUploadBox";
+import CrewEntryGrid from "./CrewEntryGrid";
+import { CREW_ENTRY_COLUMNS } from "./Husbandry.constants";
 import ChecklistMultiSelect from "../../appointment/checklistTab/ChecklistMultiSelect";
 import "../../../../../../../design/scss/checklist.scss";
 
@@ -16,6 +18,17 @@ import "../../../../../../../design/scss/checklist.scss";
 const UPLOAD_MOVEMENT_TYPE = "Sign On";
 
 const fetchCrewOptions = async (callId) => mapAxiosResponseToCrewOptions(await getCrewListForPass(callId));
+
+const linkButtonStyle = {
+  background: "none",
+  border: "none",
+  padding: 0,
+  color: "var(--card-color, #2563eb)",
+  fontWeight: 600,
+  textDecoration: "underline",
+  cursor: "pointer",
+  fontSize: 12,
+};
 
 /**
  * Multi-select of crew for a call, auto-populated from the crew roster. Reports selected crew_change_ids via onChange.
@@ -27,6 +40,7 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
   const [crewOptions, setCrewOptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("pending");
+  const [isManualEntry, setIsManualEntry] = useState(false);
 
   useEffect(() => {
     if (!callId) {
@@ -52,7 +66,7 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
 
   const handleCrewListUpload = useCallback(
     async (files) => {
-      if (!callId || uploadStatus === "uploading") return;
+      if (!callId || uploadStatus === "uploading") return false;
       setUploadStatus("uploading");
       try {
         const { data: callDetailResponse } = await callFileService.getCallDetail(callId);
@@ -62,7 +76,7 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
         if (!vesselId) {
           notify("Unable to upload: missing vessel information.", "error");
           setUploadStatus("failed");
-          return;
+          return false;
         }
 
         const formData = new FormData();
@@ -82,15 +96,28 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
         onChange(idsToSelect);
         setUploadStatus("completed");
         notify(`Crew list uploaded — ${idsToSelect.length} crew member(s) added to this request.`, "success");
+        return true;
       } catch {
         // import errors are already surfaced by the store
         setUploadStatus("failed");
+        return false;
       }
     },
     [callId, uploadStatus, crewOptions, importCrewFile, onChange]
   );
 
   const selectedIds = Array.isArray(selected) ? selected.map(String) : [];
+
+  // Grid rows go through the same crew/import_crew_ai flow as a file upload, sent as a generated CSV.
+  const handleGridSubmit = (rows) => {
+    const escapeCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const csv = [
+      CREW_ENTRY_COLUMNS.map((column) => escapeCell(column.header)).join(","),
+      ...rows.map((row) => CREW_ENTRY_COLUMNS.map((column) => escapeCell(row[column.key])).join(",")),
+    ].join("\r\n");
+    const file = new File([csv], "crew-list-manual-entry.csv", { type: "text/csv" });
+    return handleCrewListUpload([file]);
+  };
 
   if (uploadMode) {
     const selectedNames = crewOptions
@@ -100,12 +127,22 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
     return (
       <FormGroup icon="crew" label="Crew List" accent={accent}>
         <FormField className="cf-field-full">
-          <CrewListUploadBox
-            movementType={UPLOAD_MOVEMENT_TYPE}
-            movementTypeLabel="Crew List"
-            status={uploadStatus === "completed" ? "pending" : uploadStatus}
-            onSelectFile={handleCrewListUpload}
-          />
+          {isManualEntry ? (
+            <CrewEntryGrid onSubmit={handleGridSubmit} submitting={uploadStatus === "uploading"} />
+          ) : (
+            <CrewListUploadBox
+              movementType={UPLOAD_MOVEMENT_TYPE}
+              movementTypeLabel="Crew List"
+              status={uploadStatus === "completed" ? "pending" : uploadStatus}
+              onSelectFile={handleCrewListUpload}
+            />
+          )}
+          <div style={{ marginTop: 6, fontSize: 12, color: "#64748b" }}>
+            {isManualEntry ? "Have a crew list file? " : "No file? "}
+            <button type="button" style={linkButtonStyle} onClick={() => setIsManualEntry((prev) => !prev)}>
+              {isManualEntry ? "Upload crew list" : "Enter crew details manually"}
+            </button>
+          </div>
           {selectedNames.length > 0 && (
             <div className="husb-crew-upload-summary" title={selectedNames.join(", ")}>
               {selectedNames.length} crew member(s) added: {selectedNames.join(", ")}
@@ -136,20 +173,7 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
         {!loading && crewOptions.length === 0 && onGoToCrew && (
           <div style={{ marginTop: 6, fontSize: 12, color: "#64748b" }}>
             No crew uploaded yet.{" "}
-            <button
-              type="button"
-              onClick={onGoToCrew}
-              style={{
-                background: "none",
-                border: "none",
-                padding: 0,
-                color: "var(--card-color, #2563eb)",
-                fontWeight: 600,
-                textDecoration: "underline",
-                cursor: "pointer",
-                fontSize: 12,
-              }}
-            >
+            <button type="button" onClick={onGoToCrew} style={linkButtonStyle}>
               Upload crew list
             </button>
           </div>

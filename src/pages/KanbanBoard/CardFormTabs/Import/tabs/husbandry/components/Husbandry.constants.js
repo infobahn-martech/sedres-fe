@@ -214,3 +214,12 @@ export const TAB_ICON_PATHS = {
   crewChange: "M2 5H11L9 3M11 5L9 7M14 11H5L7 9M5 11L7 13",
   portPass: "M2 3H14C14.5523 3 15 3.44772 15 4V12C15 12.5523 14.5523 13 14 13H2C1.44772 13 1 12.5523 1 12V4C1 3.44772 1.44772 3 2 3ZM5.5 8.5C6.32843 8.5 7 7.82843 7 7C7 6.17157 6.32843 5.5 5.5 5.5C4.67157 5.5 4 6.17157 4 7C4 7.82843 4.67157 8.5 5.5 8.5ZM3.5 11C3.5 9.89543 4.39543 9 5.5 9C6.60457 9 7.5 9.89543 7.5 11M9.5 6H12.5M9.5 8.5H12.5",
 };
+
+/** Columns of the manual crew entry grid; headers double as the generated CSV's header row. */
+export const CREW_ENTRY_COLUMNS = [
+  { key: "crew_name", header: "Crew Name", placeholder: "Full name", required: true },
+  { key: "rank", header: "Rank", placeholder: "e.g. Master" },
+  { key: "nationality", header: "Nationality", placeholder: "e.g. Indian" },
+  { key: "date_of_birth", header: "Date of Birth", placeholder: "DD/MM/YYYY" },
+  { key: "passport_no", header: "Passport No", placeholder: "Passport number" },
+];
