@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef } from "react";
 
 const DRAG_THRESHOLD_PX = 5;
 const SELECTABLE_CARD_SELECTOR = "[data-select-card-id]";
+/* Cards whose checkbox drives its own tick state (e.g. SE batch ticks) instead of the board-wide selection. */
+const LOCAL_SCOPE = "local";
+const SELECT_TOGGLE_SELECTOR = ".kanban-card-select-toggle";
 /* A press on a card or any control keeps its own behavior (open card, tick, buttons, inputs). */
 const IGNORE_TARGET_SELECTOR =
   ".kanban-card, button, a, input, textarea, select, label, [contenteditable='true'], [role='button'], [role='menu']";
@@ -60,10 +63,28 @@ const getScrollOffset = (drag) =>
     { x: 0, y: 0 }
   );
 
+/* A local card is ticked while the box covers it and returns to its pre-drag tick once the box
+   leaves; its own checkbox handler is reused, so each card keeps its batch-specific rules. */
+const syncLocalTick = (drag, node, isHit) => {
+  const toggle = node.querySelector(SELECT_TOGGLE_SELECTOR);
+  if (!toggle) return;
+  const cardId = node.dataset.selectCardId;
+  if (!drag.localTicks.has(cardId)) {
+    const isTicked = toggle.getAttribute("aria-pressed") === "true";
+    drag.localTicks.set(cardId, { base: isTicked, current: isTicked });
+  }
+  const tick = drag.localTicks.get(cardId);
+  const desired = isHit || tick.base;
+  if (desired === tick.current) return;
+  tick.current = desired;
+  toggle.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
+};
+
 /**
  * Rubber-band drag-select on the board: press on empty board space and drag in any direction;
- * every selectable card the box touches is added to the selection. Shrinking the box drops the
- * cards it leaves again, while cards ticked before the drag always stay selected.
+ * every card with a checkbox the box touches is ticked. Shrinking the box drops the cards it
+ * leaves again, while cards ticked before the drag always stay selected. Board cards feed the
+ * board-wide selection; "local" cards (batch ticks) are ticked through their own checkbox.
  * Holding the pointer near a scroll area's edge auto-scrolls it, and the box's start corner stays
  * pinned to the content it was pressed on, so cards beyond the visible area can be reached.
  *
@@ -101,7 +122,12 @@ export default function useKanbanMarqueeSelect({ selectedCardIds, onSelectionCha
 
     const hitIds = [];
     containerRef.current.querySelectorAll(SELECTABLE_CARD_SELECTOR).forEach((node) => {
-      if (isIntersecting(node.getBoundingClientRect(), box)) hitIds.push(node.dataset.selectCardId);
+      const isHit = isIntersecting(node.getBoundingClientRect(), box);
+      if (node.dataset.selectScope !== LOCAL_SCOPE) {
+        if (isHit) hitIds.push(node.dataset.selectCardId);
+        return;
+      }
+      syncLocalTick(drag, node, isHit);
     });
     const nextIds = [...drag.baseIds, ...hitIds.filter((id) => !drag.baseIds.includes(id))];
     const nextKey = nextIds.join("|");
@@ -180,6 +206,7 @@ export default function useKanbanMarqueeSelect({ selectedCardIds, onSelectionCha
       isActive: false,
       startScrolls: getScrollChain(event.target).map((el) => ({ el, left: el.scrollLeft, top: el.scrollTop })),
       baseIds: selectedIdsRef.current,
+      localTicks: new Map(),
       lastKey: selectedIdsRef.current.join("|"),
     };
   }, []);
