@@ -9,6 +9,7 @@ import {
   OPERATION_EMAIL_MESSAGE_QUILL_MODULES,
 } from "../../CardFormTabs/Import/tabs/operation/components/OperationCommon";
 import { ensureHtmlForQuill } from "../../CardFormTabs/Import/tabs/operation/operationReportMessageHtml";
+import EmailTableEditor from "./EmailTableEditor";
 import "../../../../design/scss/pages/kanban-board/seCreationEmailModal.scss";
 
 const DEFAULT_FROM = "operations@shipping.com";
@@ -19,6 +20,14 @@ const DEFAULT_MESSAGE_HTML =
   "<p>Greetings from Sedres.</p>" +
   "<p><br></p>" +
   "<p>Please find the attached Sales Orders with supporting documents. Kindly review our sales order and confirm so we can submit our final invoice.</p>";
+
+// The table editor's quill-table-better keeps the table's attributes on a <temporary> element
+// inside the table; it is editor-only markup, so it is left out of the HTML the email is sent with.
+const getEmailHtml = (html) => {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  doc.querySelectorAll("temporary").forEach((node) => node.remove());
+  return doc.body.innerHTML;
+};
 
 const getFileNameFromUrl = (url) => {
   const name = url.split("?")[0].split("/").pop();
@@ -53,6 +62,7 @@ const SeCreationEmailModal = ({
   subjectPrefix = "Sent for SE Creation",
   documents = EMPTY_LIST,
   fileFields = null,
+  allowTables = false,
 }) => {
   const [toValue, setToValue] = useState("");
   const [ccValue, setCcValue] = useState("");
@@ -138,7 +148,7 @@ const SeCreationEmailModal = ({
       to: toValue,
       cc: ccValue,
       subject: subjectValue,
-      message,
+      message: allowTables ? getEmailHtml(message) : message,
       attachments,
       fieldFiles,
     });
@@ -432,18 +442,30 @@ const SeCreationEmailModal = ({
       </div>
 
       <div className="se-email-message">
-        <ReactQuill
-          theme="snow"
-          value={message}
-          onChange={(value) => {
-            setMessage(value);
-            clearError("message");
-          }}
-          modules={OPERATION_EMAIL_MESSAGE_QUILL_MODULES}
-          formats={OPERATION_EMAIL_MESSAGE_QUILL_FORMATS}
-          placeholder="Type your message..."
-          readOnly={isSubmitting}
-        />
+        {allowTables ? (
+          <EmailTableEditor
+            value={message}
+            onChange={(value) => {
+              setMessage(value);
+              clearError("message");
+            }}
+            placeholder="Type your message..."
+            readOnly={isSubmitting}
+          />
+        ) : (
+          <ReactQuill
+            theme="snow"
+            value={message}
+            onChange={(value) => {
+              setMessage(value);
+              clearError("message");
+            }}
+            modules={OPERATION_EMAIL_MESSAGE_QUILL_MODULES}
+            formats={OPERATION_EMAIL_MESSAGE_QUILL_FORMATS}
+            placeholder="Type your message..."
+            readOnly={isSubmitting}
+          />
+        )}
         {errors.message && <div className="se-email-field__error">{errors.message}</div>}
       </div>
     </div>
@@ -492,6 +514,7 @@ SeCreationEmailModal.propTypes = {
   documents: PropTypes.arrayOf(
     PropTypes.shape({ name: PropTypes.string, url: PropTypes.string, label: PropTypes.string })
   ),
+  allowTables: PropTypes.bool,
   fileFields: PropTypes.arrayOf(
     PropTypes.shape({
       name: PropTypes.string.isRequired,

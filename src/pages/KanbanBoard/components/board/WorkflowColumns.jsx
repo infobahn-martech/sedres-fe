@@ -58,10 +58,12 @@ const AR_INVOICES_ISSUED_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
 const CONSOLIDATED_COLUMN_PATTERN = /^consolidated\b/i;
 
 /* McDermott DA: "Upload Invoice" on "Issue AR Invoice" for the cards the user ticks (no auto-tick),
-   and "Upload POs" on "Requested PO", whose cards start ticked. */
+   "Upload POs" on "Requested PO", whose cards start ticked, and "Send Invoice" on "PO Received",
+   shown only while exactly one card there is ticked (the invoice email goes per card). */
 const MCDERMOTT_WORKFLOW = "MCDERMOTT";
 const ISSUE_AR_INVOICE_COLUMN_PATTERN = /^issue\s+ar\s+invoices?$/i;
 const REQUESTED_PO_COLUMN_PATTERN = /^requested\s+po$/i;
+const PO_RECEIVED_COLUMN_PATTERN = /^po\s+received$/i;
 
 const isMcDermottWorkflow = (workflow) =>
   String(workflow?.title ?? "").trim().toUpperCase().includes(MCDERMOTT_WORKFLOW);
@@ -71,6 +73,7 @@ const getInvoiceAction = (workflow, column) => {
   if (isMcDermottWorkflow(workflow)) {
     if (ISSUE_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
     if (REQUESTED_PO_COLUMN_PATTERN.test(title)) return "uploadPos";
+    if (PO_RECEIVED_COLUMN_PATTERN.test(title)) return "sendInvoice";
     return null;
   }
   if (!isBatchWorkflow(workflow)) return null;
@@ -84,6 +87,7 @@ const INVOICE_ACTION_BUTTONS = {
   upload: { label: "Upload Invoice", icon: <FiUploadCloud size={16} aria-hidden /> },
   issueArInvoice: { label: "Upload Invoices", icon: <FiUploadCloud size={16} aria-hidden /> },
   uploadPos: { label: "Upload POs", icon: <FiUploadCloud size={16} aria-hidden /> },
+  sendInvoice: { label: "Send Invoice", icon: <FiSend size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
   prepareSubmission: { label: "Create Submission Documents", icon: <FiDownload size={16} aria-hidden /> },
   finalSubmission: { label: "Send For Final Submission", icon: <FiSend size={16} aria-hidden /> },
@@ -104,6 +108,7 @@ export default function WorkflowColumns({
   onBatchRequestPo,
   onColumnUploadInvoice,
   onColumnUploadPos,
+  onColumnSendInvoice,
   onColumnMergeInvoice,
   onColumnPrepareSubmission,
   onColumnSendFinalSubmission,
@@ -331,6 +336,8 @@ export default function WorkflowColumns({
                     ? submissionPendingCards
                     : submissionReadyCards
                   : invoiceCards;
+              const hasInvoiceButton =
+                invoiceAction === "sendInvoice" ? invoiceCards.length === 1 : invoiceCards.length > 0;
               const secondaryAction =
                 submissionPendingCards.length && submissionReadyCards.length
                   ? {
@@ -344,6 +351,7 @@ export default function WorkflowColumns({
                   onColumnUploadInvoice?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 uploadPos: (cards) =>
                   onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
+                sendInvoice: ([card]) => onColumnSendInvoice?.(card),
                 merge: onColumnMergeInvoice,
                 prepareSubmission: onColumnPrepareSubmission,
                 finalSubmission: onColumnSendFinalSubmission,
@@ -363,11 +371,11 @@ export default function WorkflowColumns({
                       isGrouped ? undefined : () => onColumnHeaderClick(workflow.id, firstColumn.id)
                     }
                     isDarkMode={isDarkMode}
-                    actionLabel={invoiceCards.length > 0 ? INVOICE_ACTION_BUTTONS[invoiceButton].label : "Batch"}
-                    actionIcon={invoiceCards.length > 0 ? INVOICE_ACTION_BUTTONS[invoiceButton].icon : undefined}
+                    actionLabel={hasInvoiceButton ? INVOICE_ACTION_BUTTONS[invoiceButton].label : "Batch"}
+                    actionIcon={hasInvoiceButton ? INVOICE_ACTION_BUTTONS[invoiceButton].icon : undefined}
                     secondaryAction={secondaryAction}
                     onActionClick={
-                      invoiceCards.length > 0
+                      hasInvoiceButton
                         ? () => invoiceActionHandlers[invoiceButton]?.(invoiceButtonCards)
                         : hasBatchAction(workflow, displayColumn, firstColumn)
                         ? () =>

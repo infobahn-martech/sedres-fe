@@ -923,6 +923,104 @@ export default function KanbanBoardPage() {
     ]
   );
 
+  /* "Send Invoice" on McDermott's "PO Received" column header, for the one card ticked there,
+     opens that card's invoice email draft. */
+  const [showInvoiceDispatchEmailModal, setShowInvoiceDispatchEmailModal] = useState(false);
+  const [selectedInvoiceDispatchCard, setSelectedInvoiceDispatchCard] = useState(null);
+  const [invoiceDispatchDraft, setInvoiceDispatchDraft] = useState(null);
+  const [isSendingInvoiceDispatch, setIsSendingInvoiceDispatch] = useState(false);
+
+  const handleColumnSendInvoice = useCallback(async (card) => {
+    if (!card?.callId) {
+      notify("The selected card has no call to send the invoice for", "error");
+      return;
+    }
+    let data;
+    try {
+      ({ data } = await daService.getInvoiceDispatchDraft(card.callId));
+    } catch (error) {
+      data = error?.response?.data;
+    }
+    if (data?.status !== "success" || !data?.data) {
+      notify(data?.message || "Failed to load invoice email draft", "error");
+      return;
+    }
+    setInvoiceDispatchDraft(data.data);
+    setSelectedInvoiceDispatchCard(card);
+    setShowInvoiceDispatchEmailModal(true);
+  }, []);
+
+  const handleCloseInvoiceDispatchEmail = useCallback(() => {
+    setShowInvoiceDispatchEmailModal(false);
+    setSelectedInvoiceDispatchCard(null);
+    setInvoiceDispatchDraft(null);
+  }, []);
+
+  /* Sends the invoice email; the backend moves the card to "Invoice Dispatched". */
+  const handleSendInvoiceDispatchEmail = useCallback(
+    async (emailData) => {
+      const callId = invoiceDispatchDraft?.call_id ?? selectedInvoiceDispatchCard?.callId;
+      const cardId = invoiceDispatchDraft?.card_id ?? selectedInvoiceDispatchCard?.id;
+      if (!callId || !cardId) {
+        notify("Card not found", "error");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("call_id", callId);
+      formData.append("card_id", cardId);
+      if (invoiceDispatchDraft?.stage_document_id != null) {
+        formData.append("stage_document_id", invoiceDispatchDraft.stage_document_id);
+      }
+      formData.append("to", emailData?.to ?? "");
+      formData.append("cc", emailData?.cc ?? "");
+      formData.append("subject", emailData?.subject ?? "");
+      formData.append("body", emailData?.message ?? "");
+      (emailData?.attachments || []).forEach((file) => formData.append("attachments[]", file));
+
+      setIsSendingInvoiceDispatch(true);
+      try {
+        let data;
+        try {
+          ({ data } = await daService.sendInvoiceDispatch(formData));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+        if (data?.status !== "success") {
+          notify(data?.message || "Failed to send invoice", "error");
+          return;
+        }
+        notify(data.message || "Invoice sent successfully", "success");
+        removeCardSelectionId(selectedInvoiceDispatchCard?.id);
+        handleCloseInvoiceDispatchEmail();
+        refetchBoard?.();
+      } finally {
+        setIsSendingInvoiceDispatch(false);
+      }
+    },
+    [
+      invoiceDispatchDraft,
+      selectedInvoiceDispatchCard,
+      removeCardSelectionId,
+      handleCloseInvoiceDispatchEmail,
+      refetchBoard,
+    ]
+  );
+
+  /* The invoice PDF the backend already holds for the email, shown under its document name. */
+  const invoiceDispatchDocuments = useMemo(
+    () =>
+      invoiceDispatchDraft?.document_url
+        ? [
+            {
+              name: invoiceDispatchDraft.document_name || "Invoice",
+              url: invoiceDispatchDraft.document_url,
+            },
+          ]
+        : [],
+    [invoiceDispatchDraft]
+  );
+
   /* "Merge Invoice" on the "AR Invoices Issued" column header merges the ticked cards' confirmed
      AR invoices into one PDF via da/merge_ar_invoices, then shows the merged file in a new window. */
   const [isMergingInvoices, setIsMergingInvoices] = useState(false);
@@ -1415,6 +1513,7 @@ export default function KanbanBoardPage() {
           onBatchRequestPo={handleBatchRequestPo}
           onColumnUploadInvoice={handleColumnUploadInvoice}
           onColumnUploadPos={handleColumnUploadPos}
+          onColumnSendInvoice={handleColumnSendInvoice}
           onColumnMergeInvoice={handleColumnMergeInvoice}
           onColumnPrepareSubmission={handleColumnPrepareSubmission}
           onColumnSendFinalSubmission={handleColumnSendFinalSubmission}
@@ -1549,6 +1648,23 @@ export default function KanbanBoardPage() {
       />
 
       <PoReviewModal onConfirmed={refetchBoard} />
+
+      <SeCreationEmailModal
+        show={showInvoiceDispatchEmailModal}
+        onClose={handleCloseInvoiceDispatchEmail}
+        onSend={handleSendInvoiceDispatchEmail}
+        isSubmitting={isSendingInvoiceDispatch}
+        defaultTo={invoiceDispatchDraft?.to ?? ""}
+        defaultCc={invoiceDispatchDraft?.cc ?? ""}
+        defaultSubject={invoiceDispatchDraft?.subject ?? ""}
+        defaultBody={invoiceDispatchDraft?.body ?? ""}
+        documents={invoiceDispatchDocuments}
+        title="Invoice Email"
+        subtitle="Send the invoice to the client"
+        sendLabel="Send Invoice"
+        subjectPrefix="Tax Invoice"
+        allowTables
+      />
 
       {selectedCard && columnsForCardForm && (
         <CardForm
