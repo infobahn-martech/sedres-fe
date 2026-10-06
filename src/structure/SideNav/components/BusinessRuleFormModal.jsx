@@ -40,6 +40,7 @@ import SedresColorPicker from '../../../components/SedresColorPicker/SedresColor
 import { PRIMARY_PRESET_COLORS, SECONDARY_PRESET_COLORS, normalizeHexColor } from '../../../components/SedresColorPicker/sedresColorPickerConstants';
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
 import toastSuccessIcon from '../../../assets/images/toast-success.svg';
+import '../../../design/scss/structure/side-nav/BlockersListModal.scss';
 
 Quill.register({ 'modules/table-better': QuillTableBetter }, true);
 QuillTableBetter.register();
@@ -8063,7 +8064,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       <Modal
         show={show}
         onHide={onClose}
-        className="business-rule-form-modal"
+        className="business-rule-form-modal business-rule-form-list-modal"
         dialogClassName="business-rule-form-modal-dialog"
         backdropClassName="business-rule-form-modal-backdrop"
         centered={false}
@@ -9211,7 +9212,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     <Modal
       show={show}
       onHide={handleCloseAttempt}
-      className="business-rule-form-modal"
+      className="business-rule-form-modal business-rule-form-list-modal"
       dialogClassName="business-rule-form-modal-dialog"
       backdropClassName="business-rule-form-modal-backdrop"
       centered={false}
