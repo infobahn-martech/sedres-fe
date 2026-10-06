@@ -112,6 +112,10 @@
   @media (max-width: 768px) {
     gap: 16px;
   }
+
+  &--top {
+    margin-bottom: 30px;
+  }
 }
 
 .chart-card {

@@ -306,6 +306,45 @@ const Dashboard = () => {
         <p className="dashboard-subtitle">Vessels, crew changes, revenue and open sales orders at a glance.</p>
       </div>
 
+      <div className="charts-grid charts-grid--top">
+        {/* Total revenue — yearly */}
+        <div className="chart-card chart-card-full">
+          <div className="chart-header chart-header--row">
+            <div>
+              <h3 className="chart-title">Total Revenue</h3>
+              <p className="chart-subtitle">Branch and offshore marine revenue for the selected year</p>
+            </div>
+            <div className="dash-filters">
+              <FilterSelect
+                value={selectedRevenueYear}
+                onChange={setRevenueYear}
+                label="Filter by year"
+                options={revenueYearOptions}
+              />
+            </div>
+          </div>
+          <div className="so-summary">
+            <div className="so-summary-item">
+              <span className="so-summary-label">Total Revenue</span>
+              <span className="so-summary-value">{formatCurrency(totalRevenue)}</span>
+              <span className="so-summary-sub">{selectedRevenueYear}</span>
+            </div>
+            {branchRevenueTotals.map((branch) => (
+              <div key={branch.key} className="so-summary-item">
+                <span className="so-summary-label">{branch.name}</span>
+                <span className="so-summary-value">{formatCurrency(branch.total)}</span>
+                <span className="so-summary-sub">{revenueShare(branch.total)}</span>
+              </div>
+            ))}
+            <div className="so-summary-item">
+              <span className="so-summary-label">Offshore Marine</span>
+              <span className="so-summary-value">{formatCurrency(offshoreRevenueTotal)}</span>
+              <span className="so-summary-sub">{revenueShare(offshoreRevenueTotal)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Summary tiles */}
       <div className="stats-grid">
         {stats.map((stat) => (
@@ -484,43 +523,6 @@ const Dashboard = () => {
               <Bar dataKey="count" name="Crew Changes" fill={seriesColors[0]} radius={[4, 4, 0, 0]} maxBarSize={36} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
-
-        {/* Total revenue — yearly */}
-        <div className="chart-card chart-card-full">
-          <div className="chart-header chart-header--row">
-            <div>
-              <h3 className="chart-title">Total Revenue</h3>
-              <p className="chart-subtitle">Branch and offshore marine revenue for the selected year</p>
-            </div>
-            <div className="dash-filters">
-              <FilterSelect
-                value={selectedRevenueYear}
-                onChange={setRevenueYear}
-                label="Filter by year"
-                options={revenueYearOptions}
-              />
-            </div>
-          </div>
-          <div className="so-summary">
-            <div className="so-summary-item">
-              <span className="so-summary-label">Total Revenue</span>
-              <span className="so-summary-value">{formatCurrency(totalRevenue)}</span>
-              <span className="so-summary-sub">{selectedRevenueYear}</span>
-            </div>
-            {branchRevenueTotals.map((branch) => (
-              <div key={branch.key} className="so-summary-item">
-                <span className="so-summary-label">{branch.name}</span>
-                <span className="so-summary-value">{formatCurrency(branch.total)}</span>
-                <span className="so-summary-sub">{revenueShare(branch.total)}</span>
-              </div>
-            ))}
-            <div className="so-summary-item">
-              <span className="so-summary-label">Offshore Marine</span>
-              <span className="so-summary-value">{formatCurrency(offshoreRevenueTotal)}</span>
-              <span className="so-summary-sub">{revenueShare(offshoreRevenueTotal)}</span>
-            </div>
-          </div>
         </div>
 
         {/* Monthly revenue — branch wise */}
