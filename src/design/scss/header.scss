@@ -624,39 +624,50 @@
 // button) — separate from the per-board .sedres-header-dark layoutView skin
 // above, but reuses the same dark chrome palette for visual consistency.
 [data-theme="dark"] .sedres-header {
-  background: #0c0f14;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--border-chrome);
   box-shadow: none;
 
   .right-section {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--bg-input-pill);
+    border: 1px solid var(--border-pill);
+    border-radius: 16px;
     box-shadow: none;
   }
 
   .user-circle {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: var(--brand);
+    border-color: rgba(255, 255, 255, 0.18);
 
     &.active {
-      border-color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
       box-shadow: none;
     }
   }
 
+  .notification-badge {
+    background: #e5484d;
+    color: #ffffff;
+    border-color: var(--bg-input-pill);
+  }
+
   .icon-btn {
-    color: var(--text-muted);
+    color: var(--text-body);
 
     &:hover {
-      background: rgba(255, 255, 255, 0.06);
-      color: #fafafa;
+      background: rgba(76, 141, 255, 0.12);
+      color: #ffffff;
+    }
+
+    &:focus-visible {
+      outline-color: var(--brand-bright);
     }
 
     // No pulsing ring in dark mode — the glow was tuned for the light navy
     // header and reads as a mismatched flash against dark chrome.
     &.active {
-      background: rgba(255, 255, 255, 0.08);
-      color: #fafafa;
+      background: var(--brand);
+      color: #ffffff;
       box-shadow: none;
       animation: none;
     }

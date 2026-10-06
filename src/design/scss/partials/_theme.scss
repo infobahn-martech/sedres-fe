@@ -87,4 +87,27 @@
   --color-primary-accent: #{$light-blue};
 
   --modal-overlay: rgba(2, 6, 16, 0.65);
+
+  // Navy dark palette — header/sidebar chrome and the dashboard.
+  --bg-page: #070d1a;
+  --bg-chrome: #0a1530;
+  --bg-card: #0f1a30;
+  --bg-inset: #0b1426;
+  --bg-highlight: #132240;
+  --bg-input-pill: #111d3a;
+  --border: #1f2e4f;
+  --border-strong: #2a3b60;
+  --border-chrome: #1b2a4a;
+  --border-pill: #263a66;
+  --divider-row: #1a2744;
+
+  --text-heading: #ffffff;
+  --text-body: #c9d5ea;
+  --text-label: #b5c2d9;
+  --text-subtle: #9aaac4;
+  --text-control: #e6ecf5;
+
+  --brand: #1e4fd8;
+  --brand-bright: #4c8dff;
+  --progress-track: #1e2c4a;
 }

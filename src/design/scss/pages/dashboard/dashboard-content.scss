@@ -742,3 +742,237 @@
 .recharts-tooltip-wrapper {
   z-index: 1000;
 }
+
+// Dark theme — navy palette (tokens in partials/_theme.scss). Light mode is untouched.
+[data-theme="dark"] {
+  .page-cont-wrp:has(.dashboard-container),
+  .dashboard-container {
+    background: var(--bg-page);
+  }
+
+  .page-cont-wrp:has(.dashboard-container),
+  .dash-table-wrp {
+    scrollbar-color: var(--border-strong) transparent;
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-strong);
+    }
+  }
+
+  .dashboard-container {
+    // Remap generic theme vars so nested pieces (date picker, etc.) follow the navy palette.
+    --surface-primary: var(--bg-card);
+    --border-primary: var(--border);
+    --text-primary: var(--text-heading);
+    --text-secondary: var(--text-label);
+    --text-muted: var(--text-subtle);
+  }
+
+  .dashboard-header {
+    .dashboard-title {
+      color: var(--text-heading);
+      font-size: 34px;
+      font-weight: 500;
+    }
+
+    .dashboard-subtitle {
+      color: var(--text-subtle);
+    }
+  }
+
+  .chart-card,
+  .stat-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+    border-radius: 16px;
+    box-shadow: none;
+
+    &:hover {
+      box-shadow: none;
+    }
+  }
+
+  .chart-header {
+    .chart-title {
+      color: var(--text-heading);
+    }
+
+    .chart-subtitle {
+      color: var(--text-subtle);
+    }
+  }
+
+  // KPI tiles
+  .stat-icon {
+    &--blue { color: #7fb0ff; background: rgba(76, 141, 255, 0.16); }
+    &--green { color: #4fd6a6; background: rgba(34, 192, 138, 0.16); }
+    &--violet { color: #b9a3ff; background: rgba(155, 123, 255, 0.18); }
+    &--amber { color: #f5c063; background: rgba(245, 176, 65, 0.16); }
+    &--red { color: #ff7a7e; background: rgba(229, 72, 77, 0.16); }
+  }
+
+  .stat-title {
+    color: var(--text-label);
+  }
+
+  .stat-value {
+    color: var(--text-heading);
+    font-weight: 500;
+  }
+
+  // Selects / date trigger
+  .dash-select {
+    appearance: none;
+    padding-right: 32px;
+    background: var(--bg-inset)
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239AAAC4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")
+      no-repeat right 12px center;
+    border-color: var(--border-strong);
+    color: var(--text-control);
+    color-scheme: dark;
+
+    &:focus {
+      outline-color: var(--brand-bright);
+    }
+  }
+
+  .drp-trigger {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+
+    &.has-value {
+      color: var(--text-control);
+    }
+
+    &:focus-visible {
+      outline-color: var(--brand-bright);
+    }
+  }
+
+  .drp-day {
+    &:focus-visible {
+      outline-color: var(--brand-bright);
+    }
+
+    &.in-range {
+      background: rgba(76, 141, 255, 0.18);
+    }
+
+    &.is-start,
+    &.is-end {
+      background: var(--brand);
+    }
+  }
+
+  .dash-checkbox input {
+    accent-color: var(--brand-bright);
+  }
+
+  // Tabs
+  .dash-tab {
+    color: var(--text-subtle);
+
+    &:hover {
+      color: var(--text-heading);
+    }
+
+    &.active {
+      color: var(--text-heading);
+      border-bottom-color: var(--brand-bright);
+    }
+  }
+
+  .dash-tab-count {
+    background: var(--divider-row);
+    color: var(--text-subtle);
+  }
+
+  .dash-tab.active .dash-tab-count {
+    background: rgba(76, 141, 255, 0.22);
+    color: #a9caff;
+  }
+
+  // Tables
+  .dash-table {
+    color: var(--text-body);
+
+    th,
+    td {
+      border-bottom-color: var(--divider-row);
+    }
+
+    th {
+      color: var(--text-subtle);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    tbody tr:hover {
+      background: rgba(76, 141, 255, 0.05);
+    }
+  }
+
+  .dash-table-strong {
+    color: var(--text-heading);
+    font-weight: 500;
+  }
+
+  .dash-badge {
+    &--info { background: rgba(76, 141, 255, 0.18); color: #8fb9ff; }
+    &--success { background: rgba(34, 192, 138, 0.18); color: #5be0b0; }
+
+    &[data-status="arrived"] { background: rgba(34, 192, 138, 0.18); color: #5be0b0; }
+  }
+
+  // Sales order summary
+  .so-summary-item {
+    background: var(--bg-inset);
+    border-color: var(--border);
+    border-left-color: var(--brand-bright);
+
+    &--alert {
+      border-left-color: #e5484d;
+    }
+  }
+
+  // Total revenue
+  .revenue-hero {
+    background: var(--bg-highlight);
+    border-color: var(--border-strong);
+  }
+
+  .revenue-hero-value {
+    color: var(--text-heading);
+    font-weight: 600;
+  }
+
+  .revenue-segment {
+    background: var(--bg-inset);
+    border-color: var(--border);
+
+    &:hover {
+      box-shadow: none;
+    }
+  }
+
+  .revenue-segment-name {
+    color: var(--text-label);
+  }
+
+  .revenue-segment-share {
+    color: #8597b5;
+  }
+
+  .revenue-segment-value {
+    color: var(--text-heading);
+  }
+
+  .revenue-share-bar,
+  .revenue-segment-track {
+    background: var(--progress-track);
+  }
+}

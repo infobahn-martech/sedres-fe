@@ -607,18 +607,30 @@
 [data-theme="dark"] {
   .advanced-search {
     .advanced-search-box {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(255, 255, 255, 0.1);
+      background: var(--bg-input-pill);
+      border-color: var(--border-pill);
 
       &:hover {
-        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--border-strong);
+      }
+
+      .search-icon {
+        color: var(--text-body);
+      }
+
+      input {
+        color: var(--text-control);
+
+        &::placeholder {
+          color: var(--text-subtle);
+        }
       }
     }
 
     &.open .advanced-search-box {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.2);
-      box-shadow: none;
+      background: var(--bg-input-pill);
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 3px rgba(76, 141, 255, 0.2);
     }
   }
 

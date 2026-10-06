@@ -988,7 +988,71 @@
     // switches to the same dark chrome used by the kanban sidebar instead
     // of keeping the blue background in dark mode.
     .sidebar {
-        background-color: #0c0f14;
+        background-color: var(--bg-chrome);
+        border-right: 1px solid var(--border-chrome);
+        border-top-right-radius: 28px;
+
+        .menuWrp {
+            scrollbar-color: var(--border-strong) transparent;
+
+            &::-webkit-scrollbar-thumb {
+                background-color: var(--border-strong);
+            }
+
+            .drp-ico {
+                color: #6b7fa3;
+            }
+
+            .menu .link {
+                color: var(--text-body);
+                border-radius: 10px;
+
+                // #7F93B8 tint for the white SVG icons
+                .ico img {
+                    filter: brightness(0) invert(62%) sepia(12%) saturate(900%) hue-rotate(184deg) brightness(95%);
+                }
+
+                &:not(.darkmode-toggle) {
+                    &:hover {
+                        background-color: rgba(76, 141, 255, 0.1);
+                        color: #ffffff;
+                    }
+
+                    &.active {
+                        background-color: var(--brand);
+                        color: #ffffff;
+
+                        &:before {
+                            background-color: var(--brand-bright);
+                        }
+
+                        .ico img {
+                            filter: brightness(0) invert(1);
+                        }
+
+                        .drp-ico {
+                            color: #ffffff;
+                        }
+                    }
+                }
+            }
+
+            .submenu_items .link {
+                &:hover {
+                    background-color: rgba(76, 141, 255, 0.1);
+                    color: #ffffff;
+                }
+
+                &.submenu_active {
+                    background-color: rgba(76, 141, 255, 0.16);
+                    color: #ffffff;
+
+                    &:before {
+                        background-color: var(--brand-bright);
+                    }
+                }
+            }
+        }
     }
 
     .kanban-sidebar.kanban-sidebar--workspaces {

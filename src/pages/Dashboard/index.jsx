@@ -55,7 +55,7 @@ const STATUS_META = {
 // Categorical series colors (fixed order, validated for CVD separation per theme).
 const SERIES_COLORS = {
   light: ["#2a78d6", "#eb6834", "#1baf7a", "#8b5cf6"],
-  dark: ["#3987e5", "#d95926", "#199e70", "#a78bfa"],
+  dark: ["#4c8dff", "#f2743b", "#22c08a", "#9b7bff"],
 };
 
 // Period filter for monthly charts — `months: null` keeps the full year to date.
@@ -88,7 +88,11 @@ const formatDate = (iso) =>
 
 const StatusBadge = ({ status }) => {
   const meta = STATUS_META[status] ?? { label: status, tone: "neutral" };
-  return <span className={`dash-badge dash-badge--${meta.tone}`}>{meta.label}</span>;
+  return (
+    <span className={`dash-badge dash-badge--${meta.tone}`} data-status={status}>
+      {meta.label}
+    </span>
+  );
 };
 
 const FilterSelect = ({ value, onChange, label, allLabel, options }) => (
@@ -158,13 +162,13 @@ const Dashboard = () => {
 
   const isDark = useThemeStore((state) => state.isDark);
   const seriesColors = SERIES_COLORS[isDark ? "dark" : "light"];
-  const chartGridColor = isDark ? "#293548" : "#e5e7eb";
-  const chartAxisColor = isDark ? "#8f9aaa" : "#6b7280";
+  const chartGridColor = isDark ? "#1a2744" : "#e5e7eb";
+  const chartAxisColor = isDark ? "#9aaac4" : "#6b7280";
   const chartTooltipStyle = {
-    backgroundColor: isDark ? "#151f2e" : "#fff",
-    border: `1px solid ${isDark ? "#293548" : "#e5e7eb"}`,
+    backgroundColor: isDark ? "#0f1a30" : "#fff",
+    border: `1px solid ${isDark ? "#2a3b60" : "#e5e7eb"}`,
     borderRadius: "8px",
-    color: isDark ? "#f5f7fa" : "#111827",
+    color: isDark ? "#ffffff" : "#111827",
   };
 
   useEffect(() => {
