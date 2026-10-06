@@ -130,7 +130,7 @@ const createSubmissionDocuments = (payload) => Gateway.post('/da/create_submissi
  * were grouped differently since), "Submission N is already submitted", or the cards have left "Consolidated". */
 const getSubmissionEmailDraft = (submissionId) => Gateway.get(`/da/submission_email_draft/${submissionId}`);
 /** @param {FormData} formData - submission_id, to (comma separated), cc?, subject, body, signed_letter (1 file),
- *   consolidated_invoice (1 Excel file), approved_se_sheet[]?, approved_se_copies[]?, multipart/form-data.
+ *   approved_se_sheet[]?, approved_se_copies[]?, multipart/form-data.
  * @returns {Promise<{ data: { status: 'success', data: { moved_to_submitted: Array<{ call_id: number,
  *   card_id: number }> } } | { status: 'error', message: string } }>}
  * Sends the final submission email; the cards move to "Submitted Invoices". */

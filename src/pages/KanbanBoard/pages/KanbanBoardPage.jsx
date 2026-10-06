@@ -69,13 +69,30 @@ const poUploadFields = [
     multiple: true,
   },
 ];
-/* The files da/send_submission_email takes on top of the documents the draft already attaches. */
+/* The files da/send_submission_email takes on top of the documents the draft already attaches,
+   in the order the draft body lists them (the draft's merged invoices come last). The consolidated
+   invoice is not uploaded: the draft attaches it, so it only gets a row in its place. */
 const FINAL_SUBMISSION_FILE_FIELDS = [
-  { name: "signed_letter", label: "Signed covering letter", required: true },
-  { name: "consolidated_invoice", label: "Consolidated invoice (Excel)", required: true, accept: ".xlsx,.xls" },
+  { name: "signed_letter", label: "Covering letter (signed and stamped)", required: true },
+  {
+    name: "consolidated_invoice",
+    label: "Consolidated invoice (Excel)",
+    auto: true,
+    autoHint: "Attached by the system when sent",
+  },
   { name: "approved_se_sheet", label: "Approved SE sheet", multiple: true },
   { name: "approved_se_copies", label: "Copies of approved SEs", multiple: true },
 ];
+/* The draft's attachments that belong to a field's row, by their `kind`, or by file name
+   (Submission_Letter_<inv>_<id>.pdf, Consolidated_Invoice_<inv>_<id>.xlsx) for a draft without one. */
+const FINAL_SUBMISSION_DRAFT_FILES = {
+  signed_letter: { kind: "letter", pattern: /^submission_letter/i },
+  consolidated_invoice: { kind: "consolidated", pattern: /^consolidated_invoice/i },
+  approved_se_sheet: { kind: "se_sheet", pattern: /_approved_se\.[a-z]+$/i },
+};
+
+const isDraftFile = ({ kind, pattern }, attachment) =>
+  attachment?.kind ? attachment.kind === kind : pattern.test(attachment?.name ?? "");
 
 export default function KanbanBoardPage() {
   const { boardId: boardIdParam } = useParams();
@@ -1094,7 +1111,6 @@ export default function KanbanBoardPage() {
       formData.append("subject", subject);
       formData.append("body", message);
       (fieldFiles?.signed_letter ?? []).forEach((file) => formData.append("signed_letter", file));
-      (fieldFiles?.consolidated_invoice ?? []).forEach((file) => formData.append("consolidated_invoice", file));
       (fieldFiles?.approved_se_sheet ?? []).forEach((file) => formData.append("approved_se_sheet[]", file));
       (fieldFiles?.approved_se_copies ?? []).forEach((file) => formData.append("approved_se_copies[]", file));
 
@@ -1128,11 +1144,26 @@ export default function KanbanBoardPage() {
   );
 
   const finalSubmissionDraft = selectedFinalSubmission?.draft;
+  /* The draft's generated covering letter (to sign), consolidated invoice and the batch's approved SE sheet
+     open from their own rows. */
+  const finalSubmissionFileFields = useMemo(() => {
+    const attachments = (finalSubmissionDraft?.attachments ?? []).filter((attachment) => attachment?.url);
+    return FINAL_SUBMISSION_FILE_FIELDS.map((field) => {
+      const draftFile = FINAL_SUBMISSION_DRAFT_FILES[field.name];
+      const document = draftFile && attachments.find((attachment) => isDraftFile(draftFile, attachment));
+      return document ? { ...field, document } : field;
+    });
+  }, [finalSubmissionDraft]);
+
   /* The merged invoices PDF (the draft's merged_invoices file) is shown on its own "Merged invoices" row. */
   const finalSubmissionDocuments = useMemo(
     () =>
       (finalSubmissionDraft?.attachments ?? [])
-        .filter((attachment) => attachment?.url)
+        .filter(
+          (attachment) =>
+            attachment?.url &&
+            !Object.values(FINAL_SUBMISSION_DRAFT_FILES).some((draftFile) => isDraftFile(draftFile, attachment))
+        )
         .map((attachment) =>
           attachment.url === finalSubmissionDraft?.merged_invoices?.url || /^merged_invoices/i.test(attachment.name ?? "")
             ? { ...attachment, label: "Merged invoices" }
@@ -1460,7 +1491,7 @@ export default function KanbanBoardPage() {
         defaultSubject={finalSubmissionDraft?.subject ?? ""}
         defaultBody={finalSubmissionDraft?.body ?? ""}
         documents={finalSubmissionDocuments}
-        fileFields={FINAL_SUBMISSION_FILE_FIELDS}
+        fileFields={finalSubmissionFileFields}
         title="Final Submission Email"
         subtitle="Send the submission documents to the client"
         sendLabel="Send for Final Submission"

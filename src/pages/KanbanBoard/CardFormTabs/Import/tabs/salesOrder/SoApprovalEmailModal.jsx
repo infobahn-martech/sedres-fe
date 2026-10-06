@@ -5,16 +5,12 @@ import "react-quill/dist/quill.snow.css";
 import { FiMail, FiPaperclip, FiSend, FiX } from "react-icons/fi";
 import CustomModal from "../../../../../../components/CustomModal";
 import DocumentLibraryPickerModal from "./DocumentLibraryPickerModal";
+import {
+  OPERATION_EMAIL_MESSAGE_QUILL_FORMATS,
+  OPERATION_EMAIL_MESSAGE_QUILL_MODULES,
+} from "../operation/components/OperationCommon";
+import { ensureHtmlForQuill } from "../operation/operationReportMessageHtml";
 import "../../../../../../design/scss/pages/kanban-board/seApprovalUploadModal.scss";
-
-const MESSAGE_QUILL_TOOLBAR = [
-  ["bold", "italic", "underline"],
-  [{ list: "ordered" }, { list: "bullet" }],
-  ["link", "image"],
-  ["clean"],
-];
-
-const MESSAGE_QUILL_FORMATS = ["bold", "italic", "underline", "list", "bullet", "link", "image"];
 
 // Standard Sedres wording for the SO approval request body (per ops team), same for every stage.
 const DEFAULT_MESSAGE_HTML =
@@ -37,7 +33,9 @@ const DEFAULT_MESSAGE_HTML =
 // suggested recipient instead of making staff type it every time; still freely editable.
 // defaultCc is that same draft response's `cc` — the backend owns this stage's cc list too,
 // so it prefills "Cc" the same way (empty when the backend sends none); also editable.
-const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, soCustomerName = "", stageLabel = "SO Approval", actionLabel = "", defaultTo = "", defaultCc = "", preLoadedDocuments = [], callId = null }) => {
+// defaultBody is that draft's `body` — HTML (text + Sedres signature + logo), loaded into the
+// editor the same way as the report email templates; DEFAULT_MESSAGE_HTML only when it's empty.
+const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, soCustomerName = "", stageLabel = "SO Approval", actionLabel = "", defaultTo = "", defaultCc = "", defaultBody = "", preLoadedDocuments = [], callId = null }) => {
   const [fromValue, setFromValue] = useState("operations@shipping.com");
   const [toValue, setToValue] = useState("");
   const [ccValue, setCcValue] = useState("");
@@ -82,12 +80,12 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
       // body and rejects the whole request otherwise ({"status":"error","message":"call_id,
       // to, subject and body are required"}), so an empty Quill editor used to let staff submit
       // a doomed request with no warning. Still freely editable before sending.
-      setMessage(DEFAULT_MESSAGE_HTML);
+      setMessage(defaultBody ? ensureHtmlForQuill(defaultBody) : DEFAULT_MESSAGE_HTML);
       setMessageError("");
       // Pre-load the stage document (sales order) from api/da/da_action_email_draft
       setAttachments(preLoadedDocuments || []);
     }
-  }, [show, soCustomerName, stageLabel, actionLabel, defaultTo, defaultCc, preLoadedDocuments]);
+  }, [show, soCustomerName, stageLabel, actionLabel, defaultTo, defaultCc, defaultBody, preLoadedDocuments]);
 
   const handleFilesSelected = (fileList) => {
     const files = Array.from(fileList || []).filter((file) => file);
@@ -327,8 +325,8 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
               setMessage(value);
               if (messageError) setMessageError("");
             }}
-            modules={{ toolbar: MESSAGE_QUILL_TOOLBAR }}
-            formats={MESSAGE_QUILL_FORMATS}
+            modules={OPERATION_EMAIL_MESSAGE_QUILL_MODULES}
+            formats={OPERATION_EMAIL_MESSAGE_QUILL_FORMATS}
             placeholder="Type your message..."
             readOnly={isSubmitting}
           />
@@ -381,6 +379,7 @@ SoApprovalEmailModal.propTypes = {
   actionLabel: PropTypes.string,
   defaultTo: PropTypes.string,
   defaultCc: PropTypes.string,
+  defaultBody: PropTypes.string,
   preLoadedDocuments: PropTypes.arrayOf(PropTypes.object),
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };

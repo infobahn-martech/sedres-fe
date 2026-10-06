@@ -4,16 +4,12 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { FiCheck, FiFileText, FiMail, FiPaperclip, FiPlus, FiSend, FiUploadCloud, FiX } from "react-icons/fi";
 import CustomModal from "../../../../components/CustomModal";
+import {
+  OPERATION_EMAIL_MESSAGE_QUILL_FORMATS,
+  OPERATION_EMAIL_MESSAGE_QUILL_MODULES,
+} from "../../CardFormTabs/Import/tabs/operation/components/OperationCommon";
+import { ensureHtmlForQuill } from "../../CardFormTabs/Import/tabs/operation/operationReportMessageHtml";
 import "../../../../design/scss/pages/kanban-board/seCreationEmailModal.scss";
-
-const MESSAGE_QUILL_TOOLBAR = [
-  ["bold", "italic", "underline"],
-  [{ list: "ordered" }, { list: "bullet" }],
-  ["link", "image"],
-  ["clean"],
-];
-
-const MESSAGE_QUILL_FORMATS = ["bold", "italic", "underline", "list", "bullet", "link", "image"];
 
 const DEFAULT_FROM = "operations@shipping.com";
 
@@ -23,16 +19,6 @@ const DEFAULT_MESSAGE_HTML =
   "<p>Greetings from Sedres.</p>" +
   "<p><br></p>" +
   "<p>Please find the attached Sales Orders with supporting documents. Kindly review our sales order and confirm so we can submit our final invoice.</p>";
-
-const escapeHtml = (text) =>
-  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-// The draft body is plain text with "\n" line breaks; Quill needs one paragraph per line.
-const plainTextToHtml = (text) =>
-  text
-    .split("\n")
-    .map((line) => (line.trim() ? `<p>${escapeHtml(line)}</p>` : "<p><br></p>"))
-    .join("");
 
 const getFileNameFromUrl = (url) => {
   const name = url.split("?")[0].split("/").pop();
@@ -46,8 +32,10 @@ const getFileNameFromUrl = (url) => {
 // Opened from a batch group's "Send For SE creation" action on the Kanban board, and from the
 // "Consolidated" column's "Send For Final Submission" (with its own title / subject / send label).
 // `documents` lists files the backend already holds for the email (opened, not re-sent; one with a `label`
-// gets its own labelled row, like the pickers); `fileFields`
-// replaces "Add files" with one labelled picker per file the send route takes.
+// gets its own labelled row after the pickers, like the draft body lists it last); `fileFields`
+// replaces "Add files" with one labelled picker per file the send route takes (an `auto` field is a row
+// for a file the backend adds itself, shown in its place without a picker; a field's `document` is the
+// draft's file for that slot, opened from it).
 const SeCreationEmailModal = ({
   show,
   onClose,
@@ -79,7 +67,8 @@ const SeCreationEmailModal = ({
     setToValue(defaultTo);
     setCcValue(defaultCc);
     setSubjectValue(defaultSubject || `${subjectPrefix}${batchTitle ? ` — ${batchTitle}` : ""}`);
-    setMessage(defaultBody ? plainTextToHtml(defaultBody) : DEFAULT_MESSAGE_HTML);
+    // Draft bodies are HTML (text + Sedres signature + logo), loaded the same way as the report email templates.
+    setMessage(defaultBody ? ensureHtmlForQuill(defaultBody) : DEFAULT_MESSAGE_HTML);
     setAttachments([]);
     setFieldFiles({});
     setErrors({});
@@ -118,6 +107,7 @@ const SeCreationEmailModal = ({
   const attachmentCount =
     attachments.length +
     documents.length +
+    (fileFields ?? []).filter((field) => field.auto && field.document).length +
     (documentUrl ? 1 : 0) +
     Object.values(fieldFiles).reduce((sum, files) => sum + files.length, 0);
 
@@ -304,31 +294,39 @@ const SeCreationEmailModal = ({
         )}
         {(labelledDocuments.length > 0 || fileFields?.length > 0) && (
           <div className="se-email-slots">
-            {labelledDocuments.map((document) => (
-              <div key={document.url} className="se-email-slot se-email-slot--filled">
-                <div className="se-email-slot__head">
-                  <span className="se-email-slot__icon">
-                    <FiFileText />
-                  </span>
-                  <div className="se-email-slot__text">
-                    <span className="se-email-slot__label" title={document.label}>
-                      {document.label}
-                    </span>
-                    <span className="se-email-slot__hint">Included automatically</span>
-                  </div>
-                </div>
-                <a
-                  href={document.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="se-email-slot__file"
-                  title={`Open ${document.name}`}
-                >
-                  <span className="se-email-slot__file-name">{document.name}</span>
-                </a>
-              </div>
-            ))}
             {(fileFields ?? []).map((field) => {
+              if (field.auto) {
+                return (
+                  <div key={field.name} className="se-email-slot se-email-slot--filled">
+                    <div className="se-email-slot__head">
+                      <span className="se-email-slot__icon">
+                        <FiFileText />
+                      </span>
+                      <div className="se-email-slot__text">
+                        <span className="se-email-slot__label" title={field.label}>
+                          {field.label}
+                        </span>
+                        <span className="se-email-slot__hint">Included automatically</span>
+                      </div>
+                    </div>
+                    {field.document ? (
+                      <a
+                        href={field.document.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="se-email-slot__file"
+                        title={`Open ${field.document.name}`}
+                      >
+                        <span className="se-email-slot__file-name">{field.document.name}</span>
+                      </a>
+                    ) : (
+                      <div className="se-email-slot__file">
+                        <span className="se-email-slot__file-name">{field.autoHint}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
               const files = fieldFiles[field.name] ?? [];
               const error = errors[`file_${field.name}`];
               const canPick = field.multiple || files.length === 0;
@@ -351,6 +349,17 @@ const SeCreationEmailModal = ({
                       </span>
                     </div>
                   </div>
+                  {field.document && (
+                    <a
+                      href={field.document.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="se-email-slot__file"
+                      title={`Open ${field.document.name}`}
+                    >
+                      <span className="se-email-slot__file-name">{field.document.name}</span>
+                    </a>
+                  )}
                   {files.map((file, index) => (
                     <div key={`${file.name}-${index}`} className="se-email-slot__file">
                       <button
@@ -394,6 +403,30 @@ const SeCreationEmailModal = ({
                 </div>
               );
             })}
+            {labelledDocuments.map((document) => (
+              <div key={document.url} className="se-email-slot se-email-slot--filled">
+                <div className="se-email-slot__head">
+                  <span className="se-email-slot__icon">
+                    <FiFileText />
+                  </span>
+                  <div className="se-email-slot__text">
+                    <span className="se-email-slot__label" title={document.label}>
+                      {document.label}
+                    </span>
+                    <span className="se-email-slot__hint">Included automatically</span>
+                  </div>
+                </div>
+                <a
+                  href={document.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="se-email-slot__file"
+                  title={`Open ${document.name}`}
+                >
+                  <span className="se-email-slot__file-name">{document.name}</span>
+                </a>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -406,8 +439,8 @@ const SeCreationEmailModal = ({
             setMessage(value);
             clearError("message");
           }}
-          modules={{ toolbar: MESSAGE_QUILL_TOOLBAR }}
-          formats={MESSAGE_QUILL_FORMATS}
+          modules={OPERATION_EMAIL_MESSAGE_QUILL_MODULES}
+          formats={OPERATION_EMAIL_MESSAGE_QUILL_FORMATS}
           placeholder="Type your message..."
           readOnly={isSubmitting}
         />
@@ -466,6 +499,9 @@ SeCreationEmailModal.propTypes = {
       required: PropTypes.bool,
       multiple: PropTypes.bool,
       accept: PropTypes.string,
+      auto: PropTypes.bool,
+      autoHint: PropTypes.string,
+      document: PropTypes.shape({ name: PropTypes.string, url: PropTypes.string }),
     })
   ),
 };
