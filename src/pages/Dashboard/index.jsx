@@ -54,8 +54,8 @@ const STATUS_META = {
 
 // Categorical series colors (fixed order, validated for CVD separation per theme).
 const SERIES_COLORS = {
-  light: ["#2a78d6", "#eb6834", "#1baf7a"],
-  dark: ["#3987e5", "#d95926", "#199e70"],
+  light: ["#2a78d6", "#eb6834", "#1baf7a", "#8b5cf6"],
+  dark: ["#3987e5", "#d95926", "#199e70", "#a78bfa"],
 };
 
 // Period filter for monthly charts — `months: null` keeps the full year to date.
@@ -288,7 +288,15 @@ const Dashboard = () => {
   const branchRevenueTotals = overview.branches.map((branch) => ({ ...branch, total: yearRevenue[branch.key] ?? 0 }));
   const offshoreRevenueTotal = yearRevenue.offshore ?? 0;
   const totalRevenue = branchRevenueTotals.reduce((sum, branch) => sum + branch.total, offshoreRevenueTotal);
-  const revenueShare = (value) => (totalRevenue ? `${Math.round((value / totalRevenue) * 100)}% of total` : "—");
+  // Branches first, offshore last — colors follow the same order as the monthly charts.
+  const revenueSegments = [
+    ...branchRevenueTotals.map((branch) => ({ key: branch.key, name: branch.name, total: branch.total })),
+    { key: "offshore", name: "Offshore Marine", total: offshoreRevenueTotal },
+  ].map((segment, index) => ({
+    ...segment,
+    color: seriesColors[index % seriesColors.length],
+    share: totalRevenue ? (segment.total / totalRevenue) * 100 : 0,
+  }));
 
   const stats = [
     { title: "Total Vessels Imported", value: summary.total_vessels_imported, icon: <FiDownload />, tone: "blue" },
@@ -323,24 +331,35 @@ const Dashboard = () => {
               />
             </div>
           </div>
-          <div className="so-summary">
-            <div className="so-summary-item">
-              <span className="so-summary-label">Total Revenue</span>
-              <span className="so-summary-value">{formatCurrency(totalRevenue)}</span>
-              <span className="so-summary-sub">{selectedRevenueYear}</span>
-            </div>
-            {branchRevenueTotals.map((branch) => (
-              <div key={branch.key} className="so-summary-item">
-                <span className="so-summary-label">{branch.name}</span>
-                <span className="so-summary-value">{formatCurrency(branch.total)}</span>
-                <span className="so-summary-sub">{revenueShare(branch.total)}</span>
+          <div className="revenue-overview">
+            <div className="revenue-hero">
+              <span className="revenue-hero-label">Total Revenue · {selectedRevenueYear}</span>
+              <span className="revenue-hero-value">{formatCurrency(totalRevenue)}</span>
+              <div className="revenue-share-bar" role="img" aria-label="Revenue share by segment">
+                {revenueSegments.map((segment) => (
+                  <span
+                    key={segment.key}
+                    style={{ width: `${segment.share}%`, background: segment.color }}
+                    title={`${segment.name}: ${Math.round(segment.share)}%`}
+                  />
+                ))}
               </div>
-            ))}
-            <div className="so-summary-item">
-              <span className="so-summary-label">Offshore Marine</span>
-              <span className="so-summary-value">{formatCurrency(offshoreRevenueTotal)}</span>
-              <span className="so-summary-sub">{revenueShare(offshoreRevenueTotal)}</span>
             </div>
+            <ul className="revenue-breakdown">
+              {revenueSegments.map((segment) => (
+                <li key={segment.key} className="revenue-segment">
+                  <div className="revenue-segment-head">
+                    <span className="revenue-dot" style={{ background: segment.color }} />
+                    <span className="revenue-segment-name">{segment.name}</span>
+                    <span className="revenue-segment-share">{Math.round(segment.share)}%</span>
+                  </div>
+                  <span className="revenue-segment-value">{formatCurrency(segment.total)}</span>
+                  <div className="revenue-segment-track">
+                    <span style={{ width: `${segment.share}%`, background: segment.color }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>
