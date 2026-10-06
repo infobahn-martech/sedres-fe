@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import SedresColorPicker from '../../components/SedresColorPicker/SedresColorPicker';
 import { normalizeHexColor } from '../../components/SedresColorPicker/sedresColorPickerConstants';
 import { rgbToHex, hexToRgb, workflowStageHasChildColumns, DEFAULT_STAGE_SWATCH_HEX } from './workflow.utils';
+import StageDecisionModal from './StageDecisionModal';
 
 const STAGE_COLOR_PICKER_WIDTH = 308;
 const STAGE_COLOR_PICKER_Z = 10050;
@@ -53,6 +54,8 @@ function WorkflowStageCard({
   const hasChildren = workflowStageHasChildColumns(stage, swimlaneStages);
   const displayColor = stage.color ? rgbToHex(stage.color) : DEFAULT_STAGE_SWATCH_HEX;
   const [isStageColorPickerOpen, setIsStageColorPickerOpen] = useState(false);
+  const [isDecisionModalOpen, setIsDecisionModalOpen] = useState(false);
+  const [decision, setDecision] = useState('');
   const stageColorTriggerRef = useRef(null);
   const stageColorPickerPopoverRef = useRef(null);
   const [stageColorPickerPlacement, setStageColorPickerPlacement] = useState({ top: 0, left: 0 });
@@ -401,6 +404,30 @@ function WorkflowStageCard({
                 </div>,
                 document.body
               )}
+            <button
+              className="stage-action-icon stage-action-icon-decision"
+              type="button"
+              title="Add decision"
+              aria-label="Add decision"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDecisionModalOpen(true);
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 1.5L14.5 8L8 14.5L1.5 8L8 1.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <StageDecisionModal
+              show={isDecisionModalOpen}
+              stageName={stage.name}
+              initialValue={decision}
+              onClose={() => setIsDecisionModalOpen(false)}
+              onSave={(value) => {
+                setDecision(value);
+                setIsDecisionModalOpen(false);
+              }}
+            />
             {canDeleteColumn ? (
               <button
                 className="stage-action-icon stage-action-icon-delete"
