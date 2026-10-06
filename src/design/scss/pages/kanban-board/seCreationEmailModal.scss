@@ -3,14 +3,27 @@
 // Split into dialog shell, header, body and footer sections, all scoped to .se-email-dialog.
 
 // Root-scoped so it outranks Bootstrap's .modal-dialog max-width at larger breakpoints.
+// Same size as the Business Rules modal (business-rules-modal.scss); the body scrolls inside.
 .se-email-modal-root .se-email-dialog {
-  --bs-modal-width: 90vw;
-  max-width: 90vw;
-  width: 90vw;
-  margin: 32px auto;
+  --bs-modal-width: 1440px;
+  width: 94vw;
+  max-width: 1440px;
+  margin: 1.5rem auto;
+  height: min(800px, calc(100vh - 3rem));
+  max-height: calc(100vh - 3rem);
+
+  @media (max-width: 991px) {
+    width: 98vw;
+    max-width: 98vw;
+    margin: 1rem auto;
+    height: calc(100vh - 2rem);
+    max-height: calc(100vh - 2rem);
+  }
 
   // Global prospect-modal.scss pads every .modal-content, which would inset the header.
   .modal-content {
+    height: 100%;
+    max-height: 100%;
     padding: 0;
     border: none;
     border-radius: 16px;
@@ -90,8 +103,9 @@
 
   // ---------------------------------------------------------------- Body
   .se-email-body {
+    flex: 1 1 auto;
+    min-height: 0;
     padding: 24px 32px;
-    max-height: calc(100vh - 230px);
     overflow-y: auto;
   }
 
@@ -543,8 +557,6 @@
 
   // ---------------------------------------------------------------- Responsive
   @media (max-width: 576px) {
-    width: auto;
-
     .se-email-header {
       padding: 16px;
     }
