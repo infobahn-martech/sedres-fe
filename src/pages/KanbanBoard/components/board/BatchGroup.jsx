@@ -52,15 +52,14 @@ export default function BatchGroup({
   const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches whose SE approval is back sit in "SE Received" and move on to invoicing. */
   const isSeReceivedColumn = SE_RECEIVED_COLUMN_PATTERN.test((columnTitle ?? "").trim());
-  /* Batches still to be sent for SE creation start with every card ticked. Unticks are kept per
+  /* Batches still to be sent for SE creation start with no card ticked. Ticks are kept per
      batch, apart from the board-wide selection used to create batches in Backlog. */
   const isSendSeBatch = isSeFlowBatch && !isAwaitingSeColumn && !isSeReceivedColumn;
-  const [seUntickedCardIds, setSeUntickedCardIds] = useState([]);
-  /* "Awaiting SE" batches start with every card ticked, and the user may untick cards before the SE
-     upload. Once it is done, the cards the SE approval covers are ticked (and turn green); the SE
-     review is AI-detected, so the user may untick a wrongly approved card back to a plain card. */
+  const [seTickedCardIds, setSeTickedCardIds] = useState([]);
+  /* "Awaiting SE" batches start with no card ticked. The user ticks the cards to confirm; once the SE
+     upload is done, ticked cards the SE approval covers turn green. */
   const seApprovedByCardId = useBatchMoveStore((state) => state.seApprovedByCardId);
-  const seUntickedByCardId = useBatchMoveStore((state) => state.seUntickedByCardId);
+  const seTickedByCardId = useBatchMoveStore((state) => state.seTickedByCardId);
   const toggleSeReviewCard = useBatchMoveStore((state) => state.toggleSeReviewCard);
   const isSeReviewBatch = isSeFlowBatch && isAwaitingSeColumn;
   /* Once the batch's SE upload is done, "Review and Move" replaces "Upload SE Approval". */
@@ -77,11 +76,11 @@ export default function BatchGroup({
   }, [isSeReviewBatch, batchId, loadSeReview]);
 
   const getIsSelectedForAction = (card) => {
-    if (isSendSeBatch) return !seUntickedCardIds.includes(card.id);
+    if (isSendSeBatch) return seTickedCardIds.includes(card.id);
     if (isSeReviewBatch) {
-      const isSeUnticked = Boolean(seUntickedByCardId[String(card.id)]);
-      if (!isSeUploadDone) return !isSeUnticked;
-      return Boolean(seApprovedByCardId[String(card.id)]) && !isSeUnticked;
+      const isSeTicked = Boolean(seTickedByCardId[String(card.id)]);
+      if (!isSeUploadDone) return isSeTicked;
+      return Boolean(seApprovedByCardId[String(card.id)]) && isSeTicked;
     }
     return selectedActionCardIds.includes(card.id);
   };
@@ -96,15 +95,13 @@ export default function BatchGroup({
   const isBoardSelection = !isSendSeBatch && !isSeReviewBatch;
 
   const toggleSeCardTick = (card) =>
-    setSeUntickedCardIds((prev) =>
+    setSeTickedCardIds((prev) =>
       prev.includes(card.id) ? prev.filter((id) => id !== card.id) : [...prev, card.id]
     );
 
-  const handleSendSeRequest = () =>
-    onSendSeRequest?.({
-      ...batch,
-      cards: batch.cards.filter((card) => !seUntickedCardIds.includes(card.id)),
-    });
+  const tickedSeCards = batch.cards.filter((card) => seTickedCardIds.includes(card.id));
+
+  const handleSendSeRequest = () => onSendSeRequest?.({ ...batch, cards: tickedSeCards });
 
   return (
     <div
@@ -161,6 +158,7 @@ export default function BatchGroup({
               type="button"
               className="batch-group__action"
               onClick={handleSendSeRequest}
+              disabled={!tickedSeCards.length}
             >
               Send For SE creation
             </button>

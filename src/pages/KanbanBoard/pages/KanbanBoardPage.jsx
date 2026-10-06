@@ -403,7 +403,7 @@ export default function KanbanBoardPage() {
   const [seRequestEmailDraft, setSeRequestEmailDraft] = useState(null);
   const batchIdByNumber = useBatchMoveStore((state) => state.batchIdByNumber);
   const clearCardColumns = useBatchMoveStore((state) => state.clearCardColumns);
-  const clearSeUnticks = useBatchMoveStore((state) => state.clearSeUnticks);
+  const clearSeTicks = useBatchMoveStore((state) => state.clearSeTicks);
 
   /* Unique call ids of the batch's cards. */
   const getBatchCallIds = useCallback(
@@ -494,8 +494,8 @@ export default function KanbanBoardPage() {
            drawing the cards in the old column. */
         const sentCardIds = (selectedSeRequestBatch?.cards ?? []).map((card) => card.id);
         clearCardColumns(sentCardIds);
-        /* The batch lands in "Awaiting SE" with every card ticked. */
-        clearSeUnticks(sentCardIds);
+        /* The batch lands in "Awaiting SE" with no card ticked. */
+        clearSeTicks(sentCardIds);
         handleCloseSeRequestEmail();
         refetchBoard?.();
       } finally {
@@ -508,7 +508,7 @@ export default function KanbanBoardPage() {
       batchIdByNumber,
       getBatchCallIds,
       clearCardColumns,
-      clearSeUnticks,
+      clearSeTicks,
       handleCloseSeRequestEmail,
       refetchBoard,
     ]

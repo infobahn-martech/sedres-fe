@@ -16,7 +16,7 @@ const SeReviewMoveModal = ({ onConfirmed }) => {
   const selectedBatch = useBatchMoveStore((state) => state.selectedSeReviewBatch);
   const onClose = useBatchMoveStore((state) => state.closeSeReviewMoveModal);
   const seReview = useBatchMoveStore((state) => state.seReviewByBatchId[selectedBatch?.batchId]);
-  const seUntickedByCardId = useBatchMoveStore((state) => state.seUntickedByCardId);
+  const seTickedByCardId = useBatchMoveStore((state) => state.seTickedByCardId);
   const isLoading = useBatchMoveStore((state) => state.isSeReviewLoading);
   const fetchSeReview = useBatchMoveStore((state) => state.fetchSeReview);
   const isConfirming = useBatchMoveStore((state) => state.isConfirmingSeReview);
@@ -32,9 +32,9 @@ const SeReviewMoveModal = ({ onConfirmed }) => {
   const approvedSalesOrders = useMemo(
     () =>
       (seReview?.cards ?? [])
-        .filter((card) => !seUntickedByCardId[String(card?.card_id)])
+        .filter((card) => seTickedByCardId[String(card?.card_id)])
         .flatMap((card) => (card?.sales_orders ?? []).filter((salesOrder) => salesOrder?.approved)),
-    [seReview, seUntickedByCardId]
+    [seReview, seTickedByCardId]
   );
 
   const handleConfirm = async () => {
