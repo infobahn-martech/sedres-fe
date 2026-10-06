@@ -165,6 +165,22 @@ const getArInvoiceReview = (params) => Gateway.get('/da/ar_invoice_review', { pa
  * "AR Invoices Issued". invoice_no and tax_details are optional overrides: left out, the values as read are used. */
 const confirmArInvoices = (payload) => Gateway.post('/da/confirm_ar_invoices', payload);
 
+/** @param {string|number} batchId
+ * @returns {Promise<{ data: { status: 'success', data: { batch_id: number, batch_number: string, call_ids: number[],
+ *   cards: { call_id: number, card_id: number }[], to: string, cc: string, subject: string, body: string,
+ *   stage_document_id: number, document_url: string } } | { status: 'error', message: string } }>}
+ * Prefilled "Request PO" email for a McDermott batch in "Ready for PO Request"; document_url is the PO request sheet. */
+const getPoRequestDraft = (batchId) => Gateway.get(`/da/po_request_draft/${batchId}`);
+
+/** @param {FormData} formData - batch_id, stage_document_id, to, cc, subject, body, attachments[]?, multipart/form-data.
+ * @returns {Promise<{ data: { status: 'success', data: { moved_to_requested_po: { call_id: number, card_id: number }[] } }
+ *   | { status: 'error', message: string } }>}
+ * Sends the PO request email; the batch's cards move to "Requested PO". */
+const sendPoRequest = (formData) =>
+  Gateway.post('/da/send_po_request', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
 export default {
   getDaDetails,
   saveDaDetails,
@@ -201,4 +217,6 @@ export default {
   createSubmissionDocuments,
   getSubmissionEmailDraft,
   sendSubmissionEmail,
+  getPoRequestDraft,
+  sendPoRequest,
 };

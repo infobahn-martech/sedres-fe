@@ -17,6 +17,7 @@ export default function KanbanBoardContent({
   onBatchSendSeRequest,
   onBatchUploadSeApproval,
   onBatchUploadInvoice,
+  onBatchRequestPo,
   onColumnUploadInvoice,
   onColumnMergeInvoice,
   onColumnPrepareSubmission,
@@ -71,6 +72,7 @@ export default function KanbanBoardContent({
         onBatchSendSeRequest={onBatchSendSeRequest}
         onBatchUploadSeApproval={onBatchUploadSeApproval}
         onBatchUploadInvoice={onBatchUploadInvoice}
+        onBatchRequestPo={onBatchRequestPo}
         onColumnUploadInvoice={onColumnUploadInvoice}
         onColumnMergeInvoice={onColumnMergeInvoice}
         onColumnPrepareSubmission={onColumnPrepareSubmission}

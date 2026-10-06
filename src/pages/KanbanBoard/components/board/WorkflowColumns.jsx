@@ -96,6 +96,7 @@ export default function WorkflowColumns({
   onBatchSendSeRequest,
   onBatchUploadSeApproval,
   onBatchUploadInvoice,
+  onBatchRequestPo,
   onColumnUploadInvoice,
   onColumnMergeInvoice,
   onColumnPrepareSubmission,
@@ -475,6 +476,7 @@ export default function WorkflowColumns({
                         onBatchSendSeRequest={onBatchSendSeRequest}
                         onBatchUploadSeApproval={onBatchUploadSeApproval}
                         onBatchUploadInvoice={onBatchUploadInvoice}
+                        onBatchRequestPo={onBatchRequestPo}
                         onToggleCardSelect={onToggleCardSelect}
                         onCardSelectDragStart={onCardSelectDragStart}
                         onCardSelectDragEnter={onCardSelectDragEnter}

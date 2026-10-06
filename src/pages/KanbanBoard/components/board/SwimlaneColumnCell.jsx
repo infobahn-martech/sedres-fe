@@ -34,6 +34,7 @@ export default function SwimlaneColumnCell({
   onBatchSendSeRequest,
   onBatchUploadSeApproval,
   onBatchUploadInvoice,
+  onBatchRequestPo,
   onToggleCardSelect,
   onCardSelectDragStart,
   onCardSelectDragEnter,
@@ -194,6 +195,7 @@ export default function SwimlaneColumnCell({
                 onSendSeRequest={onBatchSendSeRequest}
                 onUploadSeApproval={onBatchUploadSeApproval}
                 onUploadInvoice={onBatchUploadInvoice}
+                onRequestPo={onBatchRequestPo}
               />
             ))}
             {canViewCards && !hasBatches && cards.map((card, index) =>
@@ -259,6 +261,7 @@ SwimlaneColumnCell.propTypes = {
   onBatchSendSeRequest: PropTypes.func,
   onBatchUploadSeApproval: PropTypes.func,
   onBatchUploadInvoice: PropTypes.func,
+  onBatchRequestPo: PropTypes.func,
   onToggleCardSelect: PropTypes.func,
   onCardSelectDragStart: PropTypes.func,
   onCardSelectDragEnter: PropTypes.func,
