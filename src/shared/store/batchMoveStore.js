@@ -60,9 +60,9 @@ const useBatchMoveStore = create((set, get) => ({
   seDocumentUploadedByBatchId: {},
   /** { [cardId]: bool } — per-card SE approval from da/upload_se_approval's se_review.cards. */
   seApprovedByCardId: {},
-  /** { [cardId]: true } — "Awaiting SE" cards the user unticked, before the SE upload or after it (the SE
-   * review is AI-detected and can be wrong); they show as plain cards and are left out of the confirm. */
-  seUntickedByCardId: {},
+  /** { [cardId]: true } — "Awaiting SE" cards the user ticked, before the SE upload or after it (the SE
+   * review is AI-detected, so only cards ticked here are confirmed); unticked cards show as plain cards. */
+  seTickedByCardId: {},
   /** { [batchId]: se_review } — da/upload_se_approval's se_review; its presence means the SE upload is done. */
   seReviewByBatchId: {},
   /** { [cardId]: submissionId } — "Consolidated" cards whose submission documents are created, so the column
@@ -74,7 +74,7 @@ const useBatchMoveStore = create((set, get) => ({
   isSeReviewLoading: false,
   isConfirmingSeReview: false,
 
-  /** The user's unticks are kept across uploads, so a card left out before the SE upload stays out. */
+  /** The user's ticks are kept across uploads, so a card ticked before the SE upload stays ticked. */
   setSeReview: (seReview) =>
     set((state) => {
       const seApprovedByCardId = { ...state.seApprovedByCardId };
@@ -89,16 +89,16 @@ const useBatchMoveStore = create((set, get) => ({
       return { seApprovedByCardId, seReviewByBatchId };
     }),
 
-  /** Unticks an "Awaiting SE" card, or ticks it back. Before the batch's SE upload any card can be
+  /** Ticks an "Awaiting SE" card, or unticks it. Before the batch's SE upload any card can be
    * toggled; after it, cards the SE review did not approve stay unticked. */
   toggleSeReviewCard: (cardId, { isSeUploadDone = false } = {}) =>
     set((state) => {
       const key = String(cardId);
       if (isSeUploadDone && !state.seApprovedByCardId[key]) return state;
-      const seUntickedByCardId = { ...state.seUntickedByCardId };
-      if (seUntickedByCardId[key]) delete seUntickedByCardId[key];
-      else seUntickedByCardId[key] = true;
-      return { seUntickedByCardId };
+      const seTickedByCardId = { ...state.seTickedByCardId };
+      if (seTickedByCardId[key]) delete seTickedByCardId[key];
+      else seTickedByCardId[key] = true;
+      return { seTickedByCardId };
     }),
 
   /** Refreshes a batch's se_review from da/se_approval_lines. Returns the error message on failure. */
@@ -124,10 +124,10 @@ const useBatchMoveStore = create((set, get) => ({
    * `batchCardIds` are every card of the batch as drawn, so their unticks are dropped too.
    * Returns { errorMessage } on failure, or { result } with moved_to_se_received / returned_to_backlog. */
   confirmSeReview: async (batchId, batchCardIds = []) => {
-    const { seReviewByBatchId, seUntickedByCardId } = get();
+    const { seReviewByBatchId, seTickedByCardId } = get();
     const seReview = seReviewByBatchId[batchId];
     const cards = (seReview?.cards ?? [])
-      .filter((card) => card?.approved && !seUntickedByCardId[String(card.card_id)])
+      .filter((card) => card?.approved && seTickedByCardId[String(card.card_id)])
       .map((card) => ({
         call_id: card.call_id,
         card_id: card.card_id,
@@ -154,19 +154,19 @@ const useBatchMoveStore = create((set, get) => ({
       }
 
       /* The backend has moved every card of the batch, so drop the local column overrides and
-         let the board draw them where it now says they are. Unticks go too, so a card sent back to
-         Backlog arrives ticked again the next time a batch brings it to "Awaiting SE". */
+         let the board draw them where it now says they are. Ticks go too, so a card sent back to
+         Backlog arrives unticked the next time a batch brings it to "Awaiting SE". */
       set((state) => {
         const columnByCardId = { ...state.columnByCardId };
-        const seUntickedByCardId = { ...state.seUntickedByCardId };
+        const seTickedByCardId = { ...state.seTickedByCardId };
         const seReviewByBatchId = { ...state.seReviewByBatchId };
         (seReview?.cards ?? []).forEach((card) => {
           delete columnByCardId[String(card?.card_id)];
-          delete seUntickedByCardId[String(card?.card_id)];
+          delete seTickedByCardId[String(card?.card_id)];
         });
-        batchCardIds.forEach((cardId) => delete seUntickedByCardId[String(cardId)]);
+        batchCardIds.forEach((cardId) => delete seTickedByCardId[String(cardId)]);
         delete seReviewByBatchId[batchId];
-        return { columnByCardId, seUntickedByCardId, seReviewByBatchId };
+        return { columnByCardId, seTickedByCardId, seReviewByBatchId };
       });
       return { result: data.data };
     } finally {
@@ -174,13 +174,13 @@ const useBatchMoveStore = create((set, get) => ({
     }
   },
 
-  /** Drops the unticks of cards entering "Awaiting SE", so they arrive ticked. */
-  clearSeUnticks: (cardIds) =>
+  /** Drops the ticks of cards entering "Awaiting SE", so they arrive unticked. */
+  clearSeTicks: (cardIds) =>
     set((state) => {
       if (!cardIds?.length) return state;
-      const seUntickedByCardId = { ...state.seUntickedByCardId };
-      cardIds.forEach((cardId) => delete seUntickedByCardId[String(cardId)]);
-      return { seUntickedByCardId };
+      const seTickedByCardId = { ...state.seTickedByCardId };
+      cardIds.forEach((cardId) => delete seTickedByCardId[String(cardId)]);
+      return { seTickedByCardId };
     }),
 
   openSeReviewMoveModal: (batch) => set({ showSeReviewMoveModal: true, selectedSeReviewBatch: batch }),
@@ -259,7 +259,7 @@ const useBatchMoveStore = create((set, get) => ({
       batchIdByNumber: {},
       seDocumentUploadedByBatchId: {},
       seApprovedByCardId: {},
-      seUntickedByCardId: {},
+      seTickedByCardId: {},
       seReviewByBatchId: {},
       showSeReviewMoveModal: false,
       selectedSeReviewBatch: null,
