@@ -73,12 +73,14 @@ const PORT_OPTIONS = Object.entries(PORT_LABELS).map(([value, label]) => ({ valu
 const OVERDUE_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const formatCurrency = (value) => `$${value.toLocaleString()}`;
+const CURRENCY = "SAR";
+
+const formatCurrency = (value) => `${CURRENCY} ${value.toLocaleString()}`;
 
 const formatCompactCurrency = (value) => {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `$${Math.round(value / 1_000)}K`;
-  return `$${value}`;
+  if (value >= 1_000_000) return `${CURRENCY} ${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${CURRENCY} ${Math.round(value / 1_000)}K`;
+  return `${CURRENCY} ${value}`;
 };
 
 const formatDate = (iso) =>
@@ -569,7 +571,7 @@ const Dashboard = () => {
             >
               <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
               <XAxis dataKey="month" stroke={chartAxisColor} />
-              <YAxis stroke={chartAxisColor} tickFormatter={formatCompactCurrency} />
+              <YAxis stroke={chartAxisColor} tickFormatter={formatCompactCurrency} width={72} />
               <Tooltip contentStyle={chartTooltipStyle} formatter={formatCurrency} />
               <Legend />
               {/* Color stays tied to the branch's position in the full list, so filtering never repaints a line. */}
@@ -607,7 +609,7 @@ const Dashboard = () => {
             <BarChart data={filterByPeriod(overview.revenue_offshore_marine, offshorePeriod)} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
               <XAxis dataKey="month" stroke={chartAxisColor} />
-              <YAxis stroke={chartAxisColor} tickFormatter={formatCompactCurrency} />
+              <YAxis stroke={chartAxisColor} tickFormatter={formatCompactCurrency} width={72} />
               <Tooltip
                 contentStyle={chartTooltipStyle}
                 formatter={formatCurrency}
