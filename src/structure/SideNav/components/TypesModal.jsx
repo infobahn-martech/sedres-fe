@@ -12,6 +12,7 @@ import useKanbanManagementReducer, {
 } from '../../../store/KanbanManagementReducer';
 import { normalizeHexColor } from '../../../components/SedresColorPicker/sedresColorPickerConstants';
 import '../../../design/scss/blockers-modal.scss';
+import '../../../design/scss/structure/side-nav/BlockersListModal.scss';
 
 const contrastIconFg = (bg) => {
   if (!bg || typeof bg !== 'string') return '#1a1a1a';
@@ -325,7 +326,7 @@ const TypesModal = ({ show, onClose }) => {
     <Modal
       show={show && !showNewTypeModal}
       onHide={onClose}
-      className="blockers-modal"
+      className="blockers-modal types-list-modal"
       backdropClassName="blockers-modal-backdrop"
       centered
       scrollable

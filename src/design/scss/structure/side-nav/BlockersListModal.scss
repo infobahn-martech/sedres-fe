@@ -1,6 +1,10 @@
-// Blockers list modal: Business Rules modal size (business-rules-modal.scss) on the shared
-// blockers-modal shell. Scoped to .blockers-list-modal so Stickers/Tags/Types keep their size.
-.blockers-modal.blockers-list-modal {
+// Blockers / Stickers / Tags / Types / Business Rules list modals: one wide size on the shared
+// blockers-modal and business-rules-modal shells, scoped by each list modal's own class.
+.blockers-modal.blockers-list-modal,
+.blockers-modal.stickers-list-modal,
+.blockers-modal.tags-list-modal,
+.blockers-modal.types-list-modal,
+.business-rules-modal.business-rules-list-modal {
   .modal-dialog {
     width: 98vw;
     max-width: 1800px;
@@ -15,5 +19,48 @@
       height: calc(100vh - 2rem);
       max-height: calc(100vh - 2rem);
     }
+  }
+}
+
+// New Card Blocker / Sticker / Tag / Type forms (opened from the list modals' "+"): same size as
+// the list modals; the body scrolls and the footer stays at the bottom. Scoped to their own
+// classes, since new-blocker-modal.scss is shared.
+.new-blocker-modal.new-card-blocker-modal,
+.new-blocker-modal.new-card-sticker-modal,
+.new-blocker-modal.new-card-tag-modal,
+.new-blocker-modal.new-card-type-modal {
+  .modal-dialog {
+    width: 98vw;
+    max-width: 1800px;
+    height: min(800px, calc(100vh - 3rem));
+
+    @media (max-width: 991px) {
+      max-width: 98vw;
+      height: calc(100vh - 2rem);
+    }
+  }
+
+  .modal-content {
+    height: 100%;
+  }
+}
+
+// New Card Blocker / Sticker / Tag / Type board dropdown (portaled to body): the list fills the
+// dropdown's height, which reaches down to the modal body's bottom, instead of the shared 220px cap.
+.new-blocker-board-selector.new-card-blocker-board-selector,
+.new-blocker-board-selector.new-card-sticker-board-selector,
+.new-blocker-board-selector.new-card-tag-board-selector,
+.new-blocker-board-selector.new-card-type-board-selector {
+  display: flex;
+  flex-direction: column;
+
+  .new-blocker-board-selector-header {
+    flex: 0 0 auto;
+  }
+
+  .new-blocker-board-selector-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
   }
 }
