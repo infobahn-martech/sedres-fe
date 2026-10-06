@@ -11,7 +11,11 @@ const AWAITING_SE_COLUMN_PATTERN = /^awaiting\s+(for\s+)?se$/i;
 const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
 /* McDermott batches skip SAIPEM's SE steps, so their header has no SE actions. */
 const MCDERMOTT_WORKFLOW_PATTERN = /mcdermott/i;
-const READY_FOR_PO_REQUEST_COLUMN_PATTERN = /^ready\s+for\s+po\s+request$/i;
+/* Compared on letters only, so stray spaces, punctuation or invisible characters in the live
+   column title don't hide the "Request PO" button. */
+const READY_FOR_PO_REQUEST_COLUMN_KEY = "readyforporequest";
+const isReadyForPoRequestColumn = (title) =>
+  String(title ?? "").toLowerCase().replace(/[^a-z]/g, "") === READY_FOR_PO_REQUEST_COLUMN_KEY;
 
 /**
  * Collapsible group of cards inside a column cell.
@@ -43,7 +47,7 @@ export default function BatchGroup({
   const isPoRequestBatch =
     !isUngrouped &&
     !isSeFlowBatch &&
-    READY_FOR_PO_REQUEST_COLUMN_PATTERN.test((columnTitle ?? "").trim());
+    isReadyForPoRequestColumn(columnTitle);
   /* Batches already emailed for SE creation sit in "Awaiting SE" (live title "Awaiting for SE"). */
   const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches whose SE approval is back sit in "SE Received" and move on to invoicing. */
