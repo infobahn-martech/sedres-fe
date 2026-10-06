@@ -206,6 +206,23 @@ const getPoReview = (params) => Gateway.get('/da/po_review', { params });
  * Confirms the reviewed POs (ticked cards only); the confirmed cards move to "PO Received". */
 const confirmPos = (payload) => Gateway.post('/da/confirm_pos', payload);
 
+/** @param {string|number} callId
+ * @returns {Promise<{ data: { status: 'success', data: { call_id: number, card_id: number, to: string, cc: string,
+ *   subject: string, body: string, stage_document_id: number, document_name: string, document_url: string,
+ *   page_count: number, warnings: string[] } } | { status: 'error', message: string } }>}
+ * Prefilled invoice email for one McDermott "PO Received" card; document_url is the invoice PDF. */
+const getInvoiceDispatchDraft = (callId) => Gateway.get(`/da/invoice_dispatch_draft/${callId}`);
+
+/** @param {FormData} formData - call_id, card_id, stage_document_id, to, cc, subject, body, attachments[]?,
+ *   multipart/form-data.
+ * @returns {Promise<{ data: { status: 'success', data: { moved_to_invoice_dispatched: { call_id: number,
+ *   card_id: number }[] } } | { status: 'error', message: string } }>}
+ * Sends the invoice email; the card moves to "Invoice Dispatched". */
+const sendInvoiceDispatch = (formData) =>
+  Gateway.post('/da/send_invoice_dispatch', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
 export default {
   getDaDetails,
   saveDaDetails,
@@ -247,4 +264,6 @@ export default {
   uploadPos,
   getPoReview,
   confirmPos,
+  getInvoiceDispatchDraft,
+  sendInvoiceDispatch,
 };

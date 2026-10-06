@@ -4,6 +4,7 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { FiCheck, FiFileText, FiMail, FiPaperclip, FiPlus, FiSend, FiUploadCloud, FiX } from "react-icons/fi";
 import CustomModal from "../../../../components/CustomModal";
+import EmailTableEditor from "./EmailTableEditor";
 import "../../../../design/scss/pages/kanban-board/seCreationEmailModal.scss";
 
 const MESSAGE_QUILL_TOOLBAR = [
@@ -27,12 +28,25 @@ const DEFAULT_MESSAGE_HTML =
 const escapeHtml = (text) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-// The draft body is plain text with "\n" line breaks; Quill needs one paragraph per line.
+const HTML_TAG_PATTERN = /<[a-z][\s\S]*>/i;
+
+// Most drafts' bodies are plain text with "\n" line breaks; Quill needs one paragraph per line.
+// A body that is already HTML (the invoice email draft) is used as is.
 const plainTextToHtml = (text) =>
-  text
-    .split("\n")
-    .map((line) => (line.trim() ? `<p>${escapeHtml(line)}</p>` : "<p><br></p>"))
-    .join("");
+  HTML_TAG_PATTERN.test(text)
+    ? text
+    : text
+        .split("\n")
+        .map((line) => (line.trim() ? `<p>${escapeHtml(line)}</p>` : "<p><br></p>"))
+        .join("");
+
+// The table editor's quill-table-better keeps the table's attributes on a <temporary> element
+// inside the table; it is editor-only markup, so it is left out of the HTML the email is sent with.
+const getEmailHtml = (html) => {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  doc.querySelectorAll("temporary").forEach((node) => node.remove());
+  return doc.body.innerHTML;
+};
 
 const getFileNameFromUrl = (url) => {
   const name = url.split("?")[0].split("/").pop();
@@ -65,6 +79,7 @@ const SeCreationEmailModal = ({
   subjectPrefix = "Sent for SE Creation",
   documents = EMPTY_LIST,
   fileFields = null,
+  allowTables = false,
 }) => {
   const [toValue, setToValue] = useState("");
   const [ccValue, setCcValue] = useState("");
@@ -148,7 +163,7 @@ const SeCreationEmailModal = ({
       to: toValue,
       cc: ccValue,
       subject: subjectValue,
-      message,
+      message: allowTables ? getEmailHtml(message) : message,
       attachments,
       fieldFiles,
     });
@@ -399,18 +414,30 @@ const SeCreationEmailModal = ({
       </div>
 
       <div className="se-email-message">
-        <ReactQuill
-          theme="snow"
-          value={message}
-          onChange={(value) => {
-            setMessage(value);
-            clearError("message");
-          }}
-          modules={{ toolbar: MESSAGE_QUILL_TOOLBAR }}
-          formats={MESSAGE_QUILL_FORMATS}
-          placeholder="Type your message..."
-          readOnly={isSubmitting}
-        />
+        {allowTables ? (
+          <EmailTableEditor
+            value={message}
+            onChange={(value) => {
+              setMessage(value);
+              clearError("message");
+            }}
+            placeholder="Type your message..."
+            readOnly={isSubmitting}
+          />
+        ) : (
+          <ReactQuill
+            theme="snow"
+            value={message}
+            onChange={(value) => {
+              setMessage(value);
+              clearError("message");
+            }}
+            modules={{ toolbar: MESSAGE_QUILL_TOOLBAR }}
+            formats={MESSAGE_QUILL_FORMATS}
+            placeholder="Type your message..."
+            readOnly={isSubmitting}
+          />
+        )}
         {errors.message && <div className="se-email-field__error">{errors.message}</div>}
       </div>
     </div>
@@ -459,6 +486,7 @@ SeCreationEmailModal.propTypes = {
   documents: PropTypes.arrayOf(
     PropTypes.shape({ name: PropTypes.string, url: PropTypes.string, label: PropTypes.string })
   ),
+  allowTables: PropTypes.bool,
   fileFields: PropTypes.arrayOf(
     PropTypes.shape({
       name: PropTypes.string.isRequired,
