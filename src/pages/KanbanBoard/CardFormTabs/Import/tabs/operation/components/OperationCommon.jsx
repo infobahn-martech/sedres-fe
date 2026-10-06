@@ -861,7 +861,7 @@ FormTextarea.propTypes = {
   disabled: PropTypes.bool,
 };
 
-const OPERATION_EMAIL_MESSAGE_QUILL_MODULES = {
+export const OPERATION_EMAIL_MESSAGE_QUILL_MODULES = {
   toolbar: [
     [{ header: [1, 2, 3, false] }],
     ["bold", "italic", "underline", "strike"],
@@ -875,7 +875,7 @@ const OPERATION_EMAIL_MESSAGE_QUILL_MODULES = {
   },
 };
 
-const OPERATION_EMAIL_MESSAGE_QUILL_FORMATS = [
+export const OPERATION_EMAIL_MESSAGE_QUILL_FORMATS = [
   "header",
   "bold",
   "italic",

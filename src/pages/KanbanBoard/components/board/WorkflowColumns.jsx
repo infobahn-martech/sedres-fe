@@ -179,19 +179,15 @@ export default function WorkflowColumns({
         : getSwimlaneColumnCards(workflow, laneId, colKey)
     );
 
-  /* "SE Received" and "AR Invoices Issued" cards start ticked, ready for "Upload Invoice" / "Merge
-     Invoice", and McDermott "Requested PO" cards for "Upload POs". Each card is ticked only the first
-     time it shows up in that column, so a card the user unticks stays unticked across board refetches,
-     and is ticked again once it moves on to the next one. */
+  /* McDermott "Requested PO" cards start ticked, ready for "Upload POs" (SAIPEM's invoice columns are only
+     ticked by hand). Each card is ticked only the first time it shows up in that column, so a card the user
+     unticks stays unticked across board refetches, and is ticked again once it moves on to the next one. */
   const setCardSelected = useKanbanCardSelectionStore((state) => state.setCardSelected);
   const autoTickedCardIdsRef = useRef(new Set());
 
   useEffect(() => {
-    const isAutoTickColumn = (column) => {
-      const action = getInvoiceAction(workflow, column);
-      return isBatchWorkflow(workflow) ? Boolean(action) : action === "uploadPos";
-    };
-    if (!isBatchWorkflow(workflow) && !isMcDermottWorkflow(workflow)) return;
+    const isAutoTickColumn = (column) => getInvoiceAction(workflow, column) === "uploadPos";
+    if (!isMcDermottWorkflow(workflow)) return;
     workflow.columnOrder
       .filter((colKey) => isAutoTickColumn(workflow.columns[colKey]))
       .forEach((colKey) =>

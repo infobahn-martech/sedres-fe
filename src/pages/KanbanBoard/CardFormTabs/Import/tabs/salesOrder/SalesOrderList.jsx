@@ -772,6 +772,10 @@ const SalesOrderList = ({
   // the cc list for this stage just like the recipient; empty string when it sends none.
   const [draftCcEmail, setDraftCcEmail] = useState("");
 
+  // Prefills the modal's message from the same draft response (data.body) — HTML with the Sedres
+  // signature + logo already at the end, so no signature is added on our side.
+  const [draftBody, setDraftBody] = useState("");
+
   // Pre-loaded attachments passed to SoApprovalEmailModal — only the backend's stage document
   // (the sales order itself) from da_action_email_draft.
   const [preLoadedDocuments, setPreLoadedDocuments] = useState([]);
@@ -839,6 +843,7 @@ const SalesOrderList = ({
       const { data } = await daService.getActionEmailDraft(callId);
       setDraftRecipientEmail(data?.data?.recipient || "");
       setDraftCcEmail(data?.data?.cc || "");
+      setDraftBody(data?.data?.body || "");
       const stageDocumentId = data?.data?.stage_document_id ?? null;
       const stageDocumentUrl = data?.data?.document_url || null;
       if (stageDocumentId != null) {
@@ -851,6 +856,7 @@ const SalesOrderList = ({
     } catch {
       setDraftRecipientEmail("");
       setDraftCcEmail("");
+      setDraftBody("");
     } finally {
       setPreLoadedDocuments(docs);
       setShowSoApprovalEmailModal(true);
@@ -3436,6 +3442,7 @@ const SalesOrderList = ({
           actionLabel={modalActionLabel}
           defaultTo={draftRecipientEmail}
           defaultCc={draftCcEmail}
+          defaultBody={draftBody}
           preLoadedDocuments={preLoadedDocuments}
           callId={callId}
         />
