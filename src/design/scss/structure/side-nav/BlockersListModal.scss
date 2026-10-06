@@ -2,8 +2,8 @@
 // blockers-modal shell. Scoped to .blockers-list-modal so Stickers/Tags/Types keep their size.
 .blockers-modal.blockers-list-modal {
   .modal-dialog {
-    width: 94vw;
-    max-width: 1440px;
+    width: 98vw;
+    max-width: 1800px;
     margin: 1.5rem auto;
     height: min(800px, calc(100vh - 3rem));
     max-height: calc(100vh - 3rem);
