@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { notify } from "../../../../../../components/Toaster";
+import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 import Gateway from "../../../../../../gateway/gateway";
 import callFileService from "../../../../../../services/callFileService";
 import stageTimeMappingService from "../../../../../../services/stageTimeMappingService";
@@ -121,6 +122,14 @@ const getDummyValues = () => ({
   ],
   departureDescription: "<p><strong>Departure Summary:</strong></p><p>Vessel departed successfully. All outward clearance documents have been delivered and verified. The vessel SS Central Bay has completed all port formalities and is now en route to the next destination.</p><p><strong>Clearance Status:</strong></p><ul><li>Outward clearance request: Received and processed</li><li>Outward clearance issued: Completed on schedule</li><li>Outward clearance delivered: All documents delivered to vessel</li><li>Vessel sailing: Departed on time without any issues</li></ul><p><strong>Next Port Information:</strong></p><p>The vessel is proceeding to Jeddah Port as scheduled. All required documentation for the next port has been prepared and is ready. The crew has been briefed on the next port procedures. Weather conditions are favorable for the journey.</p>",
 });
+
+// Sub-tabs with a tab-level Save button; Crew Immigration persists each action immediately.
+const UNSAVED_CHANGES_TRACKED_TABS = [
+  OPERATION_TABS.PRE_ARRIVAL,
+  OPERATION_TABS.ARRIVAL,
+  OPERATION_TABS.DEPARTURE,
+  OPERATION_TABS.CHECK_LIST,
+];
 
 async function sendOperationReportRequest(payload) {
   const reportTypeMap = {
@@ -478,8 +487,56 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
     handleChange,
   ]);
 
-  const handleTabChange = useCallback((tab) => {
-    setActiveOperationTab(tab);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [pendingTab, setPendingTab] = useState(null);
+  const isUserGestureRef = useRef(false);
+  const isTrackedTab = !isViewOnly && UNSAVED_CHANGES_TRACKED_TABS.includes(activeOperationTab);
+
+  // Tabs also call handleChange when applying fetched details, so only changes made
+  // during a user gesture (same task as a click/key press) count as unsaved edits.
+  const markUserGesture = useCallback(() => {
+    isUserGestureRef.current = true;
+    setTimeout(() => {
+      isUserGestureRef.current = false;
+    }, 0);
+  }, []);
+
+  const markDirtyFromInput = useCallback(() => {
+    if (isTrackedTab) setHasUnsavedChanges(true);
+  }, [isTrackedTab]);
+
+  const trackedHandleChange = useCallback(
+    (name) => (event) => {
+      if (isUserGestureRef.current) setHasUnsavedChanges(true);
+      handleChange(name)(event);
+    },
+    [handleChange]
+  );
+
+  const handleSaveSuccess = useCallback(() => {
+    setHasUnsavedChanges(false);
+  }, []);
+
+  const handleTabChange = useCallback(
+    (tab) => {
+      if (tab === activeOperationTab) return;
+      if (hasUnsavedChanges) {
+        setPendingTab(tab);
+        return;
+      }
+      setActiveOperationTab(tab);
+    },
+    [activeOperationTab, hasUnsavedChanges]
+  );
+
+  const handleConfirmLeaveTab = useCallback(() => {
+    setHasUnsavedChanges(false);
+    setActiveOperationTab(pendingTab);
+    setPendingTab(null);
+  }, [pendingTab]);
+
+  const handleCancelLeaveTab = useCallback(() => {
+    setPendingTab(null);
   }, []);
 
   const handleSendReportRequest = useCallback(async (payload) => {
@@ -507,7 +564,13 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
           onTabChange={handleTabChange}
           allowedTabIds={allowedOperationTabIds}
         />
-        <div className="operation-right">
+        <div
+          className="operation-right"
+          onClickCapture={markUserGesture}
+          onKeyDownCapture={markUserGesture}
+          onChangeCapture={markDirtyFromInput}
+          onInputCapture={markDirtyFromInput}
+        >
           {activeOperationTab === OPERATION_TABS.CREW_IMMIGRATION && (
             <CrewImmigrationDashboard
               card={card}
@@ -519,7 +582,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
             <PreArrival
               card={card}
               formValues={viewOnlyFormValues}
-              handleChange={handleChange}
+              handleChange={trackedHandleChange}
               ownerInitial={ownerInitial}
               cardUser={card?.user}
               cardColor={cardColor}
@@ -538,12 +601,13 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               canDeleteTimeObject={canDeletePreArrivalTimeObject}
               canPreviewEmail={canPreviewPreArrivalEmail}
               canSendReport={canSendPreArrivalReport}
+              onSaveSuccess={handleSaveSuccess}
             />
           )}
           {activeOperationTab === OPERATION_TABS.ARRIVAL && (
             <Arrival
               formValues={viewOnlyFormValues}
-              handleChange={handleChange}
+              handleChange={trackedHandleChange}
               cardColor={cardColor}
               onAddLink={handleAddLink}
               onRemoveLink={handleRemoveLink}
@@ -562,12 +626,13 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               canDeleteTimeObject={canDeleteArrivalTimeObject}
               canPreviewEmail={canPreviewArrivalEmail}
               canSendReport={canSendArrivalReport}
+              onSaveSuccess={handleSaveSuccess}
             />
           )}
           {activeOperationTab === OPERATION_TABS.DEPARTURE && (
             <Departure
               formValues={viewOnlyFormValues}
-              handleChange={handleChange}
+              handleChange={trackedHandleChange}
               cardColor={cardColor}
               onAddLink={handleAddLink}
               onRemoveLink={handleRemoveLink}
@@ -584,6 +649,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               canDeleteTimeObject={canDeleteDepartureTimeObject}
               canPreviewEmail={canPreviewDepartureEmail}
               canSendReport={canSendDepartureReport}
+              onSaveSuccess={handleSaveSuccess}
             />
           )}
           {activeOperationTab === OPERATION_TABS.CHECK_LIST && (
@@ -596,10 +662,19 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               isDAModule={isDAModule}
               cardDetail={callDetailData}
               callDetailLoading={callDetailLoading}
+              onUserEdit={markDirtyFromInput}
+              onSaveSuccess={handleSaveSuccess}
             />
           )}
         </div>
       </div>
+      <DeleteConfirmationModal
+        show={pendingTab != null}
+        showIcon={false}
+        deleteText="You have unsaved changes. Leave this tab without saving?"
+        onCancel={handleCancelLeaveTab}
+        onConfirm={handleConfirmLeaveTab}
+      />
     </div>
   );
 }

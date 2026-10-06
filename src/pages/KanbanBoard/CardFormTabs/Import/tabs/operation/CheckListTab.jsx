@@ -11,6 +11,8 @@ function CheckListTab({
   isDAModule = false,
   cardDetail,
   callDetailLoading = false,
+  onUserEdit,
+  onSaveSuccess,
 }) {
   return (
     <Checklist
@@ -23,6 +25,8 @@ function CheckListTab({
       isDAModule={isDAModule}
       cardDetail={cardDetail}
       callDetailLoading={callDetailLoading}
+      onUserEdit={onUserEdit}
+      onSaveSuccess={onSaveSuccess}
     />
   );
 }
@@ -37,6 +41,8 @@ CheckListTab.propTypes = {
   isDAModule: PropTypes.bool,
   cardDetail: PropTypes.object,
   callDetailLoading: PropTypes.bool,
+  onUserEdit: PropTypes.func,
+  onSaveSuccess: PropTypes.func,
 };
 
 export default CheckListTab;

@@ -69,6 +69,7 @@ function Arrival({
   canDeleteTimeObject = true,
   canPreviewEmail = true,
   canSendReport = true,
+  onSaveSuccess,
 }) {
   const resolveFormId = (...values) => {
     for (const value of values) {
@@ -451,6 +452,7 @@ function Arrival({
         });
       }
       notify("Arrival saved successfully.", "success");
+      onSaveSuccess?.();
       return true;
     } catch (error) {
       notify(error?.response?.data?.message || "Failed to save Arrival.", "error");
@@ -778,6 +780,7 @@ Arrival.propTypes = {
   canDeleteTimeObject: PropTypes.bool,
   canPreviewEmail: PropTypes.bool,
   canSendReport: PropTypes.bool,
+  onSaveSuccess: PropTypes.func,
 };
 
 export default Arrival;

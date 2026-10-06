@@ -60,6 +60,7 @@ function Departure({
   canDeleteTimeObject = true,
   canPreviewEmail = true,
   canSendReport = true,
+  onSaveSuccess,
 }) {
   const saveCallTimeObjectAction = useArrivalReducer((s) => s.saveCallTimeObject);
   const getTimeObjectsByCallAction = useArrivalReducer((s) => s.getTimeObjectsByCall);
@@ -346,6 +347,7 @@ function Departure({
         applyDepartureGetDetailToForm({ responseBody: detail, eventFields, handleChange });
       }
       notify("Departure saved successfully.", "success");
+      onSaveSuccess?.();
       return true;
     } catch (error) {
       notify(error?.response?.data?.message || "Failed to save Departure.", "error");
@@ -590,6 +592,7 @@ Departure.propTypes = {
   canDeleteTimeObject: PropTypes.bool,
   canPreviewEmail: PropTypes.bool,
   canSendReport: PropTypes.bool,
+  onSaveSuccess: PropTypes.func,
 };
 
 export default Departure;

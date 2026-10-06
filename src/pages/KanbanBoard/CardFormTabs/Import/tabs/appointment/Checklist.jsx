@@ -286,6 +286,8 @@ function Checklist({
   isDAModule = false,
   cardDetail,
   callDetailLoading = false,
+  onUserEdit,
+  onSaveSuccess,
 }) {
   const currentCallId = useMemo(
     () => card?.call_id ?? formValues?.call_id ?? card?.callId ?? "",
@@ -599,6 +601,7 @@ function Checklist({
   }, [savedChecklistLookup, selectedChecklistTypeIds]);
 
   const handleItemChange = (id, nextData) => {
+    onUserEdit?.();
     setItemsData((prev) => ({ ...prev, [id]: { ...prev[id], ...nextData } }));
   };
 
@@ -607,6 +610,7 @@ function Checklist({
   };
 
   const handleSelectAll = (sectionId, checked) => {
+    onUserEdit?.();
     const itemIds = collectItemIdsUnderSectionInBlocks(checklistBlocks, sectionId);
     setItemsData((prev) => {
       const next = { ...prev };
@@ -671,6 +675,7 @@ function Checklist({
     try {
       await checklistService.saveCallChecklist(buildChecklistSaveFormData());
       notify("Checklist saved successfully.", "success");
+      onSaveSuccess?.();
       try {
         const rows = await fetchSavedCallChecklist(currentCallId);
         setSavedChecklistRows(rows);
@@ -698,7 +703,7 @@ function Checklist({
     } finally {
       setSaveLoading(false);
     }
-  }, [buildChecklistSaveFormData, checklistBlocks, checklistTypeOptions, currentCallId]);
+  }, [buildChecklistSaveFormData, checklistBlocks, checklistTypeOptions, currentCallId, onSaveSuccess]);
 
   const isLoading = effectiveCallDetailLoading || typeLoading || detailLoading || savedLoading;
   const hasChecklistData = checklistBlocks.some((b) => (b.tree || []).length > 0);
@@ -794,6 +799,8 @@ Checklist.propTypes = {
   isDAModule: PropTypes.bool,
   cardDetail: PropTypes.object,
   callDetailLoading: PropTypes.bool,
+  onUserEdit: PropTypes.func,
+  onSaveSuccess: PropTypes.func,
 };
 
 export default Checklist;

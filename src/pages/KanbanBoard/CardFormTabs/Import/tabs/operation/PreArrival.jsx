@@ -376,6 +376,7 @@ function PreArrival({
   canDeleteTimeObject = true,
   canPreviewEmail = true,
   canSendReport = true,
+  onSaveSuccess,
 }) {
   const saveCallTimeObjectAction = useArrivalReducer((s) => s.saveCallTimeObject);
   const deleteCallTimeObjectAction = useArrivalReducer((s) => s.deleteCallTimeObject);
@@ -927,6 +928,7 @@ function PreArrival({
         );
       }
       notify("Pre Arrival saved successfully.", "success");
+      onSaveSuccess?.();
       return true;
     } catch (error) {
       notify(error?.response?.data?.message || "Failed to save Pre Arrival.", "error");
@@ -1286,6 +1288,7 @@ PreArrival.propTypes = {
   canDeleteTimeObject: PropTypes.bool,
   canPreviewEmail: PropTypes.bool,
   canSendReport: PropTypes.bool,
+  onSaveSuccess: PropTypes.func,
 };
 
 export default PreArrival;
