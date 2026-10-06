@@ -10,6 +10,7 @@ import useKanbanManagementReducer, {
   isKanbanManagementRowDisabled,
 } from '../../../store/KanbanManagementReducer';
 import '../../../design/scss/blockers-modal.scss';
+import '../../../design/scss/structure/side-nav/BlockersListModal.scss';
 
 /** Color swatch for tag row */
 const TagColorSwatch = ({ color }) => (
@@ -291,7 +292,7 @@ const TagsModal = ({ show, onClose }) => {
     <Modal
       show={show && !showNewTagModal}
       onHide={onClose}
-      className="blockers-modal"
+      className="blockers-modal tags-list-modal"
       backdropClassName="blockers-modal-backdrop"
       centered
       scrollable
