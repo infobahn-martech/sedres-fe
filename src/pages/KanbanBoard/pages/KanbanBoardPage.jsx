@@ -14,6 +14,7 @@ import SeCreationEmailModal from "../components/board/SeCreationEmailModal";
 import SeApprovalUploadModal from "../components/board/SeApprovalUploadModal";
 import SeReviewMoveModal from "../components/board/SeReviewMoveModal";
 import ArInvoiceReviewModal from "../components/board/ArInvoiceReviewModal";
+import PoReviewModal from "../components/board/PoReviewModal";
 import SubmissionDocumentsModal from "../components/board/SubmissionDocumentsModal";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
@@ -39,6 +40,7 @@ import { useThemeStore } from "../../../shared/store/themeStore";
 import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
 import useArInvoiceReviewStore from "../../../shared/store/arInvoiceReviewStore";
+import usePoReviewStore from "../../../shared/store/poReviewStore";
 import "../../../design/scss/pages/kanban-board/marquee-select.scss";
 
 /* "SE Received" bulk invoice upload: PDFs only. da/upload_ar_invoices takes max_files_per_request
@@ -50,6 +52,18 @@ const AR_INVOICE_NOT_PLACED_PREVIEW = 5;
 const arInvoiceUploadFields = [
   {
     name: AR_INVOICE_FIELD_NAME,
+    accept: ".pdf",
+    formatsHint: "PDF",
+    multiple: true,
+  },
+];
+/* McDermott "Requested PO" bulk PO upload: PDFs only, sent to da/upload_pos in chunks of
+   max_files_per_request (20), like the AR invoices above. */
+const PO_FIELD_NAME = "pos";
+const PO_FILES_PER_REQUEST = 20;
+const poUploadFields = [
+  {
+    name: PO_FIELD_NAME,
     accept: ".pdf",
     formatsHint: "PDF",
     multiple: true,
@@ -789,6 +803,109 @@ export default function KanbanBoardPage() {
     ]
   );
 
+  /* "Upload POs" on McDermott's "Requested PO" column header, for the cards ticked there (all of
+     them by default). The backend matches each PO PDF to a card's sales order by its invoice. */
+  const [showPoUploadModal, setShowPoUploadModal] = useState(false);
+  const [selectedPoUploadCards, setSelectedPoUploadCards] = useState([]);
+  const [selectedPoUploadWorkflowId, setSelectedPoUploadWorkflowId] = useState(null);
+  const [isUploadingPos, setIsUploadingPos] = useState(false);
+  const [poUploadProgress, setPoUploadProgress] = useState(null);
+  const openPoReviewModal = usePoReviewStore((state) => state.openPoReviewModal);
+
+  const handleColumnUploadPos = useCallback((cards, { workflowId = null } = {}) => {
+    if (!cards?.length) return;
+    setSelectedPoUploadCards(cards);
+    setSelectedPoUploadWorkflowId(workflowId);
+    setShowPoUploadModal(true);
+  }, []);
+
+  const handleClosePoUpload = useCallback(() => {
+    setShowPoUploadModal(false);
+    setSelectedPoUploadCards([]);
+    setSelectedPoUploadWorkflowId(null);
+  }, []);
+
+  /* Files go in chunks of PO_FILES_PER_REQUEST; each response carries the latest state of every
+     card, so the last one wins per card, and unplaced files are collected for the review. */
+  const handleUploadPos = useCallback(
+    async ({ [PO_FIELD_NAME]: pos = [] }) => {
+      const cards = selectedPoUploadCards;
+      const workflowId = selectedPoUploadWorkflowId;
+      const callIds = getBatchCallIds({ cards });
+      if (!callIds.length) {
+        notify("The selected cards have no call to upload POs for", "error");
+        return;
+      }
+
+      const chunks = [];
+      for (let start = 0; start < pos.length; start += PO_FILES_PER_REQUEST) {
+        chunks.push(pos.slice(start, start + PO_FILES_PER_REQUEST));
+      }
+
+      const reviewCardById = {};
+      const notPlacedFiles = [];
+      let receivedCount = 0;
+      let failedMessage = null;
+
+      setIsUploadingPos(true);
+      setPoUploadProgress({ done: 0, total: pos.length });
+      try {
+        for (const chunk of chunks) {
+          const formData = new FormData();
+          formData.append("call_ids", callIds.join(","));
+          formData.append("card_ids", cards.map((card) => card.id).join(","));
+          chunk.forEach((file) => formData.append("pos[]", file));
+
+          let data;
+          try {
+            ({ data } = await daService.uploadPos(formData));
+          } catch (error) {
+            data = error?.response?.data;
+          }
+          if (data?.status !== "success") {
+            failedMessage = data?.message || "Failed to upload POs";
+            break;
+          }
+          receivedCount += data.data?.received_files?.length ?? chunk.length;
+          notPlacedFiles.push(...(data.data?.not_placed_files ?? []));
+          (data.data?.cards ?? []).forEach((card) => {
+            reviewCardById[String(card.card_id)] = card;
+          });
+          setPoUploadProgress((prev) => ({ ...prev, done: prev.done + chunk.length }));
+        }
+
+        if (!receivedCount) {
+          notify(failedMessage || "Failed to upload POs", "error");
+          return;
+        }
+        if (failedMessage) {
+          notify(`Uploaded ${receivedCount} of ${pos.length} POs, then stopped: ${failedMessage}`, "error");
+        } else {
+          notify(`${receivedCount} ${receivedCount === 1 ? "PO" : "POs"} uploaded successfully`, "success");
+        }
+        cards.forEach((card) => removeCardSelectionId(card.id));
+        handleClosePoUpload();
+        openPoReviewModal(
+          cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
+          { notPlacedFiles, workflowId }
+        );
+        refetchBoard?.();
+      } finally {
+        setIsUploadingPos(false);
+        setPoUploadProgress(null);
+      }
+    },
+    [
+      selectedPoUploadCards,
+      selectedPoUploadWorkflowId,
+      getBatchCallIds,
+      removeCardSelectionId,
+      handleClosePoUpload,
+      openPoReviewModal,
+      refetchBoard,
+    ]
+  );
+
   /* "Merge Invoice" on the "AR Invoices Issued" column header merges the ticked cards' confirmed
      AR invoices into one PDF via da/merge_ar_invoices, then shows the merged file in a new window. */
   const [isMergingInvoices, setIsMergingInvoices] = useState(false);
@@ -1266,6 +1383,7 @@ export default function KanbanBoardPage() {
           onBatchUploadInvoice={handleBatchUploadInvoice}
           onBatchRequestPo={handleBatchRequestPo}
           onColumnUploadInvoice={handleColumnUploadInvoice}
+          onColumnUploadPos={handleColumnUploadPos}
           onColumnMergeInvoice={handleColumnMergeInvoice}
           onColumnPrepareSubmission={handleColumnPrepareSubmission}
           onColumnSendFinalSubmission={handleColumnSendFinalSubmission}
@@ -1380,6 +1498,26 @@ export default function KanbanBoardPage() {
       />
 
       <ArInvoiceReviewModal onConfirmed={refetchBoard} />
+
+      <SeApprovalUploadModal
+        show={showPoUploadModal}
+        onClose={handleClosePoUpload}
+        onUpload={handleUploadPos}
+        isSubmitting={isUploadingPos}
+        submittingLabel={
+          poUploadProgress ? `Uploading ${poUploadProgress.done} / ${poUploadProgress.total}...` : undefined
+        }
+        batchTitle={[
+          ...new Set(selectedPoUploadCards.map((card) => batchByCardId[card.id]).filter(Boolean)),
+        ].join(", ")}
+        selectedCardCount={selectedPoUploadCards.length}
+        title="Upload POs"
+        subtitle="Attach the POs for the selected cards"
+        submitLabel="Upload POs"
+        fields={poUploadFields}
+      />
+
+      <PoReviewModal onConfirmed={refetchBoard} />
 
       {selectedCard && columnsForCardForm && (
         <CardForm

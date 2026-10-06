@@ -57,9 +57,11 @@ const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
 const AR_INVOICES_ISSUED_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
 const CONSOLIDATED_COLUMN_PATTERN = /^consolidated\b/i;
 
-/* McDermott DA: "Upload Invoice" on "Issue AR Invoice" for the cards the user ticks (no auto-tick). */
+/* McDermott DA: "Upload Invoice" on "Issue AR Invoice" for the cards the user ticks (no auto-tick),
+   and "Upload POs" on "Requested PO", whose cards start ticked. */
 const MCDERMOTT_WORKFLOW = "MCDERMOTT";
 const ISSUE_AR_INVOICE_COLUMN_PATTERN = /^issue\s+ar\s+invoices?$/i;
+const REQUESTED_PO_COLUMN_PATTERN = /^requested\s+po$/i;
 
 const isMcDermottWorkflow = (workflow) =>
   String(workflow?.title ?? "").trim().toUpperCase().includes(MCDERMOTT_WORKFLOW);
@@ -67,7 +69,9 @@ const isMcDermottWorkflow = (workflow) =>
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
   if (isMcDermottWorkflow(workflow)) {
-    return ISSUE_AR_INVOICE_COLUMN_PATTERN.test(title) ? "issueArInvoice" : null;
+    if (ISSUE_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
+    if (REQUESTED_PO_COLUMN_PATTERN.test(title)) return "uploadPos";
+    return null;
   }
   if (!isBatchWorkflow(workflow)) return null;
   if (SE_RECEIVED_COLUMN_PATTERN.test(title)) return "upload";
@@ -79,6 +83,7 @@ const getInvoiceAction = (workflow, column) => {
 const INVOICE_ACTION_BUTTONS = {
   upload: { label: "Upload Invoice", icon: <FiUploadCloud size={16} aria-hidden /> },
   issueArInvoice: { label: "Upload Invoices", icon: <FiUploadCloud size={16} aria-hidden /> },
+  uploadPos: { label: "Upload POs", icon: <FiUploadCloud size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
   prepareSubmission: { label: "Create Submission Documents", icon: <FiDownload size={16} aria-hidden /> },
   finalSubmission: { label: "Send For Final Submission", icon: <FiSend size={16} aria-hidden /> },
@@ -98,6 +103,7 @@ export default function WorkflowColumns({
   onBatchUploadInvoice,
   onBatchRequestPo,
   onColumnUploadInvoice,
+  onColumnUploadPos,
   onColumnMergeInvoice,
   onColumnPrepareSubmission,
   onColumnSendFinalSubmission,
@@ -169,15 +175,20 @@ export default function WorkflowColumns({
     );
 
   /* "SE Received" and "AR Invoices Issued" cards start ticked, ready for "Upload Invoice" / "Merge
-     Invoice". Each card is ticked only the first time it shows up in that column, so a card the user
-     unticks stays unticked across board refetches, and is ticked again once it moves on to the next one. */
+     Invoice", and McDermott "Requested PO" cards for "Upload POs". Each card is ticked only the first
+     time it shows up in that column, so a card the user unticks stays unticked across board refetches,
+     and is ticked again once it moves on to the next one. */
   const setCardSelected = useKanbanCardSelectionStore((state) => state.setCardSelected);
   const autoTickedCardIdsRef = useRef(new Set());
 
   useEffect(() => {
-    if (!isBatchWorkflow(workflow)) return;
+    const isAutoTickColumn = (column) => {
+      const action = getInvoiceAction(workflow, column);
+      return isBatchWorkflow(workflow) ? Boolean(action) : action === "uploadPos";
+    };
+    if (!isBatchWorkflow(workflow) && !isMcDermottWorkflow(workflow)) return;
     workflow.columnOrder
-      .filter((colKey) => getInvoiceAction(workflow, workflow.columns[colKey]))
+      .filter((colKey) => isAutoTickColumn(workflow.columns[colKey]))
       .forEach((colKey) =>
         swimlaneOrder
           .flatMap((laneId) =>
@@ -335,6 +346,8 @@ export default function WorkflowColumns({
                 upload: onColumnUploadInvoice,
                 issueArInvoice: (cards) =>
                   onColumnUploadInvoice?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
+                uploadPos: (cards) =>
+                  onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 merge: onColumnMergeInvoice,
                 prepareSubmission: onColumnPrepareSubmission,
                 finalSubmission: onColumnSendFinalSubmission,
