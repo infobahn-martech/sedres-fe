@@ -501,9 +501,17 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
     }, 0);
   }, []);
 
+  // Check List reports its own dirty state (compared against its saved snapshot) via onDirtyChange.
   const markDirtyFromInput = useCallback(() => {
-    if (isTrackedTab) setHasUnsavedChanges(true);
-  }, [isTrackedTab]);
+    if (isTrackedTab && activeOperationTab !== OPERATION_TABS.CHECK_LIST) setHasUnsavedChanges(true);
+  }, [isTrackedTab, activeOperationTab]);
+
+  const handleChecklistDirtyChange = useCallback(
+    (isDirty) => {
+      if (!isViewOnly) setHasUnsavedChanges(isDirty);
+    },
+    [isViewOnly]
+  );
 
   const trackedHandleChange = useCallback(
     (name) => (event) => {
@@ -662,8 +670,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               isDAModule={isDAModule}
               cardDetail={callDetailData}
               callDetailLoading={callDetailLoading}
-              onUserEdit={markDirtyFromInput}
-              onSaveSuccess={handleSaveSuccess}
+              onDirtyChange={handleChecklistDirtyChange}
             />
           )}
         </div>

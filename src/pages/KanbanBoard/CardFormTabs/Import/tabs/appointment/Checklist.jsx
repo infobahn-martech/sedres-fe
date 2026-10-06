@@ -253,6 +253,23 @@ const fetchChecklistById = async (checklistTypeId) => {
   return data;
 };
 
+// Comparable view of the user-editable checklist state, used for unsaved-change detection.
+const serializeItemsDataForDirtyCheck = (itemsData) =>
+  JSON.stringify(
+    Object.keys(itemsData || {})
+      .sort()
+      .map((id) => {
+        const item = itemsData[id] || {};
+        return [
+          id,
+          item.checked === true,
+          item.remarks ?? "",
+          item.expiryDate ?? "",
+          (item.uploadedFiles || []).map((f) => f?.id ?? f?.name ?? f?.file?.name ?? ""),
+        ];
+      })
+  );
+
 const fetchSavedCallChecklist = async (callId) => {
   if (!callId) return [];
   const { data } = await checklistService.getCallChecklist(callId);
@@ -286,8 +303,7 @@ function Checklist({
   isDAModule = false,
   cardDetail,
   callDetailLoading = false,
-  onUserEdit,
-  onSaveSuccess,
+  onDirtyChange,
 }) {
   const currentCallId = useMemo(
     () => card?.call_id ?? formValues?.call_id ?? card?.callId ?? "",
@@ -600,8 +616,24 @@ function Checklist({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedChecklistLookup, selectedChecklistTypeIds]);
 
+  // Baseline = last loaded/saved state; it follows itemsData until the user edits,
+  // then edits are compared against it so reverting an edit clears the dirty flag.
+  const userEditedRef = useRef(false);
+  const baselineSnapshotRef = useRef("");
+  const latestSnapshotRef = useRef("");
+
+  useEffect(() => {
+    const snapshot = serializeItemsDataForDirtyCheck(itemsData);
+    latestSnapshotRef.current = snapshot;
+    if (!userEditedRef.current) {
+      baselineSnapshotRef.current = snapshot;
+      return;
+    }
+    onDirtyChange?.(snapshot !== baselineSnapshotRef.current);
+  }, [itemsData, onDirtyChange]);
+
   const handleItemChange = (id, nextData) => {
-    onUserEdit?.();
+    userEditedRef.current = true;
     setItemsData((prev) => ({ ...prev, [id]: { ...prev[id], ...nextData } }));
   };
 
@@ -610,7 +642,7 @@ function Checklist({
   };
 
   const handleSelectAll = (sectionId, checked) => {
-    onUserEdit?.();
+    userEditedRef.current = true;
     const itemIds = collectItemIdsUnderSectionInBlocks(checklistBlocks, sectionId);
     setItemsData((prev) => {
       const next = { ...prev };
@@ -675,7 +707,9 @@ function Checklist({
     try {
       await checklistService.saveCallChecklist(buildChecklistSaveFormData());
       notify("Checklist saved successfully.", "success");
-      onSaveSuccess?.();
+      userEditedRef.current = false;
+      baselineSnapshotRef.current = latestSnapshotRef.current;
+      onDirtyChange?.(false);
       try {
         const rows = await fetchSavedCallChecklist(currentCallId);
         setSavedChecklistRows(rows);
@@ -703,7 +737,7 @@ function Checklist({
     } finally {
       setSaveLoading(false);
     }
-  }, [buildChecklistSaveFormData, checklistBlocks, checklistTypeOptions, currentCallId, onSaveSuccess]);
+  }, [buildChecklistSaveFormData, checklistBlocks, checklistTypeOptions, currentCallId, onDirtyChange]);
 
   const isLoading = effectiveCallDetailLoading || typeLoading || detailLoading || savedLoading;
   const hasChecklistData = checklistBlocks.some((b) => (b.tree || []).length > 0);
@@ -799,8 +833,7 @@ Checklist.propTypes = {
   isDAModule: PropTypes.bool,
   cardDetail: PropTypes.object,
   callDetailLoading: PropTypes.bool,
-  onUserEdit: PropTypes.func,
-  onSaveSuccess: PropTypes.func,
+  onDirtyChange: PropTypes.func,
 };
 
 export default Checklist;
