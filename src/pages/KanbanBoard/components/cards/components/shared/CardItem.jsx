@@ -723,8 +723,9 @@ function CardItem({
               ? () => onSelectDragEnter(card)
               : undefined
           }
-          data-select-card-id={
-            canSelectForAction && typeof onSelectDragEnter === "function" ? card.id : undefined
+          data-select-card-id={canSelectForAction ? card.id : undefined}
+          data-select-scope={
+            canSelectForAction && typeof onSelectDragEnter !== "function" ? "local" : undefined
           }
           style={{
             ...fixedBoardSizeStyle,

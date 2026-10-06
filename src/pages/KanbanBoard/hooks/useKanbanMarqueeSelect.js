@@ -2,18 +2,91 @@ import { useCallback, useEffect, useRef } from "react";
 
 const DRAG_THRESHOLD_PX = 5;
 const SELECTABLE_CARD_SELECTOR = "[data-select-card-id]";
+/* Cards whose checkbox drives its own tick state (e.g. SE batch ticks) instead of the board-wide selection. */
+const LOCAL_SCOPE = "local";
+const SELECT_TOGGLE_SELECTOR = ".kanban-card-select-toggle";
 /* A press on a card or any control keeps its own behavior (open card, tick, buttons, inputs). */
 const IGNORE_TARGET_SELECTOR =
   ".kanban-card, button, a, input, textarea, select, label, [contenteditable='true'], [role='button'], [role='menu']";
 const BODY_DRAGGING_CLASS = "kanban-marquee-selecting";
+/* Pointer within this distance of a scroll area's edge auto-scrolls it; speed ramps up near the edge. */
+const AUTO_SCROLL_EDGE_PX = 48;
+const AUTO_SCROLL_MAX_STEP_PX = 18;
 
 const isIntersecting = (rect, box) =>
   rect.left < box.right && rect.right > box.left && rect.top < box.bottom && rect.bottom > box.top;
 
+const canScrollAxis = (overflow) => overflow === "auto" || overflow === "scroll" || overflow === "overlay";
+
+/* Every scrollable ancestor of `node`, innermost first, ending with the page scroller. */
+const getScrollChain = (node) => {
+  const chain = [];
+  const pageScroller = document.scrollingElement || document.documentElement;
+  for (let el = node?.parentElement; el && el !== pageScroller && el !== document.body; el = el.parentElement) {
+    const style = window.getComputedStyle(el);
+    const scrollX = canScrollAxis(style.overflowX) && el.scrollWidth > el.clientWidth;
+    const scrollY = canScrollAxis(style.overflowY) && el.scrollHeight > el.clientHeight;
+    if (scrollX || scrollY) chain.push(el);
+  }
+  chain.push(pageScroller);
+  return chain;
+};
+
+/* Visible rect of a scroller, clipped to the viewport (the page scroller is the viewport itself). */
+const getVisibleRect = (el) => {
+  const isPage = el === (document.scrollingElement || document.documentElement);
+  const rect = isPage
+    ? { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight }
+    : el.getBoundingClientRect();
+  return {
+    left: Math.max(rect.left, 0),
+    top: Math.max(rect.top, 0),
+    right: Math.min(rect.right, window.innerWidth),
+    bottom: Math.min(rect.bottom, window.innerHeight),
+  };
+};
+
+const getEdgeStep = (pos, min, max) => {
+  if (pos < min + AUTO_SCROLL_EDGE_PX) {
+    return -Math.ceil(AUTO_SCROLL_MAX_STEP_PX * Math.min(1, (min + AUTO_SCROLL_EDGE_PX - pos) / AUTO_SCROLL_EDGE_PX));
+  }
+  if (pos > max - AUTO_SCROLL_EDGE_PX) {
+    return Math.ceil(AUTO_SCROLL_MAX_STEP_PX * Math.min(1, (pos - (max - AUTO_SCROLL_EDGE_PX)) / AUTO_SCROLL_EDGE_PX));
+  }
+  return 0;
+};
+
+/* How far the start point's scroll areas have scrolled since the drag began. */
+const getScrollOffset = (drag) =>
+  drag.startScrolls.reduce(
+    (offset, { el, left, top }) => ({ x: offset.x + el.scrollLeft - left, y: offset.y + el.scrollTop - top }),
+    { x: 0, y: 0 }
+  );
+
+/* A local card is ticked while the box covers it and returns to its pre-drag tick once the box
+   leaves; its own checkbox handler is reused, so each card keeps its batch-specific rules. */
+const syncLocalTick = (drag, node, isHit) => {
+  const toggle = node.querySelector(SELECT_TOGGLE_SELECTOR);
+  if (!toggle) return;
+  const cardId = node.dataset.selectCardId;
+  if (!drag.localTicks.has(cardId)) {
+    const isTicked = toggle.getAttribute("aria-pressed") === "true";
+    drag.localTicks.set(cardId, { base: isTicked, current: isTicked });
+  }
+  const tick = drag.localTicks.get(cardId);
+  const desired = isHit || tick.base;
+  if (desired === tick.current) return;
+  tick.current = desired;
+  toggle.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
+};
+
 /**
  * Rubber-band drag-select on the board: press on empty board space and drag in any direction;
- * every selectable card the box touches is added to the selection. Shrinking the box drops the
- * cards it leaves again, while cards ticked before the drag always stay selected.
+ * every card with a checkbox the box touches is ticked. Shrinking the box drops the cards it
+ * leaves again, while cards ticked before the drag always stay selected. Board cards feed the
+ * board-wide selection; "local" cards (batch ticks) are ticked through their own checkbox.
+ * Holding the pointer near a scroll area's edge auto-scrolls it, and the box's start corner stays
+ * pinned to the content it was pressed on, so cards beyond the visible area can be reached.
  *
  * `marqueeRef` is a fixed-position overlay positioned from here (not via JSX) so a pointer move
  * never re-renders the board just to redraw the box.
@@ -23,6 +96,7 @@ export default function useKanbanMarqueeSelect({ selectedCardIds, onSelectionCha
   const containerRef = useRef(null);
   const dragRef = useRef(null);
   const frameRef = useRef(null);
+  const autoScrollFrameRef = useRef(null);
   const selectedIdsRef = useRef(selectedCardIds);
   selectedIdsRef.current = selectedCardIds;
 
@@ -32,11 +106,14 @@ export default function useKanbanMarqueeSelect({ selectedCardIds, onSelectionCha
     const marquee = marqueeRef.current;
     if (!drag?.isActive || !marquee || !containerRef.current) return;
 
+    const offset = getScrollOffset(drag);
+    const anchorX = drag.startX - offset.x;
+    const anchorY = drag.startY - offset.y;
     const box = {
-      left: Math.min(drag.startX, drag.currentX),
-      top: Math.min(drag.startY, drag.currentY),
-      right: Math.max(drag.startX, drag.currentX),
-      bottom: Math.max(drag.startY, drag.currentY),
+      left: Math.min(anchorX, drag.currentX),
+      top: Math.min(anchorY, drag.currentY),
+      right: Math.max(anchorX, drag.currentX),
+      bottom: Math.max(anchorY, drag.currentY),
     };
     marquee.style.left = `${box.left}px`;
     marquee.style.top = `${box.top}px`;
@@ -45,7 +122,12 @@ export default function useKanbanMarqueeSelect({ selectedCardIds, onSelectionCha
 
     const hitIds = [];
     containerRef.current.querySelectorAll(SELECTABLE_CARD_SELECTOR).forEach((node) => {
-      if (isIntersecting(node.getBoundingClientRect(), box)) hitIds.push(node.dataset.selectCardId);
+      const isHit = isIntersecting(node.getBoundingClientRect(), box);
+      if (node.dataset.selectScope !== LOCAL_SCOPE) {
+        if (isHit) hitIds.push(node.dataset.selectCardId);
+        return;
+      }
+      syncLocalTick(drag, node, isHit);
     });
     const nextIds = [...drag.baseIds, ...hitIds.filter((id) => !drag.baseIds.includes(id))];
     const nextKey = nextIds.join("|");
@@ -58,12 +140,55 @@ export default function useKanbanMarqueeSelect({ selectedCardIds, onSelectionCha
     if (frameRef.current == null) frameRef.current = window.requestAnimationFrame(updateSelection);
   }, [updateSelection]);
 
+  const autoScroll = useCallback(() => {
+    autoScrollFrameRef.current = null;
+    const drag = dragRef.current;
+    if (!drag?.isActive) return;
+
+    const pointerX = Math.min(Math.max(drag.currentX, 0), window.innerWidth - 1);
+    const pointerY = Math.min(Math.max(drag.currentY, 0), window.innerHeight - 1);
+    const underPointer = document.elementFromPoint(pointerX, pointerY);
+    const scrollers = [...new Set([...getScrollChain(underPointer), ...drag.startScrolls.map(({ el }) => el)])];
+
+    let scrolledX = false;
+    let scrolledY = false;
+    scrollers.forEach((el) => {
+      if (scrolledX && scrolledY) return;
+      const rect = getVisibleRect(el);
+      if (!scrolledX && drag.currentY >= rect.top && drag.currentY <= rect.bottom) {
+        const step = getEdgeStep(drag.currentX, rect.left, rect.right);
+        const before = el.scrollLeft;
+        if (step) el.scrollLeft += step;
+        scrolledX = el.scrollLeft !== before;
+      }
+      if (!scrolledY && drag.currentX >= rect.left && drag.currentX <= rect.right) {
+        const step = getEdgeStep(drag.currentY, rect.top, rect.bottom);
+        const before = el.scrollTop;
+        if (step) el.scrollTop += step;
+        scrolledY = el.scrollTop !== before;
+      }
+    });
+
+    /* Keep scrolling while the pointer rests at an edge (no mousemove fires then). */
+    if (scrolledX || scrolledY) autoScrollFrameRef.current = window.requestAnimationFrame(autoScroll);
+  }, []);
+
+  const scheduleAutoScroll = useCallback(() => {
+    if (autoScrollFrameRef.current == null) {
+      autoScrollFrameRef.current = window.requestAnimationFrame(autoScroll);
+    }
+  }, [autoScroll]);
+
   const endDrag = useCallback(() => {
     if (!dragRef.current) return;
     dragRef.current = null;
     if (frameRef.current != null) {
       window.cancelAnimationFrame(frameRef.current);
       frameRef.current = null;
+    }
+    if (autoScrollFrameRef.current != null) {
+      window.cancelAnimationFrame(autoScrollFrameRef.current);
+      autoScrollFrameRef.current = null;
     }
     marqueeRef.current?.classList.remove("is-active");
     document.body.classList.remove(BODY_DRAGGING_CLASS);
@@ -79,7 +204,9 @@ export default function useKanbanMarqueeSelect({ selectedCardIds, onSelectionCha
       currentX: event.clientX,
       currentY: event.clientY,
       isActive: false,
+      startScrolls: getScrollChain(event.target).map((el) => ({ el, left: el.scrollLeft, top: el.scrollTop })),
       baseIds: selectedIdsRef.current,
+      localTicks: new Map(),
       lastKey: selectedIdsRef.current.join("|"),
     };
   }, []);
@@ -100,6 +227,7 @@ export default function useKanbanMarqueeSelect({ selectedCardIds, onSelectionCha
       }
       event.preventDefault();
       scheduleUpdate();
+      scheduleAutoScroll();
     };
     /* Scrolling the board mid-drag moves the cards under a still box, so re-check the hits. */
     const handleScroll = () => {
@@ -117,7 +245,7 @@ export default function useKanbanMarqueeSelect({ selectedCardIds, onSelectionCha
       window.removeEventListener("scroll", handleScroll, true);
       endDrag();
     };
-  }, [endDrag, scheduleUpdate]);
+  }, [endDrag, scheduleUpdate, scheduleAutoScroll]);
 
   return { marqueeRef, handleMarqueeMouseDown: handleMouseDown };
 }
