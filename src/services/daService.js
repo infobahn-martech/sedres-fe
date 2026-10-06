@@ -181,6 +181,31 @@ const sendPoRequest = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
+/** @param {FormData} formData - call_ids, card_ids (ticked Requested PO cards, comma separated), pos[]
+ * (PO PDFs, max 20 per request), multipart/form-data.
+ * @returns {Promise<{ data: { status: 'success', data: { received_files: string[], max_files_per_request: number,
+ *   not_placed_files: { file_name: string, reason: string }[], cards: { call_id: number, card_id: number, ready: boolean,
+ *   sales_orders: { sales_order_id: number, sales_order_no: string, invoice_no: string, po: object|null }[] }[],
+ *   pagination: { page: number, per_page: number, total_cards: number, total_pages: number } } }
+ *   | { status: 'error', message: string } }>}
+ * Bulk PO upload: the backend matches each PO PDF to a card's sales order by its invoice. */
+const uploadPos = (formData) =>
+  Gateway.post('/da/upload_pos', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+/** @param {{ workflow_id: number, page: number, per_page: number }} params
+ * @returns {Promise<{ data: { status: 'success', data: { cards: { call_id: number, card_id: number, ready: boolean,
+ *   sales_orders: { sales_order_id: number, sales_order_no: string, invoice_no: string, po: object|null }[] }[],
+ *   pagination: { page: number, per_page: number, total_cards: number, total_pages: number } } }
+ *   | { status: 'error', message: string } }>}
+ * PO review of every McDermott "Requested PO" card, paged: which sales orders have a PO placed on them. */
+const getPoReview = (params) => Gateway.get('/da/po_review', { params });
+
+/** @param {{ cards: { call_id: number, card_id: number, sales_orders: { sales_order_id: number, sales_order_no: string, po_id: number }[] }[] }} payload
+ * Confirms the reviewed POs (ticked cards only); the confirmed cards move to "PO Received". */
+const confirmPos = (payload) => Gateway.post('/da/confirm_pos', payload);
+
 export default {
   getDaDetails,
   saveDaDetails,
@@ -219,4 +244,7 @@ export default {
   sendSubmissionEmail,
   getPoRequestDraft,
   sendPoRequest,
+  uploadPos,
+  getPoReview,
+  confirmPos,
 };

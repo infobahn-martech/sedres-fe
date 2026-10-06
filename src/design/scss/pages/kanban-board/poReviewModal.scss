@@ -1,0 +1,40 @@
+// "PO Review" modal, opened after a McDermott "Requested PO" bulk PO upload.
+// Reuses the Invoice Review shell (arInvoiceReviewModal.scss); only the unplaced files list and the
+// PO file link live here.
+.blockers-modal.se-review-move-modal.ar-invoice-review-modal.po-review-modal {
+  .po-review__not-placed {
+    flex: 0 0 auto;
+    margin: 0 16px 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #92400e;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+  }
+
+  .po-review__not-placed-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+  }
+
+  .po-review__not-placed-list {
+    max-height: 96px;
+    margin: 6px 0 0;
+    padding-left: 20px;
+    overflow-y: auto;
+  }
+
+  .po-review__file-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
