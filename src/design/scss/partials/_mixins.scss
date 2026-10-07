@@ -26,3 +26,15 @@
   }
 
 }
+
+/* Dark-theme status header (Edit workflow area headers, Kanban board column headers):
+   tinted fill + light text + 3px top stripe, all from one runtime colour (a CSS var).
+   Text is a fixed 45% tone / 55% white mix: the white share alone keeps contrast
+   >= 5:1 on the navy surfaces for any tone, from black to near-white.
+   Usage: @include status-tone-header(var(--area-tone), true); */
+@mixin status-tone-header($tone, $important: false) {
+  $imp: if($important, " !important", "");
+  background-color: color-mix(in srgb, #{$tone} 20%, transparent)#{$imp};
+  color: color-mix(in srgb, #{$tone} 45%, #fff)#{$imp};
+  box-shadow: inset 0 3px 0 #{$tone};
+}

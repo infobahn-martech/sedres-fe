@@ -1141,3 +1141,74 @@
 .kanban-card-dark.kanban-card--api .card-api-subtask-badge-wrap {
   border-top-color: #3a3a3a;
 }
+/* ========== Dark theme — Kanban board cards (navy palette, partials/_theme.scss) ==========
+   Scoped to the board and one class above the zinc `.kanban-dark-mode .kanban-card` rules. */
+[data-theme="dark"] .kanban-board--swimlanes .kanban-card {
+  background: var(--bg-highlight);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .kanban-card:hover {
+  background: var(--bg-highlight);
+  border-color: var(--border-hover);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .kanban-card.dragging {
+  border-color: var(--brand-bright);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .kanban-card.kanban-card--selected-for-action {
+  background: linear-gradient(to bottom, rgba(76, 141, 255, 0.14) 0%, var(--bg-highlight) 35%);
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .card-title--api.card-api-title-text {
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .card-api-secondary {
+  color: var(--text-body);
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .card-api-sales-order-label {
+  color: var(--text-control);
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .card-api-sales-order-copy {
+  color: var(--text-subtle);
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .card-api-sales-order-copy:hover {
+  color: var(--text-control);
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .card-api-summary-row {
+  border-top-color: var(--border);
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .card-api-timeline {
+  color: var(--text-subtle);
+}
+
+/* User-initial badge: same sky hue as light, tinted for the navy card */
+[data-theme="dark"] .kanban-board--swimlanes .card-api-user-avatar {
+  background: rgba(56, 189, 248, 0.2);
+  color: #bae6fd;
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .progress-svg .bg {
+  stroke: var(--border-strong);
+}
+
+/* !important beats the inline stroke: "#0d9488" in ApiCardCircularKpi (CardItem.jsx) */
+[data-theme="dark"] .kanban-board--swimlanes .card-api-kpi .progress-svg .progress {
+  stroke: var(--brand-bright) !important;
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .progress-text {
+  color: var(--text-body);
+}

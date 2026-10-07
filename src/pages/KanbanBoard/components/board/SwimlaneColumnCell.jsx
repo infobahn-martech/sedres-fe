@@ -58,6 +58,11 @@ export default function SwimlaneColumnCell({
   /* Inner card grid: repeat(cardsPerRow, …) — layout inside the cell; board row width uses the same ratio via boardGridHelpers */
   const perRow = getCardsPerRow(column);
   const cardWidth = getCardWidth(layoutView);
+  /* Custom column colour from Edit workflow → `--cell-bg` (swimlaneBoard.scss; the card list
+     inherits it). Default white stays unset so the dark theme can tell it apart. */
+  const hasCustomCellBg =
+    Boolean(column.backgroundColor) && !/^#f{3}(f{3})?$/i.test(column.backgroundColor);
+  const cellBgStyle = hasCustomCellBg ? { "--cell-bg": column.backgroundColor } : {};
 
   const handleContextMenu = (e) => {
     e.preventDefault();
@@ -134,7 +139,7 @@ export default function SwimlaneColumnCell({
         onDoubleClick={handleDoubleClick}
         style={{
           ...(columnHeight ? { minHeight: `${columnHeight}px` } : {}),
-          ...(column.backgroundColor ? { backgroundColor: column.backgroundColor } : {}),
+          ...cellBgStyle,
         }}
       >
         <span className="column-collapsed__title">{column.title}</span>
@@ -150,7 +155,7 @@ export default function SwimlaneColumnCell({
       onDoubleClick={handleDoubleClick}
       style={{
         ...(columnHeight ? { minHeight: `${columnHeight}px` } : {}),
-        ...(column.backgroundColor ? { backgroundColor: column.backgroundColor } : {}),
+        ...cellBgStyle,
       }}
     >
       <Droppable droppableId={droppableId}>
@@ -175,7 +180,6 @@ export default function SwimlaneColumnCell({
               alignItems: "start",
               alignContent: "start",
               minHeight: isUnconstrainedEmpty ? `${EMPTY_DROP_ZONE_MIN_HEIGHT}px` : undefined,
-              ...(column.backgroundColor ? { backgroundColor: column.backgroundColor } : {}),
             }}
           >
             {canViewCards && hasBatches && batches.map((batch, i) => (

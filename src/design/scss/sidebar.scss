@@ -1077,9 +1077,27 @@
         }
     }
 
-    .kanban-sidebar:not(.kanban-sidebar--workspaces) {
-        background: #0c0f14;
-        box-shadow: none;
+    // Board icon rail (/kanban-board/:id). `.kanban-sidebar` doubled to outrank the
+    // board-layout dark skin (body.app-dark-mode .kanban-sidebar-dark…, common.scss).
+    // The right border is an inset shadow so the 80px rail keeps its width.
+    .kanban-sidebar.kanban-sidebar:not(.kanban-sidebar--workspaces) {
+        background: var(--bg-chrome);
+        box-shadow: inset -1px 0 0 var(--border-chrome);
+
+        .kanban-sidebar-icon {
+            color: var(--text-body);
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.06);
+                color: var(--text-body);
+            }
+
+            &.active {
+                background: rgba(76, 141, 255, 0.14);
+                box-shadow: none;
+                color: var(--icon-brand-soft);
+            }
+        }
     }
 
     // Workspace panel (/workspaces, /workspaces/dashboard/:id).

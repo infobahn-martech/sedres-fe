@@ -2073,12 +2073,11 @@ div[role="tooltip"][id^="workflow-info-"] {
 
   // Status group headers: tinted fill + colored text + 3px top stripe, all
   // derived from the stage's API color (`--area-color`, set inline with the
-  // fill). !important beats the inline backgroundColor/color.
+  // fill). !important beats the inline backgroundColor/color. Shared with the
+  // Kanban board column headers via the status-tone-header mixin.
   .workflow-board-area-header {
     --area-tone: var(--area-color, var(--text-faint));
-    background-color: color-mix(in srgb, var(--area-tone) 20%, transparent) !important;
-    color: color-mix(in srgb, var(--area-tone) 45%, #fff) !important;
-    box-shadow: inset 0 3px 0 var(--area-tone);
+    @include status-tone-header(var(--area-tone), true);
   }
 
   // Column settings card

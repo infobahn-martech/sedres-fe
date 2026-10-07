@@ -54,7 +54,7 @@ export default function WorkflowAccordion({
     <div
       key={workflow.id}
       id={`workflow-accordion-${workflow.id}`}
-      className={`kanban-accordion ${isDarkMode ? "kanban-dark-mode" : ""}`}
+      className={`kanban-accordion ${isExpanded ? "kanban-accordion--expanded" : ""} ${isDarkMode ? "kanban-dark-mode" : ""}`}
     >
       <div ref={headerRef} className="kanban-accordion-header" onClick={onToggle}>
         <div

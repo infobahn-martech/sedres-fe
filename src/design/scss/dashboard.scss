@@ -230,6 +230,15 @@
   background: var(--bg-page);
 }
 
+// Dark theme — Kanban board page. !important beats the board's own background
+// (inline backgroundColor from getBoardPageBackgroundStyle); a wallpaper image is
+// kept and dimmed by a full-cover inset shadow, which paints above the background
+// but below the content — no extra DOM.
+[data-theme="dark"] .dashboard-wrp .page-cont-wrp:has(.kanban-board-wrapper) {
+  background-color: var(--bg-page) !important;
+  box-shadow: inset 0 0 0 100vmax rgba(7, 13, 26, 0.65);
+}
+
 // Dark theme — board-layout page scrollbars (/workspaces, kanban pages).
 // The gutter keeps its light-mode width so content never shifts when the
 // theme changes: browsers that honor scrollbar-color keep the same

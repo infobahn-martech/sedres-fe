@@ -168,6 +168,14 @@
   background: rgba(238, 240, 245, 0.72);
 }
 
+/* Column background (Edit workflow colour): `--cell-bg` is set inline on the cell only for a
+   custom colour, so default columns fall back to white. Specificity (0-3-0 on the list)
+   outranks .card-list.drag-over, matching the inline backgroundColor this replaces. */
+.kanban-board--swimlanes .column--swimlane-cell,
+.kanban-board--swimlanes .column--swimlane-cell .card-list--swimlane-grid {
+  background-color: var(--cell-bg, #fff);
+}
+
 /* Swimlane board: fixed width (layout-dependent), height from content */
 .kanban-card--fixed-board {
   flex-shrink: 0;
@@ -199,4 +207,46 @@
 
 .kanban-dark-mode .card-list--swimlane-grid.card-list--empty {
   background: rgba(17, 23, 34, 0.72);
+}
+/* -------------------------------
+   Dark theme (navy palette, partials/_theme.scss)
+-------------------------------- */
+[data-theme="dark"] .kanban-board--swimlanes .column--swimlane-cell {
+  border-color: var(--border);
+
+  // Default columns → inset navy; a custom colour keeps a 12% tint of itself.
+  &,
+  .card-list--swimlane-grid {
+    background-color: color-mix(in srgb, var(--cell-bg, var(--bg-inset)) 12%, var(--bg-inset));
+  }
+
+  // Outline (not border) so the drop zone never changes size.
+  .card-list--swimlane-grid.card-list--empty {
+    outline: 1px dashed var(--border-strong);
+    outline-offset: -1px;
+  }
+
+  .card-list--swimlane-grid.drag-over {
+    background-color: rgba(76, 141, 255, 0.08);
+    outline: 1px dashed var(--brand-bright);
+    outline-offset: -1px;
+  }
+}
+
+// Board horizontal scroll — the app's thin navy scrollbar.
+[data-theme="dark"] .kanban-container.kanban-container--board-hscroll {
+  scrollbar-color: var(--border-strong) transparent;
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--border-hover);
+  }
 }

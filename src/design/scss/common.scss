@@ -1454,3 +1454,64 @@ body.app-dark-mode {
     }
   }
 }
+/* ================================
+   KANBAN BOARD — DARK THEME (navy palette, partials/_theme.scss)
+   Outranks the zinc `.kanban-dark-mode` rules above.
+================================ */
+[data-theme="dark"] .kanban-accordion.kanban-dark-mode {
+  .kanban-accordion-header {
+    background: var(--bg-card);
+    border-bottom-color: var(--border);
+
+    &:hover {
+      background: var(--bg-tile-hover);
+    }
+  }
+
+  &.kanban-accordion--expanded .kanban-accordion-header {
+    background: var(--bg-highlight);
+  }
+
+  .kanban-accordion-title {
+    color: var(--text-heading);
+    // !important beats the inline fontWeight: 700 in WorkflowAccordion.jsx.
+    font-weight: 500 !important;
+  }
+
+  .accordion-menu-button {
+    color: var(--text-subtle);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.06);
+      color: var(--text-control);
+    }
+  }
+
+  .accordion-pin-button--active {
+    color: var(--brand-bright);
+  }
+}
+
+// Status column headers — same tint + stripe as Edit workflow, from the column's
+// API colour (`--column-color`, inline). The inset stripe replaces the ::before bar.
+[data-theme="dark"] .kanban-board--swimlanes .column-header {
+  @include status-tone-header(var(--column-color));
+  border-color: transparent;
+
+  &::before {
+    display: none;
+  }
+
+  .column-title,
+  .column-header--collapsed__count {
+    color: inherit;
+  }
+
+  .column-count {
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-body);
+    text-align: center;
+  }
+}
