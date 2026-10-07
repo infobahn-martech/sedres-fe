@@ -219,3 +219,69 @@
     resize: vertical;
   }
 }
+
+// ── Dark theme — Add/Rename Dashboard, Rename Workspace/Board, Create
+// Workflow, Stage Decision (all share these classes). The modal surface
+// itself comes from the shared dark .modal-content rule in common.scss.
+[data-theme="dark"] {
+  .add-dashboard-modal-close {
+    color: var(--text-subtle);
+
+    &:hover {
+      color: var(--text-control);
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  .add-dashboard-label,
+  .add-dashboard-field-hint {
+    color: var(--text-subtle);
+  }
+
+  .add-dashboard-input {
+    color: var(--text-control);
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+
+    &::placeholder {
+      color: var(--text-subtle);
+    }
+
+    &:hover {
+      border-color: var(--border-hover);
+    }
+
+    &:focus {
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    &.add-dashboard-input--invalid,
+    &.add-dashboard-input--invalid:focus {
+      border-color: var(--danger);
+    }
+  }
+
+  .add-dashboard-field-error {
+    color: var(--danger);
+  }
+
+  // Text (link-style) buttons: Cancel / Save were hard-coded #00368c, and
+  // disabled ones faded --text-muted to 65%.
+  .add-dashboard-btn.add-dashboard-btn--text {
+    color: var(--brand-bright);
+
+    &:hover:not(:disabled) {
+      color: var(--text-brand-soft);
+    }
+
+    &:focus-visible {
+      outline-color: var(--brand-bright);
+    }
+
+    &:disabled {
+      color: var(--btn-disabled-text);
+      opacity: 1;
+    }
+  }
+}
