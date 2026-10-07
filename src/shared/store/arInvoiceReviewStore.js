@@ -37,13 +37,17 @@ const useArInvoiceReviewStore = create((set, get) => ({
   selectedArInvoiceReviewCards: [],
   /** The McDermott workflow the review is for; null for SAIPEM. */
   selectedArInvoiceReviewWorkflowId: null,
+  /** The invoice files just uploaded (File objects), so the review can show them before confirming:
+   * the backend only returns a bare file name for them, not a link that opens. */
+  uploadedArInvoiceFiles: [],
   isArInvoiceReviewLoading: false,
 
-  openArInvoiceReviewModal: (cards, { workflowId = null } = {}) =>
+  openArInvoiceReviewModal: (cards, { workflowId = null, files = [] } = {}) =>
     set({
       showArInvoiceReviewModal: true,
       selectedArInvoiceReviewCards: Array.isArray(cards) ? cards : [],
       selectedArInvoiceReviewWorkflowId: workflowId,
+      uploadedArInvoiceFiles: Array.isArray(files) ? files : [],
     }),
 
   closeArInvoiceReviewModal: () =>
@@ -51,6 +55,7 @@ const useArInvoiceReviewStore = create((set, get) => ({
       showArInvoiceReviewModal: false,
       selectedArInvoiceReviewCards: [],
       selectedArInvoiceReviewWorkflowId: null,
+      uploadedArInvoiceFiles: [],
       isArInvoiceReviewLoading: false,
     }),
 

@@ -1,11 +1,15 @@
 import { useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import { FiCheck, FiLayers, FiX } from "react-icons/fi";
+import { FiCheck, FiEye, FiLayers, FiX } from "react-icons/fi";
 import CustomModal from "../../../../components/CustomModal";
 import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import { notify } from "../../../../components/Toaster";
+import { getUploadedFileUrl, viewUploadedFile } from "../../../../shared/utils/viewUploadedFile";
 import "../../../../design/scss/blockers-modal.scss";
 import "../../../../design/scss/pages/kanban-board/seReviewMoveModal.scss";
+
+const SE_DOCUMENT_KEY_PATTERN = /doc|excel|sheet/i;
+const SE_EMAIL_KEY_PATTERN = /email|mail/i;
 
 // Opened from an "Awaiting SE" batch's "Review and Move" action once its SE upload is done.
 // Lists the batch's approved sales orders, fetched from da/se_approval_lines on open. Confirm moves
@@ -33,7 +37,15 @@ const SeReviewMoveModal = ({ onConfirmed }) => {
     () =>
       (seReview?.cards ?? [])
         .filter((card) => seTickedByCardId[String(card?.card_id)])
-        .flatMap((card) => (card?.sales_orders ?? []).filter((salesOrder) => salesOrder?.approved)),
+        .flatMap((card) =>
+          (card?.sales_orders ?? [])
+            .filter((salesOrder) => salesOrder?.approved)
+            .map((salesOrder) => ({
+              ...salesOrder,
+              seDocumentUrl: getUploadedFileUrl(SE_DOCUMENT_KEY_PATTERN, salesOrder, card, seReview),
+              seEmailUrl: getUploadedFileUrl(SE_EMAIL_KEY_PATTERN, salesOrder, card, seReview),
+            }))
+        ),
     [seReview, seTickedByCardId]
   );
 
@@ -75,6 +87,19 @@ const SeReviewMoveModal = ({ onConfirmed }) => {
     </div>
   );
 
+  const renderViewButton = (label, url, kind) => (
+    <button
+      type="button"
+      className="se-review-move-view-btn"
+      onClick={() => viewUploadedFile(url, kind)}
+      disabled={!url}
+      title={url ? `View the ${label} in a new tab` : `No ${label} uploaded`}
+    >
+      <FiEye size={14} />
+      {label}
+    </button>
+  );
+
   const renderBody = () => (
     <>
       <div className="blockers-toolbar-section">
@@ -99,12 +124,13 @@ const SeReviewMoveModal = ({ onConfirmed }) => {
                 <th>WO</th>
                 <th>Project Split</th>
                 <th>SE Nos</th>
+                <th>Files</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && !approvedSalesOrders.length ? (
                 <tr>
-                  <td colSpan={4} className="se-review-move-empty">
+                  <td colSpan={5} className="se-review-move-empty">
                     Loading...
                   </td>
                 </tr>
@@ -129,11 +155,17 @@ const SeReviewMoveModal = ({ onConfirmed }) => {
                         "-"
                       )}
                     </td>
+                    <td>
+                      <span className="se-review-move-files">
+                        {renderViewButton("SE Doc", salesOrder.seDocumentUrl)}
+                        {renderViewButton("Email", salesOrder.seEmailUrl, "email")}
+                      </span>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="se-review-move-empty">
+                  <td colSpan={5} className="se-review-move-empty">
                     No approved sales orders
                   </td>
                 </tr>

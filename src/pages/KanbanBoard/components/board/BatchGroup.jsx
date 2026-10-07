@@ -9,6 +9,8 @@ const noop = () => {};
 const EMPTY_SELECTED_IDS = [];
 const AWAITING_SE_COLUMN_PATTERN = /^awaiting\s+(for\s+)?se$/i;
 const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
+/* Batches that are fully submitted have no header action. */
+const SUBMITTED_INVOICES_COLUMN_PATTERN = /^submitted\s+invoices$/i;
 /* McDermott batches skip SAIPEM's SE steps, so their header has no SE actions. */
 const MCDERMOTT_WORKFLOW_PATTERN = /mcdermott/i;
 /* Compared on letters only, so stray spaces, punctuation or invisible characters in the live
@@ -38,7 +40,11 @@ export default function BatchGroup({
   onUploadInvoice,
   onRequestPo,
 }) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  /* Submitted Invoices holds many batches, so there they start collapsed and the header opens one;
+     every other column starts expanded. */
+  const [isExpanded, setIsExpanded] = useState(
+    () => !SUBMITTED_INVOICES_COLUMN_PATTERN.test((columnTitle ?? "").trim())
+  );
 
   /* Loose cards render as a plain grid: no header, never collapsed. */
   const isUngrouped = Boolean(batch.isUngrouped);
@@ -52,6 +58,7 @@ export default function BatchGroup({
   const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches whose SE approval is back sit in "SE Received" and move on to invoicing. */
   const isSeReceivedColumn = SE_RECEIVED_COLUMN_PATTERN.test((columnTitle ?? "").trim());
+  const isSubmittedInvoicesColumn = SUBMITTED_INVOICES_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches still to be sent for SE creation start with no card ticked. Ticks are kept per
      batch, apart from the board-wide selection used to create batches in Backlog. */
   const isSendSeBatch = isSeFlowBatch && !isAwaitingSeColumn && !isSeReceivedColumn;
@@ -75,10 +82,22 @@ export default function BatchGroup({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSeReviewBatch, batchId, loadSeReview]);
 
+  /* A batch of one card has nothing to choose between: its card counts as ticked. In "Awaiting SE"
+     the tick stays visible but fixed; elsewhere it shows no checkbox. With more cards each one gets
+     its own checkbox. */
+  const isSingleCardSeBatch = (isSendSeBatch || isSeReviewBatch) && batch.cards.length === 1;
+  const singleCardId = isSingleCardSeBatch ? batch.cards[0].id : null;
+
+  /* "Review and Move" reads its ticks from the store, so the lone card is ticked there too. */
+  useEffect(() => {
+    if (!isSeReviewBatch || singleCardId == null || seTickedByCardId[String(singleCardId)]) return;
+    toggleSeReviewCard(singleCardId, { isSeUploadDone });
+  }, [isSeReviewBatch, singleCardId, seTickedByCardId, isSeUploadDone, toggleSeReviewCard]);
+
   const getIsSelectedForAction = (card) => {
-    if (isSendSeBatch) return seTickedCardIds.includes(card.id);
+    if (isSendSeBatch) return isSingleCardSeBatch || seTickedCardIds.includes(card.id);
     if (isSeReviewBatch) {
-      const isSeTicked = Boolean(seTickedByCardId[String(card.id)]);
+      const isSeTicked = isSingleCardSeBatch || Boolean(seTickedByCardId[String(card.id)]);
       if (!isSeUploadDone) return isSeTicked;
       return Boolean(seApprovedByCardId[String(card.id)]) && isSeTicked;
     }
@@ -86,6 +105,7 @@ export default function BatchGroup({
   };
 
   const getToggleSelectForAction = () => {
+    if (isSingleCardSeBatch) return isSeReviewBatch ? noop : undefined;
     if (isSendSeBatch) return toggleSeCardTick;
     if (isSeReviewBatch) return (card) => toggleSeReviewCard(card.id, { isSeUploadDone });
     return onToggleCardSelect;
@@ -99,7 +119,9 @@ export default function BatchGroup({
       prev.includes(card.id) ? prev.filter((id) => id !== card.id) : [...prev, card.id]
     );
 
-  const tickedSeCards = batch.cards.filter((card) => seTickedCardIds.includes(card.id));
+  const tickedSeCards = batch.cards.filter(
+    (card) => isSingleCardSeBatch || seTickedCardIds.includes(card.id)
+  );
 
   const handleSendSeRequest = () => onSendSeRequest?.({ ...batch, cards: tickedSeCards });
 
@@ -129,7 +151,7 @@ export default function BatchGroup({
             >
               Request PO
             </button>
-          ) : !isSeFlowBatch ? null : isAwaitingSeColumn && isSeUploadDone ? (
+          ) : !isSeFlowBatch || isSubmittedInvoicesColumn ? null : isAwaitingSeColumn && isSeUploadDone ? (
             <button
               type="button"
               className="batch-group__action"

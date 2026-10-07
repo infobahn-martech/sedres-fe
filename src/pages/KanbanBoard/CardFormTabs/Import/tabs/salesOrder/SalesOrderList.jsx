@@ -272,6 +272,7 @@ const SalesOrderList = ({
   currentStep,
   stepLabels,
   soActionStateResetToken,
+  onCloseCard,
 }) => {
   // Broader "this is a DA card" signal — isDAModule alone only covers the dedicated DA-desk
   // board routes; isDaCardContext also covers DA-variant/DA-board cards reached via the
@@ -2357,6 +2358,7 @@ const SalesOrderList = ({
       setApprovedByInput(name);
       setApprovedByName(name);
       useAlertReducer.getState().success("Approved by recorded.");
+      onCloseCard?.();
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -3499,6 +3501,7 @@ SalesOrderList.propTypes = {
   stepLabels: PropTypes.arrayOf(PropTypes.string),
   daStatusRefreshToken: PropTypes.number,
   soActionStateResetToken: PropTypes.number,
+  onCloseCard: PropTypes.func,
 };
 
 export default SalesOrderList;

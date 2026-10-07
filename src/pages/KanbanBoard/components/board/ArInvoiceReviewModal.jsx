@@ -1,9 +1,10 @@
 import { Fragment, useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { FiCheck, FiLayers, FiX } from "react-icons/fi";
+import { FiCheck, FiEye, FiLayers, FiX } from "react-icons/fi";
 import CustomModal from "../../../../components/CustomModal";
 import useArInvoiceReviewStore from "../../../../shared/store/arInvoiceReviewStore";
 import { notify } from "../../../../components/Toaster";
+import { findUploadedFile, getUploadedFileUrl, viewLocalFile, viewUploadedFile } from "../../../../shared/utils/viewUploadedFile";
 import MaterialTablePagination from "../../CardFormTabs/Import/tabs/husbandry/components/MaterialTablePagination";
 import "../../../../design/scss/blockers-modal.scss";
 import "../../../../design/scss/pages/kanban-board/seReviewMoveModal.scss";
@@ -23,10 +24,14 @@ const COLUMNS = [
       (salesOrder.se_numbers ?? salesOrder.invoice?.se_numbers ?? []).join(", "),
   },
   { name: "sales_order_no", label: "SO", getValue: (salesOrder) => salesOrder.sales_order_no },
+  { name: "invoice_file", label: "Invoice File", viewFile: true },
 ];
 
+/* The uploaded invoice file's link is read from the sales order's invoice, by field name. */
+const INVOICE_FILE_KEY_PATTERN = /file|url|pdf|path|document/i;
+
 /* McDermott "Issue AR Invoice" review: SO, then Invoice No. */
-const MCDERMOTT_COLUMN_ORDER = ["sales_order_no", "invoice_no"];
+const MCDERMOTT_COLUMN_ORDER = ["sales_order_no", "invoice_no", "invoice_file"];
 const MCDERMOTT_COLUMNS = MCDERMOTT_COLUMN_ORDER.map((name) =>
   COLUMNS.find((column) => column.name === name)
 );
@@ -72,6 +77,7 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
   const isConfirming = useArInvoiceReviewStore((state) => state.isConfirmingArInvoices);
   const confirmArInvoices = useArInvoiceReviewStore((state) => state.confirmArInvoices);
   const workflowId = useArInvoiceReviewStore((state) => state.selectedArInvoiceReviewWorkflowId);
+  const uploadedFiles = useArInvoiceReviewStore((state) => state.uploadedArInvoiceFiles);
 
   /* A workflow id means the McDermott review; SAIPEM's has none. */
   const isMcDermottReview = workflowId != null;
@@ -220,7 +226,28 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
     onConfirmed?.();
   };
 
+  /* The file just uploaded here is opened from the browser; the backend's own value is only a file
+     name, so it is used as a link when the file is not one of this upload's. */
+  const renderInvoiceFileButton = (salesOrder) => {
+    const fileName = getUploadedFileUrl(INVOICE_FILE_KEY_PATTERN, salesOrder.invoice);
+    const localFile = findUploadedFile(uploadedFiles, fileName);
+    const canView = Boolean(localFile || fileName);
+    return (
+      <button
+        type="button"
+        className="se-review-move-view-btn"
+        onClick={() => (localFile ? viewLocalFile(localFile) : viewUploadedFile(fileName))}
+        disabled={!canView}
+        title={canView ? "View the uploaded invoice" : "No uploaded invoice"}
+      >
+        <FiEye size={14} />
+        View
+      </button>
+    );
+  };
+
   const renderCell = (card, salesOrder, column) => {
+    if (column.viewFile) return salesOrder.invoice ? renderInvoiceFileButton(salesOrder) : "-";
     if (!column.editable) return column.getValue(salesOrder) || "-";
     if (!salesOrder.invoice) {
       return column.name === "invoice_no" ? (

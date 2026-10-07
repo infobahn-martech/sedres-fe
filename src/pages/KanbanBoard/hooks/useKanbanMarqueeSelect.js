@@ -63,8 +63,9 @@ const getScrollOffset = (drag) =>
     { x: 0, y: 0 }
   );
 
-/* A local card is ticked while the box covers it and returns to its pre-drag tick once the box
-   leaves; its own checkbox handler is reused, so each card keeps its batch-specific rules. */
+/* A local card shows the opposite of its pre-drag tick while the box covers it and returns to
+   that tick once the box leaves; its own checkbox handler is reused, so each card keeps its
+   batch-specific rules. */
 const syncLocalTick = (drag, node, isHit) => {
   const toggle = node.querySelector(SELECT_TOGGLE_SELECTOR);
   if (!toggle) return;
@@ -74,7 +75,7 @@ const syncLocalTick = (drag, node, isHit) => {
     drag.localTicks.set(cardId, { base: isTicked, current: isTicked });
   }
   const tick = drag.localTicks.get(cardId);
-  const desired = isHit || tick.base;
+  const desired = isHit ? !tick.base : tick.base;
   if (desired === tick.current) return;
   tick.current = desired;
   toggle.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
@@ -82,8 +83,8 @@ const syncLocalTick = (drag, node, isHit) => {
 
 /**
  * Rubber-band drag-select on the board: press on empty board space and drag in any direction;
- * every card with a checkbox the box touches is ticked. Shrinking the box drops the cards it
- * leaves again, while cards ticked before the drag always stay selected. Board cards feed the
+ * every card with a checkbox the box touches has its tick flipped (unticked cards get ticked,
+ * ticked cards get unticked). Shrinking the box restores the cards it leaves. Board cards feed the
  * board-wide selection; "local" cards (batch ticks) are ticked through their own checkbox.
  * Holding the pointer near a scroll area's edge auto-scrolls it, and the box's start corner stays
  * pinned to the content it was pressed on, so cards beyond the visible area can be reached.
@@ -129,7 +130,10 @@ export default function useKanbanMarqueeSelect({ selectedCardIds, onSelectionCha
       }
       syncLocalTick(drag, node, isHit);
     });
-    const nextIds = [...drag.baseIds, ...hitIds.filter((id) => !drag.baseIds.includes(id))];
+    const nextIds = [
+      ...drag.baseIds.filter((id) => !hitIds.includes(id)),
+      ...hitIds.filter((id) => !drag.baseIds.includes(id)),
+    ];
     const nextKey = nextIds.join("|");
     if (nextKey === drag.lastKey) return;
     drag.lastKey = nextKey;
