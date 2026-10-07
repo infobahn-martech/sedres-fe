@@ -37,17 +37,18 @@ const SeReviewMoveModal = ({ onConfirmed }) => {
     () =>
       (seReview?.cards ?? [])
         .filter((card) => seTickedByCardId[String(card?.card_id)])
-        .flatMap((card) =>
-          (card?.sales_orders ?? [])
-            .filter((salesOrder) => salesOrder?.approved)
-            .map((salesOrder) => ({
-              ...salesOrder,
-              seDocumentUrl: getUploadedFileUrl(SE_DOCUMENT_KEY_PATTERN, salesOrder, card, seReview),
-              seEmailUrl: getUploadedFileUrl(SE_EMAIL_KEY_PATTERN, salesOrder, card, seReview),
-            }))
-        ),
+        .flatMap((card) => (card?.sales_orders ?? []).filter((salesOrder) => salesOrder?.approved)),
     [seReview, seTickedByCardId]
   );
+
+  /* The SE document and approval email belong to the whole batch, so they are looked up once: on the
+     batch's review data first, then on its cards and sales orders. */
+  const batchFileSources = useMemo(
+    () => [seReview, ...(seReview?.cards ?? []).flatMap((card) => [card, ...(card?.sales_orders ?? [])])],
+    [seReview]
+  );
+  const seDocumentUrl = getUploadedFileUrl(SE_DOCUMENT_KEY_PATTERN, ...batchFileSources);
+  const seEmailUrl = getUploadedFileUrl(SE_EMAIL_KEY_PATTERN, ...batchFileSources);
 
   const handleConfirm = async () => {
     if (isConfirming) return;
@@ -112,6 +113,10 @@ const SeReviewMoveModal = ({ onConfirmed }) => {
           <span className="se-review-move-batch__count">
             {approvedSalesOrders.length} approved {approvedSalesOrders.length === 1 ? "SO" : "SOs"}
           </span>
+          <span className="se-review-move-batch__files">
+            {renderViewButton("SE Doc", seDocumentUrl)}
+            {renderViewButton("Email", seEmailUrl, "email")}
+          </span>
         </div>
       </div>
 
@@ -124,13 +129,12 @@ const SeReviewMoveModal = ({ onConfirmed }) => {
                 <th>WO</th>
                 <th>Project Split</th>
                 <th>SE Nos</th>
-                <th>Files</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && !approvedSalesOrders.length ? (
                 <tr>
-                  <td colSpan={5} className="se-review-move-empty">
+                  <td colSpan={4} className="se-review-move-empty">
                     Loading...
                   </td>
                 </tr>
@@ -155,17 +159,11 @@ const SeReviewMoveModal = ({ onConfirmed }) => {
                         "-"
                       )}
                     </td>
-                    <td>
-                      <span className="se-review-move-files">
-                        {renderViewButton("SE Doc", salesOrder.seDocumentUrl)}
-                        {renderViewButton("Email", salesOrder.seEmailUrl, "email")}
-                      </span>
-                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="se-review-move-empty">
+                  <td colSpan={4} className="se-review-move-empty">
                     No approved sales orders
                   </td>
                 </tr>
