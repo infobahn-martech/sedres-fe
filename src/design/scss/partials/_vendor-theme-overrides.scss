@@ -61,42 +61,83 @@
     background-color: var(--border-primary) !important;
   }
 
-  // react-quill (quill.snow.css theme)
+  // react-quill (quill.snow.css theme) — same field look as every other
+  // input (bg --bg-inset, border --border-strong). !important is kept from
+  // the original block: several page stylesheets set their own light editor
+  // colors at higher specificity. Because the base icon colors are
+  // !important, hover/active states must be too or they never show.
   .ql-toolbar.ql-snow {
-    background-color: var(--surface-secondary) !important;
-    border-color: var(--border-primary) !important;
+    background-color: var(--bg-inset) !important;
+    border-color: var(--border-strong) !important;
+    border-bottom-color: var(--border) !important;
 
     .ql-stroke {
-      stroke: var(--text-secondary) !important;
+      stroke: var(--text-body) !important;
     }
 
     .ql-fill {
-      fill: var(--text-secondary) !important;
+      fill: var(--text-body) !important;
     }
 
     .ql-picker-label,
     .ql-picker-item {
-      color: var(--text-secondary) !important;
+      color: var(--text-body) !important;
+    }
+
+    button:hover,
+    button:focus,
+    button.ql-active,
+    .ql-picker-label:hover,
+    .ql-picker-label.ql-active,
+    .ql-picker-item:hover,
+    .ql-picker-item.ql-selected {
+      color: var(--brand-bright) !important;
+
+      .ql-stroke {
+        stroke: var(--brand-bright) !important;
+      }
+
+      .ql-fill {
+        fill: var(--brand-bright) !important;
+      }
     }
   }
 
   .ql-container.ql-snow {
-    background-color: var(--input-bg) !important;
-    border-color: var(--border-primary) !important;
-    color: var(--text-primary) !important;
+    background-color: var(--bg-inset) !important;
+    border-color: var(--border-strong) !important;
+    color: var(--text-control) !important;
+
+    &:focus-within {
+      border-color: var(--brand-bright) !important;
+    }
   }
 
   .ql-editor {
-    color: var(--text-primary) !important;
+    color: var(--text-control) !important;
 
     &.ql-blank::before {
-      color: var(--input-placeholder) !important;
+      color: var(--text-subtle) !important;
     }
   }
 
   .ql-snow .ql-picker-options {
-    background-color: var(--surface-primary) !important;
-    border-color: var(--border-primary) !important;
+    background-color: var(--bg-highlight) !important;
+    border-color: var(--border-strong) !important;
+    box-shadow: var(--shadow-popover);
+  }
+
+  .ql-snow .ql-tooltip {
+    background-color: var(--bg-highlight);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-popover);
+    color: var(--text-control);
+
+    input[type='text'] {
+      background-color: var(--bg-inset);
+      border-color: var(--border-strong);
+      color: var(--text-control);
+    }
   }
 
   // recharts default tooltip (used where no custom contentStyle is passed)
