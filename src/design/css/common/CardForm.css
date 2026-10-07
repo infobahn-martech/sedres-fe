@@ -3148,6 +3148,28 @@
    toolbar keeps the dark vendor style. */
 [data-theme="dark"] .email-preview-message-quill-react {
   border-color: var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-inset);
+}
+
+/* Toolbar + paper share the frame above so they read as one composer */
+[data-theme="dark"] .email-preview-message-quill-react .ql-toolbar.ql-snow {
+  background-color: var(--bg-inset) !important;
+  border-bottom-color: var(--border-strong) !important;
+}
+
+[data-theme="dark"] .email-preview-message-quill-react .ql-toolbar.ql-snow :is(button:hover, button:focus, button.ql-active, .ql-picker-label:hover, .ql-picker-label.ql-active) {
+  color: var(--text-heading) !important;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+
+[data-theme="dark"] .email-preview-message-quill-react .ql-toolbar.ql-snow :is(button:hover, button:focus, button.ql-active, .ql-picker-label:hover, .ql-picker-label.ql-active) .ql-stroke {
+  stroke: var(--text-heading) !important;
+}
+
+[data-theme="dark"] .email-preview-message-quill-react .ql-toolbar.ql-snow :is(button:hover, button:focus, button.ql-active, .ql-picker-label:hover, .ql-picker-label.ql-active) .ql-fill {
+  fill: var(--text-heading) !important;
 }
 
 [data-theme="dark"] .email-preview-message-quill-react .ql-container.ql-snow {

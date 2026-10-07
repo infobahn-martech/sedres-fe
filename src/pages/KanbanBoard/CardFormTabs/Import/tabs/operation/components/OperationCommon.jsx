@@ -33,13 +33,24 @@ FormSection.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
+// Wraps a trailing required "*" so it can be styled (unstyled in light mode)
+const renderFieldLabel = (label) =>
+  typeof label === "string" && label.endsWith("*") ? (
+    <>
+      {label.slice(0, -1)}
+      <span className="cf-required">*</span>
+    </>
+  ) : (
+    label
+  );
+
 export const FormField = ({ label, children, className = "", readOnly = false }) => {
   return (
     <div className={`cf-field ${readOnly ? "cf-field--readonly" : ""} ${className}`.trim()}>
       {label && (
         <label>
           {readOnly}
-          {label}
+          {renderFieldLabel(label)}
         </label>
       )}
       {children}

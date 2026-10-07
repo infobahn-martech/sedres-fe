@@ -10194,9 +10194,35 @@ a.operation-task-document-name--link {
 
   // Email preview body is the email as sent → "paper" white so inline template
   // colours render as the recipient sees them. !important beats the Batch-1
-  // react-quill dark overrides (_vendor-theme-overrides.scss). Toolbar stays dark.
+  // react-quill dark overrides (_vendor-theme-overrides.scss). Toolbar stays
+  // dark; toolbar + paper share one frame so they read as a single composer.
   .operation-email-preview-panel .operation-email-preview-message-quill {
     border-color: var(--border-strong);
+    border-radius: 8px;
+    background: var(--bg-inset);
+
+    .ql-toolbar.ql-snow {
+      background-color: var(--bg-inset) !important;
+      border-bottom-color: var(--border-strong) !important;
+
+      button:hover,
+      button:focus,
+      button.ql-active,
+      .ql-picker-label:hover,
+      .ql-picker-label.ql-active {
+        color: var(--text-heading) !important;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 4px;
+
+        .ql-stroke {
+          stroke: var(--text-heading) !important;
+        }
+
+        .ql-fill {
+          fill: var(--text-heading) !important;
+        }
+      }
+    }
 
     .ql-container.ql-snow {
       background-color: var(--paper-bg) !important;
@@ -10256,5 +10282,94 @@ a.operation-task-document-name--link {
   // "click to browse" — accent link colour inside the card modal
   .cardform-panel .upload-link {
     color: var(--cf-accent-icon);
+  }
+
+  // Operation sub-nav — same purple accent as the top tabs (was brand blue).
+  // Inactive icon chips keep their own colours.
+  .operation-left.op-tab-nav--main {
+    .op-tab-list {
+      border-left-color: var(--cf-accent-ring);
+    }
+
+    .op-tab {
+      color: var(--text-body);
+    }
+
+    .op-tab:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-body);
+    }
+
+    .op-tab.active {
+      background: var(--cf-accent-tint-soft);
+      color: var(--cf-accent-text);
+      border-left-color: var(--cf-accent);
+
+      .op-tab-icon {
+        color: var(--cf-accent-text);
+        background: var(--cf-accent-tint-soft);
+      }
+    }
+  }
+
+  // Small "+" add button (adds a custom time-object row)
+  .operation-additional-time-object-add-icon-btn {
+    background: var(--cf-accent-tint-soft);
+    border-color: var(--cf-accent-ring);
+    color: var(--cf-accent-icon);
+
+    &:hover:not(:disabled) {
+      background: var(--cf-accent-tint-hover);
+      border-color: var(--cf-accent-ring);
+    }
+  }
+
+  // The "+" row sat alone above the first field. Pull it onto the first
+  // label's row (right side): -28px cancels the button's own row, and the
+  // -8px shift centres the 28px button on the label line so it doesn't
+  // touch the input below. Only the button takes clicks.
+  .operation-form-card-header-action {
+    position: relative;
+    z-index: 1;
+    margin-bottom: -28px;
+    transform: translateY(-8px);
+    pointer-events: none;
+
+    > * {
+      pointer-events: auto;
+    }
+  }
+
+  // Form labels: one step quieter than values (values stay white)
+  .operation-wrapper .cf-field label {
+    color: var(--text-body);
+    font-weight: 500;
+  }
+
+  // Required "*" — same red as the Batch 1 forms (form-designs.scss)
+  .operation-wrapper .cf-required {
+    color: var(--danger);
+  }
+
+  // Inner scroll areas — thin dark scrollbar like the rest of the app
+  .operation-two-column-grid--split-scroll,
+  .operation-prearrival-grid--split-scroll {
+    .operation-form-column,
+    .operation-email-column {
+      scrollbar-color: var(--border-strong) transparent;
+
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      &::-webkit-scrollbar-thumb,
+      &::-webkit-scrollbar-thumb:hover {
+        background: var(--border-strong);
+      }
+    }
   }
 }

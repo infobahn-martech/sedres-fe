@@ -4592,12 +4592,41 @@
     background: var(--cf-accent);
   }
 
+  // Purple fill stays; no glow on navy, hover just lifts the purple
   .form-save-button {
-    box-shadow: var(--cf-btn-shadow);
+    box-shadow: none;
 
-    &:hover:not(:disabled),
+    &:hover:not(:disabled) {
+      box-shadow: none;
+      filter: brightness(1.12);
+    }
+
     &:active:not(:disabled) {
-      box-shadow: var(--cf-btn-shadow);
+      box-shadow: none;
+    }
+  }
+
+  // Select arrows + calendar icons in the card modal: one quiet icon tone
+  .cardform-panel .cf-multi-select-arrow {
+    color: var(--text-subtle);
+  }
+
+  .cardform-panel .cf-datetime-picker .MuiIconButton-root {
+    color: var(--text-subtle);
+
+    &:hover {
+      color: var(--text-control);
+    }
+  }
+
+  // Email preview "+" attachment button — purple accent like the other add buttons
+  .email-preview-attachment-add {
+    background: var(--cf-accent-tint-soft);
+    border: 1px solid var(--cf-accent-ring);
+    color: var(--cf-accent-icon);
+
+    &:hover:not(:disabled) {
+      background: var(--cf-accent-tint-hover);
     }
   }
 }
