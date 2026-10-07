@@ -708,7 +708,9 @@
   margin: 0;
   width: 720px;
   max-width: calc(100vw - 32px);
-  max-height: 80vh;
+  /* The popover starts below the tab header and toolbar and the stepper footer covers the bottom of the
+     card, so on a laptop screen it is capped to the free space and scrolls inside. */
+  max-height: max(280px, min(80vh, calc(100vh - 360px)));
   overflow-y: auto;
   box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(15, 23, 42, 0.04);
   z-index: 110;

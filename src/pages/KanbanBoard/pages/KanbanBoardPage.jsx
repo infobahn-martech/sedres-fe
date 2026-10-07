@@ -400,6 +400,7 @@ export default function KanbanBoardPage() {
   const batchIdByNumber = useBatchMoveStore((state) => state.batchIdByNumber);
   const clearCardColumns = useBatchMoveStore((state) => state.clearCardColumns);
   const clearSeTicks = useBatchMoveStore((state) => state.clearSeTicks);
+  const resetCardPlacement = useBatchMoveStore((state) => state.resetCardPlacement);
 
   /* Unique call ids of the batch's cards. */
   const getBatchCallIds = useCallback(
@@ -486,10 +487,11 @@ export default function KanbanBoardPage() {
           return;
         }
         notify(data.message || "Email sent successfully", "success");
-        /* The backend moves the batch on; a column override left from creating it would keep
-           drawing the cards in the old column. */
+        /* The backend moves the batch on; a column override left from creating it would keep drawing
+           the cards in the old column, the unticked ones (returned to Backlog) included; every placement
+           note is dropped so the board load decides, as after a page reload. */
         const sentCardIds = (selectedSeRequestBatch?.cards ?? []).map((card) => card.id);
-        clearCardColumns(sentCardIds);
+        resetCardPlacement();
         /* The batch lands in "Awaiting SE" with no card ticked. */
         clearSeTicks(sentCardIds);
         handleCloseSeRequestEmail();
@@ -503,7 +505,7 @@ export default function KanbanBoardPage() {
       seRequestEmailDraft,
       batchIdByNumber,
       getBatchCallIds,
-      clearCardColumns,
+      resetCardPlacement,
       clearSeTicks,
       handleCloseSeRequestEmail,
       refetchBoard,
