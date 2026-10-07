@@ -115,6 +115,10 @@ export default function BatchGroup({
       prev.includes(card.id) ? prev.filter((id) => id !== card.id) : [...prev, card.id]
     );
 
+  /* "Upload SE Approval" applies to the ticked cards only; before the SE upload the ticks live in the store. */
+  const seReviewTickedCards = batch.cards.filter((card) => getIsSelectedForAction(card));
+  const seReviewUntickedCards = batch.cards.filter((card) => !seReviewTickedCards.includes(card));
+
   const tickedSeCards = batch.cards.filter(
     (card) => isSingleCardSeBatch || seTickedCardIds.includes(card.id)
   );
@@ -159,7 +163,10 @@ export default function BatchGroup({
             <button
               type="button"
               className="batch-group__action"
-              onClick={() => onUploadSeApproval?.(batch)}
+              onClick={() =>
+                onUploadSeApproval?.({ ...batch, cards: seReviewTickedCards, untickedCards: seReviewUntickedCards })
+              }
+              disabled={!seReviewTickedCards.length}
             >
               Upload SE Approval
             </button>
