@@ -811,9 +811,16 @@ $icon-tint-danger: brightness(0) invert(63%) sepia(37%) saturate(1600%) hue-rota
                 border-color: var(--brand);
                 color: #ffffff;
 
-                &:hover {
+                &:hover:not(:disabled) {
                     background: var(--brand-hover);
                     border-color: var(--brand-hover);
+                }
+
+                &:disabled {
+                    background: var(--btn-disabled-bg);
+                    border-color: transparent;
+                    color: var(--btn-disabled-text);
+                    cursor: not-allowed;
                 }
             }
         }

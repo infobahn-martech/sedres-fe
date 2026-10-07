@@ -76,12 +76,14 @@ body {
     border-color: var(--brand);
     color: #ffffff;
 
-    &:hover,
-    &:focus,
-    &:active {
-      background-color: var(--brand-hover);
-      border-color: var(--brand-hover);
-      color: #ffffff;
+    &:not(:disabled):not(.disabled) {
+      &:hover,
+      &:focus,
+      &:active {
+        background-color: var(--brand-hover);
+        border-color: var(--brand-hover);
+        color: #ffffff;
+      }
     }
   }
 
@@ -97,6 +99,18 @@ body {
       color: var(--text-control);
     }
   }
+}
+
+// Dark theme — disabled primary buttons, one style everywhere. Bootstrap
+// fades disabled buttons with opacity, which leaves dark text on dark blue;
+// page-specific primaries (e.g. .workspace-form-btn-save) reuse the
+// --btn-disabled-* tokens in their own files.
+[data-theme="dark"] .btn.btn-primary:is(:disabled, .disabled) {
+  background-color: var(--btn-disabled-bg);
+  border-color: transparent;
+  color: var(--btn-disabled-text);
+  opacity: 1;
+  cursor: not-allowed;
 }
 
 // MUI date/time pickers render their popup (Paper + calendar) in a portal

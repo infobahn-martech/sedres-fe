@@ -229,3 +229,37 @@
 [data-theme="dark"] .dashboard-wrp .page-cont-wrp {
   background: var(--bg-page);
 }
+
+// Dark theme — board-layout page scrollbars (/workspaces, kanban pages).
+// The gutter keeps its light-mode width so content never shifts when the
+// theme changes: browsers that honor scrollbar-color keep the same
+// scrollbar-width, and the ::-webkit-scrollbar fallback keeps its 30px
+// track but paints only a ~6px thumb (transparent border + padding-box clip).
+// `.main-layout` is doubled so this outranks the board-layout dark skin
+// (body.app-dark-mode .main-layout.kanban-board-layout, 0-3-1 in common.scss)
+// when both dark modes are on.
+[data-theme="dark"] .main-layout.main-layout.kanban-board-layout {
+  &,
+  .dashboard-wrp .page-cont-wrp {
+    scrollbar-color: var(--border-strong) transparent;
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+      border: none;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-strong);
+      background-clip: padding-box;
+      border: 12px solid transparent;
+      border-radius: 15px;
+      box-shadow: none;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: var(--border-hover);
+      background-clip: padding-box;
+      border: 12px solid transparent;
+    }
+  }
+}

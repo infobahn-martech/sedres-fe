@@ -423,3 +423,11 @@
     }
   }
 }
+
+// Dark theme — modal title was hard-coded to dark blue (#00368C / #0c234c)
+[data-theme="dark"] {
+  .documents-modal .modal-header .modal-title,
+  .documents-modal .documents-modal-header .modal-title {
+    color: var(--text-heading);
+  }
+}

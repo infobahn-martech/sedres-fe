@@ -38,11 +38,10 @@
     user-select: none;
   }
 
-  // Match the dark app header's chrome color exactly (header.scss uses a
-  // hardcoded #0c0f14, darker than --surface-primary's #111a28) so the page
-  // background doesn't visibly seam against the header.
+  // Same navy page background as the rest of the app shell, so it doesn't
+  // seam against .page-cont-wrp (dashboard.scss) or the sidebar.
   [data-theme="dark"] & {
-    background: #0c0f14;
+    background: var(--bg-page);
   }
 }
 
@@ -338,7 +337,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
   [data-theme="dark"] & {
-    background: linear-gradient(to bottom, #0d1014, #030304);
+    background: var(--bg-card);
   }
 
   @media ($sm-767) {
@@ -443,7 +442,7 @@
     background: linear-gradient(to bottom, var(--surface-primary), var(--surface-hover));
 
     [data-theme="dark"] & {
-      background: linear-gradient(to bottom, #0d1014, #030304);
+      background: var(--bg-card);
     }
   }
 
@@ -3289,9 +3288,12 @@ body.kanban-workspaces-sidebar-open.kanban-workspaces-sidebar-collapsed .workspa
   padding-left: 72px;
 }
 
-// The lavender-tinted shadows above (rgba(226, 230, 255, ...)) are tuned for
-// light surfaces and read as a mismatched glow on dark ones, so drop them here.
+// ── Dark theme — My workspaces page (navy palette, partials/_theme.scss) ──
+// Light mode is untouched. Borders that light mode doesn't have are drawn as
+// inset shadows so no element changes size.
 [data-theme="dark"] {
+  // The lavender-tinted shadows above (rgba(226, 230, 255, ...)) are tuned
+  // for light surfaces and read as a mismatched glow on dark ones.
   .workspaces-filter:focus-within,
   .workspace-card:hover,
   .workspace-card.expanded,
@@ -3299,43 +3301,348 @@ body.kanban-workspaces-sidebar-open.kanban-workspaces-sidebar-collapsed .workspa
     box-shadow: none;
   }
 
-  // Brand-blue title reads as low-contrast on dark surfaces.
-  .workspaces-title {
-    color: var(--text-primary);
+  // Title bar
+  .workspaces-header {
+    background: var(--bg-card);
+    box-shadow: inset 0 0 0 1px var(--border);
   }
 
-  // These interactive accents (workspace icon badge, menu item hover, kebab
-  // hover) were hardcoded to the light-mode navy (#00368c) and light-lavender
-  // (#e2e6ff) hover fill, so they didn't share the brighter accent dark mode
-  // uses elsewhere. Route them through --color-primary-accent so the "active"
-  // blue is consistent across the icon badge and both menus.
+  .workspaces-title {
+    color: var(--text-heading);
+  }
+
+  .workspaces-filter {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+
+    &:focus-within {
+      background: var(--bg-inset);
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+  }
+
+  .workspaces-filter-input {
+    color: var(--text-control);
+
+    &::placeholder {
+      color: var(--text-subtle);
+    }
+  }
+
+  .workspaces-filter-clear-btn,
+  .workspaces-filter-list-btn {
+    color: var(--text-subtle);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-control);
+    }
+  }
+
+  // Header round buttons: "+" stays primary, delete becomes secondary
+  .workspaces-btn {
+    background: var(--brand);
+    color: #ffffff;
+    box-shadow: none;
+
+    &:hover {
+      background: var(--brand-hover);
+      box-shadow: none;
+    }
+  }
+
+  .workspaces-btn.workspaces-btn-delete {
+    background: var(--bg-highlight);
+    color: var(--text-body);
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+
+    &:hover {
+      background: var(--bg-highlight);
+      box-shadow: inset 0 0 0 1px var(--border-hover);
+    }
+  }
+
+  // Workspace cards — one flat surface in every state (the light-mode
+  // hover gradient would otherwise apply)
+  .workspace-card,
+  .workspace-card:hover,
+  .workspace-card.expanded {
+    background: var(--bg-card);
+    border-color: var(--border);
+  }
+
+  .workspace-boards {
+    border-top-color: var(--border);
+  }
+
+  .workspace-name {
+    color: var(--text-heading);
+  }
+
+  .workspace-board-count-badge {
+    background: rgba(76, 141, 255, 0.16);
+    color: var(--text-brand-soft);
+    border-color: transparent;
+  }
+
+  // Drag handle — secondary square button
+  .workspace-move-btn {
+    background: var(--bg-highlight);
+    color: var(--text-subtle);
+    box-shadow: inset 0 0 0 1px var(--border);
+
+    &:hover {
+      background: var(--bg-highlight);
+      color: var(--text-subtle);
+      box-shadow: inset 0 0 0 1px var(--border-hover);
+    }
+  }
+
+  // Workspace icon — variant follows state: collapsed = soft, expanded = solid
   .workspace-icon-wrapper {
-    background: var(--surface-hover);
+    background: rgba(34, 192, 138, 0.16);
+  }
+
+  .workspace-icon {
+    color: var(--success-soft-icon);
   }
 
   .workspace-card:hover .workspace-icon-wrapper {
-    background: var(--surface-secondary);
+    background: rgba(34, 192, 138, 0.22);
   }
 
-  .workspace-card.expanded .workspace-icon-wrapper {
-    background: var(--color-primary-accent);
+  .workspace-card.expanded .workspace-icon-wrapper,
+  .workspace-card.expanded:hover .workspace-icon-wrapper {
+    background: var(--brand);
+
+    .workspace-icon {
+      color: #ffffff;
+    }
   }
 
-  .workspace-action-btn:hover,
-  .board-menu-btn:hover {
-    background: var(--surface-hover);
-    color: var(--color-primary-accent);
+  // "+" and kebab in workspace headers
+  .workspace-action-btn {
+    color: var(--text-body);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-body);
+    }
+
+    // Keyboard focus uses the global dark ring; drop the lavender click outline
+    &:focus:not(:focus-visible) {
+      outline: none;
+    }
+  }
+
+  // Board tiles
+  .board-card {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+
+    &:hover {
+      background: var(--bg-tile-hover);
+      border-color: var(--border-hover);
+    }
+  }
+
+  .board-name {
+    color: var(--text-heading);
+    font-weight: 500;
+  }
+
+  .board-menu-btn {
+    color: var(--text-faint);
+    opacity: 1;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-body);
+    }
+  }
+
+  .board-id-count,
+  .board-id-count:hover {
+    background-color: var(--bg-highlight);
+  }
+
+  .board-id-icon,
+  .board-id-number {
+    color: var(--text-body);
+  }
+
+  // Workspace / board context menus — shared popover surface
+  .workspace-context-menu,
+  .board-context-menu {
+    background: var(--bg-highlight);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-popover);
   }
 
   .workspace-context-menu-item,
   .board-context-menu-item {
     &:hover {
-      color: var(--color-primary-accent);
+      color: var(--brand-bright);
     }
 
     &:hover svg {
-      color: var(--color-primary-accent);
+      color: var(--brand-bright);
     }
+  }
+
+  // ── /workspaces/dashboard/:id ──
+  .workspaces-dashboard-toolbar {
+    background: var(--bg-card);
+    box-shadow: inset 0 0 0 1px var(--border);
+    color: var(--brand-bright);
+  }
+
+  .workspaces-dashboard-toolbar-link {
+    &:hover {
+      color: var(--text-brand-soft);
+    }
+
+    &:focus-visible {
+      outline-color: var(--brand-bright);
+    }
+  }
+
+  // The canvas draws its own white-25% border (invisible on the light page)
+  // and has no side margin while the toolbar has 12px — so in dark it showed
+  // as a second frame starting left of the toolbar. One card only: drop the
+  // canvas frame and align its edges with the toolbar.
+  .workspaces-dashboard-canvas {
+    border-color: transparent;
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+
+  // Empty state ("No workspaces found")
+  .workspaces-empty-state {
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+
+  .workspaces-empty-icon {
+    opacity: 1;
+
+    // GroupIcon is an <img>; tinted to --text-faint (#6b7fa3)
+    img {
+      filter: brightness(0) invert(52%) sepia(14%) saturate(900%) hue-rotate(182deg) brightness(90%);
+    }
+  }
+
+  .workspaces-empty-title {
+    color: var(--text-heading);
+  }
+
+  .workspaces-empty-message {
+    color: var(--text-subtle);
+  }
+
+  .workspaces-empty-btn {
+    background: var(--brand);
+    color: #ffffff;
+    box-shadow: none;
+
+    &:hover {
+      background: var(--brand-hover);
+      box-shadow: none;
+    }
+  }
+
+  // ── Team Workspace modal (NewWorkspaceModal) ──
+  // Its content wrapper painted --surface-primary over the shared navy modal
+  // surface (common.scss), leaving CustomModal's empty header as a
+  // different-colored band above the title.
+  .new-workspace-modal-content {
+    background: transparent;
+  }
+
+  .new-workspace-modal-header,
+  .workspace-form-description {
+    border-color: var(--border);
+  }
+
+  .new-workspace-modal-close {
+    background: var(--bg-highlight);
+    color: var(--text-subtle);
+
+    &:hover {
+      background: var(--bg-highlight);
+      color: var(--text-control);
+    }
+  }
+
+  .workspace-form-description-content p {
+    color: var(--text-subtle);
+  }
+
+  .workspace-form-label {
+    color: var(--text-control);
+  }
+
+  .workspace-form-info-icon {
+    color: var(--text-subtle);
+
+    &:hover {
+      color: var(--brand-bright);
+    }
+  }
+
+  .workspace-form-input {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+    color: var(--text-control);
+
+    &:hover {
+      border-color: var(--border-hover);
+    }
+
+    &:focus {
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    &::placeholder {
+      color: var(--text-subtle);
+    }
+  }
+
+  .workspace-form-btn-cancel {
+    color: var(--text-control);
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-control);
+    }
+  }
+
+  .workspace-form-btn-save {
+    background: var(--brand);
+    color: #ffffff;
+    box-shadow: none;
+
+    &:hover:not(:disabled) {
+      background: var(--brand-hover);
+      box-shadow: none;
+    }
+
+    &:disabled {
+      background: var(--btn-disabled-bg);
+      color: var(--btn-disabled-text);
+      opacity: 1;
+      cursor: not-allowed;
+    }
+  }
+
+  // Workspace-flow modal titles hard-coded to #00368C
+  .new-workspace-modal-title,
+  .boards-list-modal-title,
+  .add-board-modal-title,
+  .board-rename-modal .add-dashboard-modal-title {
+    color: var(--text-heading);
   }
 }
 

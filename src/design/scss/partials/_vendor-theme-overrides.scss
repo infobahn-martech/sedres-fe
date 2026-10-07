@@ -15,12 +15,12 @@
     border-color: var(--input-border) !important;
   }
 
-  // Excludes SearchableSelect menus, whose modifier classes (e.g.
-  // user-modal-premium-select-menu) also contain "-menu".
-  div[class$='-menu']:not(.cf-multi-select-dropdown),
-  div[class*='-menu']:not(.cf-multi-select-dropdown),
-  div[class$='-menuList'],
-  div[class*='-menuList'] {
+  // Limited to react-select's generated emotion classes (css-<hash>-menu):
+  // a bare *='-menu' also matched app wrappers such as board-menu-wrapper,
+  // workspace-menu-wrapper and user-modal-premium-select-menu, painting
+  // them with a solid surface.
+  div[class*='css-'][class*='-menu'],
+  div[class*='css-'][class*='-menuList'] {
     background-color: var(--surface-primary) !important;
   }
 

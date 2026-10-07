@@ -144,3 +144,10 @@
     }
   }
 }
+
+// Dark theme — modal section title was hard-coded to dark blue (#00368C / #0c234c)
+[data-theme="dark"] {
+  .pre-arrival-information-modal .form-section-title {
+    color: var(--text-heading);
+  }
+}
