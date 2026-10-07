@@ -10192,10 +10192,10 @@ a.operation-task-document-name--link {
     }
   }
 
-  // Email preview body is the email as sent → "paper" white so inline template
-  // colours render as the recipient sees them. !important beats the Batch-1
-  // react-quill dark overrides (_vendor-theme-overrides.scss). Toolbar stays
-  // dark; toolbar + paper share one frame so they read as a single composer.
+  // Email composer — toolbar + content share one dark frame. !important beats
+  // the Batch-1 react-quill dark overrides (_vendor-theme-overrides.scss) and,
+  // for template content, the inline style="" colours. Display only: the
+  // editor's HTML value (saved/sent) is untouched.
   .operation-email-preview-panel .operation-email-preview-message-quill {
     border-color: var(--border-strong);
     border-radius: 8px;
@@ -10225,16 +10225,35 @@ a.operation-task-document-name--link {
     }
 
     .ql-container.ql-snow {
-      background-color: var(--paper-bg) !important;
-      color: var(--paper-text) !important;
+      background-color: var(--bg-inset) !important;
+      color: var(--text-control) !important;
     }
 
     .ql-editor {
-      color: var(--paper-text) !important;
+      color: var(--text-control) !important;
+      caret-color: var(--text-heading);
+
+      // Template inline colours are tuned for white mail clients → readable
+      // text; weight/bold is untouched so labels still stand out.
+      [style*="color"] {
+        color: var(--text-control) !important;
+      }
+
+      // Inline backgrounds / highlights → transparent (images excluded)
+      [style*="background"]:not(img) {
+        background-color: transparent !important;
+        background-image: none !important;
+      }
+
+      a,
+      a[style*="color"],
+      a [style*="color"] {
+        color: var(--tint-brand-text) !important;
+      }
     }
 
     .ql-editor.ql-blank::before {
-      color: #98a2b3 !important;
+      color: var(--text-faint) !important;
     }
   }
 

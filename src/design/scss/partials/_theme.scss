@@ -174,9 +174,4 @@
   --modal-shadow-edge: 0 0 0 1px var(--modal-border), 0 0 0 2px rgba(255, 255, 255, 0.04), 0 24px 64px rgba(0, 0, 0, 0.65);
   --backdrop: rgba(2, 6, 14, 0.72);
   --backdrop-blur: blur(2px);
-
-  // Email previews render as "paper" so inline template colours show exactly
-  // as the recipient sees them
-  --paper-bg: #ffffff;
-  --paper-text: #1a273c;
 }
