@@ -93,6 +93,7 @@ function WorkflowSwimlane({
     ? {
         backgroundColor: labelBgHex,
         color: pickForegroundOnSwimlaneBackground(labelBgHex),
+        '--lane-color': labelBgHex,
       }
     : undefined;
   const [isSwimlaneColorPickerOpen, setIsSwimlaneColorPickerOpen] = useState(false);
@@ -289,7 +290,7 @@ function WorkflowSwimlane({
             }}
           >
             <span
-              className="kanban-dashboard-actions-color-swatch stage-action-color-swatch"
+              className={`kanban-dashboard-actions-color-swatch stage-action-color-swatch${labelBgHex ? '' : ' stage-action-color-swatch--default'}`}
               style={{ backgroundColor: normalizeHexColor(displayLaneColor) }}
               aria-hidden
             />
@@ -377,7 +378,7 @@ function WorkflowSwimlane({
                   <div
                     key={`${area}-${colIdx}`}
                     className="workflow-swimlane-content-cell"
-                    style={{ backgroundColor: bgColor ?? DEFAULT_STAGE_SWATCH_HEX }}
+                    style={{ backgroundColor: bgColor ?? DEFAULT_STAGE_SWATCH_HEX, '--lane-color': bgColor ?? undefined }}
                   >
                     <div className="workflow-swimlane-cell-fields">
                       <div className="workflow-swimlane-cell-field">

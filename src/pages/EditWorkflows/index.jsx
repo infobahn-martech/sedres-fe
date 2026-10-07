@@ -914,7 +914,7 @@ function EditWorkflows() {
                     {canDisableWorkflow ? (
                       <button
                         type="button"
-                        className="workflow-action-link"
+                        className="workflow-action-link workflow-action-link-toggle"
                         disabled={wfMutationPending}
                         onClick={() => handleDisableWorkflow(workflow.id)}
                       >

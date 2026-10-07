@@ -141,4 +141,13 @@
   // Disabled primary buttons
   --btn-disabled-bg: #1a2744;
   --btn-disabled-text: #6b7fa3;
+
+  // Tinted ghost buttons (Edit workflow: Copy / Delete / Disable)
+  --tint-brand-bg: rgba(76, 141, 255, 0.14);
+  --tint-brand-bg-hover: rgba(76, 141, 255, 0.22);
+  --tint-brand-text: #8fb9ff;
+  --tint-danger-bg: rgba(229, 72, 77, 0.14);
+  --tint-danger-bg-hover: rgba(229, 72, 77, 0.22);
+  --tint-neutral-bg: rgba(154, 170, 196, 0.12);
+  --tint-neutral-bg-hover: rgba(154, 170, 196, 0.2);
 }

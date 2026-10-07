@@ -5,10 +5,11 @@
 
 /**
  * Inline styles for `.workflow-board-area-header` only, driven by the API stage's own `color_code`.
+ * `--area-color` lets the dark theme derive a tinted header from the same source color.
  */
 export function getWorkflowAreaHeaderStyles(colorCode) {
   if (colorCode) {
-    return { backgroundColor: colorCode, color: '#ffffff' };
+    return { backgroundColor: colorCode, color: '#ffffff', '--area-color': colorCode };
   }
   return { backgroundColor: '#e5e7eb', color: '#374151' };
 }

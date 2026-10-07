@@ -373,7 +373,7 @@ function WorkflowStageCard({
                 }}
               >
                 <span
-                  className="kanban-dashboard-actions-color-swatch stage-action-color-swatch"
+                  className={`kanban-dashboard-actions-color-swatch stage-action-color-swatch${stage.color ? '' : ' stage-action-color-swatch--default'}`}
                   style={{ backgroundColor: normalizeHexColor(displayColor) }}
                   aria-hidden
                 />

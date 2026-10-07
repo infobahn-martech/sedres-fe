@@ -1927,3 +1927,287 @@ div[role="tooltip"][id^="workflow-info-"] {
     }
   }
 }
+
+// ── Dark theme — Edit workflow page + New workflow modal
+[data-theme="dark"] {
+  .edit-workflows-container,
+  .workflows-content,
+  .workflows-content--empty-workflow {
+    background-color: var(--bg-page);
+  }
+
+  .workflows-board-name {
+    color: var(--text-heading);
+    font-weight: 500;
+  }
+
+  .workflows-back-icon-btn {
+    background: var(--bg-highlight);
+    border-color: var(--border-strong);
+    color: var(--text-body);
+
+    &:hover {
+      background: var(--bg-highlight);
+      border-color: var(--border-hover);
+      color: var(--text-control);
+    }
+  }
+
+  .workflows-btn-create {
+    background: var(--brand);
+    box-shadow: none;
+
+    &:hover {
+      background: var(--brand-hover);
+      box-shadow: none;
+    }
+  }
+
+  // Workflow card
+  .workflow-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: var(--scrollbar-thumb-hover);
+    }
+  }
+
+  .workflow-header {
+    border-bottom-color: var(--border);
+  }
+
+  .workflow-title {
+    color: var(--text-heading);
+    font-weight: 500;
+  }
+
+  .workflow-title-input {
+    color: var(--text-control);
+    background: var(--bg-inset);
+  }
+
+  .workflow-move-btn {
+    background: var(--bg-highlight);
+    box-shadow: inset 0 0 0 1px var(--border);
+    color: var(--text-subtle);
+
+    &:hover {
+      background: var(--bg-highlight);
+      color: var(--text-control);
+    }
+  }
+
+  .workflow-collapse-btn {
+    color: var(--text-body);
+  }
+
+  .workflow-edit-btn,
+  .workflow-info-btn {
+    color: var(--text-subtle);
+  }
+
+  .workflow-collapse-btn:hover,
+  .workflow-edit-btn:hover,
+  .workflow-info-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-control);
+  }
+
+  // Copy / Delete / Disable — tinted ghost buttons
+  .workflow-action-link {
+    background: var(--tint-brand-bg);
+    color: var(--tint-brand-text);
+
+    &:hover {
+      background: var(--tint-brand-bg-hover);
+      color: var(--tint-brand-text);
+    }
+
+    &.workflow-action-link-delete {
+      background: var(--tint-danger-bg);
+      color: var(--danger);
+
+      &:hover {
+        background: var(--tint-danger-bg-hover);
+        color: var(--danger);
+      }
+    }
+
+    &.workflow-action-link-toggle {
+      background: var(--tint-neutral-bg);
+      color: var(--text-body);
+
+      &:hover {
+        background: var(--tint-neutral-bg-hover);
+        color: var(--text-control);
+      }
+    }
+  }
+
+  // Mutation overlays were translucent white
+  .workflow-header-mutation-overlay,
+  .workflow-stage-mutation-overlay,
+  .workflow-swimlane-mutation-overlay {
+    background: rgba(15, 26, 48, 0.85);
+  }
+
+  .workflow-stage-mutation-overlay--deleting {
+    background: rgba(15, 26, 48, 0.7);
+  }
+
+  .workflow-board {
+    &::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: var(--scrollbar-thumb-hover);
+    }
+  }
+
+  // Status group headers: tinted fill + colored text + 3px top stripe, all
+  // derived from the stage's API color (`--area-color`, set inline with the
+  // fill). !important beats the inline backgroundColor/color.
+  .workflow-board-area-header {
+    --area-tone: var(--area-color, var(--text-faint));
+    background-color: color-mix(in srgb, var(--area-tone) 20%, transparent) !important;
+    color: color-mix(in srgb, var(--area-tone) 45%, #fff) !important;
+    box-shadow: inset 0 3px 0 var(--area-tone);
+  }
+
+  // Column settings card
+  .workflow-stage-box {
+    border-color: var(--border-strong);
+
+    &:hover {
+      border-color: var(--border-hover);
+    }
+  }
+
+  .stage-name {
+    color: var(--text-heading);
+    font-weight: 500;
+  }
+
+  .stage-name-input {
+    color: var(--text-control);
+    background: var(--bg-highlight);
+    border-color: var(--brand-bright);
+  }
+
+  .stage-box-details {
+    color: var(--text-subtle);
+  }
+
+  // Number boxes — column cards and lane cells, display + edit states
+  .stage-detail-value,
+  .workflow-swimlane-cell-value,
+  .stage-inline-input,
+  .workflow-swimlane-inline-input {
+    background: var(--bg-highlight);
+    border-color: var(--border-strong);
+    color: var(--text-control);
+  }
+
+  .stage-detail-value:hover,
+  .workflow-swimlane-cell-value:hover {
+    background: var(--bg-highlight);
+    border-color: var(--border-hover);
+  }
+
+  .stage-inline-input:focus,
+  .workflow-swimlane-inline-input:focus {
+    border-color: var(--brand-bright);
+    box-shadow: 0 0 0 2px var(--focus-ring);
+  }
+
+  .stage-action-icon,
+  .workflow-swimlane-icon-btn {
+    color: var(--text-faint);
+
+    &:hover {
+      color: var(--text-control);
+    }
+
+    &.stage-action-icon-delete,
+    &.workflow-swimlane-icon-btn-delete {
+      color: var(--danger);
+
+      &:hover {
+        color: var(--text-control);
+      }
+    }
+  }
+
+  // Color swatch with no custom color picked (#f8fafc) rendered as a solid
+  // white dot; show an outline instead. !important beats the inline fill.
+  .stage-action-color-swatch {
+    border-color: var(--border-strong);
+    box-shadow: none;
+
+    &--default {
+      background-color: transparent !important;
+      border-color: var(--text-faint);
+    }
+  }
+
+  .stage-action-color-trigger:hover .stage-action-color-swatch--default {
+    border-color: var(--text-control);
+  }
+
+  // Default Lane tile — !important beats the inline swimlane color; a custom
+  // color is kept as a tint (`--lane-color`).
+  .workflow-swimlane-label-cell {
+    background-color: color-mix(in srgb, var(--lane-color, var(--bg-highlight)) 18%, var(--bg-highlight)) !important;
+    border-color: var(--border-strong);
+    color: var(--text-control) !important;
+  }
+
+  .workflow-swimlane-label-input {
+    color: var(--text-control);
+    background: var(--bg-inset);
+  }
+
+  // Lane cells — inline fill is the lane color (default #f8fafc); keep a
+  // custom color as a faint tint. !important beats the inline backgroundColor.
+  .workflow-swimlane-content-cell {
+    background-color: color-mix(in srgb, var(--lane-color, var(--bg-inset)) 14%, var(--bg-inset)) !important;
+    border-color: var(--border);
+    color: var(--text-subtle);
+    box-shadow: none;
+  }
+
+  .workflow-swimlane-cell-limit,
+  .workflow-swimlane-cell-label {
+    color: var(--text-subtle);
+  }
+
+  .workflow-swimlane-dashed-placeholder {
+    border-color: var(--border-strong);
+  }
+
+  .workflow-add-grid-bar {
+    background: var(--bg-highlight);
+    border-color: var(--border-strong);
+    color: var(--text-subtle);
+  }
+
+  // New workflow modal — the light overrides above use --text-primary /
+  // --text-muted; align with the Batch 1 field palette.
+  .create-workflow-modal {
+    .add-dashboard-label {
+      color: var(--text-body);
+    }
+
+    .add-dashboard-input::placeholder,
+    .add-dashboard-premium-select .cf-multi-select-placeholder {
+      color: var(--text-subtle);
+    }
+  }
+}

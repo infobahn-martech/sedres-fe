@@ -134,6 +134,23 @@
     }
   }
 
+  // Disabled / loading select — the field rule above outranks the light
+  // `.disabled` rule, so restate the disabled look here.
+  .premium-select.cf-searchable-select.disabled .cf-multi-select-email-input,
+  .premium-select.cf-searchable-select .cf-multi-select-email-input.disabled {
+    &,
+    &:hover {
+      background: var(--field-disabled-bg);
+      border-color: var(--border);
+    }
+
+    .cf-searchable-select-input,
+    .cf-searchable-select-input::placeholder,
+    .cf-multi-select-placeholder {
+      color: var(--text-faint);
+    }
+  }
+
   .cf-multi-select-option.is-highlighted,
   .premium-select.cf-searchable-select .cf-multi-select-option.is-highlighted {
     background: rgba(255, 255, 255, 0.06);
