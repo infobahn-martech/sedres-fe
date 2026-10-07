@@ -46,6 +46,7 @@ import transportContentService, { extractTransportRequestsFromEnvelope } from ".
 import hotelService, { extractHotelRequestsFromEnvelope } from "../../../../../../services/hotelService";
 import hospitalService, { extractMedicalRequestsFromEnvelope } from "../../../../../../services/hospitalService";
 import { getPassRequests, extractPassRequestsFromEnvelope } from "../../../../../../services/cgAndZwailpassService";
+import launchHireService from "../../../../../../services/launchHireService";
 import usePermissions from "../../../../../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../shared/constants/permissions";
 
@@ -90,6 +91,7 @@ const CREW_DIRECT_SERVICES = [
   { id: CREW_MANAGEMENT_SUBTABS.TRANSPORT, label: "Transport", summary: "Crew transport bookings and transfers." },
   { id: CREW_MANAGEMENT_SUBTABS.HOTEL, label: "Hotel", summary: "Crew hotel accommodation bookings." },
   { id: CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE, label: "Medical", summary: "Medical appointments and crew welfare." },
+  { id: CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE, label: "Launch Hire", summary: "Launch bookings for crew transfer to the vessel." },
 ];
 
 // Static dashboard data — replace with API values once the endpoints exist.
@@ -632,6 +634,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
     [CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE]: null,
     [CREW_MANAGEMENT_SUBTABS.CG_PASS]: null,
     [CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS]: null,
+    [CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE]: null,
   });
 
   const setRequestCount = useCallback((subTab, count) => {
@@ -642,6 +645,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
   const handleMedicalRequestCount = useCallback((count) => setRequestCount(CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE, count), [setRequestCount]);
   const handleCgPassRequestCount = useCallback((count) => setRequestCount(CREW_MANAGEMENT_SUBTABS.CG_PASS, count), [setRequestCount]);
   const handleZawilPassRequestCount = useCallback((count) => setRequestCount(CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS, count), [setRequestCount]);
+  const handleLaunchHireRequestCount = useCallback((count) => setRequestCount(CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE, count), [setRequestCount]);
 
   const inboundOrdersCount = useInboundOrderReducer((state) => state.inboundOrdersCount);
   const getInboundOrdersTotal = useInboundOrderReducer((state) => state.getInboundOrdersTotal);
@@ -713,6 +717,16 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
         const { cg, zawil } = extractPassRequestsFromEnvelope(response);
         setRequestCount(CREW_MANAGEMENT_SUBTABS.CG_PASS, cg?.length || 0);
         setRequestCount(CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS, zawil?.length || 0);
+      })
+      .catch(() => {});
+
+    launchHireService
+      .getLaunchHireRequests(callId)
+      .then((response) => {
+        if (cancelled) return;
+        const payload = response?.data?.data ?? response?.data ?? [];
+        const list = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
+        setRequestCount(CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE, list.length);
       })
       .catch(() => {});
 
@@ -1067,6 +1081,9 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
             cardColor={cardColor}
             card={card}
             onLaunchHireSaved={handleLaunchHireSaved}
+            onRequestCountChange={handleLaunchHireRequestCount}
+            onGoToCrew={handleGoToCrewTab}
+            crewUploadMode={crewServiceFromOverview}
           />
         );
       case CREW_MANAGEMENT_SUBTABS.HOTEL:
@@ -1210,6 +1227,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
     [CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE]: requestCounts[CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE] ?? selectedCrewCount("medicalServiceSelectedCrew"),
     [CREW_MANAGEMENT_SUBTABS.CG_PASS]: requestCounts[CREW_MANAGEMENT_SUBTABS.CG_PASS] ?? selectedCrewCount("cgPassSelectedCrew"),
     [CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS]: requestCounts[CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS] ?? selectedCrewCount("zawilPassSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE]: requestCounts[CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE] ?? selectedCrewCount("launchHireSelectedCrew"),
   };
 
   // DA module Husbandry: crew table only (no Booked Services)
@@ -1276,7 +1294,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
     <div className="operation-wrapper husbandry-wrapper" style={{ "--card-color": cardColor }}>
       <div className="operation-content-container">
         {/* Sidebar only where it switches sub-tabs; every other service is full width. */}
-        {(activeMainTab === MAIN_TABS.MATERIAL_MANAGEMENT || activeMainTab === "LAUNCH_HIRE") && (
+        {activeMainTab === MAIN_TABS.MATERIAL_MANAGEMENT && (
           <HusbandryTabs
             activeMainTab={activeMainTab}
             activeSubTab={activeSubTab}

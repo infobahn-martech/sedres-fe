@@ -73,6 +73,14 @@ const CREW_SERVICE_CARDS = [
     crewField: "zawilPassSelectedCrew",
     hasServiceForm: true,
   },
+  {
+    id: CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE,
+    tabName: "launchHire",
+    label: "Launch Hire",
+    description: "Book a launch for crew transfer to the vessel.",
+    crewField: "launchHireSelectedCrew",
+    hasServiceForm: true,
+  },
 ];
 
 // Backend-friendly movement type values sent with the crew list import and

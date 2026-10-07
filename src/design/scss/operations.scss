@@ -1256,11 +1256,11 @@ $send-report-optional: var(--text-muted);
    ========================================================== */
 
 // Bottom row of the Crew Management hero (see .crew-mgmt-hero-row above it)
-// — Transport/Medical/Hotel/CG Pass/Zawil Pass all fill one row via a fixed
-// 5-column grid, so there's no leftover empty track.
+// — Transport/Medical/Hotel/CG Pass/Zawil Pass/Launch Hire all fill one row
+// via a fixed 6-column grid, so there's no leftover empty track.
 .crew-mgmt-service-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
   margin-top: 20px;
   padding-top: 20px;
