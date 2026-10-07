@@ -1089,9 +1089,8 @@ export default function KanbanBoardPage() {
   );
 
   /* "Consolidated" column: "Create Submission Documents" builds the ticked cards' documents into a zip via
-     da/create_submission_documents and keeps the returned submission_id against the cards, which turns the
-     column action into "Send For Final Submission" (the email drafted by da/submission_email_draft). */
-  const submissionIdByCardId = useBatchMoveStore((state) => state.submissionIdByCardId);
+     da/create_submission_documents and keeps the returned submission_id against the cards; the Final
+     Submission Email (drafted by da/submission_email_draft) then opens right after. */
   const setSubmissionId = useBatchMoveStore((state) => state.setSubmissionId);
   const clearSubmissionId = useBatchMoveStore((state) => state.clearSubmissionId);
   const [showSubmissionDocumentsModal, setShowSubmissionDocumentsModal] = useState(false);
@@ -1099,7 +1098,6 @@ export default function KanbanBoardPage() {
   const [isCreatingSubmissionDocuments, setIsCreatingSubmissionDocuments] = useState(false);
   const [showFinalSubmissionEmailModal, setShowFinalSubmissionEmailModal] = useState(false);
   const [selectedFinalSubmission, setSelectedFinalSubmission] = useState(null);
-  const [isLoadingFinalSubmissionDraft, setIsLoadingFinalSubmissionDraft] = useState(false);
   const [isSendingFinalSubmission, setIsSendingFinalSubmission] = useState(false);
 
   const handleColumnPrepareSubmission = useCallback((cards) => {
@@ -1113,6 +1111,28 @@ export default function KanbanBoardPage() {
     setShowSubmissionDocumentsModal(false);
     setSelectedSubmissionDocumentsCards([]);
   }, [isCreatingSubmissionDocuments]);
+
+  /* Loads the submission's email draft and opens the Final Submission Email for its cards. */
+  const openFinalSubmissionEmail = useCallback(
+    async (submissionId, cards) => {
+      let data;
+      try {
+        ({ data } = await daService.getSubmissionEmailDraft(submissionId));
+      } catch (error) {
+        data = error?.response?.data;
+      }
+      if (data?.status !== "success") {
+        /* A stale submission (cards regrouped, already submitted, or moved on) has to be created again. */
+        clearSubmissionId(submissionId);
+        notify(data?.message || "Failed to load the final submission email", "error");
+        refetchBoard?.();
+        return;
+      }
+      setSelectedFinalSubmission({ submissionId, cards, draft: data.data ?? {} });
+      setShowFinalSubmissionEmailModal(true);
+    },
+    [clearSubmissionId, refetchBoard]
+  );
 
   const handleCreateSubmissionDocuments = useCallback(
     async (invoiceNo) => {
@@ -1134,8 +1154,7 @@ export default function KanbanBoardPage() {
         }
         const { submission_id: submissionId, zip_url: zipUrl } = data?.data ?? {};
         if (data?.status !== "success" || submissionId == null) {
-          notify(data?.message || "Failed to create submission documents", "error");
-          return;
+          return data?.message || "Failed to create submission documents";
         }
         setSubmissionId(
           submissionCards.map((card) => card.card_id),
@@ -1146,47 +1165,16 @@ export default function KanbanBoardPage() {
           downloadFile({ link: zipUrl, fileName: decodeURIComponent(zipUrl.split("/").pop()) || "Submission_Documents.zip" });
         }
         notify("Submission documents created", "success");
+        const createdCards = selectedSubmissionDocumentsCards;
         setShowSubmissionDocumentsModal(false);
         setSelectedSubmissionDocumentsCards([]);
+        /* The zip is saved, so the Final Submission Email follows straight away for the same cards. */
+        await openFinalSubmissionEmail(submissionId, createdCards);
       } finally {
         setIsCreatingSubmissionDocuments(false);
       }
     },
-    [selectedSubmissionDocumentsCards, setSubmissionId]
-  );
-
-  const handleColumnSendFinalSubmission = useCallback(
-    async (cards) => {
-      if (!cards?.length || isLoadingFinalSubmissionDraft) return;
-      const submissionIds = [...new Set(cards.map((card) => submissionIdByCardId[String(card.id)]))];
-      if (submissionIds.length > 1) {
-        notify("The ticked cards belong to different submissions. Tick one submission's cards at a time.", "error");
-        return;
-      }
-      const [submissionId] = submissionIds;
-
-      setIsLoadingFinalSubmissionDraft(true);
-      try {
-        let data;
-        try {
-          ({ data } = await daService.getSubmissionEmailDraft(submissionId));
-        } catch (error) {
-          data = error?.response?.data;
-        }
-        if (data?.status !== "success") {
-          /* A stale submission (cards regrouped, already submitted, or moved on) has to be created again. */
-          clearSubmissionId(submissionId);
-          notify(data?.message || "Failed to load the final submission email", "error");
-          refetchBoard?.();
-          return;
-        }
-        setSelectedFinalSubmission({ submissionId, cards, draft: data.data ?? {} });
-        setShowFinalSubmissionEmailModal(true);
-      } finally {
-        setIsLoadingFinalSubmissionDraft(false);
-      }
-    },
-    [isLoadingFinalSubmissionDraft, submissionIdByCardId, clearSubmissionId, refetchBoard]
+    [selectedSubmissionDocumentsCards, setSubmissionId, openFinalSubmissionEmail]
   );
 
   const handleCloseFinalSubmissionEmail = useCallback(() => {
@@ -1519,7 +1507,6 @@ export default function KanbanBoardPage() {
           onColumnSendInvoice={handleColumnSendInvoice}
           onColumnMergeInvoice={handleColumnMergeInvoice}
           onColumnPrepareSubmission={handleColumnPrepareSubmission}
-          onColumnSendFinalSubmission={handleColumnSendFinalSubmission}
           onContextMenu={handleColumnContextMenu}
           onHeightChange={handleWorkflowColumnHeightChange}
           onToggleWorkflow={handleToggleWorkflow}
@@ -1597,6 +1584,7 @@ export default function KanbanBoardPage() {
         title="Final Submission Email"
         subtitle="Send the submission documents to the client"
         sendLabel="Send for Final Submission"
+        showSendIcon={false}
         subjectPrefix="INV Submission"
       />
 

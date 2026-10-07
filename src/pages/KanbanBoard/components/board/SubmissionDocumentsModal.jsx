@@ -18,13 +18,16 @@ const SubmissionDocumentsModal = ({ show, onClose, onCreate, isSubmitting = fals
     setError("");
   }, [show]);
 
-  const handleCreate = () => {
+  /* onCreate resolves to the backend's rejection message (e.g. the invoice number is already used), which
+     is shown under the input. */
+  const handleCreate = async () => {
     if (isSubmitting) return;
     if (!invoiceNo.trim()) {
       setError("Please enter the invoice number.");
       return;
     }
-    onCreate?.(invoiceNo.trim());
+    const message = await onCreate?.(invoiceNo.trim());
+    if (message) setError(message);
   };
 
   const renderHeader = () => (
@@ -56,7 +59,7 @@ const SubmissionDocumentsModal = ({ show, onClose, onCreate, isSubmitting = fals
         <input
           id="submission-documents-invoice-no"
           type="text"
-          className={`form-control submission-documents-field__input${error ? " is-invalid" : ""}`}
+          className="form-control submission-documents-field__input"
           value={invoiceNo}
           onChange={(e) => {
             setInvoiceNo(e.target.value);
@@ -79,7 +82,11 @@ const SubmissionDocumentsModal = ({ show, onClose, onCreate, isSubmitting = fals
         Cancel
       </button>
       <button type="button" className="btn btn-primary" onClick={handleCreate} disabled={isSubmitting}>
-        <FiDownload className="me-2" />
+        {isSubmitting ? (
+          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+        ) : (
+          <FiDownload className="me-2" />
+        )}
         {isSubmitting ? "Creating..." : "Create Documents"}
       </button>
     </div>

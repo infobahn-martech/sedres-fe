@@ -52,7 +52,7 @@ const hasBatchAction = (workflow, ...columns) =>
 
 /* Invoice actions on SAIPEM column headers, shown only while a card in that column is ticked:
    "Upload Invoice" on "SE Received", "Merge Invoice" on "AR Invoices Issued", and on "Consolidated"
-   "Create Submission Documents", then "Send For Final Submission" once those cards' documents exist. */
+   "Create Submission Documents", which then opens the Final Submission Email. */
 const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
 const AR_INVOICES_ISSUED_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
 const CONSOLIDATED_COLUMN_PATTERN = /^consolidated\b/i;
@@ -90,7 +90,6 @@ const INVOICE_ACTION_BUTTONS = {
   sendInvoice: { label: "Send Invoice", icon: <FiSend size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
   prepareSubmission: { label: "Create Submission Documents", icon: <FiDownload size={16} aria-hidden /> },
-  finalSubmission: { label: "Send For Final Submission", icon: <FiSend size={16} aria-hidden /> },
 };
 
 export default function WorkflowColumns({
@@ -111,7 +110,6 @@ export default function WorkflowColumns({
   onColumnSendInvoice,
   onColumnMergeInvoice,
   onColumnPrepareSubmission,
-  onColumnSendFinalSubmission,
   onContextMenu,
   onHeightChange,
   isDarkMode,
@@ -319,37 +317,15 @@ export default function WorkflowColumns({
               const invoiceCards = invoiceAction
                 ? getColumnCards(group.colKeys[0]).filter((card) => selectedActionCardIds?.includes(card.id))
                 : [];
-              /* "Consolidated": ticked cards with created documents get "Send For Final Submission", the
-                 rest "Create Submission Documents"; a mix of both shows the two buttons side by side. */
-              const submissionReadyCards =
-                invoiceAction === "submission"
-                  ? invoiceCards.filter((card) => submissionIdByCardId[String(card.id)] != null)
-                  : [];
-              const submissionPendingCards =
-                invoiceAction === "submission"
-                  ? invoiceCards.filter((card) => submissionIdByCardId[String(card.id)] == null)
-                  : [];
-              const invoiceButton =
-                invoiceAction === "submission"
-                  ? submissionPendingCards.length
-                    ? "prepareSubmission"
-                    : "finalSubmission"
-                  : invoiceAction;
+              /* "Consolidated": ticked cards whose submission documents are not created yet get "Create
+                 Submission Documents"; creating them opens the Final Submission Email. */
+              const invoiceButton = invoiceAction === "submission" ? "prepareSubmission" : invoiceAction;
               const invoiceButtonCards =
                 invoiceAction === "submission"
-                  ? submissionPendingCards.length
-                    ? submissionPendingCards
-                    : submissionReadyCards
+                  ? invoiceCards.filter((card) => submissionIdByCardId[String(card.id)] == null)
                   : invoiceCards;
               const hasInvoiceButton =
-                invoiceAction === "sendInvoice" ? invoiceCards.length === 1 : invoiceCards.length > 0;
-              const secondaryAction =
-                submissionPendingCards.length && submissionReadyCards.length
-                  ? {
-                      ...INVOICE_ACTION_BUTTONS.finalSubmission,
-                      onClick: () => onColumnSendFinalSubmission?.(submissionReadyCards),
-                    }
-                  : undefined;
+                invoiceAction === "sendInvoice" ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
               const invoiceActionHandlers = {
                 upload: onColumnUploadInvoice,
                 issueArInvoice: (cards) =>
@@ -359,7 +335,6 @@ export default function WorkflowColumns({
                 sendInvoice: ([card]) => onColumnSendInvoice?.(card),
                 merge: onColumnMergeInvoice,
                 prepareSubmission: onColumnPrepareSubmission,
-                finalSubmission: onColumnSendFinalSubmission,
               };
 
               return (
@@ -378,7 +353,6 @@ export default function WorkflowColumns({
                     isDarkMode={isDarkMode}
                     actionLabel={hasInvoiceButton ? INVOICE_ACTION_BUTTONS[invoiceButton].label : "Batch"}
                     actionIcon={hasInvoiceButton ? INVOICE_ACTION_BUTTONS[invoiceButton].icon : undefined}
-                    secondaryAction={secondaryAction}
                     onActionClick={
                       hasInvoiceButton
                         ? () => invoiceActionHandlers[invoiceButton]?.(invoiceButtonCards)
