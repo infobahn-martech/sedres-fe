@@ -106,8 +106,22 @@
   --text-label: #b5c2d9;
   --text-subtle: #9aaac4;
   --text-control: #e6ecf5;
+  --text-faint: #6b7fa3;
 
   --brand: #1e4fd8;
+  --brand-hover: #2a5fea;
   --brand-bright: #4c8dff;
   --progress-track: #1e2c4a;
+
+  --danger: #ff7a7e;
+  --success: #5be0b0;
+  --warning: #f5c063;
+
+  // Common data table (header row uses --bg-highlight)
+  --bg-row-alt: #0d182c;
+  --bg-row-hover: #15233f;
+  --skeleton-highlight: #1c2c4d;
+
+  // Tooltips, dropdown menus (surface uses --bg-highlight)
+  --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.45);
 }

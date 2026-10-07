@@ -224,3 +224,8 @@
     }
   }
 }
+
+// Dark theme — app shell main area (navy palette, partials/_theme.scss)
+[data-theme="dark"] .dashboard-wrp .page-cont-wrp {
+  background: var(--bg-page);
+}

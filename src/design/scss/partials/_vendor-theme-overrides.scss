@@ -128,4 +128,42 @@
     --base-color: var(--surface-hover);
     --highlight-color: var(--surface-secondary);
   }
+
+  // react-tooltip v5 + Bootstrap dropdown menus share one popover surface.
+  // The tooltip's colors come from its own --rt-* variables (set on :root by
+  // react-tooltip.css), so they're overridden there instead of with !important.
+  .react-tooltip {
+    --rt-color-dark: var(--bg-highlight);
+    --rt-color-white: var(--text-control);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-popover);
+  }
+
+  .dropdown-menu {
+    background-color: var(--bg-highlight);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-popover);
+
+    .dropdown-item {
+      color: var(--text-control);
+
+      &:hover,
+      &:focus {
+        background-color: rgba(255, 255, 255, 0.06);
+        color: var(--text-heading);
+      }
+    }
+  }
+
+  .modal-content {
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-popover);
+  }
+
+  // Keyboard focus ring on interactive controls (text inputs keep their own
+  // border-based focus styles, so they're left out here).
+  :is(a, button, [role='button'], [type='button'], [type='checkbox'], [tabindex]):focus-visible {
+    outline: 2px solid var(--brand-bright);
+    outline-offset: 2px;
+  }
 }

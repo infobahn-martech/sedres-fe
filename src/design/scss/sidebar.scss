@@ -1000,7 +1000,7 @@
             }
 
             .drp-ico {
-                color: #6b7fa3;
+                color: var(--text-faint);
             }
 
             .menu .link {
@@ -1014,7 +1014,7 @@
 
                 &:not(.darkmode-toggle) {
                     &:hover {
-                        background-color: rgba(76, 141, 255, 0.1);
+                        background-color: rgba(255, 255, 255, 0.04);
                         color: #ffffff;
                     }
 
@@ -1035,16 +1035,31 @@
                         }
                     }
                 }
+
+                // Parent of an open submenu: white text, no fill — the
+                // active sub-item carries the highlight instead.
+                &.submenu:not(.collapsed) {
+                    background-color: transparent;
+                    color: #ffffff;
+
+                    &:hover {
+                        background-color: rgba(255, 255, 255, 0.04);
+                    }
+
+                    .drp-ico {
+                        color: #ffffff;
+                    }
+                }
             }
 
             .submenu_items .link {
                 &:hover {
-                    background-color: rgba(76, 141, 255, 0.1);
+                    background-color: rgba(255, 255, 255, 0.04);
                     color: #ffffff;
                 }
 
                 &.submenu_active {
-                    background-color: rgba(76, 141, 255, 0.16);
+                    background-color: rgba(76, 141, 255, 0.14);
                     color: #ffffff;
 
                     &:before {

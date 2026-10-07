@@ -214,7 +214,7 @@ function CustomTable({
 
   return (
     <>
-      <div className="container-fluid">
+      <div className="container-fluid custom-table">
         <div className="row">
           <div className="table-wrapper table-responsive ">
             <table className="table table-striped">
@@ -300,7 +300,7 @@ function CustomTable({
                                 </button>
                               </td>
                             )}
-                            {Sl && <td>{idx + slNo}</td>}
+                            {Sl && <td className="custom-table-sl">{idx + slNo}</td>}
                             {columns.map(
                               ({
                                 selector,
