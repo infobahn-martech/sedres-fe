@@ -221,6 +221,10 @@ const useBatchMoveStore = create((set, get) => ({
       return { columnByCardId };
     }),
 
+  /** Forgets where the app itself placed cards (batch column moves and batch grouping), so the next board
+   * load decides, as it does after a page reload. */
+  resetCardPlacement: () => set({ columnByCardId: {}, batchByCardId: {}, batchIdByNumber: {} }),
+
   setSubmissionId: (cardIds, submissionId) =>
     set((state) => {
       if (!cardIds?.length || submissionId == null) return state;

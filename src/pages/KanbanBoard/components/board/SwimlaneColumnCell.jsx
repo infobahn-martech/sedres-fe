@@ -9,6 +9,7 @@ import { buildSwimlaneDroppableId } from "../../hooks/useKanbanDnD";
 import { CARD_GAP, CELL_PADDING_X, getCardsPerRow, getCardWidth } from "../../utils/boardGridHelpers";
 import usePermissions from "../../../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES } from "../../../../shared/constants/permissions";
+import { isSubmittedInvoicesColumnTitle } from "../../utils/columnTitles";
 import "../../../../design/scss/pages/kanban-board/column.scss";
 
 const EMPTY_SELECTED_IDS = [];
@@ -228,7 +229,7 @@ export default function SwimlaneColumnCell({
                   workflowTitle={workflowTitle}
                   fixedDimensions={{ width: cardWidth }}
                   isSelectedForAction={selectedActionCardIds.includes(card.id)}
-                  onToggleSelectForAction={onToggleCardSelect}
+                  onToggleSelectForAction={isSubmittedInvoicesColumnTitle(column.title) ? undefined : onToggleCardSelect}
                   onSelectDragStart={onCardSelectDragStart}
                   onSelectDragEnter={onCardSelectDragEnter}
                 />
