@@ -135,6 +135,7 @@ export default function WorkflowColumns({
      column instead. */
   const columnByCardId = useBatchMoveStore((state) => state.columnByCardId);
   const batchByCardId = useBatchMoveStore((state) => state.batchByCardId);
+  const batchIdByNumber = useBatchMoveStore((state) => state.batchIdByNumber);
   const submissionIdByCardId = useBatchMoveStore((state) => state.submissionIdByCardId);
 
   const loadExportApprovalStatuses = useExportApprovalStatusStore((state) => state.loadStatuses);
@@ -236,7 +237,11 @@ export default function WorkflowColumns({
         cards: loose,
       });
     }
-    byNumber.forEach((batchCards, batchNumber) => {
+    /* Newest batch (highest backend batch id) first; batches without an id keep their order. */
+    const batchEntries = [...byNumber.entries()].sort(
+      ([numberA], [numberB]) => (Number(batchIdByNumber[numberB]) || 0) - (Number(batchIdByNumber[numberA]) || 0)
+    );
+    batchEntries.forEach(([batchNumber, batchCards]) => {
       batches.push({
         id: `${laneId}-${colKey}-${batchNumber}`,
         title: batchNumber,
