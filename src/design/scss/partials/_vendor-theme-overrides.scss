@@ -15,8 +15,10 @@
     border-color: var(--input-border) !important;
   }
 
-  div[class$='-menu'],
-  div[class*='-menu'],
+  // Excludes SearchableSelect menus, whose modifier classes (e.g.
+  // user-modal-premium-select-menu) also contain "-menu".
+  div[class$='-menu']:not(.cf-multi-select-dropdown),
+  div[class*='-menu']:not(.cf-multi-select-dropdown),
   div[class$='-menuList'],
   div[class*='-menuList'] {
     background-color: var(--surface-primary) !important;
@@ -155,9 +157,89 @@
     }
   }
 
-  .modal-content {
-    border: 1px solid var(--border-strong);
-    box-shadow: var(--shadow-popover);
+  // Bootstrap modal backdrop — themed through its own variables. Opacity 1
+  // with a translucent color gives the same dim on every backdrop, including
+  // the per-modal backdrop classes that only swap background-color.
+  .modal-backdrop {
+    --bs-backdrop-bg: var(--modal-overlay);
+    --bs-backdrop-opacity: 1;
+  }
+
+  // Bootstrap checkboxes / radios: unchecked fill comes from
+  // --bs-form-check-bg (white by default via --bs-body-bg).
+  .form-check-input {
+    --bs-form-check-bg: transparent;
+    border: 1.5px solid var(--text-faint);
+
+    &:checked {
+      background-color: var(--brand);
+      border-color: var(--brand);
+    }
+  }
+
+  // Bootstrap switches draw their knob from --bs-form-switch-bg (a 25% black
+  // circle) — invisible on the transparent track, so use the muted token color.
+  .form-switch .form-check-input:not(:checked) {
+    --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%239aaac4'/%3e%3c/svg%3e");
+  }
+
+  // react-phone-input-2 (bootstrap.css theme) — country dropdown + search.
+  // The input itself is styled by .phone-input (form-designs.scss).
+  .react-tel-input {
+    .selected-flag:hover,
+    .selected-flag:focus,
+    .flag-dropdown.open .selected-flag {
+      background-color: transparent;
+    }
+
+    .selected-flag .arrow {
+      border-top-color: var(--text-subtle);
+
+      &.up {
+        border-bottom-color: var(--text-subtle);
+      }
+    }
+
+    .country-list {
+      background-color: var(--bg-highlight);
+      border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow-popover);
+      color: var(--text-control);
+
+      .country {
+        &:hover,
+        &.highlight {
+          background-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .dial-code {
+          color: var(--text-subtle);
+        }
+      }
+
+      .search {
+        background-color: var(--bg-highlight);
+      }
+
+      .search-box {
+        background-color: var(--bg-inset);
+        border-color: var(--border-strong);
+        color: var(--text-control);
+
+        &::placeholder {
+          color: var(--text-subtle);
+        }
+      }
+
+      .no-entries-message {
+        color: var(--text-subtle);
+      }
+    }
+
+    .invalid-number-message {
+      background-color: var(--bg-card);
+      color: var(--danger);
+    }
   }
 
   // Keyboard focus ring on interactive controls (text inputs keep their own

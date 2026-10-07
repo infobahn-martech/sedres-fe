@@ -385,3 +385,68 @@
         }
     }
 }
+
+// ── Dark theme — Add/Edit Permission + User Permissions modal ──
+[data-theme="dark"] {
+    .permCheck-item {
+        border-color: var(--border);
+    }
+
+    .permCheckWrp,
+    .permcheck-subitems .permCheckWrp {
+        background-color: var(--bg-inset);
+        color: var(--text-control);
+
+        .toggleSwitch .togglerCheckbox {
+            label {
+                background-color: var(--border-strong);
+            }
+
+            label:after {
+                background-color: var(--text-subtle);
+            }
+
+            input:checked ~ label {
+                background-color: var(--brand);
+
+                &:after {
+                    background-color: #ffffff;
+                }
+            }
+        }
+    }
+
+    .permcheck-subitems .permCheckWrp {
+        border-color: var(--border);
+    }
+
+    .addPermissions {
+        .form-check-input[type=checkbox] {
+            border: 1.5px solid var(--text-faint);
+        }
+
+        label.form-check-label {
+            color: var(--text-control);
+        }
+
+        .permColumn-title {
+            border-bottom-color: var(--border);
+            color: var(--text-heading);
+        }
+
+        .permRow {
+            .form-check-input:checked {
+                background-color: var(--brand);
+                border-color: var(--brand);
+            }
+
+            label {
+                color: var(--text-control);
+            }
+        }
+    }
+
+    .addPermissionMod .modal-dialog.custom-mod .modal-footer {
+        border-top-color: var(--border);
+    }
+}

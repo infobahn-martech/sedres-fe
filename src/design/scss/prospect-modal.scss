@@ -301,10 +301,9 @@ span.error.text-danger {
   font-size: 20px;
   font-weight: 600;
 
-  // Brand blue reads low-contrast against dark modal backgrounds — swap for
-  // the lighter accent blue already used for dark-mode text.
+  // Headings are white in dark mode — brand blue is reserved for actions.
   [data-theme="dark"] & {
-    color: var(--color-primary-accent);
+    color: var(--text-heading);
   }
 }
 
@@ -723,6 +722,66 @@ span.error.text-danger {
 
     &:last-of-type {
       margin-bottom: 0;
+    }
+  }
+}
+
+// ── Dark theme — shared form controls + confirm dialog ──
+// Navy palette tokens live in partials/_theme.scss. Light mode is untouched.
+[data-theme="dark"] {
+  .form-control {
+    background-color: var(--bg-inset);
+    color: var(--text-control);
+    border-color: var(--border-strong);
+
+    &:hover {
+      border-color: var(--border-hover);
+    }
+
+    &:focus {
+      background-color: var(--bg-inset);
+      color: var(--text-control);
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    // Kept as separate rules: a browser that doesn't know one of these
+    // pseudo-elements would drop a combined selector list entirely.
+    &::placeholder {
+      color: var(--text-subtle);
+    }
+
+    &::-webkit-input-placeholder {
+      color: var(--text-subtle);
+    }
+
+    &:-webkit-autofill,
+    &:-webkit-autofill:hover,
+    &:-webkit-autofill:focus,
+    &:-webkit-autofill:active {
+      -webkit-text-fill-color: var(--text-control);
+      -webkit-box-shadow: 0 0 0 1000px var(--bg-inset) inset;
+      box-shadow: 0 0 0 1000px var(--bg-inset) inset;
+    }
+  }
+
+  .custom-label {
+    color: var(--text-subtle);
+    background: var(--bg-card);
+  }
+
+  // Delete / archive confirm (DeleteConfirmationModal)
+  .employee-modal .popup-title {
+    color: var(--text-control);
+  }
+
+  .two-btn button.close {
+    background-color: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-control);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.06);
     }
   }
 }

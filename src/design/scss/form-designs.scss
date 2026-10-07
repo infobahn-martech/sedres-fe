@@ -842,3 +842,280 @@ input[type=number] {
     border-radius: 0 0 12px 12px;
     min-height: 160px;
 }
+
+// ── Dark theme — shared form fields ──
+// One look for every field type: bg --bg-inset, border --border-strong,
+// text --text-control, label/placeholder --text-subtle. Labels that sit on
+// the field's top border are painted with the modal surface (--bg-card).
+// Sizes, radii-driven layout and label positions are unchanged.
+$avatar-placeholder-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3ccircle cx='12' cy='8' r='4'/%3e%3cpath d='M4 20c0-4.4 3.6-6.5 8-6.5s8 2.1 8 6.5z'/%3e%3c/svg%3e");
+
+[data-theme="dark"] {
+  // Floating-label fields (Bootstrap .form-floating — the border lives on the
+  // wrapper, from the compile-time $borderLight, so it can't follow tokens)
+  .form-floating.form-floating {
+    // Bootstrap paints the floated label's ::after patch with --bs-body-bg
+    // (white) — that's the white box behind "Role".
+    --bs-body-bg: var(--bg-card);
+    background-color: var(--bg-inset);
+    border-color: var(--border-strong);
+    border-radius: 8px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+      border-color: var(--border-hover);
+    }
+
+    &:focus-within {
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    > .form-control,
+    > .form-select {
+      background-color: var(--bg-inset);
+      color: var(--text-control);
+    }
+
+    // Floating fields hide their placeholder (the label stands in for it),
+    // exactly as Bootstrap does in light mode — the dark .form-control
+    // placeholder color would otherwise show through beside the label.
+    > .form-control::placeholder {
+      color: transparent;
+    }
+
+    > .form-control::-webkit-input-placeholder {
+      color: transparent;
+    }
+
+    // Resting label sits inside the field, so it takes the field color…
+    > label {
+      background-color: var(--bg-inset);
+      // The base label color uses !important
+      color: var(--text-subtle) !important;
+    }
+
+    // …and once floated onto the border it takes the surface color.
+    > .form-control-plaintext ~ label,
+    > .form-control:focus ~ label,
+    > .form-control:not(:placeholder-shown) ~ label,
+    > .form-select ~ label {
+      background-color: var(--bg-card);
+    }
+
+    &:has(> :disabled) {
+      background-color: var(--field-disabled-bg);
+
+      > .form-control,
+      > .form-select {
+        color: var(--text-faint);
+      }
+    }
+  }
+
+  // Labels for PremiumSelect / phone fields (.phone-wrapper) and react-select
+  .phone-label {
+    color: var(--text-subtle);
+    background: var(--bg-card);
+  }
+
+  label.select-label {
+    background: var(--bg-card);
+    // The base label color uses !important
+    color: var(--text-subtle) !important;
+  }
+
+  // Required asterisks — Bootstrap's .text-danger sets color with !important
+  .form-floating > label .text-danger,
+  .phone-label .text-danger,
+  .report-template-label .text-danger,
+  .lead-form label .star {
+    color: var(--danger) !important;
+  }
+
+  .field-error {
+    color: var(--danger);
+  }
+
+  // react-phone-input-2 input — the base .phone-input rules all use
+  // !important (to beat the library), so the dark values must too.
+  .phone-input {
+    background-color: var(--bg-inset) !important;
+    color: var(--text-control) !important;
+    border-color: var(--border-strong) !important;
+    border-radius: 8px !important;
+
+    &:hover {
+      border-color: var(--border-hover) !important;
+    }
+
+    &:focus {
+      border-color: var(--brand-bright) !important;
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    &::placeholder {
+      color: var(--text-subtle);
+    }
+
+    &:disabled {
+      background-color: var(--field-disabled-bg) !important;
+      color: var(--text-faint) !important;
+    }
+  }
+
+  // Checkboxes / radios
+  .form-check {
+    .form-check-input {
+      border: 1.5px solid var(--text-faint);
+    }
+
+    .form-check-input:checked {
+      background-color: var(--brand);
+      border-color: var(--brand);
+    }
+  }
+
+  // MUI date field wrapper used by Add/Edit modals — base border and label
+  // color use !important
+  .add-edit-modal-date-field,
+  .form-floating.form-floating.add-edit-modal-date-field {
+    background: var(--bg-inset);
+    border-color: var(--border-strong) !important;
+
+    &:hover {
+      border-color: var(--border-hover) !important;
+    }
+
+    &:focus-within {
+      border-color: var(--brand-bright) !important;
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    &:has(.is-invalid) {
+      border-color: var(--danger) !important;
+    }
+
+    > label {
+      background-color: var(--bg-card);
+      color: var(--text-subtle) !important;
+    }
+  }
+
+  // react-select inside .form-select containers
+  .form-control.form-select.react-select-container {
+    background-color: var(--bg-inset);
+    border-color: var(--border-strong);
+
+    .react-select__placeholder {
+      color: var(--text-subtle);
+    }
+
+    .react-select__single-value,
+    .react-select__input-container {
+      color: var(--text-control);
+    }
+
+    .react-select__menu {
+      background-color: var(--bg-highlight);
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-popover);
+    }
+
+    .react-select__option {
+      background: transparent;
+      color: var(--text-control);
+    }
+
+    .react-select__option--is-focused,
+    .react-select__option:active {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-control);
+    }
+
+    .react-select__option--is-selected {
+      background: rgba(76, 141, 255, 0.14);
+      color: var(--text-heading);
+    }
+  }
+
+  // File drop zone
+  .file-drop-zone {
+    background-color: var(--bg-inset);
+    border-color: var(--border-strong);
+
+    &:hover,
+    &--active {
+      border-color: var(--brand-bright);
+      background-color: rgba(76, 141, 255, 0.08);
+    }
+
+    &--error {
+      border-color: var(--danger);
+      background-color: var(--bg-inset);
+    }
+
+    &__text,
+    &__name {
+      color: var(--text-control);
+    }
+
+    &__hint,
+    &__formats {
+      color: var(--text-subtle);
+    }
+  }
+
+  // Password show/hide toggle
+  .lead-form .form-floating.desig-inp.desig-inp--password .password-toggle {
+    color: var(--text-subtle);
+
+    &:hover {
+      color: var(--text-control);
+    }
+  }
+
+  // Avatar upload
+  .avatar-wrapper {
+    border-color: var(--border-strong);
+    background: var(--avatar-placeholder-bg);
+
+    // Placeholder photo (DummyProPic) is a light raster image — hide it and
+    // draw a token-colored user icon instead. Uploaded photos are untouched.
+    &:has(.avatar-image[src*="DummyProPic"]) {
+      position: relative;
+
+      .avatar-image {
+        opacity: 0;
+      }
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-color: var(--text-faint);
+        -webkit-mask: $avatar-placeholder-icon center / 55% no-repeat;
+        mask: $avatar-placeholder-icon center / 55% no-repeat;
+        pointer-events: none;
+      }
+    }
+  }
+
+  .avatar-edit-icon {
+    background: var(--bg-highlight);
+    border: 1px solid var(--border-strong);
+  }
+
+  .avatar-edit-pencil {
+    filter: brightness(0) invert(89%) sepia(8%) saturate(640%) hue-rotate(186deg) brightness(97%);
+  }
+
+  .avatar-outer:hover .avatar-edit-icon {
+    background: var(--brand);
+    border-color: var(--brand);
+  }
+
+  .avatar-outer:hover .avatar-edit-pencil {
+    filter: brightness(0) invert(1);
+  }
+}

@@ -54,6 +54,51 @@ body {
   filter: invert(1) grayscale(100%) brightness(200%);
 }
 
+// Dark theme — one surface + button style for every Bootstrap modal.
+// `.modal .modal-dialog .modal-content` outranks the per-modal radius/padding
+// rules (e.g. `.modal-dialog.custom-mod .modal-content`, 0-3-0).
+[data-theme="dark"] .modal {
+  .modal-dialog .modal-content {
+    background-color: var(--bg-card);
+    color: var(--text-control);
+    border: 1px solid var(--border-strong);
+    border-radius: 16px;
+    box-shadow: var(--shadow-popover);
+  }
+
+  .modal-header,
+  .modal-footer {
+    border-color: var(--border);
+  }
+
+  .btn.btn-primary {
+    background-color: var(--brand);
+    border-color: var(--brand);
+    color: #ffffff;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: var(--brand-hover);
+      border-color: var(--brand-hover);
+      color: #ffffff;
+    }
+  }
+
+  .btn.btn-outline {
+    background-color: transparent;
+    // The base .btn-outline border uses !important
+    border-color: var(--border-strong) !important;
+    color: var(--text-control);
+
+    &:hover,
+    &:focus {
+      background-color: rgba(255, 255, 255, 0.06);
+      color: var(--text-control);
+    }
+  }
+}
+
 // MUI date/time pickers render their popup (Paper + calendar) in a portal
 // under document.body, styled by MUI's own baseline (no MuiThemeProvider is
 // configured in this app), so it's plain white unless overridden here. This
@@ -104,19 +149,59 @@ body {
     border-color: var(--color-primary-accent) !important;
   }
 
+  // Outlined fields — same look as every other form field (bg/border/label
+  // tokens). The notch gap follows the label automatically; the label itself
+  // gets no background so nothing paints a box behind it.
   .MuiOutlinedInput-notchedOutline,
   .MuiPickersInputBase-notchedOutline {
-    border-color: var(--input-border) !important;
+    border-color: var(--border-strong) !important;
+  }
+
+  .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
+  .MuiPickersInputBase-root:hover .MuiPickersInputBase-notchedOutline {
+    border-color: var(--border-hover) !important;
+  }
+
+  .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline,
+  .MuiPickersInputBase-root.Mui-focused .MuiPickersInputBase-notchedOutline {
+    border-color: var(--brand-bright) !important;
   }
 
   .MuiInputBase-input,
   .MuiPickersSectionList-root {
-    color: var(--text-primary) !important;
+    color: var(--text-control) !important;
+  }
+
+  .MuiInputBase-input::placeholder {
+    color: var(--text-subtle);
+    opacity: 1;
+  }
+
+  .MuiInputLabel-root,
+  .MuiFormLabel-root {
+    color: var(--text-subtle);
+    background-color: transparent;
+
+    &.Mui-focused {
+      color: var(--brand-bright);
+    }
+
+    .MuiFormLabel-asterisk {
+      color: var(--danger);
+    }
   }
 
   .MuiPickersInputBase-root,
   .MuiOutlinedInput-root {
-    background-color: var(--input-bg);
+    background-color: var(--bg-inset);
+
+    &.Mui-disabled {
+      background-color: var(--field-disabled-bg);
+    }
+  }
+
+  .MuiInputBase-input.Mui-disabled {
+    -webkit-text-fill-color: var(--text-faint);
   }
 }
 

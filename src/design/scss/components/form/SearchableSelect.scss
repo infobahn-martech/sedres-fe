@@ -103,3 +103,62 @@
     font-size: 12px;
   }
 }
+
+// ── Dark theme — SearchableSelect / PremiumSelect (field, menu, chips) ──
+// The menu is often portaled to <body> (.cf-searchable-select__menu-portal),
+// so menu/option rules are not nested under the field's wrapper.
+[data-theme="dark"] {
+  .cf-searchable-select .cf-multi-select-email-input,
+  .premium-select.cf-searchable-select .cf-multi-select-email-input {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+    box-shadow: none;
+
+    &:hover {
+      background: var(--bg-inset);
+      border-color: var(--border-hover);
+    }
+
+    &:focus-within {
+      background: var(--bg-inset);
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+  }
+
+  .cf-searchable-select-input {
+    color: var(--text-control);
+
+    &::placeholder {
+      color: var(--text-subtle);
+    }
+  }
+
+  .cf-multi-select-option.is-highlighted,
+  .premium-select.cf-searchable-select .cf-multi-select-option.is-highlighted {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .premium-select.cf-searchable-select .cf-multi-select-option.selected {
+    background: rgba(76, 141, 255, 0.14);
+    color: var(--text-heading);
+  }
+
+  .cf-ms-tag {
+    background: rgba(76, 141, 255, 0.18);
+    color: var(--text-control);
+  }
+
+  .cf-ms-tag-remove {
+    color: var(--text-subtle);
+
+    &:hover {
+      color: var(--danger);
+    }
+  }
+
+  .cf-ms-option-checkbox {
+    accent-color: var(--brand);
+    color-scheme: dark;
+  }
+}

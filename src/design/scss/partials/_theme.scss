@@ -86,7 +86,7 @@
   // left untouched per branding requirements.
   --color-primary-accent: #{$light-blue};
 
-  --modal-overlay: rgba(2, 6, 16, 0.65);
+  --modal-overlay: rgba(0, 0, 0, 0.6);
 
   // Navy dark palette — header/sidebar chrome and the dashboard.
   --bg-page: #070d1a;
@@ -122,6 +122,13 @@
   --bg-row-hover: #15233f;
   --skeleton-highlight: #1c2c4d;
 
-  // Tooltips, dropdown menus (surface uses --bg-highlight)
+  // Tooltips, dropdown menus, modals (surface uses --bg-highlight / --bg-card)
   --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.45);
+
+  // Form fields (bg --bg-inset, border --border-strong, text --text-control,
+  // label/placeholder --text-subtle, disabled text --text-faint)
+  --border-hover: #3a4f7a;
+  --focus-ring: rgba(76, 141, 255, 0.25);
+  --field-disabled-bg: #0d182c;
+  --avatar-placeholder-bg: #1a2744;
 }
