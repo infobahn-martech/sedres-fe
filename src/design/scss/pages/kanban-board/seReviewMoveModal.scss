@@ -120,6 +120,33 @@
       text-align: center;
       color: var(--text-muted);
     }
+
+    .se-review-move-files {
+      display: inline-flex;
+      gap: 8px;
+    }
+
+    .se-review-move-view-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border: 1px solid #1d4ed8;
+      border-radius: 999px;
+      background: transparent;
+      color: #1d4ed8;
+      font-size: 12px;
+      font-weight: 500;
+
+      &:hover:not(:disabled) {
+        background: #eff4ff;
+      }
+
+      &:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+    }
   }
 
   .se-review-move-batch {

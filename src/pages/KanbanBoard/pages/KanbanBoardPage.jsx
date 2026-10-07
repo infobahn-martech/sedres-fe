@@ -617,7 +617,7 @@ export default function KanbanBoardPage() {
   const setSeReview = useBatchMoveStore((state) => state.setSeReview);
   const selectedSeApprovalBatchId = batchIdByNumber[selectedSeApprovalBatch?.title];
 
-  /* SE excel sheet is required on a batch's first upload; the approval email can follow later. */
+  /* SE excel sheet is required on a batch's first upload; the approval email is required every time. */
   const seApprovalUploadFields = useMemo(
     () => [
       {
@@ -632,6 +632,7 @@ export default function KanbanBoardPage() {
         label: "SE Approval Email",
         accept: ".msg,.eml",
         formatsHint: "MSG, EML",
+        required: true,
       },
     ],
     [seDocumentUploadedByBatchId, selectedSeApprovalBatchId]
@@ -798,7 +799,7 @@ export default function KanbanBoardPage() {
         /* The response lists every SE Received card; the review covers only the ones uploaded for. */
         openArInvoiceReviewModal(
           cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
-          { workflowId: selectedInvoiceBatch?.workflowId ?? null }
+          { workflowId: selectedInvoiceBatch?.workflowId ?? null, files: invoices }
         );
         refetchBoard?.();
       } finally {
