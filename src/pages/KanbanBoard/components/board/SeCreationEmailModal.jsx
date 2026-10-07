@@ -38,6 +38,10 @@ const getFileNameFromUrl = (url) => {
   }
 };
 
+/* A required file is only demanded when the backend's draft has none for that slot: with a draft file the
+   user may leave the row alone, or attach their own to send in addition. */
+const isFileRequired = (field) => Boolean(field.required) && !field.document;
+
 // Opened from a batch group's "Send For SE creation" action on the Kanban board, and from the
 // "Consolidated" column's "Send For Final Submission" (with its own title / subject / send label).
 // `documents` lists files the backend already holds for the email (opened, not re-sent; one with a `label`
@@ -135,7 +139,7 @@ const SeCreationEmailModal = ({
     // Quill keeps markup like "<p><br></p>" when cleared, so check the text content only.
     if (!message.replace(/<[^>]*>/g, "").trim()) nextErrors.message = "Please enter a message.";
     (fileFields ?? []).forEach((field) => {
-      if (field.required && !fieldFiles[field.name]?.length) {
+      if (isFileRequired(field) && !fieldFiles[field.name]?.length) {
         nextErrors[`file_${field.name}`] = `Please attach the ${field.label.toLowerCase()}.`;
       }
     });
@@ -352,10 +356,10 @@ const SeCreationEmailModal = ({
                     <div className="se-email-slot__text">
                       <span className="se-email-slot__label" title={field.label}>
                         {field.label}
-                        {field.required && <span className="se-email-slot__required">*</span>}
+                        {isFileRequired(field) && <span className="se-email-slot__required">*</span>}
                       </span>
                       <span className="se-email-slot__hint">
-                        {field.required ? "Required" : "Optional"} · {field.multiple ? "1 or more files" : "1 file"}
+                        {isFileRequired(field) ? "Required" : "Optional"} · {field.multiple ? "1 or more files" : "1 file"}
                       </span>
                     </div>
                   </div>
