@@ -71,17 +71,13 @@ const poUploadFields = [
 ];
 /* The files da/send_submission_email takes on top of the documents the draft already attaches,
    in the order the draft body lists them (the draft's merged invoices come last). The consolidated
-   invoice is not uploaded: the draft attaches it, so it only gets a row in its place. */
+   invoice and merged invoices are attached by the draft; a file picked on their row is sent in addition. */
 const FINAL_SUBMISSION_FILE_FIELDS = [
   { name: "signed_letter", label: "Covering letter (signed and stamped)", required: true },
-  {
-    name: "consolidated_invoice",
-    label: "Consolidated invoice (Excel)",
-    auto: true,
-    autoHint: "Attached by the system when sent",
-  },
+  { name: "consolidated_invoice", label: "Consolidated invoice (Excel)", multiple: true },
   { name: "approved_se_sheet", label: "Approved SE sheet", multiple: true },
   { name: "approved_se_copies", label: "Copies of approved SEs", multiple: true },
+  { name: "merged_invoices", label: "Merged invoices", multiple: true },
 ];
 /* The draft's attachments that belong to a field's row, by their `kind`, or by file name
    (Submission_Letter_<inv>_<id>.pdf, Consolidated_Invoice_<inv>_<id>.xlsx) for a draft without one. */
@@ -1211,6 +1207,8 @@ export default function KanbanBoardPage() {
       (fieldFiles?.signed_letter ?? []).forEach((file) => formData.append("signed_letter", file));
       (fieldFiles?.approved_se_sheet ?? []).forEach((file) => formData.append("approved_se_sheet[]", file));
       (fieldFiles?.approved_se_copies ?? []).forEach((file) => formData.append("approved_se_copies[]", file));
+      (fieldFiles?.consolidated_invoice ?? []).forEach((file) => formData.append("consolidated_invoice[]", file));
+      (fieldFiles?.merged_invoices ?? []).forEach((file) => formData.append("merged_invoices[]", file));
 
       setIsSendingFinalSubmission(true);
       try {
@@ -1242,32 +1240,36 @@ export default function KanbanBoardPage() {
   );
 
   const finalSubmissionDraft = selectedFinalSubmission?.draft;
+  const isMergedInvoicesAttachment = useCallback(
+    (attachment) =>
+      attachment?.url === finalSubmissionDraft?.merged_invoices?.url || /^merged_invoices/i.test(attachment?.name ?? ""),
+    [finalSubmissionDraft]
+  );
   /* The draft's generated covering letter (to sign), consolidated invoice and the batch's approved SE sheet
      open from their own rows. */
   const finalSubmissionFileFields = useMemo(() => {
     const attachments = (finalSubmissionDraft?.attachments ?? []).filter((attachment) => attachment?.url);
     return FINAL_SUBMISSION_FILE_FIELDS.map((field) => {
+      if (field.name === "merged_invoices") {
+        const document = attachments.find((attachment) => isMergedInvoicesAttachment(attachment));
+        return document ? { ...field, document } : field;
+      }
       const draftFile = FINAL_SUBMISSION_DRAFT_FILES[field.name];
       const document = draftFile && attachments.find((attachment) => isDraftFile(draftFile, attachment));
       return document ? { ...field, document } : field;
     });
-  }, [finalSubmissionDraft]);
+  }, [finalSubmissionDraft, isMergedInvoicesAttachment]);
 
-  /* The merged invoices PDF (the draft's merged_invoices file) is shown on its own "Merged invoices" row. */
+  /* Draft attachments that have no row of their own are listed as plain attachments. */
   const finalSubmissionDocuments = useMemo(
     () =>
-      (finalSubmissionDraft?.attachments ?? [])
-        .filter(
-          (attachment) =>
-            attachment?.url &&
-            !Object.values(FINAL_SUBMISSION_DRAFT_FILES).some((draftFile) => isDraftFile(draftFile, attachment))
-        )
-        .map((attachment) =>
-          attachment.url === finalSubmissionDraft?.merged_invoices?.url || /^merged_invoices/i.test(attachment.name ?? "")
-            ? { ...attachment, label: "Merged invoices" }
-            : attachment
-        ),
-    [finalSubmissionDraft]
+      (finalSubmissionDraft?.attachments ?? []).filter(
+        (attachment) =>
+          attachment?.url &&
+          !isMergedInvoicesAttachment(attachment) &&
+          !Object.values(FINAL_SUBMISSION_DRAFT_FILES).some((draftFile) => isDraftFile(draftFile, attachment))
+      ),
+    [finalSubmissionDraft, isMergedInvoicesAttachment]
   );
 
   /* Creates the batch on the backend from the ticked Backlog cards. The backend issues the batch
