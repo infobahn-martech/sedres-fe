@@ -120,32 +120,28 @@
       text-align: center;
       color: var(--text-muted);
     }
+  }
 
-    .se-review-move-files {
-      display: inline-flex;
-      gap: 8px;
+  /* "View" pill: in Review and Move's batch bar and in Invoice Review's table rows. */
+  .se-review-move-view-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border: 1px solid #1d4ed8;
+    border-radius: 999px;
+    background: transparent;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 500;
+
+    &:hover:not(:disabled) {
+      background: #eff4ff;
     }
 
-    .se-review-move-view-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      border: 1px solid #1d4ed8;
-      border-radius: 999px;
-      background: transparent;
-      color: #1d4ed8;
-      font-size: 12px;
-      font-weight: 500;
-
-      &:hover:not(:disabled) {
-        background: #eff4ff;
-      }
-
-      &:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-      }
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
     }
   }
 
@@ -174,6 +170,14 @@
       white-space: nowrap;
       font-weight: 600;
       color: var(--text-primary);
+    }
+
+    /* The batch's uploaded SE document and approval email, at the right end of the bar. */
+    &__files {
+      display: inline-flex;
+      flex-shrink: 0;
+      gap: 8px;
+      margin-left: auto;
     }
 
     &__count {
