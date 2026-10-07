@@ -617,6 +617,7 @@ export default function KanbanBoardPage() {
   const seDocumentUploadedByBatchId = useBatchMoveStore((state) => state.seDocumentUploadedByBatchId);
   const markSeDocumentUploaded = useBatchMoveStore((state) => state.markSeDocumentUploaded);
   const setSeReview = useBatchMoveStore((state) => state.setSeReview);
+  const markSeUnticked = useBatchMoveStore((state) => state.markSeUnticked);
   const selectedSeApprovalBatchId = batchIdByNumber[selectedSeApprovalBatch?.title];
 
   /* SE excel sheet is required on a batch's first upload; the approval email is required every time. */
@@ -651,6 +652,9 @@ export default function KanbanBoardPage() {
 
       const formData = new FormData();
       formData.append("batch_id", batchId);
+      /* The SE document and approval email are for the ticked cards only (call_ids, as in the SE creation email). */
+      const callIds = getBatchCallIds(selectedSeApprovalBatch);
+      if (callIds.length) formData.append("call_ids", callIds.join(","));
       if (seDocument?.[0]) formData.append("se_document", seDocument[0]);
       if (seApprovalEmail?.[0]) formData.append("se_approval_email", seApprovalEmail[0]);
 
@@ -667,9 +671,12 @@ export default function KanbanBoardPage() {
           return;
         }
         if (seDocument?.[0]) markSeDocumentUploaded(batchId);
+        markSeUnticked((selectedSeApprovalBatch?.untickedCards ?? []).map((card) => card.id));
         setSeReview(data.data?.se_review);
         notify(data.message || "SE approval uploaded successfully", "success");
         handleCloseSeApprovalUpload();
+        /* Any card the backend returned to Backlog must not stay drawn in this column by an old placement note. */
+        resetCardPlacement();
         refetchBoard?.();
       } finally {
         setIsUploadingSeApproval(false);
@@ -677,8 +684,12 @@ export default function KanbanBoardPage() {
     },
     [
       selectedSeApprovalBatchId,
+      selectedSeApprovalBatch,
+      getBatchCallIds,
+      markSeUnticked,
       markSeDocumentUploaded,
       setSeReview,
+      resetCardPlacement,
       handleCloseSeApprovalUpload,
       refetchBoard,
     ]
