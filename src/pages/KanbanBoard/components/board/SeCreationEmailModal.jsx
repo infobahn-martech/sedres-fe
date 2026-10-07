@@ -63,6 +63,7 @@ const SeCreationEmailModal = ({
   title = "New SE Creation Email",
   subtitle = "Compose sales order confirmation",
   sendLabel = "Send for SE Creation",
+  showSendIcon = true,
   subjectPrefix = "Sent for SE Creation",
   documents = EMPTY_LIST,
   fileFields = null,
@@ -481,7 +482,7 @@ const SeCreationEmailModal = ({
         Cancel
       </button>
       <button type="button" className="se-email-footer__send" onClick={handleSend} disabled={isSubmitting}>
-        <FiSend />
+        {showSendIcon && <FiSend />}
         {isSubmitting ? "Sending..." : sendLabel}
       </button>
     </div>
@@ -514,6 +515,7 @@ SeCreationEmailModal.propTypes = {
   title: PropTypes.string,
   subtitle: PropTypes.string,
   sendLabel: PropTypes.string,
+  showSendIcon: PropTypes.bool,
   subjectPrefix: PropTypes.string,
   documents: PropTypes.arrayOf(
     PropTypes.shape({ name: PropTypes.string, url: PropTypes.string, label: PropTypes.string })
