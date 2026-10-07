@@ -1668,7 +1668,8 @@ const renderTabContent = (
   boardId,
   currentStep,
   stepLabels,
-  soActionStateResetToken
+  soActionStateResetToken,
+  onCloseCard
 ) => {
   const commonProps = {
     card,
@@ -1682,6 +1683,7 @@ const renderTabContent = (
     currentStep,
     stepLabels,
     soActionStateResetToken,
+    onCloseCard,
     onSave: addModeSave.onSave,
     isSavingGeneral: addModeSave.isSavingGeneral,
     hasSubmitted: addModeSave.hasSubmitted,
@@ -3181,7 +3183,8 @@ function CardForm({
                 boardId,
                 currentStep,
                 stepLabels,
-                soActionStateResetToken
+                soActionStateResetToken,
+                handleClose
               )}
           </>
         )}
