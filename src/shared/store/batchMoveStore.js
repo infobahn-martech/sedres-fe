@@ -74,19 +74,24 @@ const useBatchMoveStore = create((set, get) => ({
   isSeReviewLoading: false,
   isConfirmingSeReview: false,
 
-  /** The user's ticks are kept across uploads, so a card ticked before the SE upload stays ticked. */
+  /** The user's ticks are kept across uploads, so a card ticked before the SE upload stays ticked. A card
+   * the SE review newly approves is ticked here, so "Review and Move" opens with the approved cards ticked
+   * (also after a reload); a later untick by the user is not undone by a refresh. */
   setSeReview: (seReview) =>
     set((state) => {
       const seApprovedByCardId = { ...state.seApprovedByCardId };
+      const seTickedByCardId = { ...state.seTickedByCardId };
       (Array.isArray(seReview?.cards) ? seReview.cards : []).forEach((card) => {
         if (card?.card_id == null) return;
-        seApprovedByCardId[String(card.card_id)] = Boolean(card.approved);
+        const key = String(card.card_id);
+        if (card.approved && !state.seApprovedByCardId[key]) seTickedByCardId[key] = true;
+        seApprovedByCardId[key] = Boolean(card.approved);
       });
       const seReviewByBatchId =
         seReview?.batch_id != null
           ? { ...state.seReviewByBatchId, [seReview.batch_id]: seReview }
           : state.seReviewByBatchId;
-      return { seApprovedByCardId, seReviewByBatchId };
+      return { seApprovedByCardId, seTickedByCardId, seReviewByBatchId };
     }),
 
   /** Ticks an "Awaiting SE" card, or unticks it. Before the batch's SE upload any card can be
