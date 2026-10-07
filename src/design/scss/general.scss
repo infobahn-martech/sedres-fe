@@ -4552,3 +4552,52 @@
     color: var(--text-faint) !important;
   }
 }
+
+// ==========================================================
+// Dark theme — card detail modal (Appointment Details tab)
+// ==========================================================
+[data-theme="dark"] {
+  .detail-row {
+    border-bottom-color: var(--border);
+  }
+
+  .detail-row-label {
+    color: var(--text-subtle);
+  }
+
+  .detail-row-value {
+    color: var(--text-heading);
+  }
+
+  .detail-row-empty {
+    color: var(--text-faint);
+  }
+
+  .detail-subsection-title {
+    color: var(--cf-accent-text);
+    border-top-color: var(--border);
+  }
+
+  .detail-attachment-view-btn {
+    color: var(--cf-accent-icon);
+    border-color: var(--border-strong);
+
+    &:hover:not(:disabled) {
+      background: var(--cf-accent-tint);
+      border-color: var(--cf-accent);
+    }
+  }
+
+  .daily-task-todo-wrapper > .cf-field label::before {
+    background: var(--cf-accent);
+  }
+
+  .form-save-button {
+    box-shadow: var(--cf-btn-shadow);
+
+    &:hover:not(:disabled),
+    &:active:not(:disabled) {
+      box-shadow: var(--cf-btn-shadow);
+    }
+  }
+}

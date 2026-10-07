@@ -3060,3 +3060,129 @@
 /* .gro-require-submit:hover {
   background: #c4b5f5;
 } */
+
+/* =======================================
+   DARK THEME — card detail modal shell
+   ======================================= */
+
+/* Inside this modal --text-inverse is only used as text on a coloured fill
+   (topbar, Save/Send, status chips). Its global dark value is navy, so
+   restore white for this subtree instead of changing the shared token. */
+[data-theme="dark"] .cardform-panel {
+  --text-inverse: #ffffff;
+}
+
+/* Header: card colour as tint + 3px stripe on the card surface. Same formula
+   as the status-tone-header mixin (plain CSS can't @include it), mixed onto
+   --bg-card instead of transparent. !important beats the inline
+   backgroundColor set from topbarColor. */
+[data-theme="dark"] .cardform-topbar {
+  background-color: color-mix(in srgb, var(--card-tone) 20%, var(--bg-card)) !important;
+  box-shadow: inset 0 3px 0 var(--card-tone);
+  color: var(--text-heading);
+}
+
+[data-theme="dark"] .cardform-id {
+  color: var(--text-body);
+}
+
+[data-theme="dark"] .cardform-title {
+  color: var(--text-heading);
+}
+
+[data-theme="dark"] .topbar-icon-btn,
+[data-theme="dark"] .cardform-close-btn,
+[data-theme="dark"] .cardform-title-edit-btn,
+[data-theme="dark"] .cardform-title-save-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-control);
+}
+
+[data-theme="dark"] .topbar-icon-btn:hover,
+[data-theme="dark"] .cardform-close-btn:hover,
+[data-theme="dark"] .cardform-title-edit-btn:hover,
+[data-theme="dark"] .cardform-title-save-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+[data-theme="dark"] .cardform-close-btn:disabled:hover,
+[data-theme="dark"] .cardform-close-btn--loading:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .topbar-icon-btn svg {
+  color: var(--text-control);
+}
+
+/* Tabs — purple accent family, lifted for navy */
+[data-theme="dark"] .cardform-tabs .tab:not(.active):not(.disabled):hover {
+  background: var(--cf-accent-tint);
+  color: var(--cf-accent-text);
+}
+
+[data-theme="dark"] .cardform-tabs .tab.active {
+  background: var(--cf-accent-tint);
+  color: var(--cf-accent-text);
+  box-shadow: inset 0 0 0 1px var(--cf-accent-ring);
+}
+
+/* Gradient-text title: a solid fill paints over the clipped gradient */
+[data-theme="dark"] .email-preview-topbar-title {
+  -webkit-text-fill-color: var(--cf-accent-text);
+}
+
+/* Appointment email preview — the body is the email as sent, so it stays
+   "paper" white and inline template colours render as the recipient sees
+   them. !important beats the Batch-1 react-quill dark overrides
+   (_vendor-theme-overrides.scss), which are !important themselves. The
+   toolbar keeps the dark vendor style. */
+[data-theme="dark"] .email-preview-message-quill-react {
+  border-color: var(--border-strong);
+}
+
+[data-theme="dark"] .email-preview-message-quill-react .ql-container.ql-snow {
+  background-color: var(--paper-bg) !important;
+  color: var(--paper-text) !important;
+}
+
+[data-theme="dark"] .email-preview-message-quill-react .ql-editor {
+  color: var(--paper-text) !important;
+}
+
+[data-theme="dark"] .email-preview-message-quill-react .ql-editor.ql-blank::before {
+  color: #98a2b3 !important;
+}
+
+/* Footer stage stepper — StepsProgress sets every colour inline, so
+   !important is required. Done = green, upcoming = navy outline. */
+[data-theme="dark"] .cardform-steps-wrapper .step-circle {
+  background: var(--bg-card) !important;
+  border-color: var(--cf-step-upcoming-border) !important;
+  color: var(--text-body) !important;
+}
+
+[data-theme="dark"] .cardform-steps-wrapper .step-item.completed .step-circle {
+  background: var(--cf-step-done) !important;
+  border-color: var(--cf-step-done) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .cardform-steps-wrapper .step-line {
+  background: var(--border-strong) !important;
+}
+
+[data-theme="dark"] .cardform-steps-wrapper .step-line.completed-line {
+  background: var(--cf-step-done) !important;
+}
+
+[data-theme="dark"] .cardform-steps-wrapper .step-label {
+  color: var(--text-subtle) !important;
+}
+
+[data-theme="dark"] .cardform-steps-wrapper .step-item.completed .step-label {
+  color: var(--success) !important;
+}
+
+[data-theme="dark"] .cardform-steps-wrapper .step-item.is-current .step-label {
+  color: var(--text-heading) !important;
+}

@@ -10167,3 +10167,94 @@ a.operation-task-document-name--link {
     text-decoration: underline;
   }
 }
+
+// ==========================================================
+// Dark theme — card detail modal (Operation / Husbandry tabs)
+// ==========================================================
+[data-theme="dark"] {
+  // Gradient-text titles: keep the gradient, both stops light. background-image
+  // (not the shorthand) so the text clip from the base rule survives.
+  .operation-content-title {
+    background-image: linear-gradient(90deg, var(--text-heading) 0%, var(--cf-accent-text) 65%);
+  }
+
+  // Single-hue gradient text → solid light accent (fill paints over the clip)
+  .operation-email-preview-header h4,
+  .operation-task-card-title {
+    -webkit-text-fill-color: var(--cf-accent-text);
+  }
+
+  .operation-email-send-btn {
+    box-shadow: var(--cf-btn-shadow);
+
+    &:hover:not(:disabled) {
+      box-shadow: var(--cf-btn-shadow);
+    }
+  }
+
+  // Email preview body is the email as sent → "paper" white so inline template
+  // colours render as the recipient sees them. !important beats the Batch-1
+  // react-quill dark overrides (_vendor-theme-overrides.scss). Toolbar stays dark.
+  .operation-email-preview-panel .operation-email-preview-message-quill {
+    border-color: var(--border-strong);
+
+    .ql-container.ql-snow {
+      background-color: var(--paper-bg) !important;
+      color: var(--paper-text) !important;
+    }
+
+    .ql-editor {
+      color: var(--paper-text) !important;
+    }
+
+    .ql-editor.ql-blank::before {
+      color: #98a2b3 !important;
+    }
+  }
+
+  // Crew Immigration / Husbandry hero — flat navy, no glow or dot pattern
+  .husbandry-service-hero {
+    background: var(--bg-card);
+    border-color: var(--border);
+    box-shadow: none;
+
+    &::before,
+    &::after {
+      display: none;
+    }
+  }
+
+  // Lavender (#e2e6ff) soft buttons → purple tint. !important beats the
+  // !important light overrides above (.operation-wrapper / .husbandry-wrapper).
+  .operation-wrapper:not(.husbandry-wrapper) .checklist-btn-primary,
+  .operation-wrapper.husbandry-wrapper .checklist-btn-primary,
+  .operation-wrapper.husbandry-wrapper .btn-primary,
+  .operation-wrapper.husbandry-wrapper button[class*="btn"]:not(.landing-action-btn):not(.print-action-icon-wrap):not(.note-action-btn):not(.note-dropdown-btn):not(.dispatch-note-action-btn):not(.dispatch-note-dropdown-btn):not(.crew-summary-movement-filter__btn) {
+    background: var(--cf-accent-tint) !important;
+    border-color: var(--cf-accent-ring) !important;
+    color: var(--cf-accent-text) !important;
+    box-shadow: none;
+
+    &:hover,
+    &:active {
+      background: var(--cf-accent-ring) !important;
+      border-color: var(--cf-accent-ring) !important;
+    }
+
+    // Same disabled look as Batch 1 (.btn.btn-primary:disabled in common.scss)
+    &:disabled,
+    &:disabled:hover {
+      background: var(--btn-disabled-bg) !important;
+      border-color: transparent !important;
+      color: var(--btn-disabled-text) !important;
+      opacity: 1;
+      transform: none;
+      cursor: not-allowed;
+    }
+  }
+
+  // "click to browse" — accent link colour inside the card modal
+  .cardform-panel .upload-link {
+    color: var(--cf-accent-icon);
+  }
+}

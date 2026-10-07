@@ -5278,3 +5278,45 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
     width: auto;
   }
 }
+
+// ==========================================================
+// Dark theme — card detail modal (Check List tab)
+// ==========================================================
+[data-theme="dark"] {
+  .cl-empty,
+  .cl-empty--error,
+  .cl-empty--prerequisite {
+    background: var(--bg-card);
+    border: 1px dashed var(--border-strong);
+  }
+
+  // The icon SVG uses presentation attributes, which any CSS rule outranks
+  .cl-empty-ico svg {
+    rect {
+      fill: var(--bg-inset);
+      stroke: var(--text-faint);
+    }
+
+    path {
+      stroke: var(--text-faint);
+    }
+  }
+
+  .cl-empty__title {
+    color: var(--text-heading);
+  }
+
+  .cl-empty__msg {
+    color: var(--text-subtle);
+  }
+
+  // Not a .btn.btn-primary, so the Batch 1 disabled rule never matched
+  .checklist-btn-primary:disabled {
+    background: var(--btn-disabled-bg);
+    color: var(--btn-disabled-text);
+    box-shadow: none;
+    opacity: 1;
+    transform: none;
+    cursor: not-allowed;
+  }
+}

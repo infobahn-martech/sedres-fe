@@ -1111,7 +1111,7 @@ const TopBar = ({
   };
 
   return (
-    <div className="cardform-topbar" style={{ backgroundColor: topbarColor }}>
+    <div className="cardform-topbar" style={{ backgroundColor: topbarColor, "--card-tone": topbarColor }}>
       <div>
         {!isAddMode && <span className="cardform-id">ID : {cardId}</span>}
         {isAddMode ? (
@@ -1315,7 +1315,7 @@ const StepsProgress = ({ totalSteps = TOTAL_STEPS, activeStep = 2, completedStep
         const isCurrentStep = stepNumber === actualCurrentStep;
         // Treat current step as completed for styling
         const isStepCompletedOrCurrent = isCompleted || isCurrentStep;
-        const stepClass = isStepCompletedOrCurrent ? "completed" : "";
+        const stepClass = `${isStepCompletedOrCurrent ? "completed" : ""}${isCurrentStep ? " is-current" : ""}`;
 
         // Check if next step is also completed or current (for line styling)
         const nextStepNumber = stepNumber + 1;

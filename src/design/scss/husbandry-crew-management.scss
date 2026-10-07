@@ -4118,3 +4118,22 @@
     cursor: not-allowed;
   }
 }
+
+// ==========================================================
+// Dark theme — card detail modal (Crew Immigration header)
+// ==========================================================
+// Request Launch Hire is filled with --card-color (often #2A00FF); in dark it
+// uses the modal's primary fill like Save / Send.
+[data-theme="dark"] .crew-header-btn--launch-hire {
+  background: var(--cf-accent-fill);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: var(--cf-btn-shadow);
+
+  &:hover,
+  &:disabled,
+  &:disabled:hover {
+    background: var(--cf-accent-fill);
+    border-color: transparent;
+  }
+}

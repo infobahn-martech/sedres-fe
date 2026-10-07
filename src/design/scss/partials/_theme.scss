@@ -150,4 +150,21 @@
   --tint-danger-bg-hover: rgba(229, 72, 77, 0.22);
   --tint-neutral-bg: rgba(154, 170, 196, 0.12);
   --tint-neutral-bg-hover: rgba(154, 170, 196, 0.2);
+
+  // Card detail modal — its own purple accent (light uses #4f46e5/#6d5ef5),
+  // lifted to light tones so text reads on navy
+  --cf-accent: #9b7bff;
+  --cf-accent-text: #c9b8ff;
+  --cf-accent-icon: #b9a3ff;
+  --cf-accent-tint: rgba(155, 123, 255, 0.16);
+  --cf-accent-ring: rgba(155, 123, 255, 0.35);
+  --cf-accent-fill: linear-gradient(135deg, #4f46e5 0%, #6d28d9 100%);
+  --cf-btn-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --cf-step-done: #22c08a;
+  --cf-step-upcoming-border: #3a4f7a;
+
+  // Email previews render as "paper" so inline template colours show exactly
+  // as the recipient sees them
+  --paper-bg: #ffffff;
+  --paper-text: #1a273c;
 }
