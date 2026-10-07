@@ -4340,3 +4340,30 @@ $so-po-blue: #1a56db;
     flex: 1;
   }
 }
+// ==========================================================
+// Dark theme — Sales Order sub-modals: elevation from the shared modal
+// tokens (_theme.scss). Panels without a border get the ring edge.
+// ==========================================================
+[data-theme="dark"] {
+  .so-wo-modal-backdrop,
+  .so-po-modal-backdrop,
+  .document-library-picker-overlay,
+  .so-doc-modal-overlay {
+    background: var(--backdrop);
+    -webkit-backdrop-filter: var(--backdrop-blur);
+    backdrop-filter: var(--backdrop-blur);
+  }
+
+  .so-wo-modal,
+  .so-po-modal,
+  .document-library-picker-dialog {
+    background: var(--modal-bg);
+    box-shadow: var(--modal-shadow-edge);
+  }
+
+  .so-doc-modal {
+    background: var(--modal-bg);
+    border-color: var(--modal-border);
+    box-shadow: var(--modal-shadow);
+  }
+}

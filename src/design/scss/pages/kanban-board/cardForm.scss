@@ -3207,3 +3207,18 @@ $gro-supervisor-control-border: #d0d5dd;
   background: rgba(255, 255, 255, 0.2);
   transform: none;
 }
+
+// Dark theme — GRO stage upload modal elevation (shared modal tokens)
+[data-theme="dark"] {
+  .gro-stage-upload-modal-overlay {
+    background: var(--backdrop);
+    -webkit-backdrop-filter: var(--backdrop-blur);
+    backdrop-filter: var(--backdrop-blur);
+  }
+
+  .gro-stage-upload-modal {
+    background: var(--modal-bg);
+    border-color: var(--modal-border);
+    box-shadow: var(--modal-shadow);
+  }
+}

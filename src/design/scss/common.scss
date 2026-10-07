@@ -59,11 +59,11 @@ body {
 // rules (e.g. `.modal-dialog.custom-mod .modal-content`, 0-3-0).
 [data-theme="dark"] .modal {
   .modal-dialog .modal-content {
-    background-color: var(--bg-card);
+    background-color: var(--modal-bg);
     color: var(--text-control);
-    border: 1px solid var(--border-strong);
+    border: 1px solid var(--modal-border);
     border-radius: 16px;
-    box-shadow: var(--shadow-popover);
+    box-shadow: var(--modal-shadow);
   }
 
   .modal-header,

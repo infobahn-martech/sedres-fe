@@ -248,3 +248,17 @@
     background: rgba(0, 0, 0, 0.3);
   }
 }
+
+// Dark theme — drawer elevation from the shared modal tokens (_theme.scss)
+[data-theme="dark"] {
+  .board-filter-overlay {
+    background-color: var(--backdrop);
+    -webkit-backdrop-filter: var(--backdrop-blur);
+    backdrop-filter: var(--backdrop-blur);
+  }
+
+  .board-filter-panel {
+    background: var(--modal-bg);
+    box-shadow: var(--modal-shadow-edge);
+  }
+}

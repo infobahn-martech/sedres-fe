@@ -3065,20 +3065,30 @@
    DARK THEME — card detail modal shell
    ======================================= */
 
-/* Inside this modal --text-inverse is only used as text on a coloured fill
+/* Elevation: shared modal tokens (_theme.scss). The panel has no border, so
+   the edge is drawn as a ring — no size change.
+   Inside this modal --text-inverse is only used as text on a coloured fill
    (topbar, Save/Send, status chips). Its global dark value is navy, so
    restore white for this subtree instead of changing the shared token. */
-[data-theme="dark"] .cardform-panel {
-  --text-inverse: #ffffff;
+[data-theme="dark"] .cardform-overlay {
+  background: var(--backdrop);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  backdrop-filter: var(--backdrop-blur);
 }
 
-/* Header: card colour as tint + 3px stripe on the card surface. Same formula
-   as the status-tone-header mixin (plain CSS can't @include it), mixed onto
-   --bg-card instead of transparent. !important beats the inline
-   backgroundColor set from topbarColor. */
+[data-theme="dark"] .cardform-panel {
+  --text-inverse: #ffffff;
+  background: var(--modal-bg);
+  box-shadow: var(--modal-shadow-edge);
+}
+
+/* Header: card colour as a 28% tint + 3px stripe on the modal surface, and a
+   bottom edge (inset, so no height change). Same idea as the
+   status-tone-header mixin (plain CSS can't @include it). !important beats
+   the inline backgroundColor set from topbarColor. */
 [data-theme="dark"] .cardform-topbar {
-  background-color: color-mix(in srgb, var(--card-tone) 20%, var(--bg-card)) !important;
-  box-shadow: inset 0 3px 0 var(--card-tone);
+  background-color: color-mix(in srgb, var(--card-tone) 28%, var(--modal-bg)) !important;
+  box-shadow: inset 0 3px 0 var(--card-tone), inset 0 -1px 0 var(--border-strong);
   color: var(--text-heading);
 }
 

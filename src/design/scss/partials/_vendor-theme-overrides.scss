@@ -202,8 +202,10 @@
   // with a translucent color gives the same dim on every backdrop, including
   // the per-modal backdrop classes that only swap background-color.
   .modal-backdrop {
-    --bs-backdrop-bg: var(--modal-overlay);
+    --bs-backdrop-bg: var(--backdrop);
     --bs-backdrop-opacity: 1;
+    -webkit-backdrop-filter: var(--backdrop-blur);
+    backdrop-filter: var(--backdrop-blur);
   }
 
   // Bootstrap checkboxes / radios: unchecked fill comes from
