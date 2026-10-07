@@ -1059,10 +1059,17 @@
                 }
 
                 &.submenu_active {
-                    background-color: rgba(76, 141, 255, 0.14);
+                    background-color: rgba(76, 141, 255, 0.2);
                     color: #ffffff;
 
+                    // The base accent bar sits at left:-18px (outside the
+                    // item in this layout) — pull it inside the left edge.
                     &:before {
+                        left: 0;
+                        top: 8px;
+                        bottom: 8px;
+                        width: 3px;
+                        border-radius: 0 3px 3px 0;
                         background-color: var(--brand-bright);
                     }
                 }
