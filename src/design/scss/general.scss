@@ -4619,6 +4619,55 @@
     }
   }
 
+  // Native checkboxes in the card modal (Sales Order, Husbandry, Comments…).
+  // Batch 1 only themed Bootstrap's .form-check-input; these are bare
+  // <input type="checkbox">, so the UA draws a white box. Inline / class
+  // sizes still apply; the :where() size below only fills in when none is set
+  // (appearance: none drops the UA intrinsic size).
+  .cardform-panel input[type="checkbox"]:not(.form-check-input):not(.cf-ms-option-checkbox):not(.PrivateSwitchBase-input) {
+    -webkit-appearance: none;
+    appearance: none;
+    flex-shrink: 0;
+    border: 1.5px solid var(--text-faint);
+    border-radius: 4px;
+    background: transparent center / 100% no-repeat;
+    vertical-align: middle;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+
+    &:hover:not(:disabled) {
+      border-color: var(--cf-accent);
+    }
+
+    &:checked,
+    &:indeterminate {
+      background-color: var(--cf-accent-solid);
+      border-color: var(--cf-accent-solid);
+    }
+
+    &:checked {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3E%3C/svg%3E");
+    }
+
+    &:indeterminate {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-width='3' d='M6 10h8'/%3E%3C/svg%3E");
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--brand-bright);
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  @at-root :where([data-theme="dark"] .cardform-panel input[type="checkbox"]) {
+    width: 13px;
+    height: 13px;
+  }
+
   // Email preview "+" attachment button — purple accent like the other add buttons
   .email-preview-attachment-add {
     background: var(--cf-accent-tint-soft);

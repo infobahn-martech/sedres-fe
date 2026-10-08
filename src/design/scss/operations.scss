@@ -10376,3 +10376,16 @@ a.operation-task-document-name--link {
     }
   }
 }
+
+// Dark theme — Husbandry DA crew table header (lavender → navy header row).
+// !important beats the base header's !important.
+[data-theme="dark"] {
+  .husbandry-da-crew-table-wrapper .husbandry-da-crew-table thead {
+    background: var(--bg-highlight) !important;
+    box-shadow: inset 0 -1px 0 var(--border-strong);
+  }
+
+  .husbandry-da-crew-table-wrapper .husbandry-da-crew-table thead th {
+    color: var(--text-body) !important;
+  }
+}

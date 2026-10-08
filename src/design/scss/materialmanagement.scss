@@ -2327,3 +2327,20 @@ body .material-management-modal .upload-main-text {
     }
   }
 }
+
+// ==========================================================
+// Dark theme — Husbandry material / note tables (card detail modal)
+// ==========================================================
+[data-theme="dark"] {
+  .material-table-container .table.material-table thead,
+  .note-thead {
+    background: var(--bg-highlight);
+  }
+
+  // !important beats the base lavender header's !important
+  .material-table-container .table.material-table thead th,
+  .material-table-container .table.material-table .note-thead th {
+    background: var(--bg-highlight) !important;
+    color: var(--text-body);
+  }
+}

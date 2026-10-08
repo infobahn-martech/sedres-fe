@@ -148,6 +148,8 @@
   --tint-brand-text: #8fb9ff;
   --tint-danger-bg: rgba(229, 72, 77, 0.14);
   --tint-danger-bg-hover: rgba(229, 72, 77, 0.22);
+  --tint-warning-bg: rgba(245, 192, 99, 0.14);
+  --tint-success-bg: rgba(91, 224, 176, 0.12);
   --tint-neutral-bg: rgba(154, 170, 196, 0.12);
   --tint-neutral-bg-hover: rgba(154, 170, 196, 0.2);
 
@@ -160,6 +162,10 @@
   --cf-accent-tint-soft: rgba(155, 123, 255, 0.14);
   --cf-accent-tint-hover: rgba(155, 123, 255, 0.22);
   --cf-accent-ring: rgba(155, 123, 255, 0.35);
+  --cf-accent-border: rgba(155, 123, 255, 0.55);
+  --cf-accent-tint-faint: rgba(155, 123, 255, 0.1);
+  --cf-accent-solid: #6d4aff;
+  --icon-disabled: #3a4f7a;
   --cf-accent-fill: linear-gradient(135deg, #4f46e5 0%, #6d28d9 100%);
   --cf-btn-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
   --cf-step-done: #22c08a;

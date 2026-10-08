@@ -681,3 +681,82 @@
     grid-template-columns: 1fr;
   }
 }
+
+// ==========================================================
+// Dark theme — Subtasks tab (card detail modal, purple accent)
+// ==========================================================
+[data-theme="dark"] {
+  .task-tab-doc-upload {
+    color: var(--cf-accent-text);
+  }
+
+  .task-tab-doc-view:hover {
+    background: var(--cf-accent-tint-soft);
+    color: var(--cf-accent-text);
+  }
+
+  .task-tab-doc-remove {
+    background: var(--tint-danger-bg);
+    color: var(--danger);
+
+    &:hover:not(:disabled) {
+      background: var(--danger);
+      color: var(--bg-card);
+    }
+  }
+
+  .task-tab-cancel-btn:hover:not(:disabled) {
+    color: var(--cf-accent-text);
+  }
+
+  .task-tab-list-count {
+    background: var(--cf-accent-tint);
+    color: var(--cf-accent-text);
+  }
+
+  .task-tab-empty svg {
+    color: var(--text-faint);
+  }
+
+  .task-tab-task-card:hover::before,
+  .task-tab-task-card--editing::before {
+    background: var(--cf-accent);
+  }
+
+  .task-tab-task-card--editing {
+    border-color: var(--cf-accent-ring);
+  }
+
+  .task-tab-task-card--completed::before,
+  .task-tab-task-card--completed:hover::before {
+    background: var(--success);
+  }
+
+  .task-tab-icon-btn:hover:not(:disabled) {
+    background: var(--cf-accent-tint-soft);
+    color: var(--cf-accent-text);
+  }
+
+  .task-tab-status-badge--pending {
+    background: var(--tint-warning-bg);
+    color: var(--warning);
+  }
+
+  .task-tab-status-badge--completed {
+    background: var(--tint-success-bg);
+    color: var(--success);
+  }
+
+  .task-tab-task-due--overdue {
+    background: var(--tint-danger-bg);
+    color: var(--danger);
+  }
+
+  .task-tab-task-doc {
+    color: var(--cf-accent-text);
+
+    &:hover {
+      background: var(--cf-accent-tint-soft);
+    }
+  }
+}

@@ -920,3 +920,56 @@
     justify-content: center;
   }
 }
+
+// ==========================================================
+// Dark theme — Document Library tab (card detail modal, purple accent)
+// ==========================================================
+[data-theme="dark"] {
+  .doc-lib-tree-folder-btn.is-active {
+    background: var(--cf-accent-tint);
+    border-left-color: var(--cf-accent);
+    box-shadow: none;
+
+    .doc-lib-tree-folder-name {
+      color: var(--cf-accent-text);
+    }
+  }
+
+  .doc-lib-view-btn.is-active {
+    background: var(--cf-accent-tint);
+    color: var(--cf-accent-text);
+  }
+
+  .doc-lib-file-row.is-selected {
+    background: var(--cf-accent-tint);
+    border-left-color: var(--cf-accent);
+    box-shadow: none;
+  }
+
+  .doc-lib-file-list--grid .doc-lib-file-row.is-selected {
+    background: var(--cf-accent-tint);
+    border-color: var(--cf-accent-ring);
+  }
+
+  .doc-lib-file-icon {
+    &--pdf {
+      background: var(--tint-danger-bg);
+      color: var(--danger);
+    }
+
+    &--doc {
+      background: var(--tint-brand-bg);
+      color: var(--tint-brand-text);
+    }
+
+    &--xls {
+      background: var(--tint-success-bg);
+      color: var(--success);
+    }
+
+    &--msg {
+      background: var(--cf-accent-tint);
+      color: var(--cf-accent-text);
+    }
+  }
+}

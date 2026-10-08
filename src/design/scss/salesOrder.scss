@@ -4387,3 +4387,180 @@ $so-po-blue: #1a56db;
     box-shadow: var(--modal-shadow);
   }
 }
+
+// ==========================================================
+// Dark theme — Sales Order tab (card detail modal, purple accent)
+// ==========================================================
+[data-theme="dark"] {
+  // Order Details card — flat navy. The light card animates a glow gradient,
+  // a pulse shadow and a white ::before sheen; all three read as a light wash.
+  .so-left-panel {
+    background: var(--bg-card);
+    border-color: var(--border);
+    box-shadow: none;
+    animation: none;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  // Items table header — !important beats the base lavender gradient's !important
+  .sales-order-table-container .table.sales-order-table thead th {
+    background: var(--bg-highlight) !important;
+    color: var(--text-body);
+    font-weight: 600;
+    border-bottom-color: var(--border-strong);
+    border-right: 1px solid var(--border);
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+
+  // "Call File" group rows — !important beats the inline colours
+  .so-call-file-label {
+    color: var(--text-heading) !important;
+  }
+
+  .so-call-file-count {
+    color: var(--text-body) !important;
+    background-color: var(--cf-accent-tint) !important;
+  }
+
+  // Native selects (Tax Code, Type of PO): the UA arrow is drawn dark, so draw
+  // our own; padding-right replaces the space the native arrow took.
+  .sales-order-table-container .sales-order-table .sales-order-type-po-select {
+    -webkit-appearance: none;
+    appearance: none;
+    padding-right: 24px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239aaac4' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    color-scheme: dark;
+
+    &:disabled {
+      background-color: var(--field-disabled-bg);
+      border-color: var(--border);
+      color: var(--text-subtle);
+      cursor: not-allowed;
+    }
+  }
+
+  // Outline buttons (Sync SAP / DA status) — hard-coded #2a00ff text + border
+  .sales-order-sync-sap-button,
+  .sales-order-da-status-button {
+    border-color: var(--cf-accent-border);
+    color: var(--cf-accent-text);
+
+    &:hover,
+    &:active {
+      background: var(--cf-accent-tint-soft);
+    }
+  }
+
+  // Pagination
+  .so-pagination-btn:hover:not(:disabled):not(.is-active) {
+    background: var(--bg-row-hover);
+    color: var(--text-heading);
+  }
+
+  .so-pagination-nav {
+    border-color: var(--border-strong);
+    color: var(--text-body);
+
+    &:disabled {
+      color: var(--text-faint);
+      opacity: 1;
+    }
+  }
+
+  .so-pagination-page.is-active {
+    background: var(--cf-accent-solid);
+    border-color: var(--cf-accent-solid);
+    color: #ffffff;
+    box-shadow: none;
+  }
+
+  // Disabled / locked fields (Posting Date; Delivery/Document Date and
+  // BP Currency in read-only mode)
+  .so-header-field:has(.Mui-disabled, .cf-searchable-select.disabled, .cf-multi-select-email-input.disabled, :disabled) {
+    background: var(--field-disabled-bg);
+    border-color: var(--border);
+  }
+
+  // !important beats the base disabled -webkit-text-fill-color (#5b6178) !important
+  .so-header-field .so-header-input.cf-datetime-picker .cf-datetime-input-field {
+    .Mui-disabled,
+    .Mui-disabled * {
+      color: var(--text-subtle) !important;
+      -webkit-text-fill-color: var(--text-subtle) !important;
+    }
+
+    .Mui-disabled .MuiSvgIcon-root {
+      color: var(--icon-disabled);
+      opacity: 1;
+    }
+  }
+
+  .so-header-field .premium-select.cf-searchable-select.disabled .cf-multi-select-email-input,
+  .so-header-field .premium-select.cf-searchable-select .cf-multi-select-email-input.disabled {
+    .cf-searchable-select-input,
+    .cf-multi-select-placeholder,
+    .cf-multi-select-selected-value {
+      color: var(--text-subtle);
+    }
+
+    .cf-multi-select-arrow {
+      color: var(--icon-disabled);
+      opacity: 1;
+    }
+  }
+
+  // Accounting Summary
+  .so-accounting-label {
+    color: var(--text-body);
+  }
+
+  .so-accounting-value {
+    color: var(--text-heading);
+  }
+
+  .so-accounting-currency {
+    background: var(--cf-accent-tint);
+    border-color: var(--cf-accent-ring);
+    color: var(--cf-accent-text);
+  }
+
+  // Discount % / amount — no background in light, so the UA white showed
+  .so-accounting-discount-input {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+    color: var(--text-heading);
+    color-scheme: dark;
+
+    &::placeholder {
+      color: var(--text-faint);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--brand-bright);
+    }
+  }
+
+  .so-accounting-grand {
+    background: var(--cf-accent-tint-faint);
+
+    .so-accounting-label {
+      color: var(--text-control);
+      font-weight: 600;
+    }
+  }
+
+  // Gradient text → solid white (fill paints over the transparent clip colour)
+  .so-accounting-grand-value {
+    background: none;
+    -webkit-text-fill-color: var(--text-heading);
+  }
+}

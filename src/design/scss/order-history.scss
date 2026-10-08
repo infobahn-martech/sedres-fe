@@ -315,3 +315,32 @@
     transform: scaleX(1);
   }
 }
+
+// ==========================================================
+// Dark theme — Order History (Husbandry tab, purple accent)
+// ==========================================================
+[data-theme="dark"] {
+  .order-history-expand-toggle {
+    color: var(--cf-accent-text);
+
+    &:focus-visible {
+      outline-color: var(--brand-bright);
+    }
+  }
+
+  // !important beats the base header rule's !important
+  .order-history-table-wrap .order-history-chain-table thead th {
+    background: var(--bg-highlight) !important;
+    color: var(--text-body) !important;
+    border-bottom-color: var(--border-strong);
+  }
+
+  .order-history-section-title,
+  .order-history-step-doc {
+    color: var(--cf-accent-text);
+  }
+
+  .order-history-step-connector.is-done::after {
+    background: var(--cf-accent);
+  }
+}

@@ -3129,10 +3129,10 @@ const SalesOrderList = ({
                               >
                                 ▶
                               </span>
-                              <span style={{ fontWeight: "600", color: "#1a1a1a" }}>
+                              <span className="so-call-file-label" style={{ fontWeight: "600", color: "#1a1a1a" }}>
                                 Call File: {callFile}
                               </span>
-                              <span style={{
+                              <span className="so-call-file-count" style={{
                                 fontSize: "12px",
                                 color: "#666",
                                 backgroundColor: "rgba(42, 0, 255, 0.1)",

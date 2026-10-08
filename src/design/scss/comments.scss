@@ -268,3 +268,59 @@
     box-shadow: none;
   }
 }
+
+// ==========================================================
+// Dark theme — Comments tab (card detail modal, purple accent)
+// ==========================================================
+[data-theme="dark"] {
+  .comments-tab-comment-actions .subtasks-tab-edit-btn:hover:not(:disabled) {
+    background: var(--cf-accent-tint-soft);
+    color: var(--cf-accent-text);
+  }
+
+  .comments-tab-comment-actions .comments-tab-delete-btn {
+    color: var(--danger);
+
+    &:hover:not(:disabled) {
+      background: var(--tint-danger-bg);
+      color: var(--danger);
+    }
+  }
+
+  .comments-tab-list-scroll {
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: var(--scrollbar-thumb-hover);
+    }
+  }
+
+  .comments-tab-mention-highlight {
+    color: var(--cf-accent-text);
+    background: var(--cf-accent-tint);
+  }
+
+  .comments-tab-attachment-icon {
+    color: var(--text-subtle);
+  }
+
+  .comments-tab-email-input:focus {
+    border-color: var(--brand-bright);
+  }
+
+  .comments-tab-save-btn:disabled {
+    &,
+    &:hover {
+      background: var(--btn-disabled-bg);
+      color: var(--btn-disabled-text);
+    }
+  }
+}
