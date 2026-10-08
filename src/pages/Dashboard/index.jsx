@@ -1,18 +1,32 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
+  ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
 import { FiAlertTriangle } from "react-icons/fi";
-import { PackageOpen, Container, UsersRound, ShipWheel, ReceiptText, ClockAlert } from "lucide-react";
+import {
+  PackageOpen,
+  Container,
+  UsersRound,
+  ShipWheel,
+  ReceiptText,
+  ClockAlert,
+  Ship,
+  CalendarDays,
+  Trophy,
+  Building2,
+} from "lucide-react";
 import dashboardService from "../../services/dashboardService";
 import DateRangePicker from "./DateRangePicker";
 import { useThemeStore } from "../../shared/store/themeStore";
@@ -77,6 +91,13 @@ const formatCompactCurrency = (value) => {
   return `${CURRENCY} ${value}`;
 };
 
+// Axis ticks drop the currency (the chart subtitle carries it) so labels stay on one line.
+const formatAxisValue = (value) => {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${Math.round(value / 1_000)}K`;
+  return value;
+};
+
 const formatDate = (iso) =>
   new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
@@ -130,6 +151,44 @@ const PeriodFilter = ({ value, onChange }) => (
   </>
 );
 
+// Shared hover card for every chart. `color` covers marks filled with a gradient, whose payload color is a url().
+const ChartTooltip = ({ active, payload, label, formatter = (value) => value.toLocaleString(), color }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="dash-tooltip">
+      {label && <div className="dash-tooltip-label">{label}</div>}
+      {payload.map((item) => (
+        <div key={item.name} className="dash-tooltip-row">
+          <span className="dash-tooltip-dot" style={{ background: item.payload?.color ?? color ?? item.color }} />
+          <span className="dash-tooltip-name">{item.name}</span>
+          <span className="dash-tooltip-value">{formatter(item.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const ChartLegend = ({ items }) => (
+  <ul className="chart-legend">
+    {items.map((item) => (
+      <li key={item.key}>
+        <span className="chart-legend-swatch" style={{ background: item.color }} />
+        {item.name}
+      </li>
+    ))}
+  </ul>
+);
+
+// Vertical gradient used by area fills and bars — solid at the top, fading toward the baseline.
+const FadeGradient = ({ id, color, from = 1, to = 0.55 }) => (
+  <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stopColor={color} stopOpacity={from} />
+    <stop offset="100%" stopColor={color} stopOpacity={to} />
+  </linearGradient>
+);
+
+const average = (rows, key) => (rows.length ? rows.reduce((sum, row) => sum + row[key], 0) / rows.length : 0);
+
 const EmptyRow = ({ colSpan, text }) => (
   <tr>
     <td colSpan={colSpan} className="dash-table-empty">
@@ -158,12 +217,14 @@ const Dashboard = () => {
   const seriesColors = SERIES_COLORS[isDark ? "dark" : "light"];
   const chartGridColor = isDark ? "#1a2744" : "#e5e7eb";
   const chartAxisColor = isDark ? "#9aaac4" : "#6b7280";
-  const chartTooltipStyle = {
-    backgroundColor: isDark ? "#0f1a30" : "#fff",
-    border: `1px solid ${isDark ? "#2a3b60" : "#e5e7eb"}`,
-    borderRadius: "8px",
-    color: isDark ? "#ffffff" : "#111827",
+  const chartSurfaceColor = isDark ? "#0f1a30" : "#ffffff";
+  // Recessive axes: no axis or tick lines, muted labels.
+  const axisProps = {
+    axisLine: false,
+    tickLine: false,
+    tick: { fill: chartAxisColor, fontSize: 12 },
   };
+  const barCursor = { fill: chartGridColor, opacity: 0.5 };
 
   useEffect(() => {
     let isMounted = true;
@@ -295,21 +356,45 @@ const Dashboard = () => {
     color: seriesColors[index % seriesColors.length],
     share: totalRevenue ? (branchTotals[index] / totalRevenue) * 100 : 0,
   }));
+  const topSegment = revenueSegments.reduce((top, segment) => (segment.total > top.total ? segment : top), revenueSegments[0]);
+
+  const branchRevenueData = filterByPeriod(overview.revenue_by_branch, revenuePeriod);
+  // Color stays tied to the branch's position in the full list, so filtering never repaints a series.
+  const visibleBranches = overview.branches
+    .map((branch, index) => ({ key: branch.key, name: branch.name, color: seriesColors[index] }))
+    .filter((branch) => matches(revenueBranch, branch.key));
+  const offshoreData = filterByPeriod(overview.revenue_offshore_marine, offshorePeriod);
+
+  const latestCrewMonth = overview.crew_change_trend.at(-1);
+  const openOrdersValue = salesOrders.reduce((sum, so) => sum + so.amount, 0);
+  const overdueShare = salesOrders.length ? Math.round((allOverdueCount / salesOrders.length) * 100) : 0;
 
   const stats = [
-    { title: "Total Vessels Imported", value: summary.total_vessels_imported, icon: <PackageOpen />, tone: "blue" },
-    { title: "Total Vessels Exported", value: summary.total_vessels_exported, icon: <Container />, tone: "green" },
-    { title: "Total Crew Change YTD", value: summary.total_crew_change_ytd, icon: <UsersRound />, tone: "violet" },
-    { title: "Vessels Currently in Agency", value: summary.vessels_in_agency, icon: <ShipWheel />, tone: "blue" },
-    { title: "Open Sales Orders", value: salesOrders.length, icon: <ReceiptText />, tone: "amber" },
-    { title: `Sales Orders > ${OVERDUE_DAYS} Days`, value: allOverdueCount, icon: <ClockAlert />, tone: "red" },
+    { title: "Vessels Imported", value: summary.total_vessels_imported, hint: "Year to date", icon: <PackageOpen />, tone: "blue" },
+    { title: "Vessels Exported", value: summary.total_vessels_exported, hint: "Year to date", icon: <Container />, tone: "green" },
+    {
+      title: "Crew Changes YTD",
+      value: summary.total_crew_change_ytd,
+      hint: latestCrewMonth ? `${latestCrewMonth.count} in ${latestCrewMonth.month}` : "Year to date",
+      icon: <UsersRound />,
+      tone: "violet",
+    },
+    { title: "Vessels in Agency", value: summary.vessels_in_agency, hint: `Across ${PORT_OPTIONS.length} ports`, icon: <ShipWheel />, tone: "blue" },
+    { title: "Open Sales Orders", value: salesOrders.length, hint: `${formatCompactCurrency(openOrdersValue)} open value`, icon: <ReceiptText />, tone: "amber" },
+    { title: `Orders > ${OVERDUE_DAYS} Days`, value: allOverdueCount, hint: `${overdueShare}% of open orders`, icon: <ClockAlert />, tone: "red" },
   ];
 
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
-        <h2 className="dashboard-title">Dashboard</h2>
-        <p className="dashboard-subtitle">Vessels, crew changes, revenue and open sales orders at a glance.</p>
+        <div>
+          <h2 className="dashboard-title">Dashboard</h2>
+          <p className="dashboard-subtitle">Vessels, crew changes, revenue and open sales orders at a glance.</p>
+        </div>
+        <span className="dashboard-date">
+          <CalendarDays />
+          {formatDate(Date.now())}
+        </span>
       </div>
 
       <div className="charts-grid charts-grid--top">
@@ -333,16 +418,46 @@ const Dashboard = () => {
             <div className="revenue-hero">
               <span className="revenue-hero-label">Total Revenue · {selectedRevenueYear}</span>
               <span className="revenue-hero-value">{formatCurrency(totalRevenue)}</span>
-              <div className="revenue-share-bar" role="img" aria-label="Revenue share by segment">
-                {revenueSegments.map((segment) => (
-                  <span
-                    key={segment.key}
-                    style={{ width: `${segment.share}%`, background: segment.color }}
-                    title={`${segment.name}: ${Math.round(segment.share)}%`}
-                  />
-                ))}
+              <div className="revenue-hero-meta">
+                <span>
+                  <Building2 /> {revenueSegments.length} branches
+                </span>
+                {topSegment?.total > 0 && (
+                  <span>
+                    <Trophy /> {topSegment.name} leads · {Math.round(topSegment.share)}%
+                  </span>
+                )}
               </div>
             </div>
+
+            <div className="revenue-donut">
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={revenueSegments}
+                    dataKey="total"
+                    nameKey="name"
+                    innerRadius={68}
+                    outerRadius={92}
+                    paddingAngle={2}
+                    cornerRadius={4}
+                    stroke="none"
+                    startAngle={90}
+                    endAngle={-270}
+                  >
+                    {revenueSegments.map((segment) => (
+                      <Cell key={segment.key} fill={segment.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<ChartTooltip formatter={formatCurrency} />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="revenue-donut-center">
+                <span className="revenue-donut-value">{formatCompactCurrency(totalRevenue)}</span>
+                <span className="revenue-donut-label">{selectedRevenueYear}</span>
+              </div>
+            </div>
+
             <ul className="revenue-breakdown">
               {revenueSegments.map((segment) => (
                 <li key={segment.key} className="revenue-segment">
@@ -365,14 +480,13 @@ const Dashboard = () => {
       {/* Summary tiles */}
       <div className="stats-grid">
         {stats.map((stat) => (
-          <div key={stat.title} className="stat-card">
+          <div key={stat.title} className={`stat-card stat-card--${stat.tone}`}>
             <div className="stat-card-content">
               <div className={`stat-icon stat-icon--${stat.tone}`}>{stat.icon}</div>
-              <div className="stat-info">
-                <p className="stat-title">{stat.title}</p>
-                <h3 className="stat-value">{stat.value.toLocaleString()}</h3>
-              </div>
+              <p className="stat-title">{stat.title}</p>
             </div>
+            <h3 className="stat-value">{stat.value.toLocaleString()}</h3>
+            {/* <span className="stat-hint">{stat.hint}</span> */}
           </div>
         ))}
       </div>
@@ -412,7 +526,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="" role="tablist">
+          <div className="dash-tabs" role="tablist">
             {VESSEL_TABS.map((tab) => (
               <button
                 key={tab.key}
@@ -445,7 +559,14 @@ const Dashboard = () => {
                 ) : (
                   vesselRows.map((v) => (
                     <tr key={v.id}>
-                      <td className="dash-table-strong">{v.name}</td>
+                      <td className="dash-table-strong">
+                        <span className="dash-vessel">
+                          <span className="dash-vessel-icon">
+                            <Ship />
+                          </span>
+                          {v.name}
+                        </span>
+                      </td>
                       <td>{PORT_LABELS[v.port]}</td>
                       <td>{v.client}</td>
                       <td>{formatDate(v.eta)}</td>
@@ -532,12 +653,28 @@ const Dashboard = () => {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={crewTrend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
-              <XAxis dataKey="month" stroke={chartAxisColor} />
-              <YAxis stroke={chartAxisColor} />
-              <Tooltip contentStyle={chartTooltipStyle} cursor={{ fill: chartGridColor, opacity: 0.4 }} />
-              <Bar dataKey="count" name="Crew Changes" fill={seriesColors[0]} radius={[4, 4, 0, 0]} maxBarSize={36} />
+            <BarChart data={crewTrend} margin={{ top: 16, right: 8, left: -12, bottom: 0 }}>
+              <defs>
+                <FadeGradient id="crew-bar" color={seriesColors[0]} />
+              </defs>
+              <CartesianGrid strokeDasharray="4 4" stroke={chartGridColor} vertical={false} />
+              <XAxis dataKey="month" {...axisProps} tickMargin={10} />
+              <YAxis {...axisProps} />
+              <Tooltip content={<ChartTooltip color={seriesColors[0]} />} cursor={barCursor} />
+              <ReferenceLine
+                y={average(crewTrend, "count")}
+                stroke={chartAxisColor}
+                strokeDasharray="4 4"
+                label={{ value: "Avg", position: "insideTopRight", fill: chartAxisColor, fontSize: 11 }}
+              />
+              <Bar
+                dataKey="count"
+                name="Crew Changes"
+                fill="url(#crew-bar)"
+                activeBar={{ fill: seriesColors[0] }}
+                radius={[6, 6, 0, 0]}
+                maxBarSize={32}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -547,7 +684,8 @@ const Dashboard = () => {
           <div className="chart-header chart-header--row">
             <div>
               <h3 className="chart-title">Monthly Revenue · Branch Wise</h3>
-              <p className="chart-subtitle">Revenue per branch</p>
+              <p className="chart-subtitle">Revenue per branch ({CURRENCY})</p>
+              <ChartLegend items={visibleBranches} />
             </div>
             <div className="dash-filters">
               <FilterSelect
@@ -561,32 +699,33 @@ const Dashboard = () => {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <LineChart
-              data={filterByPeriod(overview.revenue_by_branch, revenuePeriod)}
-              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
-              <XAxis dataKey="month" stroke={chartAxisColor} />
-              <YAxis stroke={chartAxisColor} tickFormatter={formatCompactCurrency} width={72} />
-              <Tooltip contentStyle={chartTooltipStyle} formatter={formatCurrency} />
-              <Legend />
-              {/* Color stays tied to the branch's position in the full list, so filtering never repaints a line. */}
-              {overview.branches.map(
-                (branch, index) =>
-                  matches(revenueBranch, branch.key) && (
-                    <Line
-                      key={branch.key}
-                      type="monotone"
-                      dataKey={branch.key}
-                      name={branch.name}
-                      stroke={seriesColors[index]}
-                      strokeWidth={2}
-                      dot={{ r: 3, fill: seriesColors[index] }}
-                      activeDot={{ r: 5 }}
-                    />
-                  )
-              )}
-            </LineChart>
+            <AreaChart data={branchRevenueData} margin={{ top: 16, right: 8, left: -4, bottom: 0 }}>
+              <defs>
+                {visibleBranches.map((branch) => (
+                  <FadeGradient key={branch.key} id={`rev-${branch.key}`} color={branch.color} from={0.22} to={0} />
+                ))}
+              </defs>
+              <CartesianGrid strokeDasharray="4 4" stroke={chartGridColor} vertical={false} />
+              <XAxis dataKey="month" {...axisProps} tickMargin={10} />
+              <YAxis {...axisProps} tickFormatter={formatAxisValue} width={48} />
+              <Tooltip
+                content={<ChartTooltip formatter={formatCurrency} />}
+                cursor={{ stroke: chartAxisColor, strokeDasharray: "4 4" }}
+              />
+              {visibleBranches.map((branch) => (
+                <Area
+                  key={branch.key}
+                  type="monotone"
+                  dataKey={branch.key}
+                  name={branch.name}
+                  stroke={branch.color}
+                  strokeWidth={2}
+                  fill={`url(#rev-${branch.key})`}
+                  dot={false}
+                  activeDot={{ r: 5, strokeWidth: 2, stroke: chartSurfaceColor, fill: branch.color }}
+                />
+              ))}
+            </AreaChart>
           </ResponsiveContainer>
         </div>
 
@@ -595,23 +734,40 @@ const Dashboard = () => {
           <div className="chart-header chart-header--row">
             <div>
               <h3 className="chart-title">Monthly Revenue · Offshore Marine</h3>
-              <p className="chart-subtitle">Offshore marine revenue</p>
+              <p className="chart-subtitle">
+                {formatCurrency(offshoreData.reduce((sum, m) => sum + m.revenue, 0))} in period
+              </p>
             </div>
             <div className="dash-filters">
               <PeriodFilter value={offshorePeriod} onChange={setOffshorePeriod} />
             </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={filterByPeriod(overview.revenue_offshore_marine, offshorePeriod)} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} vertical={false} />
-              <XAxis dataKey="month" stroke={chartAxisColor} />
-              <YAxis stroke={chartAxisColor} tickFormatter={formatCompactCurrency} width={72} />
+            <BarChart data={offshoreData} margin={{ top: 16, right: 8, left: -4, bottom: 0 }}>
+              <defs>
+                <FadeGradient id="offshore-bar" color={seriesColors[3]} />
+              </defs>
+              <CartesianGrid strokeDasharray="4 4" stroke={chartGridColor} vertical={false} />
+              <XAxis dataKey="month" {...axisProps} tickMargin={10} />
+              <YAxis {...axisProps} tickFormatter={formatAxisValue} width={48} />
               <Tooltip
-                contentStyle={chartTooltipStyle}
-                formatter={formatCurrency}
-                cursor={{ fill: chartGridColor, opacity: 0.4 }}
+                content={<ChartTooltip formatter={formatCurrency} color={seriesColors[3]} />}
+                cursor={barCursor}
               />
-              <Bar dataKey="revenue" name="Revenue" fill={seriesColors[0]} radius={[4, 4, 0, 0]} maxBarSize={36} />
+              <ReferenceLine
+                y={average(offshoreData, "revenue")}
+                stroke={chartAxisColor}
+                strokeDasharray="4 4"
+                label={{ value: "Avg", position: "insideTopRight", fill: chartAxisColor, fontSize: 11 }}
+              />
+              <Bar
+                dataKey="revenue"
+                name="Revenue"
+                fill="url(#offshore-bar)"
+                activeBar={{ fill: seriesColors[3] }}
+                radius={[6, 6, 0, 0]}
+                maxBarSize={32}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
