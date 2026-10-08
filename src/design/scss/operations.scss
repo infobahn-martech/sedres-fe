@@ -10343,22 +10343,6 @@ a.operation-task-document-name--link {
     }
   }
 
-  // The "+" row sat alone above the first field. Pull it onto the first
-  // label's row (right side): -28px cancels the button's own row, and the
-  // -8px shift centres the 28px button on the label line so it doesn't
-  // touch the input below. Only the button takes clicks.
-  .operation-form-card-header-action {
-    position: relative;
-    z-index: 1;
-    margin-bottom: -28px;
-    transform: translateY(-8px);
-    pointer-events: none;
-
-    > * {
-      pointer-events: auto;
-    }
-  }
-
   // Form labels: one step quieter than values (values stay white)
   .operation-wrapper .cf-field label {
     color: var(--text-body);
