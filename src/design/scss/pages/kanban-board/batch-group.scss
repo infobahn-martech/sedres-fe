@@ -23,6 +23,28 @@
   background: transparent;
 }
 
+/* Reuses the card checkbox look (.kanban-card-select-toggle); the header is not a .kanban-card,
+   so the hover-based full opacity is set here. */
+.batch-group__select-all {
+  flex-shrink: 0;
+  opacity: 1;
+
+  &.is-partial .kanban-card-select-toggle-box {
+    position: relative;
+    background: #00368c;
+    border-color: #00368c;
+
+    &::after {
+      content: "";
+      position: absolute;
+      left: 3px;
+      top: 6px;
+      width: 8px;
+      border-top: 2px solid #fff;
+    }
+  }
+}
+
 .batch-group__header {
   display: flex;
   align-items: center;

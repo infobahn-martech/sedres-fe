@@ -100,8 +100,11 @@ export default function BatchGroup({
     return selectedActionCardIds.includes(card.id);
   };
 
+  /* A batch of one card has nothing to choose between, so its card shows no checkbox. */
+  const isSingleCardBatch = !isUngrouped && batch.cards.length === 1;
+
   const getToggleSelectForAction = () => {
-    if (isSingleCardSeBatch || isSubmittedInvoicesColumn) return undefined;
+    if (isSingleCardBatch || isSingleCardSeBatch || isSubmittedInvoicesColumn) return undefined;
     if (isSendSeBatch) return toggleSeCardTick;
     if (isSeReviewBatch) return (card) => toggleSeReviewCard(card.id, { isSeUploadDone });
     return onToggleCardSelect;
@@ -122,6 +125,25 @@ export default function BatchGroup({
   const tickedSeCards = batch.cards.filter(
     (card) => isSingleCardSeBatch || seTickedCardIds.includes(card.id)
   );
+
+  /* Select all covers every batch whose cards have their own checkbox: the per-batch SE ticks
+     (before the SE upload) and the board-wide selection. */
+  const canSelectAll = Boolean(getToggleSelectForAction()) && !(isSeReviewBatch && isSeUploadDone);
+  const showSelectAll = canSelectAll && batch.cards.length > 1;
+  const selectedCount = batch.cards.filter((card) => getIsSelectedForAction(card)).length;
+  const isAllSelected = batch.cards.length > 0 && selectedCount === batch.cards.length;
+  const isSomeSelected = selectedCount > 0 && !isAllSelected;
+
+  const handleToggleSelectAll = () => {
+    if (isSendSeBatch) {
+      setSeTickedCardIds(isAllSelected ? [] : batch.cards.map((card) => card.id));
+      return;
+    }
+    const toggleCard = getToggleSelectForAction();
+    batch.cards
+      .filter((card) => getIsSelectedForAction(card) === isAllSelected)
+      .forEach((card) => toggleCard(card));
+  };
 
   const handleSendSeRequest = () => onSendSeRequest?.({ ...batch, cards: tickedSeCards });
 
@@ -186,6 +208,21 @@ export default function BatchGroup({
               disabled={!tickedSeCards.length}
             >
               Send For SE creation
+            </button>
+          )}
+
+          {showSelectAll && (
+            <button
+              type="button"
+              className={`kanban-card-select-toggle batch-group__select-all ${
+                isAllSelected ? "is-selected" : ""
+              } ${isSomeSelected ? "is-partial" : ""}`}
+              onClick={handleToggleSelectAll}
+              aria-pressed={isAllSelected}
+              aria-label={isAllSelected ? "Deselect all cards" : "Select all cards"}
+              title={isAllSelected ? "Deselect all" : "Select all"}
+            >
+              <span className="kanban-card-select-toggle-box" aria-hidden="true" />
             </button>
           )}
         </div>
