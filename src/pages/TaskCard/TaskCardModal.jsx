@@ -382,7 +382,7 @@ function TaskCardModal({ show, onClose }) {
         <div className="cardform-overlay">
             <div className="cardform-panel add-mode">
 
-                <div className="cardform-topbar tc-topbar" style={{ backgroundColor: topbarColor }}>
+                <div className="cardform-topbar tc-topbar" style={{ backgroundColor: topbarColor, "--card-tone": topbarColor }}>
                     <input
                         type="text"
                         className="cardform-title-input"
