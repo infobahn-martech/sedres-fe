@@ -2739,18 +2739,18 @@ body .modal.archived-workspaces-confirm-modal.show .modal-dialog {
 // (blue header banner, pill search bar, card-style toolbar/table sections).
 .archived-workspaces-modal {
   .modal-dialog {
-    max-width: 1250px;
-    width: 92%;
-    margin: 1rem auto;
-    height: min(800px, calc(100vh - 2rem));
-    max-height: calc(100vh - 2rem);
+    max-width: 1800px;
+    width: 98vw;
+    margin: 1.5rem auto;
+    height: min(800px, calc(100vh - 3rem));
+    max-height: calc(100vh - 3rem);
 
     @media ($sm-991) {
-      max-width: 95%;
-      width: 95%;
-      margin: 0.75rem auto;
-      height: calc(100vh - 1.5rem);
-      max-height: calc(100vh - 1.5rem);
+      max-width: 98vw;
+      width: 98vw;
+      margin: 1rem auto;
+      height: calc(100vh - 2rem);
+      max-height: calc(100vh - 2rem);
     }
   }
 
