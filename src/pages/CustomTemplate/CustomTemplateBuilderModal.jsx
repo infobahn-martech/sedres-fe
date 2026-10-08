@@ -89,13 +89,93 @@ const getTemplateSeed = (template) => ({
     templateId: template?.templateId ?? template?.template_id ?? null,
 });
 
-const buildDefaultTabs = () => MAIN_TAB_NAMES.map((name) => ({
-    id: makeId("tab"),
-    tabId: null,
-    name,
-    fields: [],
-    subTabs: [],
+// Seed fields/subtabs for a new template, mirroring the real Sedres card.
+// Each entry is [label, type, extra?]; extra overrides any createBlankField key.
+const DEFAULT_TAB_STRUCTURE = {
+    "Appointment Details": {
+        fields: [
+            ["Owner", "text"],
+            ["Appointment Email", "file"],
+            ["Appointment Type", "dropdown"],
+            ["Appointment Received", "datetime"],
+            ["Call Type", "dropdown"],
+            ["Port", "dropdown", { optionsSource: "master", masterModule: "ports" }],
+            ["Expected Time of Arrival", "datetime"],
+            ["Expected Commencement of Custom Inspection", "datetime"],
+            ["Expected Time of Departure", "datetime"],
+            ["Last Port", "text"],
+            ["Vessel Type", "dropdown", { optionsSource: "master", masterModule: "vessel_types" }],
+            ["Vessel Name", "text"],
+            ["Billing Entity", "dropdown", { optionsSource: "master", masterModule: "billing_entities" }],
+            ["Vessel Owner", "text"],
+            ["Vessel Charterer", "text"],
+            ["Checklist", "dropdown"],
+            ["Assigned Operator", "dropdown"],
+            ["Service Requestor Name", "text"],
+            ["Service Requestor Email", "email"],
+            ["Daily Report Emails", "email"],
+            ["Billing Instructions", "textarea"],
+        ],
+    },
+    Operation: {
+        subTabs: {
+            "Pre Arrival": [
+                ["Expected Time of Arrival", "datetime", { required: true }],
+                ["Expected Commencement of Custom Inspection", "datetime", { required: true }],
+                ["Expected Commencement of Immigration Clearance for Crew", "datetime", { required: true }],
+                ["Expected Completion of Inward Clearance", "datetime", { required: true }],
+                ["SABER Status", "dropdown"],
+                ["Weather Forecast", "dropdown"],
+                ["Coordinates Type", "dropdown"],
+            ],
+            "Crew Immigration": [],
+            Arrival: [
+                ["Actual Time of Arrival", "datetime", { required: true }],
+                ["Crew Immigration Commenced", "datetime"],
+                ["Crew Immigration Completed", "datetime"],
+                ["Custom Inspection Commenced", "datetime"],
+                ["Custom Inspection Completed", "datetime"],
+                ["Custom Clearance Time", "datetime"],
+                ["Custom Inspection Status", "dropdown"],
+                ["Crew Immigration Status", "dropdown"],
+                ["Inward Clearance", "radio", { options: ["Received", "Not Received"] }],
+            ],
+            Departure: [
+                ["Email Requested Accept", "file"],
+                ["Request for Outward Clearance Received", "datetime", { required: true }],
+                ["Outward Clearance Issued", "datetime", { required: true }],
+                ["Outward Clearance Delivered", "dropdown", { options: ["By Email", "By Hand"] }],
+                ["Vessel Sailed", "datetime", { required: true }],
+                ["Next Port", "text"],
+                ["Attachments", "file"],
+            ],
+            "Check List": [],
+        },
+    },
+};
+
+const buildDefaultFields = (defs = []) => defs.map(([label, type, extra]) => ({
+    ...createBlankField(),
+    label,
+    type,
+    ...extra,
 }));
+
+const buildDefaultTabs = () => MAIN_TAB_NAMES.map((name) => {
+    const seed = DEFAULT_TAB_STRUCTURE[name] ?? {};
+    return {
+        id: makeId("tab"),
+        tabId: null,
+        name,
+        fields: buildDefaultFields(seed.fields),
+        subTabs: Object.entries(seed.subTabs ?? {}).map(([subName, defs]) => ({
+            id: makeId("subtab"),
+            tabId: null,
+            name: subName,
+            fields: buildDefaultFields(defs),
+        })),
+    };
+});
 
 // Same dual-shape acceptance as mapTemplateField, for a tab/subtab's own name
 // (name vs. tab_label) and its list of subtabs (subTabs vs. the API's subtabs).
