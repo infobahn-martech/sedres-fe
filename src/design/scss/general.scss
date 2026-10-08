@@ -669,6 +669,46 @@
         }
       }
     }
+
+    // Dark: the light rules above outrank the shared card-modal field rules
+    // (CardForm.css), so restate the same field look at this specificity.
+    [data-theme="dark"] & {
+      .cf-input,
+      .cf-multi-select-email-input {
+        background: var(--bg-inset);
+        border-color: var(--border-strong);
+        box-shadow: none;
+
+        &:hover {
+          background: var(--bg-inset);
+          border-color: var(--border-hover);
+          box-shadow: none;
+        }
+
+        &:focus-within {
+          background: var(--bg-inset);
+          border-color: var(--brand-bright);
+          box-shadow: 0 0 0 3px var(--focus-ring);
+        }
+      }
+
+      .MuiPickersInputBase-root,
+      .MuiOutlinedInput-root,
+      .MuiInputBase-root,
+      .cf-datetime-picker .cf-datetime-input-field .MuiPickersInputBase-root,
+      .cf-datetime-picker .cf-datetime-input-field .MuiOutlinedInput-root,
+      .cf-datetime-picker .cf-datetime-input-field .MuiInputBase-root {
+        &,
+        &:hover {
+          background: var(--bg-inset);
+        }
+
+        &.Mui-focused {
+          background: var(--bg-inset);
+          box-shadow: 0 0 0 3px var(--focus-ring);
+        }
+      }
+    }
   }
 }
 

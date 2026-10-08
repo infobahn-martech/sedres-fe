@@ -3218,3 +3218,109 @@
 [data-theme="dark"] .cardform-steps-wrapper .step-item.is-current .step-label {
   color: var(--text-heading) !important;
 }
+
+/* ==========================================================
+   Dark — card modal forms (Add card + every tab form inside the
+   card modal). One shared set of field rules, scoped to .cardform-panel.
+   ========================================================== */
+
+/* Add-mode header title input (the --view variant on the topbar keeps its
+   own look). Edge drawn as an inset ring so the height doesn't change. */
+[data-theme="dark"] .cardform-title-input:not(.cardform-title-input--view) {
+  background: var(--bg-inset);
+  color: var(--text-heading);
+  box-shadow: inset 0 0 0 1px var(--border-hover);
+}
+
+[data-theme="dark"] .cardform-title-input:not(.cardform-title-input--view)::placeholder {
+  color: var(--text-faint);
+}
+
+[data-theme="dark"] .cardform-title-input:not(.cardform-title-input--view):focus {
+  box-shadow: inset 0 0 0 1px var(--brand-bright), 0 0 0 3px var(--focus-ring);
+}
+
+[data-theme="dark"] .cardform-title-input:not(.cardform-title-input--view).is-invalid {
+  box-shadow: inset 0 0 0 1px var(--danger), 0 0 0 2px var(--danger);
+}
+
+/* Section titles — purple bar, white title (hover keeps the same look) */
+[data-theme="dark"] .cardform-panel .form-group-title,
+[data-theme="dark"] .cardform-panel .form-group-title:hover {
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+[data-theme="dark"] .cardform-panel .form-group-title::before,
+[data-theme="dark"] .cardform-panel .form-group-title:hover::before {
+  background: var(--cf-accent);
+}
+
+/* Fields — same look as Batch 1 (bg inset, strong border, blue focus ring).
+   Error borders keep winning: they're !important in general.scss. */
+[data-theme="dark"] .cardform-panel .cf-input,
+[data-theme="dark"] .cardform-panel .cf-searchable-select .cf-multi-select-email-input {
+  background: var(--bg-inset);
+  border-color: var(--border-strong);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .cardform-panel .cf-input:hover,
+[data-theme="dark"] .cardform-panel .cf-searchable-select .cf-multi-select-email-input:hover {
+  background: var(--bg-inset);
+  border-color: var(--border-hover);
+}
+
+[data-theme="dark"] .cardform-panel .cf-input:focus-within,
+[data-theme="dark"] .cardform-panel .cf-searchable-select .cf-multi-select-email-input:focus-within {
+  background: var(--bg-inset);
+  border-color: var(--brand-bright);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Placeholders: selects match text inputs; chosen values are white */
+[data-theme="dark"] .cardform-panel .cf-multi-select-placeholder,
+[data-theme="dark"] .cardform-panel .cf-input input::placeholder {
+  color: var(--text-faint);
+}
+
+[data-theme="dark"] .cardform-panel .cf-multi-select-selected-value {
+  color: var(--text-heading);
+}
+
+/* Manual / AI — one segmented control. Segment height drops 26→20px so the
+   track (20 + 2×3 padding + 2×1 border = 28px) stays close to the old row. */
+[data-theme="dark"] .cardform-panel .appointment-extraction-mode-group {
+  gap: 0;
+  padding: 3px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+}
+
+[data-theme="dark"] .cardform-panel .appointment-extraction-mode-btn {
+  height: 20px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-subtle);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .cardform-panel .appointment-extraction-mode-btn:hover:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-control);
+}
+
+[data-theme="dark"] .cardform-panel .appointment-extraction-mode-btn.active,
+[data-theme="dark"] .cardform-panel .appointment-extraction-mode-btn.active:hover:not(:disabled) {
+  background: var(--cf-accent-solid);
+  color: #ffffff;
+}
+
+/* Dropzone hover / drag — purple accent instead of the inline --card-color */
+[data-theme="dark"] .cardform-panel .document-upload-zone:hover,
+[data-theme="dark"] .cardform-panel .document-upload-zone.dragging {
+  border-color: var(--cf-accent);
+  background: var(--cf-accent-tint-subtle);
+}

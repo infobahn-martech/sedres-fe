@@ -439,7 +439,17 @@ AppointmentEmailFileActions.propTypes = {
 const FormField = ({ label, children, className = "", hasError = false }) => {
   return (
     <div className={`cf-field ${hasError ? "has-error" : ""} ${className}`}>
-      {label && <label>{label}</label>}
+      {label && (
+        <label>
+          {label.endsWith(" *") ? (
+            <>
+              {label.slice(0, -2)} <span className="cf-required">*</span>
+            </>
+          ) : (
+            label
+          )}
+        </label>
+      )}
       {children}
     </div>
   );

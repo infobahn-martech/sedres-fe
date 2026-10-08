@@ -10300,7 +10300,7 @@ a.operation-task-document-name--link {
 
   // "click to browse" — accent link colour inside the card modal
   .cardform-panel .upload-link {
-    color: var(--cf-accent-icon);
+    color: var(--cf-accent-text);
   }
 
   // Operation sub-nav — same purple accent as the top tabs (was brand blue).
@@ -10343,14 +10343,22 @@ a.operation-task-document-name--link {
     }
   }
 
-  // Form labels: one step quieter than values (values stay white)
-  .operation-wrapper .cf-field label {
+  // Form labels: one step quieter than values (values stay white).
+  // Shared by the operation tabs and every other card-modal form (Add card).
+  .operation-wrapper .cf-field label,
+  .cardform-panel .cf-field label {
     color: var(--text-body);
     font-weight: 500;
   }
 
+  .operation-wrapper .cf-field.has-error label,
+  .cardform-panel .cf-field.has-error label {
+    color: var(--danger);
+  }
+
   // Required "*" — same red as the Batch 1 forms (form-designs.scss)
-  .operation-wrapper .cf-required {
+  .operation-wrapper .cf-required,
+  .cardform-panel .cf-required {
     color: var(--danger);
   }
 
