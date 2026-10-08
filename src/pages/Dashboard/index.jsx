@@ -11,14 +11,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import {
-  FiDownload,
-  FiUpload,
-  FiUsers,
-  FiAnchor,
-  FiFileText,
-  FiAlertTriangle,
-} from "react-icons/fi";
+import { FiAlertTriangle } from "react-icons/fi";
+import { PackageOpen, Container, UsersRound, ShipWheel, ReceiptText, ClockAlert } from "lucide-react";
 import dashboardService from "../../services/dashboardService";
 import DateRangePicker from "./DateRangePicker";
 import { useThemeStore } from "../../shared/store/themeStore";
@@ -291,26 +285,24 @@ const Dashboard = () => {
   const revenueYearOptions = uniqueOptions(overview.revenue_by_year.map((row) => row.year)).reverse();
   const selectedRevenueYear = revenueYear ?? revenueYearOptions[0]?.value ?? "";
   const yearRevenue = overview.revenue_by_year.find((row) => row.year === selectedRevenueYear) ?? {};
-  const branchRevenueTotals = overview.branches.map((branch) => ({ ...branch, total: yearRevenue[branch.key] ?? 0 }));
-  const offshoreRevenueTotal = yearRevenue.offshore ?? 0;
-  const totalRevenue = branchRevenueTotals.reduce((sum, branch) => sum + branch.total, offshoreRevenueTotal);
-  // Branches first, offshore last — colors follow the same order as the monthly charts.
-  const revenueSegments = [
-    ...branchRevenueTotals.map((branch) => ({ key: branch.key, name: branch.name, total: branch.total })),
-    { key: "offshore", name: "Offshore Marine", total: offshoreRevenueTotal },
-  ].map((segment, index) => ({
-    ...segment,
+  const branchTotals = overview.branches.map((branch) => yearRevenue[branch.key] ?? 0);
+  const totalRevenue = branchTotals.reduce((sum, total) => sum + total, 0);
+  // Colors follow the same branch order as the monthly charts.
+  const revenueSegments = overview.branches.map((branch, index) => ({
+    key: branch.key,
+    name: branch.name,
+    total: branchTotals[index],
     color: seriesColors[index % seriesColors.length],
-    share: totalRevenue ? (segment.total / totalRevenue) * 100 : 0,
+    share: totalRevenue ? (branchTotals[index] / totalRevenue) * 100 : 0,
   }));
 
   const stats = [
-    { title: "Total Vessels Imported", value: summary.total_vessels_imported, icon: <FiDownload />, tone: "blue" },
-    { title: "Total Vessels Exported", value: summary.total_vessels_exported, icon: <FiUpload />, tone: "green" },
-    { title: "Total Crew Change YTD", value: summary.total_crew_change_ytd, icon: <FiUsers />, tone: "violet" },
-    { title: "Vessels Currently in Agency", value: summary.vessels_in_agency, icon: <FiAnchor />, tone: "blue" },
-    { title: "Open Sales Orders", value: salesOrders.length, icon: <FiFileText />, tone: "amber" },
-    { title: `Sales Orders > ${OVERDUE_DAYS} Days`, value: allOverdueCount, icon: <FiAlertTriangle />, tone: "red" },
+    { title: "Total Vessels Imported", value: summary.total_vessels_imported, icon: <PackageOpen />, tone: "blue" },
+    { title: "Total Vessels Exported", value: summary.total_vessels_exported, icon: <Container />, tone: "green" },
+    { title: "Total Crew Change YTD", value: summary.total_crew_change_ytd, icon: <UsersRound />, tone: "violet" },
+    { title: "Vessels Currently in Agency", value: summary.vessels_in_agency, icon: <ShipWheel />, tone: "blue" },
+    { title: "Open Sales Orders", value: salesOrders.length, icon: <ReceiptText />, tone: "amber" },
+    { title: `Sales Orders > ${OVERDUE_DAYS} Days`, value: allOverdueCount, icon: <ClockAlert />, tone: "red" },
   ];
 
   return (
@@ -326,7 +318,7 @@ const Dashboard = () => {
           <div className="chart-header chart-header--row">
             <div>
               <h3 className="chart-title">Total Revenue</h3>
-              <p className="chart-subtitle">Branch and offshore marine revenue for the selected year</p>
+              <p className="chart-subtitle">Branch revenue for the selected year</p>
             </div>
             <div className="dash-filters">
               <FilterSelect
