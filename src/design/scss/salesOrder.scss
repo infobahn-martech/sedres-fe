@@ -4497,6 +4497,11 @@ $so-po-blue: #1a56db;
       -webkit-text-fill-color: var(--text-subtle) !important;
     }
 
+    // Disabled native input under the picker keeps the UA's grey band
+    .Mui-disabled * {
+      background-color: transparent;
+    }
+
     .Mui-disabled .MuiSvgIcon-root {
       color: var(--icon-disabled);
       opacity: 1;
@@ -4562,5 +4567,23 @@ $so-po-blue: #1a56db;
   .so-accounting-grand-value {
     background: none;
     -webkit-text-fill-color: var(--text-heading);
+  }
+}
+
+// Dark theme — table loading overlay. !important beats the inline white wash,
+// light spinner track and dark text; the spinner's card-colour top arc stays.
+[data-theme="dark"] {
+  .so-loading-overlay {
+    background-color: var(--overlay-loading) !important;
+  }
+
+  .so-loading-spinner {
+    border-right-color: var(--border-strong) !important;
+    border-bottom-color: var(--border-strong) !important;
+    border-left-color: var(--border-strong) !important;
+  }
+
+  .so-loading-text {
+    color: var(--text-body) !important;
   }
 }

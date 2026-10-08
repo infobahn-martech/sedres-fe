@@ -2999,6 +2999,7 @@ const SalesOrderList = ({
           <div className="table-wrapper sales-order-table-container" style={{ position: "relative" }}>
             {isLoadingSalesOrder && (
               <div
+                className="so-loading-overlay"
                 style={{
                   position: "absolute",
                   inset: 0,
@@ -3014,6 +3015,7 @@ const SalesOrderList = ({
                 aria-live="polite"
               >
                 <div
+                  className="so-loading-spinner"
                   style={{
                     width: "40px",
                     height: "40px",
@@ -3024,7 +3026,7 @@ const SalesOrderList = ({
                   }}
                 />
                 <style>{`@keyframes salesOrderSpin { to { transform: rotate(360deg); } }`}</style>
-                <span style={{ fontSize: "14px", fontWeight: "600", color: "#334155" }}>Loading sales order…</span>
+                <span className="so-loading-text" style={{ fontSize: "14px", fontWeight: "600", color: "#334155" }}>Loading sales order…</span>
               </div>
             )}
             {/* Tooltips for table headers (DAModule only, labels > 10 chars) */}
