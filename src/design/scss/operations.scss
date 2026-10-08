@@ -10389,3 +10389,18 @@ a.operation-task-document-name--link {
     color: var(--text-body) !important;
   }
 }
+
+// Dark theme — Reports loading skeleton: light grey shimmer → navy shimmer
+// (same tokens as the common table skeleton). background-image only, so the
+// base background-size / animation keep running.
+[data-theme="dark"] {
+  .reports-skeleton-bar,
+  .reports-skeleton-icon {
+    background-image: linear-gradient(
+      90deg,
+      var(--bg-highlight) 25%,
+      var(--skeleton-highlight) 37%,
+      var(--bg-highlight) 63%
+    );
+  }
+}
