@@ -15,6 +15,14 @@ import {
   FiTruck,
   FiNavigation,
   FiSettings,
+  FiSliders,
+  FiLayers,
+  FiChevronDown,
+  FiAlertOctagon,
+  FiBookmark,
+  FiTag,
+  FiList,
+  FiFileText,
 } from 'react-icons/fi';
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
@@ -94,12 +102,12 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     (isPortManagerRole || isPortSupervisorRole || isDARole);
 
   const cardManagementSubmenu = [
-    { label: 'Blockers', modal: 'blockers' },
-    { label: 'Stickers', modal: 'stickers' },
-    { label: 'Tags', modal: 'tags' },
-    { label: 'Types', modal: 'types' },
+    { label: 'Blockers', modal: 'blockers', icon: <FiAlertOctagon /> },
+    { label: 'Stickers', modal: 'stickers', icon: <FiBookmark /> },
+    { label: 'Tags', modal: 'tags', icon: <FiTag /> },
+    { label: 'Types', modal: 'types', icon: <FiList /> },
     // { label: 'Templates', modal: 'templates' },
-    { label: 'Custom Templates', modal: 'templates list' },
+    { label: 'Custom Templates', modal: 'templates list', icon: <FiFileText /> },
     // { label: 'Custom Templates', modal: 'custom templates' },
   ];
 
@@ -472,30 +480,36 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
 
             {showSettingsSubmenu && (
               <div className="settings-dropdown">
+                <div className="settings-dropdown-title">Settings</div>
                 <button
                   type="button"
                   className="settings-dropdown-item"
                   onClick={handleSettingsBusinessRulesClick}
                 >
-                  Business rules
+                  <span className="settings-item-icon"><FiSliders /></span>
+                  <span className="settings-item-label">Business rules</span>
                 </button>
                 <button
                   type="button"
                   className={`settings-dropdown-item settings-dropdown-item-with-submenu ${showCardManagementSubmenu ? 'submenu-open' : ''}`}
                   onClick={handleSettingsCardManagementRowClick}
+                  aria-expanded={showCardManagementSubmenu}
                 >
-                  Card management
+                  <span className="settings-item-icon"><FiLayers /></span>
+                  <span className="settings-item-label">Card management</span>
+                  <FiChevronDown className="settings-item-chevron" />
                 </button>
                 {showCardManagementSubmenu && (
                   <div className="settings-submenu">
-                    {cardManagementSubmenu.map((subItem, index) => (
+                    {cardManagementSubmenu.map(({ label, modal, icon }) => (
                       <button
                         type="button"
-                        key={index}
+                        key={modal}
                         className="settings-submenu-item"
-                        onClick={() => handleCardManagementSubmenuClick(subItem)}
+                        onClick={() => handleCardManagementSubmenuClick({ label, modal })}
                       >
-                        {subItem.label}
+                        <span className="settings-submenu-icon">{icon}</span>
+                        <span>{label}</span>
                       </button>
                     ))}
                   </div>
