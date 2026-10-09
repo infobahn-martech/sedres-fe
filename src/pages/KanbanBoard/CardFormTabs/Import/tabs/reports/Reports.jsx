@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import { useEffect, useMemo, useState } from "react";
-import { FiDownload, FiMail, FiSend, FiUser, FiCalendar, FiFileText, FiInbox } from "react-icons/fi";
+import { FiDownload, FiMail, FiSend, FiUser, FiCalendar, FiFileText, FiInbox, FiSearch, FiUsers, FiLayers } from "react-icons/fi";
 import reportsService from "../../../../../../services/reportsService";
 import "../../../../../../design/scss/operations.scss";
 
@@ -71,80 +71,145 @@ const getTypeTagColor = (type) => {
   return TYPE_TAG_COLORS[Math.abs(hash) % TYPE_TAG_COLORS.length];
 };
 
-const ReportDocRow = ({ report, accentColor, onDownload }) => {
+// Fallback typography for unstyled email HTML; inline styles in the email still win.
+const EMAIL_BASE_STYLE = `<style>
+  body { margin: 0; padding: 28px 36px; font-family: "Segoe UI", -apple-system, Roboto, Arial, sans-serif;
+    font-size: 13.5px; line-height: 1.6; color: #1f2937; }
+  p { margin: 0 0 10px; }
+  table { border-collapse: collapse; }
+  a { color: #1d4ed8; }
+</style>`;
+
+const matchesSearch =(report, query) => {
+  if (!query) return true;
+  return [report.subject, report.reportType, report.fromEmail, report.toEmail, report.createdBy]
+    .some((value) => value && value.toLowerCase().includes(query));
+};
+
+const reportShape = PropTypes.shape({
+  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  reportType: PropTypes.string,
+  subject: PropTypes.string,
+  body: PropTypes.string,
+  fromEmail: PropTypes.string,
+  toEmail: PropTypes.string,
+  ccEmails: PropTypes.oneOfType([PropTypes.string, PropTypes.array]),
+  createdAt: PropTypes.string,
+  createdBy: PropTypes.string,
+});
+
+const ReportListItem = ({ report, accentColor, isActive, onSelect }) => {
   const title = report.subject || report.reportType || "Report";
-  const ccStr = formatCcDisplay(report.ccEmails);
 
   return (
-    <div className="reports-doc-row">
-      <div className="reports-doc-icon" style={{ background: accentColor }}>
-        <FiFileText size={16} />
-      </div>
-      <div className="reports-doc-content">
-        <p className="reports-doc-title" title={title}>
+    <button
+      type="button"
+      className={`reports-list-item${isActive ? " is-active" : ""}`}
+      onClick={() => onSelect(report.id)}
+      aria-pressed={isActive}
+      style={{ "--report-accent": accentColor }}
+    >
+      <span className="reports-doc-icon">
+        <FiFileText size={15} />
+      </span>
+      <span className="reports-list-item-content">
+        <span className="reports-list-item-title" title={title}>
           {title}
-        </p>
-        <div className="reports-doc-meta">
-          <span className="reports-doc-meta-item">
-            <FiCalendar size={11} />
-            <span className="reports-doc-meta-text">
-              {formatDateTime(report.createdAt)}
-              {report.createdBy ? ` · ${report.createdBy}` : ""}
-            </span>
-          </span>
-          {report.fromEmail ? (
-            <span className="reports-doc-meta-item">
-              <FiSend size={11} />
-              <span className="reports-doc-meta-text" title={report.fromEmail}>
-                {report.fromEmail}
-              </span>
-            </span>
-          ) : null}
-          {report.toEmail ? (
-            <span className="reports-doc-meta-item">
-              <FiUser size={11} />
-              <span className="reports-doc-meta-text" title={report.toEmail}>
-                {report.toEmail}
-              </span>
-            </span>
-          ) : null}
-          {ccStr ? (
-            <span className="reports-doc-meta-item">
-              <FiMail size={11} />
-              <span className="reports-doc-meta-text" title={ccStr}>
-                CC {ccStr}
-              </span>
-            </span>
-          ) : null}
-        </div>
+        </span>
+        <span className="reports-list-item-meta">
+          {formatDateTime(report.createdAt)}
+          {report.createdBy ? ` · ${report.createdBy}` : ""}
+        </span>
+      </span>
+    </button>
+  );
+};
+
+ReportListItem.propTypes = {
+  report: reportShape.isRequired,
+  accentColor: PropTypes.string,
+  isActive: PropTypes.bool,
+  onSelect: PropTypes.func.isRequired,
+};
+
+const ReportPreview = ({ report, accentColor, onDownload }) => {
+  if (!report) {
+    return (
+      <div className="reports-preview reports-preview--empty">
+        <p>Select a report to preview</p>
       </div>
-      <div className="reports-doc-actions">
+    );
+  }
+
+  const title = report.subject || report.reportType || "Report";
+  const metaRows = [
+    { label: "Sent at", value: formatDateTime(report.createdAt), icon: <FiCalendar size={13} /> },
+    { label: "Sent by", value: report.createdBy, icon: <FiUser size={13} /> },
+    { label: "From", value: report.fromEmail, icon: <FiSend size={13} /> },
+    { label: "To", value: report.toEmail, icon: <FiMail size={13} /> },
+    { label: "CC", value: formatCcDisplay(report.ccEmails), icon: <FiUsers size={13} />, wide: true },
+  ].filter((row) => row.value);
+
+  return (
+    <div className="reports-preview" style={{ "--report-accent": accentColor }}>
+      <div className="reports-preview-header">
+        <span className="reports-preview-avatar" aria-hidden="true">
+          <FiFileText size={20} />
+        </span>
+        <div className="reports-preview-heading">
+          <span className="reports-preview-type">{report.reportType}</span>
+          <h3 className="reports-preview-title" title={title}>
+            {title}
+          </h3>
+        </div>
         <button
           type="button"
-          className="reports-doc-action-btn"
+          className="reports-preview-download-btn"
           onClick={() => onDownload(report)}
           title="Download body as HTML"
-          aria-label="Download report"
         >
           <FiDownload size={14} />
+          <span>Download</span>
         </button>
+      </div>
+
+      <dl className="reports-preview-meta">
+        {metaRows.map(({ label, value, icon, wide }) => (
+          <div
+            className={`reports-preview-meta-row${wide ? " reports-preview-meta-row--wide" : ""}`}
+            key={label}
+          >
+            <dt aria-label={label}>{icon}</dt>
+            <dd>
+              <span className="reports-preview-meta-label">{label}</span>
+              <span className="reports-preview-meta-value" title={value}>
+                {value}
+              </span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      <div className="reports-preview-body">
+        <div className="reports-preview-paper">
+          {report.body ? (
+            <iframe
+              className="reports-preview-frame"
+              srcDoc={EMAIL_BASE_STYLE + report.body}
+              title={title}
+              sandbox=""
+            />
+          ) : (
+            <p className="reports-preview-no-body">This report has no content.</p>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-ReportDocRow.propTypes = {
-  report: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    reportType: PropTypes.string,
-    subject: PropTypes.string,
-    body: PropTypes.string,
-    fromEmail: PropTypes.string,
-    toEmail: PropTypes.string,
-    ccEmails: PropTypes.oneOfType([PropTypes.string, PropTypes.array]),
-    createdAt: PropTypes.string,
-    createdBy: PropTypes.string,
-  }).isRequired,
+ReportPreview.propTypes = {
+  report: reportShape,
   accentColor: PropTypes.string,
   onDownload: PropTypes.func.isRequired,
 };
@@ -163,27 +228,25 @@ ReportsEmptyState.propTypes = {
 };
 
 const ReportsSkeleton = () => (
-  <>
-    {[0, 1].map((cardIdx) => (
-      <div className="reports-section-card reports-skeleton-card" key={cardIdx} aria-hidden="true">
-        <div className="reports-section-header">
-          <span className="reports-skeleton-bar reports-skeleton-bar--label" />
-          <span className="reports-skeleton-bar reports-skeleton-bar--count" />
-        </div>
-        <div className="reports-doc-list">
-          {[0, 1].map((rowIdx) => (
-            <div className="reports-doc-row" key={rowIdx}>
-              <span className="reports-skeleton-icon" />
-              <div className="reports-doc-content">
-                <span className="reports-skeleton-bar reports-skeleton-bar--title" />
-                <span className="reports-skeleton-bar reports-skeleton-bar--meta" />
-              </div>
-            </div>
-          ))}
-        </div>
+  <div className="reports-library reports-skeleton-card" aria-hidden="true">
+    <aside className="reports-library__panel reports-library__panel--list">
+      <div className="reports-list-toolbar">
+        <span className="reports-skeleton-bar reports-skeleton-bar--label" />
       </div>
-    ))}
-  </>
+      <div className="reports-list-scroll">
+        {[0, 1, 2, 3].map((rowIdx) => (
+          <div className="reports-list-item" key={rowIdx}>
+            <span className="reports-skeleton-icon" />
+            <span className="reports-list-item-content">
+              <span className="reports-skeleton-bar reports-skeleton-bar--title" />
+              <span className="reports-skeleton-bar reports-skeleton-bar--meta" />
+            </span>
+          </div>
+        ))}
+      </div>
+    </aside>
+    <section className="reports-library__panel reports-library__panel--preview" />
+  </div>
 );
 
 function Reports({ card, formValues }) {
@@ -198,6 +261,8 @@ function Reports({ card, formValues }) {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedReportId, setSelectedReportId] = useState(null);
 
   useEffect(() => {
     if (!callId) {
@@ -243,13 +308,17 @@ function Reports({ card, formValues }) {
     };
   }, [callId]);
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
   const groupedByType = useMemo(() => {
     const map = {};
-    reports.forEach((r) => {
-      const key = r.reportType || "Other";
-      if (!map[key]) map[key] = [];
-      map[key].push(r);
-    });
+    reports
+      .filter((r) => matchesSearch(r, normalizedQuery))
+      .forEach((r) => {
+        const key = r.reportType || "Other";
+        if (!map[key]) map[key] = [];
+        map[key].push(r);
+      });
     Object.keys(map).forEach((k) => {
       map[k].sort((a, b) => {
         const ta = new Date(a.createdAt).getTime();
@@ -258,9 +327,15 @@ function Reports({ card, formValues }) {
       });
     });
     return map;
-  }, [reports]);
+  }, [reports, normalizedQuery]);
 
   const categoryKeys = useMemo(() => Object.keys(groupedByType).sort((a, b) => a.localeCompare(b)), [groupedByType]);
+
+  // Falls back to the first visible report so a selection always exists after load / search.
+  const selectedReport = useMemo(() => {
+    const visible = categoryKeys.flatMap((key) => groupedByType[key]);
+    return visible.find((r) => r.id === selectedReportId) ?? visible[0] ?? null;
+  }, [categoryKeys, groupedByType, selectedReportId]);
 
   const handleDownload = (report) => {
     const html = report.body || "";
@@ -287,29 +362,70 @@ function Reports({ card, formValues }) {
         ) : reports.length === 0 ? (
           <ReportsEmptyState message="No reports available." />
         ) : (
-          categoryKeys.map((category) => {
-            const items = groupedByType[category];
-            if (!items?.length) return null;
-            const accentColor = getTypeTagColor(category);
-            return (
-              <div className="reports-section-card" key={category}>
-                <div className="reports-section-header">
-                  <h4 className="reports-section-label">{category}</h4>
-                  <span className="reports-section-count">{items.length}</span>
+          <div className="reports-library">
+            <aside className="reports-library__panel reports-library__panel--list">
+              <div className="reports-list-toolbar">
+                <div className="reports-list-toolbar-title">
+                  <span className="reports-list-toolbar-icon" aria-hidden="true">
+                    <FiLayers size={16} />
+                  </span>
+                  <div className="reports-list-toolbar-text">
+                    <h4 className="reports-list-toolbar-heading">Reports</h4>
+                    <span className="reports-list-toolbar-sub">
+                      {reports.length} sent {reports.length === 1 ? "report" : "reports"}
+                    </span>
+                  </div>
                 </div>
-                <div className="reports-doc-list">
-                  {items.map((report) => (
-                    <ReportDocRow
-                      key={report.id}
-                      report={report}
-                      accentColor={accentColor}
-                      onDownload={handleDownload}
-                    />
-                  ))}
-                </div>
+                <label className="reports-search">
+                  <FiSearch size={13} />
+                  <input
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search reports"
+                    aria-label="Search reports"
+                  />
+                </label>
               </div>
-            );
-          })
+
+              <div className="reports-list-scroll">
+                {categoryKeys.length === 0 ? (
+                  <p className="reports-list-no-match">No reports match your search.</p>
+                ) : (
+                  categoryKeys.map((category) => {
+                    const items = groupedByType[category];
+                    const accentColor = getTypeTagColor(category);
+                    return (
+                      <div className="reports-list-group" key={category} style={{ "--report-accent": accentColor }}>
+                        <div className="reports-list-group-header">
+                          <span className="reports-list-group-dot" />
+                          <span className="reports-list-group-label">{category}</span>
+                          <span className="reports-list-group-count">{items.length}</span>
+                        </div>
+                        {items.map((report) => (
+                          <ReportListItem
+                            key={report.id}
+                            report={report}
+                            accentColor={accentColor}
+                            isActive={selectedReport?.id === report.id}
+                            onSelect={setSelectedReportId}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </aside>
+
+            <section className="reports-library__panel reports-library__panel--preview">
+              <ReportPreview
+                report={selectedReport}
+                accentColor={selectedReport ? getTypeTagColor(selectedReport.reportType) : undefined}
+                onDownload={handleDownload}
+              />
+            </section>
+          </div>
         )}
       </div>
     </div>
