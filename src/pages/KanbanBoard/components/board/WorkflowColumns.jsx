@@ -90,6 +90,7 @@ const INVOICE_ACTION_BUTTONS = {
   sendInvoice: { label: "Send Invoice", icon: <FiSend size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
   prepareSubmission: { label: "Create Submission Documents", icon: <FiDownload size={16} aria-hidden /> },
+  sendSubmission: { label: "Send For Final Submission", icon: <FiSend size={16} aria-hidden /> },
 };
 
 export default function WorkflowColumns({
@@ -110,6 +111,7 @@ export default function WorkflowColumns({
   onColumnSendInvoice,
   onColumnMergeInvoice,
   onColumnPrepareSubmission,
+  onColumnSendSubmission,
   onContextMenu,
   onHeightChange,
   isDarkMode,
@@ -362,12 +364,30 @@ export default function WorkflowColumns({
                 ? getColumnCards(group.colKeys[0]).filter((card) => selectedActionCardIds?.includes(card.id))
                 : [];
               /* "Consolidated": ticked cards whose submission documents are not created yet get "Create
-                 Submission Documents"; creating them opens the Final Submission Email. */
-              const invoiceButton = invoiceAction === "submission" ? "prepareSubmission" : invoiceAction;
-              const invoiceButtonCards =
-                invoiceAction === "submission"
-                  ? invoiceCards.filter((card) => submissionIdByCardId[String(card.id)] == null)
-                  : invoiceCards;
+                 Submission Documents"; creating them opens the Final Submission Email. Ticked cards that
+                 already have a submission get "Send For Final Submission", which reopens that email: it is
+                 the main button when every ticked card has one, and the second button in a mixed selection. */
+              const isSubmissionColumn = invoiceAction === "submission";
+              const submissionCreateCards = isSubmissionColumn
+                ? invoiceCards.filter((card) => submissionIdByCardId[String(card.id)] == null)
+                : [];
+              const submissionSendCards = isSubmissionColumn
+                ? invoiceCards.filter((card) => submissionIdByCardId[String(card.id)] != null)
+                : [];
+              const isCreatingSubmission = submissionCreateCards.length > 0;
+              let invoiceButton = invoiceAction;
+              let invoiceButtonCards = invoiceCards;
+              if (isSubmissionColumn) {
+                invoiceButton = isCreatingSubmission ? "prepareSubmission" : "sendSubmission";
+                invoiceButtonCards = isCreatingSubmission ? submissionCreateCards : submissionSendCards;
+              }
+              const sendSubmissionAction =
+                isCreatingSubmission && submissionSendCards.length > 0
+                  ? {
+                      ...INVOICE_ACTION_BUTTONS.sendSubmission,
+                      onClick: () => onColumnSendSubmission?.(submissionSendCards),
+                    }
+                  : undefined;
               const hasInvoiceButton =
                 invoiceAction === "sendInvoice" ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
               const invoiceActionHandlers = {
@@ -379,6 +399,7 @@ export default function WorkflowColumns({
                 sendInvoice: ([card]) => onColumnSendInvoice?.(card),
                 merge: onColumnMergeInvoice,
                 prepareSubmission: onColumnPrepareSubmission,
+                sendSubmission: onColumnSendSubmission,
               };
 
               return (
@@ -397,6 +418,7 @@ export default function WorkflowColumns({
                     isDarkMode={isDarkMode}
                     actionLabel={hasInvoiceButton ? INVOICE_ACTION_BUTTONS[invoiceButton].label : "Batch"}
                     actionIcon={hasInvoiceButton ? INVOICE_ACTION_BUTTONS[invoiceButton].icon : undefined}
+                    secondaryAction={hasInvoiceButton ? sendSubmissionAction : undefined}
                     onActionClick={
                       hasInvoiceButton
                         ? () => invoiceActionHandlers[invoiceButton]?.(invoiceButtonCards)
