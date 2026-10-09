@@ -4416,6 +4416,58 @@ $so-po-blue: #1a56db;
     border-color: var(--modal-border);
     box-shadow: var(--modal-shadow);
   }
+
+  // Supporting Documents — #2a00ff / #4c68d7 accents sink into navy; lift them.
+  .so-doc-modal-header-icon {
+    background: rgba(139, 123, 255, 0.16);
+    color: #a99dff;
+  }
+
+  .so-doc-modal-upload-btn {
+    background: rgba(139, 123, 255, 0.14);
+    border-color: rgba(139, 123, 255, 0.45);
+    color: #b4a9ff;
+
+    &:hover {
+      background: rgba(139, 123, 255, 0.24);
+      border-color: rgba(139, 123, 255, 0.65);
+    }
+  }
+
+  .so-doc-modal-item-icon,
+  .so-doc-modal-item-type {
+    background: rgba(76, 141, 255, 0.16);
+    color: var(--brand-bright);
+  }
+
+  .so-doc-modal-dropzone-icon,
+  .so-doc-modal-empty-icon {
+    color: var(--brand-bright);
+  }
+
+  .so-doc-modal-item.is-selected {
+    border-color: #8b7bff;
+    background: rgba(139, 123, 255, 0.1);
+    box-shadow: none;
+  }
+
+  .so-doc-modal-item.is-selected .so-doc-modal-item-check {
+    border-color: #8b7bff;
+    background: #8b7bff;
+  }
+
+  .so-doc-modal-item:focus-within {
+    outline-color: rgba(139, 123, 255, 0.5);
+  }
+
+  .so-doc-modal-dropzone:hover {
+    border-color: #8b7bff;
+    background: rgba(139, 123, 255, 0.08);
+  }
+
+  .so-doc-modal-link {
+    color: #b4a9ff;
+  }
 }
 
 // ==========================================================

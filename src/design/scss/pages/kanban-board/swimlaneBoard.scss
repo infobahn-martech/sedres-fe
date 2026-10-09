@@ -65,21 +65,69 @@
   gap: 6px;
 }
 
+/* width: 0 keeps the title out of the board's max-content width; min-width stretches it
+   back to the board width so the sticky title has room to slide. */
+.kanban-swimlane__title-track {
+  width: 0;
+  min-width: 100%;
+}
+
+/* Styled like the board name bar (.kanban-accordion-header); sticky + viewport-wide so it
+   stays centered and readable while the board scrolls horizontally. */
 .kanban-swimlane__title {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  // --board-viewport-w: visible width of the scroll container (set in WorkflowColumns.jsx).
+  width: var(--board-viewport-w, 100%);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
   font-family: "Manrope", sans-serif;
   color: var(--text-primary);
-  text-align: center;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  padding: 6px 12px;
-  background: transparent;
-  border: 0;
-  border-radius: 6px;
-  box-shadow: none;
+  padding: 10px 16px;
+  background: rgba(234, 241, 251, 0.82);
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
   transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    filter: brightness(0.97);
+  }
+}
+
+.kanban-swimlane__title--colored {
+  background: var(--lane-color);
+  color: var(--lane-fg);
+  border-left: 4px solid var(--lane-color);
+}
+
+.kanban-swimlane__title-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kanban-swimlane__title-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+
+.kanban-swimlane--collapsed {
+  .kanban-swimlane__title-icon {
+    transform: rotate(-90deg);
+  }
+
+  .kanban-swimlane__columns {
+    display: none !important;
+  }
 }
 
 .kanban-swimlane__columns {
@@ -192,8 +240,9 @@
 }
 
 .kanban-dark-mode .kanban-swimlane__title {
-  color: var(--text-muted);
-  background: transparent;
+  color: #fafafa;
+  background: rgba(24, 24, 27, 0.82);
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
 .kanban-dark-mode .kanban-board--swimlanes .column--swimlane-cell {
@@ -211,6 +260,24 @@
 /* -------------------------------
    Dark theme (navy palette, partials/_theme.scss)
 -------------------------------- */
+// Matches the dark board name bar; a lane colour shows as a left accent + faint tint
+// instead of a full (often light) fill.
+[data-theme="dark"] .kanban-swimlane__title {
+  color: var(--text-heading);
+  background: var(--bg-card);
+  border-color: var(--border);
+  filter: none;
+
+  &:hover {
+    background: var(--bg-tile-hover);
+  }
+
+  &.kanban-swimlane__title--colored {
+    background: color-mix(in srgb, var(--lane-color) 12%, var(--bg-card));
+    border-left-color: var(--lane-color);
+  }
+}
+
 [data-theme="dark"] .kanban-board--swimlanes .column--swimlane-cell {
   border-color: var(--border);
 

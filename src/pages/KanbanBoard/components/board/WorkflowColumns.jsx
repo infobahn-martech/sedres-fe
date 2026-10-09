@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
-import { FiDownload, FiSend, FiUploadCloud } from "react-icons/fi";
+import { FiChevronDown, FiDownload, FiSend, FiUploadCloud } from "react-icons/fi";
 import { MdCallMerge } from "react-icons/md";
 import { KANBAN_DND_DISABLED } from "../../../../shared/constants/kanbanConfig";
 import ColumnHeader from "./ColumnHeader";
@@ -128,6 +128,28 @@ export default function WorkflowColumns({
   );
 
   const shouldShowSwimlaneTitle = swimlaneOrder.length > 1;
+
+  const [collapsedLaneIds, setCollapsedLaneIds] = useState(() => new Set());
+  const toggleLane = (laneId) =>
+    setCollapsedLaneIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(laneId)) next.delete(laneId);
+      else next.add(laneId);
+      return next;
+    });
+
+  /* Visible width of the horizontal scroller, so the sticky lane title spans exactly the viewport */
+  const scrollContainerRef = useRef(null);
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el || !shouldShowSwimlaneTitle) return undefined;
+    /* contentRect excludes the container's padding-left (sidebar gutter) */
+    const observer = new ResizeObserver(([entry]) => {
+      el.style.setProperty("--board-viewport-w", `${Math.floor(entry.contentRect.width)}px`);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [shouldShowSwimlaneTitle, layoutView]);
 
   /* Cards of the batch board's first lane, with any card a batch has moved drawn in its new
      column instead. */
@@ -286,6 +308,7 @@ export default function WorkflowColumns({
 
   return (
     <div
+      ref={scrollContainerRef}
       className={`kanban-container kanban-container--board-hscroll ${layoutView === "normal" ? "kanban-normal-layout" : ""}`}
       key={layoutView}
     >
@@ -416,10 +439,13 @@ export default function WorkflowColumns({
             /* Only real (non-default) swimlane colors get the colored title band — see workflow-swimlane-label-cell / board-minimap-lane-label for the same convention */
             const laneColorHex = sanitizeSwimlaneColorCode(lane.color);
             const hasLaneColor = Boolean(laneColorHex) && laneColorHex !== "#ffffff";
+            const isLaneCollapsed = shouldShowSwimlaneTitle && collapsedLaneIds.has(laneId);
 
             return (
               <section
-                className={`kanban-swimlane ${!shouldShowSwimlaneTitle ? "kanban-swimlane--single" : ""}`}
+                className={`kanban-swimlane ${!shouldShowSwimlaneTitle ? "kanban-swimlane--single" : ""} ${
+                  isLaneCollapsed ? "kanban-swimlane--collapsed" : ""
+                }`}
                 key={laneId}
                 aria-label={lane.title}
                 style={
@@ -429,18 +455,26 @@ export default function WorkflowColumns({
                 }
               >
                 {shouldShowSwimlaneTitle && (
-                  <div
-                    className="kanban-swimlane__title"
+                  /* Zero-width track: the title never widens the board (avoids a resize feedback loop);
+                     the title is sticky to the scroll viewport so it stays centered while scrolling sideways */
+                  <div className="kanban-swimlane__title-track">
+                  <button
+                    type="button"
+                    className={`kanban-swimlane__title ${hasLaneColor ? "kanban-swimlane__title--colored" : ""}`}
+                    onClick={() => toggleLane(laneId)}
+                    aria-expanded={!isLaneCollapsed}
                     style={
                       hasLaneColor
                         ? {
-                            backgroundColor: laneColorHex,
-                            color: pickForegroundOnSwimlaneBackground(laneColorHex),
+                            "--lane-color": laneColorHex,
+                            "--lane-fg": pickForegroundOnSwimlaneBackground(laneColorHex),
                           }
                         : undefined
                     }
                   >
-                    {lane.title}
+                    <span className="kanban-swimlane__title-text">{lane.title}</span>
+                    <FiChevronDown className="kanban-swimlane__title-icon" aria-hidden="true" />
+                  </button>
                   </div>
                 )}
                 {/* Same gridTemplateColumns as header row — keeps headers and cells aligned */}
