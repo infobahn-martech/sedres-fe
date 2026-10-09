@@ -745,3 +745,38 @@
     }
   }
 }
+// Vessel Tracking — true edge-to-edge fullscreen, overriding global modal spacing
+.vessel-tracking-modal {
+  padding: 0 !important;
+
+  .modal-dialog {
+    width: 100vw;
+    max-width: none;
+    height: 100vh;
+    margin: 0;
+  }
+
+  .modal-content {
+    height: 100%;
+    padding: 0 !important;
+    border: 0;
+    border-radius: 0;
+    background: var(--surface-primary);
+  }
+
+  .modal-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .modal-title {
+    font-size: 16px;
+    color: var(--text-primary);
+  }
+
+  .modal-body {
+    flex: 1;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+}

@@ -23,7 +23,9 @@ import {
   FiTag,
   FiList,
   FiFileText,
+  FiAnchor,
 } from 'react-icons/fi';
+import { Modal } from 'react-bootstrap';
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
 
@@ -50,6 +52,9 @@ import NavTabButton from '../../components/NavTabButton';
 import { isRestrictedBoardUser, isPortOperatorUser } from '../../shared/helpers/restrictedBoardUser';
 import { isVendorRole, getRoleId } from '../../shared/helpers/vendorDashboardRoles';
 
+const MARINE_TRAFFIC_EMBED_URL =
+  'https://www.marinetraffic.com/en/ais/embed/zoom:4/centery:25.0/centerx:-12.0/maptype:4/shownames:false/mmsi:0/shipid:0/fleet:/fleet_id:/vtypes:/showmenu:true/remember:false';
+
 function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePortal = null }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -72,6 +77,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [showCallTypeBuilderModal, setShowCallTypeBuilderModal] = useState(false);
   const [showCustomTemplateModal, setShowCustomTemplateModal] = useState(false);
   const [showTemplatesListModal, setShowTemplatesListModal] = useState(false);
+  const [showVesselTrackingModal, setShowVesselTrackingModal] = useState(false);
   const { layoutView } = useLayoutView();
   const isDark = useThemeStore((state) => state.isDark);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
@@ -416,15 +422,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
             >
               <FiBarChart2 />
             </NavTabButton>
-            {/* <Tooltip id="documents" place="bottom" content="Documents" />
-            <button
-              className={`icon-btn icon-btn-hide-mobile ${showDocumentsModal ? 'active' : ''}`}
-              aria-label="Documents"
-              onClick={() => setShowDocumentsModal(true)}
-              data-tooltip-id="documents"
-            >
-              <FiFolder />
-            </button> */}
           </>
         )}
         <Tooltip id="theme-toggle" place="bottom" content={isDark ? 'Switch to light mode' : 'Switch to dark mode'} />
@@ -438,6 +435,17 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
         >
           {isDark ? <FiSun /> : <FiMoon />}
         </button>
+
+        {/* <Tooltip id="vessel-tracking" place="bottom" content="Vessel Tracking" />
+        <button
+          type="button"
+          className={`icon-btn ${showVesselTrackingModal ? 'active' : ''}`}
+          aria-label="Vessel Tracking"
+          onClick={() => setShowVesselTrackingModal(true)}
+          data-tooltip-id="vessel-tracking"
+        >
+          <FiAnchor />
+        </button> */}
 
         <Tooltip id="help" place="bottom" content="Help" />
         <button
@@ -601,6 +609,27 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           onClose={() => setShowNotificationsModal(false)}
         />
       )}
+
+      {/* Vessel Tracking Modal — MarineTraffic blocks iframing its main site, so use its embed map */}
+      <Modal
+        show={showVesselTrackingModal}
+        onHide={() => setShowVesselTrackingModal(false)}
+        fullscreen
+        className="vessel-tracking-modal"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Vessel Tracking</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-0">
+          {showVesselTrackingModal && (
+            <iframe
+              title="MarineTraffic Live Map"
+              src={MARINE_TRAFFIC_EMBED_URL}
+              style={{ width: '100%', height: '100%', border: 0, display: 'block' }}
+            />
+          )}
+        </Modal.Body>
+      </Modal>
 
       {/* Documents Modal */}
       {!!showDocumentsModal && <DocumentsModal
