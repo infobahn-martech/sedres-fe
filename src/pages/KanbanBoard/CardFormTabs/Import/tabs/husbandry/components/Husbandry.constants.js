@@ -222,6 +222,5 @@ export const CREW_ENTRY_COLUMNS = [
   { key: "crew_name", header: "Crew Name", placeholder: "Full name", required: true },
   { key: "rank", header: "Rank", placeholder: "e.g. Master" },
   { key: "nationality", header: "Nationality", placeholder: "e.g. Indian" },
-  { key: "date_of_birth", header: "Date of Birth", placeholder: "DD/MM/YYYY" },
   { key: "passport_no", header: "Passport No", placeholder: "Passport number" },
 ];

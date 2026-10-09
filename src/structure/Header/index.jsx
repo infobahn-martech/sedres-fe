@@ -237,7 +237,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const handleCardManagementSubmenuClick = (item) => {
     setShowCardManagementSubmenu(false);
     setShowSettingsSubmenu(false);
-
     setShowBlockersModal(false);
     setShowStickersModal(false);
     setShowTagsModal(false);
