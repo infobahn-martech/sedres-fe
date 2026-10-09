@@ -66,24 +66,24 @@
 }
 
 /* width: 0 keeps the title out of the board's max-content width; min-width stretches it
-   back to the board width so the sticky title has room to slide. */
+   back to the board width. */
 .kanban-swimlane__title-track {
   width: 0;
   min-width: 100%;
 }
 
-/* Styled like the board name bar (.kanban-accordion-header); sticky + viewport-wide so it
-   stays centered and readable while the board scrolls horizontally. */
+/* Styled like the board name bar (.kanban-accordion-header). --lane-title-w / --lane-title-x
+   (set in WorkflowColumns.jsx) place it exactly under that bar, so the title stays centered
+   with the board name while the board scrolls horizontally. */
 .kanban-swimlane__title {
-  position: sticky;
-  left: 0;
+  position: relative;
   z-index: 2;
-  // --board-viewport-w: visible width of the scroll container (set in WorkflowColumns.jsx).
-  width: var(--board-viewport-w, 100%);
+  width: var(--lane-title-w, 100%);
+  transform: translateX(var(--lane-title-x, 0px));
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 8px;
   font-size: 16px;
   font-weight: 600;

@@ -138,17 +138,37 @@ export default function WorkflowColumns({
       return next;
     });
 
-  /* Visible width of the horizontal scroller, so the sticky lane title spans exactly the viewport */
+  /* Lane titles mirror the board name bar's on-screen box, so they stay centered under the board
+     name however the board is scrolled (whichever ancestor does the scrolling). */
   const scrollContainerRef = useRef(null);
+  const boardRef = useRef(null);
   useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el || !shouldShowSwimlaneTitle) return undefined;
-    /* contentRect excludes the container's padding-left (sidebar gutter) */
-    const observer = new ResizeObserver(([entry]) => {
-      el.style.setProperty("--board-viewport-w", `${Math.floor(entry.contentRect.width)}px`);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
+    const container = scrollContainerRef.current;
+    const board = boardRef.current;
+    const header = container?.closest(".kanban-accordion")?.querySelector(".kanban-accordion-header");
+    if (!container || !board || !header || !shouldShowSwimlaneTitle) return undefined;
+
+    let frame = 0;
+    const align = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const headerRect = header.getBoundingClientRect();
+        const boardRect = board.getBoundingClientRect();
+        board.style.setProperty("--lane-title-w", `${headerRect.width}px`);
+        board.style.setProperty("--lane-title-x", `${headerRect.left - boardRect.left}px`);
+      });
+    };
+
+    align();
+    const observer = new ResizeObserver(align);
+    observer.observe(header);
+    observer.observe(container);
+    window.addEventListener("scroll", align, true);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("scroll", align, true);
+    };
   }, [shouldShowSwimlaneTitle, layoutView]);
 
   /* Cards of the batch board's first lane, with any card a batch has moved drawn in its new
@@ -314,6 +334,7 @@ export default function WorkflowColumns({
     >
       <DragDropContext onDragEnd={KANBAN_DND_DISABLED ? () => {} : onDragEnd}>
         <div
+          ref={boardRef}
           className={`kanban-board kanban-board--swimlanes ${!shouldShowSwimlaneTitle ? "kanban-board--single-swimlane" : ""}`}
         >
           {/* --- Column headers (workflow stages): same grid tracks as swimlane rows below --- */}
@@ -455,8 +476,7 @@ export default function WorkflowColumns({
                 }
               >
                 {shouldShowSwimlaneTitle && (
-                  /* Zero-width track: the title never widens the board (avoids a resize feedback loop);
-                     the title is sticky to the scroll viewport so it stays centered while scrolling sideways */
+                  /* Zero-width track: the title never widens the board (avoids a resize feedback loop) */
                   <div className="kanban-swimlane__title-track">
                   <button
                     type="button"
