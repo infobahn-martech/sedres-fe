@@ -4381,6 +4381,36 @@ $so-po-blue: #1a56db;
     box-shadow: var(--modal-shadow-edge);
   }
 
+  // Work Order header — the pastel card colour washes out on navy; keep it
+  // as a subtle tint with a coloured underline instead.
+  .so-wo-modal-header {
+    background: color-mix(in srgb, var(--card-color, #2A00FF) 14%, var(--modal-bg));
+    border-bottom: 1px solid color-mix(in srgb, var(--card-color, #2A00FF) 45%, transparent);
+  }
+
+  .so-wo-modal-title {
+    color: var(--text-heading);
+  }
+
+  .so-wo-modal-close {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-heading);
+
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.16);
+    }
+  }
+
+  .so-wo-btn-share {
+    background: rgba(37, 211, 102, 0.12);
+    color: #4ade80;
+    border-color: rgba(37, 211, 102, 0.35);
+
+    &:hover:not(:disabled) {
+      background: rgba(37, 211, 102, 0.2);
+    }
+  }
+
   .so-doc-modal {
     background: var(--modal-bg);
     border-color: var(--modal-border);
