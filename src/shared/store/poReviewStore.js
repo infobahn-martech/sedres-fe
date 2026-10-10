@@ -62,12 +62,15 @@ const usePoReviewStore = create((set, get) => ({
   fetchPoReview: async () => {
     if (!get().selectedPoReviewCards.length) return null;
     const workflowId = get().selectedPoReviewWorkflowId;
+    /* The upload only returns the ticked cards, so the review is limited to them too. */
+    const cardIds = get().selectedPoReviewCards.map((card) => card.card_id).join(",");
 
     const fetchPage = async (page) => {
       let data;
       try {
         ({ data } = await daService.getPoReview({
           ...(workflowId != null && { workflow_id: workflowId }),
+          card_ids: cardIds,
           page,
           per_page: REVIEW_PER_PAGE,
         }));

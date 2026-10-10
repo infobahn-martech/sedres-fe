@@ -60,6 +60,17 @@ const arInvoiceUploadFields = [
    max_files_per_request (20), like the AR invoices above. */
 const PO_FIELD_NAME = "pos";
 const PO_FILES_PER_REQUEST = 20;
+/* McDermott "Submitted to DA" SRF upload, from the workflow header: one SRF document for all the
+   ticked cards. */
+const SRF_FIELD_NAME = "srf";
+const srfUploadFields = [
+  {
+    name: SRF_FIELD_NAME,
+    accept: ".pdf",
+    formatsHint: "PDF",
+    multiple: false,
+  },
+];
 const poUploadFields = [
   {
     name: PO_FIELD_NAME,
@@ -932,6 +943,64 @@ export default function KanbanBoardPage() {
     ]
   );
 
+  /* The workflow header's "Upload SRF files" icon, for the cards ticked in "Submitted to DA". */
+  const [showSrfUploadModal, setShowSrfUploadModal] = useState(false);
+  const [selectedSrfUploadCards, setSelectedSrfUploadCards] = useState([]);
+  const [isUploadingSrf, setIsUploadingSrf] = useState(false);
+
+  const handleUploadSrfClick = useCallback((cards) => {
+    if (!cards?.length) return;
+    setSelectedSrfUploadCards(cards);
+    setShowSrfUploadModal(true);
+  }, []);
+
+  const handleCloseSrfUpload = useCallback(() => {
+    setShowSrfUploadModal(false);
+    setSelectedSrfUploadCards([]);
+  }, []);
+
+  const handleUploadSrf = useCallback(
+    async ({ [SRF_FIELD_NAME]: srfFiles = [] }) => {
+      const cards = selectedSrfUploadCards;
+      const callIds = getBatchCallIds({ cards });
+      if (!callIds.length) {
+        notify("The selected cards have no call to upload SRF files for", "error");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("call_ids", callIds.join(","));
+      formData.append("card_ids", cards.map((card) => card.id).join(","));
+      formData.append("srf", srfFiles[0]);
+
+      setIsUploadingSrf(true);
+      try {
+        let data;
+        try {
+          ({ data } = await daService.uploadSrf(formData));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+        if (data?.status !== "success") {
+          notify(data?.message || "Failed to upload SRF files", "error");
+          return;
+        }
+        const movedCount = data.data?.moved_to_da?.length ?? 0;
+        notify(
+          movedCount
+            ? `SRF uploaded for ${cards.length} ${cards.length === 1 ? "card" : "cards"}, ${movedCount} moved to DA`
+            : `SRF uploaded for ${cards.length} ${cards.length === 1 ? "card" : "cards"}`,
+          "success"
+        );
+        cards.forEach((card) => removeCardSelectionId(card.id));
+        handleCloseSrfUpload();
+        refetchBoard?.();
+      } finally {
+        setIsUploadingSrf(false);
+      }
+    },
+    [selectedSrfUploadCards, getBatchCallIds, removeCardSelectionId, handleCloseSrfUpload, refetchBoard]
+  );
+
   /* "Send Invoice" on McDermott's "PO Received" column header, for the one card ticked there,
      opens that card's invoice email draft. */
   const [showInvoiceDispatchEmailModal, setShowInvoiceDispatchEmailModal] = useState(false);
@@ -1527,6 +1596,7 @@ export default function KanbanBoardPage() {
           onBatchRequestPo={handleBatchRequestPo}
           onColumnUploadInvoice={handleColumnUploadInvoice}
           onColumnUploadPos={handleColumnUploadPos}
+          onUploadSrf={handleUploadSrfClick}
           onColumnSendInvoice={handleColumnSendInvoice}
           onColumnMergeInvoice={handleColumnMergeInvoice}
           onColumnPrepareSubmission={handleColumnPrepareSubmission}
@@ -1652,6 +1722,21 @@ export default function KanbanBoardPage() {
         subtitle="Attach the POs for the selected cards"
         submitLabel="Upload POs"
         fields={poUploadFields}
+      />
+
+      <SeApprovalUploadModal
+        show={showSrfUploadModal}
+        onClose={handleCloseSrfUpload}
+        onUpload={handleUploadSrf}
+        isSubmitting={isUploadingSrf}
+        batchTitle={[
+          ...new Set(selectedSrfUploadCards.map((card) => batchByCardId[card.id]).filter(Boolean)),
+        ].join(", ")}
+        selectedCardCount={selectedSrfUploadCards.length}
+        title="Upload SRF"
+        subtitle="Attach the SRF document for the selected cards"
+        submitLabel="Upload SRF"
+        fields={srfUploadFields}
       />
 
       <PoReviewModal onConfirmed={refetchBoard} />

@@ -254,6 +254,34 @@ SalesOrderPagination.propTypes = {
   compact: PropTypes.bool,
 };
 
+/* da/da_upload_so_approval_proof takes the approved SO document as `proof` (required), the client's
+   approval email as `approval_email` and the SCC as `scc` (required for L&T only, which the backend
+   checks). The field names are the request's form field names. */
+const approvalUploadFields = [
+  {
+    name: "proof",
+    label: "Approved SO document",
+    accept: ".pdf,.jpg,.jpeg,.png",
+    formatsHint: "PDF, JPG, PNG",
+    multiple: false,
+    required: true,
+  },
+  {
+    name: "approval_email",
+    label: "Approval email",
+    accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
+    formatsHint: "PDF, EML, MSG, JPG, PNG",
+    multiple: false,
+  },
+  {
+    name: "scc",
+    label: "SCC (L&T only)",
+    accept: ".pdf,.jpg,.jpeg,.png",
+    formatsHint: "PDF, JPG, PNG",
+    multiple: false,
+  },
+];
+
 const SalesOrderList = ({
   card,
   formValues,
@@ -725,6 +753,17 @@ const SalesOrderList = ({
   const findBoardColumnLabel = (pattern) =>
     (Array.isArray(stepLabels) ? stepLabels.find((label) => pattern.test(label || "")) : null) ?? null;
 
+  // McDermott cards are submitted to DA from the Sales Order tab while they are still on an earlier
+  // column: the line items are ticked there, and ticking the last one moves the card to the
+  // "Submitted to DA" column and closes it. SAIPEM's last column is named "Submitted to FDA", so it
+  // never matches.
+  const submittedToDaStepIndex = Array.isArray(stepLabels)
+    ? stepLabels.findIndex((label) => /submitted to da(?!\w)/i.test(label || ""))
+    : -1;
+  const isBeforeSubmittedToDa =
+    submittedToDaStepIndex !== -1 && currentStep != null && currentStep <= submittedToDaStepIndex;
+  const showActionColumn = canViewActionColumn && (isAtColumnAfterOpsCompleted || isBeforeSubmittedToDa);
+
   // "SO/PO Approval Received" (column 5) is the client-decision column for the SO approval
   // sent at column 4 — approving moves on to column 6, rejecting reverts to column 4 (see
   // handleApproveDaClientDecision / handleRejectDaClientDecision below). Being physically on
@@ -1089,11 +1128,11 @@ const SalesOrderList = ({
     setApprovalEmailUploadError("");
   };
 
-  const handleSubmitApprovalEmailUpload = async (files) => {
+  const handleSubmitApprovalEmailUpload = async (filesByField) => {
     setIsApprovalEmailUploading(true);
     setApprovalEmailUploadError("");
     try {
-      await handleUploadApprovalEmail(files);
+      await handleUploadApprovalEmail(filesByField);
       handleCloseApprovalEmailUploadModal();
     } catch (err) {
       setApprovalEmailUploadError(
@@ -1112,14 +1151,17 @@ const SalesOrderList = ({
   // (see renderApprovedWithEmailUpload).
   // Submitting with no file is allowed on purpose (SeApprovalUploadModal's allowEmptyUpload) so the
   // backend's own "No sales order found for this call" message is what the modal shows.
-  const handleUploadApprovalEmail = async (files) => {
+  const handleUploadApprovalEmail = async (filesByField) => {
     if (!callId) {
       useAlertReducer.getState().error("No call identifier available for this card.");
       return;
     }
     const formData = new FormData();
     formData.append("call_id", callId);
-    (files || []).forEach((file) => formData.append("proof", file));
+    approvalUploadFields.forEach(({ name }) => {
+      const [file] = filesByField?.[name] ?? [];
+      if (file) formData.append(name, file);
+    });
 
     const { data } = await daService.uploadSoApprovalProof(formData);
     if (data?.status !== "success") {
@@ -1425,6 +1467,14 @@ const SalesOrderList = ({
           .error(
             `Item No. ${order.itemNo || orderId} was "${body?.item_status}" on the server — click again to set it to "${targetStatus}".`
           );
+        return;
+      }
+      const allVerified =
+        isNowVerified &&
+        updatedList.every((item) => (item.id === orderId ? true : isItemVerified(item)));
+      if (allVerified && isBeforeSubmittedToDa) {
+        onAdvanceDaStage?.({ label: stepLabels[submittedToDaStepIndex], skipStatusUpdate: true });
+        onCloseCard?.();
       }
     } catch (err) {
       const msg =
@@ -2295,7 +2345,7 @@ const SalesOrderList = ({
           render gate itself, so it used to tick every row unconditionally). Each row's tick
           reflects only whether the client themselves clicked THAT line (localVerifiedItemIds,
           keyed per order id). */}
-      {canViewActionColumn && isAtColumnAfterOpsCompleted && (
+      {showActionColumn && (
         <td>
           <div className="sales-order-table-cell sales-order-action-cell">
             <input
@@ -2427,7 +2477,7 @@ const SalesOrderList = ({
         onClick={() => setShowApprovalEmailUploadModal(true)}
       >
         <FiUpload />
-        Upload Approval Email
+        Upload Approved Documents
       </button>
     );
 
@@ -3052,14 +3102,14 @@ const SalesOrderList = ({
                   {renderTableHeader("Third Party", "col-third-party")}
                   {renderTableHeader("Supporting Documents", "col-documents")}
                   {renderTableHeader("Supplier Code", "col-supplier")}
-                  {canViewActionColumn && isAtColumnAfterOpsCompleted && renderTableHeader("Action", "col-verify")}
+                  {showActionColumn && renderTableHeader("Action", "col-verify")}
                 </tr>
               </thead>
               <tbody>
                 {displayOrderList.length === 0 && !isLoadingSalesOrder && (
                   <tr>
                     <td
-                      colSpan={13 + (canViewActionColumn && isAtColumnAfterOpsCompleted ? 1 : 0)}
+                      colSpan={13 + (showActionColumn ? 1 : 0)}
                       style={{ padding: "28px 16px", textAlign: "center", color: "#64748b", fontSize: "14px" }}
                     >
                       No sales order line items for this call.
@@ -3094,7 +3144,7 @@ const SalesOrderList = ({
                         }}
                         style={{ cursor: "pointer", backgroundColor: isExpanded ? "rgba(42, 0, 255, 0.05)" : "#ffffff" }}
                       >
-                        <td colSpan={canViewActionColumn && isAtColumnAfterOpsCompleted ? 14 : 13} style={{ padding: "12px 16px" }}>
+                        <td colSpan={showActionColumn ? 14 : 13} style={{ padding: "12px 16px" }}>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                               {!isDAModule && (
@@ -3464,9 +3514,10 @@ const SalesOrderList = ({
           allowEmptyUpload
           batchTitle={soCustomerName}
           contextCaption="Sales order:"
-          title="Upload Approval Email"
-          subtitle="Attach the client's SO approval email for this call"
-          submitLabel="Upload Approval Email"
+          fields={approvalUploadFields}
+          title="Upload Approved Documents"
+          subtitle="Attach the approved SO document and the client's approval email for this call"
+          submitLabel="Upload Approved Documents"
         />
       )}
 

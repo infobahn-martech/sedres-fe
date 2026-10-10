@@ -14,7 +14,6 @@ import "../../../../design/scss/pages/kanban-board/poReviewModal.scss";
 const COLUMNS = [
   { name: "sales_order_invoice", label: "SO / Invoice No" },
   { name: "po", label: "PO" },
-  { name: "pr_number", label: "PR" },
 ];
 
 /* Cards per page in the review table, matching da/upload_pos' page size. */
@@ -141,7 +140,6 @@ const PoReviewModal = ({ onConfirmed }) => {
           <>
             <td>{renderSalesOrderInvoice(salesOrder)}</td>
             <td>{renderPo(salesOrder)}</td>
-            <td>{salesOrder.po?.pr_number || "-"}</td>
           </>
         )}
       </tr>

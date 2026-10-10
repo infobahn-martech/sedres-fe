@@ -14,6 +14,7 @@ const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
 const MCDERMOTT_WORKFLOW_PATTERN = /mcdermott/i;
 /* Compared on letters only, so stray spaces, punctuation or invisible characters in the live
    column title don't hide the "Request PO" button. */
+const REQUESTED_PO_COLUMN_PATTERN = /^requested\s+po$/i;
 const READY_FOR_PO_REQUEST_COLUMN_KEY = "readyforporequest";
 const isReadyForPoRequestColumn = (title) =>
   String(title ?? "").toLowerCase().replace(/[^a-z]/g, "") === READY_FOR_PO_REQUEST_COLUMN_KEY;
@@ -38,6 +39,7 @@ export default function BatchGroup({
   onUploadSeApproval,
   onUploadInvoice,
   onRequestPo,
+  onUploadPos,
 }) {
   /* Submitted Invoices holds many batches, so there they start collapsed and the header opens one;
      every other column starts expanded. */
@@ -51,6 +53,9 @@ export default function BatchGroup({
     !isUngrouped &&
     !isSeFlowBatch &&
     isReadyForPoRequestColumn(columnTitle);
+  /* McDermott batches in "Requested PO" upload their POs from the header, for the batch's ticked cards. */
+  const isUploadPosBatch =
+    !isUngrouped && !isSeFlowBatch && REQUESTED_PO_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches already emailed for SE creation sit in "Awaiting SE" (live title "Awaiting for SE"). */
   const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches whose SE approval is back sit in "SE Received" and move on to invoicing. */
@@ -165,7 +170,18 @@ export default function BatchGroup({
             <span className="batch-group__title">{batch.title}</span>
           </button>
 
-          {isPoRequestBatch ? (
+          {isUploadPosBatch ? (
+            <button
+              type="button"
+              className="batch-group__action"
+              onClick={() =>
+                onUploadPos?.(batch.cards.filter((card) => selectedActionCardIds.includes(card.id)))
+              }
+              disabled={!selectedCount}
+            >
+              Upload POs
+            </button>
+          ) : isPoRequestBatch ? (
             <button
               type="button"
               className="batch-group__action"
@@ -275,4 +291,5 @@ BatchGroup.propTypes = {
   onUploadSeApproval: PropTypes.func,
   onUploadInvoice: PropTypes.func,
   onRequestPo: PropTypes.func,
+  onUploadPos: PropTypes.func,
 };
