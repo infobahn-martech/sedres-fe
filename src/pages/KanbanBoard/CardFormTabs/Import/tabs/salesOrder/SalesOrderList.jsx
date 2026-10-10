@@ -255,8 +255,10 @@ SalesOrderPagination.propTypes = {
 };
 
 /* da/da_upload_so_approval_proof takes the approved SO document as `proof` (required), the client's
-   approval email as `approval_email` and the SCC as `scc` (required for L&T only, which the backend
-   checks). The field names are the request's form field names. */
+   approval email as `approval_email` and the SCC as `scc`, which only L&T sales orders get. The field
+   names are the request's form field names. */
+const LNT_CLIENT_PATTERN = /l\s*&\s*t(?!\w)|larsen/i;
+const SCC_FIELD_NAME = "scc";
 const approvalUploadFields = [
   {
     name: "proof",
@@ -274,8 +276,8 @@ const approvalUploadFields = [
     multiple: false,
   },
   {
-    name: "scc",
-    label: "SCC (L&T only)",
+    name: SCC_FIELD_NAME,
+    label: "SCC",
     accept: ".pdf,.jpg,.jpeg,.png",
     formatsHint: "PDF, JPG, PNG",
     multiple: false,
@@ -334,6 +336,10 @@ const SalesOrderList = ({
   // SO Header fields (no mock defaults — values come from API via mapSalesOrderResponse or user edits)
   const soCustomerCode = formValues.soCustomerCode || "";
   const soCustomerName = formValues.soCustomerName || "";
+  const isLntSalesOrder = LNT_CLIENT_PATTERN.test(`${soCustomerName} ${formValues.billingEntity || ""}`);
+  const visibleApprovalUploadFields = approvalUploadFields.filter(
+    (field) => field.name !== SCC_FIELD_NAME || isLntSalesOrder
+  );
   const soContactPerson = formValues.soContactPerson || "";
   const soBpCurrency = formValues.soBpCurrency || "";
   const soEuroRate = formValues.soEuroRate || "";
@@ -3514,7 +3520,7 @@ const SalesOrderList = ({
           allowEmptyUpload
           batchTitle={soCustomerName}
           contextCaption="Sales order:"
-          fields={approvalUploadFields}
+          fields={visibleApprovalUploadFields}
           title="Upload Approved Documents"
           subtitle="Attach the approved SO document and the client's approval email for this call"
           submitLabel="Upload Approved Documents"
