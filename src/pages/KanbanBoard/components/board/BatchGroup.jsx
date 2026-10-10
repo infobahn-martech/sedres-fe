@@ -31,6 +31,7 @@ export default function BatchGroup({
   columnTitle,
   workflowTitle,
   selectedActionCardIds = EMPTY_SELECTED_IDS,
+  hideCardSelect = false,
   onToggleCardSelect,
   onCardSelectDragStart,
   onCardSelectDragEnter,
@@ -109,7 +110,7 @@ export default function BatchGroup({
   const isSingleCardBatch = !isUngrouped && batch.cards.length === 1;
 
   const getToggleSelectForAction = () => {
-    if (isSingleCardBatch || isSingleCardSeBatch || isSubmittedInvoicesColumn) return undefined;
+    if (isSingleCardBatch || isSingleCardSeBatch || isSubmittedInvoicesColumn || hideCardSelect) return undefined;
     if (isSendSeBatch) return toggleSeCardTick;
     if (isSeReviewBatch) return (card) => toggleSeReviewCard(card.id, { isSeUploadDone });
     return onToggleCardSelect;
@@ -283,6 +284,7 @@ BatchGroup.propTypes = {
   columnTitle: PropTypes.string,
   workflowTitle: PropTypes.string,
   selectedActionCardIds: PropTypes.arrayOf(PropTypes.string),
+  hideCardSelect: PropTypes.bool,
   onToggleCardSelect: PropTypes.func,
   onCardSelectDragStart: PropTypes.func,
   onCardSelectDragEnter: PropTypes.func,

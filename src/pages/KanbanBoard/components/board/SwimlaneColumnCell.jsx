@@ -37,6 +37,7 @@ export default function SwimlaneColumnCell({
   onBatchUploadInvoice,
   onBatchRequestPo,
   onBatchUploadPos,
+  hideCardSelect = false,
   onToggleCardSelect,
   onCardSelectDragStart,
   onCardSelectDragEnter,
@@ -194,6 +195,7 @@ export default function SwimlaneColumnCell({
                 columnTitle={column.title}
                 workflowTitle={workflowTitle}
                 selectedActionCardIds={selectedActionCardIds}
+                hideCardSelect={hideCardSelect}
                 onToggleCardSelect={onToggleCardSelect}
                 onCardSelectDragStart={onCardSelectDragStart}
                 onCardSelectDragEnter={onCardSelectDragEnter}
@@ -231,7 +233,7 @@ export default function SwimlaneColumnCell({
                   workflowTitle={workflowTitle}
                   fixedDimensions={{ width: cardWidth }}
                   isSelectedForAction={selectedActionCardIds.includes(card.id)}
-                  onToggleSelectForAction={isSubmittedInvoicesColumnTitle(column.title) ? undefined : onToggleCardSelect}
+                  onToggleSelectForAction={hideCardSelect || isSubmittedInvoicesColumnTitle(column.title) ? undefined : onToggleCardSelect}
                   onSelectDragStart={onCardSelectDragStart}
                   onSelectDragEnter={onCardSelectDragEnter}
                 />
@@ -270,6 +272,7 @@ SwimlaneColumnCell.propTypes = {
   onBatchUploadInvoice: PropTypes.func,
   onBatchRequestPo: PropTypes.func,
   onBatchUploadPos: PropTypes.func,
+  hideCardSelect: PropTypes.bool,
   onToggleCardSelect: PropTypes.func,
   onCardSelectDragStart: PropTypes.func,
   onCardSelectDragEnter: PropTypes.func,
