@@ -17,7 +17,6 @@ import {
   getColumnWidth,
 } from "../../utils/boardGridHelpers";
 import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
-import useKanbanCardSelectionStore from "../../../../shared/store/kanbanCardSelectionStore";
 import useExportApprovalStatusStore from "../../../../shared/store/exportApprovalStatusStore";
 import { isMcDermottWorkflow } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
@@ -59,7 +58,7 @@ const AR_INVOICES_ISSUED_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
 const CONSOLIDATED_COLUMN_PATTERN = /^consolidated\b/i;
 
 /* McDermott DA: "Upload Invoice" on "Issue AR Invoice" for the cards the user ticks (no auto-tick),
-   "Upload POs" on "Requested PO", whose cards start ticked, and "Send Invoice" on "PO Received",
+   "Upload POs" on "Requested PO" for the cards the user ticks, and "Send Invoice" on "PO Received",
    shown only while exactly one card there is ticked (the invoice email goes per card). */
 const ISSUE_AR_INVOICE_COLUMN_PATTERN = /^issue\s+ar\s+invoices?$/i;
 const REQUESTED_PO_COLUMN_PATTERN = /^requested\s+po$/i;
@@ -218,33 +217,6 @@ export default function WorkflowColumns({
         ? batchLaneCardsByColumn[colKey] ?? []
         : getSwimlaneColumnCards(workflow, laneId, colKey)
     );
-
-  /* McDermott "Requested PO" cards start ticked, ready for "Upload POs" (SAIPEM's invoice columns are only
-     ticked by hand). Each card is ticked only the first time it shows up in that column, so a card the user
-     unticks stays unticked across board refetches, and is ticked again once it moves on to the next one. */
-  const setCardSelected = useKanbanCardSelectionStore((state) => state.setCardSelected);
-  const autoTickedCardIdsRef = useRef(new Set());
-
-  useEffect(() => {
-    const isAutoTickColumn = (column) => getInvoiceAction(workflow, column) === "uploadPos";
-    if (!isMcDermottWorkflow(workflow)) return;
-    workflow.columnOrder
-      .filter((colKey) => isAutoTickColumn(workflow.columns[colKey]))
-      .forEach((colKey) =>
-        swimlaneOrder
-          .flatMap((laneId) =>
-            batchLaneCardsByColumn && laneId === swimlaneOrder[0]
-              ? batchLaneCardsByColumn[colKey] ?? []
-              : getSwimlaneColumnCards(workflow, laneId, colKey)
-          )
-          .forEach((card) => {
-            const tickKey = `${colKey}:${card?.id}`;
-            if (!card?.id || autoTickedCardIdsRef.current.has(tickKey)) return;
-            autoTickedCardIdsRef.current.add(tickKey);
-            setCardSelected(card.id, true);
-          })
-      );
-  }, [workflow, swimlaneOrder, batchLaneCardsByColumn, setCardSelected]);
 
   /* A column whose cards carry a batch renders them as groups (loose cards first, headerless). */
   const getBatchesForColumn = (colKey, laneId) => {
