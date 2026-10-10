@@ -40,7 +40,8 @@ const getFileNameFromUrl = (url) => {
 
 /* A required file is only demanded when the backend's draft has none for that slot: with a draft file the
    user may leave the row alone, or attach their own to send in addition. */
-const isFileRequired = (field) => Boolean(field.required) && !field.document;
+const isFileRequired = (field, isDraftRemoved = false) =>
+  Boolean(field.required) && (!field.document || isDraftRemoved);
 
 // Opened from a batch group's "Send For SE creation" action on the Kanban board, and from the
 // "Consolidated" column's "Send For Final Submission" (with its own title / subject / send label).
@@ -75,6 +76,7 @@ const SeCreationEmailModal = ({
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState([]);
   const [fieldFiles, setFieldFiles] = useState({});
+  const [removedDrafts, setRemovedDrafts] = useState({});
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -86,6 +88,7 @@ const SeCreationEmailModal = ({
     setMessage(defaultBody ? ensureHtmlForQuill(defaultBody) : DEFAULT_MESSAGE_HTML);
     setAttachments([]);
     setFieldFiles({});
+    setRemovedDrafts({});
     setErrors({});
   }, [show, batchTitle, defaultTo, defaultCc, defaultSubject, defaultBody, subjectPrefix]);
 
@@ -116,6 +119,10 @@ const SeCreationEmailModal = ({
     setFieldFiles((prev) => ({ ...prev, [fieldName]: (prev[fieldName] ?? []).filter((_, i) => i !== index) }));
   };
 
+  const removeDraftFile = (fieldName) => {
+    setRemovedDrafts((prev) => ({ ...prev, [fieldName]: true }));
+  };
+
   const unlabelledDocuments = documents.filter((document) => !document.label);
   const labelledDocuments = documents.filter((document) => document.label);
 
@@ -140,7 +147,7 @@ const SeCreationEmailModal = ({
     // Quill keeps markup like "<p><br></p>" when cleared, so check the text content only.
     if (!message.replace(/<[^>]*>/g, "").trim()) nextErrors.message = "Please enter a message.";
     (fileFields ?? []).forEach((field) => {
-      if (isFileRequired(field) && !fieldFiles[field.name]?.length) {
+      if (isFileRequired(field, removedDrafts[field.name]) && !fieldFiles[field.name]?.length) {
         nextErrors[`file_${field.name}`] = `Please attach the ${field.label.toLowerCase()}.`;
       }
     });
@@ -343,6 +350,7 @@ const SeCreationEmailModal = ({
                 );
               }
               const files = fieldFiles[field.name] ?? [];
+              const draftDocument = removedDrafts[field.name] ? null : field.document;
               const error = errors[`file_${field.name}`];
               const canPick = field.multiple || files.length === 0;
               return (
@@ -357,23 +365,34 @@ const SeCreationEmailModal = ({
                     <div className="se-email-slot__text">
                       <span className="se-email-slot__label" title={field.label}>
                         {field.label}
-                        {isFileRequired(field) && <span className="se-email-slot__required">*</span>}
+                        {isFileRequired(field, removedDrafts[field.name]) && <span className="se-email-slot__required">*</span>}
                       </span>
                       <span className="se-email-slot__hint">
-                        {isFileRequired(field) ? "Required" : "Optional"} · {field.multiple ? "1 or more files" : "1 file"}
+                        {isFileRequired(field, removedDrafts[field.name]) ? "Required" : "Optional"} · {field.multiple ? "1 or more files" : "1 file"}
                       </span>
                     </div>
                   </div>
-                  {field.document && (
-                    <a
-                      href={field.document.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="se-email-slot__file"
-                      title={`Open ${field.document.name}`}
-                    >
-                      <span className="se-email-slot__file-name">{field.document.name}</span>
-                    </a>
+                  {draftDocument && (
+                    <div className="se-email-slot__file">
+                      <a
+                        href={draftDocument.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="se-email-slot__file-name"
+                        title={`Open ${draftDocument.name}`}
+                      >
+                        {draftDocument.name}
+                      </a>
+                      <button
+                        type="button"
+                        className="se-email-slot__file-remove"
+                        onClick={() => removeDraftFile(field.name)}
+                        aria-label={`Remove ${draftDocument.name}`}
+                        disabled={isSubmitting}
+                      >
+                        <FiX />
+                      </button>
+                    </div>
                   )}
                   {files.map((file, index) => (
                     <div key={`${file.name}-${index}`} className="se-email-slot__file">
