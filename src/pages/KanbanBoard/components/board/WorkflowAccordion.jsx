@@ -8,6 +8,7 @@ export default function WorkflowAccordion({
   onToggle,
   onMenuClick,
   onPinClick,
+  headerAction,
   children,
 }) {
   const headerRef = useRef(null);
@@ -66,6 +67,20 @@ export default function WorkflowAccordion({
           </h2>
         </div>
         <div ref={actionsRef} className="kanban-accordion-actions">
+          {headerAction && (
+            <button
+              type="button"
+              className="accordion-menu-button"
+              onClick={(event) => {
+                event.stopPropagation();
+                headerAction.onClick(event);
+              }}
+              aria-label={headerAction.label}
+              title={headerAction.label}
+            >
+              {headerAction.icon}
+            </button>
+          )}
           <button
             type="button"
             className={`accordion-menu-button accordion-pin-button ${isPinned ? "accordion-pin-button--active" : ""}`}

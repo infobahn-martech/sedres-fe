@@ -19,6 +19,7 @@ import {
 import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import useKanbanCardSelectionStore from "../../../../shared/store/kanbanCardSelectionStore";
 import useExportApprovalStatusStore from "../../../../shared/store/exportApprovalStatusStore";
+import { isMcDermottWorkflow } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "../../../../design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -60,13 +61,9 @@ const CONSOLIDATED_COLUMN_PATTERN = /^consolidated\b/i;
 /* McDermott DA: "Upload Invoice" on "Issue AR Invoice" for the cards the user ticks (no auto-tick),
    "Upload POs" on "Requested PO", whose cards start ticked, and "Send Invoice" on "PO Received",
    shown only while exactly one card there is ticked (the invoice email goes per card). */
-const MCDERMOTT_WORKFLOW = "MCDERMOTT";
 const ISSUE_AR_INVOICE_COLUMN_PATTERN = /^issue\s+ar\s+invoices?$/i;
 const REQUESTED_PO_COLUMN_PATTERN = /^requested\s+po$/i;
 const PO_RECEIVED_COLUMN_PATTERN = /^po\s+received$/i;
-
-const isMcDermottWorkflow = (workflow) =>
-  String(workflow?.title ?? "").trim().toUpperCase().includes(MCDERMOTT_WORKFLOW);
 
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
@@ -527,6 +524,9 @@ export default function WorkflowColumns({
                         onBatchUploadSeApproval={onBatchUploadSeApproval}
                         onBatchUploadInvoice={onBatchUploadInvoice}
                         onBatchRequestPo={onBatchRequestPo}
+                        onBatchUploadPos={(cards) =>
+                          onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id })
+                        }
                         onToggleCardSelect={onToggleCardSelect}
                         onCardSelectDragStart={onCardSelectDragStart}
                         onCardSelectDragEnter={onCardSelectDragEnter}

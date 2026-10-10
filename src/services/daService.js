@@ -40,7 +40,7 @@ const uploadInvoice = (formData) =>
   Gateway.post('/da/da_upload_invoice', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-/** @param {FormData} formData - call_id + proof file(s), multipart/form-data.
+/** @param {FormData} formData - call_id, proof (required), approval_email, scc (required for L&T only), multipart/form-data.
  * @returns {Promise<{ data: { status: 'success', stage_document_id: number } | { status: 'error', message: string } }>}
  * Stores the client's SO approval proof once the decision has been recorded as approved. */
 const uploadSoApprovalProof = (formData) =>
@@ -194,7 +194,17 @@ const uploadPos = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
-/** @param {{ workflow_id: number, page: number, per_page: number }} params
+/** @param {FormData} formData - call_ids, card_ids (ticked Submitted to DA cards, comma separated), srf (one
+ * SRF document for all of them), multipart/form-data.
+ * @returns {Promise<{ data: { status: 'success', data: { file_name: string, file_url: string,
+ *   cards: { call_id: number, card_id: number }[], moved_to_da: { call_id: number, card_id: number }[] } }
+ *   | { status: 'error', message: string } }>} */
+const uploadSrf = (formData) =>
+  Gateway.post('/da/upload_srf', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+/** @param {{ workflow_id: number, card_ids: string (ticked cards, comma separated), page: number, per_page: number }} params
  * @returns {Promise<{ data: { status: 'success', data: { cards: { call_id: number, card_id: number, ready: boolean,
  *   sales_orders: { sales_order_id: number, sales_order_no: string, invoice_no: string, po: object|null }[] }[],
  *   pagination: { page: number, per_page: number, total_cards: number, total_pages: number } } }
@@ -262,6 +272,7 @@ export default {
   getPoRequestDraft,
   sendPoRequest,
   uploadPos,
+  uploadSrf,
   getPoReview,
   confirmPos,
   getInvoiceDispatchDraft,
