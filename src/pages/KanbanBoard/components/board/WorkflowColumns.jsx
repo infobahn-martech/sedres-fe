@@ -18,7 +18,7 @@ import {
 } from "../../utils/boardGridHelpers";
 import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import useExportApprovalStatusStore from "../../../../shared/store/exportApprovalStatusStore";
-import { isMcDermottWorkflow } from "../../utils/columnTitles";
+import { isMcDermottWorkflow, isColumnBeforeArchive } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "../../../../design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -521,6 +521,7 @@ export default function WorkflowColumns({
                         onBatchUploadPos={(cards) =>
                           onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id })
                         }
+                        hideCardSelect={isColumnBeforeArchive(workflow, colKey)}
                         onToggleCardSelect={onToggleCardSelect}
                         onCardSelectDragStart={onCardSelectDragStart}
                         onCardSelectDragEnter={onCardSelectDragEnter}
