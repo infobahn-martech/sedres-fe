@@ -593,6 +593,8 @@ export default function KanbanBoardPage() {
         notify(data.message || "PO request sent successfully", "success");
         /* A column override left from creating the batch would keep drawing the cards in the old column. */
         clearCardColumns((selectedPoRequestBatch?.cards ?? []).map((card) => card.id));
+        /* The batch's ticks (e.g. from select all) belong to the column it leaves, not to "Requested PO". */
+        (selectedPoRequestBatch?.cards ?? []).forEach((card) => removeCardSelectionId(card.id));
         handleClosePoRequestEmail();
         refetchBoard?.();
       } finally {
@@ -604,6 +606,7 @@ export default function KanbanBoardPage() {
       selectedPoRequestBatch,
       batchIdByNumber,
       clearCardColumns,
+      removeCardSelectionId,
       handleClosePoRequestEmail,
       refetchBoard,
     ]
