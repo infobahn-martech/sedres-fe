@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { FiCheck, FiEye, FiLayers, FiX } from "react-icons/fi";
 import CustomModal from "../../../../components/CustomModal";
 import useArInvoiceReviewStore from "../../../../shared/store/arInvoiceReviewStore";
+import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import { notify } from "../../../../components/Toaster";
 import { findUploadedFile, getUploadedFileUrl, viewLocalFile, viewUploadedFile } from "../../../../shared/utils/viewUploadedFile";
 import MaterialTablePagination from "../../CardFormTabs/Import/tabs/husbandry/components/MaterialTablePagination";
@@ -73,6 +74,7 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
   const cards = useArInvoiceReviewStore((state) => state.selectedArInvoiceReviewCards);
   const isLoading = useArInvoiceReviewStore((state) => state.isArInvoiceReviewLoading);
   const onClose = useArInvoiceReviewStore((state) => state.closeArInvoiceReviewModal);
+  const clearCardColumns = useBatchMoveStore((state) => state.clearCardColumns);
   const fetchArInvoiceReview = useArInvoiceReviewStore((state) => state.fetchArInvoiceReview);
   const isConfirming = useArInvoiceReviewStore((state) => state.isConfirmingArInvoices);
   const confirmArInvoices = useArInvoiceReviewStore((state) => state.confirmArInvoices);
@@ -222,6 +224,9 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
       }`,
       "success"
     );
+    /* The backend has moved the cards on; a column note left from an earlier batch move would keep
+       drawing them in "SE Received", so it is dropped and the board load decides. */
+    clearCardColumns(confirmPayload.map((card) => card.card_id));
     onClose();
     onConfirmed?.();
   };

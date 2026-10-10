@@ -51,14 +51,14 @@ const ALL_TOP_TABS = [
   "Operation",
   "Husbandry",
   "Sales Order",
-  "Reports",
-  "Document Library",
   "Comments",
   "Subtasks",
   "Notes",
+  "Reports",
+  "Document Library",
 ];
 
-const ALL_ENABLED_TABS = ["Appointment Details", "Operation", "Husbandry", "Sales Order", "Reports", "Document Library", "Comments", "Subtasks", "Notes"];
+const ALL_ENABLED_TABS = ["Appointment Details", "Operation", "Husbandry", "Sales Order", "Comments", "Subtasks", "Notes","Reports", "Document Library"];
 
 // "DA" tab is appended to the default tab bar only for viewers the backend grants
 // KANBAN_CARD:DA - see showDAOnlyTab.
@@ -1712,18 +1712,18 @@ const renderTabContent = (
         return <SalesOrder {...commonProps} />;
       case "Invoice":
         return <Invoice {...commonProps} />;
-      case "Reports":
-        return <Reports {...commonProps} />;
       case "KPI":
         return <KPI {...commonProps} />;
-      case "Document Library":
-        return <DocumentLibrary {...commonProps} />;
       case "Comments":
         return <Comments {...commonProps} />;
       case "Subtasks":
         return <Subtasks {...commonProps} />;
       case "Notes":
         return <Notes {...commonProps} />;
+           case "Reports":
+        return <Reports {...commonProps} />;
+              case "Document Library":
+        return <DocumentLibrary {...commonProps} />;
       default:
         return <General {...commonProps} />;
     }
