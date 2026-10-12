@@ -262,7 +262,7 @@ const SCC_FIELD_NAME = "scc";
 const approvalUploadFields = [
   {
     name: "proof",
-    label: "Approved SO document",
+    label: "Approved SO",
     accept: ".pdf,.jpg,.jpeg,.png",
     formatsHint: "PDF, JPG, PNG",
     multiple: false,
@@ -270,7 +270,7 @@ const approvalUploadFields = [
   },
   {
     name: "approval_email",
-    label: "Approval email",
+    label: "Approved email",
     accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
     formatsHint: "PDF, EML, MSG, JPG, PNG",
     multiple: false,
@@ -337,9 +337,9 @@ const SalesOrderList = ({
   const soCustomerCode = formValues.soCustomerCode || "";
   const soCustomerName = formValues.soCustomerName || "";
   const isLntSalesOrder = LNT_CLIENT_PATTERN.test(`${soCustomerName} ${formValues.billingEntity || ""}`);
-  const visibleApprovalUploadFields = approvalUploadFields.filter(
-    (field) => field.name !== SCC_FIELD_NAME || isLntSalesOrder
-  );
+  const visibleApprovalUploadFields = approvalUploadFields
+    .filter((field) => field.name !== SCC_FIELD_NAME || isLntSalesOrder)
+    .map((field) => (field.name === SCC_FIELD_NAME ? { ...field, required: true } : field));
   const soContactPerson = formValues.soContactPerson || "";
   const soBpCurrency = formValues.soBpCurrency || "";
   const soEuroRate = formValues.soEuroRate || "";
@@ -772,6 +772,8 @@ const SalesOrderList = ({
   // that column is not guaranteed to sit directly after "Ops Completed".
   const isAtSoSentForSccColumn =
     Array.isArray(stepLabels) && currentStep != null && /so sent for scc/i.test(stepLabels[currentStep - 1] || "");
+  const isAtSccReceivedColumn =
+    Array.isArray(stepLabels) && currentStep != null && /scc received/i.test(stepLabels[currentStep - 1] || "");
   const showActionColumn =
     canViewActionColumn && (isAtColumnAfterOpsCompleted || isBeforeSubmittedToDa || isAtSoSentForSccColumn);
 
@@ -1192,6 +1194,14 @@ const SalesOrderList = ({
     useAlertReducer.getState().success("Approval proof uploaded.");
     if (refreshSalesOrder) refreshSalesOrder();
     onDaStatusRefresh?.();
+    // L&T SCC received: a successful upload moves the card on to "Submitted to FDA". The upload
+    // response carries no status_id, so only the board column is moved.
+    if (isAtSccReceivedColumn) {
+      const submittedToFdaLabel = findBoardColumnLabel(/submitted to fda/i);
+      if (submittedToFdaLabel) {
+        onAdvanceDaStage?.({ label: submittedToFdaLabel, skipStatusUpdate: true });
+      }
+    }
   };
 
   // Persists via da/da_upload_invoice (call_id + invoice file(s), multipart/form-data) →
@@ -2540,6 +2550,7 @@ const SalesOrderList = ({
             !(isAtArInvoiceColumn && isRealInvoiceIssuanceStage) &&
             (isCardAtSoApprovalColumn ||
               isAtSoSentForSccColumn ||
+              isAtSccReceivedColumn ||
               isAtSoApprovalDecisionColumn ||
               (effectiveNextDaStatusLabel && shouldShowDaActionButton)) && (
             // Column 4's button state is driven by api/da/action_state's button_state now, via
@@ -2548,7 +2559,24 @@ const SalesOrderList = ({
             // justApproved/justRejected/isSoApprovalEmailPendingDecision local guesswork. Every
             // other column still uses the granular DA status-timeline (isAwaitingDecisionStage /
             // daActionButtonLabel) as before.
-            isAtSoApprovalDecisionColumn ? (
+            isAtSccReceivedColumn ? (
+              isApprovalEmailUploaded ? (
+                <span className="sales-order-da-status-button sales-order-da-status-button--label">
+                  <FiCheck />
+                  Approved documents uploaded
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="sales-order-da-status-button"
+                  title="Upload the approved SO document, approval email and SCC"
+                  onClick={() => setShowApprovalEmailUploadModal(true)}
+                >
+                  <FiUpload />
+                  Upload Approved Documents
+                </button>
+              )
+            ) : isAtSoApprovalDecisionColumn ? (
               renderApprovedWithEmailUpload()
             ) : isAtSoSentForSccColumn ? (
               soActionState?.button_state === "awaiting_approval" ? (
