@@ -35,6 +35,7 @@ import workflowService from "../../../services/workflowService";
 import daService from "../../../services/daService";
 import { notify } from "../../../components/Toaster";
 import { downloadFile } from "../../../shared/utils/utils";
+import { compressPdfFiles } from "../../../shared/utils/compressPdf";
 import { useThemeStore } from "../../../shared/store/themeStore";
 import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
@@ -537,7 +538,7 @@ export default function KanbanBoardPage() {
       }
       let data;
       try {
-        ({ data } = await daService.getPoRequestDraft(batchId));
+        ({ data } = await daService.getPoRequestDraft(batchId, getBatchCallIds(batch)));
       } catch (error) {
         data = error?.response?.data;
       }
@@ -549,7 +550,7 @@ export default function KanbanBoardPage() {
       setSelectedPoRequestBatch(batch);
       setShowPoRequestEmailModal(true);
     },
-    [batchIdByNumber]
+    [batchIdByNumber, getBatchCallIds]
   );
 
   const handleClosePoRequestEmail = useCallback(() => {
@@ -569,6 +570,9 @@ export default function KanbanBoardPage() {
 
       const formData = new FormData();
       formData.append("batch_id", batchId);
+      /* Only the ticked cards move to "Requested PO"; the unticked ones stay in the batch. */
+      const callIds = getBatchCallIds(selectedPoRequestBatch);
+      if (callIds.length) formData.append("call_ids", callIds.join(","));
       if (poRequestEmailDraft?.stage_document_id != null) {
         formData.append("stage_document_id", poRequestEmailDraft.stage_document_id);
       }
@@ -605,6 +609,7 @@ export default function KanbanBoardPage() {
       poRequestEmailDraft,
       selectedPoRequestBatch,
       batchIdByNumber,
+      getBatchCallIds,
       clearCardColumns,
       removeCardSelectionId,
       handleClosePoRequestEmail,
@@ -775,7 +780,8 @@ export default function KanbanBoardPage() {
           const formData = new FormData();
           formData.append("call_ids", callIds.join(","));
           formData.append("card_ids", cards.map((card) => card.id).join(","));
-          chunk.forEach((file) => formData.append("invoices[]", file));
+          /* Compressed one chunk at a time so a very large selection is never held in memory twice. */
+          (await compressPdfFiles(chunk)).forEach((file) => formData.append("invoices[]", file));
 
           let data;
           try {

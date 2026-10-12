@@ -149,6 +149,7 @@ const sendSubmissionEmail = (formData) =>
 const uploadArInvoices = (formData) =>
   Gateway.post('/da/upload_ar_invoices', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120000,
   });
 
 /** @param {{ page: number, per_page: number }} params
@@ -166,13 +167,18 @@ const getArInvoiceReview = (params) => Gateway.get('/da/ar_invoice_review', { pa
 const confirmArInvoices = (payload) => Gateway.post('/da/confirm_ar_invoices', payload);
 
 /** @param {string|number} batchId
+ * @param {Array<string|number>} [callIds] - calls of the ticked cards, sent as call_ids=110,111
  * @returns {Promise<{ data: { status: 'success', data: { batch_id: number, batch_number: string, call_ids: number[],
  *   cards: { call_id: number, card_id: number }[], to: string, cc: string, subject: string, body: string,
  *   stage_document_id: number, document_url: string } } | { status: 'error', message: string } }>}
  * Prefilled "Request PO" email for a McDermott batch in "Ready for PO Request"; document_url is the PO request sheet. */
-const getPoRequestDraft = (batchId) => Gateway.get(`/da/po_request_draft/${batchId}`);
+const getPoRequestDraft = (batchId, callIds = []) =>
+  Gateway.get(`/da/po_request_draft/${batchId}`, {
+    params: callIds.length ? { call_ids: callIds.join(',') } : undefined,
+  });
 
-/** @param {FormData} formData - batch_id, stage_document_id, to, cc, subject, body, attachments[]?, multipart/form-data.
+/** @param {FormData} formData - batch_id, stage_document_id, to, cc, subject, body, call_ids? (ticked cards, sent as
+ * call_ids=110,111), attachments[]?, multipart/form-data.
  * @returns {Promise<{ data: { status: 'success', data: { moved_to_requested_po: { call_id: number, card_id: number }[] } }
  *   | { status: 'error', message: string } }>}
  * Sends the PO request email; the batch's cards move to "Requested PO". */

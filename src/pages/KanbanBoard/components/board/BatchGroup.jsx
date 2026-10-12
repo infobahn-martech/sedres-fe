@@ -151,7 +151,12 @@ export default function BatchGroup({
       .forEach((card) => toggleCard(card));
   };
 
-  const handleSendSeRequest = () => onSendSeRequest?.({ ...batch, cards: tickedSeCards });
+  /* "Request PO" applies to the ticked cards only; a lone card has no checkbox, so it always counts. */
+  const poRequestCards = isSingleCardBatch
+    ? batch.cards
+    : batch.cards.filter((card) => selectedActionCardIds.includes(card.id));
+
+  const handleSendSeRequest =() => onSendSeRequest?.({ ...batch, cards: tickedSeCards });
 
   return (
     <div
@@ -186,7 +191,8 @@ export default function BatchGroup({
             <button
               type="button"
               className="batch-group__action"
-              onClick={() => onRequestPo?.(batch)}
+              onClick={() => onRequestPo?.({ ...batch, cards: poRequestCards })}
+              disabled={!poRequestCards.length}
             >
               Request PO
             </button>

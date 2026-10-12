@@ -30,6 +30,7 @@
     "lucide-react": "^1.16.0",
     "moment": "^2.30.1",
     "msgreader": "^1.0.1",
+    "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.7.284",
     "prop-types": "^15.8.1",
     "quill": "^2.0.3",
