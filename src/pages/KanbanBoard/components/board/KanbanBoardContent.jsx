@@ -1,21 +1,7 @@
 import WorkflowAccordion from "./WorkflowAccordion";
-import { FiUploadCloud } from "react-icons/fi";
 import WorkflowColumns from "./WorkflowColumns";
-import { isMcDermottWorkflow } from "../../utils/columnTitles";
-import { getSwimlaneColumnCards } from "../../utils/columnHelpers";
 
-const SUBMITTED_TO_DA_COLUMN_PATTERN = /^submitted to da$/i;
 const EMPTY_SELECTED_IDS = [];
-
-/* The ticked cards sitting in a McDermott workflow's "Submitted to DA" column. */
-const getSubmittedToDaTickedCards = (workflow, selectedActionCardIds) => {
-  if (!isMcDermottWorkflow(workflow) || !selectedActionCardIds.length) return [];
-  const laneIds = workflow.swimlaneOrder?.length ? workflow.swimlaneOrder : ["lane-default"];
-  return workflow.columnOrder
-    .filter((colKey) => SUBMITTED_TO_DA_COLUMN_PATTERN.test(String(workflow.columns[colKey]?.title ?? "").trim()))
-    .flatMap((colKey) => laneIds.flatMap((laneId) => getSwimlaneColumnCards(workflow, laneId, colKey)))
-    .filter((card) => selectedActionCardIds.includes(card.id));
-};
 
 export default function KanbanBoardContent({
   workflows,
@@ -69,7 +55,6 @@ export default function KanbanBoardContent({
   }
 
   return workflows.map((workflow) => {
-    const srfCards = getSubmittedToDaTickedCards(workflow, selectedActionCardIds);
     return (
     <WorkflowAccordion
       key={workflow.id}
@@ -80,15 +65,6 @@ export default function KanbanBoardContent({
       onToggle={() => onToggleWorkflow(workflow.id)}
       onMenuClick={(event) => onAccordionMenuClick(event, workflow.id)}
       onPinClick={() => onPinClick(workflow.id)}
-      headerAction={
-        srfCards.length
-          ? {
-              label: "Upload SRF",
-              icon: <FiUploadCloud size={18} aria-hidden />,
-              onClick: () => onUploadSrf?.(srfCards, { workflowId: workflow.workflow_id ?? workflow.id }),
-            }
-          : undefined
-      }
     >
       <WorkflowColumns
         workflow={workflow}
@@ -105,6 +81,7 @@ export default function KanbanBoardContent({
         onBatchRequestPo={onBatchRequestPo}
         onColumnUploadInvoice={onColumnUploadInvoice}
         onColumnUploadPos={onColumnUploadPos}
+        onUploadSrf={onUploadSrf}
         onColumnSendInvoice={onColumnSendInvoice}
         onColumnMergeInvoice={onColumnMergeInvoice}
         onColumnPrepareSubmission={onColumnPrepareSubmission}
