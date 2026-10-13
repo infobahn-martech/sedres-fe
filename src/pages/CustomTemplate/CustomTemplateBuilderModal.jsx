@@ -496,6 +496,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const [dragOverIndex, setDragOverIndex] = useState(null);
     const [dragOverCell, setDragOverCell] = useState(null);
     const [deleteFieldRequest, setDeleteFieldRequest] = useState(null);
+    // Tab/subtab ids whose email preview the user removed; those fall back to
+    // the normal field grid. Builder-session only — not part of the save payload.
+    const [hiddenEmailPreviewIds, setHiddenEmailPreviewIds] = useState(() => new Set());
 
     const callTypeOptions = (callTypes ?? []).map((ct) => ({
         value: String(ct.call_type_id ?? ""),
@@ -517,7 +520,13 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     // Live preview mirrors the real card, so blank-label fields still being typed
     // get a placeholder rather than rendering with no label at all.
     const previewFields = activeFields.map((f) => ({ ...f, label: f.label.trim() || "Untitled Field" }));
-    const emailSubject = getEmailPreviewSubject(activeTab?.name, activeSubTab?.name);
+    const emailScopeId = hasSubTabs ? activeSubTab?.id : activeTab?.id;
+    const emailSubject = hiddenEmailPreviewIds.has(emailScopeId)
+        ? null
+        : getEmailPreviewSubject(activeTab?.name, activeSubTab?.name);
+    const handleRemoveEmailPreview = () => {
+        setHiddenEmailPreviewIds((prev) => new Set(prev).add(emailScopeId));
+    };
 
     useEffect(() => {
         if (callTypes === null) {
@@ -557,6 +566,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         setEditingSubTabId(null);
         setEditingSubTabName("");
         setDeleteFieldRequest(null);
+        setHiddenEmailPreviewIds(new Set());
     };
 
     // Writes to the currently active fields scope — the active sub-tab's fields
@@ -1289,7 +1299,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                                         <p className="ct-summary-no-fields">No fields yet — add fields on the left.</p>
                                                     )}
                                                 </div>
-                                                <TemplateEmailPreview subject={emailSubject} />
+                                                <TemplateEmailPreview subject={emailSubject} onClose={handleRemoveEmailPreview} />
                                             </div>
                                         ) : previewFields.length > 0 ? (
                                             <div className="ct-preview-custom-fields-grid">

@@ -1,3 +1,4 @@
+import { FiX } from "react-icons/fi";
 import { getReadingOrder } from "./templateFieldGrid";
 import TemplateFieldPreview from "./TemplateFieldPreview";
 
@@ -12,9 +13,21 @@ export function TemplateEmailFieldsColumn({ fields }) {
     return getReadingOrder(fields).map((i) => <TemplateFieldPreview key={fields[i].id ?? i} field={fields[i]} />);
 }
 
-function TemplateEmailPreview({ subject }) {
+// onClose (builder only) renders a corner × that removes the preview section.
+function TemplateEmailPreview({ subject, onClose }) {
     return (
         <div className="operation-email-preview-panel ctm-email-preview">
+            {onClose && (
+                <button
+                    type="button"
+                    className="ctm-preview-close-btn ctm-email-preview-close"
+                    aria-label="Remove email preview"
+                    title="Remove email preview"
+                    onClick={onClose}
+                >
+                    <FiX size={10} />
+                </button>
+            )}
             <div className="operation-email-preview-header">
                 <h4>Email Preview</h4>
             </div>

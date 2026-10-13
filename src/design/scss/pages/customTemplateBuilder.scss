@@ -1110,3 +1110,13 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
     color: #9bb8ff;
   }
 }
+
+// Email preview × (builder) — panel becomes the positioning context.
+.ctm-email-split .ctm-email-preview {
+  position: relative;
+
+  .ctm-email-preview-close {
+    top: 8px;
+    right: 8px;
+  }
+}
