@@ -16,15 +16,3 @@ const isExportApprovalFlagOn = (card) =>
    (a non-Export call such as Husbandry can still come with true). */
 export const needsExportApprovalCheck = (card) =>
   getExportApprovalFlag(card) == null || isExportApprovalFlagOn(card);
-
-// is_export_approval_card is true while export approval is still pending, so the card can't be
-// ticked for a batch. A non-Export call (e.g. Husbandry) has no export approval and stays
-// selectable. When the key is missing, the call's export_approval_status (loaded into
-// statusByCallId) decides; a card not in that map (other boards) keeps it selectable.
-export const isExportApprovalPendingCard = (card, statusByCallId) => {
-  const status = statusByCallId?.[card?.callId];
-  if (status === "not_export") return false;
-  if (isExportApprovalFlagOn(card)) return true;
-  if (getExportApprovalFlag(card) != null) return false;
-  return status === "loading" || status === "pending";
-};

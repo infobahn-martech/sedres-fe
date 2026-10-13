@@ -85,8 +85,7 @@ export default function BatchGroup({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSeReviewBatch, batchId, loadSeReview]);
 
-  /* A batch of one card has nothing to choose between: its card counts as ticked and shows no checkbox.
-     With more cards each one gets its own checkbox. */
+  /* A batch of one card has nothing to choose between: its card counts as ticked. */
   const isSingleCardSeBatch = (isSendSeBatch || isSeReviewBatch) && batch.cards.length === 1;
   const singleCardId = isSingleCardSeBatch ? batch.cards[0].id : null;
 
@@ -106,11 +105,11 @@ export default function BatchGroup({
     return selectedActionCardIds.includes(card.id);
   };
 
-  /* A batch of one card has nothing to choose between, so its card shows no checkbox. */
+  /* A batch of one card always counts as ticked for the batch actions, but still shows its checkbox. */
   const isSingleCardBatch = !isUngrouped && batch.cards.length === 1;
 
   const getToggleSelectForAction = () => {
-    if (isSingleCardBatch || isSingleCardSeBatch || isSubmittedInvoicesColumn || hideCardSelect) return undefined;
+    if (isSubmittedInvoicesColumn || hideCardSelect) return undefined;
     if (isSendSeBatch) return toggleSeCardTick;
     if (isSeReviewBatch) return (card) => toggleSeReviewCard(card.id, { isSeUploadDone });
     return onToggleCardSelect;
@@ -151,7 +150,7 @@ export default function BatchGroup({
       .forEach((card) => toggleCard(card));
   };
 
-  /* "Request PO" and "Upload POs" apply to the ticked cards only; a lone card has no checkbox, so it always counts. */
+  /* "Request PO" and "Upload POs" apply to the ticked cards only; a lone card always counts. */
   const tickedActionCards = isSingleCardBatch
     ? batch.cards
     : batch.cards.filter((card) => selectedActionCardIds.includes(card.id));

@@ -19,8 +19,6 @@ import {
   getApiCardTaskName,
   getUsernameInitial,
 } from "../../../../utils/cardDisplayHelpers";
-import { isExportApprovalPendingCard } from "../../../../utils/cardHelpers";
-import useExportApprovalStatusStore from "../../../../../../shared/store/exportApprovalStatusStore";
 
 /** Top-left badge: dynamic Fi/Lu icon from API `cardTypeIcon` (e.g. LuRocket). */
 function ApiCardTypeIcon({ card, inline = false }) {
@@ -657,10 +655,9 @@ function CardItem({
   isDragDisabled = false,
 }) {
   const isApiCard = card.cardSource === "api";
-  const exportApprovalStatusByCallId = useExportApprovalStatusStore((state) => state.statusByCallId);
-  const isExportApprovalPending = isExportApprovalPendingCard(card, exportApprovalStatusByCallId);
+  const isDaBoardCard = String(card?.da_board ?? card?.raw?.da_board ?? "").trim() === "1";
   const canSelectForAction =
-    typeof onToggleSelectForAction === "function" && !isExportApprovalPending;
+    isDaBoardCard && typeof onToggleSelectForAction === "function";
   const topRowUsernameInitial = isApiCard && !isShrunk ? getUsernameInitial(card.user) : null;
   const isTransportCoordinatorWorkflow = String(workflowTitle || "").trim().toLowerCase().includes("transport coordinator");
   const cardColor = card.color || "#2A00FF";
