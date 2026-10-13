@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX, FiMenu } from "react-icons/fi";
+import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX, FiMenu, FiChevronDown } from "react-icons/fi";
 import SearchableSelect from "../../components/form/SearchableSelect";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import TemplateFieldPreview from "./TemplateFieldPreview";
@@ -275,15 +275,18 @@ function OptionsSourceEditor({ field, onSetSource, onSetMasterModule, onAddOptio
     return (
         <div className="ctm-options-source">
             <p className="ctm-field-options-label">Options Source</p>
-            <div className="ctm-options-source-cards">
+            <div className="ctm-segmented" role="radiogroup" aria-label="Options source">
                 {OPTIONS_SOURCE_CARDS.map((card) => (
                     <button
                         key={card.value}
                         type="button"
-                        className={`ctm-options-source-card ${source === card.value ? "is-active" : ""}`}
+                        role="radio"
+                        aria-checked={source === card.value}
+                        title={card.desc}
+                        className={`ctm-segmented-btn ${source === card.value ? "is-active" : ""}`}
                         onClick={() => onSetSource(card.value)}
                     >
-                        <span className="ctm-options-source-card-title">{card.title}</span>
+                        {card.title}
                     </button>
                 ))}
             </div>
@@ -315,52 +318,96 @@ function OptionsSourceEditor({ field, onSetSource, onSetMasterModule, onAddOptio
     );
 }
 
+// One-line summary shown on a collapsed field card, e.g. "Dropdown · 3 options".
+const getFieldSummary = (field, typeLabel, isDropdown, hasOptions) => {
+    const parts = [typeLabel || "No type selected"];
+    if (isDropdown && field.optionsSource === "master") {
+        const mod = MASTER_MODULES.find((m) => m.value === field.masterModule);
+        parts.push(mod ? `Master: ${mod.label}` : "Master data");
+    } else if (hasOptions) {
+        const count = field.options?.length ?? 0;
+        parts.push(`${count} option${count === 1 ? "" : "s"}`);
+    }
+    return parts.join(" · ");
+};
+
 function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, optionsFieldTypes, dropdownTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
+    // New (unlabelled) fields open ready to edit; existing ones start collapsed
+    // so long templates stay scannable.
+    const [expanded, setExpanded] = useState(() => !field.label.trim());
     const showOptionsSource = field.type === dropdownTypeKey;
     const showManualOptions = !showOptionsSource && optionsFieldTypes.has(field.type);
+    const typeLabel = fieldTypeOptions.find((o) => o.value === field.type)?.label ?? "";
+    const summary = getFieldSummary(field, typeLabel, showOptionsSource, showManualOptions || showOptionsSource);
     return (
         <div
-            className={`ctm-field-card ${isDragging ? "is-dragging" : ""} ${isDragOver ? "is-drag-over" : ""}`}
+            className={`ctm-field-card ${expanded ? "is-expanded" : ""} ${isDragging ? "is-dragging" : ""} ${isDragOver ? "is-drag-over" : ""}`}
             draggable
             onDragStart={() => onDragStart(index)}
             onDragOver={(e) => { e.preventDefault(); onDragOver(index); }}
             onDrop={(e) => { e.preventDefault(); onDrop(index); }}
             onDragEnd={onDragEnd}
         >
-            <div className="ctm-field-row-top">
-                <div className="ctm-field-row-main">
-                    <span className="ctm-field-drag-handle" title="Drag to reorder">
-                        <FiMenu size={14} />
-                    </span>
-                    <input
-                        type="text"
-                        className="ctm-field-label-input"
-                        placeholder="Field label"
-                        value={field.label}
-                        onChange={(e) => onUpdate(field.id, "label", e.target.value)}
-                    />
-                    <button
-                        type="button"
-                        className="ctm-field-del-btn"
-                        aria-label="Delete field"
-                        onClick={() => onRequestDelete(field.id)}
-                    >
-                        <FiTrash2 size={15} />
-                    </button>
-                </div>
-                <div className="ctm-field-row-sub">
-                    <SearchableSelect
-                        className="ctm-field-type-select"
-                        value={field.type}
-                        onChange={(e) => onUpdate(field.id, "type", e.target.value)}
-                        options={fieldTypeOptions}
-                        placeholder={fieldTypesLoading ? "Loading..." : "Select type..."}
-                        disabled={fieldTypesLoading}
-                        menuPortalTarget={document.body}
-                        menuPlacement="auto"
-                    />
-                    <label className="ctm-toggle-wrap">
-                        <span className="ctm-toggle-label">Required</span>
+            <div className="ctm-field-head">
+                <span className="ctm-field-drag-handle" title="Drag to reorder">
+                    <FiMenu size={14} />
+                </span>
+                <span className="ctm-field-index">{index + 1}</span>
+                <input
+                    type="text"
+                    className="ctm-field-label-input"
+                    placeholder="Field label"
+                    aria-label="Field label"
+                    value={field.label}
+                    onChange={(e) => onUpdate(field.id, "label", e.target.value)}
+                />
+                <button
+                    type="button"
+                    className="ctm-field-expand-btn"
+                    aria-label={expanded ? "Collapse field settings" : "Expand field settings"}
+                    aria-expanded={expanded}
+                    title={expanded ? "Hide settings" : "Edit settings"}
+                    onClick={() => setExpanded((v) => !v)}
+                >
+                    <FiChevronDown size={16} />
+                </button>
+                <button
+                    type="button"
+                    className="ctm-field-del-btn"
+                    aria-label="Delete field"
+                    title="Delete field"
+                    onClick={() => onRequestDelete(field.id)}
+                >
+                    <FiTrash2 size={15} />
+                </button>
+            </div>
+
+            {!expanded ? (
+                <button type="button" className="ctm-field-summary" onClick={() => setExpanded(true)}>
+                    <span className="ctm-field-summary-text">{summary}</span>
+                    {field.required && <span className="ctm-field-required-badge">Required</span>}
+                </button>
+            ) : (
+                <div className="ctm-field-body">
+                    <div className="ctm-field-control">
+                        <span className="ctm-field-control-label">Field type</span>
+                        <SearchableSelect
+                            className="ctm-field-type-select"
+                            value={field.type}
+                            onChange={(e) => onUpdate(field.id, "type", e.target.value)}
+                            options={fieldTypeOptions}
+                            placeholder={fieldTypesLoading ? "Loading..." : "Select type..."}
+                            disabled={fieldTypesLoading}
+                            menuPortalTarget={document.body}
+                            menuPlacement="auto"
+                        />
+                    </div>
+
+                    <label className="ctm-field-required-row">
+                        <span className="ctm-field-required-text">
+                            <span className="ctm-field-control-label">Required</span>
+                            <span className="ctm-field-control-hint">Must be filled in before saving the card</span>
+                        </span>
                         <span className="ctm-toggle">
                             <input
                                 type="checkbox"
@@ -370,35 +417,32 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, optionsF
                             <span className="ctm-toggle-slider" />
                         </span>
                     </label>
+
+                    {showManualOptions && (
+                        <FieldOptionsEditor
+                            field={field}
+                            onAddOption={() => onAddOption(field.id)}
+                            onUpdateOption={(idx, val) => onUpdateOption(field.id, idx, val)}
+                            onRemoveOption={(idx) => onRemoveOption(field.id, idx)}
+                        />
+                    )}
+
+                    {showOptionsSource && (
+                        <OptionsSourceEditor
+                            field={field}
+                            onSetSource={(source) => onSetOptionsSource(field.id, source)}
+                            onSetMasterModule={(mod) => onSetMasterModule(field.id, mod)}
+                            onAddOption={() => onAddOption(field.id)}
+                            onUpdateOption={(idx, val) => onUpdateOption(field.id, idx, val)}
+                            onRemoveOption={(idx) => onRemoveOption(field.id, idx)}
+                        />
+                    )}
                 </div>
-            </div>
-
-            {showManualOptions && (
-                <FieldOptionsEditor
-                    field={field}
-                    onAddOption={() => onAddOption(field.id)}
-                    onUpdateOption={(idx, val) => onUpdateOption(field.id, idx, val)}
-                    onRemoveOption={(idx) => onRemoveOption(field.id, idx)}
-                />
-            )}
-
-            {showOptionsSource && (
-                <OptionsSourceEditor
-                    field={field}
-                    onSetSource={(source) => onSetOptionsSource(field.id, source)}
-                    onSetMasterModule={(mod) => onSetMasterModule(field.id, mod)}
-                    onAddOption={() => onAddOption(field.id)}
-                    onUpdateOption={(idx, val) => onUpdateOption(field.id, idx, val)}
-                    onRemoveOption={(idx) => onRemoveOption(field.id, idx)}
-                />
             )}
         </div>
     );
 }
 
-// Builder form + live preview, with no overlay/topbar of its own — the caller
-// (either the standalone modal below, or CustomTemplateListModal reusing its
-// own single panel) owns the surrounding chrome and decides what onClose does.
 // Small × pinned to the top-right corner of a preview tab/subtab/field.
 function PreviewCloseButton({ label, onClick }) {
     return (
@@ -416,6 +460,9 @@ function PreviewCloseButton({ label, onClick }) {
     );
 }
 
+// Builder form + live preview, with no overlay/topbar of its own — the caller
+// (either the standalone modal below, or CustomTemplateListModal reusing its
+// own single panel) owns the surrounding chrome and decides what onClose does.
 function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const {
         getFieldTypes, fieldTypes, isLoadingFieldTypes,
