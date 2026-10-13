@@ -406,7 +406,7 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, optionsF
                     <label className="ctm-field-required-row">
                         <span className="ctm-field-required-text">
                             <span className="ctm-field-control-label">Required</span>
-                            <span className="ctm-field-control-hint">Must be filled in before saving the card</span>
+                            <span className="ctm-field-control-hint">Mandatory field</span>
                         </span>
                         <span className="ctm-toggle">
                             <input
