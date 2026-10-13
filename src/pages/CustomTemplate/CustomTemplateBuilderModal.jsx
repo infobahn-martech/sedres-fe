@@ -914,9 +914,16 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                             </div>
                         </div>
 
-                        <p className="ctm-section-title">Template Structure</p>
+                        <div className="ctm-fields-header">
+                            <p className="ctm-section-title" style={{ margin: 0 }}>Template Structure</p>
+                            {!addingTab && (
+                                <button type="button" className="ctm-add-tab-btn" onClick={handleAddTabClick}>
+                                    <FiPlus size={13} /> Add Tab
+                                </button>
+                            )}
+                        </div>
 
-                        <div className="ctm-tabs-row">
+                        <div className="ctm-tabs-row ctm-tabs-row--stacked">
                             {tabs.map((tab) => (
                                 editingTabId === tab.id ? (
                                     <div key={tab.id} className="ctm-add-tab-inline">
@@ -967,7 +974,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                 )
                             ))}
 
-                            {addingTab ? (
+                            {addingTab && (
                                 <div className="ctm-add-tab-inline">
                                     <input
                                         type="text"
@@ -988,15 +995,20 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         <FiX size={14} />
                                     </button>
                                 </div>
-                            ) : (
-                                <button type="button" className="ctm-add-tab-btn" onClick={handleAddTabClick}>
-                                    <FiPlus size={13} /> Add Tab
-                                </button>
                             )}
                         </div>
 
                         {activeTab && (hasSubTabs ? (
-                            <div className="ctm-subtabs-row">
+                            <>
+                            <div className="ctm-fields-header ctm-subtabs-header">
+                                <p className="ctm-section-title" style={{ margin: 0 }}>Subtabs</p>
+                                {!addingSubTab && (
+                                    <button type="button" className="ctm-add-subtab-btn" onClick={handleAddSubTabClick}>
+                                        <FiPlus size={12} /> Add Subtab
+                                    </button>
+                                )}
+                            </div>
+                            <div className="ctm-subtabs-row ctm-subtabs-row--stacked">
                                 {activeTab.subTabs.map((sub) => (
                                     editingSubTabId === sub.id ? (
                                         <div key={sub.id} className="ctm-add-tab-inline">
@@ -1045,7 +1057,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                     )
                                 ))}
 
-                                {addingSubTab ? (
+                                {addingSubTab && (
                                     <div className="ctm-add-tab-inline">
                                         <input
                                             type="text"
@@ -1066,12 +1078,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                             <FiX size={14} />
                                         </button>
                                     </div>
-                                ) : (
-                                    <button type="button" className="ctm-add-subtab-btn" onClick={handleAddSubTabClick}>
-                                        <FiPlus size={12} /> Add Subtab
-                                    </button>
                                 )}
                             </div>
+                            </>
                         ) : addingSubTab ? (
                             <div className="ctm-add-tab-inline ctm-add-subtab-inline-standalone">
                                 <input

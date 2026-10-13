@@ -976,3 +976,54 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   border-color: rgba(217, 48, 37, 0.5);
   color: #ff8a80;
 }
+
+// Template Structure tabs: one per row, full width, icons pinned right.
+.ctm-tabs-row--stacked {
+  flex-direction: column;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  gap: 6px;
+
+  .ctm-tab-pill {
+    border-radius: 8px;
+  }
+
+  .ctm-tab-pill-name {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .ctm-add-tab-inline .ctm-tab-name-input {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+// Subtabs: same one-per-row list as the tabs above.
+.ctm-subtabs-header {
+  margin-top: -4px;
+  margin-bottom: 10px;
+}
+
+.ctm-subtabs-row--stacked {
+  flex-direction: column;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  margin-top: 0;
+
+  .ctm-subtab-pill {
+    border-radius: 8px;
+  }
+
+  .ctm-tab-pill-name {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .ctm-add-tab-inline .ctm-tab-name-input {
+    flex: 1;
+    min-width: 0;
+  }
+}
