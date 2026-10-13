@@ -12,7 +12,8 @@ import "../../../../design/scss/pages/kanban-board/poReviewModal.scss";
 
 /* Review table columns, in display order. */
 const COLUMNS = [
-  { name: "sales_order_invoice", label: "SO / Invoice No" },
+  { name: "sales_order", label: "Sales Order" },
+  { name: "invoice_no", label: "Invoice No" },
   { name: "po", label: "PO" },
 ];
 
@@ -92,9 +93,6 @@ const PoReviewModal = ({ onConfirmed }) => {
     onConfirmed?.();
   };
 
-  const renderSalesOrderInvoice = (salesOrder) =>
-    [salesOrder.sales_order_no, salesOrder.invoice_no].filter(Boolean).join(" / ") || "-";
-
   /* The PO number, linked to the PO file when there is one. */
   const renderPo = (salesOrder) => {
     if (!salesOrder.po) return <span className="ar-invoice-review__missing">Not uploaded</span>;
@@ -138,7 +136,8 @@ const PoReviewModal = ({ onConfirmed }) => {
         )}
         {salesOrder && (
           <>
-            <td>{renderSalesOrderInvoice(salesOrder)}</td>
+            <td>{salesOrder.sales_order_no || "-"}</td>
+            <td>{salesOrder.invoice_no || "-"}</td>
             <td>{renderPo(salesOrder)}</td>
           </>
         )}

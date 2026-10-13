@@ -58,11 +58,13 @@ const AR_INVOICES_ISSUED_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
 const CONSOLIDATED_COLUMN_PATTERN = /^consolidated\b/i;
 
 /* McDermott DA: "Upload Invoice" on "Issue AR Invoice" for the cards the user ticks (no auto-tick),
-   "Upload POs" on "Requested PO" for the cards the user ticks, and "Send Invoice" on "PO Received",
-   shown only while exactly one card there is ticked (the invoice email goes per card). */
+   "Upload POs" on "Requested PO" for the cards the user ticks, "Upload SRF" on "Submitted to DA" for the
+   cards the user ticks, and "Send Invoice" on "PO Received", shown only while exactly one card there is
+   ticked (the invoice email goes per card). */
 const ISSUE_AR_INVOICE_COLUMN_PATTERN = /^issue\s+ar\s+invoices?$/i;
 const REQUESTED_PO_COLUMN_PATTERN = /^requested\s+po$/i;
 const PO_RECEIVED_COLUMN_PATTERN = /^po\s+received$/i;
+const SUBMITTED_TO_DA_COLUMN_PATTERN = /^submitted to da$/i;
 
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
@@ -70,6 +72,7 @@ const getInvoiceAction = (workflow, column) => {
     if (ISSUE_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
     if (REQUESTED_PO_COLUMN_PATTERN.test(title)) return "uploadPos";
     if (PO_RECEIVED_COLUMN_PATTERN.test(title)) return "sendInvoice";
+    if (SUBMITTED_TO_DA_COLUMN_PATTERN.test(title)) return "uploadSrf";
     return null;
   }
   if (!isBatchWorkflow(workflow)) return null;
@@ -83,6 +86,7 @@ const INVOICE_ACTION_BUTTONS = {
   upload: { label: "Upload Invoice", icon: <FiUploadCloud size={16} aria-hidden /> },
   issueArInvoice: { label: "Upload Invoices", icon: <FiUploadCloud size={16} aria-hidden /> },
   uploadPos: { label: "Upload POs", icon: <FiUploadCloud size={16} aria-hidden /> },
+  uploadSrf: { label: "Upload SRF", icon: <FiUploadCloud size={16} aria-hidden /> },
   sendInvoice: { label: "Send Invoice", icon: <FiSend size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
   prepareSubmission: { label: "Create Submission Documents", icon: <FiDownload size={16} aria-hidden /> },
@@ -104,6 +108,7 @@ export default function WorkflowColumns({
   onBatchRequestPo,
   onColumnUploadInvoice,
   onColumnUploadPos,
+  onUploadSrf,
   onColumnSendInvoice,
   onColumnMergeInvoice,
   onColumnPrepareSubmission,
@@ -365,6 +370,8 @@ export default function WorkflowColumns({
                   onColumnUploadInvoice?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 uploadPos: (cards) =>
                   onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
+                uploadSrf: (cards) =>
+                  onUploadSrf?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 sendInvoice: ([card]) => onColumnSendInvoice?.(card),
                 merge: onColumnMergeInvoice,
                 prepareSubmission: onColumnPrepareSubmission,
