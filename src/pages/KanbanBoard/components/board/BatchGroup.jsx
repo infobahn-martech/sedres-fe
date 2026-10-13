@@ -70,7 +70,6 @@ export default function BatchGroup({
      upload is done, ticked cards the SE approval covers turn green. */
   const seApprovedByCardId = useBatchMoveStore((state) => state.seApprovedByCardId);
   const seTickedByCardId = useBatchMoveStore((state) => state.seTickedByCardId);
-  const seUntickedByCardId = useBatchMoveStore((state) => state.seUntickedByCardId);
   const toggleSeReviewCard = useBatchMoveStore((state) => state.toggleSeReviewCard);
   const isSeReviewBatch = isSeFlowBatch && isAwaitingSeColumn;
   /* Once the batch's SE upload is done, "Review and Move" replaces "Upload SE Approval". */
@@ -87,21 +86,19 @@ export default function BatchGroup({
   }, [isSeReviewBatch, batchId, loadSeReview]);
 
   /* A batch of one card has nothing to choose between: its card counts as ticked. */
-  const isSingleCardSeBatch = isSendSeBatch && batch.cards.length === 1;
-  const singleReviewCardId = isSeReviewBatch && batch.cards.length === 1 ? batch.cards[0].id : null;
+  const isSingleCardSeBatch = (isSendSeBatch || isSeReviewBatch) && batch.cards.length === 1;
+  const singleCardId = isSingleCardSeBatch ? batch.cards[0].id : null;
 
-  /* In "Awaiting SE" the lone card starts ticked, but the user can untick and tick it again. */
+  /* "Review and Move" reads its ticks from the store, so the lone card is ticked there too. */
   useEffect(() => {
-    if (singleReviewCardId == null) return;
-    const key = String(singleReviewCardId);
-    if (seTickedByCardId[key] || seUntickedByCardId[key]) return;
-    toggleSeReviewCard(singleReviewCardId, { isSeUploadDone });
-  }, [singleReviewCardId, seTickedByCardId, seUntickedByCardId, isSeUploadDone, toggleSeReviewCard]);
+    if (!isSeReviewBatch || singleCardId == null || seTickedByCardId[String(singleCardId)]) return;
+    toggleSeReviewCard(singleCardId, { isSeUploadDone });
+  }, [isSeReviewBatch, singleCardId, seTickedByCardId, isSeUploadDone, toggleSeReviewCard]);
 
   const getIsSelectedForAction = (card) => {
     if (isSendSeBatch) return isSingleCardSeBatch || seTickedCardIds.includes(card.id);
     if (isSeReviewBatch) {
-      const isSeTicked = Boolean(seTickedByCardId[String(card.id)]);
+      const isSeTicked = isSingleCardSeBatch || Boolean(seTickedByCardId[String(card.id)]);
       if (!isSeUploadDone) return isSeTicked;
       return Boolean(seApprovedByCardId[String(card.id)]) && isSeTicked;
     }
@@ -196,7 +193,7 @@ export default function BatchGroup({
             >
               Request PO
             </button>
-          ) : !isSeFlowBatch || isSubmittedInvoicesColumn ? null : isAwaitingSeColumn && isSeUploadDone && seReviewTickedCards.length ? (
+          ) : !isSeFlowBatch || isSubmittedInvoicesColumn ? null : isAwaitingSeColumn && isSeUploadDone ? (
             <button
               type="button"
               className="batch-group__action"
