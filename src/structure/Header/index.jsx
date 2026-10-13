@@ -436,7 +436,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           {isDark ? <FiSun /> : <FiMoon />}
         </button>
 
-        {/* <Tooltip id="vessel-tracking" place="bottom" content="Vessel Tracking" />
+        <Tooltip id="vessel-tracking" place="bottom" content="Vessel Tracking" />
         <button
           type="button"
           className={`icon-btn ${showVesselTrackingModal ? 'active' : ''}`}
@@ -445,7 +445,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           data-tooltip-id="vessel-tracking"
         >
           <FiAnchor />
-        </button> */}
+        </button>
 
         <Tooltip id="help" place="bottom" content="Help" />
         <button
