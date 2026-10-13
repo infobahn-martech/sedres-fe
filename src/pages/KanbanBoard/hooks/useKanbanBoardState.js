@@ -15,15 +15,20 @@ import { reorderWorkflowsByPinState } from "../utils/workflowHelpers";
 
 const isOperatorBoardId = (id) => String(id ?? "").toLowerCase() === "operator";
 
-/* Batch grouping for the board's cards (matched by card_id). Runs alongside every
+/* Batches belong to the Centralized DA Desk board only. */
+const DA_DESK_BOARD_ID = "17";
+
+/* Batch grouping for the board's cards (matched by card_id). Runs alongside the DA Desk
    get_full_board call; a failure leaves the board ungrouped. */
-const loadBatches = () =>
+const loadBatches = (boardId) => {
+  if (String(boardId ?? "") !== DA_DESK_BOARD_ID) return;
   daService
     .getBatches()
     .then(({ data }) => {
       if (data?.status === "success") useBatchMoveStore.getState().setBatches(data.data);
     })
     .catch(() => {});
+};
 
 /** Pinned workflows (from `is_pinned` on get_full_board) sort to the front, order preserved otherwise. */
 const sortByPinState = (mapped) => {
@@ -55,7 +60,7 @@ export default function useKanbanBoardState(selectedBoardId) {
     setBoardLoading(true);
     setBoardLoadError(null);
     try {
-      loadBatches();
+      loadBatches(selectedBoardId);
       const res = await kanbanBoardService.getFullBoard(selectedBoardId);
       const payload = res?.data;
       const mapped = sortByPinState(mapFullBoardApiResponse(payload));
@@ -103,7 +108,7 @@ export default function useKanbanBoardState(selectedBoardId) {
 
     (async () => {
       try {
-        loadBatches();
+        loadBatches(selectedBoardId);
         const res = await kanbanBoardService.getFullBoard(selectedBoardId);
         const payload = res?.data;
         const mapped = sortByPinState(mapFullBoardApiResponse(payload));
