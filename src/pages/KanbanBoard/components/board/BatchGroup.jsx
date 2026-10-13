@@ -151,7 +151,12 @@ export default function BatchGroup({
       .forEach((card) => toggleCard(card));
   };
 
-  const handleSendSeRequest = () => onSendSeRequest?.({ ...batch, cards: tickedSeCards });
+  /* "Request PO" and "Upload POs" apply to the ticked cards only; a lone card has no checkbox, so it always counts. */
+  const tickedActionCards = isSingleCardBatch
+    ? batch.cards
+    : batch.cards.filter((card) => selectedActionCardIds.includes(card.id));
+
+  const handleSendSeRequest =() => onSendSeRequest?.({ ...batch, cards: tickedSeCards });
 
   return (
     <div
@@ -175,10 +180,8 @@ export default function BatchGroup({
             <button
               type="button"
               className="batch-group__action"
-              onClick={() =>
-                onUploadPos?.(batch.cards.filter((card) => selectedActionCardIds.includes(card.id)))
-              }
-              disabled={!selectedCount}
+              onClick={() => onUploadPos?.(tickedActionCards)}
+              disabled={!tickedActionCards.length}
             >
               Upload POs
             </button>
@@ -186,7 +189,8 @@ export default function BatchGroup({
             <button
               type="button"
               className="batch-group__action"
-              onClick={() => onRequestPo?.(batch)}
+              onClick={() => onRequestPo?.({ ...batch, cards: tickedActionCards })}
+              disabled={!tickedActionCards.length}
             >
               Request PO
             </button>
