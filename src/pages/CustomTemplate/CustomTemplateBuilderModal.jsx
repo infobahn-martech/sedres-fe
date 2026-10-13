@@ -5,6 +5,8 @@ import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import TemplateFieldPreview from "./TemplateFieldPreview";
 import { buildFieldGrid, resolveFieldLayout } from "./templateFieldGrid";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
+import useBillingEntityReducer from "../../store/BillingEntityReducer";
+import { mapBillingEntitiesToOptions } from "../../shared/helpers/callFileFormOptions";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/general.scss";
 import "../../design/scss/operations.scss";
@@ -86,6 +88,7 @@ const toIdString = (v) => (v === null || v === undefined ? "" : String(v));
 const getTemplateSeed = (template) => ({
     name: template?.name ?? template?.template_name ?? "",
     callTypeId: toIdString(template?.callTypeId ?? template?.call_type_id),
+    billingEntityId: toIdString(template?.billingEntityId ?? template?.billing_entity_id),
     templateId: template?.templateId ?? template?.template_id ?? null,
 });
 
@@ -407,11 +410,13 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         saveCardTemplate, isSaving,
     } = useFormTemplateReducer((s) => s);
     const isEditMode = Boolean(initialTemplate);
+    const { getBillingEntities, billingEntities, isLoading: billingEntitiesLoading } = useBillingEntityReducer((s) => s);
 
     const [templateName, setTemplateName] = useState(() => getTemplateSeed(initialTemplate).name);
     const [nameTouched, setNameTouched] = useState(false);
     const [callTypeId, setCallTypeId] = useState(() => getTemplateSeed(initialTemplate).callTypeId);
     const [callTypeTouched, setCallTypeTouched] = useState(false);
+    const [billingEntityId, setBillingEntityId] = useState(() => getTemplateSeed(initialTemplate).billingEntityId);
     const [templateId] = useState(() => getTemplateSeed(initialTemplate).templateId);
 
     const [tabs, setTabs] = useState(() => buildTabsFromTemplate(initialTemplate));
@@ -436,6 +441,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         value: String(ct.call_type_id ?? ""),
         label: String(ct.call_type ?? ""),
     }));
+    const billingEntityOptions = mapBillingEntitiesToOptions(billingEntities);
 
     const resolveFieldTypeId = useMemo(() => buildFieldTypeIdResolver(fieldTypes), [fieldTypes]);
     const fieldTypeOptions = useMemo(() => buildFieldTypeOptions(fieldTypes), [fieldTypes]);
@@ -459,6 +465,12 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     }, [callTypes, getCallTypes]);
 
     useEffect(() => {
+        if (billingEntities === null) {
+            getBillingEntities({ params: { page: 1, limit: 1000 } });
+        }
+    }, [billingEntities, getBillingEntities]);
+
+    useEffect(() => {
         if (fieldTypes === null) {
             getFieldTypes();
         }
@@ -470,6 +482,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         setNameTouched(false);
         setCallTypeId(seed.callTypeId);
         setCallTypeTouched(false);
+        setBillingEntityId(seed.billingEntityId);
         const defaultTabs = buildTabsFromTemplate(initialTemplate);
         setTabs(defaultTabs);
         setActiveTabId(defaultTabs[0].id);
@@ -806,6 +819,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             template_name: templateName.trim(),
             tabs: tabs.map(buildTabPayload),
         };
+        if (billingEntityId) payload.billing_entity_id = Number(billingEntityId);
         if (templateId) payload.template_id = Number(templateId);
 
         saveCardTemplate({
@@ -838,6 +852,20 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                     />
                                 </div>
                                 {isNameInvalid && <span className="cf-field-error">Template name is required</span>}
+                            </div>
+
+                            <div className="cf-field">
+                                <label>Billing Entity</label>
+                                <SearchableSelect
+                                    value={billingEntityId}
+                                    onChange={(e) => setBillingEntityId(e.target.value)}
+                                    options={billingEntityOptions}
+                                    placeholder={billingEntitiesLoading ? "Loading..." : "Select billing entity"}
+                                    disabled={billingEntitiesLoading}
+                                    className="ctm-billing-select"
+                                    menuPortalTarget={document.body}
+                                    menuPlacement="auto"
+                                />
                             </div>
 
                             <div className="cf-field">
