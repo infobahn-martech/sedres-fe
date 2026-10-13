@@ -919,3 +919,60 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
     width: 340px;
   }
 }
+
+// Preview × delete icons on tabs, subtabs and fields (builder only).
+.ctm-preview-closable {
+  position: relative;
+  display: inline-flex;
+
+  &--block {
+    display: block;
+
+    > .op-tab {
+      width: 100%;
+    }
+  }
+}
+
+.ctm-builder-split .ctm-preview-drag-item {
+  position: relative;
+
+  // Opt the × back in — .ctm-preview-drag-item disables pointer events on its children.
+  > .ctm-preview-close-btn {
+    pointer-events: auto;
+  }
+}
+
+.ctm-preview-close-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 2;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-primary);
+  border-radius: 50%;
+  background: var(--surface-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: #fdecec;
+    border-color: #f5b5b5;
+    color: #d93025;
+    outline: none;
+  }
+}
+
+[data-theme="dark"] .ctm-preview-close-btn:hover,
+[data-theme="dark"] .ctm-preview-close-btn:focus-visible {
+  background: rgba(217, 48, 37, 0.18);
+  border-color: rgba(217, 48, 37, 0.5);
+  color: #ff8a80;
+}

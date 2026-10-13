@@ -399,6 +399,23 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, optionsF
 // Builder form + live preview, with no overlay/topbar of its own — the caller
 // (either the standalone modal below, or CustomTemplateListModal reusing its
 // own single panel) owns the surrounding chrome and decides what onClose does.
+// Small × pinned to the top-right corner of a preview tab/subtab/field.
+function PreviewCloseButton({ label, onClick }) {
+    return (
+        <button
+            type="button"
+            className="ctm-preview-close-btn"
+            aria-label={label}
+            title={label}
+            draggable={false}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onClick(); }}
+        >
+            <FiX size={10} />
+        </button>
+    );
+}
+
 function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const {
         getFieldTypes, fieldTypes, isLoadingFieldTypes,
@@ -898,7 +915,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                         </div>
 
                         <p className="ctm-section-title">Template Structure</p>
-                        <p className="ctm-section-subtext">Create tabs and add custom fields for this template.</p>
 
                         <div className="ctm-tabs-row">
                             {tabs.map((tab) => (
@@ -1146,14 +1162,18 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
                             <div className="cardform-tabs">
                                 {tabs.map((tab) => (
-                                    <button
-                                        key={tab.id}
-                                        type="button"
-                                        className={`tab ${tab.id === activeTabId ? "active" : ""}`}
-                                        onClick={() => handleSelectTab(tab)}
-                                    >
-                                        {tab.name}
-                                    </button>
+                                    <span key={tab.id} className="ctm-preview-closable">
+                                        <button
+                                            type="button"
+                                            className={`tab ${tab.id === activeTabId ? "active" : ""}`}
+                                            onClick={() => handleSelectTab(tab)}
+                                        >
+                                            {tab.name}
+                                        </button>
+                                        {tabs.length > 1 && (
+                                            <PreviewCloseButton label={`Delete ${tab.name} tab`} onClick={() => handleDeleteTab(tab.id)} />
+                                        )}
+                                    </span>
                                 ))}
                             </div>
 
@@ -1162,14 +1182,16 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                     {hasSubTabs && (
                                         <div className="operation-left">
                                             {activeTab.subTabs.map((sub) => (
-                                                <button
-                                                    key={sub.id}
-                                                    type="button"
-                                                    className={`op-tab ${sub.id === activeSubTabId ? "active" : ""}`}
-                                                    onClick={() => setActiveSubTabId(sub.id)}
-                                                >
-                                                    {sub.name}
-                                                </button>
+                                                <div key={sub.id} className="ctm-preview-closable ctm-preview-closable--block">
+                                                    <button
+                                                        type="button"
+                                                        className={`op-tab ${sub.id === activeSubTabId ? "active" : ""}`}
+                                                        onClick={() => setActiveSubTabId(sub.id)}
+                                                    >
+                                                        {sub.name}
+                                                    </button>
+                                                    <PreviewCloseButton label={`Delete ${sub.name} subtab`} onClick={() => handleDeleteSubTab(sub.id)} />
+                                                </div>
                                             ))}
                                         </div>
                                     )}
@@ -1195,6 +1217,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                                                         onDrop={(e) => { e.preventDefault(); handleDropInColumn(index); }}
                                                                     >
                                                                         <TemplateFieldPreview field={field} />
+                                                                        <PreviewCloseButton label="Delete field" onClick={() => handleRequestDeleteField(field.id)} />
                                                                     </div>
                                                                 );
                                                             })}
@@ -1243,6 +1266,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                                             {...dropProps}
                                                         >
                                                             <TemplateFieldPreview field={field} />
+                                                            <PreviewCloseButton label="Delete field" onClick={() => handleRequestDeleteField(field.id)} />
                                                         </div>
                                                     );
                                                 })}
