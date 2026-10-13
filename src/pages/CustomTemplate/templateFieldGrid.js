@@ -50,3 +50,12 @@ export const buildFieldGrid = (fields, extraRows = 0) => {
     }
     return cells;
 };
+
+// Field indices in grid reading order (row, then col) — the order a single
+// stacked column lists them in.
+export const getReadingOrder = (fields) => {
+    const layout = resolveFieldLayout(fields);
+    return fields
+        .map((_, i) => i)
+        .sort((a, b) => layout[a].row - layout[b].row || layout[a].col - layout[b].col);
+};

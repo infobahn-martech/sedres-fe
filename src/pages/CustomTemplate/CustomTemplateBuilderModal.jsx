@@ -3,7 +3,9 @@ import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX, FiMenu } from "react-icons/fi"
 import SearchableSelect from "../../components/form/SearchableSelect";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import TemplateFieldPreview from "./TemplateFieldPreview";
-import { buildFieldGrid, resolveFieldLayout } from "./templateFieldGrid";
+import TemplateEmailPreview from "./TemplateEmailPreview";
+import { getEmailPreviewSubject } from "./emailPreviewSubjects";
+import { buildFieldGrid, getReadingOrder, resolveFieldLayout } from "./templateFieldGrid";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
 import { mapBillingEntitiesToOptions } from "../../shared/helpers/callFileFormOptions";
@@ -457,6 +459,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     // Live preview mirrors the real card, so blank-label fields still being typed
     // get a placeholder rather than rendering with no label at all.
     const previewFields = activeFields.map((f) => ({ ...f, label: f.label.trim() || "Untitled Field" }));
+    const emailSubject = getEmailPreviewSubject(activeTab?.name, activeSubTab?.name);
 
     useEffect(() => {
         if (callTypes === null) {
@@ -729,6 +732,19 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                 else if (i === targetIndex) cell = layout[dragIndex];
                 return { ...f, gridRow: cell.row, gridCol: cell.col };
             });
+        });
+        handleDragEnd();
+    };
+    // Email-tab preview drop: fields sit in a single stacked column, so moving
+    // one re-numbers every field into column 1 in the new order.
+    const handleDropInColumn = (targetIndex) => {
+        if (dragIndex === null) return;
+        updateFieldsScope((fields) => {
+            const order = getReadingOrder(fields).filter((i) => i !== dragIndex);
+            const targetPos = targetIndex === null ? order.length : order.indexOf(targetIndex);
+            order.splice(targetPos === -1 ? order.length : targetPos, 0, dragIndex);
+            const rowByIndex = new Map(order.map((fieldIndex, pos) => [fieldIndex, pos + 1]));
+            return fields.map((f, i) => ({ ...f, gridRow: rowByIndex.get(i), gridCol: 1 }));
         });
         handleDragEnd();
     };
@@ -1165,7 +1181,44 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                     )}
 
                                     <div className="operation-right">
-                                        {previewFields.length > 0 ? (
+                                        {emailSubject ? (
+                                            <div className="ct-preview-custom-fields-grid ctm-email-split">
+                                                <div className="ctm-email-fields">
+                                                    {previewFields.length > 0 ? (
+                                                        <>
+                                                            {getReadingOrder(previewFields).map((index) => {
+                                                                const field = previewFields[index];
+                                                                const isOver = dragOverCell === field.id && dragIndex !== index;
+                                                                return (
+                                                                    <div
+                                                                        key={field.id}
+                                                                        className={`ctm-preview-drag-item ${dragIndex === index ? "is-dragging" : ""} ${isOver ? "is-drag-over" : ""}`}
+                                                                        draggable
+                                                                        title="Drag to reposition"
+                                                                        onDragStart={() => handleDragStart(index)}
+                                                                        onDragEnd={handleDragEnd}
+                                                                        onDragOver={(e) => { e.preventDefault(); setDragOverCell(field.id); }}
+                                                                        onDrop={(e) => { e.preventDefault(); handleDropInColumn(index); }}
+                                                                    >
+                                                                        <TemplateFieldPreview field={field} />
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                            {dragIndex !== null && (
+                                                                <div
+                                                                    className={`ctm-preview-empty-cell is-drop-target ${dragOverCell === "email-column-end" ? "is-drag-over" : ""}`}
+                                                                    onDragOver={(e) => { e.preventDefault(); setDragOverCell("email-column-end"); }}
+                                                                    onDrop={(e) => { e.preventDefault(); handleDropInColumn(null); }}
+                                                                />
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <p className="ct-summary-no-fields">No fields yet — add fields on the left.</p>
+                                                    )}
+                                                </div>
+                                                <TemplateEmailPreview subject={emailSubject} />
+                                            </div>
+                                        ) : previewFields.length > 0 ? (
                                             <div className="ct-preview-custom-fields-grid">
                                                 {/* Shares dragIndex with the left field list, so a field can be
                                                     dragged from either side onto any cell, empty or occupied. */}
