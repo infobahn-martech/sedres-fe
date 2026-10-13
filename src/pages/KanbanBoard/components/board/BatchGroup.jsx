@@ -193,7 +193,7 @@ export default function BatchGroup({
             >
               Request PO
             </button>
-          ) : !isSeFlowBatch || isSubmittedInvoicesColumn ? null : isAwaitingSeColumn && isSeUploadDone ? (
+          ) : !isSeFlowBatch || isSubmittedInvoicesColumn ? null : isAwaitingSeColumn && isSeUploadDone && seReviewTickedCards.length ? (
             <button
               type="button"
               className="batch-group__action"
