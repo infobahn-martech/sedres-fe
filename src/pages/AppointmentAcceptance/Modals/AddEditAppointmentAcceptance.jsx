@@ -664,12 +664,11 @@ export function ReportTemplatesModal({
                 <div className="form-field">
                   <div className="phone-wrapper">
                     <label className="phone-label">
-                      Port <span className="text-danger">*</span>
+                      Port
                     </label>
                     <Controller
                       name="port_id"
                       control={control}
-                      rules={{ required: "Port is required" }}
                       render={({ field }) => (
                         <PremiumSelect
                           value={field.value != null ? String(field.value) : ""}
@@ -699,12 +698,11 @@ export function ReportTemplatesModal({
                 <div className="form-field">
                   <div className="phone-wrapper">
                     <label className="phone-label">
-                      Call Type <span className="text-danger">*</span>
+                      Call Type
                     </label>
                     <Controller
                       name="call_type_id"
                       control={control}
-                      rules={{ required: "Call Type is required" }}
                       render={({ field }) => (
                         <PremiumSelect
                           value={field.value != null ? String(field.value) : ""}
