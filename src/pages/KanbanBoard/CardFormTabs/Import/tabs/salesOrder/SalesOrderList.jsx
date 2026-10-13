@@ -774,6 +774,8 @@ const SalesOrderList = ({
     Array.isArray(stepLabels) && currentStep != null && /so sent for scc/i.test(stepLabels[currentStep - 1] || "");
   const isAtSccReceivedColumn =
     Array.isArray(stepLabels) && currentStep != null && /scc received/i.test(stepLabels[currentStep - 1] || "");
+  const isAtSubmittedToFdaColumn =
+    Array.isArray(stepLabels) && currentStep != null && /submitted to fda/i.test(stepLabels[currentStep - 1] || "");
   const showActionColumn =
     canViewActionColumn && (isAtColumnAfterOpsCompleted || isBeforeSubmittedToDa || isAtSoSentForSccColumn);
 
@@ -2457,49 +2459,53 @@ const SalesOrderList = ({
     setApprovedByName("");
   };
 
+  const renderApprovedByField = () => (
+    <div className="sales-order-da-approved-by">
+      {approvedByName ? (
+        <span className="sales-order-da-approved-by-confirmed">
+          <FiCheck />
+          Approved by {approvedByName}
+        </span>
+      ) : (
+        <>
+          <label className="sales-order-da-approved-by-label" htmlFor="sales-order-da-approved-by">
+            Approved by
+          </label>
+          <input
+            id="sales-order-da-approved-by"
+            type="text"
+            className="sales-order-da-approved-by-input"
+            placeholder="Enter name..."
+            value={approvedByInput}
+            onChange={handleChangeApprovedBy}
+            disabled={isRecordingApprovedBy}
+          />
+          <button
+            type="button"
+            className="sales-order-da-approved-by-btn sales-order-da-approved-by-btn--confirm"
+            title="Confirm the approver name"
+            onClick={handleConfirmApprovedBy}
+            disabled={isRecordingApprovedBy}
+          >
+            <FiCheck />
+          </button>
+          <button
+            type="button"
+            className="sales-order-da-approved-by-btn sales-order-da-approved-by-btn--clear"
+            title="Clear the approver name"
+            onClick={handleClearApprovedBy}
+            disabled={isRecordingApprovedBy}
+          >
+            <FiX />
+          </button>
+        </>
+      )}
+    </div>
+  );
+
   const renderApprovedWithEmailUpload = () =>
     isApprovalEmailUploaded ? (
-      <div className="sales-order-da-approved-by">
-        {approvedByName ? (
-          <span className="sales-order-da-approved-by-confirmed">
-            <FiCheck />
-            Approved by {approvedByName}
-          </span>
-        ) : (
-          <>
-            <label className="sales-order-da-approved-by-label" htmlFor="sales-order-da-approved-by">
-              Approved by
-            </label>
-            <input
-              id="sales-order-da-approved-by"
-              type="text"
-              className="sales-order-da-approved-by-input"
-              placeholder="Enter name..."
-              value={approvedByInput}
-              onChange={handleChangeApprovedBy}
-              disabled={isRecordingApprovedBy}
-            />
-            <button
-              type="button"
-              className="sales-order-da-approved-by-btn sales-order-da-approved-by-btn--confirm"
-              title="Confirm the approver name"
-              onClick={handleConfirmApprovedBy}
-              disabled={isRecordingApprovedBy}
-            >
-              <FiCheck />
-            </button>
-            <button
-              type="button"
-              className="sales-order-da-approved-by-btn sales-order-da-approved-by-btn--clear"
-              title="Clear the approver name"
-              onClick={handleClearApprovedBy}
-              disabled={isRecordingApprovedBy}
-            >
-              <FiX />
-            </button>
-          </>
-        )}
-      </div>
+      renderApprovedByField()
     ) : (
       <button
         type="button"
@@ -2551,6 +2557,7 @@ const SalesOrderList = ({
             (isCardAtSoApprovalColumn ||
               isAtSoSentForSccColumn ||
               isAtSccReceivedColumn ||
+              isAtSubmittedToFdaColumn ||
               isAtSoApprovalDecisionColumn ||
               (effectiveNextDaStatusLabel && shouldShowDaActionButton)) && (
             // Column 4's button state is driven by api/da/action_state's button_state now, via
@@ -2559,7 +2566,9 @@ const SalesOrderList = ({
             // justApproved/justRejected/isSoApprovalEmailPendingDecision local guesswork. Every
             // other column still uses the granular DA status-timeline (isAwaitingDecisionStage /
             // daActionButtonLabel) as before.
-            isAtSccReceivedColumn ? (
+            isAtSubmittedToFdaColumn ? (
+              renderApprovedByField()
+            ) : isAtSccReceivedColumn ? (
               isApprovalEmailUploaded ? (
                 <span className="sales-order-da-status-button sales-order-da-status-button--label">
                   <FiCheck />

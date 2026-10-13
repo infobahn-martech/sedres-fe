@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { KANBAN_DND_DISABLED } from "../../../../../../shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
+import useExportApprovalStatusStore from "../../../../../../shared/store/exportApprovalStatusStore";
 import { Tooltip } from "react-tooltip";
 import "../../../../../../design/css/components/CardItem.css";
 // Company logos
@@ -19,6 +20,9 @@ import {
   getApiCardTaskName,
   getUsernameInitial,
 } from "../../../../utils/cardDisplayHelpers";
+
+/* SNAMPROGETTI is the name the SAIPEM workflow is being renamed from. */
+const SAIPEM_WORKFLOW_PATTERN = /saipem|snamprogetti/i;
 
 /** Top-left badge: dynamic Fi/Lu icon from API `cardTypeIcon` (e.g. LuRocket). */
 function ApiCardTypeIcon({ card, inline = false }) {
@@ -656,8 +660,15 @@ function CardItem({
 }) {
   const isApiCard = card.cardSource === "api";
   const isDaBoardCard = String(card?.da_board ?? card?.raw?.da_board ?? "").trim() === "1";
+  /* SAIPEM Backlog cards whose export approval is still pending (or being read) carry no checkbox,
+     so they can't be added to a batch. */
+  const exportApprovalStatus = useExportApprovalStatusStore((state) => state.statusByCallId[card?.callId]);
+  const isSaipemBacklogCard =
+    SAIPEM_WORKFLOW_PATTERN.test(workflowTitle ?? "") && String(columnTitle ?? "").trim().toLowerCase() === "backlog";
+  const isExportApprovalHeld =
+    isSaipemBacklogCard && (exportApprovalStatus === "pending" || exportApprovalStatus === "loading");
   const canSelectForAction =
-    isDaBoardCard && typeof onToggleSelectForAction === "function";
+    isDaBoardCard && typeof onToggleSelectForAction === "function" && !isExportApprovalHeld;
   const topRowUsernameInitial = isApiCard && !isShrunk ? getUsernameInitial(card.user) : null;
   const isTransportCoordinatorWorkflow = String(workflowTitle || "").trim().toLowerCase().includes("transport coordinator");
   const cardColor = card.color || "#2A00FF";
