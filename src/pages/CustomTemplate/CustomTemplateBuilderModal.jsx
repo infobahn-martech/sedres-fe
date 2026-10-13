@@ -284,7 +284,6 @@ function OptionsSourceEditor({ field, onSetSource, onSetMasterModule, onAddOptio
                         onClick={() => onSetSource(card.value)}
                     >
                         <span className="ctm-options-source-card-title">{card.title}</span>
-                        <span className="ctm-options-source-card-desc">{card.desc}</span>
                     </button>
                 ))}
             </div>
@@ -310,11 +309,6 @@ function OptionsSourceEditor({ field, onSetSource, onSetMasterModule, onAddOptio
                         menuPortalTarget={document.body}
                         menuPlacement="auto"
                     />
-                    {field.masterModule && (
-                        <p className="ctm-master-module-info">
-                            Options are automatically managed from the selected master module.
-                        </p>
-                    )}
                 </div>
             )}
         </div>
@@ -849,7 +843,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     return (
         <>
-            <div className="ct-split-body">
+            <div className="ct-split-body ctm-builder-split">
             <div className="ct-split-left">
             <div className="ct-split-scroll-area" onDragOver={handleScrollAreaDragOver}>
             <div className="ctm-body">
