@@ -66,6 +66,10 @@ const REQUESTED_PO_COLUMN_PATTERN = /^requested\s+po$/i;
 const PO_RECEIVED_COLUMN_PATTERN = /^po\s+received$/i;
 const SUBMITTED_TO_DA_COLUMN_PATTERN = /^submitted to da$/i;
 
+/* L&T DA: "Convert to AR Invoice" takes the same bulk invoice upload as McDermott's "Issue AR Invoice",
+   for the cards the user ticks. */
+const CONVERT_TO_AR_INVOICE_COLUMN_PATTERN = /^convert\s+to\s+ar\s+invoices?$/i;
+
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
   if (isMcDermottWorkflow(workflow)) {
@@ -75,6 +79,7 @@ const getInvoiceAction = (workflow, column) => {
     if (SUBMITTED_TO_DA_COLUMN_PATTERN.test(title)) return "uploadSrf";
     return null;
   }
+  if (CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
   if (!isBatchWorkflow(workflow)) return null;
   if (SE_RECEIVED_COLUMN_PATTERN.test(title)) return "upload";
   if (AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "merge";
