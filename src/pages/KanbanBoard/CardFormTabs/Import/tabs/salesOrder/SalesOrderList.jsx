@@ -774,6 +774,10 @@ const SalesOrderList = ({
     Array.isArray(stepLabels) && currentStep != null && /so sent for scc/i.test(stepLabels[currentStep - 1] || "");
   const isAtSccReceivedColumn =
     Array.isArray(stepLabels) && currentStep != null && /scc received/i.test(stepLabels[currentStep - 1] || "");
+  // L&T "Submitted to FDA": the approval proof is already uploaded, so the header shows the same
+  // "Approved by" field as the SO approval columns; recording it moves the card to the DA board.
+  const isAtSubmittedToFdaColumn =
+    Array.isArray(stepLabels) && currentStep != null && /submitted to fda/i.test(stepLabels[currentStep - 1] || "");
   const showActionColumn =
     canViewActionColumn && (isAtColumnAfterOpsCompleted || isBeforeSubmittedToDa || isAtSoSentForSccColumn);
 
@@ -2551,6 +2555,7 @@ const SalesOrderList = ({
             (isCardAtSoApprovalColumn ||
               isAtSoSentForSccColumn ||
               isAtSccReceivedColumn ||
+              isAtSubmittedToFdaColumn ||
               isAtSoApprovalDecisionColumn ||
               (effectiveNextDaStatusLabel && shouldShowDaActionButton)) && (
             // Column 4's button state is driven by api/da/action_state's button_state now, via
@@ -2576,7 +2581,7 @@ const SalesOrderList = ({
                   Upload Approved Documents
                 </button>
               )
-            ) : isAtSoApprovalDecisionColumn ? (
+            ) : isAtSoApprovalDecisionColumn || isAtSubmittedToFdaColumn ? (
               renderApprovedWithEmailUpload()
             ) : isAtSoSentForSccColumn ? (
               soActionState?.button_state === "awaiting_approval" ? (
