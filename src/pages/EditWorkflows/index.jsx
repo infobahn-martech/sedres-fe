@@ -6,6 +6,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import '../../design/scss/EditWorkflows.scss';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 import CreateWorkflowModal from './CreateWorkflowModal';
+import CopyWorkflowModal from './CopyWorkflowModal';
 import WorkflowBoard from './WorkflowBoard';
 import {
   getColumnKey,
@@ -126,6 +127,8 @@ function EditWorkflows() {
   const [collapsedWorkflowIds, setCollapsedWorkflowIds] = useState({});
   const [createWorkflowSaving, setCreateWorkflowSaving] = useState(false);
   const [deleteModal, setDeleteModal] = useState(null);
+  const [copyWorkflowTarget, setCopyWorkflowTarget] = useState(null);
+  const [copyWorkflowSaving, setCopyWorkflowSaving] = useState(false);
   const mutationInflightRef = useRef(new Set());
   const boardId = searchParams.get('boardId');
 
@@ -562,13 +565,28 @@ function EditWorkflows() {
     });
   };
 
-  const handleCopyWorkflow = (workflowId) => {
+  const handleCopyWorkflow = (workflow) => {
+    setCopyWorkflowTarget(workflow);
+  };
+
+  const confirmCopyWorkflow = ({ board_ids, workflow_name }) => {
+    if (!copyWorkflowTarget) return;
+    const workflowId = copyWorkflowTarget.id;
     const wfKey = `wf:${workflowId}`;
     if (!startMutation(wfKey, 'copy')) return;
+    setCopyWorkflowSaving(true);
     duplicateWorkflow({
       workflow_id: workflowId,
-      cb: refetchBoardWorkflows,
-      onSettled: () => clearMutationKey(wfKey),
+      board_ids,
+      workflow_name,
+      cb: () => {
+        if (board_ids.includes(String(boardId))) refetchBoardWorkflows();
+        setCopyWorkflowTarget(null);
+      },
+      onSettled: () => {
+        clearMutationKey(wfKey);
+        setCopyWorkflowSaving(false);
+      },
     });
   };
 
@@ -896,7 +914,7 @@ function EditWorkflows() {
                         type="button"
                         className="workflow-action-link"
                         disabled={wfMutationPending}
-                        onClick={() => handleCopyWorkflow(workflow.id)}
+                        onClick={() => handleCopyWorkflow(workflow)}
                       >
                         Copy
                       </button>
@@ -985,6 +1003,16 @@ function EditWorkflows() {
         onClose={() => setShowCreateWorkflowModal(false)}
         onSave={handleCreateWorkflow}
         isSaving={createWorkflowSaving}
+      />
+
+      <CopyWorkflowModal
+        show={!!copyWorkflowTarget}
+        workflow={copyWorkflowTarget}
+        workspaces={workspaces}
+        currentBoardId={boardId}
+        onClose={() => setCopyWorkflowTarget(null)}
+        onSave={confirmCopyWorkflow}
+        isSaving={copyWorkflowSaving}
       />
 
       <DeleteConfirmationModal

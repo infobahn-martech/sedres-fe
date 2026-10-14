@@ -146,9 +146,9 @@ const useWorkFlowReducer = create((set, get) => ({
         }
     },
 
-    duplicateWorkflow: async ({ workflow_id, cb, onSettled }) => {
+    duplicateWorkflow: async ({ workflow_id, board_ids, workflow_name, cb, onSettled }) => {
         try {
-            const { data } = await workflowService.duplicateWorkflow(workflow_id);
+            const { data } = await workflowService.duplicateWorkflow(workflow_id, { board_ids, workflow_name });
             const { success } = useAlertReducer.getState();
             success(data?.message || 'Workflow copied successfully.');
             cb && cb(data);
