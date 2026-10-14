@@ -1178,6 +1178,47 @@ export default function KanbanBoardPage() {
     [isMergingInvoices, removeCardSelectionId, refetchBoard]
   );
 
+  /* "Download Invoices" on the "Ready for Dispatch" column header downloads the ticked cards' invoice PDF and
+     XML files as the zip da/portal_files returns. The cards stay where they are. */
+  const [isDownloadingInvoices, setIsDownloadingInvoices] = useState(false);
+
+  const handleColumnDownloadInvoices = useCallback(
+    async (cards) => {
+      if (!cards?.length || isDownloadingInvoices) return;
+      const downloadCards = cards
+        .map((card) => ({ id: card.id, callId: card.callId ?? card.call_id ?? cardsById[card.id]?.callId }))
+        .filter((card) => card.callId);
+      if (!downloadCards.length) {
+        notify("The selected cards have no call to download invoices for", "error");
+        return;
+      }
+
+      setIsDownloadingInvoices(true);
+      try {
+        let data;
+        try {
+          ({ data } = await daService.getPortalFiles({
+            call_ids: downloadCards.map((card) => Number(card.callId)),
+            card_ids: downloadCards.map((card) => Number(card.id)),
+          }));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+        const zip = data?.data?.zip;
+        if (data?.status !== "success" || !zip?.url) {
+          notify(data?.message || "Failed to download invoices", "error");
+          return;
+        }
+        downloadFile({ link: zip.url, fileName: zip.name || decodeURIComponent(zip.url.split("/").pop()) });
+        const fileCount = data.data?.file_count;
+        notify(`${fileCount ?? ""} ${fileCount === 1 ? "file" : "files"} downloaded`.trim(), "success");
+      } finally {
+        setIsDownloadingInvoices(false);
+      }
+    },
+    [isDownloadingInvoices, cardsById]
+  );
+
   /* "Consolidated" column: "Create Submission Documents" builds the ticked cards' documents into a zip via
      da/create_submission_documents and keeps the returned submission_id against the cards; the Final
      Submission Email (drafted by da/submission_email_draft) then opens right after. */
@@ -1608,6 +1649,7 @@ export default function KanbanBoardPage() {
           onUploadSrf={handleUploadSrfClick}
           onColumnSendInvoice={handleColumnSendInvoice}
           onColumnMergeInvoice={handleColumnMergeInvoice}
+          onColumnDownloadInvoices={handleColumnDownloadInvoices}
           onColumnPrepareSubmission={handleColumnPrepareSubmission}
           onColumnSendSubmission={handleColumnSendSubmission}
           onContextMenu={handleColumnContextMenu}
