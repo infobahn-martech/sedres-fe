@@ -325,6 +325,23 @@ const useWorkFlowReducer = create((set, get) => ({
         }
     },
 
+    updateColumnDescription: async ({ column_id, column_description, cb, onSettled }) => {
+        try {
+            const { data } = await workflowService.updateColumnDescription(column_id, { column_description });
+            const { success } = useAlertReducer.getState();
+            success(data && data.message);
+            cb && cb();
+        } catch (err) {
+            set({
+                errorMessage: err?.response?.data?.message ?? err.message,
+            });
+            const { error } = useAlertReducer.getState();
+            error(err?.response?.data?.message ?? err.message);
+        } finally {
+            onSettled && onSettled();
+        }
+    },
+
     removeWorkflowColumn: async ({ column_id, cb, onSettled }) => {
         try {
             const { data } = await workflowService.removeWorkflowColumn(column_id);

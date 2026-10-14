@@ -3,7 +3,7 @@ import { FiX } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import '../../design/scss/structure/side-nav/AddDashboardModal.scss';
 
-const StageDecisionModal = ({ show, stageName, initialValue = '', onClose, onSave }) => {
+const StageDecisionModal = ({ show, stageName, initialValue = '', isSaving = false, onClose, onSave }) => {
   const [description, setDescription] = useState(initialValue);
   const [error, setError] = useState('');
 
@@ -21,13 +21,19 @@ const StageDecisionModal = ({ show, stageName, initialValue = '', onClose, onSav
       setError('Description is required.');
       return;
     }
+    if (isSaving) return;
     onSave?.(trimmed);
+  };
+
+  const handleClose = () => {
+    if (isSaving) return;
+    onClose?.();
   };
 
   return (
     <Modal
       show={show}
-      onHide={onClose}
+      onHide={handleClose}
       className="add-dashboard-modal stage-decision-modal"
       centered
       backdrop="static"
@@ -40,7 +46,13 @@ const StageDecisionModal = ({ show, stageName, initialValue = '', onClose, onSav
           <h2 className="add-dashboard-modal-title">
             {stageName ? `Description — ${stageName}` : 'Description'}
           </h2>
-          <button type="button" className="add-dashboard-modal-close" onClick={onClose} aria-label="Close">
+          <button
+            type="button"
+            className="add-dashboard-modal-close"
+            onClick={handleClose}
+            disabled={isSaving}
+            aria-label="Close"
+          >
             <FiX size={22} strokeWidth={2} />
           </button>
         </div>
@@ -60,6 +72,7 @@ const StageDecisionModal = ({ show, stageName, initialValue = '', onClose, onSav
                 setDescription(e.target.value);
                 if (error) setError('');
               }}
+              disabled={isSaving}
               required
               aria-required="true"
               aria-invalid={Boolean(error)}
@@ -75,11 +88,16 @@ const StageDecisionModal = ({ show, stageName, initialValue = '', onClose, onSav
         </div>
 
         <div className="add-dashboard-modal-footer">
-          <button type="button" onClick={onClose} className="add-dashboard-btn add-dashboard-btn--text">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="add-dashboard-btn add-dashboard-btn--text"
+            disabled={isSaving}
+          >
             Cancel
           </button>
-          <button type="submit" className="add-dashboard-btn add-dashboard-btn--text">
-            Save
+          <button type="submit" className="add-dashboard-btn add-dashboard-btn--text" disabled={isSaving}>
+            {isSaving ? 'Saving…' : 'Save'}
           </button>
         </div>
       </form>

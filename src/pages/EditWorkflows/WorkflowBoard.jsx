@@ -26,6 +26,7 @@ function WorkflowBoard({
   onDeleteStage,
   onStageLimitChange,
   onStageCardsPerRowChange,
+  onStageDescriptionChange,
   onAddSwimlane,
   onRenameSwimlane,
   onDeleteSwimlane,
@@ -112,6 +113,7 @@ function WorkflowBoard({
                 onDeleteStage={onDeleteStage}
                 onStageLimitChange={onStageLimitChange}
                 onStageCardsPerRowChange={onStageCardsPerRowChange}
+                onStageDescriptionChange={onStageDescriptionChange}
                 mutationTargets={mutationTargets}
                 canAddColumns={canAddColumns}
                 canUpdateColumnColor={canUpdateColumnColor}
@@ -147,6 +149,7 @@ function WorkflowBoard({
           onDeleteStage={onDeleteStage}
           onStageLimitChange={onStageLimitChange}
           onStageCardsPerRowChange={onStageCardsPerRowChange}
+          onStageDescriptionChange={onStageDescriptionChange}
           onAddSwimlane={onAddSwimlane}
           onRenameSwimlane={onRenameSwimlane}
           onDeleteSwimlane={onDeleteSwimlane}

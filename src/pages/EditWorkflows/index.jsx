@@ -93,6 +93,7 @@ function EditWorkflows() {
     createWorkflowColumn,
     renameWorkflowColumn,
     updateWorkflowColumn,
+    updateColumnDescription,
     removeWorkflowColumn,
     reorderWorkflows,
     workflows: apiWorkflows,
@@ -463,6 +464,28 @@ function EditWorkflows() {
     applyLocal();
   };
 
+  const handleStageDescriptionChange = (workflowId, swimlaneId, stageId, description, onSuccess) => {
+    const workflow = workflows.find((w) => w.id === workflowId || String(w.id) === String(workflowId));
+    const swimlane = workflow?.swimlanes.find(
+      (sl) => sl.id === swimlaneId || String(sl.id) === String(swimlaneId)
+    );
+    const stage = swimlane?.stages.find((s) => s.id === stageId || String(s.id) === String(stageId));
+    const columnId = stage?.columnId;
+    if (!boardId || columnId == null || String(columnId) === '') return;
+
+    const colKey = getColumnKey(workflowId, swimlaneId, stageId);
+    if (!startMutation(colKey, 'description')) return;
+    updateColumnDescription({
+      column_id: columnId,
+      column_description: description,
+      cb: () => {
+        onSuccess?.();
+        getWorkflowByBoard({ boardId, silent: true });
+      },
+      onSettled: () => clearMutationKey(colKey),
+    });
+  };
+
   const handleStageColorChange = (workflowId, swimlaneId, stageId, rgbColor) => {
     const workflow = workflows.find((w) => w.id === workflowId || String(w.id) === String(workflowId));
     const swimlane = workflow?.swimlanes.find(
@@ -580,7 +603,7 @@ function EditWorkflows() {
       board_ids,
       workflow_name,
       cb: () => {
-        if (board_ids.includes(String(boardId))) refetchBoardWorkflows();
+        if (board_ids.includes(Number(boardId))) refetchBoardWorkflows();
         setCopyWorkflowTarget(null);
       },
       onSettled: () => {
@@ -968,6 +991,7 @@ function EditWorkflows() {
                       onDeleteStage={handleDeleteStage}
                       onStageLimitChange={handleStageLimitChange}
                       onStageCardsPerRowChange={handleStageCardsPerRowChange}
+                      onStageDescriptionChange={handleStageDescriptionChange}
                       onAddSwimlane={canCreateSwimlane ? handleAddSwimlane : undefined}
                       onRenameSwimlane={canRenameSwimlane ? handleRenameSwimlane : undefined}
                       onDeleteSwimlane={canDeleteSwimlane ? handleDeleteSwimlane : undefined}
@@ -1008,7 +1032,6 @@ function EditWorkflows() {
       <CopyWorkflowModal
         show={!!copyWorkflowTarget}
         workflow={copyWorkflowTarget}
-        workspaces={workspaces}
         currentBoardId={boardId}
         onClose={() => setCopyWorkflowTarget(null)}
         onSave={confirmCopyWorkflow}

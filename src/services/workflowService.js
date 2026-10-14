@@ -12,8 +12,8 @@ const deleteWorkflow = (workflowId) =>
 const disableWorkflow = (workflowId) =>
     Gateway.post(`/kanban_workflow/enable_disable_workflow/${workflowId}`, { workflow_id: workflowId });
 
-const duplicateWorkflow = (workflowId, body = {}) =>
-    Gateway.post(`/kanban_workflow/copy_workflow/${workflowId}`, { workflow_id: workflowId, ...body });
+const duplicateWorkflow = (workflowId, { board_ids, workflow_name }) =>
+    Gateway.post(`/kanban_workflow/copy_workflow/${workflowId}`, { board_ids, workflow_name });
 
 const togglePinWorkflow =(workflowId) =>
     Gateway.post(`/kanban_workflow/toggle_pin_workflow/${workflowId}`, { workflow_id: workflowId });
@@ -51,6 +51,9 @@ const renameWorkflowColumn = (columnId, data) =>
 const updateWorkflowColumn = (columnId, data) =>
     Gateway.post(`/kanban_workflow/update_workflow_column/${columnId}`, data);
 
+const updateColumnDescription = (columnId, data) =>
+    Gateway.post(`/kanban_workflow/update_column_description/${columnId}`, data);
+
 const removeWorkflowColumn = (columnId) =>
     Gateway.post(`/kanban_workflow/remove_workflow_column/${columnId}`, { column_id: columnId });
 
@@ -75,6 +78,7 @@ export default {
     createWorkflowColumn,
     renameWorkflowColumn,
     updateWorkflowColumn,
+    updateColumnDescription,
     removeWorkflowColumn,
     reorderWorkflows,
 };

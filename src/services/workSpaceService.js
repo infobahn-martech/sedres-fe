@@ -55,9 +55,13 @@ const removeBoardBackground = (boardId) =>
 const reorderWorkspace = (data) =>
   Gateway.post('/kanban_workspace/reorder_workspace', data);
 
+const getWorkspaceBoards = () =>
+  Gateway.get('/kanban_workspace/workspace_boards');
+
 export default {
   createWorkspace,
   listAllWorkspaces,
+  getWorkspaceBoards,
   renameWorkspace,
   archiveWorkspace,
   getWorkspaceArchiveLog,

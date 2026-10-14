@@ -45,6 +45,7 @@ function WorkflowSwimlane({
   onDeleteStage,
   onStageLimitChange,
   onStageCardsPerRowChange,
+  onStageDescriptionChange,
   onAddSwimlane,
   onRenameSwimlane,
   onDeleteSwimlane,
@@ -469,6 +470,7 @@ function WorkflowSwimlane({
               onDeleteStage={onDeleteStage}
               onStageLimitChange={onStageLimitChange}
               onStageCardsPerRowChange={onStageCardsPerRowChange}
+              onStageDescriptionChange={onStageDescriptionChange}
               mutationTargets={mutationTargets}
               canAddColumns={canAddColumns}
               canUpdateColumnColor={canUpdateColumnColor}

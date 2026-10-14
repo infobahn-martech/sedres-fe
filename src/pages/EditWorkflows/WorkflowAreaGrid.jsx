@@ -39,6 +39,7 @@ function WorkflowAreaGrid({
   onDeleteStage,
   onStageLimitChange,
   onStageCardsPerRowChange,
+  onStageDescriptionChange,
   mutationTargets = {},
   canAddColumns,
   canUpdateColumnColor,
@@ -218,6 +219,7 @@ function WorkflowAreaGrid({
               onDeleteStage={onDeleteStage}
               onStageLimitChange={onStageLimitChange}
               onStageCardsPerRowChange={onStageCardsPerRowChange}
+              onStageDescriptionChange={onStageDescriptionChange}
               canAddColumns={canAddColumns}
               canUpdateColumnColor={canUpdateColumnColor}
               canDeleteColumn={canDeleteColumn}

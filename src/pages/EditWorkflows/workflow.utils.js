@@ -129,6 +129,7 @@ function buildInternalStagesFromApiStages(apiStages = [], fallbackStartId = 1) {
           colSpan: 1,
           stageId,
           columnId: String(col?.column_id ?? `${stageId}-${colIdx + 1}`),
+          description: col?.column_description ?? '',
           ...(laneColor ? { color: laneColor, bgColor: laneColor } : {}),
         });
         areaNextCol[area] += 1;
@@ -149,6 +150,7 @@ function buildInternalStagesFromApiStages(apiStages = [], fallbackStartId = 1) {
         colSpan: span,
         stageId,
         columnId: String(col?.column_id ?? `${stageId}-${colIdx + 1}`),
+        description: col?.column_description ?? '',
         ...(parentLaneColor ? { color: parentLaneColor, bgColor: parentLaneColor } : {}),
       });
 
@@ -172,6 +174,7 @@ function buildInternalStagesFromApiStages(apiStages = [], fallbackStartId = 1) {
           stageId,
           columnId: String(child?.column_id ?? `${stageId}-${childIdx + 1}`),
           parent_column_id: childParentId,
+          description: child?.column_description ?? '',
           ...(childLaneColor ? { color: childLaneColor, bgColor: childLaneColor } : {}),
         });
       });

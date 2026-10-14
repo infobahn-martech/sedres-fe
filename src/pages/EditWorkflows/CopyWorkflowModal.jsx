@@ -3,13 +3,40 @@ import { FiX } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import '../../design/scss/structure/side-nav/AddDashboardModal.scss';
 import '../../design/scss/EditWorkflows.scss';
+import workSpaceService from '../../services/workSpaceService';
 
 const WORKFLOW_NAME_MAX_LEN = 200;
 
-const CopyWorkflowModal = ({ show, workflow, workspaces = [], currentBoardId, onClose, onSave, isSaving = false }) => {
+const CopyWorkflowModal = ({ show, workflow, currentBoardId, onClose, onSave, isSaving = false }) => {
   const [workflowName, setWorkflowName] = useState('');
   const [boardIds, setBoardIds] = useState([]);
   const [error, setError] = useState('');
+  const [workspaces, setWorkspaces] = useState([]);
+  const [isWorkspacesLoading, setIsWorkspacesLoading] = useState(false);
+
+  useEffect(() => {
+    if (!show) return;
+
+    let isMounted = true;
+    setIsWorkspacesLoading(true);
+
+    workSpaceService
+      .getWorkspaceBoards()
+      .then((res) => {
+        if (!isMounted) return;
+        setWorkspaces(Array.isArray(res?.data?.data) ? res.data.data : []);
+      })
+      .catch(() => {
+        if (isMounted) setWorkspaces([]);
+      })
+      .finally(() => {
+        if (isMounted) setIsWorkspacesLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [show]);
 
   useEffect(() => {
     if (!show) return;
@@ -44,7 +71,7 @@ const CopyWorkflowModal = ({ show, workflow, workspaces = [], currentBoardId, on
     if (boardIds.length === 0) return setError('Select at least one target board.');
     setError('');
     if (isSaving) return;
-    onSave({ workflow_name: trimmed, board_ids: boardIds });
+    onSave({ workflow_name: trimmed, board_ids: boardIds.map(Number) });
   };
 
   const handleClose = () => {
@@ -104,7 +131,9 @@ const CopyWorkflowModal = ({ show, workflow, workspaces = [], currentBoardId, on
               <span className="copy-workflow-targets-count">{boardIds.length} selected</span>
             </div>
             <div className="copy-workflow-targets">
-              {targetWorkspaces.length === 0 ? (
+              {isWorkspacesLoading ? (
+                <div className="add-dashboard-field-hint">Loading workspaces...</div>
+              ) : targetWorkspaces.length === 0 ? (
                 <div className="add-dashboard-field-hint">No boards found.</div>
               ) : (
                 targetWorkspaces.map((ws) => {
@@ -173,7 +202,11 @@ const CopyWorkflowModal = ({ show, workflow, workspaces = [], currentBoardId, on
           >
             Cancel
           </button>
-          <button type="submit" className="add-dashboard-btn add-dashboard-btn--text" disabled={isSaving}>
+          <button
+            type="submit"
+            className="add-dashboard-btn add-dashboard-btn--text"
+            disabled={isSaving || isWorkspacesLoading}
+          >
             {isSaving ? 'Copying…' : boardIds.length > 1 ? `Copy to ${boardIds.length} boards` : 'Copy'}
           </button>
         </div>

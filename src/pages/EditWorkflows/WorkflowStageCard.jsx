@@ -39,6 +39,7 @@ function WorkflowStageCard({
   onDeleteStage,
   onStageLimitChange,
   onStageCardsPerRowChange,
+  onStageDescriptionChange,
   canAddColumns,
   canUpdateColumnColor,
   canDeleteColumn,
@@ -55,7 +56,7 @@ function WorkflowStageCard({
   const displayColor = stage.color ? rgbToHex(stage.color) : DEFAULT_STAGE_SWATCH_HEX;
   const [isStageColorPickerOpen, setIsStageColorPickerOpen] = useState(false);
   const [isDecisionModalOpen, setIsDecisionModalOpen] = useState(false);
-  const [decision, setDecision] = useState('');
+  const decision = stage.description ?? '';
   const stageColorTriggerRef = useRef(null);
   const stageColorPickerPopoverRef = useRef(null);
   const [stageColorPickerPlacement, setStageColorPickerPlacement] = useState({ top: 0, left: 0 });
@@ -423,11 +424,13 @@ function WorkflowStageCard({
               show={isDecisionModalOpen}
               stageName={stage.name}
               initialValue={decision}
+              isSaving={mutationState === 'description'}
               onClose={() => setIsDecisionModalOpen(false)}
-              onSave={(value) => {
-                setDecision(value);
-                setIsDecisionModalOpen(false);
-              }}
+              onSave={(value) =>
+                onStageDescriptionChange?.(workflowId, swimlaneId, stage.id, value, () =>
+                  setIsDecisionModalOpen(false)
+                )
+              }
             />
             {canDeleteColumn ? (
               <button
