@@ -117,6 +117,16 @@ const confirmSeApproval = (payload) => Gateway.post('/da/confirm_se_approval', p
  * Merges the cards' confirmed AR invoices into one PDF and moves the cards on to the consolidated column. Fails
  * when an invoice is missing, the cards are not in "AR Invoices Issued", or the invoices are in different currencies. */
 const mergeArInvoices = (payload) => Gateway.post('/da/merge_ar_invoices', payload);
+/** @param {{ call_ids: number[], card_ids: number[] }} params - the ticked cards, sent comma separated.
+ * @returns {Promise<{ data: { status: 'success', data: { cards: Array<{ call_id: number, card_id: number,
+ *   invoices: Array<{ sales_order_no: string, invoice_no: string, pdf: { name: string, url: string },
+ *   xml: { name: string, url: string } }> }>, file_count: number, zip: { name: string, url: string } } }
+ *   | { status: 'error', message: string } }>}
+ * The cards' invoice PDF and XML portal files, bundled into one zip. */
+const getPortalFiles = ({ call_ids: callIds, card_ids: cardIds }) =>
+  Gateway.get('/da/portal_files', {
+    params: { call_ids: callIds.join(','), card_ids: cardIds.join(',') },
+  });
 /** @param {{ cards: Array<{ call_id: number, card_id: number }> }} payload - the ticked "Consolidated" cards.
  * @returns {Promise<{ data: { status: 'success', data: { submission_id: number, inv_no: string, zip_url: string } }
  *   | { status: 'error', message: string } }>}
@@ -272,6 +282,7 @@ export default {
   getArInvoiceReview,
   confirmArInvoices,
   mergeArInvoices,
+  getPortalFiles,
   createSubmissionDocuments,
   getSubmissionEmailDraft,
   sendSubmissionEmail,

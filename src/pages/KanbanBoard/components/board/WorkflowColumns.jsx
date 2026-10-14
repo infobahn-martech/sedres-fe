@@ -70,6 +70,9 @@ const SUBMITTED_TO_DA_COLUMN_PATTERN = /^submitted to da$/i;
    for the cards the user ticks. */
 const CONVERT_TO_AR_INVOICE_COLUMN_PATTERN = /^convert\s+to\s+ar\s+invoices?$/i;
 
+/* L&T DA: "Ready for Dispatch" downloads the ticked cards' invoice PDF and XML files as a zip. */
+const READY_FOR_DISPATCH_COLUMN_PATTERN = /^ready\s+for\s+dispatch$/i;
+
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
   if (isMcDermottWorkflow(workflow)) {
@@ -80,6 +83,7 @@ const getInvoiceAction = (workflow, column) => {
     return null;
   }
   if (CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
+  if (READY_FOR_DISPATCH_COLUMN_PATTERN.test(title)) return "downloadInvoices";
   if (!isBatchWorkflow(workflow)) return null;
   if (SE_RECEIVED_COLUMN_PATTERN.test(title)) return "upload";
   if (AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "merge";
@@ -93,6 +97,7 @@ const INVOICE_ACTION_BUTTONS = {
   uploadPos: { label: "Upload POs", icon: <FiUploadCloud size={16} aria-hidden /> },
   uploadSrf: { label: "Upload SRF", icon: <FiUploadCloud size={16} aria-hidden /> },
   sendInvoice: { label: "Send Invoice", icon: <FiSend size={16} aria-hidden /> },
+  downloadInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
   prepareSubmission: { label: "Create Submission Documents", icon: <FiDownload size={16} aria-hidden /> },
   sendSubmission: { label: "Send For Final Submission", icon: <FiSend size={16} aria-hidden /> },
@@ -116,6 +121,7 @@ export default function WorkflowColumns({
   onUploadSrf,
   onColumnSendInvoice,
   onColumnMergeInvoice,
+  onColumnDownloadInvoices,
   onColumnPrepareSubmission,
   onColumnSendSubmission,
   onContextMenu,
@@ -379,6 +385,7 @@ export default function WorkflowColumns({
                   onUploadSrf?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 sendInvoice: ([card]) => onColumnSendInvoice?.(card),
                 merge: onColumnMergeInvoice,
+                downloadInvoices: onColumnDownloadInvoices,
                 prepareSubmission: onColumnPrepareSubmission,
                 sendSubmission: onColumnSendSubmission,
               };
