@@ -15,15 +15,15 @@ export default function WorkflowAccordion({
   const titleRef = useRef(null);
   const actionsRef = useRef(null);
 
-  // The board scrolls horizontally on `.main-layout` (not a sticky-compatible ancestor), so while
-  // expanded, offset the title (centred) and actions (right edge) to stay in the visible area.
+  // The board scrolls horizontally on `.main-layout` (not a sticky-compatible ancestor), so offset
+  // the title (centred) and actions (right edge) to stay in the visible area, expanded or collapsed.
   useEffect(() => {
     const header = headerRef.current;
     const title = titleRef.current;
     const actions = actionsRef.current;
     const row = title?.parentElement;
     const scroller = header?.closest(".main-layout");
-    if (!header || !title || !actions || !row || !scroller || !isExpanded) return undefined;
+    if (!header || !title || !actions || !row || !scroller) return undefined;
 
     let actionsX = 0;
 
@@ -42,10 +42,12 @@ export default function WorkflowAccordion({
     };
     syncHeader();
     scroller.addEventListener("scroll", syncHeader, { passive: true });
-    window.addEventListener("resize", syncHeader);
+    const resizeObserver = new ResizeObserver(syncHeader);
+    resizeObserver.observe(scroller);
+    resizeObserver.observe(header);
     return () => {
       scroller.removeEventListener("scroll", syncHeader);
-      window.removeEventListener("resize", syncHeader);
+      resizeObserver.disconnect();
       title.style.transform = "";
       actions.style.transform = "";
     };
@@ -60,7 +62,7 @@ export default function WorkflowAccordion({
       <div ref={headerRef} className="kanban-accordion-header" onClick={onToggle}>
         <div
           className="kanban-accordion-title-row"
-          style={{ flex: 1, justifyContent: isExpanded ? "flex-start" : "center" }}
+          style={{ flex: 1, justifyContent: "flex-start" }}
         >
           <h2 ref={titleRef} className="kanban-accordion-title" style={{ fontWeight: 700 }}>
             {workflow.title}
