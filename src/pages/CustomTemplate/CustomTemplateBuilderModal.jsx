@@ -215,11 +215,15 @@ const buildFieldTypeOptions = (apiFieldTypes) => [...(apiFieldTypes ?? [])]
     .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
     .map((ft) => ({ value: String(ft.type_key ?? "").toLowerCase(), label: ft.type_label ?? ft.type_key }));
 
+const CHECKBOX_TYPE_KEY = "checkbox";
+
 // Types that support an options list (dropdown, radio, ...) are flagged by the
-// API's has_options rather than a hardcoded set of type keys.
-const buildOptionsFieldTypeSet = (apiFieldTypes) => new Set(
-    (apiFieldTypes ?? []).filter((ft) => isFlagTrue(ft.has_options)).map((ft) => String(ft.type_key ?? "").toLowerCase())
-);
+// API's has_options rather than a hardcoded set of type keys. Checkbox is added
+// explicitly so it can act as a multi-select group.
+const buildOptionsFieldTypeSet = (apiFieldTypes) => new Set([
+    ...(apiFieldTypes ?? []).filter((ft) => isFlagTrue(ft.has_options)).map((ft) => String(ft.type_key ?? "").toLowerCase()),
+    CHECKBOX_TYPE_KEY,
+]);
 
 // Among the options-capable types, "Dropdown" is the one that additionally offers
 // a Master Data options source (vs. manual-only, e.g. Radio). The API doesn't
@@ -847,7 +851,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             display_order: index + 1,
         };
         if (field.fieldId) payload.field_id = Number(field.fieldId);
-        if (optionsFieldTypes.has(field.type)) {
+        // A checkbox with no options is a legacy single checkbox — saved without options.
+        const isLegacyCheckbox = field.type === CHECKBOX_TYPE_KEY && !field.options?.length;
+        if (optionsFieldTypes.has(field.type) && !isLegacyCheckbox) {
             payload.option_source = field.type === dropdownTypeKey && field.optionsSource === "master" ? "master" : "static";
             if (payload.option_source === "master") {
                 payload.master_module = field.masterModule;

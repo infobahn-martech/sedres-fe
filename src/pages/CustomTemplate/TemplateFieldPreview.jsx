@@ -1,8 +1,45 @@
+import { useId, useState } from "react";
+
+// A required checkbox group only needs one ticked option, not every checkbox.
+export const isCheckboxGroupValid = (field, selected) => !field.required || selected.length > 0;
+
+// Multi-select checkbox group: each option toggles independently and the
+// selection is kept as an array of option labels.
+function CheckboxGroupPreview({ field, label, requiredMark }) {
+    const [selected, setSelected] = useState([]);
+    const toggle = (opt) => setSelected((prev) => (
+        prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]
+    ));
+    return (
+        <div className="cf-field ct-preview-span-full">
+            <label>{label}{requiredMark}</label>
+            <div
+                className="ct-preview-radio-mock"
+                role="group"
+                aria-required={field.required || undefined}
+                aria-invalid={!isCheckboxGroupValid(field, selected) || undefined}
+            >
+                {field.options.map((opt, i) => (
+                    <label key={i} className="ct-preview-check-mock">
+                        <input
+                            type="checkbox"
+                            checked={selected.includes(opt)}
+                            onChange={() => toggle(opt)}
+                        />
+                        <span>{opt}</span>
+                    </label>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 // Renders a template field the same way the live kanban card renders it
 // (cf-field/cf-input, matching Call Type Builder's own live-preview fields)
 // so the template preview is pixel-identical to the real card. Shared by the
 // Custom Templates list preview and the Custom Template builder's live preview.
 function TemplateFieldPreview({ field }) {
+    const radioName = useId();
     const label = field.label;
     const requiredMark = field.required && <span className="text-danger">*</span>;
 
@@ -15,6 +52,10 @@ function TemplateFieldPreview({ field }) {
                 </div>
             );
         case "checkbox":
+            // Older templates saved a checkbox as a single labelled box with no options.
+            if (field.options?.length) {
+                return <CheckboxGroupPreview field={field} label={label} requiredMark={requiredMark} />;
+            }
             return (
                 <div className="cf-field ct-preview-span-full">
                     <label className="ct-preview-check-mock">
@@ -31,7 +72,7 @@ function TemplateFieldPreview({ field }) {
                     <div className="ct-preview-radio-mock">
                         {options.map((opt, i) => (
                             <label key={i} className="ct-preview-radio-option">
-                                <input type="radio" />
+                                <input type="radio" name={radioName} />
                                 <span>{opt}</span>
                             </label>
                         ))}
