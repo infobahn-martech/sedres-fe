@@ -1928,6 +1928,95 @@ div[role="tooltip"][id^="workflow-info-"] {
   }
 }
 
+// Copy workflow modal — workspace/board checkbox grid (mirrors the permission modal layout)
+.add-dashboard-modal.copy-workflow-modal {
+  .modal-dialog.add-dashboard-modal-dialog {
+    max-width: 760px;
+  }
+
+  .copy-workflow-targets-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .copy-workflow-targets-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .copy-workflow-targets {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 32px;
+    max-height: 340px;
+    overflow-y: auto;
+    margin-top: 8px;
+    padding-right: 6px;
+
+    @media (max-width: 575px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .copy-workflow-ws-title,
+  .copy-workflow-board {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .form-check-input {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      cursor: pointer;
+
+      &:checked,
+      &:indeterminate {
+        background-color: #1a6cf0;
+        border-color: #1a6cf0;
+      }
+    }
+
+    label {
+      min-width: 0;
+      cursor: pointer;
+      color: var(--text-primary);
+    }
+  }
+
+  .copy-workflow-ws-title {
+    margin-bottom: 6px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-primary);
+
+    label {
+      font-size: 15px;
+      font-weight: 600;
+    }
+  }
+
+  .copy-workflow-board {
+    padding: 5px 0;
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+  }
+
+  .copy-workflow-board-current {
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    color: #1a6cf0;
+    background: rgba(26, 108, 240, 0.1);
+  }
+}
+
 // ── Dark theme — Edit workflow page + New workflow modal
 [data-theme="dark"] {
   .edit-workflows-container,
@@ -2206,6 +2295,37 @@ div[role="tooltip"][id^="workflow-info-"] {
 
     .add-dashboard-input::placeholder,
     .add-dashboard-premium-select .cf-multi-select-placeholder {
+      color: var(--text-subtle);
+    }
+  }
+
+  .add-dashboard-modal.copy-workflow-modal {
+    .copy-workflow-ws-title {
+      border-bottom-color: var(--border);
+
+      label {
+        color: var(--text-heading);
+      }
+    }
+
+    .copy-workflow-board label {
+      color: var(--text-control);
+    }
+
+    .copy-workflow-ws-title,
+    .copy-workflow-board {
+      .form-check-input {
+        border: 1.5px solid var(--text-faint);
+
+        &:checked,
+        &:indeterminate {
+          background-color: var(--brand);
+          border-color: var(--brand);
+        }
+      }
+    }
+
+    .copy-workflow-targets-count {
       color: var(--text-subtle);
     }
   }
