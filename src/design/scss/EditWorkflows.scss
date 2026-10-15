@@ -1,9 +1,14 @@
 @import 'partials/partials';
 @import 'sedres-color-picker';
 
+// .workflows-content owns the scroll; stop the layout wrapper from adding a second scrollbar
+.dashboard-wrp .page-cont-wrp:has(.edit-workflows-container) {
+  overflow: hidden;
+}
+
 .edit-workflows-container {
   width: 100%;
-  height: calc(100vh - 74px);
+  height: 100%;
   background: var(--bg-app);
   padding: 0;
   overflow: hidden;
@@ -372,12 +377,12 @@
     white-space: nowrap;
   }
 
-  // Transparent scrollbar
   scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 
+  // 10px under zoom 0.8 renders as ~8px on screen
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 12px;
   }
 
   &::-webkit-scrollbar-track {
@@ -385,12 +390,12 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: transparent;
-    border-radius: 4px;
+    background: var(--scrollbar-thumb);
+    border-radius: 5px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--scrollbar-thumb-hover);
   }
 
   @media ($sm-767) {
@@ -1895,6 +1900,11 @@ div[role="tooltip"][id^="workflow-info-"] {
   .page-cont-wrp.full-width {
     width: 100%;
     margin-left: 0;
+  }
+
+  // .workflows-content owns the scroll; stop the layout wrapper adding a second scrollbar
+  .page-cont-wrp:has(.edit-workflows-container) {
+    overflow: hidden;
   }
 }
 
