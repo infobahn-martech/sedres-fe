@@ -45,6 +45,7 @@ import TaxiBoatCardView from "../TaxiBoat/TaxiBoatCardView";
 import DynamicIcon from "../../../../../../structure/SideNav/components/DynamicIcon";
 import { mapBackendIconNameToIconKey } from "../../../../../../store/KanbanManagementReducer";
 import { TaskCardDetailView } from "../../../../../../pages/TaskCard";
+import TemplatePickerPopover, { TEMPLATE_PICKER_WIDTH } from "./TemplatePickerPopover";
 
 // Constants - All tabs
 const ALL_TOP_TABS = [
@@ -862,7 +863,7 @@ const TopBar = ({
     const anchor = metaPickerTriggerRefs.current[openPicker];
     if (!anchor) return;
     const r = anchor.getBoundingClientRect();
-    const width = TYPE_PICKER_WIDTH;
+    const width = openPicker === "template" ? TEMPLATE_PICKER_WIDTH : TYPE_PICKER_WIDTH;
     const left = Math.max(16, Math.min(r.right - width, window.innerWidth - width - 16));
     const top = Math.min(r.bottom + 8, window.innerHeight - 16);
     setMetaPickerFloaterStyle({
@@ -1286,19 +1287,13 @@ const TopBar = ({
         {openPicker === "template" &&
           typeof document !== "undefined" &&
           createPortal(
-            <CardMetaPickerPopover
-              header="Select Template"
+            <TemplatePickerPopover
               floaterStyle={metaPickerFloaterStyle}
               wrapRef={metaPickerFloaterWrapRef}
               loading={isLoadingAllTemplates}
               items={templateItems}
               selectedId={selectedTemplateId}
-              emptyLabel="templates"
-              hasBoardId
-              showRowIcon={false}
               onSelect={handleSelectTemplate}
-              hasSelection={Boolean(selectedTemplateId)}
-              removeLabel="Remove template"
               onRemove={handleRemoveTemplate}
             />,
             document.body
