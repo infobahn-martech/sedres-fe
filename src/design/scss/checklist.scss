@@ -5320,3 +5320,49 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
     cursor: not-allowed;
   }
 }
+
+// ==========================================================
+// Dark theme — Add/Edit Checklist modal
+// ==========================================================
+[data-theme="dark"] .checklist-modal-xl-wide {
+  // The header, footer, section cards and item rows use the legacy slate
+  // tokens (many as inline styles in AddEditCheckList.jsx), which read as a
+  // gray panel inside the navy modal. Remapping them here moves the whole
+  // modal onto the navy palette without touching the JSX.
+  --surface-primary: var(--bg-card);
+  --bg-secondary: var(--bg-highlight);
+  --border-primary: var(--border-strong);
+
+  // --text-inverse flips to near-black in dark mode
+  .checklist-items-builder-header .btn {
+    background: var(--brand);
+    color: #ffffff;
+
+    &:hover {
+      background: var(--brand-hover);
+    }
+  }
+
+  .checklist-item-index {
+    color: var(--brand-bright);
+  }
+
+  .checklist-inline-add-btn {
+    border-color: var(--brand-bright);
+    color: var(--brand-bright);
+
+    &:hover {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #ffffff;
+    }
+  }
+
+  .checklist-file-action-btn--label {
+    color: var(--brand-bright);
+  }
+
+  .checklist-file-action-btn:focus-visible {
+    outline-color: var(--brand-bright);
+  }
+}
