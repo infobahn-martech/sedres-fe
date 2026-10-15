@@ -1,0 +1,103 @@
+// L&T Backlog cards coloured by their SCC signature check, and the Signature Check popup.
+
+.kanban-card.kanban-card--signature-missing {
+  background: #fdecec;
+  border-color: #dc2626;
+
+  &.kanban-card--selected-for-action {
+    background: linear-gradient(to bottom, #f9d3d3 0%, #fdecec 35%);
+  }
+}
+
+.kanban-card.kanban-card--signature-signed {
+  background: #e7f6ec;
+  border-color: #16a34a;
+
+  &.kanban-card--selected-for-action {
+    background: linear-gradient(to bottom, #cdeed8 0%, #e7f6ec 35%);
+  }
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .kanban-card {
+  &.kanban-card--signature-missing {
+    background: #3b1d1d;
+  }
+
+  &.kanban-card--signature-signed {
+    background: #17301f;
+  }
+}
+
+.blockers-modal.signature-check-modal {
+  .modal-dialog {
+    width: 98vw;
+    max-width: 1200px;
+    margin: 1.5rem auto;
+    max-height: calc(100vh - 3.5rem);
+  }
+
+  // CustomModal wraps the header in Bootstrap's .modal-header; the blue .blockers-modal-header
+  // inside it carries all the styling, so the wrapper is reset to a plain container.
+  .modal-header {
+    display: block;
+    flex: 0 0 auto;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+  }
+
+  .blockers-table {
+    thead th,
+    tbody td {
+      text-align: left;
+    }
+
+    .signature-check-empty {
+      padding: 40px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+  }
+
+  .signature-check-so {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .signature-check-link {
+    color: #1d4ed8;
+    text-decoration: underline;
+  }
+
+  .signature-check-state {
+    font-weight: 600;
+
+    &--ok {
+      color: #15803d;
+    }
+
+    &--bad {
+      color: #dc2626;
+    }
+  }
+
+  .signature-check-hand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .signature-check-footer {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border-primary);
+  }
+}

@@ -23,6 +23,16 @@ export const isColumnBeforeArchive = (workflow, colKey) => {
   );
 };
 
+const LNT_WORKFLOW_PATTERN = /l\s*&\s*t(?!\w)|larsen/i;
+const BACKLOG_COLUMN_PATTERN = /^backlog$/i;
+
+export const isLntWorkflow = (workflow) => LNT_WORKFLOW_PATTERN.test(String(workflow?.title ?? ""));
+
+/* The L&T DA "Backlog" column, whose cards get the SCC signature check. */
+export const isLntBacklog = (workflowTitle, columnTitle) =>
+  LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
+  BACKLOG_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
 const MCDERMOTT_WORKFLOW = "MCDERMOTT";
 
 export const isMcDermottWorkflow = (workflow) =>

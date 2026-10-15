@@ -14,6 +14,7 @@ import SeCreationEmailModal from "../components/board/SeCreationEmailModal";
 import SeApprovalUploadModal from "../components/board/SeApprovalUploadModal";
 import SeReviewMoveModal from "../components/board/SeReviewMoveModal";
 import ArInvoiceReviewModal from "../components/board/ArInvoiceReviewModal";
+import SignatureCheckModal from "../components/board/SignatureCheckModal";
 import PoReviewModal from "../components/board/PoReviewModal";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
@@ -1812,6 +1813,7 @@ export default function KanbanBoardPage() {
       />
 
       <ArInvoiceReviewModal onConfirmed={refetchBoard} />
+      <SignatureCheckModal onConfirmed={refetchBoard} />
 
       <SeApprovalUploadModal
         show={showPoUploadModal}
