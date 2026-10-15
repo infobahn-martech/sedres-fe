@@ -127,6 +127,14 @@ const getPortalFiles = ({ call_ids: callIds, card_ids: cardIds }) =>
   Gateway.get('/da/portal_files', {
     params: { call_ids: callIds.join(','), card_ids: cardIds.join(',') },
   });
+/** @param {FormData} formData - call_id, card_id, proof, multipart/form-data
+ * @returns {Promise<{ data: { status: 'success', data: { stage_document_id: number,
+ *   moved_to_dispatched: Array<{ call_id: number, card_id: number }> } } | { status: 'error', message: string } }>}
+ * Stores the portal upload proof for one card; the backend then moves the card to Dispatched. */
+const uploadDispatchProof = (formData) =>
+  Gateway.post('/da/upload_dispatch_proof', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 /** @param {{ cards: Array<{ call_id: number, card_id: number }> }} payload - the ticked "Consolidated" cards.
  * @returns {Promise<{ data: { status: 'success', data: { submission_id: number, inv_no: string, zip_url: string } }
  *   | { status: 'error', message: string } }>}
@@ -283,6 +291,7 @@ export default {
   confirmArInvoices,
   mergeArInvoices,
   getPortalFiles,
+  uploadDispatchProof,
   createSubmissionDocuments,
   getSubmissionEmailDraft,
   sendSubmissionEmail,

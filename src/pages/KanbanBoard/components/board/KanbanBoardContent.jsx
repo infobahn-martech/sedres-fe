@@ -25,6 +25,7 @@ export default function KanbanBoardContent({
   onColumnSendInvoice,
   onColumnMergeInvoice,
   onColumnDownloadInvoices,
+  onUploadDispatchProof,
   onColumnPrepareSubmission,
   onUploadSrf,
   onColumnSendSubmission,
@@ -86,6 +87,7 @@ export default function KanbanBoardContent({
         onColumnSendInvoice={onColumnSendInvoice}
         onColumnMergeInvoice={onColumnMergeInvoice}
         onColumnDownloadInvoices={onColumnDownloadInvoices}
+        onUploadDispatchProof={onUploadDispatchProof}
         onColumnPrepareSubmission={onColumnPrepareSubmission}
         onColumnSendSubmission={onColumnSendSubmission}
         onContextMenu={onContextMenu}
