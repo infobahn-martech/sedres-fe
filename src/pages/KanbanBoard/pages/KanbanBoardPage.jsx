@@ -1264,6 +1264,63 @@ export default function KanbanBoardPage() {
     [isDownloadingInvoices, cardsById]
   );
 
+  /* "Move the Cards" on the "Ready for Dispatch" column header: confirm, then da/advance_stage moves the ticked
+     cards to the next column (Uploaded to Portal). */
+  const [showMoveCardsModal, setShowMoveCardsModal] = useState(false);
+  const [selectedMoveCards, setSelectedMoveCards] = useState([]);
+  const [isMovingCards, setIsMovingCards] = useState(false);
+
+  const handleColumnMoveCards = useCallback(
+    (cards) => {
+      const moveCards = (cards ?? [])
+        .map((card) => ({ id: card.id, callId: card.callId ?? card.call_id ?? cardsById[card.id]?.callId }))
+        .filter((card) => card.callId);
+      if (!moveCards.length) {
+        notify("The selected cards have no call to move", "error");
+        return;
+      }
+      setSelectedMoveCards(moveCards);
+      setShowMoveCardsModal(true);
+    },
+    [cardsById]
+  );
+
+  const handleCloseMoveCards = useCallback(() => {
+    if (isMovingCards) return;
+    setShowMoveCardsModal(false);
+    setSelectedMoveCards([]);
+  }, [isMovingCards]);
+
+  const handleConfirmMoveCards = useCallback(async () => {
+    if (isMovingCards || !selectedMoveCards.length) return;
+    setIsMovingCards(true);
+    try {
+      let data;
+      try {
+        ({ data } = await daService.advanceStageCards({
+          cards: selectedMoveCards.map((card) => ({ call_id: Number(card.callId), card_id: Number(card.id) })),
+        }));
+      } catch (error) {
+        data = error?.response?.data;
+      }
+      if (data?.status !== "success") {
+        notify(data?.message || "Failed to move the cards", "error");
+        return;
+      }
+      const moved = data.data?.moved ?? [];
+      moved.forEach((card) => removeCardSelectionId(String(card.card_id)));
+      notify(
+        `${moved.length} ${moved.length === 1 ? "card" : "cards"} moved to ${data.data?.column_name ?? "the next column"}`,
+        "success"
+      );
+      setShowMoveCardsModal(false);
+      setSelectedMoveCards([]);
+      refetchBoard?.();
+    } finally {
+      setIsMovingCards(false);
+    }
+  }, [isMovingCards, selectedMoveCards, removeCardSelectionId, refetchBoard]);
+
   /* "Consolidated" column: "Create Submission Documents" builds the ticked cards' documents into a zip via
      da/create_submission_documents and keeps the returned submission_id against the cards; the Final
      Submission Email (drafted by da/submission_email_draft) then opens right after. */
@@ -1705,6 +1762,7 @@ export default function KanbanBoardPage() {
           onColumnSendInvoice={handleColumnSendInvoice}
           onColumnMergeInvoice={handleColumnMergeInvoice}
           onColumnDownloadInvoices={handleColumnDownloadInvoices}
+          onColumnMoveCards={handleColumnMoveCards}
           onUploadDispatchProof={handleUploadDispatchProofClick}
           onColumnPrepareSubmission={handleColumnPrepareSubmission}
           onColumnSendSubmission={handleColumnSendSubmission}
@@ -1731,6 +1789,17 @@ export default function KanbanBoardPage() {
         onCancel={handleCloseBatchConfirm}
         onConfirm={handleConfirmBatch}
         isLoading={isCreatingBatch}
+      />
+
+      <StatusConfirmationModal
+        show={showMoveCardsModal}
+        statusText={`Move the ${selectedMoveCards.length} selected ${
+          selectedMoveCards.length === 1 ? "card" : "cards"
+        } to the next column?`}
+        icon={confirmTickIcon}
+        onCancel={handleCloseMoveCards}
+        onConfirm={handleConfirmMoveCards}
+        isLoading={isMovingCards}
       />
 
       <SeCreationEmailModal

@@ -16,6 +16,8 @@ const getCardStage = (callId) => Gateway.get(`/da/card/${callId}`);
 const getStatusTimeline = (callId) => Gateway.get(`/da/status_timeline/${callId}`);
 /** @param {{ call_id: string|number, column_id: string|number }} payload */
 const advanceStage = (payload) => Gateway.post('/da/advance_stage', payload);
+/** Moves several cards to the next column: { cards: [{ call_id, card_id }] }. */
+const advanceStageCards = (payload) => Gateway.post('/da/advance_stage', payload);
 /** @param {{ call_id: string|number, status_id: string|number }} payload */
 const updateStatus = (payload) => Gateway.post('/da/update_status', payload);
 /** @param {{ so_item_id: string|number }} payload */
@@ -268,6 +270,7 @@ export default {
   getTimeObjects,
   getCardStage,
   advanceStage,
+  advanceStageCards,
   getStatusTimeline,
   updateStatus,
   deleteSalesLineItem,

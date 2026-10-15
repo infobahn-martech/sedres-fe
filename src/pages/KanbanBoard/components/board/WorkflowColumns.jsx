@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
-import { FiChevronDown, FiDownload, FiSend, FiUpload, FiUploadCloud } from "react-icons/fi";
+import { FiArrowRight, FiChevronDown, FiDownload, FiSend, FiUpload, FiUploadCloud } from "react-icons/fi";
 import { MdCallMerge } from "react-icons/md";
 import { KANBAN_DND_DISABLED } from "../../../../shared/constants/kanbanConfig";
 import ColumnHeader from "./ColumnHeader";
@@ -128,6 +128,7 @@ export default function WorkflowColumns({
   onColumnSendInvoice,
   onColumnMergeInvoice,
   onColumnDownloadInvoices,
+  onColumnMoveCards,
   onUploadDispatchProof,
   onColumnPrepareSubmission,
   onColumnSendSubmission,
@@ -389,13 +390,19 @@ export default function WorkflowColumns({
                 invoiceButton = isCreatingSubmission ? "prepareSubmission" : "sendSubmission";
                 invoiceButtonCards = isCreatingSubmission ? submissionCreateCards : submissionSendCards;
               }
-              const sendSubmissionAction =
-                isCreatingSubmission && submissionSendCards.length > 0
-                  ? {
-                      ...INVOICE_ACTION_BUTTONS.sendSubmission,
-                      onClick: () => onColumnSendSubmission?.(submissionSendCards),
-                    }
-                  : undefined;
+              let sendSubmissionAction;
+              if (isCreatingSubmission && submissionSendCards.length > 0) {
+                sendSubmissionAction = {
+                  ...INVOICE_ACTION_BUTTONS.sendSubmission,
+                  onClick: () => onColumnSendSubmission?.(submissionSendCards),
+                };
+              } else if (invoiceAction === "downloadInvoices") {
+                sendSubmissionAction = {
+                  label: "Move the Cards",
+                  icon: <FiArrowRight size={16} aria-hidden />,
+                  onClick: () => onColumnMoveCards?.(invoiceCards),
+                };
+              }
               const hasInvoiceButton =
                 invoiceAction === "sendInvoice" || invoiceAction === "uploadDispatchProof"
                   ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
