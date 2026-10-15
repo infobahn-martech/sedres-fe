@@ -7,7 +7,7 @@ import daService from "../../../../../../services/daService";
 import { mapSalesOrderResponse } from "../../../../../../shared/helpers/mapSalesOrderResponse";
 import { useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
-import { Tag, Layers3, AlertTriangle, Sticker, Pencil, Check, X } from "lucide-react";
+import { Tag, Layers3, AlertTriangle, Sticker, LayoutTemplate, Pencil, Check, X } from "lucide-react";
 import { notify } from "../../../../../../components/Toaster";
 import "../../../../../../design/scss/pages/kanban-board/cardForm.scss";
 import "../../../../../../design/scss/general.scss";
@@ -22,6 +22,7 @@ import {
   getFirstUserRoleId,
 } from "../../../../../../shared/helpers/groUserRoles";
 import useAuthReducer from "../../../../../../store/AuthReducer";
+import useFormTemplateReducer from "../../../../../../store/FormTemplateReducer";
 import { useDaLocalReachedDates } from "../../../../../../shared/store/daStore";
 import usePermissions from "../../../../../../shared/hooks/usePermissions";
 import {
@@ -667,7 +668,12 @@ const TopBar = ({
   onCardTagChange,
   onCardBlockerChange,
   onCardStickerChange,
+  onTemplateChange,
 }) => {
+  const allTemplates = useFormTemplateReducer((s) => s.allTemplates);
+  const isLoadingAllTemplates = useFormTemplateReducer((s) => s.isLoadingAllTemplates);
+  const getAllTemplates = useFormTemplateReducer((s) => s.getAllTemplates);
+
   const effectiveCard = useMemo(
     () => (isAddMode ? { ...card, ...formValues } : card),
     [isAddMode, card, formValues]
@@ -695,7 +701,13 @@ const TopBar = ({
   const [selectedMeta, setSelectedMeta] = useState(() => resolveTopbarMetaFromCard(effectiveCard));
   const colorPickerTriggerRef = useRef(null);
   const pickerFloaterWrapRef = useRef(null);
-  const metaPickerTriggerRefs = useRef({ type: null, tag: null, blocker: null, sticker: null });
+  const metaPickerTriggerRefs = useRef({
+    type: null,
+    tag: null,
+    blocker: null,
+    sticker: null,
+    template: null,
+  });
   const metaPickerFloaterWrapRef = useRef(null);
   const metaPickerFetchRef = useRef({ type: 0, tag: 0, blocker: 0, sticker: 0 });
   const skipTitleCommitRef = useRef(false);
@@ -895,6 +907,39 @@ const TopBar = ({
       }
       return next;
     });
+  };
+
+  const templateItems = useMemo(
+    () =>
+      (allTemplates ?? []).map((tpl) => ({
+        id: String(tpl.template_id),
+        name: tpl.template_name,
+      })),
+    [allTemplates]
+  );
+  const selectedTemplateId =
+    formValues?.template_id != null && formValues.template_id !== ""
+      ? String(formValues.template_id)
+      : null;
+
+  const handleToggleTemplatePicker = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsColorPickerOpen(false);
+    setOpenPicker((current) => (current === "template" ? null : "template"));
+    if (allTemplates === null && !isLoadingAllTemplates) {
+      getAllTemplates();
+    }
+  };
+
+  const handleSelectTemplate = (row) => {
+    onTemplateChange?.(row.id, row.name);
+    setOpenPicker(null);
+  };
+
+  const handleRemoveTemplate = () => {
+    onTemplateChange?.(null, "");
+    setOpenPicker(null);
   };
 
   const handleSelectMetaItem = async (pickerKey, row) => {
@@ -1222,6 +1267,42 @@ const TopBar = ({
               document.body
             )}
         </div>
+        {isAddMode && (
+          <button
+            ref={(el) => {
+              metaPickerTriggerRefs.current.template = el;
+            }}
+            type="button"
+            className="topbar-icon-btn"
+            onClick={handleToggleTemplatePicker}
+            title={formValues?.template_name ? `Template: ${formValues.template_name}` : "Template"}
+            aria-label="Select template"
+            aria-expanded={openPicker === "template"}
+            aria-haspopup="listbox"
+          >
+            <LayoutTemplate size={TOPBAR_ICON_SIZE} aria-hidden />
+          </button>
+        )}
+        {openPicker === "template" &&
+          typeof document !== "undefined" &&
+          createPortal(
+            <CardMetaPickerPopover
+              header="Select Template"
+              floaterStyle={metaPickerFloaterStyle}
+              wrapRef={metaPickerFloaterWrapRef}
+              loading={isLoadingAllTemplates}
+              items={templateItems}
+              selectedId={selectedTemplateId}
+              emptyLabel="templates"
+              hasBoardId
+              showRowIcon={false}
+              onSelect={handleSelectTemplate}
+              hasSelection={Boolean(selectedTemplateId)}
+              removeLabel="Remove template"
+              onRemove={handleRemoveTemplate}
+            />,
+            document.body
+          )}
         <button
           className={`cardform-close-btn${closeLoading ? " cardform-close-btn--loading" : ""}`}
           onClick={onClose}
@@ -1250,6 +1331,7 @@ TopBar.propTypes = {
   topbarColor: PropTypes.string.isRequired,
   onClose: PropTypes.func.isRequired,
   closeLoading: PropTypes.bool,
+  onTemplateChange: PropTypes.func,
   isAddMode: PropTypes.bool,
   onColorChange: PropTypes.func,
   onTitleCommit: PropTypes.func,
@@ -2740,6 +2822,14 @@ function CardForm({
     [isAddMode, card?.id, card?.card_id, patchCardType]
   );
 
+  const handleTopbarTemplateChange = useCallback((templateId, templateName) => {
+    setFormValues((prev) => ({
+      ...prev,
+      template_id: templateId,
+      template_name: templateName,
+    }));
+  }, []);
+
   const handleTopbarCardTagChange = useCallback(
     (tagId, meta) => {
       if (isAddMode) {
@@ -3121,6 +3211,7 @@ function CardForm({
           onCardTagChange={handleTopbarCardTagChange}
           onCardBlockerChange={handleTopbarCardBlockerChange}
           onCardStickerChange={handleTopbarCardStickerChange}
+          onTemplateChange={handleTopbarTemplateChange}
         />
         {isSubTaskCard ? (
           <TaskCardDetailView card={card} onClose={handleClose} />

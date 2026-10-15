@@ -8,6 +8,8 @@ const getCallTypes = () => Gateway.get('/calltype');
 
 const getTemplateList = (params) => Gateway.get('/form_template/list', { params });
 
+const getAllTemplates = () => Gateway.get('/form_template/all_templates');
+
 const getTemplateById = (templateId) => Gateway.get(`/form_template/${templateId}`);
 
 const saveCardTemplate = (payload) => Gateway.post('/form_template/save_card_template', payload);
@@ -17,6 +19,7 @@ export default {
   getMasterLookups,
   getCallTypes,
   getTemplateList,
+  getAllTemplates,
   getTemplateById,
   saveCardTemplate,
 };

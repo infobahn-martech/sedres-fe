@@ -11,6 +11,8 @@ const useFormTemplateReducer = create((set) => ({
   callTypes: null,
   isLoadingTemplates: false,
   templates: null,
+  isLoadingAllTemplates: false,
+  allTemplates: null,
   isLoadingTemplateDetail: false,
   isSaving: false,
 
@@ -62,6 +64,19 @@ const useFormTemplateReducer = create((set) => ({
       const { error: showError } = useAlertReducer.getState();
       // Leave templates as null (rather than []) on failure so the next mount retries.
       set({ isLoadingTemplates: false });
+      showError(error?.response?.data?.message ?? error?.message ?? 'Failed to fetch templates');
+    }
+  },
+
+  getAllTemplates: async () => {
+    try {
+      set({ isLoadingAllTemplates: true });
+      const { data } = await formTemplateService.getAllTemplates();
+      set({ allTemplates: data?.data ?? [], isLoadingAllTemplates: false });
+    } catch (error) {
+      const { error: showError } = useAlertReducer.getState();
+      // Leave allTemplates as null on failure so the next open retries.
+      set({ isLoadingAllTemplates: false });
       showError(error?.response?.data?.message ?? error?.message ?? 'Failed to fetch templates');
     }
   },
