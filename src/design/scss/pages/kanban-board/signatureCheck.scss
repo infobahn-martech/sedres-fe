@@ -18,13 +18,26 @@
   }
 }
 
+// The shared card hover recolours the border; keep the signature colour on hover.
+.kanban-card.kanban-card--signature-missing:hover {
+  border-color: #dc2626;
+}
+
+.kanban-card.kanban-card--signature-signed:hover {
+  border-color: #16a34a;
+}
+
 [data-theme="dark"] .kanban-board--swimlanes .kanban-card {
-  &.kanban-card--signature-missing {
+  &.kanban-card--signature-missing,
+  &.kanban-card--signature-missing:hover {
     background: #3b1d1d;
+    border-color: #dc2626;
   }
 
-  &.kanban-card--signature-signed {
+  &.kanban-card--signature-signed,
+  &.kanban-card--signature-signed:hover {
     background: #17301f;
+    border-color: #16a34a;
   }
 }
 

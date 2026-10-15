@@ -1813,7 +1813,12 @@ export default function KanbanBoardPage() {
       />
 
       <ArInvoiceReviewModal onConfirmed={refetchBoard} />
-      <SignatureCheckModal onConfirmed={refetchBoard} />
+      <SignatureCheckModal
+        onConfirmed={(result) => {
+          (result?.moved_to_convert_ar_invoice ?? []).forEach((card) => removeCardSelectionId(String(card.card_id)));
+          refetchBoard?.();
+        }}
+      />
 
       <SeApprovalUploadModal
         show={showPoUploadModal}

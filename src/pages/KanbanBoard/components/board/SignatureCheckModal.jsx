@@ -45,7 +45,7 @@ const SignatureCheckModal = ({ onConfirmed }) => {
       movedCount ? "success" : "error"
     );
     onClose();
-    onConfirmed?.();
+    onConfirmed?.(result);
   };
 
   const renderHeader = () => (
