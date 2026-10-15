@@ -107,7 +107,7 @@ const DA_TOP_TABS = [
 const DA_ENABLED_TABS = ["General", "Operation", "Husbandry", "Sales Order", "Reports", "KPI", "Invoice", "Document Library", "Comments", "Subtasks", "Notes"];
 
 const DEFAULT_ACCENT_COLOR = "#2A00FF";
-const ADD_CARD_TOPBAR_DEFAULT_HEX = "#2e7d32";
+const ADD_CARD_TOPBAR_DEFAULT_HEX = "#00368c";
 /** GRO / custom pass task card modal — default header until user picks another in SedresColorPicker. */
 const GRO_TASK_HEADER_DEFAULT_HEX = "#10b981";
 

@@ -26,7 +26,7 @@ import "../../design/scss/invoice.scss";
 import DateTimePickerField from "../KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 
 // Matches $tc-green in taskCard.scss (the topbar's default background).
-const TASK_CARD_TOPBAR_DEFAULT_HEX = "#2e7d32";
+const TASK_CARD_TOPBAR_DEFAULT_HEX = "#00368c";
 const META_PICKER_ICONS = {
     type: { Icon: Layers3, title: "Type" },
     tag: { Icon: Tag, title: "Tag" },

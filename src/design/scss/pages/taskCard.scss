@@ -3,8 +3,8 @@
 // Layout inside the detail view (.subtasks-tab-*) reuses invoice.scss — not modified here.
 // DateTimePicker styling reuses general.scss (.cf-datetime-picker) — not redefined here.
 
-$tc-green:        #2e7d32;
-$tc-green-dark:   #1b5e20;
+$tc-green:        #00368c;
+$tc-green-dark:   #002a6d;
 $tc-border:       #e2e2ea;
 $tc-border-hover: #c8d4ea;
 $tc-focus:        #00368c;
@@ -190,7 +190,7 @@ $tc-font:         "Manrope", sans-serif;
 
   &:hover:not(:disabled) {
     background: $tc-green-dark;
-    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.25);
+    box-shadow: 0 4px 12px rgba(0, 54, 140, 0.25);
   }
   &:active:not(:disabled) { transform: translateY(1px); }
   &:disabled { opacity: 0.65; cursor: not-allowed; }

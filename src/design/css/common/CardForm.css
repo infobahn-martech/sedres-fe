@@ -1201,7 +1201,7 @@
   right: 0;
   top: 0;
   height: 3px;
-  background: linear-gradient(90deg, #6d5ef5 0%, #4f46e5 50%, #22c55e 100%);
+  background: #00368c;
   z-index: 3;
   pointer-events: none;
 }
@@ -1275,6 +1275,16 @@
   padding-top: 0;
   padding-right: 2px;
   flex-shrink: 0;
+}
+
+/* Scoped so the shared .form-save-button gradient elsewhere is untouched */
+.general-add-page-actions .form-save-button {
+  background: #00368c !important;
+  box-shadow: 0 6px 16px rgba(0, 54, 140, 0.32);
+}
+
+.general-add-page-actions .form-save-button:hover:not(:disabled) {
+  box-shadow: 0 10px 22px rgba(0, 54, 140, 0.4);
 }
 
 .cf-daily-report-emails-field {
@@ -1433,7 +1443,7 @@
   right: 0;
   top: 0;
   height: 3px;
-  background: linear-gradient(90deg, #6d5ef5 0%, #4f46e5 50%, #22c55e 100%);
+  background: #00368c;
   z-index: 3;
   pointer-events: none;
 }
@@ -1518,11 +1528,7 @@
 .email-preview-topbar-title {
   font-size: 18px;
   font-weight: 700;
-  color: var(--text-primary);
-  background: linear-gradient(90deg, #4f46e5, #6d5ef5);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #00368c;
 }
 
 .email-preview-topbar-status {

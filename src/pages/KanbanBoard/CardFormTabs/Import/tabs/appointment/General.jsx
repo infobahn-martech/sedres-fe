@@ -2356,8 +2356,6 @@ function General({
   const [defaultEmailAttachments, setDefaultEmailAttachments] = useState([]);
   const [uploadedEmailAttachments, setUploadedEmailAttachments] = useState([]);
   const [isUploadingEmailAttachments, setIsUploadingEmailAttachments] = useState(false);
-  const [appointmentExtractionMode, setAppointmentExtractionMode] = useState("manual");
-  const [isAiExtractingAppointment, setIsAiExtractingAppointment] = useState(false);
   const [isServerEmailReading, setIsServerEmailReading] = useState(false);
   const [, setAiExtractionError] = useState("");
   const [previewMessageText, setPreviewMessageText] = useState("");
@@ -3802,11 +3800,11 @@ function General({
         setIsPreviewMessageDirty(true);
       }
 
-      if (filledCount > 0 || subject || body) {
+      const hasExtractedDetails = filledCount > 0 || Boolean(subject) || Boolean(body);
+      if (hasExtractedDetails) {
         notify("Appointment details extracted successfully.", "success");
-      } else {
-        notify("File uploaded, but no matching appointment details found.", "warning");
       }
+      return hasExtractedDetails;
     },
     [
       applyAppointmentReceivedDateTime,
@@ -3905,20 +3903,23 @@ ${body}
       return next;
     });
 
+    setAiExtractionError("");
+
+    // AI extraction runs first; any failure or empty result falls back to local (manual) parsing.
+    setIsServerEmailReading(true);
     try {
-      setIsAiExtractingAppointment(true);
-      setAiExtractionError("");
+      const aiExtracted = await applyBeAppointmentExtraction(file);
+      if (aiExtracted) return;
+    } catch (error) {
+      setAiExtractionError(
+        firstNonEmptyString(error?.response?.data?.message, error?.response?.data?.error, error?.message) ||
+        "AI appointment extraction failed."
+      );
+    } finally {
+      setIsServerEmailReading(false);
+    }
 
-      if (appointmentExtractionMode === "be") {
-        setIsServerEmailReading(true);
-        try {
-          await applyBeAppointmentExtraction(file);
-        } finally {
-          setIsServerEmailReading(false);
-        }
-        return;
-      }
-
+    try {
       let extractedText = "";
       let msgData = null;
       if (isMsgFile(file)) {
@@ -3943,24 +3944,13 @@ ${body}
         notify("File uploaded, but no matching appointment details found.", "warning");
       }
     } catch (error) {
-      const isAiMode = appointmentExtractionMode === "be";
-      if (isAiMode) {
-        const aiMessage =
-          firstNonEmptyString(error?.response?.data?.message, error?.response?.data?.error, error?.message) ||
-          "AI appointment extraction failed.";
-        notify(aiMessage, "error");
-        setAiExtractionError(aiMessage);
+      const isUnsupportedFormat = error?.message === "UNSUPPORTED_FILE_FORMAT";
+      if (isUnsupportedFormat) {
+        notify("Unsupported file format.", "warning");
       } else {
-        const isUnsupportedFormat = error?.message === "UNSUPPORTED_FILE_FORMAT";
-        if (isUnsupportedFormat) {
-          notify("Unsupported file format.", "warning");
-        } else {
-          notify("File uploaded, but auto-fill failed.", "warning");
-        }
-        setAiExtractionError(firstNonEmptyString(error?.message) || "Extraction failed");
+        notify("File uploaded, but auto-fill failed.", "warning");
       }
-    } finally {
-      setIsAiExtractingAppointment(false);
+      setAiExtractionError(firstNonEmptyString(error?.message) || "Extraction failed");
     }
   };
 
@@ -5425,31 +5415,6 @@ ${body}
                                   >
                                     <div className="appointment-email-label-row">
                                       <label className="appointment-email-label">Appointment Email</label>
-                                      <div
-                                        className="appointment-extraction-mode-group"
-                                        role="group"
-                                        aria-label="Appointment extraction mode"
-                                      >
-                                        {[
-                                          { id: "manual", label: "Manual" },
-                                          { id: "be", label: "AI" },
-                                        ].map((mode) => (
-                                          <button
-                                            key={mode.id}
-                                            type="button"
-                                            className={`appointment-extraction-mode-btn ${appointmentExtractionMode === mode.id ? "active" : ""
-                                              }`}
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                              setAppointmentExtractionMode(mode.id);
-                                            }}
-                                            disabled={isDisabled || isAiExtractingAppointment}
-                                          >
-                                            {mode.label}
-                                          </button>
-                                        ))}
-                                      </div>
                                     </div>
                                     <DocumentUpload
                                       attachments={appointmentDocuments}
