@@ -1,5 +1,5 @@
 import { useForm, Controller } from "react-hook-form";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import CustomModal from "../../../components/CustomModal";
 import PremiumSelect from "../../../components/form/PremiumSelect";
@@ -19,6 +19,8 @@ const CUSTOMER_TYPE_OPTIONS = [
 ];
 
 const COLOR_PICKER_PORTAL_Z = 10800;
+const COLOR_PICKER_GAP = 8;
+const VIEWPORT_MARGIN = 16;
 
 const DEFAULT_VALUES = {
   billingEntityName: "",
@@ -67,13 +69,40 @@ export function BillingEntityModal({ showModal, closeModal, onSuccess }) {
 
   const closeColorPicker = useCallback(() => setIsColorPickerOpen(false), []);
 
-  const openColorPicker = () => {
-    if (colorTriggerRef.current) {
-      const r = colorTriggerRef.current.getBoundingClientRect();
-      setColorPickerPlacement({ top: r.bottom + 8, left: r.left });
-    }
-    setIsColorPickerOpen(true);
-  };
+  // Place the picker below the trigger; flip above when it doesn't fit, else clamp inside the viewport
+  const positionColorPicker = useCallback(() => {
+    const trigger = colorTriggerRef.current;
+    const popover = colorPickerPopoverRef.current;
+    if (!trigger || !popover) return;
+    const r = trigger.getBoundingClientRect();
+    const { offsetWidth: width, offsetHeight: height } = popover;
+    const spaceBelow = window.innerHeight - r.bottom - COLOR_PICKER_GAP - VIEWPORT_MARGIN;
+    const spaceAbove = r.top - COLOR_PICKER_GAP - VIEWPORT_MARGIN;
+
+    let top;
+    if (height <= spaceBelow) top = r.bottom + COLOR_PICKER_GAP;
+    else if (height <= spaceAbove) top = r.top - COLOR_PICKER_GAP - height;
+    else top = Math.max(VIEWPORT_MARGIN, window.innerHeight - height - VIEWPORT_MARGIN);
+
+    const left = Math.max(
+      VIEWPORT_MARGIN,
+      Math.min(r.left, window.innerWidth - width - VIEWPORT_MARGIN)
+    );
+    setColorPickerPlacement({ top, left });
+  }, []);
+
+  // Measure before paint, and re-measure when the advanced palette changes the picker's height
+  useLayoutEffect(() => {
+    if (!isColorPickerOpen) return undefined;
+    positionColorPicker();
+    const observer = new ResizeObserver(positionColorPicker);
+    if (colorPickerPopoverRef.current) observer.observe(colorPickerPopoverRef.current);
+    window.addEventListener("resize", positionColorPicker);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", positionColorPicker);
+    };
+  }, [isColorPickerOpen, positionColorPicker]);
 
   // Close the picker on outside click (trigger + popover count as inside)
   useEffect(() => {
@@ -245,7 +274,7 @@ export function BillingEntityModal({ showModal, closeModal, onSuccess }) {
                             className="form-control"
                             placeholder="Color Code"
                             value={field.value?.toUpperCase() ?? ""}
-                            onClick={() => (isColorPickerOpen ? closeColorPicker() : openColorPicker())}
+                            onClick={() => setIsColorPickerOpen((open) => !open)}
                             aria-haspopup="dialog"
                             aria-expanded={isColorPickerOpen}
                           />
@@ -269,6 +298,7 @@ export function BillingEntityModal({ showModal, closeModal, onSuccess }) {
                               <SedresColorPicker
                                 popoverRef={colorPickerPopoverRef}
                                 popoverId="billing-entity-color-picker"
+                                className="kanban-dashboard-color-picker-popover--floating"
                                 initialHex={field.value}
                                 onApply={(hex) => {
                                   field.onChange(normalizeHexColor(hex));
