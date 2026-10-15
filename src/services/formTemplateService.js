@@ -14,6 +14,8 @@ const getTemplateById = (templateId) => Gateway.get(`/form_template/${templateId
 
 const saveCardTemplate = (payload) => Gateway.post('/form_template/save_card_template', payload);
 
+const deleteTemplate = (templateId) => Gateway.delete(`/form_template/delete/${templateId}`);
+
 export default {
   getFieldTypes,
   getMasterLookups,
@@ -22,4 +24,5 @@ export default {
   getAllTemplates,
   getTemplateById,
   saveCardTemplate,
+  deleteTemplate,
 };

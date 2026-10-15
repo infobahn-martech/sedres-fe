@@ -15,6 +15,7 @@ const useFormTemplateReducer = create((set) => ({
   allTemplates: null,
   isLoadingTemplateDetail: false,
   isSaving: false,
+  isDeleting: false,
 
   getFieldTypes: async () => {
     try {
@@ -106,6 +107,21 @@ const useFormTemplateReducer = create((set) => ({
       const { error: showError } = useAlertReducer.getState();
       set({ isSaving: false });
       showError(error?.response?.data?.message ?? error?.message ?? 'Failed to save custom template');
+    }
+  },
+
+  deleteTemplate: async ({ templateId, cb }) => {
+    try {
+      set({ isDeleting: true });
+      const { data } = await formTemplateService.deleteTemplate(templateId);
+      const { success } = useAlertReducer.getState();
+      success(data?.message ?? 'Custom template deleted successfully');
+      set({ isDeleting: false });
+      cb?.(data);
+    } catch (error) {
+      const { error: showError } = useAlertReducer.getState();
+      set({ isDeleting: false });
+      showError(error?.response?.data?.message ?? error?.message ?? 'Failed to delete custom template');
     }
   },
 }));

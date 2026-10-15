@@ -49,16 +49,13 @@ function TemplateListCard({ template, isActive, onSelect, onDelete }) {
 }
 
 function CustomTemplateListModal({ show, onClose }) {
-    const { getTemplateList, templates, getTemplateById } = useFormTemplateReducer((s) => s);
+    const { getTemplateList, templates, getTemplateById, deleteTemplate } = useFormTemplateReducer((s) => s);
 
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedId, setSelectedId] = useState(null);
     const [activeTabIndex, setActiveTabIndex] = useState(0);
     const [activeSubTabIndex, setActiveSubTabIndex] = useState(0);
     const [deleteRequestId, setDeleteRequestId] = useState(null);
-    // No confirmed delete endpoint exists yet — a deletion only hides the row for
-    // this session rather than persisting server-side.
-    const [dismissedIds, setDismissedIds] = useState(() => new Set());
     // 'list' shows the template list + preview; 'create'/'edit' reuse this same
     // modal panel to show the builder form + preview instead of stacking a
     // second modal on top.
@@ -72,8 +69,8 @@ function CustomTemplateListModal({ show, onClose }) {
     }, [show, templates, getTemplateList]);
 
     const normalizedTemplates = useMemo(
-        () => (templates ?? []).map(normalizeTemplateSummary).filter((t) => !dismissedIds.has(t.id)),
-        [templates, dismissedIds]
+        () => (templates ?? []).map(normalizeTemplateSummary),
+        [templates]
     );
 
     useEffect(() => {
@@ -104,12 +101,19 @@ function CustomTemplateListModal({ show, onClose }) {
     };
 
     const handleConfirmDelete = () => {
-        setDismissedIds((prev) => new Set(prev).add(deleteRequestId));
-        if (selectedId === deleteRequestId) {
-            setSelectedId(null);
-            setActiveTabIndex(0);
-        }
+        const templateId = deleteRequestId;
         setDeleteRequestId(null);
+        deleteTemplate({
+            templateId,
+            cb: () => {
+                if (selectedId === templateId) {
+                    setSelectedId(null);
+                    setActiveTabIndex(0);
+                    setActiveSubTabIndex(0);
+                }
+                getTemplateList();
+            },
+        });
     };
 
     const handleCreateClick = () => {
@@ -301,7 +305,7 @@ function CustomTemplateListModal({ show, onClose }) {
                     show={!!deleteRequestId}
                     onCancel={() => setDeleteRequestId(null)}
                     onConfirm={handleConfirmDelete}
-                    deleteText="Remove this template from the list? (Not yet permanent — no delete API is wired up.)"
+                    deleteText="Are you sure you want to delete this template?"
                     className="ctl-delete-confirm-modal"
                     backdropClassName="ctl-delete-confirm-backdrop"
                 />
