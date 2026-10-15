@@ -4,4 +4,22 @@
         cursor: not-allowed;
     }
 
+    .billing-entity-color-field {
+        .form-control {
+            cursor: pointer;
+            padding-right: 3.5rem;
+        }
+
+        .billing-entity-color-swatch {
+            position: absolute;
+            top: 50%;
+            right: 1rem;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 1px solid var(--border-primary);
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+    }
 }

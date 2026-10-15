@@ -1,6 +1,10 @@
-import { useForm } from "react-hook-form";
-import { useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import CustomModal from "../../../components/CustomModal";
+import PremiumSelect from "../../../components/form/PremiumSelect";
+import SedresColorPicker from "../../../components/SedresColorPicker/SedresColorPicker";
+import { DEFAULT_PICKER_COLOR, normalizeHexColor } from "../../../components/SedresColorPicker/sedresColorPickerConstants";
 import useBillingEntityReducer from "../../../store/BillingEntityReducer";
 import "../../../design/scss/prospect-modal.scss";
 import "../../../design/scss/modal-designs.scss";
@@ -9,6 +13,19 @@ import "../../../design/scss/billing-entity-modal.scss";
 import userIcon from "../../../assets/images/DummyProPic.avif";
 import edit from "../../../assets/images/edit.svg";
 
+const CUSTOMER_TYPE_OPTIONS = [
+  { value: "Cash", label: "Cash" },
+  { value: "Credit", label: "Credit" },
+];
+
+const COLOR_PICKER_PORTAL_Z = 10800;
+
+const DEFAULT_VALUES = {
+  billingEntityName: "",
+  creditLimit: "",
+  customerType: "",
+  colorCode: DEFAULT_PICKER_COLOR,
+};
 
 export function BillingEntityModal({ showModal, closeModal, onSuccess }) {
   const isEdit = !!showModal?.entity_id;
@@ -17,35 +34,62 @@ export function BillingEntityModal({ showModal, closeModal, onSuccess }) {
 
   const [logoImage, setLogoImage] = useState(null);
   const [logoImagePreview, setLogoImagePreview] = useState(userIcon);
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+  const [colorPickerPlacement, setColorPickerPlacement] = useState({ top: 0, left: 0 });
+
+  const colorTriggerRef = useRef(null);
+  const colorPickerPopoverRef = useRef(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    control,
     reset,
-  } = useForm({
-    defaultValues: {
-      billingEntityName: "",
-      creditLimit: "",
-    },
-  });
+  } = useForm({ defaultValues: DEFAULT_VALUES });
 
   useEffect(() => {
     if (isEdit) {
       reset({
         billingEntityName: showModal?.billing_entity ?? showModal?.billingEntityName ?? "",
         creditLimit: showModal?.credit_limit ?? showModal?.creditLimit ?? "",
+        customerType: showModal?.customer_type ?? "",
+        colorCode: normalizeHexColor(showModal?.color_code),
       });
       setLogoImagePreview(showModal?.entity_logo || showModal?.logo_path || userIcon);
     } else {
-      reset({ billingEntityName: "", creditLimit: "" });
+      reset(DEFAULT_VALUES);
       setLogoImagePreview(userIcon);
     }
     setLogoImage(null);
+    setIsColorPickerOpen(false);
   }, [showModal, reset]);
 
+  const closeColorPicker = useCallback(() => setIsColorPickerOpen(false), []);
+
+  const openColorPicker = () => {
+    if (colorTriggerRef.current) {
+      const r = colorTriggerRef.current.getBoundingClientRect();
+      setColorPickerPlacement({ top: r.bottom + 8, left: r.left });
+    }
+    setIsColorPickerOpen(true);
+  };
+
+  // Close the picker on outside click (trigger + popover count as inside)
+  useEffect(() => {
+    if (!isColorPickerOpen) return undefined;
+    const onDocMouseDown = (event) => {
+      const t = event.target;
+      if (colorTriggerRef.current?.contains(t)) return;
+      if (colorPickerPopoverRef.current?.contains(t)) return;
+      closeColorPicker();
+    };
+    document.addEventListener("mousedown", onDocMouseDown);
+    return () => document.removeEventListener("mousedown", onDocMouseDown);
+  }, [isColorPickerOpen, closeColorPicker]);
+
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       setLogoImage(file);
       const reader = new FileReader();
@@ -58,8 +102,9 @@ export function BillingEntityModal({ showModal, closeModal, onSuccess }) {
     if (isEdit) {
       await updateBillingEntityDetail({
         entityId: showModal.entity_id,
-        billingEntityName: data.billingEntityName,
         creditLimit: data.creditLimit,
+        customerType: data.customerType,
+        colorCode: data.colorCode,
         logoFile: logoImage || null,
         cb: () => {
           onSuccess?.();
@@ -83,8 +128,7 @@ export function BillingEntityModal({ showModal, closeModal, onSuccess }) {
     <div className="modal-body billing-entity-modal">
       <div className="lead-form">
         <form id="billingEntityForm" onSubmit={handleSubmit(onSubmit)}>
-
-          {/* Logo Upload */}
+          {/* ===== Logo Upload ===== */}
           <div className="d-flex justify-content-center mb-4">
             <div className="avatar-outer">
               <div className="avatar-wrapper">
@@ -107,47 +151,142 @@ export function BillingEntityModal({ showModal, closeModal, onSuccess }) {
             </div>
           </div>
 
-          {/* Billing Entity Name + Credit Limit on one row */}
-          <div className="permInputs row mb-lg-3">
-
-            <div className="col-lg-6 col-sm-12 mb-3">
-              <div className="form-field">
-                <div className="form-floating desig-inp">
-                  <input
-                    className={`form-control ${errors.billingEntityName ? "is-invalid" : ""}`}
-                    placeholder="Billing Entity Name"
-                    disabled={isEdit}
-                    {...register("billingEntityName", { required: !isEdit && "Billing Entity Name is required" })}
-                  />
-                  <label>Billing Entity Name <span className="text-danger">*</span></label>
+          {/* ===== Billing Entity Name + Credit Limit ===== */}
+          <div className="mb-lg-3 mb-sm-0">
+            <div className="row g-3">
+              <div className="col-lg-6 col-sm-12">
+                <div className="form-field">
+                  <div className="form-floating desig-inp">
+                    <input
+                      type="text"
+                      className={`form-control ${errors.billingEntityName ? "is-invalid" : ""}`}
+                      placeholder="Billing Entity Name"
+                      disabled={isEdit}
+                      {...register("billingEntityName", { required: !isEdit && "Billing Entity Name is required" })}
+                    />
+                    <label>
+                      Billing Entity Name <span className="text-danger">*</span>
+                    </label>
+                  </div>
+                  {errors.billingEntityName && (
+                    <span className="field-error">{errors.billingEntityName.message}</span>
+                  )}
                 </div>
-                {errors.billingEntityName && (
-                  <span className="field-error">{errors.billingEntityName.message}</span>
-                )}
+              </div>
+
+              <div className="col-lg-6 col-sm-12">
+                <div className="form-field">
+                  <div className="form-floating desig-inp">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className={`form-control ${errors.creditLimit ? "is-invalid" : ""}`}
+                      placeholder="Credit Limit"
+                      {...register("creditLimit")}
+                    />
+                    <label>Credit Limit</label>
+                  </div>
+                  {errors.creditLimit && (
+                    <span className="field-error">{errors.creditLimit.message}</span>
+                  )}
+                </div>
               </div>
             </div>
-
-            <div className="col-lg-6 col-sm-12 mb-3">
-              <div className="form-field">
-                <div className="form-floating desig-inp">
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className={`form-control ${errors.creditLimit ? "is-invalid" : ""}`}
-                    placeholder="Credit Limit"
-                    {...register("creditLimit")}
-                  />
-                  <label>Credit Limit</label>
-                </div>
-                {errors.creditLimit && (
-                  <span className="field-error">{errors.creditLimit.message}</span>
-                )}
-              </div>
-            </div>
-
           </div>
 
+          {/* ===== Customer Type + Color Code ===== */}
+          <div className="mb-lg-3 mb-sm-0">
+            <div className="row g-3">
+              <div className="col-lg-6 col-sm-12">
+                <div className="form-field">
+                  <div className="phone-wrapper">
+                    <label className="phone-label">
+                      Customer Type <span className="text-danger">*</span>
+                    </label>
+                    <Controller
+                      name="customerType"
+                      control={control}
+                      rules={{ required: "Customer Type is required" }}
+                      render={({ field }) => (
+                        <PremiumSelect
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          options={CUSTOMER_TYPE_OPTIONS}
+                          placeholder="Select Customer Type"
+                          searchPlaceholder="Search type..."
+                          hasError={Boolean(errors.customerType)}
+                          menuPortalTarget={
+                            typeof document !== "undefined" ? document.body : undefined
+                          }
+                          menuClassName="user-modal-premium-select-menu"
+                        />
+                      )}
+                    />
+                  </div>
+                  {errors.customerType && (
+                    <span className="field-error">{errors.customerType.message}</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="col-lg-6 col-sm-12">
+                <div className="form-field">
+                  <Controller
+                    name="colorCode"
+                    control={control}
+                    render={({ field }) => (
+                      <>
+                        <div className="form-floating desig-inp billing-entity-color-field">
+                          <input
+                            ref={colorTriggerRef}
+                            type="text"
+                            readOnly
+                            className="form-control"
+                            placeholder="Color Code"
+                            value={field.value?.toUpperCase() ?? ""}
+                            onClick={() => (isColorPickerOpen ? closeColorPicker() : openColorPicker())}
+                            aria-haspopup="dialog"
+                            aria-expanded={isColorPickerOpen}
+                          />
+                          <label>Color Code</label>
+                          <span
+                            className="billing-entity-color-swatch"
+                            style={{ backgroundColor: field.value }}
+                            aria-hidden="true"
+                          />
+                        </div>
+                        {isColorPickerOpen &&
+                          createPortal(
+                            <div
+                              style={{
+                                position: "fixed",
+                                top: colorPickerPlacement.top,
+                                left: colorPickerPlacement.left,
+                                zIndex: COLOR_PICKER_PORTAL_Z,
+                              }}
+                            >
+                              <SedresColorPicker
+                                popoverRef={colorPickerPopoverRef}
+                                popoverId="billing-entity-color-picker"
+                                initialHex={field.value}
+                                onApply={(hex) => {
+                                  field.onChange(normalizeHexColor(hex));
+                                  closeColorPicker();
+                                }}
+                                onCancel={closeColorPicker}
+                                ariaLabel="Pick billing entity color"
+                              />
+                            </div>,
+                            document.body
+                          )}
+                      </>
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </form>
       </div>
     </div>
@@ -159,13 +298,22 @@ export function BillingEntityModal({ showModal, closeModal, onSuccess }) {
         Close
       </button>
       <button type="submit" form="billingEntityForm" className="btn btn-primary" disabled={addEditLoader}>
-        {addEditLoader ? "Saving..." : "Save"}
+        {addEditLoader ? (
+          <div className="spinner-border spinner-border-sm" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        ) : isEdit ? (
+          "Update"
+        ) : (
+          "Save"
+        )}
       </button>
     </div>
   );
 
   return (
     <CustomModal
+      className="user-modal-sm add-edit-user-modal"
       dialgName="modal-dialog modal-dialog-centered"
       show={!!showModal}
       closeModal={() => closeModal(null)}

@@ -63,13 +63,14 @@ const useBillingEntityReducer = create((set) => ({
       );
     }
   },
-  updateBillingEntityDetail: async ({ entityId, billingEntityName, creditLimit, logoFile, cb }) => {
+  updateBillingEntityDetail: async ({ entityId, creditLimit, customerType, colorCode, logoFile, cb }) => {
     try {
       set({ addEditLoader: true });
       const formData = new FormData();
       formData.append('entity_id', entityId);
-      formData.append('billing_entity', billingEntityName);
       formData.append('credit_limit', creditLimit || '');
+      formData.append('customer_type', customerType);
+      formData.append('color_code', colorCode);
       if (logoFile) formData.append('entity_logo', logoFile);
       const { data } = await billingEntityService.updateBillingEntityDetail(formData);
       const { success } = useAlertReducer.getState();
