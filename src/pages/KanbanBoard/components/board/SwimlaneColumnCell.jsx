@@ -1,4 +1,4 @@
-import { useRef, useEffect, useLayoutEffect } from "react";
+import { useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { Droppable } from "@hello-pangea/dnd";
 import PropTypes from "prop-types";
 import CardItem from "../cards/CardItem";
@@ -83,55 +83,51 @@ export default function SwimlaneColumnCell({
     window.dispatchEvent(new CustomEvent("kanban:open-add-card-modal"));
   };
 
+  /* Report the height the cards actually need — never the cell's offsetHeight. The cell gets
+     the shared row min-height (columnHeight) applied, so measuring it fed that height back into
+     the pool and the row could only ever grow (e.g. after a batch collapsed or cards moved out).
+     Empty / collapsed cells report 0 so a stale height doesn't keep the row stretched. */
+  const measureHeight = useCallback(() => {
+    const cell = cellRef.current;
+    if (!cell || !onHeightChange) return;
+
+    let height = 0;
+    const list = cell.querySelector(".card-list");
+    if (list && contentCount > 0 && !isCollapsed) {
+      const cellTop = cell.getBoundingClientRect().top;
+      let contentBottom = 0;
+      for (const child of list.children) {
+        contentBottom = Math.max(contentBottom, child.getBoundingClientRect().bottom - cellTop);
+      }
+      height = Math.ceil(
+        contentBottom +
+          parseFloat(getComputedStyle(list).paddingBottom) +
+          parseFloat(getComputedStyle(cell).borderBottomWidth)
+      );
+    }
+
+    if (lastReportedHeightRef.current !== height) {
+      lastReportedHeightRef.current = height;
+      onHeightChange(column.id, height, laneId);
+    }
+  }, [column.id, laneId, onHeightChange, contentCount, isCollapsed]);
+
   useLayoutEffect(() => {
-    /* Empty columns must never report their height into the shared row-height pool: their
-       own placeholder min-height (see isUnconstrainedEmpty) would otherwise get baked into
-       maxColumnHeights and stretch every column in the row, with no way to shrink back down. */
-    if (!cellRef.current || !onHeightChange || contentCount === 0) return;
-
-    const measureHeight = () => {
-      if (cellRef.current) {
-        const height = cellRef.current.offsetHeight;
-        if (lastReportedHeightRef.current !== height) {
-          lastReportedHeightRef.current = height;
-          onHeightChange(column.id, height, laneId);
-        }
-      }
-    };
-
     measureHeight();
-    const rafId = requestAnimationFrame(() => {
-      measureHeight();
-    });
+    const rafId = requestAnimationFrame(measureHeight);
+    return () => cancelAnimationFrame(rafId);
+  }, [measureHeight]);
 
-    return () => {
-      cancelAnimationFrame(rafId);
-    };
-  }, [contentCount, column.id, laneId, onHeightChange, isCollapsed]);
-
+  /* Watch the cards themselves (batch expand/collapse, card content changes) — the cell box
+     doesn't shrink below its min-height, so observing it would miss content getting smaller. */
   useEffect(() => {
-    if (!cellRef.current || !onHeightChange || contentCount === 0) return;
+    const list = cellRef.current?.querySelector(".card-list");
+    if (!list || !onHeightChange) return;
 
-    const measureHeight = () => {
-      if (cellRef.current) {
-        const height = cellRef.current.offsetHeight;
-        if (lastReportedHeightRef.current !== height) {
-          lastReportedHeightRef.current = height;
-          onHeightChange(column.id, height, laneId);
-        }
-      }
-    };
-
-    const resizeObserver = new ResizeObserver(() => {
-      measureHeight();
-    });
-
-    resizeObserver.observe(cellRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [contentCount, column.id, laneId, onHeightChange, isCollapsed]);
+    const resizeObserver = new ResizeObserver(measureHeight);
+    Array.from(list.children).forEach((child) => resizeObserver.observe(child));
+    return () => resizeObserver.disconnect();
+  }, [measureHeight, onHeightChange]);
 
   if (isCollapsed) {
     return (
