@@ -287,6 +287,13 @@
         background-image: none !important;
         padding-right: 6px;
 
+        // Bootstrap's .form-select.is-invalid:not([multiple]):not([size])
+        // reserves 4.125rem on the right for its warning icon (hidden above),
+        // which pushes react-select's chevron inward.
+        &.is-invalid {
+            padding-right: 6px !important;
+        }
+
         .react-select {
             &__control {
                 border: none !important;
