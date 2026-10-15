@@ -45,7 +45,7 @@
     /* Firefox scrollbar styling */
     scrollbar-width: auto;
     /* Changed from thick to auto for better visibility */
-    scrollbar-color: #00368c #eef1ff;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 
     /* Fix header position so it doesn't scroll with content */
     .sedres-header {
@@ -112,7 +112,7 @@
         /* Firefox scrollbar styling */
         scrollbar-width: auto;
         /* Changed from thick to auto for better visibility */
-        scrollbar-color: #00368c #eef1ff;
+        scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
       }
     }
   }
