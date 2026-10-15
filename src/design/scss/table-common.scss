@@ -864,7 +864,8 @@ $icon-tint-danger: brightness(0) invert(63%) sepia(37%) saturate(1600%) hue-rota
             background-color: var(--bg-highlight) !important;
             color: var(--text-subtle);
             letter-spacing: 0.02em;
-            border-bottom: 1px solid var(--border-strong);
+            // Inset shadow, not a border, so the header keeps its light-mode height
+            box-shadow: inset 0 -1px 0 var(--border-strong);
 
             .sort img {
                 filter: $icon-tint-faint;
@@ -892,7 +893,9 @@ $icon-tint-danger: brightness(0) invert(63%) sepia(37%) saturate(1600%) hue-rota
             // Bootstrap's .table is vertical-align: top
             vertical-align: middle;
             color: var(--text-body);
-            border-bottom: 1px solid var(--divider-row);
+            // Inset shadow, not a border — a 1px border adds to every row and
+            // makes the table taller than in light mode.
+            box-shadow: inset 0 -1px 0 var(--divider-row);
 
             &.custom-table-sl {
                 color: var(--text-subtle);
@@ -909,7 +912,7 @@ $icon-tint-danger: brightness(0) invert(63%) sepia(37%) saturate(1600%) hue-rota
         }
 
         tbody tr:last-child td {
-            border-bottom: none;
+            box-shadow: none;
         }
 
         // Avatar initials — the inset ring defines the circle's edge, which
@@ -962,7 +965,8 @@ $icon-tint-danger: brightness(0) invert(63%) sepia(37%) saturate(1600%) hue-rota
             }
         }
 
-        // Actions column — one flex row, every control in a 32px box
+        // Actions column — one flex row, every control in a 26px box
+        // (the avatar height, so rows match light mode)
         .actions {
             display: flex;
             align-items: center;
@@ -972,7 +976,7 @@ $icon-tint-danger: brightness(0) invert(63%) sepia(37%) saturate(1600%) hue-rota
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                height: 32px;
+                height: 26px;
                 // Spacing comes from `gap`; the toggle/permission wrappers set
                 // an inline marginRight, which only !important can override.
                 margin: 0 !important;
@@ -983,7 +987,7 @@ $icon-tint-danger: brightness(0) invert(63%) sepia(37%) saturate(1600%) hue-rota
             > .edit,
             > .permission,
             > .delete {
-                width: 32px;
+                width: 26px;
 
                 img {
                     width: 18px;
