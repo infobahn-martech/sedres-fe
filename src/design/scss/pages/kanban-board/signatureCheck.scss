@@ -1,4 +1,5 @@
-// L&T Backlog cards coloured by their SCC signature check, and the Signature Check popup.
+// L&T Backlog cards with no SCC signature turn red (signed cards keep the common colour), and the
+// Signature Check popup.
 
 .kanban-card.kanban-card--signature-missing {
   background: #fdecec;
@@ -9,22 +10,9 @@
   }
 }
 
-.kanban-card.kanban-card--signature-signed {
-  background: #e7f6ec;
-  border-color: #16a34a;
-
-  &.kanban-card--selected-for-action {
-    background: linear-gradient(to bottom, #cdeed8 0%, #e7f6ec 35%);
-  }
-}
-
-// The shared card hover recolours the border; keep the signature colour on hover.
+// The shared card hover recolours the border; keep the red on hover.
 .kanban-card.kanban-card--signature-missing:hover {
   border-color: #dc2626;
-}
-
-.kanban-card.kanban-card--signature-signed:hover {
-  border-color: #16a34a;
 }
 
 [data-theme="dark"] .kanban-board--swimlanes .kanban-card {
@@ -32,12 +20,6 @@
   &.kanban-card--signature-missing:hover {
     background: #3b1d1d;
     border-color: #dc2626;
-  }
-
-  &.kanban-card--signature-signed,
-  &.kanban-card--signature-signed:hover {
-    background: #17301f;
-    border-color: #16a34a;
   }
 }
 

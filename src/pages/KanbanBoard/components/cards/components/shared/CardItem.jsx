@@ -670,7 +670,7 @@ function CardItem({
     SAIPEM_WORKFLOW_PATTERN.test(workflowTitle ?? "") && String(columnTitle ?? "").trim().toLowerCase() === "backlog";
   const isExportApprovalHeld =
     isSaipemBacklogCard && (exportApprovalStatus === "pending" || exportApprovalStatus === "loading");
-  /* L&T Backlog cards show the result of their SCC signature check: red when missing, green when signed. */
+  /* L&T Backlog cards whose SCC signature check is "missing" turn red; the rest keep the common colour. */
   const signatureCheck = useSignatureCheckStore((state) =>
     isLntBacklog(workflowTitle, columnTitle) ? state.statusByCardId[String(card?.id)] : undefined
   );
@@ -734,7 +734,7 @@ function CardItem({
     <Draggable draggableId={card.id} index={index} isDragDisabled={KANBAN_DND_DISABLED || isDragDisabled}>
       {(provided, snapshot) => (
         <div
-          className={`kanban-card ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""} ${signatureStatus ? `kanban-card--signature-${signatureStatus}` : ""}`}
+          className={`kanban-card ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""} ${signatureStatus === "missing" ? "kanban-card--signature-missing" : ""}`}
           title={signatureTooltip}
           ref={provided.innerRef}
           {...(KANBAN_DND_DISABLED ? {} : provided.draggableProps)}
