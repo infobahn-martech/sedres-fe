@@ -69,3 +69,24 @@
     padding: 1px 8px;
     white-space: nowrap;
 }
+
+// Dark mode — palette tokens live in partials/_theme.scss. --color-primary is
+// navy and the badge fill is a fixed light tint, so both vanish/glare on navy.
+[data-theme="dark"] {
+    .cpt-tariff-title {
+        color: var(--brand-bright);
+    }
+
+    .cpt-tariff-table {
+        // Bootstrap's .table-bordered draws every edge in this color, which
+        // otherwise stays a light gray in dark mode.
+        --bs-table-border-color: var(--border-strong);
+        background: var(--bg-inset);
+    }
+
+    .cpt-service-code-badge {
+        color: var(--brand-bright);
+        background: rgba(76, 141, 255, 0.18);
+        box-shadow: inset 0 0 0 1px rgba(76, 141, 255, 0.35);
+    }
+}

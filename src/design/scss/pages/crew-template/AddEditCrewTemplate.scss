@@ -256,9 +256,70 @@
   }
 }
 
-// Dark theme — modal section title was hard-coded to dark blue (#00368C / #0c234c)
+// Dark theme — the rules above use fixed light-theme SCSS colors ($colorPrimary,
+// $txtColor, $borderLight), which don't follow the theme tokens. Palette tokens
+// live in partials/_theme.scss.
 [data-theme="dark"] {
-  .crew-template-modal .form-section-title {
-    color: var(--text-heading);
+  .crew-template-modal {
+    .modal-body::-webkit-scrollbar-thumb {
+      background: var(--border-strong);
+    }
+
+    .form-section-title {
+      color: var(--text-heading);
+      border-bottom-color: var(--border-strong);
+    }
+
+    .form-field-label {
+      color: var(--text-subtle);
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 3px rgba(76, 141, 255, 0.25);
+    }
+
+    .crew-template-upload-zone {
+      border-color: var(--border-strong);
+      background: var(--bg-inset);
+
+      &:hover {
+        border-color: var(--brand-bright);
+        background: var(--bg-inset);
+      }
+
+      &.dragging {
+        border-color: var(--brand-bright);
+        background: rgba(76, 141, 255, 0.08);
+        box-shadow: 0 0 0 3px rgba(76, 141, 255, 0.25);
+      }
+
+      &.is-invalid {
+        border-color: #dc3545;
+      }
+    }
+
+    .upload-icon,
+    .upload-link {
+      color: var(--brand-bright);
+    }
+
+    .upload-main-text {
+      color: var(--text-body);
+    }
+
+    .upload-sub-text {
+      color: var(--text-subtle);
+    }
+
+    .upload-file-item {
+      border-color: var(--border-strong);
+      background: var(--bg-inset);
+
+      .file-name {
+        color: var(--text-control);
+      }
+    }
   }
 }
