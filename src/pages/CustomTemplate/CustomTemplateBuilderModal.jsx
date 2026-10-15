@@ -68,10 +68,13 @@ const mapTemplateField = (f) => {
         type: f.type ?? f.type_key ?? "text",
         required: isFlagTrue(f.required ?? f.is_required),
         options: rawOptions.map((opt) => (typeof opt === "string" ? opt : (opt?.option_label ?? ""))),
+        // Parallel to `options` (which stay plain strings for the editor/preview);
+        // carries each saved option's option_id so an update edits it in place.
+        optionIds: f.optionIds ?? rawOptions.map((opt) => opt?.option_id ?? null),
         optionsSource: f.optionsSource ?? (f.option_source === "master" ? "master" : "manual"),
         masterModule: f.masterModule ?? f.master_key ?? "",
-        gridRow: f.gridRow ?? f.grid_row ?? null,
-        gridCol: f.gridCol ?? f.grid_col ?? null,
+        gridRow: f.gridRow ?? f.row_no ?? f.grid_row ?? null,
+        gridCol: f.gridCol ?? f.col_no ?? f.grid_col ?? null,
     };
 };
 
@@ -717,6 +720,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             const next = { ...f, [key]: value };
             if (key === "type" && optionsFieldTypes.has(value) && (!next.options || next.options.length === 0)) {
                 next.options = ["Option 1"];
+                next.optionIds = [null];
             }
             if (key === "type" && value === dropdownTypeKey && !next.optionsSource) {
                 next.optionsSource = "manual";
@@ -762,7 +766,11 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     const handleAddOption = (fieldId) => {
         updateFieldsScope((fields) => fields.map((f) => (
-            f.id === fieldId ? { ...f, options: [...(f.options ?? []), `Option ${(f.options?.length ?? 0) + 1}`] } : f
+            f.id === fieldId ? {
+                ...f,
+                options: [...(f.options ?? []), `Option ${(f.options?.length ?? 0) + 1}`],
+                optionIds: [...(f.optionIds ?? []), null],
+            } : f
         )));
     };
 
@@ -777,7 +785,11 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     const handleRemoveOption = (fieldId, idx) => {
         updateFieldsScope((fields) => fields.map((f) => (
-            f.id === fieldId ? { ...f, options: (f.options ?? []).filter((_, i) => i !== idx) } : f
+            f.id === fieldId ? {
+                ...f,
+                options: (f.options ?? []).filter((_, i) => i !== idx),
+                optionIds: (f.optionIds ?? []).filter((_, i) => i !== idx),
+            } : f
         )));
     };
 
@@ -864,13 +876,18 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         if (optionsFieldTypes.has(field.type) && !isLegacyCheckbox) {
             payload.option_source = field.type === dropdownTypeKey && field.optionsSource === "master" ? "master" : "static";
             if (payload.option_source === "master") {
-                payload.master_module = field.masterModule;
+                payload.master_key = field.masterModule;
             } else {
-                payload.options = (field.options ?? []).map((opt, i) => ({
-                    option_label: opt,
-                    option_value: opt.trim().toLowerCase().replace(/\s+/g, "_"),
-                    display_order: i + 1,
-                }));
+                payload.options = (field.options ?? []).map((opt, i) => {
+                    const optionPayload = {
+                        option_label: opt,
+                        option_value: opt.trim().toLowerCase().replace(/\s+/g, "_"),
+                        display_order: i + 1,
+                    };
+                    const optionId = field.optionIds?.[i];
+                    if (optionId) optionPayload.option_id = Number(optionId);
+                    return optionPayload;
+                });
             }
         }
         return payload;
@@ -880,8 +897,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         const layout = resolveFieldLayout(fields);
         return fields.map((field, index) => ({
             ...buildFieldPayload(field, index),
-            grid_row: layout[index].row,
-            grid_col: layout[index].col,
+            row_no: layout[index].row,
+            col_no: layout[index].col,
         }));
     };
 
@@ -889,6 +906,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         const payload = {
             tab_label: tab.name,
             is_system: MAIN_TAB_NAMES.includes(tab.name) ? 1 : 0,
+            email_preview: getEmailPreviewSubject(tab.name) ? 1 : 0,
             display_order: tabIndex + 1,
             fields: tab.subTabs?.length ? [] : buildFieldsPayload(tab.fields),
         };
@@ -897,6 +915,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             payload.subtabs = tab.subTabs.map((sub, subIndex) => {
                 const subPayload = {
                     tab_label: sub.name,
+                    email_preview: getEmailPreviewSubject(tab.name, sub.name) ? 1 : 0,
                     display_order: subIndex + 1,
                     fields: buildFieldsPayload(sub.fields),
                 };
