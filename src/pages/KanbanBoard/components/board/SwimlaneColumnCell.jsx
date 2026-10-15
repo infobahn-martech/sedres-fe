@@ -9,7 +9,7 @@ import { buildSwimlaneDroppableId } from "../../hooks/useKanbanDnD";
 import { CARD_GAP, CELL_PADDING_X, getCardsPerRow, getCardWidth } from "../../utils/boardGridHelpers";
 import usePermissions from "../../../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES } from "../../../../shared/constants/permissions";
-import { isSubmittedInvoicesColumnTitle } from "../../utils/columnTitles";
+import { isSubmittedInvoicesColumnTitle, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
 import "../../../../design/scss/pages/kanban-board/column.scss";
 
 const EMPTY_SELECTED_IDS = [];
@@ -41,10 +41,12 @@ export default function SwimlaneColumnCell({
   onToggleCardSelect,
   onCardSelectDragStart,
   onCardSelectDragEnter,
+  onUploadDispatchProof,
   batches = EMPTY_BATCHES,
 }) {
   const { hasModule } = usePermissions();
   const canViewCards = hasModule(PERMISSION_MODULES.KANBAN_CARD);
+  const isUploadedToPortal = isUploadedToPortalColumnTitle(column.title);
   const EMPTY_DROP_ZONE_MIN_HEIGHT = 240;
   /* Only fall back to the big placeholder height when nothing else in the row sets a
      height — otherwise an empty column would stretch the whole swimlane row to 720px
@@ -233,7 +235,12 @@ export default function SwimlaneColumnCell({
                   workflowTitle={workflowTitle}
                   fixedDimensions={{ width: cardWidth }}
                   isSelectedForAction={selectedActionCardIds.includes(card.id)}
-                  onToggleSelectForAction={hideCardSelect || isSubmittedInvoicesColumnTitle(column.title) ? undefined : onToggleCardSelect}
+                  onToggleSelectForAction={
+                    hideCardSelect || isSubmittedInvoicesColumnTitle(column.title) || isUploadedToPortal
+                      ? undefined
+                      : onToggleCardSelect
+                  }
+                  onUploadDispatchProof={isUploadedToPortal ? onUploadDispatchProof : undefined}
                   onSelectDragStart={onCardSelectDragStart}
                   onSelectDragEnter={onCardSelectDragEnter}
                 />
@@ -248,6 +255,7 @@ export default function SwimlaneColumnCell({
 }
 
 SwimlaneColumnCell.propTypes = {
+  onUploadDispatchProof: PropTypes.func,
   laneId: PropTypes.string.isRequired,
   column: PropTypes.shape({
     id: PropTypes.string.isRequired,

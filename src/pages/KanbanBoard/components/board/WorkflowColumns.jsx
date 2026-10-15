@@ -122,6 +122,7 @@ export default function WorkflowColumns({
   onColumnSendInvoice,
   onColumnMergeInvoice,
   onColumnDownloadInvoices,
+  onUploadDispatchProof,
   onColumnPrepareSubmission,
   onColumnSendSubmission,
   onContextMenu,
@@ -544,6 +545,7 @@ export default function WorkflowColumns({
                         onToggleCardSelect={onToggleCardSelect}
                         onCardSelectDragStart={onCardSelectDragStart}
                         onCardSelectDragEnter={onCardSelectDragEnter}
+                        onUploadDispatchProof={onUploadDispatchProof}
                         batches={getBatchesForColumn(colKey, laneId)}
                       />
                     );
