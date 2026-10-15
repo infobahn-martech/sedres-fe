@@ -2,6 +2,8 @@ import Gateway from '../gateway/gateway';
 
 const getFieldTypes = () => Gateway.get('/form_template/field_types');
 
+const getMasterLookups = () => Gateway.get('/form_template/master_lookups');
+
 const getCallTypes = () => Gateway.get('/calltype');
 
 const getTemplateList = (params) => Gateway.get('/form_template/list', { params });
@@ -12,6 +14,7 @@ const saveCardTemplate = (payload) => Gateway.post('/form_template/save_card_tem
 
 export default {
   getFieldTypes,
+  getMasterLookups,
   getCallTypes,
   getTemplateList,
   getTemplateById,

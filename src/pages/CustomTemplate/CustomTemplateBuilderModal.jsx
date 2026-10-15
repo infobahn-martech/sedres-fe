@@ -15,15 +15,6 @@ import "../../design/scss/operations.scss";
 import "../../design/scss/pages/callTypeBuilder.scss";
 import "../../design/scss/pages/customTemplateBuilder.scss";
 
-const MASTER_MODULES = [
-    { value: "vessel_types", label: "Vessel Types" },
-    { value: "barge_types", label: "Barge Types" },
-    { value: "tug_types", label: "Tug Types" },
-    { value: "billing_entities", label: "Billing Entities" },
-    { value: "ports", label: "Ports" },
-    { value: "countries", label: "Countries" },
-];
-
 const OPTIONS_SOURCE_CARDS = [
     { value: "manual", title: "Manual Options", desc: "Add your own options for this field" },
     { value: "master", title: "Master Data", desc: "Use options from an existing master module" },
@@ -104,14 +95,14 @@ const DEFAULT_TAB_STRUCTURE = {
             ["Appointment Type", "dropdown"],
             ["Appointment Received", "datetime"],
             ["Call Type", "dropdown"],
-            ["Port", "dropdown", { optionsSource: "master", masterModule: "ports" }],
+            ["Port", "dropdown", { optionsSource: "master" }],
             ["Expected Time of Arrival", "datetime"],
             ["Expected Commencement of Custom Inspection", "datetime"],
             ["Expected Time of Departure", "datetime"],
             ["Last Port", "text"],
-            ["Vessel Type", "dropdown", { optionsSource: "master", masterModule: "vessel_types" }],
+            ["Vessel Type", "dropdown", { optionsSource: "master", masterModule: "vessel_type" }],
             ["Vessel Name", "text"],
-            ["Billing Entity", "dropdown", { optionsSource: "master", masterModule: "billing_entities" }],
+            ["Billing Entity", "dropdown", { optionsSource: "master", masterModule: "billing_entity" }],
             ["Vessel Owner", "text"],
             ["Vessel Charterer", "text"],
             ["Checklist", "dropdown"],
@@ -237,6 +228,12 @@ const buildDropdownTypeKey = (apiFieldTypes) => {
     return match ? String(match.type_key ?? "").toLowerCase() : "dropdown";
 };
 
+// Master Data modules come from the master_lookups API.
+const buildMasterModuleOptions = (masterLookups) => (masterLookups ?? []).map((m) => ({
+    value: String(m.master_key ?? ""),
+    label: m.label ?? m.master_key,
+}));
+
 function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption }) {
     const options = field.options ?? [];
     return (
@@ -274,7 +271,7 @@ function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption
 
 // Dropdown-only: lets the user choose between typing options manually and
 // sourcing them from an existing master module (e.g. Vessel Types).
-function OptionsSourceEditor({ field, onSetSource, onSetMasterModule, onAddOption, onUpdateOption, onRemoveOption }) {
+function OptionsSourceEditor({ field, masterModuleOptions, masterModulesLoading, onSetSource, onSetMasterModule, onAddOption, onUpdateOption, onRemoveOption }) {
     const source = field.optionsSource ?? "manual";
     return (
         <div className="ctm-options-source">
@@ -311,8 +308,9 @@ function OptionsSourceEditor({ field, onSetSource, onSetMasterModule, onAddOptio
                         className="ctm-master-module-select"
                         value={field.masterModule ?? ""}
                         onChange={(e) => onSetMasterModule(e.target.value)}
-                        options={MASTER_MODULES}
-                        placeholder="Select module..."
+                        options={masterModuleOptions}
+                        placeholder={masterModulesLoading ? "Loading..." : "Select module..."}
+                        disabled={masterModulesLoading}
                         menuPortalTarget={document.body}
                         menuPlacement="auto"
                     />
@@ -323,10 +321,10 @@ function OptionsSourceEditor({ field, onSetSource, onSetMasterModule, onAddOptio
 }
 
 // One-line summary shown on a collapsed field card, e.g. "Dropdown · 3 options".
-const getFieldSummary = (field, typeLabel, isDropdown, hasOptions) => {
+const getFieldSummary = (field, typeLabel, isDropdown, hasOptions, masterModuleOptions) => {
     const parts = [typeLabel || "No type selected"];
     if (isDropdown && field.optionsSource === "master") {
-        const mod = MASTER_MODULES.find((m) => m.value === field.masterModule);
+        const mod = masterModuleOptions.find((m) => m.value === field.masterModule);
         parts.push(mod ? `Master: ${mod.label}` : "Master data");
     } else if (hasOptions) {
         const count = field.options?.length ?? 0;
@@ -335,14 +333,14 @@ const getFieldSummary = (field, typeLabel, isDropdown, hasOptions) => {
     return parts.join(" · ");
 };
 
-function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, optionsFieldTypes, dropdownTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
+function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterModuleOptions, masterModulesLoading, optionsFieldTypes, dropdownTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
     // New (unlabelled) fields open ready to edit; existing ones start collapsed
     // so long templates stay scannable.
     const [expanded, setExpanded] = useState(() => !field.label.trim());
     const showOptionsSource = field.type === dropdownTypeKey;
     const showManualOptions = !showOptionsSource && optionsFieldTypes.has(field.type);
     const typeLabel = fieldTypeOptions.find((o) => o.value === field.type)?.label ?? "";
-    const summary = getFieldSummary(field, typeLabel, showOptionsSource, showManualOptions || showOptionsSource);
+    const summary = getFieldSummary(field, typeLabel, showOptionsSource, showManualOptions || showOptionsSource, masterModuleOptions);
     return (
         <div
             className={`ctm-field-card ${expanded ? "is-expanded" : ""} ${isDragging ? "is-dragging" : ""} ${isDragOver ? "is-drag-over" : ""}`}
@@ -434,6 +432,8 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, optionsF
                     {showOptionsSource && (
                         <OptionsSourceEditor
                             field={field}
+                            masterModuleOptions={masterModuleOptions}
+                            masterModulesLoading={masterModulesLoading}
                             onSetSource={(source) => onSetOptionsSource(field.id, source)}
                             onSetMasterModule={(mod) => onSetMasterModule(field.id, mod)}
                             onAddOption={() => onAddOption(field.id)}
@@ -470,6 +470,7 @@ function PreviewCloseButton({ label, onClick }) {
 function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const {
         getFieldTypes, fieldTypes, isLoadingFieldTypes,
+        getMasterLookups, masterLookups, isLoadingMasterLookups,
         getCallTypes, callTypes, isLoadingCallTypes: callTypesLoading,
         saveCardTemplate, isSaving,
     } = useFormTemplateReducer((s) => s);
@@ -514,6 +515,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const fieldTypeOptions = useMemo(() => buildFieldTypeOptions(fieldTypes), [fieldTypes]);
     const optionsFieldTypes = useMemo(() => buildOptionsFieldTypeSet(fieldTypes), [fieldTypes]);
     const dropdownTypeKey = useMemo(() => buildDropdownTypeKey(fieldTypes), [fieldTypes]);
+    const masterModuleOptions = useMemo(() => buildMasterModuleOptions(masterLookups), [masterLookups]);
 
     const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
     const hasSubTabs = Boolean(activeTab?.subTabs?.length);
@@ -549,6 +551,12 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             getFieldTypes();
         }
     }, [fieldTypes, getFieldTypes]);
+
+    useEffect(() => {
+        if (masterLookups === null) {
+            getMasterLookups();
+        }
+    }, [masterLookups, getMasterLookups]);
 
     const resetState = () => {
         const seed = getTemplateSeed(initialTemplate);
@@ -1198,6 +1206,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         index={index}
                                         fieldTypeOptions={fieldTypeOptions}
                                         fieldTypesLoading={isLoadingFieldTypes}
+                                        masterModuleOptions={masterModuleOptions}
+                                        masterModulesLoading={isLoadingMasterLookups}
                                         optionsFieldTypes={optionsFieldTypes}
                                         dropdownTypeKey={dropdownTypeKey}
                                         isDragging={dragIndex === index}

@@ -5,6 +5,8 @@ import useAlertReducer from './AlertReducer';
 const useFormTemplateReducer = create((set) => ({
   isLoadingFieldTypes: false,
   fieldTypes: null,
+  isLoadingMasterLookups: false,
+  masterLookups: null,
   isLoadingCallTypes: false,
   callTypes: null,
   isLoadingTemplates: false,
@@ -23,6 +25,19 @@ const useFormTemplateReducer = create((set) => ({
       // retries instead of getting stuck with a permanently empty type list.
       set({ isLoadingFieldTypes: false });
       showError(error?.response?.data?.message ?? error?.message ?? 'Failed to fetch field types');
+    }
+  },
+
+  getMasterLookups: async () => {
+    try {
+      set({ isLoadingMasterLookups: true });
+      const { data } = await formTemplateService.getMasterLookups();
+      set({ masterLookups: data?.data ?? [], isLoadingMasterLookups: false });
+    } catch (error) {
+      const { error: showError } = useAlertReducer.getState();
+      // Leave masterLookups as null on failure so the next mount retries.
+      set({ isLoadingMasterLookups: false });
+      showError(error?.response?.data?.message ?? error?.message ?? 'Failed to fetch master modules');
     }
   },
 
