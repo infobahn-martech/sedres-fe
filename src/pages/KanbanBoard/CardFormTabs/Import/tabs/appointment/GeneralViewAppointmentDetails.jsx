@@ -6,7 +6,7 @@ import {
   formatDateTime,
   splitApiDateTimeValue,
   firstNonEmptyString,
-} from "./General";
+} from "./generalHelpers";
 
 const APPOINTMENT_TYPE_LABELS = {
   tug: "Taxi Tug",
