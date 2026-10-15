@@ -375,6 +375,23 @@ body .stage-time-mapping-modal .modal-dialog {
   box-shadow: 0 24px 56px rgba(15, 23, 42, 0.14);
 }
 
+/*
+  Dark mode — the time-object list is built from Bootstrap utilities
+  (.bg-light, .text-muted, .border*), which ignore the theme tokens. They read
+  these Bootstrap variables, so remapping them here recolors the utilities
+  without fighting their !important.
+*/
+[data-theme="dark"] .stage-time-mapping-modal {
+  --bs-light-rgb: 11, 20, 38; // --bg-inset
+  --bs-secondary-color: var(--text-subtle);
+  --bs-border-color: var(--border-strong);
+
+  // The scrollable time-object list
+  .bg-light {
+    scrollbar-color: var(--border-strong) transparent;
+  }
+}
+
 /* Make USER Modal Smaller */
 /* Bootstrap modals are rendered in a portal at body level */
 body .user-modal-sm {
