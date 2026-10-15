@@ -12,7 +12,12 @@ import { Tag, Layers3, AlertTriangle, Sticker } from "lucide-react";
 import ColorPickerIcon from "../../assets/images/ColorPicker.png";
 import SedresColorPicker from "../../components/SedresColorPicker/SedresColorPicker";
 import { normalizeHexColor } from "../../components/SedresColorPicker/sedresColorPickerConstants";
-import { BOARD_META_PICKERS, unwrapListFromApi, CardMetaPickerPopover } from "../KanbanBoard/utils/cardMetaPickers";
+import {
+  BOARD_META_PICKERS,
+  unwrapListFromApi,
+  CardMetaPickerPopover,
+  META_PICKER_WIDTH,
+} from "../KanbanBoard/utils/cardMetaPickers";
 
 import "../../design/scss/pages/kanban-board/cardForm.scss";
 import "../../design/css/common/CardForm.css";
@@ -20,7 +25,6 @@ import "../../design/scss/pages/taskCard.scss";
 import "../../design/scss/invoice.scss";
 import DateTimePickerField from "../KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 
-const META_PICKER_WIDTH = 272;
 // Matches $tc-green in taskCard.scss (the topbar's default background).
 const TASK_CARD_TOPBAR_DEFAULT_HEX = "#2e7d32";
 const META_PICKER_ICONS = {

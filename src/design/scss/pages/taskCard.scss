@@ -20,7 +20,7 @@ $tc-font:         "Manrope", sans-serif;
   gap: 20px;
 
   // Tag/Type/Blocker/Sticker pickers reuse CardForm's floating popover
-  // (.cardform-type-picker-*, from cardForm.scss) — this button just needs a
+  // (.picker-popover, from cardForm.scss) — this button just needs a
   // small selected-color indicator dot of its own.
   .topbar-icon-btn {
     position: relative;

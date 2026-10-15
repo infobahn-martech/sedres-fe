@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import PropTypes from "prop-types";
+import { Check, Inbox, X } from "lucide-react";
 import kanbanBoardService from "../../../services/kanbanBoardService";
 import { normalizeHexColor } from "../../../components/SedresColorPicker/sedresColorPickerConstants";
 import { mapBackendIconNameToIconKey } from "../../../store/KanbanManagementReducer";
@@ -159,14 +160,17 @@ export const BOARD_META_PICKERS = {
   },
 };
 
-const CardMetaPickerSwatch = ({ colorCode, iconKey }) => {
-  const fg = contrastIconFg(colorCode);
-  return (
-    <span className="cardform-type-picker-row-icon" style={{ backgroundColor: colorCode }} aria-hidden>
-      <DynamicIcon iconKey={iconKey} size={14} color={fg} />
-    </span>
-  );
-};
+export const META_PICKER_WIDTH = 300;
+
+const CardMetaPickerSwatch = ({ colorCode, iconKey }) => (
+  <span
+    className="picker-popover__tile picker-popover__tile--swatch"
+    style={{ backgroundColor: colorCode }}
+    aria-hidden
+  >
+    {iconKey ? <DynamicIcon iconKey={iconKey} size={16} color={contrastIconFg(colorCode)} /> : null}
+  </span>
+);
 
 CardMetaPickerSwatch.propTypes = {
   colorCode: PropTypes.string.isRequired,
@@ -191,51 +195,71 @@ export const CardMetaPickerPopover = ({
 }) => (
   <div
     ref={wrapRef}
-    className="cardform-type-picker-popover"
-    style={floaterStyle}
+    className="picker-popover"
+    style={{ ...floaterStyle, width: META_PICKER_WIDTH }}
     role="listbox"
     aria-label={header}
   >
-    <div className="cardform-type-picker-header">{header}</div>
-    {hasSelection && (
-      <button
-        type="button"
-        className="cardform-type-picker-remove-btn"
-        onClick={onRemove}
-        disabled={saving}
-      >
-        <span>{removeLabel}</span>
-      </button>
-    )}
+    <div className="picker-popover__header">
+      <div className="picker-popover__header-text">
+        <span className="picker-popover__title">{header}</span>
+      </div>
+    </div>
+
     {loading ? (
-      <div className="cardform-type-picker-status">Loading…</div>
+      <ul className="picker-popover__list" aria-busy="true">
+        {[0, 1, 2].map((i) => (
+          <li key={i} className="picker-popover__skeleton">
+            <span className="picker-popover__skeleton-tile" />
+            <span className="picker-popover__skeleton-lines">
+              <span />
+            </span>
+          </li>
+        ))}
+      </ul>
     ) : items.length === 0 ? (
-      <div className="cardform-type-picker-status">
-        {hasBoardId ? `No ${emptyLabel} available for this board.` : "Board id is missing."}
+      <div className="picker-popover__empty">
+        <Inbox size={22} aria-hidden />
+        <span>{hasBoardId ? `No ${emptyLabel} available for this board.` : "Board id is missing."}</span>
       </div>
     ) : (
-      <ul className="cardform-type-picker-list">
+      <ul className="picker-popover__list">
         {items.map((row) => {
           const isSelected = selectedId === row.id;
           return (
             <li key={row.id || row.name}>
               <button
                 type="button"
-                className={`cardform-type-picker-row${isSelected ? " cardform-type-picker-row--selected" : ""}${!showRowIcon ? " cardform-type-picker-row--text-only" : ""}`}
+                className={`picker-popover__row${isSelected ? " picker-popover__row--selected" : ""}`}
                 onClick={() => onSelect(row)}
                 disabled={saving}
                 role="option"
                 aria-selected={isSelected}
+                title={row.name}
               >
                 {showRowIcon ? (
                   <CardMetaPickerSwatch colorCode={row.color_code} iconKey={row.iconKey} />
                 ) : null}
-                <span className="cardform-type-picker-row-label">{row.name}</span>
+                <span className="picker-popover__body">
+                  <span className="picker-popover__name">{row.name}</span>
+                </span>
+                <span className="picker-popover__check" aria-hidden>
+                  <Check size={12} strokeWidth={3} />
+                </span>
               </button>
             </li>
           );
         })}
       </ul>
+    )}
+
+    {hasSelection && (
+      <div className="picker-popover__footer">
+        <button type="button" className="picker-popover__clear" onClick={onRemove} disabled={saving}>
+          <X size={13} aria-hidden />
+          {removeLabel}
+        </button>
+      </div>
     )}
   </div>
 );

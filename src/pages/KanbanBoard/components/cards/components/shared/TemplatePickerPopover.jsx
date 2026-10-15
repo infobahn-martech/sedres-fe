@@ -47,19 +47,19 @@ const TemplatePickerPopover = ({
   return (
     <div
       ref={wrapRef}
-      className="template-picker"
+      className="picker-popover"
       style={{ ...floaterStyle, width: TEMPLATE_PICKER_WIDTH }}
       role="listbox"
       aria-label="Select template"
     >
-      <div className="template-picker__header">
-        <div className="template-picker__header-text">
-          <span className="template-picker__title">Templates</span>
+      <div className="picker-popover__header">
+        <div className="picker-popover__header-text">
+          <span className="picker-popover__title">Templates</span>
         </div>
       </div>
 
       {showSearch && (
-        <div className="template-picker__search">
+        <div className="picker-popover__search">
           <Search size={14} aria-hidden />
           <input
             type="text"
@@ -73,11 +73,11 @@ const TemplatePickerPopover = ({
       )}
 
       {loading ? (
-        <ul className="template-picker__list" aria-busy="true">
+        <ul className="picker-popover__list" aria-busy="true">
           {[0, 1, 2].map((i) => (
-            <li key={i} className="template-picker__skeleton">
-              <span className="template-picker__skeleton-tile" />
-              <span className="template-picker__skeleton-lines">
+            <li key={i} className="picker-popover__skeleton">
+              <span className="picker-popover__skeleton-tile" />
+              <span className="picker-popover__skeleton-lines">
                 <span />
                 <span />
               </span>
@@ -85,32 +85,32 @@ const TemplatePickerPopover = ({
           ))}
         </ul>
       ) : visibleRows.length === 0 ? (
-        <div className="template-picker__empty">
+        <div className="picker-popover__empty">
           <FileText size={22} aria-hidden />
           <span>{rows.length === 0 ? "No templates available yet." : "No templates match your search."}</span>
         </div>
       ) : (
-        <ul className="template-picker__list">
+        <ul className="picker-popover__list">
           {visibleRows.map((row) => {
             const isSelected = selectedId === row.id;
             return (
               <li key={row.id}>
                 <button
                   type="button"
-                  className={`template-picker__row${isSelected ? " template-picker__row--selected" : ""}`}
+                  className={`picker-popover__row${isSelected ? " picker-popover__row--selected" : ""}`}
                   onClick={() => onSelect(row)}
                   role="option"
                   aria-selected={isSelected}
                   title={row.name}
                 >
-                  <span className={`template-picker__tile template-picker__tile--${row.tone}`} aria-hidden>
+                  <span className={`picker-popover__tile picker-popover__tile--${row.tone}`} aria-hidden>
                     <FileText size={16} />
                   </span>
-                  <span className="template-picker__body">
-                    <span className="template-picker__name">{row.title}</span>
+                  <span className="picker-popover__body">
+                    <span className="picker-popover__name">{row.title}</span>
                     
                   </span>
-                  <span className="template-picker__check" aria-hidden>
+                  <span className="picker-popover__check" aria-hidden>
                     <Check size={12} strokeWidth={3} />
                   </span>
                 </button>
@@ -121,8 +121,8 @@ const TemplatePickerPopover = ({
       )}
 
       {selectedId && (
-        <div className="template-picker__footer">
-          <button type="button" className="template-picker__clear" onClick={onRemove}>
+        <div className="picker-popover__footer">
+          <button type="button" className="picker-popover__clear" onClick={onRemove}>
             <X size={13} aria-hidden />
             Clear selection
           </button>

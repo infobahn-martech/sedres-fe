@@ -3051,135 +3051,8 @@ $gro-supervisor-control-border: #d0d5dd;
   }
 }
 
-/* CardForm header — floating card type picker */
-.cardform-type-picker-popover {
-  width: 272px;
-  max-height: min(320px, calc(100vh - 32px));
-  background: var(--surface-primary);
-  border-radius: 12px;
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(15, 23, 42, 0.06);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-.cardform-type-picker-header {
-  padding: 10px 14px 8px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--border-primary);
-  flex-shrink: 0;
-}
-
-.cardform-type-picker-status {
-  padding: 16px 14px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  text-align: center;
-  line-height: 1.4;
-}
-
-.cardform-type-picker-remove-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border: none;
-  border-bottom: 1px solid var(--border-primary);
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  font-family: "Manrope", sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  color: #dc2626;
-  flex-shrink: 0;
-  transition: background 0.15s ease;
-}
-
-.cardform-type-picker-remove-btn:hover:not(:disabled) {
-  background: var(--surface-primary);
-}
-
-.cardform-type-picker-remove-btn:disabled {
-  cursor: wait;
-  opacity: 0.7;
-}
-
-.cardform-type-picker-list {
-  list-style: none;
-  margin: 0;
-  padding: 6px;
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-}
-
-.cardform-type-picker-row {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  font-family: "Manrope", sans-serif;
-}
-
-.cardform-type-picker-row:hover:not(:disabled) {
-  background: var(--surface-primary);
-}
-
-.cardform-type-picker-row:disabled {
-  cursor: wait;
-  opacity: 0.7;
-}
-
-.cardform-type-picker-row--selected {
-  background: #eff6ff;
-  border-color: #93c5fd;
-  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.12);
-}
-
-.cardform-type-picker-row-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
-}
-
-.cardform-type-picker-row-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  line-height: 1.3;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cardform-type-picker-row--text-only {
-  padding-left: 12px;
-}
-
-/* CardForm header — template picker (add mode) */
-@keyframes template-picker-enter {
+/* CardForm header — floating picker popover (template, type, tag, blocker, sticker) */
+@keyframes picker-popover-enter {
   from {
     opacity: 0;
     transform: translateY(-6px) scale(0.98);
@@ -3190,7 +3063,7 @@ $gro-supervisor-control-border: #d0d5dd;
   }
 }
 
-@keyframes template-picker-shimmer {
+@keyframes picker-popover-shimmer {
   from {
     background-position: -200px 0;
   }
@@ -3199,13 +3072,14 @@ $gro-supervisor-control-border: #d0d5dd;
   }
 }
 
-.template-picker {
-  --tp-accent: #2563eb;
-  --tp-accent-soft: rgba(37, 99, 235, 0.08);
-  --tp-hover: rgba(15, 23, 42, 0.04);
-  --tp-tag-bg: rgba(15, 23, 42, 0.05);
-  --tp-skeleton: rgba(15, 23, 42, 0.06);
+.picker-popover {
+  --pp-accent: #2563eb;
+  --pp-accent-soft: rgba(37, 99, 235, 0.08);
+  --pp-hover: rgba(15, 23, 42, 0.04);
+  --pp-tag-bg: rgba(15, 23, 42, 0.05);
+  --pp-skeleton: rgba(15, 23, 42, 0.06);
 
+  width: 300px;
   max-width: calc(100vw - 32px);
   max-height: min(420px, calc(100vh - 32px));
   display: flex;
@@ -3218,14 +3092,14 @@ $gro-supervisor-control-border: #d0d5dd;
   border-radius: 14px;
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
   transform-origin: top right;
-  animation: template-picker-enter 0.16s ease-out;
+  animation: picker-popover-enter 0.16s ease-out;
 
   [data-theme="dark"] & {
-    --tp-accent: #60a5fa;
-    --tp-accent-soft: rgba(96, 165, 250, 0.12);
-    --tp-hover: rgba(255, 255, 255, 0.05);
-    --tp-tag-bg: rgba(255, 255, 255, 0.07);
-    --tp-skeleton: rgba(255, 255, 255, 0.08);
+    --pp-accent: #60a5fa;
+    --pp-accent-soft: rgba(96, 165, 250, 0.12);
+    --pp-hover: rgba(255, 255, 255, 0.05);
+    --pp-tag-bg: rgba(255, 255, 255, 0.07);
+    --pp-skeleton: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
   }
@@ -3251,8 +3125,8 @@ $gro-supervisor-control-border: #d0d5dd;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: var(--tp-accent);
-    background: var(--tp-accent-soft);
+    color: var(--pp-accent);
+    background: var(--pp-accent-soft);
   }
 
   &__header-text {
@@ -3286,7 +3160,7 @@ $gro-supervisor-control-border: #d0d5dd;
     font-size: 11px;
     font-weight: 700;
     color: var(--text-secondary);
-    background: var(--tp-tag-bg);
+    background: var(--pp-tag-bg);
   }
 
   &__search {
@@ -3302,8 +3176,8 @@ $gro-supervisor-control-border: #d0d5dd;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
     &:focus-within {
-      border-color: var(--tp-accent);
-      box-shadow: 0 0 0 3px var(--tp-accent-soft);
+      border-color: var(--pp-accent);
+      box-shadow: 0 0 0 3px var(--pp-accent-soft);
     }
 
     input {
@@ -3344,22 +3218,27 @@ $gro-supervisor-control-border: #d0d5dd;
     font-family: inherit;
     transition: background 0.15s ease, border-color 0.15s ease;
 
-    &:hover {
-      background: var(--tp-hover);
+    &:hover:not(:disabled) {
+      background: var(--pp-hover);
+    }
+
+    &:disabled {
+      cursor: wait;
+      opacity: 0.6;
     }
 
     &:focus-visible {
       outline: none;
-      border-color: var(--tp-accent);
-      box-shadow: 0 0 0 3px var(--tp-accent-soft);
+      border-color: var(--pp-accent);
+      box-shadow: 0 0 0 3px var(--pp-accent-soft);
     }
 
     &--selected {
-      background: var(--tp-accent-soft);
-      border-color: color-mix(in srgb, var(--tp-accent) 35%, transparent);
+      background: var(--pp-accent-soft);
+      border-color: color-mix(in srgb, var(--pp-accent) 35%, transparent);
 
       &:hover {
-        background: var(--tp-accent-soft);
+        background: var(--pp-accent-soft);
       }
     }
   }
@@ -3387,6 +3266,13 @@ $gro-supervisor-control-border: #d0d5dd;
     &--neutral {
       color: #64748b;
       background: rgba(100, 116, 139, 0.12);
+    }
+
+    // Meta pickers: background is the item's own color_code (set inline).
+    &--swatch {
+      width: 32px;
+      height: 32px;
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
     }
   }
 
@@ -3425,7 +3311,7 @@ $gro-supervisor-control-border: #d0d5dd;
     font-weight: 600;
     line-height: 1.6;
     color: var(--text-secondary);
-    background: var(--tp-tag-bg);
+    background: var(--pp-tag-bg);
     white-space: nowrap;
   }
 
@@ -3438,7 +3324,7 @@ $gro-supervisor-control-border: #d0d5dd;
     justify-content: center;
     flex-shrink: 0;
     color: #fff;
-    background: var(--tp-accent);
+    background: var(--pp-accent);
     opacity: 0;
     transform: scale(0.6);
     transition: opacity 0.15s ease, transform 0.15s ease;
@@ -3458,10 +3344,10 @@ $gro-supervisor-control-border: #d0d5dd;
 
   &__skeleton-tile,
   &__skeleton-lines span {
-    background: linear-gradient(90deg, var(--tp-skeleton) 0, var(--tp-hover) 50%, var(--tp-skeleton) 100%)
+    background: linear-gradient(90deg, var(--pp-skeleton) 0, var(--pp-hover) 50%, var(--pp-skeleton) 100%)
       no-repeat;
     background-size: 400px 100%;
-    animation: template-picker-shimmer 1.2s linear infinite;
+    animation: picker-popover-shimmer 1.2s linear infinite;
 
     @media (prefers-reduced-motion: reduce) {
       animation: none;
@@ -3530,8 +3416,13 @@ $gro-supervisor-control-border: #d0d5dd;
     color: #dc2626;
     transition: background 0.15s ease;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: rgba(220, 38, 38, 0.08);
+    }
+
+    &:disabled {
+      cursor: wait;
+      opacity: 0.6;
     }
   }
 }

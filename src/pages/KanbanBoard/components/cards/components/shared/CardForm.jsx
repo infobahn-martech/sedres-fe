@@ -7,7 +7,7 @@ import daService from "../../../../../../services/daService";
 import { mapSalesOrderResponse } from "../../../../../../shared/helpers/mapSalesOrderResponse";
 import { useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
-import { Tag, Layers3, AlertTriangle, Sticker, LayoutTemplate, Pencil, Check, X } from "lucide-react";
+import { Tag, Layers3, AlertTriangle, Sticker, LayoutTemplate, Pencil, Check } from "lucide-react";
 import { notify } from "../../../../../../components/Toaster";
 import "../../../../../../design/scss/pages/kanban-board/cardForm.scss";
 import "../../../../../../design/scss/general.scss";
@@ -46,6 +46,7 @@ import DynamicIcon from "../../../../../../structure/SideNav/components/DynamicI
 import { mapBackendIconNameToIconKey } from "../../../../../../store/KanbanManagementReducer";
 import { TaskCardDetailView } from "../../../../../../pages/TaskCard";
 import TemplatePickerPopover, { TEMPLATE_PICKER_WIDTH } from "./TemplatePickerPopover";
+import { CardMetaPickerPopover, META_PICKER_WIDTH } from "../../../../utils/cardMetaPickers";
 
 // Constants - All tabs
 const ALL_TOP_TABS = [
@@ -234,8 +235,6 @@ const getStepNumberFromColumnId = (columnId, columns, columnOrder) => {
   const colForTitle = keyForOrder !== colKey ? columns[keyForOrder] : col;
   return getStepNumberFromColumnTitle(colForTitle?.title, columns, columnOrder);
 };
-
-const TYPE_PICKER_WIDTH = 272;
 
 const contrastIconFg = (bg) => {
   if (!bg || typeof bg !== "string") return "#1a1a1a";
@@ -550,108 +549,6 @@ const BOARD_META_PICKERS = {
   },
 };
 
-const CardMetaPickerSwatch = ({ colorCode, iconKey }) => {
-  const fg = contrastIconFg(colorCode);
-  return (
-    <span className="cardform-type-picker-row-icon" style={{ backgroundColor: colorCode }} aria-hidden>
-      {iconKey ? <DynamicIcon iconKey={iconKey} size={14} color={fg} /> : null}
-    </span>
-  );
-};
-
-CardMetaPickerSwatch.propTypes = {
-  colorCode: PropTypes.string.isRequired,
-  iconKey: PropTypes.string,
-};
-
-const CardMetaPickerPopover = ({
-  header,
-  floaterStyle,
-  wrapRef,
-  loading,
-  items,
-  selectedId,
-  saving,
-  emptyLabel,
-  hasBoardId,
-  showRowIcon = true,
-  onSelect,
-  hasSelection = false,
-  removeLabel,
-  onRemove,
-}) => (
-  <div
-    ref={wrapRef}
-    className="cardform-type-picker-popover"
-    style={floaterStyle}
-    role="listbox"
-    aria-label={header}
-  >
-    <div className="cardform-type-picker-header">{header}</div>
-    {hasSelection && (
-      <button
-        type="button"
-        className="cardform-type-picker-remove-btn"
-        onClick={onRemove}
-        disabled={saving}
-      >
-        <X size={14} aria-hidden />
-        <span>{removeLabel}</span>
-      </button>
-    )}
-    {loading ? (
-      <div className="cardform-type-picker-status">Loading…</div>
-    ) : items.length === 0 ? (
-      <div className="cardform-type-picker-status">
-        {hasBoardId ? `No ${emptyLabel} available for this board.` : "Board id is missing."}
-      </div>
-    ) : (
-      <ul className="cardform-type-picker-list">
-        {items.map((row) => {
-          const isSelected = selectedId === row.id;
-          return (
-            <li key={row.id || row.name}>
-              <button
-                type="button"
-                className={`cardform-type-picker-row${isSelected ? " cardform-type-picker-row--selected" : ""}${!showRowIcon ? " cardform-type-picker-row--text-only" : ""}`}
-                onClick={() => onSelect(row)}
-                disabled={saving}
-                role="option"
-                aria-selected={isSelected}
-              >
-                {showRowIcon ? (
-                  <CardMetaPickerSwatch colorCode={row.color_code} iconKey={row.iconKey} />
-                ) : null}
-                <span className="cardform-type-picker-row-label">{row.name}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    )}
-  </div>
-);
-
-CardMetaPickerPopover.propTypes = {
-  header: PropTypes.string.isRequired,
-  floaterStyle: PropTypes.object.isRequired,
-  wrapRef: PropTypes.oneOfType([
-    PropTypes.func,
-    PropTypes.shape({ current: PropTypes.instanceOf(Element) }),
-  ]),
-  loading: PropTypes.bool,
-  items: PropTypes.arrayOf(PropTypes.object).isRequired,
-  selectedId: PropTypes.string,
-  saving: PropTypes.bool,
-  emptyLabel: PropTypes.string.isRequired,
-  hasBoardId: PropTypes.bool,
-  showRowIcon: PropTypes.bool,
-  onSelect: PropTypes.func.isRequired,
-  hasSelection: PropTypes.bool,
-  removeLabel: PropTypes.string,
-  onRemove: PropTypes.func,
-};
-
 // Sub-components
 const TopBar = ({
   card,
@@ -863,7 +760,7 @@ const TopBar = ({
     const anchor = metaPickerTriggerRefs.current[openPicker];
     if (!anchor) return;
     const r = anchor.getBoundingClientRect();
-    const width = openPicker === "template" ? TEMPLATE_PICKER_WIDTH : TYPE_PICKER_WIDTH;
+    const width = openPicker === "template" ? TEMPLATE_PICKER_WIDTH : META_PICKER_WIDTH;
     const left = Math.max(16, Math.min(r.right - width, window.innerWidth - width - 16));
     const top = Math.min(r.bottom + 8, window.innerHeight - 16);
     setMetaPickerFloaterStyle({
