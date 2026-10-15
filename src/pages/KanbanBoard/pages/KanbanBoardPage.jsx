@@ -1182,6 +1182,51 @@ export default function KanbanBoardPage() {
      XML files as the zip da/portal_files returns. The cards stay where they are. */
   const [isDownloadingInvoices, setIsDownloadingInvoices] = useState(false);
 
+  /* "Upload dispatch proof" on a card in "Uploaded to Portal": one card at a time. The backend stores the proof
+     and moves the card to Dispatched, so the board is refetched. */
+  const [isUploadingDispatchProof, setIsUploadingDispatchProof] = useState(false);
+  const dispatchProofInputRef = useRef(null);
+  const dispatchProofCardRef = useRef(null);
+
+  const handleUploadDispatchProof = useCallback(
+    async (card, file) => {
+      const callId = card?.callId ?? card?.call_id ?? cardsById[card?.id]?.callId;
+      if (!file || isUploadingDispatchProof) return;
+      if (!callId) {
+        notify("This card has no call to upload a dispatch proof for", "error");
+        return;
+      }
+      setIsUploadingDispatchProof(true);
+      try {
+        const formData = new FormData();
+        formData.append("call_id", callId);
+        formData.append("card_id", card.id);
+        formData.append("proof", file);
+        let data;
+        try {
+          ({ data } = await daService.uploadDispatchProof(formData));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+        if (data?.status !== "success") {
+          notify(data?.message || "Failed to upload dispatch proof", "error");
+          return;
+        }
+        notify("Dispatch proof uploaded", "success");
+        refetchBoard?.();
+      } finally {
+        setIsUploadingDispatchProof(false);
+      }
+    },
+    [isUploadingDispatchProof, cardsById, refetchBoard]
+  );
+
+  /* "Upload Dispatch Proof" in the column header: remembers the ticked card and opens the file picker. */
+  const handleUploadDispatchProofClick = useCallback((card) => {
+    dispatchProofCardRef.current = card;
+    dispatchProofInputRef.current?.click();
+  }, []);
+
   const handleColumnDownloadInvoices = useCallback(
     async (cards) => {
       if (!cards?.length || isDownloadingInvoices) return;
@@ -1594,6 +1639,16 @@ export default function KanbanBoardPage() {
         isDarkMode ? "kanban-board-wrapper kanban-board-wrapper-dark" : "kanban-board-wrapper"
       }
     >
+      <input
+        ref={dispatchProofInputRef}
+        type="file"
+        className="d-none"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file && dispatchProofCardRef.current) handleUploadDispatchProof(dispatchProofCardRef.current, file);
+        }}
+      />
       {boardLoadError && !isOperatorBoard && (
         <div
           className="kanban-board-load-banner"
@@ -1650,6 +1705,7 @@ export default function KanbanBoardPage() {
           onColumnSendInvoice={handleColumnSendInvoice}
           onColumnMergeInvoice={handleColumnMergeInvoice}
           onColumnDownloadInvoices={handleColumnDownloadInvoices}
+          onUploadDispatchProof={handleUploadDispatchProofClick}
           onColumnPrepareSubmission={handleColumnPrepareSubmission}
           onColumnSendSubmission={handleColumnSendSubmission}
           onContextMenu={handleColumnContextMenu}
