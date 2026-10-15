@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
-import { FiChevronDown, FiDownload, FiSend, FiUploadCloud } from "react-icons/fi";
+import { FiChevronDown, FiDownload, FiSend, FiUpload, FiUploadCloud } from "react-icons/fi";
 import { MdCallMerge } from "react-icons/md";
 import { KANBAN_DND_DISABLED } from "../../../../shared/constants/kanbanConfig";
 import ColumnHeader from "./ColumnHeader";
@@ -73,6 +73,10 @@ const CONVERT_TO_AR_INVOICE_COLUMN_PATTERN = /^convert\s+to\s+ar\s+invoices?$/i;
 /* L&T DA: "Ready for Dispatch" downloads the ticked cards' invoice PDF and XML files as a zip. */
 const READY_FOR_DISPATCH_COLUMN_PATTERN = /^ready\s+for\s+dispatch$/i;
 
+/* L&T DA: "Uploaded to Portal" shows "Upload Dispatch Proof" while exactly one card there is ticked (the
+   proof is stored per card, and the backend then moves that card to Dispatched). */
+const UPLOADED_TO_PORTAL_COLUMN_PATTERN = /^uploaded\s+to\s+portal$/i;
+
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
   if (isMcDermottWorkflow(workflow)) {
@@ -84,6 +88,7 @@ const getInvoiceAction = (workflow, column) => {
   }
   if (CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
   if (READY_FOR_DISPATCH_COLUMN_PATTERN.test(title)) return "downloadInvoices";
+  if (UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(title)) return "uploadDispatchProof";
   if (!isBatchWorkflow(workflow)) return null;
   if (SE_RECEIVED_COLUMN_PATTERN.test(title)) return "upload";
   if (AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "merge";
@@ -98,6 +103,7 @@ const INVOICE_ACTION_BUTTONS = {
   uploadSrf: { label: "Upload SRF", icon: <FiUploadCloud size={16} aria-hidden /> },
   sendInvoice: { label: "Send Invoice", icon: <FiSend size={16} aria-hidden /> },
   downloadInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
+  uploadDispatchProof: { label: "Upload Dispatch Proof", icon: <FiUpload size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
   prepareSubmission: { label: "Create Submission Documents", icon: <FiDownload size={16} aria-hidden /> },
   sendSubmission: { label: "Send For Final Submission", icon: <FiSend size={16} aria-hidden /> },
@@ -234,6 +240,22 @@ export default function WorkflowColumns({
         ? batchLaneCardsByColumn[colKey] ?? []
         : getSwimlaneColumnCards(workflow, laneId, colKey)
     );
+
+  /* "Uploaded to Portal" takes one dispatch proof per card, so only one card there can stay ticked: when a
+     second one is ticked (click, drag or marquee), the earlier ticks are dropped and the newest is kept. */
+  useEffect(() => {
+    const colKey = workflow.columnOrder.find((key) =>
+      UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(String(workflow.columns[key]?.title ?? "").trim())
+    );
+    if (!colKey || !selectedActionCardIds?.length) return;
+    const ticked = getColumnCards(colKey).filter((card) => selectedActionCardIds.includes(card.id));
+    if (ticked.length < 2) return;
+    const newest = ticked.reduce((latest, card) =>
+      selectedActionCardIds.indexOf(card.id) > selectedActionCardIds.indexOf(latest.id) ? card : latest
+    );
+    ticked.filter((card) => card.id !== newest.id).forEach((card) => onToggleCardSelect?.(card));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedActionCardIds, workflow]);
 
   /* A column whose cards carry a batch renders them as groups (loose cards first, headerless). */
   const getBatchesForColumn = (colKey, laneId) => {
@@ -375,7 +397,8 @@ export default function WorkflowColumns({
                     }
                   : undefined;
               const hasInvoiceButton =
-                invoiceAction === "sendInvoice" ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
+                invoiceAction === "sendInvoice" || invoiceAction === "uploadDispatchProof"
+                  ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
               const invoiceActionHandlers = {
                 upload: onColumnUploadInvoice,
                 issueArInvoice: (cards) =>
@@ -387,6 +410,7 @@ export default function WorkflowColumns({
                 sendInvoice: ([card]) => onColumnSendInvoice?.(card),
                 merge: onColumnMergeInvoice,
                 downloadInvoices: onColumnDownloadInvoices,
+                uploadDispatchProof: ([card]) => onUploadDispatchProof?.(card),
                 prepareSubmission: onColumnPrepareSubmission,
                 sendSubmission: onColumnSendSubmission,
               };
@@ -545,7 +569,6 @@ export default function WorkflowColumns({
                         onToggleCardSelect={onToggleCardSelect}
                         onCardSelectDragStart={onCardSelectDragStart}
                         onCardSelectDragEnter={onCardSelectDragEnter}
-                        onUploadDispatchProof={onUploadDispatchProof}
                         batches={getBatchesForColumn(colKey, laneId)}
                       />
                     );

@@ -1,5 +1,4 @@
-import { useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { KANBAN_DND_DISABLED } from "../../../../../../shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
@@ -11,7 +10,7 @@ import saudimarcapLogo from "../../../../../../assets/images/saudimarcap.png";
 import saipemLogo from "../../../../../../assets/images/saipem.png";
 import lamprellLogo from "../../../../../../assets/images/lamprell.png";
 import gulfmarineLogo from "../../../../../../assets/images/gulfmarine.png";
-import { FiFileText, FiDownload, FiLoader, FiTrendingUp, FiCopy, FiCheck, FiUpload } from "react-icons/fi";
+import { FiFileText, FiDownload, FiLoader, FiTrendingUp, FiCopy, FiCheck } from "react-icons/fi";
 import { resolveIconComponentStrict } from "../../../../../../structure/SideNav/components/DynamicIcon";
 import {
   hasText,
@@ -657,10 +656,8 @@ function CardItem({
   onToggleSelectForAction,
   onSelectDragStart,
   onSelectDragEnter,
-  onUploadDispatchProof,
   isDragDisabled = false,
 }) {
-  const dispatchProofInputRef = useRef(null);
   const isApiCard = card.cardSource === "api";
   const isDaBoardCard = String(card?.da_board ?? card?.raw?.da_board ?? "").trim() === "1";
   /* SAIPEM Backlog cards whose export approval is still pending (or being read) carry no checkbox,
@@ -711,39 +708,6 @@ function CardItem({
       })()
       : null;
 
-  const dispatchProofAction = onUploadDispatchProof ? (
-    <>
-      <input
-        ref={dispatchProofInputRef}
-        type="file"
-        className="d-none"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
-          if (file) onUploadDispatchProof(card, file);
-        }}
-      />
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-primary kanban-card-dispatch-proof-btn p-1 d-inline-flex align-items-center"
-        data-tooltip-id={`dispatch-proof-${card.id}`}
-        data-tooltip-content="Upload dispatch proof"
-        aria-label="Upload dispatch proof"
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation();
-          dispatchProofInputRef.current?.click();
-        }}
-      >
-        <FiUpload size={12} aria-hidden />
-      </button>
-      {createPortal(
-        <Tooltip id={`dispatch-proof-${card.id}`} place="right" className="card-name-tooltip" />,
-        document.body
-      )}
-    </>
-  ) : null;
-
   /** Matches icon blocks below — hide separator + row when nothing would render after KPI/footer. */
   const ed = card.extraDetailsShowIcons;
   const hasExtraDetailsIcons =
@@ -778,9 +742,8 @@ function CardItem({
           }}
         >
           {(canSelectForAction ||
-            onUploadDispatchProof ||
             (isApiCard && !isShrunk && (topRowUsernameInitial || card.cardTypeIcon))) && (
-            <div className={`kanban-card-top-row${onUploadDispatchProof ? " mt-1 mb-2" : ""}`}>
+            <div className="kanban-card-top-row">
               <div className="kanban-card-top-row-left">
                 {isApiCard && !isShrunk && card.cardTypeIcon ? (
                   <ApiCardTypeIcon card={card} inline />
@@ -799,7 +762,6 @@ function CardItem({
                     <ApiCardBlockerBadge card={card} />
                   </span>
                 ) : null}
-                {dispatchProofAction}
                 {canSelectForAction && (
                   <button
                     type="button"
@@ -1222,7 +1184,6 @@ CardItem.propTypes = {
   hideExtraDetails: PropTypes.bool,
   isDarkMode: PropTypes.bool,
   columnTitle: PropTypes.string,
-  onUploadDispatchProof: PropTypes.func,
   workflowTitle: PropTypes.string,
   fixedDimensions: PropTypes.shape({
     width: PropTypes.number.isRequired,

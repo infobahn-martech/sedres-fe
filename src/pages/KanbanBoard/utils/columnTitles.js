@@ -5,13 +5,6 @@ const SUBMITTED_INVOICES_COLUMN_PATTERN = /^submitted\s+invoices$/i;
 export const isSubmittedInvoicesColumnTitle = (title) =>
   SUBMITTED_INVOICES_COLUMN_PATTERN.test(String(title ?? "").trim());
 
-const UPLOADED_TO_PORTAL_COLUMN_PATTERN = /^uploaded\s+to\s+portal$/i;
-
-/* L&T DA "Uploaded to Portal": each card gets its own "Upload dispatch proof" button (one card at a time,
-   no checkbox). */
-export const isUploadedToPortalColumnTitle = (title) =>
-  UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(String(title ?? "").trim());
-
 const ARCHIVE_COLUMN_PATTERN = /archive/i;
 const SRF_SOURCE_COLUMN_PATTERN = /^submitted\s+to\s+da$/i;
 

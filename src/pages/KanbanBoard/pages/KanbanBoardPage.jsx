@@ -1185,6 +1185,8 @@ export default function KanbanBoardPage() {
   /* "Upload dispatch proof" on a card in "Uploaded to Portal": one card at a time. The backend stores the proof
      and moves the card to Dispatched, so the board is refetched. */
   const [isUploadingDispatchProof, setIsUploadingDispatchProof] = useState(false);
+  const dispatchProofInputRef = useRef(null);
+  const dispatchProofCardRef = useRef(null);
 
   const handleUploadDispatchProof = useCallback(
     async (card, file) => {
@@ -1218,6 +1220,12 @@ export default function KanbanBoardPage() {
     },
     [isUploadingDispatchProof, cardsById, refetchBoard]
   );
+
+  /* "Upload Dispatch Proof" in the column header: remembers the ticked card and opens the file picker. */
+  const handleUploadDispatchProofClick = useCallback((card) => {
+    dispatchProofCardRef.current = card;
+    dispatchProofInputRef.current?.click();
+  }, []);
 
   const handleColumnDownloadInvoices = useCallback(
     async (cards) => {
@@ -1631,6 +1639,16 @@ export default function KanbanBoardPage() {
         isDarkMode ? "kanban-board-wrapper kanban-board-wrapper-dark" : "kanban-board-wrapper"
       }
     >
+      <input
+        ref={dispatchProofInputRef}
+        type="file"
+        className="d-none"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file && dispatchProofCardRef.current) handleUploadDispatchProof(dispatchProofCardRef.current, file);
+        }}
+      />
       {boardLoadError && !isOperatorBoard && (
         <div
           className="kanban-board-load-banner"
@@ -1687,7 +1705,7 @@ export default function KanbanBoardPage() {
           onColumnSendInvoice={handleColumnSendInvoice}
           onColumnMergeInvoice={handleColumnMergeInvoice}
           onColumnDownloadInvoices={handleColumnDownloadInvoices}
-          onUploadDispatchProof={handleUploadDispatchProof}
+          onUploadDispatchProof={handleUploadDispatchProofClick}
           onColumnPrepareSubmission={handleColumnPrepareSubmission}
           onColumnSendSubmission={handleColumnSendSubmission}
           onContextMenu={handleColumnContextMenu}
