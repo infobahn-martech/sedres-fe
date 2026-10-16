@@ -42,17 +42,21 @@
     both;
 }
 
-/* Top colored border only (left border removed) */
+/* Top status line — follows the card's rounded top corners with a short arc on each side.
+   Radius is the card's inner (padding-box) radius so the line sits flush against the border. */
 .kanban-card::before {
   content: "";
   position: absolute;
   top: 0;
-  background-color: var(--card-color, #2A00FF);
-  border-radius: 4px;
-  left: 8px;
-  right: 8px;
-  height: 3px;
-  border-top-right-radius: 12px;
+  left: 0;
+  right: 0;
+  height: 14px;
+  border: 3px solid var(--card-color, #2A00FF);
+  border-bottom: 0;
+  border-radius: 13px 13px 0 0;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 50%, transparent);
+  mask-image: linear-gradient(to bottom, #000 50%, transparent);
 }
 
 

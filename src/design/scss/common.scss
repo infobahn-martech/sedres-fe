@@ -1383,7 +1383,7 @@ body.app-dark-mode {
 
 /* Card top strip — muted toward the dark surface instead of full brand saturation */
 .kanban-dark-mode .kanban-card::before {
-  background-color: color-mix(in srgb, var(--card-color, #2A00FF) 55%, #0b1220);
+  border-color: color-mix(in srgb, var(--card-color, #2A00FF) 55%, #0b1220);
   opacity: 1;
 }
 
