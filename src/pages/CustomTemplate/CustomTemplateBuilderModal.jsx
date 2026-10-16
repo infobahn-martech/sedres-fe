@@ -30,11 +30,11 @@ const MAIN_TAB_NAMES = [
     "Operation",
     "Husbandry",
     "Sales Order",
-    "Reports",
-    "Document Library",
     "Comments",
     "Subtasks",
     "Notes",
+    "Reports",
+    "Document Library",
 ];
 
 const makeId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
