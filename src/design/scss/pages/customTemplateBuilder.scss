@@ -1014,6 +1014,25 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   }
 }
 
+// Preview main tabs (all but the pinned first tab) can be dragged to reorder.
+.ctm-preview-tab-draggable {
+  cursor: grab;
+
+  > .tab {
+    cursor: inherit;
+  }
+
+  &.is-dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+  }
+
+  &.is-drag-over {
+    box-shadow: inset 2px 0 0 #00368c;
+    background: rgba(0, 54, 140, 0.05);
+  }
+}
+
 .ctm-builder-split .ctm-preview-drag-item {
   position: relative;
 

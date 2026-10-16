@@ -529,6 +529,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const [dragIndex, setDragIndex] = useState(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
     const [dragOverCell, setDragOverCell] = useState(null);
+    const [dragTabId, setDragTabId] = useState(null);
+    const [dragOverTabId, setDragOverTabId] = useState(null);
     const [deleteFieldRequest, setDeleteFieldRequest] = useState(null);
     // Tab/subtab ids whose email preview the user removed; those fall back to
     // the normal field grid. Builder-session only — not part of the save payload.
@@ -686,6 +688,28 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             }
             return next;
         });
+    };
+
+    const handleTabDragEnd = () => {
+        setDragTabId(null);
+        setDragOverTabId(null);
+    };
+
+    // The first tab is the template's default and stays pinned at index 0 —
+    // it can't be dragged, and nothing can be dropped in front of it.
+    const handleTabDrop = (targetTabId) => {
+        if (dragTabId && dragTabId !== targetTabId) {
+            setTabs((prev) => {
+                const from = prev.findIndex((t) => t.id === dragTabId);
+                const to = prev.findIndex((t) => t.id === targetTabId);
+                if (from < 1 || to < 1) return prev;
+                const next = [...prev];
+                const [moved] = next.splice(from, 1);
+                next.splice(to, 0, moved);
+                return next;
+            });
+        }
+        handleTabDragEnd();
     };
 
     const handleAddSubTabClick = () => {
@@ -1297,8 +1321,31 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                             </div>
 
                             <div className="cardform-tabs">
-                                {tabs.map((tab, idx) => (
-                                    <span key={tab.id} className="ctm-preview-closable">
+                                {tabs.map((tab, idx) => {
+                                    const isReorderable = idx > 0;
+                                    const tabDragClass = [
+                                        isReorderable && "ctm-preview-tab-draggable",
+                                        dragTabId === tab.id && "is-dragging",
+                                        dragOverTabId === tab.id && dragTabId !== tab.id && "is-drag-over",
+                                    ].filter(Boolean).join(" ");
+                                    return (
+                                    <span
+                                        key={tab.id}
+                                        className={`ctm-preview-closable ${tabDragClass}`}
+                                        draggable={isReorderable}
+                                        onDragStart={isReorderable ? (e) => {
+                                            e.dataTransfer.effectAllowed = "move";
+                                            e.dataTransfer.setData("text/plain", tab.id);
+                                            setDragTabId(tab.id);
+                                        } : undefined}
+                                        onDragOver={(e) => {
+                                            if (!dragTabId || !isReorderable) return;
+                                            e.preventDefault();
+                                            setDragOverTabId(tab.id);
+                                        }}
+                                        onDrop={(e) => { e.preventDefault(); handleTabDrop(tab.id); }}
+                                        onDragEnd={handleTabDragEnd}
+                                    >
                                         <button
                                             type="button"
                                             className={`tab ${tab.id === activeTabId ? "active" : ""}`}
@@ -1310,7 +1357,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                             <PreviewCloseButton label={`Delete ${tab.name} tab`} onClick={() => handleDeleteTab(tab.id)} />
                                         )}
                                     </span>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             <div className="operation-wrapper">
