@@ -945,9 +945,7 @@ const SalesOrderList = ({
       if (refreshSalesOrder) refreshSalesOrder();
       onDaStatusRefresh?.();
       useAlertReducer.getState().success(
-        isAtSoSentForSccColumn
-          ? "SCC email sent."
-          : `${data.status_name || effectiveNextDaStatusLabel || "Approval"} email sent.`
+        `${data.status_name || effectiveNextDaStatusLabel || "Approval"} email sent.`
       );
     } catch (err) {
       const msg =
@@ -1014,7 +1012,7 @@ const SalesOrderList = ({
     // desync guesswork needed here anymore.
     const wasSoApprovalDecision =
       isAtSoApprovalDecisionColumn ||
-      ((isCardAtSoApprovalColumn || isAtSoSentForSccColumn) && soActionState?.button_state === "awaiting_approval");
+      (isCardAtSoApprovalColumn && soActionState?.button_state === "awaiting_approval");
     const data = await recordDaClientDecision(1);
     if (data && wasSoApprovalDecision) {
       // Optimistic — fetchSoActionState() inside recordDaClientDecision above will confirm/
@@ -1027,10 +1025,8 @@ const SalesOrderList = ({
       // the card's current column), not straight to a hardcoded "AR invoice issued" match —
       // that used to skip over "SO/PO Approval Received" entirely, jumping the card 2 steps
       // ahead in one Approve click.
-      // L&T "SO sent for SCC": approval moves the card to the "SCC received" column by name.
       const nextColumnLabel =
-        (isAtSoSentForSccColumn ? findBoardColumnLabel(/scc received/i) : null) ??
-        (Array.isArray(stepLabels) && currentStep != null ? stepLabels[currentStep] : null);
+        Array.isArray(stepLabels) && currentStep != null ? stepLabels[currentStep] : null;
       if (nextColumnLabel) {
         // skipStatusUpdate: recordDaClientDecision above (api/da/da_record_client_decision)
         // already advanced the granular DA status server-side — re-sending that same status_id
@@ -1061,7 +1057,7 @@ const SalesOrderList = ({
     // open_issue_da_record_client_decision_noop_for_desynced_call for why that used to be
     // unreliable).
     const wasSoApprovalPendingAtColumn4 =
-      (isCardAtSoApprovalColumn || isAtSoSentForSccColumn) && soActionState?.button_state === "awaiting_approval";
+      isCardAtSoApprovalColumn && soActionState?.button_state === "awaiting_approval";
     const data = await recordDaClientDecision(0);
     if (data && wasSoApprovalPendingAtColumn4) {
       // Optimistic — fetchSoActionState() inside recordDaClientDecision above will confirm/
@@ -1384,6 +1380,10 @@ const SalesOrderList = ({
         updatedList.every((item) => (item.id === orderId ? true : isItemVerified(item)));
       if (allVerified && isBeforeSubmittedToDa) {
         onAdvanceDaStage?.({ label: stepLabels[submittedToDaStepIndex], skipStatusUpdate: true });
+        onCloseCard?.();
+      } else if (allVerified && isAtSoSentForSccColumn) {
+        // L&T "SO sent for SCC": the card is sent for SCC approval from the column header, so once every
+        // line item is verified the card just closes (it is not moved).
         onCloseCard?.();
       }
     } catch (err) {
@@ -2322,10 +2322,10 @@ const SalesOrderList = ({
             !isAtOpsCompletedColumn &&
             !isAtSoApprovalDecisionColumn &&
             !isAtSccReceivedColumn &&
+            !isAtSoSentForSccColumn &&
             !isAtSubmittedToFdaColumn &&
             !(isAtArInvoiceColumn && isRealInvoiceIssuanceStage) &&
             (isCardAtSoApprovalColumn ||
-              isAtSoSentForSccColumn ||
               (effectiveNextDaStatusLabel && shouldShowDaActionButton)) && (
             // Column 4's button state is driven by api/da/action_state's button_state now, via
             // effectiveSoButtonState (see its declaration above, which is where a stale persisted
@@ -2333,45 +2333,7 @@ const SalesOrderList = ({
             // justApproved/justRejected/isSoApprovalEmailPendingDecision local guesswork. Every
             // other column still uses the granular DA status-timeline (isAwaitingDecisionStage /
             // daActionButtonLabel) as before.
-            isAtSoSentForSccColumn ? (
-              soActionState?.button_state === "awaiting_approval" ? (
-                <div className="sales-order-da-status-group">
-                  <span className="sales-order-da-status-button sales-order-da-status-button--label">
-                    <FiClipboard />
-                    Awaiting SCC
-                  </span>
-                  <button
-                    type="button"
-                    className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
-                    title="Record the client's approval"
-                    disabled={isRecordingDaClientDecision}
-                    onClick={handleApproveDaClientDecision}
-                  >
-                    <FiCheck /> Approved
-                  </button>
-                  <button
-                    type="button"
-                    className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
-                    title="Record the client's rejection and move this stage back"
-                    disabled={isRecordingDaClientDecision}
-                    onClick={handleRejectDaClientDecision}
-                  >
-                    <FiX /> Rejected
-                  </button>
-                </div>
-              ) : hasVerifiedAllItems ? (
-                <button
-                  type="button"
-                  className="sales-order-da-status-button"
-                  disabled={isAdvancingDaStage}
-                  title='Open "SCC" email'
-                  onClick={() => handleOpenSoApprovalEmailModal("Send for SCC")}
-                >
-                  <FiClipboard />
-                  Send for SCC
-                </button>
-              ) : null
-            ) : isCardAtSoApprovalColumn ? (
+            isCardAtSoApprovalColumn ? (
               effectiveSoButtonState === "awaiting_approval" ? (
                 <div className="sales-order-da-status-group">
                   <span className="sales-order-da-status-button sales-order-da-status-button--label">
