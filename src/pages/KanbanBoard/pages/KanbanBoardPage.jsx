@@ -1194,8 +1194,8 @@ export default function KanbanBoardPage() {
   );
 
   /* "Download Invoices" on the "Ready for Dispatch" column header downloads the ticked cards' invoice PDF and
-     XML files as the zip da/portal_files returns, then moves them to the next column via da/advance_stage and
-     refetches the board. */
+     XML files as the zip da/portal_files returns. That call moves the cards to "To be Uploaded to the Portal"
+     itself (moved_to_be_uploaded), so the board is only refetched. */
   const [isDownloadingInvoices, setIsDownloadingInvoices] = useState(false);
 
   /* "Upload Dispatch Proof" on the "Uploaded to Portal" column header, for the cards ticked there. The backend
@@ -1337,19 +1337,7 @@ export default function KanbanBoardPage() {
         const fileCount = data.data?.file_count;
         notify(`${fileCount ?? ""} ${fileCount === 1 ? "file" : "files"} downloaded`.trim(), "success");
 
-        let moveData;
-        try {
-          ({ data: moveData } = await daService.advanceStageCards({
-            cards: downloadCards.map((card) => ({ call_id: Number(card.callId), card_id: Number(card.id) })),
-          }));
-        } catch (error) {
-          moveData = error?.response?.data;
-        }
-        if (moveData?.status === "success") {
-          (moveData.data?.moved ?? []).forEach((card) => removeCardSelectionId(String(card.card_id)));
-        } else {
-          notify(moveData?.message || "Invoices downloaded, but the cards could not be moved", "error");
-        }
+        (data.data?.moved_to_be_uploaded ?? []).forEach((card) => removeCardSelectionId(String(card.card_id)));
         refetchBoard?.();
       } finally {
         setIsDownloadingInvoices(false);
