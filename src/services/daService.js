@@ -117,14 +117,23 @@ const getPortalFiles = ({ call_ids: callIds, card_ids: cardIds }) =>
   Gateway.get('/da/portal_files', {
     params: { call_ids: callIds.join(','), card_ids: cardIds.join(',') },
   });
-/** @param {FormData} formData - call_id, card_id, proof, multipart/form-data
- * @returns {Promise<{ data: { status: 'success', data: { stage_document_id: number,
- *   moved_to_dispatched: Array<{ call_id: number, card_id: number }> } } | { status: 'error', message: string } }>}
- * Stores the portal upload proof for one card; the backend then moves the card to Dispatched. */
+/** @param {FormData} formData - call_ids, card_ids (ticked "Uploaded to Portal" cards, comma separated), proofs[]
+ *   (max 20 per request), multipart/form-data
+ * @returns {Promise<{ data: { status: 'success', data: { received_files: string[], max_files_per_request: number,
+ *   not_placed_files: string[], cards: Array<{ call_id: number, card_id: number, invoice_nos: string[], ready: boolean,
+ *   proof: { document_id: number, name: string, url: string } | null }> } }
+ *   | { status: 'error', message: string } }>}
+ * Bulk dispatch proof upload: the backend matches each proof to a card by its invoice number. */
 const uploadDispatchProof = (formData) =>
   Gateway.post('/da/upload_dispatch_proof', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120000,
   });
+/** @param {{ cards: Array<{ call_id: number, card_id: number }> }} payload - the reviewed, ticked cards.
+ * @returns {Promise<{ data: { status: 'success', data: { moved_to_dispatched: Array<{ call_id: number,
+ *   card_id: number }> } } | { status: 'error', message: string } }>}
+ * Confirms the reviewed dispatch proofs; the cards move to "Dispatch Proof Uploaded". */
+const confirmDispatchProofs = (payload) => Gateway.post('/da/confirm_dispatch_proofs', payload);
 /** @param {{ cards: Array<{ call_id: number, card_id: number }> }} payload - the ticked "Consolidated" cards.
  * @returns {Promise<{ data: { status: 'success', data: { submission_id: number, inv_no: string, zip_url: string } }
  *   | { status: 'error', message: string } }>}
@@ -303,6 +312,7 @@ export default {
   mergeArInvoices,
   getPortalFiles,
   uploadDispatchProof,
+  confirmDispatchProofs,
   createSubmissionDocuments,
   getSubmissionEmailDraft,
   sendSubmissionEmail,

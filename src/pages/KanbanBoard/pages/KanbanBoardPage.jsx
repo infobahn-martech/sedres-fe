@@ -16,6 +16,7 @@ import SeReviewMoveModal from "../components/board/SeReviewMoveModal";
 import ArInvoiceReviewModal from "../components/board/ArInvoiceReviewModal";
 import SignatureCheckModal from "../components/board/SignatureCheckModal";
 import PoReviewModal from "../components/board/PoReviewModal";
+import DispatchProofReviewModal from "../components/board/DispatchProofReviewModal";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -42,6 +43,7 @@ import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelecti
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
 import useArInvoiceReviewStore from "../../../shared/store/arInvoiceReviewStore";
 import usePoReviewStore from "../../../shared/store/poReviewStore";
+import useDispatchProofReviewStore from "../../../shared/store/dispatchProofReviewStore";
 import "../../../design/scss/pages/kanban-board/marquee-select.scss";
 
 /* "SE Received" bulk invoice upload: PDFs only. da/upload_ar_invoices takes max_files_per_request
@@ -62,6 +64,18 @@ const arInvoiceUploadFields = [
    max_files_per_request (20), like the AR invoices above. */
 const PO_FIELD_NAME = "pos";
 const PO_FILES_PER_REQUEST = 20;
+/* L&T "Uploaded to Portal" bulk dispatch proof upload: PDFs only, sent to da/upload_dispatch_proof in chunks of
+   max_files_per_request (20), like the AR invoices above. */
+const DISPATCH_PROOF_FIELD_NAME = "proofs";
+const DISPATCH_PROOF_FILES_PER_REQUEST = 20;
+const dispatchProofUploadFields = [
+  {
+    name: DISPATCH_PROOF_FIELD_NAME,
+    accept: ".pdf",
+    formatsHint: "PDF",
+    multiple: true,
+  },
+];
 /* McDermott "Submitted to DA" SRF upload, from the workflow header: one SRF document for all the
    ticked cards. */
 const SRF_FIELD_NAME = "srf";
@@ -1184,50 +1198,113 @@ export default function KanbanBoardPage() {
      refetches the board. */
   const [isDownloadingInvoices, setIsDownloadingInvoices] = useState(false);
 
-  /* "Upload dispatch proof" on a card in "Uploaded to Portal": one card at a time. The backend stores the proof
-     and moves the card to Dispatched, so the board is refetched. */
+  /* "Upload Dispatch Proof" on the "Uploaded to Portal" column header, for the cards ticked there. The backend
+     matches each proof to a card by its invoice number; the response opens the review straight away, and
+     confirming it moves the cards on. */
+  const [showDispatchProofUploadModal, setShowDispatchProofUploadModal] = useState(false);
+  const [selectedDispatchProofUploadCards, setSelectedDispatchProofUploadCards] = useState([]);
   const [isUploadingDispatchProof, setIsUploadingDispatchProof] = useState(false);
-  const dispatchProofInputRef = useRef(null);
-  const dispatchProofCardRef = useRef(null);
-
-  const handleUploadDispatchProof = useCallback(
-    async (card, file) => {
-      const callId = card?.callId ?? card?.call_id ?? cardsById[card?.id]?.callId;
-      if (!file || isUploadingDispatchProof) return;
-      if (!callId) {
-        notify("This card has no call to upload a dispatch proof for", "error");
-        return;
-      }
-      setIsUploadingDispatchProof(true);
-      try {
-        const formData = new FormData();
-        formData.append("call_id", callId);
-        formData.append("card_id", card.id);
-        formData.append("proof", file);
-        let data;
-        try {
-          ({ data } = await daService.uploadDispatchProof(formData));
-        } catch (error) {
-          data = error?.response?.data;
-        }
-        if (data?.status !== "success") {
-          notify(data?.message || "Failed to upload dispatch proof", "error");
-          return;
-        }
-        notify("Dispatch proof uploaded", "success");
-        refetchBoard?.();
-      } finally {
-        setIsUploadingDispatchProof(false);
-      }
-    },
-    [isUploadingDispatchProof, cardsById, refetchBoard]
+  const [dispatchProofUploadProgress, setDispatchProofUploadProgress] = useState(null);
+  const openDispatchProofReviewModal = useDispatchProofReviewStore(
+    (state) => state.openDispatchProofReviewModal
   );
 
-  /* "Upload Dispatch Proof" in the column header: remembers the ticked card and opens the file picker. */
-  const handleUploadDispatchProofClick = useCallback((card) => {
-    dispatchProofCardRef.current = card;
-    dispatchProofInputRef.current?.click();
+  const handleUploadDispatchProofClick = useCallback((cards) => {
+    if (!cards?.length) return;
+    setSelectedDispatchProofUploadCards(cards);
+    setShowDispatchProofUploadModal(true);
   }, []);
+
+  const handleCloseDispatchProofUpload = useCallback(() => {
+    setShowDispatchProofUploadModal(false);
+    setSelectedDispatchProofUploadCards([]);
+  }, []);
+
+  /* Files go in chunks of DISPATCH_PROOF_FILES_PER_REQUEST; each response carries the latest state of every
+     card, so the last one wins per card, and unplaced files are collected for the review. */
+  const handleUploadDispatchProof = useCallback(
+    async ({ [DISPATCH_PROOF_FIELD_NAME]: proofs = [] }) => {
+      const cards = selectedDispatchProofUploadCards;
+      const callIds = getBatchCallIds({ cards });
+      if (!callIds.length) {
+        notify("The selected cards have no call to upload dispatch proofs for", "error");
+        return;
+      }
+
+      const chunks = [];
+      for (let start = 0; start < proofs.length; start += DISPATCH_PROOF_FILES_PER_REQUEST) {
+        chunks.push(proofs.slice(start, start + DISPATCH_PROOF_FILES_PER_REQUEST));
+      }
+
+      const reviewCardById = {};
+      const notPlacedFiles = [];
+      let receivedCount = 0;
+      let failedMessage = null;
+
+      setIsUploadingDispatchProof(true);
+      setDispatchProofUploadProgress({ done: 0, total: proofs.length });
+      try {
+        for (const chunk of chunks) {
+          const formData = new FormData();
+          formData.append("call_ids", callIds.join(","));
+          formData.append("card_ids", cards.map((card) => card.id).join(","));
+          chunk.forEach((file) => formData.append("proofs[]", file));
+
+          let data;
+          try {
+            ({ data } = await daService.uploadDispatchProof(formData));
+          } catch (error) {
+            data = error?.response?.data;
+          }
+          if (data?.status !== "success") {
+            failedMessage = data?.message || "Failed to upload dispatch proofs";
+            break;
+          }
+          receivedCount += data.data?.received_files?.length ?? chunk.length;
+          notPlacedFiles.push(...(data.data?.not_placed_files ?? []));
+          (data.data?.cards ?? []).forEach((card) => {
+            reviewCardById[String(card.card_id)] = {
+              ...card,
+              proof: card.proof ?? reviewCardById[String(card.card_id)]?.proof ?? null,
+            };
+          });
+          setDispatchProofUploadProgress((prev) => ({ ...prev, done: prev.done + chunk.length }));
+        }
+
+        if (!receivedCount) {
+          notify(failedMessage || "Failed to upload dispatch proofs", "error");
+          return;
+        }
+        if (failedMessage) {
+          notify(
+            `Uploaded ${receivedCount} of ${proofs.length} dispatch proofs, then stopped: ${failedMessage}`,
+            "error"
+          );
+        } else {
+          notify(
+            `${receivedCount} dispatch ${receivedCount === 1 ? "proof" : "proofs"} uploaded successfully`,
+            "success"
+          );
+        }
+        cards.forEach((card) => removeCardSelectionId(card.id));
+        handleCloseDispatchProofUpload();
+        openDispatchProofReviewModal(
+          cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
+          { notPlacedFiles }
+        );
+      } finally {
+        setIsUploadingDispatchProof(false);
+        setDispatchProofUploadProgress(null);
+      }
+    },
+    [
+      selectedDispatchProofUploadCards,
+      getBatchCallIds,
+      removeCardSelectionId,
+      handleCloseDispatchProofUpload,
+      openDispatchProofReviewModal,
+    ]
+  );
 
   const handleColumnDownloadInvoices = useCallback(
     async (cards) => {
@@ -1713,16 +1790,6 @@ export default function KanbanBoardPage() {
         isDarkMode ? "kanban-board-wrapper kanban-board-wrapper-dark" : "kanban-board-wrapper"
       }
     >
-      <input
-        ref={dispatchProofInputRef}
-        type="file"
-        className="d-none"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
-          if (file && dispatchProofCardRef.current) handleUploadDispatchProof(dispatchProofCardRef.current, file);
-        }}
-      />
       {boardLoadError && !isOperatorBoard && (
         <div
           className="kanban-board-load-banner"
@@ -1939,6 +2006,25 @@ export default function KanbanBoardPage() {
       />
 
       <PoReviewModal onConfirmed={refetchBoard} />
+
+      <SeApprovalUploadModal
+        show={showDispatchProofUploadModal}
+        onClose={handleCloseDispatchProofUpload}
+        onUpload={handleUploadDispatchProof}
+        isSubmitting={isUploadingDispatchProof}
+        submittingLabel={
+          dispatchProofUploadProgress
+            ? `Uploading ${dispatchProofUploadProgress.done} / ${dispatchProofUploadProgress.total}...`
+            : undefined
+        }
+        batchTitle=""
+        selectedCardCount={selectedDispatchProofUploadCards.length}
+        title="Upload Dispatch Proof"
+        subtitle="Attach the dispatch proofs for the selected cards"
+        submitLabel="Upload Dispatch Proof"
+        fields={dispatchProofUploadFields}
+      />
+      <DispatchProofReviewModal onConfirmed={refetchBoard} />
 
       <SeCreationEmailModal
         show={showInvoiceDispatchEmailModal}
