@@ -521,6 +521,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const masterModuleOptions = useMemo(() => buildMasterModuleOptions(masterLookups), [masterLookups]);
 
     const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
+    // The first tab is the template's default — it and its email preview can't be removed.
+    const isFirstTabActive = activeTab?.id === tabs[0]?.id;
     const hasSubTabs = Boolean(activeTab?.subTabs?.length);
     const activeSubTab = hasSubTabs
         ? (activeTab.subTabs.find((s) => s.id === activeSubTabId) ?? activeTab.subTabs[0])
@@ -1262,7 +1264,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                             </div>
 
                             <div className="cardform-tabs">
-                                {tabs.map((tab) => (
+                                {tabs.map((tab, idx) => (
                                     <span key={tab.id} className="ctm-preview-closable">
                                         <button
                                             type="button"
@@ -1271,7 +1273,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         >
                                             {tab.name}
                                         </button>
-                                        {tabs.length > 1 && (
+                                        {idx > 0 && (
                                             <PreviewCloseButton label={`Delete ${tab.name} tab`} onClick={() => handleDeleteTab(tab.id)} />
                                         )}
                                     </span>
@@ -1334,7 +1336,10 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                                         <p className="ct-summary-no-fields">No fields yet — add fields on the left.</p>
                                                     )}
                                                 </div>
-                                                <TemplateEmailPreview subject={emailSubject} onClose={handleRemoveEmailPreview} />
+                                                <TemplateEmailPreview
+                                                    subject={emailSubject}
+                                                    onClose={isFirstTabActive ? undefined : handleRemoveEmailPreview}
+                                                />
                                             </div>
                                         ) : previewFields.length > 0 ? (
                                             <div className="ct-preview-custom-fields-grid">
