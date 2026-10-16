@@ -1172,6 +1172,33 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
     box-shadow: none;
   }
 
+  // Reports / Document Library sit in the card's padded .cardform-body as
+  // fixed-height bordered cards — in the preview they fill the panel instead.
+  .cardform-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .cardform-left-full {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .reports-library,
+  .document-library {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
   // Sales Order line items: the real table is min-width 1700px with per-column
   // minimums, so in the preview drop those and let the fixed layout share the
   // panel width by each column's % — every column visible, no side scroll.
