@@ -688,14 +688,14 @@ html {
 
 .kanban-classic-layout {
   animation: layoutFadeIn 0.3s ease-out;
-  background: var(--bg-secondary) !important;
+  background: transparent !important;
 
   .kanban-board {
     gap: 8px;
   }
 
   .column {
-    background: var(--surface-primary);
+    background: transparent;
   }
 
   .column-classic .column-header-classic {
@@ -714,7 +714,7 @@ html {
   }
 
   .column-classic .card-list {
-    background: var(--bg-secondary);
+    background: transparent;
     padding: 8px;
   }
 

@@ -217,11 +217,12 @@
 }
 
 /* Column background (Edit workflow colour): `--cell-bg` is set inline on the cell only for a
-   custom colour, so default columns fall back to white. Specificity (0-3-0 on the list)
-   outranks .card-list.drag-over, matching the inline backgroundColor this replaces. */
+   custom colour, so default columns stay transparent and the board wallpaper shows through.
+   Specificity (0-3-0 on the list) outranks .card-list.drag-over, matching the inline
+   backgroundColor this replaces. */
 .kanban-board--swimlanes .column--swimlane-cell,
 .kanban-board--swimlanes .column--swimlane-cell .card-list--swimlane-grid {
-  background-color: var(--cell-bg, #fff);
+  background-color: var(--cell-bg, transparent);
 }
 
 /* Swimlane board: fixed width (layout-dependent), height from content */
