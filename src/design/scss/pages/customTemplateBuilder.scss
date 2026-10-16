@@ -1172,6 +1172,29 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
     box-shadow: none;
   }
 
+  // Sales Order line items: the real table is min-width 1700px with per-column
+  // minimums, so in the preview drop those and let the fixed layout share the
+  // panel width by each column's % — every column visible, no side scroll.
+  .sales-order-table-container {
+    overflow-x: hidden !important;
+    max-height: none;
+
+    .sales-order-list-table {
+      min-width: 0;
+    }
+
+    .sales-order-list-table th,
+    .sales-order-list-table td {
+      min-width: 0;
+      max-width: none;
+    }
+
+    .sales-order-table-cell {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+  }
+
   // The real card's checklist column widths collapse the Item column inside
   // the narrower preview panel, so pin the proportions the real card shows.
   .cl-excel-table {
