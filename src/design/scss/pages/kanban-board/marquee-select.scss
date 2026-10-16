@@ -4,9 +4,12 @@
   display: none;
   z-index: 1050;
   pointer-events: none;
-  border: 1px solid #00368c;
-  border-radius: 2px;
-  background: rgba(0, 54, 140, 0.12);
+  /* Orange contrasts with the blue board wallpaper (and its dimmed dark-mode version), so the
+     selection area stays identifiable; the white halo separates the edge from busy backgrounds. */
+  border: 2px dashed #f97316;
+  border-radius: 4px;
+  background: rgba(249, 115, 22, 0.14);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7);
 
   &.is-active {
     display: block;
