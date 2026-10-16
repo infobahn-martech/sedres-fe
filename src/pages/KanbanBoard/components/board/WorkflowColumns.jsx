@@ -73,6 +73,10 @@ const CONVERT_TO_AR_INVOICE_COLUMN_PATTERN = /^convert\s+to\s+ar\s+invoices?$/i;
 /* L&T DA: "Ready for Dispatch" downloads the ticked cards' invoice PDF and XML files as a zip. */
 const READY_FOR_DISPATCH_COLUMN_PATTERN = /^ready\s+for\s+dispatch$/i;
 
+/* L&T DA: "To be Uploaded to the Portal" shows "Move the Cards", which moves the ticked cards to the next
+   column (Uploaded to Portal). */
+const TO_BE_UPLOADED_TO_PORTAL_COLUMN_PATTERN = /^to\s+be\s+uploaded\s+to\s+(the\s+)?portal$/i;
+
 /* L&T DA: "Uploaded to Portal" shows "Upload Dispatch Proof" while exactly one card there is ticked (the
    proof is stored per card, and the backend then moves that card to Dispatched). */
 const UPLOADED_TO_PORTAL_COLUMN_PATTERN = /^uploaded\s+to\s+portal$/i;
@@ -88,6 +92,7 @@ const getInvoiceAction = (workflow, column) => {
   }
   if (CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
   if (READY_FOR_DISPATCH_COLUMN_PATTERN.test(title)) return "downloadInvoices";
+  if (TO_BE_UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(title)) return "moveCards";
   if (UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(title)) return "uploadDispatchProof";
   if (!isBatchWorkflow(workflow)) return null;
   if (SE_RECEIVED_COLUMN_PATTERN.test(title)) return "upload";
@@ -104,6 +109,7 @@ const INVOICE_ACTION_BUTTONS = {
   sendInvoice: { label: "Send Invoice", icon: <FiSend size={16} aria-hidden /> },
   downloadInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
   uploadDispatchProof: { label: "Upload Dispatch Proof", icon: <FiUpload size={16} aria-hidden /> },
+  moveCards: { label: "Move the Cards", icon: <FiArrowRight size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
   prepareSubmission: { label: "Create Submission Documents", icon: <FiDownload size={16} aria-hidden /> },
   sendSubmission: { label: "Send For Final Submission", icon: <FiSend size={16} aria-hidden /> },
@@ -396,12 +402,6 @@ export default function WorkflowColumns({
                   ...INVOICE_ACTION_BUTTONS.sendSubmission,
                   onClick: () => onColumnSendSubmission?.(submissionSendCards),
                 };
-              } else if (invoiceAction === "downloadInvoices") {
-                sendSubmissionAction = {
-                  label: "Move the Cards",
-                  icon: <FiArrowRight size={16} aria-hidden />,
-                  onClick: () => onColumnMoveCards?.(invoiceCards),
-                };
               }
               const hasInvoiceButton =
                 invoiceAction === "sendInvoice" || invoiceAction === "uploadDispatchProof"
@@ -418,6 +418,7 @@ export default function WorkflowColumns({
                 merge: onColumnMergeInvoice,
                 downloadInvoices: onColumnDownloadInvoices,
                 uploadDispatchProof: ([card]) => onUploadDispatchProof?.(card),
+                moveCards: onColumnMoveCards,
                 prepareSubmission: onColumnPrepareSubmission,
                 sendSubmission: onColumnSendSubmission,
               };
