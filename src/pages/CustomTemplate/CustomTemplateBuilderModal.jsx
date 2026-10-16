@@ -155,10 +155,10 @@ const DEFAULT_TAB_STRUCTURE = {
     },
 };
 
-// Appointment Details fields that are fixed on the real card, so the preview
-// doesn't offer to remove them. Matched by label since saved templates carry no
-// "default" flag.
-const DEFAULT_FIRST_TAB_FIELD_LABELS = new Set([
+// Appointment Details fields that are fixed on the real card: they can't be
+// deleted and are always required. Matched by label since saved templates
+// carry no "default" flag.
+const LOCKED_FIRST_TAB_FIELD_LABELS = new Set([
     "owner",
     "appointment email",
     "appointment received",
@@ -170,6 +170,9 @@ const DEFAULT_FIRST_TAB_FIELD_LABELS = new Set([
     "daily report emails",
     "billing instructions",
 ]);
+
+const isLockedField = (field, isFirstTab) =>
+    isFirstTab && LOCKED_FIRST_TAB_FIELD_LABELS.has(field.label.trim().toLowerCase());
 
 const buildDefaultFields = (defs = []) => defs.map(([label, type, extra]) => ({
     ...createBlankField(),
@@ -354,10 +357,11 @@ const getFieldSummary = (field, typeLabel, isDropdown, hasOptions, masterModuleO
     return parts.join(" · ");
 };
 
-function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterModuleOptions, masterModulesLoading, optionsFieldTypes, dropdownTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
+function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterModuleOptions, masterModulesLoading, optionsFieldTypes, dropdownTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, isLocked = false, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
     // New (unlabelled) fields open ready to edit; existing ones start collapsed
     // so long templates stay scannable.
     const [expanded, setExpanded] = useState(() => !field.label.trim());
+    const isRequired = field.required || isLocked;
     const showOptionsSource = field.type === dropdownTypeKey;
     const showManualOptions = !showOptionsSource && optionsFieldTypes.has(field.type);
     const typeLabel = fieldTypeOptions.find((o) => o.value === field.type)?.label ?? "";
@@ -398,7 +402,8 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
                     type="button"
                     className="ctm-field-del-btn"
                     aria-label="Delete field"
-                    title="Delete field"
+                    title={isLocked ? "Default field — can't be deleted" : "Delete field"}
+                    disabled={isLocked}
                     onClick={() => onRequestDelete(field.id)}
                 >
                     <FiTrash2 size={15} />
@@ -408,7 +413,7 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
             {!expanded ? (
                 <button type="button" className="ctm-field-summary" onClick={() => setExpanded(true)}>
                     <span className="ctm-field-summary-text">{summary}</span>
-                    {field.required && <span className="ctm-field-required-badge">Required</span>}
+                    {isRequired && <span className="ctm-field-required-badge">Required</span>}
                 </button>
             ) : (
                 <div className="ctm-field-body">
@@ -426,15 +431,18 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
                         />
                     </div>
 
-                    <label className="ctm-field-required-row">
+                    <label className={`ctm-field-required-row ${isLocked ? "is-locked" : ""}`}>
                         <span className="ctm-field-required-text">
                             <span className="ctm-field-control-label">Required</span>
-                            <span className="ctm-field-control-hint">Mandatory field</span>
+                            <span className="ctm-field-control-hint">
+                                {isLocked ? "Always mandatory for this default field" : "Mandatory field"}
+                            </span>
                         </span>
                         <span className="ctm-toggle">
                             <input
                                 type="checkbox"
-                                checked={field.required}
+                                checked={isRequired}
+                                disabled={isLocked}
                                 onChange={(e) => onUpdate(field.id, "required", e.target.checked)}
                             />
                             <span className="ctm-toggle-slider" />
@@ -541,8 +549,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
     // The first tab is the template's default — it and its email preview can't be removed.
     const isFirstTabActive = activeTab?.id === tabs[0]?.id;
-    const isFieldRemovable = (field) =>
-        !(isFirstTabActive && DEFAULT_FIRST_TAB_FIELD_LABELS.has(field.label.trim().toLowerCase()));
+    const isFieldRemovable = (field) => !isLockedField(field, isFirstTabActive);
     const hasSubTabs = Boolean(activeTab?.subTabs?.length);
     const activeSubTab = hasSubTabs
         ? (activeTab.subTabs.find((s) => s.id === activeSubTabId) ?? activeTab.subTabs[0])
@@ -550,7 +557,11 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const activeFields = hasSubTabs ? (activeSubTab?.fields ?? []) : (activeTab?.fields ?? []);
     // Live preview mirrors the real card, so blank-label fields still being typed
     // get a placeholder rather than rendering with no label at all.
-    const previewFields = activeFields.map((f) => ({ ...f, label: f.label.trim() || "Untitled Field" }));
+    const previewFields = activeFields.map((f) => ({
+        ...f,
+        label: f.label.trim() || "Untitled Field",
+        required: f.required || isLockedField(f, isFirstTabActive),
+    }));
     const emailScopeId = hasSubTabs ? activeSubTab?.id : activeTab?.id;
     const emailSubject = hiddenEmailPreviewIds.has(emailScopeId)
         ? null
@@ -886,11 +897,11 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         onClose();
     };
 
-    const buildFieldPayload = (field, index) => {
+    const buildFieldPayload = (field, index, isFirstTab) => {
         const payload = {
             field_type_id: resolveFieldTypeId(field.type),
             field_label: field.label.trim(),
-            is_required: field.required ? 1 : 0,
+            is_required: field.required || isLockedField(field, isFirstTab) ? 1 : 0,
             display_order: index + 1,
         };
         if (field.fieldId) payload.field_id = Number(field.fieldId);
@@ -916,10 +927,10 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         return payload;
     };
 
-    const buildFieldsPayload = (fields) => {
+    const buildFieldsPayload = (fields, isFirstTab = false) => {
         const layout = resolveFieldLayout(fields);
         return fields.map((field, index) => ({
-            ...buildFieldPayload(field, index),
+            ...buildFieldPayload(field, index, isFirstTab),
             row_no: layout[index].row,
             col_no: layout[index].col,
         }));
@@ -931,7 +942,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             is_system: MAIN_TAB_NAMES.includes(tab.name) ? 1 : 0,
             email_preview: getEmailPreviewSubject(tab.name) ? 1 : 0,
             display_order: tabIndex + 1,
-            fields: tab.subTabs?.length ? [] : buildFieldsPayload(tab.fields),
+            fields: tab.subTabs?.length ? [] : buildFieldsPayload(tab.fields, tabIndex === 0),
         };
         if (tab.tabId) payload.tab_id = Number(tab.tabId);
         if (tab.subTabs?.length) {
@@ -1260,6 +1271,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         onDragEnd={handleDragEnd}
                                         onUpdate={handleUpdateField}
                                         onRequestDelete={handleRequestDeleteField}
+                                        isLocked={isLockedField(field, isFirstTabActive)}
                                         onAddOption={handleAddOption}
                                         onUpdateOption={handleUpdateOption}
                                         onRemoveOption={handleRemoveOption}

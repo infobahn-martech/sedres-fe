@@ -671,7 +671,16 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
     &:checked + .ctm-toggle-slider::before {
       transform: translateX(15px);
     }
+
+    &:disabled + .ctm-toggle-slider {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
   }
+}
+
+.ctm-field-required-row.is-locked {
+  cursor: not-allowed;
 }
 
 .ctm-toggle-slider {
@@ -709,9 +718,14 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   flex-shrink: 0;
   transition: color 0.15s, background 0.15s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     color: #ef4444;
     background: rgba(239, 68, 68, 0.08);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
   }
 }
 
