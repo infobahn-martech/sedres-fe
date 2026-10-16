@@ -155,6 +155,22 @@ const DEFAULT_TAB_STRUCTURE = {
     },
 };
 
+// Appointment Details fields that are fixed on the real card, so the preview
+// doesn't offer to remove them. Matched by label since saved templates carry no
+// "default" flag.
+const DEFAULT_FIRST_TAB_FIELD_LABELS = new Set([
+    "owner",
+    "appointment email",
+    "appointment received",
+    "port",
+    "billing entity",
+    "assigned operator",
+    "service requestor name",
+    "service requestor email",
+    "daily report emails",
+    "billing instructions",
+]);
+
 const buildDefaultFields = (defs = []) => defs.map(([label, type, extra]) => ({
     ...createBlankField(),
     label,
@@ -525,6 +541,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
     // The first tab is the template's default — it and its email preview can't be removed.
     const isFirstTabActive = activeTab?.id === tabs[0]?.id;
+    const isFieldRemovable = (field) =>
+        !(isFirstTabActive && DEFAULT_FIRST_TAB_FIELD_LABELS.has(field.label.trim().toLowerCase()));
     const hasSubTabs = Boolean(activeTab?.subTabs?.length);
     const activeSubTab = hasSubTabs
         ? (activeTab.subTabs.find((s) => s.id === activeSubTabId) ?? activeTab.subTabs[0])
@@ -1325,7 +1343,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                                                         onDrop={(e) => { e.preventDefault(); handleDropInColumn(index); }}
                                                                     >
                                                                         <TemplateFieldPreview field={field} />
-                                                                        <PreviewCloseButton label="Delete field" onClick={() => handleRequestDeleteField(field.id)} />
+                                                                        {isFieldRemovable(field) && (
+                                                                            <PreviewCloseButton label="Delete field" onClick={() => handleRequestDeleteField(field.id)} />
+                                                                        )}
                                                                     </div>
                                                                 );
                                                             })}
@@ -1377,7 +1397,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                                             {...dropProps}
                                                         >
                                                             <TemplateFieldPreview field={field} />
-                                                            <PreviewCloseButton label="Delete field" onClick={() => handleRequestDeleteField(field.id)} />
+                                                            {isFieldRemovable(field) && (
+                                                                <PreviewCloseButton label="Delete field" onClick={() => handleRequestDeleteField(field.id)} />
+                                                            )}
                                                         </div>
                                                     );
                                                 })}
