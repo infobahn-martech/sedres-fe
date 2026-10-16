@@ -9,8 +9,8 @@ import "../../../../design/scss/pages/kanban-board/seReviewMoveModal.scss";
 import "../../../../design/scss/pages/kanban-board/signatureCheck.scss";
 
 // Opened from the L&T Backlog "Check Signatures" action. One row per ticked card from
-// da/signature_checks; a card without a signature can be ticked "Signed (checked by hand)". Move signed
-// cards sends them to da/confirm_signature_check.
+// da/signature_checks; a card without a signature can be ticked "Signed (checked by hand)" (currently
+// commented out). Move signed cards sends them to da/confirm_signature_check.
 const SignatureCheckModal = ({ onConfirmed }) => {
   const show = useSignatureCheckStore((state) => state.showSignatureCheckModal);
   const selectedCards = useSignatureCheckStore((state) => state.selectedSignatureCheckCards);
@@ -20,7 +20,7 @@ const SignatureCheckModal = ({ onConfirmed }) => {
   const isConfirming = useSignatureCheckStore((state) => state.isConfirmingSignatureCheck);
   const onClose = useSignatureCheckStore((state) => state.closeSignatureCheckModal);
   const fetchSignatureChecks = useSignatureCheckStore((state) => state.fetchSignatureChecks);
-  const toggleHandSigned = useSignatureCheckStore((state) => state.toggleHandSigned);
+  // const toggleHandSigned = useSignatureCheckStore((state) => state.toggleHandSigned);
   const confirmSignatureCheck = useSignatureCheckStore((state) => state.confirmSignatureCheck);
 
   useEffect(() => {
@@ -103,6 +103,7 @@ const SignatureCheckModal = ({ onConfirmed }) => {
             {isReady ? "Ready to move" : "Signature missing"}
           </span>
         </td>
+        {/* Hand-signed tick, disabled for now (also restore the extra <th /> and colSpan 5 when re-enabling)
         <td>
           {!isSigned && (
             <label className="signature-check-hand">
@@ -116,6 +117,7 @@ const SignatureCheckModal = ({ onConfirmed }) => {
             </label>
           )}
         </td>
+        */}
       </tr>
     );
   };
@@ -130,13 +132,12 @@ const SignatureCheckModal = ({ onConfirmed }) => {
               <th>SCC</th>
               <th>Signature</th>
               <th>Status</th>
-              <th />
             </tr>
           </thead>
           <tbody>
             {isLoading && !rows.length ? (
               <tr>
-                <td colSpan={5} className="signature-check-empty">
+                <td colSpan={4} className="signature-check-empty">
                   Loading...
                 </td>
               </tr>
@@ -144,7 +145,7 @@ const SignatureCheckModal = ({ onConfirmed }) => {
               rows.map(renderRow)
             ) : (
               <tr>
-                <td colSpan={5} className="signature-check-empty">
+                <td colSpan={4} className="signature-check-empty">
                   No signature checks found for the selected cards
                 </td>
               </tr>
