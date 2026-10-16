@@ -621,7 +621,14 @@ function ApiKanbanCardFull({
         <ApiCardTaskLine card={card} />
         {hasText(secondary) ? (
           <p className="card-api-secondary" title={secondary}>
-            {secondary}
+            {hasText(card.billingEntityColor) ? (
+              <span
+                className="card-api-secondary-dot"
+                style={{ backgroundColor: card.billingEntityColor }}
+                aria-hidden="true"
+              />
+            ) : null}
+            <span className="card-api-secondary-text">{secondary}</span>
           </p>
         ) : null}
       </div>

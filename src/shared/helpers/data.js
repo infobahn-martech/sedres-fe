@@ -246,6 +246,7 @@ export function mapBoardWorkflowFromApi(workflow) {
             color: perCardColor ?? stageColor,
             cardName: card.card_name || "",
             billingEntity: card.billing_entity || "",
+            billingEntityColor: normalizeHexColor(card.billing_entity_color, ""),
             salesOrderNo:
               card.sales_order_no != null && String(card.sales_order_no).trim() !== ""
                 ? String(card.sales_order_no).trim()
