@@ -249,6 +249,126 @@ const ReportsSkeleton = () => (
   </div>
 );
 
+const handleDownload = (report) => {
+  const html = report.body || "";
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${sanitizeFilename(report.subject || report.reportType || "report")}.html`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+};
+
+// Searchable report list + preview pane. Presentational — takes already-mapped
+// reports, so the Custom Template builder can render it with sample data.
+export function ReportsLibrary({ reports }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedReportId, setSelectedReportId] = useState(null);
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const groupedByType = useMemo(() => {
+    const map = {};
+    reports
+      .filter((r) => matchesSearch(r, normalizedQuery))
+      .forEach((r) => {
+        const key = r.reportType || "Other";
+        if (!map[key]) map[key] = [];
+        map[key].push(r);
+      });
+    Object.keys(map).forEach((k) => {
+      map[k].sort((a, b) => {
+        const ta = new Date(a.createdAt).getTime();
+        const tb = new Date(b.createdAt).getTime();
+        return (Number.isNaN(tb) ? 0 : tb) - (Number.isNaN(ta) ? 0 : ta);
+      });
+    });
+    return map;
+  }, [reports, normalizedQuery]);
+
+  const categoryKeys = useMemo(() => Object.keys(groupedByType).sort((a, b) => a.localeCompare(b)), [groupedByType]);
+
+  // Falls back to the first visible report so a selection always exists after load / search.
+  const selectedReport = useMemo(() => {
+    const visible = categoryKeys.flatMap((key) => groupedByType[key]);
+    return visible.find((r) => r.id === selectedReportId) ?? visible[0] ?? null;
+  }, [categoryKeys, groupedByType, selectedReportId]);
+
+  return (
+    <div className="reports-library">
+      <aside className="reports-library__panel reports-library__panel--list">
+        <div className="reports-list-toolbar">
+          <div className="reports-list-toolbar-title">
+            <span className="reports-list-toolbar-icon" aria-hidden="true">
+              <FiLayers size={16} />
+            </span>
+            <div className="reports-list-toolbar-text">
+              <h4 className="reports-list-toolbar-heading">Reports</h4>
+              <span className="reports-list-toolbar-sub">
+                {reports.length} sent {reports.length === 1 ? "report" : "reports"}
+              </span>
+            </div>
+          </div>
+          <label className="reports-search">
+            <FiSearch size={13} />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search reports"
+              aria-label="Search reports"
+            />
+          </label>
+        </div>
+
+        <div className="reports-list-scroll">
+          {categoryKeys.length === 0 ? (
+            <p className="reports-list-no-match">No reports match your search.</p>
+          ) : (
+            categoryKeys.map((category) => {
+              const items = groupedByType[category];
+              const accentColor = getTypeTagColor(category);
+              return (
+                <div className="reports-list-group" key={category} style={{ "--report-accent": accentColor }}>
+                  <div className="reports-list-group-header">
+                    <span className="reports-list-group-dot" />
+                    <span className="reports-list-group-label">{category}</span>
+                    <span className="reports-list-group-count">{items.length}</span>
+                  </div>
+                  {items.map((report) => (
+                    <ReportListItem
+                      key={report.id}
+                      report={report}
+                      accentColor={accentColor}
+                      isActive={selectedReport?.id === report.id}
+                      onSelect={setSelectedReportId}
+                    />
+                  ))}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </aside>
+
+      <section className="reports-library__panel reports-library__panel--preview">
+        <ReportPreview
+          report={selectedReport}
+          accentColor={selectedReport ? getTypeTagColor(selectedReport.reportType) : undefined}
+          onDownload={handleDownload}
+        />
+      </section>
+    </div>
+  );
+}
+
+ReportsLibrary.propTypes = {
+  reports: PropTypes.arrayOf(reportShape).isRequired,
+};
+
 function Reports({ card, formValues }) {
   const cardColor = card?.color || "#2A00FF";
 
@@ -261,8 +381,6 @@ function Reports({ card, formValues }) {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedReportId, setSelectedReportId] = useState(null);
 
   useEffect(() => {
     if (!callId) {
@@ -308,48 +426,6 @@ function Reports({ card, formValues }) {
     };
   }, [callId]);
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-
-  const groupedByType = useMemo(() => {
-    const map = {};
-    reports
-      .filter((r) => matchesSearch(r, normalizedQuery))
-      .forEach((r) => {
-        const key = r.reportType || "Other";
-        if (!map[key]) map[key] = [];
-        map[key].push(r);
-      });
-    Object.keys(map).forEach((k) => {
-      map[k].sort((a, b) => {
-        const ta = new Date(a.createdAt).getTime();
-        const tb = new Date(b.createdAt).getTime();
-        return (Number.isNaN(tb) ? 0 : tb) - (Number.isNaN(ta) ? 0 : ta);
-      });
-    });
-    return map;
-  }, [reports, normalizedQuery]);
-
-  const categoryKeys = useMemo(() => Object.keys(groupedByType).sort((a, b) => a.localeCompare(b)), [groupedByType]);
-
-  // Falls back to the first visible report so a selection always exists after load / search.
-  const selectedReport = useMemo(() => {
-    const visible = categoryKeys.flatMap((key) => groupedByType[key]);
-    return visible.find((r) => r.id === selectedReportId) ?? visible[0] ?? null;
-  }, [categoryKeys, groupedByType, selectedReportId]);
-
-  const handleDownload = (report) => {
-    const html = report.body || "";
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${sanitizeFilename(report.subject || report.reportType || "report")}.html`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <div className="cardform-body">
       <div className="cardform-left-full reports-view" style={{ "--card-color": cardColor }}>
@@ -362,70 +438,7 @@ function Reports({ card, formValues }) {
         ) : reports.length === 0 ? (
           <ReportsEmptyState message="No reports available." />
         ) : (
-          <div className="reports-library">
-            <aside className="reports-library__panel reports-library__panel--list">
-              <div className="reports-list-toolbar">
-                <div className="reports-list-toolbar-title">
-                  <span className="reports-list-toolbar-icon" aria-hidden="true">
-                    <FiLayers size={16} />
-                  </span>
-                  <div className="reports-list-toolbar-text">
-                    <h4 className="reports-list-toolbar-heading">Reports</h4>
-                    <span className="reports-list-toolbar-sub">
-                      {reports.length} sent {reports.length === 1 ? "report" : "reports"}
-                    </span>
-                  </div>
-                </div>
-                <label className="reports-search">
-                  <FiSearch size={13} />
-                  <input
-                    type="search"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search reports"
-                    aria-label="Search reports"
-                  />
-                </label>
-              </div>
-
-              <div className="reports-list-scroll">
-                {categoryKeys.length === 0 ? (
-                  <p className="reports-list-no-match">No reports match your search.</p>
-                ) : (
-                  categoryKeys.map((category) => {
-                    const items = groupedByType[category];
-                    const accentColor = getTypeTagColor(category);
-                    return (
-                      <div className="reports-list-group" key={category} style={{ "--report-accent": accentColor }}>
-                        <div className="reports-list-group-header">
-                          <span className="reports-list-group-dot" />
-                          <span className="reports-list-group-label">{category}</span>
-                          <span className="reports-list-group-count">{items.length}</span>
-                        </div>
-                        {items.map((report) => (
-                          <ReportListItem
-                            key={report.id}
-                            report={report}
-                            accentColor={accentColor}
-                            isActive={selectedReport?.id === report.id}
-                            onSelect={setSelectedReportId}
-                          />
-                        ))}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </aside>
-
-            <section className="reports-library__panel reports-library__panel--preview">
-              <ReportPreview
-                report={selectedReport}
-                accentColor={selectedReport ? getTypeTagColor(selectedReport.reportType) : undefined}
-                onDownload={handleDownload}
-              />
-            </section>
-          </div>
+          <ReportsLibrary reports={reports} />
         )}
       </div>
     </div>

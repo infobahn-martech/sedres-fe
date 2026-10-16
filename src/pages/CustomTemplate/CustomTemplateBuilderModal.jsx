@@ -566,7 +566,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const emailSubject = hiddenEmailPreviewIds.has(emailScopeId)
         ? null
         : getEmailPreviewSubject(activeTab?.name, activeSubTab?.name);
-    const featurePreviewKind = getFeaturePreviewKind(activeSubTab?.name);
+    const featurePreviewKind = getFeaturePreviewKind(activeTab?.name, activeSubTab?.name);
     const handleRemoveEmailPreview = () => {
         setHiddenEmailPreviewIds((prev) => new Set(prev).add(emailScopeId));
     };

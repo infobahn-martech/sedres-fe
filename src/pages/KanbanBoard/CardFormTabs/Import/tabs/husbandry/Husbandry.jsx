@@ -300,7 +300,7 @@ ServiceInsights.propTypes = {
 };
 
 // Service Selection Component
-const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, showLaunchHire = true, hiddenServiceIds = [], salesOrder = null }) => {
+export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, showLaunchHire = true, hiddenServiceIds = [], salesOrder = null }) => {
   const categories = servicesSummary?.categories || {};
   const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 

@@ -90,7 +90,7 @@ function CustomTemplateListModal({ show, onClose }) {
     const activeSubTab = hasSubTabs ? (activeTab.subTabs[activeSubTabIndex] ?? activeTab.subTabs[0]) : null;
     const fieldsToShow = hasSubTabs ? (activeSubTab?.fields ?? []) : (activeTab?.fields ?? []);
     const emailSubject = getEmailPreviewSubject(activeTab?.name, activeSubTab?.name);
-    const featurePreviewKind = getFeaturePreviewKind(activeSubTab?.name);
+    const featurePreviewKind = getFeaturePreviewKind(activeTab?.name, activeSubTab?.name);
 
     const handleSelectTemplate = (id) => {
         setSelectedId(id);

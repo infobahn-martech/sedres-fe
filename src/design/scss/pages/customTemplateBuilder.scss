@@ -1147,4 +1147,19 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   > * {
     pointer-events: none;
   }
+
+  // The real card's checklist column widths collapse the Item column inside
+  // the narrower preview panel, so pin the proportions the real card shows.
+  .cl-excel-table {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 860px;
+
+    col.cl-col-check { width: 6%; }
+    col.cl-col-requirement { width: 14%; }
+    col.cl-col-item { width: 32%; }
+    col.cl-col-role { width: 13%; }
+    col.cl-col-upload { width: 11%; }
+    col.cl-col-remarks { width: 24%; }
+  }
 }
