@@ -8348,16 +8348,18 @@ $send-report-optional: var(--text-muted);
   font-size: 13px;
 }
 
+// Title + Outlook-style meta share one plain band so they read as a single header.
+.reports-preview-top {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--surface-primary);
+}
+
 .reports-preview-header {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px 24px 16px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--report-accent) 7%, var(--surface-primary)) 0%,
-    var(--surface-primary) 60%
-  );
+  padding: 20px 24px 14px;
 }
 
 .reports-preview-avatar {
@@ -8434,90 +8436,46 @@ $send-report-optional: var(--text-muted);
   }
 }
 
+// Outlook-style header: one "Label: value" line per field, labels in a fixed column.
 .reports-preview-meta {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 10px;
-  margin: 0;
-  padding: 14px;
-  border-bottom: 1px solid var(--border-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 24px;
+  padding: 12px 0 16px;
+  border-top: 1px solid var(--border-primary);
 }
 
 .reports-preview-meta-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  min-width: 0;
-  padding: 10px 12px;
-  border: 1px solid var(--border-primary);
-  border-radius: 12px;
-  background: var(--surface-primary);
-
-  &--wide {
-    grid-column: span 2;
-  }
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
 
   dt {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    flex-shrink: 0;
     margin: 0;
-    color: var(--report-accent);
-    background: color-mix(in srgb, var(--report-accent) 10%, var(--surface-primary));
+    font-weight: 600;
+    color: var(--text-secondary);
   }
 
   dd {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
     margin: 0;
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
   }
 }
 
-.reports-preview-meta-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.reports-preview-meta-value {
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--text-primary);
-  word-break: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
+// Body flows straight under the header (Outlook reading pane), no inset card.
 .reports-preview-body {
   flex: 1;
   min-height: 0;
   display: flex;
-  justify-content: center;
-  padding: 20px 24px 24px;
-  background: var(--bg-secondary);
+  background: var(--surface-primary);
 }
 
-// Email bodies are authored for a white canvas, so the sheet stays white in both themes.
-.reports-preview-paper {
-  display: flex;
-  width: 100%;
-  min-height: 0;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 16px 40px -12px rgba(15, 23, 42, 0.18);
-  overflow: hidden;
-}
-
+// Email bodies are authored for a white canvas, so the frame stays white in both themes.
 .reports-preview-frame {
   flex: 1;
   width: 100%;
@@ -8550,9 +8508,6 @@ $send-report-optional: var(--text-muted);
     min-height: 520px;
   }
 
-  .reports-preview-meta-row--wide {
-    grid-column: auto;
-  }
 }
 
 @media ($sm-767) {
@@ -10772,9 +10727,5 @@ a.operation-task-document-name--link {
   .reports-list-group-count,
   .reports-preview-type {
     color: var(--text-primary);
-  }
-
-  .reports-preview-meta-row dt {
-    color: var(--text-secondary);
   }
 }

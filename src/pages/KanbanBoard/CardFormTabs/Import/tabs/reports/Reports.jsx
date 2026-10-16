@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import { useEffect, useMemo, useState } from "react";
-import { FiDownload, FiMail, FiSend, FiUser, FiCalendar, FiFileText, FiInbox, FiSearch, FiUsers, FiLayers } from "react-icons/fi";
+import { FiDownload, FiFileText, FiInbox, FiSearch, FiLayers } from "react-icons/fi";
 import reportsService from "../../../../../../services/reportsService";
 import "../../../../../../design/scss/operations.scss";
 
@@ -32,8 +32,8 @@ const extractReportsArray = (body) => {
 
 const formatCcDisplay = (cc) => {
   if (cc == null || cc === "") return "";
-  if (Array.isArray(cc)) return cc.filter(Boolean).join(", ");
-  return String(cc);
+  const list = Array.isArray(cc) ? cc : String(cc).split(/[,;]/);
+  return list.map((email) => String(email).trim()).filter(Boolean).join("; ");
 };
 
 const formatDateTime = (dateString) => {
@@ -73,7 +73,7 @@ const getTypeTagColor = (type) => {
 
 // Fallback typography for unstyled email HTML; inline styles in the email still win.
 const EMAIL_BASE_STYLE = `<style>
-  body { margin: 0; padding: 28px 36px; font-family: "Segoe UI", -apple-system, Roboto, Arial, sans-serif;
+  body { margin: 0; padding: 20px 24px; font-family: "Segoe UI", -apple-system, Roboto, Arial, sans-serif;
     font-size: 13.5px; line-height: 1.6; color: #1f2937; }
   p { margin: 0 0 10px; }
   table { border-collapse: collapse; }
@@ -142,67 +142,60 @@ const ReportPreview = ({ report, accentColor, onDownload }) => {
   }
 
   const title = report.subject || report.reportType || "Report";
+  // Outlook-style header order: sender, recipients, then send details.
   const metaRows = [
-    { label: "Sent at", value: formatDateTime(report.createdAt), icon: <FiCalendar size={13} /> },
-    { label: "Sent by", value: report.createdBy, icon: <FiUser size={13} /> },
-    { label: "From", value: report.fromEmail, icon: <FiSend size={13} /> },
-    { label: "To", value: report.toEmail, icon: <FiMail size={13} /> },
-    { label: "CC", value: formatCcDisplay(report.ccEmails), icon: <FiUsers size={13} />, wide: true },
+    { label: "From", value: report.fromEmail },
+    { label: "To", value: report.toEmail },
+    { label: "Cc", value: formatCcDisplay(report.ccEmails) },
+    { label: "Sent", value: formatDateTime(report.createdAt) },
+    { label: "Sent by", value: report.createdBy },
   ].filter((row) => row.value);
 
   return (
     <div className="reports-preview" style={{ "--report-accent": accentColor }}>
-      <div className="reports-preview-header">
-        <span className="reports-preview-avatar" aria-hidden="true">
-          <FiFileText size={20} />
-        </span>
-        <div className="reports-preview-heading">
-          <span className="reports-preview-type">{report.reportType}</span>
-          <h3 className="reports-preview-title" title={title}>
-            {title}
-          </h3>
+      <div className="reports-preview-top">
+        <div className="reports-preview-header">
+          <span className="reports-preview-avatar" aria-hidden="true">
+            <FiFileText size={20} />
+          </span>
+          <div className="reports-preview-heading">
+            <span className="reports-preview-type">{report.reportType}</span>
+            <h3 className="reports-preview-title" title={title}>
+              {title}
+            </h3>
+          </div>
+          <button
+            type="button"
+            className="reports-preview-download-btn"
+            onClick={() => onDownload(report)}
+            title="Download body as HTML"
+          >
+            <FiDownload size={14} />
+            <span>Download</span>
+          </button>
         </div>
-        <button
-          type="button"
-          className="reports-preview-download-btn"
-          onClick={() => onDownload(report)}
-          title="Download body as HTML"
-        >
-          <FiDownload size={14} />
-          <span>Download</span>
-        </button>
+
+        <dl className="reports-preview-meta">
+          {metaRows.map(({ label, value }) => (
+            <div className="reports-preview-meta-row" key={label}>
+              <dt>{label}:</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
 
-      <dl className="reports-preview-meta">
-        {metaRows.map(({ label, value, icon, wide }) => (
-          <div
-            className={`reports-preview-meta-row${wide ? " reports-preview-meta-row--wide" : ""}`}
-            key={label}
-          >
-            <dt aria-label={label}>{icon}</dt>
-            <dd>
-              <span className="reports-preview-meta-label">{label}</span>
-              <span className="reports-preview-meta-value" title={value}>
-                {value}
-              </span>
-            </dd>
-          </div>
-        ))}
-      </dl>
-
       <div className="reports-preview-body">
-        <div className="reports-preview-paper">
-          {report.body ? (
-            <iframe
-              className="reports-preview-frame"
-              srcDoc={EMAIL_BASE_STYLE + report.body}
-              title={title}
-              sandbox=""
-            />
-          ) : (
-            <p className="reports-preview-no-body">This report has no content.</p>
-          )}
-        </div>
+        {report.body ? (
+          <iframe
+            className="reports-preview-frame"
+            srcDoc={EMAIL_BASE_STYLE + report.body}
+            title={title}
+            sandbox=""
+          />
+        ) : (
+          <p className="reports-preview-no-body">This report has no content.</p>
+        )}
       </div>
     </div>
   );
