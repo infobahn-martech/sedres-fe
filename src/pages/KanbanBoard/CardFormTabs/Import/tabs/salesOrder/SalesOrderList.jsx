@@ -24,7 +24,6 @@ import GoodsReceiptPOModal from "./GoodsReceiptPOModal";
 import SoApprovalEmailModal from "./SoApprovalEmailModal";
 import DocumentListModal from "./DocumentListModal";
 import UploadInvoiceModal from "../../../../../../components/UploadInvoiceModal";
-import SeApprovalUploadModal from "../../../../components/board/SeApprovalUploadModal";
 import CustomModal from "../../../../../../components/CustomModal";
 import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 
@@ -254,36 +253,6 @@ SalesOrderPagination.propTypes = {
   compact: PropTypes.bool,
 };
 
-/* da/da_upload_so_approval_proof takes the approved SO document as `proof` (required), the client's
-   approval email as `approval_email` and the SCC as `scc`, which only L&T sales orders get. The field
-   names are the request's form field names. */
-const LNT_CLIENT_PATTERN = /l\s*&\s*t(?!\w)|larsen/i;
-const SCC_FIELD_NAME = "scc";
-const approvalUploadFields = [
-  {
-    name: "proof",
-    label: "Approved SO",
-    accept: ".pdf,.jpg,.jpeg,.png",
-    formatsHint: "PDF, JPG, PNG",
-    multiple: false,
-    required: true,
-  },
-  {
-    name: "approval_email",
-    label: "Approved email",
-    accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
-    formatsHint: "PDF, EML, MSG, JPG, PNG",
-    multiple: false,
-  },
-  {
-    name: SCC_FIELD_NAME,
-    label: "SCC",
-    accept: ".pdf,.jpg,.jpeg,.png",
-    formatsHint: "PDF, JPG, PNG",
-    multiple: false,
-  },
-];
-
 const SalesOrderList = ({
   card,
   formValues,
@@ -336,10 +305,6 @@ const SalesOrderList = ({
   // SO Header fields (no mock defaults — values come from API via mapSalesOrderResponse or user edits)
   const soCustomerCode = formValues.soCustomerCode || "";
   const soCustomerName = formValues.soCustomerName || "";
-  const isLntSalesOrder = LNT_CLIENT_PATTERN.test(`${soCustomerName} ${formValues.billingEntity || ""}`);
-  const visibleApprovalUploadFields = approvalUploadFields
-    .filter((field) => field.name !== SCC_FIELD_NAME || isLntSalesOrder)
-    .map((field) => (field.name === SCC_FIELD_NAME ? { ...field, required: true } : field));
   const soContactPerson = formValues.soContactPerson || "";
   const soBpCurrency = formValues.soBpCurrency || "";
   const soEuroRate = formValues.soEuroRate || "";
@@ -608,10 +573,9 @@ const SalesOrderList = ({
   // alone wasn't enough to catch that case, only an actual page refresh (a real fresh mount).
   // Resets to the default first so the previous card's state never shows while the fetch below
   // is still in flight. The useDaLocalSoApproval progress is deliberately NOT reset here, so the
-  // card resumes where it was left; only the uncommitted "Approved by" input is re-seeded.
+  // card resumes where it was left.
   useEffect(() => {
     setSoActionState(SO_ACTION_STATE_DEFAULT);
-    setApprovedByInput(useDaLocalSoApproval.getState().soApproval[callId]?.approvedByName ?? "");
   }, [callId, soActionStateResetToken]);
 
   // daStatusRefreshToken is bumped by onDaStatusRefresh after every action below, so the
@@ -841,33 +805,6 @@ const SalesOrderList = ({
   // via da/da_upload_invoice (see handleUploadInvoiceIssuance) — the client-decision states
   // that follow it are still local-only simulation, same as the rest of this stage.
   const [showInvoiceIssuanceModal, setShowInvoiceIssuanceModal] = useState(false);
-
-  // SO approval email upload modal — opened from the "Upload Approval Email" button shown next
-  // to the "Approved" label once the client's SO approval has been recorded (column 4 with
-  // api/da/action_state reporting "approved", or the card sitting on column 5). Same
-  // Uses the Upload SE Approval modal shell (SeApprovalUploadModal), so the submitting flag and
-  // the backend's error message are owned here.
-  const [showApprovalEmailUploadModal, setShowApprovalEmailUploadModal] = useState(false);
-  const [isApprovalEmailUploading, setIsApprovalEmailUploading] = useState(false);
-  const [approvalEmailUploadError, setApprovalEmailUploadError] = useState("");
-
-  // Whether the client's SO approval email has been uploaded for this card (see
-  // handleUploadApprovalEmail) — the "Approved" label only shows once it has been. Read back from
-  // api/da/action_state's approval_proof_uploaded so a page refresh resumes on the "Approved by"
-  // field; useDaLocalSoApproval covers the gap until the refetch after an upload lands.
-  const isApprovalEmailUploaded =
-    soApprovalProgress?.isApprovalEmailUploaded === true ||
-    [true, 1, "1", "true"].includes(soActionState?.approval_proof_uploaded);
-  const setIsApprovalEmailUploaded = (value) => setSoApprovalField(callId, "isApprovalEmailUploaded", value);
-
-  // "Approved by" header field shown in place of the old static "Approved" label once the
-  // approval email has been uploaded (per request 2026-09-23): the typed name is committed with
-  // the tick button and wiped with the clear button. The committed name is read back from
-  // api/da/action_state's approved_by, with useDaLocalSoApproval as the same fallback as above.
-  const [approvedByInput, setApprovedByInput] = useState(soApprovalProgress?.approvedByName ?? "");
-  const approvedByName = soApprovalProgress?.approvedByName || soActionState?.approved_by || "";
-  const setApprovedByName = (value) => setSoApprovalField(callId, "approvedByName", value);
-  const [isRecordingApprovedBy, setIsRecordingApprovedBy] = useState(false);
 
   // api/da/da_action_email_draft/{call_id} — { status: "success", data: { recipient,
   // stage_document_id? } }. Best effort: if it fails or callId is missing, the modal just opens
@@ -1145,65 +1082,6 @@ const SalesOrderList = ({
 
   const handleCloseInvoiceIssuanceModal = () => {
     setShowInvoiceIssuanceModal(false);
-  };
-
-  const handleCloseApprovalEmailUploadModal = () => {
-    setShowApprovalEmailUploadModal(false);
-    setApprovalEmailUploadError("");
-  };
-
-  const handleSubmitApprovalEmailUpload = async (filesByField) => {
-    setIsApprovalEmailUploading(true);
-    setApprovalEmailUploadError("");
-    try {
-      await handleUploadApprovalEmail(filesByField);
-      handleCloseApprovalEmailUploadModal();
-    } catch (err) {
-      setApprovalEmailUploadError(
-        err?.response?.data?.message || err?.message || "Upload failed. Please try again."
-      );
-    } finally {
-      setIsApprovalEmailUploading(false);
-    }
-  };
-
-  // Persists via da/da_upload_so_approval_proof (call_id + proof file(s), multipart/form-data)
-  // -> { status: "success", stage_document_id } on success, or { status: "error", message } when
-  // the call has no sales order. Like da_upload_invoice the response carries no
-  // status_id/sticker_id, so the upload does not advance the DA's real stage — it only flips
-  // isApprovalEmailUploaded so the header swaps the upload button for the "Approved" label
-  // (see renderApprovedWithEmailUpload).
-  // Submitting with no file is allowed on purpose (SeApprovalUploadModal's allowEmptyUpload) so the
-  // backend's own "No sales order found for this call" message is what the modal shows.
-  const handleUploadApprovalEmail = async (filesByField) => {
-    if (!callId) {
-      useAlertReducer.getState().error("No call identifier available for this card.");
-      return;
-    }
-    const formData = new FormData();
-    formData.append("call_id", callId);
-    approvalUploadFields.forEach(({ name }) => {
-      const [file] = filesByField?.[name] ?? [];
-      if (file) formData.append(name, file);
-    });
-
-    const { data } = await daService.uploadSoApprovalProof(formData);
-    if (data?.status !== "success") {
-      throw new Error(data?.message || "Failed to upload the approval proof.");
-    }
-
-    setIsApprovalEmailUploaded(true);
-    useAlertReducer.getState().success("Approval proof uploaded.");
-    if (refreshSalesOrder) refreshSalesOrder();
-    onDaStatusRefresh?.();
-    // L&T SCC received: a successful upload moves the card on to "Submitted to FDA". The upload
-    // response carries no status_id, so only the board column is moved.
-    if (isAtSccReceivedColumn) {
-      const submittedToFdaLabel = findBoardColumnLabel(/submitted to fda/i);
-      if (submittedToFdaLabel) {
-        onAdvanceDaStage?.({ label: submittedToFdaLabel, skipStatusUpdate: true });
-      }
-    }
   };
 
   // Persists via da/da_upload_invoice (call_id + invoice file(s), multipart/form-data) →
@@ -2407,117 +2285,6 @@ const SalesOrderList = ({
     );
   };
 
-  // "Approved" header state shared by column 4 (api/da/action_state "approved") and column 5
-  // ("SO/PO Approval Received"). Per request 2026-09-17 this is a two-step state: first only
-  // the "Upload Approval Email" button (opens the drag-and-drop upload modal, see
-  // handleUploadApprovalEmail); once the upload succeeds it becomes the "Approved by" field,
-  // where staff type in who approved the SO and commit it with the tick (per request
-  // 2026-09-23, replacing the old static "Approved" label).
-  const handleChangeApprovedBy = (event) => {
-    setApprovedByInput(event.target.value);
-    setApprovedByName("");
-  };
-
-  // Persists via da/da_record_approved_by (call_id + approved_by) -> { status: "success" }.
-  // The backend rejects it with "No approval proof uploaded yet for this call" until the
-  // approval proof exists for the same call, so the confirmed name is only shown on success.
-  const handleConfirmApprovedBy = async () => {
-    const name = approvedByInput.trim();
-    if (!name) {
-      useAlertReducer.getState().error("Please enter who approved this.");
-      return;
-    }
-    if (!callId) {
-      useAlertReducer.getState().error("No call identifier available for this card.");
-      return;
-    }
-    setIsRecordingApprovedBy(true);
-    try {
-      const { data } = await daService.recordApprovedBy({ call_id: callId, approved_by: name });
-      if (!data || data.status === "error" || data.status === false) {
-        useAlertReducer.getState().error(data?.message || "Failed to record who approved this.");
-        return;
-      }
-      setApprovedByInput(name);
-      setApprovedByName(name);
-      useAlertReducer.getState().success("Approved by recorded.");
-      onCloseCard?.();
-    } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        err?.message ||
-        "Failed to record who approved this.";
-      useAlertReducer.getState().error(msg);
-    } finally {
-      setIsRecordingApprovedBy(false);
-    }
-  };
-
-  const handleClearApprovedBy = () => {
-    setApprovedByInput("");
-    setApprovedByName("");
-  };
-
-  const renderApprovedByField = () => (
-    <div className="sales-order-da-approved-by">
-      {approvedByName ? (
-        <span className="sales-order-da-approved-by-confirmed">
-          <FiCheck />
-          Approved by {approvedByName}
-        </span>
-      ) : (
-        <>
-          <label className="sales-order-da-approved-by-label" htmlFor="sales-order-da-approved-by">
-            Approved by
-          </label>
-          <input
-            id="sales-order-da-approved-by"
-            type="text"
-            className="sales-order-da-approved-by-input"
-            placeholder="Enter name..."
-            value={approvedByInput}
-            onChange={handleChangeApprovedBy}
-            disabled={isRecordingApprovedBy}
-          />
-          <button
-            type="button"
-            className="sales-order-da-approved-by-btn sales-order-da-approved-by-btn--confirm"
-            title="Confirm the approver name"
-            onClick={handleConfirmApprovedBy}
-            disabled={isRecordingApprovedBy}
-          >
-            <FiCheck />
-          </button>
-          <button
-            type="button"
-            className="sales-order-da-approved-by-btn sales-order-da-approved-by-btn--clear"
-            title="Clear the approver name"
-            onClick={handleClearApprovedBy}
-            disabled={isRecordingApprovedBy}
-          >
-            <FiX />
-          </button>
-        </>
-      )}
-    </div>
-  );
-
-  const renderApprovedWithEmailUpload = () =>
-    isApprovalEmailUploaded ? (
-      renderApprovedByField()
-    ) : (
-      <button
-        type="button"
-        className="sales-order-da-status-button"
-        title="Upload the client's SO approval email"
-        onClick={() => setShowApprovalEmailUploadModal(true)}
-      >
-        <FiUpload />
-        Upload Approved Documents
-      </button>
-    );
-
   return (
     <div className="cardform-left-full sales-order-content-wrapper" style={{ "--card-color": cardColor }}>
       <div className="sales-order-list-header">
@@ -2553,12 +2320,12 @@ const SalesOrderList = ({
             // plain "Approved" label (Approve moves the card here from column 4, see
             // handleApproveDaClientDecision) instead of nothing at all.
             !isAtOpsCompletedColumn &&
+            !isAtSoApprovalDecisionColumn &&
+            !isAtSccReceivedColumn &&
+            !isAtSubmittedToFdaColumn &&
             !(isAtArInvoiceColumn && isRealInvoiceIssuanceStage) &&
             (isCardAtSoApprovalColumn ||
               isAtSoSentForSccColumn ||
-              isAtSccReceivedColumn ||
-              isAtSubmittedToFdaColumn ||
-              isAtSoApprovalDecisionColumn ||
               (effectiveNextDaStatusLabel && shouldShowDaActionButton)) && (
             // Column 4's button state is driven by api/da/action_state's button_state now, via
             // effectiveSoButtonState (see its declaration above, which is where a stale persisted
@@ -2566,28 +2333,7 @@ const SalesOrderList = ({
             // justApproved/justRejected/isSoApprovalEmailPendingDecision local guesswork. Every
             // other column still uses the granular DA status-timeline (isAwaitingDecisionStage /
             // daActionButtonLabel) as before.
-            isAtSubmittedToFdaColumn ? (
-              renderApprovedByField()
-            ) : isAtSccReceivedColumn ? (
-              isApprovalEmailUploaded ? (
-                <span className="sales-order-da-status-button sales-order-da-status-button--label">
-                  <FiCheck />
-                  Approved documents uploaded
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  className="sales-order-da-status-button"
-                  title="Upload the approved SO document, approval email and SCC"
-                  onClick={() => setShowApprovalEmailUploadModal(true)}
-                >
-                  <FiUpload />
-                  Upload Approved Documents
-                </button>
-              )
-            ) : isAtSoApprovalDecisionColumn ? (
-              renderApprovedWithEmailUpload()
-            ) : isAtSoSentForSccColumn ? (
+            isAtSoSentForSccColumn ? (
               soActionState?.button_state === "awaiting_approval" ? (
                 <div className="sales-order-da-status-group">
                   <span className="sales-order-da-status-button sales-order-da-status-button--label">
@@ -2626,9 +2372,7 @@ const SalesOrderList = ({
                 </button>
               ) : null
             ) : isCardAtSoApprovalColumn ? (
-              effectiveSoButtonState === "approved" ? (
-                renderApprovedWithEmailUpload()
-              ) : effectiveSoButtonState === "awaiting_approval" ? (
+              effectiveSoButtonState === "awaiting_approval" ? (
                 <div className="sales-order-da-status-group">
                   <span className="sales-order-da-status-button sales-order-da-status-button--label">
                     <FiClipboard />
@@ -3596,25 +3340,6 @@ const SalesOrderList = ({
           defaultBody={draftBody}
           preLoadedDocuments={preLoadedDocuments}
           callId={callId}
-        />
-      )}
-
-      {/* SO approval email upload — opened from the "Upload Approval Email" button; a successful
-          upload swaps that button for the "Approved" label (see renderApprovedWithEmailUpload). */}
-      {isDaVerifyContext && (
-        <SeApprovalUploadModal
-          show={showApprovalEmailUploadModal}
-          onClose={handleCloseApprovalEmailUploadModal}
-          onUpload={handleSubmitApprovalEmailUpload}
-          isSubmitting={isApprovalEmailUploading}
-          submitError={approvalEmailUploadError}
-          allowEmptyUpload
-          batchTitle={soCustomerName}
-          contextCaption="Sales order:"
-          fields={visibleApprovalUploadFields}
-          title="Upload Approved Documents"
-          subtitle="Attach the approved SO document and the client's approval email for this call"
-          submitLabel="Upload Approved Documents"
         />
       )}
 
