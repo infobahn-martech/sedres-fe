@@ -4,7 +4,7 @@ import CommonHeader from "../../components/CommonHeader";
 import CustomTable from "../../components/customTable";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import { BillingEntityModal } from "./Modals/AddEditBillingEntity";
-import { RenderAction } from "./RenderCells";
+import { RenderAction, RenderColorCode } from "./RenderCells";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
 import usePermissions from "../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../shared/constants/permissions";
@@ -119,16 +119,18 @@ const BillingEntity = () => {
       contentClass: "table-content",
     },
     {
-      name: "Contact Name",
-      selector: "contact_name",
-      width: "200",
+      name: "Customer Type",
+      selector: "customer_type",
+      width: "160",
       thclass: "tb-head",
       contentClass: "table-content",
+      cell: ({ row }) => row?.customer_type || "—",
     },
     {
-      name: "Phone Number",
-      selector: "phone_number",
-      width: "180",
+      name: "Color Code",
+      selector: "color_code",
+      width: "160",
+      cell: RenderColorCode,
       thclass: "tb-head",
       contentClass: "table-content",
     },

@@ -4,6 +4,7 @@ import moment from 'moment';
 import edit from '../../assets/images/edit.svg';
 import trash from '../../assets/images/delete.svg';
 import { getInitials } from '../../shared/utils/utils';
+import { normalizeHexColor } from '../../components/SedresColorPicker/sedresColorPickerConstants';
 
 export const RenderAction = ({ onEditClick, row, onDeleteClick, hideDelete, canEditBillingEntity = false }) => {
   return (
@@ -45,6 +46,17 @@ export const RenderName = ({ row }) => {
       {row?.firstName}&nbsp;
       {row?.lastName}
     </>
+  );
+};
+
+export const RenderColorCode = ({ row }) => {
+  if (!row?.color_code) return '—';
+  const hex = normalizeHexColor(row.color_code);
+  return (
+    <span className="color-code-cell">
+      <span className="color-code-swatch" style={{ backgroundColor: hex }} aria-hidden />
+      {hex.toUpperCase()}
+    </span>
   );
 };
 
