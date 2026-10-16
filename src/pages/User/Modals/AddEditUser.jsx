@@ -13,6 +13,7 @@ import useUserReducer from "../../../store/UserReducer";
 import useRoleReducer from "../../../store/RoleReducer";
 import useWorkSpaceReducer from "../../../store/WorkSpaceReducer";
 import useWorkFlowReducer from "../../../store/WorkFlowReducer";
+import usePortReducer from "../../../store/PortReducer";
 import Gateway from "../../../gateway/gateway";
 
 // Accepts an array, a comma-separated string, or a single id and returns string ids
@@ -44,6 +45,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
       username: "",
       email: "",
       roleid: "",
+      port_id: "",
       board_ids: [],
       workflow_ids: [],
       address: "",
@@ -65,6 +67,9 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
   );
   const { boardsWorkflows, isLoadingBoardsWorkflows, getWorkflowsByBoards } =
     useWorkFlowReducer((state) => state);
+  const { ports, getPorts, isLoading: isLoadingPorts } = usePortReducer(
+    (state) => state
+  );
 
   // --- helpers ---
   const roleOptions = useMemo(() => {
@@ -78,6 +83,15 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
   const roleSelectOptions = useMemo(
     () => roleOptions.map((role) => ({ value: role.id, label: role.name })),
     [roleOptions]
+  );
+
+  const portSelectOptions = useMemo(
+    () =>
+      (ports || []).map((p) => ({
+        value: String(p.port_id ?? ""),
+        label: String(p.port_name ?? p.port ?? p.port_id ?? ""),
+      })),
+    [ports]
   );
 
   const boardSelectOptions = useMemo(
@@ -113,6 +127,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
   useEffect(() => {
     fetchRoles({ params: { page: 1, limit: 100 } });
     if (!workspaces?.length) listAllWorkspaces();
+    getPorts({ params: { limit: 1000 } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -126,6 +141,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
         phone: showModal?.phone || "",
         address: showModal?.address || "",
         roleid: "", // ✅ keep empty first, set after roles loaded
+        port_id: showModal?.port_id != null ? String(showModal.port_id) : "",
         board_ids: [],
         workflow_ids: [],
       });
@@ -139,6 +155,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
         username: "",
         email: "",
         roleid: "",
+        port_id: "",
         board_ids: [],
         workflow_ids: [],
         address: "",
@@ -254,8 +271,9 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
       formData.append("phone", data.phone);
       formData.append("address", data.address || "");
       formData.append("roleid", data.roleid);
-      (data.board_ids || []).forEach((id) => formData.append("board_ids[]", id));
-      (data.workflow_ids || []).forEach((id) => formData.append("workflow_ids[]", id));
+      formData.append("port_id", data.port_id || "");
+      formData.append("board_ids", JSON.stringify((data.board_ids || []).map(Number)));
+      formData.append("workflow_ids", JSON.stringify((data.workflow_ids || []).map(Number)));
 
       if (profileImage) {
         formData.append("profileimg", profileImage);
@@ -552,7 +570,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
             </div>
           </div>
 
-          {/* ===== Phone + Address ===== */}
+          {/* ===== Phone + Port ===== */}
           <div className="mb-lg-3 mb-sm-0">
             <div className="row g-3">
               <div className="col-lg-6 col-sm-12">
@@ -589,6 +607,41 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
                 </div>
               </div>
               <div className="col-lg-6 col-sm-12">
+                <div className="form-field">
+                  <div className="phone-wrapper">
+                    <label className="phone-label">Port</label>
+                    <Controller
+                      name="port_id"
+                      control={control}
+                      render={({ field }) => (
+                        <PremiumSelect
+                          value={field.value != null ? String(field.value) : ""}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          options={portSelectOptions}
+                          placeholder={
+                            isLoadingPorts || ports === null ? "Loading ports..." : "Select Port"
+                          }
+                          searchPlaceholder="Search port..."
+                          disabled={isLoadingPorts || ports === null}
+                          menuPortalTarget={
+                            typeof document !== "undefined"
+                              ? document.body
+                              : undefined
+                          }
+                          menuClassName="user-modal-premium-select-menu"
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ===== Address ===== */}
+          <div className="mb-lg-3 mb-sm-0">
+            <div className="row g-3">
+              <div className="col-12">
                 <div className="form-field">
                   <div className="form-floating desig-inp">
                     <textarea
