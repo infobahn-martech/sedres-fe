@@ -16,6 +16,7 @@ import SeReviewMoveModal from "../components/board/SeReviewMoveModal";
 import ArInvoiceReviewModal from "../components/board/ArInvoiceReviewModal";
 import SignatureCheckModal from "../components/board/SignatureCheckModal";
 import PoReviewModal from "../components/board/PoReviewModal";
+import SccReviewModal from "../components/board/SccReviewModal";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -42,6 +43,7 @@ import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelecti
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
 import useArInvoiceReviewStore from "../../../shared/store/arInvoiceReviewStore";
 import usePoReviewStore from "../../../shared/store/poReviewStore";
+import useSccReviewStore from "../../../shared/store/sccReviewStore";
 import "../../../design/scss/pages/kanban-board/marquee-select.scss";
 
 /* "SE Received" bulk invoice upload: PDFs only. da/upload_ar_invoices takes max_files_per_request
@@ -70,6 +72,23 @@ const srfUploadFields = [
     name: SRF_FIELD_NAME,
     accept: ".pdf",
     formatsHint: "PDF",
+    multiple: false,
+  },
+];
+/* L&T "SCC Received" bulk upload, from the workflow header: signed SOs and SCCs (PDF) and the approval
+   email (normally one) for the ticked cards. */
+const SCC_FILES_PER_REQUEST = 20;
+const SCC_SIGNED_SO_FIELD_NAME = "signed_sos";
+const SCC_FIELD_NAME = "sccs";
+const SCC_APPROVAL_EMAIL_FIELD_NAME = "approval_email";
+const sccDocumentUploadFields = [
+  { name: SCC_SIGNED_SO_FIELD_NAME, label: "Signed SOs", accept: ".pdf", formatsHint: "PDF", multiple: true },
+  { name: SCC_FIELD_NAME, label: "SCCs", accept: ".pdf", formatsHint: "PDF", multiple: true },
+  {
+    name: SCC_APPROVAL_EMAIL_FIELD_NAME,
+    label: "Approval email",
+    accept: ".eml,.msg",
+    formatsHint: "EML, MSG",
     multiple: false,
   },
 ];
@@ -1011,6 +1030,85 @@ export default function KanbanBoardPage() {
     [selectedSrfUploadCards, getBatchCallIds, removeCardSelectionId, handleCloseSrfUpload, refetchBoard]
   );
 
+  /* The workflow header's "Upload SCC Documents" button, for the cards ticked in "SCC Received". */
+  const [showSccUploadModal, setShowSccUploadModal] = useState(false);
+  const [selectedSccUploadCards, setSelectedSccUploadCards] = useState([]);
+  const [selectedSccUploadWorkflowId, setSelectedSccUploadWorkflowId] = useState(null);
+  const [isUploadingSccDocuments, setIsUploadingSccDocuments] = useState(false);
+  const openSccReviewModal = useSccReviewStore((state) => state.openSccReviewModal);
+
+  const handleUploadSccDocumentsClick = useCallback((cards, { workflowId = null } = {}) => {
+    if (!cards?.length) return;
+    setSelectedSccUploadCards(cards);
+    setSelectedSccUploadWorkflowId(workflowId);
+    setShowSccUploadModal(true);
+  }, []);
+
+  const handleCloseSccUpload = useCallback(() => {
+    setShowSccUploadModal(false);
+    setSelectedSccUploadCards([]);
+    setSelectedSccUploadWorkflowId(null);
+  }, []);
+
+  const handleUploadSccDocuments = useCallback(
+    async (filesByField) => {
+      const cards = selectedSccUploadCards;
+      const workflowId = selectedSccUploadWorkflowId;
+      const callIds = getBatchCallIds({ cards });
+      if (!callIds.length) {
+        notify("The selected cards have no call to upload SCC documents for", "error");
+        return;
+      }
+      const fileCount = Object.values(filesByField).reduce((sum, files) => sum + (files?.length ?? 0), 0);
+      if (fileCount > SCC_FILES_PER_REQUEST) {
+        notify(`Upload at most ${SCC_FILES_PER_REQUEST} files at a time (${fileCount} selected)`, "error");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("call_ids", callIds.join(","));
+      formData.append("card_ids", cards.map((card) => card.id).join(","));
+      (filesByField[SCC_SIGNED_SO_FIELD_NAME] ?? []).forEach((file) => formData.append("signed_sos[]", file));
+      (filesByField[SCC_FIELD_NAME] ?? []).forEach((file) => formData.append("sccs[]", file));
+      const approvalEmail = filesByField[SCC_APPROVAL_EMAIL_FIELD_NAME]?.[0];
+      if (approvalEmail) formData.append("approval_email", approvalEmail);
+
+      setIsUploadingSccDocuments(true);
+      try {
+        let data;
+        try {
+          ({ data } = await daService.uploadSccDocuments(formData));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+        if (data?.status !== "success") {
+          notify(data?.message || "Failed to upload SCC documents", "error");
+          return;
+        }
+        notify("SCC documents uploaded", "success");
+        const reviewCardById = {};
+        (data.data?.cards ?? []).forEach((card) => {
+          reviewCardById[String(card.card_id)] = card;
+        });
+        cards.forEach((card) => removeCardSelectionId(card.id));
+        handleCloseSccUpload();
+        openSccReviewModal(
+          cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
+          { notPlacedFiles: data.data?.not_placed_files ?? [], workflowId }
+        );
+      } finally {
+        setIsUploadingSccDocuments(false);
+      }
+    },
+    [
+      selectedSccUploadCards,
+      selectedSccUploadWorkflowId,
+      getBatchCallIds,
+      removeCardSelectionId,
+      handleCloseSccUpload,
+      openSccReviewModal,
+    ]
+  );
+
   /* "Send Invoice" on McDermott's "PO Received" column header, for the one card ticked there,
      opens that card's invoice email draft. */
   const [showInvoiceDispatchEmailModal, setShowInvoiceDispatchEmailModal] = useState(false);
@@ -1776,6 +1874,7 @@ export default function KanbanBoardPage() {
           onColumnUploadInvoice={handleColumnUploadInvoice}
           onColumnUploadPos={handleColumnUploadPos}
           onUploadSrf={handleUploadSrfClick}
+          onUploadSccDocuments={handleUploadSccDocumentsClick}
           onColumnSendInvoice={handleColumnSendInvoice}
           onColumnMergeInvoice={handleColumnMergeInvoice}
           onColumnDownloadInvoices={handleColumnDownloadInvoices}
@@ -1937,6 +2036,23 @@ export default function KanbanBoardPage() {
         submitLabel="Upload SRF"
         fields={srfUploadFields}
       />
+
+      <SeApprovalUploadModal
+        show={showSccUploadModal}
+        onClose={handleCloseSccUpload}
+        onUpload={handleUploadSccDocuments}
+        isSubmitting={isUploadingSccDocuments}
+        batchTitle={[
+          ...new Set(selectedSccUploadCards.map((card) => batchByCardId[card.id]).filter(Boolean)),
+        ].join(", ")}
+        selectedCardCount={selectedSccUploadCards.length}
+        title="Upload SCC Documents"
+        subtitle="Attach the signed SOs, SCCs and approval email for the selected cards"
+        submitLabel="Upload"
+        fields={sccDocumentUploadFields}
+      />
+
+      <SccReviewModal onConfirmed={refetchBoard} />
 
       <PoReviewModal onConfirmed={refetchBoard} />
 

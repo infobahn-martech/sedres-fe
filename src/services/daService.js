@@ -226,6 +226,25 @@ const uploadSrf = (formData) =>
  * PO review of every McDermott "Requested PO" card, paged: which sales orders have a PO placed on them. */
 const getPoReview = (params) => Gateway.get('/da/po_review', { params });
 
+/** @param {FormData} formData - call_ids, card_ids (ticked SCC Received cards, comma separated), signed_sos[], sccs[],
+ * approval_email, multipart/form-data.
+ * @returns {Promise<{ data: { status: 'success', data: { received_files: string[], not_placed_files: string[],
+ *   cards: { call_id: number, card_id: number, sales_orders: string[], ready: boolean }[] } }
+ *   | { status: 'error', message: string } }>}
+ * Bulk upload of the signed SOs, SCCs and approval email of the ticked cards. */
+const uploadSccDocuments = (formData) =>
+  Gateway.post('/da/upload_scc_documents', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+/** @param {{ workflow_id: number, card_ids: string (ticked cards, comma separated) }} params
+ * SCC review of the ticked cards: which signed SO, SCC and approval email are placed on each. */
+const getSccDocumentReview = (params) => Gateway.get('/da/scc_document_review', { params });
+
+/** @param {{ cards: { call_id: number, card_id: number }[] }} payload
+ * Confirms the reviewed SCC documents (ticked cards only); the response lists the moved cards in moved_to_da. */
+const confirmSccDocuments = (payload) => Gateway.post('/da/confirm_scc_documents', payload);
+
 /** @param {{ cards: { call_id: number, card_id: number, sales_orders: { sales_order_id: number, sales_order_no: string, po_id: number }[] }[] }} payload
  * Confirms the reviewed POs (ticked cards only); the confirmed cards move to "PO Received". */
 const confirmPos = (payload) => Gateway.post('/da/confirm_pos', payload);
@@ -311,6 +330,9 @@ export default {
   uploadPos,
   uploadSrf,
   getPoReview,
+  uploadSccDocuments,
+  getSccDocumentReview,
+  confirmSccDocuments,
   confirmPos,
   getInvoiceDispatchDraft,
   sendInvoiceDispatch,

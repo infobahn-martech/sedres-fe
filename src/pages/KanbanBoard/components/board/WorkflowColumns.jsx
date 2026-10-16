@@ -82,6 +82,10 @@ const TO_BE_UPLOADED_TO_PORTAL_COLUMN_PATTERN = /^to\s+be\s+uploaded\s+to\s+(the
    proof is stored per card, and the backend then moves that card to Dispatched). */
 const UPLOADED_TO_PORTAL_COLUMN_PATTERN = /^uploaded\s+to\s+portal$/i;
 
+/* L&T DA: "SCC Received" shows "Upload SCC Documents" for the cards the user ticks (signed SOs, SCCs and the
+   approval email in one bulk upload), which then opens the SCC review. */
+const SCC_RECEIVED_COLUMN_PATTERN = /^scc\s+received$/i;
+
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
   if (isMcDermottWorkflow(workflow)) {
@@ -92,6 +96,7 @@ const getInvoiceAction = (workflow, column) => {
     return null;
   }
   if (isLntBacklog(workflow?.title, title)) return "checkSignatures";
+  if (SCC_RECEIVED_COLUMN_PATTERN.test(title)) return "uploadSccDocuments";
   if (CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
   if (READY_FOR_DISPATCH_COLUMN_PATTERN.test(title)) return "downloadInvoices";
   if (TO_BE_UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(title)) return "moveCards";
@@ -107,6 +112,7 @@ const INVOICE_ACTION_BUTTONS = {
   upload: { label: "Upload Invoice", icon: <FiUploadCloud size={16} aria-hidden /> },
   issueArInvoice: { label: "Upload Invoices", icon: <FiUploadCloud size={16} aria-hidden /> },
   uploadPos: { label: "Upload POs", icon: <FiUploadCloud size={16} aria-hidden /> },
+  uploadSccDocuments: { label: "Upload SCC Documents", icon: <FiUploadCloud size={16} aria-hidden /> },
   uploadSrf: { label: "Upload SRF", icon: <FiUploadCloud size={16} aria-hidden /> },
   sendInvoice: { label: "Send Invoice", icon: <FiSend size={16} aria-hidden /> },
   downloadInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
@@ -134,6 +140,7 @@ export default function WorkflowColumns({
   onColumnUploadInvoice,
   onColumnUploadPos,
   onUploadSrf,
+  onUploadSccDocuments,
   onColumnSendInvoice,
   onColumnMergeInvoice,
   onColumnDownloadInvoices,
@@ -432,6 +439,8 @@ export default function WorkflowColumns({
                   onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 uploadSrf: (cards) =>
                   onUploadSrf?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
+                uploadSccDocuments: (cards) =>
+                  onUploadSccDocuments?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 sendInvoice: ([card]) => onColumnSendInvoice?.(card),
                 merge: onColumnMergeInvoice,
                 downloadInvoices: onColumnDownloadInvoices,
