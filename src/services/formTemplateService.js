@@ -12,6 +12,8 @@ const getAllTemplates = () => Gateway.get('/form_template/all_templates');
 
 const getTemplateById = (templateId) => Gateway.get(`/form_template/${templateId}`);
 
+const getTemplateFirstTab = (templateId) => Gateway.get(`/form_template/first_tab/${templateId}`);
+
 const saveCardTemplate = (payload) => Gateway.post('/form_template/save_card_template', payload);
 
 const deleteTemplate = (templateId) => Gateway.delete(`/form_template/delete/${templateId}`);
@@ -23,6 +25,7 @@ export default {
   getTemplateList,
   getAllTemplates,
   getTemplateById,
+  getTemplateFirstTab,
   saveCardTemplate,
   deleteTemplate,
 };

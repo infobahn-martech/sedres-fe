@@ -14,6 +14,7 @@ const useFormTemplateReducer = create((set) => ({
   isLoadingAllTemplates: false,
   allTemplates: null,
   isLoadingTemplateDetail: false,
+  isLoadingTemplateFirstTab: false,
   isSaving: false,
   isDeleting: false,
 
@@ -92,6 +93,19 @@ const useFormTemplateReducer = create((set) => ({
       const { error: showError } = useAlertReducer.getState();
       set({ isLoadingTemplateDetail: false });
       showError(error?.response?.data?.message ?? error?.message ?? 'Failed to fetch template');
+    }
+  },
+
+  getTemplateFirstTab: async ({ templateId, cb }) => {
+    try {
+      set({ isLoadingTemplateFirstTab: true });
+      const { data } = await formTemplateService.getTemplateFirstTab(templateId);
+      set({ isLoadingTemplateFirstTab: false });
+      cb?.(data?.data ?? null);
+    } catch (error) {
+      const { error: showError } = useAlertReducer.getState();
+      set({ isLoadingTemplateFirstTab: false });
+      showError(error?.response?.data?.message ?? error?.message ?? 'Failed to fetch template fields');
     }
   },
 

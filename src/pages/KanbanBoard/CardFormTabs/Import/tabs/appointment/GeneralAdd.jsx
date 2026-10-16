@@ -2,6 +2,7 @@ import PropTypes from "prop-types";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import "../../../../../../design/scss/general.scss";
 import "../../../../../../design/css/common/CardForm.css";
+import "../../../../../../design/scss/pages/callTypeBuilder.scss";
 import callFileService from "../../../../../../services/callFileService";
 import mailService from "../../../../../../services/mailService";
 import billingEntityService from "../../../../../../services/billingEntityService";
@@ -10,6 +11,8 @@ import vesselService from "../../../../../../services/vesselService";
 import stageTimeMappingService from "../../../../../../services/stageTimeMappingService";
 import preArrivalInfoService from "../../../../../../services/preArrivalInfoService";
 import useCallTaskReducer from "../../../../../../store/CallTaskReducer";
+import useFormTemplateReducer from "../../../../../../store/FormTemplateReducer";
+import TemplateFieldPreview from "../../../../../CustomTemplate/TemplateFieldPreview";
 import usePermissions from "../../../../../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../shared/constants/permissions";
 import { mergeOptionIfMissing } from "../../../../../../shared/helpers/callFileFormOptions";
@@ -82,6 +85,29 @@ const UNTOUCHED_PREVIEW_FIELDS = {
   cc_emails: false,
   subject: false,
 };
+
+// Maps a form_template/first_tab field to the shape TemplateFieldPreview renders,
+// ordered by grid row, then column, then display order.
+const mapTemplateTabFields = (fields) =>
+  (Array.isArray(fields) ? fields : [])
+    .slice()
+    .sort(
+      (a, b) =>
+        Number(a?.row_no ?? 0) - Number(b?.row_no ?? 0) ||
+        Number(a?.col_no ?? 0) - Number(b?.col_no ?? 0) ||
+        Number(a?.display_order ?? 0) - Number(b?.display_order ?? 0)
+    )
+    .map((field) => ({
+      id: field?.field_id,
+      label: field?.field_label ?? "",
+      type: String(field?.type_key ?? "text").toLowerCase(),
+      required: String(field?.is_required ?? "0") === "1",
+      options: (Array.isArray(field?.options) ? field.options : []).map((opt) =>
+        typeof opt === "string" ? opt : opt?.option_label ?? ""
+      ),
+      optionsSource: field?.option_source === "master" ? "master" : "manual",
+      masterModule: field?.master_key ?? "",
+    }));
 
 const hasMeaningfulValue = (value) => {
   if (value === undefined || value === null) return false;
@@ -195,6 +221,27 @@ function GeneralAdd({
   useEffect(() => {
     clearCallTasks();
   }, [clearCallTasks]);
+
+  // Selecting a template swaps the form fields for that template's first-tab fields.
+  const getTemplateFirstTab = useFormTemplateReducer((state) => state.getTemplateFirstTab);
+  const [templateFields, setTemplateFields] = useState(null);
+  const selectedTemplateId = firstNonEmptyString(formValues?.template_id);
+
+  useEffect(() => {
+    setTemplateFields(null);
+    if (!selectedTemplateId) return;
+    let cancelled = false;
+    getTemplateFirstTab({
+      templateId: selectedTemplateId,
+      cb: (data) => {
+        if (cancelled) return;
+        setTemplateFields(mapTemplateTabFields(data?.tab?.fields));
+      },
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTemplateId, getTemplateFirstTab]);
 
   const getFieldValue = (fieldName) =>
     hasMeaningfulValue(formValues?.[fieldName]) ? formValues[fieldName] : "";
@@ -1696,6 +1743,13 @@ function GeneralAdd({
                 {canViewBasicFields && (
                   <div className="general-info-left general-add-form-panel">
                     <div className="general-add-form-scroll">
+                      {templateFields ? (
+                        <div className="pre-arrival-form">
+                          {templateFields.map((field) => (
+                            <TemplateFieldPreview key={field.id} field={field} />
+                          ))}
+                        </div>
+                      ) : (
                       <div className="pre-arrival-form">
                         <OwnerField
                           value={getFieldValue("owner")}
@@ -2278,6 +2332,7 @@ function GeneralAdd({
 
                         </div>
                       </div>
+                      )}
                     </div>
                   </div>
                 )}
