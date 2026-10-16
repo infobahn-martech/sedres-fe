@@ -75,6 +75,10 @@ const firstNonEmpty = (...values) => {
   return EMPTY_DISPLAY;
 };
 
+// get_call_detail may return these as plain labels or as { name } objects.
+const toDisplayLabel = (value) =>
+  value && typeof value === "object" ? value.name ?? value.label ?? null : value;
+
 const fileToAttachment = (file) => ({
   name: file.name,
   file,
@@ -314,19 +318,14 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
   }, [transportForm.vehicleTypeId, fetchInhouseDrivers]);
 
   const callTypeSummary = firstNonEmpty(callDetails?.call_type, callDetails?.call_type_name, cardData?.typeOfCall);
-  const billingEntitySummary = firstNonEmpty(callDetails?.billing_entity);
+  const billingEntitySummary = firstNonEmpty(toDisplayLabel(callDetails?.main_billing_entity));
   const portFromDetail =
     typeof callDetails?.port === "string"
       ? callDetails.port
       : callDetails?.port?.label || callDetails?.port?.name || "";
   const portSummary = firstNonEmpty(callDetails?.port_name, portFromDetail);
   const vesselNameSummary = firstNonEmpty(callDetails?.vessel_name, cardData?.vesselName);
-  const requestedOperatorSummary = firstNonEmpty(
-    callDetails?.requested_operator,
-    callDetails?.requested_operator_name,
-    callDetails?.assigned_operator_name,
-    callDetails?.assigned_operator
-  );
+  const requestedOperatorSummary = firstNonEmpty(callDetails?.assigned_operator_name);
 
   const handleProviderChange = useCallback((next) => {
     setTransportForm((previous) => ({
