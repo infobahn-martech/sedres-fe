@@ -535,6 +535,130 @@
   color: #475569;
 }
 
+/* ---------- Dark theme (navy tokens from partials/_theme.scss) ---------- */
+
+[data-theme="dark"] {
+  .coordinator-transport-card-view {
+    background: var(--bg-page);
+  }
+
+  .coordinator-transport-summary-card,
+  .coordinator-transport-form-card,
+  .coordinator-transport-table-card {
+    background: var(--bg-card);
+    border-color: var(--border);
+    box-shadow: var(--shadow-md);
+  }
+
+  .coordinator-transport-summary-label,
+  .coordinator-transport-form-subtitle,
+  .coordinator-transport-table-card .husb-header-subtitle,
+  .coordinator-transport-table-card .crew-pass-requests-pagination__info {
+    color: var(--text-subtle);
+  }
+
+  .coordinator-transport-summary-value,
+  .coordinator-transport-form-title,
+  .coordinator-transport-table-card .crew-pass-requests-table-card__title {
+    color: var(--text-heading);
+  }
+
+  .coordinator-transport-form-header,
+  .coordinator-transport-form-section,
+  .coordinator-transport-table-card .crew-pass-requests-table-card__header,
+  .coordinator-transport-table-card td {
+    border-color: var(--divider-row);
+  }
+
+  .coordinator-transport-form-card label {
+    color: var(--text-label);
+  }
+
+  .coordinator-transport-form-body::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+  }
+
+  .coordinator-transport-request-email-view,
+  .coordinator-transport-form-card .cf-input.location-autocomplete {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+    color: var(--text-control);
+  }
+
+  .coordinator-transport-form-card .cf-input.location-autocomplete input {
+    color: var(--text-control);
+  }
+
+  .coordinator-transport-form-card .cf-input.location-autocomplete input::placeholder,
+  .coordinator-transport-table__empty-cell {
+    color: var(--text-faint);
+  }
+
+  .coordinator-transport-provider-toggle {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+  }
+
+  .coordinator-transport-provider-option {
+    color: var(--text-subtle);
+  }
+
+  .coordinator-transport-provider-option.is-active {
+    background: var(--bg-highlight);
+    color: var(--brand-bright);
+    box-shadow: none;
+  }
+
+  .coordinator-transport-form-footer,
+  .coordinator-transport-table-card .crew-pass-requests-table-card__header,
+  .coordinator-transport-table-card .crew-pass-requests-table-card__pagination {
+    background: var(--bg-card);
+    border-color: var(--border);
+  }
+
+  .coordinator-transport-table-card th {
+    background: var(--bg-highlight);
+    color: var(--text-label);
+  }
+
+  .coordinator-transport-table-card tbody tr:hover {
+    background: var(--bg-row-hover);
+  }
+
+  .coordinator-transport-table-card .crew-pass-requests-pagination__btn {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+    color: var(--text-control);
+  }
+
+  .coordinator-transport-status-badge--pending {
+    background: rgba(245, 192, 99, 0.16);
+    color: var(--warning);
+  }
+
+  .coordinator-transport-status-badge--approved,
+  .coordinator-transport-status-badge--assigned {
+    background: rgba(76, 141, 255, 0.16);
+    color: var(--brand-bright);
+  }
+
+  .coordinator-transport-status-badge--completed {
+    background: rgba(91, 224, 176, 0.16);
+    color: var(--success);
+  }
+
+  .coordinator-transport-status-badge--rejected,
+  .coordinator-transport-status-badge--cancelled {
+    background: rgba(255, 122, 126, 0.16);
+    color: var(--danger);
+  }
+
+  .coordinator-transport-status-badge--default {
+    background: var(--bg-highlight);
+    color: var(--text-label);
+  }
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1450px) {
