@@ -78,8 +78,8 @@ const READY_FOR_DISPATCH_COLUMN_PATTERN = /^ready\s+for\s+dispatch$/i;
    column (Uploaded to Portal). */
 const TO_BE_UPLOADED_TO_PORTAL_COLUMN_PATTERN = /^to\s+be\s+uploaded\s+to\s+(the\s+)?portal$/i;
 
-/* L&T DA: "Uploaded to Portal" shows "Upload Dispatch Proof" while exactly one card there is ticked (the
-   proof is stored per card, and the backend then moves that card to Dispatched). */
+/* L&T DA: "Uploaded to Portal" shows "Upload Dispatch Proof" for the cards ticked there (bulk; the proofs are
+   reviewed and confirmed before the cards move on). */
 const UPLOADED_TO_PORTAL_COLUMN_PATTERN = /^uploaded\s+to\s+portal$/i;
 
 const getInvoiceAction = (workflow, column) => {
@@ -266,22 +266,6 @@ export default function WorkflowColumns({
         : getSwimlaneColumnCards(workflow, laneId, colKey)
     );
 
-  /* "Uploaded to Portal" takes one dispatch proof per card, so only one card there can stay ticked: when a
-     second one is ticked (click, drag or marquee), the earlier ticks are dropped and the newest is kept. */
-  useEffect(() => {
-    const colKey = workflow.columnOrder.find((key) =>
-      UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(String(workflow.columns[key]?.title ?? "").trim())
-    );
-    if (!colKey || !selectedActionCardIds?.length) return;
-    const ticked = getColumnCards(colKey).filter((card) => selectedActionCardIds.includes(card.id));
-    if (ticked.length < 2) return;
-    const newest = ticked.reduce((latest, card) =>
-      selectedActionCardIds.indexOf(card.id) > selectedActionCardIds.indexOf(latest.id) ? card : latest
-    );
-    ticked.filter((card) => card.id !== newest.id).forEach((card) => onToggleCardSelect?.(card));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedActionCardIds, workflow]);
-
   /* A column whose cards carry a batch renders them as groups (loose cards first, headerless). */
   const getBatchesForColumn = (colKey, laneId) => {
     const cards =
@@ -422,7 +406,7 @@ export default function WorkflowColumns({
                 };
               }
               const hasInvoiceButton =
-                invoiceAction === "sendInvoice" || invoiceAction === "uploadDispatchProof"
+                invoiceAction === "sendInvoice"
                   ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
               const invoiceActionHandlers = {
                 upload: onColumnUploadInvoice,
@@ -435,7 +419,7 @@ export default function WorkflowColumns({
                 sendInvoice: ([card]) => onColumnSendInvoice?.(card),
                 merge: onColumnMergeInvoice,
                 downloadInvoices: onColumnDownloadInvoices,
-                uploadDispatchProof: ([card]) => onUploadDispatchProof?.(card),
+                uploadDispatchProof: onUploadDispatchProof,
                 moveCards: onColumnMoveCards,
                 checkSignatures: (cards) =>
                   openSignatureCheckModal(
