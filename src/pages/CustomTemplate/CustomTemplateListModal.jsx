@@ -261,7 +261,7 @@ function CustomTemplateListModal({ show, onClose }) {
                                                             </div>
                                                         )}
 
-                                                        <div className="operation-right">
+                                                        <div className={`operation-right${featurePreviewKind ? " operation-right--feature-preview" : ""}`}>
                                                             {featurePreviewKind ? (
                                                                 <TemplateFeaturePreview kind={featurePreviewKind} />
                                                             ) : emailSubject ? (

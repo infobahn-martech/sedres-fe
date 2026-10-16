@@ -1137,7 +1137,17 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
 
 // Crew Immigration / Check List mock previews — real card markup shown for
 // reference only, so block all interaction and let wide tables scroll.
+// Feature screens bring their own spacing on the real card, so the preview
+// column drops the Call Type preview's forced padding and lets them fill it.
+.ct-preview-modal .operation-right.operation-right--feature-preview {
+  padding: 0 !important;
+}
+
 .ctm-feature-preview {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   width: 100%;
   min-width: 0;
   overflow-x: auto;
@@ -1146,6 +1156,20 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   // Children only, so the wrapper itself can still scroll horizontally.
   > * {
     pointer-events: none;
+  }
+
+  // Sales Order: undo the Call Type preview's bleed-out margins (they get
+  // clipped here) and the real card's own scroll box, so the whole order
+  // flows inside the preview panel's single scroll.
+  .ct-preview-modal & .sales-order-content-wrapper {
+    margin: 0;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    overflow: visible !important;
+    padding: 0 0 14px;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   // The real card's checklist column widths collapse the Item column inside
