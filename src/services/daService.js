@@ -42,13 +42,6 @@ const uploadInvoice = (formData) =>
   Gateway.post('/da/da_upload_invoice', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-/** @param {FormData} formData - call_id, proof (required), approval_email, scc (required for L&T only), multipart/form-data.
- * @returns {Promise<{ data: { status: 'success', stage_document_id: number } | { status: 'error', message: string } }>}
- * Stores the client's SO approval proof once the decision has been recorded as approved. */
-const uploadSoApprovalProof = (formData) =>
-  Gateway.post('/da/da_upload_so_approval_proof', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
 /** @param {{ call_id: string|number, decision: 1|0 }} payload - decision: 1 = approved, 0 = rejected */
 const recordClientDecision = (payload) => Gateway.post('/da/da_record_client_decision', payload);
 /** @returns {Promise<{ data: { status: string, data?: { button_state: 'send'|'awaiting_approval'|'approved', last_email_sent_date: string|null, last_decision: string|null, last_decision_date: string|null, approval_proof_uploaded?: boolean, approved_by?: string|null, approved_date?: string|null }, message?: string } }>}
@@ -56,11 +49,6 @@ const recordClientDecision = (payload) => Gateway.post('/da/da_record_client_dec
  * local justApproved/justRejected/isSoApprovalEmailPendingDecision heuristics in
  * SalesOrderList.jsx. `status: "error"` (e.g. "Call not found") on failure. */
 const getActionState = (callId) => Gateway.get(`/da/action_state/${callId}`);
-/** @param {{ call_id: string|number, approved_by: string }} payload
- * @returns {Promise<{ data: { status: 'success' } | { status: 'error', message: string } }>}
- * Records who approved the SO. Errors with "No approval proof uploaded yet for this call"
- * until the approval proof has been uploaded for the same call. */
-const recordApprovedBy = (payload) => Gateway.post('/da/da_record_approved_by', payload);
 /** @param {{ cards: Array<{ call_id: number, card_id: number }> }} payload
  * @returns {Promise<{ data: { status: true, batch_id: number, batch_number: string }
  *   | { status: false|'error', message: string } }>}
@@ -300,10 +288,8 @@ export default {
   sendActionEmail,
   getActionEmailDraft,
   uploadInvoice,
-  uploadSoApprovalProof,
   recordClientDecision,
   getActionState,
-  recordApprovedBy,
   createHubBatch,
   getBatches,
   getSeCreationEmailDraft,
