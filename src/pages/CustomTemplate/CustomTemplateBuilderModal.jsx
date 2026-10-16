@@ -5,6 +5,8 @@ import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import TemplateFieldPreview from "./TemplateFieldPreview";
 import TemplateEmailPreview from "./TemplateEmailPreview";
 import { getEmailPreviewSubject } from "./emailPreviewSubjects";
+import TemplateFeaturePreview from "./TemplateFeaturePreview";
+import { getFeaturePreviewKind } from "./templateFeaturePreviews";
 import { buildFieldGrid, getReadingOrder, resolveFieldLayout } from "./templateFieldGrid";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
@@ -535,6 +537,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const emailSubject = hiddenEmailPreviewIds.has(emailScopeId)
         ? null
         : getEmailPreviewSubject(activeTab?.name, activeSubTab?.name);
+    const featurePreviewKind = getFeaturePreviewKind(activeSubTab?.name);
     const handleRemoveEmailPreview = () => {
         setHiddenEmailPreviewIds((prev) => new Set(prev).add(emailScopeId));
     };
@@ -1300,7 +1303,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                     )}
 
                                     <div className="operation-right">
-                                        {emailSubject ? (
+                                        {featurePreviewKind ? (
+                                            <TemplateFeaturePreview kind={featurePreviewKind} />
+                                        ) : emailSubject ? (
                                             <div className="ct-preview-custom-fields-grid ctm-email-split">
                                                 <div className="ctm-email-fields">
                                                     {previewFields.length > 0 ? (

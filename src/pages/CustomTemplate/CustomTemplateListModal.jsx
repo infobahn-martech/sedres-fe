@@ -6,6 +6,8 @@ import { buildFieldGrid } from "./templateFieldGrid";
 import TemplateFieldPreview from "./TemplateFieldPreview";
 import TemplateEmailPreview, { TemplateEmailFieldsColumn } from "./TemplateEmailPreview";
 import { getEmailPreviewSubject } from "./emailPreviewSubjects";
+import TemplateFeaturePreview from "./TemplateFeaturePreview";
+import { getFeaturePreviewKind } from "./templateFeaturePreviews";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/general.scss";
@@ -88,6 +90,7 @@ function CustomTemplateListModal({ show, onClose }) {
     const activeSubTab = hasSubTabs ? (activeTab.subTabs[activeSubTabIndex] ?? activeTab.subTabs[0]) : null;
     const fieldsToShow = hasSubTabs ? (activeSubTab?.fields ?? []) : (activeTab?.fields ?? []);
     const emailSubject = getEmailPreviewSubject(activeTab?.name, activeSubTab?.name);
+    const featurePreviewKind = getFeaturePreviewKind(activeSubTab?.name);
 
     const handleSelectTemplate = (id) => {
         setSelectedId(id);
@@ -259,7 +262,9 @@ function CustomTemplateListModal({ show, onClose }) {
                                                         )}
 
                                                         <div className="operation-right">
-                                                            {emailSubject ? (
+                                                            {featurePreviewKind ? (
+                                                                <TemplateFeaturePreview kind={featurePreviewKind} />
+                                                            ) : emailSubject ? (
                                                                 <div className="ct-preview-custom-fields-grid ctm-email-split">
                                                                     <div className="ctm-email-fields">
                                                                         {fieldsToShow.length > 0

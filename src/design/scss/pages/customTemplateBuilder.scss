@@ -1120,3 +1120,17 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
     right: 8px;
   }
 }
+
+// Crew Immigration / Check List mock previews — real card markup shown for
+// reference only, so block all interaction and let wide tables scroll.
+.ctm-feature-preview {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  user-select: none;
+
+  // Children only, so the wrapper itself can still scroll horizontally.
+  > * {
+    pointer-events: none;
+  }
+}
