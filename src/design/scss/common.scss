@@ -486,6 +486,11 @@ html {
   --kanban-wallpaper-border: rgba(0, 54, 140, 0.28);
 }
 
+.kanban-accordion.kanban-dark-mode,
+[data-theme="dark"] .kanban-accordion {
+  --kanban-wallpaper-border: rgba(147, 197, 253, 0.24);
+}
+
 .kanban-accordion-header {
   display: flex;
   justify-content: space-between;
@@ -913,7 +918,7 @@ html {
 
   .kanban-accordion-header {
     background: rgba(24, 24, 27, 0.82);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--kanban-wallpaper-border);
 
     &:hover {
       background: rgba(31, 31, 35, 0.82);
@@ -959,8 +964,8 @@ html {
 .kanban-dark-mode .column-classic,
 .kanban-dark-mode .column-modern {
   background: transparent;
-  border-left: 2px solid rgba(255, 255, 255, 0.12);
-  border-right: 2px solid rgba(255, 255, 255, 0.12);
+  border-left: 2px solid var(--kanban-wallpaper-border, rgba(255, 255, 255, 0.12));
+  border-right: 2px solid var(--kanban-wallpaper-border, rgba(255, 255, 255, 0.12));
 }
 
 .kanban-dark-mode .column-header,

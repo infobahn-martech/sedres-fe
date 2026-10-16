@@ -243,20 +243,18 @@
 .kanban-dark-mode .kanban-swimlane__title {
   color: #fafafa;
   background: rgba(24, 24, 27, 0.82);
-  border-color: rgba(255, 255, 255, 0.06);
+  border-color: var(--kanban-wallpaper-border);
 }
 
+/* Transparent so the (dimmed) board wallpaper shows through, as in light mode. */
 .kanban-dark-mode .kanban-board--swimlanes .column--swimlane-cell {
-  background: rgba(17, 23, 34, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: transparent;
+  border: 1px solid var(--kanban-wallpaper-border);
 }
 
-.kanban-dark-mode .card-list--swimlane-grid {
-  background: rgba(17, 23, 34, 0.72);
-}
-
+.kanban-dark-mode .card-list--swimlane-grid,
 .kanban-dark-mode .card-list--swimlane-grid.card-list--empty {
-  background: rgba(17, 23, 34, 0.72);
+  background: transparent;
 }
 /* -------------------------------
    Dark theme (navy palette, partials/_theme.scss)
@@ -266,7 +264,7 @@
 [data-theme="dark"] .kanban-swimlane__title {
   color: var(--text-heading);
   background: var(--bg-card);
-  border-color: var(--border);
+  border-color: var(--kanban-wallpaper-border, var(--border));
   filter: none;
 
   &:hover {
@@ -280,12 +278,12 @@
 }
 
 [data-theme="dark"] .kanban-board--swimlanes .column--swimlane-cell {
-  border-color: var(--border);
+  border-color: var(--kanban-wallpaper-border, var(--border));
 
-  // Default columns → inset navy; a custom colour keeps a 12% tint of itself.
+  // Default columns stay transparent over the wallpaper; a custom colour keeps a 12% tint of itself.
   &,
   .card-list--swimlane-grid {
-    background-color: color-mix(in srgb, var(--cell-bg, var(--bg-inset)) 12%, var(--bg-inset));
+    background-color: color-mix(in srgb, var(--cell-bg, transparent) 12%, transparent);
   }
 
   // Outline (not border) so the drop zone never changes size.
