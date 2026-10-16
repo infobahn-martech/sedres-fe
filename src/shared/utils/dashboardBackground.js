@@ -14,7 +14,12 @@
  *   { type: "image", value: "https://..." }
  */
 
+import DEFAULT_BOARD_WALLPAPER from '../../assets/images/kanban-board-default-bg.jpg';
+
 const DEFAULT_CANVAS_COLOR = '#eef1f4';
+
+/** Colour saved by "Remove background" (backend has no clear endpoint); rendered as the default wallpaper. */
+export const REMOVED_BOARD_BACKGROUND_COLOR = '#fbfbf5';
 
 /**
  * @param {unknown} background
@@ -88,28 +93,25 @@ function cleanBackgroundField(value) {
 /**
  * Inline styles for the Kanban board page container (`.page-cont-wrp`) from
  * `kanban_board/get_full_board` response `background: { color, background_url }`.
- * `color` wins when present; falls back to `background_url` as a cover image.
+ * `color` wins when present; falls back to `background_url` as a cover image, and to the
+ * default board wallpaper when neither is set (or the background was removed).
  * @param {{ color?: string; background_url?: string } | null | undefined} background
- * @returns {Record<string, string> | null} null means keep the SCSS default.
+ * @returns {Record<string, string>}
  */
 export function getBoardPageBackgroundStyle(background) {
-  if (!background || typeof background !== 'object') return null;
+  const source = background && typeof background === 'object' ? background : {};
 
-  const color = cleanBackgroundField(background.color);
-  if (color) {
+  const color = cleanBackgroundField(source.color);
+  if (color && color.toLowerCase() !== REMOVED_BOARD_BACKGROUND_COLOR) {
     return { backgroundColor: color, backgroundImage: 'none' };
   }
 
-  const url = cleanBackgroundField(background.background_url);
-  if (url) {
-    return {
-      backgroundColor: 'transparent',
-      backgroundImage: `url("${url}")`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
-    };
-  }
-
-  return null;
+  const url = cleanBackgroundField(source.background_url) || DEFAULT_BOARD_WALLPAPER;
+  return {
+    backgroundColor: 'transparent',
+    backgroundImage: `url("${url}")`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  };
 }

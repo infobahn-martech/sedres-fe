@@ -482,6 +482,8 @@ html {
 
 .kanban-accordion {
   width: 100%;
+  // Borders sit on the board wallpaper, so they need more contrast than --border-primary.
+  --kanban-wallpaper-border: rgba(0, 54, 140, 0.28);
 }
 
 .kanban-accordion-header {
@@ -490,7 +492,7 @@ html {
   align-items: center;
   padding: 16px 20px;
   background: rgba(234, 241, 251, 0.82);
-  border-bottom: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--kanban-wallpaper-border);
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s ease;
@@ -638,8 +640,8 @@ html {
   flex-shrink: 0;
   padding: 0 8px 10px 8px;
   transition: width 0.3s ease, flex-grow 0.3s ease;
-  border-left: 2px solid rgba(0, 0, 0, 0.12);
-  border-right: 2px solid rgba(0, 0, 0, 0.12);
+  border-left: 2px solid var(--kanban-wallpaper-border, rgba(0, 0, 0, 0.12));
+  border-right: 2px solid var(--kanban-wallpaper-border, rgba(0, 0, 0, 0.12));
 }
 
 .column-expanded {

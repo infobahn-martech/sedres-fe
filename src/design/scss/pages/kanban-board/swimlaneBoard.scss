@@ -91,7 +91,7 @@
   color: var(--text-primary);
   padding: 10px 16px;
   background: rgba(234, 241, 251, 0.82);
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--kanban-wallpaper-border, var(--border-primary));
   border-radius: 4px;
   cursor: pointer;
   user-select: none;
@@ -145,7 +145,7 @@
   flex: none !important;
   padding: 0;
   background: rgba(243, 244, 248, 0.82);
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--kanban-wallpaper-border, var(--border-primary));
   border-radius: 8px;
   overflow: hidden;
 }

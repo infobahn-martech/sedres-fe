@@ -18,7 +18,7 @@ import RenameBoardModal from './RenameBoardModal';
 import RenameWorkspaceModal from './RenameWorkspaceModal';
 import AddDashboardModal from '../../structure/SideNav/components/AddDashboardModal';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
-import { normalizeDashboardBackground } from '../../shared/utils/dashboardBackground';
+import { normalizeDashboardBackground, REMOVED_BOARD_BACKGROUND_COLOR } from '../../shared/utils/dashboardBackground';
 import useAuthReducer from '../../store/AuthReducer';
 import { isRestrictedBoardUser } from '../../shared/helpers/restrictedBoardUser';
 import { notify } from '../../components/Toaster';
@@ -404,12 +404,13 @@ function Workspaces() {
   // "Remove background" resets to the app's default board background color
   // rather than calling a dedicated remove endpoint — the backend only
   // exposes change_background, so removal is just setting it back to this
-  // fixed color per API contract.
+  // fixed color per API contract. The board page renders this color as the
+  // default wallpaper.
   const handleRemoveBoardBackground = (boardId) => {
     changeBoardBackground({
       board_id: boardId,
       background_type: 'color',
-      color: '#fbfbf5',
+      color: REMOVED_BOARD_BACKGROUND_COLOR,
       cb: closeBoardMenus,
     });
   };
