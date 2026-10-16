@@ -259,7 +259,7 @@ export function BillingEntityModal({ showModal, closeModal, onSuccess }) {
                 </div>
               </div>
 
-              <div className="col-lg-6 col-sm-12">
+              {/* <div className="col-lg-6 col-sm-12">
                 <div className="form-field">
                   <Controller
                     name="colorCode"
@@ -314,7 +314,7 @@ export function BillingEntityModal({ showModal, closeModal, onSuccess }) {
                     )}
                   />
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </form>
