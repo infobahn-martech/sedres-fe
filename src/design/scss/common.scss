@@ -1462,17 +1462,18 @@ body.app-dark-mode {
    Outranks the zinc `.kanban-dark-mode` rules above.
 ================================ */
 [data-theme="dark"] .kanban-accordion.kanban-dark-mode {
+  // Translucent (like the light theme's 0.82 rows) so the board wallpaper shows through.
   .kanban-accordion-header {
-    background: var(--bg-card);
+    background: color-mix(in srgb, var(--bg-card) 72%, transparent);
     border-bottom-color: var(--border);
 
     &:hover {
-      background: var(--bg-tile-hover);
+      background: color-mix(in srgb, var(--bg-tile-hover) 82%, transparent);
     }
   }
 
   &.kanban-accordion--expanded .kanban-accordion-header {
-    background: var(--bg-highlight);
+    background: color-mix(in srgb, var(--bg-highlight) 82%, transparent);
   }
 
   .kanban-accordion-title {

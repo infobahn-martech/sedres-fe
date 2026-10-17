@@ -236,7 +236,7 @@
 // but below the content — no extra DOM.
 [data-theme="dark"] .dashboard-wrp .page-cont-wrp:has(.kanban-board-wrapper) {
   background-color: var(--bg-page) !important;
-  box-shadow: inset 0 0 0 100vmax rgba(7, 13, 26, 0.65);
+  box-shadow: inset 0 0 0 100vmax rgba(7, 13, 26, 0.45);
 }
 
 // Dark theme — board-layout page scrollbars (/workspaces, kanban pages).
