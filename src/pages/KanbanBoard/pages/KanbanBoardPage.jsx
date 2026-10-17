@@ -16,6 +16,7 @@ import SeReviewMoveModal from "../components/board/SeReviewMoveModal";
 import ArInvoiceReviewModal from "../components/board/ArInvoiceReviewModal";
 import SignatureCheckModal from "../components/board/SignatureCheckModal";
 import PoReviewModal from "../components/board/PoReviewModal";
+import ServiceSheetModal from "../components/board/ServiceSheetModal";
 import DispatchProofReviewModal from "../components/board/DispatchProofReviewModal";
 import SccReviewModal from "../components/board/SccReviewModal";
 import ContextMenu from "../components/menus/ContextMenu";
@@ -2206,6 +2207,8 @@ export default function KanbanBoardPage() {
       <SccReviewModal onConfirmed={refetchBoard} />
 
       <PoReviewModal onConfirmed={refetchBoard} />
+
+      <ServiceSheetModal onSaved={refetchBoard} />
 
       <SeApprovalUploadModal
         show={showDispatchProofUploadModal}

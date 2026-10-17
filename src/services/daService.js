@@ -263,6 +263,11 @@ const confirmPos = (payload) => Gateway.post('/da/confirm_pos', payload);
  *   subject: string, body: string, stage_document_id: number, document_name: string, document_url: string,
  *   page_count: number, warnings: string[] } } | { status: 'error', message: string } }>}
  * Prefilled invoice email for one McDermott "PO Received" card; document_url is the invoice PDF. */
+/** @param {{ cards: Array<{ call_id: number, card_id: number, sales_orders: Array<{ sales_order_no: string,
+ * service_sheet_no: string }> }> }} payload - the service sheet number typed for each sales order.
+ * Saves the service sheet numbers on the cards' sales orders. */
+const saveServiceSheets = (payload) => Gateway.post('/da/save_service_sheets', payload);
+
 const getInvoiceDispatchDraft = (callId) => Gateway.get(`/da/invoice_dispatch_draft/${callId}`);
 
 /** @param {FormData} formData - call_id, card_id, stage_document_id, to, cc, subject, body, attachments[]?,
@@ -364,6 +369,7 @@ export default {
   getSccDocumentReview,
   confirmSccDocuments,
   confirmPos,
+  saveServiceSheets,
   getInvoiceDispatchDraft,
   sendInvoiceDispatch,
   getSccApprovalEmailDraft,

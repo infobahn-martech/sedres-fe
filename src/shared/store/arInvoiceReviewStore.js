@@ -20,7 +20,9 @@ const mergeReviewCard = (card, review) => {
       return {
         ...uploaded,
         ...salesOrder,
-        invoice: salesOrder.invoice ?? uploaded?.invoice ?? null,
+        invoice: salesOrder.invoice
+          ? { ...uploaded?.invoice, ...salesOrder.invoice }
+          : uploaded?.invoice ?? null,
       };
     }),
   };

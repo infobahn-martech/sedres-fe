@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
-import { FiArrowRight, FiChevronDown, FiDownload, FiEdit3, FiSend, FiUpload, FiUploadCloud } from "react-icons/fi";
+import { FiArrowRight, FiChevronDown, FiDownload, FiEdit3, FiFileText, FiSend, FiUpload, FiUploadCloud } from "react-icons/fi";
 import { MdCallMerge } from "react-icons/md";
 import { KANBAN_DND_DISABLED } from "../../../../shared/constants/kanbanConfig";
 import ColumnHeader from "./ColumnHeader";
@@ -19,6 +19,7 @@ import {
 import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import useExportApprovalStatusStore from "../../../../shared/store/exportApprovalStatusStore";
 import useSignatureCheckStore from "../../../../shared/store/signatureCheckStore";
+import useServiceSheetStore from "../../../../shared/store/serviceSheetStore";
 import { isMcDermottWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntBacklog } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
@@ -99,6 +100,7 @@ const getInvoiceAction = (workflow, column) => {
     if (SUBMITTED_TO_DA_COLUMN_PATTERN.test(title)) return "uploadSrf";
     return null;
   }
+  if (ISSUE_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
   if (isLntBacklog(workflow?.title, title)) return "checkSignatures";
   if (SCC_RECEIVED_COLUMN_PATTERN.test(title)) return "uploadSccDocuments";
   if (CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
@@ -106,7 +108,9 @@ const getInvoiceAction = (workflow, column) => {
   if (TO_BE_UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(title)) return "moveCards";
   if (UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(title)) return "uploadDispatchProof";
   if (SO_SENT_FOR_SCC_COLUMN_PATTERN.test(title)) return "sendSccApproval";
-  if (!isBatchWorkflow(workflow)) return null;
+  if (!isBatchWorkflow(workflow)) {
+    return AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title) ? "enterServiceSheetNo" : null;
+  }
   if (SE_RECEIVED_COLUMN_PATTERN.test(title)) return "upload";
   if (AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "merge";
   if (CONSOLIDATED_COLUMN_PATTERN.test(title)) return "submission";
@@ -124,6 +128,7 @@ const INVOICE_ACTION_BUTTONS = {
   downloadInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
   uploadDispatchProof: { label: "Upload Dispatch Proof", icon: <FiUpload size={16} aria-hidden /> },
   moveCards: { label: "Move the Cards", icon: <FiArrowRight size={16} aria-hidden /> },
+  enterServiceSheetNo: { label: "Enter Service Sheet No", icon: <FiFileText size={16} aria-hidden /> },
   checkSignatures: { label: "Check Signatures", icon: <FiEdit3 size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
   prepareSubmission: { label: "Create Submission Documents", icon: <FiDownload size={16} aria-hidden /> },
@@ -240,6 +245,7 @@ export default function WorkflowColumns({
 
   const loadSignatureStatuses = useSignatureCheckStore((state) => state.loadStatuses);
   const openSignatureCheckModal = useSignatureCheckStore((state) => state.openSignatureCheckModal);
+  const openServiceSheetModal = useServiceSheetStore((state) => state.openServiceSheetModal);
 
   /* L&T Backlog cards are signature-checked on every board load and refetch (each action refetches the
      board), so the cards show red/green for the SCC signature. */
@@ -443,6 +449,20 @@ export default function WorkflowColumns({
                     cards
                       .filter((card) => card.callId)
                       .map((card) => ({ call_id: Number(card.callId), card_id: Number(card.id) }))
+                  ),
+                enterServiceSheetNo: (cards) =>
+                  openServiceSheetModal(
+                    cards
+                      .filter((card) => card.callId)
+                      .map((card) => ({
+                        call_id: Number(card.callId),
+                        card_id: Number(card.id),
+                        sales_orders: card.raw?.sales_orders?.length
+                          ? card.raw.sales_orders
+                          : card.salesOrderNo
+                            ? [{ sales_order_no: card.salesOrderNo, invoice_no: null }]
+                            : [],
+                      }))
                   ),
                 prepareSubmission: onColumnPrepareSubmission,
                 sendSubmission: onColumnSendSubmission,
