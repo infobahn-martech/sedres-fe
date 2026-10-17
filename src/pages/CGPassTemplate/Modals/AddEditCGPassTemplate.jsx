@@ -523,7 +523,6 @@ function QuillEditor({ value, onChange, placeholder }) {
 export function AddEditCGPassTemplateModal({ showModal, closeModal, onSuccess }) {
   const templateId = showModal?.pass_vesselreg_template_id;
   const isEdit = !!templateId;
-
   const { createTemplate, updateTemplate, isBeingUpdated } = useCGPassTemplateReducer((s) => s);
   const { ports, getPorts } = usePortReducer((s) => s);
 
