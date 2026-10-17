@@ -1,19 +1,9 @@
 import { useMemo, useState } from "react";
 import PropTypes from "prop-types";
-import { FileText, Check, Search, X, LayoutTemplate } from "lucide-react";
+import { FileText, Check, Search, X } from "lucide-react";
 
 export const TEMPLATE_PICKER_WIDTH = 320;
 const SEARCH_THRESHOLD = 5;
-
-// Template names arrive as "Title - Call Type - Group"; split so the title
-// leads and the remaining segments render as compact tags.
-const parseTemplateName = (rawName = "") => {
-  const [title, ...tags] = String(rawName)
-    .split(" - ")
-    .map((part) => part.trim())
-    .filter(Boolean);
-  return { title: title || "Untitled template", tags };
-};
 
 const resolveTone = (rawName = "") => {
   if (/export/i.test(rawName)) return "export";
@@ -33,7 +23,11 @@ const TemplatePickerPopover = ({
   const [query, setQuery] = useState("");
 
   const rows = useMemo(
-    () => items.map((row) => ({ ...row, ...parseTemplateName(row.name), tone: resolveTone(row.name) })),
+    () => items.map((row) => ({
+        ...row,
+        title: row.name?.trim() || "Untitled template",
+        tone: resolveTone(row.name),
+      })),
     [items]
   );
 
@@ -108,7 +102,6 @@ const TemplatePickerPopover = ({
                   </span>
                   <span className="picker-popover__body">
                     <span className="picker-popover__name">{row.title}</span>
-                    
                   </span>
                   <span className="picker-popover__check" aria-hidden>
                     <Check size={12} strokeWidth={3} />
