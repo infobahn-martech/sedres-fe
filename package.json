@@ -1,5 +1,5 @@
 {
-  "name": "kanbanboardfe",
+  "name": "sedres-fe",
   "homepage": "https://infobahn-martech.github.io/sedres-fe/",
   "scripts": {
     "dev": "vite",
