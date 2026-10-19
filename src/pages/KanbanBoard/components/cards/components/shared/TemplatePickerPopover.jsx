@@ -19,6 +19,7 @@ const TemplatePickerPopover = ({
   selectedId,
   onSelect,
   onRemove,
+  onReveal,
 }) => {
   const [query, setQuery] = useState("");
 
@@ -47,6 +48,13 @@ const TemplatePickerPopover = ({
       aria-label="Select template"
     >
       <div className="picker-popover__header">
+        <button
+          type="button"
+          className="picker-popover__reveal"
+          onClick={onReveal}
+          title="Show form"
+          aria-label="Show form"
+        />
         <div className="picker-popover__header-text">
           <span className="picker-popover__title">Templates</span>
         </div>
@@ -138,6 +146,7 @@ TemplatePickerPopover.propTypes = {
   selectedId: PropTypes.string,
   onSelect: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
+  onReveal: PropTypes.func.isRequired,
 };
 
 export default TemplatePickerPopover;

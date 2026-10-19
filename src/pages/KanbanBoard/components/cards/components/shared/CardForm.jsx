@@ -567,6 +567,7 @@ const TopBar = ({
   onCardBlockerChange,
   onCardStickerChange,
   onTemplateChange,
+  onRevealForm,
 }) => {
   const allTemplates = useFormTemplateReducer((s) => s.allTemplates);
   const isLoadingAllTemplates = useFormTemplateReducer((s) => s.isLoadingAllTemplates);
@@ -832,11 +833,17 @@ const TopBar = ({
 
   const handleSelectTemplate = (row) => {
     onTemplateChange?.(row.id, row.name);
+    onRevealForm?.();
     setOpenPicker(null);
   };
 
   const handleRemoveTemplate = () => {
     onTemplateChange?.(null, "");
+    setOpenPicker(null);
+  };
+
+  const handleRevealForm = () => {
+    onRevealForm?.();
     setOpenPicker(null);
   };
 
@@ -1192,6 +1199,7 @@ const TopBar = ({
               selectedId={selectedTemplateId}
               onSelect={handleSelectTemplate}
               onRemove={handleRemoveTemplate}
+              onReveal={handleRevealForm}
             />,
             document.body
           )}
@@ -1224,6 +1232,7 @@ TopBar.propTypes = {
   onClose: PropTypes.func.isRequired,
   closeLoading: PropTypes.bool,
   onTemplateChange: PropTypes.func,
+  onRevealForm: PropTypes.func,
   isAddMode: PropTypes.bool,
   onColorChange: PropTypes.func,
   onTitleCommit: PropTypes.func,
@@ -2484,11 +2493,18 @@ function CardForm({
 
   const [isSavingGeneral, setIsSavingGeneral] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  // Add mode starts with an empty body; the Templates popover's accent bar reveals it.
+  const [isFormRevealed, setIsFormRevealed] = useState(false);
   const groCardViewRef = useRef(null);
 
   useEffect(() => {
-    if (show && isAddMode) setHasSubmitted(false);
+    if (show && isAddMode) {
+      setHasSubmitted(false);
+      setIsFormRevealed(false);
+    }
   }, [show, isAddMode]);
+
+  const handleRevealForm = useCallback(() => setIsFormRevealed(true), []);
 
   // Lock background scroll while the modal is open so the board behind it can't
   // be scrolled out from under the fixed overlay.
@@ -3104,6 +3120,7 @@ function CardForm({
           onCardBlockerChange={handleTopbarCardBlockerChange}
           onCardStickerChange={handleTopbarCardStickerChange}
           onTemplateChange={handleTopbarTemplateChange}
+          onRevealForm={handleRevealForm}
         />
         {isSubTaskCard ? (
           <TaskCardDetailView card={card} onClose={handleClose} />
@@ -3139,6 +3156,7 @@ function CardForm({
             )}
             {!isMWPVariant &&
               !isGROStyleView &&
+              (!isAddMode || isFormRevealed) &&
               renderTabContent(
                 activeTopTab,
                 card,

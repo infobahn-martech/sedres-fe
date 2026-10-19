@@ -3115,16 +3115,29 @@ $gro-supervisor-control-border: #d0d5dd;
     padding: 14px 16px 12px;
     border-bottom: 1px solid var(--border-primary);
     flex-shrink: 0;
+  }
 
-    // Decorative accent bar leading the title.
-    &::before {
-      content: "";
-      width: 4px;
-      height: 16px;
-      border-radius: 2px;
-      flex-shrink: 0;
-      background: var(--pp-accent);
-      opacity: 0.85;
+  // Accent bar leading the title; clicking it reveals the Add Card form.
+  &__reveal {
+    width: 4px;
+    height: 16px;
+    padding: 0;
+    border: 0;
+    border-radius: 2px;
+    flex-shrink: 0;
+    cursor: pointer;
+    background: var(--pp-accent);
+    opacity: 0.85;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+
+    &:hover {
+      opacity: 1;
+      transform: scaleY(1.2);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--pp-accent);
+      outline-offset: 3px;
     }
   }
 

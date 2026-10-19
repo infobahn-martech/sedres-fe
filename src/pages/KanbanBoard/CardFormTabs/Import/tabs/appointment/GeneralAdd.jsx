@@ -23,6 +23,7 @@ import {
 import { getItem } from "../../../../../../shared/helpers/localStorage";
 import { extractTextFromFile, normalizeAppointmentDateTime } from "../../../../../../shared/helpers/appointmentAiExtractor";
 import { notify } from "../../../../../../components/Toaster";
+import CardTabListLoading from "../../../../../../components/CardTabListLoading";
 import DateTimePickerField from "../../../shared/components/DateTimePickerField";
 import {
   FormField,
@@ -238,7 +239,10 @@ function GeneralAdd({
   const [templateFields, setTemplateFields] = useState(null);
   const [templateFieldValues, setTemplateFieldValues] = useState({});
   const [templateFieldErrors, setTemplateFieldErrors] = useState({});
+  // Id whose fetch has finished (success or failure); derived loading avoids flashing the default form.
+  const [settledTemplateId, setSettledTemplateId] = useState("");
   const selectedTemplateId = firstNonEmptyString(formValues?.template_id);
+  const isTemplateFieldsLoading = Boolean(selectedTemplateId) && settledTemplateId !== selectedTemplateId;
 
   useEffect(() => {
     setTemplateFields(null);
@@ -252,6 +256,8 @@ function GeneralAdd({
         if (cancelled) return;
         setTemplateFields(mapTemplateTabFields(data?.tab?.fields));
       },
+    }).finally(() => {
+      if (!cancelled) setSettledTemplateId(selectedTemplateId);
     });
     return () => {
       cancelled = true;
@@ -520,7 +526,7 @@ function GeneralAdd({
   };
 
   const handleSubmit = async () => {
-    if (!canAddCard) return;
+    if (!canAddCard || isTemplateFieldsLoading) return;
     setHasSubmitted(true);
     if (templateFields) {
       await handleTemplateSubmit();
@@ -1842,6 +1848,14 @@ function GeneralAdd({
   const singleVesselTypeOptions = appointmentTypeUsesTugTypeSource(selectedAppointmentType)
     ? tugTypeSelectOptions
     : vesselTypeSelectOptions;
+
+  if (isTemplateFieldsLoading) {
+    return (
+      <div className="cardform-body card-form-panel general-tab-body general-tab-body--loading">
+        <CardTabListLoading message="Loading template..." cardColor={formValues?.cardColor} />
+      </div>
+    );
+  }
 
   return (
     <div className="cardform-body card-form-panel general-tab-body">

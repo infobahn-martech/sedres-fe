@@ -42,6 +42,12 @@
   min-height: 0;
 }
 
+// Full-body loader shown while a selected template's fields are fetched.
+.general-tab-body--loading {
+  align-items: center;
+  justify-content: center;
+}
+
 .general-sections-wrapper {
   display: flex;
   flex-direction: column;
