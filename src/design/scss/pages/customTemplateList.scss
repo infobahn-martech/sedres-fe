@@ -257,6 +257,15 @@
 // Dark mode — the light-blue selected tint above would sit behind near-white
 // --text-primary and wash the card out, so swap to the brand tint tokens.
 [data-theme="dark"] {
+  // The shared dark .cardform-topbar rule (CardForm.css) tints the header from
+  // --card-tone, which real cards set inline — without it the mix is invalid
+  // and these headers render with no colour at all.
+  .ctl-modal-topbar,
+  .ctl-preview-topbar,
+  .ctm-preview-topbar {
+    --card-tone: var(--brand);
+  }
+
   .ctl-template-card {
     &:hover {
       border-color: var(--border-hover);
