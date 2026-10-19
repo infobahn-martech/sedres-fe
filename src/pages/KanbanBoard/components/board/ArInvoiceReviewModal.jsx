@@ -5,7 +5,7 @@ import CustomModal from "../../../../components/CustomModal";
 import useArInvoiceReviewStore from "../../../../shared/store/arInvoiceReviewStore";
 import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import { notify } from "../../../../components/Toaster";
-import { downloadFilesAsZip } from "../../../../shared/utils/zipFiles";
+import { downloadFile } from "../../../../shared/utils/utils";
 import { findUploadedFile, getUploadedFileUrl, viewLocalFile, viewUploadedFile } from "../../../../shared/utils/viewUploadedFile";
 import MaterialTablePagination from "../../CardFormTabs/Import/tabs/husbandry/components/MaterialTablePagination";
 import "../../../../design/scss/blockers-modal.scss";
@@ -56,9 +56,6 @@ const formatAmount = (value) =>
   value === "" || Number.isNaN(Number(value))
     ? value
     : Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-/* File name of the zip of the uploaded invoices saved on confirm. */
-const INVOICES_ZIP_NAME = "uploaded_invoices.zip";
 
 /* Cards per page in the review table, matching da/ar_invoice_review's page size. */
 const REVIEW_PAGE_SIZE = 20;
@@ -244,13 +241,13 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
     /* The backend has moved the cards on; a column note left from an earlier batch move would keep
        drawing them in "SE Received", so it is dropped and the board load decides. */
     clearCardColumns(confirmPayload.map((card) => card.card_id));
-    /* Issue AR Invoice: the invoices uploaded for this review are saved as one zip once confirmed. */
-    if (isMcDermottReview && uploadedFiles.length) {
-      try {
-        await downloadFilesAsZip(uploadedFiles, INVOICES_ZIP_NAME);
-      } catch {
-        notify("Cards confirmed, but the invoices zip could not be created", "error");
-      }
+    /* The split tax invoices only exist once confirmed, so their zip comes from this response. */
+    const taxInvoicesZip = result?.tax_invoices?.zip;
+    if (taxInvoicesZip?.url) {
+      downloadFile({
+        link: taxInvoicesZip.url,
+        fileName: taxInvoicesZip.name || decodeURIComponent(taxInvoicesZip.url.split("/").pop()),
+      });
     }
     onClose();
     onConfirmed?.();
