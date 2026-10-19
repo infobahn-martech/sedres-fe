@@ -4,6 +4,11 @@ const getAllOperators = () => Gateway.get('/call_file/get_all_operators');
 const getAllManagers = () => Gateway.get('/call_file/get_all_managers');
 const getEntityFields = (entityId) => Gateway.post(`/call_file/get_entity_fields/${entityId}`, { entity_id: entityId });
 const createCallFile = (body) => Gateway.post('/call_file/create_call_file', body);
+// Add Card with a custom template selected — the template's own field values replace the call file form.
+const createCallFileNew = (formData) =>
+  Gateway.post('/call_file/create_call_file_new', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 // Opening a card mounts several components (CardForm, General, Checklist, ...) that each
 // request the same call's detail at once — share one in-flight request per callId.
 const pendingCallDetailRequests = new Map();
@@ -31,6 +36,7 @@ export default {
   getAllManagers,
   getEntityFields,
   createCallFile,
+  createCallFileNew,
   getCallDetail,
   allDetailByVesselId,
   getAllDetailByVesselId,

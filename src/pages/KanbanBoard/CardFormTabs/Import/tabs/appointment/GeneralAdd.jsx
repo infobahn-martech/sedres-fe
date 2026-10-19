@@ -16,7 +16,10 @@ import TemplateFieldPreview from "../../../../../CustomTemplate/TemplateFieldPre
 import usePermissions from "../../../../../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../shared/constants/permissions";
 import { mergeOptionIfMissing } from "../../../../../../shared/helpers/callFileFormOptions";
-import { buildCreateCallFileFormData } from "../../../../../../shared/helpers/createCallFilePayload";
+import {
+  buildCreateCallFileFormData,
+  buildCreateTemplateCallFileFormData,
+} from "../../../../../../shared/helpers/createCallFilePayload";
 import { getItem } from "../../../../../../shared/helpers/localStorage";
 import { extractTextFromFile, normalizeAppointmentDateTime } from "../../../../../../shared/helpers/appointmentAiExtractor";
 import { notify } from "../../../../../../components/Toaster";
@@ -97,17 +100,25 @@ const mapTemplateTabFields = (fields) =>
         Number(a?.col_no ?? 0) - Number(b?.col_no ?? 0) ||
         Number(a?.display_order ?? 0) - Number(b?.display_order ?? 0)
     )
-    .map((field) => ({
-      id: field?.field_id,
-      label: field?.field_label ?? "",
-      type: String(field?.type_key ?? "text").toLowerCase(),
-      required: String(field?.is_required ?? "0") === "1",
-      options: (Array.isArray(field?.options) ? field.options : []).map((opt) =>
-        typeof opt === "string" ? opt : opt?.option_label ?? ""
-      ),
-      optionsSource: field?.option_source === "master" ? "master" : "manual",
-      masterModule: field?.master_key ?? "",
-    }));
+    .map((field) => {
+      const options = Array.isArray(field?.options) ? field.options : [];
+      return {
+        id: field?.field_id,
+        label: field?.field_label ?? "",
+        type: String(field?.type_key ?? "text").toLowerCase(),
+        required: String(field?.is_required ?? "0") === "1",
+        options: options.map((opt) => (typeof opt === "string" ? opt : opt?.option_label ?? "")),
+        // option_value is what create_call_file_new expects for radio/dropdown/checkbox selections.
+        optionValues: options.map((opt) =>
+          typeof opt === "string" ? opt : String(opt?.option_value ?? opt?.option_label ?? "")
+        ),
+        optionsSource: field?.option_source === "master" ? "master" : "manual",
+        masterModule: field?.master_key ?? "",
+      };
+    });
+
+// A checkbox with no options is a legacy single checkbox, submitted as "1" / "0".
+const isSingleCheckboxField = (field) => field.type === "checkbox" && !field.options.length;
 
 const hasMeaningfulValue = (value) => {
   if (value === undefined || value === null) return false;
@@ -225,10 +236,14 @@ function GeneralAdd({
   // Selecting a template swaps the form fields for that template's first-tab fields.
   const getTemplateFirstTab = useFormTemplateReducer((state) => state.getTemplateFirstTab);
   const [templateFields, setTemplateFields] = useState(null);
+  const [templateFieldValues, setTemplateFieldValues] = useState({});
+  const [templateFieldErrors, setTemplateFieldErrors] = useState({});
   const selectedTemplateId = firstNonEmptyString(formValues?.template_id);
 
   useEffect(() => {
     setTemplateFields(null);
+    setTemplateFieldValues({});
+    setTemplateFieldErrors({});
     if (!selectedTemplateId) return;
     let cancelled = false;
     getTemplateFirstTab({
@@ -390,9 +405,127 @@ function GeneralAdd({
     entityFields,
   ]);
 
+  // Board / card-meta ids are picked by the topbar into formValues, falling back to the source card.
+  const resolveCardMetaIds = () => ({
+    boardId:
+      boardId ??
+      formValues?.board_id ??
+      formValues?.boardId ??
+      card?.board_id ??
+      card?.boardId ??
+      card?.raw?.board_id ??
+      card?.raw?.boardId,
+    cardTypeId:
+      formValues?.card_type_id ?? card?.card_type_id ?? card?.cardTypeId ?? card?.raw?.card_type_id,
+    cardTagId:
+      formValues?.card_tag_id ??
+      formValues?.tag_id ??
+      card?.card_tag_id ??
+      card?.tag_id ??
+      card?.raw?.card_tag_id,
+    cardBlockerId:
+      formValues?.card_blocker_id ??
+      formValues?.blocker_id ??
+      card?.card_blocker_id ??
+      card?.blocker_id ??
+      card?.raw?.card_blocker_id,
+    cardStickerId:
+      formValues?.card_sticker_id ??
+      formValues?.sticker_id ??
+      card?.card_sticker_id ??
+      card?.sticker_id ??
+      card?.raw?.card_sticker_id,
+  });
+
+  const handleTemplateFieldChange = useCallback(
+    (fieldId) => (nextValue) => {
+      setTemplateFieldValues((prev) => ({ ...prev, [fieldId]: nextValue }));
+      setTemplateFieldErrors((prev) => {
+        if (!prev[fieldId] || !hasMeaningfulValue(nextValue) || nextValue === "0") return prev;
+        const next = { ...prev };
+        delete next[fieldId];
+        return next;
+      });
+    },
+    []
+  );
+
+  // Template fields submitted as-is; single checkboxes always carry an explicit "1" / "0".
+  const getTemplateSubmitValues = () =>
+    (templateFields || []).reduce((acc, field) => {
+      const value = templateFieldValues[field.id];
+      acc[field.id] = isSingleCheckboxField(field) ? (value === "1" ? "1" : "0") : value;
+      return acc;
+    }, {});
+
+  const validateTemplateFields = (values) =>
+    (templateFields || []).reduce((errors, field) => {
+      if (!field.required) return errors;
+      const value = values[field.id];
+      const isMissing = isSingleCheckboxField(field) ? value !== "1" : !hasMeaningfulValue(value);
+      if (isMissing) errors[field.id] = `${field.label || "This field"} is required.`;
+      return errors;
+    }, {});
+
+  // A touched preview field keeps the user's edit (even if cleared); otherwise fall back to the API preview.
+  const resolvePreviewField = (fieldName, apiValue) =>
+    touchedPreviewFields[fieldName]
+      ? editablePreviewFields[fieldName] ?? ""
+      : firstNonEmptyString(editablePreviewFields[fieldName], apiValue);
+
+  const handleTemplateSubmit = async () => {
+    const fieldValues = getTemplateSubmitValues();
+    const errors = validateTemplateFields(fieldValues);
+    setTemplateFieldErrors(errors);
+    if (Object.keys(errors).length) {
+      notify("Please fill all required fields before saving.", "error");
+      requestAnimationFrame(() => {
+        document.querySelector(".cf-field-error")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      return;
+    }
+
+    const meta = resolveCardMetaIds();
+    setIsSavingGeneral(true);
+    try {
+      const formData = buildCreateTemplateCallFileFormData({
+        boardId: meta.boardId,
+        templateId: selectedTemplateId,
+        cardTitle: formValues?.cardTitle,
+        cardTypeId: meta.cardTypeId,
+        cardBlockerId: meta.cardBlockerId,
+        cardStickerId: meta.cardStickerId,
+        cardTagId: meta.cardTagId,
+        fieldValues,
+        appointmentAcceptance: {
+          to_email: resolvePreviewField("to_email", emailPreviewData?.to),
+          cc_emails: resolvePreviewField("cc_emails", emailPreviewData?.cc),
+          subject: resolvePreviewField("subject", emailPreviewData?.subject),
+          body: firstNonEmptyString(previewMessageText, emailPreviewData?.messageHtml),
+        },
+        emailAttachments: [...defaultEmailAttachments, ...uploadedEmailAttachments],
+      });
+      const response = await callFileService.createCallFileNew(formData);
+      if (onSave) onSave(response);
+    } catch (error) {
+      const msg =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Could not create call file.";
+      notify(typeof msg === "string" ? msg : "Could not create call file.", "error");
+    } finally {
+      setIsSavingGeneral(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!canAddCard) return;
     setHasSubmitted(true);
+    if (templateFields) {
+      await handleTemplateSubmit();
+      return;
+    }
     const isValid = validateGeneralForm();
     if (!isValid) {
       notify("Please fill all required fields before saving.", "error");
@@ -407,14 +540,7 @@ function GeneralAdd({
     setTimeObjectErrors({});
 
     const entityFieldsPayload = buildEntityFieldsPayload(entityFields, entityFieldValues);
-    const resolvedBoardId =
-      boardId ??
-      formValues?.board_id ??
-      formValues?.boardId ??
-      card?.board_id ??
-      card?.boardId ??
-      card?.raw?.board_id ??
-      card?.raw?.boardId;
+    const cardMeta = resolveCardMetaIds();
     const emailPreviewBody =
       firstNonEmptyString(previewMessageText) ||
       firstNonEmptyString(emailPreviewData?.messageHtml) ||
@@ -490,27 +616,11 @@ function GeneralAdd({
     };
     const formPayload = {
       ...formValues,
-      board_id: resolvedBoardId,
-      card_type_id:
-        formValues?.card_type_id ?? card?.card_type_id ?? card?.cardTypeId ?? card?.raw?.card_type_id,
-      card_tag_id:
-        formValues?.card_tag_id ??
-        formValues?.tag_id ??
-        card?.card_tag_id ??
-        card?.tag_id ??
-        card?.raw?.card_tag_id,
-      card_blocker_id:
-        formValues?.card_blocker_id ??
-        formValues?.blocker_id ??
-        card?.card_blocker_id ??
-        card?.blocker_id ??
-        card?.raw?.card_blocker_id,
-      card_sticker_id:
-        formValues?.card_sticker_id ??
-        formValues?.sticker_id ??
-        card?.card_sticker_id ??
-        card?.sticker_id ??
-        card?.raw?.card_sticker_id,
+      board_id: cardMeta.boardId,
+      card_type_id: cardMeta.cardTypeId,
+      card_tag_id: cardMeta.cardTagId,
+      card_blocker_id: cardMeta.cardBlockerId,
+      card_sticker_id: cardMeta.cardStickerId,
       entity_fields: entityFieldsPayload,
       time_objects: (Array.isArray(stageTimeObjects) ? stageTimeObjects : [])
         .map((item) => {
@@ -1746,7 +1856,13 @@ function GeneralAdd({
                       {templateFields ? (
                         <div className="pre-arrival-form">
                           {templateFields.map((field) => (
-                            <TemplateFieldPreview key={field.id} field={field} />
+                            <TemplateFieldPreview
+                              key={field.id}
+                              field={field}
+                              value={templateFieldValues[field.id]}
+                              onChange={handleTemplateFieldChange(field.id)}
+                              error={templateFieldErrors[field.id]}
+                            />
                           ))}
                         </div>
                       ) : (

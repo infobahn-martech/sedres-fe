@@ -335,3 +335,73 @@ export function buildCreateCallFileFormData(formPayload, options = {}) {
 
   return fd;
 }
+
+const isFileLike = (value) =>
+  value instanceof File || (typeof Blob !== "undefined" && value instanceof Blob);
+
+/**
+ * Builds multipart/form-data for POST /call_file/create_call_file_new (Add Card with a template).
+ * Non-file values go into the `fields` JSON keyed by field_id (checkbox groups as option_value arrays);
+ * each file field is sent on its own as `field_<field_id>`.
+ *
+ * @param {{
+ *   boardId?: unknown,
+ *   templateId?: unknown,
+ *   cardTitle?: unknown,
+ *   cardTypeId?: unknown,
+ *   cardBlockerId?: unknown,
+ *   cardStickerId?: unknown,
+ *   cardTagId?: unknown,
+ *   fieldValues?: Record<string, unknown>,
+ *   appointmentAcceptance?: { to_email?: string, cc_emails?: string, subject?: string, body?: string },
+ *   emailAttachments?: Array<{ file_name?: string }>,
+ * }} payload
+ */
+export function buildCreateTemplateCallFileFormData(payload = {}) {
+  const fd = new FormData();
+  const fields = {};
+
+  Object.entries(payload.fieldValues || {}).forEach(([fieldId, value]) => {
+    if (isFileLike(value)) {
+      fd.append(`field_${fieldId}`, value);
+      return;
+    }
+    if (Array.isArray(value)) {
+      if (value.length) fields[fieldId] = value.map((item) => str(item));
+      return;
+    }
+    const s = str(value);
+    if (s !== "") fields[fieldId] = s;
+  });
+
+  fd.append("board_id", str(payload.boardId));
+  fd.append("template_id", str(payload.templateId));
+  fd.append("fields", JSON.stringify(fields));
+  fd.append("card_title", str(payload.cardTitle));
+  fd.append("card_type_id", str(payload.cardTypeId));
+  fd.append("card_blocker_id", str(payload.cardBlockerId));
+  fd.append("card_sticker_id", str(payload.cardStickerId));
+  fd.append("card_tag_id", str(payload.cardTagId));
+
+  const acceptance = payload.appointmentAcceptance || {};
+  const seen = new Set();
+  const attachments = (Array.isArray(payload.emailAttachments) ? payload.emailAttachments : [])
+    .map((item) => ({ file_name: str(item?.file_name ?? item?.name) }))
+    .filter((item) => {
+      if (!item.file_name || seen.has(item.file_name)) return false;
+      seen.add(item.file_name);
+      return true;
+    });
+  fd.append(
+    "appointment_acceptance",
+    JSON.stringify({
+      to_email: str(acceptance.to_email),
+      cc_emails: str(acceptance.cc_emails),
+      subject: str(acceptance.subject),
+      body: str(sanitizeAppointmentEmailBody(String(acceptance.body ?? ""))),
+      attachments,
+    })
+  );
+
+  return fd;
+}
