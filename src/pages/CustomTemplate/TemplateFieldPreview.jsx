@@ -1,4 +1,7 @@
 import { useId, useState } from "react";
+import SearchableSelect from "../../components/form/SearchableSelect";
+import DatePickerField from "../KanbanBoard/CardFormTabs/shared/components/DatePickerField";
+import DateTimePickerField from "../KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 
 // A required checkbox group only needs one ticked option, not every checkbox.
 export const isCheckboxGroupValid = (field, selected) => !field.required || selected.length > 0;
@@ -6,6 +9,14 @@ export const isCheckboxGroupValid = (field, selected) => !field.required || sele
 // Options are rendered by label; when the field carries option_values (live card form)
 // they are what gets selected/submitted, otherwise the label doubles as the value.
 const getOptionValue = (field, index, label) => field.optionValues?.[index] ?? label;
+
+// Datetime values keep the "YYYY-MM-DDTHH:mm" shape the native datetime-local input produced,
+// so the submitted payload is unchanged.
+const splitDateTimeValue = (value) => {
+    const [date = "", time = ""] = String(value ?? "").trim().split(/[T ]/);
+    return { date, time: time.slice(0, 5) };
+};
+const joinDateTimeValue = ({ date, time }) => (date && time ? `${date}T${time}` : "");
 
 // Multi-select checkbox group: each option toggles independently and the
 // selection is kept as an array of option values. Controlled when onChange is given.
@@ -137,14 +148,16 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                 return (
                     <div className={fieldClassName}>
                         <label>{label}{requiredMark}</label>
-                        <div className={inputClassName}>
-                            <select {...textBinding}>
-                                <option value="">{placeholder}</option>
-                                {field.options.map((opt, i) => (
-                                    <option key={i} value={getOptionValue(field, i, opt)}>{opt}</option>
-                                ))}
-                            </select>
-                        </div>
+                        <SearchableSelect
+                            value={value ?? ""}
+                            onChange={(e) => onChange(e.target.value)}
+                            options={field.options.map((opt, i) => ({
+                                value: String(getOptionValue(field, i, opt)),
+                                label: opt,
+                            }))}
+                            placeholder={placeholder}
+                            hasError={Boolean(error)}
+                        />
                         {errorNode}
                     </div>
                 );
@@ -181,13 +194,38 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                 </div>
             );
         case "date":
+            return (
+                <div className={fieldClassName}>
+                    <label>{label}{requiredMark}</label>
+                    <DatePickerField
+                        dateValue={isControlled ? value ?? "" : ""}
+                        onDateTimeChange={isControlled ? ({ date }) => onChange(date) : undefined}
+                        hasError={Boolean(error)}
+                    />
+                    {errorNode}
+                </div>
+            );
+        case "datetime": {
+            const { date, time } = splitDateTimeValue(isControlled ? value : "");
+            return (
+                <div className={fieldClassName}>
+                    <label>{label}{requiredMark}</label>
+                    <DateTimePickerField
+                        dateValue={date}
+                        timeValue={time}
+                        onDateTimeChange={isControlled ? (next) => onChange(joinDateTimeValue(next)) : undefined}
+                        hasError={Boolean(error)}
+                    />
+                    {errorNode}
+                </div>
+            );
+        }
         case "time":
-        case "datetime":
             return (
                 <div className={fieldClassName}>
                     <label>{label}{requiredMark}</label>
                     <div className={inputClassName}>
-                        <input type={field.type === "datetime" ? "datetime-local" : field.type} {...textBinding} />
+                        <input type="time" {...textBinding} />
                     </div>
                     {errorNode}
                 </div>
