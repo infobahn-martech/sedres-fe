@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import SearchableSelect from "../../components/form/SearchableSelect";
 import DatePickerField from "../KanbanBoard/CardFormTabs/shared/components/DatePickerField";
 import DateTimePickerField from "../KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+import { DocumentUpload } from "../KanbanBoard/CardFormTabs/Import/tabs/appointment/GeneralFormFields";
 
 // A required checkbox group only needs one ticked option, not every checkbox.
 export const isCheckboxGroupValid = (field, selected) => !field.required || selected.length > 0;
@@ -180,9 +181,13 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                 return (
                     <div className={fieldClassName}>
                         <label>{label}{requiredMark}</label>
-                        <div className={inputClassName}>
-                            <input type="file" onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
-                        </div>
+                        <DocumentUpload
+                            attachments={value ? [value] : []}
+                            onAdd={onChange}
+                            onRemove={() => onChange(null)}
+                            allowMultiple={false}
+                            hasError={Boolean(error)}
+                        />
                         {errorNode}
                     </div>
                 );
