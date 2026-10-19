@@ -2,7 +2,7 @@
 // Class names are prefixed with `da-cf-` so nothing here collides with the existing
 // `.cf-*` / `.general-*` classes used by the General tab. Tokens are derived from the
 // app's existing accent (`DEFAULT_ACCENT_COLOR` in CardForm.jsx) and its Manrope typeface
-// — the rest of the app has no dark-mode support, so this stays light-only to match.
+// — dark mode is handled by remapping these tokens under [data-theme="dark"] below.
 
 .da-cf-panel {
   --da-ink: #1c2033;
@@ -23,6 +23,21 @@
   * {
     box-sizing: border-box;
   }
+
+  // Every .da-cf-* rule reads from the tokens above, so remapping them to the app's
+  // dark theme tokens fixes the whole DA tab in dark mode without touching light mode.
+  [data-theme="dark"] & {
+    --da-ink: var(--text-primary);
+    --da-ink-soft: var(--text-secondary);
+    --da-line: var(--border-primary);
+    --da-sunken: var(--bg-inset);
+    --da-accent: #818cf8;
+    --da-accent-soft: rgba(129, 140, 248, 0.14);
+  }
+}
+
+[data-theme="dark"] .da-cf-summary-refresh-btn {
+  background: var(--surface-secondary);
 }
 
 // The shared .cardform-body rule (CardForm.css) makes this panel's own scrollbar
