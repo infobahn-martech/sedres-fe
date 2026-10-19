@@ -1142,6 +1142,61 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   .ctm-segmented-btn.is-active {
     color: #9bb8ff;
   }
+
+  // Tab / subtab pills — replace the light #eaf0fb selected fill and
+  // #00368c text, which are unreadable on navy.
+  .ctm-tab-pill,
+  .ctm-subtab-pill {
+    &:hover {
+      border-color: var(--border-hover);
+    }
+
+    &.is-active {
+      border-color: var(--brand-bright);
+      background: var(--tint-brand-bg);
+
+      .ctm-tab-pill-name {
+        color: var(--tint-brand-text);
+      }
+    }
+  }
+
+  .ctm-tab-icon-btn:hover {
+    color: var(--tint-brand-text);
+    background: var(--tint-brand-bg);
+  }
+
+  .ctm-tab-name-input {
+    border-color: var(--brand-bright);
+    background: var(--input-bg);
+    color: var(--text-primary);
+  }
+
+  .ctm-add-tab-btn,
+  .ctm-add-subtab-btn,
+  .ctm-add-option-btn {
+    border-color: var(--border-pill);
+    color: var(--tint-brand-text);
+
+    &:hover {
+      border-color: var(--brand-bright);
+      background: var(--tint-brand-bg);
+    }
+  }
+
+  .ctm-add-subtab-link {
+    color: var(--tint-brand-text);
+  }
+
+  // Preview sub-tab nav — the shared .op-tab hover/active fill (#e0e7ff) keeps
+  // near-white dark-mode text, so the selected subtab became invisible.
+  .ct-preview-modal .op-tab {
+    &:hover,
+    &.active {
+      background: var(--tint-brand-bg);
+      color: var(--tint-brand-text);
+    }
+  }
 }
 
 // Email preview × (builder) — panel becomes the positioning context.

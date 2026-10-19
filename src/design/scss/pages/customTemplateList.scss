@@ -254,6 +254,26 @@
   padding: 30px 0;
 }
 
+// Dark mode — the light-blue selected tint above would sit behind near-white
+// --text-primary and wash the card out, so swap to the brand tint tokens.
+[data-theme="dark"] {
+  .ctl-template-card {
+    &:hover {
+      border-color: var(--border-hover);
+    }
+
+    &.is-active {
+      border-color: var(--brand-bright);
+      background: var(--tint-brand-bg);
+    }
+  }
+
+  .ctl-template-checkbox.is-checked {
+    border-color: var(--brand-bright);
+    background: var(--brand);
+  }
+}
+
 // The delete-template confirmation is a react-bootstrap Modal, which defaults to
 // a much lower z-index than this raw-overlay modal's 1350 (see ct-modal-overlay) —
 // without this override it mounts behind the panel and appears unresponsive.
