@@ -35,6 +35,22 @@
   }
 }
 
+/* `.column-left` ignores the pointer (so the header's buttons stay clickable); re-enable it on the
+   title only when it has a description tooltip to show. */
+.column-header .column-title--has-description {
+  pointer-events: auto;
+}
+
+/* Column description on title hover: capped width, wraps long unbroken text from the API. */
+.column-description-tooltip {
+  z-index: 1000;
+  max-width: 320px;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .column-header-dark .column-action {
   border-color: #3a4a68;
   background: transparent;

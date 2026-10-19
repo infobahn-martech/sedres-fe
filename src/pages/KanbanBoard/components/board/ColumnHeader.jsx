@@ -43,6 +43,7 @@ export default function ColumnHeader({
   const columnColor = column.color || "#2A00FF";
   const tooltipId = `column-title-${column.id}`;
   const secondaryTooltipId = `column-secondary-action-${column.id}`;
+  const descriptionTooltipId = `column-description-${column.id}`;
 
   if (isCollapsed) {
     return (
@@ -67,7 +68,14 @@ export default function ColumnHeader({
       onClick={onHeaderClick}
     >
       <div className="column-left">
-        <h2 className="column-title">{column.title}</h2>
+        {/* Anchored on the title: `.column-left` is a pointer-events:none overlay so it never receives hover. */}
+        <h2
+          className={`column-title ${column.description ? "column-title--has-description" : ""}`}
+          data-tooltip-id={column.description ? descriptionTooltipId : undefined}
+          data-tooltip-content={column.description || undefined}
+        >
+          {column.title}
+        </h2>
       </div>
       <span className="column-count">{wipDisplay}</span>
       {typeof onActionClick === "function" && (
@@ -104,6 +112,15 @@ export default function ColumnHeader({
           </button>
         </div>
       )}
+      {column.description && (
+        <Tooltip
+          id={descriptionTooltipId}
+          place="bottom"
+          positionStrategy="fixed"
+          className="column-description-tooltip"
+          delayShow={300}
+        />
+      )}
       {typeof onActionClick === "function" && <Tooltip id={tooltipId} place="top" />}
       {typeof onActionClick === "function" && secondaryAction && <Tooltip id={secondaryTooltipId} place="top" />}
     </div>
@@ -114,6 +131,7 @@ ColumnHeader.propTypes = {
   column: PropTypes.shape({
     id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
+    description: PropTypes.string,
     color: PropTypes.string,
     wipLimit: PropTypes.number,
   }).isRequired,

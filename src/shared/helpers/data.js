@@ -89,6 +89,7 @@ export function mapBoardWorkflowFromApi(workflow) {
       columns[colKey] = {
         id: colKey,
         title: col?.column_name || "Column",
+        description: col?.column_description?.trim() || "",
         color: stageColor,
         stageId,
         stageTitle,
