@@ -4889,12 +4889,22 @@ $send-report-optional: var(--text-muted);
       .document-upload-zone:hover {
         background: #eef2ff;
         border-color: #a5b4fc;
+
+        [data-theme="dark"] & {
+          background: rgba(129, 140, 248, 0.08);
+          border-color: #6366f1;
+        }
       }
 
       .attachment-list-wrapper .document-upload-zone.dragging,
       .document-upload-zone.dragging {
         background: #e0e7ff;
         border-color: #818cf8;
+
+        [data-theme="dark"] & {
+          background: rgba(129, 140, 248, 0.16);
+          border-color: #818cf8;
+        }
       }
 
       .attachment-list-wrapper .upload-zone-content,
