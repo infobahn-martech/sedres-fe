@@ -79,8 +79,9 @@ const READY_FOR_DISPATCH_COLUMN_PATTERN = /^ready\s+for\s+dispatch$/i;
    column (Uploaded to Portal). */
 const TO_BE_UPLOADED_TO_PORTAL_COLUMN_PATTERN = /^to\s+be\s+uploaded\s+to\s+(the\s+)?portal$/i;
 
-/* DA: "Uploaded to Portal" shows "Upload Dispatch Proof" only while exactly one card there is ticked; the board
-   page also keeps that column to a single ticked card (see isUploadedToPortalColumnTitle). */
+/* DA: "Uploaded to Portal" shows "Upload Dispatch Proof" only while exactly one card there is ticked, and the
+   board page keeps that column to a single ticked card (see isUploadedToPortalColumnTitle). L&T is the
+   exception: it keeps multi-select and uploads for all ticked cards. */
 
 /* L&T DA: "SCC Received" shows "Upload SCC Documents" for the cards the user ticks (signed SOs, SCCs and the
    approval email in one bulk upload), which then opens the SCC review. */
@@ -425,7 +426,8 @@ export default function WorkflowColumns({
                 };
               }
               const hasInvoiceButton =
-                invoiceAction === "sendInvoice" || invoiceAction === "uploadDispatchProof"
+                invoiceAction === "sendInvoice" ||
+                (invoiceAction === "uploadDispatchProof" && !isLntWorkflow(workflow))
                   ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
               const invoiceActionHandlers = {
                 upload: onColumnUploadInvoice,

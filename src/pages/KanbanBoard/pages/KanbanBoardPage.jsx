@@ -18,7 +18,8 @@ import SignatureCheckModal from "../components/board/SignatureCheckModal";
 import PoReviewModal from "../components/board/PoReviewModal";
 import ServiceSheetModal from "../components/board/ServiceSheetModal";
 import SccReviewModal from "../components/board/SccReviewModal";
-import { isUploadedToPortalColumnTitle } from "../utils/columnTitles";
+import DispatchProofReviewModal from "../components/board/DispatchProofReviewModal";
+import { isLntWorkflow, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -46,6 +47,7 @@ import useBatchMoveStore from "../../../shared/store/batchMoveStore";
 import useArInvoiceReviewStore from "../../../shared/store/arInvoiceReviewStore";
 import usePoReviewStore from "../../../shared/store/poReviewStore";
 import useSccReviewStore from "../../../shared/store/sccReviewStore";
+import useDispatchProofReviewStore from "../../../shared/store/dispatchProofReviewStore";
 import "../../../design/scss/pages/kanban-board/marquee-select.scss";
 
 /* "SE Received" bulk invoice upload: PDFs only. da/upload_ar_invoices takes max_files_per_request
@@ -76,6 +78,15 @@ const dispatchProofUploadFields = [
     accept: ".pdf,.jpg,.jpeg,.png,.msg,.eml,.doc,.docx,.xls,.xlsx",
     formatsHint: "PDF, JPG, PNG, MSG, EML, DOC, DOCX, XLS, XLSX",
     multiple: false,
+  },
+];
+/* L&T uploads the proofs of all ticked cards at once (PDFs only) and confirms them in a review. */
+const lntDispatchProofUploadFields = [
+  {
+    name: DISPATCH_PROOF_FIELD_NAME,
+    accept: ".pdf",
+    formatsHint: "PDF",
+    multiple: true,
   },
 ];
 /* McDermott "Submitted to DA" SRF upload, from the workflow header: one SRF document for all the
@@ -1398,6 +1409,16 @@ export default function KanbanBoardPage() {
   const [selectedDispatchProofUploadCards, setSelectedDispatchProofUploadCards] = useState([]);
   const [isUploadingDispatchProof, setIsUploadingDispatchProof] = useState(false);
   const [dispatchProofUploadProgress, setDispatchProofUploadProgress] = useState(null);
+  const openDispatchProofReviewModal = useDispatchProofReviewStore(
+    (state) => state.openDispatchProofReviewModal
+  );
+  const isLntDispatchProofUpload = useCallback(
+    (cards) =>
+      cards.some((card) =>
+        isLntWorkflow(workflows.find((wf) => String(wf.id) === String(cardsById[card.id]?.workflow_id)))
+      ),
+    [workflows, cardsById]
+  );
 
   const handleUploadDispatchProofClick = useCallback((cards) => {
     if (!cards?.length) return;
@@ -1426,6 +1447,10 @@ export default function KanbanBoardPage() {
         chunks.push(proofs.slice(start, start + DISPATCH_PROOF_FILES_PER_REQUEST));
       }
 
+      /* L&T confirms the uploaded proofs in a review (da/confirm_dispatch_proofs moves the cards on); other
+         workflows upload for one card, which moves on by itself. */
+      const isLntUpload = isLntDispatchProofUpload(cards);
+      const reviewCardById = {};
       const notPlacedFiles = [];
       let receivedCount = 0;
       let failedMessage = null;
@@ -1451,6 +1476,12 @@ export default function KanbanBoardPage() {
           }
           receivedCount += data.data?.received_files?.length ?? chunk.length;
           notPlacedFiles.push(...(data.data?.not_placed_files ?? []));
+          (data.data?.cards ?? []).forEach((card) => {
+            reviewCardById[String(card.card_id)] = {
+              ...card,
+              proof: card.proof ?? reviewCardById[String(card.card_id)]?.proof ?? null,
+            };
+          });
           setDispatchProofUploadProgress((prev) => ({ ...prev, done: prev.done + chunk.length }));
         }
 
@@ -1469,11 +1500,18 @@ export default function KanbanBoardPage() {
             "success"
           );
         }
+        cards.forEach((card) => removeCardSelectionId(card.id));
+        handleCloseDispatchProofUpload();
+        if (isLntUpload) {
+          openDispatchProofReviewModal(
+            cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
+            { notPlacedFiles }
+          );
+          return;
+        }
         if (notPlacedFiles.length) {
           notify(`Could not place: ${notPlacedFiles.join(", ")}`, "error");
         }
-        cards.forEach((card) => removeCardSelectionId(card.id));
-        handleCloseDispatchProofUpload();
         refetchBoard?.();
       } finally {
         setIsUploadingDispatchProof(false);
@@ -1485,6 +1523,8 @@ export default function KanbanBoardPage() {
       getBatchCallIds,
       removeCardSelectionId,
       handleCloseDispatchProofUpload,
+      isLntDispatchProofUpload,
+      openDispatchProofReviewModal,
       refetchBoard,
     ]
   );
@@ -1868,13 +1908,18 @@ export default function KanbanBoardPage() {
     onSelectionChange: setSelectedCardIds,
   });
 
-  /* "Uploaded to Portal" takes one dispatch proof per card, so only one card there can stay ticked: the
-     most recently ticked one wins, whichever way it was ticked (click, drag or marquee). */
+  /* Outside L&T (which uploads dispatch proofs in bulk), "Uploaded to Portal" takes one dispatch proof per
+     card, so only one card there can stay ticked: the most recently ticked one wins, whichever way it was
+     ticked (click, drag or marquee). */
   useEffect(() => {
     const portalCardIds = selectedCardIds.filter((id) => {
       const card = cardsById[id];
       const workflow = workflows.find((wf) => String(wf.id) === String(card?.workflow_id));
-      return card && isUploadedToPortalColumnTitle(workflow?.columns?.[card.columnId]?.title);
+      return (
+        card &&
+        !isLntWorkflow(workflow) &&
+        isUploadedToPortalColumnTitle(workflow?.columns?.[card.columnId]?.title)
+      );
     });
     if (portalCardIds.length < 2) return;
     portalCardIds.slice(0, -1).forEach((id) => removeCardSelectionId(id));
@@ -2226,8 +2271,13 @@ export default function KanbanBoardPage() {
         title="Upload Dispatch Proof"
         subtitle="Attach the dispatch proof for the selected card"
         submitLabel="Upload Dispatch Proof"
-        fields={dispatchProofUploadFields}
+        fields={
+          isLntDispatchProofUpload(selectedDispatchProofUploadCards)
+            ? lntDispatchProofUploadFields
+            : dispatchProofUploadFields
+        }
       />
+      <DispatchProofReviewModal onConfirmed={refetchBoard} />
 
       <SeCreationEmailModal
         show={showInvoiceDispatchEmailModal}
