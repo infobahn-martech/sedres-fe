@@ -568,6 +568,7 @@ const TopBar = ({
   onCardStickerChange,
   onTemplateChange,
   onRevealForm,
+  onHideForm,
 }) => {
   const allTemplates = useFormTemplateReducer((s) => s.allTemplates);
   const isLoadingAllTemplates = useFormTemplateReducer((s) => s.isLoadingAllTemplates);
@@ -839,6 +840,7 @@ const TopBar = ({
 
   const handleRemoveTemplate = () => {
     onTemplateChange?.(null, "");
+    onHideForm?.();
     setOpenPicker(null);
   };
 
@@ -1233,6 +1235,7 @@ TopBar.propTypes = {
   closeLoading: PropTypes.bool,
   onTemplateChange: PropTypes.func,
   onRevealForm: PropTypes.func,
+  onHideForm: PropTypes.func,
   isAddMode: PropTypes.bool,
   onColorChange: PropTypes.func,
   onTitleCommit: PropTypes.func,
@@ -2505,6 +2508,7 @@ function CardForm({
   }, [show, isAddMode]);
 
   const handleRevealForm = useCallback(() => setIsFormRevealed(true), []);
+  const handleHideForm = useCallback(() => setIsFormRevealed(false), []);
 
   // Lock background scroll while the modal is open so the board behind it can't
   // be scrolled out from under the fixed overlay.
@@ -3121,6 +3125,7 @@ function CardForm({
           onCardStickerChange={handleTopbarCardStickerChange}
           onTemplateChange={handleTopbarTemplateChange}
           onRevealForm={handleRevealForm}
+          onHideForm={handleHideForm}
         />
         {isSubTaskCard ? (
           <TaskCardDetailView card={card} onClose={handleClose} />

@@ -1194,18 +1194,6 @@
   animation: general-panel-fade-in 0.35s ease both;
 }
 
-.general-add-form-panel::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 3px;
-  background: #00368c;
-  z-index: 3;
-  pointer-events: none;
-}
-
 .general-add-form-scroll {
   flex: 1 1 auto;
   height: 100%;
@@ -1436,18 +1424,6 @@
   animation: general-panel-fade-in 0.35s ease 0.05s both;
 }
 
-.general-add-preview-panel::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 3px;
-  background: #00368c;
-  z-index: 3;
-  pointer-events: none;
-}
-
 .general-add-preview-panel.general-add-preview-panel--split-scroll {
   overflow: hidden;
   gap: 0;
@@ -1668,14 +1644,15 @@
   background: var(--surface-primary);
 }
 
-.email-preview-message-quill-react .ql-toolbar {
+/* .ql-snow raises specificity over quill.snow.css's #ccc borders, which load later. */
+.email-preview-message-quill-react .ql-toolbar.ql-snow {
   border: 0;
   border-bottom: 1px solid var(--border-primary);
   background: var(--surface-primary);
   padding: 8px 10px;
 }
 
-.email-preview-message-quill-react .ql-container {
+.email-preview-message-quill-react .ql-container.ql-snow {
   border: 0;
   font-size: 13px;
   height: auto !important;
