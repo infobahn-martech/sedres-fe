@@ -5,11 +5,15 @@ import CustomModal from "../../../../components/CustomModal";
 import useArInvoiceReviewStore from "../../../../shared/store/arInvoiceReviewStore";
 import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import { notify } from "../../../../components/Toaster";
+import { downloadFilesAsZip } from "../../../../shared/utils/zipFiles";
 import { findUploadedFile, getUploadedFileUrl, viewLocalFile, viewUploadedFile } from "../../../../shared/utils/viewUploadedFile";
 import MaterialTablePagination from "../../CardFormTabs/Import/tabs/husbandry/components/MaterialTablePagination";
 import "../../../../design/scss/blockers-modal.scss";
 import "../../../../design/scss/pages/kanban-board/seReviewMoveModal.scss";
 import "../../../../design/scss/pages/kanban-board/arInvoiceReviewModal.scss";
+
+/* Invoice amounts da/confirm_ar_invoices takes alongside the invoice no; sent as read, only when the invoice has them. */
+const CONFIRM_AMOUNT_FIELDS = ["non_taxable_amount", "taxable_amount", "vat_amount"];
 
 /*
  * Review table columns, in display order. `editable` fields are read from the sales order's invoice
@@ -52,6 +56,9 @@ const formatAmount = (value) =>
   value === "" || Number.isNaN(Number(value))
     ? value
     : Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/* File name of the zip of the uploaded invoices saved on confirm. */
+const INVOICES_ZIP_NAME = "uploaded_invoices.zip";
 
 /* Cards per page in the review table, matching da/ar_invoice_review's page size. */
 const REVIEW_PAGE_SIZE = 20;
@@ -185,6 +192,13 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
     sales_orders: (card.sales_orders ?? []).map((salesOrder) => ({
       sales_order_no: salesOrder.sales_order_no,
       invoice_id: salesOrder.invoice?.invoice_id ?? null,
+      ...(salesOrder.invoice?.invoice_no != null && { invoice_no: salesOrder.invoice.invoice_no }),
+      ...Object.fromEntries(
+        CONFIRM_AMOUNT_FIELDS.filter((name) => salesOrder.invoice?.[name] != null).map((name) => [
+          name,
+          Number(salesOrder.invoice[name]),
+        ])
+      ),
       ...getEditedFields(card, salesOrder),
     })),
   }));
@@ -214,19 +228,30 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
       notify(errorMessage, "error");
       return;
     }
-    /* McDermott: confirmed cards go back to Backlog; cards still missing invoices stay put. */
-    const movedCount =
-      (isMcDermottReview ? result?.moved_to_backlog : result?.moved_to_ar_invoices_issued)
-        ?.length ?? confirmPayload.length;
+    /* The response names where the cards went; with neither list present they are only reported as confirmed. */
+    const movedTo = [
+      { cards: result?.moved_to_backlog, column: "Backlog" },
+      { cards: result?.moved_to_ar_invoices_issued, column: "AR Invoices Issued" },
+      { cards: result?.moved_to_ar_invoice_issued, column: "AR Invoice Issued" },
+    ].find((destination) => Array.isArray(destination.cards));
+    const movedCount = movedTo?.cards.length ?? confirmPayload.length;
     notify(
-      `${movedCount} ${movedCount === 1 ? "card" : "cards"} moved to ${
-        isMcDermottReview ? "Backlog" : "AR Invoices Issued"
+      `${movedCount} ${movedCount === 1 ? "card" : "cards"} ${
+        movedTo ? `moved to ${movedTo.column}` : "confirmed"
       }`,
       "success"
     );
     /* The backend has moved the cards on; a column note left from an earlier batch move would keep
        drawing them in "SE Received", so it is dropped and the board load decides. */
     clearCardColumns(confirmPayload.map((card) => card.card_id));
+    /* Issue AR Invoice: the invoices uploaded for this review are saved as one zip once confirmed. */
+    if (isMcDermottReview && uploadedFiles.length) {
+      try {
+        await downloadFilesAsZip(uploadedFiles, INVOICES_ZIP_NAME);
+      } catch {
+        notify("Cards confirmed, but the invoices zip could not be created", "error");
+      }
+    }
     onClose();
     onConfirmed?.();
   };
