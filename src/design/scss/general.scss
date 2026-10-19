@@ -602,7 +602,6 @@
     max-height: 100%;
     overflow-y: auto !important;
     overflow-x: hidden;
-    @include general-email-preview-scrollbar;
 
     .pre-arrival-form {
       height: auto;
