@@ -5,24 +5,17 @@ import '../../design/scss/structure/side-nav/AddDashboardModal.scss';
 
 const StageDecisionModal = ({ show, stageName, initialValue = '', isSaving = false, onClose, onSave }) => {
   const [description, setDescription] = useState(initialValue);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     if (show) {
       setDescription(initialValue);
-      setError('');
     }
   }, [show, initialValue]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const trimmed = description.trim();
-    if (!trimmed) {
-      setError('Description is required.');
-      return;
-    }
     if (isSaving) return;
-    onSave?.(trimmed);
+    onSave?.(description.trim());
   };
 
   const handleClose = () => {
@@ -60,30 +53,18 @@ const StageDecisionModal = ({ show, stageName, initialValue = '', isSaving = fal
         <div className="add-dashboard-modal-body">
           <div className="add-dashboard-field">
             <label htmlFor="stageDescription" className="add-dashboard-label">
-              Description <span aria-hidden="true">*</span>
+              Description
             </label>
             <textarea
               id="stageDescription"
-              className={`add-dashboard-input stage-decision-textarea${error ? ' add-dashboard-input--invalid' : ''}`}
+              className="add-dashboard-input stage-decision-textarea"
               placeholder="Enter description"
               rows={6}
               value={description}
-              onChange={(e) => {
-                setDescription(e.target.value);
-                if (error) setError('');
-              }}
+              onChange={(e) => setDescription(e.target.value)}
               disabled={isSaving}
-              required
-              aria-required="true"
-              aria-invalid={Boolean(error)}
-              aria-describedby={error ? 'stageDescription-error' : undefined}
               autoFocus
             />
-            {error ? (
-              <div id="stageDescription-error" className="add-dashboard-field-error" role="alert">
-                {error}
-              </div>
-            ) : null}
           </div>
         </div>
 
