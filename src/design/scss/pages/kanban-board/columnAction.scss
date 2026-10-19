@@ -41,14 +41,27 @@
   pointer-events: auto;
 }
 
-/* Column description on title hover: capped width, wraps long unbroken text from the API. */
-.column-description-tooltip {
+/* Column description on title hover: brand-navy card with the column's colour as a left accent
+   (`--column-color` is inherited from the header). Doubled class beats react-tooltip's own rules. */
+.column-description-tooltip.column-description-tooltip {
   z-index: 1000;
   max-width: 320px;
-  font-size: 12px;
-  line-height: 1.45;
+  padding: 10px 14px;
+  border-left: 3px solid var(--column-color, #0a57c2);
+  border-radius: 8px;
+  background: #0f2f6b;
+  color: #eef3fb;
+  box-shadow: 0 12px 28px rgba(8, 25, 60, 0.28);
+  text-align: left;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+.column-description-tooltip__text {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.55;
 }
 
 .column-header-dark .column-action {

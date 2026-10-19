@@ -72,7 +72,6 @@ export default function ColumnHeader({
         <h2
           className={`column-title ${column.description ? "column-title--has-description" : ""}`}
           data-tooltip-id={column.description ? descriptionTooltipId : undefined}
-          data-tooltip-content={column.description || undefined}
         >
           {column.title}
         </h2>
@@ -115,11 +114,15 @@ export default function ColumnHeader({
       {column.description && (
         <Tooltip
           id={descriptionTooltipId}
-          place="bottom"
+          place="bottom-end"
           positionStrategy="fixed"
           className="column-description-tooltip"
+          opacity={1}
+          offset={8}
           delayShow={300}
-        />
+        >
+          <p className="column-description-tooltip__text">{column.description}</p>
+        </Tooltip>
       )}
       {typeof onActionClick === "function" && <Tooltip id={tooltipId} place="top" />}
       {typeof onActionClick === "function" && secondaryAction && <Tooltip id={secondaryTooltipId} place="top" />}
