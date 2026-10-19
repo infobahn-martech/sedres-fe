@@ -410,7 +410,9 @@ function WorkflowStageCard({
               type="button"
               aria-label={decision ? `Description: ${decision}` : 'Add description'}
               data-tooltip-id="workflow-stage-name-tooltip"
-              data-tooltip-content={decision || 'Add description'}
+              data-tooltip-content={
+                decision ? (decision.length > 10 ? `${decision.slice(0, 10)}...` : decision) : 'Add description'
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 setIsDecisionModalOpen(true);
