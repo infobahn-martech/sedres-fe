@@ -37,3 +37,9 @@ const MCDERMOTT_WORKFLOW = "MCDERMOTT";
 
 export const isMcDermottWorkflow = (workflow) =>
   String(workflow?.title ?? "").trim().toUpperCase().includes(MCDERMOTT_WORKFLOW);
+
+const UPLOADED_TO_PORTAL_COLUMN_PATTERN = /^(uploaded|invoice\s+submitted)\s+to\s+(the\s+)?portal$/i;
+
+/* "Uploaded to Portal" / "Invoice Submitted to Portal" take one dispatch proof for one ticked card. */
+export const isUploadedToPortalColumnTitle = (title) =>
+  UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(String(title ?? "").trim());

@@ -732,6 +732,10 @@ const SalesOrderList = ({
     : -1;
   const isBeforeSubmittedToDa =
     submittedToDaStepIndex !== -1 && currentStep != null && currentStep <= submittedToDaStepIndex;
+  // On the "Submitted to DA" column itself the Verify/Delete column stays, and verifying the last line
+  // item just closes the card (it is already there, so nothing to move).
+  const isAtSubmittedToDaColumn =
+    submittedToDaStepIndex !== -1 && currentStep != null && currentStep === submittedToDaStepIndex + 1;
   // L&T workflow: Verify/Delete also show on its "SO sent for SCC" column, matched by name since
   // that column is not guaranteed to sit directly after "Ops Completed".
   const isAtSoSentForSccColumn =
@@ -741,7 +745,7 @@ const SalesOrderList = ({
   const isAtSubmittedToFdaColumn =
     Array.isArray(stepLabels) && currentStep != null && /submitted to fda/i.test(stepLabels[currentStep - 1] || "");
   const showActionColumn =
-    canViewActionColumn && (isAtColumnAfterOpsCompleted || isBeforeSubmittedToDa || isAtSoSentForSccColumn);
+    canViewActionColumn && (isAtColumnAfterOpsCompleted || isBeforeSubmittedToDa || isAtSubmittedToDaColumn || isAtSoSentForSccColumn);
 
   // "SO/PO Approval Received" (column 5) is the client-decision column for the SO approval
   // sent at column 4 — approving moves on to column 6, rejecting reverts to column 4 (see
@@ -1381,9 +1385,9 @@ const SalesOrderList = ({
       if (allVerified && isBeforeSubmittedToDa) {
         onAdvanceDaStage?.({ label: stepLabels[submittedToDaStepIndex], skipStatusUpdate: true });
         onCloseCard?.();
-      } else if (allVerified && isAtSoSentForSccColumn) {
-        // L&T "SO sent for SCC": the card is sent for SCC approval from the column header, so once every
-        // line item is verified the card just closes (it is not moved).
+      } else if (allVerified && (isAtSubmittedToDaColumn || isAtSoSentForSccColumn)) {
+        // "Submitted to DA" / L&T "SO sent for SCC": once every line item is verified the card just closes
+        // (it is not moved; SCC approval is sent from the column header).
         onCloseCard?.();
       }
     } catch (err) {

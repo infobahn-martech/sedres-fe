@@ -16,8 +16,9 @@ import SeReviewMoveModal from "../components/board/SeReviewMoveModal";
 import ArInvoiceReviewModal from "../components/board/ArInvoiceReviewModal";
 import SignatureCheckModal from "../components/board/SignatureCheckModal";
 import PoReviewModal from "../components/board/PoReviewModal";
-import DispatchProofReviewModal from "../components/board/DispatchProofReviewModal";
+import ServiceSheetModal from "../components/board/ServiceSheetModal";
 import SccReviewModal from "../components/board/SccReviewModal";
+import { isUploadedToPortalColumnTitle } from "../utils/columnTitles";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -44,7 +45,6 @@ import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelecti
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
 import useArInvoiceReviewStore from "../../../shared/store/arInvoiceReviewStore";
 import usePoReviewStore from "../../../shared/store/poReviewStore";
-import useDispatchProofReviewStore from "../../../shared/store/dispatchProofReviewStore";
 import useSccReviewStore from "../../../shared/store/sccReviewStore";
 import "../../../design/scss/pages/kanban-board/marquee-select.scss";
 
@@ -66,16 +66,16 @@ const arInvoiceUploadFields = [
    max_files_per_request (20), like the AR invoices above. */
 const PO_FIELD_NAME = "pos";
 const PO_FILES_PER_REQUEST = 20;
-/* L&T "Uploaded to Portal" bulk dispatch proof upload: PDFs only, sent to da/upload_dispatch_proof in chunks of
-   max_files_per_request (20), like the AR invoices above. */
+/* "Uploaded to Portal" dispatch proof upload: one file for the ticked card (PDF, image, email, Word, Excel),
+   sent to da/upload_dispatch_proof in chunks of max_files_per_request (20). */
 const DISPATCH_PROOF_FIELD_NAME = "proofs";
 const DISPATCH_PROOF_FILES_PER_REQUEST = 20;
 const dispatchProofUploadFields = [
   {
     name: DISPATCH_PROOF_FIELD_NAME,
-    accept: ".pdf",
-    formatsHint: "PDF",
-    multiple: true,
+    accept: ".pdf,.jpg,.jpeg,.png,.msg,.eml,.doc,.docx,.xls,.xlsx",
+    formatsHint: "PDF, JPG, PNG, MSG, EML, DOC, DOCX, XLS, XLSX",
+    multiple: false,
   },
 ];
 /* McDermott "Submitted to DA" SRF upload, from the workflow header: one SRF document for all the
@@ -1391,16 +1391,13 @@ export default function KanbanBoardPage() {
      itself (moved_to_be_uploaded), so the board is only refetched. */
   const [isDownloadingInvoices, setIsDownloadingInvoices] = useState(false);
 
-  /* "Upload Dispatch Proof" on the "Uploaded to Portal" column header, for the cards ticked there. The backend
-     matches each proof to a card by its invoice number; the response opens the review straight away, and
-     confirming it moves the cards on. */
+  /* "Upload Dispatch Proof" on the "Uploaded to Portal" column header, for the one card ticked there. There is
+     no review or confirm: the card moves on to the next column straight after the upload, so the board is
+     only refetched. */
   const [showDispatchProofUploadModal, setShowDispatchProofUploadModal] = useState(false);
   const [selectedDispatchProofUploadCards, setSelectedDispatchProofUploadCards] = useState([]);
   const [isUploadingDispatchProof, setIsUploadingDispatchProof] = useState(false);
   const [dispatchProofUploadProgress, setDispatchProofUploadProgress] = useState(null);
-  const openDispatchProofReviewModal = useDispatchProofReviewStore(
-    (state) => state.openDispatchProofReviewModal
-  );
 
   const handleUploadDispatchProofClick = useCallback((cards) => {
     if (!cards?.length) return;
@@ -1429,7 +1426,6 @@ export default function KanbanBoardPage() {
         chunks.push(proofs.slice(start, start + DISPATCH_PROOF_FILES_PER_REQUEST));
       }
 
-      const reviewCardById = {};
       const notPlacedFiles = [];
       let receivedCount = 0;
       let failedMessage = null;
@@ -1455,12 +1451,6 @@ export default function KanbanBoardPage() {
           }
           receivedCount += data.data?.received_files?.length ?? chunk.length;
           notPlacedFiles.push(...(data.data?.not_placed_files ?? []));
-          (data.data?.cards ?? []).forEach((card) => {
-            reviewCardById[String(card.card_id)] = {
-              ...card,
-              proof: card.proof ?? reviewCardById[String(card.card_id)]?.proof ?? null,
-            };
-          });
           setDispatchProofUploadProgress((prev) => ({ ...prev, done: prev.done + chunk.length }));
         }
 
@@ -1479,12 +1469,12 @@ export default function KanbanBoardPage() {
             "success"
           );
         }
+        if (notPlacedFiles.length) {
+          notify(`Could not place: ${notPlacedFiles.join(", ")}`, "error");
+        }
         cards.forEach((card) => removeCardSelectionId(card.id));
         handleCloseDispatchProofUpload();
-        openDispatchProofReviewModal(
-          cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
-          { notPlacedFiles }
-        );
+        refetchBoard?.();
       } finally {
         setIsUploadingDispatchProof(false);
         setDispatchProofUploadProgress(null);
@@ -1495,7 +1485,7 @@ export default function KanbanBoardPage() {
       getBatchCallIds,
       removeCardSelectionId,
       handleCloseDispatchProofUpload,
-      openDispatchProofReviewModal,
+      refetchBoard,
     ]
   );
 
@@ -1878,6 +1868,18 @@ export default function KanbanBoardPage() {
     onSelectionChange: setSelectedCardIds,
   });
 
+  /* "Uploaded to Portal" takes one dispatch proof per card, so only one card there can stay ticked: the
+     most recently ticked one wins, whichever way it was ticked (click, drag or marquee). */
+  useEffect(() => {
+    const portalCardIds = selectedCardIds.filter((id) => {
+      const card = cardsById[id];
+      const workflow = workflows.find((wf) => String(wf.id) === String(card?.workflow_id));
+      return card && isUploadedToPortalColumnTitle(workflow?.columns?.[card.columnId]?.title);
+    });
+    if (portalCardIds.length < 2) return;
+    portalCardIds.slice(0, -1).forEach((id) => removeCardSelectionId(id));
+  }, [selectedCardIds, cardsById, workflows, removeCardSelectionId]);
+
   // Drop any selected id that disappears from the board (moved/removed by a refetch).
   useEffect(() => {
     const staleIds = selectedCardIds.filter((id) => !cardsById[id]);
@@ -2207,6 +2209,8 @@ export default function KanbanBoardPage() {
 
       <PoReviewModal onConfirmed={refetchBoard} />
 
+      <ServiceSheetModal onSaved={refetchBoard} />
+
       <SeApprovalUploadModal
         show={showDispatchProofUploadModal}
         onClose={handleCloseDispatchProofUpload}
@@ -2220,11 +2224,10 @@ export default function KanbanBoardPage() {
         batchTitle=""
         selectedCardCount={selectedDispatchProofUploadCards.length}
         title="Upload Dispatch Proof"
-        subtitle="Attach the dispatch proofs for the selected cards"
+        subtitle="Attach the dispatch proof for the selected card"
         submitLabel="Upload Dispatch Proof"
         fields={dispatchProofUploadFields}
       />
-      <DispatchProofReviewModal onConfirmed={refetchBoard} />
 
       <SeCreationEmailModal
         show={showInvoiceDispatchEmailModal}
