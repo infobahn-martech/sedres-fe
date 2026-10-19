@@ -3115,6 +3115,17 @@ $gro-supervisor-control-border: #d0d5dd;
     padding: 14px 16px 12px;
     border-bottom: 1px solid var(--border-primary);
     flex-shrink: 0;
+
+    // Decorative accent bar leading the title.
+    &::before {
+      content: "";
+      width: 4px;
+      height: 16px;
+      border-radius: 2px;
+      flex-shrink: 0;
+      background: var(--pp-accent);
+      opacity: 0.85;
+    }
   }
 
   &__header-icon {
