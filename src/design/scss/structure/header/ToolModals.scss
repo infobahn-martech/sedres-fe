@@ -1,0 +1,419 @@
+// Header "Tools" modals — Calculator, Dictionary, Weather.
+// Colors come from theme tokens, so light/dark follow [data-theme] automatically.
+
+.tool-modal {
+  font-family: 'Manrope', sans-serif;
+
+  .modal-dialog {
+    max-width: 480px;
+    width: calc(100vw - 32px);
+    margin: 24px auto;
+  }
+
+  &.calculator-modal .modal-dialog {
+    max-width: 360px;
+  }
+
+  .modal-content {
+    border: 1px solid var(--border-primary);
+    border-radius: 14px;
+    padding: 0;
+    background-color: var(--surface-primary);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .modal-header {
+    border-bottom: 1px solid var(--border-primary);
+    padding: 0;
+
+    .btn-close {
+      display: none;
+    }
+  }
+}
+
+.tool-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 20px;
+
+  .tool-modal-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--color-primary-accent);
+    font-size: 16px;
+  }
+
+  .tool-modal-title {
+    flex: 1;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .tool-modal-close {
+    display: inline-flex;
+    padding: 6px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--hover-bg);
+      color: var(--text-primary);
+    }
+  }
+}
+
+.tool-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: min(70vh, 620px);
+  padding: 18px 20px 20px;
+  overflow-y: auto;
+  color: var(--text-primary);
+}
+
+.tool-modal-hint,
+.tool-state {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.tool-state {
+  padding: 24px 0;
+
+  &--error {
+    color: var(--color-danger);
+  }
+}
+
+.tool-link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-primary-accent);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+// Shared search bar (Dictionary, Weather)
+.tool-search {
+  position: relative;
+  display: flex;
+  gap: 8px;
+
+  .tool-search-icon {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    color: var(--input-placeholder);
+    pointer-events: none;
+  }
+
+  .tool-search-input {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    padding: 0 12px 0 36px;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+
+    &::placeholder {
+      color: var(--input-placeholder);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary-accent);
+    }
+  }
+
+  .tool-search-btn {
+    height: 40px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--color-primary);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Calculator
+.calculator-display {
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  text-align: right;
+
+  .calculator-expression {
+    min-height: 18px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .calculator-value {
+    overflow: hidden;
+    font-size: 34px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.calculator-keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.calculator-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+
+  &:hover {
+    background: var(--hover-bg);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &--muted {
+    background: var(--bg-tertiary);
+  }
+
+  &--operator {
+    color: var(--color-primary-accent);
+    font-size: 20px;
+
+    &.is-active {
+      background: var(--color-primary-accent);
+      color: #ffffff;
+    }
+  }
+
+  &--equals {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: #ffffff;
+
+    &:hover {
+      background: var(--color-primary);
+      filter: brightness(1.1);
+    }
+  }
+}
+
+// Dictionary
+.dictionary-result {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dictionary-word-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  .dictionary-word {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+  }
+}
+
+.dictionary-meaning {
+  padding-top: 12px;
+  border-top: 1px solid var(--border-primary);
+
+  .dictionary-pos {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-style: italic;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+
+  .dictionary-definitions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding-left: 18px;
+    font-size: 14px;
+    line-height: 1.5;
+
+    li {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+  }
+
+  .dictionary-example {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+}
+
+// Weather
+.weather-city-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  .weather-city-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+
+    svg {
+      flex-shrink: 0;
+      color: var(--text-muted);
+    }
+
+    &:hover {
+      background: var(--hover-bg);
+    }
+  }
+}
+
+.weather-current {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 12px;
+  background: var(--bg-secondary);
+
+  .weather-current-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .weather-current-icon {
+    font-size: 48px;
+    color: var(--color-primary-accent);
+  }
+
+  .weather-temp {
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .weather-condition {
+    margin-top: 4px;
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .weather-location,
+  .weather-metrics span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .weather-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+}
+
+.weather-daily {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+
+  @media (max-width: 420px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .weather-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 4px;
+    border: 1px solid var(--border-primary);
+    border-radius: 10px;
+    font-size: 13px;
+  }
+
+  .weather-day-name {
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .weather-day-icon {
+    font-size: 22px;
+    color: var(--color-primary-accent);
+  }
+
+  .weather-day-range {
+    display: flex;
+    gap: 6px;
+
+    span {
+      color: var(--text-muted);
+    }
+  }
+}

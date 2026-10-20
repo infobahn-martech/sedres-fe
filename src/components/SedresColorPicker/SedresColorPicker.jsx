@@ -15,6 +15,7 @@ function SedresColorPicker({
   initialHex,
   onApply,
   onCancel,
+  onRemove,
   darkMode = false,
   ariaLabel = 'Pick color',
   hexInputId: hexInputIdProp,
@@ -149,6 +150,15 @@ function SedresColorPicker({
       </div>
 
       <div className="kanban-dashboard-color-picker-actions">
+        {onRemove ? (
+          <button
+            type="button"
+            className="kanban-dashboard-color-picker-btn kanban-dashboard-color-picker-btn--remove"
+            onClick={onRemove}
+          >
+            Remove
+          </button>
+        ) : null}
         <button
           type="button"
           className="kanban-dashboard-color-picker-btn kanban-dashboard-color-picker-btn--ghost"

@@ -317,10 +317,7 @@ function MyAccountsModal({ show, onClose }) {
                           disabled={!isEditing}
                           placeholder="First name"
                           autoComplete="name"
-                          style={{
-                            backgroundColor: !isEditing ? '#f8f9fc' : '#fff',
-                            cursor: !isEditing ? 'not-allowed' : 'text',
-                          }}
+                          style={{ cursor: !isEditing ? 'not-allowed' : 'text' }}
                         />
                         <label htmlFor="accountFullName">
                           First name
@@ -368,7 +365,6 @@ function MyAccountsModal({ show, onClose }) {
                           placeholder="Email"
                           autoComplete="email"
                           style={{
-                            backgroundColor: !isEditing ? '#f8f9fc' : '#fff',
                             cursor: !isEditing ? 'not-allowed' : 'text',
                             opacity: !isEditing ? 0.95 : 1,
                           }}

@@ -5612,6 +5612,293 @@ body.app-dark-mode {
   }
 }
 
+/* ================================
+   TOKEN DARK MODE — Business rule modals
+   (html[data-theme="dark"], driven by themeStore — independent of
+   body.app-dark-mode above). Light styles hardcode $txtColor text and
+   navy (#00368c) links, both unreadable on dark surfaces.
+================================ */
+
+[data-theme="dark"] {
+  .br-picker-search-input,
+  .business-rules-search-input {
+    background: var(--input-bg);
+    border-color: var(--input-border);
+    color: var(--text-primary);
+
+    &::placeholder {
+      color: var(--input-placeholder);
+    }
+
+    &:focus {
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 2px var(--focus-ring);
+    }
+  }
+
+  .business-rule-form-input,
+  .business-rule-form-textarea,
+  .business-rule-form-select,
+  .br-owner-picker-trigger,
+  .br-owner-picker-search input {
+    color: var(--text-primary);
+  }
+
+  .business-rule-form-input,
+  .business-rule-form-textarea,
+  .business-rule-form-select {
+    &:focus {
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+  }
+
+  .br-owner-picker-panel {
+    box-shadow: var(--shadow-popover);
+  }
+
+  .br-owner-picker-row:hover {
+    background: var(--hover-bg);
+  }
+
+  .br-owner-picker-row-btn {
+    color: var(--text-secondary);
+
+    &--selected {
+      color: var(--brand-bright);
+    }
+  }
+
+  // Card property match modal family (pills, section toggles, board filter)
+  .br-property-section-toggle {
+    color: var(--text-primary);
+
+    &:hover {
+      background: var(--hover-bg);
+    }
+  }
+
+  .br-property-section-toggle-icon {
+    background: var(--border-primary);
+    color: var(--text-primary);
+  }
+
+  .br-property-pill.br-property-pill--selected {
+    border-color: var(--brand-bright);
+    box-shadow: 0 0 0 2px var(--focus-ring);
+  }
+
+  .board-minimap-board-trigger {
+    color: var(--text-primary);
+
+    &:hover {
+      border-color: var(--brand-bright);
+    }
+  }
+
+  .br-property-add-btn {
+    background: var(--brand);
+    color: #ffffff;
+
+    &:hover:not(:disabled) {
+      background: var(--brand-hover);
+    }
+  }
+
+  // Shared with modal
+  .share-with-filter-row:focus-within {
+    border-color: var(--brand-bright);
+  }
+
+  .share-with-filter-input,
+  .share-with-row {
+    color: var(--text-primary);
+  }
+
+  .share-with-filter-chip {
+    background: var(--tint-brand-bg);
+    color: var(--tint-brand-text);
+  }
+
+  .share-with-filter-chip-remove {
+    color: var(--tint-brand-text);
+  }
+
+  .share-with-avatar {
+    background: var(--avatar-placeholder-bg);
+  }
+
+  .share-with-cancel-btn {
+    border-color: var(--brand-bright);
+    color: var(--brand-bright);
+    background: transparent;
+
+    &:hover {
+      background: var(--tint-brand-bg);
+    }
+  }
+
+  // Condition rows — operator trigger/dropdown, value input, color trigger
+  .br-condition-operator-trigger {
+    color: var(--brand-bright);
+  }
+
+  .br-condition-operator-option {
+    color: var(--text-primary);
+
+    &:hover {
+      background: var(--hover-bg);
+    }
+  }
+
+  .business-rule-form-condition-input {
+    background: var(--input-bg);
+    border-color: var(--input-border);
+
+    &::placeholder {
+      color: var(--input-placeholder);
+    }
+
+    &:focus {
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 2px var(--focus-ring);
+    }
+  }
+
+  .br-color-condition-trigger,
+  .br-color-condition-hex {
+    color: var(--text-primary);
+  }
+
+  .br-color-condition-trigger:hover {
+    border-color: var(--brand-bright);
+  }
+
+  // Shared board / operator / timezone picker panel
+  .board-minimap-picker-search input,
+  .board-minimap-picker-group-head,
+  .board-minimap-picker-tile {
+    color: var(--text-primary);
+  }
+
+  .board-minimap-picker-group-head svg,
+  .board-minimap-picker-tile-count {
+    color: var(--brand-bright);
+  }
+
+  .board-minimap-picker-tile {
+    &:hover {
+      background: var(--hover-bg);
+    }
+
+    &--selected {
+      border-color: var(--brand-bright);
+      background: var(--tint-brand-bg);
+    }
+  }
+
+  // Notification message settings — subject/body merge-field pills, recipient pills,
+  // dropdowns and the Quill toolbar's active state
+  .notification-subject-box--editable,
+  .notification-subject-text,
+  .notification-dropdown-panel button {
+    color: var(--text-primary);
+  }
+
+  .notification-dropdown-trigger:hover {
+    color: var(--brand-bright);
+  }
+
+  .notification-dropdown-panel {
+    box-shadow: var(--shadow-popover);
+
+    button:hover {
+      background: var(--hover-bg);
+    }
+  }
+
+  .notification-pill {
+    background: var(--tint-neutral-bg-hover);
+    color: var(--text-control);
+  }
+
+  .notification-user-pill {
+    background: var(--tint-success-bg);
+    color: var(--success);
+
+    &.notification-user-pill--field {
+      background: rgba(236, 72, 153, 0.16);
+      color: #f9a8d4;
+    }
+
+    &.notification-user-pill--email {
+      background: var(--tint-brand-bg);
+      color: var(--tint-brand-text);
+    }
+  }
+
+  .notification-quill-wrap .ql-toolbar.ql-snow button.ql-active {
+    background: var(--tint-brand-bg);
+
+    .ql-stroke {
+      stroke: var(--brand-bright);
+    }
+
+    .ql-fill {
+      fill: var(--brand-bright);
+    }
+  }
+
+  .business-rule-form-column-title::after {
+    background: var(--text-secondary);
+  }
+
+  .business-rule-form-filter-hint,
+  .business-rule-form-or-btn,
+  .business-rule-form-tags-input-field,
+  .business-rule-form-condition-value {
+    color: var(--text-secondary);
+  }
+
+  .business-rule-form-action-title {
+    color: var(--text-primary);
+  }
+
+  .business-rule-form-trigger-name {
+    color: var(--brand-bright);
+  }
+
+  .business-rule-form-when-fields-pill {
+    color: var(--brand-bright);
+
+    &:hover {
+      border-color: var(--brand-bright);
+    }
+  }
+
+  .business-rule-form-add-link,
+  .business-rule-form-add-action,
+  .business-rule-form-action-detail-link,
+  .business-rule-form-filter-row .business-rule-form-condition-value,
+  .business-rule-form-condition-operator-group .business-rule-form-condition-label {
+    color: var(--brand-bright);
+
+    &:hover {
+      color: var(--text-brand-soft);
+    }
+  }
+
+  // --text-inverse flips to dark navy in dark mode; keep the label white on the blue button.
+  .business-rule-form-save-btn {
+    background: var(--brand);
+    color: #ffffff;
+
+    &:hover {
+      background: var(--brand-hover);
+    }
+  }
+}
+
 // Create Card Details panel — "Configure details" on a plain create-card action (see
 // CreateCardDetailsModal in BusinessRuleFormModal.jsx), opened after the Board Minimap
 // destination pick. Reuses the shared .card-property-match-modal-* shell/header and the

@@ -172,6 +172,11 @@ function WorkflowStageCard({
     [onColorSelect, workflowId, swimlaneId, stage.id]
   );
 
+  const removeStageColor = useCallback(() => {
+    onColorSelect(workflowId, swimlaneId, stage.id, null);
+    setIsStageColorPickerOpen(false);
+  }, [onColorSelect, workflowId, swimlaneId, stage.id]);
+
   const openStageColorPicker = (e) => {
     e?.stopPropagation?.();
     setIsStageColorPickerOpen(true);
@@ -398,6 +403,7 @@ function WorkflowStageCard({
                     initialHex={displayColor}
                     onApply={applyStageColor}
                     onCancel={closeStageColorPicker}
+                    onRemove={stage.color ? removeStageColor : undefined}
                     ariaLabel={`Pick color for stage ${stage.name}`}
                     hexInputId={`stage-color-hex-${stage.id}`}
                     className="kanban-dashboard-color-picker-popover--floating"
