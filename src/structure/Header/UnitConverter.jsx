@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { FiChevronDown, FiHash } from 'react-icons/fi';
+import { useEffect, useId, useRef, useState } from 'react';
+import { FiCheck, FiChevronDown, FiHash } from 'react-icons/fi';
 import { LuArrowUpDown, LuBeaker, LuGauge, LuRuler, LuThermometer, LuWeight } from 'react-icons/lu';
 import CopyButton from './CopyButton';
 import { formatNumber } from './calculatorEngine';
@@ -17,17 +17,100 @@ const CATEGORY_ICONS = {
 const displayFormatter = new Intl.NumberFormat('en-US', { maximumSignificantDigits: 10 });
 const formatDisplay = (value) => (Number.isFinite(value) ? displayFormatter.format(value) : '');
 
+// Custom listbox instead of a native <select>, whose open list is drawn by the OS
+// and can't be styled. Focus stays on the trigger; aria-activedescendant tracks
+// the highlighted option for screen readers.
 function UnitSelect({ units, value, onChange, label }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const wrapRef = useRef(null);
+  const listId = useId();
+  const selected = units.find((unit) => unit.id === value) ?? units[0];
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleClickOutside = (event) => {
+      if (!wrapRef.current?.contains(event.target)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const open = () => {
+    setActiveIndex(Math.max(units.findIndex((unit) => unit.id === value), 0));
+    setIsOpen(true);
+  };
+
+  const choose = (unit) => {
+    onChange(unit.id);
+    setIsOpen(false);
+  };
+
+  const handleKeyDown = (event) => {
+    if (!isOpen) {
+      if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
+        event.preventDefault();
+        open();
+      }
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const step = event.key === 'ArrowDown' ? 1 : -1;
+      setActiveIndex((index) => (index + step + units.length) % units.length);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      choose(units[activeIndex]);
+    } else if (event.key === 'Escape' || event.key === 'Tab') {
+      if (event.key === 'Escape') event.stopPropagation();
+      setIsOpen(false);
+    }
+  };
+
   return (
-    <span className="converter-unit">
-      <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
-        {units.map((unit) => (
-          <option key={unit.id} value={unit.id}>
-            {unit.label} ({unit.symbol})
-          </option>
-        ))}
-      </select>
-      <FiChevronDown className="converter-unit-icon" aria-hidden />
+    <span className={`converter-unit ${isOpen ? 'is-open' : ''}`} ref={wrapRef}>
+      <button
+        type="button"
+        className="converter-unit-trigger"
+        onClick={() => (isOpen ? setIsOpen(false) : open())}
+        onKeyDown={handleKeyDown}
+        aria-label={`${label}: ${selected.label}`}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? listId : undefined}
+        aria-activedescendant={isOpen ? `${listId}-${activeIndex}` : undefined}
+      >
+        <span className="converter-unit-text">
+          {selected.label} <small>{selected.symbol}</small>
+        </span>
+        <FiChevronDown className="converter-unit-icon" aria-hidden />
+      </button>
+
+      {isOpen && (
+        <ul className="converter-unit-menu" id={listId} role="listbox" aria-label={label}>
+          {units.map((unit, index) => {
+            const isSelected = unit.id === value;
+            return (
+              <li
+                key={unit.id}
+                id={`${listId}-${index}`}
+                role="option"
+                aria-selected={isSelected}
+                className={`converter-unit-option ${isSelected ? 'is-selected' : ''} ${
+                  index === activeIndex ? 'is-active' : ''
+                }`}
+                onMouseEnter={() => setActiveIndex(index)}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => choose(unit)}
+              >
+                <span>{unit.label}</span>
+                <small>{unit.symbol}</small>
+                {isSelected && <FiCheck className="converter-unit-check" aria-hidden />}
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </span>
   );
 }
