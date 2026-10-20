@@ -108,6 +108,11 @@ const getInvoiceAction = (workflow, column) => {
   if (TO_BE_UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(title)) return "moveCards";
   if (isUploadedToPortalColumnTitle(title)) return "uploadDispatchProof";
   if (SO_SENT_FOR_SCC_COLUMN_PATTERN.test(title)) return "sendSccApproval";
+  /* POSH DA has no batches: "Request PO" on "AR Invoices Issued" sends the PO request for the one ticked
+     card (the backend takes one card at a time). */
+  if (POSH_WORKFLOW_PATTERN.test(workflow?.title ?? "") && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) {
+    return "requestPo";
+  }
   if (!isBatchWorkflow(workflow)) {
     return AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title) ? "enterServiceSheetNo" : null;
   }
@@ -132,6 +137,7 @@ const INVOICE_ACTION_BUTTONS = {
   downloadInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
   uploadDispatchProof: { label: "Upload Dispatch Proof", icon: <FiUpload size={16} aria-hidden /> },
   moveCards: { label: "Move the Cards", icon: <FiArrowRight size={16} aria-hidden /> },
+  requestPo: { label: "Request PO", icon: <FiSend size={16} aria-hidden /> },
   enterServiceSheetNo: { label: "Enter Service Sheet No", icon: <FiFileText size={16} aria-hidden /> },
   checkSignatures: { label: "Check Signatures", icon: <FiEdit3 size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
@@ -152,6 +158,7 @@ export default function WorkflowColumns({
   onBatchUploadSeApproval,
   onBatchUploadInvoice,
   onBatchRequestPo,
+  onColumnRequestPo,
   onColumnUploadInvoice,
   onColumnUploadPos,
   onUploadSrf,
@@ -431,6 +438,7 @@ export default function WorkflowColumns({
               }
               const hasInvoiceButton =
                 invoiceAction === "sendInvoice" ||
+                invoiceAction === "requestPo" ||
                 (invoiceAction === "uploadDispatchProof" && !isLntWorkflow(workflow))
                   ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
               const invoiceActionHandlers = {
@@ -445,6 +453,7 @@ export default function WorkflowColumns({
                   onUploadSccDocuments?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 sendInvoice: ([card]) => onColumnSendInvoice?.(card),
                 sendSccApproval: onColumnSendSccApproval,
+                requestPo: onColumnRequestPo,
                 merge: onColumnMergeInvoice,
                 downloadInvoices: onColumnDownloadInvoices,
                 uploadDispatchProof: onUploadDispatchProof,
