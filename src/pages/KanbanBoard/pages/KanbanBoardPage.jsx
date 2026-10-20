@@ -19,7 +19,7 @@ import PoReviewModal from "../components/board/PoReviewModal";
 import ServiceSheetModal from "../components/board/ServiceSheetModal";
 import SccReviewModal from "../components/board/SccReviewModal";
 import DispatchProofReviewModal from "../components/board/DispatchProofReviewModal";
-import { isLntWorkflow, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
+import { isLntWorkflow, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -125,6 +125,8 @@ const poUploadFields = [
     multiple: true,
   },
 ];
+/* POSH Saudi takes one PO file, which the backend places on every ticked card. */
+const singlePoUploadFields = [{ ...poUploadFields[0], multiple: false }];
 /* The files da/send_submission_email takes on top of the documents the draft already attaches,
    in the order the draft body lists them (the draft's merged invoices come last). The consolidated
    invoice and merged invoices are attached by the draft; a file picked on their row is sent in addition. */
@@ -933,10 +935,13 @@ export default function KanbanBoardPage() {
   const [poUploadProgress, setPoUploadProgress] = useState(null);
   const openPoReviewModal = usePoReviewStore((state) => state.openPoReviewModal);
 
-  const handleColumnUploadPos = useCallback((cards, { workflowId = null } = {}) => {
+  const [isSinglePoUpload, setIsSinglePoUpload] = useState(false);
+
+  const handleColumnUploadPos = useCallback((cards, { workflowId = null, singleFile = false } = {}) => {
     if (!cards?.length) return;
     setSelectedPoUploadCards(cards);
     setSelectedPoUploadWorkflowId(workflowId);
+    setIsSinglePoUpload(singleFile);
     setShowPoUploadModal(true);
   }, []);
 
@@ -1955,6 +1960,21 @@ export default function KanbanBoardPage() {
     portalCardIds.slice(0, -1).forEach((id) => removeCardSelectionId(id));
   }, [selectedCardIds, cardsById, workflows, removeCardSelectionId]);
 
+  /* POSH requests the PO, uploads it and sends the invoice one card at a time, so only one card per POSH
+     PO column can stay ticked: the most recently ticked one wins. */
+  useEffect(() => {
+    const cardIdsByColumn = {};
+    selectedCardIds.forEach((id) => {
+      const card = cardsById[id];
+      const workflow = workflows.find((wf) => String(wf.id) === String(card?.workflow_id));
+      if (!card || !isPoshOneCardColumn(workflow, workflow?.columns?.[card.columnId]?.title)) return;
+      (cardIdsByColumn[`${workflow.id}:${card.columnId}`] ??= []).push(id);
+    });
+    Object.values(cardIdsByColumn).forEach((ids) => {
+      ids.slice(0, -1).forEach((id) => removeCardSelectionId(id));
+    });
+  }, [selectedCardIds, cardsById, workflows, removeCardSelectionId]);
+
   // Drop any selected id that disappears from the board (moved/removed by a refetch).
   useEffect(() => {
     const staleIds = selectedCardIds.filter((id) => !cardsById[id]);
@@ -2252,7 +2272,7 @@ export default function KanbanBoardPage() {
         title="Upload POs"
         subtitle="Attach the POs for the selected cards"
         submitLabel="Upload POs"
-        fields={poUploadFields}
+        fields={isSinglePoUpload ? singlePoUploadFields : poUploadFields}
       />
 
       <SeApprovalUploadModal

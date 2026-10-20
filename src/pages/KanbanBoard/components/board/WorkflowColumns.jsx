@@ -65,7 +65,8 @@ const CONSOLIDATED_COLUMN_PATTERN = /^consolidated\b/i;
    ticked (the invoice email goes per card). */
 const ISSUE_AR_INVOICE_COLUMN_PATTERN = /^issue\s+ar\s+invoices?$/i;
 const REQUESTED_PO_COLUMN_PATTERN = /^requested\s+po$/i;
-const PO_RECEIVED_COLUMN_PATTERN = /^po\s+received$/i;
+const POSH_REQUESTED_PO_COLUMN_PATTERN = /^requested\b.*\bpo$/i;
+const PO_RECEIVED_COLUMN_PATTERN =/^po\s+received$/i;
 const SUBMITTED_TO_DA_COLUMN_PATTERN = /^submitted to da$/i;
 
 /* L&T DA: "Convert to AR Invoice" takes the same bulk invoice upload as McDermott's "Issue AR Invoice",
@@ -110,8 +111,11 @@ const getInvoiceAction = (workflow, column) => {
   if (SO_SENT_FOR_SCC_COLUMN_PATTERN.test(title)) return "sendSccApproval";
   /* POSH DA has no batches: "Request PO" on "AR Invoices Issued" sends the PO request for the one ticked
      card (the backend takes one card at a time). */
-  if (POSH_WORKFLOW_PATTERN.test(workflow?.title ?? "") && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) {
-    return "requestPo";
+  if (POSH_WORKFLOW_PATTERN.test(workflow?.title ?? "")) {
+    if (AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "requestPo";
+    /* POSH names the PO column "Requested/ Awaiting for PO"; it uploads one PO for one ticked card. */
+    if (POSH_REQUESTED_PO_COLUMN_PATTERN.test(title)) return "uploadPos";
+    if (PO_RECEIVED_COLUMN_PATTERN.test(title)) return "sendInvoice";
   }
   if (!isBatchWorkflow(workflow)) {
     return AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title) ? "enterServiceSheetNo" : null;
@@ -439,6 +443,7 @@ export default function WorkflowColumns({
               const hasInvoiceButton =
                 invoiceAction === "sendInvoice" ||
                 invoiceAction === "requestPo" ||
+                (invoiceAction === "uploadPos" && POSH_WORKFLOW_PATTERN.test(workflow?.title ?? "")) ||
                 (invoiceAction === "uploadDispatchProof" && !isLntWorkflow(workflow))
                   ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
               const invoiceActionHandlers = {
@@ -446,7 +451,10 @@ export default function WorkflowColumns({
                 issueArInvoice: (cards) =>
                   onColumnUploadInvoice?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 uploadPos: (cards) =>
-                  onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
+                  onColumnUploadPos?.(cards, {
+                    workflowId: workflow.workflow_id ?? workflow.id,
+                    singleFile: POSH_WORKFLOW_PATTERN.test(workflow?.title ?? ""),
+                  }),
                 uploadSrf: (cards) =>
                   onUploadSrf?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 uploadSccDocuments: (cards) =>
