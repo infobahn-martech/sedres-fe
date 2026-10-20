@@ -307,7 +307,7 @@ const useWorkFlowReducer = create((set, get) => ({
             if (cards_per_row !== undefined && cards_per_row !== null) {
                 payload.cards_per_row = cards_per_row;
             }
-            if (background_color !== undefined && background_color !== null && background_color !== '') {
+            if (background_color !== undefined && background_color !== null) {
                 payload.background_color = background_color;
             }
             const { data } = await workflowService.updateWorkflowColumn(column_id, payload);

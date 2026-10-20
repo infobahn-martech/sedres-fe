@@ -517,7 +517,7 @@ function EditWorkflows() {
       const colKey = getColumnKey(workflowId, swimlaneId, stageId);
       if (!startMutation(colKey, 'color')) return;
       applyLocal();
-      const background_color = rgbToHex(rgbColor);
+      const background_color = rgbColor ? rgbToHex(rgbColor) : '';
       updateWorkflowColumn({
         column_id: columnId,
         background_color,
@@ -675,8 +675,9 @@ function EditWorkflows() {
   };
 
   const handleSwimlaneColorChange = (workflowId, swimlaneId, colorHex) => {
-    const color_code = sanitizeSwimlaneColorCode(colorHex);
-    if (!color_code) return;
+    const isRemove = colorHex === null;
+    const color_code = isRemove ? '' : sanitizeSwimlaneColorCode(colorHex);
+    if (!isRemove && !color_code) return;
     if (!boardId) {
       showError('Open a board (boardId in URL) to update swimlane color.');
       return;
@@ -689,7 +690,7 @@ function EditWorkflows() {
         return {
           ...w,
           swimlanes: w.swimlanes.map((sl) =>
-            sl.id === swimlaneId ? { ...sl, colorCode: color_code } : sl
+            sl.id === swimlaneId ? { ...sl, colorCode: color_code || null } : sl
           ),
         };
       })

@@ -173,6 +173,11 @@ function WorkflowSwimlane({
     [onSwimlaneColorSelect, workflowId, swimlane.id]
   );
 
+  const removeSwimlaneColor = useCallback(() => {
+    if (onSwimlaneColorSelect) onSwimlaneColorSelect(workflowId, swimlane.id, null);
+    setIsSwimlaneColorPickerOpen(false);
+  }, [onSwimlaneColorSelect, workflowId, swimlane.id]);
+
   const openSwimlaneColorPicker = (e) => {
     e?.stopPropagation?.();
     setIsSwimlaneColorPickerOpen(true);
@@ -314,6 +319,7 @@ function WorkflowSwimlane({
                   initialHex={displayLaneColor}
                   onApply={applySwimlaneColor}
                   onCancel={closeSwimlaneColorPicker}
+                  onRemove={labelBgHex ? removeSwimlaneColor : undefined}
                   ariaLabel={`Pick color for swimlane ${swimlane.name}`}
                   hexInputId={`swimlane-color-hex-${swimlane.id}`}
                   className="kanban-dashboard-color-picker-popover--floating"
