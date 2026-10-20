@@ -22,7 +22,11 @@
     box-shadow: var(--shadow-lg);
   }
 
+  // margin/width reset: the divider was stopping short of the right edge
+  // under an inherited global .modal-header rule.
   .modal-header {
+    width: 100%;
+    margin: 0;
     border-bottom: 1px solid var(--border-primary);
     padding: 0;
 
@@ -166,26 +170,231 @@
   }
 }
 
+// Shared segmented control (Calculator tabs/mode, Converter categories)
+.tool-segmented {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.tool-segmented-btn {
+  display: inline-flex;
+  flex: 1 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &.is-active {
+    background: var(--surface-primary);
+    color: var(--color-primary-accent);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
 // Calculator
+.calculator-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  .tool-segmented {
+    flex: 0 1 auto;
+  }
+}
+
+.calculator-toolbar-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.calculator-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+
+  &.is-active {
+    border-color: var(--color-primary-accent);
+    color: var(--color-primary-accent);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 .calculator-display {
+  position: relative;
   padding: 14px 16px;
   border-radius: 10px;
   background: var(--bg-secondary);
   text-align: right;
 
-  .calculator-expression {
-    min-height: 18px;
-    font-size: 13px;
-    color: var(--text-muted);
+  .calculator-flags {
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    display: flex;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-primary-accent);
   }
 
-  .calculator-value {
+  .calculator-expression {
+    min-height: 18px;
+    padding-left: 56px;
     overflow: hidden;
-    font-size: 34px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    color: var(--text-muted);
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  // Scrolls (kept pinned to the end in JS) instead of truncating, so the
+  // newest input of a long expression stays visible.
+  .calculator-value {
+    height: 44px;
+    overflow-x: auto;
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 44px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    &.is-long {
+      font-size: 24px;
+    }
+  }
+}
+
+.calculator-memory {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.calculator-memory-btn {
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.calculator-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 292px;
+}
+
+.calculator-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.calculator-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 300px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.calculator-history-item {
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: right;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--hover-bg);
+  }
+
+  .calculator-history-expression {
+    display: block;
+    overflow: hidden;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .calculator-history-result {
+    display: block;
+    font-size: 17px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -240,6 +449,274 @@
       background: var(--color-primary);
       filter: brightness(1.1);
     }
+  }
+
+  &--fn {
+    background: var(--bg-tertiary);
+    color: var(--color-primary-accent);
+  }
+}
+
+// Scientific mode stacks an extra key block, so both grids get shorter keys.
+.calculator-keys--scientific {
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+
+  .calculator-key {
+    min-width: 0;
+    height: 38px;
+    padding: 0;
+    font-size: 13px;
+  }
+}
+
+.calculator-keys.is-compact .calculator-key {
+  height: 46px;
+}
+
+// Unit converter
+.converter {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+// Icon tiles instead of a scrolling pill row, so all five categories stay visible.
+.converter-categories {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.converter-category {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 4px 8px;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+  svg {
+    font-size: 18px;
+  }
+
+  span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+
+  &.is-active {
+    border-color: var(--color-primary-accent);
+    background: color-mix(in srgb, var(--color-primary-accent) 10%, transparent);
+    color: var(--color-primary-accent);
+  }
+}
+
+// From / To cards with the swap button straddling the gap between them.
+.converter-panels {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.converter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  background: var(--surface-primary);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus-within {
+    border-color: var(--color-primary-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-accent) 15%, transparent);
+  }
+
+  &--result {
+    background: var(--bg-secondary);
+  }
+}
+
+.converter-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.converter-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+// Native select (keeps keyboard + mobile pickers) dressed as a pill.
+.converter-unit {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  max-width: 70%;
+
+  select {
+    min-width: 0;
+    max-width: 100%;
+    height: 30px;
+    padding: 0 28px 0 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: var(--surface-primary);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    appearance: none;
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--color-primary-accent);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary-accent);
+    }
+
+    option {
+      background: var(--surface-primary);
+      color: var(--text-primary);
+    }
+  }
+
+  .converter-unit-icon {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: var(--text-secondary);
+    pointer-events: none;
+  }
+}
+
+.converter-amount {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+
+  &::placeholder {
+    color: var(--input-placeholder);
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.converter-result-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .converter-amount {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .calculator-icon-btn {
+    border-color: transparent;
+    background: transparent;
+  }
+}
+
+.converter-swap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 4px solid var(--surface-primary);
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #ffffff;
+  font-size: 15px;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition: transform 0.2s ease, filter 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.15);
+    transform: translate(-50%, -50%) rotate(180deg);
+  }
+}
+
+.converter-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.converter-rate {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.converter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 5px 10px;
+  border: 1px dashed var(--color-primary-accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-primary-accent);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-primary-accent) 10%, transparent);
   }
 }
 
