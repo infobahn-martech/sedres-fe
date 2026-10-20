@@ -295,14 +295,15 @@ ApiCardSubtaskBadge.propTypes = {
   }).isRequired,
 };
 
-/** Sales order number row shown above the KPI summary row, with a click-to-copy icon. */
+/** Reference number row (invoice no → PO no → sales order no) shown above the KPI summary row, with a click-to-copy icon. */
 function ApiCardSalesOrderRow({ card }) {
   const [copied, setCopied] = useState(false);
-  if (!hasText(card.salesOrderNo)) return null;
+  const referenceNo = hasText(card.referenceNo) ? card.referenceNo : card.salesOrderNo;
+  if (!hasText(referenceNo)) return null;
 
   const handleCopy = (e) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(card.salesOrderNo).then(() => {
+    navigator.clipboard.writeText(referenceNo).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
@@ -310,8 +311,8 @@ function ApiCardSalesOrderRow({ card }) {
 
   return (
     <div className="card-api-sales-order-row">
-      <span className="card-api-sales-order-label" title={card.salesOrderNo}>
-        {card.salesOrderNo}
+      <span className="card-api-sales-order-label" title={referenceNo}>
+        {referenceNo}
       </span>
       <span
         className="card-api-sales-order-copy"
@@ -319,7 +320,7 @@ function ApiCardSalesOrderRow({ card }) {
         data-tooltip-content={copied ? "Copied!" : "Copy"}
         onClick={handleCopy}
         role="button"
-        aria-label="Copy sales order number"
+        aria-label="Copy reference number"
       >
         {copied ? <FiCheck size={12} /> : <FiCopy size={12} />}
       </span>
@@ -332,6 +333,7 @@ ApiCardSalesOrderRow.propTypes = {
   card: PropTypes.shape({
     id: PropTypes.string,
     salesOrderNo: PropTypes.string,
+    referenceNo: PropTypes.string,
   }).isRequired,
 };
 
@@ -1196,6 +1198,7 @@ CardItem.propTypes = {
     subtaskCompleted: PropTypes.number,
     subtaskStatus: PropTypes.string,
     salesOrderNo: PropTypes.string,
+    referenceNo: PropTypes.string,
   }).isRequired,
   index: PropTypes.number.isRequired,
   setSelectedCard: PropTypes.func.isRequired,

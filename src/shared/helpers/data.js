@@ -31,6 +31,25 @@ function safeArray(value) {
 }
 
 /**
+ * Picks the reference number shown on a card: first invoice no, then PO no from
+ * `sales_orders`, falling back to the sales order no.
+ * @param {object} card - raw API card
+ * @returns {string}
+ */
+function resolveCardReferenceNo(card) {
+  const salesOrders = safeArray(card.sales_orders);
+  const pick = (key) => {
+    const match = salesOrders.find((so) => so?.[key] != null && String(so[key]).trim() !== "");
+    return match ? String(match[key]).trim() : "";
+  };
+  const fallbackSalesOrderNo =
+    card.sales_order_no != null && String(card.sales_order_no).trim() !== ""
+      ? String(card.sales_order_no).trim()
+      : "";
+  return pick("invoice_no") || pick("po_number") || fallbackSalesOrderNo || pick("sales_order_no");
+}
+
+/**
  * Flattens a stage's column tree into leaf columns (rendered as real board tracks).
  * A column with a non-empty `children` array is a pure header group: it is not rendered
  * itself, its children become the tracks, tagged with the parent's id/name for header grouping.
@@ -252,6 +271,7 @@ export function mapBoardWorkflowFromApi(workflow) {
               card.sales_order_no != null && String(card.sales_order_no).trim() !== ""
                 ? String(card.sales_order_no).trim()
                 : "",
+            referenceNo: resolveCardReferenceNo(card),
             card_type_id:
               card.card_type_id != null && String(card.card_type_id).trim() !== ""
                 ? String(card.card_type_id)
