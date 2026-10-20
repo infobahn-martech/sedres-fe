@@ -11,7 +11,14 @@
   }
 
   &.calculator-modal .modal-dialog {
-    max-width: 440px;
+    max-width: 520px;
+  }
+
+  // Fixed body height so Calculator / Converter tabs (and Basic / Scientific)
+  // keep the same dialog size; the keypad stretches to fill it.
+  &.calculator-modal .tool-modal-body {
+    height: min(800px, calc(100vh - 120px));
+    max-height: none;
   }
 
   .modal-content {
@@ -115,6 +122,12 @@
   padding: 18px 20px 20px;
   overflow-y: auto;
   color: var(--text-primary);
+
+  // In a scrolling flex column, children would otherwise shrink and clip
+  // (the tab bar collapsed); only elements that opt in with flex-grow resize.
+  > * {
+    flex-shrink: 0;
+  }
 }
 
 .tool-modal-hint,
@@ -378,9 +391,10 @@
 
 .calculator-history {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 8px;
-  min-height: 292px;
+  min-height: 0;
 }
 
 .calculator-history-head {
@@ -395,8 +409,9 @@
 .calculator-history-list {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   gap: 2px;
-  max-height: 300px;
+  min-height: 0;
   margin: 0;
   padding: 0;
   overflow-y: auto;
@@ -530,13 +545,22 @@
   }
 }
 
-.calculator-keys.is-compact .calculator-key {
-  height: 48px;
+// Main keypad fills the remaining body height (rows share it equally), so
+// Basic and Scientific both fit the fixed dialog without scrolling.
+.calculator-keys:not(.calculator-keys--scientific) {
+  flex: 1 1 auto;
+  grid-auto-rows: minmax(44px, 1fr);
+  min-height: 252px;
+
+  .calculator-key {
+    height: auto;
+  }
 }
 
 // Unit converter
 .converter {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 14px;
 }

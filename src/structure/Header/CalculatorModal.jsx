@@ -375,7 +375,7 @@ function CalculatorModal({ show, onClose }) {
                   {SCIENTIFIC_KEYS.map((key) => renderKey({ ...key, variant: 'fn' }))}
                 </div>
               )}
-              <div className={`calculator-keys ${isScientific ? 'is-compact' : ''}`}>{BASIC_KEYS.map(renderKey)}</div>
+              <div className="calculator-keys">{BASIC_KEYS.map(renderKey)}</div>
             </>
           )}
 
