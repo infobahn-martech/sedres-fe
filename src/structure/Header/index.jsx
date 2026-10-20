@@ -24,6 +24,9 @@ import {
   FiList,
   FiFileText,
   FiAnchor,
+  FiHash,
+  FiBookOpen,
+  FiCloud,
 } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import { Tooltip } from 'react-tooltip';
@@ -46,6 +49,9 @@ import TypesModal from '../SideNav/components/TypesModal';
 const CallTypeBuilderModal = lazy(() => import('../../pages/CallType/CallTypeBuilderModal'));
 const CustomTemplateBuilderModal = lazy(() => import('../../pages/CustomTemplate/CustomTemplateBuilderModal'));
 const CustomTemplateListModal = lazy(() => import('../../pages/CustomTemplate/CustomTemplateListModal'));
+const CalculatorModal = lazy(() => import('./CalculatorModal'));
+const DictionaryModal = lazy(() => import('./DictionaryModal'));
+const WeatherModal = lazy(() => import('./WeatherModal'));
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import { useThemeStore } from '../../shared/store/themeStore';
 import NavTabButton from '../../components/NavTabButton';
@@ -78,6 +84,9 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [showCustomTemplateModal, setShowCustomTemplateModal] = useState(false);
   const [showTemplatesListModal, setShowTemplatesListModal] = useState(false);
   const [showVesselTrackingModal, setShowVesselTrackingModal] = useState(false);
+  const [showCalculatorModal, setShowCalculatorModal] = useState(false);
+  const [showDictionaryModal, setShowDictionaryModal] = useState(false);
+  const [showWeatherModal, setShowWeatherModal] = useState(false);
   const { layoutView } = useLayoutView();
   const isDark = useThemeStore((state) => state.isDark);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
@@ -102,7 +111,8 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   // DA (22) granted the same settings-icon access as Port Manager, per
   // explicit user confirmation.
   const isDARole = String(userRoleId) === '22';
-  const showKanbanSettingsIcon =
+  // Settings icon is visible to everyone (for Tools); only these roles see the admin rows.
+  const showKanbanSettingsItems =
     !activePortal &&
     !restrictedBoardUser &&
     (isPortManagerRole || isPortSupervisorRole || isDARole);
@@ -115,6 +125,12 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     // { label: 'Templates', modal: 'templates' },
     { label: 'Custom Templates', modal: 'templates list', icon: <FiFileText /> },
     // { label: 'Custom Templates', modal: 'custom templates' },
+  ];
+
+  const toolItems = [
+    { label: 'Calculator', icon: <FiHash />, open: () => setShowCalculatorModal(true) },
+    { label: 'Dictionary', icon: <FiBookOpen />, open: () => setShowDictionaryModal(true) },
+    { label: 'Weather', icon: <FiCloud />, open: () => setShowWeatherModal(true) },
   ];
 
   const getLoggedInUser = () => {
@@ -258,6 +274,12 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     if (item.modal === 'templates') setShowCallTypeBuilderModal(true);
     if (item.modal === 'templates list') setShowTemplatesListModal(true);
     if (item.modal === 'custom templates') setShowCustomTemplateModal(true);
+  };
+
+  const handleToolClick = (open) => {
+    setShowSettingsSubmenu(false);
+    setShowCardManagementSubmenu(false);
+    open();
   };
 
   const handleUserCircleClick = () => {
@@ -472,59 +494,73 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           )}
         </div>
 
-        {showKanbanSettingsIcon && (
-          <div className="settings-btn-wrapper" ref={settingsDropdownRef}>
-            <Tooltip id="settings" place="bottom" content="Settings" />
-            <button
-              type="button"
-              className={`icon-btn ${showSettingsSubmenu ? 'active' : ''}`}
-              aria-label="Settings"
-              onClick={() => setShowSettingsSubmenu((prev) => !prev)}
-              data-tooltip-id="settings"
-            >
-              <FiSettings />
-            </button>
+        <div className="settings-btn-wrapper" ref={settingsDropdownRef}>
+          <Tooltip id="settings" place="bottom" content="Settings" />
+          <button
+            type="button"
+            className={`icon-btn ${showSettingsSubmenu ? 'active' : ''}`}
+            aria-label="Settings"
+            onClick={() => setShowSettingsSubmenu((prev) => !prev)}
+            data-tooltip-id="settings"
+          >
+            <FiSettings />
+          </button>
 
-            {showSettingsSubmenu && (
-              <div className="settings-dropdown">
-                <div className="settings-dropdown-title">Settings</div>
+          {showSettingsSubmenu && (
+            <div className="settings-dropdown">
+              {showKanbanSettingsItems && (
+                <>
+                  <div className="settings-dropdown-title">Settings</div>
+                  <button
+                    type="button"
+                    className="settings-dropdown-item"
+                    onClick={handleSettingsBusinessRulesClick}
+                  >
+                    <span className="settings-item-icon"><FiSliders /></span>
+                    <span className="settings-item-label">Business rules</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`settings-dropdown-item settings-dropdown-item-with-submenu ${showCardManagementSubmenu ? 'submenu-open' : ''}`}
+                    onClick={handleSettingsCardManagementRowClick}
+                    aria-expanded={showCardManagementSubmenu}
+                  >
+                    <span className="settings-item-icon"><FiLayers /></span>
+                    <span className="settings-item-label">Card management</span>
+                    <FiChevronDown className="settings-item-chevron" />
+                  </button>
+                  {showCardManagementSubmenu && (
+                    <div className="settings-submenu">
+                      {cardManagementSubmenu.map(({ label, modal, icon }) => (
+                        <button
+                          type="button"
+                          key={modal}
+                          className="settings-submenu-item"
+                          onClick={() => handleCardManagementSubmenuClick({ label, modal })}
+                        >
+                          <span className="settings-submenu-icon">{icon}</span>
+                          <span>{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+              <div className="settings-dropdown-title">Tools</div>
+              {toolItems.map(({ label, icon, open }) => (
                 <button
                   type="button"
+                  key={label}
                   className="settings-dropdown-item"
-                  onClick={handleSettingsBusinessRulesClick}
+                  onClick={() => handleToolClick(open)}
                 >
-                  <span className="settings-item-icon"><FiSliders /></span>
-                  <span className="settings-item-label">Business rules</span>
+                  <span className="settings-item-icon">{icon}</span>
+                  <span className="settings-item-label">{label}</span>
                 </button>
-                <button
-                  type="button"
-                  className={`settings-dropdown-item settings-dropdown-item-with-submenu ${showCardManagementSubmenu ? 'submenu-open' : ''}`}
-                  onClick={handleSettingsCardManagementRowClick}
-                  aria-expanded={showCardManagementSubmenu}
-                >
-                  <span className="settings-item-icon"><FiLayers /></span>
-                  <span className="settings-item-label">Card management</span>
-                  <FiChevronDown className="settings-item-chevron" />
-                </button>
-                {showCardManagementSubmenu && (
-                  <div className="settings-submenu">
-                    {cardManagementSubmenu.map(({ label, modal, icon }) => (
-                      <button
-                        type="button"
-                        key={modal}
-                        className="settings-submenu-item"
-                        onClick={() => handleCardManagementSubmenuClick({ label, modal })}
-                      >
-                        <span className="settings-submenu-icon">{icon}</span>
-                        <span>{label}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
 
         <Tooltip id="user-profile" place="bottom" content="User Profile" />
         <div className="user-circle-wrapper" ref={dropdownRef}>
@@ -679,6 +715,23 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
             show={showTemplatesListModal}
             onClose={() => setShowTemplatesListModal(false)}
           />
+        </Suspense>
+      )}
+
+      {/* Settings: Tools Modals */}
+      {showCalculatorModal && (
+        <Suspense fallback={null}>
+          <CalculatorModal show={showCalculatorModal} onClose={() => setShowCalculatorModal(false)} />
+        </Suspense>
+      )}
+      {showDictionaryModal && (
+        <Suspense fallback={null}>
+          <DictionaryModal show={showDictionaryModal} onClose={() => setShowDictionaryModal(false)} />
+        </Suspense>
+      )}
+      {showWeatherModal && (
+        <Suspense fallback={null}>
+          <WeatherModal show={showWeatherModal} onClose={() => setShowWeatherModal(false)} />
         </Suspense>
       )}
 
