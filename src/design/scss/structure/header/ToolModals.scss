@@ -803,6 +803,88 @@
   font-variant-numeric: tabular-nums;
 }
 
+// "In other units" quick-reference list — fills the fixed-height tab and scrolls
+// internally; clicking a row makes it the To unit.
+.converter-all {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-primary);
+}
+
+.converter-all-list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.converter-all-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--cat) 40%, transparent);
+    background: color-mix(in srgb, var(--cat) 5%, var(--surface-primary));
+  }
+
+  &.is-active {
+    border-color: var(--cat);
+    background: color-mix(in srgb, var(--cat) 8%, var(--surface-primary));
+
+    .converter-all-unit {
+      color: var(--cat);
+    }
+  }
+
+  .converter-all-unit {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .converter-all-value {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 16px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+
+    small {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+  }
+}
+
 .converter-chip {
   display: inline-flex;
   align-items: center;

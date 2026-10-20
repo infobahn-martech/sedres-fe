@@ -132,6 +132,37 @@ function UnitConverter({ calculatorValue }) {
           </button>
         )}
       </div>
+
+      <section className="converter-all" aria-label="All unit conversions">
+        <span className="converter-label">
+          {Number.isFinite(value) ? `${formatDisplay(value)} ${fromUnit.symbol} in other units` : 'Other units'}
+        </span>
+        <ul className="converter-all-list">
+          {units
+            .filter((unit) => unit.id !== fromId)
+            .map((unit) => {
+              const converted = Number.isFinite(value) ? convert(value, categoryId, fromId, unit.id) : NaN;
+              const isActive = unit.id === toId;
+              return (
+                <li key={unit.id}>
+                  <button
+                    type="button"
+                    className={`converter-all-item ${isActive ? 'is-active' : ''}`}
+                    onClick={() => setToId(unit.id)}
+                    aria-pressed={isActive}
+                    title={`Convert to ${unit.label}`}
+                  >
+                    <span className="converter-all-unit">{unit.label}</span>
+                    <span className="converter-all-value">
+                      {formatDisplay(converted) || '—'}
+                      <small>{unit.symbol}</small>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+        </ul>
+      </section>
     </div>
   );
 }
