@@ -569,6 +569,7 @@ const TopBar = ({
   onTemplateChange,
   onRevealForm,
   onHideForm,
+  showTemplateHint = false,
 }) => {
   const allTemplates = useFormTemplateReducer((s) => s.allTemplates);
   const isLoadingAllTemplates = useFormTemplateReducer((s) => s.isLoadingAllTemplates);
@@ -831,6 +832,9 @@ const TopBar = ({
       getAllTemplates();
     }
   };
+
+  // Coachmark steps aside while the picker is open so it never overlaps the popover.
+  const isTemplateHintVisible = isAddMode && showTemplateHint && openPicker !== "template";
 
   const handleSelectTemplate = (row) => {
     onTemplateChange?.(row.id, row.name);
@@ -1175,20 +1179,36 @@ const TopBar = ({
             )}
         </div>
         {isAddMode && (
-          <button
-            ref={(el) => {
-              metaPickerTriggerRefs.current.template = el;
-            }}
-            type="button"
-            className="topbar-icon-btn"
-            onClick={handleToggleTemplatePicker}
-            title={formValues?.template_name ? `Template: ${formValues.template_name}` : "Template"}
-            aria-label="Select template"
-            aria-expanded={openPicker === "template"}
-            aria-haspopup="listbox"
-          >
-            <LayoutTemplate size={TOPBAR_ICON_SIZE} aria-hidden />
-          </button>
+          <span className="cardform-template-anchor">
+            <button
+              ref={(el) => {
+                metaPickerTriggerRefs.current.template = el;
+              }}
+              type="button"
+              className={`topbar-icon-btn${isTemplateHintVisible ? " topbar-icon-btn--hint" : ""}`}
+              onClick={handleToggleTemplatePicker}
+              title={formValues?.template_name ? `Template: ${formValues.template_name}` : "Template"}
+              aria-label="Select template"
+              aria-expanded={openPicker === "template"}
+              aria-haspopup="listbox"
+            >
+              <LayoutTemplate size={TOPBAR_ICON_SIZE} aria-hidden />
+            </button>
+            {isTemplateHintVisible && (
+              <div className="template-coachmark">
+                <svg className="template-coachmark__arrow" viewBox="0 0 100 80" aria-hidden>
+                  <path className="template-coachmark__path" d="M10 74 C 40 76, 80 58, 82 12" />
+                  <path className="template-coachmark__head" d="M72 22 L82 8 L91 23" />
+                </svg>
+                <button type="button" className="template-coachmark__bubble" onClick={handleToggleTemplatePicker}>
+                  <span className="template-coachmark__title">Start by selecting a template</span>
+                  <span className="template-coachmark__text">
+                    Click the template icon to load the form for this card.
+                  </span>
+                </button>
+              </div>
+            )}
+          </span>
         )}
         {openPicker === "template" &&
           typeof document !== "undefined" &&
@@ -1236,6 +1256,7 @@ TopBar.propTypes = {
   onTemplateChange: PropTypes.func,
   onRevealForm: PropTypes.func,
   onHideForm: PropTypes.func,
+  showTemplateHint: PropTypes.bool,
   isAddMode: PropTypes.bool,
   onColorChange: PropTypes.func,
   onTitleCommit: PropTypes.func,
@@ -3101,6 +3122,16 @@ function CardForm({
     [formValues.owner]
   );
 
+  // Only the default tab body is gated by isFormRevealed; the specialised card views render immediately.
+  const isDefaultCardBody =
+    !isSubTaskCard &&
+    !isTaxiBoatVariant &&
+    !isDriverStyleView &&
+    !isMWPVariant &&
+    !isDecidingGroExportView &&
+    !isGROStyleView;
+  const showTemplateHint = isAddMode && isDefaultCardBody && !isFormRevealed;
+
   if (!show) return null;
 
   return (
@@ -3126,6 +3157,7 @@ function CardForm({
           onTemplateChange={handleTopbarTemplateChange}
           onRevealForm={handleRevealForm}
           onHideForm={handleHideForm}
+          showTemplateHint={showTemplateHint}
         />
         {isSubTaskCard ? (
           <TaskCardDetailView card={card} onClose={handleClose} />
