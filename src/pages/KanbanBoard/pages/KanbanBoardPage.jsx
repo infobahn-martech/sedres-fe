@@ -19,7 +19,7 @@ import PoReviewModal from "../components/board/PoReviewModal";
 import ServiceSheetModal from "../components/board/ServiceSheetModal";
 import SccReviewModal from "../components/board/SccReviewModal";
 import DispatchProofReviewModal from "../components/board/DispatchProofReviewModal";
-import { isLntWorkflow, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
+import { isLntWorkflow, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -125,6 +125,8 @@ const poUploadFields = [
     multiple: true,
   },
 ];
+/* POSH Saudi takes one PO file, which the backend places on every ticked card. */
+const singlePoUploadFields = [{ ...poUploadFields[0], multiple: false }];
 /* The files da/send_submission_email takes on top of the documents the draft already attaches,
    in the order the draft body lists them (the draft's merged invoices come last). The consolidated
    invoice and merged invoices are attached by the draft; a file picked on their row is sent in addition. */
@@ -598,6 +600,32 @@ export default function KanbanBoardPage() {
     [batchIdByNumber, getBatchCallIds]
   );
 
+  /* "Request PO" on the POSH "AR Invoices Issued" header: no batches, so the draft is read for the ticked
+     cards' call and card ids. The cards stand in for a batch in the shared PO request modal state. */
+  const handleColumnRequestPo = useCallback(async (cards) => {
+    const requestCards = (cards ?? []).filter((card) => card?.callId);
+    if (!requestCards.length) {
+      notify("The selected cards have no call to request a PO for", "error");
+      return;
+    }
+    let data;
+    try {
+      ({ data } = await daService.getPoRequestDraftByCards(
+        requestCards.map((card) => card.callId),
+        requestCards.map((card) => card.id)
+      ));
+    } catch (error) {
+      data = error?.response?.data;
+    }
+    if (data?.status !== "success" || !data?.data) {
+      notify(data?.message || "Failed to load PO request email draft", "error");
+      return;
+    }
+    setPoRequestEmailDraft(data.data);
+    setSelectedPoRequestBatch({ title: "", cards: requestCards, isCardRequest: true });
+    setShowPoRequestEmailModal(true);
+  }, []);
+
   const handleClosePoRequestEmail = useCallback(() => {
     setShowPoRequestEmailModal(false);
     setSelectedPoRequestBatch(null);
@@ -607,17 +635,21 @@ export default function KanbanBoardPage() {
   /* Sends the PO request via da/send_po_request; the backend moves the batch's cards to "Requested PO". */
   const handleSendPoRequestEmail = useCallback(
     async (emailData) => {
+      const isCardRequest = Boolean(selectedPoRequestBatch?.isCardRequest);
       const batchId = poRequestEmailDraft?.batch_id ?? batchIdByNumber[selectedPoRequestBatch?.title];
-      if (!batchId) {
+      if (!batchId && !isCardRequest) {
         notify("Batch not found", "error");
         return;
       }
 
       const formData = new FormData();
-      formData.append("batch_id", batchId);
+      if (batchId) formData.append("batch_id", batchId);
       /* Only the ticked cards move to "Requested PO"; the unticked ones stay in the batch. */
       const callIds = getBatchCallIds(selectedPoRequestBatch);
       if (callIds.length) formData.append("call_ids", callIds.join(","));
+      if (isCardRequest) {
+        formData.append("card_ids", selectedPoRequestBatch.cards.map((card) => card.id).join(","));
+      }
       if (poRequestEmailDraft?.stage_document_id != null) {
         formData.append("stage_document_id", poRequestEmailDraft.stage_document_id);
       }
@@ -903,10 +935,13 @@ export default function KanbanBoardPage() {
   const [poUploadProgress, setPoUploadProgress] = useState(null);
   const openPoReviewModal = usePoReviewStore((state) => state.openPoReviewModal);
 
-  const handleColumnUploadPos = useCallback((cards, { workflowId = null } = {}) => {
+  const [isSinglePoUpload, setIsSinglePoUpload] = useState(false);
+
+  const handleColumnUploadPos = useCallback((cards, { workflowId = null, singleFile = false } = {}) => {
     if (!cards?.length) return;
     setSelectedPoUploadCards(cards);
     setSelectedPoUploadWorkflowId(workflowId);
+    setIsSinglePoUpload(singleFile);
     setShowPoUploadModal(true);
   }, []);
 
@@ -1925,6 +1960,21 @@ export default function KanbanBoardPage() {
     portalCardIds.slice(0, -1).forEach((id) => removeCardSelectionId(id));
   }, [selectedCardIds, cardsById, workflows, removeCardSelectionId]);
 
+  /* POSH requests the PO, uploads it and sends the invoice one card at a time, so only one card per POSH
+     PO column can stay ticked: the most recently ticked one wins. */
+  useEffect(() => {
+    const cardIdsByColumn = {};
+    selectedCardIds.forEach((id) => {
+      const card = cardsById[id];
+      const workflow = workflows.find((wf) => String(wf.id) === String(card?.workflow_id));
+      if (!card || !isPoshOneCardColumn(workflow, workflow?.columns?.[card.columnId]?.title)) return;
+      (cardIdsByColumn[`${workflow.id}:${card.columnId}`] ??= []).push(id);
+    });
+    Object.values(cardIdsByColumn).forEach((ids) => {
+      ids.slice(0, -1).forEach((id) => removeCardSelectionId(id));
+    });
+  }, [selectedCardIds, cardsById, workflows, removeCardSelectionId]);
+
   // Drop any selected id that disappears from the board (moved/removed by a refetch).
   useEffect(() => {
     const staleIds = selectedCardIds.filter((id) => !cardsById[id]);
@@ -2068,6 +2118,7 @@ export default function KanbanBoardPage() {
           onBatchUploadSeApproval={handleBatchUploadSeApproval}
           onBatchUploadInvoice={handleBatchUploadInvoice}
           onBatchRequestPo={handleBatchRequestPo}
+          onColumnRequestPo={handleColumnRequestPo}
           onColumnUploadInvoice={handleColumnUploadInvoice}
           onColumnUploadPos={handleColumnUploadPos}
           onUploadSrf={handleUploadSrfClick}
@@ -2141,7 +2192,11 @@ export default function KanbanBoardPage() {
         defaultBody={poRequestEmailDraft?.body ?? ""}
         documentUrl={poRequestEmailDraft?.document_url ?? ""}
         title="PO Request Email"
-        subtitle="Request the purchase order for this batch"
+        subtitle={
+          selectedPoRequestBatch?.isCardRequest
+            ? "Request the purchase order for the selected cards"
+            : "Request the purchase order for this batch"
+        }
         sendLabel="Send PO Request"
         subjectPrefix="Request for PO"
       />
@@ -2217,7 +2272,7 @@ export default function KanbanBoardPage() {
         title="Upload POs"
         subtitle="Attach the POs for the selected cards"
         submitLabel="Upload POs"
-        fields={poUploadFields}
+        fields={isSinglePoUpload ? singlePoUploadFields : poUploadFields}
       />
 
       <SeApprovalUploadModal
