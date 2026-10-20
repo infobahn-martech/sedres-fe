@@ -96,7 +96,7 @@ $my-acc-input-radius: 12px;
       align-items: center;
       justify-content: center;
       background: linear-gradient(160deg, $my-acc-brand 0%, $my-acc-brand-deep 100%);
-      color: var(--text-inverse);
+      color: #ffffff;
       font-size: clamp(2.5rem, 6vw, 3.75rem);
       font-weight: 700;
       letter-spacing: -0.02em;
@@ -212,7 +212,7 @@ $my-acc-input-radius: 12px;
 
       &.edit-btn {
         background-color: $my-acc-brand;
-        color: var(--text-inverse);
+        color: #ffffff;
 
         &:hover:not(:disabled) {
           background-color: $my-acc-brand-deep;
@@ -233,6 +233,83 @@ $my-acc-input-radius: 12px;
     .my-accounts-fields {
       width: 100%;
       text-align: left;
+    }
+  }
+}
+
+// Dark theme — swap the hard-coded light palette for the navy dark tokens
+// used by the global dark form styles (form-designs.scss).
+[data-theme="dark"] {
+  .my-accounts-premium-title {
+    color: var(--text-heading);
+  }
+
+  .my-accounts-premium {
+    .my-accounts-premium-inner {
+      background: var(--bg-card);
+      border-color: var(--border);
+      box-shadow: var(--shadow-md);
+
+      &::before {
+        box-shadow: none;
+      }
+    }
+
+    .my-accounts-avatar {
+      background: linear-gradient(145deg, rgba(76, 141, 255, 0.35) 0%, rgba(76, 141, 255, 0.08) 50%, rgba(76, 141, 255, 0.28) 100%);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .my-accounts-fields {
+      .form-floating > .form-control {
+        background-color: var(--bg-inset);
+        border-color: var(--border-strong);
+        color: var(--text-control);
+
+        &:focus {
+          border-color: var(--brand-bright);
+          box-shadow: 0 0 0 3px rgba(76, 141, 255, 0.18);
+        }
+
+        &:disabled {
+          background-color: var(--field-disabled-bg) !important;
+          color: var(--text-body);
+        }
+      }
+
+      .form-floating > label,
+      .phone-wrapper .phone-label {
+        color: var(--text-subtle);
+        background: var(--bg-card);
+      }
+
+      .phone-wrapper {
+        .react-tel-input .form-control.phone-input {
+          border-color: var(--border-strong) !important;
+
+          &:disabled {
+            background-color: var(--field-disabled-bg) !important;
+          }
+        }
+
+        .flag-dropdown.phone-flag {
+          background: var(--bg-highlight) !important;
+          border-color: var(--border-strong) !important;
+        }
+      }
+    }
+
+    .my-accounts-actions {
+      border-top-color: var(--border);
+
+      .my-accounts-action-btn.btn-my-acct-cancel {
+        color: var(--brand-bright);
+        border-color: var(--border-strong);
+
+        &:hover:not(:disabled) {
+          background-color: rgba(255, 255, 255, 0.06);
+        }
+      }
     }
   }
 }
