@@ -42,6 +42,13 @@ const uploadInvoice = (formData) =>
   Gateway.post('/da/da_upload_invoice', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+/** @param {FormData} formData - call_id, proof (required), approval_email, scc (required for L&T only), multipart/form-data.
+ * @returns {Promise<{ data: { status: 'success', stage_document_id: number, uploaded: object, documents: object, moved_to_da: Array } | { status: 'error', message: string } }>}
+ * Stores the client's approved SO (and approval email) once the decision has been recorded as approved. */
+const uploadSoApprovalProof = (formData) =>
+  Gateway.post('/da/da_upload_so_approval_proof', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 /** @param {{ call_id: string|number, decision: 1|0 }} payload - decision: 1 = approved, 0 = rejected */
 const recordClientDecision = (payload) => Gateway.post('/da/da_record_client_decision', payload);
 /** @returns {Promise<{ data: { status: string, data?: { button_state: 'send'|'awaiting_approval'|'approved', last_email_sent_date: string|null, last_decision: string|null, last_decision_date: string|null, approval_proof_uploaded?: boolean, approved_by?: string|null, approved_date?: string|null }, message?: string } }>}
@@ -341,6 +348,7 @@ export default {
   sendActionEmail,
   getActionEmailDraft,
   uploadInvoice,
+  uploadSoApprovalProof,
   recordClientDecision,
   getActionState,
   createHubBatch,
