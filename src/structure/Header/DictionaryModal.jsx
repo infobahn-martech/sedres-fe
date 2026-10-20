@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { FiBookOpen, FiSearch, FiVolume2 } from 'react-icons/fi';
+import { FiBookOpen, FiSearch } from 'react-icons/fi';
 import ToolModal from './ToolModal';
 import toolsService from '../../services/toolsService';
 
 const MAX_DEFINITIONS = 3;
-const MAX_SYNONYMS = 6;
 
 function DictionaryModal({ show, onClose }) {
   const [query, setQuery] = useState('');
@@ -25,14 +24,9 @@ function DictionaryModal({ show, onClose }) {
     setStatus('loading');
 
     try {
-      const data = await toolsService.getWordDefinitions(term, controller.signal);
-      if (!data?.length) {
-        setEntry(null);
-        setStatus('not-found');
-        return;
-      }
-      setEntry(data[0]);
-      setStatus('success');
+      const result = await toolsService.getWordDefinitions(term, controller.signal);
+      setEntry(result);
+      setStatus(result ? 'success' : 'not-found');
     } catch (error) {
       if (error.name === 'AbortError') return;
       setEntry(null);
@@ -44,9 +38,6 @@ function DictionaryModal({ show, onClose }) {
     event.preventDefault();
     lookup(query);
   };
-
-  const phoneticText = entry?.phonetic || entry?.phonetics?.find((p) => p.text)?.text;
-  const audioUrl = entry?.phonetics?.find((p) => p.audio)?.audio;
 
   return (
     <ToolModal show={show} onClose={onClose} title="Dictionary" icon={<FiBookOpen />} className="dictionary-modal">
@@ -73,24 +64,12 @@ function DictionaryModal({ show, onClose }) {
       {status === 'success' && entry && (
         <div className="dictionary-result">
           <div className="dictionary-word-row">
-            <div>
-              <h3 className="dictionary-word">{entry.word}</h3>
-              {phoneticText && <span className="dictionary-phonetic">{phoneticText}</span>}
-            </div>
-            {audioUrl && (
-              <button
-                type="button"
-                className="dictionary-audio-btn"
-                aria-label="Play pronunciation"
-                onClick={() => new Audio(audioUrl).play().catch(() => {})}
-              >
-                <FiVolume2 />
-              </button>
-            )}
+            <h3 className="dictionary-word">{entry.word}</h3>
           </div>
 
-          {entry.meanings.map((meaning) => (
-            <section key={meaning.partOfSpeech} className="dictionary-meaning">
+          {/* Index key: Wiktionary can list the same part of speech once per etymology */}
+          {entry.meanings.map((meaning, index) => (
+            <section key={`${meaning.partOfSpeech}-${index}`} className="dictionary-meaning">
               <h4 className="dictionary-pos">{meaning.partOfSpeech}</h4>
               <ol className="dictionary-definitions">
                 {meaning.definitions.slice(0, MAX_DEFINITIONS).map(({ definition, example }) => (
@@ -100,16 +79,6 @@ function DictionaryModal({ show, onClose }) {
                   </li>
                 ))}
               </ol>
-              {meaning.synonyms?.length > 0 && (
-                <div className="dictionary-synonyms">
-                  <span className="dictionary-synonyms-label">Synonyms</span>
-                  {meaning.synonyms.slice(0, MAX_SYNONYMS).map((synonym) => (
-                    <button type="button" key={synonym} className="dictionary-chip" onClick={() => lookup(synonym)}>
-                      {synonym}
-                    </button>
-                  ))}
-                </div>
-              )}
             </section>
           ))}
         </div>
