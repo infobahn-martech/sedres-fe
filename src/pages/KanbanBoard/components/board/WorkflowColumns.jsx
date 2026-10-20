@@ -117,6 +117,10 @@ const getInvoiceAction = (workflow, column) => {
   return null;
 };
 
+/* POSH workflows name the "Issue AR Invoice" column action "Upload SAP Invoices". */
+const POSH_WORKFLOW_PATTERN = /posh/i;
+const POSH_ISSUE_AR_INVOICE_LABEL = "Upload SAP Invoices";
+
 const INVOICE_ACTION_BUTTONS = {
   upload: { label: "Upload Invoice", icon: <FiUploadCloud size={16} aria-hidden /> },
   issueArInvoice: { label: "Upload Invoices", icon: <FiUploadCloud size={16} aria-hidden /> },
@@ -483,7 +487,13 @@ export default function WorkflowColumns({
                       isGrouped ? undefined : () => onColumnHeaderClick(workflow.id, firstColumn.id)
                     }
                     isDarkMode={isDarkMode}
-                    actionLabel={hasInvoiceButton ? INVOICE_ACTION_BUTTONS[invoiceButton].label : "Batch"}
+                    actionLabel={
+                      hasInvoiceButton
+                        ? invoiceButton === "issueArInvoice" && POSH_WORKFLOW_PATTERN.test(workflow?.title ?? "")
+                          ? POSH_ISSUE_AR_INVOICE_LABEL
+                          : INVOICE_ACTION_BUTTONS[invoiceButton].label
+                        : "Batch"
+                    }
                     actionIcon={hasInvoiceButton ? INVOICE_ACTION_BUTTONS[invoiceButton].icon : undefined}
                     secondaryAction={hasInvoiceButton ? sendSubmissionAction : undefined}
                     onActionClick={

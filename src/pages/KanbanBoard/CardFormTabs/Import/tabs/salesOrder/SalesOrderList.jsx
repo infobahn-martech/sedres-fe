@@ -24,12 +24,35 @@ import GoodsReceiptPOModal from "./GoodsReceiptPOModal";
 import SoApprovalEmailModal from "./SoApprovalEmailModal";
 import DocumentListModal from "./DocumentListModal";
 import UploadInvoiceModal from "../../../../../../components/UploadInvoiceModal";
+import { compressPdfFiles } from "../../../../../../shared/utils/compressPdf";
+import SeApprovalUploadModal from "../../../../components/board/SeApprovalUploadModal";
 import CustomModal from "../../../../../../components/CustomModal";
 import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 
 const BP_CURRENCY_OPTIONS = ["SAR", "USD", "EURO"];
 const USD_TO_SAR_RATE = 3.75;
 const SALES_ORDER_PAGE_SIZE = 10;
+const POSH_WORKFLOW_PATTERN = /posh/i;
+/* "Upload Approved SO" runs for the POSH workflow only. da/da_upload_so_approval_proof takes the
+   approved SO as `proof` (required) and the SO email as `approval_email`; the field names are the
+   request's form field names. */
+const approvedSoUploadFields = [
+  {
+    name: "proof",
+    label: "Approved SO",
+    accept: ".pdf,.jpg,.jpeg,.png",
+    formatsHint: "PDF, JPG, PNG",
+    multiple: false,
+    required: true,
+  },
+  {
+    name: "approval_email",
+    label: "SO email",
+    accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
+    formatsHint: "PDF, EML, MSG, JPG, PNG",
+    multiple: false,
+  },
+];
 // Column 4's ("SO Sent for approval") local-only per-session action state — see soActionState.
 const SO_ACTION_STATE_DEFAULT = {
   button_state: "send",
@@ -616,8 +639,19 @@ const SalesOrderList = ({
     Array.isArray(stepLabels) && currentStep != null && /ops completed/i.test(stepLabels[currentStep - 1] || "");
   // Same masking problem as isAtArInvoiceColumn, but for column 4 ("SO Sent for approval").
   // Also reused by shouldShowDaActionButton further below.
+  const opsCompletedStepIndex = Array.isArray(stepLabels)
+    ? stepLabels.findIndex((label) => /ops completed/i.test(label || ""))
+    : -1;
+  const isAtColumnAfterOpsCompleted =
+    opsCompletedStepIndex !== -1 && currentStep != null && currentStep === opsCompletedStepIndex + 2;
+  // POSH workflows run the SAIPEM SO approval flow but do not necessarily name that column "SO Sent
+  // for approval", so for them the column right after "Ops Completed" is the SO approval column.
+  const isPoshWorkflowCard = POSH_WORKFLOW_PATTERN.test(card?.workflow_name ?? "");
+  const isPoshAtSoApprovedColumn =
+    isPoshWorkflowCard && opsCompletedStepIndex !== -1 && currentStep === opsCompletedStepIndex + 3;
   const isCardAtSoApprovalColumn =
-    Array.isArray(stepLabels) && currentStep != null && /so sent for approval/i.test(stepLabels[currentStep - 1] || "");
+    (Array.isArray(stepLabels) && currentStep != null && /so sent for approval/i.test(stepLabels[currentStep - 1] || "")) ||
+    (isPoshWorkflowCard && isAtColumnAfterOpsCompleted);
   // What column 4's header action actually renders from (see the header action block below).
   //
   // api/da/action_state can report button_state "approved" for a call that is still physically
@@ -645,11 +679,6 @@ const SalesOrderList = ({
   // Deliberately NOT reused for isCardAtSoApprovalColumn's own consumers (the header SO
   // approval email/decision button flow) — that flow is specifically about the SO-approval
   // sub-stage and must stay scoped to workflows that actually name a column that way.
-  const opsCompletedStepIndex = Array.isArray(stepLabels)
-    ? stepLabels.findIndex((label) => /ops completed/i.test(label || ""))
-    : -1;
-  const isAtColumnAfterOpsCompleted =
-    opsCompletedStepIndex !== -1 && currentStep != null && currentStep === opsCompletedStepIndex + 2;
   // api/da/status_timeline is no longer fetched here (removed per request 2026-09-11 — it was
   // the source of a "Closed Paid" label leaking into the Subject on cards that hadn't actually
   // reached that stage, and desynced from the board column in general). The card's own sticker
@@ -767,6 +796,8 @@ const SalesOrderList = ({
   const isAtSoApprovalDecisionColumn =
     (soSentForApprovalStepIndex !== -1 && currentStep != null && currentStep === soSentForApprovalStepIndex + 2) ||
     (Array.isArray(stepLabels) && currentStep != null && /so\s*\/?\s*po approval received/i.test(stepLabels[currentStep - 1] || ""));
+  // Where the card lands once the SO is approved, which is where "Upload Approved SO" shows (POSH only).
+  const isAtApprovedSoUploadColumn = isPoshAtSoApprovedColumn;
 
   // State for the SO Approval email modal, opened from the header action button when
   // effectiveNextDaStatusLabel is the "SO Approval" stage. Sends via api/da/da_send_action_email
@@ -809,6 +840,9 @@ const SalesOrderList = ({
   // via da/da_upload_invoice (see handleUploadInvoiceIssuance) — the client-decision states
   // that follow it are still local-only simulation, same as the rest of this stage.
   const [showInvoiceIssuanceModal, setShowInvoiceIssuanceModal] = useState(false);
+  const [showApprovedSoUploadModal, setShowApprovedSoUploadModal] = useState(false);
+  const [isUploadingApprovedSo, setIsUploadingApprovedSo] = useState(false);
+  const [approvedSoUploadError, setApprovedSoUploadError] = useState("");
 
   // api/da/da_action_email_draft/{call_id} — { status: "success", data: { recipient,
   // stage_document_id? } }. Best effort: if it fails or callId is missing, the modal just opens
@@ -1084,6 +1118,11 @@ const SalesOrderList = ({
     setShowInvoiceIssuanceModal(false);
   };
 
+  const handleCloseApprovedSoUploadModal = () => {
+    setShowApprovedSoUploadModal(false);
+    setApprovedSoUploadError("");
+  };
+
   // Persists via da/da_upload_invoice (call_id + invoice file(s), multipart/form-data) →
   // { status: "success", stage_document_id } — unlike da_send_action_email /
   // da_record_client_decision, this response carries no status_id/sticker_id, so the upload
@@ -1107,6 +1146,41 @@ const SalesOrderList = ({
     }
     if (refreshSalesOrder) refreshSalesOrder();
     onDaStatusRefresh?.();
+  };
+
+  // Persists via da/da_upload_so_approval_proof (call_id, proof, approval_email; multipart/form-data).
+  // The backend moves the card to the DA board and lists it in moved_to_da. The card is closed after a
+  // successful upload, and the board refetch that follows shows it gone from this board.
+  const handleUploadApprovedSo = async (filesByField) => {
+    if (!callId) {
+      setApprovedSoUploadError("No call identifier available for this card.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("call_id", callId);
+    setIsUploadingApprovedSo(true);
+    setApprovedSoUploadError("");
+    try {
+      for (const { name } of approvedSoUploadFields) {
+        const [file] = await compressPdfFiles(filesByField?.[name] ?? []);
+        if (file) formData.append(name, file);
+      }
+      const { data } = await daService.uploadSoApprovalProof(formData);
+      if (data?.status !== "success") {
+        throw new Error(data?.message || "Failed to upload the approved SO.");
+      }
+      handleCloseApprovedSoUploadModal();
+      useAlertReducer.getState().success("Approved SO uploaded.");
+      if (refreshSalesOrder) refreshSalesOrder();
+      onDaStatusRefresh?.();
+      onCloseCard?.();
+    } catch (err) {
+      setApprovedSoUploadError(
+        err?.response?.data?.message || err?.message || "Upload failed. Please try again."
+      );
+    } finally {
+      setIsUploadingApprovedSo(false);
+    }
   };
 
   const displayOrderList = Array.isArray(salesOrderList) ? salesOrderList : [];
@@ -1382,7 +1456,7 @@ const SalesOrderList = ({
       const allVerified =
         isNowVerified &&
         updatedList.every((item) => (item.id === orderId ? true : isItemVerified(item)));
-      if (allVerified && isBeforeSubmittedToDa) {
+      if (allVerified && isBeforeSubmittedToDa && !isPoshWorkflowCard) {
         onAdvanceDaStage?.({ label: stepLabels[submittedToDaStepIndex], skipStatusUpdate: true });
         onCloseCard?.();
       } else if (allVerified && (isAtSubmittedToDaColumn || isAtSoSentForSccColumn)) {
@@ -2310,6 +2384,7 @@ const SalesOrderList = ({
             // all, regardless of what the granular DA status-timeline fetch reports (that data
             // is independent of the board column and can otherwise race ahead). Per request.
             Number(currentStep) >= 4 &&
+            !isAtApprovedSoUploadColumn &&
             // isCardAtSoApprovalColumn is footer/column-driven on purpose (see its own
             // declaration above) — column 4 must show its own fixed button state purely from
             // currentStep/stepLabels, never from the sticker-derived effectiveNextDaStatusLabel
@@ -2418,6 +2493,18 @@ const SalesOrderList = ({
                 {daActionButtonLabel}
               </button>
             )
+          )}
+
+          {isDaVerifyContext && isAtApprovedSoUploadColumn && (
+            <button
+              type="button"
+              className="sales-order-da-status-button"
+              title="Upload the approved SO and the SO email"
+              onClick={() => setShowApprovedSoUploadModal(true)}
+            >
+              <FiUpload />
+              Upload Approved SO
+            </button>
           )}
 
           {!readOnly && (
@@ -3317,6 +3404,24 @@ const SalesOrderList = ({
           closeModal={handleCloseInvoiceIssuanceModal}
           contextLabel={soCustomerName ? `SO — ${soCustomerName}` : undefined}
           onUploadComplete={handleUploadInvoiceIssuance}
+        />
+      )}
+
+      {/* Upload Approved SO — shown once the SO is approved (POSH only): the approved SO and the
+          SO email, via da/da_upload_so_approval_proof. */}
+      {isDaVerifyContext && (
+        <SeApprovalUploadModal
+          show={showApprovedSoUploadModal}
+          onClose={handleCloseApprovedSoUploadModal}
+          onUpload={handleUploadApprovedSo}
+          isSubmitting={isUploadingApprovedSo}
+          batchTitle={soCustomerName || ""}
+          contextCaption="Sales order:"
+          title="Upload Approved SO"
+          subtitle="Attach the approved sales order and the SO email"
+          submitLabel="Upload Approved SO"
+          fields={approvedSoUploadFields}
+          submitError={approvedSoUploadError}
         />
       )}
     </div>
