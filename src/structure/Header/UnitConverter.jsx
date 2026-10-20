@@ -58,7 +58,7 @@ function UnitConverter({ calculatorValue }) {
   };
 
   return (
-    <div className="converter">
+    <div className={`converter converter--${categoryId}`}>
       <div className="converter-categories" role="tablist" aria-label="Unit category">
         {UNIT_CATEGORIES.map((category) => {
           const Icon = CATEGORY_ICONS[category.id];
@@ -70,7 +70,7 @@ function UnitConverter({ calculatorValue }) {
               key={category.id}
               aria-selected={isActive}
               title={category.label}
-              className={`converter-category ${isActive ? 'is-active' : ''}`}
+              className={`converter-category converter-category--${category.id} ${isActive ? 'is-active' : ''}`}
               onClick={() => handleCategoryChange(category.id)}
             >
               <Icon aria-hidden />

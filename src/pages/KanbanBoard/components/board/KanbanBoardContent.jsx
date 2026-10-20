@@ -20,6 +20,7 @@ export default function KanbanBoardContent({
   onBatchUploadSeApproval,
   onBatchUploadInvoice,
   onBatchRequestPo,
+  onColumnRequestPo,
   onColumnUploadInvoice,
   onColumnUploadPos,
   onColumnSendInvoice,
@@ -84,6 +85,7 @@ export default function KanbanBoardContent({
         onBatchUploadSeApproval={onBatchUploadSeApproval}
         onBatchUploadInvoice={onBatchUploadInvoice}
         onBatchRequestPo={onBatchRequestPo}
+        onColumnRequestPo={onColumnRequestPo}
         onColumnUploadInvoice={onColumnUploadInvoice}
         onColumnUploadPos={onColumnUploadPos}
         onUploadSrf={onUploadSrf}

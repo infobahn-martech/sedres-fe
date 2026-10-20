@@ -11,7 +11,7 @@
   }
 
   &.calculator-modal .modal-dialog {
-    max-width: 360px;
+    max-width: 440px;
   }
 
   .modal-content {
@@ -34,6 +34,33 @@
       display: none;
     }
   }
+}
+
+// Calculator accent palette — key groups and converter categories each get a
+// hue; dark mode swaps to lighter tones so tinted text stays readable on navy.
+.calculator-modal {
+  --calc-gradient: linear-gradient(135deg, #00368c 0%, #1e4fd8 100%);
+  --calc-clear: #dc2626;
+  --calc-back: #d97706;
+  --calc-fn: #7c3aed;
+  --calc-memory: #0d9488;
+  --cat-weight: #2563eb;
+  --cat-length: #059669;
+  --cat-volume: #0891b2;
+  --cat-speed: #d97706;
+  --cat-temperature: #e11d48;
+}
+
+[data-theme="dark"] .calculator-modal {
+  --calc-clear: #f87171;
+  --calc-back: #fbbf24;
+  --calc-fn: #a78bfa;
+  --calc-memory: #2dd4bf;
+  --cat-weight: #60a5fa;
+  --cat-length: #34d399;
+  --cat-volume: #22d3ee;
+  --cat-speed: #fbbf24;
+  --cat-temperature: #fb7185;
 }
 
 .tool-modal-header {
@@ -262,30 +289,40 @@
   }
 }
 
+// Brand-navy display panel, echoing the navy modal headers used across the app.
 .calculator-display {
   position: relative;
-  padding: 14px 16px;
-  border-radius: 10px;
-  background: var(--bg-secondary);
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--calc-gradient);
+  box-shadow: 0 10px 24px rgba(0, 54, 140, 0.25);
+  color: #ffffff;
   text-align: right;
 
   .calculator-flags {
     position: absolute;
-    top: 10px;
-    left: 14px;
+    top: 12px;
+    left: 16px;
     display: flex;
     gap: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--color-primary-accent);
+
+    span {
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
   }
 
   .calculator-expression {
     min-height: 18px;
-    padding-left: 56px;
+    padding-left: 80px;
     overflow: hidden;
     font-size: 13px;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.72);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -321,16 +358,16 @@
 .calculator-memory-btn {
   height: 30px;
   border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-secondary);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--calc-memory) 10%, transparent);
+  color: var(--calc-memory);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s ease;
 
   &:hover:not(:disabled) {
-    background: var(--hover-bg);
-    color: var(--text-primary);
+    background: color-mix(in srgb, var(--calc-memory) 20%, transparent);
   }
 
   &:disabled {
@@ -408,15 +445,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 52px;
+  height: 56px;
   border: 1px solid var(--border-primary);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface-primary);
   color: var(--text-primary);
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.05s ease;
+  transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
 
   &:hover {
     background: var(--hover-bg);
@@ -430,30 +467,53 @@
     background: var(--bg-tertiary);
   }
 
+  // Tinted keys share one recipe; each variant only sets --tint.
+  &--operator,
+  &--clear,
+  &--back,
+  &--fn {
+    border-color: color-mix(in srgb, var(--tint) 25%, transparent);
+    background: color-mix(in srgb, var(--tint) 10%, transparent);
+    color: var(--tint);
+
+    &:hover {
+      background: color-mix(in srgb, var(--tint) 18%, transparent);
+    }
+  }
+
   &--operator {
-    color: var(--color-primary-accent);
-    font-size: 20px;
+    --tint: var(--color-primary-accent);
+    font-size: 22px;
 
     &.is-active {
-      background: var(--color-primary-accent);
+      background: var(--tint);
       color: #ffffff;
     }
   }
 
-  &--equals {
-    border-color: var(--color-primary);
-    background: var(--color-primary);
-    color: #ffffff;
+  &--clear {
+    --tint: var(--calc-clear);
+  }
 
-    &:hover {
-      background: var(--color-primary);
-      filter: brightness(1.1);
-    }
+  &--back {
+    --tint: var(--calc-back);
   }
 
   &--fn {
-    background: var(--bg-tertiary);
-    color: var(--color-primary-accent);
+    --tint: var(--calc-fn);
+  }
+
+  &--equals {
+    border: none;
+    background: var(--calc-gradient);
+    box-shadow: 0 6px 14px rgba(0, 54, 140, 0.3);
+    color: #ffffff;
+    font-size: 22px;
+
+    &:hover {
+      background: var(--calc-gradient);
+      filter: brightness(1.1);
+    }
   }
 }
 
@@ -464,14 +524,14 @@
 
   .calculator-key {
     min-width: 0;
-    height: 38px;
+    height: 40px;
     padding: 0;
-    font-size: 13px;
+    font-size: 14px;
   }
 }
 
 .calculator-keys.is-compact .calculator-key {
-  height: 46px;
+  height: 48px;
 }
 
 // Unit converter
@@ -521,10 +581,26 @@
     color: var(--text-primary);
   }
 
+  svg {
+    color: var(--tile);
+  }
+
   &.is-active {
-    border-color: var(--color-primary-accent);
-    background: color-mix(in srgb, var(--color-primary-accent) 10%, transparent);
-    color: var(--color-primary-accent);
+    border-color: var(--tile);
+    background: color-mix(in srgb, var(--tile) 12%, transparent);
+    color: var(--tile);
+  }
+}
+
+// Each category has its own hue: --tile colors its tile, --cat themes the
+// panels/chip while that category is selected.
+@each $category in weight, length, volume, speed, temperature {
+  .converter-category--#{$category} {
+    --tile: var(--cat-#{$category});
+  }
+
+  .converter--#{$category} {
+    --cat: var(--cat-#{$category});
   }
 }
 
@@ -540,19 +616,24 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 12px 14px;
+  padding: 14px 16px;
   border: 1px solid var(--border-primary);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--surface-primary);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
   &:focus-within {
-    border-color: var(--color-primary-accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-accent) 15%, transparent);
+    border-color: var(--cat);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cat) 15%, transparent);
   }
 
   &--result {
-    background: var(--bg-secondary);
+    border-color: color-mix(in srgb, var(--cat) 30%, transparent);
+    background: color-mix(in srgb, var(--cat) 8%, var(--surface-primary));
+
+    .converter-label {
+      color: var(--cat);
+    }
   }
 }
 
@@ -671,7 +752,7 @@
   padding: 0;
   border: 4px solid var(--surface-primary);
   border-radius: 50%;
-  background: var(--color-primary);
+  background: var(--calc-gradient);
   color: #ffffff;
   font-size: 15px;
   cursor: pointer;
@@ -704,10 +785,10 @@
   gap: 6px;
   max-width: 100%;
   padding: 5px 10px;
-  border: 1px dashed var(--color-primary-accent);
+  border: 1px dashed var(--cat);
   border-radius: 999px;
   background: transparent;
-  color: var(--color-primary-accent);
+  color: var(--cat);
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
@@ -716,7 +797,7 @@
   cursor: pointer;
 
   &:hover {
-    background: color-mix(in srgb, var(--color-primary-accent) 10%, transparent);
+    background: color-mix(in srgb, var(--cat) 10%, transparent);
   }
 }
 

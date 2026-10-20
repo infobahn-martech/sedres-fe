@@ -201,8 +201,20 @@ const getPoRequestDraft = (batchId, callIds = []) =>
     params: callIds.length ? { call_ids: callIds.join(',') } : undefined,
   });
 
-/** @param {FormData} formData - batch_id, stage_document_id, to, cc, subject, body, call_ids? (ticked cards, sent as
- * call_ids=110,111), attachments[]?, multipart/form-data.
+/** @param {Array<string|number>} callIds
+ * @param {Array<string|number>} cardIds - ticked cards, sent as call_ids=210,235&card_ids=325,350
+ * @returns {Promise<{ data: { status: 'success', data: { call_ids: number[], cards: { call_id: number, card_id: number }[],
+ *   to: string, cc: string, subject: string, body: string, stage_document_id: number, document_url: string } }
+ *   | { status: 'error', message: string } }>}
+ * Prefilled "Request PO" email for ticked cards without a batch (POSH Saudi "AR Invoices Issued"). */
+const getPoRequestDraftByCards = (callIds, cardIds) =>
+  Gateway.get('/da/po_request_draft', {
+    params: { call_ids: callIds.join(','), card_ids: cardIds.join(',') },
+  });
+
+/** @param {FormData} formData - batch_id (batches only), stage_document_id, to, cc, subject, body, call_ids? (ticked
+ * cards, sent as call_ids=110,111), card_ids? (required with call_ids when there is no batch_id), attachments[]?,
+ * multipart/form-data.
  * @returns {Promise<{ data: { status: 'success', data: { moved_to_requested_po: { call_id: number, card_id: number }[] } }
  *   | { status: 'error', message: string } }>}
  * Sends the PO request email; the batch's cards move to "Requested PO". */
@@ -369,6 +381,7 @@ export default {
   getSubmissionEmailDraft,
   sendSubmissionEmail,
   getPoRequestDraft,
+  getPoRequestDraftByCards,
   sendPoRequest,
   uploadPos,
   uploadSrf,

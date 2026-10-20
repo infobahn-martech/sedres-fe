@@ -126,14 +126,14 @@ const op = (label, value) => ({ label, action: { type: 'operator', value }, vari
 const digit = (value) => ({ label: value, action: { type: 'digit', value } });
 
 const BASIC_KEYS = [
-  { label: 'C', action: { type: 'clear' }, variant: 'muted' },
+  { label: 'C', action: { type: 'clear' }, variant: 'clear' },
   { label: '±', action: { type: 'sign' }, variant: 'muted' },
   { label: '%', action: { type: 'percent' }, variant: 'muted' },
   op('÷', '/'),
   digit('7'), digit('8'), digit('9'), op('×', '*'),
   digit('4'), digit('5'), digit('6'), op('−', '-'),
   digit('1'), digit('2'), digit('3'), op('+', '+'),
-  { label: <FiDelete />, ariaLabel: 'Backspace', action: { type: 'backspace' } },
+  { label: <FiDelete />, ariaLabel: 'Backspace', action: { type: 'backspace' }, variant: 'back' },
   digit('0'),
   { label: '.', action: { type: 'dot' } },
   { label: '=', action: { type: 'equals' }, variant: 'equals' },

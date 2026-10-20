@@ -43,3 +43,12 @@ const UPLOADED_TO_PORTAL_COLUMN_PATTERN = /^(uploaded|invoice\s+submitted)\s+to\
 /* "Uploaded to Portal" / "Invoice Submitted to Portal" take one dispatch proof for one ticked card. */
 export const isUploadedToPortalColumnTitle = (title) =>
   UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(String(title ?? "").trim());
+
+const POSH_WORKFLOW_PATTERN = /posh/i;
+const POSH_ONE_CARD_COLUMN_PATTERN = /^(ar\s+invoices?\s+issued|requested\b.*\bpo|po\s+received)$/i;
+
+/* POSH DA requests the PO, uploads it and sends the invoice one card at a time, so only one card in
+   "AR Invoices Issued", "Requested/ Awaiting for PO" or "PO Received" can stay ticked. */
+export const isPoshOneCardColumn = (workflow, columnTitle) =>
+  POSH_WORKFLOW_PATTERN.test(String(workflow?.title ?? "")) &&
+  POSH_ONE_CARD_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
