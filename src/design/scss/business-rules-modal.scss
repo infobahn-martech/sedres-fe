@@ -5705,6 +5705,150 @@ body.app-dark-mode {
     }
   }
 
+  // Shared with modal
+  .share-with-filter-row:focus-within {
+    border-color: var(--brand-bright);
+  }
+
+  .share-with-filter-input,
+  .share-with-row {
+    color: var(--text-primary);
+  }
+
+  .share-with-filter-chip {
+    background: var(--tint-brand-bg);
+    color: var(--tint-brand-text);
+  }
+
+  .share-with-filter-chip-remove {
+    color: var(--tint-brand-text);
+  }
+
+  .share-with-avatar {
+    background: var(--avatar-placeholder-bg);
+  }
+
+  .share-with-cancel-btn {
+    border-color: var(--brand-bright);
+    color: var(--brand-bright);
+    background: transparent;
+
+    &:hover {
+      background: var(--tint-brand-bg);
+    }
+  }
+
+  // Condition rows — operator trigger/dropdown, value input, color trigger
+  .br-condition-operator-trigger {
+    color: var(--brand-bright);
+  }
+
+  .br-condition-operator-option {
+    color: var(--text-primary);
+
+    &:hover {
+      background: var(--hover-bg);
+    }
+  }
+
+  .business-rule-form-condition-input {
+    background: var(--input-bg);
+    border-color: var(--input-border);
+
+    &::placeholder {
+      color: var(--input-placeholder);
+    }
+
+    &:focus {
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 2px var(--focus-ring);
+    }
+  }
+
+  .br-color-condition-trigger,
+  .br-color-condition-hex {
+    color: var(--text-primary);
+  }
+
+  .br-color-condition-trigger:hover {
+    border-color: var(--brand-bright);
+  }
+
+  // Shared board / operator / timezone picker panel
+  .board-minimap-picker-search input,
+  .board-minimap-picker-group-head,
+  .board-minimap-picker-tile {
+    color: var(--text-primary);
+  }
+
+  .board-minimap-picker-group-head svg,
+  .board-minimap-picker-tile-count {
+    color: var(--brand-bright);
+  }
+
+  .board-minimap-picker-tile {
+    &:hover {
+      background: var(--hover-bg);
+    }
+
+    &--selected {
+      border-color: var(--brand-bright);
+      background: var(--tint-brand-bg);
+    }
+  }
+
+  // Notification message settings — subject/body merge-field pills, recipient pills,
+  // dropdowns and the Quill toolbar's active state
+  .notification-subject-box--editable,
+  .notification-subject-text,
+  .notification-dropdown-panel button {
+    color: var(--text-primary);
+  }
+
+  .notification-dropdown-trigger:hover {
+    color: var(--brand-bright);
+  }
+
+  .notification-dropdown-panel {
+    box-shadow: var(--shadow-popover);
+
+    button:hover {
+      background: var(--hover-bg);
+    }
+  }
+
+  .notification-pill {
+    background: var(--tint-neutral-bg-hover);
+    color: var(--text-control);
+  }
+
+  .notification-user-pill {
+    background: var(--tint-success-bg);
+    color: var(--success);
+
+    &.notification-user-pill--field {
+      background: rgba(236, 72, 153, 0.16);
+      color: #f9a8d4;
+    }
+
+    &.notification-user-pill--email {
+      background: var(--tint-brand-bg);
+      color: var(--tint-brand-text);
+    }
+  }
+
+  .notification-quill-wrap .ql-toolbar.ql-snow button.ql-active {
+    background: var(--tint-brand-bg);
+
+    .ql-stroke {
+      stroke: var(--brand-bright);
+    }
+
+    .ql-fill {
+      fill: var(--brand-bright);
+    }
+  }
+
   .business-rule-form-column-title::after {
     background: var(--text-secondary);
   }
