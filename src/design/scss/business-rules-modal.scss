@@ -5612,6 +5612,149 @@ body.app-dark-mode {
   }
 }
 
+/* ================================
+   TOKEN DARK MODE — Business rule modals
+   (html[data-theme="dark"], driven by themeStore — independent of
+   body.app-dark-mode above). Light styles hardcode $txtColor text and
+   navy (#00368c) links, both unreadable on dark surfaces.
+================================ */
+
+[data-theme="dark"] {
+  .br-picker-search-input,
+  .business-rules-search-input {
+    background: var(--input-bg);
+    border-color: var(--input-border);
+    color: var(--text-primary);
+
+    &::placeholder {
+      color: var(--input-placeholder);
+    }
+
+    &:focus {
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 2px var(--focus-ring);
+    }
+  }
+
+  .business-rule-form-input,
+  .business-rule-form-textarea,
+  .business-rule-form-select,
+  .br-owner-picker-trigger,
+  .br-owner-picker-search input {
+    color: var(--text-primary);
+  }
+
+  .business-rule-form-input,
+  .business-rule-form-textarea,
+  .business-rule-form-select {
+    &:focus {
+      border-color: var(--brand-bright);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+  }
+
+  .br-owner-picker-panel {
+    box-shadow: var(--shadow-popover);
+  }
+
+  .br-owner-picker-row:hover {
+    background: var(--hover-bg);
+  }
+
+  .br-owner-picker-row-btn {
+    color: var(--text-secondary);
+
+    &--selected {
+      color: var(--brand-bright);
+    }
+  }
+
+  // Card property match modal family (pills, section toggles, board filter)
+  .br-property-section-toggle {
+    color: var(--text-primary);
+
+    &:hover {
+      background: var(--hover-bg);
+    }
+  }
+
+  .br-property-section-toggle-icon {
+    background: var(--border-primary);
+    color: var(--text-primary);
+  }
+
+  .br-property-pill.br-property-pill--selected {
+    border-color: var(--brand-bright);
+    box-shadow: 0 0 0 2px var(--focus-ring);
+  }
+
+  .board-minimap-board-trigger {
+    color: var(--text-primary);
+
+    &:hover {
+      border-color: var(--brand-bright);
+    }
+  }
+
+  .br-property-add-btn {
+    background: var(--brand);
+    color: #ffffff;
+
+    &:hover:not(:disabled) {
+      background: var(--brand-hover);
+    }
+  }
+
+  .business-rule-form-column-title::after {
+    background: var(--text-secondary);
+  }
+
+  .business-rule-form-filter-hint,
+  .business-rule-form-or-btn,
+  .business-rule-form-tags-input-field,
+  .business-rule-form-condition-value {
+    color: var(--text-secondary);
+  }
+
+  .business-rule-form-action-title {
+    color: var(--text-primary);
+  }
+
+  .business-rule-form-trigger-name {
+    color: var(--brand-bright);
+  }
+
+  .business-rule-form-when-fields-pill {
+    color: var(--brand-bright);
+
+    &:hover {
+      border-color: var(--brand-bright);
+    }
+  }
+
+  .business-rule-form-add-link,
+  .business-rule-form-add-action,
+  .business-rule-form-action-detail-link,
+  .business-rule-form-filter-row .business-rule-form-condition-value,
+  .business-rule-form-condition-operator-group .business-rule-form-condition-label {
+    color: var(--brand-bright);
+
+    &:hover {
+      color: var(--text-brand-soft);
+    }
+  }
+
+  // --text-inverse flips to dark navy in dark mode; keep the label white on the blue button.
+  .business-rule-form-save-btn {
+    background: var(--brand);
+    color: #ffffff;
+
+    &:hover {
+      background: var(--brand-hover);
+    }
+  }
+}
+
 // Create Card Details panel — "Configure details" on a plain create-card action (see
 // CreateCardDetailsModal in BusinessRuleFormModal.jsx), opened after the Board Minimap
 // destination pick. Reuses the shared .card-property-match-modal-* shell/header and the
