@@ -461,7 +461,6 @@ const NewBlockerModal = ({
                       <DynamicIcon
                         iconKey={selectedIconKey.trim()}
                         size={22}
-                        color="#1a1a1a"
                       />
                     ) : (
                       <FiSlash size={22} color="#9ca3af" aria-hidden />

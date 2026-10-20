@@ -127,11 +127,7 @@ const IconPicker = ({ isOpen, selectedIconKey, onSelect }) => {
                                 aria-label={tooltip}
                                 aria-pressed={selected}
                             >
-                                <DynamicIcon
-                                    iconKey={opt.key}
-                                    size={20}
-                                    color={selected ? '#0369a1' : '#1a1a1a'}
-                                />
+                                <DynamicIcon iconKey={opt.key} size={20} />
                             </button>
                         );
                     })}
