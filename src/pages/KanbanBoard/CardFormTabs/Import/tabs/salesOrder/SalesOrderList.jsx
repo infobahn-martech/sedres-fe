@@ -33,7 +33,8 @@ const BP_CURRENCY_OPTIONS = ["SAR", "USD", "EURO"];
 const USD_TO_SAR_RATE = 3.75;
 const SALES_ORDER_PAGE_SIZE = 10;
 const POSH_WORKFLOW_PATTERN = /posh/i;
-/* "Upload Approved SO" runs for the POSH workflow only. da/da_upload_so_approval_proof takes the
+const SEND_FOR_SO_APPROVAL_COLUMN_PATTERN = /send for so approval/i;
+/* "Upload Approved SO" runs for the POSH workflow and for workflows with a "Send for SO Approval" column. da/da_upload_so_approval_proof takes the
    approved SO as `proof` (required) and the SO email as `approval_email`; the field names are the
    request's form field names. */
 const approvedSoUploadFields = [
@@ -649,8 +650,14 @@ const SalesOrderList = ({
   const isPoshWorkflowCard = POSH_WORKFLOW_PATTERN.test(card?.workflow_name ?? "");
   const isPoshAtSoApprovedColumn =
     isPoshWorkflowCard && opsCompletedStepIndex !== -1 && currentStep === opsCompletedStepIndex + 3;
+  // Workflows that have their own "Send for SO Approval" column (e.g. BGP) are matched by that column's
+  // title, not by workflow name. Their cards must reach it instead of being submitted to DA on the last
+  // Verify tick.
+  const hasSendForSoApprovalColumn =
+    Array.isArray(stepLabels) && stepLabels.some((label) => SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(label || ""));
   const isCardAtSoApprovalColumn =
     (Array.isArray(stepLabels) && currentStep != null && /so sent for approval/i.test(stepLabels[currentStep - 1] || "")) ||
+    (Array.isArray(stepLabels) && currentStep != null && SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
     (isPoshWorkflowCard && isAtColumnAfterOpsCompleted);
   // What column 4's header action actually renders from (see the header action block below).
   //
@@ -796,8 +803,14 @@ const SalesOrderList = ({
   const isAtSoApprovalDecisionColumn =
     (soSentForApprovalStepIndex !== -1 && currentStep != null && currentStep === soSentForApprovalStepIndex + 2) ||
     (Array.isArray(stepLabels) && currentStep != null && /so\s*\/?\s*po approval received/i.test(stepLabels[currentStep - 1] || ""));
-  // Where the card lands once the SO is approved, which is where "Upload Approved SO" shows (POSH only).
-  const isAtApprovedSoUploadColumn = isPoshAtSoApprovedColumn;
+  // Where the card lands once the SO is approved, which is where "Upload Approved SO" shows.
+  // Workflows with their own "Send for SO Approval" column show it on the column right after it.
+  const sendForSoApprovalStepIndex = Array.isArray(stepLabels)
+    ? stepLabels.findIndex((label) => SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(label || ""))
+    : -1;
+  const isAtColumnAfterSendForSoApproval =
+    sendForSoApprovalStepIndex !== -1 && currentStep != null && currentStep === sendForSoApprovalStepIndex + 2;
+  const isAtApprovedSoUploadColumn = isPoshAtSoApprovedColumn || isAtColumnAfterSendForSoApproval;
 
   // State for the SO Approval email modal, opened from the header action button when
   // effectiveNextDaStatusLabel is the "SO Approval" stage. Sends via api/da/da_send_action_email
@@ -1456,7 +1469,7 @@ const SalesOrderList = ({
       const allVerified =
         isNowVerified &&
         updatedList.every((item) => (item.id === orderId ? true : isItemVerified(item)));
-      if (allVerified && isBeforeSubmittedToDa && !isPoshWorkflowCard) {
+      if (allVerified && isBeforeSubmittedToDa && !isPoshWorkflowCard && !hasSendForSoApprovalColumn) {
         onAdvanceDaStage?.({ label: stepLabels[submittedToDaStepIndex], skipStatusUpdate: true });
         onCloseCard?.();
       } else if (allVerified && (isAtSubmittedToDaColumn || isAtSoSentForSccColumn)) {
