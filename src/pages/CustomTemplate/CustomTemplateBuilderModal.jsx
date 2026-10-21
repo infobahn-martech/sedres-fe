@@ -20,8 +20,18 @@ import "../../design/scss/pages/customTemplateBuilder.scss";
 
 const OPTIONS_SOURCE_CARDS = [
     { value: "manual", title: "Manual Options", desc: "Add your own options for this field" },
+    { value: "dependency", title: "Dependency", desc: "Use master module options filtered by another field's value" },
     { value: "master", title: "Master Data", desc: "Use options from an existing master module" },
 ];
+
+// Both of these source options from a master module (option_source "master");
+// "dependency" additionally sends depends_on_field_label.
+const isMasterBackedSource = (source) => source === "master" || source === "dependency";
+
+const getOptionsSourceFromApi = (f) => {
+    if (f.depends_on_field_label) return "dependency";
+    return f.option_source === "master" ? "master" : "manual";
+};
 
 const TIME_OBJECT_SOURCE_CARDS = [
     { value: "manual", title: "Manual", desc: "Enter the time manually" },
@@ -61,6 +71,7 @@ const createBlankField = () => ({
     options: [],
     optionsSource: "manual",
     masterModule: "",
+    dependsOnFieldLabel: "",
     timeObjectId: "",
     gridRow: null,
     gridCol: null,
@@ -83,8 +94,9 @@ const mapTemplateField = (f) => {
         // Parallel to `options` (which stay plain strings for the editor/preview);
         // carries each saved option's option_id so an update edits it in place.
         optionIds: f.optionIds ?? rawOptions.map((opt) => opt?.option_id ?? null),
-        optionsSource: f.optionsSource ?? (f.option_source === "master" ? "master" : "manual"),
+        optionsSource: f.optionsSource ?? getOptionsSourceFromApi(f),
         masterModule: f.masterModule ?? f.master_key ?? "",
+        dependsOnFieldLabel: f.dependsOnFieldLabel ?? f.depends_on_field_label ?? "",
         timeObjectId: toIdString(f.timeObjectId ?? f.time_object_id),
         gridRow: f.gridRow ?? f.row_no ?? f.grid_row ?? null,
         gridCol: f.gridCol ?? f.col_no ?? f.grid_col ?? null,
@@ -323,7 +335,7 @@ function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption
 
 // Dropdown-only: lets the user choose between typing options manually and
 // sourcing them from an existing master module (e.g. Vessel Types).
-function OptionsSourceEditor({ field, masterModuleOptions, masterModulesLoading, onSetSource, onSetMasterModule, onAddOption, onUpdateOption, onRemoveOption }) {
+function OptionsSourceEditor({ field, masterModuleOptions, masterModulesLoading, dependencyFieldOptions, onSetSource, onSetMasterModule, onSetDependsOn, onAddOption, onUpdateOption, onRemoveOption }) {
     const source = field.optionsSource ?? "manual";
     return (
         <div className="ctm-options-source">
@@ -353,7 +365,7 @@ function OptionsSourceEditor({ field, masterModuleOptions, masterModulesLoading,
                 />
             )}
 
-            {source === "master" && (
+            {isMasterBackedSource(source) && (
                 <div className="ctm-master-module-picker">
                     <p className="ctm-field-options-label">Select Master Module</p>
                     <SearchableSelect
@@ -363,6 +375,22 @@ function OptionsSourceEditor({ field, masterModuleOptions, masterModulesLoading,
                         options={masterModuleOptions}
                         placeholder={masterModulesLoading ? "Loading..." : "Select module..."}
                         disabled={masterModulesLoading}
+                        menuPortalTarget={document.body}
+                        menuPlacement="auto"
+                    />
+                </div>
+            )}
+
+            {source === "dependency" && (
+                <div className="ctm-master-module-picker">
+                    <p className="ctm-field-options-label">Depends On Field</p>
+                    <SearchableSelect
+                        className="ctm-master-module-select"
+                        value={field.dependsOnFieldLabel ?? ""}
+                        onChange={(e) => onSetDependsOn(e.target.value)}
+                        options={dependencyFieldOptions}
+                        placeholder={dependencyFieldOptions.length ? "Select field..." : "No other dropdown fields in this tab"}
+                        disabled={!dependencyFieldOptions.length}
                         menuPortalTarget={document.body}
                         menuPlacement="auto"
                     />
@@ -421,9 +449,12 @@ const getFieldSummary = (field, typeLabel, isDropdown, hasOptions, masterModuleO
         const timeObject = timeObjectOptions.find((t) => t.value === field.timeObjectId);
         if (field.optionsSource !== "master") parts.push("Manual");
         else parts.push(timeObject ? `Master: ${timeObject.label}` : "Master data");
-    } else if (isDropdown && field.optionsSource === "master") {
+    } else if (isDropdown && isMasterBackedSource(field.optionsSource)) {
         const mod = masterModuleOptions.find((m) => m.value === field.masterModule);
         parts.push(mod ? `Master: ${mod.label}` : "Master data");
+        if (field.optionsSource === "dependency" && field.dependsOnFieldLabel) {
+            parts.push(`Depends on: ${field.dependsOnFieldLabel}`);
+        }
     } else if (hasOptions) {
         const count = field.options?.length ?? 0;
         parts.push(`${count} option${count === 1 ? "" : "s"}`);
@@ -431,7 +462,7 @@ const getFieldSummary = (field, typeLabel, isDropdown, hasOptions, masterModuleO
     return parts.join(" · ");
 };
 
-function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterModuleOptions, masterModulesLoading, timeObjectOptions, timeObjectsLoading, optionsFieldTypes, dropdownTypeKey, timeObjectTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, isLocked = false, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
+function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterModuleOptions, masterModulesLoading, dropdownFieldLabels, timeObjectOptions, timeObjectsLoading, optionsFieldTypes, dropdownTypeKey, timeObjectTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, isLocked = false, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
     // New (unlabelled) fields open ready to edit; existing ones start collapsed
     // so long templates stay scannable.
     const [expanded, setExpanded] = useState(() => !field.label.trim());
@@ -441,6 +472,10 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
     const showManualOptions = !showOptionsSource && !isTimeObject && optionsFieldTypes.has(field.type);
     const typeLabel = fieldTypeOptions.find((o) => o.value === field.type)?.label ?? "";
     const summary = getFieldSummary(field, typeLabel, showOptionsSource, showManualOptions || showOptionsSource, masterModuleOptions, isTimeObject, timeObjectOptions);
+    const ownLabel = field.label.trim();
+    const dependencyFieldOptions = dropdownFieldLabels
+        .filter((label) => label !== ownLabel)
+        .map((label) => ({ value: label, label }));
     return (
         <div
             className={`ctm-field-card ${expanded ? "is-expanded" : ""} ${isDragging ? "is-dragging" : ""} ${isDragOver ? "is-drag-over" : ""}`}
@@ -538,8 +573,10 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
                             field={field}
                             masterModuleOptions={masterModuleOptions}
                             masterModulesLoading={masterModulesLoading}
+                            dependencyFieldOptions={dependencyFieldOptions}
                             onSetSource={(source) => onSetOptionsSource(field.id, source)}
                             onSetMasterModule={(mod) => onSetMasterModule(field.id, mod)}
+                            onSetDependsOn={(label) => onUpdate(field.id, "dependsOnFieldLabel", label)}
                             onAddOption={() => onAddOption(field.id)}
                             onUpdateOption={(idx, val) => onUpdateOption(field.id, idx, val)}
                             onRemoveOption={(idx) => onRemoveOption(field.id, idx)}
@@ -654,6 +691,10 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         ? (activeTab.subTabs.find((s) => s.id === activeSubTabId) ?? activeTab.subTabs[0])
         : null;
     const activeFields = hasSubTabs ? (activeSubTab?.fields ?? []) : (activeTab?.fields ?? []);
+    // Candidate parents for a Dependency dropdown: the other dropdowns in this tab.
+    const dropdownFieldLabels = [...new Set(activeFields
+        .filter((f) => f.type === dropdownTypeKey && f.label.trim())
+        .map((f) => f.label.trim()))];
     // Live preview mirrors the real card, so blank-label fields still being typed
     // get a placeholder rather than rendering with no label at all.
     const previewFields = activeFields.map((f) => ({
@@ -940,7 +981,14 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     const handleUpdateField = (fieldId, key, value) => {
         recordHistory(key === "label" ? `label:${fieldId}` : null);
-        updateFieldsScope((fields) => fields.map((f) => {
+        updateFieldsScope((fields) => fields.map((f, _, all) => {
+            // Dependencies link by label, so renaming a parent re-points its dependents.
+            if (key === "label" && f.id !== fieldId) {
+                const oldLabel = all.find((x) => x.id === fieldId)?.label.trim();
+                return oldLabel && f.dependsOnFieldLabel === oldLabel
+                    ? { ...f, dependsOnFieldLabel: value.trim() }
+                    : f;
+            }
             if (f.id !== fieldId) return f;
             const next = { ...f, [key]: value };
             if (key === "type" && optionsFieldTypes.has(value) && (!next.options || next.options.length === 0)) {
@@ -1104,6 +1152,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             is_required: field.required || isLockedField(field, isFirstTab) ? 1 : 0,
             display_order: index + 1,
         };
+        if (isLockedField(field, isFirstTab)) payload.is_system = 1;
         if (field.fieldId) payload.field_id = Number(field.fieldId);
         // A checkbox with no options is a legacy single checkbox — saved without options.
         const isLegacyCheckbox = field.type === CHECKBOX_TYPE_KEY && !field.options?.length;
@@ -1114,9 +1163,12 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                 payload.time_object_id = Number(field.timeObjectId);
             }
         } else if (optionsFieldTypes.has(field.type) && !isLegacyCheckbox) {
-            payload.option_source = field.type === dropdownTypeKey && field.optionsSource === "master" ? "master" : "static";
+            payload.option_source = field.type === dropdownTypeKey && isMasterBackedSource(field.optionsSource) ? "master" : "static";
             if (payload.option_source === "master") {
                 payload.master_key = field.masterModule;
+                if (field.optionsSource === "dependency" && field.dependsOnFieldLabel) {
+                    payload.depends_on_field_label = field.dependsOnFieldLabel;
+                }
             } else {
                 payload.options = (field.options ?? []).map((opt, i) => {
                     const optionPayload = {
@@ -1467,6 +1519,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         fieldTypesLoading={isLoadingFieldTypes}
                                         masterModuleOptions={masterModuleOptions}
                                         masterModulesLoading={isLoadingMasterLookups}
+                                        dropdownFieldLabels={dropdownFieldLabels}
                                         timeObjectOptions={timeObjectOptions}
                                         timeObjectsLoading={timeObjectsLoading}
                                         optionsFieldTypes={optionsFieldTypes}
