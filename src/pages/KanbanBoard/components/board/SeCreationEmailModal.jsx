@@ -10,6 +10,7 @@ import {
 } from "../../CardFormTabs/Import/tabs/operation/components/OperationCommon";
 import { ensureHtmlForQuill } from "../../CardFormTabs/Import/tabs/operation/operationReportMessageHtml";
 import EmailTableEditor from "./EmailTableEditor";
+import { getEmailHtml } from "../../utils/emailHtml";
 import "../../../../design/scss/pages/kanban-board/seCreationEmailModal.scss";
 
 const DEFAULT_FROM = "operations@shipping.com";
@@ -20,14 +21,6 @@ const DEFAULT_MESSAGE_HTML =
   "<p>Greetings from Sedres.</p>" +
   "<p><br></p>" +
   "<p>Please find the attached Sales Orders with supporting documents. Kindly review our sales order and confirm so we can submit our final invoice.</p>";
-
-// The table editor's quill-table-better keeps the table's attributes on a <temporary> element
-// inside the table; it is editor-only markup, so it is left out of the HTML the email is sent with.
-const getEmailHtml = (html) => {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  doc.querySelectorAll("temporary").forEach((node) => node.remove());
-  return doc.body.innerHTML;
-};
 
 const getFileNameFromUrl = (url) => {
   const name = url.split("?")[0].split("/").pop();

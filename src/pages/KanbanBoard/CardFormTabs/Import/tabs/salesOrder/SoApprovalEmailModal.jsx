@@ -1,14 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
 import { FiMail, FiPaperclip, FiSend, FiX } from "react-icons/fi";
 import CustomModal from "../../../../../../components/CustomModal";
 import DocumentLibraryPickerModal from "./DocumentLibraryPickerModal";
-import {
-  OPERATION_EMAIL_MESSAGE_QUILL_FORMATS,
-  OPERATION_EMAIL_MESSAGE_QUILL_MODULES,
-} from "../operation/components/OperationCommon";
+import EmailTableEditor from "../../../../components/board/EmailTableEditor";
+import { getEmailHtml } from "../../../../utils/emailHtml";
 import { ensureHtmlForQuill } from "../operation/operationReportMessageHtml";
 import "../../../../../../design/scss/pages/kanban-board/seApprovalUploadModal.scss";
 
@@ -142,7 +138,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
       to: toValue,
       cc: ccValue,
       subject: subjectValue,
-      message,
+      message: getEmailHtml(message),
       attachments,
     });
   };
@@ -318,15 +314,12 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
           <span className="se-approval-field__required">*</span>
         </label>
         <div className="so-approval-email-quill-wrap">
-          <ReactQuill
-            theme="snow"
+          <EmailTableEditor
             value={message}
             onChange={(value) => {
               setMessage(value);
               if (messageError) setMessageError("");
             }}
-            modules={OPERATION_EMAIL_MESSAGE_QUILL_MODULES}
-            formats={OPERATION_EMAIL_MESSAGE_QUILL_FORMATS}
             placeholder="Type your message..."
             readOnly={isSubmitting}
           />

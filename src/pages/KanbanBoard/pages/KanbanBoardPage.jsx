@@ -2178,6 +2178,7 @@ export default function KanbanBoardPage() {
         defaultSubject={seRequestEmailDraft?.subject ?? ""}
         defaultBody={seRequestEmailDraft?.body ?? ""}
         documentUrl={seRequestEmailDraft?.document_url ?? ""}
+        allowTables
       />
 
       <SeCreationEmailModal
@@ -2199,6 +2200,7 @@ export default function KanbanBoardPage() {
         }
         sendLabel="Send PO Request"
         subjectPrefix="Request for PO"
+        allowTables
       />
 
       <SeCreationEmailModal
@@ -2217,6 +2219,7 @@ export default function KanbanBoardPage() {
         sendLabel="Send for Final Submission"
         showSendIcon={false}
         subjectPrefix="INV Submission"
+        allowTables
       />
 
       <SeApprovalUploadModal
