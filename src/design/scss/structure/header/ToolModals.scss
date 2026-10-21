@@ -36,11 +36,11 @@
 
   // Wider than the other tools so 7 day columns can still fit event titles.
   &.calendar-modal .modal-dialog {
-    max-width: 760px;
+    max-width: 1080px;
   }
 
   &.calendar-modal .tool-modal-body {
-    height: min(680px, calc(100vh - 120px));
+    height: min(840px, calc(100vh - 120px));
     max-height: none;
   }
 
@@ -1200,6 +1200,7 @@
   --cal-purple: #7c3aed;
   --cal-teal: #0d9488;
   --cal-on-event: #ffffff;
+  --calendar-gradient: linear-gradient(135deg, #00368c 0%, #1e4fd8 100%);
 
   button:focus-visible {
     outline: 2px solid var(--color-primary-accent);
@@ -1232,6 +1233,45 @@
   display: flex;
   align-items: center;
   gap: 4px;
+
+  // "Today" in the accent color so it reads as the quick way back.
+  > .calendar-btn {
+    border-color: color-mix(in srgb, var(--color-primary-accent) 35%, transparent);
+    color: var(--color-primary-accent);
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-primary-accent) 10%, transparent);
+    }
+  }
+}
+
+// Month + year pickers; they replace the static title and jump straight to any date.
+.calendar-jump {
+  display: flex;
+  gap: 6px;
+  margin-right: auto;
+}
+
+.calendar-select {
+  height: 34px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--color-primary-accent);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover,
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary-accent);
+  }
+}
+
+[data-theme="dark"] .calendar-select {
+  color-scheme: dark;
 }
 
 .calendar-title {
@@ -1314,6 +1354,11 @@
     background: var(--hover-bg);
     color: var(--text-primary);
   }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 }
 
 // 1px gaps over a border-colored background draw the cell dividers.
@@ -1321,7 +1366,7 @@
   display: grid;
   flex-grow: 1;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-template-rows: auto repeat(6, minmax(88px, 1fr));
+  grid-template-rows: auto repeat(6, minmax(100px, 1fr));
   gap: 1px;
   overflow: hidden;
   border: 1px solid var(--border-primary);
@@ -1330,14 +1375,18 @@
 }
 
 .calendar-weekday {
-  padding: 6px 0;
-  background: var(--bg-secondary);
-  color: var(--text-secondary);
+  padding: 8px 0;
+  background: var(--calendar-gradient);
+  color: #ffffff;
   font-size: 11px;
   font-weight: 700;
   text-align: center;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+
+  &.is-weekend {
+    color: #fecaca;
+  }
 }
 
 .calendar-day {
@@ -1348,11 +1397,21 @@
   padding: 4px;
   background: var(--surface-primary);
   cursor: pointer;
+  transition: background 0.15s ease;
 
-  &:hover {
-    background: var(--hover-bg);
+  &.is-weekend {
+    background: color-mix(in srgb, var(--cal-red) 4%, var(--surface-primary));
+
+    .calendar-day-number {
+      color: var(--cal-red);
+    }
   }
 
+  &:hover {
+    background: color-mix(in srgb, var(--color-primary-accent) 8%, var(--surface-primary));
+  }
+
+  // After is-weekend so days from other months stay grey regardless.
   &.is-outside {
     background: var(--bg-secondary);
 
@@ -1361,9 +1420,14 @@
     }
   }
 
-  &.is-today .calendar-day-number {
-    background: var(--color-primary);
-    color: #ffffff;
+  &.is-today {
+    background: color-mix(in srgb, var(--color-primary-accent) 10%, var(--surface-primary));
+    box-shadow: inset 0 3px 0 var(--color-primary-accent);
+
+    .calendar-day-number {
+      background: var(--color-primary);
+      color: #ffffff;
+    }
   }
 }
 
@@ -1398,11 +1462,11 @@
   align-items: center;
   gap: 4px;
   min-width: 0;
-  height: 18px;
+  height: 20px;
   padding: 0 6px;
   border: none;
   border-radius: 4px;
-  background: color-mix(in srgb, var(--event) 14%, transparent);
+  background: color-mix(in srgb, var(--event) 18%, transparent);
   color: var(--text-primary);
   font-size: 11px;
   text-align: left;

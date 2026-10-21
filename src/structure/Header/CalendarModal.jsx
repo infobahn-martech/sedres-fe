@@ -5,6 +5,24 @@ import ToolModal from './ToolModal';
 import { useCalendarStore } from '../../shared/store/calendarStore';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+const MIN_YEAR = 1900;
+const MAX_YEAR = 2100;
+const YEARS = Array.from({ length: MAX_YEAR - MIN_YEAR + 1 }, (_, index) => MIN_YEAR + index);
+const isWeekend = (dayIndex) => dayIndex === 0 || dayIndex === 6;
 const COLORS = ['blue', 'green', 'red', 'amber', 'purple', 'teal'];
 const DATE_FORMAT = 'YYYY-MM-DD';
 // Always render 6 weeks so the grid keeps the same height from month to month.
@@ -241,6 +259,7 @@ function CalendarModal({ show, onClose }) {
             type="button"
             className="calendar-icon-btn"
             onClick={() => setMonth((current) => current.subtract(1, 'month'))}
+            disabled={month.year() === MIN_YEAR && month.month() === 0}
             aria-label="Previous month"
           >
             <FiChevronLeft />
@@ -249,20 +268,46 @@ function CalendarModal({ show, onClose }) {
             type="button"
             className="calendar-icon-btn"
             onClick={() => setMonth((current) => current.add(1, 'month'))}
+            disabled={month.year() === MAX_YEAR && month.month() === 11}
             aria-label="Next month"
           >
             <FiChevronRight />
           </button>
         </div>
-        <h3 className="calendar-title">{month.format('MMMM YYYY')}</h3>
+        <div className="calendar-jump">
+          <select
+            className="calendar-select"
+            value={month.month()}
+            onChange={(e) => setMonth((current) => current.month(Number(e.target.value)))}
+            aria-label="Month"
+          >
+            {MONTHS.map((name, index) => (
+              <option key={name} value={index}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <select
+            className="calendar-select"
+            value={month.year()}
+            onChange={(e) => setMonth((current) => current.year(Number(e.target.value)))}
+            aria-label="Year"
+          >
+            {YEARS.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+        </div>
         <button type="button" className="calendar-btn calendar-btn--primary" onClick={() => setFormDraft(createDraft(today))}>
           <FiPlus /> Create
         </button>
       </div>
 
       <div className="calendar-grid">
-        {WEEKDAYS.map((weekday) => (
-          <div key={weekday} className="calendar-weekday">
+        {WEEKDAYS.map((weekday, index) => (
+          <div key={weekday} className={`calendar-weekday${isWeekend(index) ? ' is-weekend' : ''}`}>
             {weekday}
           </div>
         ))}
@@ -274,6 +319,7 @@ function CalendarModal({ show, onClose }) {
           const hiddenCount = dayEvents.length - visibleCount;
           const className = [
             'calendar-day',
+            isWeekend(day.day()) && 'is-weekend',
             !day.isSame(month, 'month') && 'is-outside',
             date === today && 'is-today',
           ]
