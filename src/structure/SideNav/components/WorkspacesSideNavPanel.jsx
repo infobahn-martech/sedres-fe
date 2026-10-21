@@ -6,7 +6,6 @@ import {
   FiEdit2,
   FiHome,
   FiImage,
-  FiLayout,
   FiMoreVertical,
   FiPlus,
   FiSearch,
@@ -26,11 +25,10 @@ import '../../../design/scss/structure/side-nav/AddDashboardModal.scss';
 
 const DASHBOARD_MENU_WIDTH = 200;
 
-function WorkspacesSideNavPanel({ isDarkMode, onNewDashboard, restrictedBoardUser = false }) {
+function WorkspacesSideNavPanel({ isDarkMode, onNewDashboard }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const {
-    workspaces,
     dashboards: apiDashboards,
     listAllDashboards,
     dashboardsLoading,
@@ -39,12 +37,6 @@ function WorkspacesSideNavPanel({ isDarkMode, onNewDashboard, restrictedBoardUse
     deleteDashboard,
     addEditLoader,
   } = useWorkSpaceReducer();
-
-  const restrictedBoardPath = useMemo(() => {
-    const boards = (workspaces ?? []).flatMap((w) => w.boards ?? []);
-    if (boards.length !== 1) return null;
-    return `/kanban-board/${boards[0].board_id}`;
-  }, [workspaces]);
 
   const { hasPermission } = usePermissions();
   const canListDashboard = hasPermission({
@@ -173,11 +165,6 @@ function WorkspacesSideNavPanel({ isDarkMode, onNewDashboard, restrictedBoardUse
     navigate('/workspaces');
   };
 
-  const goRestrictedKanbanBoard = () => {
-    if (!restrictedBoardPath) return;
-    navigate(restrictedBoardPath);
-  };
-
   const openDashboard = (dashboardId) => {
     navigate(`/workspaces/dashboard/${dashboardId}`);
   };
@@ -304,24 +291,9 @@ function WorkspacesSideNavPanel({ isDarkMode, onNewDashboard, restrictedBoardUse
               <FiHome size={18} aria-hidden />
               <span>All workspaces</span>
             </button>
-            {restrictedBoardUser ? (
-              <button
-                type="button"
-                className={`kanban-sidebar-workspaces-nav-item ${
-                  restrictedBoardPath &&
-                  (pathname === restrictedBoardPath || pathname.startsWith(`${restrictedBoardPath}/`))
-                    ? 'kanban-sidebar-workspaces-nav-item--active'
-                    : ''
-                }`}
-                onClick={goRestrictedKanbanBoard}
-              >
-                <FiLayout size={18} aria-hidden />
-                <span>Kanban Board</span>
-              </button>
-            ) : null}
           </nav>
 
-          {!restrictedBoardUser && canListDashboard ? (
+          {canListDashboard ? (
             <div className="kanban-sidebar-workspaces-filter">
               <FiSearch className="kanban-sidebar-workspaces-filter-icon" aria-hidden />
               <input
@@ -336,7 +308,7 @@ function WorkspacesSideNavPanel({ isDarkMode, onNewDashboard, restrictedBoardUse
             </div>
           ) : null}
 
-          {!restrictedBoardUser && canListDashboard ? <hr className="kanban-sidebar-workspaces-divider" aria-hidden /> : null}
+          {canListDashboard ? <hr className="kanban-sidebar-workspaces-divider" aria-hidden /> : null}
 
           {canListDashboard ? (
             <ul className="kanban-sidebar-workspaces-list">
@@ -359,7 +331,7 @@ function WorkspacesSideNavPanel({ isDarkMode, onNewDashboard, restrictedBoardUse
                         <span className="kanban-sidebar-workspaces-dot" aria-hidden />
                         <span className="kanban-sidebar-workspaces-name">{d.name}</span>
                       </button>
-                      {!restrictedBoardUser && canManageDashboardItem ? (
+                      {canManageDashboardItem ? (
                         <div className="kanban-sidebar-workspaces-row-actions">
                           <button
                             ref={menuOpen ? menuBtnRef : undefined}
@@ -390,7 +362,7 @@ function WorkspacesSideNavPanel({ isDarkMode, onNewDashboard, restrictedBoardUse
             onChange={handleWallpaperFile}
           />
 
-          {!restrictedBoardUser && canManageDashboardItem && openActionsId != null &&
+          {canManageDashboardItem && openActionsId != null &&
             menuTargetDashboard &&
             createPortal(
               <div
@@ -529,7 +501,7 @@ function WorkspacesSideNavPanel({ isDarkMode, onNewDashboard, restrictedBoardUse
               document.body
             )}
 
-          {!restrictedBoardUser && canAddDashboard ? (
+          {canAddDashboard ? (
             <button type="button" className="kanban-sidebar-workspaces-new-db" onClick={onNewDashboard}>
               <span>+ New dashboard</span>
             </button>
@@ -548,23 +520,7 @@ function WorkspacesSideNavPanel({ isDarkMode, onNewDashboard, restrictedBoardUse
           >
             <FiHome size={22} />
           </button>
-          {restrictedBoardUser ? (
-            <button
-              type="button"
-              className={`kanban-sidebar-icon kanban-sidebar-icon--collapsed ${
-                restrictedBoardPath &&
-                (pathname === restrictedBoardPath || pathname.startsWith(`${restrictedBoardPath}/`))
-                  ? 'active'
-                  : ''
-              }`}
-              data-tooltip-id="ws-sidebar-tt"
-              data-tooltip-content="Kanban Board"
-              aria-label="Kanban Board"
-              onClick={goRestrictedKanbanBoard}
-            >
-              <FiLayout size={22} />
-            </button>
-          ) : canAddDashboard ? (
+          {canAddDashboard ? (
             <button
               type="button"
               className="kanban-sidebar-icon kanban-sidebar-icon--collapsed"
