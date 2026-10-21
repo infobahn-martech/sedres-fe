@@ -28,6 +28,7 @@ import {
   FiBookOpen,
   FiCloud,
   FiCalendar,
+  FiTool,
 } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import { Tooltip } from 'react-tooltip';
@@ -77,6 +78,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [imageError, setImageError] = useState(false);
   const [showSettingsSubmenu, setShowSettingsSubmenu] = useState(false);
   const [showCardManagementSubmenu, setShowCardManagementSubmenu] = useState(false);
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [showBusinessRulesModal, setShowBusinessRulesModal] = useState(false);
   const [showBlockersModal, setShowBlockersModal] = useState(false);
   const [showStickersModal, setShowStickersModal] = useState(false);
@@ -96,6 +98,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [notificationCount] = useState(3); // Default count, can be updated with real data
   const dropdownRef = useRef(null);
   const settingsDropdownRef = useRef(null);
+  const toolsDropdownRef = useRef(null);
   const doLogout = useAuthReducer((state) => state.doLogout);
   const profileData = useAuthReducer((state) => state.profileData);
   const authData = useAuthReducer((state) => state.authData);
@@ -114,7 +117,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   // DA (22) granted the same settings-icon access as Port Manager, per
   // explicit user confirmation.
   const isDARole = String(userRoleId) === '22';
-  // Settings icon is visible to everyone (for Tools); only these roles see the admin rows.
+  // Settings icon is admin-only; Tools has its own icon visible to everyone.
   const showKanbanSettingsItems =
     !activePortal &&
     !restrictedBoardUser &&
@@ -242,6 +245,23 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     };
   }, [showSettingsSubmenu]);
 
+  // Close tools dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (toolsDropdownRef.current && !toolsDropdownRef.current.contains(event.target)) {
+        setShowToolsMenu(false);
+      }
+    };
+
+    if (showToolsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showToolsMenu]);
+
   const handleSettingsBusinessRulesClick = () => {
     setShowSettingsSubmenu(false);
     setShowCardManagementSubmenu(false);
@@ -281,8 +301,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   };
 
   const handleToolClick = (open) => {
-    setShowSettingsSubmenu(false);
-    setShowCardManagementSubmenu(false);
+    setShowToolsMenu(false);
     open();
   };
 
@@ -498,58 +517,22 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           )}
         </div>
 
-        <div className="settings-btn-wrapper" ref={settingsDropdownRef}>
-          <Tooltip id="settings" place="bottom" content="Settings" />
+        {/* Reuses the settings dropdown styles so both menus look identical */}
+        <div className="settings-btn-wrapper" ref={toolsDropdownRef}>
+          <Tooltip id="tools" place="bottom" content="Tools" />
           <button
             type="button"
-            className={`icon-btn ${showSettingsSubmenu ? 'active' : ''}`}
-            aria-label="Settings"
-            onClick={() => setShowSettingsSubmenu((prev) => !prev)}
-            data-tooltip-id="settings"
+            className={`icon-btn ${showToolsMenu ? 'active' : ''}`}
+            aria-label="Tools"
+            aria-expanded={showToolsMenu}
+            onClick={() => setShowToolsMenu((prev) => !prev)}
+            data-tooltip-id="tools"
           >
-            <FiSettings />
+            <FiTool />
           </button>
 
-          {showSettingsSubmenu && (
+          {showToolsMenu && (
             <div className="settings-dropdown">
-              {showKanbanSettingsItems && (
-                <>
-                  <div className="settings-dropdown-title">Settings</div>
-                  <button
-                    type="button"
-                    className="settings-dropdown-item"
-                    onClick={handleSettingsBusinessRulesClick}
-                  >
-                    <span className="settings-item-icon"><FiSliders /></span>
-                    <span className="settings-item-label">Business rules</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`settings-dropdown-item settings-dropdown-item-with-submenu ${showCardManagementSubmenu ? 'submenu-open' : ''}`}
-                    onClick={handleSettingsCardManagementRowClick}
-                    aria-expanded={showCardManagementSubmenu}
-                  >
-                    <span className="settings-item-icon"><FiLayers /></span>
-                    <span className="settings-item-label">Card management</span>
-                    <FiChevronDown className="settings-item-chevron" />
-                  </button>
-                  {showCardManagementSubmenu && (
-                    <div className="settings-submenu">
-                      {cardManagementSubmenu.map(({ label, modal, icon }) => (
-                        <button
-                          type="button"
-                          key={modal}
-                          className="settings-submenu-item"
-                          onClick={() => handleCardManagementSubmenuClick({ label, modal })}
-                        >
-                          <span className="settings-submenu-icon">{icon}</span>
-                          <span>{label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
               <div className="settings-dropdown-title">Tools</div>
               {toolItems.map(({ label, icon, open }) => (
                 <button
@@ -565,6 +548,60 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
             </div>
           )}
         </div>
+
+        {showKanbanSettingsItems && (
+          <div className="settings-btn-wrapper" ref={settingsDropdownRef}>
+            <Tooltip id="settings" place="bottom" content="Settings" />
+            <button
+              type="button"
+              className={`icon-btn ${showSettingsSubmenu ? 'active' : ''}`}
+              aria-label="Settings"
+              onClick={() => setShowSettingsSubmenu((prev) => !prev)}
+              data-tooltip-id="settings"
+            >
+              <FiSettings />
+            </button>
+
+            {showSettingsSubmenu && (
+              <div className="settings-dropdown">
+                <div className="settings-dropdown-title">Settings</div>
+                <button
+                  type="button"
+                  className="settings-dropdown-item"
+                  onClick={handleSettingsBusinessRulesClick}
+                >
+                  <span className="settings-item-icon"><FiSliders /></span>
+                  <span className="settings-item-label">Business rules</span>
+                </button>
+                <button
+                  type="button"
+                  className={`settings-dropdown-item settings-dropdown-item-with-submenu ${showCardManagementSubmenu ? 'submenu-open' : ''}`}
+                  onClick={handleSettingsCardManagementRowClick}
+                  aria-expanded={showCardManagementSubmenu}
+                >
+                  <span className="settings-item-icon"><FiLayers /></span>
+                  <span className="settings-item-label">Card management</span>
+                  <FiChevronDown className="settings-item-chevron" />
+                </button>
+                {showCardManagementSubmenu && (
+                  <div className="settings-submenu">
+                    {cardManagementSubmenu.map(({ label, modal, icon }) => (
+                      <button
+                        type="button"
+                        key={modal}
+                        className="settings-submenu-item"
+                        onClick={() => handleCardManagementSubmenuClick({ label, modal })}
+                      >
+                        <span className="settings-submenu-icon">{icon}</span>
+                        <span>{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <Tooltip id="user-profile" place="bottom" content="User Profile" />
         <div className="user-circle-wrapper" ref={dropdownRef}>
