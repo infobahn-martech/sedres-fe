@@ -943,9 +943,18 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
       border: 1.5px solid var(--border-primary);
       color: var(--text-primary);
 
-      &:hover {
+      &:hover:not(:disabled) {
         border-color: var(--text-muted);
       }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    &.ctm-undo-btn {
+      gap: 6px;
     }
 
     &.ctm-save-btn {

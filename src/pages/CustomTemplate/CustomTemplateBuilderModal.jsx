@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX, FiMenu, FiChevronDown } from "react-icons/fi";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX, FiMenu, FiChevronDown, FiRotateCcw } from "react-icons/fi";
 import SearchableSelect from "../../components/form/SearchableSelect";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import TemplateFieldPreview from "./TemplateFieldPreview";
@@ -493,6 +493,8 @@ function PreviewCloseButton({ label, onClick }) {
     );
 }
 
+const MAX_UNDO_STEPS = 50;
+
 // Builder form + live preview, with no overlay/topbar of its own — the caller
 // (either the standalone modal below, or CustomTemplateListModal reusing its
 // own single panel) owns the surrounding chrome and decides what onClose does.
@@ -535,6 +537,13 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     // Tab/subtab ids whose email preview the user removed; those fall back to
     // the normal field grid. Builder-session only — not part of the save payload.
     const [hiddenEmailPreviewIds, setHiddenEmailPreviewIds] = useState(() => new Set());
+    // Undo stack of pre-change snapshots. Every update already produces new
+    // objects, so a snapshot is just references — no deep copy needed.
+    const [undoStack, setUndoStack] = useState([]);
+    // Consecutive edits sharing a group key (e.g. typing into one input)
+    // collapse into a single undo step.
+    const lastUndoGroupRef = useRef(null);
+    const undoRef = useRef(null);
 
     const callTypeOptions = (callTypes ?? []).map((ct) => ({
         value: String(ct.call_type_id ?? ""),
@@ -569,7 +578,56 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         ? null
         : getEmailPreviewSubject(activeTab?.name, activeSubTab?.name);
     const featurePreviewKind = getFeaturePreviewKind(activeTab?.name, activeSubTab?.name);
+    const recordHistory = (groupKey = null) => {
+        if (groupKey && groupKey === lastUndoGroupRef.current) return;
+        lastUndoGroupRef.current = groupKey;
+        const snapshot = {
+            templateName, billingEntityId, callTypeId, tabs, hiddenEmailPreviewIds, activeTabId, activeSubTabId,
+        };
+        setUndoStack((prev) => [...prev.slice(-(MAX_UNDO_STEPS - 1)), snapshot]);
+    };
+
+    const handleUndo = () => {
+        if (undoStack.length === 0) return;
+        const snapshot = undoStack[undoStack.length - 1];
+        setUndoStack(undoStack.slice(0, -1));
+        lastUndoGroupRef.current = null;
+        setTemplateName(snapshot.templateName);
+        setBillingEntityId(snapshot.billingEntityId);
+        setCallTypeId(snapshot.callTypeId);
+        setTabs(snapshot.tabs);
+        setHiddenEmailPreviewIds(snapshot.hiddenEmailPreviewIds);
+        const tab = snapshot.tabs.find((t) => t.id === snapshot.activeTabId) ?? snapshot.tabs[0];
+        const subTabStillExists = tab?.subTabs?.some((s) => s.id === snapshot.activeSubTabId);
+        setActiveTabId(tab?.id);
+        setActiveSubTabId(subTabStillExists ? snapshot.activeSubTabId : (tab?.subTabs?.[0]?.id ?? null));
+        // Close any inline editor so it can't re-apply a stale name over the restored state.
+        setAddingTab(false);
+        setEditingTabId(null);
+        setAddingSubTab(false);
+        setEditingSubTabId(null);
+        setDeleteFieldRequest(null);
+    };
+
+    useEffect(() => {
+        undoRef.current = handleUndo;
+    });
+
+    // Ctrl/Cmd+Z undoes builder changes — except inside text inputs, where the
+    // browser's native text undo is what the user expects.
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.key.toLowerCase() !== "z") return;
+            if (e.target.closest?.("input, textarea, select, [contenteditable='true']")) return;
+            e.preventDefault();
+            undoRef.current?.();
+        };
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
     const handleRemoveEmailPreview = () => {
+        recordHistory();
         setHiddenEmailPreviewIds((prev) => new Set(prev).add(emailScopeId));
     };
 
@@ -618,6 +676,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         setEditingSubTabName("");
         setDeleteFieldRequest(null);
         setHiddenEmailPreviewIds(new Set());
+        setUndoStack([]);
+        lastUndoGroupRef.current = null;
     };
 
     // Writes to the currently active fields scope — the active sub-tab's fields
@@ -651,6 +711,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             setAddingTab(false);
             return;
         }
+        recordHistory();
         const tab = { id: makeId("tab"), name: trimmed, fields: [createBlankField()], subTabs: [] };
         setTabs((prev) => [...prev, tab]);
         setActiveTabId(tab.id);
@@ -671,7 +732,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     const handleConfirmRenameTab = () => {
         const trimmed = editingTabName.trim();
-        if (trimmed) {
+        const currentName = tabs.find((t) => t.id === editingTabId)?.name;
+        if (trimmed && trimmed !== currentName) {
+            recordHistory();
             setTabs((prev) => prev.map((t) => (t.id === editingTabId ? { ...t, name: trimmed } : t)));
         }
         setEditingTabId(null);
@@ -680,6 +743,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     const handleDeleteTab = (tabId) => {
         if (tabs.length <= 1) return;
+        recordHistory();
         setTabs((prev) => {
             const next = prev.filter((t) => t.id !== tabId);
             if (activeTabId === tabId) {
@@ -698,7 +762,10 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     // The first tab is the template's default and stays pinned at index 0 —
     // it can't be dragged, and nothing can be dropped in front of it.
     const handleTabDrop = (targetTabId) => {
-        if (dragTabId && dragTabId !== targetTabId) {
+        const from = tabs.findIndex((t) => t.id === dragTabId);
+        const to = tabs.findIndex((t) => t.id === targetTabId);
+        if (dragTabId && dragTabId !== targetTabId && from >= 1 && to >= 1) {
+            recordHistory();
             setTabs((prev) => {
                 const from = prev.findIndex((t) => t.id === dragTabId);
                 const to = prev.findIndex((t) => t.id === targetTabId);
@@ -723,6 +790,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             setAddingSubTab(false);
             return;
         }
+        recordHistory();
         const sub = { id: makeId("subtab"), name: trimmed, fields: [createBlankField()] };
         setTabs((prev) => prev.map((t) => (
             t.id === activeTabId ? { ...t, subTabs: [...(t.subTabs ?? []), sub] } : t
@@ -744,7 +812,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     const handleConfirmRenameSubTab = () => {
         const trimmed = editingSubTabName.trim();
-        if (trimmed) {
+        const currentName = activeTab?.subTabs?.find((s) => s.id === editingSubTabId)?.name;
+        if (trimmed && trimmed !== currentName) {
+            recordHistory();
             setTabs((prev) => prev.map((t) => (
                 t.id === activeTabId
                     ? { ...t, subTabs: t.subTabs.map((s) => (s.id === editingSubTabId ? { ...s, name: trimmed } : s)) }
@@ -756,6 +826,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     };
 
     const handleDeleteSubTab = (subTabId) => {
+        recordHistory();
         setTabs((prev) => prev.map((t) => {
             if (t.id !== activeTabId) return t;
             const nextSubTabs = (t.subTabs ?? []).filter((s) => s.id !== subTabId);
@@ -769,10 +840,12 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     };
 
     const handleAddField = () => {
+        recordHistory();
         updateFieldsScope((fields) => [createBlankField(), ...fields]);
     };
 
     const handleUpdateField = (fieldId, key, value) => {
+        recordHistory(key === "label" ? `label:${fieldId}` : null);
         updateFieldsScope((fields) => fields.map((f) => {
             if (f.id !== fieldId) return f;
             const next = { ...f, [key]: value };
@@ -788,12 +861,14 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     };
 
     const handleSetOptionsSource = (fieldId, source) => {
+        recordHistory();
         updateFieldsScope((fields) => fields.map((f) => (
             f.id === fieldId ? { ...f, optionsSource: source } : f
         )));
     };
 
     const handleSetMasterModule = (fieldId, masterModule) => {
+        recordHistory();
         updateFieldsScope((fields) => fields.map((f) => (
             f.id === fieldId ? { ...f, masterModule } : f
         )));
@@ -805,6 +880,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
     const handleConfirmDeleteField = () => {
         if (!deleteFieldRequest) return;
+        recordHistory();
         setTabs((prev) => prev.map((t) => {
             if (t.id !== deleteFieldRequest.tabId) return t;
             if (deleteFieldRequest.subTabId) {
@@ -823,6 +899,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     };
 
     const handleAddOption = (fieldId) => {
+        recordHistory();
         updateFieldsScope((fields) => fields.map((f) => (
             f.id === fieldId ? {
                 ...f,
@@ -833,6 +910,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     };
 
     const handleUpdateOption = (fieldId, idx, value) => {
+        recordHistory(`option:${fieldId}:${idx}`);
         updateFieldsScope((fields) => fields.map((f) => {
             if (f.id !== fieldId) return f;
             const nextOptions = [...(f.options ?? [])];
@@ -842,6 +920,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     };
 
     const handleRemoveOption = (fieldId, idx) => {
+        recordHistory();
         updateFieldsScope((fields) => fields.map((f) => (
             f.id === fieldId ? {
                 ...f,
@@ -873,6 +952,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     // back so auto-placed fields keep their spot from here on.
     const handleDropOnCell = (row, col) => {
         if (dragIndex === null) return;
+        recordHistory();
         updateFieldsScope((fields) => {
             const layout = resolveFieldLayout(fields);
             const targetIndex = layout.findIndex((c) => c.row === row && c.col === col);
@@ -889,6 +969,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     // one re-numbers every field into column 1 in the new order.
     const handleDropInColumn = (targetIndex) => {
         if (dragIndex === null) return;
+        recordHistory();
         updateFieldsScope((fields) => {
             const order = getReadingOrder(fields).filter((i) => i !== dragIndex);
             const targetPos = targetIndex === null ? order.length : order.indexOf(targetIndex);
@@ -903,6 +984,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             handleDragEnd();
             return;
         }
+        recordHistory();
         updateFieldsScope((fields) => {
             const next = [...fields];
             const [moved] = next.splice(dragIndex, 1);
@@ -1022,7 +1104,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         type="text"
                                         placeholder="Enter template name"
                                         value={templateName}
-                                        onChange={(e) => setTemplateName(e.target.value)}
+                                        onChange={(e) => { recordHistory("templateName"); setTemplateName(e.target.value); }}
                                         onBlur={() => setNameTouched(true)}
                                     />
                                 </div>
@@ -1033,7 +1115,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                 <label>Billing Entity</label>
                                 <SearchableSelect
                                     value={billingEntityId}
-                                    onChange={(e) => setBillingEntityId(e.target.value)}
+                                    onChange={(e) => { recordHistory(); setBillingEntityId(e.target.value); }}
                                     options={billingEntityOptions}
                                     placeholder={billingEntitiesLoading ? "Loading..." : "Select billing entity"}
                                     disabled={billingEntitiesLoading}
@@ -1049,7 +1131,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                 </label>
                                 <SearchableSelect
                                     value={callTypeId}
-                                    onChange={(e) => { setCallTypeId(e.target.value); setCallTypeTouched(true); }}
+                                    onChange={(e) => { recordHistory(); setCallTypeId(e.target.value); setCallTypeTouched(true); }}
                                     options={callTypeOptions}
                                     placeholder={callTypesLoading ? "Loading..." : "Select call type"}
                                     hasError={isCallTypeInvalid}
@@ -1477,6 +1559,15 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                     <div className="ctm-footer">
                         <span className="ctm-required-note">* Required fields</span>
                         <div className="ctm-footer-actions">
+                            <button
+                                type="button"
+                                className="btn-common ctm-undo-btn"
+                                disabled={undoStack.length === 0}
+                                onClick={handleUndo}
+                                title="Undo last change (Ctrl+Z)"
+                            >
+                                <FiRotateCcw size={14} /> Undo
+                            </button>
                             <button type="button" className="btn-common close" onClick={handleClose}>
                                 Cancel
                             </button>
@@ -1491,7 +1582,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                     show={!!deleteFieldRequest}
                     onCancel={() => setDeleteFieldRequest(null)}
                     onConfirm={handleConfirmDeleteField}
-                    deleteText="Delete this field? This cannot be undone."
+                    deleteText="Delete this field?"
                     className="ctm-delete-confirm-modal"
                     backdropClassName="ctm-delete-confirm-backdrop"
                 />
