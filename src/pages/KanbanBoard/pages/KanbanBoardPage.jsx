@@ -125,8 +125,6 @@ const poUploadFields = [
     multiple: true,
   },
 ];
-/* POSH Saudi takes one PO file, which the backend places on every ticked card. */
-const singlePoUploadFields = [{ ...poUploadFields[0], multiple: false }];
 /* The files da/send_submission_email takes on top of the documents the draft already attaches,
    in the order the draft body lists them (the draft's merged invoices come last). The consolidated
    invoice and merged invoices are attached by the draft; a file picked on their row is sent in addition. */
@@ -935,13 +933,10 @@ export default function KanbanBoardPage() {
   const [poUploadProgress, setPoUploadProgress] = useState(null);
   const openPoReviewModal = usePoReviewStore((state) => state.openPoReviewModal);
 
-  const [isSinglePoUpload, setIsSinglePoUpload] = useState(false);
-
-  const handleColumnUploadPos = useCallback((cards, { workflowId = null, singleFile = false } = {}) => {
+  const handleColumnUploadPos = useCallback((cards, { workflowId = null } = {}) => {
     if (!cards?.length) return;
     setSelectedPoUploadCards(cards);
     setSelectedPoUploadWorkflowId(workflowId);
-    setIsSinglePoUpload(singleFile);
     setShowPoUploadModal(true);
   }, []);
 
@@ -2275,7 +2270,7 @@ export default function KanbanBoardPage() {
         title="Upload POs"
         subtitle="Attach the POs for the selected cards"
         submitLabel="Upload POs"
-        fields={isSinglePoUpload ? singlePoUploadFields : poUploadFields}
+        fields={poUploadFields}
       />
 
       <SeApprovalUploadModal

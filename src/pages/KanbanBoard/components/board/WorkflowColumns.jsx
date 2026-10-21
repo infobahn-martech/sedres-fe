@@ -443,7 +443,6 @@ export default function WorkflowColumns({
               const hasInvoiceButton =
                 invoiceAction === "sendInvoice" ||
                 invoiceAction === "requestPo" ||
-                (invoiceAction === "uploadPos" && POSH_WORKFLOW_PATTERN.test(workflow?.title ?? "")) ||
                 (invoiceAction === "uploadDispatchProof" && !isLntWorkflow(workflow))
                   ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
               const invoiceActionHandlers = {
@@ -451,10 +450,7 @@ export default function WorkflowColumns({
                 issueArInvoice: (cards) =>
                   onColumnUploadInvoice?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 uploadPos: (cards) =>
-                  onColumnUploadPos?.(cards, {
-                    workflowId: workflow.workflow_id ?? workflow.id,
-                    singleFile: POSH_WORKFLOW_PATTERN.test(workflow?.title ?? ""),
-                  }),
+                  onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 uploadSrf: (cards) =>
                   onUploadSrf?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 uploadSccDocuments: (cards) =>
