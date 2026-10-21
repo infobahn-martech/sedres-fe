@@ -143,7 +143,7 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
             );
         }
         case "dropdown": {
-            const usesMasterData = field.optionsSource === "master" && field.masterModule;
+            const usesMasterData = (field.optionsSource === "master" || field.optionsSource === "dependency") && field.masterModule;
             const placeholder = usesMasterData ? `Select ${label.trim().toLowerCase()}...` : "Select option...";
             if (isControlled && field.options?.length) {
                 return (

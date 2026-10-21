@@ -36,17 +36,14 @@ import {
 // 🆕 Kanban sidebar icons + tooltip
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
-import { FiPlus, FiInbox, FiFilter, FiPlusCircle, FiActivity, FiLayout, FiMail, FiEdit3, FiMapPin, FiLayers, FiList } from 'react-icons/fi';
+import { FiPlus, FiInbox, FiFilter, FiPlusCircle, FiActivity, FiMail, FiEdit3, FiMapPin, FiLayers, FiList } from 'react-icons/fi';
 import TaskCardModal from '../../pages/TaskCard';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
 import useAuthReducer from '../../store/AuthReducer';
 import { useKanbanSidebarBridge } from '../../store/kanbanSidebarBridge';
 import { ROUTE_PATHS } from '../../router/paths';
-import {
-  hasKanbanFullSidebar,
-  isRestrictedBoardUser,
-} from '../../shared/helpers/restrictedBoardUser';
+import { hasKanbanFullSidebar } from '../../shared/helpers/restrictedBoardUser';
 import usePermissions from '../../shared/hooks/usePermissions';
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from '../../shared/constants/permissions';
 
@@ -107,18 +104,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     userProfile?.role?.role_id ||
     userProfile?.user?.role_id ||
     userProfile?.data?.role_id;
-  const isPortManagerRole = String(userRoleId) === '1';
   const isPortSupervisorRole = String(userRoleId) === '23';
-  // DA (22) granted the same Kanban sidebar rail as Port Manager, per
-  // explicit user confirmation.
-  const isDARole = String(userRoleId) === '22';
-  const restrictedNav = isRestrictedBoardUser(userProfile);
-  // Classic sidebar only renders while already on a /kanban-board/* (or /compact)
-  // route for restricted nav, so the current board can be read straight from the URL.
-  const restrictedBoardBasePath = useMemo(
-    () => pathname.match(/^\/kanban-board\/[^/]+/)?.[0] ?? '/kanban-board',
-    [pathname]
-  );
   const { hasPermission, hasAnyPermission } = usePermissions();
   // User Management → Users is fully migrated to the new permission system:
   // the backend permission response is authoritative here, no legacy OR.
@@ -126,12 +112,6 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     moduleKey: PERMISSION_MODULES.USER_MANAGEMENT,
     submoduleKey: PERMISSION_SUBMODULES.USERS,
     actionKey: PERMISSION_ACTIONS.VIEW,
-  });
-  // Kanban Workspaces is fully migrated to the new permission system: the
-  // backend permission response is authoritative here, no legacy OR.
-  const canViewWorkspaceMenu = hasPermission({
-    moduleKey: PERMISSION_MODULES.KANBAN_WORKSPACE,
-    actionKey: PERMISSION_ACTIONS.VIEW_WORKSPACE,
   });
   const kanbanFullSidebar = hasKanbanFullSidebar(userProfile);
   // Edit Workflow sidebar icon is gated by KANBAN_WORKFLOW/VIEW_WORKFLOW (the
@@ -185,15 +165,6 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     return icons;
   }, [showEditWorkflowSidebarIcon, kanbanFullSidebar, isPortSupervisorRole, canAddCard]);
 
-  const restrictedKanbanStripIcons = useMemo(
-    () =>
-      [
-        canViewWorkspaceMenu ? { id: 4, icon: FiInbox, label: 'Workspaces' } : null,
-        { id: 6, icon: FiLayout, label: 'Kanban Board' },
-      ].filter(Boolean),
-    [canViewWorkspaceMenu]
-  );
-
   const workspacesIcons = [
     { id: 4, icon: FiInbox, label: 'Workspaces' },
     { id: 5, icon: FiPlusCircle, label: 'Add new dashboard' },
@@ -205,10 +176,9 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     { label: 'Dashboards', modal: 'dashboards' },
   ];
 
-  // Select icons based on route (restricted roles: only Workspaces + fixed board)
-  const kanbanIcons = restrictedNav
-    ? restrictedKanbanStripIcons
-    : pathname === '/kanban-board/operator' || pathname.startsWith('/kanban-board/') || pathname === '/compact'
+  // Select icons based on route
+  const kanbanIcons =
+    pathname === '/kanban-board/operator' || pathname.startsWith('/kanban-board/') || pathname === '/compact'
       ? kanbanBoardIcons
       : workspacesIcons;
 
@@ -557,28 +527,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     },
   ];
 
-  const restrictedSidebarMenus = useMemo(
-    () => [
-      {
-        menu: 'Workspaces',
-        isDefaultMenu: true,
-        to: '/workspaces',
-        icon: dashboardIcon,
-        hasPermission: canViewWorkspaceMenu,
-      },
-      {
-        menu: 'Kanban Board',
-        isDefaultMenu: true,
-        to: restrictedBoardBasePath,
-        icon: materialIcon,
-        hasPermission: true,
-      },
-    ],
-    [restrictedBoardBasePath, canViewWorkspaceMenu]
-  );
-
   const [menuState, setMenuState] = useState(menus);
-  const effectiveMenuState = restrictedNav ? restrictedSidebarMenus : menuState;
 
   // Sync with Header's mobile menu state
   useEffect(() => {
@@ -614,7 +563,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
 
   useEffect(() => {
     // 🔒 Don’t touch normal menu behaviour when on Kanban sidebar
-    if (isKanbanBoard || activePortal || restrictedNav) return;
+    if (isKanbanBoard || activePortal) return;
 
     if (width > 991)
       setMenuState((prev) =>
@@ -628,7 +577,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       setMenuState((prev) => prev.map((e) => ({ ...e, isOpen: false })));
       setExpand(false);
     }
-  }, [pathname, width, isKanbanBoard, activePortal, restrictedNav]);
+  }, [pathname, width, isKanbanBoard, activePortal]);
 
   const toggleCollapse = (menu) => {
     setMenuState((prev) => {
@@ -676,14 +625,6 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   // Set active icon based on current route
   useEffect(() => {
     if (!isKanbanBoard) return;
-    if (restrictedNav) {
-      if (pathname === '/workspaces' || pathname.startsWith('/workspaces/')) {
-        setActiveKanbanIcon(4);
-      } else {
-        setActiveKanbanIcon(6);
-      }
-      return;
-    }
     if (pathname === '/workspaces') {
       setActiveKanbanIcon(4);
     } else if (pathname.includes('/analytics')) {
@@ -695,7 +636,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     ) {
       setActiveKanbanIcon(1);
     }
-  }, [pathname, isKanbanBoard, restrictedNav]);
+  }, [pathname, isKanbanBoard]);
 
   // Add/remove class to body when submenu is open
   useEffect(() => {
@@ -731,7 +672,6 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         <WorkspacesSideNavPanel
           isDarkMode={isDarkMode}
           onNewDashboard={() => setShowAddDashboardModal(true)}
-          restrictedBoardUser={restrictedNav}
         />
         <BoardFilterPanel show={showFilterPanel} onClose={() => setShowFilterPanel(false)} />
         <ManagersModal show={showManagersModal} onClose={() => setShowManagersModal(false)} />
@@ -755,19 +695,6 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
 
   if (isKanbanBoard && !activePortal) {
     const handleIconClick = (item) => {
-      if (restrictedNav) {
-        if (item.label === 'Workspaces') {
-          navigate('/workspaces');
-          setActiveKanbanIcon(item.id);
-          return;
-        }
-        if (item.label === 'Kanban Board') {
-          navigate(restrictedBoardBasePath);
-          setActiveKanbanIcon(item.id);
-          return;
-        }
-      }
-
       if (item.label === 'Filter') {
         const newShowState = !showFilterPanel;
         closeSelectWorkflowModal();
@@ -900,100 +827,95 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
 
     return (
       <>
-        {(isPortManagerRole || isPortSupervisorRole || isDARole) && (
-          <aside className={`kanban-sidebar ${isDarkMode ? 'kanban-sidebar-dark' : ''}`}>
-            {kanbanIcons.map((item) => {
-              const Icon = item.icon;
-              const isActive =
-                activeKanbanIcon === item.id ||
-                (restrictedNav &&
-                  item.label === 'Kanban Board' &&
-                  pathname.startsWith('/kanban-board/')) ||
-                (item.label === 'Filter' && showFilterPanel) ||
-                (item.label === 'Analytics' && pathname.includes('/analytics')) ||
-                (item.label === 'Board teams' && showBoardTeamsSubmenu) ||
-                (item.label === 'Edit Workflow' && pathname.startsWith('/edit-workflow')) ||
-                (item.label === 'Select Workflow' && showSelectWorkflowSubmenu) ||
-                (item.label === 'On Station' && showOnStationModal) ||
-                (item.label === 'Outlook' && showOutlookModal) ||
-                (item.label === 'Add new dashboard' && showAddDashboardModal) ||
-                (item.label === 'Add' && showSelectWorkflowModal) ||
-                (item.label === 'Task' && showSubTaskModal);
+        <aside className={`kanban-sidebar ${isDarkMode ? 'kanban-sidebar-dark' : ''}`}>
+          {kanbanIcons.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              activeKanbanIcon === item.id ||
+              (item.label === 'Filter' && showFilterPanel) ||
+              (item.label === 'Analytics' && pathname.includes('/analytics')) ||
+              (item.label === 'Board teams' && showBoardTeamsSubmenu) ||
+              (item.label === 'Edit Workflow' && pathname.startsWith('/edit-workflow')) ||
+              (item.label === 'Select Workflow' && showSelectWorkflowSubmenu) ||
+              (item.label === 'On Station' && showOnStationModal) ||
+              (item.label === 'Outlook' && showOutlookModal) ||
+              (item.label === 'Add new dashboard' && showAddDashboardModal) ||
+              (item.label === 'Add' && showSelectWorkflowModal) ||
+              (item.label === 'Task' && showSubTaskModal);
 
-              return (
-                <div key={item.id} style={{ position: 'relative' }}>
-                  <div
-                    className={`kanban-sidebar-icon ${isActive ? 'active' : ''}`}
-                    onClick={() => handleIconClick(item)}
-                    data-tooltip-id="sidebar-tooltip"
-                    data-tooltip-content={item.label}
-                  >
-                    <Icon size={22} />
-                  </div>
-
-                  {item.label === 'Board teams' && showBoardTeamsSubmenu && (
-                    <div className="kanban-sidebar-submenu">
-                      {boardTeamsSubmenu.map((subItem, index) => (
-                        <div
-                          key={index}
-                          className="kanban-sidebar-submenu-item"
-                          onClick={() => handleSubmenuClickKanban(subItem)}
-                        >
-                          {subItem.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {item.label === 'Select Workflow' && showSelectWorkflowSubmenu && (
-                    <div className="kanban-sidebar-submenu">
-                      {jumpWorkflowOptions.length === 0 ? (
-                        <div className="kanban-sidebar-submenu-item">No workflows found</div>
-                      ) : (
-                        jumpWorkflowOptions.map((wf) => (
-                          <div
-                            key={String(wf.id)}
-                            className="kanban-sidebar-submenu-item kanban-sidebar-submenu-item--truncate"
-                            onClick={() => handleSelectWorkflowSubmenuItemClick(wf.id)}
-                            data-tooltip-id="select-workflow-submenu-tooltip"
-                            data-tooltip-content={wf.name}
-                          >
-                            {wf.name}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
+            return (
+              <div key={item.id} style={{ position: 'relative' }}>
+                <div
+                  className={`kanban-sidebar-icon ${isActive ? 'active' : ''}`}
+                  onClick={() => handleIconClick(item)}
+                  data-tooltip-id="sidebar-tooltip"
+                  data-tooltip-content={item.label}
+                >
+                  <Icon size={22} />
                 </div>
-              );
-            })}
 
-            <Tooltip
-              id="sidebar-tooltip"
-              place="right"
-              style={{
-                backgroundColor: '#333',
-                color: '#fff',
-                fontSize: '0.85rem',
-                borderRadius: '6px',
-                padding: '6px 10px',
-                fontWeight: '500',
-              }}
-            />
-            <Tooltip
-              id="select-workflow-submenu-tooltip"
-              place="right"
-              style={{
-                backgroundColor: '#333',
-                color: '#fff',
-                fontSize: '0.85rem',
-                borderRadius: '6px',
-                padding: '6px 10px',
-                fontWeight: '500',
-              }}
-            />
-          </aside>
-        )}
+                {item.label === 'Board teams' && showBoardTeamsSubmenu && (
+                  <div className="kanban-sidebar-submenu">
+                    {boardTeamsSubmenu.map((subItem, index) => (
+                      <div
+                        key={index}
+                        className="kanban-sidebar-submenu-item"
+                        onClick={() => handleSubmenuClickKanban(subItem)}
+                      >
+                        {subItem.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {item.label === 'Select Workflow' && showSelectWorkflowSubmenu && (
+                  <div className="kanban-sidebar-submenu">
+                    {jumpWorkflowOptions.length === 0 ? (
+                      <div className="kanban-sidebar-submenu-item">No workflows found</div>
+                    ) : (
+                      jumpWorkflowOptions.map((wf) => (
+                        <div
+                          key={String(wf.id)}
+                          className="kanban-sidebar-submenu-item kanban-sidebar-submenu-item--truncate"
+                          onClick={() => handleSelectWorkflowSubmenuItemClick(wf.id)}
+                          data-tooltip-id="select-workflow-submenu-tooltip"
+                          data-tooltip-content={wf.name}
+                        >
+                          {wf.name}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          <Tooltip
+            id="sidebar-tooltip"
+            place="right"
+            style={{
+              backgroundColor: '#333',
+              color: '#fff',
+              fontSize: '0.85rem',
+              borderRadius: '6px',
+              padding: '6px 10px',
+              fontWeight: '500',
+            }}
+          />
+          <Tooltip
+            id="select-workflow-submenu-tooltip"
+            place="right"
+            style={{
+              backgroundColor: '#333',
+              color: '#fff',
+              fontSize: '0.85rem',
+              borderRadius: '6px',
+              padding: '6px 10px',
+              fontWeight: '500',
+            }}
+          />
+        </aside>
 
         <BoardFilterPanel show={showFilterPanel} onClose={() => setShowFilterPanel(false)} />
         <OnStationModal
@@ -1070,7 +992,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
 
         <div className="menuWrp">
           <ul className="menu">
-            {(activePortal ? (portalMenuMap[activePortal] || []) : effectiveMenuState)
+            {(activePortal ? (portalMenuMap[activePortal] || []) : menuState)
               .filter((e) => e.hasPermission === true)
               .map(({ menu, subMenus, to, isDefaultMenu, icon, isOpen }) => {
                 if (!isDefaultMenu) return null;

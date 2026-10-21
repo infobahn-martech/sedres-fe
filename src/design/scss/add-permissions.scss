@@ -355,6 +355,10 @@
         color: var(--text-primary);
     }
 
+    .permSelectAll label {
+        font-weight: 500;
+    }
+
     .permRow {
         display: flex;
         align-items: center;

@@ -458,6 +458,10 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
             >
               <FiGrid />
             </NavTabButton> */}
+          </>
+        )}
+        {!vendorDashboardUser && (
+          <>
             <Tooltip id="kpi-dashboard" place="bottom" content="KPI Dashboard" />
             <NavTabButton
               className="icon-btn icon-btn-hide-mobile"

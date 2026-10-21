@@ -46,6 +46,17 @@ const transformPermissionsData = (apiData) => {
   });
 };
 
+// Every permission id in a module: the module itself, its actions, sub-modules and their actions
+const collectSectionIds = (section) =>
+  [
+    section.permissionId || section.id,
+    ...(section.items ?? []).map((item) => item.permissionId || item.id),
+    ...(section.subSections ?? []).flatMap((sub) => [
+      sub.permissionId || sub.id,
+      ...(sub.items ?? []).map((item) => item.permissionId || item.id),
+    ]),
+  ].map(Number);
+
 // -------------------------------------------
 //  MAIN COMPONENT
 // -------------------------------------------
@@ -258,13 +269,7 @@ export function PermissionModal({
   // Check if a permission is selected
   const isPermissionSelected = (permissionId) => selectedPermissions.has(Number(permissionId));
 
-  // Toggle a sub-module together with all of its actions
-  const handleSubToggle = (sub, checked) => {
-    const permissionIds = [
-      Number(sub.permissionId || sub.id),
-      ...(sub.items ?? []).map((item) => Number(item.permissionId || item.id)),
-    ];
-
+  const togglePermissions = (permissionIds, checked) => {
     setSelectedPermissions((prev) => {
       const newSet = new Set(prev);
       permissionIds.forEach((id) => {
@@ -273,6 +278,17 @@ export function PermissionModal({
       });
       return newSet;
     });
+  };
+
+  // Toggle a sub-module together with all of its actions
+  const handleSubToggle = (sub, checked) => {
+    togglePermissions(
+      [
+        Number(sub.permissionId || sub.id),
+        ...(sub.items ?? []).map((item) => Number(item.permissionId || item.id)),
+      ],
+      checked
+    );
   };
 
   // -------------------------------------------
@@ -333,13 +349,33 @@ export function PermissionModal({
   // -------------------------------------------
   //  Render Level 1 (column)
   // -------------------------------------------
-  const renderTopLevel = (section) => (
-    <div className="permColumn" key={section.id}>
-      <h6 className="permColumn-title">{section.title}</h6>
-      {section.items?.map((item) => renderActionRow([section.id], item, false))}
-      {section.subSections?.map((sub) => renderSubLevel(section, sub))}
-    </div>
-  );
+  const renderTopLevel = (section) => {
+    const sectionIds = collectSectionIds(section);
+    const selectedCount = sectionIds.filter((id) => selectedPermissions.has(id)).length;
+    const isAllSelected = selectedCount === sectionIds.length;
+    const selectAllId = buildToggleId(section.id, "all");
+
+    return (
+      <div className="permColumn" key={section.id}>
+        <h6 className="permColumn-title">{section.title}</h6>
+        <div className="permRow permSelectAll">
+          <input
+            type="checkbox"
+            className="form-check-input"
+            id={selectAllId}
+            checked={isAllSelected}
+            ref={(el) => {
+              if (el) el.indeterminate = selectedCount > 0 && !isAllSelected;
+            }}
+            onChange={() => togglePermissions(sectionIds, !isAllSelected)}
+          />
+          <label htmlFor={selectAllId}>Select all</label>
+        </div>
+        {section.items?.map((item) => renderActionRow([section.id], item, false))}
+        {section.subSections?.map((sub) => renderSubLevel(section, sub))}
+      </div>
+    );
+  };
 
   // -------------------------------------------
   //  Body
