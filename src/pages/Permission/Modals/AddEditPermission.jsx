@@ -195,18 +195,9 @@ export function PermissionModal({
         return;
       }
 
+      // Full list: every known permission id (modules, sub-modules, actions) mapped to is_allowed
       const permissions = Array.from(
-        // Build the full list: every known permission id mapped to is_allowed
-        (permissionsList ?? []).flatMap((level1) => {
-          const collectIds = (item) => {
-            const ids = [item.permission_id];
-            if (item.subpermission?.length) {
-              item.subpermission.forEach((sub) => ids.push(...collectIds(sub)));
-            }
-            return ids;
-          };
-          return collectIds(level1);
-        })
+        new Set(PERMISSION_SECTIONS.flatMap(collectSectionIds))
       ).map((permission_id) => ({
         permission_id,
         is_allowed: selectedPermissions.has(permission_id) ? 1 : 0,
