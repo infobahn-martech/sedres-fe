@@ -138,6 +138,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     { label: 'Dictionary', icon: <FiBookOpen />, open: () => setShowDictionaryModal(true) },
     { label: 'Weather', icon: <FiCloud />, open: () => setShowWeatherModal(true) },
     { label: 'Calendar', icon: <FiCalendar />, open: () => setShowCalendarModal(true) },
+    { label: 'Vessel Tracking', icon: <FiAnchor />, open: () => setShowVesselTrackingModal(true) },
   ];
 
   const getLoggedInUser = () => {
@@ -479,17 +480,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           data-tooltip-id="theme-toggle"
         >
           {isDark ? <FiSun /> : <FiMoon />}
-        </button>
-
-        <Tooltip id="vessel-tracking" place="bottom" content="Vessel Tracking" />
-        <button
-          type="button"
-          className={`icon-btn ${showVesselTrackingModal ? 'active' : ''}`}
-          aria-label="Vessel Tracking"
-          onClick={() => setShowVesselTrackingModal(true)}
-          data-tooltip-id="vessel-tracking"
-        >
-          <FiAnchor />
         </button>
 
         <Tooltip id="help" place="bottom" content="Help" />
