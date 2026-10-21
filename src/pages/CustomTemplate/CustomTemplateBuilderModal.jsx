@@ -10,6 +10,7 @@ import { getFeaturePreviewKind } from "./templateFeaturePreviews";
 import { buildFieldGrid, getReadingOrder, resolveFieldLayout } from "./templateFieldGrid";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
+import useTimeObjectReducer from "../../store/TimeObjectReducer";
 import { mapBillingEntitiesToOptions } from "../../shared/helpers/callFileFormOptions";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/general.scss";
@@ -21,6 +22,14 @@ const OPTIONS_SOURCE_CARDS = [
     { value: "manual", title: "Manual Options", desc: "Add your own options for this field" },
     { value: "master", title: "Master Data", desc: "Use options from an existing master module" },
 ];
+
+const TIME_OBJECT_SOURCE_CARDS = [
+    { value: "manual", title: "Manual", desc: "Enter the time manually" },
+    { value: "master", title: "Master Data", desc: "Link to an existing time object" },
+];
+
+// master_key sent for a Time Object field that is linked to a master time object.
+const TIME_OBJECT_MASTER_KEY = "time_object";
 
 // Level 1 of the template structure — mirrors the real Sedres card's top-level tabs.
 // A main tab optionally owns Level 2 sub-tabs (e.g. Operation > Pre Arrival); fields
@@ -52,6 +61,7 @@ const createBlankField = () => ({
     options: [],
     optionsSource: "manual",
     masterModule: "",
+    timeObjectId: "",
     gridRow: null,
     gridCol: null,
 });
@@ -75,6 +85,7 @@ const mapTemplateField = (f) => {
         optionIds: f.optionIds ?? rawOptions.map((opt) => opt?.option_id ?? null),
         optionsSource: f.optionsSource ?? (f.option_source === "master" ? "master" : "manual"),
         masterModule: f.masterModule ?? f.master_key ?? "",
+        timeObjectId: toIdString(f.timeObjectId ?? f.time_object_id),
         gridRow: f.gridRow ?? f.row_no ?? f.grid_row ?? null,
         gridCol: f.gridCol ?? f.col_no ?? f.grid_col ?? null,
     };
@@ -252,6 +263,23 @@ const buildDropdownTypeKey = (apiFieldTypes) => {
     return match ? String(match.type_key ?? "").toLowerCase() : "dropdown";
 };
 
+// "Time Object" offers a Manual / Master Data source, where Master Data links
+// the field to a time object from the time_object master. Identified by
+// key/label for the same reason as the dropdown type above.
+const buildTimeObjectTypeKey = (apiFieldTypes) => {
+    const match = (apiFieldTypes ?? []).find((ft) => {
+        const key = String(ft.type_key ?? "").toLowerCase().replace(/[\s-]+/g, "_");
+        const label = String(ft.type_label ?? "").toLowerCase();
+        return key === "time_object" || label.includes("time object");
+    });
+    return match ? String(match.type_key ?? "").toLowerCase() : "time_object";
+};
+
+const buildTimeObjectOptions = (timeObjects) => (timeObjects ?? []).map((t) => ({
+    value: String(t.time_object_id ?? ""),
+    label: t.time_object,
+}));
+
 // Master Data modules come from the master_lookups API.
 const buildMasterModuleOptions = (masterLookups) => (masterLookups ?? []).map((m) => ({
     value: String(m.master_key ?? ""),
@@ -344,10 +372,56 @@ function OptionsSourceEditor({ field, masterModuleOptions, masterModulesLoading,
     );
 }
 
+// Time Object-only: the time is either entered manually or linked to a time
+// object from the time_object master.
+function TimeObjectSourceEditor({ field, timeObjectOptions, timeObjectsLoading, onSetSource, onSetTimeObject }) {
+    const source = field.optionsSource ?? "manual";
+    return (
+        <div className="ctm-options-source">
+            <p className="ctm-field-options-label">Time Object Source</p>
+            <div className="ctm-segmented" role="radiogroup" aria-label="Time object source">
+                {TIME_OBJECT_SOURCE_CARDS.map((card) => (
+                    <button
+                        key={card.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={source === card.value}
+                        title={card.desc}
+                        className={`ctm-segmented-btn ${source === card.value ? "is-active" : ""}`}
+                        onClick={() => onSetSource(card.value)}
+                    >
+                        {card.title}
+                    </button>
+                ))}
+            </div>
+
+            {source === "master" && (
+                <div className="ctm-master-module-picker">
+                    <p className="ctm-field-options-label">Select Time Object</p>
+                    <SearchableSelect
+                        className="ctm-master-module-select"
+                        value={field.timeObjectId ?? ""}
+                        onChange={(e) => onSetTimeObject(e.target.value)}
+                        options={timeObjectOptions}
+                        placeholder={timeObjectsLoading ? "Loading..." : "Select time object..."}
+                        disabled={timeObjectsLoading}
+                        menuPortalTarget={document.body}
+                        menuPlacement="auto"
+                    />
+                </div>
+            )}
+        </div>
+    );
+}
+
 // One-line summary shown on a collapsed field card, e.g. "Dropdown · 3 options".
-const getFieldSummary = (field, typeLabel, isDropdown, hasOptions, masterModuleOptions) => {
+const getFieldSummary = (field, typeLabel, isDropdown, hasOptions, masterModuleOptions, isTimeObject, timeObjectOptions) => {
     const parts = [typeLabel || "No type selected"];
-    if (isDropdown && field.optionsSource === "master") {
+    if (isTimeObject) {
+        const timeObject = timeObjectOptions.find((t) => t.value === field.timeObjectId);
+        if (field.optionsSource !== "master") parts.push("Manual");
+        else parts.push(timeObject ? `Master: ${timeObject.label}` : "Master data");
+    } else if (isDropdown && field.optionsSource === "master") {
         const mod = masterModuleOptions.find((m) => m.value === field.masterModule);
         parts.push(mod ? `Master: ${mod.label}` : "Master data");
     } else if (hasOptions) {
@@ -357,15 +431,16 @@ const getFieldSummary = (field, typeLabel, isDropdown, hasOptions, masterModuleO
     return parts.join(" · ");
 };
 
-function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterModuleOptions, masterModulesLoading, optionsFieldTypes, dropdownTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, isLocked = false, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
+function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterModuleOptions, masterModulesLoading, timeObjectOptions, timeObjectsLoading, optionsFieldTypes, dropdownTypeKey, timeObjectTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, isLocked = false, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
     // New (unlabelled) fields open ready to edit; existing ones start collapsed
     // so long templates stay scannable.
     const [expanded, setExpanded] = useState(() => !field.label.trim());
     const isRequired = field.required || isLocked;
+    const isTimeObject = field.type === timeObjectTypeKey;
     const showOptionsSource = field.type === dropdownTypeKey;
-    const showManualOptions = !showOptionsSource && optionsFieldTypes.has(field.type);
+    const showManualOptions = !showOptionsSource && !isTimeObject && optionsFieldTypes.has(field.type);
     const typeLabel = fieldTypeOptions.find((o) => o.value === field.type)?.label ?? "";
-    const summary = getFieldSummary(field, typeLabel, showOptionsSource, showManualOptions || showOptionsSource, masterModuleOptions);
+    const summary = getFieldSummary(field, typeLabel, showOptionsSource, showManualOptions || showOptionsSource, masterModuleOptions, isTimeObject, timeObjectOptions);
     return (
         <div
             className={`ctm-field-card ${expanded ? "is-expanded" : ""} ${isDragging ? "is-dragging" : ""} ${isDragOver ? "is-drag-over" : ""}`}
@@ -470,6 +545,16 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
                             onRemoveOption={(idx) => onRemoveOption(field.id, idx)}
                         />
                     )}
+
+                    {isTimeObject && (
+                        <TimeObjectSourceEditor
+                            field={field}
+                            timeObjectOptions={timeObjectOptions}
+                            timeObjectsLoading={timeObjectsLoading}
+                            onSetSource={(source) => onSetOptionsSource(field.id, source)}
+                            onSetTimeObject={(id) => onUpdate(field.id, "timeObjectId", id)}
+                        />
+                    )}
                 </div>
             )}
         </div>
@@ -507,6 +592,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     } = useFormTemplateReducer((s) => s);
     const isEditMode = Boolean(initialTemplate);
     const { getBillingEntities, billingEntities, isLoading: billingEntitiesLoading } = useBillingEntityReducer((s) => s);
+    const { getTimeObjects, timeObjects, isLoadingGet: timeObjectsLoading } = useTimeObjectReducer((s) => s);
 
     const [templateName, setTemplateName] = useState(() => getTemplateSeed(initialTemplate).name);
     const [nameTouched, setNameTouched] = useState(false);
@@ -556,6 +642,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const optionsFieldTypes = useMemo(() => buildOptionsFieldTypeSet(fieldTypes), [fieldTypes]);
     const dropdownTypeKey = useMemo(() => buildDropdownTypeKey(fieldTypes), [fieldTypes]);
     const masterModuleOptions = useMemo(() => buildMasterModuleOptions(masterLookups), [masterLookups]);
+    const timeObjectTypeKey = useMemo(() => buildTimeObjectTypeKey(fieldTypes), [fieldTypes]);
+    const timeObjectOptions = useMemo(() => buildTimeObjectOptions(timeObjects), [timeObjects]);
 
     const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
     // The first tab is the template's default — it and its email preview can't be removed.
@@ -654,6 +742,12 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             getMasterLookups();
         }
     }, [masterLookups, getMasterLookups]);
+
+    // Always refetch the full list: the shared store may only hold one
+    // paginated page left behind by the Time Objects screen.
+    useEffect(() => {
+        getTimeObjects({ page: 1, limit: 1000 });
+    }, [getTimeObjects]);
 
     const resetState = () => {
         const seed = getTemplateSeed(initialTemplate);
@@ -1013,7 +1107,13 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         if (field.fieldId) payload.field_id = Number(field.fieldId);
         // A checkbox with no options is a legacy single checkbox — saved without options.
         const isLegacyCheckbox = field.type === CHECKBOX_TYPE_KEY && !field.options?.length;
-        if (optionsFieldTypes.has(field.type) && !isLegacyCheckbox) {
+        if (field.type === timeObjectTypeKey) {
+            if (field.optionsSource === "master" && field.timeObjectId) {
+                payload.option_source = "master";
+                payload.master_key = TIME_OBJECT_MASTER_KEY;
+                payload.time_object_id = Number(field.timeObjectId);
+            }
+        } else if (optionsFieldTypes.has(field.type) && !isLegacyCheckbox) {
             payload.option_source = field.type === dropdownTypeKey && field.optionsSource === "master" ? "master" : "static";
             if (payload.option_source === "master") {
                 payload.master_key = field.masterModule;
@@ -1367,8 +1467,11 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         fieldTypesLoading={isLoadingFieldTypes}
                                         masterModuleOptions={masterModuleOptions}
                                         masterModulesLoading={isLoadingMasterLookups}
+                                        timeObjectOptions={timeObjectOptions}
+                                        timeObjectsLoading={timeObjectsLoading}
                                         optionsFieldTypes={optionsFieldTypes}
                                         dropdownTypeKey={dropdownTypeKey}
+                                        timeObjectTypeKey={timeObjectTypeKey}
                                         isDragging={dragIndex === index}
                                         isDragOver={dragOverIndex === index && dragIndex !== index}
                                         onDragStart={handleDragStart}
