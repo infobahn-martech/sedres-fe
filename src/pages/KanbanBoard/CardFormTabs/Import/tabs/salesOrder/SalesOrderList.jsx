@@ -33,7 +33,8 @@ const BP_CURRENCY_OPTIONS = ["SAR", "USD", "EURO"];
 const USD_TO_SAR_RATE = 3.75;
 const SALES_ORDER_PAGE_SIZE = 10;
 const POSH_WORKFLOW_PATTERN = /posh/i;
-/* "Upload Approved SO" runs for the POSH workflow only. da/da_upload_so_approval_proof takes the
+const SEND_FOR_SO_APPROVAL_COLUMN_PATTERN = /send for so approval/i;
+/* "Upload Approved SO" runs for the POSH workflow and for workflows with a "Send for SO Approval" column. da/da_upload_so_approval_proof takes the
    approved SO as `proof` (required) and the SO email as `approval_email`; the field names are the
    request's form field names. */
 const approvedSoUploadFields = [
@@ -649,8 +650,14 @@ const SalesOrderList = ({
   const isPoshWorkflowCard = POSH_WORKFLOW_PATTERN.test(card?.workflow_name ?? "");
   const isPoshAtSoApprovedColumn =
     isPoshWorkflowCard && opsCompletedStepIndex !== -1 && currentStep === opsCompletedStepIndex + 3;
+  // Workflows that have their own "Send for SO Approval" column (e.g. BGP) are matched by that column's
+  // title, not by workflow name. Their cards must reach it instead of being submitted to DA on the last
+  // Verify tick.
+  const hasSendForSoApprovalColumn =
+    Array.isArray(stepLabels) && stepLabels.some((label) => SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(label || ""));
   const isCardAtSoApprovalColumn =
     (Array.isArray(stepLabels) && currentStep != null && /so sent for approval/i.test(stepLabels[currentStep - 1] || "")) ||
+    (Array.isArray(stepLabels) && currentStep != null && SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
     (isPoshWorkflowCard && isAtColumnAfterOpsCompleted);
   // What column 4's header action actually renders from (see the header action block below).
   //
@@ -796,8 +803,14 @@ const SalesOrderList = ({
   const isAtSoApprovalDecisionColumn =
     (soSentForApprovalStepIndex !== -1 && currentStep != null && currentStep === soSentForApprovalStepIndex + 2) ||
     (Array.isArray(stepLabels) && currentStep != null && /so\s*\/?\s*po approval received/i.test(stepLabels[currentStep - 1] || ""));
-  // Where the card lands once the SO is approved, which is where "Upload Approved SO" shows (POSH only).
-  const isAtApprovedSoUploadColumn = isPoshAtSoApprovedColumn;
+  // Where the card lands once the SO is approved, which is where "Upload Approved SO" shows.
+  // Workflows with their own "Send for SO Approval" column show it on the column right after it.
+  const sendForSoApprovalStepIndex = Array.isArray(stepLabels)
+    ? stepLabels.findIndex((label) => SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(label || ""))
+    : -1;
+  const isAtColumnAfterSendForSoApproval =
+    sendForSoApprovalStepIndex !== -1 && currentStep != null && currentStep === sendForSoApprovalStepIndex + 2;
+  const isAtApprovedSoUploadColumn = isPoshAtSoApprovedColumn || isAtColumnAfterSendForSoApproval;
 
   // State for the SO Approval email modal, opened from the header action button when
   // effectiveNextDaStatusLabel is the "SO Approval" stage. Sends via api/da/da_send_action_email
@@ -806,15 +819,6 @@ const SalesOrderList = ({
   // real email send and refetches the timeline so any server-side change shows up.
   const [showSoApprovalEmailModal, setShowSoApprovalEmailModal] = useState(false);
   const [isSendingSoApprovalEmail, setIsSendingSoApprovalEmail] = useState(false);
-
-  // The label the modal's Subject should echo. Deliberately captured explicitly per open call
-  // (see handleOpenSoApprovalEmailModal below) instead of always reading daActionButtonLabel at
-  // render time — daActionButtonLabel is driven by the granular DA status-timeline
-  // (effectiveNextDaStatusLabel), which can disagree with the board-column-driven
-  // isCardAtSoApprovalColumn/soActionState path (the same desync class already hit on column 4
-  // before). When "Send For SO approval" is the button actually clicked, the Subject must say
-  // that column's real name, not whatever the (possibly stale/desynced) granular status says.
-  const [modalActionLabel, setModalActionLabel] = useState("");
 
   // Prefills the modal's "To" field — api/da/da_action_email_draft/{call_id} →
   // { status: "success", data: { recipient } }. Fetched right before opening the modal (see
@@ -829,6 +833,9 @@ const SalesOrderList = ({
   // Prefills the modal's message from the same draft response (data.body) — HTML with the Sedres
   // signature + logo already at the end, so no signature is added on our side.
   const [draftBody, setDraftBody] = useState("");
+
+  // Prefills the modal's Subject from the same draft response (data.subject).
+  const [draftSubject, setDraftSubject] = useState("");
 
   // Pre-loaded attachments passed to SoApprovalEmailModal — only the backend's stage document
   // (the sales order itself) from da_action_email_draft.
@@ -859,9 +866,7 @@ const SalesOrderList = ({
   // document_url (added to the response 2026-09-15) is that same document's file URL — passed
   // through as this entry's `url` so SoApprovalEmailModal's handleOpenAttachment can actually
   // open/preview it instead of the name-only placeholder from before.
-  const handleOpenSoApprovalEmailModal = async (actionLabel) => {
-    setModalActionLabel(actionLabel || daActionButtonLabel);
-
+  const handleOpenSoApprovalEmailModal = async () => {
     const docs = [];
 
     if (!callId) {
@@ -874,6 +879,7 @@ const SalesOrderList = ({
       setDraftRecipientEmail(data?.data?.recipient || "");
       setDraftCcEmail(data?.data?.cc || "");
       setDraftBody(data?.data?.body || "");
+      setDraftSubject(data?.data?.subject || "");
       const stageDocumentId = data?.data?.stage_document_id ?? null;
       const stageDocumentUrl = data?.data?.document_url || null;
       if (stageDocumentId != null) {
@@ -887,6 +893,7 @@ const SalesOrderList = ({
       setDraftRecipientEmail("");
       setDraftCcEmail("");
       setDraftBody("");
+      setDraftSubject("");
     } finally {
       setPreLoadedDocuments(docs);
       setShowSoApprovalEmailModal(true);
@@ -1456,7 +1463,7 @@ const SalesOrderList = ({
       const allVerified =
         isNowVerified &&
         updatedList.every((item) => (item.id === orderId ? true : isItemVerified(item)));
-      if (allVerified && isBeforeSubmittedToDa && !isPoshWorkflowCard) {
+      if (allVerified && isBeforeSubmittedToDa && !isPoshWorkflowCard && !hasSendForSoApprovalColumn) {
         onAdvanceDaStage?.({ label: stepLabels[submittedToDaStepIndex], skipStatusUpdate: true });
         onCloseCard?.();
       } else if (allVerified && (isAtSubmittedToDaColumn || isAtSoSentForSccColumn)) {
@@ -2444,7 +2451,7 @@ const SalesOrderList = ({
                   className="sales-order-da-status-button"
                   disabled={isAdvancingDaStage}
                   title='Open "SO approval" email'
-                  onClick={() => handleOpenSoApprovalEmailModal(stepLabels?.[currentStep - 1])}
+                  onClick={() => handleOpenSoApprovalEmailModal()}
                 >
                   <FiClipboard />
                   Send For SO approval
@@ -3385,11 +3392,10 @@ const SalesOrderList = ({
           onClose={() => setShowSoApprovalEmailModal(false)}
           onCreate={handleCreateSoApprovalEmail}
           isSubmitting={isSendingSoApprovalEmail}
-          soCustomerName={soCustomerName}
           stageLabel={displayStageLabel || "SO Approval"}
-          actionLabel={modalActionLabel}
           defaultTo={draftRecipientEmail}
           defaultCc={draftCcEmail}
+          defaultSubject={draftSubject}
           defaultBody={draftBody}
           preLoadedDocuments={preLoadedDocuments}
           callId={callId}
