@@ -8,12 +8,6 @@ import { getEmailHtml } from "../../../../utils/emailHtml";
 import { ensureHtmlForQuill } from "../operation/operationReportMessageHtml";
 import "../../../../../../design/scss/pages/kanban-board/seApprovalUploadModal.scss";
 
-// Standard Sedres wording for the SO approval request body (per ops team), same for every stage.
-const DEFAULT_MESSAGE_HTML =
-  "<p>Greetings from Sedres.</p>" +
-  "<p><br></p>" +
-  "<p>Please find the attached Sales orders with supporting documents. Kindly review our sales order and confirm so we can submit our final invoice.</p>";
-
 // Opened from the SO Status stepper's "To Be Sent for SO Approval" step. Built on the
 // app's common CustomModal (react-bootstrap Modal wrapper, used across ~80 other modals in
 // this codebase) instead of a bespoke backdrop, so positioning/stacking (above the card's
@@ -30,8 +24,9 @@ const DEFAULT_MESSAGE_HTML =
 // defaultCc is that same draft response's `cc` — the backend owns this stage's cc list too,
 // so it prefills "Cc" the same way (empty when the backend sends none); also editable.
 // defaultBody is that draft's `body` — HTML (text + Sedres signature + logo), loaded into the
-// editor the same way as the report email templates; DEFAULT_MESSAGE_HTML only when it's empty.
-const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, soCustomerName = "", stageLabel = "SO Approval", actionLabel = "", defaultTo = "", defaultCc = "", defaultBody = "", preLoadedDocuments = [], callId = null }) => {
+// editor the same way as the report email templates; nothing is filled in on our side when it's empty.
+// defaultSubject is that draft's `subject` — the backend owns the subject wording too.
+const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, stageLabel = "SO Approval", defaultTo = "", defaultCc = "", defaultSubject = "", defaultBody = "", preLoadedDocuments = [], callId = null }) => {
   const [fromValue, setFromValue] = useState("operations@shipping.com");
   const [toValue, setToValue] = useState("");
   const [ccValue, setCcValue] = useState("");
@@ -63,25 +58,19 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
 
   useEffect(() => {
     if (show) {
-      // Subject always mirrors the footer step button's own action text (actionLabel, e.g.
-      // "Closed Paid", "Send for SO approval") instead of a generic "{stageLabel} Request" —
-      // the two used to drift apart (e.g. footer said "Closed Paid" while the subject read
-      // "Closed paid Request"), so this keeps them in sync for every stage.
-      setSubjectValue(`${actionLabel || stageLabel}${soCustomerName ? ` — ${soCustomerName}` : ""}`);
+      setSubjectValue(defaultSubject);
       setToValue(defaultTo);
       setCcValue(defaultCc);
       setToError("");
       setSubjectError("");
-      // Prefilled (not just a placeholder) — api/da/da_send_action_email requires a non-empty
-      // body and rejects the whole request otherwise ({"status":"error","message":"call_id,
-      // to, subject and body are required"}), so an empty Quill editor used to let staff submit
-      // a doomed request with no warning. Still freely editable before sending.
-      setMessage(defaultBody ? ensureHtmlForQuill(defaultBody) : DEFAULT_MESSAGE_HTML);
+      // api/da/da_send_action_email requires a non-empty body, so handleCreate blocks an empty
+      // message inline. Still freely editable before sending.
+      setMessage(defaultBody ? ensureHtmlForQuill(defaultBody) : "");
       setMessageError("");
       // Pre-load the stage document (sales order) from api/da/da_action_email_draft
       setAttachments(preLoadedDocuments || []);
     }
-  }, [show, soCustomerName, stageLabel, actionLabel, defaultTo, defaultCc, defaultBody, preLoadedDocuments]);
+  }, [show, defaultTo, defaultCc, defaultSubject, defaultBody, preLoadedDocuments]);
 
   const handleFilesSelected = (fileList) => {
     const files = Array.from(fileList || []).filter((file) => file);
@@ -367,11 +356,10 @@ SoApprovalEmailModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   onCreate: PropTypes.func,
   isSubmitting: PropTypes.bool,
-  soCustomerName: PropTypes.string,
   stageLabel: PropTypes.string,
-  actionLabel: PropTypes.string,
   defaultTo: PropTypes.string,
   defaultCc: PropTypes.string,
+  defaultSubject: PropTypes.string,
   defaultBody: PropTypes.string,
   preLoadedDocuments: PropTypes.arrayOf(PropTypes.object),
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
