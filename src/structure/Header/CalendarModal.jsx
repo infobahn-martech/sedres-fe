@@ -1,6 +1,17 @@
 import { useMemo, useState } from 'react';
 import dayjs from 'dayjs';
-import { FiArrowLeft, FiCalendar, FiChevronLeft, FiChevronRight, FiPlus, FiTrash2 } from 'react-icons/fi';
+import {
+  FiAlignLeft,
+  FiArrowLeft,
+  FiCalendar,
+  FiCheck,
+  FiChevronLeft,
+  FiChevronRight,
+  FiClock,
+  FiDroplet,
+  FiPlus,
+  FiTrash2,
+} from 'react-icons/fi';
 import ToolModal from './ToolModal';
 import { useCalendarStore } from '../../shared/store/calendarStore';
 
@@ -33,6 +44,15 @@ const COMPACT_QUERY = '(max-width: 576px)';
 
 const formatTime = (date, time) => dayjs(`${date}T${time}`).format('h:mm A');
 const colorStyle = (color) => ({ '--event': `var(--cal-${color})` });
+
+// "1 hr 30 min"; empty when either time is missing or the range is invalid.
+const formatDuration = (startTime, endTime) => {
+  const minutes = dayjs(`2000-01-01T${endTime}`).diff(dayjs(`2000-01-01T${startTime}`), 'minute');
+  if (!(minutes > 0)) return '';
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return [hours && `${hours} hr`, rest && `${rest} min`].filter(Boolean).join(' ');
+};
 
 // All-day events first, then by start time.
 const sortEvents = (a, b) => {
@@ -94,84 +114,113 @@ function EventForm({ initial, onSave, onDelete, onCancel }) {
     onSave({ ...draft, title: draft.title.trim(), notes: draft.notes.trim() });
   };
 
+  const duration = draft.allDay ? '' : formatDuration(draft.startTime, draft.endTime);
+
+  // The card is tinted with the selected color, so picking a swatch previews it live.
   return (
-    <form className="calendar-form" onSubmit={handleSubmit} noValidate>
+    <form className="calendar-form" style={colorStyle(draft.color)} onSubmit={handleSubmit} noValidate>
       <div className="calendar-form-head">
         <button type="button" className="calendar-icon-btn" onClick={onCancel} aria-label="Back">
           <FiArrowLeft />
         </button>
-        <h3 className="calendar-title">{isEdit ? 'Edit event' : 'New event'}</h3>
+        <div className="calendar-form-heading">
+          <h3 className="calendar-title">{isEdit ? 'Edit event' : 'New event'}</h3>
+          {draft.date && <span className="calendar-form-subtitle">{dayjs(draft.date).format('dddd, D MMMM YYYY')}</span>}
+        </div>
       </div>
 
-      <label className="calendar-field">
-        <span>Title</span>
-        <input
-          className="calendar-input"
-          value={draft.title}
-          onChange={update('title')}
-          placeholder="Add title"
-          maxLength={120}
-          autoFocus
-        />
-        {submitted && errors.title && <small className="calendar-field-error">{errors.title}</small>}
-      </label>
+      <div className="calendar-form-body">
+        <div>
+          <input
+            className={`calendar-title-input${submitted && errors.title ? ' has-error' : ''}`}
+            value={draft.title}
+            onChange={update('title')}
+            placeholder="Add title"
+            aria-label="Title"
+            maxLength={120}
+            autoFocus
+          />
+          {submitted && errors.title && <small className="calendar-field-error">{errors.title}</small>}
+        </div>
 
-      <div className="calendar-form-row">
-        <label className="calendar-field">
-          <span>Date</span>
-          <input type="date" className="calendar-input" value={draft.date} onChange={update('date')} />
-          {submitted && errors.date && <small className="calendar-field-error">{errors.date}</small>}
-        </label>
-        <label className="calendar-check">
-          <input type="checkbox" checked={draft.allDay} onChange={update('allDay')} />
-          All day
-        </label>
-      </div>
-
-      {!draft.allDay && (
         <div className="calendar-form-row">
-          <label className="calendar-field">
-            <span>Start</span>
-            <input type="time" className="calendar-input" value={draft.startTime} onChange={update('startTime')} />
-          </label>
-          <label className="calendar-field">
-            <span>End</span>
-            <input type="time" className="calendar-input" value={draft.endTime} onChange={update('endTime')} />
-          </label>
-        </div>
-      )}
-      {submitted && errors.time && <small className="calendar-field-error">{errors.time}</small>}
-
-      <div className="calendar-field">
-        <span>Color</span>
-        <div className="calendar-swatches" role="radiogroup" aria-label="Event color">
-          {COLORS.map((color) => (
-            <button
-              key={color}
-              type="button"
-              role="radio"
-              aria-checked={draft.color === color}
-              aria-label={color}
-              className={`calendar-swatch${draft.color === color ? ' is-active' : ''}`}
-              style={colorStyle(color)}
-              onClick={() => setDraft((current) => ({ ...current, color }))}
+          <FiCalendar className="calendar-form-icon" />
+          <div className="calendar-form-controls">
+            <input
+              type="date"
+              className="calendar-input"
+              value={draft.date}
+              onChange={update('date')}
+              aria-label="Date"
             />
-          ))}
+            <label className="calendar-toggle">
+              <input type="checkbox" checked={draft.allDay} onChange={update('allDay')} />
+              <span className="calendar-toggle-track" aria-hidden="true" />
+              All day
+            </label>
+            {submitted && errors.date && <small className="calendar-field-error">{errors.date}</small>}
+          </div>
+        </div>
+
+        {!draft.allDay && (
+          <div className="calendar-form-row">
+            <FiClock className="calendar-form-icon" />
+            <div className="calendar-form-controls">
+              <input
+                type="time"
+                className="calendar-input"
+                value={draft.startTime}
+                onChange={update('startTime')}
+                aria-label="Start time"
+              />
+              <span className="calendar-form-sep">–</span>
+              <input
+                type="time"
+                className="calendar-input"
+                value={draft.endTime}
+                onChange={update('endTime')}
+                aria-label="End time"
+              />
+              {duration && <span className="calendar-duration">{duration}</span>}
+              {submitted && errors.time && <small className="calendar-field-error">{errors.time}</small>}
+            </div>
+          </div>
+        )}
+
+        <div className="calendar-form-row">
+          <FiDroplet className="calendar-form-icon" />
+          <div className="calendar-swatches" role="radiogroup" aria-label="Event color">
+            {COLORS.map((color) => (
+              <button
+                key={color}
+                type="button"
+                role="radio"
+                aria-checked={draft.color === color}
+                aria-label={color}
+                className={`calendar-swatch${draft.color === color ? ' is-active' : ''}`}
+                style={colorStyle(color)}
+                onClick={() => setDraft((current) => ({ ...current, color }))}
+              >
+                {draft.color === color && <FiCheck />}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="calendar-form-row calendar-form-row--notes">
+          <FiAlignLeft className="calendar-form-icon" />
+          <textarea
+            className="calendar-input calendar-textarea"
+            rows={4}
+            value={draft.notes}
+            onChange={update('notes')}
+            placeholder="Add description"
+            aria-label="Notes"
+          />
         </div>
       </div>
 
-      <label className="calendar-field">
-        <span>Notes</span>
-        <textarea
-          className="calendar-input"
-          rows={3}
-          value={draft.notes}
-          onChange={update('notes')}
-          placeholder="Add description"
-        />
-      </label>
-
-      <div className="calendar-form-actions">
+      <div className="calendar-form-footer">
         {isEdit &&
           (confirmDelete ? (
             <div className="calendar-confirm">
@@ -193,7 +242,7 @@ function EventForm({ initial, onSave, onDelete, onCancel }) {
             Cancel
           </button>
           <button type="submit" className="calendar-btn calendar-btn--primary">
-            Save
+            <FiCheck /> Save
           </button>
         </div>
       </div>

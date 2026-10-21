@@ -1603,41 +1603,130 @@
   overflow-wrap: anywhere;
 }
 
+// Event form — fills the fixed-height modal body; the notes row absorbs spare height
+// so the footer stays pinned to the bottom.
 .calendar-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  flex-grow: 1;
+  overflow: hidden;
+  border: 1px solid var(--border-primary);
+  border-top: 4px solid var(--event);
+  border-radius: 14px;
+  background: var(--surface-primary);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease;
 }
 
 .calendar-form-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding: 14px 20px;
+  background: color-mix(in srgb, var(--event) 10%, var(--surface-primary));
+  transition: background 0.2s ease;
 }
 
-.calendar-form-row {
+.calendar-form-heading {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 12px;
+  flex-direction: column;
+  min-width: 0;
 }
 
-.calendar-field {
+.calendar-form-subtitle {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.calendar-form-body {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 6px;
-  min-width: 140px;
-  margin: 0;
+  gap: 18px;
+  padding: 20px 24px 24px;
+}
 
-  > span {
-    color: var(--text-secondary);
-    font-size: 12px;
+.calendar-title-input {
+  width: 100%;
+  padding: 6px 2px;
+  border: none;
+  border-bottom: 2px solid var(--border-primary);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 700;
+
+  &::placeholder {
+    color: var(--input-placeholder);
     font-weight: 600;
+  }
+
+  &:focus {
+    outline: none;
+    border-bottom-color: var(--event);
+  }
+
+  &.has-error {
+    border-bottom-color: var(--color-danger);
   }
 }
 
+// Icon gutter on the left, controls on the right (Google-style rows).
+.calendar-form-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.calendar-form-row--notes {
+  flex: 1;
+  align-items: stretch;
+
+  .calendar-form-icon {
+    margin-top: 10px;
+  }
+
+  .calendar-textarea {
+    min-height: 120px;
+    resize: none;
+  }
+}
+
+.calendar-form-icon {
+  justify-self: center;
+  color: var(--event);
+  font-size: 18px;
+}
+
+.calendar-form-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+
+  .calendar-field-error {
+    flex-basis: 100%;
+  }
+}
+
+.calendar-form-sep {
+  color: var(--text-muted);
+}
+
+.calendar-duration {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--event) 12%, transparent);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .calendar-field-error {
+  display: block;
+  margin-top: 4px;
   color: var(--color-danger);
   font-size: 12px;
 }
@@ -1657,31 +1746,69 @@
 
   &:focus {
     outline: none;
-    border-color: var(--color-primary-accent);
+    border-color: var(--event, var(--color-primary-accent));
   }
 }
 
-textarea.calendar-input {
+.calendar-textarea {
+  width: 100%;
   height: auto;
-  padding: 8px 12px;
+  padding: 10px 12px;
   font-family: inherit;
   resize: vertical;
 }
 
-.calendar-check {
+// Switch built on a visually hidden checkbox, so keyboard and screen readers still work.
+.calendar-toggle {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 38px;
-  margin: 0;
+  margin: 0 0 0 auto;
   color: var(--text-primary);
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
 
   input {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--color-primary);
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .calendar-toggle-track {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    border-radius: 999px;
+    background: var(--border-primary);
+    transition: background 0.2s ease;
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s ease;
+    }
+  }
+
+  input:checked + .calendar-toggle-track {
+    background: var(--event);
+
+    &::after {
+      transform: translateX(16px);
+    }
+  }
+
+  input:focus-visible + .calendar-toggle-track {
+    outline: 2px solid var(--color-primary-accent);
+    outline-offset: 2px;
   }
 }
 
@@ -1692,25 +1819,37 @@ textarea.calendar-input {
 }
 
 .calendar-swatch {
-  width: 26px;
-  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: none;
   border-radius: 50%;
   background: var(--event);
+  color: var(--cal-on-event);
+  font-size: 15px;
   cursor: pointer;
+  transition: transform 0.15s ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
 
   &.is-active {
     box-shadow: 0 0 0 2px var(--surface-primary), 0 0 0 4px var(--event);
   }
 }
 
-.calendar-form-actions {
+.calendar-form-footer {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding-top: 4px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
 }
 
 .calendar-form-actions-end {
