@@ -27,6 +27,7 @@ import {
   FiHash,
   FiBookOpen,
   FiCloud,
+  FiCalendar,
 } from 'react-icons/fi';
 import { Modal } from 'react-bootstrap';
 import { Tooltip } from 'react-tooltip';
@@ -52,6 +53,7 @@ const CustomTemplateListModal = lazy(() => import('../../pages/CustomTemplate/Cu
 const CalculatorModal = lazy(() => import('./CalculatorModal'));
 const DictionaryModal = lazy(() => import('./DictionaryModal'));
 const WeatherModal = lazy(() => import('./WeatherModal'));
+const CalendarModal = lazy(() => import('./CalendarModal'));
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import { useThemeStore } from '../../shared/store/themeStore';
 import NavTabButton from '../../components/NavTabButton';
@@ -87,6 +89,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [showCalculatorModal, setShowCalculatorModal] = useState(false);
   const [showDictionaryModal, setShowDictionaryModal] = useState(false);
   const [showWeatherModal, setShowWeatherModal] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
   const { layoutView } = useLayoutView();
   const isDark = useThemeStore((state) => state.isDark);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
@@ -131,6 +134,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     { label: 'Calculator', icon: <FiHash />, open: () => setShowCalculatorModal(true) },
     { label: 'Dictionary', icon: <FiBookOpen />, open: () => setShowDictionaryModal(true) },
     { label: 'Weather', icon: <FiCloud />, open: () => setShowWeatherModal(true) },
+    { label: 'Calendar', icon: <FiCalendar />, open: () => setShowCalendarModal(true) },
   ];
 
   const getLoggedInUser = () => {
@@ -732,6 +736,11 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
       {showWeatherModal && (
         <Suspense fallback={null}>
           <WeatherModal show={showWeatherModal} onClose={() => setShowWeatherModal(false)} />
+        </Suspense>
+      )}
+      {showCalendarModal && (
+        <Suspense fallback={null}>
+          <CalendarModal show={showCalendarModal} onClose={() => setShowCalendarModal(false)} />
         </Suspense>
       )}
 
