@@ -19,7 +19,7 @@ import "../../design/scss/pages/callTypeBuilder.scss";
 import "../../design/scss/pages/customTemplateBuilder.scss";
 
 const OPTIONS_SOURCE_CARDS = [
-    { value: "manual", title: "Manual Options", desc: "Add your own options for this field" },
+    { value: "manual", title: "Manual", desc: "Add your own options for this field" },
     { value: "dependency", title: "Dependency", desc: "Use master module options filtered by another field's value" },
     { value: "master", title: "Master Data", desc: "Use options from an existing master module" },
 ];

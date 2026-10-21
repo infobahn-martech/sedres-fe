@@ -852,12 +852,13 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   }
 }
 
-// Segmented toggle (Manual Options / Dependency / Master Data) — one equal
-// column per button, so it fits both the 2- and 3-option variants.
+// Segmented toggle (Manual / Dependency / Master Data) — one equal column per
+// button, so it fits both the 2- and 3-option variants. minmax(0, 1fr) lets
+// columns shrink below their text width in a narrow panel instead of overflowing.
 .ctm-segmented {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 1fr;
+  grid-auto-columns: minmax(0, 1fr);
   padding: 3px;
   gap: 3px;
   border-radius: 8px;
@@ -866,14 +867,15 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
 }
 
 .ctm-segmented-btn {
-  padding: 6px 8px;
+  padding: 6px 4px;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
-  white-space: nowrap;
+  line-height: 1.25;
+  text-align: center;
   cursor: pointer;
   transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 
