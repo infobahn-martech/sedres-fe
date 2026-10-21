@@ -19,8 +19,6 @@ import RenameWorkspaceModal from './RenameWorkspaceModal';
 import AddDashboardModal from '../../structure/SideNav/components/AddDashboardModal';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 import { normalizeDashboardBackground, REMOVED_BOARD_BACKGROUND_COLOR } from '../../shared/utils/dashboardBackground';
-import useAuthReducer from '../../store/AuthReducer';
-import { isRestrictedBoardUser } from '../../shared/helpers/restrictedBoardUser';
 import { notify } from '../../components/Toaster';
 import usePermissions from '../../shared/hooks/usePermissions';
 import { PERMISSION_MODULES, PERMISSION_ACTIONS } from '../../shared/constants/permissions';
@@ -104,8 +102,6 @@ function Workspaces() {
     addEditLoader,
   } = useWorkSpaceReducer();
 
-  const userProfile = useAuthReducer((state) => state.userProfile);
-  const restrictedUser = isRestrictedBoardUser(userProfile);
   const { hasPermission } = usePermissions();
   // Kanban Workspaces is fully migrated to the new permission system: the
   // backend permission response is authoritative for every action below, no
@@ -1329,11 +1325,9 @@ function Workspaces() {
       ) : (
         <>
           <div className="workspaces-dashboard-toolbar">
-            {!restrictedUser ? (
-              <button type="button" className="workspaces-dashboard-toolbar-link" onClick={openDashboardWorkspaceModal}>
-                Add Workspace
-              </button>
-            ) : null}
+            <button type="button" className="workspaces-dashboard-toolbar-link" onClick={openDashboardWorkspaceModal}>
+              Add Workspace
+            </button>
             {/* <span className="workspaces-dashboard-toolbar-sep">/</span>
             <button type="button" className="workspaces-dashboard-toolbar-link" onClick={openDashboardWidgetModal}>
               Add Widget

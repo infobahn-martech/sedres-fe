@@ -19,34 +19,6 @@ function isSedresRestrictedBoardRoleId(roleId) {
   return SEDRES_RESTRICTED_ROLE_IDS.has(normalized);
 }
 
-/** Roles limited to specific boards (board_id strings). Roles not listed see every board the API returns. */
-const ROLE_ALLOWED_BOARD_IDS = {
-  '19': ['1'], // Coordinator Transport → Rastanura Operations
-};
-
-function getAllowedBoardIdsForUser(user) {
-  const candidates = [...collectRoleIdCandidatesFromUser(user), toRoleIdString(getItem('role_id'))];
-  const roleId = candidates.find((id) => id && ROLE_ALLOWED_BOARD_IDS[id]);
-  return roleId ? new Set(ROLE_ALLOWED_BOARD_IDS[roleId]) : null;
-}
-
-/**
- * Drops boards outside the user's role allowlist (and workspaces left empty by that).
- * @param {Array} workspaces — raw list_all_workspaces API rows
- * @param {object|null|undefined} user
- * @returns {Array}
- */
-export function filterWorkspacesForUser(workspaces, user) {
-  const allowedBoardIds = getAllowedBoardIdsForUser(user);
-  if (!allowedBoardIds || !Array.isArray(workspaces)) return workspaces;
-  return workspaces
-    .map((ws) => ({
-      ...ws,
-      boards: (ws.boards ?? []).filter((b) => allowedBoardIds.has(String(b.board_id))),
-    }))
-    .filter((ws) => ws.boards.length > 0);
-}
-
 /** Port Operator — hide Master Module / Vendor shortcuts in header */
 export const PORT_OPERATOR_ROLE_ID = '2';
 

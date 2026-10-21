@@ -1,7 +1,5 @@
 import { create } from 'zustand';
 import useAlertReducer from './AlertReducer';
-import useAuthReducer from './AuthReducer';
-import { filterWorkspacesForUser } from '../shared/helpers/restrictedBoardUser';
 import workSpaceService from '../services/workSpaceService';
 import kanbanDashboardService from '../services/kanbanDashboardService';
 
@@ -51,8 +49,7 @@ const useWorkSpaceReducer = create((set, get) => ({
     try {
       set({ isLoading: true });
       const { data } = await workSpaceService.listAllWorkspaces();
-      const raw = data?.status === 'success' ? data.data ?? [] : [];
-      const workspaces = filterWorkspacesForUser(raw, useAuthReducer.getState().userProfile);
+      const workspaces = data?.status === 'success' ? data.data ?? [] : [];
       set({ workspaces, isLoading: false, workspacesFetched: true, errorMessage: '' });
     } catch (error) {
       set({ errorMessage: error.message, isLoading: false, workspacesFetched: true, workspaces: [] });
