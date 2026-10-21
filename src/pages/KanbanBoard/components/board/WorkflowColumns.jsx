@@ -37,9 +37,9 @@ const isBatchWorkflow = (workflow) => {
   return BATCH_ACTION_WORKFLOWS.some((name) => workflowTitle.includes(name));
 };
 
-/* McDermott DA creates batches from Backlog the same way; the backend moves them to its PO request
+/* McDermott and BGP DA create batches from Backlog the same way; the backend moves them to its next
    column. The SAIPEM invoice/SE steps after Backlog stay SAIPEM-only (isBatchWorkflow). */
-const BATCH_CREATE_WORKFLOWS = [...BATCH_ACTION_WORKFLOWS, "MCDERMOTT"];
+const BATCH_CREATE_WORKFLOWS = [...BATCH_ACTION_WORKFLOWS, "MCDERMOTT", "BGP"];
 
 const isBatchCreateWorkflow = (workflow) => {
   const workflowTitle = String(workflow?.title ?? "").trim().toUpperCase();
@@ -126,9 +126,10 @@ const getInvoiceAction = (workflow, column) => {
   return null;
 };
 
-/* POSH workflows name the "Issue AR Invoice" column action "Upload SAP Invoices". */
 const POSH_WORKFLOW_PATTERN = /posh/i;
-const POSH_ISSUE_AR_INVOICE_LABEL = "Upload SAP Invoices";
+/* POSH and BGP workflows name the "Issue AR Invoice" column action "Upload SAP Invoices". */
+const SAP_INVOICES_LABEL_WORKFLOW_PATTERN = /posh|bgp/i;
+const ISSUE_AR_INVOICE_SAP_LABEL = "Upload SAP Invoices";
 
 const INVOICE_ACTION_BUTTONS = {
   upload: { label: "Upload Invoice", icon: <FiUploadCloud size={16} aria-hidden /> },
@@ -502,8 +503,8 @@ export default function WorkflowColumns({
                     isDarkMode={isDarkMode}
                     actionLabel={
                       hasInvoiceButton
-                        ? invoiceButton === "issueArInvoice" && POSH_WORKFLOW_PATTERN.test(workflow?.title ?? "")
-                          ? POSH_ISSUE_AR_INVOICE_LABEL
+                        ? invoiceButton === "issueArInvoice" && SAP_INVOICES_LABEL_WORKFLOW_PATTERN.test(workflow?.title ?? "")
+                          ? ISSUE_AR_INVOICE_SAP_LABEL
                           : INVOICE_ACTION_BUTTONS[invoiceButton].label
                         : "Batch"
                     }
