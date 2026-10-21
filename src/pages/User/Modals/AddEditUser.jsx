@@ -483,6 +483,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
                       render={({ field }) => (
                         <PremiumSelect
                           isMulti
+                          showSelectAll
                           className="premium-select--multi"
                           value={field.value || []}
                           onChange={(e) => {
@@ -536,6 +537,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
                       render={({ field }) => (
                         <PremiumSelect
                           isMulti
+                          showSelectAll
                           className="premium-select--multi"
                           value={field.value || []}
                           onChange={(e) => field.onChange(e.target.value)}

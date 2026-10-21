@@ -25,6 +25,7 @@ const SearchableSelect = ({
   disabled = false,
   hasError = false,
   isMulti = false,
+  showSelectAll = false,
   getOptionLabel = defaultGetOptionLabel,
   getOptionValue = defaultGetOptionValue,
   renderOption,
@@ -177,6 +178,22 @@ const SearchableSelect = ({
     [onChange, isMulti, value]
   );
 
+  // "Select all" acts on the currently visible (search-filtered) options only
+  const filteredValues = useMemo(
+    () => filteredOptions.map((opt) => String(getOptionValue(opt))),
+    [filteredOptions, getOptionValue]
+  );
+  const selectedFilteredCount = filteredValues.filter((v) => normalizedValues.includes(v)).length;
+  const allFilteredSelected = filteredValues.length > 0 && selectedFilteredCount === filteredValues.length;
+
+  const handleToggleAll = useCallback(() => {
+    const current = Array.isArray(value) ? value.map(String) : [];
+    const newValues = allFilteredSelected
+      ? current.filter((v) => !filteredValues.includes(v))
+      : [...new Set([...current, ...filteredValues])];
+    onChange({ target: { value: newValues } });
+  }, [onChange, value, allFilteredSelected, filteredValues]);
+
   const handleRemoveTag = useCallback(
     (optionValue) => {
       const strVal = String(optionValue);
@@ -262,7 +279,29 @@ const SearchableSelect = ({
     filteredOptions.length === 0 ? (
       <div className="cf-multi-select-no-results">{noResultsText}</div>
     ) : (
-      filteredOptions.map((option, index) => {
+      <>
+      {isMulti && showSelectAll && (
+        <div
+          className={`cf-multi-select-option cf-ms-select-all ${allFilteredSelected ? "selected" : ""}`}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            handleToggleAll();
+          }}
+        >
+          <input
+            type="checkbox"
+            className="cf-ms-option-checkbox"
+            checked={allFilteredSelected}
+            ref={(el) => {
+              if (el) el.indeterminate = selectedFilteredCount > 0 && !allFilteredSelected;
+            }}
+            readOnly
+            tabIndex={-1}
+          />
+          <span>Select all</span>
+        </div>
+      )}
+      {filteredOptions.map((option, index) => {
         const optVal = getOptionValue(option);
         const isSelected = isMulti
           ? normalizedValues.includes(String(optVal))
@@ -295,7 +334,8 @@ const SearchableSelect = ({
             )}
           </div>
         );
-      })
+      })}
+      </>
     );
 
   const dropdownClassName = ["cf-multi-select-dropdown", menuClassName || "", useMenuPortal ? "cf-searchable-select__menu-portal" : ""]
@@ -390,6 +430,7 @@ SearchableSelect.propTypes = {
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.array]),
   onChange: PropTypes.func.isRequired,
   isMulti: PropTypes.bool,
+  showSelectAll: PropTypes.bool,
   options: PropTypes.array,
   placeholder: PropTypes.string,
   searchPlaceholder: PropTypes.string,
