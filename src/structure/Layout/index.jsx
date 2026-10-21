@@ -5,23 +5,10 @@ import { Outlet } from 'react-router';
 import SideNav from '../SideNav/index';
 import Header from '../Header';
 import { LayoutViewProvider, useLayoutView } from '../../shared/context/LayoutViewContext';
-import useAuthReducer from '../../store/AuthReducer';
 
 function Layout() {
   const { pathname } = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const userProfile = useAuthReducer((state) => state.userProfile);
-  const userRoleId =
-    userProfile?.role_id ||
-    userProfile?.roleId ||
-    userProfile?.role?.role_id ||
-    userProfile?.user?.role_id ||
-    userProfile?.data?.role_id;
-  const isPortManagerRole = String(userRoleId) === '1';
-  const isPortSupervisorRole = String(userRoleId) === '23';
-  // DA (22) granted the same Kanban sidebar rail as Port Manager, per
-  // explicit user confirmation.
-  const isDARole = String(userRoleId) === '22';
   const hideSidebar = pathname === '/edit-workflow' || pathname === '/da-module';
   const isKanbanBoard =
     pathname === '/kanban-board/operator' ||
@@ -29,11 +16,6 @@ function Layout() {
     pathname === '/compact' ||
     pathname === '/workspaces' ||
     pathname.startsWith('/workspaces/dashboard');
-  const isKanbanIconSidebarRoute =
-    pathname === '/kanban-board/operator' ||
-    pathname.startsWith('/kanban-board/') ||
-    pathname === '/compact';
-  const kanbanFullWidth = isKanbanIconSidebarRoute && !isPortManagerRole && !isPortSupervisorRole && !isDARole;
   const isVendorPortal = pathname.startsWith('/vendor-portal');
   const isMedicalPortal = pathname.startsWith('/medical-portal');
   const isTransportPortal = pathname.startsWith('/transport-portal');
@@ -59,7 +41,6 @@ function Layout() {
     <LayoutViewProvider>
       <LayoutContent
         isKanbanBoard={isKanbanBoard}
-        kanbanFullWidth={kanbanFullWidth}
         hideSidebar={hideSidebar}
         mobileMenuOpen={mobileMenuOpen}
         activePortal={activePortal}
@@ -72,7 +53,6 @@ function Layout() {
 
 function LayoutContent({
   isKanbanBoard,
-  kanbanFullWidth,
   hideSidebar,
   mobileMenuOpen,
   activePortal,
@@ -83,7 +63,7 @@ function LayoutContent({
 
   return (
     <div
-      className={`main-layout ${isKanbanBoard ? 'kanban-board-layout' : ''} ${kanbanFullWidth ? 'kanban-full-width' : ''}`}
+      className={`main-layout ${isKanbanBoard ? 'kanban-board-layout' : ''}`}
     >
       <Header
         onMenuToggle={handleMenuToggle}
@@ -92,7 +72,7 @@ function LayoutContent({
       />
 
       <div
-        className={`dashboard-wrp ${hideSidebar ? 'no-sidebar' : ''} ${kanbanFullWidth ? 'kanban-full-width' : ''}`}
+        className={`dashboard-wrp ${hideSidebar ? 'no-sidebar' : ''}`}
       >
         {!hideSidebar && (
           <SideNav
@@ -103,7 +83,7 @@ function LayoutContent({
         )}
 
         <div
-          className={`page-cont-wrp ${hideSidebar ? 'full-width' : ''} ${kanbanFullWidth ? 'kanban-full-width' : ''}`}
+          className={`page-cont-wrp ${hideSidebar ? 'full-width' : ''}`}
           style={pageBackground ?? undefined}
         >
           <Outlet />

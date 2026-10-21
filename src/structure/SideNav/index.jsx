@@ -107,11 +107,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     userProfile?.role?.role_id ||
     userProfile?.user?.role_id ||
     userProfile?.data?.role_id;
-  const isPortManagerRole = String(userRoleId) === '1';
   const isPortSupervisorRole = String(userRoleId) === '23';
-  // DA (22) granted the same Kanban sidebar rail as Port Manager, per
-  // explicit user confirmation.
-  const isDARole = String(userRoleId) === '22';
   const restrictedNav = isRestrictedBoardUser(userProfile);
   // Classic sidebar only renders while already on a /kanban-board/* (or /compact)
   // route for restricted nav, so the current board can be read straight from the URL.
@@ -900,100 +896,98 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
 
     return (
       <>
-        {(isPortManagerRole || isPortSupervisorRole || isDARole) && (
-          <aside className={`kanban-sidebar ${isDarkMode ? 'kanban-sidebar-dark' : ''}`}>
-            {kanbanIcons.map((item) => {
-              const Icon = item.icon;
-              const isActive =
-                activeKanbanIcon === item.id ||
-                (restrictedNav &&
-                  item.label === 'Kanban Board' &&
-                  pathname.startsWith('/kanban-board/')) ||
-                (item.label === 'Filter' && showFilterPanel) ||
-                (item.label === 'Analytics' && pathname.includes('/analytics')) ||
-                (item.label === 'Board teams' && showBoardTeamsSubmenu) ||
-                (item.label === 'Edit Workflow' && pathname.startsWith('/edit-workflow')) ||
-                (item.label === 'Select Workflow' && showSelectWorkflowSubmenu) ||
-                (item.label === 'On Station' && showOnStationModal) ||
-                (item.label === 'Outlook' && showOutlookModal) ||
-                (item.label === 'Add new dashboard' && showAddDashboardModal) ||
-                (item.label === 'Add' && showSelectWorkflowModal) ||
-                (item.label === 'Task' && showSubTaskModal);
+        <aside className={`kanban-sidebar ${isDarkMode ? 'kanban-sidebar-dark' : ''}`}>
+          {kanbanIcons.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              activeKanbanIcon === item.id ||
+              (restrictedNav &&
+                item.label === 'Kanban Board' &&
+                pathname.startsWith('/kanban-board/')) ||
+              (item.label === 'Filter' && showFilterPanel) ||
+              (item.label === 'Analytics' && pathname.includes('/analytics')) ||
+              (item.label === 'Board teams' && showBoardTeamsSubmenu) ||
+              (item.label === 'Edit Workflow' && pathname.startsWith('/edit-workflow')) ||
+              (item.label === 'Select Workflow' && showSelectWorkflowSubmenu) ||
+              (item.label === 'On Station' && showOnStationModal) ||
+              (item.label === 'Outlook' && showOutlookModal) ||
+              (item.label === 'Add new dashboard' && showAddDashboardModal) ||
+              (item.label === 'Add' && showSelectWorkflowModal) ||
+              (item.label === 'Task' && showSubTaskModal);
 
-              return (
-                <div key={item.id} style={{ position: 'relative' }}>
-                  <div
-                    className={`kanban-sidebar-icon ${isActive ? 'active' : ''}`}
-                    onClick={() => handleIconClick(item)}
-                    data-tooltip-id="sidebar-tooltip"
-                    data-tooltip-content={item.label}
-                  >
-                    <Icon size={22} />
-                  </div>
-
-                  {item.label === 'Board teams' && showBoardTeamsSubmenu && (
-                    <div className="kanban-sidebar-submenu">
-                      {boardTeamsSubmenu.map((subItem, index) => (
-                        <div
-                          key={index}
-                          className="kanban-sidebar-submenu-item"
-                          onClick={() => handleSubmenuClickKanban(subItem)}
-                        >
-                          {subItem.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {item.label === 'Select Workflow' && showSelectWorkflowSubmenu && (
-                    <div className="kanban-sidebar-submenu">
-                      {jumpWorkflowOptions.length === 0 ? (
-                        <div className="kanban-sidebar-submenu-item">No workflows found</div>
-                      ) : (
-                        jumpWorkflowOptions.map((wf) => (
-                          <div
-                            key={String(wf.id)}
-                            className="kanban-sidebar-submenu-item kanban-sidebar-submenu-item--truncate"
-                            onClick={() => handleSelectWorkflowSubmenuItemClick(wf.id)}
-                            data-tooltip-id="select-workflow-submenu-tooltip"
-                            data-tooltip-content={wf.name}
-                          >
-                            {wf.name}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
+            return (
+              <div key={item.id} style={{ position: 'relative' }}>
+                <div
+                  className={`kanban-sidebar-icon ${isActive ? 'active' : ''}`}
+                  onClick={() => handleIconClick(item)}
+                  data-tooltip-id="sidebar-tooltip"
+                  data-tooltip-content={item.label}
+                >
+                  <Icon size={22} />
                 </div>
-              );
-            })}
 
-            <Tooltip
-              id="sidebar-tooltip"
-              place="right"
-              style={{
-                backgroundColor: '#333',
-                color: '#fff',
-                fontSize: '0.85rem',
-                borderRadius: '6px',
-                padding: '6px 10px',
-                fontWeight: '500',
-              }}
-            />
-            <Tooltip
-              id="select-workflow-submenu-tooltip"
-              place="right"
-              style={{
-                backgroundColor: '#333',
-                color: '#fff',
-                fontSize: '0.85rem',
-                borderRadius: '6px',
-                padding: '6px 10px',
-                fontWeight: '500',
-              }}
-            />
-          </aside>
-        )}
+                {item.label === 'Board teams' && showBoardTeamsSubmenu && (
+                  <div className="kanban-sidebar-submenu">
+                    {boardTeamsSubmenu.map((subItem, index) => (
+                      <div
+                        key={index}
+                        className="kanban-sidebar-submenu-item"
+                        onClick={() => handleSubmenuClickKanban(subItem)}
+                      >
+                        {subItem.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {item.label === 'Select Workflow' && showSelectWorkflowSubmenu && (
+                  <div className="kanban-sidebar-submenu">
+                    {jumpWorkflowOptions.length === 0 ? (
+                      <div className="kanban-sidebar-submenu-item">No workflows found</div>
+                    ) : (
+                      jumpWorkflowOptions.map((wf) => (
+                        <div
+                          key={String(wf.id)}
+                          className="kanban-sidebar-submenu-item kanban-sidebar-submenu-item--truncate"
+                          onClick={() => handleSelectWorkflowSubmenuItemClick(wf.id)}
+                          data-tooltip-id="select-workflow-submenu-tooltip"
+                          data-tooltip-content={wf.name}
+                        >
+                          {wf.name}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          <Tooltip
+            id="sidebar-tooltip"
+            place="right"
+            style={{
+              backgroundColor: '#333',
+              color: '#fff',
+              fontSize: '0.85rem',
+              borderRadius: '6px',
+              padding: '6px 10px',
+              fontWeight: '500',
+            }}
+          />
+          <Tooltip
+            id="select-workflow-submenu-tooltip"
+            place="right"
+            style={{
+              backgroundColor: '#333',
+              color: '#fff',
+              fontSize: '0.85rem',
+              borderRadius: '6px',
+              padding: '6px 10px',
+              fontWeight: '500',
+            }}
+          />
+        </aside>
 
         <BoardFilterPanel show={showFilterPanel} onClose={() => setShowFilterPanel(false)} />
         <OnStationModal
