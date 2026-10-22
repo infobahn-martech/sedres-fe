@@ -83,21 +83,23 @@ function PortalDashboard({
                 </div>
             )}
 
-            <div className="vendor-dashboard-section">
-                <h3 className="vendor-section-title">Quick Actions</h3>
-                <div className="vendor-quick-actions">
-                    {quickActions.map((action, i) => (
-                        <button
-                            key={i}
-                            type="button"
-                            className="vendor-quick-action-btn"
-                            onClick={action.onClick}
-                        >
-                            {action.icon} {action.label}
-                        </button>
-                    ))}
+            {!!quickActions?.length && (
+                <div className="vendor-dashboard-section">
+                    <h3 className="vendor-section-title">Quick Actions</h3>
+                    <div className="vendor-quick-actions">
+                        {quickActions.map((action, i) => (
+                            <button
+                                key={i}
+                                type="button"
+                                className="vendor-quick-action-btn"
+                                onClick={action.onClick}
+                            >
+                                {action.icon} {action.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
 
             <div className="vendor-dashboard-section">
                 <div className="vendor-section-header">

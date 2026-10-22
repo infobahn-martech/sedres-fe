@@ -9,6 +9,14 @@ const updateTransportRequestDetail = (formData) =>
 const getTransportRequest = (callId) =>
   Gateway.get(`/transport/get_transport_request/${encodeURIComponent(String(callId))}`);
 
+const getTransportRequestDetail = (transportRequestId) =>
+  Gateway.get(
+    `/transport/get_transport_request_detail/${encodeURIComponent(String(transportRequestId))}`
+  );
+
+const getTransportRequestCardDetail = (cardId) =>
+  Gateway.get(`/transport/get_transport_request_card_detail/${encodeURIComponent(String(cardId))}`);
+
 const getAllInvoiceBranches = () => Gateway.get("/transport/all_invoice_branches");
 
 /**
@@ -80,5 +88,7 @@ export default {
   createTransportRequest,
   updateTransportRequestDetail,
   getTransportRequest,
+  getTransportRequestDetail,
+  getTransportRequestCardDetail,
   getAllInvoiceBranches,
 };

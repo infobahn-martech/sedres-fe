@@ -69,6 +69,8 @@ const STATUS_TONE_MAP = {
   canceled: "cancelled",
 };
 
+const resolveCardId = (cardData) => cardData?.id ?? cardData?.card_id ?? null;
+
 const resolveCallId = (cardData) =>
   cardData?.call_id ?? cardData?.callId ?? cardData?.card_call_id ?? cardData?.id ?? null;
 
@@ -86,10 +88,6 @@ const firstNonEmpty = (...values) => {
   }
   return EMPTY_DISPLAY;
 };
-
-// get_call_detail may return these as plain labels or as { name } objects.
-const toDisplayLabel = (value) =>
-  value && typeof value === "object" ? value.name ?? value.label ?? null : value;
 
 const fileToAttachment = (file) => ({
   name: file.name,
@@ -272,13 +270,12 @@ CoordinatorTransportSummaryCard.propTypes = {
 const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
   const documentsInputRef = useRef(null);
 
-  const callId = useMemo(() => resolveCallId(cardData), [cardData]);
-  const transportRequestId = useMemo(() => resolveTransportRequestId(cardData), [cardData]);
+  const cardId = useMemo(() => resolveCardId(cardData), [cardData]);
 
   const {
-    callDetails,
-    transportRequests,
-    loadingTransportRequests,
+    cardDetail,
+    transportRequestDetail,
+    loadingTransportRequestDetail,
     transportCompanies,
     loadingCompanies,
     vehicleTypes,
@@ -288,8 +285,8 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
     invoiceBranches,
     loadingInvoiceBranches,
     isSavingTransport,
-    fetchCallDetails,
-    fetchTransportRequests,
+    fetchCardDetail,
+    fetchTransportRequestDetail,
     fetchTransportCompanies,
     fetchVehicleTypes,
     fetchInhouseDrivers,
@@ -297,6 +294,16 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
     createTransportRequest,
     updateTransportRequestDetail,
   } = useCoordinatorTransportReducer();
+
+  const callId = cardDetail?.call_id ?? resolveCallId(cardData);
+  const transportRequestId = resolveTransportRequestId(cardData) ?? cardDetail?.transport_request_id ?? null;
+
+  // The store is shared across cards; ignore a detail left over from a previously opened card.
+  const detail =
+    transportRequestDetail &&
+    String(transportRequestDetail.transport_request_id ?? "") === String(transportRequestId ?? "")
+      ? transportRequestDetail
+      : null;
 
   const [transportForm, setTransportForm] = useState(EMPTY_TRANSPORT_FORM);
   const [isDraggingDocuments, setIsDraggingDocuments] = useState(false);
@@ -312,23 +319,19 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
   }, []);
 
   useEffect(() => {
-    fetchCallDetails(callId);
-  }, [callId, fetchCallDetails]);
+    fetchCardDetail(cardId);
+  }, [cardId, fetchCardDetail]);
 
-  const refreshTransportRequests = useCallback(
-    () => fetchTransportRequests(callId),
-    [callId, fetchTransportRequests]
+  const refreshTransportRequestDetail = useCallback(
+    () => fetchTransportRequestDetail(transportRequestId),
+    [transportRequestId, fetchTransportRequestDetail]
   );
 
   useEffect(() => {
-    void refreshTransportRequests();
-  }, [refreshTransportRequests]);
+    void refreshTransportRequestDetail();
+  }, [refreshTransportRequestDetail]);
 
   useEffect(() => {
-    if (!transportRequestId) return;
-    const detail = transportRequests.find(
-      (r) => String(r?.transport_request_id ?? "") === String(transportRequestId)
-    );
     if (!detail) return;
 
     const hasPickupDateTime =
@@ -367,7 +370,7 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
         url: a?.file_url ?? a?.url ?? "",
       })),
     }));
-  }, [transportRequestId, transportRequests]);
+  }, [detail]);
 
   useEffect(() => {
     fetchTransportCompanies();
@@ -385,15 +388,11 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
     fetchInhouseDrivers(transportForm.vehicleTypeId);
   }, [transportForm.vehicleTypeId, fetchInhouseDrivers]);
 
-  const callTypeSummary = firstNonEmpty(callDetails?.call_type, callDetails?.call_type_name, cardData?.typeOfCall);
-  const billingEntitySummary = firstNonEmpty(toDisplayLabel(callDetails?.main_billing_entity));
-  const portFromDetail =
-    typeof callDetails?.port === "string"
-      ? callDetails.port
-      : callDetails?.port?.label || callDetails?.port?.name || "";
-  const portSummary = firstNonEmpty(callDetails?.port_name, portFromDetail);
-  const vesselNameSummary = firstNonEmpty(callDetails?.vessel_name, cardData?.vesselName);
-  const requestedOperatorSummary = firstNonEmpty(callDetails?.assigned_operator_name);
+  const callTypeSummary = firstNonEmpty(cardData?.typeOfCall);
+  const billingEntitySummary = firstNonEmpty(cardDetail?.billing_entity);
+  const portSummary = firstNonEmpty(cardDetail?.port, detail?.port);
+  const vesselNameSummary = firstNonEmpty(cardDetail?.vessel_name, detail?.vessel_name, cardData?.vesselName);
+  const requestedOperatorSummary = firstNonEmpty(cardDetail?.assigned_operator);
 
   const handleProviderChange = useCallback((next) => {
     setTransportForm((previous) => ({
@@ -455,10 +454,6 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
       notify("Call is required to save a transport request.", "error", "top-center");
       return;
     }
-    if (!callDetails?.call_type_id) {
-      notify("Call type id is missing. Please reload call details.", "warning", "top-center");
-      return;
-    }
     if (!transportForm.pickupDate || !transportForm.pickupTime) {
       setPickupSubmitAttempted(true);
       notify("Pickup date and time are required.", "error", "top-center");
@@ -515,7 +510,7 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
       try {
         const response = await updateTransportRequestDetail(updateFormData);
         notify(response?.data?.message || "Transport request updated successfully", "success", "top-center");
-        await refreshTransportRequests();
+        await refreshTransportRequestDetail();
       } catch (error) {
         notify(error?.response?.data?.message || "Failed to update transport request", "error", "top-center");
       }
@@ -577,18 +572,17 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
       const response = await createTransportRequest(formData);
       notify(response?.data?.message || "Transport request created successfully", "success", "top-center");
       resetForm();
-      await refreshTransportRequests();
+      await refreshTransportRequestDetail();
     } catch (error) {
       notify(error?.response?.data?.message || "Failed to create transport request", "error", "top-center");
     }
   }, [
     callId,
-    callDetails,
     transportForm,
     transportRequestId,
     createTransportRequest,
     updateTransportRequestDetail,
-    refreshTransportRequests,
+    refreshTransportRequestDetail,
     resetForm,
   ]);
 
@@ -629,8 +623,8 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
   );
 
   const transportRequestRows = useMemo(
-    () => flattenTransportRequestRows(transportRequests),
-    [transportRequests]
+    () => flattenTransportRequestRows(detail ? [detail] : []),
+    [detail]
   );
 
   return (
@@ -883,7 +877,7 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
               subtitle="All bookings for this job"
               icon="list"
               requests={transportRequestRows}
-              loading={loadingTransportRequests}
+              loading={loadingTransportRequestDetail}
               columns={COORDINATOR_TRANSPORT_REQUEST_COLUMNS}
               emptyMessage="No transport requests found"
               serviceType="transport"

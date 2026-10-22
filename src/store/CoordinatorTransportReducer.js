@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import callFileService from '../services/callFileService';
 import transportContentService from '../services/transportContentService';
 import transportCompanyService from '../services/transportCompanyService';
 import vehicleService from '../services/vehicleService';
@@ -11,11 +10,16 @@ const extractListEnvelope = (response) => {
   return [];
 };
 
+const extractObjectEnvelope = (response) => {
+  const payload = response?.data?.data ?? null;
+  return payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : null;
+};
+
 const useCoordinatorTransportReducer = create((set) => ({
-  callDetails: null,
-  loadingCallDetails: false,
-  transportRequests: [],
-  loadingTransportRequests: false,
+  cardDetail: null,
+  loadingCardDetail: false,
+  transportRequestDetail: null,
+  loadingTransportRequestDetail: false,
   transportCompanies: [],
   loadingCompanies: false,
   vehicleTypes: [],
@@ -26,31 +30,34 @@ const useCoordinatorTransportReducer = create((set) => ({
   loadingInvoiceBranches: false,
   isSavingTransport: false,
 
-  fetchCallDetails: async (callId) => {
-    if (!callId) {
-      set({ callDetails: null });
+  fetchCardDetail: async (cardId) => {
+    if (!cardId) {
+      set({ cardDetail: null, loadingCardDetail: false });
       return;
     }
+    set({ cardDetail: null, loadingCardDetail: true });
     try {
-      set({ loadingCallDetails: true });
-      const { data } = await callFileService.getCallDetail(callId);
-      set({ callDetails: data?.data || null, loadingCallDetails: false });
+      const response = await transportContentService.getTransportRequestCardDetail(cardId);
+      set({ cardDetail: extractObjectEnvelope(response), loadingCardDetail: false });
     } catch {
-      set({ callDetails: null, loadingCallDetails: false });
+      set({ cardDetail: null, loadingCardDetail: false });
     }
   },
 
-  fetchTransportRequests: async (callId) => {
-    if (!callId) {
-      set({ transportRequests: [], loadingTransportRequests: false });
+  fetchTransportRequestDetail: async (transportRequestId) => {
+    if (!transportRequestId) {
+      set({ transportRequestDetail: null, loadingTransportRequestDetail: false });
       return;
     }
-    set({ loadingTransportRequests: true });
+    set({ loadingTransportRequestDetail: true });
     try {
-      const response = await transportContentService.getTransportRequest(callId);
-      set({ transportRequests: extractListEnvelope(response), loadingTransportRequests: false });
+      const response = await transportContentService.getTransportRequestDetail(transportRequestId);
+      set({
+        transportRequestDetail: extractObjectEnvelope(response),
+        loadingTransportRequestDetail: false,
+      });
     } catch {
-      set({ transportRequests: [], loadingTransportRequests: false });
+      set({ transportRequestDetail: null, loadingTransportRequestDetail: false });
     }
   },
 

@@ -5,7 +5,6 @@ import {
     FiCheckCircle,
     FiClock,
     FiMapPin,
-    FiList,
     FiPaperclip,
     FiAnchor,
     FiBriefcase,
@@ -45,11 +44,6 @@ const getInitials = (name = '') =>
         .join('') || '?';
 
 const hasValue = (value) => value != null && value !== '' && value !== '—';
-
-const quickActions = [
-    { label: 'View My Trips', icon: <FiList />, onClick: () => {} },
-    { label: 'View Route Map', icon: <FiMapPin />, onClick: () => {} },
-];
 
 const tableColumns = [
     { label: 'Trip No', key: 'tripNo' },
@@ -288,7 +282,6 @@ function InhouseDriverDashboard() {
             title="Inhouse Driver Dashboard"
             subtitle="Overview of your assigned, completed, and pending trips."
             summaryCards={summaryCards}
-            quickActions={quickActions}
             tableTitle="Recent Trips"
             tableColumns={tableColumns}
             tableRows={tableRows}

@@ -259,9 +259,19 @@
     }
   }
 
+  // Wrap chips onto new lines instead of clipping them in a horizontal scroller;
+  // cap the height so a large crew list scrolls vertically inside the field.
+  .cf-multiselect-tags {
+    flex-wrap: wrap;
+    max-height: 104px;
+    padding: 2px 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
   .cf-multiselect-tag {
     width: auto;
-    max-width: 140px;
+    max-width: 180px;
     padding: 4px 6px 4px 10px;
     background: var(--accent-tint, #e6f7f5);
     border: 1px solid rgba(13, 148, 136, 0.22);
