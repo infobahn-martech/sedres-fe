@@ -130,7 +130,6 @@ const DEFAULT_TAB_STRUCTURE = {
             ["Last Port", "text"],
             ["Vessel Type", "dropdown", { optionsSource: "master", masterModule: "vessel_type" }],
             ["Vessel Name", "text"],
-            ["Billing Entity", "dropdown", { optionsSource: "master", masterModule: "billing_entity" }],
             ["Vessel Owner", "text"],
             ["Vessel Charterer", "text"],
             ["Checklist", "dropdown"],
@@ -138,7 +137,6 @@ const DEFAULT_TAB_STRUCTURE = {
             ["Service Requestor Name", "text"],
             ["Service Requestor Email", "email"],
             ["Daily Report Emails", "email"],
-            ["Billing Instructions", "textarea"],
         ],
     },
     Operation: {
@@ -186,12 +184,10 @@ const LOCKED_FIRST_TAB_FIELD_LABELS = new Set([
     "appointment email",
     "appointment received",
     "port",
-    "billing entity",
     "assigned operator",
     "service requestor name",
     "service requestor email",
     "daily report emails",
-    "billing instructions",
 ]);
 
 const isLockedField = (field, isFirstTab) =>
