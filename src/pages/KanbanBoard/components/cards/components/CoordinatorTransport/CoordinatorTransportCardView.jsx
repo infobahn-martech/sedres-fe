@@ -1,7 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { format, isValid, parseISO } from "date-fns";
-import { FiEye } from "react-icons/fi";
+import {
+  FiAnchor,
+  FiBriefcase,
+  FiCheck,
+  FiEye,
+  FiHome,
+  FiLayers,
+  FiMail,
+  FiNavigation,
+  FiTruck,
+  FiUser,
+} from "react-icons/fi";
 import { notify } from "../../../../../../components/Toaster";
 import useCoordinatorTransportReducer from "../../../../../../store/CoordinatorTransportReducer";
 import { buildPickupDateTime } from "../../../../../../store/TransportContent";
@@ -190,16 +201,22 @@ const COORDINATOR_TRANSPORT_REQUEST_COLUMNS = [
   },
 ];
 
-const CoordinatorTransportSummaryCard = ({ label, value }) => (
+const CoordinatorTransportSummaryCard = ({ icon, label, value }) => (
   <div className="coordinator-transport-summary-card">
-    <div className="coordinator-transport-summary-label">{label}</div>
-    <div className="coordinator-transport-summary-value" title={value}>
-      {value}
+    <span className="coordinator-transport-summary-icon">
+      {icon}
+    </span>
+    <div className="coordinator-transport-summary-text">
+      <div className="coordinator-transport-summary-label">{label}</div>
+      <div className="coordinator-transport-summary-value" title={value}>
+        {value}
+      </div>
     </div>
   </div>
 );
 
 CoordinatorTransportSummaryCard.propTypes = {
+  icon: PropTypes.node.isRequired,
   label: PropTypes.string.isRequired,
   value: PropTypes.string.isRequired,
 };
@@ -567,18 +584,23 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
     <div className="coordinator-transport-card-view" style={{ "--card-color": cardColor }}>
       <div className="coordinator-transport-content">
         <div className="coordinator-transport-summary">
-          <CoordinatorTransportSummaryCard label="Call Type" value={callTypeSummary} />
-          <CoordinatorTransportSummaryCard label="Billing Entity" value={billingEntitySummary} />
-          <CoordinatorTransportSummaryCard label="Port" value={portSummary} />
-          <CoordinatorTransportSummaryCard label="Vessel Name" value={vesselNameSummary} />
-          <CoordinatorTransportSummaryCard label="Requested Operator" value={requestedOperatorSummary} />
+          <CoordinatorTransportSummaryCard icon={<FiLayers size={16} />} label="Call Type" value={callTypeSummary} />
+          <CoordinatorTransportSummaryCard icon={<FiBriefcase size={16} />} label="Billing Entity" value={billingEntitySummary} />
+          <CoordinatorTransportSummaryCard icon={<FiAnchor size={16} />} label="Port" value={portSummary} />
+          <CoordinatorTransportSummaryCard icon={<FiNavigation size={16} />} label="Vessel Name" value={vesselNameSummary} />
+          <CoordinatorTransportSummaryCard icon={<FiUser size={16} />} label="Requested Operator" value={requestedOperatorSummary} />
         </div>
 
-        <div className="coordinator-transport-workspace">
+        <div className={`coordinator-transport-workspace husb-accent-${TRANSPORT_ACCENT}`}>
           <section className={`coordinator-transport-form-card husb-accent-${TRANSPORT_ACCENT}`}>
             <div className="coordinator-transport-form-header">
-              <h3 className="coordinator-transport-form-title">New transport request</h3>
-              <p className="coordinator-transport-form-subtitle">Book a vehicle for crew movement</p>
+              <span className="coordinator-transport-form-header-icon">
+                <FiTruck size={18} />
+              </span>
+              <div>
+                <h3 className="coordinator-transport-form-title">New transport request</h3>
+                <p className="coordinator-transport-form-subtitle">Book a vehicle for crew movement</p>
+              </div>
             </div>
 
             <div className="coordinator-transport-form-body crew-pass-thin-scrollbar">
@@ -588,6 +610,9 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                     <div className="coordinator-transport-request-email-view">
                       {transportForm.requestEmail?.[0] ? (
                         <div className="coordinator-transport-request-email-view__file">
+                          <span className="coordinator-transport-request-email-view__icon">
+                            <FiMail size={15} />
+                          </span>
                           <span className="coordinator-transport-request-email-view__name">
                             {transportForm.requestEmail[0].name}
                           </span>
@@ -605,7 +630,10 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                           ) : null}
                         </div>
                       ) : (
-                        <span className="coordinator-transport-table__empty-cell">{EMPTY_DISPLAY}</span>
+                        <div className="coordinator-transport-request-email-view__empty">
+                          <FiMail size={16} />
+                          <span>No request email attached</span>
+                        </div>
                       )}
                     </div>
                   </FormField>
@@ -632,6 +660,7 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                         }`}
                         onClick={() => handleProviderChange("inhouse")}
                       >
+                        <FiHome size={14} />
                         In house
                       </button>
                       <button
@@ -641,6 +670,7 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                         }`}
                         onClick={() => handleProviderChange("thirdparty")}
                       >
+                        <FiTruck size={14} />
                         Third party
                       </button>
                     </div>
@@ -698,7 +728,7 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                 )}
               </div>
 
-              <div className="coordinator-transport-form-section">
+              <div className="coordinator-transport-form-section coordinator-transport-form-section--route">
                 <FormGroup icon="calendar" label="Pickup Date Time" accent={TRANSPORT_ACCENT}>
                   <FormField>
                     <DateTimePickerField
@@ -785,7 +815,8 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                 onClick={handleSave}
                 disabled={isSavingTransport}
               >
-                {isSavingTransport ? "Saving..." : "Save"}
+                {!isSavingTransport && <FiCheck size={15} />}
+                {isSavingTransport ? "Saving..." : "Save request"}
               </button>
             </div>
           </section>

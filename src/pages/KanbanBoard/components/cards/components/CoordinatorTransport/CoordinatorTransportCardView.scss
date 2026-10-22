@@ -1,10 +1,13 @@
+/* Accent colors come from the husb-accent-* class on the workspace / form card
+   (--accent, --accent-tint), so the whole view follows the Transport accent. */
+
 .coordinator-transport-card-view {
   height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #f6f8fc;
+  background: #f4f6fb;
   box-sizing: border-box;
 }
 
@@ -13,7 +16,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
   padding: 18px 20px 20px;
   overflow: hidden;
   box-sizing: border-box;
@@ -24,30 +27,57 @@
 .coordinator-transport-summary {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 16px;
+  gap: 14px;
   width: 100%;
   flex-shrink: 0;
 }
 
 .coordinator-transport-summary-card {
   min-width: 0;
-  min-height: 88px;
-  padding: 18px 20px;
+  min-height: 76px;
+  padding: 14px 16px;
   background: #ffffff;
   border: 1px solid #e3e8f0;
-  border-radius: 16px;
-  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    border-color: #cfd8e3;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+    transform: translateY(-1px);
+  }
+}
+
+.coordinator-transport-summary-icon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e6f7f5;
+  color: #0d9488;
+}
+
+.coordinator-transport-summary-text {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 8px;
-  box-sizing: border-box;
+  gap: 4px;
 }
 
 .coordinator-transport-summary-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: #718096;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8a94a6;
 }
 
 .coordinator-transport-summary-value {
@@ -55,9 +85,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 16px;
-  font-weight: 500;
-  color: #273144;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2a3d;
 }
 
 /* ---------- Workspace (form + table) ---------- */
@@ -68,7 +98,7 @@
   display: grid;
   grid-template-columns: minmax(430px, 32%) minmax(0, 1fr);
   align-items: start;
-  gap: 22px;
+  gap: 20px;
   overflow: hidden;
 }
 
@@ -78,7 +108,7 @@
   background: #ffffff;
   border: 1px solid #e1e7ef;
   border-radius: 16px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
   box-sizing: border-box;
 }
 
@@ -94,30 +124,48 @@
 
 .coordinator-transport-form-header {
   flex-shrink: 0;
-  padding: 16px 20px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(180deg, var(--accent-tint, #e6f7f5) 0%, #ffffff 100%);
   border-bottom: 1px solid #edf0f5;
+}
+
+.coordinator-transport-form-header-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent, #0d9488);
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(13, 148, 136, 0.28);
 }
 
 .coordinator-transport-form-title {
   margin: 0;
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 700;
   line-height: 1.25;
   color: #1f2937;
 }
 
 .coordinator-transport-form-subtitle {
-  margin-top: 4px;
+  margin-top: 2px;
   margin-bottom: 0;
   font-size: 12px;
-  color: #7b8495;
+  color: #6b7587;
 }
 
 .coordinator-transport-form-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 16px 18px 24px;
+  padding: 14px 14px 18px;
+  background: #fafbfd;
   scrollbar-width: thin;
 }
 
@@ -130,45 +178,201 @@
   border-radius: 999px;
 }
 
+/* Each section is its own soft card instead of a hairline-divided list. */
 .coordinator-transport-form-section {
-  padding-bottom: 18px;
-  margin-bottom: 18px;
-  border-bottom: 1px solid #edf1f5;
-}
+  padding: 14px;
+  margin-bottom: 12px;
+  background: #ffffff;
+  border: 1px solid #e9edf3;
+  border-radius: 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
-.coordinator-transport-form-section:last-child {
-  margin-bottom: 0;
-  border-bottom: 0;
-  padding-bottom: 0;
+  &:focus-within {
+    border-color: #cde7e3;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.07);
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .husb-group {
+    margin-bottom: 0;
+  }
+
+  .husb-group + .husb-group__row {
+    margin-top: 14px;
+  }
 }
 
 .coordinator-transport-form-card label {
-  margin-bottom: 7px;
+  margin-bottom: 6px;
   font-size: 12px;
   font-weight: 500;
-  color: #2d3748;
+  color: #475569;
 }
+
+/* ---------- Form controls ---------- */
 
 .coordinator-transport-form-card input,
 .coordinator-transport-form-card select,
 .coordinator-transport-form-card .cf-multi-select-email-input {
   min-height: 40px;
-  border-radius: 8px;
+  border-radius: 10px;
   box-sizing: border-box;
+}
+
+.coordinator-transport-form-card .cf-multi-select-email-input {
+  border: 1px solid #dbe2ea;
+  background: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: #b5c0ce;
+  }
+
+  &.disabled {
+    background: #f3f5f8;
+    border-color: #e5e9ef;
+  }
+}
+
+.coordinator-transport-form-card .cf-multi-select-arrow {
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+/* Crew multiselect: inline dropdown (not portaled), so it can be scoped here */
+.coordinator-transport-form-card .husb-crew-multiselect {
+  .cf-multiselect-input {
+    height: auto;
+    min-height: 44px;
+    padding: 6px 12px;
+    border: 1px solid #dbe2ea;
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: none;
+
+    &:hover {
+      border-color: #b5c0ce;
+      box-shadow: none;
+    }
+  }
+
+  .cf-multiselect-tag {
+    width: auto;
+    max-width: 140px;
+    padding: 4px 6px 4px 10px;
+    background: var(--accent-tint, #e6f7f5);
+    border: 1px solid rgba(13, 148, 136, 0.22);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--accent, #0d9488);
+  }
+
+  .cf-multiselect-tag-remove {
+    width: 16px;
+    height: 16px;
+    font-size: 14px;
+    color: inherit;
+
+    &:hover {
+      background: rgba(13, 148, 136, 0.15);
+      color: inherit;
+    }
+  }
+
+  .cf-multiselect-placeholder {
+    font-size: 13px;
+    font-style: normal;
+    color: #94a3b8;
+  }
+
+  .cf-multiselect-arrow {
+    font-size: 9px;
+    color: #94a3b8;
+  }
+
+  .cf-multiselect-dropdown {
+    max-height: 240px;
+    padding: 6px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  }
+
+  .cf-multiselect-search {
+    top: -6px;
+    margin: -6px -6px 4px;
+    padding: 6px;
+    border-bottom: 1px solid #eef1f5;
+  }
+
+  .cf-multiselect-search input {
+    height: 36px;
+    min-height: 36px;
+    border: 1px solid #dbe2ea;
+    border-radius: 8px;
+
+    &:focus {
+      border-color: var(--accent, #0d9488);
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+    }
+  }
+
+  .cf-multiselect-option {
+    position: relative;
+    padding: 9px 12px 9px 36px;
+    font-size: 13px;
+    border-radius: 8px;
+
+    /* checkbox affordance */
+    &::before {
+      content: "";
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      transform: translateY(-50%);
+      border: 1.5px solid #c3ccd8;
+      border-radius: 4px;
+      background: #ffffff;
+      box-sizing: border-box;
+    }
+
+    &:hover {
+      background: #f3f6f9;
+    }
+
+    &.selected {
+      background: var(--accent-tint, #e6f7f5);
+      color: #0f5f58;
+      font-weight: 600;
+
+      &::before {
+        border-color: var(--accent, #0d9488);
+        background: var(--accent, #0d9488)
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E")
+          no-repeat center / 10px 10px;
+      }
+    }
+  }
 }
 
 /* From / To location inputs: match the select fields' height, padding and border */
 .coordinator-transport-form-card .cf-input.location-autocomplete {
   height: 40px;
   min-height: 40px;
-  margin-top: 10px;
+  margin-top: 8px;
   padding: 0;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
   background: #ffffff;
   box-sizing: border-box;
   gap: 0;
   align-items: stretch;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .coordinator-transport-form-card .cf-input.location-autocomplete input {
@@ -184,23 +388,46 @@
 
 .coordinator-transport-form-card .cf-input.location-autocomplete input::placeholder {
   font-size: 13px;
-  color: #999;
+  color: #94a3b8;
 }
 
 .coordinator-transport-form-card .cf-input.location-autocomplete:hover {
-  border-color: #999;
+  border-color: #b5c0ce;
 }
 
 .coordinator-transport-form-card .cf-input.location-autocomplete:focus-within {
-  border-color: #3e5cb6;
-  box-shadow: 0 0 0 1px #3e5cb6;
+  border-color: var(--accent, #0d9488);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
 }
 
-/* Balanced two-up field rows (Coordinator/Branch, Company/Driver, From/To) */
+/* Balanced two-up field rows (Vehicle/Driver, From/To) */
 .coordinator-transport-form-section .husb-group__row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
+}
+
+/* Route: colored origin/destination markers on the From / To labels */
+.coordinator-transport-form-section--route .husb-group__row > .cf-field {
+  > label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    &::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent, #0d9488);
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    }
+  }
+
+  &:nth-child(2) > label::before {
+    background: #e11d48;
+    box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.14);
+  }
 }
 
 @media (max-width: 1250px) {
@@ -213,23 +440,56 @@
 .coordinator-transport-request-email-view {
   display: flex;
   align-items: center;
-  min-height: 64px;
-  padding: 10px 14px;
+  min-height: 52px;
+  padding: 8px 12px;
   border: 1px solid #e2e6ef;
-  border-radius: 8px;
+  border-radius: 10px;
+  background: #ffffff;
   box-sizing: border-box;
+}
+
+.coordinator-transport-request-email-view__empty {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* Empty state reads as a placeholder slot rather than an empty input */
+.coordinator-transport-request-email-view:has(.coordinator-transport-request-email-view__empty) {
+  border-style: dashed;
+  background: #fafbfd;
 }
 
 .coordinator-transport-request-email-view__file {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   width: 100%;
+  min-width: 0;
+}
+
+.coordinator-transport-request-email-view__icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-tint, #e6f7f5);
+  color: var(--accent, #0d9488);
 }
 
 .coordinator-transport-request-email-view__name {
+  flex: 1;
+  min-width: 0;
   font-size: 13px;
+  font-weight: 500;
+  color: #273144;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -243,8 +503,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 10px;
   box-sizing: border-box;
   overflow: visible;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    border-color: var(--accent, #0d9488) !important;
+    background: #f5fbfa;
+  }
 }
 
 .coordinator-transport-documents-upload .upload-zone-content {
@@ -270,10 +537,12 @@
   width: 100%;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  padding: 3px;
-  background: #f1f3fb;
-  border: 1px solid #e2e6f0;
-  border-radius: 10px;
+  gap: 4px;
+  padding: 4px;
+  background: #f1f4f8;
+  border: 1px solid #e3e8ef;
+  border-radius: 12px;
+  box-sizing: border-box;
 }
 
 .coordinator-transport-provider-option {
@@ -281,21 +550,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 0;
-  border-radius: 7px;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: 9px;
   background: transparent;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: #475569;
+  color: #64748b;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+
+  &:hover:not(.is-active) {
+    color: #334155;
+    background: rgba(255, 255, 255, 0.6);
+  }
 }
 
 .coordinator-transport-provider-option.is-active {
   background: #ffffff;
-  color: #4f46e5;
-  font-weight: 600;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  border-color: rgba(13, 148, 136, 0.25);
+  color: var(--accent, #0d9488);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }
 
 /* ---------- Save footer ---------- */
@@ -304,19 +579,29 @@
   flex-shrink: 0;
   display: flex;
   justify-content: flex-end;
-  padding: 14px 18px;
+  padding: 12px 16px;
   background: #ffffff;
   border-top: 1px solid #e5eaf1;
+  box-shadow: 0 -6px 14px rgba(15, 23, 42, 0.04);
 }
 
 .coordinator-transport-save-button {
-  min-width: 92px;
-  height: 38px;
+  min-width: 132px;
+  height: 40px;
   padding: 0 22px;
-  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 10px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: progress;
+  }
 }
 
 /* ---------- Table panel ---------- */
@@ -342,22 +627,39 @@
 
 .coordinator-transport-table-card .crew-pass-requests-table-card__header {
   flex-shrink: 0;
-  min-height: 64px;
-  padding: 14px 18px;
+  min-height: 72px;
+  padding: 16px 20px;
   border-bottom: 1px solid #e5eaf1;
   box-sizing: border-box;
 }
 
+.coordinator-transport-table-card .husb-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+}
+
 .coordinator-transport-table-card .crew-pass-requests-table-card__title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #202938;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f2937;
 }
 
 .coordinator-transport-table-card .husb-header-subtitle {
   margin-top: 2px;
-  font-size: 11px;
+  font-size: 12px;
   color: #7c8798;
+}
+
+.coordinator-transport-table-card .crew-pass-requests-table-card__count {
+  min-width: 28px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-tint, #e6f7f5);
+  color: var(--accent, #0d9488);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
 }
 
 .coordinator-transport-table-card .crew-pass-requests-table-card__body {
@@ -379,27 +681,43 @@
   border-collapse: collapse;
 }
 
-.coordinator-transport-table-card th {
-  height: 42px;
-  padding: 0 14px;
-  font-size: 11px;
-  font-weight: 600;
+.coordinator-transport-table-card th,
+.coordinator-transport-table-card .crew-pass-requests-table thead th {
+  height: 40px;
+  padding: 0 16px;
+  background: #f7f9fc;
+  color: #64748b;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   text-align: left;
   white-space: nowrap;
+  border-bottom: 1px solid #e5eaf1;
 }
 
 .coordinator-transport-table-card td {
-  height: 44px;
-  padding: 10px 14px;
-  font-size: 11px;
+  height: 52px;
+  padding: 10px 16px;
+  font-size: 12.5px;
+  color: #334155;
   vertical-align: middle;
-  border-bottom: 1px solid #edf0f4;
+  border-bottom: 1px solid #f0f2f6;
   overflow: hidden;
+}
+
+.coordinator-transport-table-card tbody tr {
+  transition: background 0.12s ease;
+}
+
+.coordinator-transport-table-card tbody tr:hover {
+  background: #f7fbfa;
 }
 
 .coordinator-transport-table-card .husb-route {
   min-width: 0;
   max-width: 100%;
+  font-weight: 500;
 }
 
 .coordinator-transport-table-card .husb-route__point {
@@ -411,10 +729,8 @@
 
 .coordinator-transport-table-card .husb-route__arrow {
   flex-shrink: 0;
-}
-
-.coordinator-transport-table-card tbody tr:hover {
-  background: #fafbff;
+  margin: 0 4px;
+  color: var(--accent, #0d9488);
 }
 
 .coordinator-transport-table-card .husb-crew-cell__name {
@@ -422,6 +738,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 600;
+  color: #1f2937;
 }
 
 .coordinator-transport-table-card th:nth-child(1),
@@ -442,6 +760,8 @@
 .coordinator-transport-table-card th:nth-child(4),
 .coordinator-transport-table-card td:nth-child(4) {
   width: 18%;
+  font-variant-numeric: tabular-nums;
+  color: #475569;
 }
 
 .coordinator-transport-table-card th:nth-child(5),
@@ -450,15 +770,29 @@
   text-align: center;
 }
 
+.coordinator-transport-table-card .crew-pass-requests-table__doc-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 8px;
+  background: var(--accent-tint, #e6f7f5);
+  color: var(--accent, #0d9488);
+
+  &:hover {
+    background: var(--accent, #0d9488);
+    color: #ffffff;
+  }
+}
+
 .coordinator-transport-table__empty-cell {
   color: #94a3b8;
 }
 
 .coordinator-transport-table-card .crew-pass-requests-table-card__pagination {
   flex-shrink: 0;
-  min-height: 58px;
+  min-height: 56px;
   margin-top: auto;
-  padding: 12px 16px;
+  padding: 12px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -468,7 +802,7 @@
 }
 
 .coordinator-transport-table-card .crew-pass-requests-pagination__info {
-  font-size: 11px;
+  font-size: 12px;
   color: #677489;
 }
 
@@ -479,15 +813,23 @@
 }
 
 .coordinator-transport-table-card .crew-pass-requests-pagination__btn {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid #e1e6ee;
   border-radius: 8px;
   background: #ffffff;
+  color: #475569;
   cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--accent, #0d9488);
+    color: var(--accent, #0d9488);
+    background: var(--accent-tint, #e6f7f5);
+  }
 }
 
 .coordinator-transport-table-card .crew-pass-requests-pagination__btn:disabled {
@@ -500,12 +842,21 @@
 .coordinator-transport-status-badge {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   text-transform: capitalize;
   white-space: nowrap;
+
+  &::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
 }
 
 .coordinator-transport-status-badge--pending {
@@ -544,30 +895,55 @@
 
   .coordinator-transport-summary-card,
   .coordinator-transport-form-card,
-  .coordinator-transport-table-card {
+  .coordinator-transport-table-card,
+  .coordinator-transport-form-section {
     background: var(--bg-card);
     border-color: var(--border);
     box-shadow: var(--shadow-md);
   }
 
+  .coordinator-transport-form-section {
+    box-shadow: none;
+  }
+
+  .coordinator-transport-form-body {
+    background: var(--bg-page);
+  }
+
+  .coordinator-transport-form-header {
+    background: var(--bg-card);
+  }
+
+  .coordinator-transport-summary-icon,
+  .coordinator-transport-request-email-view__icon {
+    background: rgba(13, 148, 136, 0.18);
+    color: #5eead4;
+  }
+
   .coordinator-transport-summary-label,
   .coordinator-transport-form-subtitle,
   .coordinator-transport-table-card .husb-header-subtitle,
-  .coordinator-transport-table-card .crew-pass-requests-pagination__info {
+  .coordinator-transport-table-card .crew-pass-requests-pagination__info,
+  .coordinator-transport-request-email-view__empty {
     color: var(--text-subtle);
   }
 
   .coordinator-transport-summary-value,
   .coordinator-transport-form-title,
-  .coordinator-transport-table-card .crew-pass-requests-table-card__title {
+  .coordinator-transport-request-email-view__name,
+  .coordinator-transport-table-card .crew-pass-requests-table-card__title,
+  .coordinator-transport-table-card .husb-crew-cell__name {
     color: var(--text-heading);
   }
 
   .coordinator-transport-form-header,
-  .coordinator-transport-form-section,
   .coordinator-transport-table-card .crew-pass-requests-table-card__header,
   .coordinator-transport-table-card td {
     border-color: var(--divider-row);
+  }
+
+  .coordinator-transport-table-card td {
+    color: var(--text-control);
   }
 
   .coordinator-transport-form-card label {
@@ -579,10 +955,44 @@
   }
 
   .coordinator-transport-request-email-view,
-  .coordinator-transport-form-card .cf-input.location-autocomplete {
+  .coordinator-transport-form-card .cf-input.location-autocomplete,
+  .coordinator-transport-form-card .cf-multi-select-email-input,
+  .coordinator-transport-form-card .husb-crew-multiselect .cf-multiselect-input {
     background: var(--bg-inset);
     border-color: var(--border-strong);
     color: var(--text-control);
+  }
+
+  .coordinator-transport-form-card .husb-crew-multiselect {
+    .cf-multiselect-tag {
+      background: rgba(13, 148, 136, 0.18);
+      border-color: rgba(94, 234, 212, 0.3);
+      color: #5eead4;
+    }
+
+    .cf-multiselect-dropdown {
+      border-color: var(--border-strong);
+    }
+
+    .cf-multiselect-search {
+      border-color: var(--border);
+    }
+
+    .cf-multiselect-option {
+      &::before {
+        background: var(--bg-inset);
+        border-color: var(--border-strong);
+      }
+
+      &:hover {
+        background: var(--bg-row-hover);
+      }
+
+      &.selected {
+        background: rgba(13, 148, 136, 0.18);
+        color: #5eead4;
+      }
+    }
   }
 
   .coordinator-transport-form-card .cf-input.location-autocomplete input {
@@ -594,6 +1004,10 @@
     color: var(--text-faint);
   }
 
+  .coordinator-transport-documents-upload .document-upload-zone:hover {
+    background: var(--bg-row-hover);
+  }
+
   .coordinator-transport-provider-toggle {
     background: var(--bg-inset);
     border-color: var(--border-strong);
@@ -601,11 +1015,17 @@
 
   .coordinator-transport-provider-option {
     color: var(--text-subtle);
+
+    &:hover:not(.is-active) {
+      background: var(--bg-row-hover);
+      color: var(--text-control);
+    }
   }
 
   .coordinator-transport-provider-option.is-active {
     background: var(--bg-highlight);
-    color: var(--brand-bright);
+    border-color: transparent;
+    color: #5eead4;
     box-shadow: none;
   }
 
@@ -614,15 +1034,24 @@
   .coordinator-transport-table-card .crew-pass-requests-table-card__pagination {
     background: var(--bg-card);
     border-color: var(--border);
+    box-shadow: none;
   }
 
-  .coordinator-transport-table-card th {
+  .coordinator-transport-table-card th,
+  .coordinator-transport-table-card .crew-pass-requests-table thead th {
     background: var(--bg-highlight);
     color: var(--text-label);
+    border-color: var(--border);
   }
 
   .coordinator-transport-table-card tbody tr:hover {
     background: var(--bg-row-hover);
+  }
+
+  .coordinator-transport-table-card .crew-pass-requests-table-card__count,
+  .coordinator-transport-table-card .crew-pass-requests-table__doc-btn {
+    background: rgba(13, 148, 136, 0.18);
+    color: #5eead4;
   }
 
   .coordinator-transport-table-card .crew-pass-requests-pagination__btn {
