@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiPlus, FiChevronDown, FiChevronUp, FiTrash2, FiFilter, FiUsers, FiInfo, FiCalendar, FiDownload, FiMaximize2, FiShare2, FiCheck, FiFile } from 'react-icons/fi';
+import { FiX, FiPlus, FiChevronDown, FiChevronUp, FiTrash2, FiFilter, FiUsers, FiInfo, FiCalendar, FiDownload } from 'react-icons/fi';
 import { LuTriangle } from 'react-icons/lu';
 import { Modal } from 'react-bootstrap';
 import PropTypes from 'prop-types';
@@ -9,20 +9,18 @@ import QuillTableBetter from 'quill-table-better';
 import 'react-quill-new/dist/quill.snow.css';
 import 'quill-table-better/dist/quill-table-better.css';
 import {
-  THEN_ACTION_SECTIONS, ACTION_GROUP_TYPE_TO_SECTION_ID, CREATE_ACTION_OPTIONS, COPY_CARD_DETAIL_REGULAR_FIELDS, SIZE_OPTIONS, DUMMY_CREATE_ACTION_TEMPLATES, LINK_ACTION_OPTIONS, LINK_REMOVE_OTHERS_OPTIONS, MOVE_ACTION_OPTIONS, CONVERT_SUBTASK_ACTION_OPTIONS, NOTIFY_ACTION_OPTIONS, UPDATE_ACTION_OPTIONS, STICKER_ACTION_FREQUENCY_OPTIONS,
-  LIST_UPDATE_MODE_OPTIONS, DEADLINE_MODE_OPTIONS, WHEN_DEADLINE_COMPARISON_OPTIONS, WEEKDAY_OPTIONS, PRIORITY_OPTIONS, CREATE_CARD_SIZE_OPTIONS, classifyCustomFieldUiKind,
+  THEN_ACTION_SECTIONS, ACTION_GROUP_TYPE_TO_SECTION_ID, CREATE_ACTION_OPTIONS, LINK_ACTION_OPTIONS, LINK_REMOVE_OTHERS_OPTIONS, NOTIFY_ACTION_OPTIONS, UPDATE_ACTION_OPTIONS, STICKER_ACTION_FREQUENCY_OPTIONS,
+  LIST_UPDATE_MODE_OPTIONS, DEADLINE_MODE_OPTIONS, WHEN_DEADLINE_COMPARISON_OPTIONS, WEEKDAY_OPTIONS, PRIORITY_OPTIONS, classifyCustomFieldUiKind,
   INVOKE_ACTION_OPTIONS, DUMMY_INVOKE_METHOD_OPTIONS, DUMMY_INVOKE_AUTH_OPTIONS, INVOKE_METHODS_WITH_BODY, DUMMY_URL_FIELD_OPTIONS,
   DUMMY_REGULAR_FIELDS, DUMMY_TIME_UNITS, DUMMY_CUSTOM_FIELDS,
   DUMMY_WORKSPACE_BOARDS,
   DUMMY_NOTIFICATION_FROM_EMAIL, DUMMY_INTERNAL_USERS,
   DUMMY_NOTIFICATION_SUBJECT_PARTS, DUMMY_NOTIFICATION_BODY_DELTA_OPS, INTERNAL_USER_ROLE_OPTIONS,
   DUMMY_LINK_ACTION_OPERATORS, DUMMY_FIELD_OPERATORS,
-  TRIGGER_CODE_TO_ICON, RELATIONAL_CREATE_ACTION_ORIGIN_LABELS,
+  TRIGGER_CODE_TO_ICON, UNSUPPORTED_ACTION_GROUP_TYPES,
 } from './businessRulesData';
-import { buildBoardMinimapWorkflows } from './boardMinimap.utils';
-import { buildCreateBusinessRulePayload, buildUpdateBusinessRulePayload, getUnconfiguredActionLabels, isCreateSubtaskAction, getRelationTypeFromLabel, RECURRENCE_REGULAR_FIELD_IDS, buildAdvancedScheduleFields } from './buildBusinessRulePayload';
+import { buildCreateBusinessRulePayload, buildUpdateBusinessRulePayload, getUnconfiguredActionLabels, isCreateSubtaskAction, RECURRENCE_REGULAR_FIELD_IDS, buildAdvancedScheduleFields } from './buildBusinessRulePayload';
 import ThenGroupRawSummary from './ThenGroupRawSummary';
-import DateTimePickerField from '../../../pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField';
 import DynamicIcon from './DynamicIcon';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import useAlertReducer from '../../../store/AlertReducer';
@@ -30,10 +28,6 @@ import useWorkSpaceReducer from '../../../store/WorkSpaceReducer';
 import useCommonReducer from '../../../store/CommonReducer';
 import useKanbanManagementReducer, { isKanbanManagementRowDisabled } from '../../../store/KanbanManagementReducer';
 import useAuthReducer from '../../../store/AuthReducer';
-import useWorkFlowReducer from '../../../store/WorkFlowReducer';
-import workflowService from '../../../services/workflowService';
-import userService from '../../../services/userService';
-import { pickForegroundOnSwimlaneBackground } from '../../../pages/EditWorkflows/workflow.utils';
 import { getInitials, stripHtmlTags } from '../../../shared/utils/utils';
 import DatePickerField from '../../../pages/KanbanBoard/CardFormTabs/shared/components/DatePickerField';
 import SedresColorPicker from '../../../components/SedresColorPicker/SedresColorPicker';
@@ -992,8 +986,10 @@ function CreateActionModal({ show, onClose, onSelect, actionTypeId }) {
   }, [show, actionTypeId]);
 
   const mappedOptions = thenActionRegularFields.map((field) => ({ key: field.field_key, label: field.field_label }));
-  // Dev-only fallback so the modal can be visually tested without a live backend.
-  const createActionOptions = mappedOptions.length > 0 ? mappedOptions : (import.meta.env.DEV ? CREATE_ACTION_OPTIONS : []);
+  // Dev-only fallback so the modal can be visually tested without a live backend. Only
+  // "Create subtask" is still supported — destination-based create variants are hidden.
+  const createActionOptions = (mappedOptions.length > 0 ? mappedOptions : (import.meta.env.DEV ? CREATE_ACTION_OPTIONS : []))
+    .filter(isCreateSubtaskAction);
 
   const filterQuery = filterText.trim().toLowerCase();
   const filteredOptions = filterQuery
@@ -1026,7 +1022,7 @@ function CreateActionModal({ show, onClose, onSelect, actionTypeId }) {
     >
       <div className="card-property-match-modal-shell">
         <header className="card-property-match-modal-header">
-          <h2 className="card-property-match-modal-title">Create Card or Subtask</h2>
+          <h2 className="card-property-match-modal-title">Create Subtask</h2>
           <button
             type="button"
             className="business-rule-form-modal-close"
@@ -1642,314 +1638,6 @@ function LinkActionModal({ show, onClose, onSelect }) {
   );
 }
 
-function BoardMinimapModal({ show, onClose, onSave, initialBoardId }) {
-  const [boardId, setBoardId] = useState('');
-  const [isBoardPickerOpen, setIsBoardPickerOpen] = useState(false);
-  const [boardFilterText, setBoardFilterText] = useState('');
-  const [workspaceFilterId, setWorkspaceFilterId] = useState('');
-  const [hoveredLeafColumnId, setHoveredLeafColumnId] = useState(null);
-  const [hoveredSwimlaneId, setHoveredSwimlaneId] = useState(null);
-
-  const boardPickerTriggerRef = useRef(null);
-  const boardPickerPanelRef = useRef(null);
-
-  const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
-  const displayWorkspaces = useMemo(() => workspaces ?? [], [workspaces]);
-  const boards = useMemo(
-    () => displayWorkspaces.flatMap((w) => (w.boards ?? []).map((b) => ({ ...b, workspace_name: w.workspace_name }))),
-    [displayWorkspaces]
-  );
-
-  const boardFilterQuery = boardFilterText.trim().toLowerCase();
-  const filteredWorkspaceGroups = displayWorkspaces
-    .filter((w) => !workspaceFilterId || String(w.workspace_id) === String(workspaceFilterId))
-    .map((w) => {
-      const wsMatch = w.workspace_name.toLowerCase().includes(boardFilterQuery);
-      const groupBoards = wsMatch
-        ? (w.boards ?? [])
-        : (w.boards ?? []).filter((b) => b.board_name.toLowerCase().includes(boardFilterQuery));
-      return { workspace_id: w.workspace_id, workspace_name: w.workspace_name, boards: groupBoards };
-    })
-    .filter((g) => g.boards.length > 0);
-
-  const selectedBoard = boards.find((b) => String(b.board_id) === String(boardId));
-
-  const handlePickBoard = (board) => {
-    setBoardId(board.board_id);
-    setIsBoardPickerOpen(false);
-    setBoardFilterText('');
-  };
-
-  useEffect(() => {
-    if (!show) return;
-    setBoardId(initialBoardId ?? '');
-    setIsBoardPickerOpen(false);
-    setBoardFilterText('');
-    setWorkspaceFilterId('');
-    if (workspaces.length === 0) listAllWorkspaces();
-  }, [show]);
-
-  useEffect(() => {
-    if (!show || boardId || initialBoardId) return;
-    // Falls back to the first board across ALL workspaces, not displayWorkspaces[0] —
-    // that index-0 lookup silently no-ops (leaving the trigger stuck on "Select a
-    // board") whenever the first workspace in the raw API order happens to have no
-    // boards, even though a later workspace (e.g. the first one the dropdown actually
-    // shows, since it filters out empty groups) does.
-    const firstBoard = boards[0];
-    if (firstBoard) setBoardId(firstBoard.board_id);
-  }, [show, boardId, initialBoardId, boards]);
-
-  useEffect(() => {
-    if (!isBoardPickerOpen) return undefined;
-    const onDocMouseDown = (event) => {
-      const t = event.target;
-      if (boardPickerPanelRef.current?.contains(t)) return;
-      if (boardPickerTriggerRef.current?.contains(t)) return;
-      setIsBoardPickerOpen(false);
-    };
-    document.addEventListener('mousedown', onDocMouseDown);
-    return () => document.removeEventListener('mousedown', onDocMouseDown);
-  }, [isBoardPickerOpen]);
-
-  const { boardStructure, isLoadingBoardStructure, getBoardStructure } = useWorkFlowReducer((s) => s);
-
-  useEffect(() => {
-    if (!show || !boardId) return;
-    getBoardStructure({ boardId });
-  }, [show, boardId]);
-
-  // One block per active workflow on the board — each with its own stage segments
-  // (colored, from `stages`), the flattened leaf columns under them, and its own
-  // swimlane rows. Workflows can have entirely different stages, so they're never
-  // merged into a single shared header.
-  const minimapWorkflows = useMemo(
-    () => (boardId ? buildBoardMinimapWorkflows(boardStructure) : []),
-    [boardId, boardStructure]
-  );
-
-  const handlePickCell = (workflow, swimlane, leafColumn) => {
-    onSave({
-      boardId,
-      boardName: selectedBoard?.board_name ?? '',
-      workspaceName: selectedBoard?.workspace_name ?? '',
-      workflowId: workflow.id,
-      workflowName: workflow.name,
-      swimlaneId: swimlane.id,
-      swimlaneName: swimlane.name,
-      stageId: leafColumn.id,
-      stageName: leafColumn.name,
-    });
-    onClose();
-  };
-
-  // Column header pick: matches this stage in any swimlane (row left blank).
-  const handlePickColumn = (workflow, leafColumn) => {
-    onSave({
-      boardId,
-      boardName: selectedBoard?.board_name ?? '',
-      workspaceName: selectedBoard?.workspace_name ?? '',
-      workflowId: workflow.id,
-      workflowName: workflow.name,
-      swimlaneId: '',
-      swimlaneName: '',
-      stageId: leafColumn.id,
-      stageName: leafColumn.name,
-    });
-    onClose();
-  };
-
-  // Row header pick: matches any stage within this swimlane (column left blank).
-  const handlePickRow = (workflow, swimlane) => {
-    onSave({
-      boardId,
-      boardName: selectedBoard?.board_name ?? '',
-      workspaceName: selectedBoard?.workspace_name ?? '',
-      workflowId: workflow.id,
-      workflowName: workflow.name,
-      swimlaneId: swimlane.id,
-      swimlaneName: swimlane.name,
-      stageId: '',
-      stageName: '',
-    });
-    onClose();
-  };
-
-  return (
-    <Modal
-      show={show}
-      onHide={onClose}
-      className="card-property-match-modal board-minimap-modal"
-      dialogClassName="card-property-match-modal-dialog board-minimap-modal-dialog"
-      backdropClassName="card-property-match-modal-backdrop"
-      centered
-      scrollable
-    >
-      <div className="card-property-match-modal-shell">
-        <header className="card-property-match-modal-header">
-          <h2 className="card-property-match-modal-title">Board Minimap</h2>
-          <button
-            type="button"
-            className="business-rule-form-modal-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
-            <FiX size={20} />
-          </button>
-        </header>
-
-        <div className="card-property-match-modal-body board-minimap-body">
-          <div className="board-minimap-picker-wrap">
-            <button
-              type="button"
-              ref={boardPickerTriggerRef}
-              className="board-minimap-board-trigger"
-              onClick={() => setIsBoardPickerOpen((v) => !v)}
-              aria-haspopup="listbox"
-              aria-expanded={isBoardPickerOpen}
-            >
-              <span>
-                {selectedBoard ? `${selectedBoard.workspace_name} / ${selectedBoard.board_name}` : 'Select a board'}
-              </span>
-              <FiChevronDown aria-hidden />
-            </button>
-
-            {isBoardPickerOpen && (
-              <div className="board-minimap-picker-panel" ref={boardPickerPanelRef}>
-                <select
-                  className="business-rule-form-select board-minimap-picker-workspace-select"
-                  value={workspaceFilterId}
-                  onChange={(e) => setWorkspaceFilterId(e.target.value)}
-                >
-                  <option value="">All workspaces</option>
-                  {displayWorkspaces.map((w) => (
-                    <option key={w.workspace_id} value={w.workspace_id}>{w.workspace_name}</option>
-                  ))}
-                </select>
-
-                <div className="board-minimap-picker-search">
-                  <FiFilter size={20} className="board-minimap-picker-search-icon" aria-hidden />
-                  <input
-                    type="text"
-                    placeholder="Filter"
-                    value={boardFilterText}
-                    onChange={(e) => setBoardFilterText(e.target.value)}
-                    autoFocus
-                  />
-                </div>
-
-                <div className="board-minimap-picker-scroll">
-                  {filteredWorkspaceGroups.length === 0 ? (
-                    <div className="br-property-picker-empty">No matches</div>
-                  ) : (
-                    filteredWorkspaceGroups.map((ws) => (
-                      <div key={ws.workspace_id} className="board-minimap-picker-group">
-                        <div className="board-minimap-picker-group-head">
-                          <FiUsers size={20} aria-hidden />
-                          <span>{ws.workspace_name}</span>
-                        </div>
-                        <div className="board-minimap-picker-grid">
-                          {ws.boards.map((board) => (
-                            <button
-                              type="button"
-                              key={board.board_id}
-                              className={`board-minimap-picker-tile${String(board.board_id) === String(boardId) ? ' board-minimap-picker-tile--selected' : ''}`}
-                              onClick={() => handlePickBoard(board)}
-                            >
-                              <span className="board-minimap-picker-tile-name">{board.board_name}</span>
-                              <span className="board-minimap-picker-tile-count">{(board.total_cards ?? 0).toLocaleString()}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {!boardId ? (
-            <div className="br-property-picker-empty">Select a board to view its structure</div>
-          ) : isLoadingBoardStructure ? (
-            <div className="br-property-picker-empty">Loading board structure…</div>
-          ) : minimapWorkflows.length === 0 ? (
-            <div className="br-property-picker-empty">No active workflow found for this board</div>
-          ) : (
-            <div className="board-minimap-workflows">
-              {minimapWorkflows.map((workflow) => (
-                <div key={workflow.id} className="board-minimap-grid">
-                  <div className="board-minimap-title-bar">{workflow.name}</div>
-
-                  <div className="board-minimap-area-row">
-                    {workflow.stageSegments.map((segment) => (
-                      <div
-                        key={`${workflow.id}-${segment.id}`}
-                        className="board-minimap-area-cell"
-                        style={{ flexGrow: segment.columns.length, backgroundColor: segment.color }}
-                        title={segment.name}
-                      >
-                        {segment.name}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="board-minimap-header-grid">
-                    {workflow.leafColumns.map((column) => (
-                      <div
-                        key={`${workflow.id}-${column.id}`}
-                        className="board-minimap-header-cell"
-                        role="button"
-                        tabIndex={0}
-                        onMouseEnter={() => setHoveredLeafColumnId(column.id)}
-                        onMouseLeave={() => setHoveredLeafColumnId(null)}
-                        onClick={() => handlePickColumn(workflow, column)}
-                      >
-                        {column.name}
-                      </div>
-                    ))}
-                  </div>
-
-                  {workflow.swimlanes.map((swimlane) => (
-                    <div key={`${workflow.id}-${swimlane.id}`} className="board-minimap-lane-row">
-                      <div
-                        className="board-minimap-lane-label"
-                        style={swimlane.colorCode
-                          ? { backgroundColor: swimlane.colorCode, color: pickForegroundOnSwimlaneBackground(swimlane.colorCode) }
-                          : undefined}
-                        role="button"
-                        tabIndex={0}
-                        onMouseEnter={() => setHoveredSwimlaneId(swimlane.id)}
-                        onMouseLeave={() => setHoveredSwimlaneId(null)}
-                        onClick={() => handlePickRow(workflow, swimlane)}
-                      >
-                        {swimlane.name}
-                      </div>
-                      <div className="board-minimap-lane-cells">
-                        {workflow.leafColumns.map((column) => (
-                          <button
-                            type="button"
-                            key={`${workflow.id}-${swimlane.id}-${column.id}`}
-                            className={`board-minimap-cell${hoveredLeafColumnId === column.id ? ' board-minimap-cell--col-active' : ''}${hoveredSwimlaneId === swimlane.id ? ' board-minimap-cell--row-active' : ''}`}
-                            onMouseEnter={() => setHoveredLeafColumnId(column.id)}
-                            onMouseLeave={() => setHoveredLeafColumnId(null)}
-                            onClick={() => handlePickCell(workflow, swimlane, column)}
-                            aria-label={`Move to ${workflow.name}, ${swimlane.name}, ${column.name}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
 function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabels, existingActionKeys, triggerTypeId, actionTypeId }) {
   const [selectedActions, setSelectedActions] = useState([]);
   const [selectedCustomFields, setSelectedCustomFields] = useState([]);
@@ -2174,826 +1862,6 @@ function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabel
           >
             Add
           </button>
-        </footer>
-      </div>
-    </Modal>
-  );
-}
-
-// Template picker for a create action's title row ("Create child with custom properties",
-// etc.) — was previously an anchored dropdown panel; converted to a centered Modal to match
-// every other picker in this THEN card (board minimap, Copy Card Details, Card details).
-function CreateTemplatePickerModal({ show, onClose, onSelect }) {
-  const [filterText, setFilterText] = useState('');
-
-  useEffect(() => {
-    if (!show) return;
-    setFilterText('');
-  }, [show]);
-
-  const filterQuery = filterText.trim().toLowerCase();
-  const filteredTemplates = filterQuery
-    ? DUMMY_CREATE_ACTION_TEMPLATES.filter((name) => name.toLowerCase().includes(filterQuery))
-    : DUMMY_CREATE_ACTION_TEMPLATES;
-
-  return (
-    <Modal
-      show={show}
-      onHide={onClose}
-      className="card-property-match-modal"
-      dialogClassName="card-property-match-modal-dialog"
-      backdropClassName="card-property-match-modal-backdrop"
-      centered
-      scrollable
-    >
-      <div className="card-property-match-modal-shell">
-        <header className="card-property-match-modal-header">
-          <h2 className="card-property-match-modal-title">Create Card Template</h2>
-          <button
-            type="button"
-            className="business-rule-form-modal-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
-            <FiX size={20} />
-          </button>
-        </header>
-
-        <div className="card-property-match-modal-body">
-          <div className="board-minimap-picker-search">
-            <FiFilter size={16} className="board-minimap-picker-search-icon" aria-hidden />
-            <input
-              type="text"
-              placeholder="Filter"
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              autoFocus
-            />
-          </div>
-          <div className="br-create-template-scroll">
-            <button
-              type="button"
-              className="br-create-template-option br-create-template-option--default"
-              onClick={() => onSelect(null)}
-            >
-              with custom properties
-            </button>
-            <div className="br-create-template-section-label">Templates</div>
-            {filteredTemplates.length === 0 ? (
-              <div className="br-property-picker-empty">No matches</div>
-            ) : (
-              filteredTemplates.map((name) => (
-                <button
-                  type="button"
-                  key={name}
-                  className="br-create-template-option"
-                  onClick={() => onSelect(name)}
-                >
-                  {name}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-CreateTemplatePickerModal.propTypes = {
-  show: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onSelect: PropTypes.func.isRequired,
-};
-
-// Follow-up step after picking a destination for a relational "Create card" action
-// (Create child/parent/predecessor/relative/successor) — lets the user pick which of the
-// originator (triggering) card's fields to carry over onto the new card.
-function CopyCardDetailsModal({ show, onClose, onContinue, triggerTypeId, boardId, initialFields }) {
-  const [selectedRegular, setSelectedRegular] = useState([]);
-  const [selectedCustom, setSelectedCustom] = useState([]);
-  const [expandedRegularFields, setExpandedRegularFields] = useState(true);
-  const [expandedCustomFields, setExpandedCustomFields] = useState(true);
-
-  const { customFields, isLoadingCustomFields } = useCustomFieldsByTrigger({
-    show, triggerTypeId, boardId, showDisabled: false, search: '',
-  });
-  // Dev-only fallback so the modal can be visually tested without a live backend.
-  const displayCustomFields = customFields.length > 0 ? customFields : (import.meta.env.DEV ? DUMMY_CUSTOM_FIELDS : []);
-
-  // Reopening this modal on an already-configured create action (e.g. clicking the "title
-  // will be copied..." summary) should show what was picked last time, not a blank slate.
-  useEffect(() => {
-    if (!show) return;
-    setSelectedRegular(initialFields?.regularFields ?? []);
-    setSelectedCustom(initialFields?.customFields ?? []);
-  }, [show, initialFields]);
-
-  const toggleRegular = (key) => {
-    setSelectedRegular((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
-  };
-
-  const toggleCustom = (key) => {
-    setSelectedCustom((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
-  };
-
-  const handleContinue = () => {
-    onContinue({ regularFields: selectedRegular, customFields: selectedCustom });
-    onClose();
-  };
-
-  return (
-    <Modal
-      show={show}
-      onHide={onClose}
-      className="card-property-match-modal"
-      dialogClassName="card-property-match-modal-dialog"
-      backdropClassName="card-property-match-modal-backdrop"
-      centered
-      scrollable
-    >
-      <div className="card-property-match-modal-shell">
-        <header className="card-property-match-modal-header">
-          <h2 className="card-property-match-modal-title">Copy Card Details</h2>
-          <button
-            type="button"
-            className="business-rule-form-modal-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
-            <FiX size={20} />
-          </button>
-        </header>
-
-        <div className="card-property-match-modal-body">
-          <p className="br-copy-card-details-subtitle">Select the fields that you want to copy from the originator</p>
-
-          <div className="br-property-section">
-            <button
-              type="button"
-              className="br-property-section-toggle"
-              onClick={() => setExpandedRegularFields((v) => !v)}
-            >
-              <span className="br-property-section-toggle-icon">
-                {expandedRegularFields ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-              </span>
-              Regular fields
-            </button>
-            {expandedRegularFields && (
-              <>
-                <div className="br-property-select-all-row">
-                  <button
-                    type="button"
-                    className="business-rule-form-add-link"
-                    onClick={() => setSelectedRegular(COPY_CARD_DETAIL_REGULAR_FIELDS.map((f) => f.key))}
-                  >
-                    Select all
-                  </button>
-                  /
-                  <button
-                    type="button"
-                    className="business-rule-form-add-link"
-                    onClick={() => setSelectedRegular([])}
-                  >
-                    Deselect all
-                  </button>
-                </div>
-                <div className="br-property-pill-grid">
-                  {COPY_CARD_DETAIL_REGULAR_FIELDS.map((field) => (
-                    <PropertyPill
-                      key={field.key}
-                      pillKey={field.key}
-                      label={field.label}
-                      selected={selectedRegular.includes(field.key)}
-                      onClick={() => toggleRegular(field.key)}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="br-property-section">
-            <button
-              type="button"
-              className="br-property-section-toggle"
-              onClick={() => setExpandedCustomFields((v) => !v)}
-            >
-              <span className="br-property-section-toggle-icon">
-                {expandedCustomFields ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-              </span>
-              Custom fields
-            </button>
-            {expandedCustomFields && (
-              <>
-                <div className="br-property-select-all-row">
-                  <button
-                    type="button"
-                    className="business-rule-form-add-link"
-                    onClick={() => setSelectedCustom(displayCustomFields.map((f, idx) => f.custom_field_id ?? idx))}
-                  >
-                    Select all
-                  </button>
-                  /
-                  <button
-                    type="button"
-                    className="business-rule-form-add-link"
-                    onClick={() => setSelectedCustom([])}
-                  >
-                    Deselect all
-                  </button>
-                </div>
-                <div className="br-property-pill-grid">
-                  {isLoadingCustomFields ? (
-                    <div className="br-property-picker-empty">Loading...</div>
-                  ) : displayCustomFields.length === 0 ? (
-                    <div className="br-property-picker-empty">No custom fields found</div>
-                  ) : (
-                    displayCustomFields.map((field, idx) => {
-                      const key = field.custom_field_id ?? idx;
-                      return (
-                        <PropertyPill
-                          key={key}
-                          pillKey={key}
-                          label={getFieldLabel(field)}
-                          selected={selectedCustom.includes(key)}
-                          onClick={() => toggleCustom(key)}
-                        />
-                      );
-                    })
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        <footer className="card-property-match-modal-footer">
-          <button type="button" className="br-property-add-btn" onClick={handleContinue}>
-            Continue
-          </button>
-        </footer>
-      </div>
-    </Modal>
-  );
-}
-
-// Card-fields panel layout for CreateCardFieldsModal below: owner/co-owner render as an
-// avatar-prefixed pill, size/priority/type/color render as a select-styled box (chevron,
-// no live options source yet), and this pairing/order keeps Owner+Co-owners and
-// Deadline+Size on the same row (matching the reference card UI) regardless of the fixed
-// COPY_CARD_DETAIL_REGULAR_FIELDS declaration order.
-const CARD_FIELD_DISPLAY_ORDER = [
-  'owner', 'co_owners', 'deadline', 'size', 'tags', 'custom_card_id',
-  'priority', 'color', 'type', 'stickers', 'milestones', 'parent_links',
-];
-const FULL_WIDTH_FIELD_KEYS = ['tags', 'custom_card_id', 'priority', 'color', 'type', 'stickers', 'milestones', 'parent_links'];
-const SELECT_LIKE_FIELD_KEYS = ['priority', 'type', 'color'];
-// Shown by default (matches the real card modal) when the action hasn't been through
-// Copy Card Details with a regular-field selection yet — still addable/removable from here.
-const DEFAULT_CARD_FIELD_KEYS = ['owner', 'co_owners', 'deadline', 'size', 'tags', 'custom_card_id'];
-// title/description have their own dedicated inputs above the panel, subtasks/attachments
-// have their own dedicated sections, and "all custom fields" isn't a single value — none
-// of these belong in the addable "Card fields" panel list.
-const NON_CARD_FIELD_PANEL_KEYS = ['title', 'description', 'subtasks', 'attachments', 'all_custom_fields'];
-
-// Read-only preview of the card a "Create card" (or relational create) THEN-action will
-// produce — opened right after Copy Card Details so the rule author can set default values
-// for the regular/custom fields they just chose to carry. Nothing here creates a real card;
-// "Save details" just stores these as the create-action's field defaults (see
-// handleSaveCreateCardFields), same non-persisted pattern as CopyCardDetailsModal. Board/
-// workflow/swimlane/stage are read-only here — they come from the earlier board-minimap step.
-function CreateCardFieldsModal({ show, onClose, onSave, action, triggerTypeId }) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [fieldValues, setFieldValues] = useState({});
-  const [customFieldValues, setCustomFieldValues] = useState({});
-  const [expandedSubtasks, setExpandedSubtasks] = useState(true);
-  const [expandedDocs, setExpandedDocs] = useState(true);
-  const [subtasks, setSubtasks] = useState([]);
-  const [subtaskDraft, setSubtaskDraft] = useState('');
-  const [cardFieldKeys, setCardFieldKeys] = useState([]);
-  const [customFieldKeys, setCustomFieldKeys] = useState([]);
-  const [expandedCustomFields, setExpandedCustomFields] = useState(true);
-  const [showAddFieldPicker, setShowAddFieldPicker] = useState(false);
-  const addFieldTriggerRef = useRef(null);
-  const addFieldPanelRef = useRef(null);
-  const quillRef = useRef(null);
-  const quillWrapRef = useRef(null);
-
-  const { boardStructure, getBoardStructure } = useWorkFlowReducer((s) => s);
-  const { customFields } = useCustomFieldsByTrigger({
-    show, triggerTypeId, boardId: action?.boardId, showDisabled: false, search: '',
-  });
-  // Dev-only fallback so the modal can be visually tested without a live backend.
-  const displayCustomFields = customFields.length > 0 ? customFields : (import.meta.env.DEV ? DUMMY_CUSTOM_FIELDS : []);
-
-  const { users, usersLoading, getUsers } = useCommonReducer((s) => s);
-
-  useEffect(() => {
-    if (!show) return;
-    if (users.length === 0 && !usersLoading) getUsers({ params: { limit: 200 } });
-  }, [show, users.length, usersLoading, getUsers]);
-
-  useEffect(() => {
-    if (!show || !action?.boardId) return;
-    getBoardStructure({ boardId: action.boardId });
-  }, [show, action?.boardId]);
-
-  useEffect(() => {
-    if (!show) return;
-    setTitle(action?.title ?? '');
-    setDescription(action?.description ?? '');
-    setFieldValues(action?.fieldValues ?? {});
-    setCustomFieldValues(action?.customFieldValues ?? {});
-    setSubtasks(action?.subtasks ?? []);
-    setSubtaskDraft('');
-    setExpandedSubtasks(true);
-    setExpandedDocs(true);
-    // DEFAULT_CARD_FIELD_KEYS always shows (matches the real card modal) and can't be
-    // removed from here (no "x" on those rows) — merged with whatever else was picked in
-    // Copy Card Details, plus anything added/removed on a previous visit to this modal
-    // (action.cardFieldKeys), rather than either of those replacing the defaults outright.
-    const copyFieldsKeys = (action?.copyFields?.regularFields ?? []).filter((k) => !NON_CARD_FIELD_PANEL_KEYS.includes(k));
-    const baseKeys = action?.cardFieldKeys ?? copyFieldsKeys;
-    setCardFieldKeys(Array.from(new Set([...DEFAULT_CARD_FIELD_KEYS, ...baseKeys])));
-    // Custom fields shown here start with whatever was picked in Copy Card Details, plus
-    // anything added/removed on a previous visit to this modal (action.customFieldKeys).
-    setCustomFieldKeys(action?.customFieldKeys ?? (action?.copyFields?.customFields ?? []));
-    setShowAddFieldPicker(false);
-  }, [show, action]);
-
-  useEffect(() => {
-    if (!showAddFieldPicker) return undefined;
-    const onDocMouseDown = (event) => {
-      const t = event.target;
-      if (addFieldPanelRef.current?.contains(t)) return;
-      if (addFieldTriggerRef.current?.contains(t)) return;
-      setShowAddFieldPicker(false);
-    };
-    document.addEventListener('mousedown', onDocMouseDown);
-    return () => document.removeEventListener('mousedown', onDocMouseDown);
-  }, [showAddFieldPicker]);
-
-  // Same rich-text toolbar/config as the notification body editor above — reused as-is
-  // for consistency rather than hand-rolling a second Quill setup.
-  const quillModules = useMemo(() => ({
-    table: false,
-    toolbar: [
-      [{ font: [] }, { size: ['small', false, 'large', 'huge'] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ color: [] }, { background: [] }],
-      [{ align: [] }],
-      ['link'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      ['image', 'table-better'],
-      ['clean'],
-    ],
-    'table-better': {
-      language: 'en_US',
-      menus: ['column', 'row', 'merge', 'table', 'cell', 'wrap', 'delete'],
-      toolbarTable: true,
-    },
-    keyboard: { bindings: QuillTableBetter.keyboardBindings },
-  }), []);
-
-  useLayoutEffect(() => {
-    if (!show) return undefined;
-    const toolbar = quillWrapRef.current?.querySelector('.ql-toolbar');
-    if (!toolbar) return undefined;
-    return attachToolbarOverflow(toolbar);
-  }, [show]);
-
-  const minimapWorkflows = useMemo(
-    () => (action?.boardId ? buildBoardMinimapWorkflows(boardStructure) : []),
-    [action?.boardId, boardStructure]
-  );
-  const activeWorkflow = minimapWorkflows.find((wf) => String(wf.id) === String(action?.workflowId));
-  const leafColumns = activeWorkflow?.leafColumns ?? [];
-  const activeStageIndex = leafColumns.findIndex((col) => String(col.id) === String(action?.stageId));
-
-  const cardFieldRows = COPY_CARD_DETAIL_REGULAR_FIELDS
-    .filter((f) => cardFieldKeys.includes(f.key))
-    .sort((a, b) => {
-      const ai = CARD_FIELD_DISPLAY_ORDER.indexOf(a.key);
-      const bi = CARD_FIELD_DISPLAY_ORDER.indexOf(b.key);
-      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
-    });
-  const addableFields = COPY_CARD_DETAIL_REGULAR_FIELDS.filter(
-    (f) => !NON_CARD_FIELD_PANEL_KEYS.includes(f.key) && !cardFieldKeys.includes(f.key)
-  );
-  const customFieldRows = displayCustomFields.filter((f, idx) => customFieldKeys.includes(f.custom_field_id ?? idx));
-  const addableCustomFields = displayCustomFields.filter((f, idx) => !customFieldKeys.includes(f.custom_field_id ?? idx));
-
-  const handleFieldValueChange = (key, value) => setFieldValues((prev) => ({ ...prev, [key]: value }));
-  const handleCustomFieldValueChange = (key, value) => setCustomFieldValues((prev) => ({ ...prev, [key]: value }));
-
-  // The "+" on the Card fields panel offers both regular fields (land in the Card fields
-  // grid) and custom fields (land under Custom fields, bumping its count) from one picker.
-  const handleAddCardField = (key) => {
-    setCardFieldKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
-    setShowAddFieldPicker(false);
-  };
-
-  const handleAddCustomField = (key) => {
-    setCustomFieldKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
-    setShowAddFieldPicker(false);
-  };
-
-  const handleRemoveCustomField = (key) => {
-    setCustomFieldKeys((prev) => prev.filter((k) => k !== key));
-    setCustomFieldValues((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-  };
-
-  const handleRemoveCardField = (key) => {
-    setCardFieldKeys((prev) => prev.filter((k) => k !== key));
-    setFieldValues((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-  };
-
-  const handleAddSubtaskDraft = () => {
-    const trimmed = subtaskDraft.trim();
-    if (!trimmed) return;
-    setSubtasks((prev) => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, title: trimmed }]);
-    setSubtaskDraft('');
-  };
-
-  const handleSubtaskDraftKeyDown = (e) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-      e.preventDefault();
-      handleAddSubtaskDraft();
-    }
-  };
-
-  const handleRemoveSubtask = (id) => {
-    setSubtasks((prev) => prev.filter((t) => t.id !== id));
-  };
-
-  const handleSave = () => {
-    onSave({ title, description, fieldValues, customFieldValues, cardFieldKeys, customFieldKeys, subtasks });
-    onClose();
-  };
-
-  const renderFieldControl = (field) => {
-    if (field.key === 'owner' || field.key === 'co_owners') {
-      const value = fieldValues[field.key] ?? '';
-      const selectedUser = users.find((u) => String(u.user_id) === String(value));
-      const badgeLetter = (selectedUser?.name ?? '').trim().charAt(0).toUpperCase() || 'N';
-      return (
-        <div className="br-card-preview-avatar-field">
-          <span className="br-card-preview-avatar-badge" aria-hidden>{badgeLetter}</span>
-          <select
-            className="br-card-preview-avatar-select"
-            value={value}
-            onChange={(e) => handleFieldValueChange(field.key, e.target.value)}
-            disabled={usersLoading}
-          >
-            <option value="">{usersLoading ? 'Loading...' : 'None'}</option>
-            {users.map((u) => (
-              <option key={u.user_id} value={u.user_id}>{u.name}</option>
-            ))}
-          </select>
-          <FiChevronDown size={14} className="br-card-preview-avatar-chevron" aria-hidden />
-        </div>
-      );
-    }
-    if (field.key === 'deadline') {
-      const [deadlineDate = '', deadlineTime = ''] = (fieldValues.deadline ?? '').split(' ');
-      return (
-        <DateTimePickerField
-          dateValue={deadlineDate}
-          timeValue={deadlineTime}
-          onDateTimeChange={({ date, time }) => {
-            handleFieldValueChange('deadline', date ? `${date}${time ? ` ${time}` : ''}` : '');
-          }}
-          dateFieldName="br-card-preview-deadline-date"
-          timeFieldName="br-card-preview-deadline-time"
-          placeholder="Select date and time"
-        />
-      );
-    }
-    if (field.key === 'size') {
-      return (
-        <div className="br-card-preview-select-field">
-          <select
-            className="business-rule-form-input"
-            value={fieldValues.size ?? ''}
-            onChange={(e) => handleFieldValueChange('size', e.target.value)}
-          >
-            {SIZE_OPTIONS.map((option) => (
-              <option key={option.key} value={option.key}>{option.label}</option>
-            ))}
-          </select>
-          <FiChevronDown size={14} className="br-card-preview-select-chevron" aria-hidden />
-        </div>
-      );
-    }
-    if (SELECT_LIKE_FIELD_KEYS.includes(field.key)) {
-      return (
-        <div className="br-card-preview-select-field">
-          <input
-            type="text"
-            className="business-rule-form-input"
-            placeholder="Not Set"
-            value={fieldValues[field.key] ?? ''}
-            onChange={(e) => handleFieldValueChange(field.key, e.target.value)}
-          />
-          <FiChevronDown size={14} className="br-card-preview-select-chevron" aria-hidden />
-        </div>
-      );
-    }
-    return (
-      <input
-        type="text"
-        className="business-rule-form-input"
-        value={fieldValues[field.key] ?? ''}
-        onChange={(e) => handleFieldValueChange(field.key, e.target.value)}
-      />
-    );
-  };
-
-  return (
-    <Modal
-      show={show}
-      onHide={onClose}
-      className="card-property-match-modal br-card-preview-modal"
-      dialogClassName="card-property-match-modal-dialog br-card-preview-modal-dialog"
-      backdropClassName="card-property-match-modal-backdrop"
-      centered
-      scrollable
-    >
-      <div className="card-property-match-modal-shell br-card-preview-shell">
-        <header className="br-card-preview-header-bar">
-          <input
-            type="text"
-            className="br-card-preview-title-input"
-            placeholder="Enter card title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <button type="button" className="br-card-preview-close-btn" onClick={onClose} aria-label="Close">
-            <FiX size={18} />
-          </button>
-        </header>
-
-        <div className="card-property-match-modal-body br-card-preview-body">
-          <div className="br-card-preview-main">
-            <div className="br-card-preview-quill-wrap" ref={quillWrapRef}>
-              <ReactQuill
-                ref={quillRef}
-                theme="snow"
-                modules={quillModules}
-                value={description}
-                onChange={setDescription}
-                placeholder="Enter card description"
-              />
-            </div>
-
-          </div>
-
-          <aside className="br-card-preview-sidebar">
-              {(cardFieldRows.length > 0 || addableFields.length > 0 || addableCustomFields.length > 0) && (
-                <div className="br-card-preview-fields-panel">
-                  <div className="br-card-preview-section-bar br-card-preview-section-bar--static br-card-preview-fields-header-wrap">
-                    <span className="br-card-preview-section-bar-badge">
-                      <FiChevronUp size={14} />
-                    </span>
-                    <span className="br-card-preview-section-bar-label">Card fields</span>
-                    {(addableFields.length > 0 || addableCustomFields.length > 0) && (
-                      <button
-                        type="button"
-                        ref={addFieldTriggerRef}
-                        className="br-card-preview-add-field-btn"
-                        onClick={() => setShowAddFieldPicker((v) => !v)}
-                        aria-haspopup="listbox"
-                        aria-expanded={showAddFieldPicker}
-                        aria-label="Add card field"
-                      >
-                        <FiPlus size={14} />
-                      </button>
-                    )}
-                    {showAddFieldPicker && (
-                      <div className="br-card-preview-add-field-panel" ref={addFieldPanelRef}>
-                        {addableFields.map((f) => (
-                          <button
-                            type="button"
-                            key={f.key}
-                            className="br-card-preview-add-field-option"
-                            onClick={() => handleAddCardField(f.key)}
-                          >
-                            {f.label}
-                          </button>
-                        ))}
-                        {addableCustomFields.length > 0 && (
-                          <>
-                            <div className="br-card-preview-add-field-group-label">Custom fields</div>
-                            {addableCustomFields.map((f, idx) => {
-                              const key = f.custom_field_id ?? idx;
-                              return (
-                                <button
-                                  type="button"
-                                  key={key}
-                                  className="br-card-preview-add-field-option"
-                                  onClick={() => handleAddCustomField(key)}
-                                >
-                                  {getFieldLabel(f)}
-                                </button>
-                              );
-                            })}
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  {cardFieldRows.length > 0 && (
-                    <div className="br-card-preview-fields-grid">
-                      {cardFieldRows.map((field) => (
-                        <div
-                          key={field.key}
-                          className={`br-card-preview-field-row${FULL_WIDTH_FIELD_KEYS.includes(field.key) ? ' br-card-preview-field-row--full' : ''}`}
-                        >
-                          <div className="br-card-preview-field-row-head">
-                            <label>{field.label}</label>
-                            {!DEFAULT_CARD_FIELD_KEYS.includes(field.key) && (
-                              <button
-                                type="button"
-                                className="br-card-preview-field-remove"
-                                onClick={() => handleRemoveCardField(field.key)}
-                                aria-label={`Remove ${field.label}`}
-                              >
-                                <FiX size={12} />
-                              </button>
-                            )}
-                          </div>
-                          {renderFieldControl(field)}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="br-card-preview-custom-fields-divider">
-                    <button
-                      type="button"
-                      className="br-card-preview-custom-fields-toggle"
-                      onClick={() => setExpandedCustomFields((v) => !v)}
-                      aria-expanded={expandedCustomFields}
-                    >
-                      {`Custom fields (${customFieldRows.length})`}
-                      {expandedCustomFields ? <FiChevronUp size={13} /> : <FiChevronDown size={13} />}
-                    </button>
-                  </div>
-
-                  {expandedCustomFields && (
-                    <>
-                      <p className="br-card-preview-custom-fields-note">
-                        Custom fields here that match ones already selected to be copied from the originator card
-                        (in Copy Card Details) will be ignored during card creation. If &quot;All custom fields&quot;
-                        was selected there, every custom field value set here will be ignored.
-                      </p>
-
-                      {customFieldRows.length > 0 && (
-                        <div className="br-card-preview-fields-grid">
-                          {customFieldRows.map((field, idx) => {
-                            const key = field.custom_field_id ?? idx;
-                            return (
-                              <div key={key} className="br-card-preview-field-row br-card-preview-field-row--full">
-                                <div className="br-card-preview-field-row-head">
-                                  <label>{getFieldLabel(field)}</label>
-                                  <button
-                                    type="button"
-                                    className="br-card-preview-field-remove"
-                                    onClick={() => handleRemoveCustomField(key)}
-                                    aria-label={`Remove ${getFieldLabel(field)}`}
-                                  >
-                                    <FiX size={12} />
-                                  </button>
-                                </div>
-                                <input
-                                  type="text"
-                                  className="business-rule-form-input"
-                                  value={customFieldValues[key] ?? ''}
-                                  onChange={(e) => handleCustomFieldValueChange(key, e.target.value)}
-                                />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-
-              <div className="br-card-preview-fields-panel">
-                <button
-                  type="button"
-                  className="br-card-preview-section-bar"
-                  onClick={() => setExpandedSubtasks((v) => !v)}
-                >
-                  <span className="br-card-preview-section-bar-badge">
-                    {expandedSubtasks ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-                  </span>
-                  <span className="br-card-preview-section-bar-label">Subtasks</span>
-                </button>
-                {expandedSubtasks && (
-                  <div className="br-card-preview-subtasks">
-                    {subtasks.length > 0 && (
-                      <ul className="br-card-preview-subtask-list">
-                        {subtasks.map((task) => (
-                          <li key={task.id} className="br-card-preview-subtask-item">
-                            <span className="br-card-preview-subtask-item-title">{task.title}</span>
-                            <button
-                              type="button"
-                              className="br-card-preview-field-remove"
-                              onClick={() => handleRemoveSubtask(task.id)}
-                              aria-label={`Remove ${task.title}`}
-                            >
-                              <FiX size={12} />
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <textarea
-                      className="br-card-preview-subtask-input"
-                      placeholder="Press ctrl/cmd + enter to create new subtask"
-                      value={subtaskDraft}
-                      onChange={(e) => setSubtaskDraft(e.target.value)}
-                      onKeyDown={handleSubtaskDraftKeyDown}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="br-card-preview-fields-panel">
-                <button
-                  type="button"
-                  className="br-card-preview-section-bar"
-                  onClick={() => setExpandedDocs((v) => !v)}
-                >
-                  <span className="br-card-preview-section-bar-badge">
-                    {expandedDocs ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-                  </span>
-                  <span className="br-card-preview-section-bar-label">Docs</span>
-                  <span className="br-card-preview-section-bar-right" aria-hidden>
-                    <FiFile size={14} />
-                  </span>
-                  <span className="br-card-preview-section-bar-right" aria-hidden>
-                    <FiPlus size={14} />
-                  </span>
-                </button>
-                {expandedDocs && (
-                  <div className="br-card-preview-placeholder">Add docs from the + button</div>
-                )}
-              </div>
-            </aside>
-        </div>
-
-        <footer className="card-property-match-modal-footer br-card-preview-footer">
-          <div className="br-card-preview-breadcrumb">
-            Board <span>{action?.boardName || 'Not set'}</span>
-            {action?.workflowName && <>{' '}/ Workflow <span>{action.workflowName}</span></>}
-            {action?.swimlaneName && <>{' '}/ Swimlane <span>{action.swimlaneName}</span></>}
-          </div>
-
-          <div className="br-card-preview-footer-row">
-            {leafColumns.length > 0 && (
-              <div className="br-card-preview-stepper">
-                {leafColumns.map((col, idx) => {
-                  const segment = activeWorkflow.stageSegments.find((seg) => seg.columns.some((c) => c.id === col.id));
-                  const stepColor = segment?.color || '#d1d5db';
-                  const isDone = activeStageIndex >= 0 && idx < activeStageIndex;
-                  const isActive = idx === activeStageIndex;
-                  return (
-                    <div
-                      key={col.id}
-                      className={`br-card-preview-step${isDone ? ' br-card-preview-step--done' : ''}${isActive ? ' br-card-preview-step--active' : ''}`}
-                      title={col.name}
-                    >
-                      <span
-                        className="br-card-preview-step-dot"
-                        style={isActive ? { borderColor: stepColor, backgroundColor: stepColor } : (isDone ? undefined : { borderColor: stepColor })}
-                      >
-                        {isDone ? <FiCheck size={11} /> : null}
-                      </span>
-                      <span className="br-card-preview-step-label">{col.name}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <button type="button" className="br-property-add-btn br-card-preview-save-btn" onClick={handleSave}>
-              Save details
-            </button>
-          </div>
         </footer>
       </div>
     </Modal>
@@ -5796,672 +4664,6 @@ CreateSubtaskSettingsModal.propTypes = {
   users: PropTypes.array,
 };
 
-// Single-user "Owner"/"Co-owners" picker — same floating, portaled panel behavior as
-// CreateSubtaskSettingsModal's own Owner picker above, generalized so CreateCardDetailsModal
-// can use it twice (Owner, Co-owners) without duplicating the positioning/outside-click logic.
-function UserPickerField({ label, users, valueUserId, onChange }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [filterText, setFilterText] = useState('');
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, placement: 'bottom' });
-  const triggerRef = useRef(null);
-  const panelRef = useRef(null);
-
-  // Backend search (users/get_non_vendor_users?search=...) so Owner/Co-owner isn't limited
-  // to whatever page of users happened to preload into the shared CommonReducer list.
-  const [searchResults, setSearchResults] = useState(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const searchDebounceRef = useRef(null);
-  // Kept separately from `users` so a name picked from search results (outside the
-  // preloaded list) still displays correctly on the trigger button.
-  const [pickedUser, setPickedUser] = useState(null);
-
-  useEffect(() => {
-    const query = filterText.trim();
-    clearTimeout(searchDebounceRef.current);
-    if (!query) {
-      setSearchResults(null);
-      setIsSearching(false);
-      return undefined;
-    }
-    setIsSearching(true);
-    searchDebounceRef.current = setTimeout(() => {
-      userService.getNonVendorUsers({ params: { page: 1, limit: 10, search: query } })
-        .then(({ data }) => setSearchResults(Array.isArray(data?.data) ? data.data : []))
-        .catch(() => setSearchResults([]))
-        .finally(() => setIsSearching(false));
-    }, 350);
-    return () => clearTimeout(searchDebounceRef.current);
-  }, [filterText]);
-
-  const updatePosition = () => {
-    const el = triggerRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const gap = 6;
-    const estimatedPanelHeight = 320;
-    const spaceBelow = window.innerHeight - r.bottom;
-    const placeAbove = spaceBelow < estimatedPanelHeight && r.top > spaceBelow;
-    setCoords({
-      top: placeAbove ? r.top - gap : r.bottom + gap,
-      left: r.left,
-      width: Math.max(r.width, 260),
-      placement: placeAbove ? 'top' : 'bottom',
-    });
-  };
-
-  const handleToggle = () => {
-    setIsOpen((prev) => {
-      const next = !prev;
-      if (next) updatePosition();
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const onDocMouseDown = (e) => {
-      const t = e.target;
-      if (panelRef.current?.contains(t)) return;
-      if (triggerRef.current?.contains(t)) return;
-      setIsOpen(false);
-    };
-    const onReposition = () => updatePosition();
-    document.addEventListener('mousedown', onDocMouseDown);
-    window.addEventListener('resize', onReposition);
-    window.addEventListener('scroll', onReposition, true);
-    return () => {
-      document.removeEventListener('mousedown', onDocMouseDown);
-      window.removeEventListener('resize', onReposition);
-      window.removeEventListener('scroll', onReposition, true);
-    };
-  }, [isOpen]);
-
-  const selectedUser = pickedUser
-    ?? (users ?? []).find((u) => String(u.user_id) === String(valueUserId));
-  const name = selectedUser?.name || 'None';
-  const filteredUsers = searchResults ?? (users ?? []);
-
-  const handlePick = (user) => {
-    setPickedUser(user ?? null);
-    onChange(user?.user_id ?? '');
-    setIsOpen(false);
-  };
-
-  return (
-    <div className="business-rule-form-field">
-      <label className="business-rule-form-label">{label}</label>
-      <button
-        type="button"
-        ref={triggerRef}
-        className="business-rule-form-select-wrap business-rule-form-select-wrap--owner business-rule-form-control br-owner-picker-trigger"
-        onClick={handleToggle}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-      >
-        <span className="business-rule-form-owner-avatar" aria-hidden>{getInitials(name)}</span>
-        <span className="br-owner-picker-trigger-name">{name}</span>
-        <FiChevronDown className="business-rule-form-select-icon" aria-hidden />
-      </button>
-
-      {isOpen && createPortal(
-        <div
-          className={`br-owner-picker-panel br-owner-picker-panel--floating br-owner-picker-panel--${coords.placement}`}
-          ref={panelRef}
-          style={{ top: coords.top, left: coords.left, width: coords.width }}
-        >
-          <div className="br-owner-picker-search">
-            <FiFilter size={14} className="br-owner-picker-search-icon" aria-hidden />
-            <input type="text" placeholder="Filter" value={filterText} onChange={(e) => setFilterText(e.target.value)} autoFocus />
-          </div>
-          <div className="br-owner-picker-list">
-            <div className="br-owner-picker-row">
-              <button
-                type="button"
-                className={`br-owner-picker-row-btn${!valueUserId ? ' br-owner-picker-row-btn--selected' : ''}`}
-                onClick={() => handlePick(null)}
-              >
-                <span className="business-rule-form-owner-avatar" aria-hidden>{getInitials('None')}</span>
-                <span className="br-owner-picker-row-name">None</span>
-              </button>
-            </div>
-            {isSearching ? (
-              <div className="br-property-picker-empty">Searching…</div>
-            ) : filteredUsers.length === 0 ? (
-              <div className="br-property-picker-empty">No matches</div>
-            ) : (
-              filteredUsers.map((user) => (
-                <div key={user.user_id} className="br-owner-picker-row">
-                  <button
-                    type="button"
-                    className={`br-owner-picker-row-btn${String(valueUserId) === String(user.user_id) ? ' br-owner-picker-row-btn--selected' : ''}`}
-                    onClick={() => handlePick(user)}
-                  >
-                    <span className="business-rule-form-owner-avatar" aria-hidden>{getInitials(user.name)}</span>
-                    <span className="br-owner-picker-row-name">{user.name}</span>
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </div>,
-        document.body
-      )}
-    </div>
-  );
-}
-
-UserPickerField.propTypes = {
-  label: PropTypes.string.isRequired,
-  users: PropTypes.array,
-  valueUserId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  onChange: PropTypes.func.isRequired,
-};
-
-// Multi-select "Tags" field — same input-styled trigger + floating filterable panel as
-// UserPickerField, but toggles multiple kanban-board tags (board's own tag catalog, not the
-// rule's own free-text metadata tags at business-rule-form-tags-input elsewhere in this file).
-function TagPickerField({ label, tags, valueTagIds, onChange }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [filterText, setFilterText] = useState('');
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, placement: 'bottom' });
-  const triggerRef = useRef(null);
-  const panelRef = useRef(null);
-
-  const updatePosition = () => {
-    const el = triggerRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const gap = 6;
-    const estimatedPanelHeight = 320;
-    const spaceBelow = window.innerHeight - r.bottom;
-    const placeAbove = spaceBelow < estimatedPanelHeight && r.top > spaceBelow;
-    setCoords({
-      top: placeAbove ? r.top - gap : r.bottom + gap,
-      left: r.left,
-      width: Math.max(r.width, 260),
-      placement: placeAbove ? 'top' : 'bottom',
-    });
-  };
-
-  const handleToggle = () => {
-    setIsOpen((prev) => {
-      const next = !prev;
-      if (next) updatePosition();
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const onDocMouseDown = (e) => {
-      const t = e.target;
-      if (panelRef.current?.contains(t)) return;
-      if (triggerRef.current?.contains(t)) return;
-      setIsOpen(false);
-    };
-    const onReposition = () => updatePosition();
-    document.addEventListener('mousedown', onDocMouseDown);
-    window.addEventListener('resize', onReposition);
-    window.addEventListener('scroll', onReposition, true);
-    return () => {
-      document.removeEventListener('mousedown', onDocMouseDown);
-      window.removeEventListener('resize', onReposition);
-      window.removeEventListener('scroll', onReposition, true);
-    };
-  }, [isOpen]);
-
-  const activeTags = (tags ?? []).filter((t) => !isKanbanManagementRowDisabled(t.status));
-  const query = filterText.trim().toLowerCase();
-  const filteredTags = query ? activeTags.filter((t) => t.label?.toLowerCase().includes(query)) : activeTags;
-  const selectedTags = activeTags.filter((t) => (valueTagIds ?? []).includes(t.id));
-
-  const handleToggleTag = (tagId) => {
-    onChange((valueTagIds ?? []).includes(tagId) ? valueTagIds.filter((id) => id !== tagId) : [...(valueTagIds ?? []), tagId]);
-  };
-
-  const handleRemoveTag = (tagId, e) => {
-    e.stopPropagation();
-    onChange((valueTagIds ?? []).filter((id) => id !== tagId));
-  };
-
-  return (
-    <div className="business-rule-form-field">
-      <label className="business-rule-form-label">{label}</label>
-      <button
-        type="button"
-        ref={triggerRef}
-        className="business-rule-form-input business-rule-form-control business-rule-form-tags-input br-tag-picker-trigger"
-        onClick={handleToggle}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-      >
-        {selectedTags.length === 0 ? (
-          <span className="br-tag-picker-placeholder">Select tags</span>
-        ) : (
-          selectedTags.map((t) => (
-            <span key={t.id} className="business-rule-form-tag-pill">
-              {t.color_code && <span className="br-property-pill-dot" style={{ backgroundColor: t.color_code }} aria-hidden />}
-              {t.label}
-              <button type="button" onClick={(e) => handleRemoveTag(t.id, e)} aria-label={`Remove tag ${t.label}`}>
-                <FiX size={12} />
-              </button>
-            </span>
-          ))
-        )}
-      </button>
-
-      {isOpen && createPortal(
-        <div
-          className={`br-owner-picker-panel br-owner-picker-panel--floating br-owner-picker-panel--${coords.placement}`}
-          ref={panelRef}
-          style={{ top: coords.top, left: coords.left, width: coords.width }}
-        >
-          <div className="br-owner-picker-search">
-            <FiFilter size={14} className="br-owner-picker-search-icon" aria-hidden />
-            <input type="text" placeholder="Filter" value={filterText} onChange={(e) => setFilterText(e.target.value)} autoFocus />
-          </div>
-          <div className="br-owner-picker-list">
-            {filteredTags.length === 0 ? (
-              <div className="br-property-picker-empty">No tags found</div>
-            ) : (
-              filteredTags.map((t) => (
-                <div key={t.id} className="br-owner-picker-row">
-                  <button
-                    type="button"
-                    className={`br-owner-picker-row-btn${(valueTagIds ?? []).includes(t.id) ? ' br-owner-picker-row-btn--selected' : ''}`}
-                    onClick={() => handleToggleTag(t.id)}
-                  >
-                    <span className="br-property-pill-dot" style={{ backgroundColor: t.color_code || '#9ca3af' }} aria-hidden />
-                    <span className="br-owner-picker-row-name">{t.label}</span>
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </div>,
-        document.body
-      )}
-    </div>
-  );
-}
-
-TagPickerField.propTypes = {
-  label: PropTypes.string.isRequired,
-  tags: PropTypes.array,
-  valueTagIds: PropTypes.array,
-  onChange: PropTypes.func.isRequired,
-};
-
-// Regular-field labels CreateCardDetailsModal owns on the action's fieldValues list — used
-// to tell "fields this modal manages" apart from any leftover entries saved before the
-// freeform "Set card fields" picker was removed, so saving from this modal never silently
-// drops an unrelated chip that got in that other way.
-const CREATE_CARD_FIXED_FIELD_LABELS = ['Owner', 'Co-owners', 'Deadline', 'Size', 'Tags', 'Custom card ID'];
-
-// "Configure details" on a create-card action (see hasCustomProperties in the THEN column)
-// opens this instead of going straight from the Board Minimap destination pick to done —
-// title/description plus Owner/Deadline/Tags/... field values, presented as the fixed panel
-// the reference product itself uses, with the board's own custom fields and a simple
-// subtask-title list alongside it.
-function CreateCardDetailsModal({ show, onClose, onSave, action, users, kanbanTags, triggerTypeId }) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [ownerUserId, setOwnerUserId] = useState('');
-  const [coOwnerUserId, setCoOwnerUserId] = useState('');
-  const [deadlineDate, setDeadlineDate] = useState('');
-  const [size, setSize] = useState('');
-  const [tagIds, setTagIds] = useState([]);
-  const [customCardId, setCustomCardId] = useState('');
-  const [customFieldValues, setCustomFieldValues] = useState({});
-  const [subtaskTitles, setSubtaskTitles] = useState([]);
-  const [subtaskDraft, setSubtaskDraft] = useState('');
-  const [isCustomFieldsExpanded, setIsCustomFieldsExpanded] = useState(false);
-  const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(true);
-
-  const boardId = action?.boardId;
-
-  const { customFields, isLoadingCustomFields } = useCustomFieldsByTrigger({
-    show, triggerTypeId, boardId, showDisabled: false, search: '',
-  });
-  // Dev-only fallback so the panel can be visually tested without a live backend, same as
-  // CopyCardDetailsModal's own displayCustomFields above.
-  const displayCustomFields = customFields.length > 0 ? customFields : (import.meta.env.DEV ? DUMMY_CUSTOM_FIELDS : []);
-
-  const { boardStructure, getBoardStructure } = useWorkFlowReducer((s) => s);
-  useEffect(() => {
-    if (!show || !boardId) return;
-    getBoardStructure({ boardId });
-  }, [show, boardId]);
-
-  // Same transform the Board Minimap itself uses, so the footer's stage strip reflects the
-  // actual picked workflow's real stage segments/colors instead of a re-invented palette.
-  const minimapWorkflows = useMemo(
-    () => (boardId ? buildBoardMinimapWorkflows(boardStructure) : []),
-    [boardId, boardStructure]
-  );
-  const activeWorkflow = minimapWorkflows.find((w) => String(w.id) === String(action?.workflowId));
-  const stageDots = activeWorkflow
-    ? activeWorkflow.stageSegments.flatMap((segment) => segment.columns.map((col) => ({ ...col, color: segment.color })))
-    : [];
-
-  useEffect(() => {
-    if (!show) return;
-    const fv = action?.fieldValues ?? [];
-    const findOne = (label) => fv.find((f) => f.field === label);
-    setTitle(action?.cardTitle ?? '');
-    setDescription(action?.cardDescription ?? '');
-    setOwnerUserId(findOne('Owner')?.refId ?? '');
-    setCoOwnerUserId(findOne('Co-owners')?.refId ?? '');
-    setDeadlineDate(findOne('Deadline')?.value ?? '');
-    setSize(findOne('Size')?.value ?? '');
-    setTagIds(findOne('Tags')?.tagIds ?? []);
-    setCustomCardId(findOne('Custom card ID')?.value ?? '');
-    setSubtaskTitles(action?.subtaskTitles ?? []);
-    setSubtaskDraft('');
-    setIsCustomFieldsExpanded(false);
-  }, [show, action?.id]);
-
-  // Separate effect: the board's custom-field catalog only resolves after boardId's fetch
-  // completes, which can land after the effect above already ran on open.
-  useEffect(() => {
-    if (!show || displayCustomFields.length === 0) return;
-    const fv = action?.fieldValues ?? [];
-    const next = {};
-    displayCustomFields.forEach((f) => {
-      const match = fv.find((x) => x.field === f.field_label);
-      if (match) next[f.field_label] = match.value ?? '';
-    });
-    setCustomFieldValues((prev) => ({ ...next, ...prev }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [show, displayCustomFields.length, action?.id]);
-
-  const handleAddSubtaskDraft = () => {
-    if (!subtaskDraft.trim()) return;
-    setSubtaskTitles((prev) => [...prev, subtaskDraft.trim()]);
-    setSubtaskDraft('');
-  };
-
-  const handleSubtaskDraftKeyDown = (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      handleAddSubtaskDraft();
-    }
-  };
-
-  const handleRemoveSubtask = (idx) => {
-    setSubtaskTitles((prev) => prev.filter((_, i) => i !== idx));
-  };
-
-  const renderDeadlineTrigger = ({ disabled, onOpen, displayValue }) => (
-    <button type="button" className="br-subtask-deadline-trigger" onClick={onOpen} disabled={disabled}>
-      <FiCalendar size={14} aria-hidden />
-      {displayValue || 'Not Set'}
-    </button>
-  );
-
-  const handleSave = () => {
-    const makeId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const ownerUser = (users ?? []).find((u) => String(u.user_id) === String(ownerUserId));
-    const coOwnerUser = (users ?? []).find((u) => String(u.user_id) === String(coOwnerUserId));
-
-    const built = [
-      ownerUserId ? { id: makeId(), type: 'user', field: 'Owner', label: 'Owner', refId: ownerUserId, refName: ownerUser?.name ?? '' } : null,
-      coOwnerUserId ? { id: makeId(), type: 'user', field: 'Co-owners', label: 'Co-owners', refId: coOwnerUserId, refName: coOwnerUser?.name ?? '' } : null,
-      deadlineDate ? { id: makeId(), type: 'date', field: 'Deadline', label: 'Deadline', value: deadlineDate } : null,
-      size ? { id: makeId(), type: 'text', field: 'Size', label: 'Size', value: size } : null,
-      tagIds.length > 0 ? { id: makeId(), type: 'tags', field: 'Tags', label: 'Tags', tagIds } : null,
-      customCardId ? { id: makeId(), type: 'text', field: 'Custom card ID', label: 'Custom card ID', value: customCardId } : null,
-      ...displayCustomFields
-        .filter((f) => (customFieldValues[f.field_label] ?? '').trim() !== '')
-        .map((f) => ({
-          id: makeId(),
-          type: classifyCustomFieldUiKind(f.field_label) === 'date' ? 'date' : 'text',
-          field: f.field_label,
-          label: `Set ${f.field_label}`,
-          value: customFieldValues[f.field_label],
-        })),
-    ].filter(Boolean);
-
-    const managedLabels = new Set([...CREATE_CARD_FIXED_FIELD_LABELS, ...displayCustomFields.map((f) => f.field_label)]);
-    const untouchedExisting = (action?.fieldValues ?? []).filter((fv) => !managedLabels.has(fv.field));
-
-    onSave({
-      cardTitle: title,
-      cardDescription: description,
-      fieldValues: [...untouchedExisting, ...built],
-      subtaskTitles,
-    });
-    onClose();
-  };
-
-  const destinationLabel = action?.boardName
-    ? `${action.workspaceName ? `${action.workspaceName} / ` : ''}${action.boardName}`
-    : null;
-
-  return (
-    <Modal
-      show={show}
-      onHide={onClose}
-      className="card-property-match-modal br-create-card-details-modal"
-      dialogClassName="card-property-match-modal-dialog br-create-card-details-modal-dialog"
-      backdropClassName="card-property-match-modal-backdrop"
-      centered
-      scrollable
-    >
-      <div className="card-property-match-modal-shell br-ccd-shell">
-        <header className="card-property-match-modal-header">
-          <h2 className="card-property-match-modal-title">Create Card Details</h2>
-          <button type="button" className="business-rule-form-modal-close" onClick={onClose} aria-label="Close">
-            <FiX size={20} />
-          </button>
-        </header>
-
-        <div className="br-ccd-titlebar">
-          <input
-            type="text"
-            className="br-ccd-title-input"
-            placeholder="Enter card title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </div>
-
-        <div className="card-property-match-modal-body br-ccd-body">
-          <div className="br-ccd-desc-col">
-            <textarea
-              className="br-ccd-desc-textarea"
-              placeholder="Enter card description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-
-          <div className="br-ccd-fields-col">
-            <div className="br-ccd-fields-head">Card fields</div>
-
-            <div className="br-ccd-grid2">
-              <UserPickerField label="Owner" users={users} valueUserId={ownerUserId} onChange={setOwnerUserId} />
-              <UserPickerField label="Co-owners" users={users} valueUserId={coOwnerUserId} onChange={setCoOwnerUserId} />
-            </div>
-
-            <div className="br-ccd-grid2">
-              <div className="business-rule-form-field">
-                <label className="business-rule-form-label">Deadline</label>
-                <DatePickerField
-                  dateValue={deadlineDate}
-                  onDateChange={(e) => setDeadlineDate(e.target.value)}
-                  popperClassName="br-subtask-deadline-popper"
-                  renderTrigger={renderDeadlineTrigger}
-                />
-              </div>
-              <div className="business-rule-form-field">
-                <label className="business-rule-form-label">Size</label>
-                <div className="business-rule-form-select-wrap">
-                  <select className="business-rule-form-select" value={size} onChange={(e) => setSize(e.target.value)}>
-                    <option value="">Not Set</option>
-                    {CREATE_CARD_SIZE_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <TagPickerField label="Tags" tags={kanbanTags} valueTagIds={tagIds} onChange={setTagIds} />
-
-            <div className="business-rule-form-field">
-              <label className="business-rule-form-label">Custom card ID</label>
-              <input
-                type="text"
-                className="business-rule-form-input"
-                value={customCardId}
-                onChange={(e) => setCustomCardId(e.target.value)}
-              />
-            </div>
-
-            <div className="br-ccd-subsection">
-              <div className="br-ccd-divider">
-                <button
-                  type="button"
-                  className="br-ccd-divider-pill"
-                  onClick={() => setIsCustomFieldsExpanded((v) => !v)}
-                  aria-expanded={isCustomFieldsExpanded}
-                >
-                  Custom fields
-                  {isCustomFieldsExpanded ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-                </button>
-                <div className="br-ccd-divider-icons">
-                  <span className="br-ccd-divider-icon-btn" aria-hidden><FiMaximize2 size={13} /></span>
-                  <span className="br-ccd-divider-icon-btn" aria-hidden><FiShare2 size={13} /></span>
-                </div>
-              </div>
-              {isCustomFieldsExpanded && (
-                <div className="br-ccd-custom-fields-list">
-                  {isLoadingCustomFields ? (
-                    <div className="br-property-picker-empty">Loading...</div>
-                  ) : displayCustomFields.length === 0 ? (
-                    <div className="br-property-picker-empty">No custom fields found</div>
-                  ) : (
-                    displayCustomFields.map((field, idx) => {
-                      const key = field.custom_field_id ?? idx;
-                      const kind = classifyCustomFieldUiKind(field.field_label);
-                      return (
-                        <div key={key} className="business-rule-form-field br-ccd-custom-field-row">
-                          <label className="business-rule-form-label">{field.field_label}</label>
-                          {kind === 'none' ? (
-                            <div className="br-property-picker-empty">Not settable from this panel</div>
-                          ) : (
-                            <input
-                              type={kind === 'date' ? 'date' : 'text'}
-                              className="business-rule-form-input"
-                              value={customFieldValues[field.field_label] ?? ''}
-                              onChange={(e) => setCustomFieldValues((prev) => ({ ...prev, [field.field_label]: e.target.value }))}
-                            />
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="br-property-section br-ccd-subsection">
-              <button
-                type="button"
-                className="br-property-section-toggle"
-                onClick={() => setIsSubtasksExpanded((v) => !v)}
-              >
-                <span className="br-property-section-toggle-icon">
-                  {isSubtasksExpanded ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-                </span>
-                Subtasks
-              </button>
-              {isSubtasksExpanded && (
-                <div className="br-ccd-subtasks">
-                  {subtaskTitles.length > 0 && (
-                    <ul className="br-ccd-subtask-list">
-                      {subtaskTitles.map((st, idx) => (
-                        <li key={`${st}-${idx}`} className="br-ccd-subtask-row">
-                          <span>{st}</span>
-                          <button type="button" onClick={() => handleRemoveSubtask(idx)} aria-label="Remove subtask">
-                            <FiX size={12} />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <input
-                    type="text"
-                    className="br-ccd-subtask-input"
-                    placeholder="Press ctrl/cmd + enter to create new subtask"
-                    value={subtaskDraft}
-                    onChange={(e) => setSubtaskDraft(e.target.value)}
-                    onKeyDown={handleSubtaskDraftKeyDown}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <footer className="br-ccd-footer">
-          <div className="br-ccd-crumb">
-            {destinationLabel ? (
-              <>
-                Board <span className="br-ccd-crumb-value">{destinationLabel}</span>
-                {action?.workflowName && (<><span className="br-ccd-crumb-sep">/</span>Workflow <span className="br-ccd-crumb-value">{action.workflowName}</span></>)}
-                {action?.swimlaneName && (<><span className="br-ccd-crumb-sep">/</span>Swimlane <span className="br-ccd-crumb-value">{action.swimlaneName}</span></>)}
-              </>
-            ) : 'No destination picked yet'}
-          </div>
-
-          <div className="br-ccd-stagerow">
-            {stageDots.length > 0 && (
-              <div className="br-ccd-stages">
-                {stageDots.map((dot) => {
-                  const isCurrent = String(dot.id) === String(action?.stageId);
-                  return (
-                    <span key={dot.id} className={`br-ccd-dot${isCurrent ? ' br-ccd-dot--current' : ''}`} style={{ '--dot-color': dot.color }}>
-                      {isCurrent && <span className="br-ccd-dot-label">{dot.name}</span>}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-            <button type="button" className="br-ccd-save-btn" onClick={handleSave}>
-              Save details
-            </button>
-          </div>
-        </footer>
-      </div>
-    </Modal>
-  );
-}
-
-CreateCardDetailsModal.propTypes = {
-  show: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onSave: PropTypes.func.isRequired,
-  action: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    boardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    boardName: PropTypes.string,
-    workspaceName: PropTypes.string,
-    workflowId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    workflowName: PropTypes.string,
-    stageId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    swimlaneName: PropTypes.string,
-    cardTitle: PropTypes.string,
-    cardDescription: PropTypes.string,
-    fieldValues: PropTypes.array,
-    subtaskTitles: PropTypes.array,
-  }),
-  users: PropTypes.array,
-  kanbanTags: PropTypes.array,
-  triggerTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-};
-
 function ShareWithModal({ show, onClose, permissions, onSave }) {
   const [filterText, setFilterText] = useState('');
   const [draftPermissions, setDraftPermissions] = useState(permissions);
@@ -6654,12 +4856,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   const [showWhenFieldPicker, setShowWhenFieldPicker] = useState(false);
   const [createActions, setCreateActions] = useState([]);
   const [showCreateActionPicker, setShowCreateActionPicker] = useState(false);
-  const [showCreateTemplatePicker, setShowCreateTemplatePicker] = useState(false);
-  const [showCreateDetailsPicker, setShowCreateDetailsPicker] = useState(false);
-  const [showCreateCardDetailsModal, setShowCreateCardDetailsModal] = useState(false);
-  const [activeCreateActionId, setActiveCreateActionId] = useState(null);
-  const [showCopyCardDetailsPicker, setShowCopyCardDetailsPicker] = useState(false);
-  const [showCreateCardFieldsModal, setShowCreateCardFieldsModal] = useState(false);
   const [linkActions, setLinkActions] = useState([]);
   const [showLinkActionPicker, setShowLinkActionPicker] = useState(false);
   const editingLinkActionIdRef = useRef(null);
@@ -6737,12 +4933,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   const [updateNonWorkingFilterText, setUpdateNonWorkingFilterText] = useState('');
   const updateNonWorkingTriggerRef = useRef(null);
   const updateNonWorkingPanelRef = useRef(null);
-  const [moveActions, setMoveActions] = useState([]);
-  const [showMoveDestinationPicker, setShowMoveDestinationPicker] = useState(false);
-  const [activeMoveActionId, setActiveMoveActionId] = useState(null);
-  const [convertSubtaskActions, setConvertSubtaskActions] = useState([]);
-  const [showConvertDestinationPicker, setShowConvertDestinationPicker] = useState(false);
-  const [activeConvertActionId, setActiveConvertActionId] = useState(null);
   // "Update the parent/child card details" — its own repeatable action list (see
   // ACTION_GROUP_TYPE_TO_SECTION_ID's update_parent_card/update_child_card comment).
   // Each instance carries its own fields-to-update chips plus its own nested
@@ -6789,15 +4979,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   // own delete button, since that resets boardId back to '' and looks identical to the
   // untouched initial state the effect is meant to default.
   const boardConditionDefaultAppliedRef = useRef(false);
-  // "Position" (board + swimlane/stage) is a second default condition some triggers carry
-  // alongside "Board" — get_field_details/regular/6 only returns operators (is/is not), not
-  // an actual list of positions, so this reuses the board-minimap destination picker (the
-  // same one "Move the card" uses) as the value picker instead of a plain dropdown.
-  const [positionConditionRows, setPositionConditionRows] = useState([
-    { id: 'position-0', boardId: '', boardName: '', swimlaneId: '', swimlaneName: '', stageId: '', stageName: '', joinWord: 'OR' },
-  ]);
-  const [showPositionDestinationPicker, setShowPositionDestinationPicker] = useState(false);
-  const [activePositionRowId, setActivePositionRowId] = useState(null);
   const [openColorConditionId, setOpenColorConditionId] = useState(null);
   const colorConditionTriggerRef = useRef(null);
   const colorConditionPanelRef = useRef(null);
@@ -7003,13 +5184,14 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   const andHeaderText = triggerConfig?.and_header || 'the created card matches this filter';
   const hasBoardDefaultCondition = (triggerConfig?.default_conditions ?? [])
     .some((c) => String(c.field_label ?? '').trim().toLowerCase() === 'board');
-  const hasPositionDefaultCondition = (triggerConfig?.default_conditions ?? [])
-    .some((c) => String(c.field_label ?? '').trim().toLowerCase() === 'position');
 
   // Drives the THEN column from the selected trigger type's own action catalog
   // (get_trigger_config's `actions`, ordered by display_order) instead of always
   // showing every action section for every trigger type.
-  const triggerActions = triggerConfig?.actions ?? [];
+  // Destination-based actions (move/convert/create card) are no longer supported, so they're
+  // dropped here instead of falling through to the generic read-only section below.
+  const triggerActions = (triggerConfig?.actions ?? [])
+    .filter((a) => !UNSUPPORTED_ACTION_GROUP_TYPES.includes(a.group_type));
   const sortedTriggerActions = [...triggerActions].sort(
     (a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0)
   );
@@ -7030,26 +5212,12 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   // Each THEN action section fetches its own regular/custom/time-unit field catalog
   // from get_then_action_fields, keyed by this trigger's action_type_id for that
   // group_type (get_trigger_config's actions[] carries one per group_type).
-  const createActionMeta = sortedTriggerActions.find((a) => a.group_type === 'create_cards' || a.group_type === 'create_card_recurring');
-  const createActionTypeId = createActionMeta?.action_type_id;
-  // A recurring/scheduled trigger has no originating card, so the relational create
-  // variants (child/parent/predecessor/relative/successor) in CREATE_ACTION_OPTIONS
-  // don't apply — only a plain "Create card" ever makes sense here. Skip the type
-  // picker entirely and go straight to "Add new action" → the board/destination picker.
-  const isRecurringCreateAction = createActionMeta?.group_type === 'create_card_recurring';
+  const createActionTypeId = sortedTriggerActions.find((a) => a.group_type === 'create_cards')?.action_type_id;
   const updateActionTypeId = sortedTriggerActions.find((a) => a.group_type === 'update_card')?.action_type_id;
 
   // Resolved once per trigger: which cross-card direction (if any) this trigger's own
-  // move/update-related action applies to, so the nested filter block can read
-  // "if parent card matches this filter" vs "if child card matches this filter" — and
-  // be skipped entirely for the plain same-card move_card case (neither flag set).
-  const moveRelatedActionMeta = sortedTriggerActions.find((a) =>
-    a.group_type === 'move_parent_card' || a.group_type === 'move_child_card'
-  );
-  const moveRelatedFilterLabel = moveRelatedActionMeta?.has_parent_filter === '1'
-    ? 'parent'
-    : moveRelatedActionMeta?.has_child_filter === '1' ? 'child' : null;
-
+  // update-related action applies to, so the nested filter block can read
+  // "if parent card matches this filter" vs "if child card matches this filter".
   const updateRelatedActionMeta = sortedTriggerActions.find((a) =>
     a.group_type === 'update_parent_card' || a.group_type === 'update_child_card'
   );
@@ -7077,9 +5245,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     if (workspaces.length === 0) listAllWorkspaces();
     setBoardConditionRows([{ id: 'board-0', boardId: '', joinWord: 'OR' }]);
     boardConditionDefaultAppliedRef.current = false;
-    setPositionConditionRows([{ id: 'position-0', boardId: '', boardName: '', swimlaneId: '', swimlaneName: '', stageId: '', stageName: '', joinWord: 'OR' }]);
-    setShowPositionDestinationPicker(false);
-    setActivePositionRowId(null);
     setName(rule.name ?? '');
     setDescription(rule.description ?? '');
     setTags([]);
@@ -7098,19 +5263,12 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setShowWhenFieldPicker(false);
     setCreateActions([]);
     setShowCreateActionPicker(false);
-    setShowCopyCardDetailsPicker(false);
     setLinkActions([]);
     setShowLinkActionPicker(false);
     editingLinkActionIdRef.current = null;
     setOpenLinkOperatorRowId(null);
     setLinkOperatorFilterText('');
     setRemoveOtherLinksByType({});
-    setMoveActions([]);
-    setShowMoveDestinationPicker(false);
-    setActiveMoveActionId(null);
-    setConvertSubtaskActions([]);
-    setShowConvertDestinationPicker(false);
-    setActiveConvertActionId(null);
     setUpdateRelatedActions([]);
     setShowUpdateRelatedFieldPicker(false);
     setActiveUpdateRelatedActionId(null);
@@ -7218,10 +5376,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setWhenFields(realWhenFields);
   }, [isEditMode, businessRuleDetailsReady, businessRuleDetails, regularFields, editModeCustomFields]);
 
-  // Board/position restriction rows carry no field id of their own in the saved rule's flat
+  // Board restriction rows carry no field id of their own in the saved rule's flat
   // conditions[] list — best-effort split against this trigger's own default_conditions
   // catalog by field_label, the exact inverse of buildConditions()'s equally best-effort
-  // forward mapping in buildBusinessRulePayload.js.
+  // forward mapping in buildBusinessRulePayload.js. Saved "Position" conditions are no
+  // longer supported and are dropped rather than shown as a plain condition box.
   useEffect(() => {
     if (!isEditMode || !businessRuleDetailsReady) return;
     const rawConditions = businessRuleDetails.conditions ?? [];
@@ -7231,7 +5390,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     const positionDefault = defaultConditionFor('position');
 
     const boardRows = [];
-    const positionRows = [];
     const plainConditions = [];
 
     rawConditions
@@ -7244,19 +5402,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           return;
         }
         const positionFieldId = positionDefault?.regular_field_id ?? positionDefault?.field_id;
-        if (positionDefault && cond.regular_field_id != null && String(cond.regular_field_id) === String(positionFieldId)) {
-          const [boardId = '', swimlaneId = '', stageId = ''] = String(cond.input_value ?? '').split(':');
-          positionRows.push({
-            id: `position-${cond.condition_id}`, boardId, boardName: '', swimlaneId, swimlaneName: '', stageId, stageName: '',
-            joinWord: cond.connector || 'OR',
-          });
-          return;
-        }
+        if (positionDefault && cond.regular_field_id != null && String(cond.regular_field_id) === String(positionFieldId)) return;
         plainConditions.push(cond);
       });
 
     if (boardRows.length > 0) setBoardConditionRows(boardRows);
-    if (positionRows.length > 0) setPositionConditionRows(positionRows);
 
     // Group the flat per-value-row list into one box per distinct field, each with its own
     // values[] — the inverse of how the create-side payload flattens boxes back into rows.
@@ -7318,8 +5468,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     const nextUpdateActions = [];
     const nextLinkActions = [];
     const nextRemoveOtherLinksByType = {};
-    const nextMoveActions = [];
-    const nextConvertActions = [];
     const nextNotifyActions = [];
     const nextInvokeActions = [];
     const nextRawSummaryBySectionId = {};
@@ -7341,72 +5489,28 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
     const propVal = (action, key) => (action.properties ?? []).find((p) => p.property_key === key)?.property_value ?? null;
 
-    const resolveBoardName = (boardId) => {
-      if (boardId == null || boardId === '') return '';
-      const match = (workspaces ?? []).flatMap((w) => w.boards ?? []).find((b) => String(b.board_id) === String(boardId));
-      return match ? match.board_name : `Board #${boardId}`;
-    };
-
-    const resolveWorkspaceName = (boardId) => {
-      if (boardId == null || boardId === '') return '';
-      const owner = (workspaces ?? []).find((w) => (w.boards ?? []).some((b) => String(b.board_id) === String(boardId)));
-      return owner?.workspace_name ?? '';
-    };
-
     groups.forEach((group) => {
       const sectionId = ACTION_GROUP_TYPE_TO_SECTION_ID[group.group_type];
       const actions = group.actions ?? [];
 
       if (sectionId === 'create') {
         actions.forEach((action) => {
-          // A subtask create-action has no board/column/title (it's created under the
-          // current card, not a new board location) — just relation_type: 'subtask' plus a
+          // Only subtask create-actions are still supported — they have no board/column/title
+          // (created under the current card), just relation_type: 'subtask' plus a
           // create_subtask_id referencing its owner/deadline/description record, saved
           // separately via saveCreateSubtaskSettings. Restore it into the same editable chip
-          // shape handleSaveCreateSubtaskSettings produces for a live save, so the
-          // owner/deadline link shows the real saved settings instead of a dead-end raw dump.
+          // shape handleSaveCreateSubtaskSettings produces for a live save. Saved
+          // destination-based creates (card/child/parent/...) are dropped.
           const relationType = propVal(action, 'relation_type');
           const restoredCreateSubtaskId = action.create_subtask_id ?? propVal(action, 'create_subtask_id');
-          if (relationType === 'subtask' || restoredCreateSubtaskId != null) {
-            nextCreateActions.push({
-              id: `create-${action.then_action_id}`,
-              thenActionId: action.then_action_id ?? null,
-              key: 'subtask',
-              label: 'Create subtask',
-              createSubtaskId: restoredCreateSubtaskId,
-              configured: restoredCreateSubtaskId != null,
-            });
-            return;
-          }
-          const copyRegular = propVal(action, 'copy_regular_fields');
-          const copyCustom = propVal(action, 'copy_custom_fields');
-          const createBoardId = propVal(action, 'target_board_id') ?? '';
+          if (relationType !== 'subtask' && restoredCreateSubtaskId == null) return;
           nextCreateActions.push({
             id: `create-${action.then_action_id}`,
             thenActionId: action.then_action_id ?? null,
-            key: relationType ?? 'card',
-            label: relationType ? `Create ${relationType}` : 'Create card',
-            boardId: createBoardId,
-            // Same board→workspace/board-name resolve the move/convert branch below already
-            // does — without it, the "Configure details" link never picks up the saved
-            // destination text and permanently reads as unconfigured after a reload.
-            boardName: resolveBoardName(createBoardId),
-            workspaceName: resolveWorkspaceName(createBoardId),
-            workflowId: propVal(action, 'target_workflow_id') ?? '',
-            workflowName: '',
-            swimlaneId: propVal(action, 'target_swimlane_id') ?? '',
-            swimlaneName: '',
-            stageId: propVal(action, 'target_column_id') ?? '',
-            stageName: '',
-            templateName: propVal(action, 'card_title') ?? '',
-            // Feeds the THEN-column Title-status line (green box's typed title) — same
-            // saved value as templateName above, restored into both since a saved
-            // card_title can't be told apart as "typed" vs "picked from a template".
-            title: propVal(action, 'card_title') ?? '',
-            copyFields: (copyRegular || copyCustom) ? {
-              regularFields: copyRegular ? copyRegular.split(',').map((s) => s.trim()).filter(Boolean) : [],
-              customFields: copyCustom ? copyCustom.split(',').map((s) => s.trim()).filter(Boolean) : [],
-            } : undefined,
+            key: 'subtask',
+            label: 'Create subtask',
+            createSubtaskId: restoredCreateSubtaskId,
+            configured: restoredCreateSubtaskId != null,
           });
         });
         return;
@@ -7542,29 +5646,8 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         return;
       }
 
-      if (sectionId === 'move' || sectionId === 'convert') {
-        const targetArray = sectionId === 'move' ? nextMoveActions : nextConvertActions;
-        actions.forEach((action) => {
-          const boardId = propVal(action, 'target_board_id');
-          targetArray.push({
-            id: `${sectionId}-${action.then_action_id}`,
-            thenActionId: action.then_action_id ?? null,
-            key: sectionId === 'move' ? 'move_to' : 'convert_to',
-            label: sectionId === 'move' ? 'Move card to' : 'Convert subtasks to',
-            boardId: boardId ?? '',
-            boardName: resolveBoardName(boardId),
-            workspaceName: resolveWorkspaceName(boardId),
-            workflowId: propVal(action, 'target_workflow_id') ?? '',
-            workflowName: '',
-            swimlaneId: propVal(action, 'target_swimlane_id') ?? '',
-            swimlaneName: '',
-            stageId: propVal(action, 'target_column_id') ?? '',
-            stageName: '',
-            filterProperties: [],
-          });
-        });
-        return;
-      }
+      // Unsupported destination-based groups (move/convert/recurring create) are dropped.
+      if (UNSUPPORTED_ACTION_GROUP_TYPES.includes(group.group_type)) return;
 
       if (sectionId === 'notify') {
         actions.forEach((action) => {
@@ -7642,8 +5725,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setUpdateActions(nextUpdateActions);
     setLinkActions(nextLinkActions);
     setRemoveOtherLinksByType(nextRemoveOtherLinksByType);
-    setMoveActions(nextMoveActions);
-    setConvertSubtaskActions(nextConvertActions);
     setNotifyActions(nextNotifyActions);
     setInvokeActions(nextInvokeActions);
     setExecuteThenActionId(nextExecuteThenActionId);
@@ -7656,43 +5737,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     if (nextPredefinedIntervalDays) setPredefinedIntervalDays(nextPredefinedIntervalDays);
     if (nextPredefinedIntervalStartDate) setPredefinedIntervalStartDate(nextPredefinedIntervalStartDate);
     setRawSummaryBySectionId(nextRawSummaryBySectionId);
-
-    // workflowName/swimlaneName/stageName can't be resolved from `workspaces` (board list
-    // only, no stage/swimlane layout) the way boardName is above — each referenced board's
-    // actual structure has to be fetched. Without this, a saved move/convert/create
-    // destination permanently reads as "Any stage / Any lane" (workflow name blank too)
-    // on reopen, even though a real stage/swimlane was picked, until the user reopens the
-    // Board Minimap picker and re-saves it.
-    const destinationActions = [...nextCreateActions, ...nextMoveActions, ...nextConvertActions]
-      .filter((a) => a.boardId && (a.workflowId || a.stageId || a.swimlaneId));
-    const boardIdsToResolve = [...new Set(destinationActions.map((a) => String(a.boardId)))];
-    if (boardIdsToResolve.length > 0) {
-      Promise.all(boardIdsToResolve.map((id) => workflowService.getWorkflowByBoard(id)
-        .then(({ data }) => {
-          const source = data?.status === 'success' ? data?.data : data;
-          const list = Array.isArray(source) ? source : source ? [source] : [];
-          return [id, buildBoardMinimapWorkflows(list)];
-        })
-        .catch(() => [id, []])))
-        .then((entries) => {
-          const minimapByBoardId = new Map(entries);
-          const resolveNames = (action) => {
-            const workflows = minimapByBoardId.get(String(action.boardId));
-            const workflow = workflows?.find((wf) => String(wf.id) === String(action.workflowId));
-            if (!workflow) return action;
-            return {
-              ...action,
-              workflowName: workflow.name ?? action.workflowName,
-              stageName: workflow.leafColumns.find((c) => String(c.id) === String(action.stageId))?.name ?? action.stageName,
-              swimlaneName: workflow.swimlanes.find((s) => String(s.id) === String(action.swimlaneId))?.name ?? action.swimlaneName,
-            };
-          };
-          setCreateActions((prev) => prev.map(resolveNames));
-          setMoveActions((prev) => prev.map(resolveNames));
-          setConvertSubtaskActions((prev) => prev.map(resolveNames));
-        });
-    }
-  }, [isEditMode, businessRuleDetailsReady, businessRuleDetails, triggerConfig, workspaces, users, cardStickers]);
+  }, [isEditMode, businessRuleDetailsReady, businessRuleDetails, triggerConfig, users, cardStickers]);
 
   // The THEN-column notify card shows the actual saved subject (as pills) instead of a
   // generic "Configured" label — needs each restored notify action's subject fetched up
@@ -7989,10 +6034,10 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     );
   }, [show, workspaces]);
 
-  // update_parent_card/update_child_card and move_parent_card/move_child_card aren't
-  // optional, many-instance actions the way create/link/notify/invoke are — a trigger
-  // that carries one of these only ever carries exactly one, and it's the whole point
-  // of the trigger (e.g. "Child card is moved" exists to update/move the parent). So
+  // update_parent_card/update_child_card aren't optional, many-instance actions the way
+  // create/link/notify/invoke are — a trigger that carries one of these only ever carries
+  // exactly one, and it's the whole point of the trigger (e.g. "Child card is moved"
+  // exists to update the parent). So
   // unlike those optional sections, this one instance is auto-created as soon as the
   // trigger config loads, instead of waiting for an explicit "Add new action" click.
   useEffect(() => {
@@ -8003,28 +6048,9 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         ? [{ id: Date.now(), fields: [], filterProperties: [] }]
         : prev));
     }
-    if (actions.some((a) => a.group_type === 'move_parent_card' || a.group_type === 'move_child_card')) {
-      const option = MOVE_ACTION_OPTIONS[0];
-      setMoveActions((prev) => (prev.length === 0
-        ? [{
-          id: Date.now(), key: option.key, label: option.label,
-          boardId: '', boardName: '', swimlaneId: '', swimlaneName: '', stageId: '', stageName: '',
-          filterProperties: [],
-        }]
-        : prev));
-    }
     if (actions.some((a) => a.group_type === 'copy_values_to_parent' || a.group_type === 'copy_values_to_child')) {
       setCopyValuesActions((prev) => (prev.length === 0
         ? [{ id: Date.now(), fields: [], filterProperties: [] }]
-        : prev));
-    }
-    // "Recurring create cards" always shows one "Create card" row open by default
-    // (per product requirement) instead of requiring an "Add new action" click first —
-    // a recurring/scheduled trigger has no originator card, so the only option is ever
-    // a plain "Create card" (see isRecurringCreateAction below).
-    if (actions.some((a) => a.group_type === 'create_card_recurring')) {
-      setCreateActions((prev) => (prev.length === 0
-        ? [{ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, key: 'card', label: 'Create card' }]
         : prev));
     }
   }, [show, triggerConfig]);
@@ -8100,13 +6126,10 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       disallowTriggerChain,
       whenFields,
       boardConditionRows,
-      positionConditionRows,
       conditions,
       createActions,
       linkActions,
       removeOtherLinksByType,
-      moveActions,
-      convertSubtaskActions,
       updateActions,
       updateRelatedActions,
       copyValuesActions,
@@ -8244,16 +6267,12 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setConditions((prev) => prev.filter((c) => c.id !== id));
   };
 
-  // Clears every AND-column addition (Position is / custom property boxes, and any
-  // extra "Board is" rows) back to their untouched default state, same as the
-  // Create/Link "Clear all" footers. The remaining single "Board is" row keeps its
-  // selected board — clearing it here would drop the board, which users don't expect
-  // from this button.
+  // Clears every AND-column addition (custom property boxes and any extra "Board is"
+  // rows) back to their untouched default state, same as the Create/Link "Clear all"
+  // footers. The remaining single "Board is" row keeps its selected board — clearing it
+  // here would drop the board, which users don't expect from this button.
   const handleClearAndConditions = () => {
     setBoardConditionRows((prev) => (prev.length > 1 ? [prev[0]] : prev));
-    setPositionConditionRows([
-      { id: 'position-0', boardId: '', boardName: '', swimlaneId: '', swimlaneName: '', stageId: '', stageName: '', joinWord: 'OR' },
-    ]);
     setConditions([]);
   };
 
@@ -8370,83 +6389,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       });
     });
   };
-
-  const handleOpenCreateTemplatePicker = (id) => {
-    setActiveCreateActionId(id);
-    setShowCreateTemplatePicker(true);
-  };
-
-  const handleSelectCreateTemplate = (templateName) => {
-    setCreateActions((prev) => prev.map((a) => (a.id === activeCreateActionId ? { ...a, templateName } : a)));
-    setShowCreateTemplatePicker(false);
-  };
-
-  const handleOpenCreateDetails = (id) => {
-    setActiveCreateActionId(id);
-    const action = createActions.find((a) => a.id === id);
-    const isRelational = getRelationTypeFromLabel(action?.label) != null;
-    // A destination already picked (boardId set) on a plain "Create card" action means the
-    // button now shows that destination instead of "Configure details" — re-clicking it goes
-    // straight to editing the card details rather than re-picking the board from scratch.
-    // Relational creates (child/parent/...) have no CreateCardDetailsModal step, so they
-    // always go back through the Board Minimap.
-    if (action?.boardId && !isRelational) {
-      setShowCreateCardDetailsModal(true);
-    } else {
-      setShowCreateDetailsPicker(true);
-    }
-  };
-
-  // The "title will be copied..." summary (shown once Title is in copyFields) re-opens
-  // Copy Card Details directly instead of the board minimap — the destination is already
-  // set, so re-picking the board isn't what clicking this line means to the user.
-  const handleOpenCopyCardDetails = (id) => {
-    setActiveCreateActionId(id);
-    setShowCopyCardDetailsPicker(true);
-  };
-
-  // Once a destination is set and Title isn't being copied from the originator, the THEN
-  // summary shows the literal title typed in the "green box" (CreateCardFieldsModal) —
-  // clicking it reopens that modal directly rather than routing back through the board
-  // minimap / Copy Card Details steps that already happened.
-  const handleOpenCreateCardFieldsModal = (id) => {
-    setActiveCreateActionId(id);
-    setShowCreateCardFieldsModal(true);
-  };
-
-  // Recurring-schedule triggers only ever create a plain card (no originator to
-  // relate a child/parent/... to), so "Add new action" skips the create-type picker
-  // and goes straight to a "Create card" row. The board/destination picker (board
-  // minimap) only opens when the user clicks that row's "Configure details" link.
-  const handleAddRecurringCreateAction = () => {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    setCreateActions((prev) => [...prev, { id, key: 'card', label: 'Create card' }]);
-  };
-
-  const handleSaveCreateDetails = (destination) => {
-    setCreateActions((prev) => prev.map((a) => (a.id === activeCreateActionId ? { ...a, ...destination } : a)));
-    // Every create-action variant (plain "Create card" included) creates a card linked to
-    // the card that triggered the rule, so once a destination is picked they all get one
-    // more step: choosing which of that originator card's fields to carry over.
-    setShowCopyCardDetailsPicker(true);
-  };
-
-  const handleContinueCopyCardDetails = (fields) => {
-    setCreateActions((prev) => prev.map((a) => (a.id === activeCreateActionId ? { ...a, copyFields: fields } : a)));
-    // Once the rule author has picked which fields to carry, let them also set the actual
-    // default values for those fields on the card that will be created.
-    setShowCreateCardFieldsModal(true);
-  };
-
-  const handleSaveCreateCardFields = (values) => {
-    setCreateActions((prev) => prev.map((a) => (a.id === activeCreateActionId ? { ...a, ...values } : a)));
-  };
-
-  const handleSaveCreateCardDetails = (details) => {
-    setCreateActions((prev) => prev.map((a) => (a.id === activeCreateActionId ? { ...a, ...details } : a)));
-  };
-
-  const activeCreateAction = createActions.find((a) => a.id === activeCreateActionId);
 
   const handleSelectLinkAction = (option) => {
     const editingId = editingLinkActionIdRef.current;
@@ -8574,61 +6516,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     ? enabledUpdateTags.filter((t) => t.label.toLowerCase().includes(updateTagsFilterQuery))
     : enabledUpdateTags;
 
-  const handleAddMoveAction = () => {
-    const option = MOVE_ACTION_OPTIONS[0];
-    setMoveActions((prev) => [
-      ...prev,
-      {
-        id: Date.now(), key: option.key, label: option.label,
-        boardId: '', boardName: '', workflowId: '', workflowName: '',
-        swimlaneId: '', swimlaneName: '', stageId: '', stageName: '',
-        filterProperties: [],
-      },
-    ]);
-  };
-
-  const handleRemoveMoveAction = (id) => {
-    setMoveActions((prev) => prev.filter((a) => a.id !== id));
-  };
-
-  const handleOpenMoveDestination = (id) => {
-    setActiveMoveActionId(id);
-    setShowMoveDestinationPicker(true);
-  };
-
-  const handleSaveMoveDestination = (destination) => {
-    setMoveActions((prev) => prev.map((a) => (a.id === activeMoveActionId ? { ...a, ...destination } : a)));
-  };
-
-  const activeMoveAction = moveActions.find((a) => a.id === activeMoveActionId);
-
-  const handleAddConvertAction = () => {
-    const option = CONVERT_SUBTASK_ACTION_OPTIONS[0];
-    setConvertSubtaskActions((prev) => [
-      ...prev,
-      {
-        id: Date.now(), key: option.key, label: option.label,
-        boardId: '', boardName: '', workflowId: '', workflowName: '',
-        swimlaneId: '', swimlaneName: '', stageId: '', stageName: '',
-      },
-    ]);
-  };
-
-  const handleRemoveConvertAction = (id) => {
-    setConvertSubtaskActions((prev) => prev.filter((a) => a.id !== id));
-  };
-
-  const handleOpenConvertDestination = (id) => {
-    setActiveConvertActionId(id);
-    setShowConvertDestinationPicker(true);
-  };
-
-  const handleSaveConvertDestination = (destination) => {
-    setConvertSubtaskActions((prev) => prev.map((a) => (a.id === activeConvertActionId ? { ...a, ...destination } : a)));
-  };
-
-  const activeConvertAction = convertSubtaskActions.find((a) => a.id === activeConvertActionId);
-
   const handleAddUpdateRelatedAction = () => {
     setUpdateRelatedActions((prev) => [...prev, { id: Date.now(), fields: [], filterProperties: [] }]);
   };
@@ -8701,11 +6588,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     const { section, actionId } = activeRelatedFilterTarget;
     const propId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const prop = { id: propId, fieldLabel: getFieldLabel(field) };
-    if (section === 'move') {
-      setMoveActions((prev) => prev.map((a) => (a.id === actionId
-        ? { ...a, filterProperties: [...(a.filterProperties ?? []), prop] }
-        : a)));
-    } else if (section === 'update_related') {
+    if (section === 'update_related') {
       setUpdateRelatedActions((prev) => prev.map((a) => (a.id === actionId
         ? { ...a, filterProperties: [...(a.filterProperties ?? []), prop] }
         : a)));
@@ -8717,11 +6600,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   };
 
   const handleRemoveRelatedFilterProperty = (section, actionId, propId) => {
-    if (section === 'move') {
-      setMoveActions((prev) => prev.map((a) => (a.id === actionId
-        ? { ...a, filterProperties: (a.filterProperties ?? []).filter((p) => p.id !== propId) }
-        : a)));
-    } else if (section === 'update_related') {
+    if (section === 'update_related') {
       setUpdateRelatedActions((prev) => prev.map((a) => (a.id === actionId
         ? { ...a, filterProperties: (a.filterProperties ?? []).filter((p) => p.id !== propId) }
         : a)));
@@ -8732,13 +6611,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     }
   };
 
-  const activeRelatedFilterAction = activeRelatedFilterTarget?.section === 'move'
-    ? moveActions.find((a) => a.id === activeRelatedFilterTarget.actionId)
-    : activeRelatedFilterTarget?.section === 'update_related'
-      ? updateRelatedActions.find((a) => a.id === activeRelatedFilterTarget.actionId)
-      : activeRelatedFilterTarget?.section === 'copy_values'
-        ? copyValuesActions.find((a) => a.id === activeRelatedFilterTarget.actionId)
-        : null;
+  const activeRelatedFilterAction = activeRelatedFilterTarget?.section === 'update_related'
+    ? updateRelatedActions.find((a) => a.id === activeRelatedFilterTarget.actionId)
+    : activeRelatedFilterTarget?.section === 'copy_values'
+      ? copyValuesActions.find((a) => a.id === activeRelatedFilterTarget.actionId)
+      : null;
   const activeRelatedFilterExistingLabels = (activeRelatedFilterAction?.filterProperties ?? [])
     .map((p) => p.fieldLabel.trim().toLowerCase());
 
@@ -9096,35 +6973,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     });
   };
 
-  const handleOpenPositionDestination = (rowId) => {
-    setActivePositionRowId(rowId);
-    setShowPositionDestinationPicker(true);
-  };
-
-  const handleSavePositionDestination = (destination) => {
-    setPositionConditionRows((prev) => prev.map((row) => (row.id === activePositionRowId ? { ...row, ...destination } : row)));
-  };
-
-  const handleRemovePositionConditionRow = (rowId) => {
-    setPositionConditionRows((prev) => {
-      if (prev.length <= 1) {
-        return [{ id: 'position-0', boardId: '', boardName: '', swimlaneId: '', swimlaneName: '', stageId: '', stageName: '', joinWord: 'OR' }];
-      }
-      return prev.filter((row) => row.id !== rowId);
-    });
-  };
-
-  const handleTogglePositionConditionJoinWord = (rowId) => {
-    setPositionConditionRows((prev) => {
-      const rowIndex = prev.findIndex((row) => row.id === rowId);
-      if (rowIndex === -1) return prev;
-      const newRow = { ...prev[rowIndex], id: `position-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` };
-      const next = [...prev];
-      next.splice(rowIndex + 1, 0, newRow);
-      return next;
-    });
-  };
-
   const handleSelectMonthlyDay = (rowId, day) => {
     setMonthlyDayRows((prev) => prev.map((row) => (row.id === rowId ? { ...row, day } : row)));
     setOpenMonthlyDayRowId(null);
@@ -9173,16 +7021,12 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     });
   };
 
-  const activePositionRow = positionConditionRows.find((row) => row.id === activePositionRowId);
-
   // "Clear all" only makes sense to show once the user has actually added something
-  // beyond the trigger's untouched defaults — an extra "Board is" row, a configured
-  // "Position is" row, or a custom property box.
+  // beyond the trigger's untouched defaults — an extra "Board is" row or a custom
+  // property box.
   const hasAndAdditions =
     conditions.length > 0 ||
-    boardConditionRows.length > 1 ||
-    positionConditionRows.length > 1 ||
-    positionConditionRows.some((row) => row.boardId);
+    boardConditionRows.length > 1;
 
   const handleCloseAttempt = () => {
     if (isEditMode) {
@@ -9759,44 +7603,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                   </div>
                 )}
 
-                {hasPositionDefaultCondition && positionConditionRows.length > 0 && (
-                  <div className="business-rule-form-filter-row business-rule-form-filter-row--multi">
-                    <span className="business-rule-form-condition-label">Position is</span>
-                    {positionConditionRows.map((row) => (
-                      <div key={row.id} className="br-board-condition-value-row">
-                        <button
-                          type="button"
-                          className="business-rule-form-condition-value"
-                          onClick={() => handleOpenPositionDestination(row.id)}
-                        >
-                          {row.boardName
-                            ? `${row.workspaceName ? `${row.workspaceName} / ` : ''}${row.boardName}${row.workflowName ? ` (${row.workflowName})` : ''} → ${row.stageName || 'Any stage'} / ${row.swimlaneName || 'Any lane'}`
-                            : 'Not Set'}
-                          <FiChevronDown size={16} aria-hidden />
-                        </button>
-
-                        <div className="business-rule-form-filter-row-actions">
-                          <button
-                            type="button"
-                            className="business-rule-form-or-btn"
-                            onClick={() => handleTogglePositionConditionJoinWord(row.id)}
-                          >
-                            {row.joinWord || 'OR'}
-                          </button>
-                          <button
-                            type="button"
-                            className="business-rule-form-filter-row-delete"
-                            onClick={() => handleRemovePositionConditionRow(row.id)}
-                            aria-label="Remove filter"
-                          >
-                            <FiTrash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
                 {conditions.map((cond) => {
                   const detailsKey = cond.fieldType && cond.fieldId != null ? `${cond.fieldType}-${cond.fieldId}` : null;
                   const details = detailsKey ? fieldDetailsByKey[detailsKey] : null;
@@ -9967,7 +7773,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                   );
                 })}
 
-                {(hasBoardDefaultCondition || hasPositionDefaultCondition) && (
+                {hasBoardDefaultCondition && (
                   <div className="br-add-property-wrap">
                     <button
                       type="button"
@@ -10011,128 +7817,60 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
                     {section.id === 'create' && createActions.length > 0 && (
                       <div className="br-create-action-list">
-                        {createActions.map((action) => {
-                          const isSubtaskAction = isCreateSubtaskAction(action);
-                          // A subtask has no destination to configure (it's created under
-                          // the current card, not a new board location) — no template
-                          // picker, no "Configure details" board link, no custom
-                          // card-field-values list, just the owner/deadline/description link.
-                          const showFieldValues = !isSubtaskAction;
-                          const titleText = action.templateName
-                            ? `${action.label} - ${action.templateName}`
-                            : `${action.label}${showFieldValues ? ' with custom properties' : ''}`;
-                          return (
-                            <div key={action.id} className="br-create-action-card">
-                              <button
-                                type="button"
-                                className="business-rule-form-action-detail-close"
-                                onClick={() => handleRemoveCreateAction(action.id)}
-                                aria-label="Remove action"
-                              >
-                                <FiX size={14} />
-                              </button>
+                        {createActions.map((action) => (
+                          <div key={action.id} className="br-create-action-card">
+                            <button
+                              type="button"
+                              className="business-rule-form-action-detail-close"
+                              onClick={() => handleRemoveCreateAction(action.id)}
+                              aria-label="Remove action"
+                            >
+                              <FiX size={14} />
+                            </button>
 
-                              {isSubtaskAction ? (
-                                <h5 className="br-create-action-title">{action.label}</h5>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="br-create-action-title br-create-action-title--trigger"
-                                  onClick={() => handleOpenCreateTemplatePicker(action.id)}
-                                >
-                                  {titleText}
-                                  <FiChevronDown size={14} aria-hidden />
-                                </button>
-                              )}
+                            <h5 className="br-create-action-title">{action.label}</h5>
 
-                              {!isSubtaskAction && (() => {
-                                const isTitleCopied = action.copyFields?.regularFields?.includes('title');
-                                // Plain "Create card" has no relation, so the originator stays
-                                // "the card that triggered the rule" — relational variants
-                                // (child/parent/relative) describe it from the new card's point
-                                // of view instead (e.g. a "child" card's originator is "the
-                                // parent card"). action.key is tried first (the real saved
-                                // relation_type once an action has been restored) — it falls
-                                // back to the label keyword match for an action just picked this
-                                // session, whose key is still the backend's opaque field_key.
-                                const originLabel = RELATIONAL_CREATE_ACTION_ORIGIN_LABELS[action.key]
-                                  ?? RELATIONAL_CREATE_ACTION_ORIGIN_LABELS[getRelationTypeFromLabel(action.label)]
-                                  ?? 'the card that triggered the rule';
-                                // Board destination isn't picked yet — still route through the
-                                // board minimap first, same as before.
-                                if (!action.boardName) {
-                                  return (
-                                    <button
-                                      type="button"
-                                      className="br-create-action-link br-create-action-link--btn"
-                                      onClick={() => handleOpenCreateDetails(action.id)}
-                                    >
-                                      Configure details
-                                    </button>
-                                  );
-                                }
-                                // Destination is set — the summary now reports Title status
-                                // instead of the board path (visible in the green box modal's
-                                // own board/workflow/swimlane footer once reopened).
-                                return (
-                                  <button
-                                    type="button"
-                                    className="br-create-action-link br-create-action-link--btn"
-                                    onClick={() => (isTitleCopied
-                                      ? handleOpenCopyCardDetails(action.id)
-                                      : handleOpenCreateCardFieldsModal(action.id))}
-                                  >
-                                    {isTitleCopied
-                                      ? `The title will be copied from ${originLabel}`
-                                      : (action.title?.trim() || 'Title is not set')}
-                                  </button>
-                                );
-                              })()}
-
-                              {isSubtaskAction && (
-                                <button
-                                  type="button"
-                                  className="br-create-action-link br-create-action-link--btn"
-                                  onClick={() => handleOpenCreateSubtaskSettings(action.id)}
-                                >
-                                  {action.configured ? (
-                                    action.previewLoaded ? (
-                                      (action.ownerUserId || action.deadline || action.description?.trim()) ? (
-                                        <span className="br-subtask-preview-row">
-                                          {action.ownerUserId && (
-                                            <span className="br-subtask-preview-pill">
-                                              <FiUsers size={12} aria-hidden />
-                                              {users.find((u) => String(u.user_id) === String(action.ownerUserId))?.name ?? 'Unknown user'}
-                                            </span>
-                                          )}
-                                          {action.deadline && (
-                                            <span className="br-subtask-preview-pill">
-                                              <FiCalendar size={12} aria-hidden />
-                                              {formatDeadlineDisplay(action.deadline)}
-                                            </span>
-                                          )}
-                                          {action.description?.trim() && (
-                                            <span className="br-subtask-preview-pill br-subtask-preview-pill--desc">
-                                              <FiInfo size={12} aria-hidden />
-                                              {action.description.trim()}
-                                            </span>
-                                          )}
+                            <button
+                              type="button"
+                              className="br-create-action-link br-create-action-link--btn"
+                              onClick={() => handleOpenCreateSubtaskSettings(action.id)}
+                            >
+                              {action.configured ? (
+                                action.previewLoaded ? (
+                                  (action.ownerUserId || action.deadline || action.description?.trim()) ? (
+                                    <span className="br-subtask-preview-row">
+                                      {action.ownerUserId && (
+                                        <span className="br-subtask-preview-pill">
+                                          <FiUsers size={12} aria-hidden />
+                                          {users.find((u) => String(u.user_id) === String(action.ownerUserId))?.name ?? 'Unknown user'}
                                         </span>
-                                      ) : 'Configured'
-                                    ) : 'Loading...'
-                                  ) : 'Not Set'}
-                                </button>
-                              )}
+                                      )}
+                                      {action.deadline && (
+                                        <span className="br-subtask-preview-pill">
+                                          <FiCalendar size={12} aria-hidden />
+                                          {formatDeadlineDisplay(action.deadline)}
+                                        </span>
+                                      )}
+                                      {action.description?.trim() && (
+                                        <span className="br-subtask-preview-pill br-subtask-preview-pill--desc">
+                                          <FiInfo size={12} aria-hidden />
+                                          {action.description.trim()}
+                                        </span>
+                                      )}
+                                    </span>
+                                  ) : 'Configured'
+                                ) : 'Loading...'
+                              ) : 'Not Set'}
+                            </button>
 
-                            </div>
-                          );
-                        })}
+                          </div>
+                        ))}
 
                         <div className="br-link-footer-actions">
                           <button
                             type="button"
                             className="business-rule-form-add-link"
-                            onClick={() => (isRecurringCreateAction ? handleAddRecurringCreateAction() : setShowCreateActionPicker(true))}
+                            onClick={() => setShowCreateActionPicker(true)}
                           >
                             <FiPlus size={14} aria-hidden />
                             Add new action
@@ -11646,79 +9384,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                       </div>
                     ))}
 
-                    {section.id === 'move' && moveActions.map((action) => (
-                      <div key={action.id} className="business-rule-form-action-detail-card">
-                        <button
-                          type="button"
-                          className="business-rule-form-action-detail-close"
-                          onClick={() => handleRemoveMoveAction(action.id)}
-                          aria-label="Remove action"
-                        >
-                          <FiX size={14} />
-                        </button>
-                        <h5 className="business-rule-form-action-detail-title">{action.label}</h5>
-                        <button
-                          type="button"
-                          className="business-rule-form-action-detail-link"
-                          onClick={() => handleOpenMoveDestination(action.id)}
-                        >
-                          {action.boardName
-                            ? `${action.workspaceName ? `${action.workspaceName} / ` : ''}${action.boardName}${action.workflowName ? ` (${action.workflowName})` : ''} → ${action.stageName || 'Any stage'} / ${action.swimlaneName || 'Any lane'}`
-                            : 'Choose where to move'}
-                        </button>
-
-                        {moveRelatedFilterLabel && (
-                          <div>
-                            <p className="business-rule-form-when-fields-header">if {moveRelatedFilterLabel} card matches this filter</p>
-                            {(action.filterProperties ?? []).map((prop) => (
-                              <div key={prop.id} className="business-rule-form-action-chip">
-                                <span className="business-rule-form-action-chip-label">{prop.fieldLabel}</span>
-                                <button
-                                  type="button"
-                                  className="business-rule-form-condition-remove"
-                                  onClick={() => handleRemoveRelatedFilterProperty('move', action.id, prop.id)}
-                                  aria-label="Remove property"
-                                >
-                                  <FiTrash2 size={14} />
-                                </button>
-                              </div>
-                            ))}
-                            <button
-                              type="button"
-                              className="business-rule-form-add-link"
-                              onClick={() => handleOpenRelatedFilterPicker('move', action.id)}
-                            >
-                              <FiPlus size={14} aria-hidden />
-                              Add new property
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-
-                    {section.id === 'convert' && convertSubtaskActions.map((action) => (
-                      <div key={action.id} className="business-rule-form-action-detail-card">
-                        <button
-                          type="button"
-                          className="business-rule-form-action-detail-close"
-                          onClick={() => handleRemoveConvertAction(action.id)}
-                          aria-label="Remove action"
-                        >
-                          <FiX size={14} />
-                        </button>
-                        <h5 className="business-rule-form-action-detail-title">{action.label}</h5>
-                        <button
-                          type="button"
-                          className="business-rule-form-action-detail-link"
-                          onClick={() => handleOpenConvertDestination(action.id)}
-                        >
-                          {action.boardName
-                            ? `${action.workspaceName ? `${action.workspaceName} / ` : ''}${action.boardName}${action.workflowName ? ` (${action.workflowName})` : ''} → ${action.stageName || 'Any stage'} / ${action.swimlaneName || 'Any lane'}`
-                            : 'Choose where to move'}
-                        </button>
-                      </div>
-                    ))}
-
                     {section.id === 'notify' && notifyActions.map((action) => (
                       <div key={action.id} className="business-rule-form-action-detail-card">
                         <button
@@ -11833,19 +9498,14 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                       <ThenGroupRawSummary key={group.then_group_id ?? group.group_type} group={group} />
                     ))}
 
-                    {section.id !== 'execute' && section.id !== 'generic' && !(section.id === 'link' && linkActions.length > 0) && !(section.id === 'create' && createActions.length > 0) && !(section.id === 'move' && moveActions.length > 0) && (
+                    {section.id !== 'execute' && section.id !== 'generic' && !(section.id === 'link' && linkActions.length > 0) && !(section.id === 'create' && createActions.length > 0) && (
                       <div className="br-link-footer-actions">
                         <button
                           type="button"
                           className="business-rule-form-add-action"
                           onClick={() => {
-                            if (section.id === 'create') {
-                              if (isRecurringCreateAction) handleAddRecurringCreateAction();
-                              else setShowCreateActionPicker(true);
-                            }
+                            if (section.id === 'create') setShowCreateActionPicker(true);
                             if (section.id === 'link') setShowLinkActionPicker(true);
-                            if (section.id === 'move') handleAddMoveAction();
-                            if (section.id === 'convert') handleAddConvertAction();
                             if (section.id === 'update') setShowUpdateActionPicker(true);
                             if (section.id === 'update_related') handleAddUpdateRelatedAction();
                             if (section.id === 'copy_values') handleAddCopyValuesAction();
@@ -11854,10 +9514,9 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                           }}
                         >
                           <FiPlus size={14} aria-hidden />
-                          {section.id === 'move' ? 'Add new move action'
-                            : section.id === 'update_related' ? 'Add new update action'
-                              : section.id === 'copy_values' ? 'Add new copy values action'
-                                : 'Add new action'}
+                          {section.id === 'update_related' ? 'Add new update action'
+                            : section.id === 'copy_values' ? 'Add new copy values action'
+                              : 'Add new action'}
                         </button>
 
                         {section.id === 'update' && updateActions.length > 1 && (
@@ -12160,67 +9819,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       onSelect={handleSelectLinkAction}
     />
 
-    <BoardMinimapModal
-      show={showMoveDestinationPicker}
-      onClose={() => setShowMoveDestinationPicker(false)}
-      onSave={handleSaveMoveDestination}
-      initialBoardId={activeMoveAction?.boardId}
-    />
-
-    <BoardMinimapModal
-      show={showConvertDestinationPicker}
-      onClose={() => setShowConvertDestinationPicker(false)}
-      onSave={handleSaveConvertDestination}
-      initialBoardId={activeConvertAction?.boardId}
-    />
-
-    <BoardMinimapModal
-      show={showPositionDestinationPicker}
-      onClose={() => setShowPositionDestinationPicker(false)}
-      onSave={handleSavePositionDestination}
-      initialBoardId={activePositionRow?.boardId}
-    />
-
-    <BoardMinimapModal
-      show={showCreateDetailsPicker}
-      onClose={() => setShowCreateDetailsPicker(false)}
-      onSave={handleSaveCreateDetails}
-      initialBoardId={activeCreateAction?.boardId}
-    />
-
-    <CreateTemplatePickerModal
-      show={showCreateTemplatePicker}
-      onClose={() => setShowCreateTemplatePicker(false)}
-      onSelect={handleSelectCreateTemplate}
-    />
-
-    <CopyCardDetailsModal
-      show={showCopyCardDetailsPicker}
-      onClose={() => setShowCopyCardDetailsPicker(false)}
-      onContinue={handleContinueCopyCardDetails}
-      triggerTypeId={rule.id}
-      boardId={activeCreateAction?.boardId}
-      initialFields={activeCreateAction?.copyFields}
-    />
-
-    <CreateCardFieldsModal
-      show={showCreateCardFieldsModal}
-      onClose={() => setShowCreateCardFieldsModal(false)}
-      onSave={handleSaveCreateCardFields}
-      action={activeCreateAction}
-      triggerTypeId={rule.id}
-    />
-
-    <CreateCardDetailsModal
-      show={showCreateCardDetailsModal}
-      onClose={() => setShowCreateCardDetailsModal(false)}
-      onSave={handleSaveCreateCardDetails}
-      action={activeCreateAction}
-      users={users}
-      kanbanTags={kanbanTags}
-      triggerTypeId={rule.id}
-    />
-
     <RefineUpdateCriteriaModal
       show={showUpdateActionPicker}
       onClose={() => setShowUpdateActionPicker(false)}
@@ -12360,13 +9958,6 @@ LinkActionModal.propTypes = {
   onSelect: PropTypes.func.isRequired,
 };
 
-BoardMinimapModal.propTypes = {
-  show: PropTypes.bool.isRequired,
-  initialBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  onClose: PropTypes.func.isRequired,
-  onSave: PropTypes.func.isRequired,
-};
-
 RefineUpdateCriteriaModal.propTypes = {
   show: PropTypes.bool.isRequired,
   existingFieldLabels: PropTypes.arrayOf(PropTypes.string),
@@ -12375,44 +9966,6 @@ RefineUpdateCriteriaModal.propTypes = {
   onSelect: PropTypes.func.isRequired,
   triggerTypeId: PropTypes.number,
   actionTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-};
-
-CopyCardDetailsModal.propTypes = {
-  show: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onContinue: PropTypes.func.isRequired,
-  triggerTypeId: PropTypes.number,
-  boardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  initialFields: PropTypes.shape({
-    regularFields: PropTypes.arrayOf(PropTypes.string),
-    customFields: PropTypes.arrayOf(PropTypes.string),
-  }),
-};
-
-CreateCardFieldsModal.propTypes = {
-  show: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onSave: PropTypes.func.isRequired,
-  action: PropTypes.shape({
-    boardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    boardName: PropTypes.string,
-    workflowId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    workflowName: PropTypes.string,
-    swimlaneName: PropTypes.string,
-    stageId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    title: PropTypes.string,
-    description: PropTypes.string,
-    fieldValues: PropTypes.object,
-    customFieldValues: PropTypes.object,
-    cardFieldKeys: PropTypes.arrayOf(PropTypes.string),
-    customFieldKeys: PropTypes.array,
-    subtasks: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, title: PropTypes.string })),
-    copyFields: PropTypes.shape({
-      regularFields: PropTypes.arrayOf(PropTypes.string),
-      customFields: PropTypes.array,
-    }),
-  }),
-  triggerTypeId: PropTypes.number,
 };
 
 NotificationSettingsModal.propTypes = {

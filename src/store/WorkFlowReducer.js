@@ -8,33 +8,6 @@ const useWorkFlowReducer = create((set, get) => ({
     errorMessage: '',
     workflows: null,
 
-    boardStructure: [],
-    isLoadingBoardStructure: false,
-
-    // Raw (un-normalized) workflows for a board — used by the Board Minimap picker,
-    // which needs each workflow's actual stage/column layout rather than the Edit
-    // Workflows editor's 4-area bucket model that `getWorkflowByBoard` normalizes into.
-    getBoardStructure: async ({ boardId, silent = false }) => {
-        try {
-            if (!silent) {
-                set({ isLoadingBoardStructure: true });
-            }
-            const { data } = await workflowService.getWorkflowByBoard(boardId);
-            const source = data?.status === 'success' ? data?.data : data;
-            const list = Array.isArray(source) ? source : source ? [source] : [];
-            set({
-                boardStructure: list,
-                isLoadingBoardStructure: false,
-            });
-        } catch (err) {
-            set({
-                errorMessage: err?.response?.data?.message ?? err.message,
-                isLoadingBoardStructure: false,
-                boardStructure: silent ? get().boardStructure : [],
-            });
-        }
-    },
-
     boardsWorkflows: [],
     isLoadingBoardsWorkflows: false,
     boardsWorkflowsRequestId: 0,

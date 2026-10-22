@@ -1,27 +1,13 @@
-import { ACTION_GROUP_TYPE_TO_SECTION_ID, RELATIONAL_CREATE_ACTION_KEYWORDS } from './businessRulesData';
+import { ACTION_GROUP_TYPE_TO_SECTION_ID } from './businessRulesData';
 
 const findActionTypeId = (triggerActions, sectionId) =>
   triggerActions.find((a) => ACTION_GROUP_TYPE_TO_SECTION_ID[a.group_type] === sectionId)?.action_type_id ?? null;
 
-// A create action's `key` is the DEV-fallback's literal 'child'/'parent'/... string, but a
-// live backend response keys it by its own field_key instead — so relation_type has to be
-// derived from the label ("Create child" -> "child") the same way hasCustomProperties does
-// in BusinessRuleFormModal.jsx, not from action.key. Matched by keyword-in-label rather than
-// exact phrase, since a live label may carry extra wording (e.g. "Create Child Card"). Exported
-// — BusinessRuleFormModal.jsx's render side tries action.key first (the real saved
-// relation_type once an action has been restored) and falls back to this for an action
-// just picked this session, whose key is still the backend's opaque field_key.
-export const getRelationTypeFromLabel = (label) => {
-  const normalized = label?.trim().toLowerCase() ?? '';
-  return RELATIONAL_CREATE_ACTION_KEYWORDS.find((kw) => normalized.includes(kw)) ?? null;
-};
-
-// Same fragile-label problem as getRelationTypeFromLabel above, but matched with
-// `.includes()` rather than an exact string — a strict `=== 'create subtask'` broke
-// whenever the live field_label carried slightly different wording (e.g. "Create Sub Task"),
-// silently falling through to the plain create-card branch below and losing the
-// owner/deadline/description settings on save. Exported so BusinessRuleFormModal.jsx's
-// render-side hasCustomProperties check stays in sync with what actually gets saved here.
+// A create action's `key` is the DEV-fallback's literal 'subtask' string, but a live backend
+// response keys it by its own field_key — so the label is matched with `.includes()` rather
+// than an exact string, since a strict `=== 'create subtask'` broke whenever the live
+// field_label carried slightly different wording (e.g. "Create Sub Task"). Exported so
+// BusinessRuleFormModal.jsx filters/renders create actions with the same check used on save.
 export const isCreateSubtaskAction = (action) =>
   action?.key === 'subtask' || (action?.label ?? '').trim().toLowerCase().includes('subtask');
 
@@ -33,13 +19,13 @@ const getOperatorLabel = (fieldDetailsByKey, fieldType, fieldId, operatorId) => 
 
 // Flat conditions[] list: one entry per condition-box value row, in field-details-derived
 // operator-label form (matches the "is"/"is not" convention confirmed by DUMMY_FIELD_OPERATORS
-// lining up with the documented example's `operator: "is"`). The board/position restriction
-// rows are folded in alongside real conditions using the same shape — best-effort, since the
-// create_business_rule example only documents plain field conditions and neither of these two
-// have a confirmed backend contract yet. whenFields is NOT folded in here — see
+// lining up with the documented example's `operator: "is"`). The board restriction rows are
+// folded in alongside real conditions using the same shape — best-effort, since the
+// create_business_rule example only documents plain field conditions and board rows have no
+// confirmed backend contract yet. whenFields is NOT folded in here — see
 // buildWhenFields below, confirmed to be its own top-level request field instead.
 const buildConditions = (formState, ctx) => {
-  const { conditions, boardConditionRows, positionConditionRows } = formState;
+  const { conditions, boardConditionRows } = formState;
   const { fieldDetailsByKey, triggerConfig } = ctx;
   const entries = [];
 
@@ -63,7 +49,7 @@ const buildConditions = (formState, ctx) => {
     });
   });
 
-  // Board/position restriction rows carry no field id of their own — best-effort lookup
+  // Board restriction rows carry no field id of their own — best-effort lookup
   // against this trigger's own default_conditions catalog by field_label.
   const defaultConditionFor = (label) =>
     (triggerConfig?.default_conditions ?? []).find((c) => String(c.field_label ?? '').trim().toLowerCase() === label);
@@ -75,18 +61,6 @@ const buildConditions = (formState, ctx) => {
         regular_field_id: boardDefault.regular_field_id ?? boardDefault.field_id ?? null,
         operator: 'is',
         input_value: row.boardId,
-        connector: index === 0 ? 'AND' : row.joinWord,
-      });
-    });
-  }
-
-  const positionDefault = defaultConditionFor('position');
-  if (positionDefault) {
-    positionConditionRows.filter((row) => row.boardId).forEach((row, index) => {
-      entries.push({
-        regular_field_id: positionDefault.regular_field_id ?? positionDefault.field_id ?? null,
-        operator: 'is',
-        input_value: [row.boardId, row.swimlaneId, row.stageId].filter(Boolean).join(':'),
         connector: index === 0 ? 'AND' : row.joinWord,
       });
     });
@@ -280,8 +254,8 @@ const buildRawThenActions = (rawGroups, ctx) => {
 
 const buildThenActions = (formState, ctx) => {
   const {
-    createActions, linkActions, removeOtherLinksByType, moveActions, updateActions,
-    copyValuesActions, convertSubtaskActions, notifyActions, invokeActions,
+    createActions, linkActions, removeOtherLinksByType, updateActions,
+    copyValuesActions, notifyActions, invokeActions,
   } = formState;
   const { triggerActions } = ctx;
   const thenActions = [];
@@ -297,80 +271,18 @@ const buildThenActions = (formState, ctx) => {
   };
 
   const createActionTypeId = findActionTypeId(triggerActions, 'create');
-  createActions.forEach((action) => {
-    if (isCreateSubtaskAction(action)) {
-      // No board/column/title to configure — a subtask has no destination picker in the
-      // UI (it's created under the current card, not a new board location). Only
-      // relation_type marks it as a subtask.
-      const properties = [{ property_key: 'relation_type', property_value: 'subtask', property_value_type: 'string' }];
-      const entry = withThenActionId({ action_type_id: createActionTypeId, properties }, action);
-      // create_subtask_id (referencing the owner/deadline/description record already saved
-      // server-side via saveCreateSubtaskSettings) is a top-level sibling field on the
-      // then_action, confirmed from a real get_business_rule_by_id response — that action's
-      // own "create_subtask_id": null sits next to "properties", not inside it. Sending it
-      // as a properties[] entry instead (the previous approach) meant the backend never saw
-      // it, so the link was always null and the subtask always read "Not Set" on reopen.
-      if (action.createSubtaskId != null) entry.create_subtask_id = action.createSubtaskId;
-      thenActions.push(entry);
-      return;
-    }
-    // Base target_board_id/target_column_id/card_title reconfirmed against a real
-    // update_business_rule response (action_type_id 3, branch b35, 2026-07-25).
-    const properties = [
-      { property_key: 'target_board_id', property_value: action.boardId, property_value_type: 'number' },
-      { property_key: 'target_column_id', property_value: action.stageId, property_value_type: 'number' },
-      // The literal title typed in the green box (CreateCardFieldsModal) takes priority —
-      // falls back to the selected board template name when no title was typed.
-      { property_key: 'card_title', property_value: action.title?.trim() || action.templateName || '', property_value_type: 'string' },
-    ];
-    // Same board-can-have-several-workflows reasoning as buildDestinationProperties below
-    // (move/convert) — without these, a create action's workflow/swimlane pick is silently
-    // dropped on save, so it can never be resolved back into a name on reopen and always
-    // reads as "Any stage / Any lane".
-    if (action.workflowId) {
-      properties.push({ property_key: 'target_workflow_id', property_value: action.workflowId, property_value_type: 'number' });
-    }
-    if (action.swimlaneId) {
-      properties.push({ property_key: 'target_swimlane_id', property_value: action.swimlaneId, property_value_type: 'number' });
-    }
-    const relationType = getRelationTypeFromLabel(action.label);
-    if (relationType) {
-      // Cross-card create variants (child/parent/predecessor/relative/successor) aren't
-      // covered by the documented example (a plain "create card") — best-effort.
-      properties.push({ property_key: 'relation_type', property_value: relationType, property_value_type: 'string' });
-    }
-    // Fields picked in the "Copy Card Details" step (relational creates only) — no
-    // documented shape for this either, sent as comma-separated key lists, best-effort.
-    if (action.copyFields?.regularFields?.length > 0) {
-      properties.push({ property_key: 'copy_regular_fields', property_value: action.copyFields.regularFields.join(', '), property_value_type: 'string' });
-    }
-    if (action.copyFields?.customFields?.length > 0) {
-      properties.push({ property_key: 'copy_custom_fields', property_value: action.copyFields.customFields.join(', '), property_value_type: 'string' });
-    }
-    // Initial field values to set on the created card (Owner, Deadline, Tags, custom
-    // fields, ...), set via the green box (CreateCardFieldsModal) as flat { key: value }
-    // maps. Sent as one property per field keyed by the field's own key (same convention
-    // as target_board_id/card_title above) rather than the generic field_key/field_value
-    // wrapper the single-field update action uses below — that wrapper only works for one
-    // field per action; reused here it collapsed multiple fields down to just the last one
-    // once the backend folded properties[] into a { [property_key]: property_value } map,
-    // since every field's property_key was the literal string "field_key".
-    Object.entries(action.fieldValues ?? {}).forEach(([key, value]) => {
-      if (value === '' || value == null) return;
-      properties.push({ property_key: key, property_value: value, property_value_type: 'string' });
-    });
-    Object.entries(action.customFieldValues ?? {}).forEach(([key, value]) => {
-      if (value === '' || value == null) return;
-      properties.push({ property_key: key, property_value: value, property_value_type: 'string' });
-    });
-    // Subtask titles typed into CreateCardDetailsModal's Subtasks panel — a different
-    // concept from the separate "Create subtask" create-action (which owns its own
-    // saveCreateSubtaskSettings-backed id), so sent as plain titles alongside this card,
-    // best-effort property name, no documented shape.
-    (action.subtaskTitles ?? []).forEach((subtaskTitle) => {
-      properties.push({ property_key: 'subtask_title', property_value: subtaskTitle, property_value_type: 'string' });
-    });
-    thenActions.push(withThenActionId({ action_type_id: createActionTypeId, properties }, action));
+  // Only "Create subtask" create-actions are supported — no board/column/title to configure
+  // (it's created under the current card, not a new board location). Only relation_type
+  // marks it as a subtask.
+  createActions.filter(isCreateSubtaskAction).forEach((action) => {
+    const properties = [{ property_key: 'relation_type', property_value: 'subtask', property_value_type: 'string' }];
+    const entry = withThenActionId({ action_type_id: createActionTypeId, properties }, action);
+    // create_subtask_id (referencing the owner/deadline/description record already saved
+    // server-side via saveCreateSubtaskSettings) is a top-level sibling field on the
+    // then_action, confirmed from a real get_business_rule_by_id response — that action's
+    // own "create_subtask_id": null sits next to "properties", not inside it.
+    if (action.createSubtaskId != null) entry.create_subtask_id = action.createSubtaskId;
+    thenActions.push(entry);
   });
 
   // Update field — each chip is one field+value pair, wrapped in the generic
@@ -454,40 +366,6 @@ const buildThenActions = (formState, ctx) => {
     });
     thenActions.push({ action_type_id: findActionTypeId(triggerActions, 'link'), link_card: linkCard });
   }
-
-  // Destination picker also lets the user pin a workflow and swimlane (a board can have
-  // several active workflows, each with its own stages/swimlanes — see boardMinimap.utils.js
-  // — and the board minimap row/cell pick records which one), so target_workflow_id and
-  // target_swimlane_id have to ride along with board/column. Left out when the user picked
-  // a whole column (any-lane) or when the picker only ever surfaced one workflow, matching
-  // handlePickColumn's blank swimlaneId. Base target_board_id/target_column_id confirmed
-  // against a real update_business_rule response (action_type_id 1, branch b35, 2026-07-25);
-  // target_workflow_id/target_swimlane_id remain best-effort — not covered by that example.
-  const buildDestinationProperties = (action) => {
-    const properties = [
-      { property_key: 'target_board_id', property_value: action.boardId, property_value_type: 'number' },
-      { property_key: 'target_column_id', property_value: action.stageId, property_value_type: 'number' },
-    ];
-    if (action.workflowId) {
-      properties.push({ property_key: 'target_workflow_id', property_value: action.workflowId, property_value_type: 'number' });
-    }
-    if (action.swimlaneId) {
-      properties.push({ property_key: 'target_swimlane_id', property_value: action.swimlaneId, property_value_type: 'number' });
-    }
-    return properties;
-  };
-
-  const moveActionTypeId = findActionTypeId(triggerActions, 'move');
-  moveActions.forEach((action) => {
-    thenActions.push(withThenActionId({ action_type_id: moveActionTypeId, properties: buildDestinationProperties(action) }, action));
-  });
-
-  // Convert subtasks to — best-effort, reuses the move destination shape since it's the
-  // same board/workflow/swimlane/column picker; unverified against a real example.
-  const convertActionTypeId = findActionTypeId(triggerActions, 'convert');
-  convertSubtaskActions.forEach((action) => {
-    thenActions.push(withThenActionId({ action_type_id: convertActionTypeId, properties: buildDestinationProperties(action) }, action));
-  });
 
   // Update related (parent/child) card fields: skipped. Those field chips have no value
   // input yet (the same gap the main "update" section had before this change), so there

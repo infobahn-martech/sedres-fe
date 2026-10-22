@@ -74,10 +74,9 @@ export const TRIGGER_CODE_TO_ICON = {
 // Dev-only fallback for the THEN column, used when get_trigger_config hasn't
 // returned an `actions` list yet (e.g. local dev without a live backend).
 export const THEN_ACTION_SECTIONS = [
-  { id: 'create', title: 'Create cards or subtasks' },
+  { id: 'create', title: 'Create subtasks' },
   { id: 'update', title: 'Update the card details' },
   { id: 'link', title: 'Link the card' },
-  { id: 'move', title: 'Move the card' },
   { id: 'copy_values', title: 'Copy the values of these fields from the child into the parent' },
   { id: 'notify', title: 'Send notifications' },
   { id: 'invoke', title: 'Create the UI Invoke web service' },
@@ -88,21 +87,10 @@ export const THEN_ACTION_SECTIONS = [
 // type's own action catalog instead of always showing every section.
 export const ACTION_GROUP_TYPE_TO_SECTION_ID = {
   create_cards: 'create',
-  // Recurring-schedule triggers (e.g. "Recurring create cards") carry the "what to
-  // create" action under this group_type instead of plain create_cards — same 'create'
-  // section/chip-list UI, just paired with the trigger's own 'execute' schedule section.
-  create_card_recurring: 'create',
   update_card: 'update',
   link_card: 'link',
-  move_card: 'move',
   send_notifications: 'notify',
   invoke_web_service: 'invoke',
-  // move_parent_card/move_child_card reuse the same 'move' section as plain move_card —
-  // it's still just a destination pick, and the nested "if parent/child card matches
-  // this filter" block below each move action is only rendered when this trigger's own
-  // move action actually carries has_parent_filter/has_child_filter.
-  move_parent_card: 'move',
-  move_child_card: 'move',
   // update_parent_card/update_child_card get their own dedicated, repeatable section
   // (like 'create') instead of reusing the flat same-card 'update' chip list — they need
   // a per-instance nested "if parent/child card matches this filter" sub-picker that the
@@ -114,11 +102,6 @@ export const ACTION_GROUP_TYPE_TO_SECTION_ID = {
   // dedicated "execute" section, rendered with a time+timezone picker instead of
   // an add/remove action list since there's exactly one schedule per rule.
   execute_at: 'execute',
-  // "Convert subtasks to" (e.g. on "Card is moved") has the same empty
-  // get_then_action_fields shape as move_card — it's a destination pick, not a
-  // field pick — so it reuses the board-minimap destination picker as its own
-  // dedicated section rather than the 'move' one, to keep it a separate action list.
-  convert_subtasks_to: 'convert',
   // "Copy the values of these fields from the child into the parent" (e.g. on
   // "Child card is updated") — its own repeatable section like update_related,
   // with a field-to-copy chip list plus the same nested parent-filter sub-picker.
@@ -132,95 +115,19 @@ export const ACTION_GROUP_TYPE_TO_SECTION_ID = {
   copy_values_to_child: 'copy_values',
 };
 
+// Destination-based action groups (move/convert card, recurring create card) — no longer
+// supported by the form, so they are filtered out of the THEN column and dropped when
+// restoring a saved rule.
+export const UNSUPPORTED_ACTION_GROUP_TYPES = [
+  'move_card',
+  'move_parent_card',
+  'move_child_card',
+  'convert_subtasks_to',
+  'create_card_recurring',
+];
+
 export const CREATE_ACTION_OPTIONS = [
-  { key: 'card', label: 'Create card' },
-  { key: 'child', label: 'Create child' },
-  { key: 'parent', label: 'Create parent' },
-  { key: 'predecessor', label: 'Create predecessor' },
-  { key: 'relative', label: 'Create relative' },
   { key: 'subtask', label: 'Create subtask' },
-  { key: 'successor', label: 'Create successor' },
-];
-
-// Relational create-action variants — these create a new card linked to the card that
-// triggered the rule (an "originator"), so after picking a destination they get an extra
-// "Copy Card Details" step to pick which of the originator's fields to carry over. A plain
-// "Create card" has no originator relationship, so it skips that step entirely.
-// Matched by keyword-in-label rather than key or exact phrase — same reason as the
-// "Create subtask" check nearby (hasCustomProperties): a live get_then_action_fields
-// response keys/labels each regular field using the backend's own wording (e.g. "Create
-// Child Card"), not the dev-fallback's literal 'child'/'parent'/... strings or exact
-// 'create child' phrasing, so key-based or exact-phrase matching silently never fires
-// once real backend data is in play.
-export const RELATIONAL_CREATE_ACTION_KEYWORDS = ['child', 'parent', 'predecessor', 'relative', 'successor'];
-
-// Inverse-relation wording for the THEN-column "title will be copied from..." note —
-// the originator (triggering) card is described from the *new* card's point of view,
-// e.g. creating a "child" means the originator is that new card's parent.
-export const RELATIONAL_CREATE_ACTION_ORIGIN_LABELS = {
-  child: 'the parent card',
-  parent: 'the child card',
-  relative: 'the relative card',
-  successor: 'the predecessor card',
-};
-
-// Fixed field list for the "Copy Card Details" step (no backend endpoint returns this
-// list today — best-effort, hardcoded to match the same fixed-option pattern as
-// CREATE_ACTION_OPTIONS/UPDATE_ACTION_OPTIONS above).
-export const COPY_CARD_DETAIL_REGULAR_FIELDS = [
-  { key: 'title', label: 'Title' },
-  { key: 'description', label: 'Description' },
-  { key: 'owner', label: 'Owner' },
-  { key: 'color', label: 'Color' },
-  { key: 'priority', label: 'Priority' },
-  { key: 'deadline', label: 'Deadline' },
-  { key: 'size', label: 'Size' },
-  { key: 'type', label: 'Type' },
-  { key: 'tags', label: 'Tags' },
-  { key: 'attachments', label: 'Attachments' },
-  { key: 'subtasks', label: 'Subtasks' },
-  { key: 'co_owners', label: 'Co-owners' },
-  { key: 'stickers', label: 'Stickers' },
-  { key: 'milestones', label: 'Milestones' },
-  { key: 'custom_card_id', label: 'Custom card ID' },
-  { key: 'parent_links', label: 'Parent links' },
-  { key: 'all_custom_fields', label: 'All custom fields' },
-];
-
-// Dev-only fallback data for the "Create card or subtask" action's board-template picker.
-export const DUMMY_CREATE_ACTION_TEMPLATES = [
-  'Air Shipment',
-  'Air(FFD)',
-  'Bahrain Visa services',
-  'Bidding',
-  'Collections - Offshore Marine',
-  'CREW CHANGE',
-  'Crew change - Jubail',
-  'Custom Clearance',
-  'DOMESTIC CALL',
-  'Export call',
-  'EXPORT VESSEL',
-  'FFD',
-  'General Board',
-  'IMPORT VESSEL',
-  'Infobahn Import call template',
-  'Land Shipment',
-  'LAUNCH HIRE INVOICE',
-  'MARINE SUPPORT',
-  'Marine Work Permit',
-  'MATERIAL / GARBAGE DELIVERY',
-  'MEDICAL CREW',
-  'Miscellaneous',
-  'MWP',
-  'ON STATION CHARGES',
-  'Procurement',
-  'Purchase Order',
-  'REMOTE ROB SURVEY',
-  'Request Driver',
-  'Sea Freight',
-  'Taxi Tug',
-  'test by khadeeja',
-  'Visa services',
 ];
 
 export const LINK_ACTION_OPTIONS = [
@@ -259,10 +166,6 @@ export const DUMMY_FIELD_OPERATORS = [
   { field_operator_id: '2', operator_label: 'is not' },
   { field_operator_id: '3', operator_label: 'contains' },
   { field_operator_id: '4', operator_label: 'does not contain' },
-];
-
-export const MOVE_ACTION_OPTIONS = [
-  { key: 'move_to', label: 'Move card to' },
 ];
 
 // Execution-frequency picker shown next to the "Add stickers"/"Remove stickers" update
@@ -319,22 +222,6 @@ export const PRIORITY_OPTIONS = [
   { key: 'low', label: 'Low', color: '#2f80ed' },
 ];
 
-// Static size catalog for the "Create card with custom properties" panel's Size field —
-// no documented backend enum for card size exists yet, so this is the fixed T-shirt
-// scale (same best-effort-fixed-list pattern as PRIORITY_OPTIONS above).
-export const CREATE_CARD_SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL'];
-
-// Static size catalog for the card fields "Size" dropdown — no backend endpoint for this
-// today, same fixed-option pattern as PRIORITY_OPTIONS above.
-export const SIZE_OPTIONS = [
-  { key: '', label: 'Not Set' },
-  { key: 'xs', label: 'XS' },
-  { key: 's', label: 'S' },
-  { key: 'm', label: 'M' },
-  { key: 'l', label: 'L' },
-  { key: 'xl', label: 'XL' },
-];
-
 // Custom fields carry no confirmed field_type anywhere in this app yet (nothing in the
 // codebase branches on get_custom_fields'/get_then_action_fields' field_type today), so
 // which value UI a "Set {custom field}" update action gets is guessed from the field's
@@ -355,10 +242,6 @@ export function classifyCustomFieldUiKind(label) {
   if (CUSTOM_FIELD_NO_VALUE_LABEL_HINTS.some((hint) => l.includes(hint))) return 'none';
   return 'text';
 }
-
-export const CONVERT_SUBTASK_ACTION_OPTIONS = [
-  { key: 'convert_to', label: 'Convert subtasks to' },
-];
 
 export const NOTIFY_ACTION_OPTIONS = [
   { key: 'send_notification', label: 'Send notification' },
