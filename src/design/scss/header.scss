@@ -751,8 +751,10 @@
 // app's Bootstrap modals (1299/1300), so Notifications, Tools etc. open on top.
 .sedres-header.card-quick-actions {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
+  // Inside the card panel's right edge (panel is 98vw wide), lifted clear of its
+  // ~77px footer stepper (panel sits 2.5vh above the viewport bottom).
+  right: calc(1vw + 20px);
+  bottom: calc(2.5vh + 96px);
   z-index: 1250;
   width: auto;
   min-height: 0;
@@ -791,9 +793,24 @@
     display: flex;
     align-items: center;
     gap: 12px;
+
+    // Label only slides out on hover / keyboard focus, so the collapsed button
+    // covers as little of the card content as possible.
+    &:hover,
+    &:focus-within {
+      .card-quick-actions__label {
+        opacity: 1;
+        transform: translateX(0);
+        pointer-events: auto;
+      }
+    }
   }
 
   .card-quick-actions__label {
+    opacity: 0;
+    transform: translateX(8px);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
     border: none;
     padding: 10px 14px;
     border-radius: 6px;
@@ -816,8 +833,8 @@
   }
 
   .card-quick-actions__fab {
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
     border: none;
     border-radius: 50%;
     background: #00368c;
@@ -830,8 +847,8 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 
     svg {
-      width: 24px;
-      height: 24px;
+      width: 22px;
+      height: 22px;
     }
 
     &:hover {
@@ -849,14 +866,13 @@
     }
 
     @media (max-width: 767px) {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
     }
   }
 
   @media (max-width: 767px) {
-    right: 16px;
-    bottom: 16px;
+    right: calc(1vw + 12px);
   }
 
   @media (prefers-reduced-motion: reduce) {
