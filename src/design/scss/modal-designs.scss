@@ -692,7 +692,25 @@ body .user-modal-sm.driver-modal .modal-dialog {
     background: var(--surface-primary);
 
     .form-check-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       margin-right: 0;
+      padding-left: 0;
+    }
+
+    // Match the 13px text of the neighbouring inputs instead of the large global radio style.
+    .form-check-input {
+      float: none;
+      width: 16px;
+      height: 16px;
+      margin: 0;
+    }
+
+    .form-check-label {
+      font-size: 13px;
+      line-height: 1;
+      color: var(--text-primary);
     }
   }
 
