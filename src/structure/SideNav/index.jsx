@@ -80,7 +80,6 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
 
   const inhouseDriverMenus = [
     { menu: 'Dashboard', isDefaultMenu: true, to: '/inhouse-driver/dashboard', icon: dashboardIcon, hasPermission: true },
-    { menu: 'Invoice Management', isDefaultMenu: true, to: '/inhouse-driver/invoices', icon: materialIcon, hasPermission: true },
   ];
 
   const hotelPortalMenus = [

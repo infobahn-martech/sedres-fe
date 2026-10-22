@@ -1,16 +1,50 @@
 import { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
-import { FiNavigation, FiCheckCircle, FiClock, FiMapPin, FiList } from 'react-icons/fi';
+import {
+    FiNavigation,
+    FiCheckCircle,
+    FiClock,
+    FiMapPin,
+    FiList,
+    FiPaperclip,
+    FiAnchor,
+    FiBriefcase,
+    FiHome,
+    FiUsers,
+    FiCalendar,
+    FiMessageSquare,
+    FiCheck,
+    FiGlobe,
+    FiActivity,
+} from 'react-icons/fi';
 import PortalDashboard from '../../../components/PortalDashboard';
 import useInhouseDriverReducer from '../../../store/InhouseDriverReducer';
 
-const TRIP_STATUS_OPTIONS = ['Pending', 'In Progress', 'Completed'];
+const TRIP_STATUS_OPTIONS = [
+    { value: 'Pending', tone: 'amber', icon: <FiClock /> },
+    { value: 'In Progress', tone: 'blue', icon: <FiActivity /> },
+    { value: 'Completed', tone: 'green', icon: <FiCheckCircle /> },
+];
+
+const AVATAR_TONES = ['blue', 'violet', 'green', 'amber'];
 
 const formatDateTime = (value) => {
     if (!value) return '—';
     const parsed = dayjs(value);
-    return parsed.isValid() ? parsed.format('DD MMM YYYY, HH:mm') : value;
+    if (!parsed.isValid()) return value;
+    // Backend sends 1899-12-30 (SQL zero date) when no date is set
+    return parsed.year() < 1900 ? '—' : parsed.format('DD MMM YYYY, HH:mm');
 };
+
+const getInitials = (name = '') =>
+    name
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0].toUpperCase())
+        .join('') || '?';
+
+const hasValue = (value) => value != null && value !== '' && value !== '—';
 
 const quickActions = [
     { label: 'View My Trips', icon: <FiList />, onClick: () => {} },
@@ -100,6 +134,155 @@ function InhouseDriverDashboard() {
         [requestsData]
     );
 
+    const renderExpandedRow = (row) => {
+        const selectedStatus = statusEdits[row.id] ?? row.status;
+        const isStatusUnchanged = selectedStatus === row.status;
+        const infoTiles = [
+            { label: 'Vessel', value: row.vesselName, icon: <FiAnchor />, tone: 'blue' },
+            { label: 'Billing Entity', value: row.billingEntity, icon: <FiBriefcase />, tone: 'violet' },
+            { label: 'Branch', value: row.invoiceBranch, icon: <FiHome />, tone: 'green' },
+            { label: 'Seater', value: row.seater, icon: <FiUsers />, tone: 'amber' },
+            { label: 'Created', value: row.createdDate, icon: <FiCalendar />, tone: 'blue' },
+        ].filter(({ value }) => hasValue(value));
+
+        return (
+            <div className="trip-details">
+                <div className="trip-details__top">
+                    <div className="trip-details__card trip-details__route">
+                        <div className="trip-details__stop">
+                            <span className="trip-details__stop-dot trip-details__stop-dot--from" />
+                            <div>
+                                <p className="trip-details__eyebrow">Pickup · {row.pickup}</p>
+                                <p className="trip-details__place">{row.from || '—'}</p>
+                                {hasValue(row.fromDet) && <p className="trip-details__note">{row.fromDet}</p>}
+                            </div>
+                        </div>
+                        <div className="trip-details__stop">
+                            <span className="trip-details__stop-dot trip-details__stop-dot--to">
+                                <FiMapPin />
+                            </span>
+                            <div>
+                                <p className="trip-details__eyebrow">Drop-off · {row.dropOff}</p>
+                                <p className="trip-details__place">{row.to || '—'}</p>
+                                {hasValue(row.toDet) && <p className="trip-details__note">{row.toDet}</p>}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="trip-details__card trip-details__status">
+                        <p className="trip-details__card-title">Update Trip Status</p>
+                        <div className="trip-details__status-options" role="radiogroup" aria-label="Trip status">
+                            {TRIP_STATUS_OPTIONS.map(({ value, tone, icon }) => (
+                                <button
+                                    key={value}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={selectedStatus === value}
+                                    className={`trip-details__status-pill tone-${tone} ${selectedStatus === value ? 'is-active' : ''}`}
+                                    onClick={() => setStatusEdits((prev) => ({ ...prev, [row.id]: value }))}
+                                >
+                                    {icon} {value}
+                                </button>
+                            ))}
+                        </div>
+                        <button
+                            type="button"
+                            className="trip-details__save"
+                            disabled={isUpdatingTripStatus || isStatusUnchanged}
+                            onClick={() => handleStatusSave(row)}
+                        >
+                            <FiCheck /> {isUpdatingTripStatus ? 'Saving...' : 'Save Status'}
+                        </button>
+                    </div>
+                </div>
+
+                {!!infoTiles.length && (
+                    <div className="trip-details__tiles">
+                        {infoTiles.map(({ label, value, icon, tone }) => (
+                            <div key={label} className="trip-details__tile">
+                                <span className={`stat-icon stat-icon--${tone}`}>{icon}</span>
+                                <div className="trip-details__tile-text">
+                                    <p className="trip-details__eyebrow">{label}</p>
+                                    <p className="trip-details__tile-value">{value}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {hasValue(row.remarks) && (
+                    <div className="trip-details__remarks">
+                        <FiMessageSquare />
+                        <p>{row.remarks}</p>
+                    </div>
+                )}
+
+                <div className="trip-details__card">
+                    <p className="trip-details__card-title">
+                        <FiUsers /> Crew Members
+                        <span className="trip-details__count">{row.crew.length}</span>
+                    </p>
+                    {row.crew.length ? (
+                        <div className="vendor-table-scroll">
+                            <table className="trip-details__crew">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Rank</th>
+                                        <th>Passport No</th>
+                                        <th>Nationality</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {row.crew.map((crew, i) => (
+                                        <tr key={`${row.id}-crew-${i}`}>
+                                            <td>
+                                                <span className="trip-details__person">
+                                                    <span className={`trip-details__avatar tone-${AVATAR_TONES[i % AVATAR_TONES.length]}`}>
+                                                        {getInitials(crew.crew_name)}
+                                                    </span>
+                                                    {crew.crew_name || '—'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {crew.rank ? <span className="trip-details__rank">{crew.rank}</span> : '—'}
+                                            </td>
+                                            <td className="trip-details__mono">{crew.passport_no || '—'}</td>
+                                            <td>
+                                                <span className="trip-details__person">
+                                                    <FiGlobe className="trip-details__muted-icon" />
+                                                    {crew.nationality || '—'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <p className="trip-details__empty">No crew details available</p>
+                    )}
+                </div>
+
+                {!!row.attachments.length && (
+                    <div className="trip-details__attachments">
+                        {row.attachments.map((att) => (
+                            <a
+                                key={att.attachment_id}
+                                href={att.file_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="trip-details__attachment"
+                            >
+                                <FiPaperclip /> {att.file_name}
+                            </a>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     return (
         <PortalDashboard
             title="Inhouse Driver Dashboard"
@@ -113,98 +296,7 @@ function InhouseDriverDashboard() {
             emptyMessage="No trips found"
             expandable
             rowKey={(row) => row.id}
-            renderExpandedRow={(row) => (
-                <div className="vendor-table-scroll">
-                    {(row.fromDet || row.toDet || row.remarks) && (
-                        <p style={{ marginBottom: 12 }}>
-                            {row.fromDet && <span><strong>From details:</strong> {row.fromDet}</span>}
-                            {row.fromDet && (row.toDet || row.remarks) && ' — '}
-                            {row.toDet && <span><strong>To details:</strong> {row.toDet}</span>}
-                            {row.toDet && row.remarks && ' — '}
-                            {row.remarks && <span><strong>Remarks:</strong> {row.remarks}</span>}
-                        </p>
-                    )}
-
-                    <p style={{ marginBottom: 12 }}>
-                        {row.vesselName && <span><strong>Vessel:</strong> {row.vesselName} — </span>}
-                        {row.billingEntity && <span><strong>Billing Entity:</strong> {row.billingEntity} — </span>}
-                        {row.invoiceBranch && <span><strong>Branch:</strong> {row.invoiceBranch} — </span>}
-                        {row.seater != null && <span><strong>Seater:</strong> {row.seater} — </span>}
-                        <span><strong>Created:</strong> {row.createdDate}</span>
-                    </p>
-
-                    <div className="d-flex align-items-center gap-2" style={{ marginBottom: 16 }}>
-                        <label className="form-label mb-0"><strong>Trip Status:</strong></label>
-                        <select
-                            className="form-control form-control-sm"
-                            style={{ width: 160 }}
-                            value={statusEdits[row.id] ?? row.status}
-                            onChange={(e) =>
-                                setStatusEdits((prev) => ({ ...prev, [row.id]: e.target.value }))
-                            }
-                        >
-                            {TRIP_STATUS_OPTIONS.map((option) => (
-                                <option key={option} value={option}>
-                                    {option}
-                                </option>
-                            ))}
-                        </select>
-                        <button
-                            type="button"
-                            className="btn btn-primary btn-sm"
-                            disabled={isUpdatingTripStatus || (statusEdits[row.id] ?? row.status) === row.status}
-                            onClick={() => handleStatusSave(row)}
-                        >
-                            {isUpdatingTripStatus ? 'Saving...' : 'Save'}
-                        </button>
-                    </div>
-
-                    <table className="vendor-table" style={{ marginBottom: 0, minWidth: 720 }}>
-                        <thead>
-                            <tr>
-                                <th>Crew Name</th>
-                                <th>Rank</th>
-                                <th>Passport No</th>
-                                <th>Nationality</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {row.crew.length ? (
-                                row.crew.map((crew, i) => (
-                                    <tr key={`${row.id}-crew-${i}`}>
-                                        <td>{crew.crew_name}</td>
-                                        <td>{crew.rank ?? '—'}</td>
-                                        <td>{crew.passport_no}</td>
-                                        <td>{crew.nationality}</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={4} style={{ color: '#6b7280' }}>
-                                        No crew details available
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                    {!!row.attachments.length && (
-                        <div style={{ marginTop: 12 }}>
-                            <strong>Attachments:</strong>{' '}
-                            {row.attachments.map((att) => (
-                                <a
-                                    key={att.attachment_id}
-                                    href={att.file_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    style={{ marginRight: 12 }}
-                                >
-                                    {att.file_name}
-                                </a>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
+            renderExpandedRow={renderExpandedRow}
         />
     );
 }

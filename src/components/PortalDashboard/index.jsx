@@ -47,7 +47,7 @@ function PortalDashboard({
     const colSpan = tableColumns.length + (expandable ? 1 : 0);
 
     return (
-        <div className="dashboard-container">
+        <div className="dashboard-container portal-dashboard">
             <div className="dashboard-header">
                 <h2 className="dashboard-title">{title}</h2>
                 <p className="dashboard-subtitle">{subtitle}</p>
