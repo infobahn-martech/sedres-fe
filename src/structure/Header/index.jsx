@@ -386,6 +386,38 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
 
       {/* RIGHT — User + Icons (GRO / Custom Clearance / vendor-dashboard roles skip module shortcuts; still show help, alerts, profile) */}
       <div className="right-section">
+        {/* Reuses the settings dropdown styles so both menus look identical */}
+        <div className="settings-btn-wrapper" ref={toolsDropdownRef}>
+          <Tooltip id="tools" place="bottom" content="Tools" />
+          <button
+            type="button"
+            className={`icon-btn ${showToolsMenu ? 'active' : ''}`}
+            aria-label="Tools"
+            aria-expanded={showToolsMenu}
+            onClick={() => setShowToolsMenu((prev) => !prev)}
+            data-tooltip-id="tools"
+          >
+            <FiTool />
+          </button>
+
+          {showToolsMenu && (
+            <div className="settings-dropdown">
+              <div className="settings-dropdown-title">Tools</div>
+              {toolItems.map(({ label, icon, open }) => (
+                <button
+                  type="button"
+                  key={label}
+                  className="settings-dropdown-item"
+                  onClick={() => handleToolClick(open)}
+                >
+                  <span className="settings-item-icon">{icon}</span>
+                  <span className="settings-item-label">{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {!restrictedBoardUser && !vendorDashboardUser && (
           <>
             {!portOperatorUser && (
@@ -508,38 +540,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           </button>
           {notificationCount > 0 && (
             <span className="notification-badge">{notificationCount > 99 ? '99+' : notificationCount}</span>
-          )}
-        </div>
-
-        {/* Reuses the settings dropdown styles so both menus look identical */}
-        <div className="settings-btn-wrapper" ref={toolsDropdownRef}>
-          <Tooltip id="tools" place="bottom" content="Tools" />
-          <button
-            type="button"
-            className={`icon-btn ${showToolsMenu ? 'active' : ''}`}
-            aria-label="Tools"
-            aria-expanded={showToolsMenu}
-            onClick={() => setShowToolsMenu((prev) => !prev)}
-            data-tooltip-id="tools"
-          >
-            <FiTool />
-          </button>
-
-          {showToolsMenu && (
-            <div className="settings-dropdown">
-              <div className="settings-dropdown-title">Tools</div>
-              {toolItems.map(({ label, icon, open }) => (
-                <button
-                  type="button"
-                  key={label}
-                  className="settings-dropdown-item"
-                  onClick={() => handleToolClick(open)}
-                >
-                  <span className="settings-item-icon">{icon}</span>
-                  <span className="settings-item-label">{label}</span>
-                </button>
-              ))}
-            </div>
           )}
         </div>
 
