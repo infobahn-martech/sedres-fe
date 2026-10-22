@@ -24,6 +24,7 @@ import {
 import useAuthReducer from "../../../../../../store/AuthReducer";
 import useFormTemplateReducer from "../../../../../../store/FormTemplateReducer";
 import { useDaLocalReachedDates } from "../../../../../../shared/store/daStore";
+import useCardModalStore from "../../../../../../shared/store/cardModalStore";
 import usePermissions from "../../../../../../shared/hooks/usePermissions";
 import {
   PERMISSION_MODULES,
@@ -1807,6 +1808,7 @@ function CardForm({
   initialTab,
 }) {
   const userProfile = useAuthReducer((state) => state.userProfile);
+  const setCardModalOpen = useCardModalStore((state) => state.setCardModalOpen);
   const { hasAnyPermission, hasSubmodule } = usePermissions();
   // KANBAN_CARD top-tab visibility: absence of the module/submodule/action in the
   // permissions response means false (deny by default). "Operation" hosts Pre
@@ -2430,6 +2432,13 @@ function CardForm({
   const [isClosing, setIsClosing] = useState(false);
   const [isTitleSaving, setIsTitleSaving] = useState(false);
   const isClosingRef = useRef(false);
+
+  // Lets the Header move its actions into the floating quick-actions button while this modal covers it.
+  useEffect(() => {
+    if (!show) return undefined;
+    setCardModalOpen(true);
+    return () => setCardModalOpen(false);
+  }, [show, setCardModalOpen]);
   const lastSalesOrderFetchKeyRef = useRef(null);
 
   // Shared by the auto-fetch effect below and by refreshSalesOrder (called after actions
