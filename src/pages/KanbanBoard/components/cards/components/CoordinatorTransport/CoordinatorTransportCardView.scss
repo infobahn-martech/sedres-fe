@@ -744,7 +744,8 @@
   box-shadow: inset 0 -1px 0 #e5eaf1;
   position: sticky;
   top: 0;
-  z-index: 1;
+  /* above any positioned content inside the scrolling rows */
+  z-index: 3;
 }
 
 .coordinator-transport-table-card td {
@@ -835,6 +836,9 @@
 
 .coordinator-transport-route__connector {
   position: relative;
+  /* own stacking context: the badge's z-index only lifts it over this
+     connector's dashed track, never over the sticky table header */
+  isolation: isolate;
   flex: 1 1 56px;
   min-width: 44px;
   max-width: 96px;
