@@ -319,6 +319,27 @@ const sendSccApprovalEmail = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
+/** @param {number[]} callIds
+ * @param {number[]} cardIds
+ * @returns {Promise<{ data: { status: 'success', data: { call_ids: number[], cards: { call_id: number,
+ *   card_id: number }[], invoices: { call_id: number, card_id: number, sales_order_no: string, invoice_no: string,
+ *   vessel: string, service: string, amount: number, crpo_no: string }[], to: string, cc: string, subject: string,
+ *   body: string, stage_document_id: number, document_name: string, document_url: string, attachment_type: string,
+ *   size_mb: number, warnings: string[] } } | { status: 'error', message: string } }>}
+ * Prefilled invoice submission email for the ticked BGP "Submit by Email" cards. */
+const getInvoiceSubmissionDraft = (callIds, cardIds) =>
+  Gateway.get('/da/invoice_submission_draft', {
+    params: { call_ids: callIds.join(','), card_ids: cardIds.join(',') },
+  });
+
+/** @param {FormData} formData - call_ids, card_ids, stage_document_id, to, cc, subject, body, attachments[]?,
+ *   multipart/form-data.
+ * Sends the invoice submission email; the sent cards move on. */
+const sendInvoiceSubmission = (formData) =>
+  Gateway.post('/da/send_invoice_submission', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
 /** @typedef {{ call_id: number, card_id: number, sales_orders: string[], documents: { scc: { stage_document_id: number,
  *   name: string, url: string, signed: boolean } | null }, ready: boolean, status: 'signed'|'missing'|null,
  *   checked_date: string|null }} SignatureCheckCard */
@@ -395,4 +416,6 @@ export default {
   sendInvoiceDispatch,
   getSccApprovalEmailDraft,
   sendSccApprovalEmail,
+  getInvoiceSubmissionDraft,
+  sendInvoiceSubmission,
 };
