@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import CommonHeader from "../../components/CommonHeader";
 import CustomTable from "../../components/customTable";
 import { DriverModal } from "./Modals/AddEditDriver";
-import { DateFormat, RenderAction } from "./RenderCells";
+import { RenderAction } from "./RenderCells";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import useDriverReducer from "../../store/DriverReducer";
 
@@ -26,6 +26,14 @@ const Driver = () => {
     // 👉 ONLY TWO COLUMNS (Name + Description)
     const cols = [
         {
+            name: "Employee No",
+            selector: "employee_no",
+            width: "180",
+            thclass: "tb-head",
+            contentClass: "table-content",
+            sort: true,
+        },
+        {
             name: "Driver Name",
             selector: "driver_name",
             width: "200",
@@ -48,14 +56,6 @@ const Driver = () => {
             },
         },
         {
-            name: "Driver No",
-            selector: "employee_no",
-            width: "180",
-            thclass: "tb-head",
-            contentClass: "table-content",
-            sort: true,
-        },
-        {
             name: "Contact No",
             selector: "contact_no",
             width: "180",
@@ -67,32 +67,6 @@ const Driver = () => {
             name: "Iqama No",
             selector: "iqama_no",
             width: "200",
-            thclass: "tb-head",
-            contentClass: "table-content",
-            sort: true,
-        },
-        {
-            name: "Joining Date",
-            selector: "joining_date",
-            width: "180",
-            thclass: "tb-head",
-            contentClass: "table-content",
-            sort: true,
-            // optional: format date
-            cell: (row) => DateFormat({ row, selector: "joining_date" }),
-        },
-        {
-            name: "Location",
-            selector: "location",
-            width: "200",
-            thclass: "tb-head",
-            contentClass: "table-content",
-            sort: true,
-        },
-        {
-            name: "Nationality",
-            selector: "country",
-            width: "180",
             thclass: "tb-head",
             contentClass: "table-content",
             sort: true,

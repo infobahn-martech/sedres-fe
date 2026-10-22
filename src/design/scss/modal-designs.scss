@@ -646,3 +646,146 @@ body .modal.show .modal-dialog {
     border-color: var(--border-strong);
   }
 }
+/* Add / Edit Driver — 2-column form with avatar, "Driver For" radios, Zawil Pass upload */
+// Selector mirrors the base .user-modal-sm rule (plus .driver-modal) so it wins over its !important.
+body .user-modal-sm.driver-modal .modal-dialog {
+  max-width: 920px !important;
+  width: calc(100% - 32px);
+}
+
+
+.driver-modal {
+  .modal-body {
+    padding-top: 10px;
+  }
+
+  // Bordered 52px box so the radios line up with the inputs beside them.
+  .driver-radio-box {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 52px;
+    padding: 0 16px;
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    background: var(--surface-primary);
+
+    .form-check-inline {
+      margin-right: 0;
+    }
+  }
+
+  // Notched label like the phone/select fields, without .phone-wrapper's bottom margin.
+  .driver-notched {
+    position: relative;
+  }
+
+  .driver-drop-zone {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    min-height: 52px;
+    padding: 8px 16px;
+    border-width: 1px;
+    border-color: var(--border-primary);
+
+    .file-drop-zone__icon {
+      margin-bottom: 0;
+      font-size: 20px;
+      color: var(--color-primary);
+    }
+
+    .file-drop-zone__text {
+      color: var(--text-primary);
+    }
+
+    .file-drop-zone__formats {
+      margin-top: 0;
+    }
+
+    // Base drop zone uses a fixed light-blue tint; a primary-based tint works in both themes.
+    &:hover,
+    &.file-drop-zone--active {
+      border-style: dashed;
+      border-color: var(--color-primary);
+      background-color: color-mix(in srgb, var(--color-primary) 8%, transparent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    &__browse {
+      color: var(--color-primary);
+      text-decoration: underline;
+    }
+  }
+
+  .driver-file-list {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+
+    &__item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      padding: 8px 10px 8px 12px;
+      border: 1px solid var(--border-primary);
+      border-radius: 10px;
+      background: var(--surface-primary);
+    }
+
+    &__icon {
+      flex-shrink: 0;
+      font-size: 18px;
+      color: var(--color-primary);
+    }
+
+    &__name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    a.driver-file-list__name:hover {
+      color: var(--color-primary);
+      text-decoration: underline;
+    }
+
+    &__meta {
+      flex-shrink: 0;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    &__remove {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background-color 0.2s, color 0.2s;
+
+      &:hover {
+        background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+        color: var(--color-danger);
+      }
+    }
+  }
+}
