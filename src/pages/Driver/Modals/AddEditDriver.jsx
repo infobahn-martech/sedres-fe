@@ -341,7 +341,7 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
             <div className="lead-form">
                 <form id="driverForm" onSubmit={handleSubmit(onSubmit)}>
                     {/* ===== Avatar Upload ===== */}
-                    <div className="d-flex justify-content-center mb-4">
+                    <div className="d-flex justify-content-center mb-3">
                         <div className="avatar-outer">
                             <div className="avatar-wrapper">
                                 <img src={profileImagePreview} alt="Driver Avatar" className="avatar-image" />

@@ -655,8 +655,29 @@ body .user-modal-sm.driver-modal .modal-dialog {
 
 
 .driver-modal {
+  .modal-content {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+
   .modal-body {
     padding-top: 10px;
+  }
+
+  // Row spacing comes from row-gap alone; the shared field/wrapper margins stacked on top of it.
+  .permInputs.row {
+    row-gap: 30px;
+  }
+
+  .form-field,
+  .phone-wrapper {
+    margin-bottom: 0;
+  }
+
+  .avatar-wrapper {
+    width: 100px;
+    height: 100px;
+    margin-top: 0;
   }
 
   // Bordered 52px box so the radios line up with the inputs beside them.
