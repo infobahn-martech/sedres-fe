@@ -921,8 +921,11 @@
   width: 16%;
 }
 
-.coordinator-transport-table-card th:nth-child(5),
-.coordinator-transport-table-card td:nth-child(5) {
+/* Document column: header and eye button share one center line. The selector
+   matches the specificity of the base `thead th` rule (text-align: left) so
+   the centering actually wins on the header cell. */
+.coordinator-transport-table-card .crew-pass-requests-table thead th:nth-child(5),
+.coordinator-transport-table-card .crew-pass-requests-table tbody td:nth-child(5) {
   width: 16%;
   text-align: center;
 }
