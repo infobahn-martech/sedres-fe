@@ -170,6 +170,7 @@ export default function WorkflowColumns({
   onUploadSccDocuments,
   onColumnSendInvoice,
   onColumnSendSccApproval,
+  onColumnSubmitByEmail,
   onColumnMergeInvoice,
   onColumnDownloadInvoices,
   onColumnMoveCards,
@@ -643,6 +644,7 @@ export default function WorkflowColumns({
                         onBatchUploadPos={(cards) =>
                           onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id })
                         }
+                        onBatchSubmitByEmail={onColumnSubmitByEmail}
                         hideCardSelect={isColumnBeforeArchive(workflow, colKey)}
                         onToggleCardSelect={onToggleCardSelect}
                         onCardSelectDragStart={onCardSelectDragStart}

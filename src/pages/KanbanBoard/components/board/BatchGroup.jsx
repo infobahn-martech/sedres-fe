@@ -10,11 +10,14 @@ const noop = () => {};
 const EMPTY_SELECTED_IDS = [];
 const AWAITING_SE_COLUMN_PATTERN = /^awaiting\s+(for\s+)?se$/i;
 const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
-/* McDermott batches skip SAIPEM's SE steps, so their header has no SE actions. */
-const MCDERMOTT_WORKFLOW_PATTERN = /mcdermott/i;
+/* McDermott and BGP batches skip SAIPEM's SE steps, so their header has no SE actions. */
+const MCDERMOTT_WORKFLOW_PATTERN = /mcdermott|bgp/i;
 /* Compared on letters only, so stray spaces, punctuation or invisible characters in the live
    column title don't hide the "Request PO" button. */
 const REQUESTED_PO_COLUMN_PATTERN = /^requested\s+po$/i;
+/* BGP batches in "Submit by Email" send the invoice submission email from the header. */
+const BGP_WORKFLOW_PATTERN = /bgp/i;
+const SUBMIT_BY_EMAIL_COLUMN_PATTERN = /^submit\s+by\s+email$/i;
 const READY_FOR_PO_REQUEST_COLUMN_KEY = "readyforporequest";
 const isReadyForPoRequestColumn = (title) =>
   String(title ?? "").toLowerCase().replace(/[^a-z]/g, "") === READY_FOR_PO_REQUEST_COLUMN_KEY;
@@ -41,6 +44,7 @@ export default function BatchGroup({
   onUploadInvoice,
   onRequestPo,
   onUploadPos,
+  onSubmitByEmail,
 }) {
   /* Submitted Invoices holds many batches, so there they start collapsed and the header opens one;
      every other column starts expanded. */
@@ -57,6 +61,10 @@ export default function BatchGroup({
   /* McDermott batches in "Requested PO" upload their POs from the header, for the batch's ticked cards. */
   const isUploadPosBatch =
     !isUngrouped && !isSeFlowBatch && REQUESTED_PO_COLUMN_PATTERN.test((columnTitle ?? "").trim());
+  const isSubmitByEmailBatch =
+    !isUngrouped &&
+    BGP_WORKFLOW_PATTERN.test(workflowTitle ?? "") &&
+    SUBMIT_BY_EMAIL_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches already emailed for SE creation sit in "Awaiting SE" (live title "Awaiting for SE"). */
   const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches whose SE approval is back sit in "SE Received" and move on to invoicing. */
@@ -105,6 +113,8 @@ export default function BatchGroup({
       if (!isSeUploadDone) return isSeTicked;
       return Boolean(seApprovedByCardId[String(card.id)]) && isSeTicked;
     }
+    /* A lone card in a "Submit by Email" batch shows ticked, as it always counts for the batch action. */
+    if (isSubmitByEmailBatch && batch.cards.length === 1) return true;
     return selectedActionCardIds.includes(card.id);
   };
 
@@ -113,6 +123,8 @@ export default function BatchGroup({
 
   const getToggleSelectForAction = () => {
     if (isSubmittedInvoicesColumn || hideCardSelect) return undefined;
+    /* A lone card in a "Submit by Email" batch has nothing to choose, so it carries no checkbox. */
+    if (isSubmitByEmailBatch && batch.cards.length === 1) return undefined;
     if (isSendSeBatch) return toggleSeCardTick;
     if (isSeReviewBatch) return (card) => toggleSeReviewCard(card.id, { isSeUploadDone });
     return onToggleCardSelect;
@@ -178,7 +190,16 @@ export default function BatchGroup({
             <span className="batch-group__title">{batch.title}</span>
           </button>
 
-          {isUploadPosBatch ? (
+          {isSubmitByEmailBatch ? (
+            <button
+              type="button"
+              className="batch-group__action"
+              onClick={() => onSubmitByEmail?.(tickedActionCards)}
+              disabled={!tickedActionCards.length}
+            >
+              Submit by Email
+            </button>
+          ) : isUploadPosBatch ? (
             <button
               type="button"
               className="batch-group__action"
@@ -300,4 +321,5 @@ BatchGroup.propTypes = {
   onUploadInvoice: PropTypes.func,
   onRequestPo: PropTypes.func,
   onUploadPos: PropTypes.func,
+  onSubmitByEmail: PropTypes.func,
 };

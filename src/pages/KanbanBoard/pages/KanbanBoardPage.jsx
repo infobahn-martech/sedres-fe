@@ -39,7 +39,7 @@ import useAuthReducer from "../../../store/AuthReducer";
 import workflowService from "../../../services/workflowService";
 import daService from "../../../services/daService";
 import { notify } from "../../../components/Toaster";
-import { downloadFile } from "../../../shared/utils/utils";
+import { downloadFile, downloadRowsXLSX } from "../../../shared/utils/utils";
 import { compressPdfFiles } from "../../../shared/utils/compressPdf";
 import { useThemeStore } from "../../../shared/store/themeStore";
 import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
@@ -68,15 +68,14 @@ const arInvoiceUploadFields = [
    max_files_per_request (20), like the AR invoices above. */
 const PO_FIELD_NAME = "pos";
 const PO_FILES_PER_REQUEST = 20;
-/* "Uploaded to Portal" dispatch proof upload: one file for the ticked card (PDF, image, email, Word, Excel),
-   sent to da/upload_dispatch_proof in chunks of max_files_per_request (20). */
+/* "Uploaded to Portal" dispatch proof upload: one file of any type (signed sheet, image, PDF, email) for the
+   ticked card, sent to da/upload_dispatch_proof in chunks of max_files_per_request (20). */
 const DISPATCH_PROOF_FIELD_NAME = "proofs";
 const DISPATCH_PROOF_FILES_PER_REQUEST = 20;
 const dispatchProofUploadFields = [
   {
     name: DISPATCH_PROOF_FIELD_NAME,
-    accept: ".pdf,.jpg,.jpeg,.png,.msg,.eml,.doc,.docx,.xls,.xlsx",
-    formatsHint: "PDF, JPG, PNG, MSG, EML, DOC, DOCX, XLS, XLSX",
+    formatsHint: "Any file type",
     multiple: false,
   },
 ];
@@ -89,6 +88,9 @@ const lntDispatchProofUploadFields = [
     multiple: true,
   },
 ];
+/* BGP "Submit by Email": the hard copies sheet downloaded after the invoice submission email is sent. */
+const HARD_COPIES_SHEET_HEADINGS = ["Sales Order No", "Invoice No", "Vessel", "Service", "Amount", "CRPO No"];
+const HARD_COPIES_SHEET_FILE_NAME = "Hard_Copies_Sheet.xlsx";
 /* McDermott "Submitted to DA" SRF upload, from the workflow header: one SRF document for all the
    ticked cards. */
 const SRF_FIELD_NAME = "srf";
@@ -1348,6 +1350,124 @@ export default function KanbanBoardPage() {
     ]
   );
 
+  /* "Submit by Email" on BGP's "Submit by Email" column header, for the cards ticked there, opens one
+     invoice submission email draft covering all of them. */
+  const [showInvoiceSubmissionEmailModal, setShowInvoiceSubmissionEmailModal] = useState(false);
+  const [selectedInvoiceSubmissionCards, setSelectedInvoiceSubmissionCards] = useState([]);
+  const [invoiceSubmissionDraft, setInvoiceSubmissionDraft] = useState(null);
+  const [isSendingInvoiceSubmission, setIsSendingInvoiceSubmission] = useState(false);
+
+  const handleColumnSubmitByEmail = useCallback(async (cards) => {
+    const submissionCards = (cards || []).filter((card) => card.callId);
+    if (!submissionCards.length) {
+      notify("The selected cards have no call to submit by email", "error");
+      return;
+    }
+    let data;
+    try {
+      ({ data } = await daService.getInvoiceSubmissionDraft(
+        submissionCards.map((card) => Number(card.callId)),
+        submissionCards.map((card) => Number(card.id))
+      ));
+    } catch (error) {
+      data = error?.response?.data;
+    }
+    if (data?.status !== "success" || !data?.data) {
+      notify(data?.message || "Failed to load invoice submission email draft", "error");
+      return;
+    }
+    setInvoiceSubmissionDraft(data.data);
+    setSelectedInvoiceSubmissionCards(submissionCards);
+    setShowInvoiceSubmissionEmailModal(true);
+  }, []);
+
+  const handleCloseInvoiceSubmissionEmail = useCallback(() => {
+    setShowInvoiceSubmissionEmailModal(false);
+    setSelectedInvoiceSubmissionCards([]);
+    setInvoiceSubmissionDraft(null);
+  }, []);
+
+  /* Sends the invoice submission email; the backend moves the sent cards on. */
+  const handleSendInvoiceSubmissionEmail = useCallback(
+    async (emailData) => {
+      const draftCards = invoiceSubmissionDraft?.cards?.length
+        ? invoiceSubmissionDraft.cards
+        : selectedInvoiceSubmissionCards.map((card) => ({ call_id: card.callId, card_id: card.id }));
+      if (!draftCards.length) {
+        notify("Cards not found", "error");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("call_ids", draftCards.map((card) => card.call_id).join(","));
+      formData.append("card_ids", draftCards.map((card) => card.card_id).join(","));
+      if (invoiceSubmissionDraft?.stage_document_id != null) {
+        formData.append("stage_document_id", invoiceSubmissionDraft.stage_document_id);
+      }
+      formData.append("to", emailData?.to ?? "");
+      formData.append("cc", emailData?.cc ?? "");
+      formData.append("subject", emailData?.subject ?? "");
+      formData.append("body", emailData?.message ?? "");
+      (emailData?.attachments || []).forEach((file) => formData.append("attachments[]", file));
+
+      setIsSendingInvoiceSubmission(true);
+      try {
+        let data;
+        try {
+          ({ data } = await daService.sendInvoiceSubmission(formData));
+        } catch (error) {
+          data = error?.response?.data;
+        }
+        if (data?.status !== "success") {
+          notify(data?.message || "Failed to send invoice submission email", "error");
+          return;
+        }
+        notify(data.message || "Invoice submission email sent successfully", "success");
+        /* The hard copies sheet lists the invoices of the cards just sent, built from the draft. */
+        const sentCardIds = new Set(draftCards.map((card) => String(card.card_id)));
+        const hardCopyRows = (invoiceSubmissionDraft?.invoices || [])
+          .filter((invoice) => sentCardIds.has(String(invoice.card_id)))
+          .map((invoice) => [
+            invoice.sales_order_no,
+            invoice.invoice_no,
+            invoice.vessel,
+            invoice.service,
+            invoice.amount,
+            invoice.crpo_no,
+          ]);
+        if (hardCopyRows.length) {
+          downloadRowsXLSX(HARD_COPIES_SHEET_HEADINGS, hardCopyRows, HARD_COPIES_SHEET_FILE_NAME);
+        }
+        selectedInvoiceSubmissionCards.forEach((card) => removeCardSelectionId(card.id));
+        handleCloseInvoiceSubmissionEmail();
+        refetchBoard?.();
+      } finally {
+        setIsSendingInvoiceSubmission(false);
+      }
+    },
+    [
+      invoiceSubmissionDraft,
+      selectedInvoiceSubmissionCards,
+      removeCardSelectionId,
+      handleCloseInvoiceSubmissionEmail,
+      refetchBoard,
+    ]
+  );
+
+  /* The invoice document the backend already holds for the email, shown under its document name. */
+  const invoiceSubmissionDocuments = useMemo(
+    () =>
+      invoiceSubmissionDraft?.document_url
+        ? [
+            {
+              name: invoiceSubmissionDraft.document_name || "Invoice",
+              url: invoiceSubmissionDraft.document_url,
+            },
+          ]
+        : [],
+    [invoiceSubmissionDraft]
+  );
+
   /* The zip the backend already holds for the email, shown under its document name. */
   const sccApprovalDocuments = useMemo(
     () =>
@@ -2120,6 +2240,7 @@ export default function KanbanBoardPage() {
           onUploadSccDocuments={handleUploadSccDocumentsClick}
           onColumnSendInvoice={handleColumnSendInvoice}
           onColumnSendSccApproval={handleColumnSendSccApproval}
+          onColumnSubmitByEmail={handleColumnSubmitByEmail}
           onColumnMergeInvoice={handleColumnMergeInvoice}
           onColumnDownloadInvoices={handleColumnDownloadInvoices}
           onColumnMoveCards={handleColumnMoveCards}
@@ -2362,6 +2483,22 @@ export default function KanbanBoardPage() {
         title="SCC Approval Email"
         subtitle="Send the selected cards for SCC approval"
         sendLabel="Send for SCC Approval"
+        allowTables
+      />
+
+      <SeCreationEmailModal
+        show={showInvoiceSubmissionEmailModal}
+        onClose={handleCloseInvoiceSubmissionEmail}
+        onSend={handleSendInvoiceSubmissionEmail}
+        isSubmitting={isSendingInvoiceSubmission}
+        defaultTo={invoiceSubmissionDraft?.to ?? ""}
+        defaultCc={invoiceSubmissionDraft?.cc ?? ""}
+        defaultSubject={invoiceSubmissionDraft?.subject ?? ""}
+        defaultBody={invoiceSubmissionDraft?.body ?? ""}
+        documents={invoiceSubmissionDocuments}
+        title="Invoice Submission Email"
+        subtitle="Submit the selected invoices by email"
+        sendLabel="Submit by Email"
         allowTables
       />
 

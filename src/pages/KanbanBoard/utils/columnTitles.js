@@ -7,9 +7,11 @@ export const isSubmittedInvoicesColumnTitle = (title) =>
 
 const ARCHIVE_COLUMN_PATTERN = /archive/i;
 const SRF_SOURCE_COLUMN_PATTERN = /^submitted\s+to\s+da$/i;
+const SUBMIT_BY_EMAIL_COLUMN_PATTERN = /^submit\s+by\s+email$/i;
 
 /* The last working column of a flow (the one right before "Ready to Archive") holds finished cards, so
-   its cards carry no checkbox. "Submitted to DA" keeps its ticks because they drive Upload SRF. */
+   its cards carry no checkbox. "Submitted to DA" keeps its ticks because they drive Upload SRF, and BGP's
+   "Submit by Email" because they drive Submit by Email. */
 export const isColumnBeforeArchive = (workflow, colKey) => {
   const order = workflow?.columnOrder ?? [];
   const index = order.indexOf(colKey);
@@ -19,7 +21,8 @@ export const isColumnBeforeArchive = (workflow, colKey) => {
   return (
     ARCHIVE_COLUMN_PATTERN.test(nextTitle) &&
     !ARCHIVE_COLUMN_PATTERN.test(title) &&
-    !SRF_SOURCE_COLUMN_PATTERN.test(title)
+    !SRF_SOURCE_COLUMN_PATTERN.test(title) &&
+    !SUBMIT_BY_EMAIL_COLUMN_PATTERN.test(title)
   );
 };
 
@@ -38,9 +41,11 @@ const MCDERMOTT_WORKFLOW = "MCDERMOTT";
 export const isMcDermottWorkflow = (workflow) =>
   String(workflow?.title ?? "").trim().toUpperCase().includes(MCDERMOTT_WORKFLOW);
 
-const UPLOADED_TO_PORTAL_COLUMN_PATTERN = /^(uploaded|invoice\s+submitted)\s+to\s+(the\s+)?portal$/i;
+const UPLOADED_TO_PORTAL_COLUMN_PATTERN =
+  /^((uploaded|invoice\s+submitted)\s+to\s+(the\s+)?portal|dispatch\s+the\s+hard\s+copies)$/i;
 
-/* "Uploaded to Portal" / "Invoice Submitted to Portal" take one dispatch proof for one ticked card. */
+/* "Uploaded to Portal" / "Invoice Submitted to Portal" / BGP's "Dispatch the Hard Copies" take one dispatch
+   proof for one ticked card. */
 export const isUploadedToPortalColumnTitle = (title) =>
   UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(String(title ?? "").trim());
 

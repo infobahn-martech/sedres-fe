@@ -1192,7 +1192,7 @@ const SalesOrderList = ({
       useAlertReducer.getState().success("Approved SO uploaded.");
       if (refreshSalesOrder) refreshSalesOrder();
       onDaStatusRefresh?.();
-      onCloseCard?.();
+      if (Array.isArray(data?.moved_to_da) && data.moved_to_da.length > 0) onCloseCard?.();
     } catch (err) {
       setApprovedSoUploadError(
         err?.response?.data?.message || err?.message || "Upload failed. Please try again."
@@ -1475,12 +1475,13 @@ const SalesOrderList = ({
       const allVerified =
         isNowVerified &&
         updatedList.every((item) => (item.id === orderId ? true : isItemVerified(item)));
+      // The card is closed only when the backend reports it moved to DA (moved_to_da non-empty) —
+      // a successful verify alone never closes it.
+      const wasMovedToDa = Array.isArray(body?.moved_to_da) && body.moved_to_da.length > 0;
       if (allVerified && isBeforeSubmittedToDa && !isPoshWorkflowCard && !hasSendForSoApprovalColumn) {
         onAdvanceDaStage?.({ label: stepLabels[submittedToDaStepIndex], skipStatusUpdate: true });
-        onCloseCard?.();
-      } else if (allVerified && (isAtSubmittedToDaColumn || isAtSoSentForSccColumn)) {
-        // "Submitted to DA" / L&T "SO sent for SCC": once every line item is verified the card just closes
-        // (it is not moved; SCC approval is sent from the column header).
+        if (wasMovedToDa) onCloseCard?.();
+      } else if (allVerified && (isAtSubmittedToDaColumn || isAtSoSentForSccColumn) && wasMovedToDa) {
         onCloseCard?.();
       }
     } catch (err) {

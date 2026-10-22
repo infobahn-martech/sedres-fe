@@ -45,6 +45,13 @@ export function downloadFile({ link, fileName }) {
   document.body.removeChild(a); // Remove the anchor element
 }
 
+export function downloadRowsXLSX(headings, rows, fileName) {
+  const workbook = XLSX.utils.book_new();
+  const worksheet = XLSX.utils.aoa_to_sheet([headings, ...rows]);
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+  XLSX.writeFile(workbook, fileName);
+}
+
 export function downloadSampleXLSX(headings, fileName) {
   // Create a new workbook
   const workbook = XLSX.utils.book_new();
