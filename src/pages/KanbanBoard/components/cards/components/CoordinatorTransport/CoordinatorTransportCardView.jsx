@@ -23,6 +23,7 @@ import {
   FormSelect,
   FieldRow,
   ReactQuillEditor,
+  CrewAvatar,
 } from "../../../../CardFormTabs/Import/tabs/husbandry/components/Husbandry.components";
 import {
   CREW_MANAGEMENT_SUBTABS,
@@ -38,7 +39,7 @@ import "./CoordinatorTransportCardView.scss";
 
 const TRANSPORT_ACCENT = SERVICE_ACCENT[CREW_MANAGEMENT_SUBTABS.TRANSPORT];
 const EMPTY_DISPLAY = "—";
-const TABLE_PAGE_SIZE = 5;
+const TABLE_PAGE_SIZE = 10;
 
 const EMPTY_TRANSPORT_FORM = {
   requestEmail: [],
@@ -142,12 +143,37 @@ const flattenTransportRequestRows = (requests) => {
   });
 };
 
-const formatPickupDateTime = (value) => {
+const parsePickupDateTime = (value) => {
   if (!value) return null;
-  const normalized = String(value).replace(" ", "T");
-  const parsed = parseISO(normalized);
-  if (!isValid(parsed)) return null;
-  return format(parsed, "dd/MM/yyyy HH:mm");
+  const parsed = parseISO(String(value).replace(" ", "T"));
+  return isValid(parsed) ? parsed : null;
+};
+
+const renderPickupDateTime = (value) => {
+  const parsed = parsePickupDateTime(value);
+  if (!parsed) return <span className="coordinator-transport-table__empty-cell">{EMPTY_DISPLAY}</span>;
+  return (
+    <span className="coordinator-transport-datetime">
+      <span className="coordinator-transport-datetime__date">{format(parsed, "dd MMM yyyy")}</span>
+      <span className="coordinator-transport-datetime__time">{format(parsed, "HH:mm")}</span>
+    </span>
+  );
+};
+
+// Stable palette per name, so the same crew member keeps the same avatar color across pages.
+const getAvatarIndex = (name) =>
+  [...String(name)].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+const renderCrewCell = (name) => {
+  if (!name || !String(name).trim()) {
+    return <span className="coordinator-transport-table__empty-cell">{EMPTY_DISPLAY}</span>;
+  }
+  return (
+    <span className="husb-crew-cell">
+      <CrewAvatar name={name} index={getAvatarIndex(name)} />
+      <span className="husb-crew-cell__name" title={name}>{name}</span>
+    </span>
+  );
 };
 
 const renderStatusBadge = (status) => {
@@ -162,7 +188,7 @@ const renderStatusBadge = (status) => {
 };
 
 const COORDINATOR_TRANSPORT_REQUEST_COLUMNS = [
-  { key: "crew_name", header: "Crew", accessor: (r) => r?.crew_name, type: "crew" },
+  { key: "crew_name", header: "Crew", render: (r) => renderCrewCell(r?.crew_name) },
   {
     key: "route",
     header: "Route",
@@ -178,9 +204,7 @@ const COORDINATOR_TRANSPORT_REQUEST_COLUMNS = [
   {
     key: "requested",
     header: "Requested",
-    render: (r) => formatPickupDateTime(r?.pickup_datetime) || (
-      <span className="coordinator-transport-table__empty-cell">{EMPTY_DISPLAY}</span>
-    ),
+    render: (r) => renderPickupDateTime(r?.pickup_datetime),
   },
   {
     key: "document",

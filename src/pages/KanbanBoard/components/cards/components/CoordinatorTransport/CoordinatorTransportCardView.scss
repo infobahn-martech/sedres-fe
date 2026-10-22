@@ -97,7 +97,7 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(430px, 32%) minmax(0, 1fr);
-  align-items: start;
+  align-items: stretch;
   gap: 20px;
   overflow: hidden;
 }
@@ -617,10 +617,12 @@
 
 /* ---------- Table panel ---------- */
 
+/* Fills the workspace height like the form card: header and pagination stay
+   pinned, only the rows scroll in between. */
 .coordinator-transport-table-card {
-  align-self: start;
   width: 100%;
-  min-height: 430px;
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -675,15 +677,47 @@
 
 .coordinator-transport-table-card .crew-pass-requests-table-card__body {
   flex: 1;
-  min-height: 300px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
 .coordinator-transport-table-card .crew-pass-requests-table-scroll {
   flex: 1;
-  min-height: 240px;
-  overflow-x: auto;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+  }
+}
+
+.coordinator-transport-table-card .crew-pass-requests-table-card__skeleton {
+  flex: 1;
+  padding: 18px 20px;
+}
+
+/* Empty state centered in the full-height body */
+.coordinator-transport-table-card .crew-pass-requests-table-card__empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 13px;
+  color: #7c8798;
+
+  &::before {
+    background-color: var(--accent-tint, #e6f7f5);
+  }
 }
 
 .coordinator-transport-table-card table.crew-pass-requests-table {
@@ -705,10 +739,16 @@
   text-align: left;
   white-space: nowrap;
   border-bottom: 1px solid #e5eaf1;
+  /* stays visible while rows scroll; collapsed borders don't stick, so the
+     divider is redrawn as an inset shadow */
+  box-shadow: inset 0 -1px 0 #e5eaf1;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .coordinator-transport-table-card td {
-  height: 52px;
+  height: 56px;
   padding: 10px 16px;
   font-size: 12.5px;
   color: #334155;
@@ -718,30 +758,48 @@
 }
 
 .coordinator-transport-table-card tbody tr {
-  transition: background 0.12s ease;
+  transition: background 0.12s ease, box-shadow 0.12s ease;
 }
 
 .coordinator-transport-table-card tbody tr:hover {
-  background: #f7fbfa;
+  background: #f5faf9;
+  box-shadow: inset 3px 0 0 var(--accent, #0d9488);
 }
 
-.coordinator-transport-table-card .husb-route {
-  min-width: 0;
-  max-width: 100%;
-  font-weight: 500;
+.coordinator-transport-table-card tbody tr:last-child td {
+  border-bottom: 0;
 }
 
-.coordinator-transport-table-card .husb-route__point {
-  min-width: 0;
-  flex-shrink: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Crew: soft tinted initials avatar + name */
+.coordinator-transport-table-card .husb-crew-cell {
+  gap: 10px;
 }
 
-.coordinator-transport-table-card .husb-route__arrow {
-  flex-shrink: 0;
-  margin: 0 4px;
-  color: var(--accent, #0d9488);
+.coordinator-transport-table-card .husb-avatar {
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.coordinator-transport-table-card .husb-avatar--purple {
+  background: #f1ebfe;
+  color: #6d28d9;
+}
+
+.coordinator-transport-table-card .husb-avatar--orange {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.coordinator-transport-table-card .husb-avatar--blue {
+  background: #e0ecff;
+  color: #1d4ed8;
+}
+
+.coordinator-transport-table-card .husb-avatar--green {
+  background: #dcfce7;
+  color: #15803d;
 }
 
 .coordinator-transport-table-card .husb-crew-cell__name {
@@ -751,6 +809,52 @@
   white-space: nowrap;
   font-weight: 600;
   color: #1f2937;
+}
+
+/* Route: origin/destination chips joined by an accent arrow */
+.coordinator-transport-table-card .husb-route {
+  min-width: 0;
+  max-width: 100%;
+  gap: 6px;
+}
+
+.coordinator-transport-table-card .husb-route__point {
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: #f3f5f9;
+  border: 1px solid #e8ecf2;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.coordinator-transport-table-card .husb-route__arrow {
+  flex-shrink: 0;
+  color: var(--accent, #0d9488);
+  font-weight: 700;
+}
+
+/* Requested: date on top, time muted underneath */
+.coordinator-transport-datetime {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.coordinator-transport-datetime__date {
+  font-weight: 600;
+  color: #273144;
+}
+
+.coordinator-transport-datetime__time {
+  font-size: 11px;
+  color: #8a94a6;
 }
 
 .coordinator-transport-table-card th:nth-child(1),
@@ -771,8 +875,6 @@
 .coordinator-transport-table-card th:nth-child(4),
 .coordinator-transport-table-card td:nth-child(4) {
   width: 18%;
-  font-variant-numeric: tabular-nums;
-  color: #475569;
 }
 
 .coordinator-transport-table-card th:nth-child(5),
@@ -1059,6 +1161,25 @@
     background: var(--bg-row-hover);
   }
 
+  .coordinator-transport-table-card .husb-route__point {
+    background: var(--bg-inset);
+    border-color: var(--border);
+    color: var(--text-control);
+  }
+
+  .coordinator-transport-datetime__date {
+    color: var(--text-heading);
+  }
+
+  .coordinator-transport-datetime__time,
+  .coordinator-transport-table-card .crew-pass-requests-table-card__empty {
+    color: var(--text-subtle);
+  }
+
+  .coordinator-transport-table-card .crew-pass-requests-table-scroll::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+  }
+
   .coordinator-transport-table-card .crew-pass-requests-table-card__count,
   .coordinator-transport-table-card .crew-pass-requests-table__doc-btn {
     background: rgba(13, 148, 136, 0.18);
@@ -1126,7 +1247,7 @@
   }
 
   .coordinator-transport-table-card {
-    min-height: 420px;
+    height: 560px;
     width: 100%;
   }
 }
