@@ -136,7 +136,6 @@ const DEFAULT_TAB_STRUCTURE = {
             ["Assigned Operator", "dropdown"],
             ["Service Requestor Name", "text"],
             ["Service Requestor Email", "email"],
-            ["Daily Report Emails", "email"],
         ],
     },
     Operation: {
@@ -187,7 +186,6 @@ const LOCKED_FIRST_TAB_FIELD_LABELS = new Set([
     "assigned operator",
     "service requestor name",
     "service requestor email",
-    "daily report emails",
 ]);
 
 const isLockedField = (field, isFirstTab) =>
