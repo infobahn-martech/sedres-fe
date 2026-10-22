@@ -187,8 +187,8 @@ const renderStatusBadge = (status) => {
   );
 };
 
-// Stacked origin → destination timeline: two lines fit the row height and long
-// location names get the full column width instead of sharing one line.
+// Ticket-style route: origin and destination on one line, joined by a dashed
+// connector with a vehicle badge pointing toward the destination.
 const renderRouteCell = (from, to) => {
   const fromText = String(from ?? "").trim();
   const toText = String(to ?? "").trim();
@@ -199,6 +199,11 @@ const renderRouteCell = (from, to) => {
     <span className="coordinator-transport-route">
       <span className="coordinator-transport-route__stop coordinator-transport-route__stop--from" title={fromText}>
         {fromText || EMPTY_DISPLAY}
+      </span>
+      <span className="coordinator-transport-route__connector" aria-hidden="true">
+        <span className="coordinator-transport-route__vehicle">
+          <FiTruck size={11} />
+        </span>
       </span>
       <span className="coordinator-transport-route__stop coordinator-transport-route__stop--to" title={toText}>
         {toText || EMPTY_DISPLAY}

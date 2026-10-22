@@ -811,67 +811,75 @@
   color: #1f2937;
 }
 
-/* Route: stacked origin → destination timeline. Same green/red markers as the
-   From / To labels in the form, joined by a dashed connector. */
+/* Route: ticket style — origin ┄┄ [vehicle] ┄┄› destination on one line.
+   Stops shrink with an ellipsis so the connector always stays visible. */
 .coordinator-transport-route {
-  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
-  padding-left: 16px;
-
-  /* connector between the two markers */
-  &::before {
-    content: "";
-    position: absolute;
-    left: 3px;
-    top: 9px;
-    bottom: 9px;
-    border-left: 1.5px dashed #c9d2de;
-  }
+  max-width: 100%;
 }
 
 .coordinator-transport-route__stop {
-  position: relative;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 12.5px;
+  font-weight: 600;
   line-height: 1.2;
+  color: #1f2937;
+}
 
+.coordinator-transport-route__connector {
+  position: relative;
+  flex: 1 1 56px;
+  min-width: 44px;
+  max-width: 96px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* dashed track */
   &::before {
     content: "";
     position: absolute;
-    left: -16px;
+    left: 0;
+    right: 4px;
     top: 50%;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    transform: translateY(-50%);
+    border-top: 1.5px dashed #c3ccd8;
+  }
+
+  /* arrowhead toward the destination */
+  &::after {
+    content: "";
+    position: absolute;
+    right: 1px;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    border-top: 1.5px solid #c3ccd8;
+    border-right: 1.5px solid #c3ccd8;
+    transform: translateY(-50%) rotate(45deg);
     box-sizing: border-box;
   }
 }
 
-.coordinator-transport-route__stop--from {
-  font-weight: 600;
-  color: #1f2937;
-
-  &::before {
-    background: #ffffff;
-    border: 2px solid var(--accent, #0d9488);
-  }
-}
-
-.coordinator-transport-route__stop--to {
-  font-weight: 500;
-  color: #475569;
-
-  &::before {
-    background: #e11d48;
-    box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.15);
-  }
+.coordinator-transport-route__vehicle {
+  position: relative;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e6f7f5;
+  border: 1px solid rgba(13, 148, 136, 0.25);
+  color: var(--accent, #0d9488);
 }
 
 /* Requested: date on top, time muted underneath */
@@ -1197,20 +1205,21 @@
     background: var(--bg-row-hover);
   }
 
-  .coordinator-transport-route::before {
-    border-color: var(--border-strong);
+  .coordinator-transport-route__stop {
+    color: var(--text-heading);
   }
 
-  .coordinator-transport-route__stop--from {
-    color: var(--text-heading);
-
-    &::before {
-      background: var(--bg-card);
+  .coordinator-transport-route__connector {
+    &::before,
+    &::after {
+      border-color: var(--border-strong);
     }
   }
 
-  .coordinator-transport-route__stop--to {
-    color: var(--text-control);
+  .coordinator-transport-route__vehicle {
+    background: #123a3a;
+    border-color: rgba(94, 234, 212, 0.3);
+    color: #5eead4;
   }
 
   .coordinator-transport-datetime__date {
