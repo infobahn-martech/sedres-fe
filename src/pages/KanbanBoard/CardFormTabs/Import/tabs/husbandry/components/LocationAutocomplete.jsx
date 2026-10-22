@@ -7,7 +7,7 @@ const LocationAutocomplete = ({ value, onChange, placeholder, className = "", on
   const autocompleteRef = useRef(null);
   const onChangeRef = useRef(onChange);
   const onLocationSelectRef = useRef(onLocationSelect);
-  const { isLoaded, error } = useGoogleMaps();
+  const { isLoaded, error, authFailed } = useGoogleMaps();
   const [inputValue, setInputValue] = useState(value || "");
 
   useEffect(() => {
@@ -23,7 +23,7 @@ const LocationAutocomplete = ({ value, onChange, placeholder, className = "", on
   }, [value]);
 
   useEffect(() => {
-    if (!isLoaded || !inputRef.current || error) return;
+    if (!isLoaded || !inputRef.current || error || authFailed) return;
 
     if (!autocompleteRef.current && window.google?.maps?.places) {
       autocompleteRef.current = new window.google.maps.places.Autocomplete(
@@ -62,7 +62,19 @@ const LocationAutocomplete = ({ value, onChange, placeholder, className = "", on
         autocompleteRef.current = null;
       }
     };
-  }, [isLoaded, error]);
+  }, [isLoaded, error, authFailed]);
+
+  // On key rejection Google disables the input and swaps its placeholder for
+  // "Sorry! Something went wrong." directly on the DOM node. Undo that so the
+  // field keeps working as a plain text input without suggestions.
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!authFailed || !input) return;
+    input.disabled = disabled;
+    input.placeholder = placeholder || "Search for a location...";
+    input.classList.remove("gm-err-autocomplete");
+    input.style.backgroundImage = "";
+  }, [authFailed, disabled, placeholder]);
 
   // The pac-container is positioned via the input's bounding rect at open time and
   // only repositions on window scroll, so scrolling an internal panel leaves it

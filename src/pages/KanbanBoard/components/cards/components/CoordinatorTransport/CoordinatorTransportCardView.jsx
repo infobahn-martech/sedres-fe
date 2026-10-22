@@ -252,6 +252,9 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
 
   const [transportForm, setTransportForm] = useState(EMPTY_TRANSPORT_FORM);
   const [isDraggingDocuments, setIsDraggingDocuments] = useState(false);
+  // Set once a save is blocked by a missing pickup date/time, so the field is
+  // only highlighted after the user has tried to submit.
+  const [pickupSubmitAttempted, setPickupSubmitAttempted] = useState(false);
 
   const updateTransportField = useCallback((field, value) => {
     setTransportForm((previous) => ({
@@ -409,9 +412,11 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
       return;
     }
     if (!transportForm.pickupDate || !transportForm.pickupTime) {
+      setPickupSubmitAttempted(true);
       notify("Pickup date and time are required.", "error", "top-center");
       return;
     }
+    setPickupSubmitAttempted(false);
     if (transportForm.providerType === "inhouse") {
       if (!transportForm.vehicleTypeId) {
         notify("Vehicle type is required.", "error", "top-center");
@@ -729,11 +734,14 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
               </div>
 
               <div className="coordinator-transport-form-section coordinator-transport-form-section--route">
-                <FormGroup icon="calendar" label="Pickup Date Time" accent={TRANSPORT_ACCENT}>
+                <FormGroup icon="calendar" label="Pickup Date Time*" accent={TRANSPORT_ACCENT}>
                   <FormField>
                     <DateTimePickerField
                       dateValue={transportForm.pickupDate}
                       timeValue={transportForm.pickupTime}
+                      hasError={
+                        pickupSubmitAttempted && (!transportForm.pickupDate || !transportForm.pickupTime)
+                      }
                       onDateChange={(e) => updateTransportField("pickupDate", e.target.value)}
                       onTimeChange={(e) => updateTransportField("pickupTime", e.target.value)}
                     />

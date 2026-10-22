@@ -400,6 +400,17 @@
   box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
 }
 
+/* Required pickup date/time left empty on save. The shared picker styles hide
+   MUI's own error outline, so the red state is drawn on the input root here. */
+.coordinator-transport-form-card .cf-datetime-picker.is-invalid .cf-datetime-input-field {
+  .MuiPickersInputBase-root,
+  .MuiOutlinedInput-root,
+  .MuiInputBase-root {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+  }
+}
+
 /* Balanced two-up field rows (Vehicle/Driver, From/To) */
 .coordinator-transport-form-section .husb-group__row {
   display: grid;
