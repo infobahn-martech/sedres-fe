@@ -732,10 +732,10 @@
   padding: 0 16px;
   background: #f7f9fc;
   color: #64748b;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
   text-align: left;
   white-space: nowrap;
   border-bottom: 1px solid #e5eaf1;
@@ -811,31 +811,67 @@
   color: #1f2937;
 }
 
-/* Route: origin/destination chips joined by an accent arrow */
-.coordinator-transport-table-card .husb-route {
+/* Route: stacked origin → destination timeline. Same green/red markers as the
+   From / To labels in the form, joined by a dashed connector. */
+.coordinator-transport-route {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   min-width: 0;
-  max-width: 100%;
-  gap: 6px;
+  padding-left: 16px;
+
+  /* connector between the two markers */
+  &::before {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: 9px;
+    bottom: 9px;
+    border-left: 1.5px dashed #c9d2de;
+  }
 }
 
-.coordinator-transport-table-card .husb-route__point {
+.coordinator-transport-route__stop {
+  position: relative;
   min-width: 0;
-  flex-shrink: 1;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 3px 9px;
-  border-radius: 6px;
-  background: #f3f5f9;
-  border: 1px solid #e8ecf2;
-  font-size: 12px;
-  font-weight: 600;
-  color: #334155;
+  white-space: nowrap;
+  font-size: 12.5px;
+  line-height: 1.2;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: -16px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    transform: translateY(-50%);
+    box-sizing: border-box;
+  }
 }
 
-.coordinator-transport-table-card .husb-route__arrow {
-  flex-shrink: 0;
-  color: var(--accent, #0d9488);
-  font-weight: 700;
+.coordinator-transport-route__stop--from {
+  font-weight: 600;
+  color: #1f2937;
+
+  &::before {
+    background: #ffffff;
+    border: 2px solid var(--accent, #0d9488);
+  }
+}
+
+.coordinator-transport-route__stop--to {
+  font-weight: 500;
+  color: #475569;
+
+  &::before {
+    background: #e11d48;
+    box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.15);
+  }
 }
 
 /* Requested: date on top, time muted underneath */
@@ -869,12 +905,12 @@
 
 .coordinator-transport-table-card th:nth-child(3),
 .coordinator-transport-table-card td:nth-child(3) {
-  width: 16%;
+  width: 18%;
 }
 
 .coordinator-transport-table-card th:nth-child(4),
 .coordinator-transport-table-card td:nth-child(4) {
-  width: 18%;
+  width: 16%;
 }
 
 .coordinator-transport-table-card th:nth-child(5),
@@ -1161,9 +1197,19 @@
     background: var(--bg-row-hover);
   }
 
-  .coordinator-transport-table-card .husb-route__point {
-    background: var(--bg-inset);
-    border-color: var(--border);
+  .coordinator-transport-route::before {
+    border-color: var(--border-strong);
+  }
+
+  .coordinator-transport-route__stop--from {
+    color: var(--text-heading);
+
+    &::before {
+      background: var(--bg-card);
+    }
+  }
+
+  .coordinator-transport-route__stop--to {
     color: var(--text-control);
   }
 

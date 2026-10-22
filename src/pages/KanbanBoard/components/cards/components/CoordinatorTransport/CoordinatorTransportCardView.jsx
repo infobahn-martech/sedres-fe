@@ -187,24 +187,43 @@ const renderStatusBadge = (status) => {
   );
 };
 
+// Stacked origin → destination timeline: two lines fit the row height and long
+// location names get the full column width instead of sharing one line.
+const renderRouteCell = (from, to) => {
+  const fromText = String(from ?? "").trim();
+  const toText = String(to ?? "").trim();
+  if (!fromText && !toText) {
+    return <span className="coordinator-transport-table__empty-cell">{EMPTY_DISPLAY}</span>;
+  }
+  return (
+    <span className="coordinator-transport-route">
+      <span className="coordinator-transport-route__stop coordinator-transport-route__stop--from" title={fromText}>
+        {fromText || EMPTY_DISPLAY}
+      </span>
+      <span className="coordinator-transport-route__stop coordinator-transport-route__stop--to" title={toText}>
+        {toText || EMPTY_DISPLAY}
+      </span>
+    </span>
+  );
+};
+
 const COORDINATOR_TRANSPORT_REQUEST_COLUMNS = [
-  { key: "crew_name", header: "Crew", render: (r) => renderCrewCell(r?.crew_name) },
+  { key: "crew_name", header: "Crew Name", render: (r) => renderCrewCell(r?.crew_name) },
   {
     key: "route",
     header: "Route",
-    type: "route",
-    fromAccessor: (r) => r?.from_location_det || r?.from_location,
-    toAccessor: (r) => r?.to_location_det || r?.to_location,
-  },
-  {
-    key: "status",
-    header: "Status",
-    render: (r) => renderStatusBadge(r?.status),
+    render: (r) =>
+      renderRouteCell(r?.from_location_det || r?.from_location, r?.to_location_det || r?.to_location),
   },
   {
     key: "requested",
     header: "Requested",
     render: (r) => renderPickupDateTime(r?.pickup_datetime),
+  },
+  {
+    key: "status",
+    header: "Status",
+    render: (r) => renderStatusBadge(r?.status),
   },
   {
     key: "document",
