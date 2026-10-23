@@ -94,7 +94,8 @@ export default function BatchGroup({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSeReviewBatch, batchId, loadSeReview]);
 
-  /* A batch of one card has nothing to choose between: its card counts as ticked. */
+  /* A batch of one card has nothing to choose between: its card counts as ticked and shows no checkbox. */
+  const isSingleCardBatch = !isUngrouped && batch.cards.length === 1;
   const isSingleCardSeBatch = isSendSeBatch && batch.cards.length === 1;
   const singleReviewCardId = isSeReviewBatch && batch.cards.length === 1 ? batch.cards[0].id : null;
 
@@ -113,18 +114,15 @@ export default function BatchGroup({
       if (!isSeUploadDone) return isSeTicked;
       return Boolean(seApprovedByCardId[String(card.id)]) && isSeTicked;
     }
-    /* A lone card in a "Submit by Email" batch shows ticked, as it always counts for the batch action. */
-    if (isSubmitByEmailBatch && batch.cards.length === 1) return true;
+    /* A lone card in a batch always counts as ticked for the batch actions. */
+    if (isSingleCardBatch) return true;
     return selectedActionCardIds.includes(card.id);
   };
 
-  /* A batch of one card always counts as ticked for the batch actions, but still shows its checkbox. */
-  const isSingleCardBatch = !isUngrouped && batch.cards.length === 1;
-
   const getToggleSelectForAction = () => {
     if (isSubmittedInvoicesColumn || hideCardSelect) return undefined;
-    /* A lone card in a "Submit by Email" batch has nothing to choose, so it carries no checkbox. */
-    if (isSubmitByEmailBatch && batch.cards.length === 1) return undefined;
+    /* A lone card in a batch has nothing to choose, so it carries no checkbox. */
+    if (isSingleCardBatch) return undefined;
     if (isSendSeBatch) return toggleSeCardTick;
     if (isSeReviewBatch) return (card) => toggleSeReviewCard(card.id, { isSeUploadDone });
     return onToggleCardSelect;

@@ -51,7 +51,7 @@ const uploadSoApprovalProof = (formData) =>
   });
 /** @param {{ call_id: string|number, decision: 1|0 }} payload - decision: 1 = approved, 0 = rejected */
 const recordClientDecision = (payload) => Gateway.post('/da/da_record_client_decision', payload);
-/** @returns {Promise<{ data: { status: string, data?: { button_state: 'send'|'awaiting_approval'|'approved', last_email_sent_date: string|null, last_decision: string|null, last_decision_date: string|null, approval_proof_uploaded?: boolean, approved_by?: string|null, approved_date?: string|null }, message?: string } }>}
+/** @returns {Promise<{ data: { status: string, data?: { button_state: 'send'|'awaiting_approval'|'approved', last_email_sent_date: string|null, last_decision: string|null, last_decision_date: string|null, approval_proof_uploaded?: boolean, approved_by?: string|null, approved_date?: string|null, srt_flow?: boolean }, message?: string } }>}
  * Authoritative Sales Order operator/supervisor workflow button state — replaces the old
  * local justApproved/justRejected/isSoApprovalEmailPendingDecision heuristics in
  * SalesOrderList.jsx. `status: "error"` (e.g. "Call not found") on failure. */
@@ -299,6 +299,20 @@ const sendInvoiceDispatch = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
+const getFinalInvoiceEmailDraft = (callId, cardId) =>
+  Gateway.get('/da/final_invoice_email_draft', { params: { call_id: callId, card_id: cardId } });
+
+/** @param {FormData} formData - call_id, card_id, stage_document_id, to, cc, subject, body, attachments[]?,
+ *   multipart/form-data.
+ * @returns {Promise<{ data: { status: 'success', data: { moved: { call_id: number, card_id: number,
+ *   column_id: number, column_name: string }, dispatch_proof: { stage_document_id: number, name: string,
+ *   url: string } } } }>}
+ * Sends the final invoice email; the card moves to "Invoice dispatched". */
+const sendFinalInvoiceEmail = (formData) =>
+  Gateway.post('/da/send_final_invoice_email', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
 /** @param {number[]} callIds
  * @param {number[]} cardIds
  * @returns {Promise<{ data: { status: 'success', data: { cards: { call_id: number, card_id: number }[], to: string,
@@ -414,6 +428,8 @@ export default {
   saveServiceSheets,
   getInvoiceDispatchDraft,
   sendInvoiceDispatch,
+  getFinalInvoiceEmailDraft,
+  sendFinalInvoiceEmail,
   getSccApprovalEmailDraft,
   sendSccApprovalEmail,
   getInvoiceSubmissionDraft,

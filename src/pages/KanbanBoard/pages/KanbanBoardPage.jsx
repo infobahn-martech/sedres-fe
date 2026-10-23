@@ -39,7 +39,7 @@ import useAuthReducer from "../../../store/AuthReducer";
 import workflowService from "../../../services/workflowService";
 import daService from "../../../services/daService";
 import { notify } from "../../../components/Toaster";
-import { downloadFile, downloadRowsXLSX } from "../../../shared/utils/utils";
+import { downloadFile } from "../../../shared/utils/utils";
 import { compressPdfFiles } from "../../../shared/utils/compressPdf";
 import { useThemeStore } from "../../../shared/store/themeStore";
 import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
@@ -88,9 +88,19 @@ const lntDispatchProofUploadFields = [
     multiple: true,
   },
 ];
-/* BGP "Submit by Email": the hard copies sheet downloaded after the invoice submission email is sent. */
-const HARD_COPIES_SHEET_HEADINGS = ["Sales Order No", "Invoice No", "Vessel", "Service", "Amount", "CRPO No"];
-const HARD_COPIES_SHEET_FILE_NAME = "Hard_Copies_Sheet.xlsx";
+/* Saves a remote file under its own name. The file host is another origin, so the link opens in a new
+   tab (closed by the browser when the file is a download) and the board page is not navigated away. */
+const downloadDocument = ({ url, name }) => {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name || decodeURIComponent(url.split("/").pop());
+  link.target = "_blank";
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 /* McDermott "Submitted to DA" SRF upload, from the workflow header: one SRF document for all the
    ticked cards. */
 const SRF_FIELD_NAME = "srf";
@@ -1173,14 +1183,19 @@ export default function KanbanBoardPage() {
   const [invoiceDispatchDraft, setInvoiceDispatchDraft] = useState(null);
   const [isSendingInvoiceDispatch, setIsSendingInvoiceDispatch] = useState(false);
 
-  const handleColumnSendInvoice = useCallback(async (card) => {
+  /* Subsea 7 sends the final invoice through its own draft and send routes. */
+  const [isFinalInvoiceDispatch, setIsFinalInvoiceDispatch] = useState(false);
+
+  const handleColumnSendInvoice = useCallback(async (card, { isFinalInvoice = false } = {}) => {
     if (!card?.callId) {
       notify("The selected card has no call to send the invoice for", "error");
       return;
     }
     let data;
     try {
-      ({ data } = await daService.getInvoiceDispatchDraft(card.callId));
+      ({ data } = isFinalInvoice
+        ? await daService.getFinalInvoiceEmailDraft(card.callId, card.id)
+        : await daService.getInvoiceDispatchDraft(card.callId));
     } catch (error) {
       data = error?.response?.data;
     }
@@ -1189,6 +1204,7 @@ export default function KanbanBoardPage() {
       return;
     }
     setInvoiceDispatchDraft(data.data);
+    setIsFinalInvoiceDispatch(isFinalInvoice);
     setSelectedInvoiceDispatchCard(card);
     setShowInvoiceDispatchEmailModal(true);
   }, []);
@@ -1225,7 +1241,9 @@ export default function KanbanBoardPage() {
       try {
         let data;
         try {
-          ({ data } = await daService.sendInvoiceDispatch(formData));
+          ({ data } = await (isFinalInvoiceDispatch
+            ? daService.sendFinalInvoiceEmail(formData)
+            : daService.sendInvoiceDispatch(formData)));
         } catch (error) {
           data = error?.response?.data;
         }
@@ -1243,6 +1261,7 @@ export default function KanbanBoardPage() {
     },
     [
       invoiceDispatchDraft,
+      isFinalInvoiceDispatch,
       selectedInvoiceDispatchCard,
       removeCardSelectionId,
       handleCloseInvoiceDispatchEmail,
@@ -1423,21 +1442,11 @@ export default function KanbanBoardPage() {
           return;
         }
         notify(data.message || "Invoice submission email sent successfully", "success");
-        /* The hard copies sheet lists the invoices of the cards just sent, built from the draft. */
-        const sentCardIds = new Set(draftCards.map((card) => String(card.card_id)));
-        const hardCopyRows = (invoiceSubmissionDraft?.invoices || [])
-          .filter((invoice) => sentCardIds.has(String(invoice.card_id)))
-          .map((invoice) => [
-            invoice.sales_order_no,
-            invoice.invoice_no,
-            invoice.vessel,
-            invoice.service,
-            invoice.amount,
-            invoice.crpo_no,
-          ]);
-        if (hardCopyRows.length) {
-          downloadRowsXLSX(HARD_COPIES_SHEET_HEADINGS, hardCopyRows, HARD_COPIES_SHEET_FILE_NAME);
-        }
+        /* The backend builds the hard copies sheet and the dispatch document; download both, then the
+           sent cards are refreshed to their new column. */
+        [data.data?.hard_copies_sheet, data.data?.dispatch_document].forEach((document) => {
+          if (document?.url) downloadDocument(document);
+        });
         selectedInvoiceSubmissionCards.forEach((card) => removeCardSelectionId(card.id));
         handleCloseInvoiceSubmissionEmail();
         refetchBoard?.();
