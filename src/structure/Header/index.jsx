@@ -24,15 +24,8 @@ import {
   FiTag,
   FiList,
   FiFileText,
-  FiAnchor,
-  FiHash,
-  FiBookOpen,
-  FiCloud,
-  FiCalendar,
-  FiTool,
   FiX,
 } from 'react-icons/fi';
-import { Modal } from 'react-bootstrap';
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
 
@@ -53,10 +46,7 @@ import TypesModal from '../SideNav/components/TypesModal';
 const CallTypeBuilderModal = lazy(() => import('../../pages/CallType/CallTypeBuilderModal'));
 const CustomTemplateBuilderModal = lazy(() => import('../../pages/CustomTemplate/CustomTemplateBuilderModal'));
 const CustomTemplateListModal = lazy(() => import('../../pages/CustomTemplate/CustomTemplateListModal'));
-const CalculatorModal = lazy(() => import('./CalculatorModal'));
-const DictionaryModal = lazy(() => import('./DictionaryModal'));
-const WeatherModal = lazy(() => import('./WeatherModal'));
-const CalendarModal = lazy(() => import('./CalendarModal'));
+import ToolsMenu, { ToolModals } from './ToolsMenu';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import { useThemeStore } from '../../shared/store/themeStore';
 import useCardModalStore from '../../shared/store/cardModalStore';
@@ -64,9 +54,6 @@ import NavTabButton from '../../components/NavTabButton';
 import { isRestrictedBoardUser, isPortOperatorUser } from '../../shared/helpers/restrictedBoardUser';
 import { isVendorRole, getRoleId } from '../../shared/helpers/vendorDashboardRoles';
 import { hasMasterModuleAccess } from '../../shared/helpers/roleMasterMenuAccess';
-
-const MARINE_TRAFFIC_EMBED_URL =
-  'https://www.marinetraffic.com/en/ais/embed/zoom:4/centery:25.0/centerx:-12.0/maptype:4/shownames:false/mmsi:0/shipid:0/fleet:/fleet_id:/vtypes:/showmenu:true/remember:false';
 
 function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePortal = null }) {
   const { pathname } = useLocation();
@@ -82,7 +69,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [imageError, setImageError] = useState(false);
   const [showSettingsSubmenu, setShowSettingsSubmenu] = useState(false);
   const [showCardManagementSubmenu, setShowCardManagementSubmenu] = useState(false);
-  const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [showBusinessRulesModal, setShowBusinessRulesModal] = useState(false);
   const [showBlockersModal, setShowBlockersModal] = useState(false);
   const [showStickersModal, setShowStickersModal] = useState(false);
@@ -91,11 +77,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [showCallTypeBuilderModal, setShowCallTypeBuilderModal] = useState(false);
   const [showCustomTemplateModal, setShowCustomTemplateModal] = useState(false);
   const [showTemplatesListModal, setShowTemplatesListModal] = useState(false);
-  const [showVesselTrackingModal, setShowVesselTrackingModal] = useState(false);
-  const [showCalculatorModal, setShowCalculatorModal] = useState(false);
-  const [showDictionaryModal, setShowDictionaryModal] = useState(false);
-  const [showWeatherModal, setShowWeatherModal] = useState(false);
-  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [activeTool, setActiveTool] = useState(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const isCardModalOpen = useCardModalStore((state) => state.isCardModalOpen);
   const { layoutView } = useLayoutView();
@@ -104,7 +86,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [notificationCount] = useState(3); // Default count, can be updated with real data
   const dropdownRef = useRef(null);
   const settingsDropdownRef = useRef(null);
-  const toolsDropdownRef = useRef(null);
   const quickActionsRef = useRef(null);
   const doLogout = useAuthReducer((state) => state.doLogout);
   const profileData = useAuthReducer((state) => state.profileData);
@@ -131,6 +112,10 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     !activePortal &&
     !restrictedBoardUser &&
     (isPortManagerRole || isPortSupervisorRole || isDARole);
+  // Kanban board routes show Tools in the kanban sidebar instead (mirrors SideNav's board-route check).
+  // The card modal covers that sidebar, so Tools stays in the quick actions panel while it's open.
+  const isKanbanBoardRoute = pathname.startsWith('/kanban-board/') || pathname === '/compact';
+  const showHeaderTools = Boolean(activePortal) || !isKanbanBoardRoute || isCardModalOpen;
 
   const cardManagementSubmenu = [
     { label: 'Blockers', modal: 'blockers', icon: <FiAlertOctagon /> },
@@ -140,14 +125,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     // { label: 'Templates', modal: 'templates' },
     { label: 'Custom Templates', modal: 'templates list', icon: <FiFileText /> },
     // { label: 'Custom Templates', modal: 'custom templates' },
-  ];
-
-  const toolItems = [
-    { label: 'Calculator', icon: <FiHash />, open: () => setShowCalculatorModal(true) },
-    { label: 'Dictionary', icon: <FiBookOpen />, open: () => setShowDictionaryModal(true) },
-    { label: 'Weather', icon: <FiCloud />, open: () => setShowWeatherModal(true) },
-    { label: 'Calendar', icon: <FiCalendar />, open: () => setShowCalendarModal(true) },
-    { label: 'Vessel Tracking', icon: <FiAnchor />, open: () => setShowVesselTrackingModal(true) },
   ];
 
   const getLoggedInUser = () => {
@@ -255,23 +232,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     };
   }, [showSettingsSubmenu]);
 
-  // Close tools dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (toolsDropdownRef.current && !toolsDropdownRef.current.contains(event.target)) {
-        setShowToolsMenu(false);
-      }
-    };
-
-    if (showToolsMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showToolsMenu]);
-
   // Quick actions panel (shown while a card modal covers the navbar): close on outside click / Esc,
   // and reset whenever the card modal closes so it starts collapsed next time.
   useEffect(() => {
@@ -336,11 +296,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     if (item.modal === 'custom templates') setShowCustomTemplateModal(true);
   };
 
-  const handleToolClick = (open) => {
-    setShowToolsMenu(false);
-    open();
-  };
-
   const handleUserCircleClick = () => {
     setShowUserDropdown(!showUserDropdown);
   };
@@ -387,37 +342,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   // RIGHT — User + Icons (GRO / Custom Clearance / vendor-dashboard roles skip module shortcuts; still show help, alerts, profile)
   const rightSection = (
     <div className="right-section">
-      {/* Reuses the settings dropdown styles so both menus look identical */}
-      <div className="settings-btn-wrapper" ref={toolsDropdownRef}>
-        <Tooltip id="tools" place="bottom" content="Tools" />
-        <button
-          type="button"
-          className={`icon-btn ${showToolsMenu ? 'active' : ''}`}
-          aria-label="Tools"
-          aria-expanded={showToolsMenu}
-          onClick={() => setShowToolsMenu((prev) => !prev)}
-          data-tooltip-id="tools"
-        >
-          <FiTool />
-        </button>
-
-        {showToolsMenu && (
-          <div className="settings-dropdown">
-            <div className="settings-dropdown-title">Tools</div>
-            {toolItems.map(({ label, icon, open }) => (
-              <button
-                type="button"
-                key={label}
-                className="settings-dropdown-item"
-                onClick={() => handleToolClick(open)}
-              >
-                <span className="settings-item-icon">{icon}</span>
-                <span className="settings-item-label">{label}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      {showHeaderTools && <ToolsMenu variant="header" onSelect={setActiveTool} />}
 
       {(roleMasterModuleUser || (!restrictedBoardUser && !vendorDashboardUser)) && (
         <>
@@ -751,27 +676,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
         />
       )}
 
-      {/* Vessel Tracking Modal — MarineTraffic blocks iframing its main site, so use its embed map */}
-      <Modal
-        show={showVesselTrackingModal}
-        onHide={() => setShowVesselTrackingModal(false)}
-        fullscreen
-        className="vessel-tracking-modal"
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Vessel Tracking</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="p-0">
-          {showVesselTrackingModal && (
-            <iframe
-              title="MarineTraffic Live Map"
-              src={MARINE_TRAFFIC_EMBED_URL}
-              style={{ width: '100%', height: '100%', border: 0, display: 'block' }}
-            />
-          )}
-        </Modal.Body>
-      </Modal>
-
       {/* Documents Modal */}
       {!!showDocumentsModal && <DocumentsModal
         show={showDocumentsModal}
@@ -823,27 +727,8 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
         </Suspense>
       )}
 
-      {/* Settings: Tools Modals */}
-      {showCalculatorModal && (
-        <Suspense fallback={null}>
-          <CalculatorModal show={showCalculatorModal} onClose={() => setShowCalculatorModal(false)} />
-        </Suspense>
-      )}
-      {showDictionaryModal && (
-        <Suspense fallback={null}>
-          <DictionaryModal show={showDictionaryModal} onClose={() => setShowDictionaryModal(false)} />
-        </Suspense>
-      )}
-      {showWeatherModal && (
-        <Suspense fallback={null}>
-          <WeatherModal show={showWeatherModal} onClose={() => setShowWeatherModal(false)} />
-        </Suspense>
-      )}
-      {showCalendarModal && (
-        <Suspense fallback={null}>
-          <CalendarModal show={showCalendarModal} onClose={() => setShowCalendarModal(false)} />
-        </Suspense>
-      )}
+      {/* Tools Modals */}
+      <ToolModals activeTool={activeTool} onClose={() => setActiveTool(null)} />
 
     </>
   );

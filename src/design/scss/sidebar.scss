@@ -607,6 +607,23 @@
     }
 }
 
+.kanban-sidebar-submenu-item--with-icon {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+.kanban-sidebar-submenu-icon {
+    display: inline-flex;
+    color: var(--color-primary-accent);
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
 .kanban-sidebar-submenu-item--truncate {
     max-width: 220px;
     overflow: hidden;

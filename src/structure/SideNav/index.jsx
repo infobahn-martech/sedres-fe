@@ -11,6 +11,7 @@ import WorkspacesSideNavPanel from './components/WorkspacesSideNavPanel';
 import OutlookModal from './components/OutlookModal';
 import MyAccountsModal from '../Header/MyAccountsModal';
 import OnStationModal from '../Header/OnStationModal';
+import ToolsMenu, { ToolModals } from '../Header/ToolsMenu';
 import '../../design/scss/common.scss';
 import '../../design/scss/sidebar.scss';
 
@@ -196,6 +197,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   const [showSelectWorkflowModal, setShowSelectWorkflowModal] = useState(false);
   const [showSelectWorkflowSubmenu, setShowSelectWorkflowSubmenu] = useState(false);
   const [showSubTaskModal, setShowSubTaskModal] = useState(false);
+  const [activeTool, setActiveTool] = useState(null);
   const [addModalStep, setAddModalStep] = useState('workflow');
   const [selectedWorkflowId, setSelectedWorkflowId] = useState(null);
   const [selectedSwimlaneId, setSelectedSwimlaneId] = useState(null);
@@ -913,6 +915,8 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
             );
           })}
 
+          <ToolsMenu variant="sidebar" onSelect={setActiveTool} />
+
           <Tooltip
             id="sidebar-tooltip"
             place="right"
@@ -980,6 +984,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
           show={showSubTaskModal}
           onClose={() => setShowSubTaskModal(false)}
         />
+        <ToolModals activeTool={activeTool} onClose={() => setActiveTool(null)} />
       </>
     );
   }
