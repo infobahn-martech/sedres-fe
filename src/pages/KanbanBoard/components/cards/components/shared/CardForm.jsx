@@ -828,8 +828,10 @@ const TopBar = ({
     e.preventDefault();
     e.stopPropagation();
     setIsColorPickerOpen(false);
-    setOpenPicker((current) => (current === "template" ? null : "template"));
-    if (allTemplates === null && !isLoadingAllTemplates) {
+    const isOpening = openPicker !== "template";
+    setOpenPicker(isOpening ? "template" : null);
+    // Refetch on every open so newly created/edited templates show up immediately.
+    if (isOpening && !isLoadingAllTemplates) {
       getAllTemplates();
     }
   };
