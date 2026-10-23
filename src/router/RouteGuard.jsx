@@ -9,7 +9,7 @@ import {
   isRestrictedUserAllowedPath,
   RESTRICTED_USER_FALLBACK_PATH,
 } from '../shared/helpers/restrictedBoardUser';
-import { isMasterMenuPathAllowed } from '../shared/helpers/roleMasterMenuAccess';
+import { isMasterMenuPathAllowed, hasMasterModuleAccess } from '../shared/helpers/roleMasterMenuAccess';
 import {
   isVendorRole,
   isVendorRoleAllowedPath,
@@ -122,6 +122,13 @@ function RouteGuard({ children, moduleKey, submoduleKey, actionKey, permissionOn
 
   const vendorRoleId = getRoleId();
   if (isVendorRole(vendorRoleId)) {
+    // Vendor roles moved onto the Master module use only their configured master menus;
+    // the old portal URLs redirect to the Master dashboard.
+    if (hasMasterModuleAccess(userProfile)) {
+      return isMasterMenuPathAllowed(userProfile, currentPath)
+        ? children
+        : <Navigate to={ROUTE_PATHS.DASHBOARD} replace />;
+    }
     if (!isVendorRoleAllowedPath(vendorRoleId, currentPath)) {
       return <Navigate to={getVendorDashboardByRole(vendorRoleId).dashboardPath} replace />;
     }

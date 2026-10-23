@@ -97,6 +97,10 @@ export const routePermissions = {
   // "unlisted route = allow" fallback let any logged-in user reach the Approve
   // action by navigating to the URL directly.
   "/approval/ceo": [ROLE_IDS.CEO],
+  // Vendor-role master pages — granted via roleMasterMenuAccess, not this table.
+  "/trip-management": [],
+  "/order-management": [],
+  "/invoice-management": [],
 };
 
 // Helper function to check if a role has access to a route

@@ -18,7 +18,23 @@ export const ROLE_MASTER_MENUS = {
     'Transport Management': true,
     Settings: ['My Accounts'],
   },
+  // Inhouse Driver
+  '15': {
+    Dashboard: true,
+    'Trip Management': true,
+    Settings: ['My Accounts'],
+  },
+  // Transport Company
+  '16': {
+    Dashboard: true,
+    'Order Management': true,
+    'Invoice Management': true,
+    Settings: ['My Accounts'],
+  },
 };
+
+/** Menus that exist only for roles that list them above — hidden from every other role. */
+const ROLE_ONLY_MASTER_MENUS = new Set(['Trip Management', 'Order Management', 'Invoice Management']);
 
 /** Routes behind each master menu — keep in sync with the SideNav menu entries. */
 const MASTER_MENU_PATHS = {
@@ -29,6 +45,9 @@ const MASTER_MENU_PATHS = {
     '/driver-vehicle-mapping',
     '/transport-company',
   ],
+  'Trip Management': ['/trip-management'],
+  'Order Management': ['/order-management'],
+  'Invoice Management': ['/invoice-management'],
 };
 
 function getAllowedMenus(user) {
@@ -45,10 +64,11 @@ export function hasMasterModuleAccess(user) {
   return getAllowedMenus(user) !== null;
 }
 
-/** True when the menu should render; roles without a config see every menu. */
+/** True when the menu should render; roles without a config see every menu except role-only ones. */
 export function isMasterMenuAllowed(user, menuName) {
   const allowedMenus = getAllowedMenus(user);
-  return !allowedMenus || Boolean(allowedMenus[menuName]);
+  if (!allowedMenus) return !ROLE_ONLY_MASTER_MENUS.has(menuName);
+  return Boolean(allowedMenus[menuName]);
 }
 
 /** Submenus of `menuName` the role may see; unchanged when the role/menu isn't limited. */

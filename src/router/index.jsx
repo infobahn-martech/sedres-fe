@@ -81,6 +81,8 @@ import TransportDashboard from "../pages/TransportPortal/Dashboard";
 import TransportPortalInvoices from "../pages/TransportPortal/Invoices";
 import InhouseDriverDashboard from "../pages/InhouseDriverPortal/Dashboard";
 import InhouseDriverPortalInvoices from "../pages/InhouseDriverPortal/Invoices";
+import TripManagement from "../pages/InhouseDriverPortal/TripManagement";
+import OrderManagement from "../pages/TransportPortal/OrderManagement";
 import HotelPortalDashboard from "../pages/HotelPortal/Dashboard";
 import HotelPortalInvoices from "../pages/HotelPortal/Invoices";
 import TransportCompany from "../pages/TransportCompany";
@@ -389,6 +391,10 @@ const router = createBrowserRouter(
                 // Inhouse Driver Portal
                 { path: "/inhouse-driver/dashboard", element: <RouteGuard><InhouseDriverDashboard /></RouteGuard> },
                 { path: "/inhouse-driver/invoices", element: <RouteGuard><InhouseDriverPortalInvoices /></RouteGuard> },
+                { path: "/trip-management", element: <RouteGuard><TripManagement /></RouteGuard> },
+                { path: "/order-management", element: <RouteGuard><OrderManagement /></RouteGuard> },
+                // Same page as /transport-portal/invoices, mounted outside that prefix so the Master sidebar stays.
+                { path: "/invoice-management", element: <RouteGuard><TransportPortalInvoices /></RouteGuard> },
                 // Hotel Portal
                 { path: "/hotel-portal/dashboard", element: <RouteGuard><HotelPortalDashboard /></RouteGuard> },
                 { path: "/hotel-portal/invoices", element: <RouteGuard><HotelPortalInvoices /></RouteGuard> },

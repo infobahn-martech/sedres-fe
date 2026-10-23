@@ -25,6 +25,7 @@ import materialIcon from '../../assets/images/icon-material.svg';
 import billingIcon from '../../assets/images/icon-billing.svg';
 import usersIcon from '../../assets/images/icon-users.svg';
 import configIcon from '../../assets/images/icon-config.svg';
+import crewIcon from '../../assets/images/icon-crew.svg';
 
 import { useBreakpoint } from '../../shared/hooks/useWindowSize';
 import {
@@ -477,6 +478,27 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         { menu: 'Transport Company', to: '/transport-company', hasPermission: true },
 
       ],
+    },
+    {
+      menu: 'Trip Management',
+      isDefaultMenu: true,
+      to: '/trip-management',
+      icon: crewIcon,
+      hasPermission: true,
+    },
+    {
+      menu: 'Order Management',
+      isDefaultMenu: true,
+      to: '/order-management',
+      icon: billingIcon,
+      hasPermission: true,
+    },
+    {
+      menu: 'Invoice Management',
+      isDefaultMenu: true,
+      to: '/invoice-management',
+      icon: materialIcon,
+      hasPermission: true,
     },
     {
       menu: 'Third Party Service',

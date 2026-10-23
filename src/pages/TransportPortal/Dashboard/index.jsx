@@ -11,32 +11,14 @@ import {
 import PortalDashboard from '../../../components/PortalDashboard';
 import UploadInvoiceModal from '../../../components/UploadInvoiceModal';
 import useVendorReducer from '../../../store/VendorReducer';
+import OrderCrewTable from '../OrderCrewTable';
+import { ORDER_TABLE_COLUMNS, toOrderRow } from '../orderRows';
 import '../../../design/scss/prospect-modal.scss';
 import '../../../design/scss/modal-designs.scss';
 import '../../../design/scss/form-designs.scss';
 
-const PICKUP_STATUS_CLASS_MAP = {
-    'pending': 'status-pending',
-    'picked up': 'status-approved',
-    'dropped off': 'status-completed',
-    'completed': 'status-completed',
-    'cancelled': 'status-rejected',
-};
-
-const getPickupStatusClass = (status) =>
-    PICKUP_STATUS_CLASS_MAP[(status || '').toLowerCase()] || '';
-
-const formatDate = (value) => {
-    if (!value) return '—';
-    const parsed = dayjs(value);
-    return parsed.isValid() ? parsed.format('DD MMM YYYY') : value;
-};
-
-const toDateTimeLocal = (value) => {
-    if (!value) return '';
-    const parsed = dayjs(value);
-    return parsed.isValid() ? parsed.format('YYYY-MM-DDTHH:mm') : '';
-};
+// The full list lives in Order Management.
+const RECENT_ORDERS_LIMIT = 10;
 
 function TransportDashboard() {
     const {
@@ -101,18 +83,6 @@ function TransportDashboard() {
         { label: 'Manage Vehicles', icon: <FiTruck />, onClick: () => {} },
     ];
 
-    const tableColumns = [
-        { label: 'PO No', key: 'poNo' },
-        { label: 'WO No', key: 'woNo' },
-        { label: 'Subject', key: 'subject' },
-        { label: 'Company', key: 'company' },
-        { label: 'Order Date', key: 'orderDate' },
-        { label: 'Purchaser', key: 'purchaser' },
-        { label: 'Amount', key: 'amount' },
-        { label: 'Currency', key: 'currency' },
-        { label: 'Status', key: 'status', isStatus: true },
-    ];
-
     const tableHeaderAction = (
         <div className="vendor-table-header-actions">
             <input
@@ -134,19 +104,7 @@ function TransportDashboard() {
     );
 
     const tableRows = useMemo(
-        () =>
-            (ordersData || []).map((order) => ({
-                poNo: order.po_number,
-                woNo: order.wo_number,
-                subject: `${order.vehicle_type || 'Transport'} - Crew transfer`,
-                company: order.company,
-                orderDate: formatDate(order.order_date),
-                purchaser: order.requested_by,
-                amount: order.amount,
-                currency: order.currency,
-                status: order.status,
-                crew: order.crew || [],
-            })),
+        () => (ordersData || []).slice(0, RECENT_ORDERS_LIMIT).map(toOrderRow),
         [ordersData]
     );
 
@@ -161,70 +119,13 @@ function TransportDashboard() {
                 quickActions={quickActions}
                 tableTitle="Recent Orders"
                 tableHeaderAction={tableHeaderAction}
-                tableColumns={tableColumns}
+                tableColumns={ORDER_TABLE_COLUMNS}
                 tableRows={tableRows}
                 isTableLoading={isDashboardLoading || isOrdersLoading}
                 emptyMessage="No orders found"
                 expandable
                 rowKey={(row) => row.poNo}
-                renderExpandedRow={(row) => (
-                    <div className="vendor-table-scroll">
-                        <table className="vendor-table" style={{ marginBottom: 0, minWidth: 960 }}>
-                            <thead>
-                                <tr>
-                                    <th>Crew Name</th>
-                                    <th>Rank</th>
-                                    <th>Nationality</th>
-                                    <th>Passport No</th>
-                                    <th>Pickup Status</th>
-                                    <th>CheckIn</th>
-                                    <th>CheckOut</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {row.crew.length ? (
-                                    row.crew.map((crew, i) => (
-                                        <tr key={`${row.poNo}-crew-${i}`}>
-                                            <td>{crew.name}</td>
-                                            <td>{crew.rank ?? '—'}</td>
-                                            <td>{crew.nationality}</td>
-                                            <td>{crew.passport}</td>
-                                            <td>
-                                                <span className={`vendor-status-badge ${getPickupStatusClass(crew.pickup_status)}`}>
-                                                    {crew.pickup_status ?? '—'}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <input
-                                                    type="datetime-local"
-                                                    readOnly
-                                                    tabIndex={-1}
-                                                    className="form-control form-control-sm vendor-crew-datetime-input vendor-crew-datetime-input--readonly"
-                                                    value={toDateTimeLocal(crew.pickup_datetime)}
-                                                />
-                                            </td>
-                                            <td>
-                                                <input
-                                                    type="datetime-local"
-                                                    readOnly
-                                                    tabIndex={-1}
-                                                    className="form-control form-control-sm vendor-crew-datetime-input vendor-crew-datetime-input--readonly"
-                                                    value={toDateTimeLocal(crew.drop_offdatetime)}
-                                                />
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan={7} style={{ color: '#6b7280' }}>
-                                            No crew details available
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                renderExpandedRow={(row) => <OrderCrewTable row={row} />}
             />
 
             {!!showUploadModal && (
