@@ -745,10 +745,10 @@
     }
   }
 }
-// Floating quick actions — shown while the card modal (z-index 1200) covers the
+// Floating quick tools — shown while the card modal (z-index 1200) covers the
 // navbar. Carries .sedres-header so the icon bar reuses every rule above; this
 // block resets the navbar box itself. 1250 keeps it above the card but below the
-// app's Bootstrap modals (1299/1300), so Notifications, Tools etc. open on top.
+// floating tool windows (1300), so an opened tool sits on top.
 .sedres-header.card-quick-actions {
   position: fixed;
   // Inside the card panel's right edge (panel is 98vw wide), lifted clear of its
@@ -778,15 +778,6 @@
     max-width: calc(100vw - 32px);
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
     animation: cardQuickActionsIn 0.18s ease;
-  }
-
-  // The bar sits near the bottom of the screen, so its menus open upward.
-  .settings-dropdown,
-  .user-dropdown {
-    top: auto;
-    bottom: calc(100% + 10px);
-    max-height: calc(100vh - 140px);
-    overflow-y: auto;
   }
 
   .card-quick-actions__trigger-row {

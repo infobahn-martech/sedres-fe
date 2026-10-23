@@ -22,7 +22,8 @@ const TOOL_ITEMS = [
 
 /**
  * Tools trigger + menu. `variant="header"` renders the navbar icon + dropdown;
- * `variant="sidebar"` renders a kanban sidebar icon with a flyout.
+ * `variant="sidebar"` renders a kanban sidebar icon with a flyout;
+ * `variant="inline"` renders one icon button per tool (card quick actions bar).
  * The modals live in <ToolModals>, rendered by the host outside any menu that can unmount.
  */
 function ToolsMenu({ variant = 'header', onSelect }) {
@@ -47,6 +48,28 @@ function ToolsMenu({ variant = 'header', onSelect }) {
     setShowMenu(false);
     onSelect(key);
   };
+
+  // Every tool as its own icon button — no dropdown, one click to open.
+  if (variant === 'inline') {
+    return (
+      <>
+        <Tooltip id="quick-tools" place="top" />
+        {TOOL_ITEMS.map(({ key, label, icon }) => (
+          <button
+            type="button"
+            key={key}
+            className="icon-btn"
+            aria-label={label}
+            onClick={() => onSelect(key)}
+            data-tooltip-id="quick-tools"
+            data-tooltip-content={label}
+          >
+            {icon}
+          </button>
+        ))}
+      </>
+    );
+  }
 
   if (isSidebar) {
     return (
@@ -128,7 +151,8 @@ function ToolsMenu({ variant = 'header', onSelect }) {
   );
 }
 
-export function ToolModals({ activeTool, onClose }) {
+// `dockVessel` fills the board area with the vessel map (kanban sidebar) instead of floating it.
+export function ToolModals({ activeTool, onClose, dockVessel = false }) {
   return (
     <>
       {/* Vessel Tracking — MarineTraffic blocks iframing its main site, so use its embed map */}
@@ -138,6 +162,7 @@ export function ToolModals({ activeTool, onClose }) {
         title="Vessel Tracking"
         icon={<FiAnchor />}
         className="vessel-modal"
+        docked={dockVessel}
       >
         <iframe title="MarineTraffic Live Map" src={MARINE_TRAFFIC_EMBED_URL} className="vessel-tracking-frame" />
       </ToolModal>

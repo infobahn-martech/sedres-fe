@@ -984,7 +984,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
           show={showSubTaskModal}
           onClose={() => setShowSubTaskModal(false)}
         />
-        <ToolModals activeTool={activeTool} onClose={() => setActiveTool(null)} />
+        <ToolModals activeTool={activeTool} onClose={() => setActiveTool(null)} dockVessel />
       </>
     );
   }

@@ -7,7 +7,7 @@ import {
   FiHelpCircle,
   FiBell,
   FiLayout,
-  FiGrid,
+  FiTool,
   FiMoon,
   FiSun,
   FiBarChart2,
@@ -113,9 +113,14 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     !restrictedBoardUser &&
     (isPortManagerRole || isPortSupervisorRole || isDARole);
   // Kanban board routes show Tools in the kanban sidebar instead (mirrors SideNav's board-route check).
-  // The card modal covers that sidebar, so Tools stays in the quick actions panel while it's open.
+  // While a card is open, the quick actions panel offers the tools directly.
   const isKanbanBoardRoute = pathname.startsWith('/kanban-board/') || pathname === '/compact';
-  const showHeaderTools = Boolean(activePortal) || !isKanbanBoardRoute || isCardModalOpen;
+  const showHeaderTools = Boolean(activePortal) || !isKanbanBoardRoute;
+
+  const handleQuickToolSelect = (tool) => {
+    setShowQuickActions(false);
+    setActiveTool(tool);
+  };
 
   const cardManagementSubmenu = [
     { label: 'Blockers', modal: 'blockers', icon: <FiAlertOctagon /> },
@@ -611,13 +616,17 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
       {!isCardModalOpen && rightSection}
     </div>
 
-      {/* Card modal covers the navbar — its actions move into this floating button. Keeps the
-          sedres-header class so the icon bar, dropdowns and dark theme styles apply unchanged.
+      {/* Card modal covers the navbar — this floating button offers the tools instead. Keeps the
+          sedres-header class so the icon bar and dark theme styles apply unchanged.
           The per-board sedres-header-dark skin is left off: its near-transparent icon bar is
           meant for the dark navbar and would be unreadable floating over the card. */}
       {isCardModalOpen && createPortal(
         <div ref={quickActionsRef} className="sedres-header card-quick-actions">
-          {showQuickActions && rightSection}
+          {showQuickActions && (
+            <div className="right-section">
+              <ToolsMenu variant="inline" onSelect={handleQuickToolSelect} />
+            </div>
+          )}
           <div className="card-quick-actions__trigger-row">
             {!showQuickActions && (
               <button
@@ -625,17 +634,17 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
                 className="card-quick-actions__label"
                 onClick={() => setShowQuickActions(true)}
               >
-                Need something? <strong>Quick actions</strong>
+                Need a tool? <strong>Quick tools</strong>
               </button>
             )}
             <button
               type="button"
               className={`card-quick-actions__fab ${showQuickActions ? 'is-open' : ''}`}
-              aria-label={showQuickActions ? 'Close quick actions' : 'Open quick actions'}
+              aria-label={showQuickActions ? 'Close quick tools' : 'Open quick tools'}
               aria-expanded={showQuickActions}
               onClick={() => setShowQuickActions((prev) => !prev)}
             >
-              {showQuickActions ? <FiX /> : <FiGrid />}
+              {showQuickActions ? <FiX /> : <FiTool />}
             </button>
           </div>
         </div>,

@@ -12,8 +12,9 @@ const clamp = (value, min, max) => Math.min(Math.max(value, min), Math.max(min, 
  * Floating, draggable tool window (no backdrop), so the page — including an open
  * card — stays usable behind it. Opens at the bottom-right corner (see ToolModals.scss);
  * dragging the header switches it to explicit top/left coordinates.
+ * `docked` instead fills the content area between the header and kanban sidebar (not draggable).
  */
-function ToolModal({ show, onClose, title, icon, className = '', children }) {
+function ToolModal({ show, onClose, title, icon, className = '', docked = false, children }) {
   const panelRef = useRef(null);
   const dragRef = useRef(null);
   const [position, setPosition] = useState(null);
@@ -80,24 +81,31 @@ function ToolModal({ show, onClose, title, icon, className = '', children }) {
       role="dialog"
       aria-label={title}
       tabIndex={-1}
-      className={`tool-modal ${className} ${position ? 'is-positioned' : ''}`}
+      className={`tool-modal ${className} ${docked ? 'is-docked' : ''} ${position ? 'is-positioned' : ''}`}
       style={position ? { left: position.left, top: position.top } : undefined}
       onKeyDown={handleKeyDown}
       onPointerDown={handlePanelPointerDown}
     >
-      <div
-        className="tool-modal-header"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-      >
-        <span className="tool-modal-icon">{icon}</span>
-        <h2 className="tool-modal-title">{title}</h2>
-        <button type="button" className="tool-modal-close" onClick={onClose} aria-label="Close">
+      {/* Docked windows drop the title bar so the content fills the area; a floating close button remains. */}
+      {docked ? (
+        <button type="button" className="tool-modal-dock-close" onClick={onClose} aria-label={`Close ${title}`}>
           <FiX />
         </button>
-      </div>
+      ) : (
+        <div
+          className="tool-modal-header"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
+          <span className="tool-modal-icon">{icon}</span>
+          <h2 className="tool-modal-title">{title}</h2>
+          <button type="button" className="tool-modal-close" onClick={onClose} aria-label="Close">
+            <FiX />
+          </button>
+        </div>
+      )}
       <div className="tool-modal-body">{children}</div>
     </div>,
     document.body
