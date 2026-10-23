@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { FiCheck, FiChevronDown, FiHash } from 'react-icons/fi';
+import { FiCheck, FiChevronDown, FiDelete, FiHash } from 'react-icons/fi';
 import { LuArrowUpDown, LuBeaker, LuGauge, LuRuler, LuThermometer, LuWeight } from 'react-icons/lu';
 import CopyButton from './CopyButton';
 import { formatNumber } from './calculatorEngine';
@@ -16,6 +16,19 @@ const CATEGORY_ICONS = {
 // Grouped for reading ("1,852"); copy/"use value" keep the raw number for pasting.
 const displayFormatter = new Intl.NumberFormat('en-US', { maximumSignificantDigits: 10 });
 const formatDisplay = (value) => (Number.isFinite(value) ? displayFormatter.format(value) : '');
+
+const MAX_AMOUNT_LENGTH = 15;
+
+// Amount keypad — reuses the calculator key styles; `wide` keys span three columns.
+const KEYPAD_KEYS = [
+  { key: '7' }, { key: '8' }, { key: '9' },
+  { key: 'back', label: <FiDelete />, ariaLabel: 'Backspace', variant: 'back' },
+  { key: '4' }, { key: '5' }, { key: '6' },
+  { key: 'clear', label: 'C', ariaLabel: 'Clear', variant: 'clear' },
+  { key: '1' }, { key: '2' }, { key: '3' },
+  { key: 'sign', label: '±', ariaLabel: 'Toggle sign', variant: 'muted' },
+  { key: '0', wide: true }, { key: '.' },
+];
 
 // Custom listbox instead of a native <select>, whose open list is drawn by the OS
 // and can't be styled. Focus stays on the trigger; aria-activedescendant tracks
@@ -140,6 +153,27 @@ function UnitConverter({ calculatorValue }) {
     setToId(fromId);
   };
 
+  // First keypad press replaces the default/prefilled amount instead of appending to it,
+  // matching how the input selects its value on focus.
+  const replaceOnKeyRef = useRef(true);
+
+  const handleKeypad = (key) => {
+    const replace = replaceOnKeyRef.current && (key === '.' || /\d/.test(key));
+    replaceOnKeyRef.current = false;
+    setAmount((prev) => {
+      const current = replace ? '' : prev;
+      if (key === 'clear') return '';
+      if (key === 'back') return current.slice(0, -1);
+      if (key === 'sign') return current.startsWith('-') ? current.slice(1) : `-${current}`;
+      if (current.replace('-', '').length >= MAX_AMOUNT_LENGTH) return current;
+      if (key === '.') {
+        if (current.includes('.')) return current;
+        return `${current.replace(/^(-?)$/, '$10')}.`;
+      }
+      return current === '0' ? key : `${current}${key}`;
+    });
+  };
+
   return (
     <div className={`converter converter--${categoryId}`}>
       <div className="converter-categories" role="tablist" aria-label="Unit category">
@@ -175,7 +209,10 @@ function UnitConverter({ calculatorValue }) {
             className="converter-amount"
             value={amount}
             placeholder="0"
-            onChange={(e) => setAmount(e.target.value.replace(',', '.'))}
+            onChange={(e) => {
+              replaceOnKeyRef.current = false;
+              setAmount(e.target.value.replace(',', '.'));
+            }}
             onFocus={(e) => e.target.select()}
             aria-label="Amount"
           />
@@ -207,13 +244,32 @@ function UnitConverter({ calculatorValue }) {
           <button
             type="button"
             className="converter-chip"
-            onClick={() => setAmount(formatNumber(calculatorValue))}
+            onClick={() => {
+              replaceOnKeyRef.current = true;
+              setAmount(formatNumber(calculatorValue));
+            }}
             title="Use the calculator's current value"
           >
             <FiHash aria-hidden />
             Use {formatDisplay(calculatorValue)}
           </button>
         )}
+      </div>
+
+      <div className="converter-keypad" aria-label="Amount keypad">
+        {KEYPAD_KEYS.map(({ key, label, ariaLabel, variant, wide }) => (
+          <button
+            type="button"
+            key={key}
+            className={`calculator-key ${variant ? `calculator-key--${variant}` : ''} ${
+              wide ? 'converter-keypad-wide' : ''
+            }`}
+            onClick={() => handleKeypad(key)}
+            aria-label={ariaLabel}
+          >
+            {label ?? key}
+          </button>
+        ))}
       </div>
     </div>
   );

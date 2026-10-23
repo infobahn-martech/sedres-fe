@@ -1044,6 +1044,26 @@
   font-variant-numeric: tabular-nums;
 }
 
+// Amount keypad fills the rest of the fixed-height Converter tab (rows share it equally).
+.converter-keypad {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: minmax(32px, 1fr);
+  gap: 6px;
+  min-height: 140px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-primary);
+
+  .calculator-key {
+    height: auto;
+  }
+
+  .converter-keypad-wide {
+    grid-column: span 3;
+  }
+}
+
 .converter-chip {
   display: inline-flex;
   align-items: center;
