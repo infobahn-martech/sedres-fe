@@ -9,7 +9,7 @@ import PermissionRoute from "./PermissionRoute";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../shared/constants/permissions";
 import Layout from "../structure/Layout";
 import DADeskBoard from "../pages/DADeskBoard";
-import Dashboard from "../pages/Dashboard";
+import RoleDashboard from "../pages/Dashboard/RoleDashboard";
 import Login from "../pages/Authentication";
 import ForgetPassword from "../pages/ForgetPassword";
 import ResetPassword from "../pages/ResetPassword";
@@ -141,7 +141,7 @@ const router = createBrowserRouter(
               element: <Layout />,
               children: [
                 // Dashboard - All roles
-                { path: ROUTE_PATHS.DASHBOARD, element: <RouteGuard><Dashboard /></RouteGuard> },
+                { path: ROUTE_PATHS.DASHBOARD, element: <RouteGuard><RoleDashboard /></RouteGuard> },
                 // Kanban Board - with dynamic ID support
                 { path: "/kanban-board/centralized-da-desk", element: <RouteGuard><DADeskBoard /></RouteGuard> },
                 { path: "/kanban-board/jubail-operations", element: <RouteGuard><JubailOperations /></RouteGuard> },

@@ -44,7 +44,7 @@ import useAuthReducer from '../../store/AuthReducer';
 import { useKanbanSidebarBridge } from '../../store/kanbanSidebarBridge';
 import { ROUTE_PATHS } from '../../router/paths';
 import { hasKanbanFullSidebar } from '../../shared/helpers/restrictedBoardUser';
-import { isMasterMenuAllowed } from '../../shared/helpers/roleMasterMenuAccess';
+import { isMasterMenuAllowed, filterMasterSubMenus } from '../../shared/helpers/roleMasterMenuAccess';
 import usePermissions from '../../shared/hooks/usePermissions';
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from '../../shared/constants/permissions';
 
@@ -1000,7 +1000,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
                 return (
                   <DefaultMenu
                     menu={menu}
-                    subMenus={subMenus}
+                    subMenus={activePortal ? subMenus : filterMasterSubMenus(userProfile, menu, subMenus)}
                     to={to}
                     key={menu}
                     icon={icon}

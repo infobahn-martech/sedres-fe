@@ -28,16 +28,28 @@ import {
   Building2,
 } from "lucide-react";
 import dashboardService from "../../services/dashboardService";
-import DateRangePicker from "./DateRangePicker";
-import { useThemeStore } from "../../shared/store/themeStore";
+import {
+  PORT_LABELS,
+  PORT_OPTIONS,
+  DEFAULT_PERIOD,
+  formatDate,
+  uniqueOptions,
+  matches,
+  filterByPeriod,
+  average,
+  useChartTheme,
+} from "./dashboardUtils";
+import {
+  StatusBadge,
+  FilterSelect,
+  PeriodFilter,
+  ChartTooltip,
+  ChartLegend,
+  FadeGradient,
+  EmptyRow,
+} from "./dashboardWidgets";
 import "../../design/scss/dashboard.scss";
 import "../../design/scss/pages/dashboard/dashboard-content.scss";
-
-const PORT_LABELS = {
-  jubail: "Jubail",
-  rt: "Ras Tanura",
-  dammam: "Dammam",
-};
 
 // Tabs of the port-wise vessel list. Domestic tabs are pinned to a port.
 const VESSEL_TABS = [
@@ -60,24 +72,6 @@ const STATUS_META = {
   completed: { label: "Completed", tone: "success" },
 };
 
-// Categorical series colors (fixed order, validated for CVD separation per theme).
-const SERIES_COLORS = {
-  light: ["#2a78d6", "#eb6834", "#1baf7a", "#8b5cf6"],
-  dark: ["#4c8dff", "#f2743b", "#22c08a", "#9b7bff"],
-};
-
-// Period filter for monthly charts — `months: null` keeps the full year to date.
-const PERIOD_OPTIONS = [
-  { value: "ytd", label: "Year to Date", months: null },
-  { value: "6m", label: "Last 6 Months", months: 6 },
-  { value: "3m", label: "Last 3 Months", months: 3 },
-  { value: "custom", label: "Custom Range", months: null },
-];
-
-const DEFAULT_PERIOD = { period: "ytd", from: "", to: "" };
-
-const PORT_OPTIONS = Object.entries(PORT_LABELS).map(([value, label]) => ({ value, label }));
-
 const OVERDUE_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -98,105 +92,6 @@ const formatAxisValue = (value) => {
   return value;
 };
 
-const formatDate = (iso) =>
-  new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-
-const StatusBadge = ({ status }) => {
-  const meta = STATUS_META[status] ?? { label: status, tone: "neutral" };
-  return (
-    <span className={`dash-badge dash-badge--${meta.tone}`} data-status={status}>
-      {meta.label}
-    </span>
-  );
-};
-
-const FilterSelect = ({ value, onChange, label, allLabel, options }) => (
-  <select className="dash-select" value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
-    {allLabel && <option value="all">{allLabel}</option>}
-    {options.map((option) => (
-      <option key={option.value} value={option.value}>
-        {option.label}
-      </option>
-    ))}
-  </select>
-);
-
-const uniqueOptions = (values, labelFor = (v) => v) =>
-  [...new Set(values)].sort().map((value) => ({ value, label: labelFor(value) }));
-
-const matches = (filter, value) => filter === "all" || filter === value;
-
-// Monthly rows carry `period` as YYYY-MM; a custom range keeps every month it touches.
-const filterByPeriod = (data, { period, from, to }) => {
-  if (period === "custom") {
-    const fromMonth = from.slice(0, 7);
-    const toMonth = to.slice(0, 7);
-    return data.filter((row) => (!fromMonth || row.period >= fromMonth) && (!toMonth || row.period <= toMonth));
-  }
-  const months = PERIOD_OPTIONS.find((option) => option.value === period)?.months;
-  return months ? data.slice(-months) : data;
-};
-
-const PeriodFilter = ({ value, onChange }) => (
-  <>
-    <FilterSelect
-      value={value.period}
-      onChange={(period) => onChange({ ...value, period })}
-      label="Filter by period"
-      options={PERIOD_OPTIONS}
-    />
-    {value.period === "custom" && (
-      <DateRangePicker from={value.from} to={value.to} onChange={(range) => onChange({ ...value, ...range })} />
-    )}
-  </>
-);
-
-// Shared hover card for every chart. `color` covers marks filled with a gradient, whose payload color is a url().
-const ChartTooltip = ({ active, payload, label, formatter = (value) => value.toLocaleString(), color }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="dash-tooltip">
-      {label && <div className="dash-tooltip-label">{label}</div>}
-      {payload.map((item) => (
-        <div key={item.name} className="dash-tooltip-row">
-          <span className="dash-tooltip-dot" style={{ background: item.payload?.color ?? color ?? item.color }} />
-          <span className="dash-tooltip-name">{item.name}</span>
-          <span className="dash-tooltip-value">{formatter(item.value)}</span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const ChartLegend = ({ items }) => (
-  <ul className="chart-legend">
-    {items.map((item) => (
-      <li key={item.key}>
-        <span className="chart-legend-swatch" style={{ background: item.color }} />
-        {item.name}
-      </li>
-    ))}
-  </ul>
-);
-
-// Vertical gradient used by area fills and bars — solid at the top, fading toward the baseline.
-const FadeGradient = ({ id, color, from = 1, to = 0.55 }) => (
-  <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%" stopColor={color} stopOpacity={from} />
-    <stop offset="100%" stopColor={color} stopOpacity={to} />
-  </linearGradient>
-);
-
-const average = (rows, key) => (rows.length ? rows.reduce((sum, row) => sum + row[key], 0) / rows.length : 0);
-
-const EmptyRow = ({ colSpan, text }) => (
-  <tr>
-    <td colSpan={colSpan} className="dash-table-empty">
-      {text}
-    </td>
-  </tr>
-);
-
 const Dashboard = () => {
   const [overview, setOverview] = useState(null);
   const [vesselTab, setVesselTab] = useState(VESSEL_TABS[0].key);
@@ -213,18 +108,14 @@ const Dashboard = () => {
   const [soClient, setSoClient] = useState("all");
   const [soOverdueOnly, setSoOverdueOnly] = useState(false);
 
-  const isDark = useThemeStore((state) => state.isDark);
-  const seriesColors = SERIES_COLORS[isDark ? "dark" : "light"];
-  const chartGridColor = isDark ? "#1a2744" : "#e5e7eb";
-  const chartAxisColor = isDark ? "#9aaac4" : "#6b7280";
-  const chartSurfaceColor = isDark ? "#0f1a30" : "#ffffff";
-  // Recessive axes: no axis or tick lines, muted labels.
-  const axisProps = {
-    axisLine: false,
-    tickLine: false,
-    tick: { fill: chartAxisColor, fontSize: 12 },
-  };
-  const barCursor = { fill: chartGridColor, opacity: 0.5 };
+  const {
+    seriesColors,
+    gridColor: chartGridColor,
+    axisColor: chartAxisColor,
+    surfaceColor: chartSurfaceColor,
+    axisProps,
+    barCursor,
+  } = useChartTheme();
 
   useEffect(() => {
     let isMounted = true;
@@ -571,7 +462,7 @@ const Dashboard = () => {
                       <td>{v.client}</td>
                       <td>{formatDate(v.eta)}</td>
                       <td>
-                        <StatusBadge status={v.status} />
+                        <StatusBadge status={v.status} meta={STATUS_META} />
                       </td>
                     </tr>
                   ))
@@ -629,7 +520,7 @@ const Dashboard = () => {
                         {cc.on_signers} / {cc.off_signers}
                       </td>
                       <td>
-                        <StatusBadge status={cc.status} />
+                        <StatusBadge status={cc.status} meta={STATUS_META} />
                       </td>
                     </tr>
                   ))

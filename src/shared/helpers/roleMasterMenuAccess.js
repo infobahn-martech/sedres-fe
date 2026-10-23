@@ -8,10 +8,16 @@ import { ROUTE_PATHS } from '../../router/paths';
  * header icon, sees ONLY these sidebar menus, and may open their routes.
  * Roles not listed keep their existing behaviour.
  *
- * Menu names must match the `menu` labels in structure/SideNav.
+ * Menu and submenu names must match the `menu` labels in structure/SideNav.
+ * `true` shows the whole menu; an array shows only those submenus.
  */
 export const ROLE_MASTER_MENUS = {
-  '19': ['Dashboard', 'Transport Management'], // Coordinator Transport
+  // Coordinator Transport
+  '19': {
+    Dashboard: true,
+    'Transport Management': true,
+    Settings: ['My Accounts'],
+  },
 };
 
 /** Routes behind each master menu — keep in sync with the SideNav menu entries. */
@@ -42,14 +48,21 @@ export function hasMasterModuleAccess(user) {
 /** True when the menu should render; roles without a config see every menu. */
 export function isMasterMenuAllowed(user, menuName) {
   const allowedMenus = getAllowedMenus(user);
-  return !allowedMenus || allowedMenus.includes(menuName);
+  return !allowedMenus || Boolean(allowedMenus[menuName]);
+}
+
+/** Submenus of `menuName` the role may see; unchanged when the role/menu isn't limited. */
+export function filterMasterSubMenus(user, menuName, subMenus) {
+  const allowedSubMenus = getAllowedMenus(user)?.[menuName];
+  if (!Array.isArray(allowedSubMenus) || !subMenus) return subMenus;
+  return subMenus.filter((subMenu) => allowedSubMenus.includes(subMenu.menu));
 }
 
 /** True when the path belongs to one of the role's configured master menus. */
 export function isMasterMenuPathAllowed(user, pathname) {
   const allowedMenus = getAllowedMenus(user);
   if (!allowedMenus || !pathname) return false;
-  return allowedMenus.some((menuName) =>
+  return Object.keys(allowedMenus).some((menuName) =>
     (MASTER_MENU_PATHS[menuName] || []).some(
       (path) => pathname === path || pathname.startsWith(`${path}/`)
     )
