@@ -495,7 +495,8 @@
     position: fixed;
     top: 0;
     left: 0;
-    border-top-right-radius: 18px;
+    // Square top corner: the rail sits flush under the header, so a radius there
+    // left a light notch where the page showed through the curve.
     border-bottom-right-radius: 18px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     // Must sit above Kanban card/column content (card type badge uses z-index: 10)
