@@ -113,6 +113,9 @@ const mapTemplateTabFields = (fields) =>
         optionValues: options.map((opt) =>
           typeof opt === "string" ? opt : String(opt?.option_value ?? opt?.option_label ?? "")
         ),
+        // User-list masters (e.g. Owner) send an `avatar` key per option, even when it is null.
+        hasAvatars: options.some((opt) => opt && typeof opt === "object" && "avatar" in opt),
+        optionAvatars: options.map((opt) => opt?.avatar ?? null),
         optionsSource: field?.option_source === "master" ? "master" : "manual",
         masterModule: field?.master_key ?? "",
       };

@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import SearchableSelect from "../../components/form/SearchableSelect";
 import DatePickerField from "../KanbanBoard/CardFormTabs/shared/components/DatePickerField";
 import DateTimePickerField from "../KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
-import { DocumentUpload } from "../KanbanBoard/CardFormTabs/Import/tabs/appointment/GeneralFormFields";
+import { DocumentUpload, OwnerField } from "../KanbanBoard/CardFormTabs/Import/tabs/appointment/GeneralFormFields";
 
 // A required checkbox group only needs one ticked option, not every checkbox.
 export const isCheckboxGroupValid = (field, selected) => !field.required || selected.length > 0;
@@ -145,6 +145,22 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
         case "dropdown": {
             const usesMasterData = (field.optionsSource === "master" || field.optionsSource === "dependency") && field.masterModule;
             const placeholder = usesMasterData ? `Select ${label.trim().toLowerCase()}...` : "Select option...";
+            if (isControlled && field.options?.length && field.hasAvatars) {
+                return (
+                    <OwnerField
+                        label={field.required ? `${label} *` : label}
+                        value={value ?? ""}
+                        onChange={(e) => onChange(e.target.value)}
+                        options={field.options.map((opt, i) => ({
+                            value: String(getOptionValue(field, i, opt)),
+                            label: opt,
+                            avatar: field.optionAvatars?.[i] ?? undefined,
+                        }))}
+                        placeholder={placeholder}
+                        error={error || undefined}
+                    />
+                );
+            }
             if (isControlled && field.options?.length) {
                 return (
                     <div className={fieldClassName}>
