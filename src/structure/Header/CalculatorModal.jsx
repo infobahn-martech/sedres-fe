@@ -228,6 +228,9 @@ function CalculatorModal({ show, onClose }) {
     if (!show || !isCalculatorTab) return undefined;
     const handleKeyDown = (event) => {
       if (event.ctrlKey || event.metaKey || event.altKey) return;
+      // The window is non-modal, so only take keys while focus is inside it —
+      // otherwise typing elsewhere on the page (e.g. an open card) would feed the calculator.
+      if (!event.target.closest?.('.calculator-modal')) return;
       if (event.target.closest?.('input, select, textarea')) return;
       const action = keyToAction(event.key);
       if (!action) return;

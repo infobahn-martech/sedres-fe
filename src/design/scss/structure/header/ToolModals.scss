@@ -1,47 +1,73 @@
-// Header "Tools" modals — Calculator, Dictionary, Weather.
+// Header "Tools" windows — Calculator, Dictionary, Weather, Calendar, Vessel Tracking.
 // Colors come from theme tokens, so light/dark follow [data-theme] automatically.
 
+// Floating, draggable window (see ToolModal.jsx). Docked bottom-right until dragged,
+// then positioned by inline top/left. Sits above the card form overlay (1200) and
+// its quick actions button (1250) so tools stay usable while a card is open.
 .tool-modal {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1300;
+  display: flex;
+  flex-direction: column;
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  border: 1px solid var(--border-primary);
+  border-radius: 14px;
+  background-color: var(--surface-primary);
+  box-shadow: var(--shadow-lg), 0 12px 32px rgba(0, 0, 0, 0.18);
   font-family: 'Manrope', sans-serif;
+  overflow: hidden;
+  animation: toolModalIn 0.18s ease-out;
 
-  .modal-dialog {
-    max-width: 480px;
-    width: calc(100vw - 32px);
-    margin: 24px auto;
+  &:focus {
+    outline: none;
   }
 
-  &.calculator-modal .modal-dialog {
-    max-width: 520px;
+  &.is-positioned {
+    right: auto;
+    bottom: auto;
+  }
+
+  &.calculator-modal {
+    width: min(340px, calc(100vw - 32px));
   }
 
   // Fixed body height so Calculator / Converter tabs (and Basic / Scientific)
-  // keep the same dialog size; the keypad stretches to fill it.
+  // keep the same window size; the keypad stretches to fill it.
   &.calculator-modal .tool-modal-body {
-    height: min(800px, calc(100vh - 120px));
+    height: min(540px, calc(100vh - 100px));
     max-height: none;
   }
 
-  &.dictionary-modal .modal-dialog,
-  &.weather-modal .modal-dialog {
-    max-width: 640px;
-  }
-
-  // Fixed body height so the dialog doesn't jump between idle and loaded states;
+  // Fixed body height so the window doesn't jump between idle and loaded states;
   // overflowing content scrolls inside it.
   &.dictionary-modal .tool-modal-body,
   &.weather-modal .tool-modal-body {
-    height: min(560px, calc(100vh - 120px));
+    height: min(480px, calc(100vh - 100px));
     max-height: none;
   }
 
   // Wider than the other tools so 7 day columns can still fit event titles.
-  &.calendar-modal .modal-dialog {
-    max-width: 1080px;
+  &.calendar-modal {
+    width: min(900px, calc(100vw - 32px));
   }
 
   &.calendar-modal .tool-modal-body {
-    height: min(840px, calc(100vh - 120px));
+    height: min(640px, calc(100vh - 100px));
     max-height: none;
+  }
+
+  &.vessel-modal {
+    width: min(720px, calc(100vw - 32px));
+  }
+
+  &.vessel-modal .tool-modal-body {
+    height: min(480px, calc(100vh - 100px));
+    max-height: none;
+    padding: 0;
+    overflow: hidden;
   }
 
   // Current-conditions card absorbs the extra height instead of leaving a gap below the forecast.
@@ -50,26 +76,36 @@
     justify-content: center;
   }
 
-  .modal-content {
-    border: 1px solid var(--border-primary);
-    border-radius: 14px;
-    padding: 0;
-    background-color: var(--surface-primary);
-    box-shadow: var(--shadow-lg);
-  }
+  // Phones: full-width sheet docked to the bottom (dragging still works vertically).
+  @media (max-width: 576px) {
+    right: 16px;
+    bottom: 16px;
 
-  // margin/width reset: the divider was stopping short of the right edge
-  // under an inherited global .modal-header rule.
-  .modal-header {
-    width: 100%;
-    margin: 0;
-    border-bottom: 1px solid var(--border-primary);
-    padding: 0;
-
-    .btn-close {
-      display: none;
+    &.calculator-modal,
+    &.calendar-modal,
+    &.vessel-modal {
+      width: calc(100vw - 32px);
     }
   }
+}
+
+@keyframes toolModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vessel-tracking-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
 
 // Calculator accent palette — key groups and converter categories each get a
@@ -99,29 +135,35 @@
   --cat-temperature: #fb7185;
 }
 
+// Doubles as the drag handle.
 .tool-modal-header {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 16px 20px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-primary);
+  cursor: move;
+  touch-action: none;
+  user-select: none;
 
   .tool-modal-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 8px;
     background: var(--bg-secondary);
     color: var(--color-primary-accent);
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .tool-modal-title {
     flex: 1;
     margin: 0;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--text-primary);
   }
@@ -148,7 +190,7 @@
   flex-direction: column;
   gap: 14px;
   max-height: min(70vh, 620px);
-  padding: 18px 20px 20px;
+  padding: 16px;
   overflow-y: auto;
   color: var(--text-primary);
 
@@ -586,6 +628,96 @@
   }
 }
 
+// Compact sizing for the small floating calculator window.
+.tool-modal.calculator-modal {
+  .tool-modal-body {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .calculator-icon-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+
+  .tool-segmented-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .calculator-display {
+    padding: 12px 14px;
+    border-radius: 12px;
+
+    .calculator-flags {
+      top: 9px;
+      left: 12px;
+    }
+
+    .calculator-expression {
+      padding-left: 64px;
+      font-size: 12px;
+    }
+
+    .calculator-value {
+      height: 36px;
+      font-size: 28px;
+      line-height: 36px;
+
+      &.is-long {
+        font-size: 20px;
+      }
+    }
+  }
+
+  .calculator-memory {
+    gap: 6px;
+  }
+
+  .calculator-memory-btn {
+    height: 26px;
+    font-size: 12px;
+  }
+
+  .calculator-keys {
+    gap: 6px;
+  }
+
+  .calculator-key {
+    border-radius: 10px;
+    font-size: 16px;
+
+    &--operator,
+    &--equals {
+      font-size: 18px;
+    }
+  }
+
+  .calculator-keys--scientific {
+    gap: 4px;
+
+    .calculator-key {
+      height: 30px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+  }
+
+  .calculator-keys:not(.calculator-keys--scientific) {
+    grid-auto-rows: minmax(34px, 1fr);
+    min-height: 190px;
+  }
+
+  .converter {
+    gap: 10px;
+  }
+
+  .converter-amount {
+    font-size: 22px;
+  }
+}
+
 // Unit converter
 .converter {
   display: flex;
@@ -910,88 +1042,6 @@
   font-size: 12px;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
-}
-
-// "In other units" quick-reference list — fills the fixed-height tab and scrolls
-// internally; clicking a row makes it the To unit.
-.converter-all {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 0;
-  padding-top: 14px;
-  border-top: 1px solid var(--border-primary);
-}
-
-.converter-all-list {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 6px;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  overflow-y: auto;
-  list-style: none;
-}
-
-.converter-all-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid var(--border-primary);
-  border-radius: 12px;
-  background: var(--surface-primary);
-  color: var(--text-primary);
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-
-  &:hover {
-    border-color: color-mix(in srgb, var(--cat) 40%, transparent);
-    background: color-mix(in srgb, var(--cat) 5%, var(--surface-primary));
-  }
-
-  &.is-active {
-    border-color: var(--cat);
-    background: color-mix(in srgb, var(--cat) 8%, var(--surface-primary));
-
-    .converter-all-unit {
-      color: var(--cat);
-    }
-  }
-
-  .converter-all-unit {
-    min-width: 0;
-    overflow: hidden;
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .converter-all-value {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 5px;
-    min-width: 0;
-    overflow: hidden;
-    font-size: 16px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-
-    small {
-      color: var(--text-muted);
-      font-size: 12px;
-      font-weight: 600;
-    }
-  }
 }
 
 .converter-chip {

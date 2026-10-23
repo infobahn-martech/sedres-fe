@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { FiAnchor, FiBookOpen, FiCalendar, FiCloud, FiHash, FiTool } from 'react-icons/fi';
-import { Modal } from 'react-bootstrap';
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
+import ToolModal from './ToolModal';
 
 const CalculatorModal = lazy(() => import('./CalculatorModal'));
 const DictionaryModal = lazy(() => import('./DictionaryModal'));
@@ -132,25 +132,15 @@ export function ToolModals({ activeTool, onClose }) {
   return (
     <>
       {/* Vessel Tracking — MarineTraffic blocks iframing its main site, so use its embed map */}
-      <Modal
+      <ToolModal
         show={activeTool === 'vessel'}
-        onHide={onClose}
-        fullscreen
-        className="vessel-tracking-modal"
+        onClose={onClose}
+        title="Vessel Tracking"
+        icon={<FiAnchor />}
+        className="vessel-modal"
       >
-        <Modal.Header closeButton>
-          <Modal.Title>Vessel Tracking</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="p-0">
-          {activeTool === 'vessel' && (
-            <iframe
-              title="MarineTraffic Live Map"
-              src={MARINE_TRAFFIC_EMBED_URL}
-              style={{ width: '100%', height: '100%', border: 0, display: 'block' }}
-            />
-          )}
-        </Modal.Body>
-      </Modal>
+        <iframe title="MarineTraffic Live Map" src={MARINE_TRAFFIC_EMBED_URL} className="vessel-tracking-frame" />
+      </ToolModal>
 
       <Suspense fallback={null}>
         {activeTool === 'calculator' && <CalculatorModal show onClose={onClose} />}
