@@ -73,16 +73,22 @@
   // Docked: fills the content area below the header and right of the kanban sidebar
   // (offsets match .sedres-header min-height / .kanban-sidebar width per breakpoint).
   // Below the sidebar (900) so its flyouts stay on top, above the board content.
+  // The window tucks --dock-tuck under the sidebar, padded back out by the same amount,
+  // so the sidebar's rounded corners (18px radius) reveal the dark fill instead of
+  // a light gap; the content itself still starts at the sidebar edge.
   &.is-docked {
+    --dock-tuck: 18px;
     top: 74px;
-    left: 80px;
+    left: calc(80px - var(--dock-tuck));
     right: 0;
     bottom: 0;
     z-index: 850;
     width: auto;
     max-height: none;
+    padding-left: var(--dock-tuck);
+    border: none;
     border-radius: 0;
-    border-width: 0 0 0 1px;
+    background-color: #0b1a2c;
     box-shadow: none;
     animation: none;
 
@@ -93,12 +99,12 @@
 
     @media (max-width: 991px) {
       top: 64px;
-      left: 60px;
+      left: calc(60px - var(--dock-tuck));
     }
 
     @media (max-width: 767px) {
       top: 60px;
-      left: 56px;
+      left: calc(56px - var(--dock-tuck));
     }
   }
 
@@ -133,11 +139,12 @@
   }
 }
 
-// Close button floating over a docked window's content (top-left, clear of map controls on the right).
+// Close button floating over a docked window's content (top-left, clear of map controls
+// on the right). Dark translucent to match the map's own overlay controls.
 .tool-modal-dock-close {
   position: absolute;
   top: 12px;
-  left: 12px;
+  left: calc(var(--dock-tuck, 0px) + 12px);
   z-index: 1;
   display: inline-flex;
   align-items: center;
@@ -145,22 +152,22 @@
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1px solid var(--border-primary);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 50%;
-  background: var(--surface-primary);
-  color: var(--text-primary);
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
   font-size: 18px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   cursor: pointer;
   transition: transform 0.15s ease, background 0.15s ease;
 
   &:hover {
-    background: var(--hover-bg);
+    background: rgba(15, 23, 42, 0.92);
     transform: scale(1.05);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--color-primary-accent);
+    outline: 2px solid #ffffff;
     outline-offset: 2px;
   }
 }
