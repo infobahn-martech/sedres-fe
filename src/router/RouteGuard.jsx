@@ -9,6 +9,7 @@ import {
   isRestrictedUserAllowedPath,
   RESTRICTED_USER_FALLBACK_PATH,
 } from '../shared/helpers/restrictedBoardUser';
+import { isMasterMenuPathAllowed } from '../shared/helpers/roleMasterMenuAccess';
 import {
   isVendorRole,
   isVendorRoleAllowedPath,
@@ -90,6 +91,10 @@ function RouteGuard({ children, moduleKey, submoduleKey, actionKey, permissionOn
   const boardAllowed = !requestedBoardId || canAccessKanbanBoard(requestedBoardId, workspaces);
 
   if (isRestrictedBoardUser(userProfile)) {
+    // Master menus configured for this role in roleMasterMenuAccess are allowed too.
+    if (isMasterMenuPathAllowed(userProfile, currentPath)) {
+      return children;
+    }
     if (!isRestrictedUserAllowedPath(currentPath) || !boardAllowed) {
       return <Navigate to={RESTRICTED_USER_FALLBACK_PATH} replace />;
     }

@@ -63,6 +63,7 @@ import useCardModalStore from '../../shared/store/cardModalStore';
 import NavTabButton from '../../components/NavTabButton';
 import { isRestrictedBoardUser, isPortOperatorUser } from '../../shared/helpers/restrictedBoardUser';
 import { isVendorRole, getRoleId } from '../../shared/helpers/vendorDashboardRoles';
+import { hasMasterModuleAccess } from '../../shared/helpers/roleMasterMenuAccess';
 
 const MARINE_TRAFFIC_EMBED_URL =
   'https://www.marinetraffic.com/en/ais/embed/zoom:4/centery:25.0/centerx:-12.0/maptype:4/shownames:false/mmsi:0/shipid:0/fleet:/fleet_id:/vtypes:/showmenu:true/remember:false';
@@ -112,6 +113,8 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const restrictedBoardUser = isRestrictedBoardUser(userProfile);
   const portOperatorUser = isPortOperatorUser(userProfile);
   const vendorDashboardUser = isVendorRole(getRoleId());
+  // Roles configured in roleMasterMenuAccess get the Master Module icon even when otherwise restricted.
+  const roleMasterModuleUser = hasMasterModuleAccess(userProfile);
   const userRoleId =
     userProfile?.role_id ||
     userProfile?.roleId ||
@@ -416,9 +419,9 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
         )}
       </div>
 
-      {!restrictedBoardUser && !vendorDashboardUser && (
+      {(roleMasterModuleUser || (!restrictedBoardUser && !vendorDashboardUser)) && (
         <>
-          {!portOperatorUser && (
+          {(roleMasterModuleUser || !portOperatorUser) && (
             <>
               <Tooltip id="master-module" place="bottom" content="Master Module" />
               <NavTabButton

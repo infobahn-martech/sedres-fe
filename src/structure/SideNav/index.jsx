@@ -44,6 +44,7 @@ import useAuthReducer from '../../store/AuthReducer';
 import { useKanbanSidebarBridge } from '../../store/kanbanSidebarBridge';
 import { ROUTE_PATHS } from '../../router/paths';
 import { hasKanbanFullSidebar } from '../../shared/helpers/restrictedBoardUser';
+import { isMasterMenuAllowed } from '../../shared/helpers/roleMasterMenuAccess';
 import usePermissions from '../../shared/hooks/usePermissions';
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from '../../shared/constants/permissions';
 
@@ -993,6 +994,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
           <ul className="menu">
             {(activePortal ? (portalMenuMap[activePortal] || []) : menuState)
               .filter((e) => e.hasPermission === true)
+              .filter((e) => activePortal || isMasterMenuAllowed(userProfile, e.menu))
               .map(({ menu, subMenus, to, isDefaultMenu, icon, isOpen }) => {
                 if (!isDefaultMenu) return null;
                 return (
