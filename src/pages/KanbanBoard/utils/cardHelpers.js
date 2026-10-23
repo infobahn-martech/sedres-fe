@@ -7,7 +7,10 @@ export const createNewCardDraft = (color, swimlaneId) => ({
     : {}),
 });
 
-const getExportApprovalFlag = (card) => card?.raw?.is_export_approval_card ?? card?.is_export_approval_card;
+/* Only DA board cards carry the action checkbox. */
+export const isDaBoardCard = (card) => String(card?.da_board ?? card?.raw?.da_board ?? "").trim() === "1";
+
+const getExportApprovalFlag =(card) => card?.raw?.is_export_approval_card ?? card?.is_export_approval_card;
 
 const isExportApprovalFlagOn = (card) =>
   Boolean(card?.isExportApprovalCard) || ["true", "1"].includes(String(getExportApprovalFlag(card)));

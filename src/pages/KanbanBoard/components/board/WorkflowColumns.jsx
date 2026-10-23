@@ -21,7 +21,7 @@ import useExportApprovalStatusStore from "../../../../shared/store/exportApprova
 import useSignatureCheckStore from "../../../../shared/store/signatureCheckStore";
 import useServiceSheetStore from "../../../../shared/store/serviceSheetStore";
 import { isMcDermottWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntBacklog, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
-import { needsExportApprovalCheck } from "../../utils/cardHelpers";
+import { isDaBoardCard, needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "../../../../design/scss/pages/kanban-board/swimlaneBoard.scss";
 
@@ -271,7 +271,7 @@ export default function WorkflowColumns({
     const cards = workflow.columnOrder
       .filter((colKey) => isLntBacklog(workflow.title, workflow.columns[colKey]?.title))
       .flatMap((colKey) => swimlaneOrder.flatMap((laneId) => getSwimlaneColumnCards(workflow, laneId, colKey)))
-      .filter((card) => card?.callId)
+      .filter((card) => card?.callId && isDaBoardCard(card))
       .map((card) => ({ call_id: Number(card.callId), card_id: Number(card.id) }));
     loadSignatureStatuses(cards);
   }, [workflow, swimlaneOrder, loadSignatureStatuses]);

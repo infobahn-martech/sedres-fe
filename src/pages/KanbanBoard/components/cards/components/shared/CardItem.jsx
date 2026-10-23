@@ -5,6 +5,7 @@ import PropTypes from "prop-types";
 import useExportApprovalStatusStore from "../../../../../../shared/store/exportApprovalStatusStore";
 import useSignatureCheckStore from "../../../../../../shared/store/signatureCheckStore";
 import { isLntBacklog } from "../../../../utils/columnTitles";
+import { isDaBoardCard as isDaBoardCardHelper } from "../../../../utils/cardHelpers";
 import "../../../../../../design/scss/pages/kanban-board/signatureCheck.scss";
 import { Tooltip } from "react-tooltip";
 import "../../../../../../design/css/components/CardItem.css";
@@ -671,7 +672,7 @@ function CardItem({
   isDragDisabled = false,
 }) {
   const isApiCard = card.cardSource === "api";
-  const isDaBoardCard = String(card?.da_board ?? card?.raw?.da_board ?? "").trim() === "1";
+  const isDaBoardCard = isDaBoardCardHelper(card);
   /* SAIPEM Backlog cards whose export approval is still pending (or being read) carry no checkbox,
      so they can't be added to a batch. */
   const exportApprovalStatus = useExportApprovalStatusStore((state) => state.statusByCallId[card?.callId]);
