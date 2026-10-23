@@ -896,3 +896,16 @@
         background: var(--bg-secondary);
     }
 }
+
+[data-theme="dark"] .vendor-upload-btn {
+    color: var(--brand-bright);
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+    box-shadow: none;
+
+    &:hover {
+        color: var(--brand-bright);
+        background: var(--bg-row-hover);
+        border-color: var(--brand-bright);
+    }
+}

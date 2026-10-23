@@ -177,7 +177,7 @@ function TransportDashboard() {
                         <div className="dash-filters">
                             <input
                                 type="month"
-                                className="dash-select"
+                                className="dash-select dash-select--date"
                                 value={invoiceMonth}
                                 onChange={(e) => setInvoiceMonth(e.target.value)}
                                 aria-label="Invoice month"

@@ -257,6 +257,12 @@
     border-color: #2a78d6;
     box-shadow: 0 0 0 3px rgba(42, 120, 214, 0.18);
   }
+
+  // Date/month inputs bring their own calendar icon — drop the dropdown chevron.
+  &--date {
+    background-image: none;
+    padding-right: 12px;
+  }
 }
 
 // Chart legend, tooltip
@@ -1155,6 +1161,11 @@
 
     &:focus {
       outline-color: var(--brand-bright);
+    }
+
+    &.dash-select--date {
+      background-image: none;
+      padding-right: 12px;
     }
   }
 
