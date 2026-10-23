@@ -623,9 +623,7 @@
 
         th {
             padding: 10px 14px;
-            font: normal normal 600 11px/1.4 $font-primary;
-            letter-spacing: 0.6px;
-            text-transform: uppercase;
+            font: normal normal 600 12px/1.4 $font-primary;
             text-align: left;
             color: var(--text-muted);
             background: var(--surface-secondary);
@@ -647,6 +645,20 @@
 
         tbody tr:hover td {
             background: var(--surface-hover);
+        }
+
+        // Inside a CustomTable expanded row, the global `.table thead th` rule
+        // (fixed blue, !important) and the striped row colors leak into this
+        // nested table — selectors here out-rank both themes' versions.
+        .custom-table .custom-table-expanded-inner .trip-details & {
+            thead th {
+                color: var(--text-muted) !important;
+                background: var(--surface-secondary) !important;
+            }
+
+            tbody tr {
+                background: transparent !important;
+            }
         }
     }
 

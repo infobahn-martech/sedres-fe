@@ -8,26 +8,16 @@ const formatDate = (value) => {
     return parsed.isValid() ? parsed.format('DD MMM YYYY') : value;
 };
 
-export const ORDER_TABLE_COLUMNS = [
-    { label: 'PO No', key: 'poNo' },
-    { label: 'WO No', key: 'woNo' },
-    { label: 'Subject', key: 'subject' },
-    { label: 'Company', key: 'company' },
-    { label: 'Order Date', key: 'orderDate' },
-    { label: 'Purchaser', key: 'purchaser' },
-    { label: 'Amount', key: 'amount' },
-    { label: 'Currency', key: 'currency' },
-    { label: 'Status', key: 'status', isStatus: true },
-];
+export const formatAmount = (row) =>
+    row.amount != null && row.amount !== '' ? `${row.currency ?? ''} ${row.amount}`.trim() : '—';
 
+// `poNo` is kept only as the row key — it isn't shown.
 export const toOrderRow = (order) => ({
     poNo: order.po_number,
-    woNo: order.wo_number,
-    subject: `${order.vehicle_type || 'Transport'} - Crew transfer`,
     company: order.company,
+    vehicleType: order.vehicle_type || 'Transport',
     orderDate: formatDate(order.order_date),
     rawOrderDate: order.order_date,
-    purchaser: order.requested_by,
     amount: order.amount,
     currency: order.currency,
     status: order.status,

@@ -4,7 +4,7 @@ import CommonHeader from '../../../components/CommonHeader';
 import CustomTable from '../../../components/customTable';
 import useVendorReducer from '../../../store/VendorReducer';
 import OrderCrewTable from '../OrderCrewTable';
-import { toOrderRow } from '../orderRows';
+import { formatAmount, toOrderRow } from '../orderRows';
 
 const STATUS_CLASS = {
     completed: 'status-active',
@@ -18,15 +18,14 @@ const STATUS_CLASS = {
 
 // Sortable columns map to the raw value they compare on.
 const SORT_VALUE = {
-    poNo: (row) => String(row.poNo ?? ''),
-    woNo: (row) => String(row.woNo ?? ''),
-    company: (row) => (row.company || '').toLowerCase(),
     orderDate: (row) => dayjs(row.rawOrderDate).valueOf() || 0,
+    company: (row) => (row.company || '').toLowerCase(),
+    crew: (row) => row.crew.length,
     amount: (row) => Number(row.amount) || 0,
     status: (row) => row.status || '',
 };
 
-const SEARCH_FIELDS = ['poNo', 'woNo', 'subject', 'company', 'purchaser', 'status'];
+const SEARCH_FIELDS = ['orderDate', 'company', 'vehicleType', 'status'];
 
 const OrderManagement = () => {
     const { isOrdersLoading, ordersData, getVendorOrders } = useVendorReducer();
@@ -69,19 +68,25 @@ const OrderManagement = () => {
     );
 
     const cols = [
-        { name: 'PO No', selector: 'poNo', width: '140', thclass: 'tb-head', contentClass: 'table-content', sort: true },
-        { name: 'WO No', selector: 'woNo', width: '140', thclass: 'tb-head', contentClass: 'table-content', sort: true },
-        { name: 'Subject', selector: 'subject', width: '220', thclass: 'tb-head', contentClass: 'table-content' },
-        { name: 'Company', selector: 'company', width: '180', thclass: 'tb-head', contentClass: 'table-content', sort: true },
         { name: 'Order Date', selector: 'orderDate', width: '150', thclass: 'tb-head', contentClass: 'table-content', sort: true },
-        { name: 'Purchaser', selector: 'purchaser', width: '160', thclass: 'tb-head', contentClass: 'table-content' },
+        { name: 'Company', selector: 'company', width: '240', thclass: 'tb-head', contentClass: 'table-content', sort: true },
+        { name: 'Vehicle', selector: 'vehicleType', width: '160', thclass: 'tb-head', contentClass: 'table-content' },
+        {
+            name: 'Crew',
+            selector: 'crew',
+            width: '100',
+            thclass: 'tb-head',
+            contentClass: 'table-content',
+            cell: ({ row }) => <span>{row.crew.length}</span>,
+            sort: true,
+        },
         {
             name: 'Amount',
             selector: 'amount',
             width: '140',
             thclass: 'tb-head',
             contentClass: 'table-content',
-            cell: ({ row }) => <span>{row.amount != null ? `${row.currency ?? ''} ${row.amount}`.trim() : '-'}</span>,
+            cell: ({ row }) => <span>{formatAmount(row)}</span>,
             sort: true,
         },
         {
