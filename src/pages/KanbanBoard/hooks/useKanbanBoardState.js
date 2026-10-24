@@ -9,22 +9,18 @@ import {
 } from "../../../shared/helpers/kanbanBoardApiMapper";
 import kanbanBoardService from "../../../services/kanbanBoardService";
 import daService from "../../../services/daService";
+import { DA_DESK_BOARD_ID } from "../../../shared/constants/kanbanConfig";
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
 import { findWorkflowByCardId } from "../utils/boardHelpers";
 import { reorderWorkflowsByPinState } from "../utils/workflowHelpers";
 
 const isOperatorBoardId = (id) => String(id ?? "").toLowerCase() === "operator";
 
-/* Batch grouping for the board's cards (matched by card_id). Only boards with at least one
-   da_board = 1 card call da/batches; otherwise the grouping is cleared. A failure leaves
-   the board ungrouped. */
-const hasDaBoardCard = (workflows) =>
-  workflows.some((wf) =>
-    Object.values(wf?.cards ?? {}).some((card) => String(card?.da_board ?? "").trim() === "1")
-  );
-
-const loadBatches = (workflows) => {
-  if (!hasDaBoardCard(workflows)) {
+/* Batch grouping for the board's cards (matched by card_id). Only the Centralized DA Desk
+   board calls da/batches; every other board has its grouping cleared. A failure leaves the
+   board ungrouped. */
+const loadBatches = (boardId) => {
+  if (String(boardId ?? "") !== DA_DESK_BOARD_ID) {
     useBatchMoveStore.getState().setBatches([]);
     return Promise.resolve();
   }
@@ -69,7 +65,7 @@ export default function useKanbanBoardState(selectedBoardId) {
       const res = await kanbanBoardService.getFullBoard(selectedBoardId);
       const payload = res?.data;
       const mapped = sortByPinState(mapFullBoardApiResponse(payload));
-      loadBatches(mapped);
+      loadBatches(selectedBoardId);
       setWorkflows(mapped);
       setBoardBackground(extractFullBoardBackground(payload));
       setSelectedCard((prev) => {
@@ -118,7 +114,7 @@ export default function useKanbanBoardState(selectedBoardId) {
         const payload = res?.data;
         const mapped = sortByPinState(mapFullBoardApiResponse(payload));
         if (cancelled) return;
-        loadBatches(mapped);
+        loadBatches(selectedBoardId);
         setWorkflows(mapped);
         setBoardBackground(extractFullBoardBackground(payload));
         setBoardLoadError(null);
