@@ -46,9 +46,19 @@ export const isUploadedToPortalColumnTitle = (title) =>
 const POSH_WORKFLOW_PATTERN = /posh/i;
 const POSH_ONE_CARD_COLUMN_PATTERN = /^(ar\s+invoices?\s+issued|po\s+received)$/i;
 
+const SUBSEA_WORKFLOW_PATTERN = /subsea/i;
+const SUBSEA_ONE_CARD_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
+
+export const isSubseaWorkflow = (workflow) => SUBSEA_WORKFLOW_PATTERN.test(String(workflow?.title ?? ""));
+
 /* POSH DA requests the PO and sends the invoice one card at a time, so only one card in
    "AR Invoices Issued" or "PO Received" can stay ticked. The POs are uploaded in bulk, so
-   "Requested/ Awaiting for PO" takes several. */
-export const isPoshOneCardColumn = (workflow, columnTitle) =>
-  POSH_WORKFLOW_PATTERN.test(String(workflow?.title ?? "")) &&
-  POSH_ONE_CARD_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+   "Requested/ Awaiting for PO" takes several. Subsea 7 DA sends the invoice one card at a time
+   from "AR Invoices Issued". */
+export const isPoshOneCardColumn = (workflow, columnTitle) => {
+  const title = String(columnTitle ?? "").trim();
+  return (
+    (POSH_WORKFLOW_PATTERN.test(String(workflow?.title ?? "")) && POSH_ONE_CARD_COLUMN_PATTERN.test(title)) ||
+    (isSubseaWorkflow(workflow) && SUBSEA_ONE_CARD_COLUMN_PATTERN.test(title))
+  );
+};

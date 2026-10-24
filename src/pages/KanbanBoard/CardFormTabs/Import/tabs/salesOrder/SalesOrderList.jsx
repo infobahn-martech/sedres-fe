@@ -54,6 +54,12 @@ const approvedSoUploadFields = [
     multiple: false,
   },
 ];
+/* Subsea 7 (srt_flow) uses the same da/da_upload_so_approval_proof route: the signed SRT goes in as
+   `proof` (required) and the approval email as `approval_email`. */
+const srtUploadFields = [
+  { ...approvedSoUploadFields[0], label: "Signed SRT" },
+  { ...approvedSoUploadFields[1], label: "SRT approval email" },
+];
 // Column 4's ("SO Sent for approval") local-only per-session action state — see soActionState.
 const SO_ACTION_STATE_DEFAULT = {
   button_state: "send",
@@ -655,7 +661,12 @@ const SalesOrderList = ({
   // Verify tick.
   const hasSendForSoApprovalColumn =
     Array.isArray(stepLabels) && stepLabels.some((label) => SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(label || ""));
+  // api/da/action_state's srt_flow marks the Subsea 7 flow: the column after "Ops Completed"
+  // ("Awaiting SRT") has no SO approval process, only a "Send SRT request" email (same
+  // da_action_email_draft + da_send_action_email path), and no Approve / Reject.
+  const isSrtFlow = soActionState?.srt_flow === true;
   const isCardAtSoApprovalColumn =
+    (isSrtFlow && isAtColumnAfterOpsCompleted) ||
     (Array.isArray(stepLabels) && currentStep != null && /so sent for approval/i.test(stepLabels[currentStep - 1] || "")) ||
     (Array.isArray(stepLabels) && currentStep != null && SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
     (isPoshWorkflowCard && isAtColumnAfterOpsCompleted);
@@ -1180,16 +1191,16 @@ const SalesOrderList = ({
     setIsUploadingApprovedSo(true);
     setApprovedSoUploadError("");
     try {
-      for (const { name } of approvedSoUploadFields) {
+      for (const { name } of isSrtFlow ? srtUploadFields : approvedSoUploadFields) {
         const [file] = await compressPdfFiles(filesByField?.[name] ?? []);
         if (file) formData.append(name, file);
       }
       const { data } = await daService.uploadSoApprovalProof(formData);
       if (data?.status !== "success") {
-        throw new Error(data?.message || "Failed to upload the approved SO.");
+        throw new Error(data?.message || (isSrtFlow ? "Failed to upload the SRT." : "Failed to upload the approved SO."));
       }
       handleCloseApprovedSoUploadModal();
-      useAlertReducer.getState().success("Approved SO uploaded.");
+      useAlertReducer.getState().success(isSrtFlow ? "SRT uploaded." : "Approved SO uploaded.");
       if (refreshSalesOrder) refreshSalesOrder();
       onDaStatusRefresh?.();
       if (Array.isArray(data?.moved_to_da) && data.moved_to_da.length > 0) onCloseCard?.();
@@ -2433,7 +2444,30 @@ const SalesOrderList = ({
             // other column still uses the granular DA status-timeline (isAwaitingDecisionStage /
             // daActionButtonLabel) as before.
             isCardAtSoApprovalColumn ? (
-              effectiveSoButtonState === "awaiting_approval" ? (
+              isSrtFlow ? (
+                effectiveSoButtonState === "send" && hasVerifiedAllItems ? (
+                  <button
+                    type="button"
+                    className="sales-order-da-status-button"
+                    disabled={isAdvancingDaStage}
+                    title='Open "SRT request" email'
+                    onClick={() => handleOpenSoApprovalEmailModal("Send SRT request")}
+                  >
+                    <FiClipboard />
+                    Send SRT request
+                  </button>
+                ) : effectiveSoButtonState === "awaiting_approval" ? (
+                  <button
+                    type="button"
+                    className="sales-order-da-status-button"
+                    title="Upload the signed SRT and the SRT approval email"
+                    onClick={() => setShowApprovedSoUploadModal(true)}
+                  >
+                    <FiUpload />
+                    Upload signed SRT
+                  </button>
+                ) : null
+              ) : effectiveSoButtonState === "awaiting_approval" ? (
                 <div className="sales-order-da-status-group">
                   <span className="sales-order-da-status-button sales-order-da-status-button--label">
                     <FiClipboard />
@@ -3438,10 +3472,14 @@ const SalesOrderList = ({
           isSubmitting={isUploadingApprovedSo}
           batchTitle={soCustomerName || ""}
           contextCaption="Sales order:"
-          title="Upload Approved SO"
-          subtitle="Attach the approved sales order and the SO email"
-          submitLabel="Upload Approved SO"
-          fields={approvedSoUploadFields}
+          title={isSrtFlow ? "Upload SRT" : "Upload Approved SO"}
+          subtitle={
+            isSrtFlow
+              ? "Attach the signed SRT and the SRT approval email"
+              : "Attach the approved sales order and the SO email"
+          }
+          submitLabel={isSrtFlow ? "Upload SRT" : "Upload Approved SO"}
+          fields={isSrtFlow ? srtUploadFields : approvedSoUploadFields}
           submitError={approvedSoUploadError}
         />
       )}

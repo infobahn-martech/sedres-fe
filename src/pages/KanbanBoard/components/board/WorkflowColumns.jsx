@@ -19,7 +19,7 @@ import {
 import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import useExportApprovalStatusStore from "../../../../shared/store/exportApprovalStatusStore";
 import useServiceSheetStore from "../../../../shared/store/serviceSheetStore";
-import { isMcDermottWorkflow, isColumnBeforeArchive, isLntWorkflow, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
+import { isMcDermottWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "../../../../design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -115,6 +115,8 @@ const getInvoiceAction = (workflow, column) => {
     if (POSH_REQUESTED_PO_COLUMN_PATTERN.test(title)) return "uploadPos";
     if (PO_RECEIVED_COLUMN_PATTERN.test(title)) return "sendInvoice";
   }
+  /* Subsea 7 DA sends the final invoice for the one ticked card from "AR Invoices Issued". */
+  if (isSubseaWorkflow(workflow) && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "sendInvoice";
   if (!isBatchWorkflow(workflow)) {
     return AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title) ? "enterServiceSheetNo" : null;
   }
@@ -125,8 +127,8 @@ const getInvoiceAction = (workflow, column) => {
 };
 
 const POSH_WORKFLOW_PATTERN = /posh/i;
-/* POSH and BGP workflows name the "Issue AR Invoice" column action "Upload SAP Invoices". */
-const SAP_INVOICES_LABEL_WORKFLOW_PATTERN = /posh|bgp/i;
+/* POSH, BGP and Subsea 7 workflows name the "Issue AR Invoice" column action "Upload SAP Invoices". */
+const SAP_INVOICES_LABEL_WORKFLOW_PATTERN = /posh|bgp|subsea/i;
 const ISSUE_AR_INVOICE_SAP_LABEL = "Upload SAP Invoices";
 
 const INVOICE_ACTION_BUTTONS = {
@@ -440,7 +442,7 @@ export default function WorkflowColumns({
                   onUploadSrf?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 uploadSccDocuments: (cards) =>
                   onUploadSccDocuments?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
-                sendInvoice: ([card]) => onColumnSendInvoice?.(card),
+                sendInvoice: ([card]) => onColumnSendInvoice?.(card, { isFinalInvoice: isSubseaWorkflow(workflow) }),
                 sendSccApproval: onColumnSendSccApproval,
                 requestPo: onColumnRequestPo,
                 merge: onColumnMergeInvoice,
