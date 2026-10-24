@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
-import { FiArrowRight, FiChevronDown, FiDownload, FiEdit3, FiFileText, FiSend, FiUpload, FiUploadCloud } from "react-icons/fi";
+import { FiArrowRight, FiChevronDown, FiDownload, FiFileText, FiSend, FiUpload, FiUploadCloud } from "react-icons/fi";
 import { MdCallMerge } from "react-icons/md";
 import { KANBAN_DND_DISABLED } from "../../../../shared/constants/kanbanConfig";
 import ColumnHeader from "./ColumnHeader";
@@ -18,9 +18,8 @@ import {
 } from "../../utils/boardGridHelpers";
 import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import useExportApprovalStatusStore from "../../../../shared/store/exportApprovalStatusStore";
-import useSignatureCheckStore from "../../../../shared/store/signatureCheckStore";
 import useServiceSheetStore from "../../../../shared/store/serviceSheetStore";
-import { isMcDermottWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntBacklog, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
+import { isMcDermottWorkflow, isColumnBeforeArchive, isLntWorkflow, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "../../../../design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -102,7 +101,6 @@ const getInvoiceAction = (workflow, column) => {
     return null;
   }
   if (ISSUE_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
-  if (isLntBacklog(workflow?.title, title)) return "checkSignatures";
   if (SCC_RECEIVED_COLUMN_PATTERN.test(title)) return "uploadSccDocuments";
   if (CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
   if (READY_FOR_DISPATCH_COLUMN_PATTERN.test(title)) return "downloadInvoices";
@@ -144,7 +142,6 @@ const INVOICE_ACTION_BUTTONS = {
   moveCards: { label: "Move the Cards", icon: <FiArrowRight size={16} aria-hidden /> },
   requestPo: { label: "Request PO", icon: <FiSend size={16} aria-hidden /> },
   enterServiceSheetNo: { label: "Enter Service Sheet No", icon: <FiFileText size={16} aria-hidden /> },
-  checkSignatures: { label: "Check Signatures", icon: <FiEdit3 size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
   prepareSubmission: { label: "Create Submission Documents", icon: <FiDownload size={16} aria-hidden /> },
   sendSubmission: { label: "Send For Final Submission", icon: <FiSend size={16} aria-hidden /> },
@@ -260,21 +257,7 @@ export default function WorkflowColumns({
     if (callIds.length) loadExportApprovalStatuses([...new Set(callIds)]);
   }, [workflow, swimlaneOrder, loadExportApprovalStatuses]);
 
-  const loadSignatureStatuses = useSignatureCheckStore((state) => state.loadStatuses);
-  const openSignatureCheckModal = useSignatureCheckStore((state) => state.openSignatureCheckModal);
   const openServiceSheetModal = useServiceSheetStore((state) => state.openServiceSheetModal);
-
-  /* L&T Backlog cards are signature-checked on every board load and refetch (each action refetches the
-     board), so the cards show red/green for the SCC signature. */
-  useEffect(() => {
-    if (!isLntWorkflow(workflow)) return;
-    const cards = workflow.columnOrder
-      .filter((colKey) => isLntBacklog(workflow.title, workflow.columns[colKey]?.title))
-      .flatMap((colKey) => swimlaneOrder.flatMap((laneId) => getSwimlaneColumnCards(workflow, laneId, colKey)))
-      .filter((card) => card?.callId)
-      .map((card) => ({ call_id: Number(card.callId), card_id: Number(card.id) }));
-    loadSignatureStatuses(cards);
-  }, [workflow, swimlaneOrder, loadSignatureStatuses]);
 
   const batchLaneCardsByColumn = useMemo(() => {
     if (!isBatchCreateWorkflow(workflow)) return null;
@@ -464,12 +447,6 @@ export default function WorkflowColumns({
                 downloadInvoices: onColumnDownloadInvoices,
                 uploadDispatchProof: onUploadDispatchProof,
                 moveCards: onColumnMoveCards,
-                checkSignatures: (cards) =>
-                  openSignatureCheckModal(
-                    cards
-                      .filter((card) => card.callId)
-                      .map((card) => ({ call_id: Number(card.callId), card_id: Number(card.id) }))
-                  ),
                 enterServiceSheetNo: (cards) =>
                   openServiceSheetModal(
                     cards
