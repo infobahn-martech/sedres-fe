@@ -34,6 +34,9 @@ const USD_TO_SAR_RATE = 3.75;
 const SALES_ORDER_PAGE_SIZE = 10;
 const POSH_WORKFLOW_PATTERN = /posh/i;
 const SEND_FOR_SO_APPROVAL_COLUMN_PATTERN = /send for so approval/i;
+const SUBSEA_WORKFLOW_PATTERN = /subsea/i;
+const AWAITING_SRT_COLUMN_PATTERN = /awaiting srt/i;
+const SRT_RECEIVED_COLUMN_PATTERN = /srt received/i;
 /* "Upload Approved SO" runs for the POSH workflow and for workflows with a "Send for SO Approval" column. da/da_upload_so_approval_proof takes the
    approved SO as `proof` (required) and the SO email as `approval_email`; the field names are the
    request's form field names. */
@@ -55,9 +58,9 @@ const approvedSoUploadFields = [
   },
 ];
 /* Subsea 7 (srt_flow) uses the same da/da_upload_so_approval_proof route: the signed SRT goes in as
-   `proof` (required) and the approval email as `approval_email`. */
+   `srt` (required, the backend lists it under documents.srt) and the approval email as `approval_email`. */
 const srtUploadFields = [
-  { ...approvedSoUploadFields[0], label: "Signed SRT" },
+  { ...approvedSoUploadFields[0], name: "srt", label: "SRT" },
   { ...approvedSoUploadFields[1], label: "SRT approval email" },
 ];
 // Column 4's ("SO Sent for approval") local-only per-session action state — see soActionState.
@@ -664,9 +667,22 @@ const SalesOrderList = ({
   // api/da/action_state's srt_flow marks the Subsea 7 flow: the column after "Ops Completed"
   // ("Awaiting SRT") has no SO approval process, only a "Send SRT request" email (same
   // da_action_email_draft + da_send_action_email path), and no Approve / Reject.
-  const isSrtFlow = soActionState?.srt_flow === true;
+  // The card's own "Awaiting SRT" column marks the flow too, so the button does not wait on the flag.
+  const isSubseaWorkflowCard = SUBSEA_WORKFLOW_PATTERN.test(card?.workflow_name ?? "");
+  const isAtAwaitingSrtColumn =
+    isSubseaWorkflowCard &&
+    Array.isArray(stepLabels) &&
+    currentStep != null &&
+    AWAITING_SRT_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
+  // Once the request is sent the card sits on "SRT Received", where the signed SRT is uploaded.
+  const isAtSrtReceivedColumn =
+    isSubseaWorkflowCard &&
+    Array.isArray(stepLabels) &&
+    currentStep != null &&
+    SRT_RECEIVED_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
+  const isSrtFlow = soActionState?.srt_flow === true || isAtAwaitingSrtColumn || isAtSrtReceivedColumn;
   const isCardAtSoApprovalColumn =
-    (isSrtFlow && isAtColumnAfterOpsCompleted) ||
+    (isSrtFlow && (isAtColumnAfterOpsCompleted || isAtSrtReceivedColumn)) ||
     (Array.isArray(stepLabels) && currentStep != null && /so sent for approval/i.test(stepLabels[currentStep - 1] || "")) ||
     (Array.isArray(stepLabels) && currentStep != null && SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
     (isPoshWorkflowCard && isAtColumnAfterOpsCompleted);
@@ -791,8 +807,15 @@ const SalesOrderList = ({
     Array.isArray(stepLabels) && currentStep != null && /scc received/i.test(stepLabels[currentStep - 1] || "");
   const isAtSubmittedToFdaColumn =
     Array.isArray(stepLabels) && currentStep != null && /submitted to fda/i.test(stepLabels[currentStep - 1] || "");
+  // Subsea 7 (an "Awaiting SRT" column in its workflow) shows the Action column only while the card is
+  // on "Awaiting SRT" itself, not on the columns before or after it.
+  const hasAwaitingSrtColumn =
+    isSubseaWorkflowCard && Array.isArray(stepLabels) && stepLabels.some((label) => AWAITING_SRT_COLUMN_PATTERN.test(label || ""));
   const showActionColumn =
-    canViewActionColumn && (isAtColumnAfterOpsCompleted || isBeforeSubmittedToDa || isAtSubmittedToDaColumn || isAtSoSentForSccColumn);
+    canViewActionColumn &&
+    (hasAwaitingSrtColumn
+      ? isAtAwaitingSrtColumn
+      : isAtColumnAfterOpsCompleted || isBeforeSubmittedToDa || isAtSubmittedToDaColumn || isAtSoSentForSccColumn);
 
   // "SO/PO Approval Received" (column 5) is the client-decision column for the SO approval
   // sent at column 4 — approving moves on to column 6, rejecting reverts to column 4 (see
@@ -999,10 +1022,20 @@ const SalesOrderList = ({
         return;
       }
       setShowSoApprovalEmailModal(false);
-      // Optimistic — the action_state refetch triggered by onDaStatusRefresh below confirms it;
-      // this just avoids a flash back to "Send For SO approval" while that refetch is in flight.
-      setSoActionState((prev) => ({ ...prev, button_state: "awaiting_approval" }));
-      setDidApproveSoInSession(false);
+      // Subsea 7 (srt_flow) has no SO approval wait: sending the SRT request moves the card exactly
+      // one column forward, the same one-column move Approve does.
+      const nextColumnLabel =
+        Array.isArray(stepLabels) && currentStep != null ? stepLabels[currentStep] : null;
+      if (isSrtFlow && nextColumnLabel) {
+        onAdvanceDaStage?.({ statusId: data.status_id, label: nextColumnLabel, skipStatusUpdate: true });
+        // The card stays open: the signed SRT upload shows right after the request is sent.
+        setSoActionState((prev) => ({ ...prev, button_state: "awaiting_approval" }));
+      } else {
+        // Optimistic — the action_state refetch triggered by onDaStatusRefresh below confirms it;
+        // this just avoids a flash back to "Send For SO approval" while that refetch is in flight.
+        setSoActionState((prev) => ({ ...prev, button_state: "awaiting_approval" }));
+        setDidApproveSoInSession(false);
+      }
       // Deliberately NOT moving the board column here (no onAdvanceDaStage call) — sending the
       // SO approval email keeps the card on "SO Sent for approval" (column 4) itself; the
       // Awaiting-decision UI shows right there too (see isCardAtSoApprovalColumn + soActionState
@@ -1203,7 +1236,17 @@ const SalesOrderList = ({
       useAlertReducer.getState().success(isSrtFlow ? "SRT uploaded." : "Approved SO uploaded.");
       if (refreshSalesOrder) refreshSalesOrder();
       onDaStatusRefresh?.();
-      if (Array.isArray(data?.moved_to_da) && data.moved_to_da.length > 0) onCloseCard?.();
+      const wasMovedToDa = Array.isArray(data?.moved_to_da) && data.moved_to_da.length > 0;
+      // Subsea 7: the card must end up on "Submitted to DA" once the SRT is in, so when the backend
+      // did not move it (moved_to_da empty) it is moved one column forward here.
+      const nextColumnLabel =
+        Array.isArray(stepLabels) && currentStep != null ? stepLabels[currentStep] : null;
+      if (isSrtFlow && !wasMovedToDa && nextColumnLabel) {
+        onAdvanceDaStage?.({ label: nextColumnLabel, skipStatusUpdate: true });
+        onCloseCard?.();
+      } else if (wasMovedToDa) {
+        onCloseCard?.();
+      }
     } catch (err) {
       setApprovedSoUploadError(
         err?.response?.data?.message || err?.message || "Upload failed. Please try again."
@@ -1489,7 +1532,8 @@ const SalesOrderList = ({
       // The card is closed only when the backend reports it moved to DA (moved_to_da non-empty) —
       // a successful verify alone never closes it.
       const wasMovedToDa = Array.isArray(body?.moved_to_da) && body.moved_to_da.length > 0;
-      if (allVerified && isBeforeSubmittedToDa && !isPoshWorkflowCard && !hasSendForSoApprovalColumn) {
+      // Subsea 7 (srt_flow) cards stay put after the last tick: "Send SRT request" takes over there.
+      if (allVerified && isBeforeSubmittedToDa && !isPoshWorkflowCard && !hasSendForSoApprovalColumn && !isSrtFlow) {
         onAdvanceDaStage?.({ label: stepLabels[submittedToDaStepIndex], skipStatusUpdate: true });
         if (wasMovedToDa) onCloseCard?.();
       } else if (allVerified && (isAtSubmittedToDaColumn || isAtSoSentForSccColumn) && wasMovedToDa) {
@@ -2445,7 +2489,21 @@ const SalesOrderList = ({
             // daActionButtonLabel) as before.
             isCardAtSoApprovalColumn ? (
               isSrtFlow ? (
-                effectiveSoButtonState === "send" && hasVerifiedAllItems ? (
+                // No Approve / Reject in this flow. Once the request is sent (action_state
+                // awaiting_approval) the signed SRT upload shows, and "SRT Received" always shows it
+                // since the request has already gone; before that, "Awaiting SRT" with every item
+                // verified offers the request.
+                effectiveSoButtonState === "awaiting_approval" || isAtSrtReceivedColumn ? (
+                  <button
+                    type="button"
+                    className="sales-order-da-status-button"
+                    title="Upload the SRT and the SRT approval email"
+                    onClick={() => setShowApprovedSoUploadModal(true)}
+                  >
+                    <FiUpload />
+                    Upload signed SRT
+                  </button>
+                ) : !isAtSrtReceivedColumn && hasVerifiedAllItems ? (
                   <button
                     type="button"
                     className="sales-order-da-status-button"
@@ -2455,16 +2513,6 @@ const SalesOrderList = ({
                   >
                     <FiClipboard />
                     Send SRT request
-                  </button>
-                ) : effectiveSoButtonState === "awaiting_approval" ? (
-                  <button
-                    type="button"
-                    className="sales-order-da-status-button"
-                    title="Upload the signed SRT and the SRT approval email"
-                    onClick={() => setShowApprovedSoUploadModal(true)}
-                  >
-                    <FiUpload />
-                    Upload signed SRT
                   </button>
                 ) : null
               ) : effectiveSoButtonState === "awaiting_approval" ? (
