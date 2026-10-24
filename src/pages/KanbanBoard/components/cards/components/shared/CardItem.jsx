@@ -3,9 +3,6 @@ import { Draggable } from "@hello-pangea/dnd";
 import { KANBAN_DND_DISABLED } from "../../../../../../shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
 import useExportApprovalStatusStore from "../../../../../../shared/store/exportApprovalStatusStore";
-import useSignatureCheckStore from "../../../../../../shared/store/signatureCheckStore";
-import { isLntBacklog } from "../../../../utils/columnTitles";
-import "../../../../../../design/scss/pages/kanban-board/signatureCheck.scss";
 import { Tooltip } from "react-tooltip";
 import "../../../../../../design/css/components/CardItem.css";
 // Company logos
@@ -679,15 +676,6 @@ function CardItem({
     SAIPEM_WORKFLOW_PATTERN.test(workflowTitle ?? "") && String(columnTitle ?? "").trim().toLowerCase() === "backlog";
   const isExportApprovalHeld =
     isSaipemBacklogCard && (exportApprovalStatus === "pending" || exportApprovalStatus === "loading");
-  /* L&T Backlog cards whose SCC signature check is "missing" turn red; the rest keep the common colour. */
-  const signatureCheck = useSignatureCheckStore((state) =>
-    isLntBacklog(workflowTitle, columnTitle) ? state.statusByCardId[String(card?.id)] : undefined
-  );
-  const signatureStatus = signatureCheck?.status ?? null;
-  const signatureTooltip =
-    signatureStatus === "missing"
-      ? `Signature missing — checked ${signatureCheck.checkedDate ?? "-"}`
-      : undefined;
   const canSelectForAction =
     isDaBoardCard && typeof onToggleSelectForAction === "function" && !isExportApprovalHeld;
   const topRowUsernameInitial = isApiCard && !isShrunk ? getUsernameInitial(card.user) : null;
@@ -743,8 +731,7 @@ function CardItem({
     <Draggable draggableId={card.id} index={index} isDragDisabled={KANBAN_DND_DISABLED || isDragDisabled}>
       {(provided, snapshot) => (
         <div
-          className={`kanban-card ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""} ${signatureStatus === "missing" ? "kanban-card--signature-missing" : ""}`}
-          title={signatureTooltip}
+          className={`kanban-card ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""}`}
           ref={provided.innerRef}
           {...(KANBAN_DND_DISABLED ? {} : provided.draggableProps)}
           {...(KANBAN_DND_DISABLED ? {} : provided.dragHandleProps)}
