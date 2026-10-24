@@ -72,6 +72,7 @@ const SUBMITTED_TO_DA_COLUMN_PATTERN = /^submitted to da$/i;
 /* L&T DA: "Convert to AR Invoice" takes the same bulk invoice upload as McDermott's "Issue AR Invoice",
    for the cards the user ticks. */
 const CONVERT_TO_AR_INVOICE_COLUMN_PATTERN = /^convert\s+to\s+ar\s+invoices?$/i;
+const READY_FOR_POSTING_IN_SAP_COLUMN_PATTERN = /^ready\s+(to|for)\s+post(ing)?\s+in\s+sap$/i;
 
 /* L&T DA: "Ready for Dispatch" downloads the ticked cards' invoice PDF and XML files as a zip. */
 const READY_FOR_DISPATCH_COLUMN_PATTERN = /^ready\s+for\s+dispatch$/i;
@@ -117,6 +118,8 @@ const getInvoiceAction = (workflow, column) => {
     if (POSH_REQUESTED_PO_COLUMN_PATTERN.test(title)) return "uploadPos";
     if (PO_RECEIVED_COLUMN_PATTERN.test(title)) return "sendInvoice";
   }
+  /* Subsea 7 DA uploads the SAP invoices for the cards the user ticks on "Ready to post in SAP". */
+  if (isSubseaWorkflow(workflow) && READY_FOR_POSTING_IN_SAP_COLUMN_PATTERN.test(title)) return "issueArInvoice";
   /* Subsea 7 DA sends the final invoice for the one ticked card from "AR Invoices Issued". */
   if (isSubseaWorkflow(workflow) && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "sendInvoice";
   if (!isBatchWorkflow(workflow)) {
