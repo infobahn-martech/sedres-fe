@@ -65,4 +65,9 @@ $primary-font: "Manrope", sans-serif;
   .email-field-wrap {
     margin-top: 8px;
   }
+
+  /* Keeps a validation message from touching the next row's notched label. */
+  .transport-company-form-row + .transport-company-form-row {
+    margin-top: 12px;
+  }
 }

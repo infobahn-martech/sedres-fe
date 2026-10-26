@@ -30,6 +30,18 @@ const mapDriversFromApi = (list) => {
   }));
 };
 
+const validateOptionalPhone = (value) => {
+  const digits = (value || '').replace(/\D/g, '');
+  return !digits || digits.length >= 7 || 'Enter a valid phone number';
+};
+
+// PhoneInput keeps the dial code after the user clears the number; store '' so the field stays empty.
+const handlePhoneChange = (onChange) => (value, country) =>
+  onChange(value === country?.dialCode ? '' : value);
+
+const isDriverRowEmpty = (d) =>
+  !d.driver_name?.trim() && !d.contact_no?.trim() && !d.vehicle_type_id;
+
 export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
   const transportCompanyId = showModal?.transport_company_id ?? showModal?._id;
   const isEdit = !!transportCompanyId;
@@ -119,11 +131,11 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
   }, [showModal, transportCompanyId, getTransportCompanyById, reset]);
 
   const onSubmit = async (data) => {
-    const driversPayload = (data.drivers ?? []).map((d) => {
+    const driversPayload = (data.drivers ?? []).filter((d) => !isDriverRowEmpty(d)).map((d) => {
       const entry = {
         driver_name: d.driver_name?.trim() ?? '',
         contact_no: d.contact_no?.trim() ?? '',
-        vehicle_type_id: Number(d.vehicle_type_id),
+        vehicle_type_id: d.vehicle_type_id ? Number(d.vehicle_type_id) : null,
       };
       const existingId = d.transport_driver_id?.toString().trim();
       if (isEdit && existingId) {
@@ -174,7 +186,7 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
         >
           {loadError && <div className="alert alert-danger mb-3">{loadError}</div>}
 
-          <div className="row align-items-end">
+          <div className="row align-items-end transport-company-form-row">
             <div className="col-md-6 mb-lg-3 mb-sm-0">
               <div className="transport-field">
                 <div className="form-floating desig-inp">
@@ -200,41 +212,39 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
                 <div className="form-floating desig-inp">
                   <input
                     type="text"
-                    className="form-control"
+                    className={`form-control ${errors.vendor_code ? 'is-invalid' : ''}`}
                     placeholder=" "
                     disabled={isEdit && isLoadingDetail}
-                    {...register('vendor_code')}
+                    {...register('vendor_code', {
+                      validate: (value) => !!value?.trim() || 'Vendor code is required',
+                    })}
                   />
-                  <label>Vendor code</label>
+                  <label>
+                    Vendor code <span className="text-danger">*</span>
+                  </label>
                 </div>
-                <div className="transport-field__error" />
+                <div className="transport-field__error">
+                  {errors.vendor_code?.message}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="row align-items-end">
+          <div className="row align-items-end transport-company-form-row">
             <div className="col-md-6 mb-lg-3 mb-sm-0">
               <div className="transport-field">
                 <div className="phone-wrapper phone-wrapper--notched">
                   <label className="phone-label">
-                    Contact Number <span className="text-danger">*</span>
+                    Contact Number
                   </label>
                   <Controller
                     name="contact_no"
                     control={control}
-                    rules={{
-                      required: 'Contact number is required',
-                      validate: (value) => {
-                        const digits = (value || '').replace(/\D/g, '');
-                        return (
-                          digits.length >= 7 ||
-                          'Enter a valid phone number'
-                        );
-                      },
-                    }}
+                    rules={{ validate: validateOptionalPhone }}
                     render={({ field }) => (
                       <PhoneInput
                         {...field}
+                        onChange={handlePhoneChange(field.onChange)}
                         country="sa"
                         enableSearch
                         inputClass="phone-input"
@@ -259,16 +269,13 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
                     placeholder=" "
                     disabled={isEdit && isLoadingDetail}
                     {...register('email', {
-                      required: 'Email is required',
                       pattern: {
                         value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                         message: 'Enter a valid email address',
                       },
                     })}
                   />
-                  <label>
-                    Email <span className="text-danger">*</span>
-                  </label>
+                  <label>Email</label>
                 </div>
                 <div className="transport-field__error">
                   {errors.email?.message}
@@ -297,16 +304,14 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
                     <div className="transport-company-driver-field">
                       <div className="transport-field">
                         <label className="transport-company-driver-field__label">
-                          Driver name <span className="text-danger">*</span>
+                          Driver name
                         </label>
                         <input
                           type="text"
                           className={`form-control transport-company-driver-field__input ${errors.drivers?.[index]?.driver_name ? 'is-invalid' : ''}`}
                           placeholder="Enter driver name"
                           disabled={isEdit && isLoadingDetail}
-                          {...register(`drivers.${index}.driver_name`, {
-                            required: 'Driver name is required',
-                          })}
+                          {...register(`drivers.${index}.driver_name`)}
                         />
                         <div className="transport-field__error">
                           {errors.drivers?.[index]?.driver_name?.message}
@@ -317,24 +322,16 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
                       <div className="transport-field">
                         <div className="phone-wrapper">
                           <label className="phone-label">
-                            Contact no <span className="text-danger">*</span>
+                            Contact no
                           </label>
                           <Controller
                             name={`drivers.${index}.contact_no`}
                             control={control}
-                            rules={{
-                              required: 'Contact number is required',
-                              validate: (value) => {
-                                const digits = (value || '').replace(/\D/g, '');
-                                return (
-                                  digits.length >= 7 ||
-                                  'Enter a valid phone number'
-                                );
-                              },
-                            }}
+                            rules={{ validate: validateOptionalPhone }}
                             render={({ field }) => (
                               <PhoneInput
                                 {...field}
+                                onChange={handlePhoneChange(field.onChange)}
                                 country="sa"
                                 enableSearch
                                 inputClass="phone-input"
@@ -352,13 +349,12 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
                     <div className="transport-company-driver-field transport-company-driver-field--vehicle">
                       <div className="transport-field">
                         <label className="transport-company-driver-field__label">
-                          Vehicle type <span className="text-danger">*</span>
+                          Vehicle type
                         </label>
                         <div className="transport-company-driver-field--select">
                           <Controller
                             name={`drivers.${index}.vehicle_type_id`}
                             control={control}
-                            rules={{ required: 'Vehicle type is required' }}
                             render={({ field }) => (
                               <PremiumSelect
                                 value={field.value != null ? String(field.value) : ''}
