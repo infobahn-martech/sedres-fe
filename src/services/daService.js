@@ -354,8 +354,31 @@ const sendInvoiceSubmission = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
+/** @typedef {{ call_id: number, card_id: number, sales_orders: string[], documents: { scc: { stage_document_id: number,
+ *   name: string, url: string, signed: boolean } | null }, ready: boolean, status: 'signed'|'missing'|null,
+ *   checked_date: string|null }} SignatureCheckCard */
+/** @param {{ cards: Array<{ call_id: number, card_id: number }> }} payload - the L&T Backlog cards.
+ * @returns {Promise<{ data: { status: 'success', data: { cards: SignatureCheckCard[] } }
+ *   | { status: 'error', message: string } }>}
+ * Checks the signature on each card's SCC and stores the result. */
+const checkSignatures = (payload) => Gateway.post('/da/signature_check', payload);
+/** @returns {Promise<{ data: { status: 'success', data: { cards: SignatureCheckCard[] } }
+ *   | { status: 'error', message: string } }>}
+ * The stored result of the latest signature check of every card. */
+const getSignatureChecks = () => Gateway.get('/da/signature_checks');
+/** @param {{ cards: Array<{ call_id: number, card_id: number, signed_by_hand?: boolean }> }} payload
+ * @returns {Promise<{ data: { status: 'success', data: { moved_to_da: Array<{ call_id: number, card_id: number }>,
+ *   returned_to_scc_received: Array<{ call_id: number, card_id: number, column_id: number, column_name: string }>,
+ *   moved_to_convert_ar_invoice: Array<{ call_id: number, card_id: number }>,
+ *   not_moved: Array<{ call_id: number, card_id: number, reason: string }>, skipped: Array<unknown> } }
+ *   | { status: 'error', message: string } }>}
+ * Moves the signed cards to the DA board and returns the unsigned ones to "SCC Received". */
+const confirmSignatureCheck = (payload) => Gateway.post('/da/confirm_signature_check', payload);
 
 export default {
+  checkSignatures,
+  getSignatureChecks,
+  confirmSignatureCheck,
   getDaDetails,
   saveDaDetails,
   saveOperationTab,

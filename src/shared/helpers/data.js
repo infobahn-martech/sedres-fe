@@ -231,6 +231,8 @@ export function mapBoardWorkflowFromApi(workflow) {
             // get_full_board per-card flag: 1 enables the card modal's "DA" tab.
             // Carried through raw (backend sends 1 / "1") and interpreted at the use site.
             da_board: card.da_board ?? null,
+            // get_full_board per-card flag: "missing" when the SCC signature check found no signature.
+            signature_status: card.signature_status ?? null,
             // get_full_board per-card flag: true while the card's export approval is pending (hides the batch tick).
             isExportApprovalCard:
               card.is_export_approval_card === true ||
