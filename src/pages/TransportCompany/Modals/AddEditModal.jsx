@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { FiPlus, FiTrash2 } from 'react-icons/fi';
 import CustomModal from '../../../components/CustomModal';
 import useTransportCompanyReducer from '../../../store/TransportCompanyReducer';
-import useVehicleReducer from '../../../store/VehicleReducer';
+import useCoordinatorTransportReducer from '../../../store/CoordinatorTransportReducer';
 import '../../../design/scss/prospect-modal.scss';
 import '../../../design/scss/modal-designs.scss';
 import '../../../design/scss/form-designs.scss';
@@ -37,7 +37,8 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
   const { addTransportCompany, updateTransportCompany, getTransportCompanyById, isBeingUpdated } =
     useTransportCompanyReducer((state) => state);
 
-  const { vehicles = [], getVehicles } = useVehicleReducer((state) => state);
+  const vehicleTypes = useCoordinatorTransportReducer((state) => state.vehicleTypes);
+  const fetchVehicleTypes = useCoordinatorTransportReducer((state) => state.fetchVehicleTypes);
 
   const [loadError, setLoadError] = useState('');
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
@@ -51,6 +52,7 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
   } = useForm({
     defaultValues: {
       transport_company: '',
+      vendor_code: '',
       contact_no: '',
       email: '',
       drivers: [emptyDriver()],
@@ -64,15 +66,16 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
 
   useEffect(() => {
     if (showModal) {
-      getVehicles?.({ params: {} });
+      fetchVehicleTypes();
     }
-  }, [showModal, getVehicles]);
+  }, [showModal, fetchVehicleTypes]);
 
   useEffect(() => {
     if (showModal && !transportCompanyId) {
       setLoadError('');
       reset({
         transport_company: '',
+        vendor_code: '',
         contact_no: '',
         email: '',
         drivers: [emptyDriver()],
@@ -96,6 +99,7 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
         if (cancelled || !row) return;
         reset({
           transport_company: String(row.transport_company ?? ''),
+          vendor_code: String(row.vendor_code ?? ''),
           contact_no: String(row.contact_no ?? ''),
           email: String(row.email ?? ''),
           drivers: mapDriversFromApi(row.drivers),
@@ -130,6 +134,7 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
 
     const payload = {
       transport_company: data.transport_company?.trim() ?? '',
+      vendor_code: data.vendor_code?.trim() ?? '',
       contact_no: data.contact_no?.trim() ?? '',
       email: data.email?.trim() ?? '',
       drivers: driversPayload,
@@ -185,6 +190,21 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
               </div>
               <div className="transport-field__error">
                 {errors.transport_company?.message}
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-lg-3 mb-sm-0">
+            <div className="transport-field">
+              <div className="form-floating desig-inp">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder=" "
+                  disabled={isEdit && isLoadingDetail}
+                  {...register('vendor_code')}
+                />
+                <label>Vendor code</label>
               </div>
             </div>
           </div>
@@ -338,17 +358,10 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
                               <PremiumSelect
                                 value={field.value != null ? String(field.value) : ''}
                                 onChange={(e) => field.onChange(e.target.value)}
-                                options={(vehicles || []).map((v) => {
-                                  const id = v.vehicle_type_id ?? v._id;
-                                  return {
-                                    value: String(id ?? ''),
-                                    label: String(
-                                      v.vehicle_type ??
-                                        v.name ??
-                                        `Vehicle ${v.vehicle_type_id ?? v._id ?? ''}`,
-                                    ),
-                                  };
-                                })}
+                                options={vehicleTypes.map((v) => ({
+                                  value: String(v.vehicle_type_id ?? ''),
+                                  label: String(v.vehicle_name ?? v.vehicle_type ?? ''),
+                                }))}
                                 placeholder="Select vehicle type"
                                 searchPlaceholder="Search vehicle type..."
                                 disabled={isEdit && isLoadingDetail}
