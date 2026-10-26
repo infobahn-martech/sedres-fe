@@ -87,12 +87,23 @@ const lntDispatchProofUploadFields = [
     multiple: true,
   },
 ];
-/* Saves a remote file under its own name. The file host is another origin, so the link opens in a new
-   tab (closed by the browser when the file is a download) and the board page is not navigated away. */
-const downloadDocument = ({ url, name }) => {
+/* Saves a remote file under its own name. The file host is another origin, where a plain download link
+   is not honoured for a PDF (it only navigates), so the file is fetched as a blob first. While the file
+   host sends no CORS header the fetch fails, and the link opens in a new tab instead. */
+const downloadDocument = async ({ url, name }) => {
+  const fileName = name || decodeURIComponent(url.split("/").pop());
+  try {
+    const response = await fetch(url);
+    if (response.ok) {
+      downloadFile({ link: URL.createObjectURL(await response.blob()), fileName });
+      return;
+    }
+  } catch {
+    /* Falls back to the plain link below. */
+  }
   const link = document.createElement("a");
   link.href = url;
-  link.download = name || decodeURIComponent(url.split("/").pop());
+  link.download = fileName;
   link.target = "_blank";
   link.rel = "noopener";
   document.body.appendChild(link);
@@ -1441,11 +1452,15 @@ export default function KanbanBoardPage() {
           return;
         }
         notify(data.message || "Invoice submission email sent successfully", "success");
-        /* The backend builds the hard copies sheet and the dispatch document; download both, then the
+        /* The backend builds the hard copies zip (sheet and dispatch document); it is downloaded, then the
            sent cards are refreshed to their new column. */
-        [data.data?.hard_copies_sheet, data.data?.dispatch_document].forEach((document) => {
-          if (document?.url) downloadDocument(document);
-        });
+        const { hard_copies_zip: hardCopiesZip } = data.data ?? {};
+        if (hardCopiesZip?.url) await downloadDocument(hardCopiesZip);
+        /* The backend has moved the cards, so their local batch column overrides go and the board draws
+           them where get_full_board now says they are. */
+        clearCardColumns(
+          (data.data?.moved_to_dispatch_hard_copies ?? []).map((movedCard) => movedCard.card_id)
+        );
         selectedInvoiceSubmissionCards.forEach((card) => removeCardSelectionId(card.id));
         handleCloseInvoiceSubmissionEmail();
         refetchBoard?.();
@@ -1458,6 +1473,7 @@ export default function KanbanBoardPage() {
       selectedInvoiceSubmissionCards,
       removeCardSelectionId,
       handleCloseInvoiceSubmissionEmail,
+      clearCardColumns,
       refetchBoard,
     ]
   );
