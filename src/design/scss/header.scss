@@ -833,9 +833,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: grab;
+    // Draggable: stop touch gestures from scrolling the page mid-drag.
+    touch-action: none;
     box-shadow: 0 6px 18px rgba(0, 54, 140, 0.4);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:active {
+      cursor: grabbing;
+    }
 
     svg {
       width: 22px;

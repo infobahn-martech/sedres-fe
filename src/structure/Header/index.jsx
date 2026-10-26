@@ -55,6 +55,12 @@ import { isRestrictedBoardUser, isPortOperatorUser } from '../../shared/helpers/
 import { isVendorRole, getRoleId } from '../../shared/helpers/vendorDashboardRoles';
 import { hasMasterModuleAccess } from '../../shared/helpers/roleMasterMenuAccess';
 
+// Pointer travel (px) before a press on the quick tools button counts as a drag, not a click.
+const QUICK_FAB_DRAG_THRESHOLD = 4;
+// Keeps the quick tools button this far inside the viewport while dragging.
+const QUICK_FAB_EDGE_GAP = 8;
+const clamp = (value, min, max) => Math.min(Math.max(value, min), Math.max(min, max));
+
 function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePortal = null }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -79,6 +85,9 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [showTemplatesListModal, setShowTemplatesListModal] = useState(false);
   const [activeTool, setActiveTool] = useState(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
+  const [quickActionsPos, setQuickActionsPos] = useState(null);
+  const quickFabDragRef = useRef(null);
+  const quickFabWasDraggedRef = useRef(false);
   const isCardModalOpen = useCardModalStore((state) => state.isCardModalOpen);
   const { layoutView } = useLayoutView();
   const isDark = useThemeStore((state) => state.isDark);
@@ -120,6 +129,49 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const handleQuickToolSelect = (tool) => {
     setShowQuickActions(false);
     setActiveTool(tool);
+  };
+
+  // Drag the quick tools button by its FAB. Position is kept as right/bottom offsets so the
+  // menu keeps expanding up and to the left of the button wherever it's dropped.
+  const handleQuickFabPointerDown = (event) => {
+    if (event.button !== 0) return;
+    const rect = quickActionsRef.current.getBoundingClientRect();
+    quickFabDragRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      startRight: window.innerWidth - rect.right,
+      startBottom: window.innerHeight - rect.bottom,
+      moved: false,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleQuickFabPointerMove = (event) => {
+    const drag = quickFabDragRef.current;
+    if (!drag) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < QUICK_FAB_DRAG_THRESHOLD) return;
+    drag.moved = true;
+    const fab = event.currentTarget;
+    setQuickActionsPos({
+      right: clamp(drag.startRight - dx, QUICK_FAB_EDGE_GAP, window.innerWidth - fab.offsetWidth - QUICK_FAB_EDGE_GAP),
+      bottom: clamp(drag.startBottom - dy, QUICK_FAB_EDGE_GAP, window.innerHeight - fab.offsetHeight - QUICK_FAB_EDGE_GAP),
+    });
+  };
+
+  const handleQuickFabPointerUp = () => {
+    quickFabWasDraggedRef.current = Boolean(quickFabDragRef.current?.moved);
+    quickFabDragRef.current = null;
+  };
+
+  const handleQuickFabClick = () => {
+    // A drag ends with a click on the same element — swallow it so dropping doesn't toggle the menu.
+    if (quickFabWasDraggedRef.current) {
+      quickFabWasDraggedRef.current = false;
+      return;
+    }
+    setShowQuickActions((prev) => !prev);
   };
 
   const cardManagementSubmenu = [
@@ -621,7 +673,11 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           The per-board sedres-header-dark skin is left off: its near-transparent icon bar is
           meant for the dark navbar and would be unreadable floating over the card. */}
       {isCardModalOpen && createPortal(
-        <div ref={quickActionsRef} className="sedres-header card-quick-actions">
+        <div
+          ref={quickActionsRef}
+          className="sedres-header card-quick-actions"
+          style={quickActionsPos ? { right: quickActionsPos.right, bottom: quickActionsPos.bottom } : undefined}
+        >
           {showQuickActions && (
             <div className="right-section">
               <ToolsMenu variant="inline" onSelect={handleQuickToolSelect} />
@@ -642,7 +698,12 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
               className={`card-quick-actions__fab ${showQuickActions ? 'is-open' : ''}`}
               aria-label={showQuickActions ? 'Close quick tools' : 'Open quick tools'}
               aria-expanded={showQuickActions}
-              onClick={() => setShowQuickActions((prev) => !prev)}
+              title="Drag to move"
+              onClick={handleQuickFabClick}
+              onPointerDown={handleQuickFabPointerDown}
+              onPointerMove={handleQuickFabPointerMove}
+              onPointerUp={handleQuickFabPointerUp}
+              onPointerCancel={handleQuickFabPointerUp}
             >
               {showQuickActions ? <FiX /> : <FiTool />}
             </button>
