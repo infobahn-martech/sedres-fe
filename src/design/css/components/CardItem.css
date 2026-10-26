@@ -1076,6 +1076,12 @@
   box-sizing: border-box;
 }
 
+/* No service counts before it: the row's own top border already divides it. */
+.card-api-count-icons-row > .card-api-link-badge-wrap:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
 .card-api-link-badge {
   cursor: pointer;
 }
