@@ -135,8 +135,8 @@ const sccDocumentUploadFields = [
   {
     name: SCC_APPROVAL_EMAIL_FIELD_NAME,
     label: "Approval email",
-    accept: ".eml,.msg",
-    formatsHint: "EML, MSG",
+    accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
+    formatsHint: "PDF, EML, MSG, JPG, PNG",
     multiple: false,
   },
 ];
@@ -749,8 +749,8 @@ export default function KanbanBoardPage() {
       {
         name: "se_approval_email",
         label: "SE Approval Email",
-        accept: ".msg,.eml",
-        formatsHint: "MSG, EML",
+        accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
+        formatsHint: "PDF, EML, MSG, JPG, PNG",
         required: true,
       },
     ],
