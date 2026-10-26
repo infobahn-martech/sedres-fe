@@ -96,6 +96,13 @@
   margin-bottom: 4px;
 }
 
+/* Full API cards: divide the ID/title header row from the card body, matching the other row separators. */
+.kanban-card--api:not(.card-shrunk) .kanban-card-top-row {
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border-primary);
+}
+
 .kanban-card-top-row-left,
 .kanban-card-top-row-right {
   display: flex;
@@ -1196,6 +1203,10 @@
 .kanban-card-dark.kanban-card--api .card-api-subtask-badge-wrap {
   border-top-color: #3a3a3a;
 }
+
+.kanban-card-dark.kanban-card--api .kanban-card-top-row {
+  border-bottom-color: #3a3a3a;
+}
 /* ========== Dark theme — Kanban board cards (navy palette, partials/_theme.scss) ==========
    Scoped to the board and one class above the zinc `.kanban-dark-mode .kanban-card` rules. */
 [data-theme="dark"] .kanban-board--swimlanes .kanban-card {
@@ -1242,6 +1253,10 @@
 
 [data-theme="dark"] .kanban-board--swimlanes .card-api-summary-row {
   border-top-color: var(--border);
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .kanban-card--api .kanban-card-top-row {
+  border-bottom-color: var(--border);
 }
 
 [data-theme="dark"] .kanban-board--swimlanes .card-api-timeline {
