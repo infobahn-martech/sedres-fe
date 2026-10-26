@@ -1051,8 +1051,9 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  padding: 4px 0 6px 0;
+  padding: 6px 0;
   margin: 0;
+  border-top: 1px solid var(--border-primary);
 }
 
 .card-api-count-badge {
@@ -1213,6 +1214,10 @@
 .kanban-card-dark.kanban-card--api .kanban-card-top-row {
   border-bottom-color: #3a3a3a;
 }
+
+.kanban-card-dark.kanban-card--api .card-api-count-icons-row {
+  border-top-color: #3a3a3a;
+}
 /* ========== Dark theme — Kanban board cards (navy palette, partials/_theme.scss) ==========
    Scoped to the board and one class above the zinc `.kanban-dark-mode .kanban-card` rules. */
 [data-theme="dark"] .kanban-board--swimlanes .kanban-card {
@@ -1263,6 +1268,10 @@
 
 [data-theme="dark"] .kanban-board--swimlanes .kanban-card--api .kanban-card-top-row {
   border-bottom-color: var(--border);
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .card-api-count-icons-row {
+  border-top-color: var(--border);
 }
 
 [data-theme="dark"] .kanban-board--swimlanes .card-api-timeline {
