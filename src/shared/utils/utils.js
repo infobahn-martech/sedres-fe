@@ -45,6 +45,29 @@ export function downloadFile({ link, fileName }) {
   document.body.removeChild(a); // Remove the anchor element
 }
 
+/* Saves a remote file under its own name. The file host is another origin, so the file is fetched as a
+   blob first; while the host sends no CORS header the fetch fails, and the plain link is used instead. */
+export async function downloadRemoteFile({ url, name }) {
+  const fileName = name || decodeURIComponent(url.split('/').pop());
+  try {
+    const response = await fetch(url);
+    if (response.ok) {
+      downloadFile({ link: URL.createObjectURL(await response.blob()), fileName });
+      return;
+    }
+  } catch {
+    /* Falls back to the plain link below. */
+  }
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 export function downloadRowsXLSX(headings, rows, fileName) {
   const workbook = XLSX.utils.book_new();
   const worksheet = XLSX.utils.aoa_to_sheet([headings, ...rows]);
