@@ -42,7 +42,7 @@ const uploadInvoice = (formData) =>
   Gateway.post('/da/da_upload_invoice', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-/** @param {FormData} formData - call_id, proof (required), approval_email, scc (required for L&T only), multipart/form-data.
+/** @param {FormData} formData - call_id, proof (required; `srt` instead for Subsea 7), approval_email, scc (required for L&T only), multipart/form-data.
  * @returns {Promise<{ data: { status: 'success', stage_document_id: number, uploaded: object, documents: object, moved_to_da: Array } | { status: 'error', message: string } }>}
  * Stores the client's approved SO (and approval email) once the decision has been recorded as approved. */
 const uploadSoApprovalProof = (formData) =>
