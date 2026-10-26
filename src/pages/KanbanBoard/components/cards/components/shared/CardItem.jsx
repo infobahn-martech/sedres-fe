@@ -751,13 +751,24 @@ function CardItem({
           }}
         >
           {(canSelectForAction ||
-            (isApiCard && !isShrunk && (topRowUsernameInitial || card.cardTypeIcon))) && (
+            (isApiCard && !isShrunk)) && (
             <div className="kanban-card-top-row">
               <div className="kanban-card-top-row-left">
                 {isApiCard && !isShrunk && card.cardTypeIcon ? (
                   <ApiCardTypeIcon card={card} inline />
                 ) : null}
               </div>
+              {isApiCard && !isShrunk ? (
+                <div
+                  className="kanban-card-top-row-title"
+                  title={hasText(card.title) ? `ID : ${card.id}  ${card.title}` : `ID : ${card.id}`}
+                >
+                  <span className="kanban-card-top-row-id">ID : {card.id}</span>
+                  {hasText(card.title) ? (
+                    <span className="kanban-card-top-row-name">{card.title}</span>
+                  ) : null}
+                </div>
+              ) : null}
               <div className="kanban-card-top-row-right">
                 {isApiCard && !isShrunk && topRowUsernameInitial ? (
                   <span className="card-api-avatar-wrap">

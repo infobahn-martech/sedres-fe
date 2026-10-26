@@ -103,6 +103,41 @@
   gap: 6px;
 }
 
+/* Card ID + title between the type icon and the user avatar; truncates to fit narrow columns. */
+.kanban-card-top-row-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.kanban-card-top-row-id {
+  flex-shrink: 0;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.kanban-card-top-row-name {
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kanban-card-dark .kanban-card-top-row-title {
+  color: #e2e8f0;
+}
+
+.kanban-card-dark .kanban-card-top-row-id {
+  color: #94a3b8;
+}
+
 .kanban-card-select-toggle {
   display: flex;
   padding: 0;
