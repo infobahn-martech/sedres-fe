@@ -174,101 +174,105 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
         >
           {loadError && <div className="alert alert-danger mb-3">{loadError}</div>}
 
-          <div className="mb-lg-3 mb-sm-0">
-            <div className="transport-field">
-              <div className="form-floating desig-inp">
-                <input
-                  type="text"
-                  className={`form-control ${errors.transport_company ? 'is-invalid' : ''}`}
-                  placeholder=" "
-                  disabled={isEdit && isLoadingDetail}
-                  {...register('transport_company', { required: 'Company name is required' })}
-                />
-                <label>
-                  Transport company <span className="text-danger">*</span>
-                </label>
+          <div className="row align-items-end">
+            <div className="col-md-6 mb-lg-3 mb-sm-0">
+              <div className="transport-field">
+                <div className="form-floating desig-inp">
+                  <input
+                    type="text"
+                    className={`form-control ${errors.transport_company ? 'is-invalid' : ''}`}
+                    placeholder=" "
+                    disabled={isEdit && isLoadingDetail}
+                    {...register('transport_company', { required: 'Company name is required' })}
+                  />
+                  <label>
+                    Transport company <span className="text-danger">*</span>
+                  </label>
+                </div>
+                <div className="transport-field__error">
+                  {errors.transport_company?.message}
+                </div>
               </div>
-              <div className="transport-field__error">
-                {errors.transport_company?.message}
+            </div>
+
+            <div className="col-md-6 mb-lg-3 mb-sm-0">
+              <div className="transport-field">
+                <div className="form-floating desig-inp">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder=" "
+                    disabled={isEdit && isLoadingDetail}
+                    {...register('vendor_code')}
+                  />
+                  <label>Vendor code</label>
+                </div>
+                <div className="transport-field__error" />
               </div>
             </div>
           </div>
 
-          <div className="mb-lg-3 mb-sm-0">
-            <div className="transport-field">
-              <div className="form-floating desig-inp">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder=" "
-                  disabled={isEdit && isLoadingDetail}
-                  {...register('vendor_code')}
-                />
-                <label>Vendor code</label>
-              </div>
-              <div className="transport-field__error" />
-            </div>
-          </div>
-
-          <div className="mb-lg-3 mb-sm-0">
-            <div className="transport-field">
-              <div className="phone-wrapper phone-wrapper--notched">
-                <label className="phone-label">
-                  Contact Number <span className="text-danger">*</span>
-                </label>
-                <Controller
-                  name="contact_no"
-                  control={control}
-                  rules={{
-                    required: 'Contact number is required',
-                    validate: (value) => {
-                      const digits = (value || '').replace(/\D/g, '');
-                      return (
-                        digits.length >= 7 ||
-                        'Enter a valid phone number'
-                      );
-                    },
-                  }}
-                  render={({ field }) => (
-                    <PhoneInput
-                      {...field}
-                      country="sa"
-                      enableSearch
-                      inputClass="phone-input"
-                      buttonClass="phone-flag"
-                      disabled={isEdit && isLoadingDetail}
-                    />
-                  )}
-                />
-              </div>
-              <div className="transport-field__error">
-                {errors.contact_no?.message}
+          <div className="row align-items-end">
+            <div className="col-md-6 mb-lg-3 mb-sm-0">
+              <div className="transport-field">
+                <div className="phone-wrapper phone-wrapper--notched">
+                  <label className="phone-label">
+                    Contact Number <span className="text-danger">*</span>
+                  </label>
+                  <Controller
+                    name="contact_no"
+                    control={control}
+                    rules={{
+                      required: 'Contact number is required',
+                      validate: (value) => {
+                        const digits = (value || '').replace(/\D/g, '');
+                        return (
+                          digits.length >= 7 ||
+                          'Enter a valid phone number'
+                        );
+                      },
+                    }}
+                    render={({ field }) => (
+                      <PhoneInput
+                        {...field}
+                        country="sa"
+                        enableSearch
+                        inputClass="phone-input"
+                        buttonClass="phone-flag"
+                        disabled={isEdit && isLoadingDetail}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="transport-field__error">
+                  {errors.contact_no?.message}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="mb-lg-3 mb-sm-0 email-field-wrap">
-            <div className="transport-field">
-              <div className="form-floating desig-inp">
-                <input
-                  type="email"
-                  className={`form-control ${errors.email ? 'is-invalid' : ''}`}
-                  placeholder=" "
-                  disabled={isEdit && isLoadingDetail}
-                  {...register('email', {
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                      message: 'Enter a valid email address',
-                    },
-                  })}
-                />
-                <label>
-                  Email <span className="text-danger">*</span>
-                </label>
-              </div>
-              <div className="transport-field__error">
-                {errors.email?.message}
+            <div className="col-md-6 mb-lg-3 mb-sm-0 email-field-wrap">
+              <div className="transport-field">
+                <div className="form-floating desig-inp">
+                  <input
+                    type="email"
+                    className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+                    placeholder=" "
+                    disabled={isEdit && isLoadingDetail}
+                    {...register('email', {
+                      required: 'Email is required',
+                      pattern: {
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: 'Enter a valid email address',
+                      },
+                    })}
+                  />
+                  <label>
+                    Email <span className="text-danger">*</span>
+                  </label>
+                </div>
+                <div className="transport-field__error">
+                  {errors.email?.message}
+                </div>
               </div>
             </div>
           </div>
