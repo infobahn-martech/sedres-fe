@@ -3,6 +3,7 @@ import { Draggable } from "@hello-pangea/dnd";
 import { KANBAN_DND_DISABLED } from "../../../../../../shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
 import useExportApprovalStatusStore from "../../../../../../shared/store/exportApprovalStatusStore";
+import "../../../../../../design/scss/pages/kanban-board/signatureCheck.scss";
 import { Tooltip } from "react-tooltip";
 import "../../../../../../design/css/components/CardItem.css";
 // Company logos
@@ -676,6 +677,11 @@ function CardItem({
     SAIPEM_WORKFLOW_PATTERN.test(workflowTitle ?? "") && String(columnTitle ?? "").trim().toLowerCase() === "backlog";
   const isExportApprovalHeld =
     isSaipemBacklogCard && (exportApprovalStatus === "pending" || exportApprovalStatus === "loading");
+  /* get_full_board's per-card signature_status "missing" turns the card red; no key keeps the common colour. */
+  const isSignatureMissing = card?.signature_status === "missing";
+  const signatureTooltip = isSignatureMissing
+    ? "Signature missing on the SCC — upload the signed SCC again"
+    : undefined;
   const canSelectForAction =
     isDaBoardCard && typeof onToggleSelectForAction === "function" && !isExportApprovalHeld;
   const topRowUsernameInitial = isApiCard && !isShrunk ? getUsernameInitial(card.user) : null;
@@ -731,7 +737,8 @@ function CardItem({
     <Draggable draggableId={card.id} index={index} isDragDisabled={KANBAN_DND_DISABLED || isDragDisabled}>
       {(provided, snapshot) => (
         <div
-          className={`kanban-card ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""}`}
+          className={`kanban-card ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""} ${isSignatureMissing ? "kanban-card--signature-missing" : ""}`}
+          title={signatureTooltip}
           ref={provided.innerRef}
           {...(KANBAN_DND_DISABLED ? {} : provided.draggableProps)}
           {...(KANBAN_DND_DISABLED ? {} : provided.dragHandleProps)}

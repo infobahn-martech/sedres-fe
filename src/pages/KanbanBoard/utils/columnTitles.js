@@ -22,13 +22,20 @@ export const isColumnBeforeArchive = (workflow, colKey) => {
     ARCHIVE_COLUMN_PATTERN.test(nextTitle) &&
     !ARCHIVE_COLUMN_PATTERN.test(title) &&
     !SRF_SOURCE_COLUMN_PATTERN.test(title) &&
-    !SUBMIT_BY_EMAIL_COLUMN_PATTERN.test(title)
+    !SUBMIT_BY_EMAIL_COLUMN_PATTERN.test(title) &&
+    !isLntSubmittedToDa(workflow?.title, title)
   );
 };
 
 const LNT_WORKFLOW_PATTERN = /l\s*&\s*t(?!\w)|larsen/i;
+const SUBMITTED_TO_DA_COLUMN_PATTERN = /^submitted\s+to\s+f?da$/i;
 
 export const isLntWorkflow = (workflow) => LNT_WORKFLOW_PATTERN.test(String(workflow?.title ?? ""));
+
+/* The L&T "Submitted to DA" (Operations board: "Submitted to FDA") column, whose cards get the SCC signature check. */
+export const isLntSubmittedToDa = (workflowTitle, columnTitle) =>
+  LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
+  SUBMITTED_TO_DA_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
 const MCDERMOTT_WORKFLOW = "MCDERMOTT";
 

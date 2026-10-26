@@ -1,0 +1,98 @@
+// L&T Submitted to DA cards with no SCC signature turn red (signed cards keep the common colour), and the
+// Signature Check popup.
+
+.kanban-card.kanban-card--signature-missing {
+  background: #fdecec;
+  border-color: #dc2626;
+
+  &.kanban-card--selected-for-action {
+    background: linear-gradient(to bottom, #f9d3d3 0%, #fdecec 35%);
+  }
+}
+
+// The shared card hover recolours the border; keep the red on hover.
+.kanban-card.kanban-card--signature-missing:hover {
+  border-color: #dc2626;
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .kanban-card {
+  &.kanban-card--signature-missing,
+  &.kanban-card--signature-missing:hover {
+    background: #3b1d1d;
+    border-color: #dc2626;
+  }
+}
+
+.blockers-modal.signature-check-modal {
+  .modal-dialog {
+    width: 98vw;
+    max-width: 1200px;
+    margin: 1.5rem auto;
+    max-height: calc(100vh - 3.5rem);
+  }
+
+  // CustomModal wraps the header in Bootstrap's .modal-header; the blue .blockers-modal-header
+  // inside it carries all the styling, so the wrapper is reset to a plain container.
+  .modal-header {
+    display: block;
+    flex: 0 0 auto;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+  }
+
+  .blockers-table {
+    thead th,
+    tbody td {
+      text-align: left;
+    }
+
+    .signature-check-empty {
+      padding: 40px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+  }
+
+  .signature-check-so {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .signature-check-link {
+    color: #1d4ed8;
+    text-decoration: underline;
+  }
+
+  .signature-check-state {
+    font-weight: 600;
+
+    &--ok {
+      color: #15803d;
+    }
+
+    &--bad {
+      color: #dc2626;
+    }
+  }
+
+  .signature-check-hand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .signature-check-footer {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border-primary);
+  }
+}
