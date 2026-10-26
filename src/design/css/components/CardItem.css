@@ -897,6 +897,12 @@
   border-bottom: 1px solid var(--border-primary);
 }
 
+/* The header row above already draws this divider (with its own spacing). */
+.kanban-card-top-row + .card-api-sticker-row {
+  border-top: none;
+  padding-top: 0;
+}
+
 .card-api-sticker-badge {
   width: 22px;
   height: 22px;
