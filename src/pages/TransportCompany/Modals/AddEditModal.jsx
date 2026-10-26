@@ -206,6 +206,7 @@ export function TransportCompanyModal({ showModal, closeModal, onSuccess }) {
                 />
                 <label>Vendor code</label>
               </div>
+              <div className="transport-field__error" />
             </div>
           </div>
 
