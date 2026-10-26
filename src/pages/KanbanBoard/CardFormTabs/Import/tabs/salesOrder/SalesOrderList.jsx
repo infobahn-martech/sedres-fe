@@ -58,10 +58,12 @@ const approvedSoUploadFields = [
   },
 ];
 /* Subsea 7 (srt_flow) uses the same da/da_upload_so_approval_proof route: the signed SRT goes in as
-   `srt` (required, the backend lists it under documents.srt) and the approval email as `approval_email`. */
+   `srt` (required, the backend lists it under documents.srt), the approval email as `approval_email` and the
+   signed SO as `proof` (required too: documents.proof, the card is not moved until it is in). */
 const srtUploadFields = [
   { ...approvedSoUploadFields[0], name: "srt", label: "SRT" },
   { ...approvedSoUploadFields[1], label: "SRT approval email" },
+  { ...approvedSoUploadFields[0], label: "Signed SO" },
 ];
 // Column 4's ("SO Sent for approval") local-only per-session action state — see soActionState.
 const SO_ACTION_STATE_DEFAULT = {
@@ -1022,13 +1024,10 @@ const SalesOrderList = ({
         return;
       }
       setShowSoApprovalEmailModal(false);
-      // Subsea 7 (srt_flow) has no SO approval wait: sending the SRT request moves the card exactly
-      // one column forward, the same one-column move Approve does.
-      const nextColumnLabel =
-        Array.isArray(stepLabels) && currentStep != null ? stepLabels[currentStep] : null;
-      if (isSrtFlow && nextColumnLabel) {
-        onAdvanceDaStage?.({ statusId: data.status_id, label: nextColumnLabel, skipStatusUpdate: true });
-        // The card stays open: the signed SRT upload shows right after the request is sent.
+      // Subsea 7 (srt_flow): sending the SRT request does not move the card. da/advance_stage rejects
+      // the move until the signed SRT is uploaded, and that upload moves the card itself. The card
+      // stays open: the document upload shows right after the request is sent.
+      if (isSrtFlow) {
         setSoActionState((prev) => ({ ...prev, button_state: "awaiting_approval" }));
       } else {
         // Optimistic — the action_state refetch triggered by onDaStatusRefresh below confirms it;
@@ -1236,7 +1235,8 @@ const SalesOrderList = ({
       useAlertReducer.getState().success(isSrtFlow ? "SRT uploaded." : "Approved SO uploaded.");
       if (refreshSalesOrder) refreshSalesOrder();
       onDaStatusRefresh?.();
-      const wasMovedToDa = Array.isArray(data?.moved_to_da) && data.moved_to_da.length > 0;
+      const wasMovedToDa =
+        (Array.isArray(data?.moved_to_da) && data.moved_to_da.length > 0) || Boolean(data?.moved_to_column);
       // Subsea 7: the card must end up on "Submitted to DA" once the SRT is in, so when the backend
       // did not move it (moved_to_da empty) it is moved one column forward here.
       const nextColumnLabel =
@@ -2493,17 +2493,18 @@ const SalesOrderList = ({
                 // awaiting_approval) the signed SRT upload shows, and "SRT Received" always shows it
                 // since the request has already gone; before that, "Awaiting SRT" with every item
                 // verified offers the request.
-                effectiveSoButtonState === "awaiting_approval" || isAtSrtReceivedColumn ? (
+                (effectiveSoButtonState === "awaiting_approval" || isAtSrtReceivedColumn) &&
+                hasVerifiedAllItems ? (
                   <button
                     type="button"
                     className="sales-order-da-status-button"
-                    title="Upload the SRT and the SRT approval email"
+                    title="Upload the SRT, the SRT approval email and the signed SO"
                     onClick={() => setShowApprovedSoUploadModal(true)}
                   >
                     <FiUpload />
-                    Upload signed SRT
+                    Upload Documents
                   </button>
-                ) : !isAtSrtReceivedColumn && hasVerifiedAllItems ? (
+                ) : !isAtSrtReceivedColumn && effectiveSoButtonState !== "awaiting_approval" && hasVerifiedAllItems ? (
                   <button
                     type="button"
                     className="sales-order-da-status-button"
@@ -3489,6 +3490,7 @@ const SalesOrderList = ({
           isSubmitting={isSendingSoApprovalEmail}
           soCustomerName={soCustomerName}
           stageLabel={displayStageLabel || "SO Approval"}
+          isSrtFlow={isSrtFlow}
           actionLabel={modalActionLabel}
           defaultTo={draftRecipientEmail}
           defaultCc={draftCcEmail}
@@ -3523,7 +3525,7 @@ const SalesOrderList = ({
           title={isSrtFlow ? "Upload SRT" : "Upload Approved SO"}
           subtitle={
             isSrtFlow
-              ? "Attach the signed SRT and the SRT approval email"
+              ? "Attach the signed SRT, the SRT approval email and the signed SO"
               : "Attach the approved sales order and the SO email"
           }
           submitLabel={isSrtFlow ? "Upload SRT" : "Upload Approved SO"}

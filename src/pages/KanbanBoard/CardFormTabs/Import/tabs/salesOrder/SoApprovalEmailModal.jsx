@@ -26,7 +26,7 @@ import "../../../../../../design/scss/pages/kanban-board/seApprovalUploadModal.s
 // defaultBody is that draft's `body` — HTML (text + Sedres signature + logo), loaded into the
 // editor the same way as the report email templates; nothing is filled in on our side when it's empty.
 // defaultSubject is that draft's `subject` — the backend owns the subject wording too.
-const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, stageLabel = "SO Approval", defaultTo = "", defaultCc = "", defaultSubject = "", defaultBody = "", preLoadedDocuments = [], callId = null }) => {
+const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, stageLabel = "SO Approval", isSrtFlow = false, defaultTo = "", defaultCc = "", defaultSubject = "", defaultBody = "", preLoadedDocuments = [], callId = null }) => {
   const [fromValue, setFromValue] = useState("operations@shipping.com");
   const [toValue, setToValue] = useState("");
   const [ccValue, setCcValue] = useState("");
@@ -138,8 +138,10 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
         <FiMail />
       </span>
       <div className="se-approval-header__text">
-        <h5 className="se-approval-header__title">New {stageLabel} Email</h5>
-        <p className="se-approval-header__subtitle">Send the sales order to the client for approval</p>
+        <h5 className="se-approval-header__title">{isSrtFlow ? "New SRT Request Email" : `New ${stageLabel} Email`}</h5>
+        <p className="se-approval-header__subtitle">
+          {isSrtFlow ? "Send the SRT request to the client" : "Send the sales order to the client for approval"}
+        </p>
       </div>
       <button
         type="button"
@@ -325,7 +327,7 @@ const SoApprovalEmailModal = ({ show, onClose, onCreate, isSubmitting = false, s
       </button>
       <button type="button" className="se-approval-footer__upload" onClick={handleCreate} disabled={isSubmitting}>
         <FiSend />
-        {isSubmitting ? "Sending..." : `Send for ${stageLabel}`}
+        {isSubmitting ? "Sending..." : isSrtFlow ? "Send SRT Request" : `Send for ${stageLabel}`}
       </button>
     </div>
   );
@@ -357,6 +359,7 @@ SoApprovalEmailModal.propTypes = {
   onCreate: PropTypes.func,
   isSubmitting: PropTypes.bool,
   stageLabel: PropTypes.string,
+  isSrtFlow: PropTypes.bool,
   defaultTo: PropTypes.string,
   defaultCc: PropTypes.string,
   defaultSubject: PropTypes.string,
