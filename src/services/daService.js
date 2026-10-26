@@ -76,7 +76,7 @@ const getSeCreationEmailDraft = (batchId, callIds = []) =>
  * Every hub batch created so far, with the cards grouped under it. */
 const getBatches = () => Gateway.get('/da/batches');
 /** @param {FormData} formData - batch_id, se_document (SE excel sheet, required on the first upload),
- * se_approval_email (.msg/.eml), multipart/form-data.
+ * se_approval_email (pdf/eml/msg/jpg/jpeg/png), multipart/form-data.
  * @returns {Promise<{ data: { status: 'success', stage_document_id: number, document_url: string }
  *   | { status: 'error', message: string } }>}
  * Errors if the SE Creation email has not been sent for the batch yet. */
