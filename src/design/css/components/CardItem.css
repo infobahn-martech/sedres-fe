@@ -973,8 +973,9 @@
   gap: 5px;
   width: 100%;
   min-width: 0;
-  padding: 4px 0;
+  padding: 6px 0;
   margin: 0;
+  border-top: 1px solid var(--border-primary);
   box-sizing: border-box;
 }
 
@@ -1221,7 +1222,8 @@
   border-bottom-color: #3a3a3a;
 }
 
-.kanban-card-dark.kanban-card--api .card-api-count-icons-row {
+.kanban-card-dark.kanban-card--api .card-api-count-icons-row,
+.kanban-card-dark.kanban-card--api .card-api-sales-order-row {
   border-top-color: #3a3a3a;
 }
 /* ========== Dark theme — Kanban board cards (navy palette, partials/_theme.scss) ==========
@@ -1276,7 +1278,8 @@
   border-bottom-color: var(--border);
 }
 
-[data-theme="dark"] .kanban-board--swimlanes .card-api-count-icons-row {
+[data-theme="dark"] .kanban-board--swimlanes .card-api-count-icons-row,
+[data-theme="dark"] .kanban-board--swimlanes .card-api-sales-order-row {
   border-top-color: var(--border);
 }
 
