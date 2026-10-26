@@ -24,21 +24,22 @@ const useWorkFlowReducer = create((set, get) => ({
         }
 
         set({ isLoadingBoardsWorkflows: true });
-        const lists = await Promise.all(
-            boardIds.map((boardId) =>
-                workflowService
-                    .getWorkflowByBoard(boardId)
-                    .then(({ data }) => {
-                        const source = data?.status === 'success' ? data?.data : data;
-                        const list = Array.isArray(source) ? source : source ? [source] : [];
-                        return list.map((wf) => ({ ...wf, board_id: String(boardId) }));
-                    })
-                    .catch(() => [])
-            )
-        );
+        let boardsWorkflows = [];
+        try {
+            const { data } = await workflowService.getWorkflowsByBoards(boardIds.map(Number));
+            boardsWorkflows = (data?.data || []).flatMap((board) =>
+                (board.workflows || []).map((wf) => ({
+                    ...wf,
+                    board_id: String(board.board_id),
+                    board_name: board.board_name,
+                }))
+            );
+        } catch {
+            // Picker falls back to an empty workflow list on failure
+        }
 
         if (get().boardsWorkflowsRequestId !== requestId) return;
-        set({ boardsWorkflows: lists.flat(), isLoadingBoardsWorkflows: false });
+        set({ boardsWorkflows, isLoadingBoardsWorkflows: false });
     },
 
     getWorkflowByBoard: async ({ boardId, silent = false }) => {

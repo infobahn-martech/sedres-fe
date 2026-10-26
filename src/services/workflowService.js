@@ -3,6 +3,9 @@ import Gateway from '../gateway/gateway';
 const getWorkflowByBoard = (boardId) =>
     Gateway.get(`/kanban_workflow/get_workflow_by_board/${boardId}`);
 
+const getWorkflowsByBoards = (boardIds) =>
+    Gateway.post('/kanban_workflow/get_workflows_by_boards', { board_ids: boardIds });
+
 const renameWorkflow = (workflowId, data) =>
     Gateway.post(`/kanban_workflow/rename_workflow/${workflowId}`, data);
 
@@ -62,6 +65,7 @@ const reorderWorkflows = (data) =>
 
 export default {
     getWorkflowByBoard,
+    getWorkflowsByBoards,
     renameWorkflow,
     deleteWorkflow,
     disableWorkflow,
