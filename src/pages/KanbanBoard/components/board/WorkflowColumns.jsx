@@ -632,6 +632,9 @@ export default function WorkflowColumns({
                         onBatchSendSeRequest={onBatchSendSeRequest}
                         onBatchUploadSeApproval={onBatchUploadSeApproval}
                         onBatchUploadInvoice={onBatchUploadInvoice}
+                        onBatchIssueArInvoice={(cards) =>
+                          onColumnUploadInvoice?.(cards, { workflowId: workflow.workflow_id ?? workflow.id })
+                        }
                         onBatchRequestPo={onBatchRequestPo}
                         onBatchUploadPos={(cards) =>
                           onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id })

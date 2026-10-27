@@ -18,6 +18,9 @@ const REQUESTED_PO_COLUMN_PATTERN = /^requested\s+po$/i;
 /* BGP batches in "Submit by Email" send the invoice submission email from the header. */
 const BGP_WORKFLOW_PATTERN = /bgp/i;
 const SUBMIT_BY_EMAIL_COLUMN_PATTERN = /^submit\s+by\s+email$/i;
+/* Zamil Crew batches in "Convert to AR Invoice" upload their invoices from the header, for the batch's ticked cards. */
+const ZAMIL_WORKFLOW_PATTERN = /zamil/i;
+const CONVERT_TO_AR_INVOICE_COLUMN_PATTERN = /^convert\s+to\s+ar\s+invoices?$/i;
 const READY_FOR_PO_REQUEST_COLUMN_KEY = "readyforporequest";
 const isReadyForPoRequestColumn = (title) =>
   String(title ?? "").toLowerCase().replace(/[^a-z]/g, "") === READY_FOR_PO_REQUEST_COLUMN_KEY;
@@ -42,6 +45,7 @@ export default function BatchGroup({
   onSendSeRequest,
   onUploadSeApproval,
   onUploadInvoice,
+  onIssueArInvoice,
   onRequestPo,
   onUploadPos,
   onSubmitByEmail,
@@ -61,6 +65,10 @@ export default function BatchGroup({
   /* McDermott batches in "Requested PO" upload their POs from the header, for the batch's ticked cards. */
   const isUploadPosBatch =
     !isUngrouped && !isSeFlowBatch && REQUESTED_PO_COLUMN_PATTERN.test((columnTitle ?? "").trim());
+  const isIssueArInvoiceBatch =
+    !isUngrouped &&
+    ZAMIL_WORKFLOW_PATTERN.test(workflowTitle ?? "") &&
+    CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   const isSubmitByEmailBatch =
     !isUngrouped &&
     BGP_WORKFLOW_PATTERN.test(workflowTitle ?? "") &&
@@ -188,7 +196,16 @@ export default function BatchGroup({
             <span className="batch-group__title">{batch.title}</span>
           </button>
 
-          {isSubmitByEmailBatch ? (
+          {isIssueArInvoiceBatch ? (
+            <button
+              type="button"
+              className="batch-group__action"
+              onClick={() => onIssueArInvoice?.(tickedActionCards)}
+              disabled={!tickedActionCards.length}
+            >
+              Upload Invoices
+            </button>
+          ) : isSubmitByEmailBatch ? (
             <button
               type="button"
               className="batch-group__action"
@@ -317,6 +334,7 @@ BatchGroup.propTypes = {
   onSendSeRequest: PropTypes.func,
   onUploadSeApproval: PropTypes.func,
   onUploadInvoice: PropTypes.func,
+  onIssueArInvoice: PropTypes.func,
   onRequestPo: PropTypes.func,
   onUploadPos: PropTypes.func,
   onSubmitByEmail: PropTypes.func,
