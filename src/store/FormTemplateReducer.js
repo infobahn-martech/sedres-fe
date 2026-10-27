@@ -7,6 +7,8 @@ const useFormTemplateReducer = create((set) => ({
   fieldTypes: null,
   isLoadingMasterLookups: false,
   masterLookups: null,
+  isLoadingSystemBindings: false,
+  systemBindings: null,
   isLoadingCallTypes: false,
   callTypes: null,
   isLoadingTemplates: false,
@@ -42,6 +44,19 @@ const useFormTemplateReducer = create((set) => ({
       // Leave masterLookups as null on failure so the next mount retries.
       set({ isLoadingMasterLookups: false });
       showError(error?.response?.data?.message ?? error?.message ?? 'Failed to fetch master modules');
+    }
+  },
+
+  getSystemBindings: async () => {
+    try {
+      set({ isLoadingSystemBindings: true });
+      const { data } = await formTemplateService.getSystemBindings();
+      set({ systemBindings: data?.data ?? [], isLoadingSystemBindings: false });
+    } catch (error) {
+      const { error: showError } = useAlertReducer.getState();
+      // Fall back to [] so the builder (which waits on this) still opens.
+      set({ systemBindings: [], isLoadingSystemBindings: false });
+      showError(error?.response?.data?.message ?? error?.message ?? 'Failed to fetch default fields');
     }
   },
 

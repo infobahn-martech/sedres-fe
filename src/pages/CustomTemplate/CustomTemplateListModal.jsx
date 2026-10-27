@@ -19,11 +19,11 @@ import "../../design/scss/pages/customTemplateList.scss";
 // Normalizes a raw form_template/list item (template_name/tab_count, tabs in
 // the API's own tab_label/field_label/... shape) into the shape this modal's
 // list/preview UI and TemplateFieldPreview already render.
-const normalizeTemplateSummary = (tpl) => ({
+const normalizeTemplateSummary = (tpl, systemBindings) => ({
     id: tpl.templateId ?? tpl.template_id,
     name: tpl.name ?? tpl.template_name ?? "",
     tabCount: tpl.tabCount ?? tpl.tab_count ?? tpl.tabs?.length ?? 0,
-    tabs: buildTabsFromTemplate(tpl),
+    tabs: buildTabsFromTemplate(tpl, systemBindings),
 });
 
 function TemplateListCard({ template, isActive, onSelect, onDelete }) {
@@ -51,7 +51,9 @@ function TemplateListCard({ template, isActive, onSelect, onDelete }) {
 }
 
 function CustomTemplateListModal({ show, onClose }) {
-    const { getTemplateList, templates, getTemplateById, deleteTemplate } = useFormTemplateReducer((s) => s);
+    const {
+        getTemplateList, templates, getTemplateById, deleteTemplate, getSystemBindings, systemBindings,
+    } = useFormTemplateReducer((s) => s);
 
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedId, setSelectedId] = useState(null);
@@ -70,9 +72,15 @@ function CustomTemplateListModal({ show, onClose }) {
         }
     }, [show, templates, getTemplateList]);
 
+    useEffect(() => {
+        if (show && systemBindings === null) {
+            getSystemBindings();
+        }
+    }, [show, systemBindings, getSystemBindings]);
+
     const normalizedTemplates = useMemo(
-        () => (templates ?? []).map(normalizeTemplateSummary),
-        [templates]
+        () => (templates ?? []).map((tpl) => normalizeTemplateSummary(tpl, systemBindings ?? [])),
+        [templates, systemBindings]
     );
 
     useEffect(() => {
