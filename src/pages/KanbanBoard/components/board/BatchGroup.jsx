@@ -199,12 +199,13 @@ export default function BatchGroup({
           {isIssueArInvoiceBatch ? (
             <button
               type="button"
-              className="batch-group__action d-inline-flex align-items-center gap-1"
+              className="batch-group__action d-inline-flex align-items-center"
               onClick={() => onIssueArInvoice?.(tickedActionCards)}
               disabled={!tickedActionCards.length}
+              title="Upload Invoices"
+              aria-label="Upload Invoices"
             >
               <FiUploadCloud size={16} aria-hidden />
-              Upload Invoices
             </button>
           ) : isSubmitByEmailBatch ? (
             <button
