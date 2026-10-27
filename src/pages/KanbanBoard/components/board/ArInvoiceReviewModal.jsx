@@ -73,17 +73,18 @@ const getTaxLines = (salesOrder) =>
 // invoice placed on it and its tax details alongside, refreshed from da/ar_invoice_review on open. Confirm
 // sends the ticked cards to da/confirm_ar_invoices, which moves them to "AR Invoices Issued"
 // (McDermott "Issue AR Invoice": back to Backlog).
-const ArInvoiceReviewModal = ({ onConfirmed }) => {
-  const show = useArInvoiceReviewStore((state) => state.showArInvoiceReviewModal);
-  const cards = useArInvoiceReviewStore((state) => state.selectedArInvoiceReviewCards);
-  const isLoading = useArInvoiceReviewStore((state) => state.isArInvoiceReviewLoading);
-  const onClose = useArInvoiceReviewStore((state) => state.closeArInvoiceReviewModal);
+/* `useReviewStore` is the workflow's own review store (same state shape), so each workflow keeps its own API calls. */
+const ArInvoiceReviewModal = ({ onConfirmed, useReviewStore = useArInvoiceReviewStore }) => {
+  const show = useReviewStore((state) => state.showArInvoiceReviewModal);
+  const cards = useReviewStore((state) => state.selectedArInvoiceReviewCards);
+  const isLoading = useReviewStore((state) => state.isArInvoiceReviewLoading);
+  const onClose = useReviewStore((state) => state.closeArInvoiceReviewModal);
   const clearCardColumns = useBatchMoveStore((state) => state.clearCardColumns);
-  const fetchArInvoiceReview = useArInvoiceReviewStore((state) => state.fetchArInvoiceReview);
-  const isConfirming = useArInvoiceReviewStore((state) => state.isConfirmingArInvoices);
-  const confirmArInvoices = useArInvoiceReviewStore((state) => state.confirmArInvoices);
-  const workflowId = useArInvoiceReviewStore((state) => state.selectedArInvoiceReviewWorkflowId);
-  const uploadedFiles = useArInvoiceReviewStore((state) => state.uploadedArInvoiceFiles);
+  const fetchArInvoiceReview = useReviewStore((state) => state.fetchArInvoiceReview);
+  const isConfirming = useReviewStore((state) => state.isConfirmingArInvoices);
+  const confirmArInvoices = useReviewStore((state) => state.confirmArInvoices);
+  const workflowId = useReviewStore((state) => state.selectedArInvoiceReviewWorkflowId);
+  const uploadedFiles = useReviewStore((state) => state.uploadedArInvoiceFiles);
 
   /* A workflow id means the McDermott review; SAIPEM's has none. */
   const isMcDermottReview = workflowId != null;
@@ -513,6 +514,7 @@ const ArInvoiceReviewModal = ({ onConfirmed }) => {
 
 ArInvoiceReviewModal.propTypes = {
   onConfirmed: PropTypes.func,
+  useReviewStore: PropTypes.func,
 };
 
 export default ArInvoiceReviewModal;
