@@ -33,7 +33,7 @@ const BP_CURRENCY_OPTIONS = ["SAR", "USD", "EURO"];
 const USD_TO_SAR_RATE = 3.75;
 const SALES_ORDER_PAGE_SIZE = 10;
 const POSH_WORKFLOW_PATTERN = /posh/i;
-const SEND_FOR_SO_APPROVAL_COLUMN_PATTERN = /send for so approval/i;
+const SEND_FOR_SO_APPROVAL_COLUMN_PATTERN = /send for so approval|awaiting so\/pr approval/i;
 const SUBSEA_WORKFLOW_PATTERN = /subsea/i;
 const AWAITING_SRT_COLUMN_PATTERN = /awaiting srt/i;
 const SRT_RECEIVED_COLUMN_PATTERN = /srt received/i;
@@ -844,7 +844,9 @@ const SalesOrderList = ({
     : -1;
   const isAtColumnAfterSendForSoApproval =
     sendForSoApprovalStepIndex !== -1 && currentStep != null && currentStep === sendForSoApprovalStepIndex + 2;
-  const isAtApprovedSoUploadColumn = isPoshAtSoApprovedColumn || isAtColumnAfterSendForSoApproval;
+  // SAIPEM's own "SO Sent for approval" flow lands on the column after it (isAtSoApprovalDecisionColumn).
+  const isAtApprovedSoUploadColumn =
+    isPoshAtSoApprovedColumn || isAtColumnAfterSendForSoApproval || isAtSoApprovalDecisionColumn;
 
   // State for the SO Approval email modal, opened from the header action button when
   // effectiveNextDaStatusLabel is the "SO Approval" stage. Sends via api/da/da_send_action_email
@@ -3510,7 +3512,7 @@ const SalesOrderList = ({
         />
       )}
 
-      {/* Upload Approved SO — shown once the SO is approved (POSH only): the approved SO and the
+      {/* Upload Approved SO — shown once the SO is approved (POSH, SAIPEM, "Send for SO Approval" workflows): the approved SO and the
           SO email, via da/da_upload_so_approval_proof. */}
       {isDaVerifyContext && (
         <SeApprovalUploadModal
