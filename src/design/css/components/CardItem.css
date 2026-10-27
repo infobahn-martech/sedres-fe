@@ -994,6 +994,35 @@
   color: #0d9488;
 }
 
+/* DA final invoice download: pill pushed to the row's right edge */
+.card-api-invoice-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 2px 8px;
+  border: 1px solid rgba(13, 148, 136, 0.3);
+  border-radius: 999px;
+  background: rgba(13, 148, 136, 0.08);
+  color: #0d9488;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.card-api-invoice-download:hover {
+  background: #0d9488;
+  color: #fff;
+}
+
+.card-api-invoice-download:focus-visible {
+  outline: 2px solid #0d9488;
+  outline-offset: 1px;
+}
+
 .card-api-summary-row {
   display: flex;
   flex-direction: row;
@@ -1260,6 +1289,17 @@
 
 [data-theme="dark"] .kanban-board--swimlanes .card-api-sales-order-copy:hover {
   color: var(--text-control);
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .card-api-invoice-download {
+  border-color: rgba(45, 212, 191, 0.35);
+  background: rgba(45, 212, 191, 0.12);
+  color: #5eead4;
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .card-api-invoice-download:hover {
+  background: #14b8a6;
+  color: #042f2e;
 }
 
 [data-theme="dark"] .kanban-board--swimlanes .card-api-summary-row {

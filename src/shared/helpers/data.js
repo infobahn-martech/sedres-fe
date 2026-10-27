@@ -50,6 +50,21 @@ function resolveCardReferenceNo(card) {
 }
 
 /**
+ * The first final invoice ready in `sales_orders` (DA board); `full_invoice` is null until one is.
+ * @param {object} card - raw API card
+ * @returns {{ url: string, name: string }}
+ */
+function resolveCardFullInvoice(card) {
+  const invoice = safeArray(card.sales_orders).find(
+    (so) => so?.full_invoice?.url != null && String(so.full_invoice.url).trim() !== ""
+  )?.full_invoice;
+  return {
+    url: invoice ? String(invoice.url).trim() : "",
+    name: invoice?.name ? String(invoice.name).trim() : "",
+  };
+}
+
+/**
  * Flattens a stage's column tree into leaf columns (rendered as real board tracks).
  * A column with a non-empty `children` array is a pure header group: it is not rendered
  * itself, its children become the tracks, tagged with the parent's id/name for header grouping.
@@ -274,6 +289,7 @@ export function mapBoardWorkflowFromApi(workflow) {
                 ? String(card.sales_order_no).trim()
                 : "",
             referenceNo: resolveCardReferenceNo(card),
+            fullInvoice: resolveCardFullInvoice(card),
             card_type_id:
               card.card_type_id != null && String(card.card_type_id).trim() !== ""
                 ? String(card.card_type_id)

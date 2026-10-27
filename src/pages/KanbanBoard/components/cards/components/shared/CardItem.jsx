@@ -21,6 +21,7 @@ import {
   getApiCardTaskName,
   getUsernameInitial,
 } from "../../../../utils/cardDisplayHelpers";
+import { downloadRemoteFile } from "../../../../../../shared/utils/utils";
 
 /* SNAMPROGETTI is the name the SAIPEM workflow is being renamed from. */
 const SAIPEM_WORKFLOW_PATTERN = /saipem|snamprogetti/i;
@@ -293,11 +294,18 @@ ApiCardSubtaskBadge.propTypes = {
   }).isRequired,
 };
 
-/** Reference number row (invoice no → PO no → sales order no) shown above the KPI summary row, with a click-to-copy icon. */
-function ApiCardSalesOrderRow({ card }) {
+/** Reference number row (invoice no → PO no → sales order no) shown above the KPI summary row, with a click-to-copy icon
+    and, on DA board cards whose final invoice is ready, a download icon. */
+function ApiCardSalesOrderRow({ card, showInvoiceDownload = false }) {
   const [copied, setCopied] = useState(false);
   const referenceNo = hasText(card.referenceNo) ? card.referenceNo : card.salesOrderNo;
   if (!hasText(referenceNo)) return null;
+  const invoiceUrl = showInvoiceDownload ? card.fullInvoice?.url : "";
+
+  const handleInvoiceDownload = (e) => {
+    e.stopPropagation();
+    downloadRemoteFile({ url: invoiceUrl, name: card.fullInvoice?.name });
+  };
 
   const handleCopy = (e) => {
     e.stopPropagation();
@@ -323,6 +331,22 @@ function ApiCardSalesOrderRow({ card }) {
         {copied ? <FiCheck size={12} /> : <FiCopy size={12} />}
       </span>
       <Tooltip id={`sales-order-copy-${card.id}`} place="top" className="card-name-tooltip" />
+      {hasText(invoiceUrl) && (
+        <>
+          <button
+            type="button"
+            className="card-api-invoice-download"
+            data-tooltip-id={`invoice-download-${card.id}`}
+            data-tooltip-content="Download Invoice"
+            onClick={handleInvoiceDownload}
+            aria-label="Download invoice"
+          >
+            <FiDownload size={11} aria-hidden />
+            <span>Invoice</span>
+          </button>
+          <Tooltip id={`invoice-download-${card.id}`} place="top" className="card-name-tooltip" />
+        </>
+      )}
     </div>
   );
 }
@@ -332,7 +356,9 @@ ApiCardSalesOrderRow.propTypes = {
     id: PropTypes.string,
     salesOrderNo: PropTypes.string,
     referenceNo: PropTypes.string,
+    fullInvoice: PropTypes.shape({ url: PropTypes.string, name: PropTypes.string }),
   }).isRequired,
+  showInvoiceDownload: PropTypes.bool,
 };
 
 /** Circular KPI used in API card summary row (classic + compact). */
@@ -584,6 +610,7 @@ function ApiKanbanCardFull({
   setSelectedCard,
   cardsById,
   transportOnlyIcons = false,
+  showInvoiceDownload = false,
 }) {
   const displayTitle = getApiCardDisplayTitle(card);
   const secondary = hasText(card.billingEntity)
@@ -635,7 +662,7 @@ function ApiKanbanCardFull({
 
       <ApiCardCountIconsRow card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} transportOnly={transportOnlyIcons} />
 
-      <ApiCardSalesOrderRow card={card} />
+      <ApiCardSalesOrderRow card={card} showInvoiceDownload={showInvoiceDownload} />
 
       {showSummaryRow ? (
         <div className="card-api-summary-row">
@@ -825,6 +852,7 @@ function CardItem({
                 setSelectedCard={setSelectedCard}
                 cardsById={cardsById}
                 transportOnlyIcons={isTransportCoordinatorWorkflow}
+                showInvoiceDownload={isDaBoardCard}
               />
             )
           ) : isShrunk ? (
