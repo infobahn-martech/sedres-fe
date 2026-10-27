@@ -47,6 +47,7 @@ import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelecti
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
 import useArInvoiceReviewStore from "../../../shared/store/arInvoiceReviewStore";
 import useZamilCrewArInvoiceStore from "../../../shared/store/zamilCrewArInvoiceStore";
+import useZamilCrewFinalInvoiceStore from "../../../shared/store/zamilCrewFinalInvoiceStore";
 import usePoReviewStore from "../../../shared/store/poReviewStore";
 import useSccReviewStore from "../../../shared/store/sccReviewStore";
 import useDispatchProofReviewStore from "../../../shared/store/dispatchProofReviewStore";
@@ -1203,28 +1204,45 @@ export default function KanbanBoardPage() {
   /* Subsea 7 sends the final invoice through its own draft and send routes. */
   const [isFinalInvoiceDispatch, setIsFinalInvoiceDispatch] = useState(false);
 
-  const handleColumnSendInvoice = useCallback(async (card, { isFinalInvoice = false } = {}) => {
+  /* Zamil Crew sends the final invoice through its own service and store. */
+  const [isZamilCrewInvoiceDispatch, setIsZamilCrewInvoiceDispatch] = useState(false);
+  const fetchZamilCrewFinalInvoiceDraft = useZamilCrewFinalInvoiceStore((state) => state.fetchFinalInvoiceDraft);
+  const sendZamilCrewFinalInvoice = useZamilCrewFinalInvoiceStore((state) => state.sendFinalInvoice);
+
+  const handleColumnSendInvoice = useCallback(async (card, { isFinalInvoice = false, isZamilCrew = false } = {}) => {
     if (!card?.callId) {
       notify("The selected card has no call to send the invoice for", "error");
       return;
     }
-    let data;
-    try {
-      ({ data } = isFinalInvoice
-        ? await daService.getFinalInvoiceEmailDraft(card.callId, card.id)
-        : await daService.getInvoiceDispatchDraft(card.callId));
-    } catch (error) {
-      data = error?.response?.data;
+    let draft;
+    if (isZamilCrew) {
+      const result = await fetchZamilCrewFinalInvoiceDraft(card.callId, card.id);
+      if (result.errorMessage) {
+        notify(result.errorMessage, "error");
+        return;
+      }
+      draft = result.draft;
+    } else {
+      let data;
+      try {
+        ({ data } = isFinalInvoice
+          ? await daService.getFinalInvoiceEmailDraft(card.callId, card.id)
+          : await daService.getInvoiceDispatchDraft(card.callId));
+      } catch (error) {
+        data = error?.response?.data;
+      }
+      if (data?.status !== "success" || !data?.data) {
+        notify(data?.message || "Failed to load invoice email draft", "error");
+        return;
+      }
+      draft = data.data;
     }
-    if (data?.status !== "success" || !data?.data) {
-      notify(data?.message || "Failed to load invoice email draft", "error");
-      return;
-    }
-    setInvoiceDispatchDraft(data.data);
+    setInvoiceDispatchDraft(draft);
     setIsFinalInvoiceDispatch(isFinalInvoice);
+    setIsZamilCrewInvoiceDispatch(isZamilCrew);
     setSelectedInvoiceDispatchCard(card);
     setShowInvoiceDispatchEmailModal(true);
-  }, []);
+  }, [fetchZamilCrewFinalInvoiceDraft]);
 
   const handleCloseInvoiceDispatchEmail = useCallback(() => {
     setShowInvoiceDispatchEmailModal(false);
@@ -1256,19 +1274,28 @@ export default function KanbanBoardPage() {
 
       setIsSendingInvoiceDispatch(true);
       try {
-        let data;
-        try {
-          ({ data } = await (isFinalInvoiceDispatch
-            ? daService.sendFinalInvoiceEmail(formData)
-            : daService.sendInvoiceDispatch(formData)));
-        } catch (error) {
-          data = error?.response?.data;
+        let result;
+        if (isZamilCrewInvoiceDispatch) {
+          result = await sendZamilCrewFinalInvoice(formData);
+        } else {
+          let data;
+          try {
+            ({ data } = await (isFinalInvoiceDispatch
+              ? daService.sendFinalInvoiceEmail(formData)
+              : daService.sendInvoiceDispatch(formData)));
+          } catch (error) {
+            data = error?.response?.data;
+          }
+          result =
+            data?.status === "success"
+              ? { message: data.message }
+              : { errorMessage: data?.message || "Failed to send invoice" };
         }
-        if (data?.status !== "success") {
-          notify(data?.message || "Failed to send invoice", "error");
+        if (result.errorMessage) {
+          notify(result.errorMessage, "error");
           return;
         }
-        notify(data.message || "Invoice sent successfully", "success");
+        notify(result.message || "Invoice sent successfully", "success");
         removeCardSelectionId(selectedInvoiceDispatchCard?.id);
         handleCloseInvoiceDispatchEmail();
         refetchBoard?.();
@@ -1279,6 +1306,8 @@ export default function KanbanBoardPage() {
     [
       invoiceDispatchDraft,
       isFinalInvoiceDispatch,
+      isZamilCrewInvoiceDispatch,
+      sendZamilCrewFinalInvoice,
       selectedInvoiceDispatchCard,
       removeCardSelectionId,
       handleCloseInvoiceDispatchEmail,
