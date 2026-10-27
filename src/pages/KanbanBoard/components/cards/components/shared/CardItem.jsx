@@ -342,7 +342,6 @@ function ApiCardSalesOrderRow({ card, showInvoiceDownload = false }) {
             aria-label="Download invoice"
           >
             <FiDownload size={11} aria-hidden />
-            <span>Invoice</span>
           </button>
           <Tooltip id={`invoice-download-${card.id}`} place="top" className="card-name-tooltip" />
         </>
