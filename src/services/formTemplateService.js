@@ -4,6 +4,8 @@ const getFieldTypes = () => Gateway.get('/form_template/field_types');
 
 const getMasterLookups = () => Gateway.get('/form_template/master_lookups');
 
+const getSystemBindings = () => Gateway.get('/form_template/system_bindings');
+
 const getCallTypes = () => Gateway.get('/calltype');
 
 const getTemplateList = (params) => Gateway.get('/form_template/list', { params });
@@ -21,6 +23,7 @@ const deleteTemplate = (templateId) => Gateway.delete(`/form_template/delete/${t
 export default {
   getFieldTypes,
   getMasterLookups,
+  getSystemBindings,
   getCallTypes,
   getTemplateList,
   getAllTemplates,

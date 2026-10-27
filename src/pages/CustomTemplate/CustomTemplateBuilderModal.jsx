@@ -73,6 +73,7 @@ const createBlankField = () => ({
     masterModule: "",
     dependsOnFieldLabel: "",
     timeObjectId: "",
+    systemBindingKey: null,
     gridRow: null,
     gridCol: null,
 });
@@ -98,6 +99,7 @@ const mapTemplateField = (f) => {
         masterModule: f.masterModule ?? f.master_key ?? "",
         dependsOnFieldLabel: f.dependsOnFieldLabel ?? f.depends_on_field_label ?? "",
         timeObjectId: toIdString(f.timeObjectId ?? f.time_object_id),
+        systemBindingKey: f.systemBindingKey ?? f.system_binding_key ?? null,
         gridRow: f.gridRow ?? f.row_no ?? f.grid_row ?? null,
         gridCol: f.gridCol ?? f.col_no ?? f.grid_col ?? null,
     };
@@ -115,27 +117,15 @@ const getTemplateSeed = (template) => ({
 
 // Seed fields/subtabs for a new template, mirroring the real Sedres card.
 // Each entry is [label, type, extra?]; extra overrides any createBlankField key.
+// Appointment Details' locked fields come from the system_bindings API; the
+// fields listed here are ordinary (removable) ones appended after them.
 const DEFAULT_TAB_STRUCTURE = {
     "Appointment Details": {
         fields: [
-            ["Owner", "text"],
-            ["Appointment Email", "file"],
-            ["Appointment Type", "dropdown"],
-            ["Appointment Received", "datetime"],
-            ["Call Type", "dropdown"],
-            ["Port", "dropdown", { optionsSource: "master" }],
             ["Expected Time of Arrival", "datetime"],
             ["Expected Commencement of Custom Inspection", "datetime"],
             ["Expected Time of Departure", "datetime"],
-            ["Last Port", "text"],
-            ["Vessel Type", "dropdown", { optionsSource: "master", masterModule: "vessel_type" }],
-            ["Vessel Name", "text"],
-            ["Vessel Owner", "text"],
-            ["Vessel Charterer", "text"],
             ["Checklist", "dropdown"],
-            ["Assigned Operator", "dropdown"],
-            ["Service Requestor Name", "text"],
-            ["Service Requestor Email", "email"],
         ],
     },
     Operation: {
@@ -175,21 +165,31 @@ const DEFAULT_TAB_STRUCTURE = {
     },
 };
 
-// Appointment Details fields that are fixed on the real card: they can't be
-// deleted and are always required. Matched by label since saved templates
-// carry no "default" flag.
-const LOCKED_FIRST_TAB_FIELD_LABELS = new Set([
-    "owner",
-    "appointment email",
-    "appointment received",
-    "port",
-    "assigned operator",
-    "service requestor name",
-    "service requestor email",
-]);
+// A form_template/system_bindings entry as a builder field. These are the
+// fixed Appointment Details fields of the real card — always required.
+const mapSystemBindingField = (binding) => ({
+    ...createBlankField(),
+    label: binding.label ?? "",
+    type: String(binding.field_type ?? "text").toLowerCase(),
+    required: true,
+    options: (binding.options ?? []).map((opt) => opt?.option_label ?? ""),
+    optionsSource: binding.option_source === "master" ? "master" : "manual",
+    masterModule: binding.master_key ?? "",
+    systemBindingKey: binding.system_binding_key ?? null,
+});
 
-const isLockedField = (field, isFirstTab) =>
-    isFirstTab && LOCKED_FIRST_TAB_FIELD_LABELS.has(field.label.trim().toLowerCase());
+// Resolves a first-tab field's system_binding_key (null when it isn't a
+// system field). Falls back to matching by label for templates saved before
+// fields carried a binding key.
+const buildSystemBindingResolver = (systemBindings) => {
+    const keys = new Set(systemBindings.map((b) => b.system_binding_key));
+    const keyByLabel = new Map(systemBindings.map((b) => [String(b.label ?? "").trim().toLowerCase(), b.system_binding_key]));
+    return (field, isFirstTab) => {
+        if (!isFirstTab) return null;
+        if (field.systemBindingKey && keys.has(field.systemBindingKey)) return field.systemBindingKey;
+        return keyByLabel.get(field.label.trim().toLowerCase()) ?? null;
+    };
+};
 
 const buildDefaultFields = (defs = []) => defs.map(([label, type, extra]) => ({
     ...createBlankField(),
@@ -198,13 +198,14 @@ const buildDefaultFields = (defs = []) => defs.map(([label, type, extra]) => ({
     ...extra,
 }));
 
-const buildDefaultTabs = () => MAIN_TAB_NAMES.map((name) => {
+const buildDefaultTabs = (systemBindings) => MAIN_TAB_NAMES.map((name, idx) => {
     const seed = DEFAULT_TAB_STRUCTURE[name] ?? {};
+    const systemFields = idx === 0 ? systemBindings.map(mapSystemBindingField) : [];
     return {
         id: makeId("tab"),
         tabId: null,
         name,
-        fields: buildDefaultFields(seed.fields),
+        fields: [...systemFields, ...buildDefaultFields(seed.fields)],
         subTabs: Object.entries(seed.subTabs ?? {}).map(([subName, defs]) => ({
             id: makeId("subtab"),
             tabId: null,
@@ -216,8 +217,8 @@ const buildDefaultTabs = () => MAIN_TAB_NAMES.map((name) => {
 
 // Same dual-shape acceptance as mapTemplateField, for a tab/subtab's own name
 // (name vs. tab_label) and its list of subtabs (subTabs vs. the API's subtabs).
-const buildTabsFromTemplate = (template) => {
-    if (!template?.tabs?.length) return buildDefaultTabs();
+const buildTabsFromTemplate = (template, systemBindings = []) => {
+    if (!template?.tabs?.length) return buildDefaultTabs(systemBindings);
     return template.tabs.map((tab) => ({
         id: makeId("tab"),
         tabId: tab.tabId ?? tab.tab_id ?? null,
@@ -614,7 +615,31 @@ const MAX_UNDO_STEPS = 50;
 // Builder form + live preview, with no overlay/topbar of its own — the caller
 // (either the standalone modal below, or CustomTemplateListModal reusing its
 // own single panel) owns the surrounding chrome and decides what onClose does.
+// Waits for the system bindings first, since the form seeds its tabs (and
+// locked fields) from them on mount.
 function TemplateBuilderBody({ initialTemplate = null, onClose }) {
+    const { getSystemBindings, systemBindings } = useFormTemplateReducer((s) => s);
+
+    useEffect(() => {
+        if (systemBindings === null) {
+            getSystemBindings();
+        }
+    }, [systemBindings, getSystemBindings]);
+
+    if (systemBindings === null) {
+        return (
+            <div className="ct-split-body">
+                <div className="ct-preview-empty">
+                    <p>Loading default fields...</p>
+                </div>
+            </div>
+        );
+    }
+
+    return <TemplateBuilderForm initialTemplate={initialTemplate} systemBindings={systemBindings} onClose={onClose} />;
+}
+
+function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
     const {
         getFieldTypes, fieldTypes, isLoadingFieldTypes,
         getMasterLookups, masterLookups, isLoadingMasterLookups,
@@ -632,7 +657,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const [billingEntityId, setBillingEntityId] = useState(() => getTemplateSeed(initialTemplate).billingEntityId);
     const [templateId] = useState(() => getTemplateSeed(initialTemplate).templateId);
 
-    const [tabs, setTabs] = useState(() => buildTabsFromTemplate(initialTemplate));
+    const [tabs, setTabs] = useState(() => buildTabsFromTemplate(initialTemplate, systemBindings));
     const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id);
     const [activeSubTabId, setActiveSubTabId] = useState(() => tabs[0]?.subTabs?.[0]?.id ?? null);
     const [addingTab, setAddingTab] = useState(false);
@@ -675,6 +700,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const masterModuleOptions = useMemo(() => buildMasterModuleOptions(masterLookups), [masterLookups]);
     const timeObjectTypeKey = useMemo(() => buildTimeObjectTypeKey(fieldTypes), [fieldTypes]);
     const timeObjectOptions = useMemo(() => buildTimeObjectOptions(timeObjects), [timeObjects]);
+    const resolveSystemBindingKey = useMemo(() => buildSystemBindingResolver(systemBindings), [systemBindings]);
+    // System-bound Appointment Details fields can't be deleted and are always required.
+    const isLockedField = (field, isFirstTab) => Boolean(resolveSystemBindingKey(field, isFirstTab));
 
     const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
     // The first tab is the template's default — it and its email preview can't be removed.
@@ -791,7 +819,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         setCallTypeId(seed.callTypeId);
         setCallTypeTouched(false);
         setBillingEntityId(seed.billingEntityId);
-        const defaultTabs = buildTabsFromTemplate(initialTemplate);
+        const defaultTabs = buildTabsFromTemplate(initialTemplate, systemBindings);
         setTabs(defaultTabs);
         setActiveTabId(defaultTabs[0].id);
         setActiveSubTabId(defaultTabs[0].subTabs?.[0]?.id ?? null);
@@ -1140,13 +1168,17 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     };
 
     const buildFieldPayload = (field, index, isFirstTab) => {
+        const systemBindingKey = resolveSystemBindingKey(field, isFirstTab);
         const payload = {
             field_type_id: resolveFieldTypeId(field.type),
             field_label: field.label.trim(),
-            is_required: field.required || isLockedField(field, isFirstTab) ? 1 : 0,
+            is_required: field.required || systemBindingKey ? 1 : 0,
             display_order: index + 1,
         };
-        if (isLockedField(field, isFirstTab)) payload.is_system = 1;
+        if (systemBindingKey) {
+            payload.is_system = 1;
+            payload.system_binding_key = systemBindingKey;
+        }
         if (field.fieldId) payload.field_id = Number(field.fieldId);
         // A checkbox with no options is a legacy single checkbox — saved without options.
         const isLegacyCheckbox = field.type === CHECKBOX_TYPE_KEY && !field.options?.length;
