@@ -35,6 +35,7 @@ const SALES_ORDER_PAGE_SIZE = 10;
 const POSH_WORKFLOW_PATTERN = /posh/i;
 const SEND_FOR_SO_APPROVAL_COLUMN_PATTERN = /send for so approval|awaiting so\/pr approval/i;
 const SUBSEA_WORKFLOW_PATTERN = /subsea/i;
+const ZAKHER_WORKFLOW_PATTERN = /zakher/i;
 const AWAITING_SRT_COLUMN_PATTERN = /awaiting srt/i;
 const SRT_RECEIVED_COLUMN_PATTERN = /srt received/i;
 /* "Upload Approved SO" runs for the POSH workflow and for workflows with a "Send for SO Approval" column. da/da_upload_so_approval_proof takes the
@@ -671,6 +672,7 @@ const SalesOrderList = ({
   // da_action_email_draft + da_send_action_email path), and no Approve / Reject.
   // The card's own "Awaiting SRT" column marks the flow too, so the button does not wait on the flag.
   const isSubseaWorkflowCard = SUBSEA_WORKFLOW_PATTERN.test(card?.workflow_name ?? "");
+  const isZakherWorkflowCard = ZAKHER_WORKFLOW_PATTERN.test(card?.workflow_name ?? "");
   const isAtAwaitingSrtColumn =
     isSubseaWorkflowCard &&
     Array.isArray(stepLabels) &&
@@ -813,11 +815,27 @@ const SalesOrderList = ({
   // on "Awaiting SRT" itself, not on the columns before or after it.
   const hasAwaitingSrtColumn =
     isSubseaWorkflowCard && Array.isArray(stepLabels) && stepLabels.some((label) => AWAITING_SRT_COLUMN_PATTERN.test(label || ""));
+  // Zakher Marine cards are verified only once they sit on "Submitted to DA" itself, so the Action
+  // column stays hidden on every earlier column.
   const showActionColumn =
     canViewActionColumn &&
-    (hasAwaitingSrtColumn
+    (isZakherWorkflowCard
+      ? isAtSubmittedToDaColumn
+      : hasAwaitingSrtColumn
       ? isAtAwaitingSrtColumn
       : isAtColumnAfterOpsCompleted || isBeforeSubmittedToDa || isAtSubmittedToDaColumn || isAtSoSentForSccColumn);
+
+  // Zakher Marine: moving a card to "Submitted to DA" (footer step click) while all its line items are
+  // already verified closes the card, same as ticking the last item there. Only a change of column
+  // counts, so opening a card that already sits on the column does not close it.
+  const previousStepRef = useRef(currentStep);
+  useEffect(() => {
+    const previousStep = previousStepRef.current;
+    previousStepRef.current = currentStep;
+    if (isZakherWorkflowCard && isAtSubmittedToDaColumn && previousStep !== currentStep && hasVerifiedAllItems) {
+      onCloseCard?.();
+    }
+  }, [currentStep, isZakherWorkflowCard, isAtSubmittedToDaColumn, hasVerifiedAllItems, onCloseCard]);
 
   // "SO/PO Approval Received" (column 5) is the client-decision column for the SO approval
   // sent at column 4 — approving moves on to column 6, rejecting reverts to column 4 (see
@@ -1538,7 +1556,11 @@ const SalesOrderList = ({
       if (allVerified && isBeforeSubmittedToDa && !isPoshWorkflowCard && !hasSendForSoApprovalColumn && !isSrtFlow) {
         onAdvanceDaStage?.({ label: stepLabels[submittedToDaStepIndex], skipStatusUpdate: true });
         if (wasMovedToDa) onCloseCard?.();
-      } else if (allVerified && (isAtSubmittedToDaColumn || isAtSoSentForSccColumn) && wasMovedToDa) {
+      } else if (
+        allVerified &&
+        (isAtSubmittedToDaColumn || isAtSoSentForSccColumn) &&
+        (wasMovedToDa || isZakherWorkflowCard)
+      ) {
         onCloseCard?.();
       }
     } catch (err) {
