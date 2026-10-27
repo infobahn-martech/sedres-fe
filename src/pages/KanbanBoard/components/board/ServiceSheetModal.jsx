@@ -4,6 +4,7 @@ import { FiCheck, FiLayers, FiX } from "react-icons/fi";
 import CustomModal from "../../../../components/CustomModal";
 import useServiceSheetStore from "../../../../shared/store/serviceSheetStore";
 import { notify } from "../../../../components/Toaster";
+import { downloadFile } from "../../../../shared/utils/utils";
 import "../../../../design/scss/blockers-modal.scss";
 import "../../../../design/scss/pages/kanban-board/seReviewMoveModal.scss";
 import "../../../../design/scss/pages/kanban-board/arInvoiceReviewModal.scss";
@@ -53,7 +54,7 @@ const ServiceSheetModal = ({ onSaved }) => {
 
   const handleSave = async () => {
     if (isSaving || !payload.length) return;
-    const { errorMessage } = await saveServiceSheets(payload);
+    const { errorMessage, result } = await saveServiceSheets(payload);
     if (errorMessage) {
       notify(errorMessage, "error");
       return;
@@ -62,6 +63,18 @@ const ServiceSheetModal = ({ onSaved }) => {
       `${enteredCount} service sheet ${enteredCount === 1 ? "number" : "numbers"} saved`,
       "success"
     );
+    const movedCount = result?.moved_to_invoice_submitted?.length ?? 0;
+    if (movedCount) {
+      notify(`${movedCount} ${movedCount === 1 ? "card" : "cards"} moved to Invoice Submitted to Portal`, "success");
+    }
+    /* The full invoices zip only exists once the cards have moved, so it comes from this response. */
+    const fullInvoicesZip = result?.full_invoices_zip;
+    if (fullInvoicesZip?.url) {
+      downloadFile({
+        link: fullInvoicesZip.url,
+        fileName: fullInvoicesZip.name || decodeURIComponent(fullInvoicesZip.url.split("/").pop()),
+      });
+    }
     onClose();
     onSaved?.();
   };
