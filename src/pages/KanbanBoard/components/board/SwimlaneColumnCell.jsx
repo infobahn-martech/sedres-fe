@@ -35,6 +35,7 @@ export default function SwimlaneColumnCell({
   onBatchSendSeRequest,
   onBatchUploadSeApproval,
   onBatchUploadInvoice,
+  onBatchIssueArInvoice,
   onBatchRequestPo,
   onBatchUploadPos,
   onBatchSubmitByEmail,
@@ -200,6 +201,7 @@ export default function SwimlaneColumnCell({
                 onSendSeRequest={onBatchSendSeRequest}
                 onUploadSeApproval={onBatchUploadSeApproval}
                 onUploadInvoice={onBatchUploadInvoice}
+                onIssueArInvoice={onBatchIssueArInvoice}
                 onRequestPo={onBatchRequestPo}
                 onUploadPos={onBatchUploadPos}
                 onSubmitByEmail={onBatchSubmitByEmail}
@@ -268,6 +270,7 @@ SwimlaneColumnCell.propTypes = {
   onBatchSendSeRequest: PropTypes.func,
   onBatchUploadSeApproval: PropTypes.func,
   onBatchUploadInvoice: PropTypes.func,
+  onBatchIssueArInvoice: PropTypes.func,
   onBatchRequestPo: PropTypes.func,
   onBatchUploadPos: PropTypes.func,
   onBatchSubmitByEmail: PropTypes.func,

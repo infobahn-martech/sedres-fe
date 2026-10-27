@@ -20,7 +20,7 @@ import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import useExportApprovalStatusStore from "../../../../shared/store/exportApprovalStatusStore";
 import useSignatureCheckStore from "../../../../shared/store/signatureCheckStore";
 import useServiceSheetStore from "../../../../shared/store/serviceSheetStore";
-import { isMcDermottWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
+import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "../../../../design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -442,7 +442,10 @@ export default function WorkflowColumns({
               const invoiceActionHandlers = {
                 upload: onColumnUploadInvoice,
                 issueArInvoice: (cards) =>
-                  onColumnUploadInvoice?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
+                  onColumnUploadInvoice?.(cards, {
+                    workflowId: workflow.workflow_id ?? workflow.id,
+                    isZamilCrew: isZamilWorkflow(workflow),
+                  }),
                 uploadPos: (cards) =>
                   onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 uploadSrf: (cards) =>
@@ -632,6 +635,12 @@ export default function WorkflowColumns({
                         onBatchSendSeRequest={onBatchSendSeRequest}
                         onBatchUploadSeApproval={onBatchUploadSeApproval}
                         onBatchUploadInvoice={onBatchUploadInvoice}
+                        onBatchIssueArInvoice={(cards) =>
+                          onColumnUploadInvoice?.(cards, {
+                            workflowId: workflow.workflow_id ?? workflow.id,
+                            isZamilCrew: isZamilWorkflow(workflow),
+                          })
+                        }
                         onBatchRequestPo={onBatchRequestPo}
                         onBatchUploadPos={(cards) =>
                           onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id })

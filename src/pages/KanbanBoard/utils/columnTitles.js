@@ -42,6 +42,11 @@ const MCDERMOTT_WORKFLOW = "MCDERMOTT";
 export const isMcDermottWorkflow = (workflow) =>
   String(workflow?.title ?? "").trim().toUpperCase().includes(MCDERMOTT_WORKFLOW);
 
+const ZAMIL_WORKFLOW = "ZAMIL";
+
+export const isZamilWorkflow = (workflow) =>
+  String(workflow?.title ?? "").trim().toUpperCase().includes(ZAMIL_WORKFLOW);
+
 const UPLOADED_TO_PORTAL_COLUMN_PATTERN =
   /^((uploaded|invoice\s+submitted)\s+to\s+(the\s+)?portal|dispatch\s+the\s+hard\s+copies)$/i;
 
