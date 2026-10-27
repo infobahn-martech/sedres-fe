@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { FiChevronDown } from "react-icons/fi";
+import { FiChevronDown, FiUploadCloud } from "react-icons/fi";
 import CardItem from "../cards/CardItem";
 import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import { isSubmittedInvoicesColumnTitle } from "../../utils/columnTitles";
@@ -199,10 +199,11 @@ export default function BatchGroup({
           {isIssueArInvoiceBatch ? (
             <button
               type="button"
-              className="batch-group__action"
+              className="batch-group__action d-inline-flex align-items-center gap-1"
               onClick={() => onIssueArInvoice?.(tickedActionCards)}
               disabled={!tickedActionCards.length}
             >
+              <FiUploadCloud size={16} aria-hidden />
               Upload Invoices
             </button>
           ) : isSubmitByEmailBatch ? (
