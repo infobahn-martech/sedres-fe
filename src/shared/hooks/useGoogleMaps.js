@@ -18,6 +18,28 @@ if (typeof window !== 'undefined') {
     };
 }
 
+// With `loading=async` the script's onload fires before the places library is
+// ready, so resolve only after importLibrary('places'). One shared promise per
+// page means late subscribers never miss an already-fired load event.
+let loaderPromise = null;
+
+const loadGoogleMaps = () => {
+    if (!loaderPromise) {
+        loaderPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = GOOGLE_MAPS_API_URL;
+            script.async = true;
+            script.onload = () => window.google.maps.importLibrary('places').then(resolve, reject);
+            script.onerror = () => reject(new Error('Failed to load Google Maps script'));
+            document.head.appendChild(script);
+        }).catch((err) => {
+            loaderPromise = null;
+            throw err;
+        });
+    }
+    return loaderPromise;
+};
+
 export const useGoogleMaps = () => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [error, setError] = useState(null);
@@ -30,47 +52,27 @@ export const useGoogleMaps = () => {
     }, []);
 
     useEffect(() => {
-        // Check if Google Maps is already loaded
-        if (window.google && window.google.maps && window.google.maps.places) {
+        if (window.google?.maps?.places) {
             setIsLoaded(true);
-            return;
+            return undefined;
         }
 
-        // Check if script is already being loaded
-        const existingScript = document.querySelector(`script[src*="maps.googleapis.com"]`);
-        if (existingScript) {
-            existingScript.addEventListener('load', () => setIsLoaded(true));
-            existingScript.addEventListener('error', () => setError('Failed to load Google Maps'));
-            return;
-        }
-
-        // Only load if API key is provided
         if (!GOOGLE_MAPS_API_KEY) {
             setError('Google Maps API key is not configured. Please add VITE_GOOGLE_MAPS_API_KEY to your .env file.');
-            return;
+            return undefined;
         }
 
-        // Create and load the script
-        const script = document.createElement('script');
-        script.src = GOOGLE_MAPS_API_URL;
-        script.async = true;
-        script.defer = true;
-
-        script.onload = () => {
-            setIsLoaded(true);
-            setError(null);
-        };
-
-        script.onerror = () => {
-            setError('Failed to load Google Maps script');
-            setIsLoaded(false);
-        };
-
-        document.head.appendChild(script);
+        let cancelled = false;
+        loadGoogleMaps()
+            .then(() => {
+                if (!cancelled) setIsLoaded(true);
+            })
+            .catch((err) => {
+                if (!cancelled) setError(err.message || 'Failed to load Google Maps');
+            });
 
         return () => {
-            // Cleanup: remove script if component unmounts (optional)
-            // Note: We might want to keep it for other components
+            cancelled = true;
         };
     }, []);
 
