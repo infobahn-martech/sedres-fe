@@ -37,9 +37,9 @@ const isBatchWorkflow = (workflow) => {
   return BATCH_ACTION_WORKFLOWS.some((name) => workflowTitle.includes(name));
 };
 
-/* McDermott and BGP DA create batches from Backlog the same way; the backend moves them to its next
-   column. The SAIPEM invoice/SE steps after Backlog stay SAIPEM-only (isBatchWorkflow). */
-const BATCH_CREATE_WORKFLOWS = [...BATCH_ACTION_WORKFLOWS, "MCDERMOTT", "BGP"];
+/* McDermott, BGP and Zamil Crew DA create batches from Backlog the same way; the backend moves them to
+   its next column. The SAIPEM invoice/SE steps after Backlog stay SAIPEM-only (isBatchWorkflow). */
+const BATCH_CREATE_WORKFLOWS = [...BATCH_ACTION_WORKFLOWS, "MCDERMOTT", "BGP", "ZAMIL"];
 
 const isBatchCreateWorkflow = (workflow) => {
   const workflowTitle = String(workflow?.title ?? "").trim().toUpperCase();
