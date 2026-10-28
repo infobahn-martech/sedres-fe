@@ -104,10 +104,17 @@ const REQUEST_FOR_PO_COLUMN_PATTERN = /^request[^a-z]*for[^a-z]*po$/i;
 /* "Upload PO" on "PO Requested" takes the PO for every card the user ticks. */
 const PO_REQUESTED_COLUMN_PATTERN = /^po[^a-z]*requested$/i;
 
+/* "Upload SAP Invoices" on "PO Received / Submitted to DA" takes the SAP invoices for every card the user ticks. */
+const PO_RECEIVED_SUBMITTED_TO_DA_COLUMN_PATTERN = /^po\W*rec(ei|ie)ved(\W+submitted\W*to\W*da)?$/i;
+const isZamilMarineWorkflow = (workflow) => ZAMIL_MARINE_WORKFLOW_PATTERN.test(workflow?.title ?? "");
+
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
   if (ZAMIL_MARINE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && PO_REQUESTED_COLUMN_PATTERN.test(title)) {
     return "uploadZamilMarinePo";
+  }
+  if (isZamilMarineWorkflow(workflow) && PO_RECEIVED_SUBMITTED_TO_DA_COLUMN_PATTERN.test(title)) {
+    return "issueArInvoice";
   }
   if (ZAMIL_MARINE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && REQUEST_FOR_PO_COLUMN_PATTERN.test(title)) {
     return "requestZamilMarinePo";
@@ -152,7 +159,7 @@ const getInvoiceAction = (workflow, column) => {
 
 const POSH_WORKFLOW_PATTERN = /posh/i;
 /* POSH, BGP and Subsea 7 workflows name the "Issue AR Invoice" column action "Upload SAP Invoices". */
-const SAP_INVOICES_LABEL_WORKFLOW_PATTERN = /posh|bgp|subsea/i;
+const SAP_INVOICES_LABEL_WORKFLOW_PATTERN = /posh|bgp|subsea|zamil.*marine/i;
 const ISSUE_AR_INVOICE_SAP_LABEL = "Upload SAP Invoices";
 
 const INVOICE_ACTION_BUTTONS = {
@@ -478,7 +485,8 @@ export default function WorkflowColumns({
                 issueArInvoice: (cards) =>
                   onColumnUploadInvoice?.(cards, {
                     workflowId: workflow.workflow_id ?? workflow.id,
-                    isZamilCrew: isZamilWorkflow(workflow),
+                    isZamilCrew: isZamilWorkflow(workflow) && !isZamilMarineWorkflow(workflow),
+                    isZamilMarine: isZamilMarineWorkflow(workflow),
                   }),
                 uploadPos: (cards) =>
                   onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
@@ -677,7 +685,8 @@ export default function WorkflowColumns({
                         onBatchIssueArInvoice={(cards) =>
                           onColumnUploadInvoice?.(cards, {
                             workflowId: workflow.workflow_id ?? workflow.id,
-                            isZamilCrew: isZamilWorkflow(workflow),
+                            isZamilCrew: isZamilWorkflow(workflow) && !isZamilMarineWorkflow(workflow),
+                            isZamilMarine: isZamilMarineWorkflow(workflow),
                           })
                         }
                         onBatchRequestPo={onBatchRequestPo}
