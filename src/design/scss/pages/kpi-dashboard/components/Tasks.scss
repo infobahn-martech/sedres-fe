@@ -3,8 +3,18 @@
   border-radius: 16px;
   backdrop-filter: blur(10px);
 
-  &__header {
+  // Title on the left, search + filters on the right; wraps on narrow screens.
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px 24px;
     margin-bottom: 24px;
+  }
+
+  &__header {
+    min-width: 0;
   }
 
   &__title {
@@ -25,12 +35,15 @@
   &__filters {
     display: flex;
     gap: 16px;
-    margin-bottom: 24px;
     align-items: flex-start;
     flex-wrap: wrap;
+    margin-left: auto;
 
     @media (max-width: 768px) {
       flex-direction: column;
+      align-items: stretch;
+      width: 100%;
+      margin-left: 0;
     }
   }
 

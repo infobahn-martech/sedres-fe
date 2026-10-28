@@ -48,33 +48,35 @@ const LevelManagement = () => {
 
   return (
     <div className="level-management">
-      <div className="level-management__header">
-        <h2 className="level-management__title">KPI Level Management</h2>
-        <p className="level-management__subtitle">
-          Manage KPI levels, points range and badge icons
-        </p>
-      </div>
-
-      <div className="level-management__toolbar">
-        <div className="level-management__search">
-          <FiSearch className="level-management__search-icon" />
-          <input
-            type="text"
-            placeholder="Search levels..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="level-management__search-input"
-          />
+      <div className="level-management__top">
+        <div className="level-management__header">
+          <h2 className="level-management__title">KPI Level Management</h2>
+          <p className="level-management__subtitle">
+            Manage KPI levels, points range and badge icons
+          </p>
         </div>
 
-        <button
-          type="button"
-          className="level-management__add-btn"
-          onClick={() => setShowModal(true)}
-        >
-          <FiPlus />
-          <span>Add Level</span>
-        </button>
+        <div className="level-management__toolbar">
+          <div className="level-management__search">
+            <FiSearch className="level-management__search-icon" />
+            <input
+              type="text"
+              placeholder="Search levels..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="level-management__search-input"
+            />
+          </div>
+
+          <button
+            type="button"
+            className="level-management__add-btn"
+            onClick={() => setShowModal(true)}
+          >
+            <FiPlus />
+            <span>Add Level</span>
+          </button>
+        </div>
       </div>
 
       <div className="level-management__table-wrapper">

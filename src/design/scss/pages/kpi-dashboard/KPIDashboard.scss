@@ -84,7 +84,7 @@
     box-sizing: border-box;
   }
 
-  // Dashboard home: centered content column with the spec's spacing.
+  // Dashboard home: full-width content column with the spec's spacing.
   &--home &__content {
     padding: 32px clamp(16px, 3vw, 40px) 40px;
   }
@@ -92,8 +92,7 @@
   &--home &__content > .kpi-header-bar,
   &--home &__scrollable-content {
     width: 100%;
-    max-width: 1180px;
-    margin: 0 auto;
+    margin: 0;
   }
 
   &--home &__content > .kpi-header-bar {

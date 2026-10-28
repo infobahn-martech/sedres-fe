@@ -144,54 +144,56 @@ const Tasks = () => {
 
   return (
     <div className="tasks">
-      <div className="tasks__header">
-        <h2 className="tasks__title">Task Management</h2>
-        <p className="tasks__subtitle">View, filter, and manage all your assigned tasks</p>
-      </div>
-
-      <div className="tasks__filters">
-        <div className="tasks__search">
-          <FiSearch className="tasks__search-icon" />
-          <input
-            type="text"
-            placeholder="Search tasks..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(1);
-            }}
-            className="tasks__search-input"
-          />
+      <div className="tasks__toolbar">
+        <div className="tasks__header">
+          <h2 className="tasks__title">Task Management</h2>
+          <p className="tasks__subtitle">View, filter, and manage all your assigned tasks</p>
         </div>
 
-        <div className="tasks__filter-controls">
-          <button
-            type="button"
-            className={`tasks__filter-toggle ${showFilters ? 'tasks__filter-toggle--active' : ''}`}
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <FiFilter />
-            <span>Filters</span>
-          </button>
+        <div className="tasks__filters">
+          <div className="tasks__search">
+            <FiSearch className="tasks__search-icon" />
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
+              className="tasks__search-input"
+            />
+          </div>
 
-          {showFilters && (
-            <div className="tasks__filter-dropdown">
-              <div className="tasks__filter-group">
-                <label className="tasks__filter-label">Status</label>
-                <PremiumSelect
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setPage(1);
-                  }}
-                  options={statusOptions.map((option) => ({ value: option, label: option }))}
-                  placeholder="Filter by status"
-                  searchPlaceholder="Search status..."
-                  className="tasks__filter-premium-select"
-                />
+          <div className="tasks__filter-controls">
+            <button
+              type="button"
+              className={`tasks__filter-toggle ${showFilters ? 'tasks__filter-toggle--active' : ''}`}
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <FiFilter />
+              <span>Filters</span>
+            </button>
+
+            {showFilters && (
+              <div className="tasks__filter-dropdown">
+                <div className="tasks__filter-group">
+                  <label className="tasks__filter-label">Status</label>
+                  <PremiumSelect
+                    value={statusFilter}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value);
+                      setPage(1);
+                    }}
+                    options={statusOptions.map((option) => ({ value: option, label: option }))}
+                    placeholder="Filter by status"
+                    searchPlaceholder="Search status..."
+                    className="tasks__filter-premium-select"
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

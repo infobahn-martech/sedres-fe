@@ -117,57 +117,59 @@ const TeamLeaderboard = () => {
 
   return (
     <div className="team-leaderboard">
-      <div className="team-leaderboard__header">
-        <h2 className="team-leaderboard__title">Team Leaderboard</h2>
-        <p className="team-leaderboard__subtitle">View and track your team&apos;s performance and achievements</p>
-      </div>
-
-      <div className="team-leaderboard__filters">
-        <div className="team-leaderboard__search">
-          <FiSearch className="team-leaderboard__search-icon" />
-          <input
-            type="text"
-            placeholder="Search team members..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(1);
-            }}
-            className="team-leaderboard__search-input"
-          />
+      <div className="team-leaderboard__toolbar">
+        <div className="team-leaderboard__header">
+          <h2 className="team-leaderboard__title">Team Leaderboard</h2>
+          <p className="team-leaderboard__subtitle">View and track your team&apos;s performance and achievements</p>
         </div>
 
-        <div className="team-leaderboard__filter-controls">
-          <button
-            type="button"
-            className={`team-leaderboard__filter-toggle ${showFilters ? 'team-leaderboard__filter-toggle--active' : ''}`}
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <FiFilter />
-            <span>Filters</span>
-          </button>
+        <div className="team-leaderboard__filters">
+          <div className="team-leaderboard__search">
+            <FiSearch className="team-leaderboard__search-icon" />
+            <input
+              type="text"
+              placeholder="Search team members..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
+              className="team-leaderboard__search-input"
+            />
+          </div>
 
-          {showFilters && (
-            <div className="team-leaderboard__filter-dropdown">
-              <div className="team-leaderboard__filter-group">
-                <label className="team-leaderboard__filter-label">Level</label>
-                <PremiumSelect
-                  value={levelFilter}
-                  onChange={(e) => {
-                    setLevelFilter(e.target.value);
-                    setPage(1);
-                  }}
-                  options={levelOptions.map((option) => ({
-                    value: option,
-                    label: option === 'All' ? 'All Levels' : `Level ${option}`,
-                  }))}
-                  placeholder="Filter by level"
-                  searchPlaceholder="Search level..."
-                  className="team-leaderboard__filter-premium-select"
-                />
+          <div className="team-leaderboard__filter-controls">
+            <button
+              type="button"
+              className={`team-leaderboard__filter-toggle ${showFilters ? 'team-leaderboard__filter-toggle--active' : ''}`}
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <FiFilter />
+              <span>Filters</span>
+            </button>
+
+            {showFilters && (
+              <div className="team-leaderboard__filter-dropdown">
+                <div className="team-leaderboard__filter-group">
+                  <label className="team-leaderboard__filter-label">Level</label>
+                  <PremiumSelect
+                    value={levelFilter}
+                    onChange={(e) => {
+                      setLevelFilter(e.target.value);
+                      setPage(1);
+                    }}
+                    options={levelOptions.map((option) => ({
+                      value: option,
+                      label: option === 'All' ? 'All Levels' : `Level ${option}`,
+                    }))}
+                    placeholder="Filter by level"
+                    searchPlaceholder="Search level..."
+                    className="team-leaderboard__filter-premium-select"
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

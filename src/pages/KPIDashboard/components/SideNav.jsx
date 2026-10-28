@@ -186,7 +186,7 @@ const SideNav = ({ activeMenu, setActiveMenu, onProfileClick, onSignOutClick, is
           <div
             className="kpi-sidenav__logo-image"
             style={{
-              background: `url(${KIPLogo}) #050b27 50% / cover no-repeat`
+              background: `url(${KIPLogo}) left center / contain no-repeat`
             }}
           />
           <div className="kpi-sidenav__separator">
