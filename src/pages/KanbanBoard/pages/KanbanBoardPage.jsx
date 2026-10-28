@@ -48,6 +48,7 @@ import useBatchMoveStore from "../../../shared/store/batchMoveStore";
 import useArInvoiceReviewStore from "../../../shared/store/arInvoiceReviewStore";
 import useZamilCrewArInvoiceStore from "../../../shared/store/zamilCrewArInvoiceStore";
 import useZamilMarinePoRequestStore from "../../../shared/store/zamilMarinePoRequestStore";
+import useZamilMarinePoUploadStore from "../../../shared/store/zamilMarinePoUploadStore";
 import useZamilCrewFinalInvoiceStore from "../../../shared/store/zamilCrewFinalInvoiceStore";
 import usePoReviewStore from "../../../shared/store/poReviewStore";
 import useSccReviewStore from "../../../shared/store/sccReviewStore";
@@ -142,6 +143,15 @@ const sccDocumentUploadFields = [
     accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
     formatsHint: "PDF, EML, MSG, JPG, PNG",
     multiple: false,
+  },
+];
+const ZAMIL_MARINE_PO_FIELD_NAME = "po_approval";
+const zamilMarinePoUploadFields = [
+  {
+    name: ZAMIL_MARINE_PO_FIELD_NAME,
+    accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
+    formatsHint: "PDF, EML, MSG, JPG, PNG",
+    multiple: true,
   },
 ];
 const poUploadFields = [
@@ -691,6 +701,34 @@ export default function KanbanBoardPage() {
       refetchBoard?.();
     },
     [zamilMarinePoRequestDraft, zamilMarinePoRequestCards, sendZamilMarinePoRequest, clearCardColumns, removeCardSelectionId, refetchBoard]
+  );
+
+  /* Zamil Marine "Upload PO" on "PO Requested": the PO for the ticked cards goes to da/upload_po_approval;
+     the cards move to the next column on the backend. */
+  const showZamilMarinePoUploadModal = useZamilMarinePoUploadStore((state) => state.showPoUploadModal);
+  const zamilMarinePoUploadCards = useZamilMarinePoUploadStore((state) => state.selectedPoUploadCards);
+  const isUploadingZamilMarinePo = useZamilMarinePoUploadStore((state) => state.isPoUploading);
+  const closeZamilMarinePoUploadModal = useZamilMarinePoUploadStore((state) => state.closePoUploadModal);
+  const uploadZamilMarinePo = useZamilMarinePoUploadStore((state) => state.uploadPo);
+
+  const handleUploadZamilMarinePo = useCallback(
+    async ({ [ZAMIL_MARINE_PO_FIELD_NAME]: files = [] }) => {
+      const formData = new FormData();
+      formData.append("call_ids", zamilMarinePoUploadCards.map((card) => card.callId).join(","));
+      formData.append("card_ids", zamilMarinePoUploadCards.map((card) => card.id).join(","));
+      files.forEach((file) => formData.append("po_approval[]", file));
+
+      const { ok, message } = await uploadZamilMarinePo(formData);
+      if (!ok) {
+        notify(message, "error");
+        return;
+      }
+      notify(message || "PO uploaded successfully", "success");
+      clearCardColumns(zamilMarinePoUploadCards.map((card) => card.id));
+      zamilMarinePoUploadCards.forEach((card) => removeCardSelectionId(card.id));
+      refetchBoard?.();
+    },
+    [zamilMarinePoUploadCards, uploadZamilMarinePo, clearCardColumns, removeCardSelectionId, refetchBoard]
   );
 
   /* Sends the PO request via da/send_po_request; the backend moves the batch's cards to "Requested PO". */
@@ -2507,6 +2545,18 @@ export default function KanbanBoardPage() {
         subtitle="Attach the POs for the selected cards"
         submitLabel="Upload POs"
         fields={poUploadFields}
+      />
+
+      <SeApprovalUploadModal
+        show={showZamilMarinePoUploadModal}
+        onClose={closeZamilMarinePoUploadModal}
+        onUpload={handleUploadZamilMarinePo}
+        isSubmitting={isUploadingZamilMarinePo}
+        selectedCardCount={zamilMarinePoUploadCards.length}
+        title="Upload PO"
+        subtitle="Attach the PO for the selected cards"
+        submitLabel="Upload PO"
+        fields={zamilMarinePoUploadFields}
       />
 
       <SeApprovalUploadModal
