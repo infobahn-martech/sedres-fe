@@ -57,7 +57,8 @@ const useZamilMarineStore = create((set) => ({
   closeUploadDocumentsModal: () => set({ showUploadDocumentsModal: false, uploadDocumentsError: "" }),
 
   /** @param {FormData} formData
-   * @returns {Promise<{ ok: boolean, movedToDa: boolean }>} movedToDa is true when the backend moved the card to DA. */
+   * @returns {Promise<{ ok: boolean, movedToDa: boolean }>} movedToDa is true when the backend moved the card to DA,
+   * or when every required document is uploaded (the process is complete, so the card is done on this board). */
   uploadDocuments: async (formData) => {
     set({ isUploadingDocuments: true, uploadDocumentsError: "" });
     try {
@@ -66,7 +67,13 @@ const useZamilMarineStore = create((set) => ({
         throw new Error(data?.message || "Failed to upload the documents.");
       }
       set({ showUploadDocumentsModal: false });
-      return { ok: true, movedToDa: Array.isArray(data?.moved_to_da) && data.moved_to_da.length > 0 };
+      const requiredDocuments = Object.values(data?.documents ?? {}).filter((document) => document?.required);
+      const allRequiredUploaded = requiredDocuments.length > 0 && requiredDocuments.every((document) => document.uploaded);
+      const movedToDa =
+        (Array.isArray(data?.moved_to_da) && data.moved_to_da.length > 0) ||
+        Boolean(data?.moved_to_column) ||
+        allRequiredUploaded;
+      return { ok: true, movedToDa };
     } catch (err) {
       set({
         uploadDocumentsError:
