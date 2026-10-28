@@ -21,6 +21,7 @@ import useExportApprovalStatusStore from "../../../../shared/store/exportApprova
 import useSignatureCheckStore from "../../../../shared/store/signatureCheckStore";
 import useServiceSheetStore from "../../../../shared/store/serviceSheetStore";
 import useZamilMarinePoRequestStore from "../../../../shared/store/zamilMarinePoRequestStore";
+import useZamilMarinePoUploadStore from "../../../../shared/store/zamilMarinePoUploadStore";
 import useAlertReducer from "../../../../store/AlertReducer";
 import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
@@ -100,8 +101,14 @@ const SO_SENT_FOR_SCC_COLUMN_PATTERN = /^so\s+sent\s+for\s+scc$/i;
 const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil.*marine/i;
 const REQUEST_FOR_PO_COLUMN_PATTERN = /^request[^a-z]*for[^a-z]*po$/i;
 
+/* "Upload PO" on "PO Requested" takes the PO for every card the user ticks. */
+const PO_REQUESTED_COLUMN_PATTERN = /^po[^a-z]*requested$/i;
+
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
+  if (ZAMIL_MARINE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && PO_REQUESTED_COLUMN_PATTERN.test(title)) {
+    return "uploadZamilMarinePo";
+  }
   if (ZAMIL_MARINE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && REQUEST_FOR_PO_COLUMN_PATTERN.test(title)) {
     return "requestZamilMarinePo";
   }
@@ -161,6 +168,7 @@ const INVOICE_ACTION_BUTTONS = {
   moveCards: { label: "Move the Cards", icon: <FiArrowRight size={16} aria-hidden /> },
   requestPo: { label: "Request PO", icon: <FiSend size={16} aria-hidden /> },
   requestZamilMarinePo: { label: "Send for PO Request", icon: <FiSend size={16} aria-hidden /> },
+  uploadZamilMarinePo: { label: "Upload PO", icon: <FiUploadCloud size={16} aria-hidden /> },
   enterServiceSheetNo: { label: "Enter Service Sheet No", icon: <FiFileText size={16} aria-hidden /> },
   checkSignatures: { label: "Check Signatures", icon: <FiEdit3 size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
@@ -281,6 +289,13 @@ export default function WorkflowColumns({
   const openSignatureCheckModal = useSignatureCheckStore((state) => state.openSignatureCheckModal);
   const openServiceSheetModal = useServiceSheetStore((state) => state.openServiceSheetModal);
   const openZamilMarinePoRequestModal = useZamilMarinePoRequestStore((state) => state.openPoRequestEmailModal);
+
+  const openZamilMarinePoUploadModal = useZamilMarinePoUploadStore((state) => state.openPoUploadModal);
+
+  const handleZamilMarinePoUpload = (cards) => {
+    const { ok, message } = openZamilMarinePoUploadModal(cards);
+    if (!ok) useAlertReducer.getState().error(message);
+  };
 
   const handleZamilMarinePoRequest = async (cards) => {
     const { ok, message } = await openZamilMarinePoRequestModal(cards);
@@ -478,6 +493,7 @@ export default function WorkflowColumns({
                 sendSccApproval: onColumnSendSccApproval,
                 requestPo: onColumnRequestPo,
                 requestZamilMarinePo: handleZamilMarinePoRequest,
+                uploadZamilMarinePo: handleZamilMarinePoUpload,
                 merge: onColumnMergeInvoice,
                 downloadInvoices: onColumnDownloadInvoices,
                 uploadDispatchProof: onUploadDispatchProof,
