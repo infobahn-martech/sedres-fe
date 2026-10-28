@@ -118,13 +118,31 @@ const mapTemplateTabFields = (fields) =>
         optionAvatars: options.map((opt) => opt?.avatar ?? null),
         optionsSource: field?.option_source === "master" ? "master" : "manual",
         masterModule: field?.master_key ?? "",
-        bindingKey: field?.system_binding_key ?? "",
+        refetchParam: resolveTemplateRefetchParam(field),
       };
     });
 
-// Changing a field bound to one of these keys re-fetches first_tab so the backend can resolve
-// the remaining field values for that email / vessel / billing entity.
-const TEMPLATE_REFETCH_BINDING_KEYS = ["appointment_email_file", "vessel_id", "billing_entity_id"];
+// Changing a field bound to one of these params re-fetches first_tab so the backend can resolve
+// the remaining field values for that email / vessel / billing entity. Keyed by the normalized
+// system_binding_key / master_key / label (e.g. "billing_entity_id", "Billing Entity", "Vessel Name").
+const TEMPLATE_REFETCH_PARAMS = {
+  appointment_email: "appointment_email_file",
+  vessel: "vessel_id",
+  billing_entity: "billing_entity_id",
+};
+
+const normalizeBindingKey = (value) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/_(id|file|name)$/, "");
+
+const resolveTemplateRefetchParam = (field) =>
+  [field?.system_binding_key, field?.master_key, field?.field_label]
+    .map((candidate) => TEMPLATE_REFETCH_PARAMS[normalizeBindingKey(candidate)])
+    .find(Boolean) ?? "";
 
 const isFileValue = (value) =>
   value instanceof File || (typeof Blob !== "undefined" && value instanceof Blob);
@@ -480,10 +498,10 @@ function GeneralAdd({
       const payload = new FormData();
       const triggerValues = {};
       templateFields.forEach((field) => {
-        if (!TEMPLATE_REFETCH_BINDING_KEYS.includes(field.bindingKey)) return;
+        if (!field.refetchParam) return;
         const value = values[field.id];
         triggerValues[field.id] = value;
-        if (isFileValue(value) || hasMeaningfulValue(value)) payload.append(field.bindingKey, value);
+        if (isFileValue(value) || hasMeaningfulValue(value)) payload.append(field.refetchParam, value);
       });
 
       const requestId = ++templateRefetchRequestIdRef.current;
@@ -522,7 +540,7 @@ function GeneralAdd({
         delete next[fieldId];
         return next;
       });
-      if (TEMPLATE_REFETCH_BINDING_KEYS.includes(field.bindingKey)) refetchTemplateFirstTab(nextValues);
+      if (field.refetchParam) refetchTemplateFirstTab(nextValues);
     },
     [refetchTemplateFirstTab]
   );
