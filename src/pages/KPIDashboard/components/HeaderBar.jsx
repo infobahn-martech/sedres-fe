@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileIconKPI from '../../../assets/images/ProfileIconKPI.png';
 import useKPIDashboardReducer from '../../../store/KPIDashboard';
@@ -29,8 +29,34 @@ const getProgressPercentage = (totalPoints, pointsToNextLevel) => {
   return total > 0 ? Math.round((earned / total) * 100) : 0;
 };
 
-const HeaderBar = ({ breadcrumbs = null, title = 'KPI Dashboard', onMobileMenuToggle }) => {
+const HeaderBar = ({ breadcrumbs = null, title = 'KPI Dashboard', onMobileMenuToggle, onMyAccountClick, onLogoutClick }) => {
   const navigate = useNavigate();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef(null);
+
+  // Close the user menu on outside click or Escape
+  useEffect(() => {
+    if (!showUserMenu) return undefined;
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setShowUserMenu(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showUserMenu]);
+
+  const handleUserMenuSelect = (callback) => {
+    setShowUserMenu(false);
+    if (callback) callback();
+  };
   const dashboardData = useKPIDashboardReducer((state) => state.dashboardData);
   const { user, current_level, next_level, points_to_next_level, total_points } = dashboardData;
   const userName = user?.name ?? 'User';
@@ -101,22 +127,50 @@ const HeaderBar = ({ breadcrumbs = null, title = 'KPI Dashboard', onMobileMenuTo
           </div>
         </div>
       )}
-      <div className="kpi-header-bar__right">
-        <div className="kpi-header-bar__greeting">
-          <div className="kpi-header-bar__greeting-text">
-            Hello, <span className="kpi-header-bar__name">{userName}</span>
+      <div className="kpi-header-bar__user" ref={userMenuRef}>
+        <button
+          type="button"
+          className="kpi-header-bar__right"
+          aria-haspopup="menu"
+          aria-expanded={showUserMenu}
+          onClick={() => setShowUserMenu((open) => !open)}
+        >
+          <div className="kpi-header-bar__greeting">
+            <div className="kpi-header-bar__greeting-text">
+              Hello, <span className="kpi-header-bar__name">{userName}</span>
+            </div>
+            {current_level != null && (
+              <div className="kpi-header-bar__level-text">Level {current_level}</div>
+            )}
           </div>
-          {current_level != null && (
-            <div className="kpi-header-bar__level-text">Level {current_level}</div>
-          )}
-        </div>
-        <div className="kpi-header-bar__profile">
-          <img
-            src={avatarUrl}
-            alt="Profile"
-            className="kpi-header-bar__profile-image"
-          />
-        </div>
+          <div className="kpi-header-bar__profile">
+            <img
+              src={avatarUrl}
+              alt="Profile"
+              className="kpi-header-bar__profile-image"
+            />
+          </div>
+        </button>
+        {showUserMenu && (
+          <div className="kpi-header-bar__menu" role="menu">
+            <button
+              type="button"
+              role="menuitem"
+              className="kpi-header-bar__menu-item"
+              onClick={() => handleUserMenuSelect(onMyAccountClick)}
+            >
+              My Account
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="kpi-header-bar__menu-item"
+              onClick={() => handleUserMenuSelect(onLogoutClick)}
+            >
+              Logout
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ import ChartsRow from './components/ChartsRow';
 import Earnings from './components/Earnings';
 import Tasks from './components/Tasks';
 import TeamLeaderboard from './components/TeamLeaderboard';
-import ProfileModal from './components/ProfileModal';
+import MyAccountsModal from '../../structure/Header/MyAccountsModal';
 import SignOutModal from './components/SignOutModal';
 import useAuthReducer from '../../store/AuthReducer';
 import useKPIDashboardReducer from '../../store/KPIDashboard';
@@ -51,7 +51,7 @@ const KPIDashboard = () => {
     };
 
     const [activeMenu, setActiveMenu] = useState(getInitialMenu());
-    const [showProfileModal, setShowProfileModal] = useState(false);
+    const [showMyAccountModal, setShowMyAccountModal] = useState(false);
     const [showSignOutModal, setShowSignOutModal] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -159,7 +159,7 @@ const KPIDashboard = () => {
                 <SideNav
                     activeMenu={activeMenu}
                     setActiveMenu={setActiveMenu}
-                    onProfileClick={() => setShowProfileModal(true)}
+                    onProfileClick={() => setShowMyAccountModal(true)}
                     onSignOutClick={() => setShowSignOutModal(true)}
                     isMobileMenuOpen={isMobileMenuOpen}
                     onMobileMenuClose={() => setIsMobileMenuOpen(false)}
@@ -169,16 +169,20 @@ const KPIDashboard = () => {
                         title={getPageTitle()}
                         breadcrumbs={getBreadcrumbs()}
                         onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        onMyAccountClick={() => setShowMyAccountModal(true)}
+                        onLogoutClick={() => setShowSignOutModal(true)}
                     />
                     <div className="kpi-dashboard__scrollable-content">
                         {renderContent()}
                     </div>
                 </div>
             </div>
-            <ProfileModal
-                show={showProfileModal}
-                onClose={() => setShowProfileModal(false)}
-            />
+            {showMyAccountModal && (
+                <MyAccountsModal
+                    show={showMyAccountModal}
+                    onClose={() => setShowMyAccountModal(false)}
+                />
+            )}
             <SignOutModal
                 show={showSignOutModal}
                 onClose={() => setShowSignOutModal(false)}

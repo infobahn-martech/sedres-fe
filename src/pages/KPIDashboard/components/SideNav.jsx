@@ -90,13 +90,6 @@ const SideNav = ({ activeMenu, setActiveMenu, onProfileClick, onSignOutClick, is
     </svg>
   );
 
-  const ProfileIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15" fill="none">
-      <path d="M9.74525 1.89175C9.17513 1.27622 8.37884 0.937256 7.49994 0.937256C6.61634 0.937256 5.81742 1.27417 5.24994 1.88589C4.6763 2.50435 4.39681 3.34487 4.46244 4.25249C4.59251 6.04311 5.95511 7.49975 7.49994 7.49975C9.04476 7.49975 10.405 6.04341 10.5371 4.25307C10.6036 3.35366 10.3224 2.51489 9.74525 1.89175Z" fill="currentColor" />
-      <path d="M12.6562 14.0616H2.3437C2.20872 14.0634 2.07505 14.035 1.9524 13.9786C1.82976 13.9222 1.72123 13.8392 1.63472 13.7355C1.44429 13.5079 1.36753 13.1971 1.42437 12.8827C1.67163 11.511 2.44331 10.3588 3.6562 9.5499C4.73374 8.83183 6.09868 8.43661 7.49995 8.43661C8.90122 8.43661 10.2662 8.83212 11.3437 9.5499C12.5566 10.3585 13.3283 11.5107 13.5755 12.8824C13.6324 13.1968 13.5556 13.5076 13.3652 13.7352C13.2787 13.8389 13.1702 13.922 13.0475 13.9785C12.9249 14.0349 12.7912 14.0633 12.6562 14.0616Z" fill="currentColor" />
-    </svg>
-  );
-
   const MasterModuleIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15" fill="none">
       <path d="M7.5 0L9.18301 5.18237H14.6329L10.225 8.38513L11.908 13.5675L7.5 10.3647L3.09202 13.5675L4.77505 8.38513L0.367076 5.18237H5.81699L7.5 0Z" fill="currentColor" />
@@ -108,12 +101,6 @@ const SideNav = ({ activeMenu, setActiveMenu, onProfileClick, onSignOutClick, is
     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15" fill="none">
       <path d="M1.875 2.8125C1.875 2.26022 2.32272 1.8125 2.875 1.8125H5.625C6.17728 1.8125 6.625 2.26022 6.625 2.8125V12.1875C6.625 12.7398 6.17728 13.1875 5.625 13.1875H2.875C2.32272 13.1875 1.875 12.7398 1.875 12.1875V2.8125Z" fill="currentColor" />
       <path d="M8.375 5.625C8.375 5.07272 8.82272 4.625 9.375 4.625H12.125C12.6773 4.625 13.125 5.07272 13.125 5.625V12.1875C13.125 12.7398 12.6773 13.1875 12.125 13.1875H9.375C8.82272 13.1875 8.375 12.7398 8.375 12.1875V5.625Z" fill="currentColor" />
-    </svg>
-  );
-
-  const SignOutIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="16" viewBox="0 0 13 16" fill="none">
-      <path d="M10.1049 0.000110984C11.3298 0.000110984 12.3395 1.00745 12.3395 2.25261V3.95211C12.3389 4.02561 12.3238 4.09837 12.295 4.16607C12.2661 4.23391 12.2241 4.29523 12.1715 4.34654C12.1188 4.398 12.0565 4.43845 11.9881 4.4657C11.9197 4.49295 11.8466 4.50629 11.773 4.50513L10.6624 4.5073C10.336 4.5073 10.0959 4.25275 10.0959 3.93864V2.53078C10.0959 2.37481 9.97474 2.25377 9.82557 2.25377H4.48702L7.9779 4.00255C8.52756 4.27739 8.97406 4.99971 8.97406 5.61565V10.9631C8.97261 11.0009 8.97899 11.0386 8.99262 11.074C9.00624 11.1092 9.02683 11.1414 9.05335 11.1685C9.07974 11.1955 9.11148 11.2169 9.14642 11.2314C9.18135 11.2459 9.2189 11.253 9.25673 11.2526H9.81308C9.84975 11.2536 9.88643 11.2472 9.92063 11.234C9.95499 11.2206 9.98615 11.2006 10.0125 11.1749C10.0389 11.1492 10.0598 11.1187 10.0741 11.0847C10.0884 11.051 10.0957 11.0146 10.0957 10.9778V9.57224C10.0947 9.49744 10.1086 9.42337 10.1368 9.35422C10.1649 9.28493 10.2065 9.22202 10.2594 9.16925C10.3122 9.11649 10.3751 9.07474 10.4442 9.04662C10.5134 9.01849 10.5876 9.00458 10.6622 9.00574H11.7728C11.8466 9.00342 11.9201 9.01603 11.9889 9.04285C12.0576 9.06952 12.1204 9.10996 12.1732 9.16142C12.2261 9.21288 12.2681 9.27449 12.2965 9.34262C12.3251 9.4106 12.3396 9.48381 12.3393 9.55759V11.2548C12.3393 12.5044 11.3341 13.5028 10.0946 13.5028H8.97409V14.0738C8.97409 15.319 8.02171 15.9932 6.84712 15.5893L2.12681 13.9684C0.960168 13.5679 0 12.2319 0 10.9924V2.24571C0 0.995013 1.00051 0 2.23454 0L10.1049 0.000110984Z" fill="currentColor" />
     </svg>
   );
 
@@ -132,14 +119,12 @@ const SideNav = ({ activeMenu, setActiveMenu, onProfileClick, onSignOutClick, is
   ];
 
   const accountItems = [
-    { id: 'Profile', label: 'Profile', icon: ProfileIcon },
     { id: 'Master Module', label: 'Master Module', icon: MasterModuleIcon, path: '/dashboard' },
     { id: 'Back to Workspace', label: 'Back to Workspace', icon: BackToBoardIcon, path: '/workspaces' },
-    { id: 'Sign Out', label: 'Sign Out', icon: SignOutIcon },
   ];
 
-  // Route items render as links (so they can be opened in a new tab); a plain
-  // click still goes through handleMenuClick. Profile and Sign Out are actions.
+  // Items render as links (so they can be opened in a new tab); a plain
+  // click still goes through handleMenuClick.
   const renderMenuItem = (item) => {
     const Icon = item.icon;
     const isActive = currentActiveMenu === item.id;
@@ -152,14 +137,6 @@ const SideNav = ({ activeMenu, setActiveMenu, onProfileClick, onSignOutClick, is
         <span className={`kpi-sidenav__menu-text ${isActive ? 'kpi-sidenav__menu-text--active' : ''}`}>{item.label}</span>
       </>
     );
-
-    if (!item.path) {
-      return (
-        <button key={item.id} type="button" className={className} onClick={() => handleMenuClick(item.id)}>
-          {children}
-        </button>
-      );
-    }
 
     return (
       <Link
