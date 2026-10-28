@@ -1,42 +1,34 @@
 .kpi-sidenav {
-  width: 280px;
-  min-width: 280px;
-  height: 100vh;
-  position: fixed;
-  left: 0;
-  top: 0;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  z-index: 10;
-  overflow-y: auto;
-  overflow-x: hidden;
-  transition: transform 0.3s ease;
+  flex: 0 0 240px;
+  width: 240px;
+  box-sizing: border-box;
+  background: var(--kpi-sidebar-bg);
+  border-right: 1px solid var(--kpi-border);
 
-  @media (max-width: 1024px) {
-    transform: translateX(-100%);
-    z-index: 11;
-
-    &--mobile-open {
-      transform: translateX(0);
-    }
+  // Narrow screens: the sidebar stacks above the content.
+  @media (max-width: 900px) {
+    flex-basis: 100%;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--kpi-border);
   }
 
   &__content {
-    padding: 24px 20px;
-    height: 100%;
+    padding: 24px 16px;
     display: flex;
     flex-direction: column;
+    gap: 24px;
   }
 
   &__logo {
-    margin-bottom: 32px;
+    padding: 0 4px;
 
     &-image {
-      width: 213px;
-      height: 52px;
-      aspect-ratio: 213/52;
+      width: 100%;
+      max-width: 208px;
+      aspect-ratio: 213 / 52;
       background: #050b27 50% / cover no-repeat;
+      border-radius: var(--kpi-radius-chip);
       margin-bottom: 16px;
     }
   }
@@ -44,45 +36,61 @@
   &__separator {
     width: 100%;
     display: flex;
-    align-items: center;
-    justify-content: center;
 
     svg {
       width: 100%;
       height: 1px;
-      max-width: 234px;
     }
   }
 
-  &__menu {
+  &__menu,
+  &__account-menu {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 24px;
+    gap: 4px;
+
+    @media (max-width: 900px) {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr));
+    }
   }
 
   &__menu-item {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 16px;
-    border: none;
-    cursor: pointer;
-    width: 100%;
-    text-align: left;
-    border-radius: 12px;
-    background: transparent;
-    transition: all 0.2s ease;
     min-height: 44px;
-
-    &--active {
-      border-radius: 12px;
-      background: rgba(26, 31, 55, 0.6);
-      box-shadow: 0 3.5px 5.5px 0 rgba(0, 0, 0, 0.02);
-    }
+    padding: 0 12px;
+    box-sizing: border-box;
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--kpi-text-secondary);
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
 
     &:hover {
-      opacity: 0.9;
+      background: var(--kpi-surface);
+      color: var(--kpi-text);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--kpi-accent);
+      outline-offset: 2px;
+    }
+
+    &--active,
+    &--active:hover {
+      background: var(--kpi-accent);
+      color: #FFF;
+      font-weight: 700;
     }
   }
 
@@ -95,173 +103,33 @@
     height: 20px;
 
     svg {
-      width: 100%;
-      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
     }
   }
 
   &__menu-text {
-    color: #FFF;
-    font-family: 'Manrope', sans-serif;
-    font-size: 14px;
-    font-style: normal;
-    font-weight: 500;
-    line-height: 100%;
+    color: inherit;
+    font: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__account {
-    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 
     &-separator {
-      color: var(--text-muted);
+      color: var(--kpi-text-faint);
       font-family: 'Manrope', sans-serif;
-      font-size: 12px;
-      font-style: normal;
-      font-weight: 500;
-      line-height: 100%;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      line-height: 1;
       text-transform: uppercase;
-      margin-bottom: 12px;
-      padding: 0 16px;
-    }
-
-    &-menu {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-  }
-
-  &__help {
-    margin-top: auto;
-    padding-top: 20px;
-
-    &-card {
-      position: relative;
-      border-radius: 16px;
-      padding: 20px;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      overflow: hidden;
-      min-height: 160px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    &-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: #0075FF;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 12px;
-      flex-shrink: 0;
-
-      svg {
-        width: 18px;
-        height: 18px;
-      }
-    }
-
-    &-content {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      flex: 1;
-    }
-
-    &-title {
-      color: #FFF;
-      font-family: 'Manrope', sans-serif;
-      font-size: 16px;
-      font-style: normal;
-      font-weight: 600;
-      line-height: 100%;
-      margin: 0;
-    }
-
-    &-text {
-      color: rgba(255, 255, 255, 0.8);
-      font-family: 'Manrope', sans-serif;
-      font-size: 12px;
-      font-style: normal;
-      font-weight: 400;
-      line-height: 140%;
-      margin: 0;
-    }
-
-    &-button {
-      margin-top: auto;
-      padding: 10px 16px;
-      border-radius: 8px;
-      background: #1A1F37;
-      border: none;
-      color: #FFF;
-      font-family: 'Manrope', sans-serif;
-      font-size: 12px;
-      font-style: normal;
-      font-weight: 600;
-      line-height: 100%;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      width: 100%;
-
-      &:hover {
-        opacity: 0.9;
-        transform: translateY(-1px);
-      }
-    }
-  }
-}
-
-// Responsive styles
-@media (max-width: 768px) {
-  .kpi-sidenav {
-    width: 260px;
-
-    &__content {
-      padding: 20px 16px;
-    }
-
-    &__logo {
-      margin-bottom: 24px;
-
-      &-image {
-        width: 180px;
-        height: 44px;
-      }
-    }
-
-    &__menu-item {
-      padding: 10px 12px;
-      min-height: 40px;
-    }
-
-    &__menu-text {
-      font-size: 13px;
-    }
-
-    &__help {
-      &-card {
-        padding: 16px;
-        min-height: 140px;
-      }
-
-      &-title {
-        font-size: 14px;
-      }
-
-      &-text {
-        font-size: 11px;
-      }
-
-      &-button {
-        padding: 8px 12px;
-        font-size: 11px;
-      }
+      padding: 0 12px;
     }
   }
 }

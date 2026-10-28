@@ -1,12 +1,10 @@
 .kpi-charts-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  padding: 0 32px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: var(--kpi-gap-card);
   box-sizing: border-box;
   width: 100%;
-  max-width: 100%;
+  min-width: 0;
 
   &__import-export,
   &__monthly-tasks,
@@ -27,39 +25,3 @@
     grid-template-columns: 1fr;
   }
 }
-
-@media (max-width: 1200px) {
-  .kpi-charts-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 1024px) {
-  .kpi-charts-row {
-    padding: 0 24px;
-    gap: 16px;
-  }
-}
-
-@media (max-width: 768px) {
-  .kpi-charts-row {
-    padding: 0 16px;
-    margin-bottom: 16px;
-    gap: 16px;
-
-    &--bottom {
-      .kpi-our-team,
-      .kpi-earning-transactions {
-        max-height: 300px;
-      }
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .kpi-charts-row {
-    padding: 0 12px;
-    gap: 12px;
-  }
-}
-

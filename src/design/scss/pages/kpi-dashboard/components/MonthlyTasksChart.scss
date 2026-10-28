@@ -1,9 +1,8 @@
 .kpi-monthly-tasks-chart {
-  background: rgba(26, 31, 55, 0.6);
-  border-radius: 16px;
+  background: var(--kpi-surface);
+  border-radius: var(--kpi-radius-card);
   padding: 24px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--kpi-border);
   box-sizing: border-box;
   height: 100%;
   display: flex;

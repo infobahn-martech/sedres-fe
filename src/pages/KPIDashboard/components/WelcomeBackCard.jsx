@@ -4,9 +4,9 @@ import useKPIDashboardReducer from '../../../store/KPIDashboard';
 import '../../../design/scss/pages/kpi-dashboard/components/WelcomeBackCard.scss';
 
 const RightArrowIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 13 13" fill="none">
-    <path d="M6.80475 2.84375L10.461 6.5L6.80475 10.1562" stroke="white" strokeWidth="1.125" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M9.95312 6.50024H2.53906" stroke="white" strokeWidth="1.125" strokeLinecap="round" strokeLinejoin="round" />
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+    <path d="M6.80475 2.84375L10.461 6.5L6.80475 10.1562" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M9.95312 6.50024H2.53906" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -43,10 +43,10 @@ const WelcomeBackCard = () => {
               <span className="kpi-welcome-card__message-line1">Keep up the great work!</span>
             )}
           </p>
-          <div className="kpi-welcome-card__action">
+          <button type="button" className="kpi-welcome-card__action">
             <span>Tap to record</span>
             <RightArrowIcon />
-          </div>
+          </button>
         </div>
         {current_level != null && (
           <div className="kpi-welcome-card__badge">

@@ -1,107 +1,121 @@
+// KPI dashboard design tokens. Every KPI component reads its colors from these,
+// so the brand accent (and any other color) can be changed in one place.
 .kpi-dashboard {
+  --kpi-accent: #3D6BF5;
+
+  --kpi-bg: #0A0F1C;
+  --kpi-sidebar-bg: #0E1426;
+  --kpi-surface: #111A30;
+  --kpi-tile: #0E1426;
+  --kpi-border: #1C2640;
+  --kpi-track: #1F2B4A;
+
+  --kpi-text: #E8ECF5;
+  --kpi-text-secondary: #C4CCDD;
+  --kpi-text-muted: #9AA6BF;
+  --kpi-text-faint: #8A96B0;
+
+  --kpi-success: #4ADE9B;
+  --kpi-success-bg: #12352C;
+  --kpi-success-ring: #34D399;
+  --kpi-info: #8FB0FF;
+  --kpi-info-bg: #1A2850;
+  --kpi-warning: #FBBF5A;
+  --kpi-warning-bg: #3A2A12;
+  --kpi-purple: #C4A3FF;
+  --kpi-purple-bg: #2E1E4A;
+  --kpi-alert: #E5484D;
+
+  --kpi-welcome-greeting: #E3EAFF;
+  --kpi-welcome-highlight: #FFE58A;
+  --kpi-welcome-action: #1B2B66;
+
+  --kpi-radius-card: 20px;
+  --kpi-radius-tile: 16px;
+  --kpi-radius-chip: 10px;
+  --kpi-radius-pill: 999px;
+
+  --kpi-gap-section: 24px;
+  --kpi-gap-card: 20px;
+  --kpi-gap-grid: 16px;
+
   width: 100%;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
   position: absolute;
   top: 0;
   left: 0;
   margin: 0;
   padding: 0;
+  background: var(--kpi-bg);
+  color: var(--kpi-text);
+  font-family: 'Manrope', sans-serif;
 
+  // The sidebar stacks above the content on narrow screens, so the
+  // slide-in overlay is no longer needed.
   &__overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 9;
     display: none;
-
-    @media (max-width: 1024px) {
-      display: block;
-    }
   }
 
   &__background {
     width: 100%;
     min-height: 100vh;
-    position: relative;
     display: flex;
-    // Gradient background matching KIP-BG.png
-    // Dark navy blue to bright electric blue with light source in center-right
-    background: 
-      radial-gradient(
-        ellipse 120% 100% at 70% 45%,
-        #0080ff 0%,
-        #0066ff 15%,
-        #0044cc 30%,
-        #002288 50%,
-        #001144 70%,
-        #000822 85%,
-        #000511 100%
-      ),
-      linear-gradient(
-        180deg,
-        #000822 0%,
-        #001144 50%,
-        #000822 100%
-      );
-    background-attachment: fixed;
-
-    @media (max-width: 768px) {
-      background-attachment: scroll;
-    }
+    flex-wrap: wrap;
+    align-items: stretch;
+    background: var(--kpi-bg);
   }
 
   &__content {
-    position: relative;
-    z-index: 1;
-    width: calc(100% - 280px);
-    height: 100vh;
-    margin-left: 280px;
-    overflow: hidden;
+    flex: 1 1 0;
+    min-width: 0;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    transition: margin-left 0.3s ease, width 0.3s ease;
 
-    @media (max-width: 1024px) {
-      width: 100%;
-      margin-left: 0;
+    @media (max-width: 900px) {
+      flex-basis: 100%;
     }
   }
 
   &__scrollable-content {
     flex: 1;
-    overflow-x: hidden;
-    overflow-y: auto;
     padding-top: 24px;
     padding-bottom: 40px;
     box-sizing: border-box;
+  }
 
-    @media (max-width: 768px) {
-      padding-top: 16px;
-      padding-bottom: 24px;
-    }
+  // Dashboard home: centered content column with the spec's spacing.
+  &--home &__content {
+    padding: 32px clamp(16px, 3vw, 40px) 40px;
+  }
 
-    // Custom scrollbar styling
-    &::-webkit-scrollbar {
-      width: 8px;
-    }
+  &--home &__content > .kpi-header-bar,
+  &--home &__scrollable-content {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
 
-    &::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 4px;
-    }
+  &--home &__content > .kpi-header-bar {
+    margin-bottom: var(--kpi-gap-section);
+  }
 
-    &::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 4px;
+  &--home &__scrollable-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--kpi-gap-section);
+    padding: 0;
+  }
 
-      &:hover {
-        background: rgba(255, 255, 255, 0.3);
-      }
+  // Shared responsive grid: hero, metrics and chart rows.
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+    gap: var(--kpi-gap-card);
+    min-width: 0;
+
+    > * {
+      min-width: 0;
     }
   }
 }

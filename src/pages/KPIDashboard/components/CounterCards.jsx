@@ -50,6 +50,7 @@ const CounterCards = () => {
       change: null,
       isPositive: null,
       icon: CounterIcon1,
+      tone: 'info',
     },
     {
       id: 2,
@@ -58,6 +59,7 @@ const CounterCards = () => {
       change: null,
       isPositive: null,
       icon: CounterIcon2,
+      tone: 'success',
     },
     {
       id: 3,
@@ -66,6 +68,7 @@ const CounterCards = () => {
       change: null,
       isPositive: null,
       icon: CounterIcon3,
+      tone: 'warning',
     },
     {
       id: 4,
@@ -74,6 +77,7 @@ const CounterCards = () => {
       change: null,
       isPositive: null,
       icon: CounterIcon4,
+      tone: 'purple',
     },
   ];
 
@@ -82,8 +86,8 @@ const CounterCards = () => {
       {counters.map((counter) => {
         const Icon = counter.icon;
         return (
-          <div key={counter.id} className="kpi-counter-card">
-            <div className="kpi-counter-card__icon">
+          <div key={counter.id} className={`kpi-counter-card kpi-counter-card--${counter.tone}`}>
+            <div className="kpi-counter-card__icon" aria-hidden="true">
               <Icon />
             </div>
             <div className="kpi-counter-card__content">

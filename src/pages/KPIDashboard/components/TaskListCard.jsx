@@ -114,34 +114,21 @@ const shouldShowPriorityAlert = (task) => {
 };
 
 const CompletedStatusIcon = () => (
-  <svg className="task-list-item__icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-    <circle cx="10" cy="10" r="9" fill="#4ADE80" />
-    <path
-      d="M6.5 10.2L8.8 12.5L13.5 7.8"
-      stroke="#FFFFFF"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+  <svg className="task-list-item__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const InProgressStatusIcon = () => (
-  <svg className="task-list-item__icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-    <circle cx="10" cy="10" r="8.5" stroke="#60A5FA" strokeWidth="1.6" />
-    <path
-      d="M10 5.5V10.5L13 12"
-      stroke="#60A5FA"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+  <svg className="task-list-item__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+    <path d="M12 7V12L15 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const PendingStatusIcon = () => (
-  <svg className="task-list-item__icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-    <circle cx="10" cy="10" r="8.5" stroke="rgba(255, 255, 255, 0.5)" strokeWidth="1.5" />
+  <svg className="task-list-item__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
   </svg>
 );
 
@@ -182,17 +169,21 @@ const TaskListCard = () => {
             return (
               <div
                 key={`${task.call_id}-${task.task_name}-${task.call_initiated_date}-${index}`}
-                className="task-list-item"
+                className={`task-list-item task-list-item--${status}`}
               >
                 <div className="task-list-item__icon-wrapper">
                   {getStatusIcon(status)}
                 </div>
-                <div className="task-list-item__content">
-                  <div className="task-list-item__title">{task.task_name}</div>
-                  <div className="task-list-item__status">{getStatusDisplayText(status)}</div>
-                </div>
+                <div className="task-list-item__title" title={task.task_name}>{task.task_name}</div>
+                <span className="task-list-item__status">{getStatusDisplayText(status)}</span>
                 {showPriorityAlert && (
-                  <div className="task-list-item__priority task-list-item__priority--high">!</div>
+                  <div
+                    className="task-list-item__priority task-list-item__priority--high"
+                    role="img"
+                    aria-label="Needs attention"
+                  >
+                    <span aria-hidden="true">!</span>
+                  </div>
                 )}
               </div>
             );

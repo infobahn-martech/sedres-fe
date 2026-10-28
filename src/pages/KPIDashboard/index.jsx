@@ -4,6 +4,7 @@ import SideNav from './components/SideNav';
 import HeaderBar from './components/HeaderBar';
 import CounterCards from './components/CounterCards';
 import MiddleRowCards from './components/MiddleRowCards';
+import WelcomeBackCard from './components/WelcomeBackCard';
 import ChartsRow from './components/ChartsRow';
 import Earnings from './components/Earnings';
 import Tasks from './components/Tasks';
@@ -85,7 +86,10 @@ const KPIDashboard = () => {
             default:
                 return (
                     <>
-                        <CounterCards />
+                        <div className="kpi-dashboard__grid kpi-dashboard__hero">
+                            <WelcomeBackCard />
+                            <CounterCards />
+                        </div>
                         <MiddleRowCards />
                         <ChartsRow />
                     </>
@@ -144,7 +148,7 @@ const KPIDashboard = () => {
     };
 
     return (
-        <div className="kpi-dashboard">
+        <div className={`kpi-dashboard ${activeMenu === 'Dashboard' ? 'kpi-dashboard--home' : ''}`}>
             {isMobileMenuOpen && (
                 <div
                     className="kpi-dashboard__overlay"
