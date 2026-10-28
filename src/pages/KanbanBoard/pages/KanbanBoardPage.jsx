@@ -47,6 +47,7 @@ import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelecti
 import useBatchMoveStore from "../../../shared/store/batchMoveStore";
 import useArInvoiceReviewStore from "../../../shared/store/arInvoiceReviewStore";
 import useZamilCrewArInvoiceStore from "../../../shared/store/zamilCrewArInvoiceStore";
+import useZamilMarinePoRequestStore from "../../../shared/store/zamilMarinePoRequestStore";
 import useZamilCrewFinalInvoiceStore from "../../../shared/store/zamilCrewFinalInvoiceStore";
 import usePoReviewStore from "../../../shared/store/poReviewStore";
 import useSccReviewStore from "../../../shared/store/sccReviewStore";
@@ -655,6 +656,42 @@ export default function KanbanBoardPage() {
     setSelectedPoRequestBatch(null);
     setPoRequestEmailDraft(null);
   }, []);
+
+  /* Zamil Marine "Send for PO Request" on "Request for PO": no batches, one request for the ticked cards.
+     The modal state lives in its own store; the backend moves the cards to the next column on send. */
+  const showZamilMarinePoRequestModal = useZamilMarinePoRequestStore((state) => state.showPoRequestEmailModal);
+  const zamilMarinePoRequestCards = useZamilMarinePoRequestStore((state) => state.selectedPoRequestCards);
+  const zamilMarinePoRequestDraft = useZamilMarinePoRequestStore((state) => state.poRequestEmailDraft);
+  const isSendingZamilMarinePoRequest = useZamilMarinePoRequestStore((state) => state.isPoRequestSending);
+  const closeZamilMarinePoRequestModal = useZamilMarinePoRequestStore((state) => state.closePoRequestEmailModal);
+  const sendZamilMarinePoRequest = useZamilMarinePoRequestStore((state) => state.sendPoRequest);
+
+  const handleSendZamilMarinePoRequest = useCallback(
+    async (emailData) => {
+      const formData = new FormData();
+      if (zamilMarinePoRequestDraft?.stage_document_id != null) {
+        formData.append("stage_document_id", zamilMarinePoRequestDraft.stage_document_id);
+      }
+      formData.append("call_ids", zamilMarinePoRequestCards.map((card) => card.callId).join(","));
+      formData.append("card_ids", zamilMarinePoRequestCards.map((card) => card.id).join(","));
+      formData.append("to", emailData?.to ?? "");
+      formData.append("cc", emailData?.cc ?? "");
+      formData.append("subject", emailData?.subject ?? "");
+      formData.append("body", emailData?.message ?? "");
+      (emailData?.attachments || []).forEach((file) => formData.append("attachments[]", file));
+
+      const { ok, message } = await sendZamilMarinePoRequest(formData);
+      if (!ok) {
+        notify(message, "error");
+        return;
+      }
+      notify(message || "PO request sent successfully", "success");
+      clearCardColumns(zamilMarinePoRequestCards.map((card) => card.id));
+      zamilMarinePoRequestCards.forEach((card) => removeCardSelectionId(card.id));
+      refetchBoard?.();
+    },
+    [zamilMarinePoRequestDraft, zamilMarinePoRequestCards, sendZamilMarinePoRequest, clearCardColumns, removeCardSelectionId, refetchBoard]
+  );
 
   /* Sends the PO request via da/send_po_request; the backend moves the batch's cards to "Requested PO". */
   const handleSendPoRequestEmail = useCallback(
@@ -2374,6 +2411,23 @@ export default function KanbanBoardPage() {
             ? "Request the purchase order for the selected cards"
             : "Request the purchase order for this batch"
         }
+        sendLabel="Send PO Request"
+        subjectPrefix="Request for PO"
+        allowTables
+      />
+
+      <SeCreationEmailModal
+        show={showZamilMarinePoRequestModal}
+        onClose={closeZamilMarinePoRequestModal}
+        onSend={handleSendZamilMarinePoRequest}
+        isSubmitting={isSendingZamilMarinePoRequest}
+        defaultTo={zamilMarinePoRequestDraft?.to ?? ""}
+        defaultCc={zamilMarinePoRequestDraft?.cc ?? ""}
+        defaultSubject={zamilMarinePoRequestDraft?.subject ?? ""}
+        defaultBody={zamilMarinePoRequestDraft?.body ?? ""}
+        documentUrl={zamilMarinePoRequestDraft?.document_url ?? ""}
+        title="PO Request Email"
+        subtitle="Request the purchase order for the selected cards"
         sendLabel="Send PO Request"
         subjectPrefix="Request for PO"
         allowTables
