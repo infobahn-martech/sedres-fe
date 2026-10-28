@@ -15,18 +15,25 @@ import ToolsMenu, { ToolModals } from '../Header/ToolsMenu';
 import '../../design/scss/common.scss';
 import '../../design/scss/sidebar.scss';
 
-// Existing icons
+// Sidebar menu icons (one unique icon per menu)
 import dashboardIcon from '../../assets/images/icon-dashboard.svg';
-import workerIcon from '../../assets/images/icon-workers.svg';
-import settingsIcon from '../../assets/images/icon-settings.svg';
-
-// New menu-specific icons
-import hotelIcon from '../../assets/images/icon-hotel.svg';
-import materialIcon from '../../assets/images/icon-material.svg';
-import billingIcon from '../../assets/images/icon-billing.svg';
 import usersIcon from '../../assets/images/icon-users.svg';
-import configIcon from '../../assets/images/icon-config.svg';
-import crewIcon from '../../assets/images/icon-crew.svg';
+import entityIcon from '../../assets/images/icon-entity.svg';
+import vesselIcon from '../../assets/images/icon-vessel.svg';
+import operationsIcon from '../../assets/images/icon-operations.svg';
+import timeIcon from '../../assets/images/icon-time.svg';
+import checklistIcon from '../../assets/images/icon-checklist.svg';
+import launchIcon from '../../assets/images/icon-launch.svg';
+import hotelIcon from '../../assets/images/icon-hotel.svg';
+import hospitalIcon from '../../assets/images/icon-hospital.svg';
+import transportIcon from '../../assets/images/icon-transport.svg';
+import tripIcon from '../../assets/images/icon-trip.svg';
+import orderIcon from '../../assets/images/icon-order.svg';
+import invoiceIcon from '../../assets/images/icon-invoice.svg';
+import thirdPartyIcon from '../../assets/images/icon-third-party.svg';
+import packageIcon from '../../assets/images/icon-package.svg';
+import kpiIcon from '../../assets/images/icon-kpi.svg';
+import settingsIcon from '../../assets/images/icon-settings.svg';
 
 import { useBreakpoint } from '../../shared/hooks/useWindowSize';
 import {
@@ -68,17 +75,17 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   // Vendor Portal menu - simple direct links, no accordions
   const vendorMenus = [
     { menu: 'Dashboard', isDefaultMenu: true, to: '/vendor-portal/dashboard', icon: dashboardIcon, hasPermission: true },
-    { menu: 'Invoice Management', isDefaultMenu: true, to: '/vendor-portal/orders', icon: materialIcon, hasPermission: true },
+    { menu: 'Invoice Management', isDefaultMenu: true, to: '/vendor-portal/orders', icon: invoiceIcon, hasPermission: true },
   ];
 
   const medicalMenus = [
     { menu: 'Dashboard', isDefaultMenu: true, to: '/medical-portal/dashboard', icon: dashboardIcon, hasPermission: true },
-    { menu: 'Invoice Management', isDefaultMenu: true, to: '/medical-portal/invoices', icon: materialIcon, hasPermission: true },
+    { menu: 'Invoice Management', isDefaultMenu: true, to: '/medical-portal/invoices', icon: invoiceIcon, hasPermission: true },
   ];
 
   const transportMenus = [
     { menu: 'Dashboard', isDefaultMenu: true, to: '/transport-portal/dashboard', icon: dashboardIcon, hasPermission: true },
-    { menu: 'Invoice Management', isDefaultMenu: true, to: '/transport-portal/invoices', icon: materialIcon, hasPermission: true },
+    { menu: 'Invoice Management', isDefaultMenu: true, to: '/transport-portal/invoices', icon: invoiceIcon, hasPermission: true },
   ];
 
   const inhouseDriverMenus = [
@@ -87,7 +94,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
 
   const hotelPortalMenus = [
     { menu: 'Dashboard', isDefaultMenu: true, to: '/hotel-portal/dashboard', icon: dashboardIcon, hasPermission: true },
-    { menu: 'Invoice Management', isDefaultMenu: true, to: '/hotel-portal/invoices', icon: materialIcon, hasPermission: true },
+    { menu: 'Invoice Management', isDefaultMenu: true, to: '/hotel-portal/invoices', icon: invoiceIcon, hasPermission: true },
   ];
 
   const portalMenuMap = {
@@ -350,7 +357,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       menu: 'Dashboard',
       isDefaultMenu: true,
       to: ROUTE_PATHS.DASHBOARD,
-      icon: dashboardIcon, // 2x2 grid icon
+      icon: dashboardIcon,
       hasPermission: true,
     },
     // ✅ Admin + Configuration
@@ -364,7 +371,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         { menu: 'Users', to: '/users', hasPermission: canViewUsersMenu },
         { menu: 'Permissions', to: '/permissions', hasPermission: true },
       ],
-      icon: usersIcon, // User management-specific icon
+      icon: usersIcon,
     },
     {
       menu: 'Entity Management',
@@ -381,7 +388,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         { menu: 'MWP History', to: "/mwp-history", hasPermission: true },
         // { menu: 'Job Status', to: '/job-status', hasPermission: true },
       ],
-      icon: billingIcon, // Billing-specific icon
+      icon: entityIcon,
     },
     {
       menu: 'Vessel Management',
@@ -394,7 +401,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         { menu: 'Barge Types', to: '/barge-types', hasPermission: true },
         { menu: 'Tug Type', to: '/tug-type', hasPermission: true },
       ],
-      icon: billingIcon, // Billing-specific icon
+      icon: vesselIcon,
     },
     {
       menu: 'Operations Configuration',
@@ -410,12 +417,12 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         // { menu: 'Vessel Reg. Template', to: '/vessel-registration-template', hasPermission: true },
         // { menu: 'Custom Fields', to: '/custom-fields', hasPermission: true },
       ],
-      icon: configIcon, // Configuration-specific icon
+      icon: operationsIcon,
     },
     {
       menu: 'Time Object Management',
       isDefaultMenu: true,
-      icon: materialIcon, // Material-specific icon
+      icon: timeIcon,
       hasPermission: true,
       isOpen: false,
       subMenus: [
@@ -433,7 +440,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         { menu: 'Task Roles', to: '/task-roles', hasPermission: true },
         { menu: 'Checklist', to: '/check-list', hasPermission: true },
       ],
-      icon: workerIcon, // Two stylized human figures
+      icon: checklistIcon,
     },
     {
       menu: 'Launch Hire Management',
@@ -447,19 +454,19 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         { menu: 'Services', to: '/lh-services', hasPermission: true },
         // { menu: 'Location', to: '/location', hasPermission: true },
       ],
-      icon: workerIcon, // Two stylized human figures
+      icon: launchIcon,
     },
     {
       menu: 'Hotel Management',
       isDefaultMenu: true,
       to: '/hotel-management',
-      icon: hotelIcon, // Hotel-specific icon
+      icon: hotelIcon,
       hasPermission: true,
     },
     {
       menu: 'Hospital Management',
       isDefaultMenu: true,
-      icon: usersIcon, // Hospital-specific icon
+      icon: hospitalIcon,
       hasPermission: true,
       subMenus: [
         { menu: 'Hospitals', to: '/hospital-management', hasPermission: true },
@@ -470,7 +477,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     {
       menu: 'Transport Management',
       isDefaultMenu: true,
-      icon: settingsIcon, // Gear/cogwheel icon
+      icon: transportIcon,
       hasPermission: true,
       isOpen: false,
       subMenus: [
@@ -485,34 +492,34 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       menu: 'Trip Management',
       isDefaultMenu: true,
       to: '/trip-management',
-      icon: crewIcon,
+      icon: tripIcon,
       hasPermission: true,
     },
     {
       menu: 'Order Management',
       isDefaultMenu: true,
       to: '/order-management',
-      icon: billingIcon,
+      icon: orderIcon,
       hasPermission: true,
     },
     {
       menu: 'Invoice Management',
       isDefaultMenu: true,
       to: '/invoice-management',
-      icon: materialIcon,
+      icon: invoiceIcon,
       hasPermission: true,
     },
     {
       menu: 'Third Party Service',
       isDefaultMenu: true,
       to: '/third-party-service',
-      icon: workerIcon, // Third Party Services-specific icon
+      icon: thirdPartyIcon,
       hasPermission: true,
     },
     {
       menu: 'Material Management',
       isDefaultMenu: true,
-      icon: materialIcon, // Material-specific icon
+      icon: packageIcon,
       hasPermission: true,
       isOpen: false,
       subMenus: [
@@ -532,7 +539,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         { menu: 'Tasks', to: '/kpi-tasks', hasPermission: true },
         { menu: 'Dashboard', to: '/kpi-dashboard', hasPermission: true },
       ],
-      icon: dashboardIcon, // Two stylized human figures
+      icon: kpiIcon,
     },
     // ✅ Settings (last)
     {
