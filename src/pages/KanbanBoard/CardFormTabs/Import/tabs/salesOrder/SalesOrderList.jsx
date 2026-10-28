@@ -9,6 +9,8 @@ import salesOrderService from "../../../../../../services/salesOrderService";
 import billingEntityService from "../../../../../../services/billingEntityService";
 import callFileService from "../../../../../../services/callFileService";
 import daService from "../../../../../../services/daService";
+import zamilMarineService from "../../../../../../services/zamilMarineService";
+import useZamilMarineStore from "../../../../../../shared/store/zamilMarineStore";
 import useAttachmentsReducer from "../../../../../../store/AttachmentsReducer";
 import useVendorReducer from "../../../../../../store/VendorReducer";
 import DatePickerField from "../../../shared/components/DatePickerField";
@@ -36,6 +38,7 @@ const POSH_WORKFLOW_PATTERN = /posh/i;
 const SEND_FOR_SO_APPROVAL_COLUMN_PATTERN = /send for so approval|awaiting so\/pr approval/i;
 const SUBSEA_WORKFLOW_PATTERN = /subsea/i;
 const ZAKHER_WORKFLOW_PATTERN = /zakher/i;
+const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil\s*marine/i;
 const AWAITING_SRT_COLUMN_PATTERN = /awaiting srt/i;
 const SRT_RECEIVED_COLUMN_PATTERN = /srt received/i;
 /* "Upload Approved SO" runs for the POSH workflow and for workflows with a "Send for SO Approval" column. da/da_upload_so_approval_proof takes the
@@ -65,6 +68,14 @@ const srtUploadFields = [
   { ...approvedSoUploadFields[0], name: "srt", label: "SRT" },
   { ...approvedSoUploadFields[1], label: "SRT approval email" },
   { ...approvedSoUploadFields[0], label: "Signed SO" },
+];
+/* Zamil Marine uploads the signed SO (`proof`, required), the PR and the approval email through
+   da/da_upload_so_approval_proof. The PR's form field name is not in the API contract yet, so it is kept here. */
+const ZAMIL_MARINE_PR_FIELD_NAME = "pr";
+const zamilMarineUploadFields = [
+  { ...approvedSoUploadFields[0], label: "Signed SO" },
+  { ...approvedSoUploadFields[0], name: ZAMIL_MARINE_PR_FIELD_NAME, label: "PR", required: false },
+  { ...approvedSoUploadFields[1], label: "Approval email" },
 ];
 // Column 4's ("SO Sent for approval") local-only per-session action state — see soActionState.
 const SO_ACTION_STATE_DEFAULT = {
@@ -312,7 +323,10 @@ const SalesOrderList = ({
   // Broader "this is a DA card" signal — isDAModule alone only covers the dedicated DA-desk
   // board routes; isDaCardContext also covers DA-variant/DA-board cards reached via the
   // generic /kanban-board/:boardId route.
-  const isDaContext = isDAModule || isDaCardContext;
+  // Zamil Marine cards (Jubail Marine board) are not on a board the DA flags above cover, so their
+  // workflow name marks them.
+  const isZamilMarineWorkflowCard = ZAMIL_MARINE_WORKFLOW_PATTERN.test(card?.workflow_name ?? "");
+  const isDaContext = isDAModule || isDaCardContext || isZamilMarineWorkflowCard;
   //
   // The Sales Order tab's header DA action button (status/advance button, SO approval
   // email, Approve/Reject decisions) is restricted to Port Manager (role_id "1") and Port
@@ -673,6 +687,9 @@ const SalesOrderList = ({
   // The card's own "Awaiting SRT" column marks the flow too, so the button does not wait on the flag.
   const isSubseaWorkflowCard = SUBSEA_WORKFLOW_PATTERN.test(card?.workflow_name ?? "");
   const isZakherWorkflowCard = ZAKHER_WORKFLOW_PATTERN.test(card?.workflow_name ?? "");
+  // Zamil Marine sends "Send For PR" from the column after "Ops Completed"; it has no approve / reject step
+  // and uses its own service for the line item and email calls.
+  const salesLineItemService = isZamilMarineWorkflowCard ? zamilMarineService : daService;
   const isAtAwaitingSrtColumn =
     isSubseaWorkflowCard &&
     Array.isArray(stepLabels) &&
@@ -689,7 +706,8 @@ const SalesOrderList = ({
     (isSrtFlow && (isAtColumnAfterOpsCompleted || isAtSrtReceivedColumn)) ||
     (Array.isArray(stepLabels) && currentStep != null && /so sent for approval/i.test(stepLabels[currentStep - 1] || "")) ||
     (Array.isArray(stepLabels) && currentStep != null && SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
-    (isPoshWorkflowCard && isAtColumnAfterOpsCompleted);
+    (isPoshWorkflowCard && isAtColumnAfterOpsCompleted) ||
+    (isZamilMarineWorkflowCard && isAtColumnAfterOpsCompleted);
   // What column 4's header action actually renders from (see the header action block below).
   //
   // api/da/action_state can report button_state "approved" for a call that is still physically
@@ -966,6 +984,106 @@ const SalesOrderList = ({
       setPreLoadedDocuments(docs);
       setShowSoApprovalEmailModal(true);
     }
+  };
+
+  const showPrEmailModal = useZamilMarineStore((state) => state.showPrEmailModal);
+  const selectedPrEmailDraft = useZamilMarineStore((state) => state.selectedPrEmailDraft);
+  const isPrEmailDraftLoading = useZamilMarineStore((state) => state.isPrEmailDraftLoading);
+  const isPrEmailSending = useZamilMarineStore((state) => state.isPrEmailSending);
+  const openPrEmailModal = useZamilMarineStore((state) => state.openPrEmailModal);
+  const closePrEmailModal = useZamilMarineStore((state) => state.closePrEmailModal);
+  const sendPrEmail = useZamilMarineStore((state) => state.sendPrEmail);
+  const showUploadDocumentsModal = useZamilMarineStore((state) => state.showUploadDocumentsModal);
+  const isUploadingDocuments = useZamilMarineStore((state) => state.isUploadingDocuments);
+  const uploadDocumentsError = useZamilMarineStore((state) => state.uploadDocumentsError);
+  const openUploadDocumentsModal = useZamilMarineStore((state) => state.openUploadDocumentsModal);
+  const closeUploadDocumentsModal = useZamilMarineStore((state) => state.closeUploadDocumentsModal);
+  const uploadZamilMarineDocuments = useZamilMarineStore((state) => state.uploadDocuments);
+
+  // The email draft's stage document is passed on through the endpoint's own stage_document_id field,
+  // so it is only shown as a pre-loaded attachment here.
+  const prEmailPreLoadedDocuments = useMemo(() => {
+    const stageDocumentId = selectedPrEmailDraft?.stage_document_id ?? null;
+    if (stageDocumentId == null) return [];
+    const stageDocumentUrl = selectedPrEmailDraft?.document_url || null;
+    return [
+      {
+        stage_document_id: stageDocumentId,
+        name: stageDocumentUrl ? stageDocumentUrl.split("/").pop() : `Attached document #${stageDocumentId}`,
+        url: stageDocumentUrl,
+      },
+    ];
+  }, [selectedPrEmailDraft]);
+
+  const handleOpenPrEmailModal = () => {
+    if (!callId) {
+      useAlertReducer.getState().error("No call identifier available for this card.");
+      return;
+    }
+    openPrEmailModal(callId);
+  };
+
+  const handleSendPrEmail = async (emailData) => {
+    if (!callId) {
+      useAlertReducer.getState().error("No call identifier available for this card.");
+      return;
+    }
+    const rawAttachments = emailData?.attachments || [];
+    const stageDocumentEntry = rawAttachments.find((file) => !(file instanceof File) && file?.stage_document_id != null);
+    const libraryEntries = rawAttachments.filter(
+      (file) => !(file instanceof File) && file?.stage_document_id == null && file?.url
+    );
+    const fetchedLibraryFiles = [];
+    for (const doc of libraryEntries) {
+      try {
+        const res = await fetch(doc.url);
+        const blob = await res.blob();
+        fetchedLibraryFiles.push(new File([blob], doc.name, { type: blob.type }));
+      } catch {
+        useAlertReducer.getState().error(`Couldn't attach "${doc.name}" from the Document Library — sending without it.`);
+      }
+    }
+
+    const formData = new FormData();
+    formData.append("call_id", callId);
+    formData.append("to", emailData?.to ?? "");
+    formData.append("cc", emailData?.cc ?? "");
+    formData.append("subject", emailData?.subject ?? "");
+    formData.append("body", emailData?.message ?? "");
+    if (stageDocumentEntry) formData.append("stage_document_id", stageDocumentEntry.stage_document_id);
+    [...rawAttachments.filter((file) => file instanceof File), ...fetchedLibraryFiles]
+      .forEach((file) => formData.append("attachments[]", file));
+
+    const { ok, message } = await sendPrEmail(formData);
+    if (!ok) {
+      useAlertReducer.getState().error(message || "Failed to send the PR email.");
+      return;
+    }
+    // Optimistic — the action_state refetch from onDaStatusRefresh confirms it.
+    setSoActionState((prev) => ({ ...prev, button_state: "awaiting_approval" }));
+    if (refreshSalesOrder) refreshSalesOrder();
+    onDaStatusRefresh?.();
+    useAlertReducer.getState().success(message || "PR email sent.");
+  };
+
+  const handleUploadZamilMarineDocuments = async (filesByField) => {
+    if (!callId) {
+      useAlertReducer.getState().error("No call identifier available for this card.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("call_id", callId);
+    for (const { name } of zamilMarineUploadFields) {
+      const [file] = await compressPdfFiles(filesByField?.[name] ?? []);
+      if (file) formData.append(name, file);
+    }
+    const { ok, movedToDa } = await uploadZamilMarineDocuments(formData);
+    if (!ok) return;
+    useAlertReducer.getState().success("Documents uploaded.");
+    if (refreshSalesOrder) refreshSalesOrder();
+    onDaStatusRefresh?.();
+    // The backend moves the card to the DA board once everything is in.
+    if (movedToDa) onCloseCard?.();
   };
 
   const handleAdvanceDaStatusFromHeader = () => {
@@ -1513,7 +1631,7 @@ const SalesOrderList = ({
       // Exactly ONE request per click — no retry, no corrective second call. The checkbox and
       // the backend are kept in step by the apiVerifiedItemIds seeding above, so the flip this
       // call performs is already the one the click intends.
-      const response = await daService.verifySalesLineItem({ so_item_id: orderId });
+      const response = await salesLineItemService.verifySalesLineItem({ so_item_id: orderId });
       const body = response?.data;
       if (body?.status !== "success") {
         throw new Error(body?.message || "Failed to update the item's verification status.");
@@ -1592,7 +1710,7 @@ const SalesOrderList = ({
     if (!deletingItem || isDeletingItem) return;
     setIsDeletingItem(true);
     try {
-      const response = await daService.deleteSalesLineItem({ so_item_id: deletingItem.id });
+      const response = await salesLineItemService.deleteSalesLineItem({ so_item_id: deletingItem.id });
       const body = response?.data;
       if (body?.status !== "success") {
         throw new Error(body?.message || "Failed to delete the item.");
@@ -2512,7 +2630,30 @@ const SalesOrderList = ({
             // other column still uses the granular DA status-timeline (isAwaitingDecisionStage /
             // daActionButtonLabel) as before.
             isCardAtSoApprovalColumn ? (
-              isSrtFlow ? (
+              isZamilMarineWorkflowCard ? (
+                effectiveSoButtonState === "awaiting_approval" && hasVerifiedAllItems ? (
+                  <button
+                    type="button"
+                    className="sales-order-da-status-button"
+                    title="Upload the signed SO, the PR and the approval email"
+                    onClick={openUploadDocumentsModal}
+                  >
+                    <FiUpload />
+                    Upload Documents
+                  </button>
+                ) : hasVerifiedAllItems ? (
+                  <button
+                    type="button"
+                    className="sales-order-da-status-button"
+                    disabled={isPrEmailDraftLoading}
+                    title='Open "PR" email'
+                    onClick={handleOpenPrEmailModal}
+                  >
+                    <FiClipboard />
+                    Send For PR
+                  </button>
+                ) : null
+              ) : isSrtFlow ? (
                 // No Approve / Reject in this flow. Once the request is sent (action_state
                 // awaiting_approval) the signed SRT upload shows, and "SRT Received" always shows it
                 // since the request has already gone; before that, "Awaiting SRT" with every item
@@ -3522,6 +3663,40 @@ const SalesOrderList = ({
           defaultBody={draftBody}
           preLoadedDocuments={preLoadedDocuments}
           callId={callId}
+        />
+      )}
+
+      {/* Zamil Marine "Send For PR" email — draft from da/da_action_email_draft, sent via da/da_send_action_email. */}
+      {isDaVerifyContext && isZamilMarineWorkflowCard && (
+        <SoApprovalEmailModal
+          show={showPrEmailModal}
+          onClose={closePrEmailModal}
+          onCreate={handleSendPrEmail}
+          isSubmitting={isPrEmailSending}
+          stageLabel="PR"
+          defaultTo={selectedPrEmailDraft?.recipient || ""}
+          defaultCc={selectedPrEmailDraft?.cc || ""}
+          defaultSubject={selectedPrEmailDraft?.subject || ""}
+          defaultBody={selectedPrEmailDraft?.body || ""}
+          preLoadedDocuments={prEmailPreLoadedDocuments}
+          callId={callId}
+        />
+      )}
+
+      {/* Zamil Marine Upload Documents — the signed SO, the PR and the approval email, via da/da_upload_so_approval_proof. */}
+      {isDaVerifyContext && isZamilMarineWorkflowCard && (
+        <SeApprovalUploadModal
+          show={showUploadDocumentsModal}
+          onClose={closeUploadDocumentsModal}
+          onUpload={handleUploadZamilMarineDocuments}
+          isSubmitting={isUploadingDocuments}
+          batchTitle={soCustomerName || ""}
+          contextCaption="Sales order:"
+          title="Upload Documents"
+          subtitle="Attach the signed SO, the PR and the approval email"
+          submitLabel="Upload Documents"
+          fields={zamilMarineUploadFields}
+          submitError={uploadDocumentsError}
         />
       )}
 
