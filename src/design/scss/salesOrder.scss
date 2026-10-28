@@ -4468,6 +4468,66 @@ $so-po-blue: #1a56db;
   .so-doc-modal-link {
     color: #b4a9ff;
   }
+
+  // Purchase Order — inputs / vendor picker hard-code a lavender fill and
+  // border that read as white slabs on navy.
+  .so-po-field-input,
+  .so-po-vendor-trigger,
+  .so-po-doc-totals-input {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+    color: var(--text-heading);
+    color-scheme: dark;
+
+    &::placeholder {
+      color: var(--text-faint);
+    }
+
+    &:hover:not(:disabled) {
+      border-color: var(--brand-bright);
+    }
+
+    &:focus {
+      border-color: var(--brand-bright);
+      box-shadow: none;
+    }
+
+    &:disabled {
+      background: var(--field-disabled-bg);
+      border-color: var(--border);
+      color: var(--text-subtle);
+    }
+  }
+
+  .so-po-vendor-menu {
+    background: var(--modal-bg);
+    border-color: var(--modal-border);
+    box-shadow: var(--modal-shadow);
+  }
+
+  .so-po-vendor-search {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+    color: var(--text-heading);
+
+    &::placeholder {
+      color: var(--text-faint);
+    }
+
+    &:focus {
+      border-color: var(--brand-bright);
+      box-shadow: none;
+    }
+  }
+
+  .so-po-vendor-item:hover {
+    background: var(--bg-row-hover);
+  }
+
+  .so-po-vendor-item-code {
+    background: rgba(76, 141, 255, 0.16);
+    color: var(--brand-bright);
+  }
 }
 
 // ==========================================================

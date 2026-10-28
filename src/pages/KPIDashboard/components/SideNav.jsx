@@ -209,23 +209,6 @@ const SideNav = ({ activeMenu, setActiveMenu, onProfileClick, onSignOutClick, is
             })}
           </nav>
         </div>
-
-        {/* Help Card */}
-        <div className="kpi-sidenav__help">
-          <div
-            className="kpi-sidenav__help-card"
-            style={{ backgroundImage: `url(${NeedHelpBG})` }}
-          >
-            <div className="kpi-sidenav__help-icon">
-              <NeedHelpIcon />
-            </div>
-            <div className="kpi-sidenav__help-content">
-              <h3 className="kpi-sidenav__help-title">Need help?</h3>
-              <p className="kpi-sidenav__help-text">Please check our docs</p>
-              <button className="kpi-sidenav__help-button">DOCUMENTATION</button>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
