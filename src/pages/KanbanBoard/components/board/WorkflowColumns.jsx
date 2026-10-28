@@ -97,8 +97,8 @@ const SO_SENT_FOR_SCC_COLUMN_PATTERN = /^so\s+sent\s+for\s+scc$/i;
 
 /* Zamil Marine DA has no batches: "Send for PO Request" on "Request for PO" sends one request for
    every card the user ticks. */
-const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil\s*marine/i;
-const REQUEST_FOR_PO_COLUMN_PATTERN = /^request\s+for\s+po$/i;
+const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil.*marine/i;
+const REQUEST_FOR_PO_COLUMN_PATTERN = /^request[^a-z]*for[^a-z]*po$/i;
 
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
