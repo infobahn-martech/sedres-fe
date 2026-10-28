@@ -118,8 +118,26 @@ const mapTemplateTabFields = (fields) =>
         optionAvatars: options.map((opt) => opt?.avatar ?? null),
         optionsSource: field?.option_source === "master" ? "master" : "manual",
         masterModule: field?.master_key ?? "",
+        bindingKey: field?.system_binding_key ?? "",
       };
     });
+
+// Changing a field bound to one of these keys re-fetches first_tab so the backend can resolve
+// the remaining field values for that email / vessel / billing entity.
+const TEMPLATE_REFETCH_BINDING_KEYS = ["appointment_email_file", "vessel_id", "billing_entity_id"];
+
+const isFileValue = (value) =>
+  value instanceof File || (typeof Blob !== "undefined" && value instanceof Blob);
+
+// Values returned by first_tab, keyed by field_id. File fields are skipped: the uploaded File stays local.
+const extractTemplateFieldValues = (fields) =>
+  (Array.isArray(fields) ? fields : []).reduce((acc, field) => {
+    const value = field?.value ?? field?.field_value;
+    if (field?.field_id == null || String(field?.type_key ?? "").toLowerCase() === "file") return acc;
+    if (!hasMeaningfulValue(value)) return acc;
+    acc[field.field_id] = Array.isArray(value) ? value.map((item) => String(item)) : String(value);
+    return acc;
+  }, {});
 
 // A checkbox with no options is a legacy single checkbox, submitted as "1" / "0".
 const isSingleCheckboxField = (field) => field.type === "checkbox" && !field.options.length;
@@ -242,6 +260,8 @@ function GeneralAdd({
   const [templateFields, setTemplateFields] = useState(null);
   const [templateFieldValues, setTemplateFieldValues] = useState({});
   const [templateFieldErrors, setTemplateFieldErrors] = useState({});
+  const templateRefetchRequestIdRef = useRef(0);
+  const [isTemplateRefetching, setIsTemplateRefetching] = useState(false);
   // Id whose fetch has finished (success or failure); derived loading avoids flashing the default form.
   const [settledTemplateId, setSettledTemplateId] = useState("");
   const selectedTemplateId = firstNonEmptyString(formValues?.template_id);
@@ -251,6 +271,9 @@ function GeneralAdd({
     setTemplateFields(null);
     setTemplateFieldValues({});
     setTemplateFieldErrors({});
+    // Drop any in-flight re-fetch for the previous template.
+    templateRefetchRequestIdRef.current += 1;
+    setIsTemplateRefetching(false);
     if (!selectedTemplateId) return;
     let cancelled = false;
     getTemplateFirstTab({
@@ -258,6 +281,7 @@ function GeneralAdd({
       cb: (data) => {
         if (cancelled) return;
         setTemplateFields(mapTemplateTabFields(data?.tab?.fields));
+        setTemplateFieldValues(extractTemplateFieldValues(data?.tab?.fields));
       },
     }).finally(() => {
       if (!cancelled) setSettledTemplateId(selectedTemplateId);
@@ -446,17 +470,61 @@ function GeneralAdd({
       card?.raw?.card_sticker_id,
   });
 
+  const templateFieldValuesRef = useRef(templateFieldValues);
+  templateFieldValuesRef.current = templateFieldValues;
+  // Re-fetches first_tab with the current email / vessel / billing entity selection and binds the
+  // returned values; the trigger fields keep what the user picked.
+  const refetchTemplateFirstTab = useCallback(
+    (values) => {
+      if (!selectedTemplateId || !templateFields) return;
+      const payload = new FormData();
+      const triggerValues = {};
+      templateFields.forEach((field) => {
+        if (!TEMPLATE_REFETCH_BINDING_KEYS.includes(field.bindingKey)) return;
+        const value = values[field.id];
+        triggerValues[field.id] = value;
+        if (isFileValue(value) || hasMeaningfulValue(value)) payload.append(field.bindingKey, value);
+      });
+
+      const requestId = ++templateRefetchRequestIdRef.current;
+      setIsTemplateRefetching(true);
+      getTemplateFirstTab({
+        templateId: selectedTemplateId,
+        payload,
+        cb: (data) => {
+          if (requestId !== templateRefetchRequestIdRef.current) return;
+          const fields = data?.tab?.fields;
+          if (Array.isArray(fields) && fields.length) setTemplateFields(mapTemplateTabFields(fields));
+          const boundValues = extractTemplateFieldValues(fields);
+          setTemplateFieldValues((prev) => ({ ...prev, ...boundValues, ...triggerValues }));
+          setTemplateFieldErrors((prev) => {
+            const next = { ...prev };
+            Object.keys(boundValues).forEach((id) => delete next[id]);
+            return next;
+          });
+        },
+      }).finally(() => {
+        if (requestId === templateRefetchRequestIdRef.current) setIsTemplateRefetching(false);
+      });
+    },
+    [selectedTemplateId, templateFields, getTemplateFirstTab]
+  );
+
   const handleTemplateFieldChange = useCallback(
-    (fieldId) => (nextValue) => {
-      setTemplateFieldValues((prev) => ({ ...prev, [fieldId]: nextValue }));
+    (field) => (nextValue) => {
+      const fieldId = field.id;
+      const nextValues = { ...templateFieldValuesRef.current, [fieldId]: nextValue };
+      templateFieldValuesRef.current = nextValues;
+      setTemplateFieldValues(nextValues);
       setTemplateFieldErrors((prev) => {
         if (!prev[fieldId] || !hasMeaningfulValue(nextValue) || nextValue === "0") return prev;
         const next = { ...prev };
         delete next[fieldId];
         return next;
       });
+      if (TEMPLATE_REFETCH_BINDING_KEYS.includes(field.bindingKey)) refetchTemplateFirstTab(nextValues);
     },
-    []
+    [refetchTemplateFirstTab]
   );
 
   // Template fields submitted as-is; single checkboxes always carry an explicit "1" / "0".
@@ -529,7 +597,7 @@ function GeneralAdd({
   };
 
   const handleSubmit = async () => {
-    if (!canAddCard || isTemplateFieldsLoading) return;
+    if (!canAddCard || isTemplateFieldsLoading || isTemplateRefetching) return;
     setHasSubmitted(true);
     if (templateFields) {
       await handleTemplateSubmit();
@@ -1878,7 +1946,7 @@ function GeneralAdd({
                               key={field.id}
                               field={field}
                               value={templateFieldValues[field.id]}
-                              onChange={handleTemplateFieldChange(field.id)}
+                              onChange={handleTemplateFieldChange(field)}
                               error={templateFieldErrors[field.id]}
                             />
                           ))}

@@ -111,10 +111,10 @@ const useFormTemplateReducer = create((set) => ({
     }
   },
 
-  getTemplateFirstTab: async ({ templateId, cb }) => {
+  getTemplateFirstTab: async ({ templateId, payload, cb }) => {
     try {
       set({ isLoadingTemplateFirstTab: true });
-      const { data } = await formTemplateService.getTemplateFirstTab(templateId);
+      const { data } = await formTemplateService.getTemplateFirstTab(templateId, payload);
       set({ isLoadingTemplateFirstTab: false });
       cb?.(data?.data ?? null);
     } catch (error) {

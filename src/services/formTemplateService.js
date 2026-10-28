@@ -14,7 +14,12 @@ const getAllTemplates = () => Gateway.get('/form_template/all_templates');
 
 const getTemplateById = (templateId) => Gateway.get(`/form_template/${templateId}`);
 
-const getTemplateFirstTab = (templateId) => Gateway.get(`/form_template/first_tab/${templateId}`);
+// With a payload (FormData carrying appointment_email_file / vessel_id / billing_entity_id) the
+// backend resolves field values for the selection; multipart is required for the email file.
+const getTemplateFirstTab = (templateId, payload) =>
+  payload
+    ? Gateway.post(`/form_template/first_tab/${templateId}`, payload)
+    : Gateway.get(`/form_template/first_tab/${templateId}`);
 
 const saveCardTemplate = (payload) => Gateway.post('/form_template/save_card_template', payload);
 
