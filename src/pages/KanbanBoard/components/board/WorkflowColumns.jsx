@@ -20,6 +20,8 @@ import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
 import useExportApprovalStatusStore from "../../../../shared/store/exportApprovalStatusStore";
 import useSignatureCheckStore from "../../../../shared/store/signatureCheckStore";
 import useServiceSheetStore from "../../../../shared/store/serviceSheetStore";
+import useZamilMarinePoRequestStore from "../../../../shared/store/zamilMarinePoRequestStore";
+import useAlertReducer from "../../../../store/AlertReducer";
 import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
@@ -93,8 +95,16 @@ const SCC_RECEIVED_COLUMN_PATTERN = /^scc\s+received$/i;
    approval email draft, and sending moves the cards to "SCC received". */
 const SO_SENT_FOR_SCC_COLUMN_PATTERN = /^so\s+sent\s+for\s+scc$/i;
 
+/* Zamil Marine DA has no batches: "Send for PO Request" on "Ready for PO Request" sends one request for
+   every card the user ticks. */
+const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil\s*marine/i;
+const READY_FOR_PO_REQUEST_COLUMN_PATTERN = /^ready\s+for\s+po\s+request$/i;
+
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
+  if (ZAMIL_MARINE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && READY_FOR_PO_REQUEST_COLUMN_PATTERN.test(title)) {
+    return "requestZamilMarinePo";
+  }
   if (isMcDermottWorkflow(workflow)) {
     if (ISSUE_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
     if (REQUESTED_PO_COLUMN_PATTERN.test(title)) return "uploadPos";
@@ -148,6 +158,7 @@ const INVOICE_ACTION_BUTTONS = {
   uploadDispatchProof: { label: "Upload Dispatch Proof", icon: <FiUpload size={16} aria-hidden /> },
   moveCards: { label: "Move the Cards", icon: <FiArrowRight size={16} aria-hidden /> },
   requestPo: { label: "Request PO", icon: <FiSend size={16} aria-hidden /> },
+  requestZamilMarinePo: { label: "Send for PO Request", icon: <FiSend size={16} aria-hidden /> },
   enterServiceSheetNo: { label: "Enter Service Sheet No", icon: <FiFileText size={16} aria-hidden /> },
   checkSignatures: { label: "Check Signatures", icon: <FiEdit3 size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
@@ -267,6 +278,12 @@ export default function WorkflowColumns({
 
   const openSignatureCheckModal = useSignatureCheckStore((state) => state.openSignatureCheckModal);
   const openServiceSheetModal = useServiceSheetStore((state) => state.openServiceSheetModal);
+  const openZamilMarinePoRequestModal = useZamilMarinePoRequestStore((state) => state.openPoRequestEmailModal);
+
+  const handleZamilMarinePoRequest = async (cards) => {
+    const { ok, message } = await openZamilMarinePoRequestModal(cards);
+    if (!ok) useAlertReducer.getState().error(message);
+  };
 
   const batchLaneCardsByColumn = useMemo(() => {
     if (!isBatchCreateWorkflow(workflow)) return null;
@@ -455,6 +472,7 @@ export default function WorkflowColumns({
                 sendInvoice: ([card]) => onColumnSendInvoice?.(card, { isFinalInvoice: isSubseaWorkflow(workflow) }),
                 sendSccApproval: onColumnSendSccApproval,
                 requestPo: onColumnRequestPo,
+                requestZamilMarinePo: handleZamilMarinePoRequest,
                 merge: onColumnMergeInvoice,
                 downloadInvoices: onColumnDownloadInvoices,
                 uploadDispatchProof: onUploadDispatchProof,
