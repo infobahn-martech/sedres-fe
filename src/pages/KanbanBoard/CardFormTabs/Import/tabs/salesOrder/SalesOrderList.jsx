@@ -69,12 +69,13 @@ const srtUploadFields = [
   { ...approvedSoUploadFields[1], label: "SRT approval email" },
   { ...approvedSoUploadFields[0], label: "Signed SO" },
 ];
-/* Zamil Marine uploads the signed SO (`proof`, required), the PR and the approval email through
-   da/da_upload_so_approval_proof. The PR's form field name is not in the API contract yet, so it is kept here. */
+/* Zamil Marine uploads the signed SO (`proof`), the PR and the approval email through
+   da/da_upload_so_approval_proof. da/action_state reports `pr` as a required document (`client_document: "pr"`),
+   and the card only moves to DA once the required documents are in. */
 const ZAMIL_MARINE_PR_FIELD_NAME = "pr";
 const zamilMarineUploadFields = [
   { ...approvedSoUploadFields[0], label: "Signed SO" },
-  { ...approvedSoUploadFields[0], name: ZAMIL_MARINE_PR_FIELD_NAME, label: "PR", required: false },
+  { ...approvedSoUploadFields[0], name: ZAMIL_MARINE_PR_FIELD_NAME, label: "PR", required: true },
   { ...approvedSoUploadFields[1], label: "Approval email" },
 ];
 // Column 4's ("SO Sent for approval") local-only per-session action state — see soActionState.
