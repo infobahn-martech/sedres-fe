@@ -52,6 +52,7 @@ import useZamilCrewArInvoiceStore from "../../../shared/store/zamilCrewArInvoice
 import useZamilMarinePoRequestStore from "../../../shared/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "../../../shared/store/zamilMarinePoUploadStore";
 import useZamilCrewFinalInvoiceStore from "../../../shared/store/zamilCrewFinalInvoiceStore";
+import useZamilMarineFinalInvoiceStore from "../../../shared/store/zamilMarineFinalInvoiceStore";
 import usePoReviewStore from "../../../shared/store/poReviewStore";
 import useSccReviewStore from "../../../shared/store/sccReviewStore";
 import useDispatchProofReviewStore from "../../../shared/store/dispatchProofReviewStore";
@@ -1296,14 +1297,20 @@ export default function KanbanBoardPage() {
   const fetchZamilCrewFinalInvoiceDraft = useZamilCrewFinalInvoiceStore((state) => state.fetchFinalInvoiceDraft);
   const sendZamilCrewFinalInvoice = useZamilCrewFinalInvoiceStore((state) => state.sendFinalInvoice);
 
-  const handleColumnSendInvoice = useCallback(async (card, { isFinalInvoice = false, isZamilCrew = false } = {}) => {
+  /* Zamil Marine sends the final invoice through its own service and store. */
+  const [isZamilMarineInvoiceDispatch, setIsZamilMarineInvoiceDispatch] = useState(false);
+  const fetchZamilMarineFinalInvoiceDraft = useZamilMarineFinalInvoiceStore((state) => state.fetchFinalInvoiceDraft);
+  const sendZamilMarineFinalInvoice = useZamilMarineFinalInvoiceStore((state) => state.sendFinalInvoice);
+
+  const handleColumnSendInvoice = useCallback(async (card, { isFinalInvoice = false, isZamilCrew = false, isZamilMarine = false } = {}) => {
     if (!card?.callId) {
       notify("The selected card has no call to send the invoice for", "error");
       return;
     }
     let draft;
-    if (isZamilCrew) {
-      const result = await fetchZamilCrewFinalInvoiceDraft(card.callId, card.id);
+    if (isZamilCrew || isZamilMarine) {
+      const fetchFinalInvoiceDraft = isZamilMarine ? fetchZamilMarineFinalInvoiceDraft : fetchZamilCrewFinalInvoiceDraft;
+      const result = await fetchFinalInvoiceDraft(card.callId, card.id);
       if (result.errorMessage) {
         notify(result.errorMessage, "error");
         return;
@@ -1327,9 +1334,10 @@ export default function KanbanBoardPage() {
     setInvoiceDispatchDraft(draft);
     setIsFinalInvoiceDispatch(isFinalInvoice);
     setIsZamilCrewInvoiceDispatch(isZamilCrew);
+    setIsZamilMarineInvoiceDispatch(isZamilMarine);
     setSelectedInvoiceDispatchCard(card);
     setShowInvoiceDispatchEmailModal(true);
-  }, [fetchZamilCrewFinalInvoiceDraft]);
+  }, [fetchZamilCrewFinalInvoiceDraft, fetchZamilMarineFinalInvoiceDraft]);
 
   const handleCloseInvoiceDispatchEmail = useCallback(() => {
     setShowInvoiceDispatchEmailModal(false);
@@ -1362,7 +1370,9 @@ export default function KanbanBoardPage() {
       setIsSendingInvoiceDispatch(true);
       try {
         let result;
-        if (isZamilCrewInvoiceDispatch) {
+        if (isZamilMarineInvoiceDispatch) {
+          result = await sendZamilMarineFinalInvoice(formData);
+        } else if (isZamilCrewInvoiceDispatch) {
           result = await sendZamilCrewFinalInvoice(formData);
         } else {
           let data;
@@ -1395,6 +1405,8 @@ export default function KanbanBoardPage() {
       isFinalInvoiceDispatch,
       isZamilCrewInvoiceDispatch,
       sendZamilCrewFinalInvoice,
+      isZamilMarineInvoiceDispatch,
+      sendZamilMarineFinalInvoice,
       selectedInvoiceDispatchCard,
       removeCardSelectionId,
       handleCloseInvoiceDispatchEmail,
