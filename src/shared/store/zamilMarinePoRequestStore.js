@@ -4,7 +4,7 @@ import zamilMarinePoRequestService from "../../services/zamilMarinePoRequestServ
 const getErrorMessage = (error) => error?.response?.data?.message || error?.message;
 
 /**
- * Zamil Marine "Send for PO Request" email, opened from the DA board's "Ready for PO Request" column for the
+ * Zamil Marine "Send for PO Request" email, opened from the DA board's "Request for PO" column for the
  * ticked cards. The draft comes from da/po_request_draft; sending posts to da/send_po_request.
  */
 const useZamilMarinePoRequestStore = create((set) => ({

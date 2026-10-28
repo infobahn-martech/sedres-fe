@@ -656,7 +656,7 @@ export default function KanbanBoardPage() {
     setPoRequestEmailDraft(null);
   }, []);
 
-  /* Zamil Marine "Send for PO Request" on "Ready for PO Request": no batches, one request for the ticked cards.
+  /* Zamil Marine "Send for PO Request" on "Request for PO": no batches, one request for the ticked cards.
      The modal state lives in its own store; the backend moves the cards to the next column on send. */
   const showZamilMarinePoRequestModal = useZamilMarinePoRequestStore((state) => state.showPoRequestEmailModal);
   const zamilMarinePoRequestCards = useZamilMarinePoRequestStore((state) => state.selectedPoRequestCards);

@@ -95,14 +95,14 @@ const SCC_RECEIVED_COLUMN_PATTERN = /^scc\s+received$/i;
    approval email draft, and sending moves the cards to "SCC received". */
 const SO_SENT_FOR_SCC_COLUMN_PATTERN = /^so\s+sent\s+for\s+scc$/i;
 
-/* Zamil Marine DA has no batches: "Send for PO Request" on "Ready for PO Request" sends one request for
+/* Zamil Marine DA has no batches: "Send for PO Request" on "Request for PO" sends one request for
    every card the user ticks. */
 const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil\s*marine/i;
-const READY_FOR_PO_REQUEST_COLUMN_PATTERN = /^ready\s+for\s+po\s+request$/i;
+const REQUEST_FOR_PO_COLUMN_PATTERN = /^request\s+for\s+po$/i;
 
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
-  if (ZAMIL_MARINE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && READY_FOR_PO_REQUEST_COLUMN_PATTERN.test(title)) {
+  if (ZAMIL_MARINE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && REQUEST_FOR_PO_COLUMN_PATTERN.test(title)) {
     return "requestZamilMarinePo";
   }
   if (isMcDermottWorkflow(workflow)) {
