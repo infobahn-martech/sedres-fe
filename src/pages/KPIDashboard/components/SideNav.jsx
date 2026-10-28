@@ -9,6 +9,17 @@ const SideNav = ({ activeMenu, setActiveMenu, onProfileClick, onSignOutClick, is
   const [localActiveMenu, setLocalActiveMenu] = useState(activeMenu || 'Dashboard');
 
   const handleMenuClick = (menuId) => {
+    // These leave the KPI section; setting them as the active menu would make
+    // the KPI page fall back to the Dashboard view before the route changes.
+    if (menuId === 'Master Module') {
+      navigate('/dashboard');
+      return;
+    }
+    if (menuId === 'Back to Workspace') {
+      navigate('/workspaces');
+      return;
+    }
+
     setLocalActiveMenu(menuId);
     if (setActiveMenu) {
       setActiveMenu(menuId);
@@ -41,10 +52,6 @@ const SideNav = ({ activeMenu, setActiveMenu, onProfileClick, onSignOutClick, is
       navigate('/level-management');
     } else if (menuId === 'Dashboard') {
       navigate('/kpi-dashboard');
-    } else if (menuId === 'Master Module') {
-      navigate('/dashboard');
-    } else if (menuId === 'Back to Workspace') {
-      navigate(`/workspaces`);
     }
 
     // Close mobile menu after navigation
