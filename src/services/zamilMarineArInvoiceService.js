@@ -26,8 +26,30 @@ const getArInvoiceReview = (params) => Gateway.get('/da/ar_invoice_review', { pa
  * Confirms the reviewed AR invoices (ticked cards only); the backend moves the confirmed cards to the next column. */
 const confirmArInvoices = (payload) => Gateway.post('/da/confirm_ar_invoices', payload);
 
+/** @param {number|string} callId
+ * @param {number|string} cardId
+ * @returns {Promise<{ data: { status: 'success', data: { call_id: number, card_id: number, to: string, cc: string,
+ *   subject: string, body: string, stage_document_id: number, document_name: string, document_url: string } }
+ *   | { status: 'error', message: string } }>}
+ * Prefilled final invoice email for one "AR Invoice Issued" card; document_url is the invoice PDF. */
+const getFinalInvoiceEmailDraft = (callId, cardId) =>
+  Gateway.get('/da/final_invoice_email_draft', { params: { call_id: callId, card_id: cardId } });
+
+/** @param {FormData} formData - call_id, card_id, stage_document_id, to, cc, subject, body, attachments[]?,
+ *   multipart/form-data.
+ * @returns {Promise<{ data: { status: 'success', data: { moved: { call_id: number, card_id: number,
+ *   column_id: number, column_name: string }, dispatch_proof: { stage_document_id: number, name: string,
+ *   url: string } } } | { status: 'error', message: string } }>}
+ * Sends the final invoice email; the card moves to "Invoice dispatched". */
+const sendFinalInvoiceEmail = (formData) =>
+  Gateway.post('/da/send_final_invoice_email', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
 export default {
   uploadArInvoices,
   getArInvoiceReview,
   confirmArInvoices,
+  getFinalInvoiceEmailDraft,
+  sendFinalInvoiceEmail,
 };

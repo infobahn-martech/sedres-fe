@@ -146,7 +146,7 @@ const getInvoiceAction = (workflow, column) => {
   if (isSubseaWorkflow(workflow) && READY_FOR_POSTING_IN_SAP_COLUMN_PATTERN.test(title)) return "issueArInvoice";
   /* Subsea 7 DA sends the final invoice for the one ticked card from "AR Invoices Issued". */
   if (isSubseaWorkflow(workflow) && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "sendInvoice";
-  /* Zamil Crew DA sends the final invoice for the one ticked card from "AR Invoice Issued". */
+  /* Zamil Crew and Zamil Marine DA send the final invoice for the one ticked card from "AR Invoice Issued". */
   if (isZamilWorkflow(workflow) && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "sendInvoice";
   if (!isBatchWorkflow(workflow)) {
     return AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title) ? "enterServiceSheetNo" : null;
@@ -496,7 +496,8 @@ export default function WorkflowColumns({
                   onUploadSccDocuments?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 sendInvoice: ([card]) => onColumnSendInvoice?.(card, {
                     isFinalInvoice: isSubseaWorkflow(workflow),
-                    isZamilCrew: isZamilWorkflow(workflow),
+                    isZamilCrew: isZamilWorkflow(workflow) && !isZamilMarineWorkflow(workflow),
+                    isZamilMarine: isZamilMarineWorkflow(workflow),
                   }),
                 sendSccApproval: onColumnSendSccApproval,
                 requestPo: onColumnRequestPo,
