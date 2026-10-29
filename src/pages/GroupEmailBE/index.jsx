@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import CommonHeader from "../../components/CommonHeader";
 import CustomTable from "../../components/customTable";
 import { GroupEmailBEModal } from "./Modals/AddEditGroupEmail";
-import { RenderAction } from "./renderCells";
+import { RenderAction } from "./RenderCells";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import useGroupEmailBEReducer from "../../store/GroupEmailBEReducer";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";

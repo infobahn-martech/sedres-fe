@@ -15,7 +15,7 @@ import {
   mapGroSupervisorDocuments,
   parseDocumentsByTaskPayload,
   resolveGroSupervisorTaskId,
-} from "./groSupervisorDocuments";
+} from "./groSupervisorDocumentsUtils";
 import GROSupervisorTabs from "./GROSupervisorTabs";
 import GROSupervisorAssignTask from "./GROSupervisorAssignTask";
 import GROSupervisorDocuments from "./GROSupervisorDocuments";
