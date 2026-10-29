@@ -646,8 +646,8 @@ const SalesOrderList = ({
   // verifying — on every call whose next step isn't literally named "SO approval".
 
   // The card's real current stage — the card's own sticker (same flattened sticker_name field
-  // the topbar sticker pill reads, kept in sync via kanban_card/update_card_sticker — see the
-  // "status_timeline's sticker_id" note in daStatusTimeline.js) is now the only source; the
+  // the topbar sticker pill reads, kept in sync via kanban_card/update_card_sticker)
+  // is now the only source; the
   // separate api/da/status_timeline fetch this used to also fall back to (and the local
   // override for the window before it loaded) was removed per request 2026-09-11 — it was
   // desyncing from the board column and leaking stale labels (e.g. "Closed Paid") into the

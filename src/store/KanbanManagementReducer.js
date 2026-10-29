@@ -4,7 +4,7 @@ import * as LuIcons from 'react-icons/lu';
 import useAlertReducer from './AlertReducer';
 import workSpaceService from '../services/workSpaceService';
 import kanbanManagementService from '../services/kanbanManagementService';
-import cardMangementService from '../services/cardMangementService';
+import cardManagementService from '../services/cardManagementService';
 import { normalizeHexColor } from '../components/SedresColorPicker/sedresColorPickerConstants';
 
 /** Map `/kanban_workspace/list_all_workspace` rows → NewTagModal `workspaceBoardOptions` */
@@ -260,7 +260,7 @@ const useKanbanManagementReducer = create((set, get) => ({
     } = opts;
     try {
       set({ cardTypesLoading: true, cardTypesError: '' });
-      const { data } = await cardMangementService.getAllKanbanCardTypes({
+      const { data } = await cardManagementService.getAllKanbanCardTypes({
         search,
         page,
         limit: per_page,
@@ -318,7 +318,7 @@ const useKanbanManagementReducer = create((set, get) => ({
     } = opts;
     try {
       set({ cardStickersLoading: true, cardStickersError: '' });
-      const { data } = await cardMangementService.getAllKanbanCardStickers({
+      const { data } = await cardManagementService.getAllKanbanCardStickers({
         search,
         page,
         limit,
@@ -383,7 +383,7 @@ const useKanbanManagementReducer = create((set, get) => ({
     } = opts;
     try {
       set({ cardBlockersLoading: true, cardBlockersError: '' });
-      const { data } = await cardMangementService.getAllKanbanCardBlockers({
+      const { data } = await cardManagementService.getAllKanbanCardBlockers({
         search,
         page,
         limit,
@@ -534,7 +534,7 @@ const useKanbanManagementReducer = create((set, get) => ({
 
   createKanbanCardType: async (payload, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.saveKanbanCardType(payload);
+      const { data } = await cardManagementService.saveKanbanCardType(payload);
       useAlertReducer.getState().success(data?.message ?? 'Card type saved');
       await get().fetchKanbanCardTypes({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -550,7 +550,7 @@ const useKanbanManagementReducer = create((set, get) => ({
 
   updateKanbanCardTypeRecord: async (cardTypeId, payload, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.updateKanbanCardType(cardTypeId, payload);
+      const { data } = await cardManagementService.updateKanbanCardType(cardTypeId, payload);
       useAlertReducer.getState().success(data?.message ?? 'Card type updated');
       await get().fetchKanbanCardTypes({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -566,7 +566,7 @@ const useKanbanManagementReducer = create((set, get) => ({
 
   disableKanbanCardTypeRecord: async (cardTypeId, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.disableKanbanCardType(cardTypeId);
+      const { data } = await cardManagementService.disableKanbanCardType(cardTypeId);
       useAlertReducer.getState().success(data?.message ?? 'Card type disabled');
       await get().fetchKanbanCardTypes({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -582,7 +582,7 @@ const useKanbanManagementReducer = create((set, get) => ({
 
   enableKanbanCardTypeRecord: async (cardTypeId, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.enableKanbanCardType(cardTypeId);
+      const { data } = await cardManagementService.enableKanbanCardType(cardTypeId);
       useAlertReducer.getState().success(data?.message ?? 'Card type enabled');
       await get().fetchKanbanCardTypes({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -598,7 +598,7 @@ const useKanbanManagementReducer = create((set, get) => ({
 
   deleteKanbanCardTypeRecord: async (cardTypeId, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.deleteKanbanCardType(cardTypeId);
+      const { data } = await cardManagementService.deleteKanbanCardType(cardTypeId);
       useAlertReducer.getState().success(data?.message ?? 'Card type deleted');
       await get().fetchKanbanCardTypes({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -614,7 +614,7 @@ const useKanbanManagementReducer = create((set, get) => ({
 
   createKanbanCardSticker: async (payload, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.saveKanbanCardSticker(payload);
+      const { data } = await cardManagementService.saveKanbanCardSticker(payload);
       useAlertReducer.getState().success(data?.message ?? 'Card sticker saved');
       await get().fetchKanbanCardStickers({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -630,7 +630,7 @@ const useKanbanManagementReducer = create((set, get) => ({
 
   updateKanbanCardStickerRecord: async (stickerId, payload, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.updateKanbanCardSticker(stickerId, payload);
+      const { data } = await cardManagementService.updateKanbanCardSticker(stickerId, payload);
       useAlertReducer.getState().success(data?.message ?? 'Card sticker updated');
       await get().fetchKanbanCardStickers({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -646,7 +646,7 @@ const useKanbanManagementReducer = create((set, get) => ({
 
   disableKanbanCardStickerRecord: async (stickerId, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.disableKanbanCardSticker(stickerId);
+      const { data } = await cardManagementService.disableKanbanCardSticker(stickerId);
       useAlertReducer.getState().success(data?.message ?? 'Card sticker disabled');
       await get().fetchKanbanCardStickers({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -663,7 +663,7 @@ const useKanbanManagementReducer = create((set, get) => ({
   /** Backend toggles enabled state via the same route as disable */
   enableKanbanCardStickerRecord: async (stickerId, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.disableKanbanCardSticker(stickerId);
+      const { data } = await cardManagementService.disableKanbanCardSticker(stickerId);
       useAlertReducer.getState().success(data?.message ?? 'Card sticker enabled');
       await get().fetchKanbanCardStickers({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -679,7 +679,7 @@ const useKanbanManagementReducer = create((set, get) => ({
 
   deleteKanbanCardStickerRecord: async (stickerId, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.deleteKanbanCardSticker(stickerId);
+      const { data } = await cardManagementService.deleteKanbanCardSticker(stickerId);
       useAlertReducer.getState().success(data?.message ?? 'Card sticker deleted');
       await get().fetchKanbanCardStickers({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -695,7 +695,7 @@ const useKanbanManagementReducer = create((set, get) => ({
 
   createKanbanCardBlocker: async (payload, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.saveKanbanCardBlocker(payload);
+      const { data } = await cardManagementService.saveKanbanCardBlocker(payload);
       useAlertReducer.getState().success(data?.message ?? 'Card blocker saved');
       await get().fetchKanbanCardBlockers({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -711,7 +711,7 @@ const useKanbanManagementReducer = create((set, get) => ({
 
   updateKanbanCardBlockerRecord: async (blockerId, payload, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.updateKanbanCardBlocker(blockerId, payload);
+      const { data } = await cardManagementService.updateKanbanCardBlocker(blockerId, payload);
       useAlertReducer.getState().success(data?.message ?? 'Card blocker updated');
       await get().fetchKanbanCardBlockers({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -727,7 +727,7 @@ const useKanbanManagementReducer = create((set, get) => ({
 
   disableKanbanCardBlockerRecord: async (blockerId, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.disableKanbanCardBlocker(blockerId);
+      const { data } = await cardManagementService.disableKanbanCardBlocker(blockerId);
       useAlertReducer.getState().success(data?.message ?? 'Card blocker disabled');
       await get().fetchKanbanCardBlockers({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -744,7 +744,7 @@ const useKanbanManagementReducer = create((set, get) => ({
   /** Backend toggles enabled state via the same route as disable */
   enableKanbanCardBlockerRecord: async (blockerId, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.disableKanbanCardBlocker(blockerId);
+      const { data } = await cardManagementService.disableKanbanCardBlocker(blockerId);
       useAlertReducer.getState().success(data?.message ?? 'Card blocker enabled');
       await get().fetchKanbanCardBlockers({ ...fetchOpts, silentToastOnError: true });
       return data;
@@ -760,7 +760,7 @@ const useKanbanManagementReducer = create((set, get) => ({
 
   deleteKanbanCardBlockerRecord: async (blockerId, fetchOpts = {}) => {
     try {
-      const { data } = await cardMangementService.deleteKanbanCardBlocker(blockerId);
+      const { data } = await cardManagementService.deleteKanbanCardBlocker(blockerId);
       useAlertReducer.getState().success(data?.message ?? 'Card blocker deleted');
       await get().fetchKanbanCardBlockers({ ...fetchOpts, silentToastOnError: true });
       return data;
