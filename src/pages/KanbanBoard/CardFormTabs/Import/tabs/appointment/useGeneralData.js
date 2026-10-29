@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import callFileService from "@/services/callFileService";
-import portService from "@/services/portService";
-import CommonService from "@/services/commonService";
-import billingEntityService from "@/services/billingEntityService";
-import vesselTypeService from "@/services/vesselTypeService";
-import bargeTypeService from "@/services/bargeTypeService";
-import tugTypeService from "@/services/tugTypeService";
-import vesselService from "@/services/vesselService";
-import checklistService from "@/services/checklistService";
+import callFileService from "../../../../../../services/callFileService";
+import portService from "../../../../../../services/portService";
+import CommonService from "../../../../../../services/commonService";
+import billingEntityService from "../../../../../../services/billingEntityService";
+import vesselTypeService from "../../../../../../services/vesselTypeService";
+import bargeTypeService from "../../../../../../services/bargeTypeService";
+import tugTypeService from "../../../../../../services/tugTypeService";
+import vesselService from "../../../../../../services/vesselService";
+import checklistService from "../../../../../../services/checklistService";
 import {
   unwrapListResponse,
   mapOperatorsToOptions,
@@ -19,7 +19,7 @@ import {
   mapTugTypesToOptions,
   mapVesselsToOptions,
   mapChecklistsToOptions,
-} from "@/shared/helpers/callFileFormOptions";
+} from "../../../../../../shared/helpers/callFileFormOptions";
 import { normalizeEntityEmailOptions, normalizeEntityFields } from "./generalHelpers";
 
 // Dropdown catalogues shared by the Add and View variants of the Appointment Details tab, loaded once on mount.

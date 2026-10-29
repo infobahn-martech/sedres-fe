@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
-import GroupSettingsIcon from "@/assets/images/cv.png";
+import GroupSettingsIcon from "../../../../../../assets/images/cv.png";
 import { buildDepartureReportBody } from "../../services/sendReportBodyBuilder";
 import { ensureHtmlForQuill, resolveReportBodyHtml } from "./operationReportMessageHtml";
-import { notify } from "@/components/Toaster";
-import appointmentAcceptanceService from "@/services/appointmentAcceptanceService";
-import useArrivalReducer from "@/store/ArrivalReducer";
-import useDepartureReducer from "@/store/DepartureReducer";
+import { notify } from "../../../../../../components/Toaster";
+import appointmentAcceptanceService from "../../../../../../services/appointmentAcceptanceService";
+import useArrivalReducer from "../../../../../../store/ArrivalReducer";
+import useDepartureReducer from "../../../../../../store/DepartureReducer";
 import { OPERATION_STAGE_IDS } from "./operationConstants";
 import { extractReportTemplateFields } from "./operationReportTemplate";
 import {

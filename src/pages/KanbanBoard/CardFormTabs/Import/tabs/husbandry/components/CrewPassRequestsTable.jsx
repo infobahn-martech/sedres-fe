@@ -4,7 +4,7 @@ import { format, isValid, parseISO } from "date-fns";
 import { FiChevronLeft, FiChevronRight, FiChevronDown, FiEye } from "react-icons/fi";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import { groupPassRequestRows } from "@/services/cgAndZwailpassService";
+import { groupPassRequestRows } from "../../../../../../../services/cgAndZwailpassService";
 import { PremiumCardHeader, CrewCell, WorkOrderChip } from "./Husbandry.components";
 
 const DEFAULT_PAGE_SIZE = 10;

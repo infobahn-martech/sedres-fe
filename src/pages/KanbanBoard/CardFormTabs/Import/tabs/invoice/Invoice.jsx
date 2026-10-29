@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import { useMemo } from "react";
-import "@/design/scss/invoice.scss";
+import "../../../../../../design/scss/invoice.scss";
 
 // Six invoice types shown in a flat list (no category headers)
 const INVOICE_TYPES = [

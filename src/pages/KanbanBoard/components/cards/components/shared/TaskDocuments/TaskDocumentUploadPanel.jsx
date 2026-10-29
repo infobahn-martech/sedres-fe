@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import PropTypes from "prop-types";
 import { FiClock } from "react-icons/fi";
-import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+import DateTimePickerField from "../../../../../CardFormTabs/shared/components/DateTimePickerField";
 
 /** Task document upload popover (anchored beside segmented tabs). */
 function TaskDocumentUploadPanel({

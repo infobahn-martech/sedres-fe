@@ -1,16 +1,16 @@
 import { useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { Droppable } from "@hello-pangea/dnd";
 import PropTypes from "prop-types";
-import CardItem from "../cards/components/shared/CardItem";
+import CardItem from "../cards/CardItem";
 import TaxiBoatSmallCard from "../cards/components/TaxiBoat/TaxiBoatSmallCard";
 import DASmallCard from "../cards/components/DA/DASmallCard";
 import BatchGroup from "./BatchGroup";
 import { buildSwimlaneDroppableId } from "../../hooks/useKanbanDnD";
 import { CARD_GAP, CELL_PADDING_X, getCardsPerRow, getCardWidth } from "../../utils/boardGridHelpers";
-import usePermissions from "@/shared/hooks/usePermissions";
-import { PERMISSION_MODULES } from "@/shared/constants/permissions";
+import usePermissions from "../../../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES } from "../../../../shared/constants/permissions";
 import { isSubmittedInvoicesColumnTitle } from "../../utils/columnTitles";
-import "@/design/scss/pages/kanban-board/column.scss";
+import "../../../../design/scss/pages/kanban-board/column.scss";
 
 const EMPTY_SELECTED_IDS = [];
 const EMPTY_BATCHES = [];

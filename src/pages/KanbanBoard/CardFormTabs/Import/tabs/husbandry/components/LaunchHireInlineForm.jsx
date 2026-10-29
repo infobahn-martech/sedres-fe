@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { FiNavigation, FiSend } from "react-icons/fi";
-import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+import DateTimePickerField from "../../../../shared/components/DateTimePickerField";
 import ChecklistMultiSelect from "../../appointment/checklistTab/ChecklistMultiSelect";
 
 const LOCATION_OPTIONS = ["Freighter Anchorage", "RT7", "Sea Island", "Juaymah"];

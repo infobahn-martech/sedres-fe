@@ -3,33 +3,33 @@ import PropTypes from "prop-types";
 import { FiFilePlus, FiFileText, FiClipboard, FiTool, FiCheck, FiX, FiChevronLeft, FiChevronRight, FiRefreshCw, FiUpload, FiTrash2 } from "react-icons/fi";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
-import "@/design/scss/salesOrder.scss";
-import { PORT_OPTIONS_WITH_ID } from "@/shared/constants/ports";
-import salesOrderService from "@/services/salesOrderService";
-import billingEntityService from "@/services/billingEntityService";
-import callFileService from "@/services/callFileService";
-import daService from "@/services/daService";
-import zamilMarineService from "@/services/zamilMarineService";
-import useZamilMarineStore from "@/store/zamilMarineStore";
-import useAttachmentsReducer from "@/store/AttachmentsReducer";
-import useVendorReducer from "@/store/VendorReducer";
+import "../../../../../../design/scss/salesOrder.scss";
+import { PORT_OPTIONS_WITH_ID } from "../../../../../../shared/constants/ports";
+import salesOrderService from "../../../../../../services/salesOrderService";
+import billingEntityService from "../../../../../../services/billingEntityService";
+import callFileService from "../../../../../../services/callFileService";
+import daService from "../../../../../../services/daService";
+import zamilMarineService from "../../../../../../services/zamilMarineService";
+import useZamilMarineStore from "../../../../../../shared/store/zamilMarineStore";
+import useAttachmentsReducer from "../../../../../../store/AttachmentsReducer";
+import useVendorReducer from "../../../../../../store/VendorReducer";
 import DatePickerField from "../../../shared/components/DatePickerField";
-import PremiumSelect from "@/components/form/PremiumSelect";
-import useAlertReducer from "@/store/AlertReducer";
-import useAuthReducer from "@/store/AuthReducer";
-import { useDaLocalSoApproval, useDaLocalVerifiedItems } from "@/store/daStore";
-import { getFirstUserRoleId } from "@/shared/helpers/groUserRoles";
+import PremiumSelect from "../../../../../../components/form/PremiumSelect";
+import useAlertReducer from "../../../../../../store/AlertReducer";
+import useAuthReducer from "../../../../../../store/AuthReducer";
+import { useDaLocalSoApproval, useDaLocalVerifiedItems } from "../../../../../../shared/store/daStore";
+import { getFirstUserRoleId } from "../../../../../../shared/helpers/groUserRoles";
 import WorkOrderCreationModal from "./WorkOrderCreationModal";
 import WorkOrderDetailsModal from "./WorkOrderDetailsModal";
 import GeneratePOModal from "./GeneratePOModal";
 import GoodsReceiptPOModal from "./GoodsReceiptPOModal";
 import SoApprovalEmailModal from "./SoApprovalEmailModal";
 import DocumentListModal from "./DocumentListModal";
-import UploadInvoiceModal from "@/components/UploadInvoiceModal";
-import { compressPdfFiles } from "@/shared/utils/compressPdf";
-import SeApprovalUploadModal from "@/pages/KanbanBoard/components/board/SeApprovalUploadModal";
-import CustomModal from "@/components/CustomModal";
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
+import UploadInvoiceModal from "../../../../../../components/UploadInvoiceModal";
+import { compressPdfFiles } from "../../../../../../shared/utils/compressPdf";
+import SeApprovalUploadModal from "../../../../components/board/SeApprovalUploadModal";
+import CustomModal from "../../../../../../components/CustomModal";
+import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 
 const BP_CURRENCY_OPTIONS = ["SAR", "USD", "EURO"];
 const USD_TO_SAR_RATE = 3.75;
@@ -646,8 +646,8 @@ const SalesOrderList = ({
   // verifying — on every call whose next step isn't literally named "SO approval".
 
   // The card's real current stage — the card's own sticker (same flattened sticker_name field
-  // the topbar sticker pill reads, kept in sync via kanban_card/update_card_sticker)
-  // is now the only source; the
+  // the topbar sticker pill reads, kept in sync via kanban_card/update_card_sticker — see the
+  // "status_timeline's sticker_id" note in daStatusTimeline.js) is now the only source; the
   // separate api/da/status_timeline fetch this used to also fall back to (and the local
   // override for the window before it loaded) was removed per request 2026-09-11 — it was
   // desyncing from the board column and leaking stale labels (e.g. "Closed Paid") into the

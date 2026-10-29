@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { FaWhatsapp } from "react-icons/fa";
-import salesOrderService from "@/services/salesOrderService";
-import useAlertReducer from "@/store/AlertReducer";
+import salesOrderService from "../../../../../../services/salesOrderService";
+import useAlertReducer from "../../../../../../store/AlertReducer";
 
 const formatDateTime = (value) => {
   if (!value) return "—";

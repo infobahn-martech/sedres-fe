@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
-import "@/design/scss/pages/kanban-board/columnAction.scss";
+import "../../../../design/scss/pages/kanban-board/columnAction.scss";
 
 /* Batch action icon: a hierarchy (one box branching into two), the batch grouping its cards. */
 function BatchCardsIcon() {

@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import { useState, useEffect, useRef } from "react";
 import { FiUploadCloud } from "react-icons/fi";
-import DatePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DatePickerField";
+import DatePickerField from "../../../../shared/components/DatePickerField";
 import { FormTextarea } from "./checklistFormPrimitives";
 import { getBackendFileSessionRemovalKey } from "./checklistMappers";
 

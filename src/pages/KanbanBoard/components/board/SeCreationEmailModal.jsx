@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { FiCheck, FiFileText, FiMail, FiPaperclip, FiPlus, FiSend, FiUploadCloud, FiX } from "react-icons/fi";
-import CustomModal from "@/components/CustomModal";
+import CustomModal from "../../../../components/CustomModal";
 import {
   OPERATION_EMAIL_MESSAGE_QUILL_FORMATS,
   OPERATION_EMAIL_MESSAGE_QUILL_MODULES,
@@ -11,7 +11,7 @@ import {
 import { ensureHtmlForQuill } from "../../CardFormTabs/Import/tabs/operation/operationReportMessageHtml";
 import EmailTableEditor from "./EmailTableEditor";
 import { getEmailHtml } from "../../utils/emailHtml";
-import "@/design/scss/pages/kanban-board/seCreationEmailModal.scss";
+import "../../../../design/scss/pages/kanban-board/seCreationEmailModal.scss";
 
 const DEFAULT_FROM = "operations@shipping.com";
 

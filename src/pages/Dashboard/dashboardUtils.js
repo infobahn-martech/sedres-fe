@@ -1,4 +1,4 @@
-import { useThemeStore } from "../../store/themeStore";
+import { useThemeStore } from "../../shared/store/themeStore";
 
 // Shared constants and helpers for role dashboards (master Dashboard, Transport Coordinator, ...).
 

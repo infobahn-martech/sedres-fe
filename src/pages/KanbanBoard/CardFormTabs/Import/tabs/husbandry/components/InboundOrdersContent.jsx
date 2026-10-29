@@ -5,34 +5,34 @@ import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import CustomModal from "@/components/CustomModal";
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
-import CardTabListLoading from "@/components/CardTabListLoading";
+import CustomModal from "../../../../../../../components/CustomModal";
+import DeleteConfirmationModal from "../../../../../../../components/DeleteConfirmationModal";
+import CardTabListLoading from "../../../../../../../components/CardTabListLoading";
 import { FormField, FormInput, FormSelect, FormTextarea } from "./Husbandry.components";
 import { validateDocumentFiles } from "./Husbandry.constants";
-import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+import DateTimePickerField from "../../../../shared/components/DateTimePickerField";
 import LocationAutocomplete from "./LocationAutocomplete";
-import editIcon from "@/assets/images/edit.svg";
-import deleteIcon from "@/assets/images/delete.svg";
-import eyeIcon from "@/assets/images/eye.svg";
-import printIcon from "@/assets/images/print.svg";
-import logisticsWarehouseService from "@/services/logisticsWarehouseService";
-import packingTypeService from "@/services/packingTypeService";
-import useInboundOrderReducer from "@/store/InboundOrderReducer";
-import useLandingNoteReducer from "@/store/LandingNoteReducer";
-import useAlertReducer from "@/store/AlertReducer";
-import inboundOrderService from "@/services/inboundOrderService";
-import vehicleService from "@/services/vehicleService";
-import usePermissions from "@/shared/hooks/usePermissions";
-import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "@/shared/constants/permissions";
+import editIcon from "../../../../../../../assets/images/edit.svg";
+import deleteIcon from "../../../../../../../assets/images/delete.svg";
+import eyeIcon from "../../../../../../../assets/images/eye.svg";
+import printIcon from "../../../../../../../assets/images/print.svg";
+import logisticsWarehouseService from "../../../../../../../services/logisticsWarehouseService";
+import packingTypeService from "../../../../../../../services/packingTypeService";
+import useInboundOrderReducer from "../../../../../../../store/InboundOrderReducer";
+import useLandingNoteReducer from "../../../../../../../store/LandingNoteReducer";
+import useAlertReducer from "../../../../../../../store/AlertReducer";
+import inboundOrderService from "../../../../../../../services/inboundOrderService";
+import vehicleService from "../../../../../../../services/vehicleService";
+import usePermissions from "../../../../../../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../../shared/constants/permissions";
 import {
   splitApiDateTimeParts,
   buildApiDateTime,
   formatDisplayDateTime,
   nextDayOf,
-} from "@/shared/helpers/dateTimeFieldUtils";
-import "@/design/scss/material-edit-form.scss";
-import "@/design/scss/dispatch-note.scss";
+} from "../../../../../../../shared/helpers/dateTimeFieldUtils";
+import "../../../../../../../design/scss/material-edit-form.scss";
+import "../../../../../../../design/scss/dispatch-note.scss";
 import MaterialTablePagination from "./MaterialTablePagination";
 
 const extractListFromApi = (body) => {

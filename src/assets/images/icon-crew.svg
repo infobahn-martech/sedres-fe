@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="17.5" height="17.5" viewBox="0 0 17.5 17.5">
+  <g id="Group_5" data-name="Group 5" transform="translate(-41.25 -167.25)">
+    <path id="Vector" d="M6.8,5.216V1.584C6.8.456,6.288,0,5.016,0H1.784C.512,0,0,.456,0,1.584V5.208C0,6.344.512,6.792,1.784,6.792H5.016C6.288,6.8,6.8,6.344,6.8,5.216Z" transform="translate(51.2 168)" fill="none" stroke="#225fbd" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+    <path id="Vector-2" data-name="Vector" d="M6.8,5.016V1.784C6.8.512,6.288,0,5.016,0H1.784C.512,0,0,.512,0,1.784V5.016C0,6.288.512,6.8,1.784,6.8H5.016C6.288,6.8,6.8,6.288,6.8,5.016Z" transform="translate(51.2 177.2)" fill="none" stroke="#225fbd" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+    <path id="Vector-3" data-name="Vector" d="M6.8,5.216V1.584C6.8.456,6.288,0,5.016,0H1.784C.512,0,0,.456,0,1.584V5.208C0,6.344.512,6.792,1.784,6.792H5.016C6.288,6.8,6.8,6.344,6.8,5.216Z" transform="translate(42 168)" fill="none" stroke="#225fbd" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+    <path id="Vector-4" data-name="Vector" d="M6.8,5.016V1.784C6.8.512,6.288,0,5.016,0H1.784C.512,0,0,.512,0,1.784V5.016C0,6.288.512,6.8,1.784,6.8H5.016C6.288,6.8,6.8,6.288,6.8,5.016Z" transform="translate(42 177.2)" fill="none" stroke="#225fbd" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+    <circle cx="3.5" cy="3.5" r="1.5" transform="translate(46.5 171.5)" fill="none" stroke="#225fbd" stroke-width="1.5"/>
+    <path d="M0,4.5a3,3,0,0,1,3-3" transform="translate(46.5 176)" fill="none" stroke="#225fbd" stroke-linecap="round" stroke-width="1.5"/>
+  </g>
+</svg>

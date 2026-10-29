@@ -4,14 +4,14 @@ import ReactQuill from "react-quill";
 import DOMPurify from "dompurify";
 import { FiEdit2, FiTrash2, FiCornerUpLeft, FiFile } from "react-icons/fi";
 import "react-quill/dist/quill.snow.css";
-import "@/design/scss/invoice.scss";
-import "@/design/scss/comments.scss";
-import kanbanBoardService from "@/services/kanbanBoardService";
-import userService from "@/services/userService";
-import { unwrapListResponse } from "@/shared/helpers/callFileFormOptions";
-import { notify } from "@/components/Toaster";
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
-import useAuthReducer from "@/store/AuthReducer";
+import "../../../../../../design/scss/invoice.scss";
+import "../../../../../../design/scss/comments.scss";
+import kanbanBoardService from "../../../../../../services/kanbanBoardService";
+import userService from "../../../../../../services/userService";
+import { unwrapListResponse } from "../../../../../../shared/helpers/callFileFormOptions";
+import { notify } from "../../../../../../components/Toaster";
+import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
+import useAuthReducer from "../../../../../../store/AuthReducer";
 
 const QUILL_MODULES = {
     toolbar: [

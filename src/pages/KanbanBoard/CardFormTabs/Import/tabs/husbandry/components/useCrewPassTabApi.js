@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { notify } from "@/components/Toaster";
+import { notify } from "../../../../../../../components/Toaster";
 import {
   createPassRequest,
   extractPassRequestsFromEnvelope,
   getPassRequests,
-} from "@/services/cgAndZwailpassService";
+} from "../../../../../../../services/cgAndZwailpassService";
 
 export const resolvePassCallId = (formValues, card, routeParams) => {
   const raw =

@@ -4,13 +4,13 @@
   import { FiCheckCircle, FiArrowRight, FiClock, FiLoader, FiAlertCircle, FiPauseCircle } from "react-icons/fi";
   import DateTimePickerField from "../../../shared/components/DateTimePickerField";
   import { FormSelect } from "../../../Import/tabs/husbandry/components/Husbandry.components";
-  import useExportApprovalReducer from "@/store/ExportApprovalReducer";
-  import useAuthReducer from "@/store/AuthReducer";
-  import useAlertReducer from "@/store/AlertReducer";
-  import { splitApiDateTimeParts, buildApiDateTime } from "@/shared/helpers/dateTimeFieldUtils";
-  import "@/design/scss/general.scss";
-  import "@/design/css/common/CardForm.css";
-  import "@/design/scss/approval.scss";
+  import useExportApprovalReducer from "../../../../../../store/ExportApprovalReducer";
+  import useAuthReducer from "../../../../../../store/AuthReducer";
+  import useAlertReducer from "../../../../../../store/AlertReducer";
+  import { splitApiDateTimeParts, buildApiDateTime } from "../../../../../../shared/helpers/dateTimeFieldUtils";
+  import "../../../../../../design/scss/general.scss";
+  import "../../../../../../design/css/common/CardForm.css";
+  import "../../../../../../design/scss/approval.scss";
 
   const AUTO_SAVE_DEBOUNCE_MS = 1200;
 

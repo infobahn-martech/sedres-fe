@@ -1,5 +1,6 @@
 import Gateway from "../gateway/gateway";
 import taskCardService from "./taskCardService";
+import groArrivalService from "./groService/arrivalService";
 
 export const getCallDetailById = (callId, cardId) => {
   const callSegment = encodeURIComponent(String(callId));
@@ -25,11 +26,7 @@ export const getTemplatesByPort = (portId, templateType) =>
     params: { template_type: templateType },
   });
 
-/** POST arrival/save_arrival_document — GRO task popover save */
-export const saveArrivalDocument = (formData) =>
-  Gateway.post("arrival/save_arrival_document", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+export const saveArrivalDocument = groArrivalService.saveArrivalDocument;
 
 export const getPassRequests = (callId) =>
   Gateway.get(`crew_pass/get_pass_requests/${encodeURIComponent(String(callId))}`);

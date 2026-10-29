@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { FiAlertTriangle, FiCheck, FiFileText, FiLayers, FiX } from "react-icons/fi";
-import CustomModal from "@/components/CustomModal";
-import useDispatchProofReviewStore from "@/store/dispatchProofReviewStore";
-import { notify } from "@/components/Toaster";
+import CustomModal from "../../../../components/CustomModal";
+import useDispatchProofReviewStore from "../../../../shared/store/dispatchProofReviewStore";
+import { notify } from "../../../../components/Toaster";
 import MaterialTablePagination from "../../CardFormTabs/Import/tabs/husbandry/components/MaterialTablePagination";
-import "@/design/scss/blockers-modal.scss";
-import "@/design/scss/pages/kanban-board/seReviewMoveModal.scss";
-import "@/design/scss/pages/kanban-board/arInvoiceReviewModal.scss";
-import "@/design/scss/pages/kanban-board/poReviewModal.scss";
+import "../../../../design/scss/blockers-modal.scss";
+import "../../../../design/scss/pages/kanban-board/seReviewMoveModal.scss";
+import "../../../../design/scss/pages/kanban-board/arInvoiceReviewModal.scss";
+import "../../../../design/scss/pages/kanban-board/poReviewModal.scss";
 
 /* Review table columns, in display order (plus the card tick before them). */
 const COLUMNS = [

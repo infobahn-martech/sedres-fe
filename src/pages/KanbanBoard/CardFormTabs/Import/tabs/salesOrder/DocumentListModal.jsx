@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { FiFileText, FiSearch, FiUploadCloud, FiUpload, FiX, FiCheck, FiPaperclip } from "react-icons/fi";
-import useAlertReducer from "@/store/AlertReducer";
-import "@/design/scss/salesOrder.scss";
+import useAlertReducer from "../../../../../../store/AlertReducer";
+import "../../../../../../design/scss/salesOrder.scss";
 
 // Document List Modal — manages the documents already attached to a sales order item
 // (sourced from the API's per-item `documents` array) plus any newly uploaded this session.

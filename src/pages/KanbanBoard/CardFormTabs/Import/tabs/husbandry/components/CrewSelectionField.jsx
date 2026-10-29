@@ -3,16 +3,16 @@ import PropTypes from "prop-types";
 import {
   getCrewListForPass,
   mapAxiosResponseToCrewOptions,
-} from "@/services/cgAndZwailpassService";
-import callFileService from "@/services/callFileService";
-import useCrewReducer from "@/store/CrewReducer";
-import { notify } from "@/components/Toaster";
+} from "../../../../../../../services/cgAndZwailpassService";
+import callFileService from "../../../../../../../services/callFileService";
+import useCrewReducer from "../../../../../../../store/CrewReducer";
+import { notify } from "../../../../../../../components/Toaster";
 import { FormGroup, FormField } from "./Husbandry.components";
 import CrewListUploadBox from "./CrewListUploadBox";
 import CrewEntryGrid from "./CrewEntryGrid";
 import { CREW_ENTRY_COLUMNS } from "./Husbandry.constants";
 import ChecklistMultiSelect from "../../appointment/checklistTab/ChecklistMultiSelect";
-import "@/design/scss/checklist.scss";
+import "../../../../../../../design/scss/checklist.scss";
 
 // Same tag the Crew Management dashboard applies to its crew list uploads.
 const UPLOAD_MOVEMENT_TYPE = "Sign On";

@@ -4,13 +4,13 @@ import ReactQuill from "react-quill";
 import DOMPurify from "dompurify";
 import { FiEdit2, FiTrash2, FiFileText, FiClock, FiX, FiSend } from "react-icons/fi";
 import "react-quill/dist/quill.snow.css";
-import "@/design/scss/invoice.scss";
-import "@/design/scss/notes.scss";
-import callFileService from "@/services/callFileService";
-import kanbanBoardService from "@/services/kanbanBoardService";
-import { unwrapListResponse } from "@/shared/helpers/callFileFormOptions";
-import { notify } from "@/components/Toaster";
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
+import "../../../../../../design/scss/invoice.scss";
+import "../../../../../../design/scss/notes.scss";
+import callFileService from "../../../../../../services/callFileService";
+import kanbanBoardService from "../../../../../../services/kanbanBoardService";
+import { unwrapListResponse } from "../../../../../../shared/helpers/callFileFormOptions";
+import { notify } from "../../../../../../components/Toaster";
+import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
 
 const QUILL_MODULES = {
     toolbar: [

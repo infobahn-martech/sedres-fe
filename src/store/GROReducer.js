@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { saveArrivalDocument } from "../services/groService";
+import groArrivalService from "../services/groService/arrivalService";
 
 /**
  * Pure helpers for GRO task-card documents (numeric status from API).
@@ -19,7 +19,7 @@ const useGROReducer = create((set) => ({
   saveArrivalDocument: async ({ formData } = {}) => {
     try {
       set({ isSavingArrivalDocument: true, arrivalDocumentError: "" });
-      const { data } = await saveArrivalDocument(formData);
+      const { data } = await groArrivalService.saveArrivalDocument(formData);
       set({ isSavingArrivalDocument: false });
       return data;
     } catch (err) {

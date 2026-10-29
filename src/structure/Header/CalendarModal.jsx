@@ -13,7 +13,7 @@ import {
   FiTrash2,
 } from 'react-icons/fi';
 import ToolModal from './ToolModal';
-import { useCalendarStore } from '../../store/calendarStore';
+import { useCalendarStore } from '../../shared/store/calendarStore';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [

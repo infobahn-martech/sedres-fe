@@ -1,11 +1,11 @@
 import { Draggable } from "@hello-pangea/dnd";
-import { KANBAN_DND_DISABLED } from "@/shared/constants/kanbanConfig";
+import { KANBAN_DND_DISABLED } from "../../../../../../shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
-import "@/design/scss/pages/kanban-board/taxi-boat-small-card.scss";
-import saudimarcapLogo from "@/assets/images/saudimarcap.png";
-import saipemLogo      from "@/assets/images/saipem.png";
-import lamprellLogo    from "@/assets/images/lamprell.png";
-import gulfmarineLogo  from "@/assets/images/gulfmarine.png";
+import "../../../../../../design/scss/pages/kanban-board/taxi-boat-small-card.scss";
+import saudimarcapLogo from "../../../../../../assets/images/saudimarcap.png";
+import saipemLogo      from "../../../../../../assets/images/saipem.png";
+import lamprellLogo    from "../../../../../../assets/images/lamprell.png";
+import gulfmarineLogo  from "../../../../../../assets/images/gulfmarine.png";
 
 const COMPANY_LOGO_MAP = {
   "gulf marine":  gulfmarineLogo,

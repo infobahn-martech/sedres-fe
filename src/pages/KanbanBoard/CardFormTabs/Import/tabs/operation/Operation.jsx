@@ -1,12 +1,12 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import { notify } from "@/components/Toaster";
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
-import Gateway from "@/gateway/gateway";
-import callFileService from "@/services/callFileService";
-import stageTimeMappingService from "@/services/stageTimeMappingService";
-import preArrivalInfoService from "@/services/preArrivalInfoService";
-import "@/design/scss/operations.scss";
+import { notify } from "../../../../../../components/Toaster";
+import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
+import Gateway from "../../../../../../gateway/gateway";
+import callFileService from "../../../../../../services/callFileService";
+import stageTimeMappingService from "../../../../../../services/stageTimeMappingService";
+import preArrivalInfoService from "../../../../../../services/preArrivalInfoService";
+import "../../../../../../design/scss/operations.scss";
 import OperationTabs from "./components/OperationTabs";
 import CrewImmigrationDashboard from "./CrewImmigrationDashboard";
 import PreArrival from "./PreArrival";
@@ -14,12 +14,12 @@ import Arrival from "./Arrival";
 import Departure from "./Departure";
 import CheckListTab from "./CheckListTab";
 import { buildSendReportRequestBody } from "./components/OperationCommon";
-import usePermissions from "@/shared/hooks/usePermissions";
+import usePermissions from "../../../../../../shared/hooks/usePermissions";
 import {
   PERMISSION_MODULES,
   PERMISSION_SUBMODULES,
   PERMISSION_ACTIONS,
-} from "@/shared/constants/permissions";
+} from "../../../../../../shared/constants/permissions";
 import {
   OPERATION_TABS,
   OPERATION_STAGE_IDS,

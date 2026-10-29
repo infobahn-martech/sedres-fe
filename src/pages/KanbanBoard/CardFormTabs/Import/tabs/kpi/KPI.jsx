@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import PropTypes from "prop-types";
 import KPIAnalytics from "./KPIAnalytics";
-import "@/design/scss/operations.scss";
+import "../../../../../../design/scss/operations.scss";
 
 // Generate dummy KPI data
 const generateDummyKPIs = () => {

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import '@/design/scss/pages/kanban-board/accordionMenu.scss';
+import '../../../../design/scss/pages/kanban-board/accordionMenu.scss';
 
 function AccordionMenu({
   position,

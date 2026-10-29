@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { FiMail, FiPaperclip, FiSend, FiX } from "react-icons/fi";
-import CustomModal from "@/components/CustomModal";
+import CustomModal from "../../../../../../components/CustomModal";
 import DocumentLibraryPickerModal from "./DocumentLibraryPickerModal";
-import EmailTableEditor from "@/pages/KanbanBoard/components/board/EmailTableEditor";
-import { getEmailHtml } from "@/pages/KanbanBoard/utils/emailHtml";
+import EmailTableEditor from "../../../../components/board/EmailTableEditor";
+import { getEmailHtml } from "../../../../utils/emailHtml";
 import { ensureHtmlForQuill } from "../operation/operationReportMessageHtml";
-import "@/design/scss/pages/kanban-board/seApprovalUploadModal.scss";
+import "../../../../../../design/scss/pages/kanban-board/seApprovalUploadModal.scss";
 
 // Opened from the SO Status stepper's "To Be Sent for SO Approval" step. Built on the
 // app's common CustomModal (react-bootstrap Modal wrapper, used across ~80 other modals in

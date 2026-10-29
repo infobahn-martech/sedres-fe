@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { FiLayers, FiPaperclip, FiUpload, FiUploadCloud, FiX } from "react-icons/fi";
-import CustomModal from "@/components/CustomModal";
-import "@/design/scss/pages/kanban-board/seApprovalUploadModal.scss";
+import CustomModal from "../../../../components/CustomModal";
+import "../../../../design/scss/pages/kanban-board/seApprovalUploadModal.scss";
 
 const ACCEPTED_FILE_TYPES = ".pdf,.eml,.msg,.jpg,.jpeg,.png";
 const ACCEPTED_FORMATS_HINT = "PDF, EML, MSG, JPG, PNG";

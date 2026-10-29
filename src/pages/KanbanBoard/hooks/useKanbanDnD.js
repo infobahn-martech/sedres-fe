@@ -4,7 +4,7 @@ import { userHasDeskStartTaskRole } from "../../../shared/helpers/groUserRoles";
 import taskCardService from "../../../services/taskCardService";
 import daService from "../../../services/daService";
 import kanbanBoardService from "../../../services/kanbanBoardService";
-import useKanbanCardSelectionStore from "../../../store/kanbanCardSelectionStore";
+import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
 import {
   findColumnByCardId,
   findLaneColumnLocationForCard,

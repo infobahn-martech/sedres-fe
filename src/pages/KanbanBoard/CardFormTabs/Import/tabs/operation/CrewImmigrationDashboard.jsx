@@ -4,19 +4,19 @@ import { FiSearch, FiChevronLeft, FiChevronRight, FiCheck, FiNavigation, FiEdit2
 import CrewListUploadBox from "../husbandry/components/CrewListUploadBox";
 import CrewUploadDropzones from "../husbandry/components/CrewUploadDropzones";
 import LaunchHireInlineForm from "../husbandry/components/LaunchHireInlineForm";
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
-import PremiumSelect from "@/components/form/PremiumSelect";
+import DeleteConfirmationModal from "../../../../../../components/DeleteConfirmationModal";
+import PremiumSelect from "../../../../../../components/form/PremiumSelect";
 import DatePickerField from "../../../shared/components/DatePickerField";
-import useCrewReducer from "@/store/CrewReducer";
-import useCrewImmigrationReducer from "@/store/CrewImmigrationReducer";
-import useCommonReducer from "@/store/CommonReducer";
-import useLaunchHireServiceReducer from "@/store/LaunchHireServiceReducer";
-import callFileService from "@/services/callFileService";
-import { buildApiDateTime } from "@/shared/helpers/dateTimeFieldUtils";
-import { notify } from "@/components/Toaster";
-import PermissionGuard from "@/components/PermissionGuard";
-import usePermissions from "@/shared/hooks/usePermissions";
-import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "@/shared/constants/permissions";
+import useCrewReducer from "../../../../../../store/CrewReducer";
+import useCrewImmigrationReducer from "../../../../../../store/CrewImmigrationReducer";
+import useCommonReducer from "../../../../../../store/CommonReducer";
+import useLaunchHireServiceReducer from "../../../../../../store/LaunchHireServiceReducer";
+import callFileService from "../../../../../../services/callFileService";
+import { buildApiDateTime } from "../../../../../../shared/helpers/dateTimeFieldUtils";
+import { notify } from "../../../../../../components/Toaster";
+import PermissionGuard from "../../../../../../components/PermissionGuard";
+import usePermissions from "../../../../../../shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../shared/constants/permissions";
 
 const LISTING_PAGE_SIZE = 10;
 

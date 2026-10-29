@@ -9,8 +9,8 @@ import {
   transformAttachmentsResponse,
   resolveLibraryDefaults,
 } from "./documentLibraryData";
-import attachmentsService from "@/services/attachmentsService";
-import "@/design/scss/documentLibrary.scss";
+import attachmentsService from "../../../../../../../services/attachmentsService";
+import "../../../../../../../design/scss/documentLibrary.scss";
 
 const buildFolderIndex = (folderTree) => {
   const index = new Map();

@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import userService from "@/services/userService";
-import groService from "@/services/groService";
-import { PRE_ARRIVAL_GRO_ROLE_ID } from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/operation/operationConstants";
+import userService from "../../../../../../../services/userService";
+import groService from "../../../../../../../services/groService";
+import { PRE_ARRIVAL_GRO_ROLE_ID } from "../../../../../CardFormTabs/Import/tabs/operation/operationConstants";
 import {
   getGroSupervisorTasksForCard,
   createEmptyTaskAssignment,
@@ -15,11 +15,11 @@ import {
   mapGroSupervisorDocuments,
   parseDocumentsByTaskPayload,
   resolveGroSupervisorTaskId,
-} from "./groSupervisorDocumentsUtils";
+} from "./groSupervisorDocuments";
 import GROSupervisorTabs from "./GROSupervisorTabs";
 import GROSupervisorAssignTask from "./GROSupervisorAssignTask";
 import GROSupervisorDocuments from "./GROSupervisorDocuments";
-import { isExportCallType, resolveCallTypeId } from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callTypes";
+import { isExportCallType, resolveCallTypeId } from "../../../../../CardFormTabs/shared/utils/callTypes";
 
 const SUPERVISOR_TABS = {
   assign: "assign",

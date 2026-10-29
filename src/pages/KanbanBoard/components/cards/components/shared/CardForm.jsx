@@ -1,53 +1,53 @@
 import { useState, useMemo, useCallback, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
-import salesOrderService from "@/services/salesOrderService";
-import kanbanBoardService from "@/services/kanbanBoardService";
-import callFileService from "@/services/callFileService";
-import daService from "@/services/daService";
-import { mapSalesOrderResponse } from "@/shared/helpers/mapSalesOrderResponse";
+import salesOrderService from "../../../../../../services/salesOrderService";
+import kanbanBoardService from "../../../../../../services/kanbanBoardService";
+import callFileService from "../../../../../../services/callFileService";
+import daService from "../../../../../../services/daService";
+import { mapSalesOrderResponse } from "../../../../../../shared/helpers/mapSalesOrderResponse";
 import { useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
 import { Tag, Layers3, AlertTriangle, Sticker, LayoutTemplate, Pencil, Check } from "lucide-react";
-import { notify } from "@/components/Toaster";
-import "@/design/scss/pages/kanban-board/cardForm.scss";
-import "@/design/scss/general.scss";
-import ColorPickerIcon from "@/assets/images/ColorPicker.png";
-import SedresColorPicker from "@/components/SedresColorPicker/SedresColorPicker";
-import { normalizeHexColor } from "@/components/SedresColorPicker/sedresColorPickerConstants";
-import PriorityIcon from "@/assets/images/Priority.png";
-import { getItem } from "@/shared/helpers/localStorage";
+import { notify } from "../../../../../../components/Toaster";
+import "../../../../../../design/scss/pages/kanban-board/cardForm.scss";
+import "../../../../../../design/scss/general.scss";
+import ColorPickerIcon from "../../../../../../assets/images/ColorPicker.png";
+import SedresColorPicker from "../../../../../../components/SedresColorPicker/SedresColorPicker";
+import { normalizeHexColor } from "../../../../../../components/SedresColorPicker/sedresColorPickerConstants";
+import PriorityIcon from "../../../../../../assets/images/Priority.png";
+import { getItem } from "../../../../../../shared/helpers/localStorage";
 import {
   isGROSupervisorRole,
   isCustomClearanceSupervisorRole,
   getFirstUserRoleId,
-} from "@/shared/helpers/groUserRoles";
-import useAuthReducer from "@/store/AuthReducer";
-import useFormTemplateReducer from "@/store/FormTemplateReducer";
-import { useDaLocalReachedDates } from "@/store/daStore";
-import useCardModalStore from "@/store/cardModalStore";
-import usePermissions from "@/shared/hooks/usePermissions";
+} from "../../../../../../shared/helpers/groUserRoles";
+import useAuthReducer from "../../../../../../store/AuthReducer";
+import useFormTemplateReducer from "../../../../../../store/FormTemplateReducer";
+import { useDaLocalReachedDates } from "../../../../../../shared/store/daStore";
+import useCardModalStore from "../../../../../../shared/store/cardModalStore";
+import usePermissions from "../../../../../../shared/hooks/usePermissions";
 import {
   PERMISSION_MODULES,
   PERMISSION_SUBMODULES,
   PERMISSION_ACTIONS,
-} from "@/shared/constants/permissions";
+} from "../../../../../../shared/constants/permissions";
 
 // Import Tab Components
-import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Reports, KPI, Comments, Subtasks, Notes, DA } from "@/pages/KanbanBoard/CardFormTabs/Import";
-import { Approval } from "@/pages/KanbanBoard/CardFormTabs/Export";
-import { DEFAULT_PRE_ARRIVAL_DOCUMENT_HANDLING } from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/operation/preArrivalDocumentHandling";
-import { isExportCall } from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callTypes";
-import NavTabButton from "@/components/NavTabButton";
+import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Reports, KPI, Comments, Subtasks, Notes, DA } from "../../../../CardFormTabs/Import";
+import { Approval } from "../../../../CardFormTabs/Export";
+import { DEFAULT_PRE_ARRIVAL_DOCUMENT_HANDLING } from "../../../../CardFormTabs/Import/tabs/operation/preArrivalDocumentHandling";
+import { isExportCall } from "../../../../CardFormTabs/shared/utils/callTypes";
+import NavTabButton from "../../../../../../components/NavTabButton";
 import GROCardView from "../GRO/User/GROCardView";
 import CoordinatorTransportCardView from "../CoordinatorTransport/CoordinatorTransportCardView";
 import CustomCardView from "../Custom/User/CustomCardView";
 import MWPCardView from "../MWP/User/MWPCardView";
 import TaxiBoatCardView from "../TaxiBoat/TaxiBoatCardView";
-import DynamicIcon from "@/structure/SideNav/components/DynamicIcon";
-import { mapBackendIconNameToIconKey } from "@/store/KanbanManagementReducer";
-import { TaskCardDetailView } from "@/pages/TaskCard";
+import DynamicIcon from "../../../../../../structure/SideNav/components/DynamicIcon";
+import { mapBackendIconNameToIconKey } from "../../../../../../store/KanbanManagementReducer";
+import { TaskCardDetailView } from "../../../../../../pages/TaskCard";
 import TemplatePickerPopover, { TEMPLATE_PICKER_WIDTH } from "./TemplatePickerPopover";
-import { CardMetaPickerPopover, META_PICKER_WIDTH } from "@/pages/KanbanBoard/utils/cardMetaPickers";
+import { CardMetaPickerPopover, META_PICKER_WIDTH } from "../../../../utils/cardMetaPickers";
 
 // Constants - All tabs
 const ALL_TOP_TABS = [

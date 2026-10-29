@@ -1,5 +1,6 @@
 {
   "name": "sedres-fe",
+  "homepage": "https://infobahn-martech.github.io/sedres-fe/",
   "scripts": {
     "dev": "vite",
     "dev:old": "vite --mode old",
@@ -7,7 +8,9 @@
     "build": "vite build",
     "build:old": "vite build --mode old",
     "build:marine": "vite build --mode marine",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build && cp dist/index.html dist/404.html",
+    "deploy": "gh-pages -d dist -b gh-pages --dotfiles"
   },
   "dependencies": {
     "@azure/msal-browser": "^5.17.1",
@@ -62,6 +65,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
+    "gh-pages": "^6.3.0",
     "globals": "^16.4.0",
     "prettier": "^3.6.2",
     "sass-embedded": "^1.93.3",

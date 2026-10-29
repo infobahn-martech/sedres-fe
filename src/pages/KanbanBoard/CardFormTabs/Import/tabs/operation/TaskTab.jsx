@@ -3,7 +3,7 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { TASK_STATUS } from "./operationTasksMapper";
-import "@/design/scss/operations.scss";
+import "../../../../../../design/scss/operations.scss";
 
 const STATUS_CLASS_MAP = {
   [TASK_STATUS.PENDING]: "operation-task-status--pending",

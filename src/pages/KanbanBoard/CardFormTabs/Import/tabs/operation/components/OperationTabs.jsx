@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import NavTabButton from "@/components/NavTabButton";
+import NavTabButton from "../../../../../../../components/NavTabButton";
 import { OPERATION_TABS } from "../operationConstants";
 
 // Small stroke-icon set for this nav only, following the same inline-SVG

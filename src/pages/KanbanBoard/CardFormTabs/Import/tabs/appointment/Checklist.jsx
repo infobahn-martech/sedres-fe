@@ -1,10 +1,10 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SendReportButton } from "../../services/sendReportFullWidthView";
-import callFileService from "@/services/callFileService";
-import checklistService from "@/services/checklistService";
-import { notify } from "@/components/Toaster";
-import "@/design/scss/checklist.scss";
+import callFileService from "../../../../../../services/callFileService";
+import checklistService from "../../../../../../services/checklistService";
+import { notify } from "../../../../../../components/Toaster";
+import "../../../../../../design/scss/checklist.scss";
 import ChecklistMultiSelect from "./checklistTab/ChecklistMultiSelect";
 import ChecklistTypeBlock from "./checklistTab/ChecklistTypeBlock";
 import ChecklistFooterActions from "./checklistTab/ChecklistFooterActions";

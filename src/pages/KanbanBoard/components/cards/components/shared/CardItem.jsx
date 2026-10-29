@@ -1,18 +1,18 @@
 import { useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
-import { KANBAN_DND_DISABLED } from "@/shared/constants/kanbanConfig";
+import { KANBAN_DND_DISABLED } from "../../../../../../shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
-import useExportApprovalStatusStore from "@/store/exportApprovalStatusStore";
-import "@/design/scss/pages/kanban-board/signatureCheck.scss";
+import useExportApprovalStatusStore from "../../../../../../shared/store/exportApprovalStatusStore";
+import "../../../../../../design/scss/pages/kanban-board/signatureCheck.scss";
 import { Tooltip } from "react-tooltip";
-import "@/design/css/components/CardItem.css";
+import "../../../../../../design/css/components/CardItem.css";
 // Company logos
-import saudimarcapLogo from "@/assets/images/saudimarcap.png";
-import saipemLogo from "@/assets/images/saipem.png";
-import lamprellLogo from "@/assets/images/lamprell.png";
-import gulfmarineLogo from "@/assets/images/gulfmarine.png";
+import saudimarcapLogo from "../../../../../../assets/images/saudimarcap.png";
+import saipemLogo from "../../../../../../assets/images/saipem.png";
+import lamprellLogo from "../../../../../../assets/images/lamprell.png";
+import gulfmarineLogo from "../../../../../../assets/images/gulfmarine.png";
 import { FiFileText, FiDownload, FiLoader, FiTrendingUp, FiCopy, FiCheck } from "react-icons/fi";
-import { resolveIconComponentStrict } from "@/structure/SideNav/components/DynamicIcon";
+import { resolveIconComponentStrict } from "../../../../../../structure/SideNav/components/DynamicIcon";
 import {
   hasText,
   isValidProgress,
@@ -20,8 +20,8 @@ import {
   getApiCardDisplayTitle,
   getApiCardTaskName,
   getUsernameInitial,
-} from "@/pages/KanbanBoard/utils/cardDisplayHelpers";
-import { downloadRemoteFile } from "@/shared/utils/utils";
+} from "../../../../utils/cardDisplayHelpers";
+import { downloadRemoteFile } from "../../../../../../shared/utils/utils";
 
 /* SNAMPROGETTI is the name the SAIPEM workflow is being renamed from. */
 const SAIPEM_WORKFLOW_PATTERN = /saipem|snamprogetti/i;

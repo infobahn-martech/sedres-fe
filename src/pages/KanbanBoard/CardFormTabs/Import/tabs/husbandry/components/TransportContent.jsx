@@ -1,17 +1,17 @@
   import { useState, useEffect, useCallback, useRef } from "react";
   import PropTypes from "prop-types";
-  import GroupSettingsIcon from "@/assets/images/cv.png";
-  import { notify } from "@/components/Toaster";
+  import GroupSettingsIcon from "../../../../../../../assets/images/cv.png";
+  import { notify } from "../../../../../../../components/Toaster";
   import { FormSection, FormField, FormSelect, ReactQuillEditor, FormGroup, FieldRow, PremiumCardHeader } from "./Husbandry.components";
   import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT, TRANSPORT_ROUTE_LOCATION_OPTIONS, LAUNCH_HIRE_LOCATION_OPTIONS } from "./Husbandry.constants";
   import AttachmentsList from "../../appointment/AttachmentsList";
-  import callFileService from "@/services/callFileService";
-  import transportContentService from "@/services/transportContentService";
-  import { buildPickupDateTime } from "@/store/TransportContent";
+  import callFileService from "../../../../../../../services/callFileService";
+  import transportContentService from "../../../../../../../services/transportContentService";
+  import { buildPickupDateTime } from "../../../../../../../store/TransportContent";
   import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
   import CrewSelectionField from "./CrewSelectionField";
   import LocationAutocomplete from "./LocationAutocomplete";
-  import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+  import DateTimePickerField from "../../../../shared/components/DateTimePickerField";
 
   // Helper functions to extract and flatten transport requests from API response
   const extractTransportRequestsFromEnvelope = (response) => {

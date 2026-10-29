@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import '@/design/scss/pages/kanban-board/contextMenu.scss';
+import '../../../../design/scss/pages/kanban-board/contextMenu.scss';
 
 function ContextMenu({ position, onClose, onCreateCard }) {
     if (!position) return null;

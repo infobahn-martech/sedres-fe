@@ -4,7 +4,7 @@ import { MsalProvider } from '@azure/msal-react';
 import { EventType } from '@azure/msal-browser';
 import router from './router';
 import { msalInstance } from './config/msalConfig';
-import { initTheme } from './store/themeStore';
+import { initTheme } from './shared/store/themeStore';
 import MuiThemeBridge from './shared/context/MuiThemeBridge';
 
 initTheme();
