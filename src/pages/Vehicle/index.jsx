@@ -63,14 +63,6 @@ const Vehicle = () => {
             sort: true,
         },
         {
-            name: "Vehicle Purpose",
-            selector: "vehicle_purpose",
-            width: "220",
-            thclass: "tb-head",
-            contentClass: "table-content",
-            sort: true,
-        },
-        {
             name: "Seater",
             selector: "seater",
             width: "220",
