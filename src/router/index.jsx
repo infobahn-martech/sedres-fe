@@ -8,7 +8,19 @@ import RouteGuard from "./RouteGuard";
 import PermissionRoute from "./PermissionRoute";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../shared/constants/permissions";
 import Layout from "../structure/Layout";
-import DADeskBoard from "../pages/DADeskBoard";
+import {
+  AdminBoard,
+  DADeskBoard,
+  DriverBoard,
+  GROBoard,
+  HotelBoard,
+  JubailOperations,
+  MWPBoard,
+  RastanuraDammamOperations,
+  RastanuraOperations,
+  TBCBoard,
+  TBOBoard,
+} from "../pages/StaticBoard/boards";
 import RoleDashboard from "../pages/Dashboard/RoleDashboard";
 import Login from "../pages/Authentication";
 import ForgetPassword from "../pages/ForgetPassword";
@@ -58,17 +70,7 @@ import TransportParties from "../pages/TransportParties";
 import WasteTypes from "../pages/WasteTypes";
 import NotFound from "../pages/NotFound";
 import Compact from "../pages/Compact";
-import JubailOperations from "../pages/JubailOperations";
-import RastanuraDammamOperations from "../pages/RastanuraDammamOperations";
 import CoordinatorTransport from "../pages/CoordinatorTransport";
-import RastanuraOperations from "../pages/RastanuraOperations";
-import DriverBoard from "../pages/DriverBoard";
-import TBCBoard from "../pages/TBCBoard";
-import TBOBoard from "../pages/TBOBoard";
-import MWPBoard from "../pages/MWPBoard";
-import GROBoard from "../pages/GROBoard";
-import HotelBoard from "../pages/HotelBoard";
-import AdminBoard from "../pages/AdminBoard";
 import LHServices from "../pages/LHServices";
 import Fleet from "../pages/Fleet";
 import CrewTemplate from "../pages/CrewTemplate";

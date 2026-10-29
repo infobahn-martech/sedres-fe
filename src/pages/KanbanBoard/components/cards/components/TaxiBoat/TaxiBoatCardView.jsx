@@ -1,24 +1,24 @@
 /* eslint-disable no-unused-vars */
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useCTPendingCards } from "../../../../../../shared/store/ctStore";
-import { useTaxiBoatStore } from "../../../../../../shared/store/taxiBoatStore";
-import useTaxiBoatAssignmentReducer from "../../../../../../store/TaxiBoatAssignmentReducer";
-import useBillingEntityReducer from "../../../../../../store/BillingEntityReducer";
-import useAuthReducer from "../../../../../../store/AuthReducer";
-import useAlertReducer from "../../../../../../store/AlertReducer";
-import launchHireService from "../../../../../../services/launchHireService";
-import DateTimePickerField from "../../../../CardFormTabs/shared/components/DateTimePickerField";
-import SearchableSelect from "../../../../../../components/form/SearchableSelect";
-import { buildApiDateTime, splitApiDateTimeParts } from "../../../../../../shared/helpers/dateTimeFieldUtils";
+import { useCTPendingCards } from "@/store/ctStore";
+import { useTaxiBoatStore } from "@/store/taxiBoatStore";
+import useTaxiBoatAssignmentReducer from "@/store/TaxiBoatAssignmentReducer";
+import useBillingEntityReducer from "@/store/BillingEntityReducer";
+import useAuthReducer from "@/store/AuthReducer";
+import useAlertReducer from "@/store/AlertReducer";
+import launchHireService from "@/services/launchHireService";
+import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+import SearchableSelect from "@/components/form/SearchableSelect";
+import { buildApiDateTime, splitApiDateTimeParts } from "@/shared/helpers/dateTimeFieldUtils";
 import { formatGroDocumentDisplayName } from "../GRO/User/groCardUtils";
 import PropTypes from "prop-types";
 import { FiFlag, FiAnchor, FiNavigation, FiHome, FiArrowDown, FiArrowUp, FiArrowLeft, FiClock, FiUpload, FiPlus, FiCheckCircle, FiPrinter, FiUser } from "react-icons/fi";
 import { FaShip } from "react-icons/fa";
 import { MdDirectionsBoat } from "react-icons/md";
-import "../../../../../../design/scss/pages/kanban-board/taxi-boat-card.scss";
-import "../../../../../../design/scss/pages/kanban-board/taxi-boat-service-scenarios.scss";
+import "@/design/scss/pages/kanban-board/taxi-boat-card.scss";
+import "@/design/scss/pages/kanban-board/taxi-boat-service-scenarios.scss";
 import GroSummaryCard, { GroSummaryFieldCard } from "../GRO/User/GroSummaryCard";
-import CardTabListLoading from "../../../../../../components/CardTabListLoading";
+import CardTabListLoading from "@/components/CardTabListLoading";
 
 const CREW_CHANGE_SERVICES = ["Crew Change"];
 const MATERIAL_SERVICES   = ["Material Delivery", "Provision Delivery", "Garbage Collection"];

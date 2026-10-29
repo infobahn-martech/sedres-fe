@@ -1,12 +1,12 @@
 import { useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { FiCheck, FiEye, FiLayers, FiX } from "react-icons/fi";
-import CustomModal from "../../../../components/CustomModal";
-import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
-import { notify } from "../../../../components/Toaster";
-import { getUploadedFileUrl, viewUploadedFile } from "../../../../shared/utils/viewUploadedFile";
-import "../../../../design/scss/blockers-modal.scss";
-import "../../../../design/scss/pages/kanban-board/seReviewMoveModal.scss";
+import CustomModal from "@/components/CustomModal";
+import useBatchMoveStore from "@/store/batchMoveStore";
+import { notify } from "@/components/Toaster";
+import { getUploadedFileUrl, viewUploadedFile } from "@/shared/utils/viewUploadedFile";
+import "@/design/scss/blockers-modal.scss";
+import "@/design/scss/pages/kanban-board/seReviewMoveModal.scss";
 
 const SE_DOCUMENT_KEY_PATTERN = /doc|excel|sheet/i;
 const SE_EMAIL_KEY_PATTERN = /email|mail/i;

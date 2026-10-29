@@ -1,7 +1,7 @@
 import React from 'react';
 import YellowColorIcon from '../../../assets/images/YellowColorIcon.png';
 import BlueColorIcon from '../../../assets/images/BlueColorIcon.png';
-import VoilentColorIcon from '../../../assets/images/VoilentColorIcon.png';
+import VioletColorIcon from '../../../assets/images/VioletColorIcon.png';
 import GreenColorIcon from '../../../assets/images/GreenColorIcon.png';
 import PurpleColorIcon from '../../../assets/images/PurpleColorIcon.png';
 import '../../../design/scss/pages/kpi-dashboard/components/OurTeam.scss';
@@ -41,7 +41,7 @@ const OurTeam = () => {
             level: 5,
             points: 5867,
             completion: 25,
-            icon: VoilentColorIcon,
+            icon: VioletColorIcon,
         },
         {
             name: 'Yusuf Al-Hassan',

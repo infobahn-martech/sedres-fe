@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import { FiUpload, FiUploadCloud } from "react-icons/fi";
-import { notify } from "../../../../../../../components/Toaster";
-import crewService from "../../../../../../../services/crewService";
-import groService from "../../../../../../../services/groService";
-import { getPassRequests, extractPassRequestsFromEnvelope } from "../../../../../../../services/cgAndZwailpassService";
+import { notify } from "@/components/Toaster";
+import crewService from "@/services/crewService";
+import groService from "@/services/groService";
+import { getPassRequests, extractPassRequestsFromEnvelope } from "@/services/cgAndZwailpassService";
 import { groApiErrorMessage } from "./groCardUtils";
 import {
   crewChangeRowFields,

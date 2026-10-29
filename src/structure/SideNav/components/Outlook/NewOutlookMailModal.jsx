@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 import { FiX } from 'react-icons/fi';
-import useOutlookReducer from '../../../../store/OutlookReducer';
+import useOutlookReducer from '@/store/OutlookReducer';
 
 const MODE_TITLES = {
   new: 'New message',

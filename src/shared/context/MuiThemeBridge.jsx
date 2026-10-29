@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { useThemeStore } from '../store/themeStore';
+import { useThemeStore } from '../../store/themeStore';
 
 // Syncs MUI's theme (used by @mui/x-date-pickers) with the app's existing
 // data-theme dark mode, so the date/time picker calendar popups render dark

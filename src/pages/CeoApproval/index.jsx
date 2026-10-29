@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import CardForm from "../KanbanBoard/components/cards/CardForm";
+import CardForm from "../KanbanBoard/components/cards/components/shared/CardForm";
 import callFileService from "../../services/callFileService";
 import kanbanBoardService from "../../services/kanbanBoardService";
 import workSpaceService from "../../services/workSpaceService";

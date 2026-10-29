@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
 import PropTypes from "prop-types";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import "../../../../../../design/scss/operations.scss";
-import "../../../../../../design/scss/table-common.scss";
-import "../../../../../../design/scss/materialmanagement.scss";
+import "@/design/scss/operations.scss";
+import "@/design/scss/table-common.scss";
+import "@/design/scss/materialmanagement.scss";
 
 // Import constants
 import {
@@ -36,19 +36,19 @@ import MWPRenewalContent from "./components/MWPRenewalContent";
 import OnStationContent from "./components/OnStationContent";
 import ThirdPartyServicesContent from "./components/ThirdPartyServicesContent";
 import AddOnServicesContent from "./components/AddOnServicesContent";
-import useInboundOrderReducer from "../../../../../../store/InboundOrderReducer";
-import useLandingNoteReducer from "../../../../../../store/LandingNoteReducer";
-import useDispatchNoteReducer from "../../../../../../store/DispatchNoteReducer";
-import callFileService from "../../../../../../services/callFileService";
-import salesOrderService from "../../../../../../services/salesOrderService";
-import { mapSalesOrderResponse } from "../../../../../../shared/helpers/mapSalesOrderResponse";
-import transportContentService, { extractTransportRequestsFromEnvelope } from "../../../../../../services/transportContentService";
-import hotelService, { extractHotelRequestsFromEnvelope } from "../../../../../../services/hotelService";
-import hospitalService, { extractMedicalRequestsFromEnvelope } from "../../../../../../services/hospitalService";
-import { getPassRequests, extractPassRequestsFromEnvelope } from "../../../../../../services/cgAndZwailpassService";
-import launchHireService from "../../../../../../services/launchHireService";
-import usePermissions from "../../../../../../shared/hooks/usePermissions";
-import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../shared/constants/permissions";
+import useInboundOrderReducer from "@/store/InboundOrderReducer";
+import useLandingNoteReducer from "@/store/LandingNoteReducer";
+import useDispatchNoteReducer from "@/store/DispatchNoteReducer";
+import callFileService from "@/services/callFileService";
+import salesOrderService from "@/services/salesOrderService";
+import { mapSalesOrderResponse } from "@/shared/helpers/mapSalesOrderResponse";
+import transportContentService, { extractTransportRequestsFromEnvelope } from "@/services/transportContentService";
+import hotelService, { extractHotelRequestsFromEnvelope } from "@/services/hotelService";
+import hospitalService, { extractMedicalRequestsFromEnvelope } from "@/services/hospitalService";
+import { getPassRequests, extractPassRequestsFromEnvelope } from "@/services/cgAndZwailpassService";
+import launchHireService from "@/services/launchHireService";
+import usePermissions from "@/shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "@/shared/constants/permissions";
 
 // Left-nav services that jump straight to their sidebar subtab. CG Pass/
 // Zawil Pass are handled via handleNavigateToTab instead. Crew Change/Port

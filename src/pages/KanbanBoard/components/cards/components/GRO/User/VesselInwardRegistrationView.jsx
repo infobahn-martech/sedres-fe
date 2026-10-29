@@ -3,9 +3,9 @@ import PropTypes from "prop-types";
 import { FiSave } from "react-icons/fi";
 import VesselBoardingArabicPreview from "./VesselBoardingArabicPreview";
 import { extractVesselRegTemplateFields, matchVesselApiFieldKey } from "./vesselRegTemplateFields";
-import groService from "../../../../../../../services/groService";
-import vesselService from "../../../../../../../services/vesselService";
-import translateService from "../../../../../../../services/translateService";
+import groService from "@/services/groService";
+import vesselService from "@/services/vesselService";
+import translateService from "@/services/translateService";
 
 const TRANSLATE_DEBOUNCE_MS = 500;
 

@@ -3,7 +3,7 @@ import authService from '../services/authService';
 import { getAuthData, removeItem, setItem, getItem } from '../shared/helpers/localStorage';
 import useAlertReducer from './AlertReducer';
 import { normalizePermissionSections } from '../shared/utils/permissions';
-import { useDaLocalReachedDates, useDaLocalLaunchHire, useDaLocalVerifiedItems } from '../shared/store/daStore';
+import { useDaLocalReachedDates, useDaLocalLaunchHire, useDaLocalVerifiedItems } from './daStore';
 
 const { isLoggedIn } = getAuthData();
 

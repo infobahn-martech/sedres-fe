@@ -7,7 +7,7 @@ import useSyncKanbanSidebarWorkflows from "../../../shared/hooks/useSyncKanbanSi
 import useKanbanAddCardFromSidebar from "../../../shared/hooks/useKanbanAddCardFromSidebar";
 import { getAddModeCardFormWorkflow } from "../../../shared/helpers/kanbanSidebarWorkflow";
 import KanbanBoardContent from "../components/board/KanbanBoardContent";
-import CardForm from "../components/cards/CardForm";
+import CardForm from "../components/cards/components/shared/CardForm";
 import StatusConfirmationModal from "../../../components/StatusConfirmationModal";
 import confirmTickIcon from "../../../assets/images/toast-success.svg";
 import SeCreationEmailModal from "../components/board/SeCreationEmailModal";
@@ -43,19 +43,19 @@ import zamilMarineArInvoiceService from "../../../services/zamilMarineArInvoiceS
 import { notify } from "../../../components/Toaster";
 import { downloadFile } from "../../../shared/utils/utils";
 import { compressPdfFiles } from "../../../shared/utils/compressPdf";
-import { useThemeStore } from "../../../shared/store/themeStore";
-import useKanbanCardSelectionStore from "../../../shared/store/kanbanCardSelectionStore";
-import useBatchMoveStore from "../../../shared/store/batchMoveStore";
-import useArInvoiceReviewStore from "../../../shared/store/arInvoiceReviewStore";
-import useZamilMarineArInvoiceStore from "../../../shared/store/zamilMarineArInvoiceStore";
-import useZamilCrewArInvoiceStore from "../../../shared/store/zamilCrewArInvoiceStore";
-import useZamilMarinePoRequestStore from "../../../shared/store/zamilMarinePoRequestStore";
-import useZamilMarinePoUploadStore from "../../../shared/store/zamilMarinePoUploadStore";
-import useZamilCrewFinalInvoiceStore from "../../../shared/store/zamilCrewFinalInvoiceStore";
-import useZamilMarineFinalInvoiceStore from "../../../shared/store/zamilMarineFinalInvoiceStore";
-import usePoReviewStore from "../../../shared/store/poReviewStore";
-import useSccReviewStore from "../../../shared/store/sccReviewStore";
-import useDispatchProofReviewStore from "../../../shared/store/dispatchProofReviewStore";
+import { useThemeStore } from "../../../store/themeStore";
+import useKanbanCardSelectionStore from "../../../store/kanbanCardSelectionStore";
+import useBatchMoveStore from "../../../store/batchMoveStore";
+import useArInvoiceReviewStore from "../../../store/arInvoiceReviewStore";
+import useZamilMarineArInvoiceStore from "../../../store/zamilMarineArInvoiceStore";
+import useZamilCrewArInvoiceStore from "../../../store/zamilCrewArInvoiceStore";
+import useZamilMarinePoRequestStore from "../../../store/zamilMarinePoRequestStore";
+import useZamilMarinePoUploadStore from "../../../store/zamilMarinePoUploadStore";
+import useZamilCrewFinalInvoiceStore from "../../../store/zamilCrewFinalInvoiceStore";
+import useZamilMarineFinalInvoiceStore from "../../../store/zamilMarineFinalInvoiceStore";
+import usePoReviewStore from "../../../store/poReviewStore";
+import useSccReviewStore from "../../../store/sccReviewStore";
+import useDispatchProofReviewStore from "../../../store/dispatchProofReviewStore";
 import "../../../design/scss/pages/kanban-board/marquee-select.scss";
 
 /* "SE Received" bulk invoice upload: PDFs only. da/upload_ar_invoices takes max_files_per_request

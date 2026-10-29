@@ -1,5 +1,5 @@
 import * as MsgReaderModule from "msgreader";
-import { formatToApiDateTime } from "../../../../../../shared/helpers/appointmentAiExtractor";
+import { formatToApiDateTime } from "@/shared/helpers/appointmentAiExtractor";
 
 const msgHeadersToText = (headers) => {
   if (!headers) return "";

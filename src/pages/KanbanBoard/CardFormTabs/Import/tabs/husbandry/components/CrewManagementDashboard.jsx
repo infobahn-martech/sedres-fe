@@ -10,14 +10,14 @@ import CrewUploadedListsPanel from "./CrewUploadedListsPanel";
 import CrewTodayHistoryPanel from "./CrewTodayHistoryPanel";
 import CrewUploadPreviewModal from "./CrewUploadPreviewModal";
 import LaunchHireInlineForm from "./LaunchHireInlineForm";
-import useCrewReducer from "../../../../../../../store/CrewReducer";
-import useCommonReducer from "../../../../../../../store/CommonReducer";
-import useLaunchHireServiceReducer from "../../../../../../../store/LaunchHireServiceReducer";
-import callFileService from "../../../../../../../services/callFileService";
-import { buildApiDateTime } from "../../../../../../../shared/helpers/dateTimeFieldUtils";
-import { notify } from "../../../../../../../components/Toaster";
-import usePermissions from "../../../../../../../shared/hooks/usePermissions";
-import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../../shared/constants/permissions";
+import useCrewReducer from "@/store/CrewReducer";
+import useCommonReducer from "@/store/CommonReducer";
+import useLaunchHireServiceReducer from "@/store/LaunchHireServiceReducer";
+import callFileService from "@/services/callFileService";
+import { buildApiDateTime } from "@/shared/helpers/dateTimeFieldUtils";
+import { notify } from "@/components/Toaster";
+import usePermissions from "@/shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "@/shared/constants/permissions";
 
 const INITIAL_UPLOAD_STEPS = {
   crewList: { status: "pending", files: [], progress: 0 },

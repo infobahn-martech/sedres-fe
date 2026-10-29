@@ -1,27 +1,8 @@
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-
-
-
 # Frontend Technical Documentation
 
 **Document version:** 1.0
 **Generated from repository state on:** 2026-08-05
-**Repository (local):** `kanbanBoardFE`
+**Repository:** `sedres-fe`
 
 ---
 
@@ -29,12 +10,12 @@ If you are developing a production application, we recommend using TypeScript wi
 
 | Item | Detail |
 |---|---|
-| Project name | `kanbanboardfe` (`package.json` → `name`), referred to internally as **Sedres** (see `CLAUDE.md`, `.cpanel.yml` deploy path `sedres.onlinebareed.com`) |
+| Project name | `sedres-fe` (`package.json` → `name`), referred to internally as **Sedres** (see `.cpanel.yml` deploy path `sedres.onlinebareed.com`) |
 | Purpose | A large, multi-module enterprise operations platform for maritime/port logistics. It centers on Kanban-style operational boards (DA Desk, Jubail Operations, Ras Tanura Operations, Coordinator Transport, Driver, Taxi/Boat Captain & Operator, MWP, GRO, Hotel, Admin) alongside master-data management (vessels, crew, billing, drivers, hotels, hospitals, transport companies, waste, etc.), KPI dashboards, and vendor/medical/transport/hotel/in-house-driver portals |
 | Framework | React 18 (`react` ^18.3.1, `react-dom` ^18.3.1) |
 | Build tool | Vite ^7.1.7 (`vite.config.js`), using `@vitejs/plugin-react` |
 | Programming language | JavaScript (JSX). No TypeScript is configured — `@types/react` and `@types/react-dom` are present as dev dependencies only, likely for editor IntelliSense; there are no `.ts`/`.tsx` source files |
-| Repository overview | Single-page application (SPA) bootstrapped with the standard Vite + React template (see `README.md`), heavily extended into a full enterprise app. It contains 93 page modules (`src/pages`), 78 Zustand stores (`src/store`), and 88 API service modules (`src/services`) |
+| Repository overview | Single-page application (SPA) bootstrapped with the standard Vite + React template, heavily extended into a full enterprise app. It contains 95 page modules (`src/pages`), 103 Zustand stores (`src/store`), and 96 API service modules (`src/services`). Imports can use the `@/` alias for `src/` (configured in `vite.config.js` and `jsconfig.json`) |
 
 ---
 
@@ -119,12 +100,6 @@ If you are developing a production application, we recommend using TypeScript wi
 | prettier | ^3.6.2 | Code formatting |
 | globals | ^16.4.0 | Global variable definitions for ESLint |
 
-### Deployment Tooling
-
-| Technology | Version | Purpose |
-|---|---|---|
-| gh-pages | ^6.3.0 | Publishes the `dist` build to a `gh-pages` branch |
-
 ---
 
 ## 3. Project Structure
@@ -138,8 +113,8 @@ High-level layout under `src/`:
 | `src/pages/` | 93 top-level feature/page modules (one folder per business module — e.g., `KanbanBoard`, `Crew`, `BillingEntity`, `VendorPortal`, `Workspaces`). Most page folders contain their own `Modals/`, `RenderCells.jsx`, and sub-components |
 | `src/components/` | 16 shared, cross-page UI components (e.g., `CustomModal.jsx`, `customTable.jsx`, `CommonFilter.jsx`, `DeleteConfirmationModal.jsx`, `PermissionGuard.jsx`, `Toaster.jsx`) |
 | `src/structure/` | Application shell/chrome: `Layout` (main page frame), `Header`, `SideNav` (with its own `components/` subfolder) |
-| `src/services/` | 88 API service modules — one per domain (e.g., `authService.js`, `crewService.js`, `kanbanBoardService.js`), each wrapping `Gateway` (axios) calls to backend endpoints |
-| `src/store/` | 78 Zustand store modules ("Reducers", e.g., `AuthReducer.js`, `KanbanManagementReducer.js`, `AlertReducer.js`) — one store per domain, holding state + async actions that call the corresponding service |
+| `src/services/` | 96 API service modules — one per domain (e.g., `authService.js`, `crewService.js`, `kanbanBoardService.js`), each wrapping `Gateway` (axios) calls to backend endpoints |
+| `src/store/` | 103 Zustand store modules (older ones named `*Reducer.js`, e.g., `AuthReducer.js`, `KanbanManagementReducer.js`; newer ones `*Store.js`, e.g., `themeStore.js`) — one store per domain, holding state + async actions that call the corresponding service |
 | `src/router/` | Routing configuration: `index.jsx` (route tree), `paths.js` (route path constants), `PrivateRoute.jsx`, `PublicRoute.jsx`, `PermissionRoute.jsx`, `RouteGuard.jsx`, `rolePermissions.js` |
 | `src/gateway/gateway.js` | Configured Axios instance with request/response interceptors (auth token attachment, 401 refresh-token flow) |
 | `src/config/msalConfig.js` | Azure AD (MSAL) authentication configuration and instance |
@@ -148,7 +123,7 @@ High-level layout under `src/`:
 | `src/assets/` | Static assets — images, icons, logos, backgrounds |
 | `public/` | Static files served as-is (favicon, `mock-documents/` sample PDFs) |
 
-Root-level items of note: `docs/` (a prebuilt static output, used as the GitHub Pages publish target per `homepage` in `package.json`), `scripts/update-shared-imports.mjs` (a maintenance script), `dist/` (build output, git-ignored).
+Root-level items of note: `dist/` (production build output, committed because `.cpanel.yml` deploys it directly).
 
 ---
 
@@ -176,7 +151,7 @@ Routing uses `react-router-dom` v7's `createBrowserRouter` (`src/router/index.js
 
 ### State management
 
-State is managed with **Zustand** — one store per domain in `src/store/*Reducer.js` (78 files) plus a few additional domain stores under `src/shared/store/`. Each store typically:
+State is managed with **Zustand** — one store per domain in `src/store/` (103 files, named `*Reducer.js` or `*Store.js`). Each store typically:
 - Holds domain state (lists, loading flags, selected records, error/success messages).
 - Exposes async action methods that call the matching `src/services/*Service.js` module and update state with the result.
 - Is consumed in components via Zustand's selector-hook pattern, e.g. `useAuthReducer((state) => state.isLoggedIn)`.
@@ -296,15 +271,9 @@ Responsiveness is handled through SCSS breakpoint variables/mixins (`_variables.
 
 ## 7. Deployment
 
-Two deployment paths are configured in the repository:
+Deployment is via cPanel.
 
-### 1. GitHub Pages (`gh-pages` package)
-
-- `homepage` in `package.json`: `https://infobahn-martech.github.io/sedres-fe/`
-- `npm run deploy` first runs `predeploy` (`npm run build && cp dist/index.html dist/404.html` — the 404 copy is an SPA-routing fallback technique for GitHub Pages), then publishes the `dist/` folder to the `gh-pages` branch via the `gh-pages` CLI (`gh-pages -d dist -b gh-pages --dotfiles`).
-- A `docs/` folder in the repo root contains a previously built static bundle (hashed asset filenames consistent with a Vite production build), suggesting GitHub Pages may alternatively be configured to serve from `/docs` on a branch — this cannot be confirmed from the repository alone (**Not Found**: which serving mode is actually enabled in the GitHub repository settings).
-
-### 2. cPanel deployment
+### cPanel deployment
 
 - `.cpanel.yml` defines a deployment task set targeting `DEPLOYPATH=/home/onlirdcv/sedres.onlinebareed.com/`:
   1. Removes the existing `assets` directory at the deploy path.
@@ -322,7 +291,7 @@ Two deployment paths are configured in the repository:
 
 ### Folder organization
 
-The `pages → components → services → store` separation is consistently applied, and the API/service/store split (Section 4) gives a clean, traceable data flow. At 93 page modules, 88 services, and 78 stores, the codebase is large; a further grouping of `src/pages/` and `src/store/` into domain sub-directories (e.g., `pages/kanban/*`, `pages/masterData/*`) could improve navigability, though this is a structural change beyond the scope of this document.
+The `pages → components → services → store` separation is consistently applied, and the API/service/store split (Section 4) gives a clean, traceable data flow. At 95 page modules, 96 services, and 103 stores, the codebase is large; a further grouping of `src/pages/` and `src/store/` into domain sub-directories (e.g., `pages/kanban/*`, `pages/masterData/*`) could improve navigability, though this is a structural change beyond the scope of this document.
 
 ### Component structure
 

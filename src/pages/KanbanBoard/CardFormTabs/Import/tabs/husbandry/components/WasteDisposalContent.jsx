@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
-import GroupSettingsIcon from "../../../../../../../assets/images/cv.png";
-import { notify } from "../../../../../../../components/Toaster";
+import GroupSettingsIcon from "@/assets/images/cv.png";
+import { notify } from "@/components/Toaster";
 import { FormSection, FormField, FormSelect, FormGroup, PremiumCardHeader, ReactQuillEditor } from "./Husbandry.components";
 import AttachmentsList from "../../appointment/AttachmentsList";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
-import DateTimePickerField from "../../../../shared/components/DateTimePickerField";
-import wasteTypeService from "../../../../../../../services/wasteTypeService";
-import useWasteDisposalReducer from "../../../../../../../store/WasteDisposalReducer";
+import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+import wasteTypeService from "@/services/wasteTypeService";
+import useWasteDisposalReducer from "@/store/WasteDisposalReducer";
 import { MAIN_TABS, SERVICE_ACCENT } from "./Husbandry.constants";
 
 const WASTE_DISPOSAL_ACCENT = SERVICE_ACCENT[MAIN_TABS.WASTE_DISPOSAL];

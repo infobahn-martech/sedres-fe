@@ -1,8 +1,8 @@
 import PropTypes from "prop-types";
 import { FiCheckCircle, FiXCircle } from "react-icons/fi";
-import CustomModal from "../../../../../../../components/CustomModal";
-import "../../../../../../../design/scss/modal-designs.scss";
-import "../../../../../../../design/scss/prospect-modal.scss";
+import CustomModal from "@/components/CustomModal";
+import "@/design/scss/modal-designs.scss";
+import "@/design/scss/prospect-modal.scss";
 import {
   TaskDocumentFilePreview,
   TaskDocumentItem,

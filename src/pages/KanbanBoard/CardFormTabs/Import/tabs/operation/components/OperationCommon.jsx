@@ -4,12 +4,12 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { ensureHtmlForQuill } from "../operationReportMessageHtml";
 import { parseApiDateTimeParts } from "../preArrivalDetailApply";
-import DateTimePickerField from "../../../../shared/components/DateTimePickerField";
+import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import { isEventFieldRequired } from "../operationConstants";
-import SearchableSelect, { deriveSearchPlaceholder } from "../../../../../../../components/form/SearchableSelect";
+import SearchableSelect, { deriveSearchPlaceholder } from "@/components/form/SearchableSelect";
 import { FiEye, } from "react-icons/fi";
-import callFileService from "../../../../../../../services/callFileService";
-import { notify } from "../../../../../../../components/Toaster";
+import callFileService from "@/services/callFileService";
+import { notify } from "@/components/Toaster";
 
 export const FormSection = ({ icon, title, children }) => {
   return (

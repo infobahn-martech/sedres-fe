@@ -48,8 +48,8 @@ const CustomTemplateBuilderModal = lazy(() => import('../../pages/CustomTemplate
 const CustomTemplateListModal = lazy(() => import('../../pages/CustomTemplate/CustomTemplateListModal'));
 import ToolsMenu, { ToolModals } from './ToolsMenu';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
-import { useThemeStore } from '../../shared/store/themeStore';
-import useCardModalStore from '../../shared/store/cardModalStore';
+import { useThemeStore } from '../../store/themeStore';
+import useCardModalStore from '../../store/cardModalStore';
 import NavTabButton from '../../components/NavTabButton';
 import { isRestrictedBoardUser, isPortOperatorUser } from '../../shared/helpers/restrictedBoardUser';
 import { isVendorRole, getRoleId } from '../../shared/helpers/vendorDashboardRoles';

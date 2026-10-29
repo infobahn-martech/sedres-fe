@@ -10,7 +10,7 @@ import {
 import kanbanBoardService from "../../../services/kanbanBoardService";
 import daService from "../../../services/daService";
 import { DA_DESK_BOARD_ID } from "../../../shared/constants/kanbanConfig";
-import useBatchMoveStore from "../../../shared/store/batchMoveStore";
+import useBatchMoveStore from "../../../store/batchMoveStore";
 import { findWorkflowByCardId } from "../utils/boardHelpers";
 import { reorderWorkflowsByPinState } from "../utils/workflowHelpers";
 

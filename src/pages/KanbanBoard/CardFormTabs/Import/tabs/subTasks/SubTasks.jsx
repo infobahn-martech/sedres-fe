@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import { FiEdit2, FiPlus, FiCheck, FiClock, FiPaperclip, FiCheckSquare, FiEye, FiTrash2 } from "react-icons/fi";
-import SearchableSelect, { deriveSearchPlaceholder } from "../../../../../../components/form/SearchableSelect";
+import SearchableSelect, { deriveSearchPlaceholder } from "@/components/form/SearchableSelect";
 import DateTimePickerField from "../../../shared/components/DateTimePickerField";
-import useCommonReducer from "../../../../../../store/CommonReducer";
-import { notify } from "../../../../../../components/Toaster";
-import kanbanBoardService from "../../../../../../services/kanbanBoardService";
+import useCommonReducer from "@/store/CommonReducer";
+import { notify } from "@/components/Toaster";
+import kanbanBoardService from "@/services/kanbanBoardService";
 import { DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS, DOCUMENT_UPLOAD_MAX_SIZE, validateDocumentFiles } from "../husbandry/components/Husbandry.constants";
-import "../../../../../../design/scss/invoice.scss";
-import "../../../../../../design/css/common/CardForm.css";
-import "../../../../../../design/scss/subtasks.scss";
+import "@/design/scss/invoice.scss";
+import "@/design/css/common/CardForm.css";
+import "@/design/scss/subtasks.scss";
 
 const STATUS_OPTIONS = [
     { value: "0", label: "Pending" },

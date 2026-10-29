@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import NavTabButton from "../../../../../../../components/NavTabButton";
+import NavTabButton from "@/components/NavTabButton";
 
 const TABS = [
   { id: "assign", label: "Assign Task" },

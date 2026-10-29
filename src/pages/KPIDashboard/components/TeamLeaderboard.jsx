@@ -2,14 +2,14 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { FiSearch, FiFilter, FiChevronDown, FiChevronUp, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import YellowColorIcon from '../../../assets/images/YellowColorIcon.png';
 import BlueColorIcon from '../../../assets/images/BlueColorIcon.png';
-import VoilentColorIcon from '../../../assets/images/VoilentColorIcon.png';
+import VioletColorIcon from '../../../assets/images/VioletColorIcon.png';
 import GreenColorIcon from '../../../assets/images/GreenColorIcon.png';
 import PurpleColorIcon from '../../../assets/images/PurpleColorIcon.png';
 import '../../../design/scss/pages/kpi-dashboard/components/TeamLeaderboard.scss';
 import PremiumSelect from '../../../components/form/PremiumSelect';
 import useKPIDashboardReducer from '../../../store/KPIDashboard';
 
-const fallbackIcons = [BlueColorIcon, GreenColorIcon, YellowColorIcon, PurpleColorIcon, VoilentColorIcon];
+const fallbackIcons = [BlueColorIcon, GreenColorIcon, YellowColorIcon, PurpleColorIcon, VioletColorIcon];
 
 const getBadgeIcon = (member) => {
   if (member.badgeIconUrl) return member.badgeIconUrl;

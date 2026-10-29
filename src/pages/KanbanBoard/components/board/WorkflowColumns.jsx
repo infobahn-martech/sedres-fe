@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { FiArrowRight, FiChevronDown, FiDownload, FiEdit3, FiFileText, FiSend, FiUpload, FiUploadCloud } from "react-icons/fi";
 import { MdCallMerge } from "react-icons/md";
-import { KANBAN_DND_DISABLED } from "../../../../shared/constants/kanbanConfig";
+import { KANBAN_DND_DISABLED } from "@/shared/constants/kanbanConfig";
 import ColumnHeader from "./ColumnHeader";
 import SwimlaneColumnCell from "./SwimlaneColumnCell";
 import {
@@ -16,17 +16,17 @@ import {
   getBoardGridTemplateColumns,
   getColumnWidth,
 } from "../../utils/boardGridHelpers";
-import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
-import useExportApprovalStatusStore from "../../../../shared/store/exportApprovalStatusStore";
-import useSignatureCheckStore from "../../../../shared/store/signatureCheckStore";
-import useServiceSheetStore from "../../../../shared/store/serviceSheetStore";
-import useZamilMarinePoRequestStore from "../../../../shared/store/zamilMarinePoRequestStore";
-import useZamilMarinePoUploadStore from "../../../../shared/store/zamilMarinePoUploadStore";
-import useAlertReducer from "../../../../store/AlertReducer";
+import useBatchMoveStore from "@/store/batchMoveStore";
+import useExportApprovalStatusStore from "@/store/exportApprovalStatusStore";
+import useSignatureCheckStore from "@/store/signatureCheckStore";
+import useServiceSheetStore from "@/store/serviceSheetStore";
+import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
+import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
+import useAlertReducer from "@/store/AlertReducer";
 import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
-import "../../../../design/scss/pages/kanban-board/swimlaneBoard.scss";
+import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
 
 const EMPTY_COLLAPSED_SET = new Set();
 

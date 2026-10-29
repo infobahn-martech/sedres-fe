@@ -1,16 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
-import GroupSettingsIcon from "../../../../../../../assets/images/cv.png";
-import { notify } from "../../../../../../../components/Toaster";
+import GroupSettingsIcon from "@/assets/images/cv.png";
+import { notify } from "@/components/Toaster";
 import { FormSection, FormField, FormSelect, ReactQuillEditor, FormGroup, FieldRow, PremiumCardHeader } from "./Husbandry.components";
 import AttachmentsList from "../../appointment/AttachmentsList";
-import DateTimePickerField from "../../../../shared/components/DateTimePickerField";
+import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import hotelService, {
   extractHotelRequestsFromEnvelope,
   flattenHotelRequestRows,
-} from "../../../../../../../services/hotelService";
-import callFileService from "../../../../../../../services/callFileService";
-import { buildPickupDateTime } from "../../../../../../../store/TransportContent";
+} from "@/services/hotelService";
+import callFileService from "@/services/callFileService";
+import { buildPickupDateTime } from "@/store/TransportContent";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import CrewSelectionField from "./CrewSelectionField";
 import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT, LAUNCH_HIRE_LOCATION_OPTIONS } from "./Husbandry.constants";
