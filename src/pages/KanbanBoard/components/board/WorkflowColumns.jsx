@@ -23,7 +23,7 @@ import useServiceSheetStore from "@/store/serviceSheetStore";
 import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
+import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isUploadedToPortalColumnTitle, isDaDefaultWorkflow } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -150,8 +150,8 @@ const getInvoiceAction = (workflow, column) => {
     if (POSH_REQUESTED_PO_COLUMN_PATTERN.test(title)) return "uploadPos";
     if (PO_RECEIVED_COLUMN_PATTERN.test(title)) return "sendInvoice";
   }
-  /* Subsea 7 DA uploads the SAP invoices for the cards the user ticks on "Ready to post in SAP". */
-  if (isSubseaWorkflow(workflow) && READY_FOR_POSTING_IN_SAP_COLUMN_PATTERN.test(title)) return "issueArInvoice";
+  /* Subsea 7 DA and the DA Default workflow upload the SAP invoices for the cards the user ticks on "Ready to post in SAP". */
+  if ((isSubseaWorkflow(workflow) || isDaDefaultWorkflow(workflow)) && READY_FOR_POSTING_IN_SAP_COLUMN_PATTERN.test(title)) return "issueArInvoice";
   /* Subsea 7 DA sends the final invoice for the one ticked card from "AR Invoices Issued". */
   if (isSubseaWorkflow(workflow) && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "sendInvoice";
   /* Zamil Crew and Zamil Marine DA send the final invoice for the one ticked card from "AR Invoice Issued". */
@@ -166,8 +166,8 @@ const getInvoiceAction = (workflow, column) => {
 };
 
 const POSH_WORKFLOW_PATTERN = /posh/i;
-/* POSH, BGP and Subsea 7 workflows name the "Issue AR Invoice" column action "Upload SAP Invoices". */
-const SAP_INVOICES_LABEL_WORKFLOW_PATTERN = /posh|bgp|subsea|zamil.*marine/i;
+/* POSH, BGP, Subsea 7 and the DA Default workflow name the "Issue AR Invoice" column action "Upload SAP Invoices". */
+const SAP_INVOICES_LABEL_WORKFLOW_PATTERN = /posh|bgp|subsea|zamil.*marine|default.*\bda\b|\bda\b.*default/i;
 const ISSUE_AR_INVOICE_SAP_LABEL = "Upload SAP Invoices";
 
 const INVOICE_ACTION_BUTTONS = {
