@@ -2426,6 +2426,7 @@ export default function KanbanBoardPage() {
         defaultSubject={zamilMarinePoRequestDraft?.subject ?? ""}
         defaultBody={zamilMarinePoRequestDraft?.body ?? ""}
         documentUrl={zamilMarinePoRequestDraft?.document_url ?? ""}
+        documents={zamilMarinePoRequestDraft?.attachments}
         title="PO Request Email"
         subtitle="Request the purchase order for the selected cards"
         sendLabel="Send PO Request"
