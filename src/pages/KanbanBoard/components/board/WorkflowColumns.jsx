@@ -51,8 +51,13 @@ const isBatchCreateWorkflow = (workflow) => {
 const isBacklogColumn = (column) =>
   String(column?.title ?? "").trim().toLowerCase() === BATCH_ACTION_COLUMN;
 
+/* Zamil Marine has no batch step, so its Backlog column header carries no batch icon. */
+const NO_BATCH_ACTION_WORKFLOW_PATTERN = /zamil.*marine/i;
+
 const hasBatchAction = (workflow, ...columns) =>
-  isBatchCreateWorkflow(workflow) && columns.some(isBacklogColumn);
+  isBatchCreateWorkflow(workflow) &&
+  !NO_BATCH_ACTION_WORKFLOW_PATTERN.test(workflow?.title ?? "") &&
+  columns.some(isBacklogColumn);
 
 /* Invoice actions on SAIPEM column headers, shown only while a card in that column is ticked:
    "Upload Invoice" on "SE Received", "Merge Invoice" on "AR Invoices Issued", and on "Consolidated"
