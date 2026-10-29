@@ -13,10 +13,11 @@ const useDriverReducer = create((set) => ({
     errorMessage: '',
     totalCount: null,
 
-    fetchAllDrivers: async ({ params, cb } = {}) => {
+    // `type` is "transport" (default) or "material".
+    fetchAllDrivers: async ({ params, cb, type } = {}) => {
         try {
             set({ isLoading: true });
-            const { data } = await driverService.getAllDrivers(params || {});
+            const { data } = await driverService.getAllDrivers(params || {}, type);
             set({
                 drivers: data?.data ?? [],
                 totalCount: data?.pagination?.total ?? (Array.isArray(data?.data) ? data.data.length : (Array.isArray(data) ? data.length : 0)),
@@ -33,10 +34,10 @@ const useDriverReducer = create((set) => ({
         }
     },
 
-    fetchDriverDetail: async (id) => {
+    fetchDriverDetail: async (id, type) => {
         try {
             set({ isLoadingDetail: true });
-            const { data } = await driverService.getDriverDetail(id);
+            const { data } = await driverService.getDriverDetail(id, type);
             set({ isLoadingDetail: false });
             return data?.data ?? null;
         } catch (err) {
@@ -70,10 +71,10 @@ const useDriverReducer = create((set) => ({
         }
     },
 
-    addDriver: async ({ formData, cb }) => {
+    addDriver: async ({ formData, cb, type }) => {
         try {
             set({ isBeingUpdated: true });
-            const { data } = await driverService.addDriver(formData);
+            const { data } = await driverService.addDriver(formData, type);
             const { success } = useAlertReducer.getState();
             success(data?.message ?? 'Driver added successfully');
             set({ isBeingUpdated: false });
@@ -88,10 +89,10 @@ const useDriverReducer = create((set) => ({
         }
     },
 
-    updateDriver: async ({ formData, cb }) => {
+    updateDriver: async ({ formData, cb, type }) => {
         try {
             set({ isBeingUpdated: true });
-            const { data } = await driverService.updateDriver(formData);
+            const { data } = await driverService.updateDriver(formData, type);
             const { success } = useAlertReducer.getState();
             success(data?.message ?? 'Driver updated successfully');
             set({ isBeingUpdated: false });

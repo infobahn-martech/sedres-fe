@@ -9,7 +9,8 @@ import useDriverReducer from "../../store/DriverReducer";
 
 
 
-const Driver = () => {
+/** Driver Management for Transport (default) or Material drivers — `type` picks the APIs. */
+const Driver = ({ type = "transport" }) => {
     const [params, setParams] = useState({
         page: 1,
         search: "",
@@ -111,8 +112,8 @@ const Driver = () => {
     const { drivers, totalCount, fetchAllDrivers, deleteDriver, isDeleteLoading } = useDriverReducer();
 
     useEffect(() => {
-        fetchAllDrivers({ params });
-    }, [params, fetchAllDrivers, showDriverModal, showDeleteModal]);
+        fetchAllDrivers({ params, type });
+    }, [params, type, fetchAllDrivers, showDriverModal, showDeleteModal]);
 
     return (
         <>
@@ -157,9 +158,10 @@ const Driver = () => {
 
                     {!!showDriverModal && (
                         <DriverModal
+                            type={type}
                             showModal={showDriverModal}
                             closeModal={() => setShowDriverModal(false)}
-                            onSuccess={() => fetchAllDrivers({ params })}
+                            onSuccess={() => fetchAllDrivers({ params, type })}
                         />
                     )}
                     {!!showDeleteModal && (

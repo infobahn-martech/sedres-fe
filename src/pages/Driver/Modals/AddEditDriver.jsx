@@ -79,9 +79,11 @@ const EMPTY_FORM = {
     nationality: "",
 };
 
-export function DriverModal({ showModal, closeModal, onSuccess }) {
+/** `type` "transport" has per-port Zawil Passes and a profile photo (multipart); "material" is plain JSON. */
+export function DriverModal({ showModal, closeModal, onSuccess, type = "transport" }) {
     const isEdit = !!showModal?.driver_id;
     const editId = showModal?.driver_id;
+    const isTransport = type === "transport";
 
     const [zawilByPort, setZawilByPort] = useState({});
     const [draggingPortId, setDraggingPortId] = useState(null);
@@ -110,7 +112,7 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
     } = useDriverReducer();
     const { ports, getPorts, isLoading: isLoadingPorts } = usePortReducer((s) => s);
 
-    // Edit uses transport_driver_detail (full zawil_passes list); null until it loads.
+    // Edit loads the driver from its detail API (full zawil_passes list); null until it loads.
     const [driver, setDriver] = useState(null);
 
     useEffect(() => {
@@ -124,13 +126,13 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
         setDriver(null);
         if (!editId) return;
         let cancelled = false;
-        fetchDriverDetail(editId).then((detail) => {
+        fetchDriverDetail(editId, type).then((detail) => {
             if (!cancelled) setDriver(detail);
         });
         return () => {
             cancelled = true;
         };
-    }, [editId, fetchDriverDetail]);
+    }, [editId, type, fetchDriverDetail]);
 
     useEffect(() => {
         if (!showModal) return;
@@ -193,19 +195,21 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
             location: data.location,
             joining_date: data.joining_date,
             port_ids: portIds.map(Number),
-            zawil_passes: portIds
-                .filter((portId) => zawilByPort[portId]?.expiry_date)
-                .map((portId) => ({ port_id: Number(portId), expiry_date: zawilByPort[portId].expiry_date })),
+            ...(isTransport && {
+                zawil_passes: portIds
+                    .filter((portId) => zawilByPort[portId]?.expiry_date)
+                    .map((portId) => ({ port_id: Number(portId), expiry_date: zawilByPort[portId].expiry_date })),
+            }),
         };
         const cb = () => {
             closeModal();
             onSuccess?.();
         };
-        const formData = buildRequestBody(payload, zawilByPort, portIds, profileImage);
+        const formData = isTransport ? buildRequestBody(payload, zawilByPort, portIds, profileImage) : payload;
         if (isEdit) {
-            updateDriver({ formData, cb });
+            updateDriver({ formData, cb, type });
         } else {
-            addDriver({ formData, cb });
+            addDriver({ formData, cb, type });
         }
     };
 
@@ -329,23 +333,25 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
             <div className="lead-form">
                 <form id="driverForm" onSubmit={handleSubmit(onSubmit)}>
                     {/* ===== Avatar Upload ===== */}
-                    <div className="d-flex justify-content-center mb-3">
-                        <div className="avatar-outer">
-                            <div className="avatar-wrapper">
-                                <img src={profileImagePreview} alt="Driver Avatar" className="avatar-image" />
+                    {isTransport && (
+                        <div className="d-flex justify-content-center mb-3">
+                            <div className="avatar-outer">
+                                <div className="avatar-wrapper">
+                                    <img src={profileImagePreview} alt="Driver Avatar" className="avatar-image" />
+                                </div>
+                                <label htmlFor="driverAvatarUpload" className="avatar-edit-icon">
+                                    <img src={edit} alt="Edit" className="avatar-edit-pencil" />
+                                </label>
+                                <input
+                                    type="file"
+                                    id="driverAvatarUpload"
+                                    className="d-none"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                />
                             </div>
-                            <label htmlFor="driverAvatarUpload" className="avatar-edit-icon">
-                                <img src={edit} alt="Edit" className="avatar-edit-pencil" />
-                            </label>
-                            <input
-                                type="file"
-                                id="driverAvatarUpload"
-                                className="d-none"
-                                accept="image/*"
-                                onChange={handleImageChange}
-                            />
                         </div>
-                    </div>
+                    )}
 
                     <div className="permInputs row">
                         {/* EMPLOYEE NO */}
@@ -597,7 +603,7 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
                         </div>
 
                         {/* ZAWIL PASS (one expiry date + file per selected port) */}
-                        <div className="col-12">{renderZawilPasses()}</div>
+                        {isTransport && <div className="col-12">{renderZawilPasses()}</div>}
                     </div>
                 </form>
             </div>
