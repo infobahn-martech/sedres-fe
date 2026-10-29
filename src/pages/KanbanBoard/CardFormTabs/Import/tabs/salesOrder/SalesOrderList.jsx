@@ -63,11 +63,11 @@ const approvedSoUploadFields = [
   },
 ];
 /* Subsea 7 (srt_flow) uses the same da/da_upload_so_approval_proof route: the signed SRT goes in as
-   `srt` (required, the backend lists it under documents.srt), the approval email as `approval_email` and the
-   signed SO as `proof` (required too: documents.proof, the card is not moved until it is in). */
+   `srt` (required; pdf, jpg or png) and the approval email as `approval_email` (optional; eml, msg, pdf, jpg or png).
+   The backend also requires the signed SO as `proof` (documents.proof) before it moves the card to "Submitted to DA". */
 const srtUploadFields = [
-  { ...approvedSoUploadFields[0], name: "srt", label: "SRT" },
-  { ...approvedSoUploadFields[1], label: "SRT approval email" },
+  { ...approvedSoUploadFields[0], name: "srt", label: "Upload SRT" },
+  { ...approvedSoUploadFields[1], label: "SRT approval eml" },
   { ...approvedSoUploadFields[0], label: "Signed SO" },
 ];
 /* Zamil Marine uploads the signed SO (`proof`), the PR and the approval email through
@@ -1166,11 +1166,15 @@ const SalesOrderList = ({
         return;
       }
       setShowSoApprovalEmailModal(false);
-      // Subsea 7 (srt_flow): sending the SRT request does not move the card. da/advance_stage rejects
-      // the move until the signed SRT is uploaded, and that upload moves the card itself. The card
-      // stays open: the document upload shows right after the request is sent.
+      // Subsea 7 (srt_flow): sending the SRT request moves the card from "Awaiting SRT" to "SRT Received",
+      // where the SRT upload shows.
       if (isSrtFlow) {
         setSoActionState((prev) => ({ ...prev, button_state: "awaiting_approval" }));
+        const srtReceivedLabel =
+          Array.isArray(stepLabels) && currentStep != null ? stepLabels[currentStep] : null;
+        if (isAtAwaitingSrtColumn && srtReceivedLabel) {
+          onAdvanceDaStage?.({ label: srtReceivedLabel, skipStatusUpdate: true });
+        }
       } else {
         // Optimistic — the action_state refetch triggered by onDaStatusRefresh below confirms it;
         // this just avoids a flash back to "Send For SO approval" while that refetch is in flight.
@@ -2658,22 +2662,19 @@ const SalesOrderList = ({
                   </button>
                 ) : null
               ) : isSrtFlow ? (
-                // No Approve / Reject in this flow. Once the request is sent (action_state
-                // awaiting_approval) the signed SRT upload shows, and "SRT Received" always shows it
-                // since the request has already gone; before that, "Awaiting SRT" with every item
-                // verified offers the request.
-                (effectiveSoButtonState === "awaiting_approval" || isAtSrtReceivedColumn) &&
-                hasVerifiedAllItems ? (
+                // No Approve / Reject in this flow. The signed SRT upload belongs to "SRT Received"
+                // only; "Awaiting SRT" with every item verified offers the request.
+                isAtSrtReceivedColumn && hasVerifiedAllItems ? (
                   <button
                     type="button"
                     className="sales-order-da-status-button"
-                    title="Upload the SRT, the SRT approval email and the signed SO"
+                    title="Upload the SRT, the SRT approval eml and the signed SO"
                     onClick={() => setShowApprovedSoUploadModal(true)}
                   >
                     <FiUpload />
-                    Upload Documents
+                    Upload SRT
                   </button>
-                ) : !isAtSrtReceivedColumn && effectiveSoButtonState !== "awaiting_approval" && hasVerifiedAllItems ? (
+                ) : !isAtSrtReceivedColumn && hasVerifiedAllItems ? (
                   <button
                     type="button"
                     className="sales-order-da-status-button"
@@ -3728,7 +3729,7 @@ const SalesOrderList = ({
           title={isSrtFlow ? "Upload SRT" : "Upload Approved SO"}
           subtitle={
             isSrtFlow
-              ? "Attach the signed SRT, the SRT approval email and the signed SO"
+              ? "Attach the signed SRT, the SRT approval eml and the signed SO"
               : "Attach the approved sales order and the SO email"
           }
           submitLabel={isSrtFlow ? "Upload SRT" : "Upload Approved SO"}
