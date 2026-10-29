@@ -5,7 +5,7 @@ import { KANBAN_DND_DISABLED } from "../../shared/constants/kanbanConfig";
 import { FiLayers } from "react-icons/fi";
 import { initialData } from "../../shared/helpers/CTdata";
 import Column from "./Column";
-import CardForm from "../KanbanBoard/components/cards/CardForm";
+import CardForm from "../KanbanBoard/components/cards/components/shared/CardForm";
 import ContextMenu from "../KanbanBoard/components/menus/ContextMenu";
 import AccordionMenu from "../KanbanBoard/components/menus/AccordionMenu";
 import Workspaces from "../Workspaces";

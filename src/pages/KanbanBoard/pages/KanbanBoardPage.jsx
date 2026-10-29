@@ -7,7 +7,7 @@ import useSyncKanbanSidebarWorkflows from "../../../shared/hooks/useSyncKanbanSi
 import useKanbanAddCardFromSidebar from "../../../shared/hooks/useKanbanAddCardFromSidebar";
 import { getAddModeCardFormWorkflow } from "../../../shared/helpers/kanbanSidebarWorkflow";
 import KanbanBoardContent from "../components/board/KanbanBoardContent";
-import CardForm from "../components/cards/CardForm";
+import CardForm from "../components/cards/components/shared/CardForm";
 import StatusConfirmationModal from "../../../components/StatusConfirmationModal";
 import confirmTickIcon from "../../../assets/images/toast-success.svg";
 import SeCreationEmailModal from "../components/board/SeCreationEmailModal";
