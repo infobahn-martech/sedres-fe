@@ -3,8 +3,8 @@ import { useMemo, useRef, useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { FiEye } from "react-icons/fi";
-import Gateway from "../../../../../../gateway/gateway";
-import { notify } from "../../../../../../components/Toaster";
+import Gateway from "@/gateway/gateway";
+import { notify } from "@/components/Toaster";
 import { getOptionLabel, normalizePreviewValue } from "./generalHelpers";
 import {
   formatPreviewDate,

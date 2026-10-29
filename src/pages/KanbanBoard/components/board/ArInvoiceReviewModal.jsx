@@ -1,16 +1,16 @@
 import { Fragment, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { FiCheck, FiEye, FiLayers, FiX } from "react-icons/fi";
-import CustomModal from "../../../../components/CustomModal";
-import useArInvoiceReviewStore from "../../../../shared/store/arInvoiceReviewStore";
-import useBatchMoveStore from "../../../../shared/store/batchMoveStore";
-import { notify } from "../../../../components/Toaster";
-import { downloadFile } from "../../../../shared/utils/utils";
-import { findUploadedFile, getUploadedFileUrl, viewLocalFile, viewUploadedFile } from "../../../../shared/utils/viewUploadedFile";
+import CustomModal from "@/components/CustomModal";
+import useArInvoiceReviewStore from "@/shared/store/arInvoiceReviewStore";
+import useBatchMoveStore from "@/shared/store/batchMoveStore";
+import { notify } from "@/components/Toaster";
+import { downloadFile } from "@/shared/utils/utils";
+import { findUploadedFile, getUploadedFileUrl, viewLocalFile, viewUploadedFile } from "@/shared/utils/viewUploadedFile";
 import MaterialTablePagination from "../../CardFormTabs/Import/tabs/husbandry/components/MaterialTablePagination";
-import "../../../../design/scss/blockers-modal.scss";
-import "../../../../design/scss/pages/kanban-board/seReviewMoveModal.scss";
-import "../../../../design/scss/pages/kanban-board/arInvoiceReviewModal.scss";
+import "@/design/scss/blockers-modal.scss";
+import "@/design/scss/pages/kanban-board/seReviewMoveModal.scss";
+import "@/design/scss/pages/kanban-board/arInvoiceReviewModal.scss";
 
 /* Invoice amounts da/confirm_ar_invoices takes alongside the invoice no; sent as read, only when the invoice has them. */
 const CONFIRM_AMOUNT_FIELDS = ["non_taxable_amount", "taxable_amount", "vat_amount"];

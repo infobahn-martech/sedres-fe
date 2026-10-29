@@ -1,13 +1,13 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import GroupSettingsIcon from "../../../../../../assets/images/cv.png";
-import { notify } from "../../../../../../components/Toaster";
+import GroupSettingsIcon from "@/assets/images/cv.png";
+import { notify } from "@/components/Toaster";
 import { buildPreArrivalReportBody } from "../../services/sendReportBodyBuilder";
 import { DEFAULT_PRE_ARRIVAL_DOCUMENT_HANDLING } from "./preArrivalDocumentHandling";
-import preArrivalService from "../../../../../../services/preArrivalService";
-import appointmentAcceptanceService from "../../../../../../services/appointmentAcceptanceService";
-import coordinatesService from "../../../../../../services/coordinatesService";
-import useArrivalReducer from "../../../../../../store/ArrivalReducer";
+import preArrivalService from "@/services/preArrivalService";
+import appointmentAcceptanceService from "@/services/appointmentAcceptanceService";
+import coordinatesService from "@/services/coordinatesService";
+import useArrivalReducer from "@/store/ArrivalReducer";
 import {
   BAD_WEATHER,
   OPERATION_STAGE_IDS,

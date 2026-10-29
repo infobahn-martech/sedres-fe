@@ -1,8 +1,8 @@
 import PropTypes from "prop-types";
 import { useEffect, useMemo, useState } from "react";
 import { FiDownload, FiFileText, FiInbox, FiSearch, FiLayers } from "react-icons/fi";
-import reportsService from "../../../../../../services/reportsService";
-import "../../../../../../design/scss/operations.scss";
+import reportsService from "@/services/reportsService";
+import "@/design/scss/operations.scss";
 
 const mapReportRow = (raw, index) => ({
   id: raw.email_log_id ?? raw.emailLogId ?? `report-${index}`,

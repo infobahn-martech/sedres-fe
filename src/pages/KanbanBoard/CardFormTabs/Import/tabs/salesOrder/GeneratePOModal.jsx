@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
-import salesOrderService from "../../../../../../services/salesOrderService";
-import billingEntityService from "../../../../../../services/billingEntityService";
+import salesOrderService from "@/services/salesOrderService";
+import billingEntityService from "@/services/billingEntityService";
 import DatePickerField from "../../../shared/components/DatePickerField";
 import { calcLineAmounts } from "./poLineAmounts";
 

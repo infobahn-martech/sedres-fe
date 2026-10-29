@@ -2,29 +2,29 @@ import { useState, useCallback, useEffect, useRef, useMemo, forwardRef, useImper
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import { FiClock } from "react-icons/fi";
-import { notify } from "../../../../../../../components/Toaster";
-import SearchableSelect, { deriveSearchPlaceholder } from "../../../../../../../components/form/SearchableSelect";
-import userService from "../../../../../../../services/userService";
+import { notify } from "@/components/Toaster";
+import SearchableSelect, { deriveSearchPlaceholder } from "@/components/form/SearchableSelect";
+import userService from "@/services/userService";
 import {
   isGROSupervisorRole,
   isMWPSupervisorRole,
   isCustomClearanceSupervisorRole,
   isPortSupervisorRole,
-} from "../../../../../../../shared/helpers/groUserRoles";
+} from "@/shared/helpers/groUserRoles";
 import {
   PRE_ARRIVAL_GRO_ROLE_ID,
   PRE_ARRIVAL_CUSTOM_CLEARANCE_ROLE_ID,
   PRE_ARRIVAL_MWP_USER_ROLE_ID,
-} from "../../../../../CardFormTabs/Import/tabs/operation/operationConstants";
-import groService from "../../../../../../../services/groService";
+} from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/operation/operationConstants";
+import groService from "@/services/groService";
 import {
   getImmigrationCrewList,
   normalizeImmigrationCrewRows,
   normalizeImmigrationCrewPagination,
   extractImmigrationBatchOptions,
   extractImmigrationBatchCounts,
-} from "../../../../../../../services/cgAndZwailpassService";
-import useGROReducer from "../../../../../../../store/GROReducer";
+} from "@/services/cgAndZwailpassService";
+import useGROReducer from "@/store/GROReducer";
 import GroSummaryCard, { GroSummaryFieldCard } from "./GroSummaryCard";
 import InwardClearanceView, { DocumentActionConfirmModal, InwardClearanceToolbar } from "./InwardClearanceView";
 import PassRequestsView from "./PassRequestsView";
@@ -33,8 +33,8 @@ import GroPopoverStageExtraFields from "./GroPopoverStageExtraFields";
 import CrewImmigrationPanel from "./CrewImmigrationPanel";
 import CrewChangePassPanel from "./CrewChangePassPanel";
 import VesselInwardRegistrationView from "./VesselInwardRegistrationView";
-import DateTimePickerField from "../../../../../CardFormTabs/shared/components/DateTimePickerField";
-import { isExportCallType, resolveCallTypeId } from "../../../../../CardFormTabs/shared/utils/callTypes";
+import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+import { isExportCallType, resolveCallTypeId } from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callTypes";
 import {
   createEmptyExtraStageFields,
   validateGroExtraStageFields,

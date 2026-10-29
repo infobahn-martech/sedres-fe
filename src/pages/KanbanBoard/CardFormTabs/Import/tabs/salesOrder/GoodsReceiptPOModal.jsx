@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import salesOrderService from "../../../../../../services/salesOrderService";
+import salesOrderService from "@/services/salesOrderService";
 
 const formatCurrencySAR = (amount) =>
   new Intl.NumberFormat("en-US", {

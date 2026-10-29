@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 import { useMemo, useRef, useState, useEffect, useCallback, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { FiEye } from "react-icons/fi";
-import SearchableSelect, { deriveSearchPlaceholder } from "../../../../../../components/form/SearchableSelect";
+import SearchableSelect, { deriveSearchPlaceholder } from "@/components/form/SearchableSelect";
 
 const openAppointmentEmail = (url) => {
   if (!url) return;

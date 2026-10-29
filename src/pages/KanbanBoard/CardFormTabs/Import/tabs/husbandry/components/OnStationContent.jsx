@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import PropTypes from "prop-types";
-import GroupSettingsIcon from "../../../../../../../assets/images/cv.png";
+import GroupSettingsIcon from "@/assets/images/cv.png";
 import { FormSection, FormField, FormSelect, ReactQuillEditor } from "./Husbandry.components";
 
 const OnStationContent = ({ formValues, handleChange, cardColor }) => {

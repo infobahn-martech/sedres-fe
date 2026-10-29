@@ -1,6 +1,6 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { notify } from "../../../../../../../components/Toaster";
+import { notify } from "@/components/Toaster";
 import { CREW_ENTRY_COLUMNS } from "./Husbandry.constants";
 
 const INITIAL_ROW_COUNT = 3;

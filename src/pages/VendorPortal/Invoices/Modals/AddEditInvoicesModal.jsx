@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import CustomModal from "../../../../components/CustomModal";
-import "../../../../design/scss/prospect-modal.scss";
-import "../../../../design/scss/modal-designs.scss";
-import "../../../../design/scss/form-designs.scss";
+import CustomModal from "@/components/CustomModal";
+import "@/design/scss/prospect-modal.scss";
+import "@/design/scss/modal-designs.scss";
+import "@/design/scss/form-designs.scss";
 
 export function AddEditInvoicesModal({
     showModal,

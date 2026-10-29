@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
-import GroupSettingsIcon from "../../../../../../../assets/images/cv.png";
-import { notify } from "../../../../../../../components/Toaster";
+import GroupSettingsIcon from "@/assets/images/cv.png";
+import { notify } from "@/components/Toaster";
 import { FormSection, FormField, FormGroup, PremiumCardHeader, ReactQuillEditor } from "./Husbandry.components";
 import AttachmentsList from "../../appointment/AttachmentsList";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
-import DateTimePickerField from "../../../../shared/components/DateTimePickerField";
-import useMWPRenewalReducer from "../../../../../../../store/MWPRenewalReducer";
+import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+import useMWPRenewalReducer from "@/store/MWPRenewalReducer";
 import { MAIN_TABS, SERVICE_ACCENT } from "./Husbandry.constants";
 
 const MWP_RENEWAL_ACCENT = SERVICE_ACCENT[MAIN_TABS.MWP_RENEWAL];

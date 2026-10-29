@@ -6,9 +6,9 @@ import "react-tooltip/dist/react-tooltip.css";
 import CardItem from "../cards/CardItem";
 import TaxiBoatSmallCard from "../cards/components/TaxiBoat/TaxiBoatSmallCard";
 import DASmallCard from "../cards/components/DA/DASmallCard";
-import usePermissions from "../../../../shared/hooks/usePermissions";
-import { PERMISSION_MODULES } from "../../../../shared/constants/permissions";
-import "../../../../design/scss/pages/kanban-board/column.scss";
+import usePermissions from "@/shared/hooks/usePermissions";
+import { PERMISSION_MODULES } from "@/shared/constants/permissions";
+import "@/design/scss/pages/kanban-board/column.scss";
 
 function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk = false, onHeaderClick, onContextMenu, columnHeight, onHeightChange, isDarkMode = false }) {
   const columnRef = useRef(null);

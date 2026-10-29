@@ -1,10 +1,10 @@
 import { useState, useEffect, Fragment } from "react";
 import PropTypes from "prop-types";
 import { FiPackage, FiAnchor, FiTruck, FiCheck } from "react-icons/fi";
-import CardTabListLoading from "../../../../../../../components/CardTabListLoading";
-import inboundOrderService from "../../../../../../../services/inboundOrderService";
-import orderHistoryService from "../../../../../../../services/orderHistoryService";
-import "../../../../../../../design/scss/order-history.scss";
+import CardTabListLoading from "@/components/CardTabListLoading";
+import inboundOrderService from "@/services/inboundOrderService";
+import orderHistoryService from "@/services/orderHistoryService";
+import "@/design/scss/order-history.scss";
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "—";

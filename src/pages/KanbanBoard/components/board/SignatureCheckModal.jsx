@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import PropTypes from "prop-types";
 import { FiCheck, FiX } from "react-icons/fi";
-import CustomModal from "../../../../components/CustomModal";
-import useSignatureCheckStore from "../../../../shared/store/signatureCheckStore";
-import { notify } from "../../../../components/Toaster";
-import "../../../../design/scss/blockers-modal.scss";
-import "../../../../design/scss/pages/kanban-board/seReviewMoveModal.scss";
-import "../../../../design/scss/pages/kanban-board/signatureCheck.scss";
+import CustomModal from "@/components/CustomModal";
+import useSignatureCheckStore from "@/shared/store/signatureCheckStore";
+import { notify } from "@/components/Toaster";
+import "@/design/scss/blockers-modal.scss";
+import "@/design/scss/pages/kanban-board/seReviewMoveModal.scss";
+import "@/design/scss/pages/kanban-board/signatureCheck.scss";
 
 // Opened from the L&T Submitted to DA "Check Signatures" action. One row per ticked card from
 // da/signature_checks; a card without a signature can be ticked "Signed (checked by hand)" (currently

@@ -13,10 +13,10 @@ import {
   FiTruck,
   FiUser,
 } from "react-icons/fi";
-import { notify } from "../../../../../../components/Toaster";
-import useCoordinatorTransportReducer from "../../../../../../store/CoordinatorTransportReducer";
-import { buildPickupDateTime } from "../../../../../../store/TransportContent";
-import { splitApiDateTimeParts } from "../../../../../../shared/helpers/dateTimeFieldUtils";
+import { notify } from "@/components/Toaster";
+import useCoordinatorTransportReducer from "@/store/CoordinatorTransportReducer";
+import { buildPickupDateTime } from "@/store/TransportContent";
+import { splitApiDateTimeParts } from "@/shared/helpers/dateTimeFieldUtils";
 import {
   FormGroup,
   FormField,
@@ -24,17 +24,17 @@ import {
   FieldRow,
   ReactQuillEditor,
   CrewAvatar,
-} from "../../../../CardFormTabs/Import/tabs/husbandry/components/Husbandry.components";
+} from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/husbandry/components/Husbandry.components";
 import {
   CREW_MANAGEMENT_SUBTABS,
   SERVICE_ACCENT,
   TRANSPORT_ROUTE_LOCATION_OPTIONS,
-} from "../../../../CardFormTabs/Import/tabs/husbandry/components/Husbandry.constants";
-import CrewSelectionField from "../../../../CardFormTabs/Import/tabs/husbandry/components/CrewSelectionField";
-import LocationAutocomplete from "../../../../CardFormTabs/Import/tabs/husbandry/components/LocationAutocomplete";
-import DateTimePickerField from "../../../../CardFormTabs/shared/components/DateTimePickerField";
-import AttachmentsList from "../../../../CardFormTabs/Import/tabs/appointment/AttachmentsList";
-import HusbandryServiceRequestsTable from "../../../../CardFormTabs/Import/tabs/husbandry/components/HusbandryServiceRequestsTable";
+} from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/husbandry/components/Husbandry.constants";
+import CrewSelectionField from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/husbandry/components/CrewSelectionField";
+import LocationAutocomplete from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/husbandry/components/LocationAutocomplete";
+import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+import AttachmentsList from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/appointment/AttachmentsList";
+import HusbandryServiceRequestsTable from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/husbandry/components/HusbandryServiceRequestsTable";
 import "./CoordinatorTransportCardView.scss";
 
 const TRANSPORT_ACCENT = SERVICE_ACCENT[CREW_MANAGEMENT_SUBTABS.TRANSPORT];

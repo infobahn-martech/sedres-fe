@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
-import GroupSettingsIcon from "../../../../../../../assets/images/cv.png";
-import { notify } from "../../../../../../../components/Toaster";
+import GroupSettingsIcon from "@/assets/images/cv.png";
+import { notify } from "@/components/Toaster";
 import { FormSection, FormField, FormSelect, FormGroup, PremiumCardHeader, ReactQuillEditor } from "./Husbandry.components";
 import AttachmentsList from "../../appointment/AttachmentsList";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import CrewSelectionField from "./CrewSelectionField";
-import DateTimePickerField from "../../../../shared/components/DateTimePickerField";
-import useLaunchHireServiceReducer from "../../../../../../../store/LaunchHireServiceReducer";
-import { buildPickupDateTime } from "../../../../../../../store/TransportContent";
+import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+import useLaunchHireServiceReducer from "@/store/LaunchHireServiceReducer";
+import { buildPickupDateTime } from "@/store/TransportContent";
 import { SERVICE_ACCENT, LAUNCH_HIRE_LOCATION_OPTIONS } from "./Husbandry.constants";
 
 const LAUNCH_HIRE_ACCENT = SERVICE_ACCENT.LAUNCH_HIRE;

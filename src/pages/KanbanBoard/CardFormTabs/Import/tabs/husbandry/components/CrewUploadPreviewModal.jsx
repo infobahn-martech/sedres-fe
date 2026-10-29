@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import CustomModal from "../../../../../../../components/CustomModal";
+import CustomModal from "@/components/CustomModal";
 
 // Read-only preview of the crew rows belonging to one uploaded movement-type
 // batch (Sign On or Sign Off) — opened from that batch's preview card on the

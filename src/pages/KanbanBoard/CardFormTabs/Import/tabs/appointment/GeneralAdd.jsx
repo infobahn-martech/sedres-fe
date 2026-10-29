@@ -1,29 +1,29 @@
 import PropTypes from "prop-types";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import "../../../../../../design/scss/general.scss";
-import "../../../../../../design/css/common/CardForm.css";
-import "../../../../../../design/scss/pages/callTypeBuilder.scss";
-import callFileService from "../../../../../../services/callFileService";
-import mailService from "../../../../../../services/mailService";
-import billingEntityService from "../../../../../../services/billingEntityService";
-import billingInstructionService from "../../../../../../services/billingInstructionService";
-import vesselService from "../../../../../../services/vesselService";
-import stageTimeMappingService from "../../../../../../services/stageTimeMappingService";
-import preArrivalInfoService from "../../../../../../services/preArrivalInfoService";
-import useCallTaskReducer from "../../../../../../store/CallTaskReducer";
-import useFormTemplateReducer from "../../../../../../store/FormTemplateReducer";
-import TemplateFieldPreview from "../../../../../CustomTemplate/TemplateFieldPreview";
-import usePermissions from "../../../../../../shared/hooks/usePermissions";
-import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../../../../shared/constants/permissions";
-import { mergeOptionIfMissing } from "../../../../../../shared/helpers/callFileFormOptions";
+import "@/design/scss/general.scss";
+import "@/design/css/common/CardForm.css";
+import "@/design/scss/pages/callTypeBuilder.scss";
+import callFileService from "@/services/callFileService";
+import mailService from "@/services/mailService";
+import billingEntityService from "@/services/billingEntityService";
+import billingInstructionService from "@/services/billingInstructionService";
+import vesselService from "@/services/vesselService";
+import stageTimeMappingService from "@/services/stageTimeMappingService";
+import preArrivalInfoService from "@/services/preArrivalInfoService";
+import useCallTaskReducer from "@/store/CallTaskReducer";
+import useFormTemplateReducer from "@/store/FormTemplateReducer";
+import TemplateFieldPreview from "@/pages/CustomTemplate/TemplateFieldPreview";
+import usePermissions from "@/shared/hooks/usePermissions";
+import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "@/shared/constants/permissions";
+import { mergeOptionIfMissing } from "@/shared/helpers/callFileFormOptions";
 import {
   buildCreateCallFileFormData,
   buildCreateTemplateCallFileFormData,
-} from "../../../../../../shared/helpers/createCallFilePayload";
-import { getItem } from "../../../../../../shared/helpers/localStorage";
-import { extractTextFromFile, normalizeAppointmentDateTime } from "../../../../../../shared/helpers/appointmentAiExtractor";
-import { notify } from "../../../../../../components/Toaster";
-import CardTabListLoading from "../../../../../../components/CardTabListLoading";
+} from "@/shared/helpers/createCallFilePayload";
+import { getItem } from "@/shared/helpers/localStorage";
+import { extractTextFromFile, normalizeAppointmentDateTime } from "@/shared/helpers/appointmentAiExtractor";
+import { notify } from "@/components/Toaster";
+import CardTabListLoading from "@/components/CardTabListLoading";
 import DateTimePickerField from "../../../shared/components/DateTimePickerField";
 import {
   FormField,

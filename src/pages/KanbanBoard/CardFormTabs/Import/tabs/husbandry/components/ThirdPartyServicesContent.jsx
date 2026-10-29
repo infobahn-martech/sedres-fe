@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import PropTypes from "prop-types";
-import GroupSettingsIcon from "../../../../../../../assets/images/cv.png";
-import { notify } from "../../../../../../../components/Toaster";
+import GroupSettingsIcon from "@/assets/images/cv.png";
+import { notify } from "@/components/Toaster";
 import { FormSection, FormField, FormInput, FormSelect, FormGroup, FieldRow, PremiumCardHeader, ReactQuillEditor } from "./Husbandry.components";
 import AttachmentsList from "../../appointment/AttachmentsList";
-import DateTimePickerField from "../../../../shared/components/DateTimePickerField";
+import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
-import thirdPartyService from "../../../../../../../services/thirdPartyService";
-import useThirdPartyServiceRequestReducer from "../../../../../../../store/ThirdPartyServiceRequestReducer";
-import { buildPickupDateTime } from "../../../../../../../store/TransportContent";
+import thirdPartyService from "@/services/thirdPartyService";
+import useThirdPartyServiceRequestReducer from "@/store/ThirdPartyServiceRequestReducer";
+import { buildPickupDateTime } from "@/store/TransportContent";
 import { MAIN_TABS, SERVICE_ACCENT, LAUNCH_HIRE_LOCATION_OPTIONS } from "./Husbandry.constants";
 
 const THIRD_PARTY_ACCENT = SERVICE_ACCENT[MAIN_TABS.THIRD_PARTY_SERVICES];

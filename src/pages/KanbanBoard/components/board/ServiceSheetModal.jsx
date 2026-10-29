@@ -1,13 +1,13 @@
 import { Fragment, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { FiCheck, FiLayers, FiX } from "react-icons/fi";
-import CustomModal from "../../../../components/CustomModal";
-import useServiceSheetStore from "../../../../shared/store/serviceSheetStore";
-import { notify } from "../../../../components/Toaster";
-import { downloadFile } from "../../../../shared/utils/utils";
-import "../../../../design/scss/blockers-modal.scss";
-import "../../../../design/scss/pages/kanban-board/seReviewMoveModal.scss";
-import "../../../../design/scss/pages/kanban-board/arInvoiceReviewModal.scss";
+import CustomModal from "@/components/CustomModal";
+import useServiceSheetStore from "@/shared/store/serviceSheetStore";
+import { notify } from "@/components/Toaster";
+import { downloadFile } from "@/shared/utils/utils";
+import "@/design/scss/blockers-modal.scss";
+import "@/design/scss/pages/kanban-board/seReviewMoveModal.scss";
+import "@/design/scss/pages/kanban-board/arInvoiceReviewModal.scss";
 
 const COLUMNS = [
   { name: "sales_order", label: "Sales Order" },

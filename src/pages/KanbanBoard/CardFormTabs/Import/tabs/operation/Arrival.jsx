@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import PropTypes from "prop-types";
-import GroupSettingsIcon from "../../../../../../assets/images/cv.png";
-import { notify } from "../../../../../../components/Toaster";
+import GroupSettingsIcon from "@/assets/images/cv.png";
+import { notify } from "@/components/Toaster";
 import { buildArrivalReportBody, buildArrivalDailyReportBody } from "../../services/sendReportBodyBuilder";
-import appointmentAcceptanceService from "../../../../../../services/appointmentAcceptanceService";
-import useArrivalReducer from "../../../../../../store/ArrivalReducer";
+import appointmentAcceptanceService from "@/services/appointmentAcceptanceService";
+import useArrivalReducer from "@/store/ArrivalReducer";
 import DateTimePickerField from "../../../shared/components/DateTimePickerField";
 import {
   AdditionalTimeObjectAddButton,
