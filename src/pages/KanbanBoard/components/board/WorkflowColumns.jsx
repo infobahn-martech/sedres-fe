@@ -52,8 +52,8 @@ const isBatchCreateWorkflow = (workflow) => {
 const isBacklogColumn = (column) =>
   String(column?.title ?? "").trim().toLowerCase() === BATCH_ACTION_COLUMN;
 
-/* Zamil Marine and BGP create no batches from Backlog, so their Backlog column header carries no batch icon. */
-const NO_BATCH_ACTION_WORKFLOW_PATTERN = /zamil.*marine|bgp/i;
+/* Zamil Marine creates no batches from Backlog, so its Backlog column header carries no batch icon. */
+const NO_BATCH_ACTION_WORKFLOW_PATTERN = /zamil.*marine/i;
 
 /* Batches are created on the DA board only; Operations boards show no batch icon in Backlog. */
 const hasBatchAction = (boardId, workflow, ...columns) =>
