@@ -65,6 +65,10 @@ const ZAMIL_ONE_CARD_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
 
 export const isSubseaWorkflow = (workflow) => SUBSEA_WORKFLOW_PATTERN.test(String(workflow?.title ?? ""));
 
+const DA_DEFAULT_WORKFLOW_PATTERN = /default.*\bda\b|\bda\b.*default/i;
+
+export const isDaDefaultWorkflow = (workflow) => DA_DEFAULT_WORKFLOW_PATTERN.test(String(workflow?.title ?? ""));
+
 /* POSH DA requests the PO and sends the invoice one card at a time, so only one card in
    "AR Invoices Issued" or "PO Received" can stay ticked. The POs are uploaded in bulk, so
    "Requested/ Awaiting for PO" takes several. Subsea 7 DA sends the invoice one card at a time
