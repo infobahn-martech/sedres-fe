@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import callFileService from "../../services/callFileService";
-import { isExportCallType } from "../../pages/KanbanBoard/CardFormTabs/shared/utils/callTypes";
+import callFileService from "../services/callFileService";
+import { isExportCallType } from "../pages/KanbanBoard/CardFormTabs/shared/utils/callTypes";
 
 /**
  * Export approval state per call, read from the call detail for board cards whose

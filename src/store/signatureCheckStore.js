@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import daService from "../../services/daService";
+import daService from "../services/daService";
 
 const getErrorMessage = (error, fallback) =>
   error?.response?.data?.message || error?.message || fallback;

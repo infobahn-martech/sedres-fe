@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { KANBAN_DND_DISABLED } from "@/shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
-import useExportApprovalStatusStore from "@/shared/store/exportApprovalStatusStore";
+import useExportApprovalStatusStore from "@/store/exportApprovalStatusStore";
 import "@/design/scss/pages/kanban-board/signatureCheck.scss";
 import { Tooltip } from "react-tooltip";
 import "@/design/css/components/CardItem.css";

@@ -1,6 +1,6 @@
   import { useState, useCallback, useEffect, useRef } from "react";
-import { useCTPendingCards } from "@/shared/store/ctStore";
-import { useDAStore } from "@/shared/store/DAStore";
+import { useCTPendingCards } from "@/store/ctStore";
+import { useDAStore } from "@/store/daStore";
 import useDAAssignmentReducer from "@/store/DAAssignmentReducer";
 import useAuthReducer from "@/store/AuthReducer";
 import useAlertReducer from "@/store/AlertReducer";

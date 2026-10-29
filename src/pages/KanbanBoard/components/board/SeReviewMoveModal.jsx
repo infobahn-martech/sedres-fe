@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { FiCheck, FiEye, FiLayers, FiX } from "react-icons/fi";
 import CustomModal from "@/components/CustomModal";
-import useBatchMoveStore from "@/shared/store/batchMoveStore";
+import useBatchMoveStore from "@/store/batchMoveStore";
 import { notify } from "@/components/Toaster";
 import { getUploadedFileUrl, viewUploadedFile } from "@/shared/utils/viewUploadedFile";
 import "@/design/scss/blockers-modal.scss";

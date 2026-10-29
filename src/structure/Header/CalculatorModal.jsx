@@ -4,7 +4,7 @@ import { LuArrowRightLeft } from 'react-icons/lu';
 import ToolModal from './ToolModal';
 import CopyButton from './CopyButton';
 import UnitConverter from './UnitConverter';
-import { useCalculatorStore } from '../../shared/store/calculatorStore';
+import { useCalculatorStore } from '../../store/calculatorStore';
 import {
   FUNCTION_CALL_AT_END,
   MAX_EXPRESSION_LENGTH,

@@ -13,7 +13,7 @@ import CustomModal from "@/components/CustomModal";
 import daService from "@/services/daService";
 import userService from "@/services/userService";
 import { getInitials } from "@/shared/utils/utils";
-import { useDaLocalLaunchHire } from "@/shared/store/daStore";
+import { useDaLocalLaunchHire } from "@/store/daStore";
 import "@/design/scss/pages/kanban-board/daCardFields.scss";
 
 // Card / Appointment & Clearance / MWP / Launch Hire / Clearance Copies / Invoices,

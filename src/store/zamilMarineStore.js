@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import zamilMarineService from "../../services/zamilMarineService";
+import zamilMarineService from "../services/zamilMarineService";
 
 /**
  * Zamil Marine "Send For PR" email, opened from the Sales Order tab once every line item is verified.

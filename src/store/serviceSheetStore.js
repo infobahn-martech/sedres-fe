@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import daService from "../../services/daService";
+import daService from "../services/daService";
 
 /**
  * Enter Service Sheet No popup, opened from the "AR Invoice Issued" column header for the ticked cards.

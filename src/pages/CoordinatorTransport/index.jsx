@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { useCTPendingCards } from "../../shared/store/ctStore";
+import { useCTPendingCards } from "../../store/ctStore";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { KANBAN_DND_DISABLED } from "../../shared/constants/kanbanConfig";
 import { FiLayers } from "react-icons/fi";

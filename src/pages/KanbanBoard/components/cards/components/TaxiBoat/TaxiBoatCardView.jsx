@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useCTPendingCards } from "@/shared/store/ctStore";
-import { useTaxiBoatStore } from "@/shared/store/taxiBoatStore";
+import { useCTPendingCards } from "@/store/ctStore";
+import { useTaxiBoatStore } from "@/store/taxiBoatStore";
 import useTaxiBoatAssignmentReducer from "@/store/TaxiBoatAssignmentReducer";
 import useBillingEntityReducer from "@/store/BillingEntityReducer";
 import useAuthReducer from "@/store/AuthReducer";

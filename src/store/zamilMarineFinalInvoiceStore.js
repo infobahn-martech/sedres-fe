@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import zamilMarineArInvoiceService from "../../services/zamilMarineArInvoiceService";
+import zamilMarineArInvoiceService from "../services/zamilMarineArInvoiceService";
 
 /**
  * Zamil Marine "Send Invoice" on "AR Invoice Issued": the final invoice email draft of the one ticked

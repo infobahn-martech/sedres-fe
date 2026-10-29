@@ -23,8 +23,8 @@ import {
 } from "@/shared/helpers/groUserRoles";
 import useAuthReducer from "@/store/AuthReducer";
 import useFormTemplateReducer from "@/store/FormTemplateReducer";
-import { useDaLocalReachedDates } from "@/shared/store/daStore";
-import useCardModalStore from "@/shared/store/cardModalStore";
+import { useDaLocalReachedDates } from "@/store/daStore";
+import useCardModalStore from "@/store/cardModalStore";
 import usePermissions from "@/shared/hooks/usePermissions";
 import {
   PERMISSION_MODULES,

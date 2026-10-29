@@ -16,12 +16,12 @@ import {
   getBoardGridTemplateColumns,
   getColumnWidth,
 } from "../../utils/boardGridHelpers";
-import useBatchMoveStore from "@/shared/store/batchMoveStore";
-import useExportApprovalStatusStore from "@/shared/store/exportApprovalStatusStore";
-import useSignatureCheckStore from "@/shared/store/signatureCheckStore";
-import useServiceSheetStore from "@/shared/store/serviceSheetStore";
-import useZamilMarinePoRequestStore from "@/shared/store/zamilMarinePoRequestStore";
-import useZamilMarinePoUploadStore from "@/shared/store/zamilMarinePoUploadStore";
+import useBatchMoveStore from "@/store/batchMoveStore";
+import useExportApprovalStatusStore from "@/store/exportApprovalStatusStore";
+import useSignatureCheckStore from "@/store/signatureCheckStore";
+import useServiceSheetStore from "@/store/serviceSheetStore";
+import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
+import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useAlertReducer from "@/store/AlertReducer";
 import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";

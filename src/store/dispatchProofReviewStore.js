@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import daService from "../../services/daService";
+import daService from "../services/daService";
 
 /**
  * Dispatch proof review popup, opened straight from a bulk da/upload_dispatch_proof response on L&T

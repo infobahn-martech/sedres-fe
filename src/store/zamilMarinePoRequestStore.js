@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import zamilMarinePoRequestService from "../../services/zamilMarinePoRequestService";
+import zamilMarinePoRequestService from "../services/zamilMarinePoRequestService";
 
 const getErrorMessage = (error) => error?.response?.data?.message || error?.message;
 

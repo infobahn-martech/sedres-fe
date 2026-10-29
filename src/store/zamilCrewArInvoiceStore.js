@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import zamilCrewService from "../../services/zamilCrewService";
+import zamilCrewService from "../services/zamilCrewService";
 
 /* da/ar_invoice_review lists the workflow's cards a page at a time; after page 1 the remaining
    pages are fetched a few calls at a time. */

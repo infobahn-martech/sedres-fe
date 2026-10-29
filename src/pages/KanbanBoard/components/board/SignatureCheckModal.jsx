@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import PropTypes from "prop-types";
 import { FiCheck, FiX } from "react-icons/fi";
 import CustomModal from "@/components/CustomModal";
-import useSignatureCheckStore from "@/shared/store/signatureCheckStore";
+import useSignatureCheckStore from "@/store/signatureCheckStore";
 import { notify } from "@/components/Toaster";
 import "@/design/scss/blockers-modal.scss";
 import "@/design/scss/pages/kanban-board/seReviewMoveModal.scss";

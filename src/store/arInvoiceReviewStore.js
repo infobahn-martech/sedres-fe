@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import daService from "../../services/daService";
+import daService from "../services/daService";
 
 /* da/ar_invoice_review lists every SE Received card, a page at a time; after page 1 the remaining
    pages are fetched a few calls at a time. */

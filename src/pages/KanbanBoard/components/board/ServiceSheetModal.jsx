@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { FiCheck, FiLayers, FiX } from "react-icons/fi";
 import CustomModal from "@/components/CustomModal";
-import useServiceSheetStore from "@/shared/store/serviceSheetStore";
+import useServiceSheetStore from "@/store/serviceSheetStore";
 import { notify } from "@/components/Toaster";
 import { downloadFile } from "@/shared/utils/utils";
 import "@/design/scss/blockers-modal.scss";

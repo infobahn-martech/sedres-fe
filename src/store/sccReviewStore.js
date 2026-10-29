@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import daService from "../../services/daService";
+import daService from "../services/daService";
 
 /* Keeps the upload's documents where da/scc_document_review has none. */
 const mergeReviewCard = (card, review) => {

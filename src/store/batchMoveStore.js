@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import daService from "../../services/daService";
+import daService from "../services/daService";
 
 /**
  * Where a batch has pushed its cards on the SAIPEM board.
