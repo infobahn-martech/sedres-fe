@@ -4,12 +4,24 @@ import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import CardItem from "../KanbanBoard/components/cards/CardItem";
+import TaxiBoatSmallCard from "../KanbanBoard/components/cards/components/TaxiBoat/TaxiBoatSmallCard";
 import "../../design/css/common/Column.css";
-import PriorityIcon from "../../assets/images/Priority.svg";
 import "../../design/css/common/DAColumn.css";
 
+function BoardCard({ cardVariant, isShrunk, ...props }) {
+  if (cardVariant === "taxi-boat") {
+    return <TaxiBoatSmallCard {...props} />;
+  }
+  return <CardItem {...props} isShrunk={isShrunk} hideExtraDetails={true} />;
+}
+
+BoardCard.propTypes = {
+  cardVariant: PropTypes.string,
+  isShrunk: PropTypes.bool,
+};
+
 // Nested Column Component (for sub-columns within "In Progress")
-function NestedColumn({ column, cards, setSelectedCard, isShrunk = false, columnHeight, onHeightChange }) {
+function NestedColumn({ column, cards, setSelectedCard, isShrunk = false, columnHeight, onHeightChange, cardVariant }) {
   const columnRef = useRef(null);
   const columnColor = column.color || "#2A00FF";
   const onHeightChangeRef = useRef(onHeightChange);
@@ -95,13 +107,13 @@ function NestedColumn({ column, cards, setSelectedCard, isShrunk = false, column
             {...provided.droppableProps}
           >
             {cards.map((card, index) => (
-              <CardItem
+              <BoardCard
                 key={card.id}
                 card={card}
                 index={index}
                 setSelectedCard={setSelectedCard}
                 isShrunk={isShrunk}
-                hideExtraDetails={true}
+                cardVariant={cardVariant}
               />
             ))}
             {provided.placeholder}
@@ -113,7 +125,7 @@ function NestedColumn({ column, cards, setSelectedCard, isShrunk = false, column
 }
 
 // Main Column Component (handles both regular and nested columns)
-function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk = false, onHeaderClick, onContextMenu, columnHeight, onHeightChange, subColumns, subColumnCards, subColumnHeights }) {
+function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk = false, onHeaderClick, onContextMenu, columnHeight, onHeightChange, subColumns, subColumnCards, subColumnHeights, columnStyle, cardListStyle, cardVariant = "default", showNestedFooterCount = false }) {
   const columnRef = useRef(null);
   const columnColor = column.color || "#2A00FF";
   const isNestedColumn = column.isNested || (subColumns && subColumns.length > 0);
@@ -196,7 +208,7 @@ function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk =
         ref={columnRef}
         className={`column nested-column-parent ${isExpanded ? 'column-expanded' : ''} ${isShrunk ? 'column-shrunk' : ''}`}
         onContextMenu={handleContextMenu}
-        style={columnHeight ? { minHeight: `${columnHeight}px` } : {}}
+        style={{ ...columnStyle, ...(columnHeight ? { minHeight: `${columnHeight}px` } : {}) }}
       >
         <div
           className="column-header nested-column-parent-header"
@@ -222,10 +234,12 @@ function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk =
                 isShrunk={isShrunk}
                 columnHeight={subHeight}
                 onHeightChange={onHeightChange}
+                cardVariant={cardVariant}
               />
             );
           })}
         </div>
+        {showNestedFooterCount && <span className="column-count">{cards?.length ?? 0}</span>}
       </div>
     );
   }
@@ -236,7 +250,7 @@ function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk =
       ref={columnRef}
       className={`column ${isExpanded ? 'column-expanded' : ''} ${isShrunk ? 'column-shrunk' : ''}`}
       onContextMenu={handleContextMenu}
-      style={columnHeight ? { minHeight: `${columnHeight}px` } : {}}
+      style={{ ...columnStyle, ...(columnHeight ? { minHeight: `${columnHeight}px` } : {}) }}
     >
       <div
         className="column-header"
@@ -268,15 +282,16 @@ function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk =
             className={`card-list ${snapshot.isDraggingOver ? "drag-over" : ""}`}
             ref={provided.innerRef}
             {...provided.droppableProps}
+            style={cardListStyle}
           >
             {cards.map((card, index) => (
-              <CardItem
+              <BoardCard
                 key={card.id}
                 card={card}
                 index={index}
                 setSelectedCard={setSelectedCard}
                 isShrunk={isShrunk}
-                hideExtraDetails={true}
+                cardVariant={cardVariant}
               />
             ))}
             {provided.placeholder}
@@ -305,6 +320,10 @@ Column.propTypes = {
   subColumns: PropTypes.array,
   subColumnCards: PropTypes.object,
   subColumnHeights: PropTypes.object,
+  columnStyle: PropTypes.object,
+  cardListStyle: PropTypes.object,
+  cardVariant: PropTypes.oneOf(["default", "taxi-boat"]),
+  showNestedFooterCount: PropTypes.bool,
 };
 
 NestedColumn.propTypes = {
@@ -318,6 +337,7 @@ NestedColumn.propTypes = {
   isShrunk: PropTypes.bool,
   columnHeight: PropTypes.number,
   onHeightChange: PropTypes.func,
+  cardVariant: PropTypes.oneOf(["default", "taxi-boat"]),
 };
 
 export default Column;

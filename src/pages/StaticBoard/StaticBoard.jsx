@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { KANBAN_DND_DISABLED } from "../../shared/constants/kanbanConfig";
 import { FiLayers } from "react-icons/fi";
-import { initialData } from "../../shared/helpers/Driverdata";
+import PropTypes from "prop-types";
 import Column from "./Column";
 import CardForm from "../KanbanBoard/components/cards/CardForm";
 import ContextMenu from "../KanbanBoard/components/menus/ContextMenu";
@@ -13,7 +13,13 @@ import useSyncKanbanSidebarWorkflows from "../../shared/hooks/useSyncKanbanSideb
 import useKanbanAddCardFromSidebar from "../../shared/hooks/useKanbanAddCardFromSidebar";
 import { getAddModeCardFormWorkflow } from "../../shared/helpers/kanbanSidebarWorkflow";
 
-export default function DriverBoard() {
+export default function StaticBoard({
+  initialData,
+  cardFormVariant,
+  cardVariant = "default",
+  accentColumns,
+  showNestedFooterCount = false,
+}) {
   const [workflows, setWorkflows] = useState(initialData);
   const [selectedCard, setSelectedCard] = useState(null);
   const [isAddMode, setIsAddMode] = useState(false);
@@ -517,7 +523,15 @@ export default function DriverBoard() {
       }
     }
 
+    const isAccentWorkflow = accentColumns?.workflowId === workflow.id;
+
     return columnsToRender.map((item) => {
+      const accentStyle = { backgroundColor: "rgb(65, 105, 225)" };
+      const columnStyle = isAccentWorkflow && accentColumns.titles.includes(item.column.title)
+        ? accentStyle
+        : undefined;
+      const cardListStyle = columnStyle;
+
       if (item.type === 'nested') {
         const isExpanded = expandedColumnId === item.column.id;
         const isShrunk = expandedColumnId !== null && expandedColumnId !== item.column.id;
@@ -536,6 +550,10 @@ export default function DriverBoard() {
             subColumns={item.subColumns}
             subColumnCards={item.subColumnCards}
             subColumnHeights={item.subColumnHeights}
+            columnStyle={columnStyle}
+            cardListStyle={cardListStyle}
+            cardVariant={cardVariant}
+            showNestedFooterCount={showNestedFooterCount}
           />
         );
       } else {
@@ -553,16 +571,15 @@ export default function DriverBoard() {
             onContextMenu={handleColumnContextMenu}
             columnHeight={maxHeight > 0 ? maxHeight : undefined}
             onHeightChange={handleColumnHeightChange}
+            columnStyle={columnStyle}
+            cardListStyle={cardListStyle}
+            cardVariant={cardVariant}
+            showNestedFooterCount={showNestedFooterCount}
           />
         );
       }
     });
-  }, [handleSelectCard, expandedColumns, handleColumnHeaderClick, handleColumnContextMenu, maxColumnHeights, columnHeights, handleColumnHeightChange]);
-
-  // Show Workspaces view when Workspaces icon is clicked
-  if (showWorkspaces) {
-    return <Workspaces />;
-  }
+  }, [handleSelectCard, expandedColumns, handleColumnHeaderClick, handleColumnContextMenu, maxColumnHeights, columnHeights, handleColumnHeightChange, accentColumns, cardVariant, showNestedFooterCount]);
 
   const getSelectedCardWorkflow = useCallback(() => {
     if (!selectedCard) return null;
@@ -580,6 +597,11 @@ export default function DriverBoard() {
 
   const columnsForCardForm = addModeCardWorkflow?.columns;
   const columnOrderForCardForm = addModeCardWorkflow?.columnOrder;
+
+  // Show Workspaces view when Workspaces icon is clicked
+  if (showWorkspaces) {
+    return <Workspaces />;
+  }
 
   if (isLoading) {
     return (
@@ -640,13 +662,13 @@ export default function DriverBoard() {
         <CardForm
           show={true}
           close={handleCloseCard}
-          card={selectedCard}
+          card={cardVariant === "taxi-boat" ? { ...selectedCard, crew: [] } : selectedCard}
           moveCardToColumn={moveCardToColumn}
           columns={columnsForCardForm}
           columnOrder={columnOrderForCardForm}
           currentColumn={isAddMode ? null : findCardColumn(selectedCard.id)}
           isAddMode={isAddMode}
-          variant="driver"
+          variant={cardFormVariant}
         />
       )}
 
@@ -668,3 +690,14 @@ export default function DriverBoard() {
     </>
   );
 }
+
+StaticBoard.propTypes = {
+  initialData: PropTypes.arrayOf(PropTypes.object).isRequired,
+  cardFormVariant: PropTypes.string,
+  cardVariant: PropTypes.oneOf(["default", "taxi-boat"]),
+  accentColumns: PropTypes.shape({
+    workflowId: PropTypes.string.isRequired,
+    titles: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }),
+  showNestedFooterCount: PropTypes.bool,
+};
