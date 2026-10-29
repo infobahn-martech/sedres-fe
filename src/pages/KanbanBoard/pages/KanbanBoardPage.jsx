@@ -2376,6 +2376,7 @@ export default function KanbanBoardPage() {
           </div>
         )}
         <KanbanBoardContent
+          boardId={selectedBoardId}
           workflows={visibleWorkflows}
           cardsById={cardsById}
           boardLoading={boardLoading}
