@@ -115,7 +115,8 @@ const getInvoiceAction = (workflow, column) => {
   if (ISSUE_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
   if (isLntSubmittedToDa(workflow?.title, title)) return "checkSignatures";
   if (SCC_RECEIVED_COLUMN_PATTERN.test(title)) return "uploadSccDocuments";
-  if (CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
+  /* Zamil Crew uploads from each batch header (BatchGroup), so its column header has no upload button. */
+  if (CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test(title)) return isZamilWorkflow(workflow) ? null : "issueArInvoice";
   if (READY_FOR_DISPATCH_COLUMN_PATTERN.test(title)) return "downloadInvoices";
   if (TO_BE_UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(title)) return "moveCards";
   if (isUploadedToPortalColumnTitle(title)) return "uploadDispatchProof";
