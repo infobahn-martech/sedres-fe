@@ -42,6 +42,7 @@ const ZAKHER_WORKFLOW_PATTERN = /zakher/i;
 const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil\s*marine/i;
 const AWAITING_SRT_COLUMN_PATTERN = /awaiting srt/i;
 const SRT_RECEIVED_COLUMN_PATTERN = /srt received/i;
+const PR_RECEIVED_COLUMN_PATTERN = /pr received/i;
 /* "Upload Approved SO" runs for the POSH workflow and for workflows with a "Send for SO Approval" column. da/da_upload_so_approval_proof takes the
    approved SO as `proof` (required) and the SO email as `approval_email`; the field names are the
    request's form field names. */
@@ -706,7 +707,14 @@ const SalesOrderList = ({
     currentStep != null &&
     SRT_RECEIVED_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
   const isSrtFlow = soActionState?.srt_flow === true || isAtAwaitingSrtColumn || isAtSrtReceivedColumn;
+  // Once the PR email is sent the Zamil Marine card sits on "PR Received", where the documents are uploaded.
+  const isAtPrReceivedColumn =
+    isZamilMarineWorkflowCard &&
+    Array.isArray(stepLabels) &&
+    currentStep != null &&
+    PR_RECEIVED_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
   const isCardAtSoApprovalColumn =
+    isAtPrReceivedColumn ||
     (isSrtFlow && (isAtColumnAfterOpsCompleted || isAtSrtReceivedColumn)) ||
     (Array.isArray(stepLabels) && currentStep != null && /so sent for approval/i.test(stepLabels[currentStep - 1] || "")) ||
     (Array.isArray(stepLabels) && currentStep != null && SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
@@ -831,7 +839,9 @@ const SalesOrderList = ({
     Array.isArray(stepLabels) && currentStep != null && /so sent for scc/i.test(stepLabels[currentStep - 1] || "");
   const isAtSccReceivedColumn =
     Array.isArray(stepLabels) && currentStep != null && /scc received/i.test(stepLabels[currentStep - 1] || "");
+  // Zamil Marine's "PR Received / Submitted to FDA" column is the PR Received column, which keeps the Upload Documents action.
   const isAtSubmittedToFdaColumn =
+    !isAtPrReceivedColumn &&
     Array.isArray(stepLabels) && currentStep != null && /submitted to fda/i.test(stepLabels[currentStep - 1] || "");
   // Subsea 7 (an "Awaiting SRT" column in its workflow) shows the Action column only while the card is
   // on "Awaiting SRT" itself, not on the columns before or after it.
@@ -1065,6 +1075,12 @@ const SalesOrderList = ({
     }
     // Optimistic — the action_state refetch from onDaStatusRefresh confirms it.
     setSoActionState((prev) => ({ ...prev, button_state: "awaiting_approval" }));
+    // Sending the PR email moves the card from the column after "Ops Completed" to "PR Received",
+    // where the Upload Documents button shows.
+    const prReceivedLabel = Array.isArray(stepLabels) && currentStep != null ? stepLabels[currentStep] : null;
+    if (isAtColumnAfterOpsCompleted && prReceivedLabel) {
+      onAdvanceDaStage?.({ label: prReceivedLabel, skipStatusUpdate: true });
+    }
     if (refreshSalesOrder) refreshSalesOrder();
     onDaStatusRefresh?.();
     useAlertReducer.getState().success(message || "PR email sent.");
@@ -2639,7 +2655,7 @@ const SalesOrderList = ({
             // daActionButtonLabel) as before.
             isCardAtSoApprovalColumn ? (
               isZamilMarineWorkflowCard ? (
-                effectiveSoButtonState === "awaiting_approval" && hasVerifiedAllItems ? (
+                isAtPrReceivedColumn && hasVerifiedAllItems ? (
                   <button
                     type="button"
                     className="sales-order-da-status-button"
@@ -2649,7 +2665,7 @@ const SalesOrderList = ({
                     <FiUpload />
                     Upload Documents
                   </button>
-                ) : hasVerifiedAllItems ? (
+                ) : !isAtPrReceivedColumn && hasVerifiedAllItems ? (
                   <button
                     type="button"
                     className="sales-order-da-status-button"
