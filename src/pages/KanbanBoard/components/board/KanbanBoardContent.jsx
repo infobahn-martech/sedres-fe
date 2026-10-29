@@ -4,6 +4,7 @@ import WorkflowColumns from "./WorkflowColumns";
 const EMPTY_SELECTED_IDS = [];
 
 export default function KanbanBoardContent({
+  boardId,
   workflows,
   cardsById,
   boardLoading = false,
@@ -74,6 +75,7 @@ export default function KanbanBoardContent({
       onPinClick={() => onPinClick(workflow.id)}
     >
       <WorkflowColumns
+        boardId={boardId}
         workflow={workflow}
         collapsedColumns={collapsedColumns}
         maxColumnHeights={maxColumnHeights}

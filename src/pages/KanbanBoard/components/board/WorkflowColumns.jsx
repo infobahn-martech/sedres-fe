@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { FiArrowRight, FiChevronDown, FiDownload, FiEdit3, FiFileText, FiSend, FiUpload, FiUploadCloud } from "react-icons/fi";
 import { MdCallMerge } from "react-icons/md";
-import { KANBAN_DND_DISABLED } from "@/shared/constants/kanbanConfig";
+import { KANBAN_DND_DISABLED, DA_DESK_BOARD_ID } from "@/shared/constants/kanbanConfig";
 import ColumnHeader from "./ColumnHeader";
 import SwimlaneColumnCell from "./SwimlaneColumnCell";
 import {
@@ -52,10 +52,12 @@ const isBatchCreateWorkflow = (workflow) => {
 const isBacklogColumn = (column) =>
   String(column?.title ?? "").trim().toLowerCase() === BATCH_ACTION_COLUMN;
 
-/* Zamil Marine has no batch step, so its Backlog column header carries no batch icon. */
-const NO_BATCH_ACTION_WORKFLOW_PATTERN = /zamil.*marine/i;
+/* Zamil Marine and BGP create no batches from Backlog, so their Backlog column header carries no batch icon. */
+const NO_BATCH_ACTION_WORKFLOW_PATTERN = /zamil.*marine|bgp/i;
 
-const hasBatchAction = (workflow, ...columns) =>
+/* Batches are created on the DA board only; Operations boards show no batch icon in Backlog. */
+const hasBatchAction = (boardId, workflow, ...columns) =>
+  String(boardId ?? "") === DA_DESK_BOARD_ID &&
   isBatchCreateWorkflow(workflow) &&
   !NO_BATCH_ACTION_WORKFLOW_PATTERN.test(workflow?.title ?? "") &&
   columns.some(isBacklogColumn);
@@ -190,6 +192,7 @@ const INVOICE_ACTION_BUTTONS = {
 };
 
 export default function WorkflowColumns({
+  boardId,
   workflow,
   collapsedColumns,
   maxColumnHeights,
@@ -563,7 +566,7 @@ export default function WorkflowColumns({
                     onActionClick={
                       hasInvoiceButton
                         ? () => invoiceActionHandlers[invoiceButton]?.(invoiceButtonCards)
-                        : hasBatchAction(workflow, displayColumn, firstColumn)
+                        : hasBatchAction(boardId, workflow, displayColumn, firstColumn)
                         ? () =>
                             onColumnBatchAction({
                               /* Only Backlog's ticks: other columns keep cards ticked too. */
