@@ -17,6 +17,7 @@ import ArInvoiceReviewModal from "../components/board/ArInvoiceReviewModal";
 import SignatureCheckModal from "../components/board/SignatureCheckModal";
 import PoReviewModal from "../components/board/PoReviewModal";
 import ServiceSheetModal from "../components/board/ServiceSheetModal";
+import FinalInvoiceModal from "../components/board/FinalInvoiceModal";
 import SccReviewModal from "../components/board/SccReviewModal";
 import DispatchProofReviewModal from "../components/board/DispatchProofReviewModal";
 import { isLntWorkflow, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
@@ -2621,6 +2622,7 @@ export default function KanbanBoardPage() {
       <PoReviewModal onConfirmed={refetchBoard} />
 
       <ServiceSheetModal onSaved={refetchBoard} />
+      <FinalInvoiceModal onSaved={refetchBoard} />
 
       <SeApprovalUploadModal
         show={showDispatchProofUploadModal}

@@ -287,6 +287,23 @@ const confirmPos = (payload) => Gateway.post('/da/confirm_pos', payload);
  * Saves the service sheet numbers on the cards' sales orders. */
 const saveServiceSheets = (payload) => Gateway.post('/da/save_service_sheets', payload);
 
+/** @param {string|number} callId
+ * @param {string|number} cardId
+ * @returns {Promise<{ data: { status: 'success', data: { call_id: number, card_id: number,
+ *   sources: { source: string, name: string, url: string, page_count: number }[],
+ *   pages: { source: string, page: number }[] } } | { status: 'error', message: string } }>}
+ * The pages the final invoice PDF is made of, in their default order. */
+const getFinalInvoicePages = (callId, cardId) =>
+  Gateway.get('/da/final_invoice_pages', { params: { call_id: callId, card_id: cardId } });
+
+/** @param {{ call_id: number, card_id: number, pages: { source: string, page: number }[] }} payload - the pages
+ *   in the order the user arranged them.
+ * @returns {Promise<{ data: { status: 'success', data: { moved: { call_id: number, card_id: number,
+ *   column_id: number, column_name: string }, document: { stage_document_id: number, name: string, url: string },
+ *   zip: object|null, page_count: number, size_mb: number, warnings: string[] } } | { status: 'error', message: string } }>}
+ * Builds and stores the final invoice PDF; the card moves to the next column. */
+const saveFinalInvoice = (payload) => Gateway.post('/da/save_final_invoice', payload);
+
 const getInvoiceDispatchDraft = (callId) => Gateway.get(`/da/invoice_dispatch_draft/${callId}`);
 
 /** @param {FormData} formData - call_id, card_id, stage_document_id, to, cc, subject, body, attachments[]?,
@@ -428,6 +445,8 @@ export default {
   confirmSccDocuments,
   confirmPos,
   saveServiceSheets,
+  getFinalInvoicePages,
+  saveFinalInvoice,
   getInvoiceDispatchDraft,
   sendInvoiceDispatch,
   getFinalInvoiceEmailDraft,
