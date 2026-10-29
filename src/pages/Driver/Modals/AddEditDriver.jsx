@@ -1,5 +1,5 @@
-import { useForm, Controller } from "react-hook-form";
-import { useEffect, useRef, useState } from "react";
+import { useForm, Controller, useWatch } from "react-hook-form";
+import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import { FiUploadCloud, FiFileText, FiX } from "react-icons/fi";
 import "react-phone-input-2/lib/bootstrap.css";
@@ -14,52 +14,39 @@ import PremiumSelect from "../../../components/form/PremiumSelect";
 import userIcon from "../../../assets/images/DummyProPic.avif";
 import edit from "../../../assets/images/edit.svg";
 
-const DRIVER_FOR_OPTIONS = [
-    { value: 1, label: "Transport" },
-    { value: 2, label: "Material" },
-];
-
 // Two fields per row, matching the Add/Edit User modal.
 const FIELD_COL = "col-lg-6 col-sm-12";
 
 const ZAWIL_ACCEPT = ".pdf,.jpg,.jpeg,.png";
 
-/** API may return driver_for as 1/2, "1"/"2", or "Transport" / "Material". */
-function normalizeDriverFor(value) {
-    if (value === 2 || value === "2") return 2;
-    if (value === 1 || value === "1") return 1;
-    if (typeof value === "string") {
-        const v = value.trim().toLowerCase();
-        if (v === "material") return 2;
-        if (v === "transport") return 1;
-    }
-    return 1;
-}
-
 const fileNameFromUrl = (url) => decodeURIComponent(String(url).split("?")[0].split("/").pop() || url);
 
-/** API may return zawil_pass as a JSON string, URL strings, or { file_name, file_url } objects. */
-function normalizeZawilFiles(value) {
-    let list = value;
-    if (typeof list === "string") {
-        try {
-            list = JSON.parse(list);
-        } catch {
-            list = list.split(",");
-        }
+function parseList(value) {
+    if (typeof value !== "string") return value;
+    try {
+        return JSON.parse(value);
+    } catch {
+        return [];
     }
-    if (!Array.isArray(list)) return [];
-    return list
-        .map((entry) => {
-            if (typeof entry === "string") {
-                const url = entry.trim();
-                return url ? { file_name: fileNameFromUrl(url), file_url: url } : null;
-            }
-            const url = entry?.file_url ?? entry?.url ?? "";
-            const name = entry?.file_name ?? entry?.name ?? (url ? fileNameFromUrl(url) : "");
-            return name ? { file_name: name, file_url: url } : null;
-        })
-        .filter(Boolean);
+}
+
+/**
+ * Per-port Zawil Pass state keyed by port_id: { expiry_date, file (new File), existing ({ file_name, file_url }) }.
+ * API may return zawil_passes as a JSON string or an array of { port_id, expiry_date, file_url | zawil_pass }.
+ */
+function normalizeZawilPasses(value) {
+    const list = parseList(value);
+    if (!Array.isArray(list)) return {};
+    return list.reduce((acc, entry) => {
+        if (entry?.port_id == null) return acc;
+        const url = entry.file_url ?? entry.zawil_pass ?? entry.file ?? "";
+        acc[String(entry.port_id)] = {
+            expiry_date: entry.expiry_date || "",
+            file: null,
+            existing: url ? { file_name: entry.file_name || fileNameFromUrl(url), file_url: url } : null,
+        };
+        return acc;
+    }, {});
 }
 
 const formatFileSize = (bytes) => {
@@ -68,18 +55,14 @@ const formatFileSize = (bytes) => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-/** Plain JSON unless new files are attached — keeps the existing request shape when nothing is uploaded. */
-function buildRequestBody(payload, files, profileImage) {
-    if (!files.length && !profileImage) return payload;
+/** Request shape: `data` (JSON string) + `zawil_pass_files[<port_id>]` per uploaded pass + optional `profileimg`. */
+function buildRequestBody(payload, zawilByPort, portIds, profileImage) {
     const formData = new FormData();
-    Object.entries(payload).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-            value.forEach((item) => formData.append(`${key}[]`, item));
-        } else {
-            formData.append(key, value ?? "");
-        }
+    formData.append("data", JSON.stringify(payload));
+    portIds.forEach((portId) => {
+        const file = zawilByPort[portId]?.file;
+        if (file) formData.append(`zawil_pass_files[${portId}]`, file);
     });
-    files.forEach((file) => formData.append("zawil_pass[]", file));
     if (profileImage) formData.append("profileimg", profileImage);
     return formData;
 }
@@ -94,20 +77,16 @@ const EMPTY_FORM = {
     location: "",
     port_id: [],
     nationality: "",
-    driver_for: 1,
 };
 
 export function DriverModal({ showModal, closeModal, onSuccess }) {
     const isEdit = !!showModal?.driver_id;
     const editId = showModal?.driver_id;
 
-    const [zawilFiles, setZawilFiles] = useState([]);
-    const [existingZawilFiles, setExistingZawilFiles] = useState([]);
-    const [removedZawilFiles, setRemovedZawilFiles] = useState([]);
-    const [isDragging, setIsDragging] = useState(false);
+    const [zawilByPort, setZawilByPort] = useState({});
+    const [draggingPortId, setDraggingPortId] = useState(null);
     const [profileImage, setProfileImage] = useState(null);
     const [profileImagePreview, setProfileImagePreview] = useState(userIcon);
-    const fileInputRef = useRef(null);
 
     const {
         register,
@@ -115,8 +94,9 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
         formState: { errors },
         control,
         reset,
-        setValue,
     } = useForm({ defaultValues: EMPTY_FORM });
+
+    const selectedPortIds = useWatch({ control, name: "port_id" }) || [];
 
     const { countries, fetchAllCountries, addDriver, updateDriver, isBeingUpdated, isLoadingCountries } = useDriverReducer();
     const { ports, getPorts, isLoading: isLoadingPorts } = usePortReducer((s) => s);
@@ -130,11 +110,9 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
 
     useEffect(() => {
         if (!showModal) return;
-        setZawilFiles([]);
-        setRemovedZawilFiles([]);
         setProfileImage(null);
         setProfileImagePreview((isEdit && (showModal?.avatar_path || showModal?.profileimg)) || userIcon);
-        setExistingZawilFiles(isEdit ? normalizeZawilFiles(showModal?.zawil_pass) : []);
+        setZawilByPort(isEdit ? normalizeZawilPasses(showModal?.zawil_passes) : {});
     }, [showModal, isEdit]);
 
     useEffect(() => {
@@ -161,21 +139,11 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
                 location: showModal?.location || "",
                 port_id: portIds,
                 nationality: showModal?.nationality ?? showModal?.country_id ?? "",
-                driver_for: normalizeDriverFor(showModal?.driver_for),
             });
         } else if (showModal && !isEdit) {
             reset(EMPTY_FORM);
         }
     }, [showModal, isEdit, reset, isLoadingCountries, countries]);
-
-    // Ensure driver_for syncs for edit (row may load before/after main reset; radios are controlled).
-    useEffect(() => {
-        if (!showModal || !isEdit || !showModal?.driver_id) return;
-        setValue("driver_for", normalizeDriverFor(showModal.driver_for), {
-            shouldValidate: false,
-            shouldDirty: false,
-        });
-    }, [showModal?.driver_id, showModal?.driver_for, isEdit, setValue]);
 
     const handleImageChange = (e) => {
         const file = e.target.files?.[0];
@@ -187,56 +155,41 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
         }
     };
 
-    const addZawilFiles = (fileList) => {
-        const incoming = Array.from(fileList || []);
-        if (!incoming.length) return;
-        // Skip files already queued (same name + size) so a double drop doesn't duplicate them.
-        setZawilFiles((prev) => [
+    const updateZawil = (portId, changes) => {
+        setZawilByPort((prev) => ({
             ...prev,
-            ...incoming.filter((f) => !prev.some((p) => p.name === f.name && p.size === f.size)),
-        ]);
+            [portId]: { expiry_date: "", file: null, existing: null, ...prev[portId], ...changes },
+        }));
     };
 
-    const handleFileInputChange = (e) => {
-        addZawilFiles(e.target.files);
-        // Reset so picking the same file again after removing it still fires onChange.
-        e.target.value = "";
-    };
-
-    const handleDrop = (e) => {
-        e.preventDefault();
-        setIsDragging(false);
-        addZawilFiles(e.dataTransfer.files);
-    };
-
-    const removeNewZawilFile = (index) => {
-        setZawilFiles((prev) => prev.filter((_, i) => i !== index));
-    };
-
-    const removeExistingZawilFile = (file) => {
-        setExistingZawilFiles((prev) => prev.filter((f) => f.file_name !== file.file_name));
-        setRemovedZawilFiles((prev) => [...prev, file.file_name]);
+    // One pass file per port; a new file replaces the uploaded one.
+    const setZawilFile = (portId, fileList) => {
+        const file = fileList?.[0];
+        if (file) updateZawil(portId, { file });
     };
 
     const onSubmit = (data) => {
+        const portIds = (data.port_id || []).map(String);
         const payload = {
+            ...(isEdit && { driver_id: editId }),
             driver_name: data.driver_name,
-            employee_no: data.employee_no,
+            iqama_no: data.iqama_no,
+            nationality: data.nationality ? Number(data.nationality) : null,
             contact_no: data.contact_no,
             email: data.email,
-            iqama_no: data.iqama_no,
-            nationality: data.nationality,
+            employee_no: data.employee_no,
             location: data.location,
-            port_ids: (data.port_id || []).map(Number),
             joining_date: data.joining_date,
-            driver_for: normalizeDriverFor(data.driver_for),
-            ...(isEdit && { driver_id: editId, remove_files: removedZawilFiles }),
+            port_ids: portIds.map(Number),
+            zawil_passes: portIds
+                .filter((portId) => zawilByPort[portId]?.expiry_date)
+                .map((portId) => ({ port_id: Number(portId), expiry_date: zawilByPort[portId].expiry_date })),
         };
         const cb = () => {
             closeModal();
             onSuccess?.();
         };
-        const formData = buildRequestBody(payload, zawilFiles, profileImage);
+        const formData = buildRequestBody(payload, zawilByPort, portIds, profileImage);
         if (isEdit) {
             updateDriver({ formData, cb });
         } else {
@@ -250,89 +203,112 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
         </h1>
     );
 
-    const renderZawilUpload = () => (
-        <div className="form-field">
-            <div className="driver-notched">
-                <label className="phone-label">Zawil Pass</label>
-                <div
-                    role="button"
-                    tabIndex={0}
-                    className={`file-drop-zone driver-drop-zone ${isDragging ? "file-drop-zone--active" : ""}`}
-                    onClick={() => fileInputRef.current?.click()}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            fileInputRef.current?.click();
-                        }
-                    }}
-                    onDragOver={(e) => {
-                        e.preventDefault();
-                        setIsDragging(true);
-                    }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={handleDrop}
-                >
-                    <FiUploadCloud className="file-drop-zone__icon" />
-                    <span className="file-drop-zone__text">
-                        Drag & drop files, or <span className="driver-drop-zone__browse">browse</span>
-                    </span>
-                    <span className="file-drop-zone__formats">PDF, JPG, PNG · multiple allowed</span>
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        accept={ZAWIL_ACCEPT}
-                        hidden
-                        onChange={handleFileInputChange}
-                    />
-                </div>
-            </div>
+    const portName = (portId) => {
+        const port = (ports || []).find((p) => String(p.port_id) === String(portId));
+        return String(port?.port_name ?? port?.port ?? portId);
+    };
 
-            {(existingZawilFiles.length > 0 || zawilFiles.length > 0) && (
-                <ul className="driver-file-list">
-                    {existingZawilFiles.map((file) => (
-                        <li key={`existing-${file.file_name}`} className="driver-file-list__item">
-                            <FiFileText className="driver-file-list__icon" />
-                            {file.file_url ? (
-                                <a
-                                    href={file.file_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="driver-file-list__name"
-                                >
-                                    {file.file_name}
-                                </a>
-                            ) : (
-                                <span className="driver-file-list__name">{file.file_name}</span>
-                            )}
-                            <span className="driver-file-list__meta">Uploaded</span>
-                            <button
-                                type="button"
-                                className="driver-file-list__remove"
-                                aria-label={`Remove ${file.file_name}`}
-                                onClick={() => removeExistingZawilFile(file)}
-                            >
-                                <FiX />
-                            </button>
-                        </li>
-                    ))}
-                    {zawilFiles.map((file, index) => (
-                        <li key={`new-${file.name}-${file.size}`} className="driver-file-list__item">
-                            <FiFileText className="driver-file-list__icon" />
-                            <span className="driver-file-list__name">{file.name}</span>
-                            <span className="driver-file-list__meta">{formatFileSize(file.size)}</span>
-                            <button
-                                type="button"
-                                className="driver-file-list__remove"
-                                aria-label={`Remove ${file.name}`}
-                                onClick={() => removeNewZawilFile(index)}
-                            >
-                                <FiX />
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            )}
+    const renderZawilFile = (portId, zawil) => {
+        if (zawil?.file) {
+            return (
+                <div className="driver-file-list__item">
+                    <FiFileText className="driver-file-list__icon" />
+                    <span className="driver-file-list__name">{zawil.file.name}</span>
+                    <span className="driver-file-list__meta">{formatFileSize(zawil.file.size)}</span>
+                    <button
+                        type="button"
+                        className="driver-file-list__remove"
+                        aria-label={`Remove ${zawil.file.name}`}
+                        onClick={() => updateZawil(portId, { file: null })}
+                    >
+                        <FiX />
+                    </button>
+                </div>
+            );
+        }
+        const inputId = `zawilPassFile_${portId}`;
+        return (
+            <label
+                htmlFor={inputId}
+                className={`file-drop-zone driver-drop-zone mb-0 ${draggingPortId === portId ? "file-drop-zone--active" : ""}`}
+                onDragOver={(e) => {
+                    e.preventDefault();
+                    setDraggingPortId(portId);
+                }}
+                onDragLeave={() => setDraggingPortId(null)}
+                onDrop={(e) => {
+                    e.preventDefault();
+                    setDraggingPortId(null);
+                    setZawilFile(portId, e.dataTransfer.files);
+                }}
+            >
+                <FiUploadCloud className="file-drop-zone__icon" />
+                <span className="file-drop-zone__text">
+                    {zawil?.existing ? "Replace file" : "Drag & drop, or"}{" "}
+                    <span className="driver-drop-zone__browse">browse</span>
+                </span>
+                <span className="file-drop-zone__formats">PDF, JPG, PNG</span>
+                <input
+                    id={inputId}
+                    type="file"
+                    accept={ZAWIL_ACCEPT}
+                    hidden
+                    onChange={(e) => {
+                        setZawilFile(portId, e.target.files);
+                        // Reset so picking the same file again after removing it still fires onChange.
+                        e.target.value = "";
+                    }}
+                />
+            </label>
+        );
+    };
+
+    const renderZawilPasses = () => (
+        <div className="form-field">
+            <div className="driver-notched driver-zawil">
+                <label className="phone-label">Zawil Pass</label>
+                {selectedPortIds.length === 0 ? (
+                    <p className="driver-zawil__empty">Select a port to add its Zawil Pass.</p>
+                ) : (
+                    selectedPortIds.map((portId) => {
+                        const zawil = zawilByPort[portId];
+                        return (
+                            <div key={portId} className="driver-zawil__row">
+                                <span className="driver-zawil__port">{portName(portId)}</span>
+                                <div className="form-floating desig-inp add-edit-modal-date-field driver-zawil__expiry">
+                                    <DatePickerField
+                                        dateValue={zawil?.expiry_date || ""}
+                                        dateFieldName={`zawil_expiry_${portId}`}
+                                        onDateChange={(event) => updateZawil(portId, { expiry_date: event.target.value })}
+                                        placeholder=""
+                                        className="add-edit-modal-date-picker"
+                                        slotProps={{
+                                            textField: {
+                                                variant: "outlined",
+                                                size: "small",
+                                            },
+                                        }}
+                                    />
+                                    <label>Expiry Date</label>
+                                </div>
+                                <div className="driver-zawil__file">
+                                    {renderZawilFile(portId, zawil)}
+                                    {zawil?.existing && !zawil?.file && (
+                                        <a
+                                            href={zawil.existing.file_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="driver-zawil__existing"
+                                        >
+                                            <FiFileText /> {zawil.existing.file_name}
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
         </div>
     );
 
@@ -433,10 +409,13 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
                         <div className={FIELD_COL}>
                             <div className="form-field">
                                 <div className="phone-wrapper">
-                                    <label className="phone-label">Nationality</label>
+                                    <label className="phone-label">
+                                        Nationality <span className="text-danger">*</span>
+                                    </label>
                                     <Controller
                                         name="nationality"
                                         control={control}
+                                        rules={{ required: "Nationality is required" }}
                                         render={({ field }) => (
                                             <PremiumSelect
                                                 value={field.value != null ? String(field.value) : ""}
@@ -497,57 +476,21 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
                             />
                         </div>
 
-                        {/* DRIVER FOR — Transport (1) / Material (2) */}
-                        <div className={FIELD_COL}>
-                            <div className="form-field">
-                                <div className="phone-wrapper">
-                                    <label className="phone-label">
-                                        Driver For <span className="text-danger">*</span>
-                                    </label>
-                                    <Controller
-                                        name="driver_for"
-                                        control={control}
-                                        rules={{ required: true }}
-                                        render={({ field }) => (
-                                            <div className="driver-radio-box" role="radiogroup" aria-label="Driver For">
-                                                {DRIVER_FOR_OPTIONS.map(({ value, label }) => (
-                                                    <div key={value} className="form-check form-check-inline mb-0">
-                                                        <input
-                                                            className="form-check-input"
-                                                            type="radio"
-                                                            id={`driver_for_${value}`}
-                                                            name={field.name}
-                                                            checked={Number(field.value) === value}
-                                                            onChange={() => field.onChange(value)}
-                                                            onBlur={field.onBlur}
-                                                        />
-                                                        <label className="form-check-label" htmlFor={`driver_for_${value}`}>
-                                                            {label}
-                                                        </label>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    />
-                                </div>
-                                {errors.driver_for && (
-                                    <span className="field-error">Please select Driver For</span>
-                                )}
-                            </div>
-                        </div>
-
                         {/* CONTACT NO (PhoneInput) */}
                         <div className={FIELD_COL}>
                             <div className="form-field">
                                 <div className="phone-wrapper">
-                                    <label className="phone-label">Contact No</label>
+                                    <label className="phone-label">
+                                        Contact No <span className="text-danger">*</span>
+                                    </label>
                                     <Controller
                                         name="contact_no"
                                         control={control}
                                         rules={{
                                             validate: (value) => {
-                                                if (!value) return true;
+                                                // PhoneInput keeps the dial code (e.g. "966") when the number is cleared.
                                                 const digits = (value || "").replace(/\D/g, "");
+                                                if (digits.length <= 4) return "Contact number is required";
                                                 return digits.length >= 7 || "Enter a valid phone number";
                                             },
                                         }}
@@ -577,16 +520,13 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
                                         className={`form-control ${errors.email ? "is-invalid" : ""}`}
                                         placeholder="Email"
                                         {...register("email", {
-                                            required: "Email is required",
                                             pattern: {
                                                 value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                                                 message: "Enter a valid email address",
                                             },
                                         })}
                                     />
-                                    <label>
-                                        Email <span className="text-danger">*</span>
-                                    </label>
+                                    <label>Email</label>
                                 </div>
                                 {errors.email && (
                                     <span className="field-error">{errors.email.message}</span>
@@ -598,16 +538,10 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
                         <div className={FIELD_COL}>
                             <div className="form-field">
                                 <div className="phone-wrapper">
-                                    <label className="phone-label">
-                                        Port <span className="text-danger">*</span>
-                                    </label>
+                                    <label className="phone-label">Port</label>
                                     <Controller
                                         name="port_id"
                                         control={control}
-                                        rules={{
-                                            validate: (val) =>
-                                                (Array.isArray(val) && val.length > 0) || "Port is required",
-                                        }}
                                         render={({ field }) => (
                                             <PremiumSelect
                                                 isMulti
@@ -650,8 +584,8 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
                             </div>
                         </div>
 
-                        {/* ZAWIL PASS (multiple files) */}
-                        <div className="col-12">{renderZawilUpload()}</div>
+                        {/* ZAWIL PASS (one expiry date + file per selected port) */}
+                        <div className="col-12">{renderZawilPasses()}</div>
                     </div>
                 </form>
             </div>

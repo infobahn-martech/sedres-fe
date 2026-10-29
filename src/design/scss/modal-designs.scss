@@ -646,7 +646,7 @@ body .modal.show .modal-dialog {
     border-color: var(--border-strong);
   }
 }
-/* Add / Edit Driver — 2-column form with avatar, "Driver For" radios, Zawil Pass upload */
+/* Add / Edit Driver — 2-column form with avatar, per-port Zawil Pass upload */
 // Selector mirrors the base .user-modal-sm rule (plus .driver-modal) so it wins over its !important.
 body .user-modal-sm.driver-modal .modal-dialog {
   max-width: 920px !important;
@@ -678,40 +678,6 @@ body .user-modal-sm.driver-modal .modal-dialog {
     width: 100px;
     height: 100px;
     margin-top: 0;
-  }
-
-  // Bordered 52px box so the radios line up with the inputs beside them.
-  .driver-radio-box {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    height: 52px;
-    padding: 0 16px;
-    border: 1px solid var(--border-primary);
-    border-radius: 12px;
-    background: var(--surface-primary);
-
-    .form-check-inline {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-right: 0;
-      padding-left: 0;
-    }
-
-    // Match the 13px text of the neighbouring inputs instead of the large global radio style.
-    .form-check-input {
-      float: none;
-      width: 16px;
-      height: 16px;
-      margin: 0;
-    }
-
-    .form-check-label {
-      font-size: 13px;
-      line-height: 1;
-      color: var(--text-primary);
-    }
   }
 
   // Notched label like the phone/select fields, without .phone-wrapper's bottom margin.
@@ -824,6 +790,68 @@ body .user-modal-sm.driver-modal .modal-dialog {
       &:hover {
         background: color-mix(in srgb, var(--color-danger) 12%, transparent);
         color: var(--color-danger);
+      }
+    }
+  }
+
+  // Zawil Pass: one row per selected port — port name, expiry date, single file.
+  .driver-zawil {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 16px 14px;
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+
+    &__empty {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    &__row {
+      display: grid;
+      grid-template-columns: minmax(100px, 160px) 200px minmax(0, 1fr);
+      align-items: start;
+      gap: 12px;
+
+      @media (max-width: 767px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    &__port {
+      display: flex;
+      align-items: center;
+      min-height: 52px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow-wrap: anywhere;
+    }
+
+    &__file {
+      min-width: 0;
+
+      .driver-file-list__item {
+        min-height: 52px;
+      }
+    }
+
+    &__existing {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+      margin-top: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      color: var(--color-primary);
+
+      &:hover {
+        text-decoration: underline;
       }
     }
   }
