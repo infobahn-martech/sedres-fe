@@ -7,6 +7,7 @@ const useDriverReducer = create((set) => ({
     countries: null,
     isLoading: false,
     isLoadingCountries: false,
+    isLoadingDetail: false,
     isBeingUpdated: false,
     isDeleteLoading: false,
     errorMessage: '',
@@ -29,6 +30,23 @@ const useDriverReducer = create((set) => ({
                 isLoading: false,
             });
             error(err?.response?.data?.message ?? err.message);
+        }
+    },
+
+    fetchDriverDetail: async (id) => {
+        try {
+            set({ isLoadingDetail: true });
+            const { data } = await driverService.getDriverDetail(id);
+            set({ isLoadingDetail: false });
+            return data?.data ?? null;
+        } catch (err) {
+            const { error } = useAlertReducer.getState();
+            set({
+                errorMessage: err?.response?.data?.message ?? err.message,
+                isLoadingDetail: false,
+            });
+            error(err?.response?.data?.message ?? err.message);
+            return null;
         }
     },
 

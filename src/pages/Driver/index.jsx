@@ -42,18 +42,13 @@ const Driver = () => {
             sort: true,
         },
         {
-            name: "Driver For",
-            selector: "driver_for",
-            width: "180",
+            name: "Nationality",
+            selector: "country",
+            width: "160",
             thclass: "tb-head",
             contentClass: "table-content",
             sort: true,
-            cell: ({ row }) => {
-                const v = Number(row.driver_for);
-                if (v === 2) return "Material";
-                if (v === 1) return "Transport";
-                return row.driver_for ?? "—";
-            },
+            cell: ({ row }) => row.country || "—",
         },
         {
             name: "Contact No",
@@ -70,6 +65,14 @@ const Driver = () => {
             thclass: "tb-head",
             contentClass: "table-content",
             sort: true,
+        },
+        {
+            name: "Ports",
+            selector: "ports",
+            width: "200",
+            thclass: "tb-head",
+            contentClass: "table-content",
+            cell: ({ row }) => row.ports || "—",
         },
         // {
         //     name: "Status",

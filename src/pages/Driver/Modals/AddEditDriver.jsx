@@ -98,8 +98,20 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
 
     const selectedPortIds = useWatch({ control, name: "port_id" }) || [];
 
-    const { countries, fetchAllCountries, addDriver, updateDriver, isBeingUpdated, isLoadingCountries } = useDriverReducer();
+    const {
+        countries,
+        fetchAllCountries,
+        fetchDriverDetail,
+        addDriver,
+        updateDriver,
+        isBeingUpdated,
+        isLoadingCountries,
+        isLoadingDetail,
+    } = useDriverReducer();
     const { ports, getPorts, isLoading: isLoadingPorts } = usePortReducer((s) => s);
+
+    // Edit uses transport_driver_detail (full zawil_passes list); null until it loads.
+    const [driver, setDriver] = useState(null);
 
     useEffect(() => {
         if (showModal) {
@@ -109,41 +121,41 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
     }, [showModal]);
 
     useEffect(() => {
-        if (!showModal) return;
-        setProfileImage(null);
-        setProfileImagePreview((isEdit && (showModal?.avatar_path || showModal?.profileimg)) || userIcon);
-        setZawilByPort(isEdit ? normalizeZawilPasses(showModal?.zawil_passes) : {});
-    }, [showModal, isEdit]);
+        setDriver(null);
+        if (!editId) return;
+        let cancelled = false;
+        fetchDriverDetail(editId).then((detail) => {
+            if (!cancelled) setDriver(detail);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [editId, fetchDriverDetail]);
 
     useEffect(() => {
-        if (showModal && isEdit && !isLoadingCountries && countries) {
-            // Handle port_id: split comma-separated string or convert array
-            let portIds = [];
-            if (showModal?.port_ids && Array.isArray(showModal.port_ids)) {
-                portIds = showModal.port_ids.map(String);
-            } else if (showModal?.port_id) {
-                if (typeof showModal.port_id === 'string') {
-                    portIds = showModal.port_id.split(',').map(id => id.trim());
-                } else {
-                    portIds = [String(showModal.port_id)];
-                }
-            }
+        if (!showModal) return;
+        setProfileImage(null);
+        setProfileImagePreview((isEdit && (driver?.avatar_path || driver?.profileimg)) || userIcon);
+        setZawilByPort(isEdit ? normalizeZawilPasses(driver?.zawil_passes) : {});
+    }, [showModal, isEdit, driver]);
 
+    useEffect(() => {
+        if (showModal && isEdit && driver && !isLoadingCountries && countries) {
             reset({
-                driver_name: showModal?.driver_name || "",
-                employee_no: showModal?.employee_no || "",
-                joining_date: showModal?.joining_date || "",
-                contact_no: showModal?.contact_no || "",
-                email: showModal?.email || "",
-                iqama_no: showModal?.iqama_no || "",
-                location: showModal?.location || "",
-                port_id: portIds,
-                nationality: showModal?.nationality ?? showModal?.country_id ?? "",
+                driver_name: driver.driver_name || "",
+                employee_no: driver.employee_no || "",
+                joining_date: driver.joining_date || "",
+                contact_no: driver.contact_no || "",
+                email: driver.email || "",
+                iqama_no: driver.iqama_no || "",
+                location: driver.location || "",
+                port_id: Array.isArray(driver.port_ids) ? driver.port_ids.map(String) : [],
+                nationality: driver.nationality ?? "",
             });
         } else if (showModal && !isEdit) {
             reset(EMPTY_FORM);
         }
-    }, [showModal, isEdit, reset, isLoadingCountries, countries]);
+    }, [showModal, isEdit, driver, reset, isLoadingCountries, countries]);
 
     const handleImageChange = (e) => {
         const file = e.target.files?.[0];
@@ -597,8 +609,13 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
             <button type="button" className="btn btn-outline" onClick={closeModal} disabled={isBeingUpdated}>
                 Close
             </button>
-            <button type="submit" form="driverForm" className="btn btn-primary" disabled={isBeingUpdated}>
-                {isBeingUpdated ? "Saving..." : "Save"}
+            <button
+                type="submit"
+                form="driverForm"
+                className="btn btn-primary"
+                disabled={isBeingUpdated || (isEdit && !driver)}
+            >
+                {isBeingUpdated ? "Saving..." : isEdit && isLoadingDetail ? "Loading..." : "Save"}
             </button>
         </div>
     );
