@@ -35,6 +35,7 @@ const BP_CURRENCY_OPTIONS = ["SAR", "USD", "EURO"];
 const USD_TO_SAR_RATE = 3.75;
 const SALES_ORDER_PAGE_SIZE = 10;
 const POSH_WORKFLOW_PATTERN = /posh/i;
+const CREW_HUB_WORKFLOW_PATTERN = /crew\s*hub/i;
 const SEND_FOR_SO_APPROVAL_COLUMN_PATTERN = /send for so approval|awaiting so\/pr approval/i;
 const SUBSEA_WORKFLOW_PATTERN = /subsea/i;
 const ZAKHER_WORKFLOW_PATTERN = /zakher/i;
@@ -674,7 +675,9 @@ const SalesOrderList = ({
     opsCompletedStepIndex !== -1 && currentStep != null && currentStep === opsCompletedStepIndex + 2;
   // POSH workflows run the SAIPEM SO approval flow but do not necessarily name that column "SO Sent
   // for approval", so for them the column right after "Ops Completed" is the SO approval column.
-  const isPoshWorkflowCard = POSH_WORKFLOW_PATTERN.test(card?.workflow_name ?? "");
+  // The Crew Hub Operations Flow follows the same column layout and SO approval UI as POSH.
+  const isPoshWorkflowCard =
+    POSH_WORKFLOW_PATTERN.test(card?.workflow_name ?? "") || CREW_HUB_WORKFLOW_PATTERN.test(card?.workflow_name ?? "");
   const isPoshAtSoApprovedColumn =
     isPoshWorkflowCard && opsCompletedStepIndex !== -1 && currentStep === opsCompletedStepIndex + 3;
   // Workflows that have their own "Send for SO Approval" column (e.g. BGP) are matched by that column's
