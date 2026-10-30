@@ -79,9 +79,11 @@ const EMPTY_FORM = {
     nationality: "",
 };
 
-export function DriverModal({ showModal, closeModal, onSuccess }) {
+/** `type` "transport" has per-port Zawil Passes and a profile photo (multipart); "material" is plain JSON. */
+export function DriverModal({ showModal, closeModal, onSuccess, type = "transport" }) {
     const isEdit = !!showModal?.driver_id;
     const editId = showModal?.driver_id;
+    const isTransport = type === "transport";
 
     const [zawilByPort, setZawilByPort] = useState({});
     const [draggingPortId, setDraggingPortId] = useState(null);
@@ -98,8 +100,20 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
 
     const selectedPortIds = useWatch({ control, name: "port_id" }) || [];
 
-    const { countries, fetchAllCountries, addDriver, updateDriver, isBeingUpdated, isLoadingCountries } = useDriverReducer();
+    const {
+        countries,
+        fetchAllCountries,
+        fetchDriverDetail,
+        addDriver,
+        updateDriver,
+        isBeingUpdated,
+        isLoadingCountries,
+        isLoadingDetail,
+    } = useDriverReducer();
     const { ports, getPorts, isLoading: isLoadingPorts } = usePortReducer((s) => s);
+
+    // Edit loads the driver from its detail API (full zawil_passes list); null until it loads.
+    const [driver, setDriver] = useState(null);
 
     useEffect(() => {
         if (showModal) {
@@ -109,41 +123,41 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
     }, [showModal]);
 
     useEffect(() => {
-        if (!showModal) return;
-        setProfileImage(null);
-        setProfileImagePreview((isEdit && (showModal?.avatar_path || showModal?.profileimg)) || userIcon);
-        setZawilByPort(isEdit ? normalizeZawilPasses(showModal?.zawil_passes) : {});
-    }, [showModal, isEdit]);
+        setDriver(null);
+        if (!editId) return;
+        let cancelled = false;
+        fetchDriverDetail(editId, type).then((detail) => {
+            if (!cancelled) setDriver(detail);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [editId, type, fetchDriverDetail]);
 
     useEffect(() => {
-        if (showModal && isEdit && !isLoadingCountries && countries) {
-            // Handle port_id: split comma-separated string or convert array
-            let portIds = [];
-            if (showModal?.port_ids && Array.isArray(showModal.port_ids)) {
-                portIds = showModal.port_ids.map(String);
-            } else if (showModal?.port_id) {
-                if (typeof showModal.port_id === 'string') {
-                    portIds = showModal.port_id.split(',').map(id => id.trim());
-                } else {
-                    portIds = [String(showModal.port_id)];
-                }
-            }
+        if (!showModal) return;
+        setProfileImage(null);
+        setProfileImagePreview((isEdit && (driver?.avatar_path || driver?.profileimg)) || userIcon);
+        setZawilByPort(isEdit ? normalizeZawilPasses(driver?.zawil_passes) : {});
+    }, [showModal, isEdit, driver]);
 
+    useEffect(() => {
+        if (showModal && isEdit && driver && !isLoadingCountries && countries) {
             reset({
-                driver_name: showModal?.driver_name || "",
-                employee_no: showModal?.employee_no || "",
-                joining_date: showModal?.joining_date || "",
-                contact_no: showModal?.contact_no || "",
-                email: showModal?.email || "",
-                iqama_no: showModal?.iqama_no || "",
-                location: showModal?.location || "",
-                port_id: portIds,
-                nationality: showModal?.nationality ?? showModal?.country_id ?? "",
+                driver_name: driver.driver_name || "",
+                employee_no: driver.employee_no || "",
+                joining_date: driver.joining_date || "",
+                contact_no: driver.contact_no || "",
+                email: driver.email || "",
+                iqama_no: driver.iqama_no || "",
+                location: driver.location || "",
+                port_id: Array.isArray(driver.port_ids) ? driver.port_ids.map(String) : [],
+                nationality: driver.nationality ?? "",
             });
         } else if (showModal && !isEdit) {
             reset(EMPTY_FORM);
         }
-    }, [showModal, isEdit, reset, isLoadingCountries, countries]);
+    }, [showModal, isEdit, driver, reset, isLoadingCountries, countries]);
 
     const handleImageChange = (e) => {
         const file = e.target.files?.[0];
@@ -181,19 +195,21 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
             location: data.location,
             joining_date: data.joining_date,
             port_ids: portIds.map(Number),
-            zawil_passes: portIds
-                .filter((portId) => zawilByPort[portId]?.expiry_date)
-                .map((portId) => ({ port_id: Number(portId), expiry_date: zawilByPort[portId].expiry_date })),
+            ...(isTransport && {
+                zawil_passes: portIds
+                    .filter((portId) => zawilByPort[portId]?.expiry_date)
+                    .map((portId) => ({ port_id: Number(portId), expiry_date: zawilByPort[portId].expiry_date })),
+            }),
         };
         const cb = () => {
             closeModal();
             onSuccess?.();
         };
-        const formData = buildRequestBody(payload, zawilByPort, portIds, profileImage);
+        const formData = isTransport ? buildRequestBody(payload, zawilByPort, portIds, profileImage) : payload;
         if (isEdit) {
-            updateDriver({ formData, cb });
+            updateDriver({ formData, cb, type });
         } else {
-            addDriver({ formData, cb });
+            addDriver({ formData, cb, type });
         }
     };
 
@@ -317,23 +333,25 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
             <div className="lead-form">
                 <form id="driverForm" onSubmit={handleSubmit(onSubmit)}>
                     {/* ===== Avatar Upload ===== */}
-                    <div className="d-flex justify-content-center mb-3">
-                        <div className="avatar-outer">
-                            <div className="avatar-wrapper">
-                                <img src={profileImagePreview} alt="Driver Avatar" className="avatar-image" />
+                    {isTransport && (
+                        <div className="d-flex justify-content-center mb-3">
+                            <div className="avatar-outer">
+                                <div className="avatar-wrapper">
+                                    <img src={profileImagePreview} alt="Driver Avatar" className="avatar-image" />
+                                </div>
+                                <label htmlFor="driverAvatarUpload" className="avatar-edit-icon">
+                                    <img src={edit} alt="Edit" className="avatar-edit-pencil" />
+                                </label>
+                                <input
+                                    type="file"
+                                    id="driverAvatarUpload"
+                                    className="d-none"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                />
                             </div>
-                            <label htmlFor="driverAvatarUpload" className="avatar-edit-icon">
-                                <img src={edit} alt="Edit" className="avatar-edit-pencil" />
-                            </label>
-                            <input
-                                type="file"
-                                id="driverAvatarUpload"
-                                className="d-none"
-                                accept="image/*"
-                                onChange={handleImageChange}
-                            />
                         </div>
-                    </div>
+                    )}
 
                     <div className="permInputs row">
                         {/* EMPLOYEE NO */}
@@ -585,7 +603,7 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
                         </div>
 
                         {/* ZAWIL PASS (one expiry date + file per selected port) */}
-                        <div className="col-12">{renderZawilPasses()}</div>
+                        {isTransport && <div className="col-12">{renderZawilPasses()}</div>}
                     </div>
                 </form>
             </div>
@@ -597,8 +615,13 @@ export function DriverModal({ showModal, closeModal, onSuccess }) {
             <button type="button" className="btn btn-outline" onClick={closeModal} disabled={isBeingUpdated}>
                 Close
             </button>
-            <button type="submit" form="driverForm" className="btn btn-primary" disabled={isBeingUpdated}>
-                {isBeingUpdated ? "Saving..." : "Save"}
+            <button
+                type="submit"
+                form="driverForm"
+                className="btn btn-primary"
+                disabled={isBeingUpdated || (isEdit && !driver)}
+            >
+                {isBeingUpdated ? "Saving..." : isEdit && isLoadingDetail ? "Loading..." : "Save"}
             </button>
         </div>
     );

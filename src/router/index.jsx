@@ -378,6 +378,8 @@ const router = createBrowserRouter(
                 { path: "/transport-parties", element: <RouteGuard><TransportParties /></RouteGuard> },
                 // Waste Types
                 { path: "/waste-types", element: <RouteGuard><WasteTypes /></RouteGuard> },
+                // Material Driver Management
+                { path: "/material-driver-management", element: <RouteGuard><Driver key="material" type="material" /></RouteGuard> },
                 // Settings
                 { path: "/settings", element: <RouteGuard><h1>Settings</h1></RouteGuard> },
                 // Vendor Portal

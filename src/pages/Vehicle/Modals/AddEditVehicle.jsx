@@ -1,5 +1,4 @@
-import { useForm, Controller, useWatch } from "react-hook-form";
-import PremiumSelect from "../../../components/form/PremiumSelect";
+import { useForm } from "react-hook-form";
 import { useEffect } from "react";
 import CustomModal from "../../../components/CustomModal";
 import useVehicleReducer from "../../../store/VehicleReducer";
@@ -8,29 +7,20 @@ import "../../../design/scss/modal-designs.scss";
 import "../../../design/scss/form-designs.scss";
 import "../../../design/scss/master-modal-form.scss";
 
-const VEHICLE_PURPOSE_OPTIONS = [
-    { value: "crew_transport", label: "Crew Transport" },
-    { value: "material", label: "Material" },
-];
-
 export function VehicleModal({ showModal, closeModal, onSuccess }) {
     const {
         register,
-        control,
         handleSubmit,
         formState: { errors },
         reset,
     } = useForm({
         defaultValues: {
             vehicle_type: "",
-            vehicle_purpose: "",
             seater: "",
         },
     });
 
     const { addVehicle, updateVehicle, isBeingUpdated } = useVehicleReducer((state) => state);
-    const vehiclePurpose = useWatch({ control, name: "vehicle_purpose" });
-    const showSeater = vehiclePurpose === "crew_transport";
 
     const isEdit = showModal && typeof showModal === "object" && (showModal.vehicle_type_id ?? showModal._id);
     const vehicleTypeId = isEdit ? (showModal.vehicle_type_id ?? showModal._id) : null;
@@ -39,13 +29,11 @@ export function VehicleModal({ showModal, closeModal, onSuccess }) {
         if (isEdit) {
             reset({
                 vehicle_type: showModal?.vehicle_type ?? "",
-                vehicle_purpose: showModal?.vehicle_purpose ?? "",
                 seater: showModal?.seater ?? "",
             });
         } else {
             reset({
                 vehicle_type: "",
-                vehicle_purpose: "",
                 seater: "",
             });
         }
@@ -54,8 +42,8 @@ export function VehicleModal({ showModal, closeModal, onSuccess }) {
     const onSubmit = async (data) => {
         const formData = {
             vehicle_type: data.vehicle_type?.trim() ?? "",
-            vehicle_purpose: data.vehicle_purpose ?? "",
-            seater: showSeater ? (data.seater ?? null) : null,
+            // valueAsNumber turns an empty input into NaN.
+            seater: Number.isNaN(data.seater) || data.seater === "" ? null : data.seater,
         };
 
         const cb = () => {
@@ -108,67 +96,29 @@ export function VehicleModal({ showModal, closeModal, onSuccess }) {
                         )}
                     </div>
 
-                    {/* VEHICLE PURPOSE */}
+                    {/* SEATER */}
                     <div className="form-field">
-                        <div className="phone-wrapper">
-                            <label className="phone-label">
-                                Vehicle Purpose <span className="text-danger">*</span>
-                            </label>
-                            <Controller
-                                name="vehicle_purpose"
-                                control={control}
-                                rules={{ required: "Vehicle purpose is required" }}
-                                render={({ field }) => (
-                                    <PremiumSelect
-                                        value={field.value != null ? String(field.value) : ""}
-                                        onChange={(e) => field.onChange(e.target.value)}
-                                        options={VEHICLE_PURPOSE_OPTIONS}
-                                        placeholder="Select Vehicle Purpose"
-                                        searchPlaceholder="Search vehicle purpose..."
-                                        hasError={Boolean(errors.vehicle_purpose)}
-                                        menuPortalTarget={
-                                            typeof document !== "undefined" ? document.body : null
-                                        }
-                                        menuPosition="fixed"
-                                    />
-                                )}
+                        <div className="form-floating desig-inp">
+                            <input
+                                type="number"
+                                className={`form-control ${errors.seater ? "is-invalid" : ""
+                                    }`}
+                                placeholder="Seater"
+                                min={1}
+                                {...register("seater", {
+                                    valueAsNumber: true,
+                                    validate: (val) =>
+                                        Number.isNaN(val) || val === "" || val > 0 || "Seater must be greater than 0",
+                                })}
                             />
+                            <label>Seater</label>
                         </div>
-                        {errors.vehicle_purpose && (
+                        {errors.seater && (
                             <span className="field-error">
-                                {errors.vehicle_purpose.message}
+                                {errors.seater.message}
                             </span>
                         )}
                     </div>
-
-                    {/* SEATER - Only show when Crew Transport is selected */}
-                    {showSeater && (
-                        <div className="form-field">
-                            <div className="form-floating desig-inp">
-                                <input
-                                    type="number"
-                                    className={`form-control ${errors.seater ? "is-invalid" : ""
-                                        }`}
-                                    placeholder="Seater"
-                                    min={1}
-                                    {...register("seater", {
-                                        required: showSeater ? "Seater is required" : false,
-                                        valueAsNumber: true,
-                                        validate: (val) =>
-                                            !showSeater || val > 0 || "Seater must be greater than 0",
-                                    })}
-                                />
-                                <label>
-                                    Seater <span className="text-danger">*</span>
-                                </label>
-                            </div>
-                            {errors.seater && (
-                                <span className="field-error">
-                                    {errors.seater.message}
-                                </span>
-                            )}
-                        </div>
-                    )}
 
 
                 </form>

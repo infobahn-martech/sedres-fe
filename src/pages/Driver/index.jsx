@@ -9,7 +9,8 @@ import useDriverReducer from "../../store/DriverReducer";
 
 
 
-const Driver = () => {
+/** Driver Management for Transport (default) or Material drivers — `type` picks the APIs. */
+const Driver = ({ type = "transport" }) => {
     const [params, setParams] = useState({
         page: 1,
         search: "",
@@ -42,18 +43,13 @@ const Driver = () => {
             sort: true,
         },
         {
-            name: "Driver For",
-            selector: "driver_for",
-            width: "180",
+            name: "Nationality",
+            selector: "country",
+            width: "160",
             thclass: "tb-head",
             contentClass: "table-content",
             sort: true,
-            cell: ({ row }) => {
-                const v = Number(row.driver_for);
-                if (v === 2) return "Material";
-                if (v === 1) return "Transport";
-                return row.driver_for ?? "—";
-            },
+            cell: ({ row }) => row.country || "—",
         },
         {
             name: "Contact No",
@@ -70,6 +66,14 @@ const Driver = () => {
             thclass: "tb-head",
             contentClass: "table-content",
             sort: true,
+        },
+        {
+            name: "Ports",
+            selector: "ports",
+            width: "200",
+            thclass: "tb-head",
+            contentClass: "table-content",
+            cell: ({ row }) => row.ports || "—",
         },
         // {
         //     name: "Status",
@@ -108,8 +112,8 @@ const Driver = () => {
     const { drivers, totalCount, fetchAllDrivers, deleteDriver, isDeleteLoading } = useDriverReducer();
 
     useEffect(() => {
-        fetchAllDrivers({ params });
-    }, [params, fetchAllDrivers, showDriverModal, showDeleteModal]);
+        fetchAllDrivers({ params, type });
+    }, [params, type, fetchAllDrivers, showDriverModal, showDeleteModal]);
 
     return (
         <>
@@ -154,9 +158,10 @@ const Driver = () => {
 
                     {!!showDriverModal && (
                         <DriverModal
+                            type={type}
                             showModal={showDriverModal}
                             closeModal={() => setShowDriverModal(false)}
-                            onSuccess={() => fetchAllDrivers({ params })}
+                            onSuccess={() => fetchAllDrivers({ params, type })}
                         />
                     )}
                     {!!showDeleteModal && (

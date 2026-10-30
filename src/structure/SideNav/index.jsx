@@ -524,6 +524,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       isOpen: false,
       subMenus: [
         // { menu: 'Material Types', to: '/material-type', hasPermission: true },
+        { menu: 'Driver Management', to: '/material-driver-management', hasPermission: true },
         { menu: 'Waste Types', to: '/waste-types', hasPermission: true },
         { menu: 'Packaging Types', to: '/packing-type', hasPermission: true },
         { menu: 'Logistics Warehouses', to: '/logistics-warehouse', hasPermission: true },

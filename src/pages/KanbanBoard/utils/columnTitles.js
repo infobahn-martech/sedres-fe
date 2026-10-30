@@ -73,10 +73,11 @@ const ZAMIL_ONE_CARD_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
 
 export const isSubseaWorkflow = (workflow) => SUBSEA_WORKFLOW_PATTERN.test(String(workflow?.title ?? ""));
 
-const DEFAULT_DA_WORKFLOW_PATTERN = /default/i;
 const DEFAULT_DA_ONE_CARD_COLUMN_PATTERN = /^(ar\s+invoices?\s+issued|ready\s+for\s+submission)$/i;
 
-export const isDefaultDaWorkflow = (workflow) => DEFAULT_DA_WORKFLOW_PATTERN.test(String(workflow?.title ?? ""));
+const DA_DEFAULT_WORKFLOW_PATTERN = /default.*\bda\b|\bda\b.*default/i;
+
+export const isDaDefaultWorkflow = (workflow) => DA_DEFAULT_WORKFLOW_PATTERN.test(String(workflow?.title ?? ""));
 
 /* POSH DA requests the PO and sends the invoice one card at a time, so only one card in
    "AR Invoices Issued" or "PO Received" can stay ticked. The POs are uploaded in bulk, so
@@ -89,6 +90,6 @@ export const isPoshOneCardColumn = (workflow, columnTitle) => {
     (POSH_WORKFLOW_PATTERN.test(String(workflow?.title ?? "")) && POSH_ONE_CARD_COLUMN_PATTERN.test(title)) ||
     (isSubseaWorkflow(workflow) && SUBSEA_ONE_CARD_COLUMN_PATTERN.test(title)) ||
     (isZamilWorkflow(workflow) && ZAMIL_ONE_CARD_COLUMN_PATTERN.test(title)) ||
-    (isDefaultDaWorkflow(workflow) && DEFAULT_DA_ONE_CARD_COLUMN_PATTERN.test(title))
+    (isDaDefaultWorkflow(workflow) && DEFAULT_DA_ONE_CARD_COLUMN_PATTERN.test(title))
   );
 };

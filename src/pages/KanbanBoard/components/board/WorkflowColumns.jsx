@@ -24,7 +24,7 @@ import useFinalInvoiceStore from "@/store/finalInvoiceStore";
 import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isDefaultDaWorkflow, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
+import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -53,8 +53,8 @@ const isBatchCreateWorkflow = (workflow) => {
 const isBacklogColumn = (column) =>
   String(column?.title ?? "").trim().toLowerCase() === BATCH_ACTION_COLUMN;
 
-/* Zamil Marine and BGP create no batches from Backlog, so their Backlog column header carries no batch icon. */
-const NO_BATCH_ACTION_WORKFLOW_PATTERN = /zamil.*marine|bgp/i;
+/* Zamil Marine creates no batches from Backlog, so its Backlog column header carries no batch icon. */
+const NO_BATCH_ACTION_WORKFLOW_PATTERN = /zamil.*marine/i;
 
 /* Batches are created on the DA board only; Operations boards show no batch icon in Backlog. */
 const hasBatchAction = (boardId, workflow, ...columns) =>
@@ -152,17 +152,17 @@ const getInvoiceAction = (workflow, column) => {
     if (POSH_REQUESTED_PO_COLUMN_PATTERN.test(title)) return "uploadPos";
     if (PO_RECEIVED_COLUMN_PATTERN.test(title)) return "sendInvoice";
   }
-  /* Subsea 7 DA uploads the SAP invoices for the cards the user ticks on "Ready to post in SAP". */
-  if (isSubseaWorkflow(workflow) && READY_FOR_POSTING_IN_SAP_COLUMN_PATTERN.test(title)) return "issueArInvoice";
+  /* Subsea 7 DA and the DA Default workflow upload the SAP invoices for the cards the user ticks on "Ready to post in SAP". */
+  if ((isSubseaWorkflow(workflow) || isDaDefaultWorkflow(workflow)) && READY_FOR_POSTING_IN_SAP_COLUMN_PATTERN.test(title)) return "issueArInvoice";
   /* Subsea 7 DA sends the final invoice for the one ticked card from "AR Invoices Issued". */
   if (isSubseaWorkflow(workflow) && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "sendInvoice";
   /* Zamil Crew and Zamil Marine DA send the final invoice for the one ticked card from "AR Invoice Issued". */
   if (isZamilWorkflow(workflow) && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "sendInvoice";
   /* Default DA checks the invoice pages of the one ticked card on "AR Invoice Issued". */
-  if (isDefaultDaWorkflow(workflow) && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "checkInvoice";
+  if (isDaDefaultWorkflow(workflow) && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "checkInvoice";
   /* Default DA submits the one ticked card's final invoice from "Ready for Submission": by email (second button)
      or through the portal (main button, which takes the dispatch proof). */
-  if (isDefaultDaWorkflow(workflow) && READY_FOR_SUBMISSION_COLUMN_PATTERN.test(title)) return "submitViaPortal";
+  if (isDaDefaultWorkflow(workflow) && READY_FOR_SUBMISSION_COLUMN_PATTERN.test(title)) return "submitViaPortal";
   if (!isBatchWorkflow(workflow)) {
     return AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title) ? "enterServiceSheetNo" : null;
   }
@@ -173,8 +173,8 @@ const getInvoiceAction = (workflow, column) => {
 };
 
 const POSH_WORKFLOW_PATTERN = /posh/i;
-/* POSH, BGP and Subsea 7 workflows name the "Issue AR Invoice" column action "Upload SAP Invoices". */
-const SAP_INVOICES_LABEL_WORKFLOW_PATTERN = /posh|bgp|subsea|zamil.*marine/i;
+/* POSH, BGP, Subsea 7 and the DA Default workflow name the "Issue AR Invoice" column action "Upload SAP Invoices". */
+const SAP_INVOICES_LABEL_WORKFLOW_PATTERN = /posh|bgp|subsea|zamil.*marine|default.*\bda\b|\bda\b.*default/i;
 const ISSUE_AR_INVOICE_SAP_LABEL = "Upload SAP Invoices";
 
 const INVOICE_ACTION_BUTTONS = {
