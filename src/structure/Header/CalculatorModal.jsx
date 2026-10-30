@@ -12,7 +12,9 @@ import {
   endsWithOperator,
   evaluate,
   formatNumber,
+  groupDigits,
   isOperandEnd,
+  numberToWords,
   openParenCount,
   prettify,
   splitLastOperand,
@@ -256,9 +258,10 @@ function CalculatorModal({ show, onClose }) {
   const previewText = Number.isFinite(preview) ? formatNumber(preview) : '';
   const currentValue = state.answer !== null ? parseFloat(state.answer) : Number.isFinite(preview) ? preview : null;
 
-  let expressionLine = previewText && previewText !== state.expr ? `= ${previewText}` : '';
+  let expressionLine = previewText && previewText !== state.expr ? `= ${groupDigits(previewText)}` : '';
   if (state.answer !== null || state.error) expressionLine = `${prettify(state.lastExpression)} =`;
-  const valueLine = state.error ? 'Error' : state.answer ?? (prettify(state.expr) || '0');
+  const valueLine = state.error ? 'Error' : state.answer !== null ? groupDigits(state.answer) : prettify(state.expr) || '0';
+  const amountInWords = currentValue === null ? '' : numberToWords(currentValue);
   const activeOperator = state.answer === null ? state.expr.slice(-1) : null;
 
   const handleMemoryAdd = (sign) => {
@@ -312,7 +315,7 @@ function CalculatorModal({ show, onClose }) {
 
           <div className="calculator-display" aria-live="polite">
             <div className="calculator-flags">
-              {memory !== null && <span title={`Memory: ${formatNumber(memory)}`}>M</span>}
+              {memory !== null && <span title={`Memory: ${groupDigits(formatNumber(memory))}`}>M</span>}
               {isScientific && <span title="Angle unit">{angleUnit.toUpperCase()}</span>}
             </div>
             <div className="calculator-expression" title={expressionLine}>{expressionLine || ' '}</div>
@@ -323,6 +326,7 @@ function CalculatorModal({ show, onClose }) {
             >
               {valueLine}
             </div>
+            <div className="calculator-words" title={amountInWords}>{amountInWords || ' '}</div>
           </div>
 
           {showHistory ? (
@@ -343,7 +347,7 @@ function CalculatorModal({ show, onClose }) {
                     <li key={entry.id}>
                       <button type="button" className="calculator-history-item" onClick={() => handleHistorySelect(entry)}>
                         <span className="calculator-history-expression">{prettify(entry.expression)} =</span>
-                        <span className="calculator-history-result">{entry.result}</span>
+                        <span className="calculator-history-result">{groupDigits(entry.result)}</span>
                       </button>
                     </li>
                   ))}

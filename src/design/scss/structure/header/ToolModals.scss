@@ -502,6 +502,17 @@
       font-size: 24px;
     }
   }
+
+  .calculator-words {
+    min-height: 16px;
+    margin-top: 2px;
+    overflow: hidden;
+    font-size: 11px;
+    line-height: 16px;
+    color: rgba(255, 255, 255, 0.72);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .calculator-memory {

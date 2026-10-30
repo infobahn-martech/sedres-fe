@@ -202,6 +202,12 @@ export function evaluate(expr, { angleUnit = 'rad' } = {}) {
   }
 }
 
+// Adds Indian-style separators (12,34,567) to the integer part of every number;
+// fractions and exponents (1.23456e-7, 1e+21) are left untouched.
+export const groupDigits = (text) =>
+  text.replace(/(\d+)(\.\d*)?(e[+-]?\d+)?/g, (_, int, frac = '', exp = '') =>
+    int.replace(/(\d)(?=(\d\d)+\d$)/g, '$1,') + frac + exp);
+
 export function prettify(expr) {
   let out = '';
   for (let i = 0; i < expr.length; i += 1) {
@@ -210,5 +216,44 @@ export function prettify(expr) {
     const isBinary = '+-*/'.includes(ch) && i > 0 && isOperandEnd(expr.slice(0, i));
     out += isBinary ? ` ${symbol} ` : symbol;
   }
-  return out;
+  return groupDigits(out);
+}
+
+const ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+  'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+const TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+const MAX_WORD_DIGITS = 15;
+const DIGIT_WORDS = ['Zero', ...ONES.slice(1, 10)];
+
+const hundredsToWords = (n) => {
+  const words = [];
+  if (n >= 100) words.push(`${ONES[Math.floor(n / 100)]} Hundred`);
+  const rest = n % 100;
+  if (rest >= 20) words.push(TENS[Math.floor(rest / 10)] + (rest % 10 ? `-${ONES[rest % 10]}` : ''));
+  else if (rest) words.push(ONES[rest]);
+  return words.join(' ');
+};
+
+// Indian system: crore (10^7), lakh (10^5), thousand; crores above 99 recurse ("One Thousand Crore").
+const integerToWords = (n) => {
+  const parts = [];
+  if (n >= 1e7) parts.push(`${integerToWords(Math.floor(n / 1e7))} Crore`);
+  const lakh = Math.floor((n % 1e7) / 1e5);
+  const thousand = Math.floor((n % 1e5) / 1000);
+  if (lakh) parts.push(`${hundredsToWords(lakh)} Lakh`);
+  if (thousand) parts.push(`${hundredsToWords(thousand)} Thousand`);
+  if (n % 1000) parts.push(hundredsToWords(n % 1000));
+  return parts.join(' ');
+};
+
+// "350000" → "Three Lakh Fifty Thousand"; '' when the value is too large or in exponent form.
+export function numberToWords(value) {
+  const text = typeof value === 'number' ? formatNumber(value) : String(value);
+  const match = text.match(/^(-)?(\d+)(?:\.(\d+))?$/);
+  if (!match || match[2].length > MAX_WORD_DIGITS) return '';
+  const [, minus, int, frac] = match;
+
+  let words = integerToWords(Number(int)) || 'Zero';
+  if (frac) words += ` Point ${[...frac].map((d) => DIGIT_WORDS[d]).join(' ')}`;
+  return minus ? `Minus ${words}` : words;
 }
