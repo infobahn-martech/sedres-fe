@@ -15,8 +15,8 @@ const MCDERMOTT_WORKFLOW_PATTERN = /mcdermott|bgp|zamil/i;
 /* Compared on letters only, so stray spaces, punctuation or invisible characters in the live
    column title don't hide the "Request PO" button. */
 const REQUESTED_PO_COLUMN_PATTERN = /^requested\s+po$/i;
-/* BGP batches in "Submit by Email" send the invoice submission email from the header. */
-const BGP_WORKFLOW_PATTERN = /bgp/i;
+/* BGP and Lamprell Saudi batches in "Submit by Email" send the invoice submission email from the header. */
+const SUBMIT_BY_EMAIL_WORKFLOW_PATTERN = /bgp|lamprell\s*saudi/i;
 const SUBMIT_BY_EMAIL_COLUMN_PATTERN = /^submit\s+by\s+email$/i;
 /* Zamil Crew batches in "Convert to AR Invoice" upload their invoices from the header, for the batch's ticked cards. */
 const ZAMIL_WORKFLOW_PATTERN = /zamil/i;
@@ -71,7 +71,7 @@ export default function BatchGroup({
     CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   const isSubmitByEmailBatch =
     !isUngrouped &&
-    BGP_WORKFLOW_PATTERN.test(workflowTitle ?? "") &&
+    SUBMIT_BY_EMAIL_WORKFLOW_PATTERN.test(workflowTitle ?? "") &&
     SUBMIT_BY_EMAIL_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches already emailed for SE creation sit in "Awaiting SE" (live title "Awaiting for SE"). */
   const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
