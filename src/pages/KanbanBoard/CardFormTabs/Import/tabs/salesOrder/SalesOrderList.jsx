@@ -40,9 +40,8 @@ const SEND_FOR_SO_APPROVAL_COLUMN_PATTERN = /send for so approval|awaiting so\/p
 const SUBSEA_WORKFLOW_PATTERN = /subsea/i;
 const ZAKHER_WORKFLOW_PATTERN = /zakher/i;
 const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil\s*marine/i;
-const AWAITING_SRT_COLUMN_PATTERN = /awaiting srt/i;
-const SRT_REQUESTED_COLUMN_PATTERN = /srt requested/i;
-const SRT_RECEIVED_COLUMN_PATTERN = /^\s*srt received\s*$|srt requested/i;
+const AWAITING_SRT_COLUMN_PATTERN = /awaiting srt|srt requested/i;
+const SRT_RECEIVED_COLUMN_PATTERN = /srt rec(?:ie|ei)ved/i;
 const PR_RECEIVED_COLUMN_PATTERN = /pr received/i;
 /* "Upload Approved SO" runs for the POSH workflow and for workflows with a "Send for SO Approval" column. da/da_upload_so_approval_proof takes the
    approved SO as `proof` (required) and the SO email as `approval_email`; the field names are the
@@ -696,16 +695,11 @@ const SalesOrderList = ({
   // Zamil Marine sends "Send For PR" from the column after "Ops Completed"; it has no approve / reject step
   // and uses its own service for the line item and email calls.
   const salesLineItemService = isZamilMarineWorkflowCard ? zamilMarineService : daService;
-  // Workflows without an "Awaiting SRT" column send the request from the column right before "SRT requested".
-  const srtRequestedStepIndex = Array.isArray(stepLabels)
-    ? stepLabels.findIndex((label) => SRT_REQUESTED_COLUMN_PATTERN.test(label || ""))
-    : -1;
   const isAtAwaitingSrtColumn =
     isSubseaWorkflowCard &&
     Array.isArray(stepLabels) &&
     currentStep != null &&
-    (AWAITING_SRT_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "") ||
-      (srtRequestedStepIndex > 0 && currentStep === srtRequestedStepIndex));
+    AWAITING_SRT_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
   // Once the request is sent the card sits on "SRT Received", where the signed SRT is uploaded.
   const isAtSrtReceivedColumn =
     isSubseaWorkflowCard &&
