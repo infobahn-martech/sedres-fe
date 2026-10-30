@@ -79,7 +79,7 @@ const EMPTY_FORM = {
     nationality: "",
 };
 
-/** `type` "transport" has per-port Zawil Passes and a profile photo (multipart); "material" is plain JSON. */
+/** Both types send multipart with a profile photo; only "transport" has per-port Zawil Passes. */
 export function DriverModal({ showModal, closeModal, onSuccess, type = "transport" }) {
     const isEdit = !!showModal?.driver_id;
     const editId = showModal?.driver_id;
@@ -205,7 +205,7 @@ export function DriverModal({ showModal, closeModal, onSuccess, type = "transpor
             closeModal();
             onSuccess?.();
         };
-        const formData = isTransport ? buildRequestBody(payload, zawilByPort, portIds, profileImage) : payload;
+        const formData = buildRequestBody(payload, zawilByPort, isTransport ? portIds : [], profileImage);
         if (isEdit) {
             updateDriver({ formData, cb, type });
         } else {
@@ -333,25 +333,23 @@ export function DriverModal({ showModal, closeModal, onSuccess, type = "transpor
             <div className="lead-form">
                 <form id="driverForm" onSubmit={handleSubmit(onSubmit)}>
                     {/* ===== Avatar Upload ===== */}
-                    {isTransport && (
-                        <div className="d-flex justify-content-center mb-3">
-                            <div className="avatar-outer">
-                                <div className="avatar-wrapper">
-                                    <img src={profileImagePreview} alt="Driver Avatar" className="avatar-image" />
-                                </div>
-                                <label htmlFor="driverAvatarUpload" className="avatar-edit-icon">
-                                    <img src={edit} alt="Edit" className="avatar-edit-pencil" />
-                                </label>
-                                <input
-                                    type="file"
-                                    id="driverAvatarUpload"
-                                    className="d-none"
-                                    accept="image/*"
-                                    onChange={handleImageChange}
-                                />
+                    <div className="d-flex justify-content-center mb-3">
+                        <div className="avatar-outer">
+                            <div className="avatar-wrapper">
+                                <img src={profileImagePreview} alt="Driver Avatar" className="avatar-image" />
                             </div>
+                            <label htmlFor="driverAvatarUpload" className="avatar-edit-icon">
+                                <img src={edit} alt="Edit" className="avatar-edit-pencil" />
+                            </label>
+                            <input
+                                type="file"
+                                id="driverAvatarUpload"
+                                className="d-none"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                            />
                         </div>
-                    )}
+                    </div>
 
                     <div className="permInputs row">
                         {/* EMPLOYEE NO */}
