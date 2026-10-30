@@ -41,13 +41,17 @@ const isBatchWorkflow = (workflow) => {
   return BATCH_ACTION_WORKFLOWS.some((name) => workflowTitle.includes(name));
 };
 
-/* McDermott, BGP and Zamil Crew DA create batches from Backlog the same way; the backend moves them to
-   its next column. The SAIPEM invoice/SE steps after Backlog stay SAIPEM-only (isBatchWorkflow). */
+/* McDermott, BGP, Zamil Crew and Lamprell Saudi DA create batches from Backlog the same way; the backend moves
+   them to its next column. The SAIPEM invoice/SE steps after Backlog stay SAIPEM-only (isBatchWorkflow). */
 const BATCH_CREATE_WORKFLOWS = [...BATCH_ACTION_WORKFLOWS, "MCDERMOTT", "BGP", "ZAMIL"];
+const LAMPRELL_SAUDI_WORKFLOW_PATTERN = /lamprell\s*saudi/i;
 
 const isBatchCreateWorkflow = (workflow) => {
   const workflowTitle = String(workflow?.title ?? "").trim().toUpperCase();
-  return BATCH_CREATE_WORKFLOWS.some((name) => workflowTitle.includes(name));
+  return (
+    BATCH_CREATE_WORKFLOWS.some((name) => workflowTitle.includes(name)) ||
+    LAMPRELL_SAUDI_WORKFLOW_PATTERN.test(workflowTitle)
+  );
 };
 
 const isBacklogColumn = (column) =>
@@ -173,8 +177,8 @@ const getInvoiceAction = (workflow, column) => {
 };
 
 const POSH_WORKFLOW_PATTERN = /posh/i;
-/* POSH, BGP, Subsea 7 and the DA Default workflow name the "Issue AR Invoice" column action "Upload SAP Invoices". */
-const SAP_INVOICES_LABEL_WORKFLOW_PATTERN = /posh|bgp|subsea|zamil.*marine|default.*\bda\b|\bda\b.*default/i;
+/* POSH, BGP, Subsea 7, Lamprell Saudi and the DA Default workflow name the "Issue AR Invoice" column action "Upload SAP Invoices". */
+const SAP_INVOICES_LABEL_WORKFLOW_PATTERN = /posh|bgp|subsea|lamprell\s*saudi|zamil.*marine|default.*\bda\b|\bda\b.*default/i;
 const ISSUE_AR_INVOICE_SAP_LABEL = "Upload SAP Invoices";
 
 const INVOICE_ACTION_BUTTONS = {

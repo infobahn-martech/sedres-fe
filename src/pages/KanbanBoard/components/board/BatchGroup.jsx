@@ -10,8 +10,8 @@ const noop = () => {};
 const EMPTY_SELECTED_IDS = [];
 const AWAITING_SE_COLUMN_PATTERN = /^awaiting\s+(for\s+)?se$/i;
 const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
-/* McDermott, BGP and Zamil Crew batches skip SAIPEM's SE steps, so their header has no SE actions. */
-const MCDERMOTT_WORKFLOW_PATTERN = /mcdermott|bgp|zamil/i;
+/* McDermott, BGP, Zamil Crew and Lamprell Saudi batches skip SAIPEM's SE steps, so their header has no SE actions. */
+const MCDERMOTT_WORKFLOW_PATTERN = /mcdermott|bgp|zamil|lamprell\s*saudi/i;
 /* Compared on letters only, so stray spaces, punctuation or invisible characters in the live
    column title don't hide the "Request PO" button. */
 const REQUESTED_PO_COLUMN_PATTERN = /^requested\s+po$/i;
