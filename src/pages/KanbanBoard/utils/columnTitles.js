@@ -55,6 +55,14 @@ const UPLOADED_TO_PORTAL_COLUMN_PATTERN =
 export const isUploadedToPortalColumnTitle = (title) =>
   UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(String(title ?? "").trim());
 
+const BGP_WORKFLOW_PATTERN = /bgp/i;
+const DISPATCH_HARD_COPIES_COLUMN_PATTERN = /^dispatch\s+the\s+hard\s+copies$/i;
+
+/* BGP's "Dispatch the Hard Copies" keeps multi-select: one dispatch proof is attached to every ticked card. */
+export const isMultiCardDispatchProofColumn = (workflow, columnTitle) =>
+  BGP_WORKFLOW_PATTERN.test(String(workflow?.title ?? "")) &&
+  DISPATCH_HARD_COPIES_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
 const POSH_WORKFLOW_PATTERN = /posh/i;
 const POSH_ONE_CARD_COLUMN_PATTERN = /^(ar\s+invoices?\s+issued|po\s+received)$/i;
 

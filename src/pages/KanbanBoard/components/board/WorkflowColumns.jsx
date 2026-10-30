@@ -24,7 +24,7 @@ import useFinalInvoiceStore from "@/store/finalInvoiceStore";
 import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isDefaultDaWorkflow, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
+import { isDefaultDaWorkflow, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -511,7 +511,7 @@ export default function WorkflowColumns({
                 invoiceAction === "requestPo" ||
                 invoiceAction === "checkInvoice" ||
                 invoiceAction === "submitViaPortal" ||
-                (invoiceAction === "uploadDispatchProof" && !isLntWorkflow(workflow))
+                (invoiceAction === "uploadDispatchProof" && !isLntWorkflow(workflow) && !isMultiCardDispatchProofColumn(workflow, firstColumn?.title))
                   ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
               const invoiceActionHandlers = {
                 upload: onColumnUploadInvoice,
