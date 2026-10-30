@@ -160,6 +160,8 @@ const getStepLabelsFromColumns = (columns, columnOrder) => {
 // independently by admins, so "Ops completed" vs "Ops Completed " shouldn't fail to match.
 const normalizeLabelForMatch = (value) => String(value ?? "").trim().toLowerCase();
 
+const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil\s*marine/i;
+
 // Helper function to map step label to column ID (column.id for moveCardToColumn)
 const getColumnIdFromStepLabel = (stepLabel, columns, columnOrder) => {
   if (!columns) return null;
@@ -2884,7 +2886,9 @@ function CardForm({
       // DA-style department boards (Jubail Operations, Rastanura-Dammam, etc.) reached via
       // isDAModule's route match but not flagged isDaCardContext (not boardId "3" and not an
       // explicit "da" card variant).
-      if (!(isDaCardContext || isDAModule || isPortOperatorDAAccess) || isAdvancingStage) return;
+      // Zamil Marine cards (Jubail Marine board) match none of the DA flags above; their workflow name marks them.
+      const isZamilMarineWorkflowCard = ZAMIL_MARINE_WORKFLOW_PATTERN.test(card?.workflow_name ?? "");
+      if (!(isDaCardContext || isDAModule || isPortOperatorDAAccess || isZamilMarineWorkflowCard) || isAdvancingStage) return;
       const statusId = target?.statusId;
       const statusName = target?.label;
       const callIdRaw = card?.call_id ?? card?.callId;
