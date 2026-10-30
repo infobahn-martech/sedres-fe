@@ -86,7 +86,7 @@ const CONVERT_TO_AR_INVOICE_COLUMN_PATTERN = /^convert\s+to\s+ar\s+invoices?$/i;
 const READY_FOR_POSTING_IN_SAP_COLUMN_PATTERN = /^ready\s+(to|for)\s+post(ing)?\s+in\s+sap$/i;
 
 /* L&T DA: "Ready for Dispatch" downloads the ticked cards' invoice PDF and XML files as a zip. */
-const READY_FOR_SUBMISSION_COLUMN_PATTERN = /^ready\s+for\s+submission$/i;
+const READY_FOR_SUBMISSION_COLUMN_PATTERN = /^(ready\s+for\s+submission|submit\s+invoice)$/i;
 const READY_FOR_DISPATCH_COLUMN_PATTERN = /^ready\s+for\s+dispatch$/i;
 
 /* L&T DA: "To be Uploaded to the Portal" shows "Move the Cards", which moves the ticked cards to the next
