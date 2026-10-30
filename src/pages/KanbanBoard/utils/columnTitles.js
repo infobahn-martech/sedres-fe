@@ -73,7 +73,7 @@ const ZAMIL_ONE_CARD_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
 
 export const isSubseaWorkflow = (workflow) => SUBSEA_WORKFLOW_PATTERN.test(String(workflow?.title ?? ""));
 
-const DEFAULT_DA_ONE_CARD_COLUMN_PATTERN = /^(ar\s+invoices?\s+issued|ready\s+for\s+submission)$/i;
+const DEFAULT_DA_ONE_CARD_COLUMN_PATTERN = /^(ar\s+invoices?\s+issued|ready\s+for\s+submission|submit\s+invoice)$/i;
 
 const DA_DEFAULT_WORKFLOW_PATTERN = /default.*\bda\b|\bda\b.*default/i;
 
