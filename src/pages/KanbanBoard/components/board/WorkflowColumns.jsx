@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
-import { FiArrowRight, FiChevronDown, FiDownload, FiEdit3, FiFileText, FiSend, FiUpload, FiUploadCloud } from "react-icons/fi";
+import { FiArrowRight, FiChevronDown, FiDownload, FiEdit3, FiFileText, FiMail, FiSend, FiUpload, FiUploadCloud } from "react-icons/fi";
 import { MdCallMerge } from "react-icons/md";
 import { KANBAN_DND_DISABLED, DA_DESK_BOARD_ID } from "@/shared/constants/kanbanConfig";
 import ColumnHeader from "./ColumnHeader";
@@ -20,10 +20,11 @@ import useBatchMoveStore from "@/store/batchMoveStore";
 import useExportApprovalStatusStore from "@/store/exportApprovalStatusStore";
 import useSignatureCheckStore from "@/store/signatureCheckStore";
 import useServiceSheetStore from "@/store/serviceSheetStore";
+import useFinalInvoiceStore from "@/store/finalInvoiceStore";
 import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isUploadedToPortalColumnTitle, isDaDefaultWorkflow } from "../../utils/columnTitles";
+import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -85,6 +86,7 @@ const CONVERT_TO_AR_INVOICE_COLUMN_PATTERN = /^convert\s+to\s+ar\s+invoices?$/i;
 const READY_FOR_POSTING_IN_SAP_COLUMN_PATTERN = /^ready\s+(to|for)\s+post(ing)?\s+in\s+sap$/i;
 
 /* L&T DA: "Ready for Dispatch" downloads the ticked cards' invoice PDF and XML files as a zip. */
+const READY_FOR_SUBMISSION_COLUMN_PATTERN = /^ready\s+for\s+submission$/i;
 const READY_FOR_DISPATCH_COLUMN_PATTERN = /^ready\s+for\s+dispatch$/i;
 
 /* L&T DA: "To be Uploaded to the Portal" shows "Move the Cards", which moves the ticked cards to the next
@@ -156,6 +158,11 @@ const getInvoiceAction = (workflow, column) => {
   if (isSubseaWorkflow(workflow) && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "sendInvoice";
   /* Zamil Crew and Zamil Marine DA send the final invoice for the one ticked card from "AR Invoice Issued". */
   if (isZamilWorkflow(workflow) && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "sendInvoice";
+  /* Default DA checks the invoice pages of the one ticked card on "AR Invoice Issued". */
+  if (isDaDefaultWorkflow(workflow) && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "checkInvoice";
+  /* Default DA submits the one ticked card's final invoice from "Ready for Submission": by email (second button)
+     or through the portal (main button, which takes the dispatch proof). */
+  if (isDaDefaultWorkflow(workflow) && READY_FOR_SUBMISSION_COLUMN_PATTERN.test(title)) return "submitViaPortal";
   if (!isBatchWorkflow(workflow)) {
     return AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title) ? "enterServiceSheetNo" : null;
   }
@@ -186,6 +193,9 @@ const INVOICE_ACTION_BUTTONS = {
   uploadZamilMarinePo: { label: "Upload PO", icon: <FiUploadCloud size={16} aria-hidden /> },
   enterServiceSheetNo: { label: "Enter Service Sheet No", icon: <FiFileText size={16} aria-hidden /> },
   checkSignatures: { label: "Check Signatures", icon: <FiEdit3 size={16} aria-hidden /> },
+  checkInvoice: { label: "Check Invoice", icon: <FiFileText size={16} aria-hidden /> },
+  submitViaPortal: { label: "Submit via Portal", icon: <FiUploadCloud size={16} aria-hidden /> },
+  submitViaEmail: { label: "Submit via Email", icon: <FiMail size={16} aria-hidden /> },
   merge: { label: "Merge Invoice", icon: <MdCallMerge size={16} aria-hidden /> },
   prepareSubmission: { label: "Create Submission Documents", icon: <FiDownload size={16} aria-hidden /> },
   sendSubmission: { label: "Send For Final Submission", icon: <FiSend size={16} aria-hidden /> },
@@ -304,6 +314,12 @@ export default function WorkflowColumns({
 
   const openSignatureCheckModal = useSignatureCheckStore((state) => state.openSignatureCheckModal);
   const openServiceSheetModal = useServiceSheetStore((state) => state.openServiceSheetModal);
+  const openFinalInvoiceModal = useFinalInvoiceStore((state) => state.openFinalInvoiceModal);
+
+  const handleCheckInvoice = async ([card]) => {
+    const errorMessage = await openFinalInvoiceModal({ call_id: Number(card.callId), card_id: Number(card.id) });
+    if (errorMessage) useAlertReducer.getState().error(errorMessage);
+  };
   const openZamilMarinePoRequestModal = useZamilMarinePoRequestStore((state) => state.openPoRequestEmailModal);
 
   const openZamilMarinePoUploadModal = useZamilMarinePoUploadStore((state) => state.openPoUploadModal);
@@ -484,10 +500,18 @@ export default function WorkflowColumns({
                   onClick: () => onColumnSendSubmission?.(submissionSendCards),
                 };
               }
+              if (invoiceAction === "submitViaPortal") {
+                sendSubmissionAction = {
+                  ...INVOICE_ACTION_BUTTONS.submitViaEmail,
+                  onClick: () => onColumnSendInvoice?.(invoiceCards[0], { isFinalInvoice: true }),
+                };
+              }
               const hasInvoiceButton =
                 invoiceAction === "sendInvoice" ||
                 invoiceAction === "requestPo" ||
-                (invoiceAction === "uploadDispatchProof" && !isLntWorkflow(workflow))
+                invoiceAction === "checkInvoice" ||
+                invoiceAction === "submitViaPortal" ||
+                (invoiceAction === "uploadDispatchProof" && !isLntWorkflow(workflow) && !isMultiCardDispatchProofColumn(workflow, firstColumn?.title))
                   ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
               const invoiceActionHandlers = {
                 upload: onColumnUploadInvoice,
@@ -516,6 +540,8 @@ export default function WorkflowColumns({
                 downloadInvoices: onColumnDownloadInvoices,
                 uploadDispatchProof: onUploadDispatchProof,
                 moveCards: onColumnMoveCards,
+                checkInvoice: handleCheckInvoice,
+                submitViaPortal: onUploadDispatchProof,
                 checkSignatures: (cards) =>
                   openSignatureCheckModal(
                     cards

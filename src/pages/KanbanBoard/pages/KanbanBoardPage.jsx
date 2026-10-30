@@ -17,9 +17,10 @@ import ArInvoiceReviewModal from "../components/board/ArInvoiceReviewModal";
 import SignatureCheckModal from "../components/board/SignatureCheckModal";
 import PoReviewModal from "../components/board/PoReviewModal";
 import ServiceSheetModal from "../components/board/ServiceSheetModal";
+import FinalInvoiceModal from "../components/board/FinalInvoiceModal";
 import SccReviewModal from "../components/board/SccReviewModal";
 import DispatchProofReviewModal from "../components/board/DispatchProofReviewModal";
-import { isLntWorkflow, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
+import { isLntWorkflow, isMultiCardDispatchProofColumn, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -85,6 +86,14 @@ const dispatchProofUploadFields = [
     name: DISPATCH_PROOF_FIELD_NAME,
     formatsHint: "Any file type",
     multiple: false,
+  },
+];
+/* BGP's "Dispatch the Hard Copies" takes any number of files of any type for the ticked cards. */
+const multiDispatchProofUploadFields = [
+  {
+    name: DISPATCH_PROOF_FIELD_NAME,
+    formatsHint: "Any file type",
+    multiple: true,
   },
 ];
 /* L&T uploads the proofs of all ticked cards at once (PDFs only) and confirms them in a review. */
@@ -1729,6 +1738,16 @@ export default function KanbanBoardPage() {
     [workflows, cardsById]
   );
 
+  const isMultiCardDispatchProofUpload = useCallback(
+    (cards) =>
+      cards.some((card) => {
+        const boardCard = cardsById[card.id];
+        const workflow = workflows.find((wf) => String(wf.id) === String(boardCard?.workflow_id));
+        return isMultiCardDispatchProofColumn(workflow, workflow?.columns?.[boardCard?.columnId]?.title);
+      }),
+    [workflows, cardsById]
+  );
+
   const handleUploadDispatchProofClick = useCallback((cards) => {
     if (!cards?.length) return;
     setSelectedDispatchProofUploadCards(cards);
@@ -1751,14 +1770,14 @@ export default function KanbanBoardPage() {
         return;
       }
 
+      /* L&T confirms the uploaded proofs in a review (da/confirm_dispatch_proofs moves the cards on); other
+         workflows upload for one card, which moves on by itself. */
+      const isLntUpload = isLntDispatchProofUpload(cards);
+
       const chunks = [];
       for (let start = 0; start < proofs.length; start += DISPATCH_PROOF_FILES_PER_REQUEST) {
         chunks.push(proofs.slice(start, start + DISPATCH_PROOF_FILES_PER_REQUEST));
       }
-
-      /* L&T confirms the uploaded proofs in a review (da/confirm_dispatch_proofs moves the cards on); other
-         workflows upload for one card, which moves on by itself. */
-      const isLntUpload = isLntDispatchProofUpload(cards);
       const reviewCardById = {};
       const notPlacedFiles = [];
       let receivedCount = 0;
@@ -2217,9 +2236,9 @@ export default function KanbanBoardPage() {
     onSelectionChange: setSelectedCardIds,
   });
 
-  /* Outside L&T (which uploads dispatch proofs in bulk), "Uploaded to Portal" takes one dispatch proof per
-     card, so only one card there can stay ticked: the most recently ticked one wins, whichever way it was
-     ticked (click, drag or marquee). */
+  /* Outside L&T (which uploads dispatch proofs in bulk) and BGP's "Dispatch the Hard Copies" (one proof for
+     several cards), "Uploaded to Portal" takes one dispatch proof per card, so only one card there can stay
+     ticked: the most recently ticked one wins, whichever way it was ticked (click, drag or marquee). */
   useEffect(() => {
     const portalCardIds = selectedCardIds.filter((id) => {
       const card = cardsById[id];
@@ -2227,6 +2246,7 @@ export default function KanbanBoardPage() {
       return (
         card &&
         !isLntWorkflow(workflow) &&
+        !isMultiCardDispatchProofColumn(workflow, workflow?.columns?.[card.columnId]?.title) &&
         isUploadedToPortalColumnTitle(workflow?.columns?.[card.columnId]?.title)
       );
     });
@@ -2621,6 +2641,7 @@ export default function KanbanBoardPage() {
       <PoReviewModal onConfirmed={refetchBoard} />
 
       <ServiceSheetModal onSaved={refetchBoard} />
+      <FinalInvoiceModal onSaved={refetchBoard} />
 
       <SeApprovalUploadModal
         show={showDispatchProofUploadModal}
@@ -2635,12 +2656,14 @@ export default function KanbanBoardPage() {
         batchTitle=""
         selectedCardCount={selectedDispatchProofUploadCards.length}
         title="Upload Dispatch Proof"
-        subtitle="Attach the dispatch proof for the selected card"
+        subtitle={`Attach the dispatch proof for the selected ${selectedDispatchProofUploadCards.length > 1 ? "cards" : "card"}`}
         submitLabel="Upload Dispatch Proof"
         fields={
           isLntDispatchProofUpload(selectedDispatchProofUploadCards)
             ? lntDispatchProofUploadFields
-            : dispatchProofUploadFields
+            : isMultiCardDispatchProofUpload(selectedDispatchProofUploadCards)
+              ? multiDispatchProofUploadFields
+              : dispatchProofUploadFields
         }
       />
       <DispatchProofReviewModal onConfirmed={refetchBoard} />
