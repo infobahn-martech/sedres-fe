@@ -41,7 +41,8 @@ const SUBSEA_WORKFLOW_PATTERN = /subsea/i;
 const ZAKHER_WORKFLOW_PATTERN = /zakher/i;
 const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil\s*marine/i;
 const AWAITING_SRT_COLUMN_PATTERN = /awaiting srt/i;
-const SRT_RECEIVED_COLUMN_PATTERN = /srt received/i;
+const SRT_REQUESTED_COLUMN_PATTERN = /srt requested/i;
+const SRT_RECEIVED_COLUMN_PATTERN = /^\s*srt received\s*$|srt requested/i;
 const PR_RECEIVED_COLUMN_PATTERN = /pr received/i;
 /* "Upload Approved SO" runs for the POSH workflow and for workflows with a "Send for SO Approval" column. da/da_upload_so_approval_proof takes the
    approved SO as `proof` (required) and the SO email as `approval_email`; the field names are the
@@ -695,11 +696,16 @@ const SalesOrderList = ({
   // Zamil Marine sends "Send For PR" from the column after "Ops Completed"; it has no approve / reject step
   // and uses its own service for the line item and email calls.
   const salesLineItemService = isZamilMarineWorkflowCard ? zamilMarineService : daService;
+  // Workflows without an "Awaiting SRT" column send the request from the column right before "SRT requested".
+  const srtRequestedStepIndex = Array.isArray(stepLabels)
+    ? stepLabels.findIndex((label) => SRT_REQUESTED_COLUMN_PATTERN.test(label || ""))
+    : -1;
   const isAtAwaitingSrtColumn =
     isSubseaWorkflowCard &&
     Array.isArray(stepLabels) &&
     currentStep != null &&
-    AWAITING_SRT_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
+    (AWAITING_SRT_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "") ||
+      (srtRequestedStepIndex > 0 && currentStep === srtRequestedStepIndex));
   // Once the request is sent the card sits on "SRT Received", where the signed SRT is uploaded.
   const isAtSrtReceivedColumn =
     isSubseaWorkflowCard &&
@@ -715,7 +721,7 @@ const SalesOrderList = ({
     PR_RECEIVED_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
   const isCardAtSoApprovalColumn =
     isAtPrReceivedColumn ||
-    (isSrtFlow && (isAtColumnAfterOpsCompleted || isAtSrtReceivedColumn)) ||
+    (isSrtFlow && (isAtColumnAfterOpsCompleted || isAtAwaitingSrtColumn || isAtSrtReceivedColumn)) ||
     (Array.isArray(stepLabels) && currentStep != null && /so sent for approval/i.test(stepLabels[currentStep - 1] || "")) ||
     (Array.isArray(stepLabels) && currentStep != null && SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
     (isPoshWorkflowCard && isAtColumnAfterOpsCompleted) ||
@@ -976,6 +982,11 @@ const SalesOrderList = ({
     }
     try {
       const { data } = await daService.getActionEmailDraft(callId);
+      // The SRT request has no manual fallback: the backend refuses the draft until the SO Confirmation exists.
+      if (isSrtFlow && data?.status === "error") {
+        useAlertReducer.getState().error(data.message || "Failed to load the SRT request email draft.");
+        return;
+      }
       setDraftRecipientEmail(data?.data?.recipient || "");
       setDraftCcEmail(data?.data?.cc || "");
       setDraftBody(data?.data?.body || "");
@@ -989,15 +1000,18 @@ const SalesOrderList = ({
           url: stageDocumentUrl,
         });
       }
-    } catch {
+    } catch (err) {
+      if (isSrtFlow && err?.response?.data?.message) {
+        useAlertReducer.getState().error(err.response.data.message);
+        return;
+      }
       setDraftRecipientEmail("");
       setDraftCcEmail("");
       setDraftBody("");
       setDraftSubject("");
-    } finally {
-      setPreLoadedDocuments(docs);
-      setShowSoApprovalEmailModal(true);
     }
+    setPreLoadedDocuments(docs);
+    setShowSoApprovalEmailModal(true);
   };
 
   const showPrEmailModal = useZamilMarineStore((state) => state.showPrEmailModal);
@@ -1188,7 +1202,7 @@ const SalesOrderList = ({
         setSoActionState((prev) => ({ ...prev, button_state: "awaiting_approval" }));
         const srtReceivedLabel =
           Array.isArray(stepLabels) && currentStep != null ? stepLabels[currentStep] : null;
-        if (isAtAwaitingSrtColumn && srtReceivedLabel) {
+        if (!isAtSrtReceivedColumn && srtReceivedLabel) {
           onAdvanceDaStage?.({ label: srtReceivedLabel, skipStatusUpdate: true });
         }
       } else {
@@ -2690,7 +2704,7 @@ const SalesOrderList = ({
                     <FiUpload />
                     Upload SRT
                   </button>
-                ) : !isAtSrtReceivedColumn && hasVerifiedAllItems ? (
+                ) : !isAtSrtReceivedColumn && effectiveSoButtonState === "send" && hasVerifiedAllItems ? (
                   <button
                     type="button"
                     className="sales-order-da-status-button"
