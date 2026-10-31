@@ -852,12 +852,20 @@ const SalesOrderList = ({
     isSubseaWorkflowCard && Array.isArray(stepLabels) && stepLabels.some((label) => AWAITING_SRT_COLUMN_PATTERN.test(label || ""));
   // Zakher Marine cards are verified only once they sit on "Submitted to DA" itself, so the Action
   // column stays hidden on every earlier column.
+  // Workflows with their own "Send for SO Approval" column (e.g. BGP) show it only while the card is on
+  // that column, not on the earlier columns that precede their "Submitted to DA" column.
+  const isAtSendForSoApprovalColumn =
+    Array.isArray(stepLabels) &&
+    currentStep != null &&
+    SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
   const showActionColumn =
     canViewActionColumn &&
     (isZakherWorkflowCard
       ? isAtSubmittedToDaColumn
       : hasAwaitingSrtColumn
       ? isAtAwaitingSrtColumn
+      : hasSendForSoApprovalColumn
+      ? isAtSendForSoApprovalColumn
       : isAtColumnAfterOpsCompleted || isBeforeSubmittedToDa || isAtSubmittedToDaColumn || isAtSoSentForSccColumn);
 
   // Zakher Marine: moving a card to "Submitted to DA" (footer step click) while all its line items are
