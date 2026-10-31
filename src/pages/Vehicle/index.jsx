@@ -63,14 +63,15 @@ const Vehicle = ({ type = "transport" }) => {
             contentClass: "table-content",
             sort: true,
         },
-        {
+        // Material vehicles have no seating capacity.
+        ...(type === "material" ? [] : [{
             name: "Seater",
             selector: "seater",
             width: "220",
             thclass: "tb-head",
             contentClass: "table-content",
             sort: true,
-        },
+        }]),
         {
             name: "Actions",
             selector: "linksInfo",

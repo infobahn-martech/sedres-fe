@@ -22,6 +22,9 @@ export function VehicleModal({ showModal, closeModal, onSuccess, type = "transpo
 
     const { addVehicle, updateVehicle, isBeingUpdated } = useVehicleReducer((state) => state);
 
+    // Material vehicles have no seating capacity.
+    const isMaterial = type === "material";
+
     const isEdit = showModal && typeof showModal === "object" && (showModal.vehicle_type_id ?? showModal._id);
     const vehicleTypeId = isEdit ? (showModal.vehicle_type_id ?? showModal._id) : null;
 
@@ -42,9 +45,11 @@ export function VehicleModal({ showModal, closeModal, onSuccess, type = "transpo
     const onSubmit = async (data) => {
         const formData = {
             vehicle_type: data.vehicle_type?.trim() ?? "",
-            // valueAsNumber turns an empty input into NaN.
-            seater: Number.isNaN(data.seater) || data.seater === "" ? null : data.seater,
         };
+        if (!isMaterial) {
+            // valueAsNumber turns an empty input into NaN.
+            formData.seater = Number.isNaN(data.seater) || data.seater === "" ? null : data.seater;
+        }
 
         const cb = () => {
             closeModal();
@@ -98,6 +103,7 @@ export function VehicleModal({ showModal, closeModal, onSuccess, type = "transpo
                     </div>
 
                     {/* SEATER */}
+                    {!isMaterial && (
                     <div className="form-field">
                         <div className="form-floating desig-inp">
                             <input
@@ -120,6 +126,7 @@ export function VehicleModal({ showModal, closeModal, onSuccess, type = "transpo
                             </span>
                         )}
                     </div>
+                    )}
 
 
                 </form>
