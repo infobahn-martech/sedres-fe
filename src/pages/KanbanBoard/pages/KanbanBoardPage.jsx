@@ -1523,7 +1523,7 @@ export default function KanbanBoardPage() {
     ]
   );
 
-  /* "Submit by Email" on BGP's "Submit by Email" column header, for the cards ticked there, opens one
+  /* "Submit by Email" on the BGP and Lamprell Saudi "Submit by Email" column header, for the cards ticked there, opens one
      invoice submission email draft covering all of them. */
   const [showInvoiceSubmissionEmailModal, setShowInvoiceSubmissionEmailModal] = useState(false);
   const [selectedInvoiceSubmissionCards, setSelectedInvoiceSubmissionCards] = useState([]);
