@@ -107,7 +107,8 @@ const lntDispatchProofUploadFields = [
 ];
 /* Saves a remote file under its own name. The file host is another origin, where a plain download link
    is not honoured for a PDF (it only navigates), so the file is fetched as a blob first. While the file
-   host sends no CORS header the fetch fails, and the link opens in a new tab instead. */
+   host sends no CORS header the fetch fails, and the plain link is clicked in this tab instead, so a zip
+   downloads without a new tab opening and closing. */
 const downloadDocument = async ({ url, name }) => {
   const fileName = name || decodeURIComponent(url.split("/").pop());
   try {
@@ -122,8 +123,6 @@ const downloadDocument = async ({ url, name }) => {
   const link = document.createElement("a");
   link.href = url;
   link.download = fileName;
-  link.target = "_blank";
-  link.rel = "noopener";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
