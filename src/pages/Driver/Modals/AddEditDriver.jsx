@@ -198,7 +198,12 @@ export function DriverModal({ showModal, closeModal, onSuccess, type = "transpor
             ...(isTransport && {
                 zawil_passes: portIds
                     .filter((portId) => zawilByPort[portId]?.expiry_date)
-                    .map((portId) => ({ port_id: Number(portId), expiry_date: zawilByPort[portId].expiry_date })),
+                    .map((portId) => ({
+                        port_id: Number(portId),
+                        expiry_date: zawilByPort[portId].expiry_date,
+                        // Existing pass file removed with no replacement uploaded.
+                        ...(zawilByPort[portId].remove_file && !zawilByPort[portId].file && { remove_file: true }),
+                    })),
             }),
         };
         const cb = () => {
@@ -310,14 +315,24 @@ export function DriverModal({ showModal, closeModal, onSuccess, type = "transpor
                                 <div className="driver-zawil__file">
                                     {renderZawilFile(portId, zawil)}
                                     {zawil?.existing && !zawil?.file && (
-                                        <a
-                                            href={zawil.existing.file_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="driver-zawil__existing"
-                                        >
-                                            <FiFileText /> {zawil.existing.file_name}
-                                        </a>
+                                        <div className="driver-zawil__existing-row">
+                                            <a
+                                                href={zawil.existing.file_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="driver-zawil__existing"
+                                            >
+                                                <FiFileText /> {zawil.existing.file_name}
+                                            </a>
+                                            <button
+                                                type="button"
+                                                className="driver-file-list__remove driver-zawil__existing-remove"
+                                                aria-label={`Remove ${zawil.existing.file_name}`}
+                                                onClick={() => updateZawil(portId, { existing: null, remove_file: true })}
+                                            >
+                                                <FiX />
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             </div>

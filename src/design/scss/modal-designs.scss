@@ -838,6 +838,24 @@ body .user-modal-sm.driver-modal .modal-dialog {
       }
     }
 
+    &__existing-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      max-width: 100%;
+      margin-top: 6px;
+
+      .driver-zawil__existing {
+        margin-top: 0;
+      }
+    }
+
+    &__existing-remove {
+      width: 22px;
+      height: 22px;
+      font-size: 13px;
+    }
+
     &__existing {
       display: inline-flex;
       align-items: center;
