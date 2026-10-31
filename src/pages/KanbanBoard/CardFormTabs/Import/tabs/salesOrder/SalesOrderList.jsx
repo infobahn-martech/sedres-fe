@@ -44,6 +44,8 @@ const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil\s*marine/i;
 const AWAITING_SRT_COLUMN_PATTERN = /awaiting srt|srt requested/i;
 const SRT_RECEIVED_COLUMN_PATTERN = /srt rec(?:ie|ei)ved/i;
 const PR_RECEIVED_COLUMN_PATTERN = /pr received/i;
+const OPS_COMPLETED_COLUMN_PATTERN = /ops completed|sailed\s*\/\s*awaiting 3rd party invoices/i;
+const SO_SENT_FOR_APPROVAL_COLUMN_PATTERN = /so sent for approval|so in progress/i;
 /* "Upload Approved SO" runs for the POSH workflow and for workflows with a "Send for SO Approval" column. da/da_upload_so_approval_proof takes the
    approved SO as `proof` (required) and the SO email as `approval_email`; the field names are the
    request's form field names. */
@@ -667,11 +669,11 @@ const SalesOrderList = ({
   // once verified — a same-day attempt to show it right after verify (before the column move)
   // was reverted.
   const isAtOpsCompletedColumn =
-    Array.isArray(stepLabels) && currentStep != null && /ops completed/i.test(stepLabels[currentStep - 1] || "");
+    Array.isArray(stepLabels) && currentStep != null && OPS_COMPLETED_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
   // Same masking problem as isAtArInvoiceColumn, but for column 4 ("SO Sent for approval").
   // Also reused by shouldShowDaActionButton further below.
   const opsCompletedStepIndex = Array.isArray(stepLabels)
-    ? stepLabels.findIndex((label) => /ops completed/i.test(label || ""))
+    ? stepLabels.findIndex((label) => OPS_COMPLETED_COLUMN_PATTERN.test(label || ""))
     : -1;
   const isAtColumnAfterOpsCompleted =
     opsCompletedStepIndex !== -1 && currentStep != null && currentStep === opsCompletedStepIndex + 2;
@@ -719,7 +721,7 @@ const SalesOrderList = ({
   const isCardAtSoApprovalColumn =
     isAtPrReceivedColumn ||
     (isSrtFlow && (isAtColumnAfterOpsCompleted || isAtAwaitingSrtColumn || isAtSrtReceivedColumn)) ||
-    (Array.isArray(stepLabels) && currentStep != null && /so sent for approval/i.test(stepLabels[currentStep - 1] || "")) ||
+    (Array.isArray(stepLabels) && currentStep != null && SO_SENT_FOR_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
     (Array.isArray(stepLabels) && currentStep != null && SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
     (isPoshWorkflowCard && isAtColumnAfterOpsCompleted) ||
     (isZamilMarineWorkflowCard && isAtColumnAfterOpsCompleted);
@@ -895,7 +897,7 @@ const SalesOrderList = ({
   // (reported 2026-09-16). The old name match is kept as a fallback for any workflow where
   // that column isn't directly after "SO Sent for approval".
   const soSentForApprovalStepIndex = Array.isArray(stepLabels)
-    ? stepLabels.findIndex((label) => /so sent for approval/i.test(label || ""))
+    ? stepLabels.findIndex((label) => SO_SENT_FOR_APPROVAL_COLUMN_PATTERN.test(label || ""))
     : -1;
   const isAtSoApprovalDecisionColumn =
     (soSentForApprovalStepIndex !== -1 && currentStep != null && currentStep === soSentForApprovalStepIndex + 2) ||
@@ -1348,7 +1350,7 @@ const SalesOrderList = ({
     }
     if (data && wasInvoiceDispatchedStage) setShowInvoiceIssuanceModal(true);
     if (data && wasSoApprovalDecisionColumn) {
-      const soSentForApprovalLabel = findBoardColumnLabel(/so sent for approval/i);
+      const soSentForApprovalLabel = findBoardColumnLabel(SO_SENT_FOR_APPROVAL_COLUMN_PATTERN);
       if (soSentForApprovalLabel) {
         // See the matching comment in handleApproveDaClientDecision above — decision is already
         // recorded server-side by recordDaClientDecision, so skip the redundant update_status call.
