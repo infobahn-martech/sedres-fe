@@ -2,7 +2,7 @@ import Gateway from '../gateway/gateway';
 
 const addVehicle = (data) => Gateway.post('transport/add_transport_vehicle', data);
 const fetchVehicles = ({ params }) => Gateway.get('/transport/all_vehicle_types', { params });
-const updateVehicle = (data) => Gateway.post(`/transport/update_vehicle_type`, data);
+const updateVehicle = (data) => Gateway.post('transport/update_transport_vehicle', data);
 const deleteVehicle = (id) => Gateway.post(`/transport/delete_vehicle_type/${id}`);
 
 const getAllTransportVehicles = () => Gateway.get('/transport/get_all_transport_vehicles');
