@@ -32,15 +32,21 @@ const Vehicle = ({ type = "transport" }) => {
     const [showVehicleModal, setShowVehicleModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-    useEffect(() => {
+    const fetchList = () =>
         getVehicles?.({
-            search: params.searchTerm || "",
-            page: params.page,
-            limit: params.limit,
-            sortBy: params.sortBy,
-            sortOrder: params.sortOrder,
+            type,
+            params: {
+                search: params.searchTerm || "",
+                page: params.page,
+                limit: params.limit,
+                sortBy: params.sortBy,
+                sortOrder: params.sortOrder,
+            },
         });
-    }, [params.page, params.limit, params.searchTerm, params.sortBy, params.sortOrder, getVehicles]);
+
+    useEffect(() => {
+        fetchList();
+    }, [params.page, params.limit, params.searchTerm, params.sortBy, params.sortOrder, type, getVehicles]);
 
     const debouncedSearch = useMemo(
         () =>
@@ -133,7 +139,7 @@ const Vehicle = ({ type = "transport" }) => {
                         closeModal={() => setShowVehicleModal(false)}
                         onSuccess={() => {
                             setShowVehicleModal(false);
-                            getVehicles?.({ ...params, search: params.searchTerm || "" });
+                            fetchList();
                         }}
                     />
                 )}
@@ -148,13 +154,7 @@ const Vehicle = ({ type = "transport" }) => {
                                 cb: () => {
                                     setShowDeleteModal(false);
                                     selectedVehicleRef.current = null;
-                                    getVehicles?.({
-                                        search: params.searchTerm || "",
-                                        page: params.page,
-                                        limit: params.limit,
-                                        sortBy: params.sortBy,
-                                        sortOrder: params.sortOrder,
-                                    });
+                                    fetchList();
                                 },
                             })
                         }

@@ -5,17 +5,25 @@ const VEHICLE_ENDPOINTS = {
   transport: {
     add: 'transport/add_transport_vehicle',
     update: 'transport/update_transport_vehicle',
+    list: 'transport/transport_vehicle_list',
+    purpose: 'crew_transport',
   },
   material: {
     add: 'transport/add_material_vehicle',
     update: 'transport/update_material_vehicle',
+    list: 'transport/material_vehicle_list',
+    purpose: 'material',
   },
 };
 
 const endpoints = (type = 'transport') => VEHICLE_ENDPOINTS[type] ?? VEHICLE_ENDPOINTS.transport;
 
 const addVehicle = (data, type) => Gateway.post(endpoints(type).add, data);
-const fetchVehicles = ({ params }) => Gateway.get('/transport/all_vehicle_types', { params });
+/** Paginated list for the Vehicle Management tables. */
+const fetchVehicles = ({ params, type }) => Gateway.get(endpoints(type).list, { params });
+/** Unpaginated vehicle types for dropdowns, filtered by purpose. */
+const fetchVehicleTypes = ({ type }) =>
+  Gateway.get('/transport/all_vehicle_types', { params: { vehicle_purpose: endpoints(type).purpose } });
 const updateVehicle = (data, type) => Gateway.post(endpoints(type).update, data);
 const deleteVehicle = (id) => Gateway.post(`/transport/delete_vehicle_type/${id}`);
 
@@ -31,6 +39,7 @@ const getMaterialDrivers = () => Gateway.get('/transport/get_material_drivers');
 export default {
   addVehicle,
   fetchVehicles,
+  fetchVehicleTypes,
   updateVehicle,
   deleteVehicle,
   getAllTransportVehicles,

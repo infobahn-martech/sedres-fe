@@ -28,10 +28,10 @@ const useVehicleReducer = create((set) => ({
       error(err?.response?.data?.message ?? err.message);
     }
   },
-  getVehicles: async ({ params }) => {
+  getVehicles: async ({ params, type }) => {
     try {
       set({ isLoading: true });
-      const { data } = await vehicleService.fetchVehicles({ params });
+      const { data } = await vehicleService.fetchVehicles({ params, type });
       set({
         vehicles: data?.data ?? [],
         totalCount: data?.pagination?.total ?? 0,
@@ -39,6 +39,16 @@ const useVehicleReducer = create((set) => ({
       });
     } catch (error) {
       set({ errorMessage: error.message, isLoading: false, vehicles: [], totalCount: 0 });
+    }
+  },
+  // Dropdown source: `/transport/all_vehicle_types?vehicle_purpose=...`.
+  getVehicleTypes: async ({ type }) => {
+    try {
+      set({ isLoading: true });
+      const { data } = await vehicleService.fetchVehicleTypes({ type });
+      set({ vehicles: data?.data ?? [], isLoading: false });
+    } catch (error) {
+      set({ errorMessage: error.message, isLoading: false, vehicles: [] });
     }
   },
   updateVehicle: async ({ formData, cb, type }) => {

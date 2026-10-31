@@ -69,7 +69,7 @@ function pickVehicleTypeIdFromMappingRow(row) {
     return v != null && String(v).trim() !== "" ? String(v) : "";
 }
 
-/** Match display label from mapping row to `/transport/all_vehicle_types`. */
+/** Match display label from mapping row to `/transport/all_vehicle_types?vehicle_purpose=...`. */
 function resolveVehicleTypeIdFromMasterList(row, list) {
     const direct = pickVehicleTypeIdFromMappingRow(row);
     if (direct) return direct;
@@ -88,7 +88,7 @@ function resolveVehicleTypeIdFromMasterList(row, list) {
     return "";
 }
 
-export function DriverVehicleMappingModal({ showModal, closeModal, onSuccess }) {
+export function DriverVehicleMappingModal({ showModal, closeModal, onSuccess, type = "transport" }) {
     const driverVehicleId = showModal?.driver_vehicle_id ?? showModal?._id;
     const isEdit = typeof showModal === "object" && showModal !== null && !!driverVehicleId;
 
@@ -96,7 +96,7 @@ export function DriverVehicleMappingModal({ showModal, closeModal, onSuccess }) 
     const drivers = useDriverReducer((state) => state.drivers);
     const fetchAllDrivers = useDriverReducer((state) => state.fetchAllDrivers);
     const vehicles = useVehicleReducer((state) => state.vehicles);
-    const getVehicles = useVehicleReducer((state) => state.getVehicles);
+    const getVehicleTypes = useVehicleReducer((state) => state.getVehicleTypes);
 
     const driversList = drivers != null ? drivers : EMPTY_DRIVER_LIST;
     const vehiclesList = vehicles ?? EMPTY_DRIVER_LIST;
@@ -112,7 +112,7 @@ export function DriverVehicleMappingModal({ showModal, closeModal, onSuccess }) 
     useEffect(() => {
         if (showModal) {
             fetchAllDrivers?.({ params: {} });
-            getVehicles?.({ params: {} });
+            getVehicleTypes?.({ type });
         }
     }, [showModal]);
 

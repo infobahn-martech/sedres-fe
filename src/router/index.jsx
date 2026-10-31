@@ -383,7 +383,7 @@ const router = createBrowserRouter(
                 // Material Vehicle Management
                 { path: "/material-vehicle-management", element: <RouteGuard><Vehicle key="material" type="material" /></RouteGuard> },
                 // Material Driver Vehicle Mapping
-                { path: "/material-driver-vehicle-mapping", element: <RouteGuard><DriverVehicleMapping key="material" /></RouteGuard> },
+                { path: "/material-driver-vehicle-mapping", element: <RouteGuard><DriverVehicleMapping key="material" type="material" /></RouteGuard> },
                 // Settings
                 { path: "/settings", element: <RouteGuard><h1>Settings</h1></RouteGuard> },
                 // Vendor Portal

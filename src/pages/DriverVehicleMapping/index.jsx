@@ -12,7 +12,7 @@ import { DateFormat } from "../ActivityLog/RenderCells";
 import useDriverVehicleMappingReducer from "../../store/DriverVehicleReducer";
 // ex: "../../stores/DriverVehicleMappingReducer"
 
-const DriverVehicleMapping = () => {
+const DriverVehicleMapping = ({ type = "transport" }) => {
     // ✅ Store / API
     const {
         getDriverVehicleMappingData,
@@ -191,6 +191,7 @@ const DriverVehicleMapping = () => {
                 {!!showDriverVehicleMappingModal && (
                     <DriverVehicleMappingModal
                         showModal={showDriverVehicleMappingModal} // boolean OR row object
+                        type={type}
                         closeModal={() => setShowDriverVehicleMappingModal(false)}
                         onSuccess={() => {
                             setShowDriverVehicleMappingModal(false);
