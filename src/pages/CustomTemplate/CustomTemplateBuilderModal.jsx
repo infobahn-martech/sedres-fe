@@ -7,7 +7,7 @@ import TemplateEmailPreview from "./TemplateEmailPreview";
 import { getEmailPreviewSubject } from "./emailPreviewSubjects";
 import TemplateFeaturePreview from "./TemplateFeaturePreview";
 import { getFeaturePreviewKind } from "./templateFeaturePreviews";
-import { buildFieldGrid, getReadingOrder, resolveFieldLayout } from "./templateFieldGrid";
+import { alignLayoutToOrder, buildFieldGrid, getReadingOrder, resolveFieldLayout, sortFieldsByLayout } from "./templateFieldGrid";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
 import useTimeObjectReducer from "../../store/TimeObjectReducer";
@@ -223,12 +223,12 @@ const buildTabsFromTemplate = (template, systemBindings = []) => {
         id: makeId("tab"),
         tabId: tab.tabId ?? tab.tab_id ?? null,
         name: tab.name ?? tab.tab_label ?? "",
-        fields: (tab.fields ?? []).map(mapTemplateField),
+        fields: sortFieldsByLayout((tab.fields ?? []).map(mapTemplateField)),
         subTabs: (tab.subTabs ?? tab.subtabs ?? []).map((sub) => ({
             id: makeId("subtab"),
             tabId: sub.tabId ?? sub.tab_id ?? null,
             name: sub.name ?? sub.tab_label ?? "",
-            fields: (sub.fields ?? []).map(mapTemplateField),
+            fields: sortFieldsByLayout((sub.fields ?? []).map(mapTemplateField)),
         })),
     }));
 };
@@ -998,7 +998,7 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
 
     const handleAddField = () => {
         recordHistory();
-        updateFieldsScope((fields) => [createBlankField(), ...fields]);
+        updateFieldsScope((fields) => alignLayoutToOrder([createBlankField(), ...fields]));
     };
 
     const handleUpdateField = (fieldId, key, value) => {
@@ -1120,12 +1120,12 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
         updateFieldsScope((fields) => {
             const layout = resolveFieldLayout(fields);
             const targetIndex = layout.findIndex((c) => c.row === row && c.col === col);
-            return fields.map((f, i) => {
+            return sortFieldsByLayout(fields.map((f, i) => {
                 let cell = layout[i];
                 if (i === dragIndex) cell = { row, col };
                 else if (i === targetIndex) cell = layout[dragIndex];
                 return { ...f, gridRow: cell.row, gridCol: cell.col };
-            });
+            }));
         });
         handleDragEnd();
     };
@@ -1138,8 +1138,7 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
             const order = getReadingOrder(fields).filter((i) => i !== dragIndex);
             const targetPos = targetIndex === null ? order.length : order.indexOf(targetIndex);
             order.splice(targetPos === -1 ? order.length : targetPos, 0, dragIndex);
-            const rowByIndex = new Map(order.map((fieldIndex, pos) => [fieldIndex, pos + 1]));
-            return fields.map((f, i) => ({ ...f, gridRow: rowByIndex.get(i), gridCol: 1 }));
+            return order.map((fieldIndex, pos) => ({ ...fields[fieldIndex], gridRow: pos + 1, gridCol: 1 }));
         });
         handleDragEnd();
     };
@@ -1153,7 +1152,7 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
             const next = [...fields];
             const [moved] = next.splice(dragIndex, 1);
             next.splice(dropIndex, 0, moved);
-            return next;
+            return alignLayoutToOrder(next);
         });
         handleDragEnd();
     };

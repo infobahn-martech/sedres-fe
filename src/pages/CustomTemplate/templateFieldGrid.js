@@ -59,3 +59,15 @@ export const getReadingOrder = (fields) => {
         .map((_, i) => i)
         .sort((a, b) => layout[a].row - layout[b].row || layout[a].col - layout[b].col);
 };
+
+// The left field list and the preview grid must always show the same order.
+// After a preview drop, re-sort the fields array into grid reading order.
+export const sortFieldsByLayout = (fields) => getReadingOrder(fields).map((i) => fields[i]);
+
+// After a left-list reorder (or an insert), hand the occupied cells back out in
+// the new array order, so reading order follows the list while any gaps the
+// user left in the grid stay where they are.
+export const alignLayoutToOrder = (fields) => {
+    const cells = [...resolveFieldLayout(fields)].sort((a, b) => a.row - b.row || a.col - b.col);
+    return fields.map((f, i) => ({ ...f, gridRow: cells[i].row, gridCol: cells[i].col }));
+};
