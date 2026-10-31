@@ -5842,6 +5842,10 @@ $send-report-optional: var(--text-muted);
   margin-bottom: 1px;
 }
 
+.cf-field .cf-required {
+  color: var(--danger, #dc3545);
+}
+
 .cf-input {
   background: var(--surface-primary);
   border-radius: 8px;
