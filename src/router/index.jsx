@@ -381,7 +381,7 @@ const router = createBrowserRouter(
                 // Material Driver Management
                 { path: "/material-driver-management", element: <RouteGuard><Driver key="material" type="material" /></RouteGuard> },
                 // Material Vehicle Management
-                { path: "/material-vehicle-management", element: <RouteGuard><Vehicle key="material" /></RouteGuard> },
+                { path: "/material-vehicle-management", element: <RouteGuard><Vehicle key="material" type="material" /></RouteGuard> },
                 // Material Driver Vehicle Mapping
                 { path: "/material-driver-vehicle-mapping", element: <RouteGuard><DriverVehicleMapping key="material" /></RouteGuard> },
                 // Settings

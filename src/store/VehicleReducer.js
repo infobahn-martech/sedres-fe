@@ -10,10 +10,11 @@ const useVehicleReducer = create((set) => ({
   isBeingUpdated: false,
   isDeleteLoading: false,
   totalCount: 0,
-  addVehicle: async ({ formData, cb }) => {
+  // `type` is "transport" (default) or "material".
+  addVehicle: async ({ formData, cb, type }) => {
     try {
       set({ isBeingUpdated: true });
-      const { data } = await vehicleService.addVehicle(formData);
+      const { data } = await vehicleService.addVehicle(formData, type);
       set({ successMessage: data.message, isBeingUpdated: false });
       const { success } = useAlertReducer.getState();
       success(data && data.message);
@@ -40,10 +41,10 @@ const useVehicleReducer = create((set) => ({
       set({ errorMessage: error.message, isLoading: false, vehicles: [], totalCount: 0 });
     }
   },
-  updateVehicle: async ({ formData, cb }) => {
+  updateVehicle: async ({ formData, cb, type }) => {
     try {
       set({ isBeingUpdated: true });
-      const { data } = await vehicleService.updateVehicle(formData);
+      const { data } = await vehicleService.updateVehicle(formData, type);
       set({ successMessage: data.message, isBeingUpdated: false });
       const { success } = useAlertReducer.getState();
       success(data && data.message);

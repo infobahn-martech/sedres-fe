@@ -1,8 +1,22 @@
 import Gateway from '../gateway/gateway';
 
-const addVehicle = (data) => Gateway.post('transport/add_transport_vehicle', data);
+/** Transport and Material vehicle types share one form but have separate add/update endpoints. */
+const VEHICLE_ENDPOINTS = {
+  transport: {
+    add: 'transport/add_transport_vehicle',
+    update: 'transport/update_transport_vehicle',
+  },
+  material: {
+    add: 'transport/add_material_vehicle',
+    update: 'transport/update_material_vehicle',
+  },
+};
+
+const endpoints = (type = 'transport') => VEHICLE_ENDPOINTS[type] ?? VEHICLE_ENDPOINTS.transport;
+
+const addVehicle = (data, type) => Gateway.post(endpoints(type).add, data);
 const fetchVehicles = ({ params }) => Gateway.get('/transport/all_vehicle_types', { params });
-const updateVehicle = (data) => Gateway.post('transport/update_transport_vehicle', data);
+const updateVehicle = (data, type) => Gateway.post(endpoints(type).update, data);
 const deleteVehicle = (id) => Gateway.post(`/transport/delete_vehicle_type/${id}`);
 
 const getAllTransportVehicles = () => Gateway.get('/transport/get_all_transport_vehicles');

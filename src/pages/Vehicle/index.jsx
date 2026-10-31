@@ -8,7 +8,8 @@ import { RenderAction } from "./RenderCells";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import useVehicleReducer from "../../store/VehicleReducer";
 
-const Vehicle = () => {
+/** Vehicle Management for Transport (default) or Material vehicles — `type` picks the add/update APIs. */
+const Vehicle = ({ type = "transport" }) => {
     const {
         vehicles,
         getVehicles,
@@ -127,6 +128,7 @@ const Vehicle = () => {
                 {!!showVehicleModal && (
                     <VehicleModal
                         showModal={showVehicleModal}
+                        type={type}
                         closeModal={() => setShowVehicleModal(false)}
                         onSuccess={() => {
                             setShowVehicleModal(false);

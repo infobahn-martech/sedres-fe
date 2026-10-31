@@ -7,7 +7,7 @@ import "../../../design/scss/modal-designs.scss";
 import "../../../design/scss/form-designs.scss";
 import "../../../design/scss/master-modal-form.scss";
 
-export function VehicleModal({ showModal, closeModal, onSuccess }) {
+export function VehicleModal({ showModal, closeModal, onSuccess, type = "transport" }) {
     const {
         register,
         handleSubmit,
@@ -55,9 +55,10 @@ export function VehicleModal({ showModal, closeModal, onSuccess }) {
             await updateVehicle({
                 formData: { vehicle_type_id: vehicleTypeId, ...formData },
                 cb,
+                type,
             });
         } else {
-            await addVehicle({ formData, cb });
+            await addVehicle({ formData, cb, type });
         }
     };
 
