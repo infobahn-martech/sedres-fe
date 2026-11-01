@@ -88,7 +88,7 @@ const dispatchProofUploadFields = [
     multiple: false,
   },
 ];
-/* BGP's "Dispatch the Hard Copies" takes any number of files of any type for the ticked cards. */
+/* BGP's and Lamprell Saudi's "Dispatch the Hard Copies" take any number of files of any type for the ticked cards. */
 const multiDispatchProofUploadFields = [
   {
     name: DISPATCH_PROOF_FIELD_NAME,
@@ -2235,7 +2235,7 @@ export default function KanbanBoardPage() {
     onSelectionChange: setSelectedCardIds,
   });
 
-  /* Outside L&T (which uploads dispatch proofs in bulk) and BGP's "Dispatch the Hard Copies" (one proof for
+  /* Outside L&T (which uploads dispatch proofs in bulk) and the BGP / Lamprell Saudi "Dispatch the Hard Copies" (one proof for
      several cards), "Uploaded to Portal" takes one dispatch proof per card, so only one card there can stay
      ticked: the most recently ticked one wins, whichever way it was ticked (click, drag or marquee). */
   useEffect(() => {
