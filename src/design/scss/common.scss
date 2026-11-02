@@ -496,7 +496,7 @@ html {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  background: rgba(234, 241, 251, 0.82);
+  background: rgba(234, 241, 251, 0.6);
   border-bottom: 1px solid var(--kanban-wallpaper-border);
   cursor: pointer;
   user-select: none;
@@ -505,7 +505,7 @@ html {
    border-radius:4px;
 
   &:hover {
-    background-color: rgba(234, 241, 251, 0.82);
+    background-color: rgba(234, 241, 251, 0.72);
   }
 
   // Responsive adjustments for sidebar width
@@ -1462,7 +1462,7 @@ body.app-dark-mode {
    Outranks the zinc `.kanban-dark-mode` rules above.
 ================================ */
 [data-theme="dark"] .kanban-accordion.kanban-dark-mode {
-  // Translucent (like the light theme's 0.82 rows) so the board wallpaper shows through.
+  // Translucent (like the light theme's 0.6 rows) so the board wallpaper shows through.
   .kanban-accordion-header {
     background: color-mix(in srgb, var(--bg-card) 72%, transparent);
     border-bottom-color: var(--border);
