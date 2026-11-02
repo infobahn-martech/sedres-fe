@@ -1,0 +1,18 @@
+// "PO Review" modal for Lamprell UAE "Upload PO". Reuses the Invoice Review shell (arInvoiceReviewModal.scss);
+// every cell is an input the user fills by hand, so the inputs keep a visible box instead of reading as plain text.
+.blockers-modal.se-review-move-modal.ar-invoice-review-modal.lamprell-uae-po-review-modal {
+  .blockers-table-wrapper .ar-invoice-review__grid {
+    .ar-invoice-review__input {
+      width: 100%;
+      min-width: 140px;
+      margin-left: 0;
+      border-color: var(--border-primary, #e2e8f0);
+      background: var(--surface-primary, #ffffff);
+    }
+
+    // The SO No column holds a full sales order number such as TMP-SO-202610-00288.
+    tbody td:nth-child(2) .ar-invoice-review__input {
+      min-width: 220px;
+    }
+  }
+}

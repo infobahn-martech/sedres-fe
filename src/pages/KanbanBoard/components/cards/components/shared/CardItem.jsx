@@ -25,6 +25,7 @@ import {
   MINIMAL_CARD_TOOLTIP_ID,
 } from "@/pages/KanbanBoard/utils/cardDisplayHelpers";
 import { downloadRemoteFile } from "@/shared/utils/utils";
+import { isLamprellUaePoReceivedColumn } from "../../../../utils/columnTitles";
 
 /* SNAMPROGETTI is the name the SAIPEM workflow is being renamed from. */
 const SAIPEM_WORKFLOW_PATTERN = /saipem|snamprogetti/i;
@@ -751,7 +752,9 @@ function CardItem({
     ? "Signature missing on the SCC — upload the signed SCC again"
     : undefined;
   const canSelectForAction =
-    isDaBoardCard && typeof onToggleSelectForAction === "function" && !isExportApprovalHeld;
+    (isDaBoardCard || isLamprellUaePoReceivedColumn(workflowTitle, columnTitle)) &&
+    typeof onToggleSelectForAction === "function" &&
+    !isExportApprovalHeld;
   const topRowUsernameInitial = isApiCard && !isShrunk ? getUsernameInitial(card.user) : null;
   const isTransportCoordinatorWorkflow = String(workflowTitle || "").trim().toLowerCase().includes("transport coordinator");
   const cardColor = card.color || "#2A00FF";

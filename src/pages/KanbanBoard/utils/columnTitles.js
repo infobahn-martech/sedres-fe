@@ -5,6 +5,15 @@ const SUBMITTED_INVOICES_COLUMN_PATTERN = /^submitted\s+invoices$/i;
 export const isSubmittedInvoicesColumnTitle = (title) =>
   SUBMITTED_INVOICES_COLUMN_PATTERN.test(String(title ?? "").trim());
 
+const LAMPRELL_UAE_WORKFLOW_PATTERN = /lamprell\s*uae/i;
+const PO_RECEIVED_SUBMITTED_TO_DA_COLUMN_PATTERN = /^po\W*rec(ei|ie)ved(\W+submitted\W*to\W*da)?$/i;
+
+/* Lamprell UAE Operations "PO Received / Submitted to DA": its cards are ticked for "Upload PO" even though
+   the backend does not flag them with da_board. */
+export const isLamprellUaePoReceivedColumn = (workflowTitle, columnTitle) =>
+  LAMPRELL_UAE_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
+  PO_RECEIVED_SUBMITTED_TO_DA_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
 const ARCHIVE_COLUMN_PATTERN = /archive/i;
 const SRF_SOURCE_COLUMN_PATTERN = /^submitted\s+to\s+da$/i;
 const SUBMIT_BY_EMAIL_COLUMN_PATTERN = /^submit\s+by\s+email$/i;
@@ -23,7 +32,8 @@ export const isColumnBeforeArchive = (workflow, colKey) => {
     !ARCHIVE_COLUMN_PATTERN.test(title) &&
     !SRF_SOURCE_COLUMN_PATTERN.test(title) &&
     !SUBMIT_BY_EMAIL_COLUMN_PATTERN.test(title) &&
-    !isLntSubmittedToDa(workflow?.title, title)
+    !isLntSubmittedToDa(workflow?.title, title) &&
+    !isLamprellUaePoReceivedColumn(workflow?.title, title)
   );
 };
 

@@ -16,6 +16,7 @@ import SeReviewMoveModal from "../components/board/SeReviewMoveModal";
 import ArInvoiceReviewModal from "../components/board/ArInvoiceReviewModal";
 import SignatureCheckModal from "../components/board/SignatureCheckModal";
 import PoReviewModal from "../components/board/PoReviewModal";
+import LamprellUaePoReviewModal from "../components/board/LamprellUaePoReviewModal";
 import ServiceSheetModal from "../components/board/ServiceSheetModal";
 import FinalInvoiceModal from "../components/board/FinalInvoiceModal";
 import SccReviewModal from "../components/board/SccReviewModal";
@@ -52,6 +53,7 @@ import useZamilMarineArInvoiceStore from "../../../store/zamilMarineArInvoiceSto
 import useZamilCrewArInvoiceStore from "../../../store/zamilCrewArInvoiceStore";
 import useZamilMarinePoRequestStore from "../../../store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "../../../store/zamilMarinePoUploadStore";
+import useLamprellUaePoApprovalStore from "../../../store/lamprellUaePoApprovalStore";
 import useZamilCrewFinalInvoiceStore from "../../../store/zamilCrewFinalInvoiceStore";
 import useZamilMarineFinalInvoiceStore from "../../../store/zamilMarineFinalInvoiceStore";
 import usePoReviewStore from "../../../store/poReviewStore";
@@ -166,6 +168,15 @@ const zamilMarinePoUploadFields = [
     accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
     formatsHint: "PDF, EML, MSG, JPG, PNG",
     multiple: true,
+  },
+];
+/* da/upload_po_approval for Lamprell UAE takes the client's reply as one file. */
+const lamprellUaePoUploadFields = [
+  {
+    name: ZAMIL_MARINE_PO_FIELD_NAME,
+    accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
+    formatsHint: "PDF, EML, MSG, JPG, PNG",
+    multiple: false,
   },
 ];
 const poUploadFields = [
@@ -750,6 +761,42 @@ export default function KanbanBoardPage() {
       refetchBoard?.();
     },
     [zamilMarinePoUploadCards, uploadZamilMarinePo, clearCardColumns, removeCardSelectionId, refetchBoard]
+  );
+
+  /* Lamprell UAE "Upload PO" on "PO Received / Submitted to DA": the client's reply goes to da/upload_po_approval and
+     pre-fills the PO review; with no file the review opens blank to fill by hand. Confirming the review
+     saves it via da/confirm_po_approval, and the backend moves the cards on. */
+  const showLamprellUaePoUploadModal = useLamprellUaePoApprovalStore((state) => state.showPoUploadModal);
+  const lamprellUaePoUploadCards = useLamprellUaePoApprovalStore((state) => state.selectedPoUploadCards);
+  const isUploadingLamprellUaePo = useLamprellUaePoApprovalStore((state) => state.isPoUploading);
+  const closeLamprellUaePoUploadModal = useLamprellUaePoApprovalStore((state) => state.closePoUploadModal);
+  const uploadLamprellUaePo = useLamprellUaePoApprovalStore((state) => state.uploadPo);
+  const openLamprellUaeManualPoReview = useLamprellUaePoApprovalStore((state) => state.openManualPoReview);
+
+  const handleUploadLamprellUaePo = useCallback(
+    async ({ [ZAMIL_MARINE_PO_FIELD_NAME]: files = [] }) => {
+      if (!files.length) {
+        openLamprellUaeManualPoReview();
+        return;
+      }
+      const formData = new FormData();
+      formData.append("call_ids", lamprellUaePoUploadCards.map((card) => card.callId).join(","));
+      formData.append("card_ids", lamprellUaePoUploadCards.map((card) => card.id).join(","));
+      files.forEach((file) => formData.append("po_approval[]", file));
+
+      const { ok, message } = await uploadLamprellUaePo(formData);
+      if (!ok) notify(message, "error");
+    },
+    [lamprellUaePoUploadCards, uploadLamprellUaePo, openLamprellUaeManualPoReview]
+  );
+
+  const handleLamprellUaePoConfirmed = useCallback(
+    (cardIds) => {
+      clearCardColumns(cardIds);
+      cardIds.forEach((cardId) => removeCardSelectionId(cardId));
+      refetchBoard?.();
+    },
+    [clearCardColumns, removeCardSelectionId, refetchBoard]
   );
 
   /* Sends the PO request via da/send_po_request; the backend moves the batch's cards to "Requested PO". */
@@ -2616,6 +2663,21 @@ export default function KanbanBoardPage() {
         submitLabel="Upload PO"
         fields={zamilMarinePoUploadFields}
       />
+
+      <SeApprovalUploadModal
+        show={showLamprellUaePoUploadModal}
+        onClose={closeLamprellUaePoUploadModal}
+        onUpload={handleUploadLamprellUaePo}
+        isSubmitting={isUploadingLamprellUaePo}
+        selectedCardCount={lamprellUaePoUploadCards.length}
+        title="Upload PO"
+        subtitle="Attach the client's reply, or continue without a file to enter the PO details by hand"
+        submitLabel="Continue"
+        fields={lamprellUaePoUploadFields}
+        allowEmptyUpload
+      />
+
+      <LamprellUaePoReviewModal onConfirmed={handleLamprellUaePoConfirmed} />
 
       <SeApprovalUploadModal
         show={showSrfUploadModal}
