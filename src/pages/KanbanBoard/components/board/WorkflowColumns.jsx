@@ -24,8 +24,9 @@ import useServiceSheetStore from "@/store/serviceSheetStore";
 import useFinalInvoiceStore from "@/store/finalInvoiceStore";
 import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
+import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow } from "../../utils/columnTitles";
+import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -132,6 +133,11 @@ const getInvoiceAction = (workflow, column) => {
   if (LAMPRELL_UAE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && SEND_FOR_PO_APPROVAL_COLUMN_PATTERN.test(title)) {
     return "requestLamprellUaePo";
   }
+  /* "Upload PO" on Lamprell UAE's "PO Received / Submitted to DA" takes the client's reply for every card the
+     user ticks; confirming the review moves them to the DA board. */
+  if (isLamprellUaePoReceivedColumn(workflow?.title, title)) {
+    return "uploadLamprellUaePo";
+  }
   if (ZAMIL_MARINE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && PO_REQUESTED_COLUMN_PATTERN.test(title)) {
     return "uploadZamilMarinePo";
   }
@@ -205,6 +211,7 @@ const INVOICE_ACTION_BUTTONS = {
   requestZamilMarinePo: { label: "Send for PO Request", icon: <FiSend size={16} aria-hidden /> },
   requestLamprellUaePo: { label: "Request for PO", icon: <FiSend size={16} aria-hidden /> },
   uploadZamilMarinePo: { label: "Upload PO", icon: <FiUploadCloud size={16} aria-hidden /> },
+  uploadLamprellUaePo: { label: "Upload PO", icon: <FiUploadCloud size={16} aria-hidden /> },
   enterServiceSheetNo: { label: "Enter Service Sheet No", icon: <FiFileText size={16} aria-hidden /> },
   checkSignatures: { label: "Check Signatures", icon: <FiEdit3 size={16} aria-hidden /> },
   checkInvoice: { label: "Arrange invoice pages", icon: <FiFileText size={16} aria-hidden /> },
@@ -359,6 +366,13 @@ export default function WorkflowColumns({
   const openZamilMarinePoRequestModal = useZamilMarinePoRequestStore((state) => state.openPoRequestEmailModal);
 
   const openZamilMarinePoUploadModal = useZamilMarinePoUploadStore((state) => state.openPoUploadModal);
+
+  const openLamprellUaePoUploadModal = useLamprellUaePoApprovalStore((state) => state.openPoUploadModal);
+
+  const handleLamprellUaePoUpload = (cards) => {
+    const { ok, message } = openLamprellUaePoUploadModal(cards);
+    if (!ok) useAlertReducer.getState().error(message);
+  };
 
   const handleZamilMarinePoUpload = (cards) => {
     const { ok, message } = openZamilMarinePoUploadModal(cards);
@@ -574,6 +588,7 @@ export default function WorkflowColumns({
                 requestZamilMarinePo: handleZamilMarinePoRequest,
                 requestLamprellUaePo: handleZamilMarinePoRequest,
                 uploadZamilMarinePo: handleZamilMarinePoUpload,
+                uploadLamprellUaePo: handleLamprellUaePoUpload,
                 merge: onColumnMergeInvoice,
                 downloadInvoices: onColumnDownloadInvoices,
                 uploadDispatchProof: onUploadDispatchProof,
