@@ -26,10 +26,10 @@ const useDriverVehicleMappingReducer = create((set) => ({
       error(err?.response?.data?.message ?? err.message);
     }
   },
-  getDriverVehicleMappingData: async ({ params }) => {
+  getDriverVehicleMappingData: async ({ params, type }) => {
     try {
       set({ isLoading: true });
-      const { data } = await driverVehicleMappingService.getDriverVehicleMappingData({ params });
+      const { data } = await driverVehicleMappingService.getDriverVehicleMappingData({ params, type });
       set({
         driverVehicleMappingData: data?.data ?? [],
         totalDriverVehicleMappingCount: data?.pagination?.total ?? 0,

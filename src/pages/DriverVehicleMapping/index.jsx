@@ -40,13 +40,17 @@ const DriverVehicleMapping = ({ type = "transport" }) => {
     // ✅ Fetch list whenever params change
     useEffect(() => {
         getDriverVehicleMappingData?.({
-            search: params.searchTerm || "",
-            page: params.page,
-            limit: params.limit,
-            sortBy: params.sortBy,
-            sortOrder: params.sortOrder,
+            params: {
+                search: params.searchTerm || "",
+                page: params.page,
+                limit: params.limit,
+                sortBy: params.sortBy,
+                sortOrder: params.sortOrder,
+            },
+            type,
         });
     }, [
+        type,
         params.page,
         params.limit,
         params.searchTerm,
@@ -127,11 +131,14 @@ const DriverVehicleMapping = ({ type = "transport" }) => {
 
     const refreshList = () => {
         getDriverVehicleMappingData?.({
-            search: params.searchTerm || "",
-            page: params.page,
-            limit: params.limit,
-            sortBy: params.sortBy,
-            sortOrder: params.sortOrder,
+            params: {
+                search: params.searchTerm || "",
+                page: params.page,
+                limit: params.limit,
+                sortBy: params.sortBy,
+                sortOrder: params.sortOrder,
+            },
+            type,
         });
     };
 
