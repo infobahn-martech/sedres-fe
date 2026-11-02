@@ -632,46 +632,76 @@
     white-space: nowrap;
 }
 
-/* Page switcher pinned to the bottom of the board icon rail */
+/* Card view level selector pinned to the bottom of the board icon rail:
+   a vertical stepper — dots on a rail that fills down to the active level, a glowing white
+   indicator that slides between dots, and a caption naming the current view. */
 .kanban-sidebar-pager {
-    --pager-item: 32px;
-    --pager-gap: 4px;
+    --pager-dot: 26px;
+    --pager-step: 36px; // distance between dot centres
+    --pager-dot-bg: #0b3f94; // opaque fill so the rail doesn't show through the dots
 
     margin-top: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    padding: 4px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    gap: 4px;
+    width: 52px;
+    padding: 6px 0 8px;
+    border-radius: 26px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 6px 18px rgba(0, 18, 60, 0.28);
 }
 
 .kanban-sidebar-pager-track {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--pager-gap);
+    align-items: center;
+    gap: calc(var(--pager-step) - var(--pager-dot));
+    padding: 2px 0;
 }
 
-// Slides behind the active number (index set inline via --pager-index)
+// Thin rail linking the dots (centre of first dot → centre of last dot)
+.kanban-sidebar-pager-rail {
+    position: absolute;
+    left: 50%;
+    top: calc(2px + var(--pager-dot) / 2);
+    width: 2px;
+    height: calc(var(--pager-steps, 3) * var(--pager-step));
+    transform: translateX(-50%);
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.18);
+    pointer-events: none;
+}
+
+.kanban-sidebar-pager-rail-fill {
+    display: block;
+    width: 100%;
+    height: calc(var(--pager-index, 0) * var(--pager-step));
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), #ffffff);
+    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// Sliding active dot: white disc with a soft halo
 .kanban-sidebar-pager-indicator {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: var(--pager-item);
-    height: var(--pager-item);
-    border-radius: 10px;
-    background: var(--surface-primary);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
-    transform: translateY(calc(var(--pager-index, 0) * (var(--pager-item) + var(--pager-gap))));
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    left: 50%;
+    top: 2px;
+    width: var(--pager-dot);
+    height: var(--pager-dot);
+    margin-left: calc(var(--pager-dot) / -2);
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow:
+        0 0 0 4px rgba(255, 255, 255, 0.18),
+        0 4px 12px rgba(0, 18, 60, 0.35);
+    transform: translateY(calc(var(--pager-index, 0) * var(--pager-step)));
+    transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
     pointer-events: none;
-
-    @media (prefers-reduced-motion: reduce) {
-        transition: none;
-    }
 }
 
 .kanban-sidebar-pager-arrow,
@@ -680,28 +710,32 @@
     align-items: center;
     justify-content: center;
     border: none;
-    background: transparent;
-    color: #ffffff;
-    cursor: pointer;
     padding: 0;
+    cursor: pointer;
     font-family: 'Manrope', sans-serif;
-    transition: background 0.2s ease-in-out, color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+    transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease, border-color 0.2s ease,
+        transform 0.2s ease;
 
     &:focus-visible {
-        outline: 2px solid rgba(255, 255, 255, 0.8);
-        outline-offset: 2px;
+        outline: 2px solid rgba(255, 255, 255, 0.85);
+        outline-offset: 3px;
     }
 }
 
 .kanban-sidebar-pager-arrow {
-    width: var(--pager-item);
-    height: 22px;
-    border-radius: 8px;
-    opacity: 0.85;
+    width: 26px;
+    height: 20px;
+    border-radius: 10px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
 
     &:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.14);
-        opacity: 1;
+        background: rgba(255, 255, 255, 0.16);
+        color: #ffffff;
+    }
+
+    &:active:not(:disabled) {
+        transform: scale(0.9);
     }
 
     &:disabled {
@@ -710,29 +744,86 @@
     }
 }
 
+// Level dots: outlined rings on the rail (solid navy fill hides the rail behind them)
 .kanban-sidebar-pager-page {
-    position: relative; // above the sliding indicator
-    width: var(--pager-item);
-    height: var(--pager-item);
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.75);
+    position: relative; // above the rail and the sliding indicator
+    z-index: 1;
+    width: var(--pager-dot);
+    height: var(--pager-dot);
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+    background: var(--pager-dot-bg);
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 11.5px;
+    font-weight: 700;
 
     &:hover:not(.active) {
-        background: rgba(255, 255, 255, 0.14);
+        border-color: #ffffff;
+        color: #ffffff;
+        transform: scale(1.08);
+    }
+
+    // Levels above the active one sit on the filled part of the rail
+    &.passed {
+        border-color: rgba(255, 255, 255, 0.75);
         color: #ffffff;
     }
 
     &.active {
-        color: var(--color-primary-accent);
-        font-weight: 700;
+        border-color: transparent;
+        background: transparent; // the indicator disc shows through
+        color: #00368c;
+        font-size: 12.5px;
+        font-weight: 800;
+    }
+}
+
+// Name of the current view, under the control
+.kanban-sidebar-pager-caption {
+    margin-top: 2px;
+    max-width: 100%;
+    padding: 0 2px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+// Dark sidebar skins: match the dot fill to the darker rail and tint the active number
+.kanban-sidebar-dark .kanban-sidebar-pager {
+    --pager-dot-bg: #161b24;
+}
+
+[data-theme="dark"] .kanban-sidebar .kanban-sidebar-pager {
+    --pager-dot-bg: var(--bg-chrome);
+}
+
+.kanban-sidebar-dark .kanban-sidebar-pager-page.active,
+[data-theme="dark"] .kanban-sidebar .kanban-sidebar-pager-page.active {
+    color: #0c0f14;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .kanban-sidebar-pager-rail-fill,
+    .kanban-sidebar-pager-indicator {
+        transition: none;
     }
 }
 
 @media (max-width: 767px) {
     .kanban-sidebar-pager {
-        --pager-item: 28px;
+        --pager-dot: 22px;
+        --pager-step: 30px;
+        width: 44px;
+    }
+
+    .kanban-sidebar-pager-caption {
+        display: none;
     }
 }
 

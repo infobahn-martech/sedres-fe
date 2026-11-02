@@ -964,18 +964,25 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
               data-tooltip-id="sidebar-tooltip"
               data-tooltip-content="More detail"
             >
-              <FiChevronUp size={18} />
+              <FiChevronUp size={16} />
             </button>
             <div
               className="kanban-sidebar-pager-track"
-              style={{ '--pager-index': cardViewLevel - 1 }}
+              style={{
+                '--pager-index': cardViewLevel - 1,
+                '--pager-steps': CARD_VIEW_LEVELS.length - 1,
+              }}
             >
+              {/* Rail behind the dots; its fill grows down to the active level */}
+              <span className="kanban-sidebar-pager-rail" aria-hidden>
+                <span className="kanban-sidebar-pager-rail-fill" />
+              </span>
               <span className="kanban-sidebar-pager-indicator" aria-hidden />
               {CARD_VIEW_LEVELS.map(({ level, label, ariaLabel }) => (
                 <button
                   key={level}
                   type="button"
-                  className={`kanban-sidebar-pager-page ${cardViewLevel === level ? 'active' : ''}`}
+                  className={`kanban-sidebar-pager-page ${cardViewLevel === level ? 'active' : ''} ${level < cardViewLevel ? 'passed' : ''}`}
                   onClick={() => selectCardViewLevel(level)}
                   aria-pressed={cardViewLevel === level}
                   aria-label={ariaLabel}
@@ -997,8 +1004,11 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
               data-tooltip-id="sidebar-tooltip"
               data-tooltip-content="Less detail"
             >
-              <FiChevronDown size={18} />
+              <FiChevronDown size={16} />
             </button>
+            <span className="kanban-sidebar-pager-caption" aria-hidden>
+              {CARD_VIEW_LEVELS[cardViewLevel - 1]?.label}
+            </span>
           </div>
 
           <Tooltip
