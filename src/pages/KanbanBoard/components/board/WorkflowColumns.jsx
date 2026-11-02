@@ -121,13 +121,14 @@ const PO_REQUESTED_COLUMN_PATTERN = /^po[^a-z]*requested$/i;
 const PO_RECEIVED_SUBMITTED_TO_DA_COLUMN_PATTERN = /^po\W*rec(ei|ie)ved(\W+submitted\W*to\W*da)?$/i;
 const isZamilMarineWorkflow = (workflow) => ZAMIL_MARINE_WORKFLOW_PATTERN.test(workflow?.title ?? "");
 
-/* Lamprell UAE has no batches either: "Request for PO" on "Request for PO" opens the same PO request email
-   draft for every card the user ticks. */
+/* Lamprell UAE Operations has no batches: "Request for PO" on "Send for PO Approval" opens the same PO request
+   email draft as Zamil Marine for every card the user ticks. */
 const LAMPRELL_UAE_WORKFLOW_PATTERN = /lamprell\s*uae/i;
+const SEND_FOR_PO_APPROVAL_COLUMN_PATTERN = /^send\s+for\s+po\s+approval$/i;
 
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
-  if (LAMPRELL_UAE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && REQUEST_FOR_PO_COLUMN_PATTERN.test(title)) {
+  if (LAMPRELL_UAE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && SEND_FOR_PO_APPROVAL_COLUMN_PATTERN.test(title)) {
     return "requestLamprellUaePo";
   }
   if (ZAMIL_MARINE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && PO_REQUESTED_COLUMN_PATTERN.test(title)) {
