@@ -302,7 +302,8 @@ const getFinalInvoicePages = (callId, cardId) =>
  *   column_id: number, column_name: string }, document: { stage_document_id: number, name: string, url: string },
  *   zip: object|null, page_count: number, size_mb: number, warnings: string[] } } | { status: 'error', message: string } }>}
  * Builds and stores the final invoice PDF; the card moves to the next column. */
-const saveFinalInvoice = (payload) => Gateway.post('/da/save_final_invoice', payload);
+const saveFinalInvoice = (payload) =>
+  Gateway.post('/da/save_final_invoice', payload, { timeout: 300000 });
 
 const getInvoiceDispatchDraft = (callId) => Gateway.get(`/da/invoice_dispatch_draft/${callId}`);
 
