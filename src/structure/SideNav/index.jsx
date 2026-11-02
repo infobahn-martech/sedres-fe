@@ -1006,9 +1006,6 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
             >
               <FiChevronDown size={16} />
             </button>
-            <span className="kanban-sidebar-pager-caption" aria-hidden>
-              {CARD_VIEW_LEVELS[cardViewLevel - 1]?.label}
-            </span>
           </div>
 
           <Tooltip
