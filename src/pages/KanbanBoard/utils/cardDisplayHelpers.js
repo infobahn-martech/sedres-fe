@@ -51,3 +51,15 @@ export function getUsernameInitial(username) {
   const s = String(username).trim();
   return s ? s.charAt(0).toUpperCase() : "";
 }
+
+/** Shared react-tooltip id for Level 4 (minimal) card tiles — rendered once by KanbanBoardPage. */
+export const MINIMAL_CARD_TOOLTIP_ID = "kanban-card-minimal-tooltip";
+
+/** Multi-line hover text for a minimal card tile: vessel/title, card ID, customer. */
+export function getMinimalCardTooltip(card) {
+  if (!card || typeof card !== "object") return "";
+  const customer = hasText(card.billingEntity) ? card.billingEntity : card.name;
+  return [getApiCardDisplayTitle(card), `ID: ${card.id}`, hasText(customer) ? String(customer).trim() : ""]
+    .filter(Boolean)
+    .join("\n");
+}

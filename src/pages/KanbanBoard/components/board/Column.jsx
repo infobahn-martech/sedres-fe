@@ -7,6 +7,7 @@ import CardItem from "../cards/components/shared/CardItem";
 import TaxiBoatSmallCard from "../cards/components/TaxiBoat/TaxiBoatSmallCard";
 import DASmallCard from "../cards/components/DA/DASmallCard";
 import usePermissions from "@/shared/hooks/usePermissions";
+import useKanbanCardViewStore from "@/store/kanbanCardViewStore";
 import { PERMISSION_MODULES } from "@/shared/constants/permissions";
 import "@/design/scss/pages/kanban-board/column.scss";
 
@@ -16,6 +17,7 @@ function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk =
   const columnColor = column.color || "#2A00FF";
   const { hasModule } = usePermissions();
   const canViewCards = hasModule(PERMISSION_MODULES.KANBAN_CARD);
+  const isMinimalView = useKanbanCardViewStore((state) => state.level === 4);
 
   // Truncate title to 8 characters when shrunk
   const displayTitle = isShrunk && column.title.length > 8
@@ -124,7 +126,7 @@ function Column({ column, cards, setSelectedCard, isExpanded = false, isShrunk =
       <Droppable droppableId={column.id}>
         {(provided, snapshot) => (
           <div
-            className={`card-list ${snapshot.isDraggingOver ? "drag-over" : ""}`}
+            className={`card-list ${snapshot.isDraggingOver ? "drag-over" : ""} ${isMinimalView ? "card-list--minimal" : ""}`}
             ref={provided.innerRef}
             {...provided.droppableProps}
           >

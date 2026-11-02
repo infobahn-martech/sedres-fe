@@ -195,3 +195,8 @@
         line-height: 1;
     }
 }
+
+/* Card view Level 3 (Compact): only the accent line remains in the top section */
+.tb-sc.tb-sc--level-3 .tb-sc-top {
+    height: 14px;
+}

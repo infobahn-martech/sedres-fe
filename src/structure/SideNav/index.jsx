@@ -51,13 +51,12 @@ import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
 import useAuthReducer from '../../store/AuthReducer';
 import { useKanbanSidebarBridge } from '../../store/kanbanSidebarBridge';
+import useKanbanCardViewStore, { CARD_VIEW_LEVELS } from '../../store/kanbanCardViewStore';
 import { ROUTE_PATHS } from '../../router/paths';
 import { hasKanbanFullSidebar } from '../../shared/helpers/restrictedBoardUser';
 import { isMasterMenuAllowed, filterMasterSubMenus } from '../../shared/helpers/roleMasterMenuAccess';
 import usePermissions from '../../shared/hooks/usePermissions';
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from '../../shared/constants/permissions';
-
-const SIDEBAR_PAGE_COUNT = 4;
 
 function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   const { pathname } = useLocation();
@@ -212,15 +211,27 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   const [selectedSwimlaneId, setSelectedSwimlaneId] = useState(null);
   const [addModalWorkflows, setAddModalWorkflows] = useState([]);
   const [swimlanePhaseWorkflow, setSwimlanePhaseWorkflow] = useState(null);
-  const [activeSidebarPage, setActiveSidebarPage] = useState(1);
 
-  // Board pager at the bottom of the icon rail; the board listens for
-  // `kanban:sidebar-page` to react to the selected page.
-  const selectSidebarPage = useCallback((page) => {
-    const next = Math.min(SIDEBAR_PAGE_COUNT, Math.max(1, page));
-    setActiveSidebarPage(next);
-    window.dispatchEvent(new CustomEvent('kanban:sidebar-page', { detail: { page: next } }));
-  }, []);
+  // Card view level selector at the bottom of the icon rail (1 Detailed … 4 Minimal).
+  // Presentation only: cards read the level from the store, nothing is refetched.
+  const cardViewLevel = useKanbanCardViewStore((s) => s.level);
+  const setCardViewLevel = useKanbanCardViewStore((s) => s.setLevel);
+  const selectCardViewLevel = useCallback(
+    (level) => setCardViewLevel(Math.min(CARD_VIEW_LEVELS.length, Math.max(1, level))),
+    [setCardViewLevel]
+  );
+  const handleCardViewKeyDown = useCallback(
+    (e) => {
+      const step = { ArrowUp: -1, ArrowLeft: -1, ArrowDown: 1, ArrowRight: 1 }[e.key];
+      const jump = { Home: 1, End: CARD_VIEW_LEVELS.length }[e.key];
+      if (!step && !jump) return;
+      e.preventDefault();
+      const next = jump ?? Math.min(CARD_VIEW_LEVELS.length, Math.max(1, cardViewLevel + step));
+      selectCardViewLevel(next);
+      e.currentTarget.querySelector(`[data-card-view-level="${next}"]`)?.focus();
+    },
+    [cardViewLevel, selectCardViewLevel]
+  );
 
   const sidebarWorkflows = useKanbanSidebarBridge((s) => s.boardWorkflows);
   const pendingAddCardFromWorkflowRef = useRef(null);
@@ -938,44 +949,57 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
 
           <ToolsMenu variant="sidebar" onSelect={setActiveTool} />
 
-          <nav className="kanban-sidebar-pager" aria-label="Board pages">
+          <div
+            className="kanban-sidebar-pager"
+            role="group"
+            aria-label="Card view level"
+            onKeyDown={handleCardViewKeyDown}
+          >
             <button
               type="button"
               className="kanban-sidebar-pager-arrow"
-              onClick={() => selectSidebarPage(activeSidebarPage - 1)}
-              disabled={activeSidebarPage === 1}
-              aria-label="Previous page"
+              onClick={() => selectCardViewLevel(cardViewLevel - 1)}
+              disabled={cardViewLevel === 1}
+              aria-label="Show more card details"
+              data-tooltip-id="sidebar-tooltip"
+              data-tooltip-content="More detail"
             >
               <FiChevronUp size={18} />
             </button>
             <div
               className="kanban-sidebar-pager-track"
-              style={{ '--pager-index': activeSidebarPage - 1 }}
+              style={{ '--pager-index': cardViewLevel - 1 }}
             >
               <span className="kanban-sidebar-pager-indicator" aria-hidden />
-              {Array.from({ length: SIDEBAR_PAGE_COUNT }, (_, i) => i + 1).map((page) => (
+              {CARD_VIEW_LEVELS.map(({ level, label, ariaLabel }) => (
                 <button
-                  key={page}
+                  key={level}
                   type="button"
-                  className={`kanban-sidebar-pager-page ${activeSidebarPage === page ? 'active' : ''}`}
-                  onClick={() => selectSidebarPage(page)}
-                  aria-current={activeSidebarPage === page ? 'page' : undefined}
-                  aria-label={`Page ${page}`}
+                  className={`kanban-sidebar-pager-page ${cardViewLevel === level ? 'active' : ''}`}
+                  onClick={() => selectCardViewLevel(level)}
+                  aria-pressed={cardViewLevel === level}
+                  aria-label={ariaLabel}
+                  tabIndex={cardViewLevel === level ? 0 : -1}
+                  data-card-view-level={level}
+                  data-tooltip-id="sidebar-tooltip"
+                  data-tooltip-content={label}
                 >
-                  {page}
+                  {level}
                 </button>
               ))}
             </div>
             <button
               type="button"
               className="kanban-sidebar-pager-arrow"
-              onClick={() => selectSidebarPage(activeSidebarPage + 1)}
-              disabled={activeSidebarPage === SIDEBAR_PAGE_COUNT}
-              aria-label="Next page"
+              onClick={() => selectCardViewLevel(cardViewLevel + 1)}
+              disabled={cardViewLevel === CARD_VIEW_LEVELS.length}
+              aria-label="Show less card details"
+              data-tooltip-id="sidebar-tooltip"
+              data-tooltip-content="Less detail"
             >
               <FiChevronDown size={18} />
             </button>
-          </nav>
+          </div>
 
           <Tooltip
             id="sidebar-tooltip"

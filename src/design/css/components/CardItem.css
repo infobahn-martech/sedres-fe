@@ -1338,3 +1338,122 @@
 [data-theme="dark"] .kanban-board--swimlanes .progress-text {
   color: var(--text-body);
 }
+
+/* ==========================================================================
+   Card view levels (sidebar 1/2/3/4 — kanbanCardViewStore)
+   1 Detailed = existing card (no overrides) · 2 Standard · 3 Compact · 4 Minimal
+   ========================================================================== */
+
+/* Short fade on the content that appears when switching level; opacity only, so it stays cheap
+   on boards with hundreds of cards. Level 1 keeps the existing card enter animation untouched. */
+@keyframes kanbanCardLevelFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.kanban-card--level-2 > *,
+.kanban-card--level-3 > * {
+  animation: kanbanCardLevelFade 0.18s ease-out both;
+}
+
+/* Level 3 — one row: title + avatar (+ select toggle). Top status line stays via ::before. */
+.kanban-card.kanban-card--level-3 {
+  padding: 9px 8px 7px;
+}
+
+.card-compact-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.card-compact-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+[data-theme="dark"] .kanban-board--swimlanes .card-compact-row-title,
+.kanban-card-dark .card-compact-row-title {
+  color: var(--text-heading, #f0f0f0);
+}
+
+/* Level 4 — colour tile. Colour is painted by ::before so theme rules that reset the card
+   background (dark mode) can't hide it. */
+.kanban-card.kanban-card--minimal {
+  width: 34px;
+  height: 18px;
+  padding: 0;
+  border-radius: 5px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+  cursor: pointer;
+  overflow: visible;
+  animation: none;
+}
+
+.kanban-card.kanban-card--minimal:not(.priority-blink) {
+  animation: kanbanCardLevelFade 0.18s ease-out both;
+}
+
+.kanban-card.kanban-card--minimal::before {
+  inset: 0;
+  height: auto;
+  border: 0;
+  border-radius: 4px;
+  background: var(--card-color, #2a00ff);
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.kanban-card.kanban-card--minimal:hover {
+  transform: translateY(-1px) scale(1.08);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.22);
+}
+
+.kanban-card.kanban-card--minimal:focus-visible {
+  outline: 2px solid var(--color-primary-accent, #2563eb);
+  outline-offset: 2px;
+}
+
+.kanban-card.kanban-card--minimal.kanban-card--selected-for-action {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Blocker indicator kept on the tile so blocked cards stand out in the overview */
+.kanban-card-minimal-blocker {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--surface-primary, #fff);
+  z-index: 1;
+}
+
+/* Legacy (non-swimlane) Column list: wrap tiles instead of stacking them */
+.card-list.card-list--minimal {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+}
+
+/* Shared hover tooltip for minimal tiles: vessel / ID / customer on separate lines */
+.kanban-card-minimal-tooltip {
+  white-space: pre-line;
+  font-size: 12px;
+  line-height: 1.45;
+  z-index: 1100;
+}

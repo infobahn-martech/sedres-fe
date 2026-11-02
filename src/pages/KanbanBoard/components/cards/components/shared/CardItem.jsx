@@ -3,6 +3,7 @@ import { Draggable } from "@hello-pangea/dnd";
 import { KANBAN_DND_DISABLED } from "@/shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
 import useExportApprovalStatusStore from "@/store/exportApprovalStatusStore";
+import useKanbanCardViewStore from "@/store/kanbanCardViewStore";
 import "@/design/scss/pages/kanban-board/signatureCheck.scss";
 import { Tooltip } from "react-tooltip";
 import "@/design/css/components/CardItem.css";
@@ -20,6 +21,8 @@ import {
   getApiCardDisplayTitle,
   getApiCardTaskName,
   getUsernameInitial,
+  getMinimalCardTooltip,
+  MINIMAL_CARD_TOOLTIP_ID,
 } from "@/pages/KanbanBoard/utils/cardDisplayHelpers";
 import { downloadRemoteFile } from "@/shared/utils/utils";
 
@@ -610,6 +613,7 @@ function ApiKanbanCardFull({
   cardsById,
   transportOnlyIcons = false,
   showInvoiceDownload = false,
+  isStandardView = false,
 }) {
   const displayTitle = getApiCardDisplayTitle(card);
   const secondary = hasText(card.billingEntity)
@@ -644,7 +648,7 @@ function ApiKanbanCardFull({
             />
           )}
         </div>
-        <ApiCardTaskLine card={card} />
+        {!isStandardView && <ApiCardTaskLine card={card} />}
         {hasText(secondary) ? (
           <p className="card-api-secondary" title={secondary}>
             {hasText(card.billingEntityColor) ? (
@@ -659,11 +663,16 @@ function ApiKanbanCardFull({
         ) : null}
       </div>
 
-      <ApiCardCountIconsRow card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} transportOnly={transportOnlyIcons} />
+      {/* Level 2 (Standard) stops here: linked card, subtasks, reference no., age and progress are Level 1 only */}
+      {isStandardView ? null : (
+        <>
+          <ApiCardCountIconsRow card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} transportOnly={transportOnlyIcons} />
 
-      <ApiCardSalesOrderRow card={card} showInvoiceDownload={showInvoiceDownload} />
+          <ApiCardSalesOrderRow card={card} showInvoiceDownload={showInvoiceDownload} />
+        </>
+      )}
 
-      {showSummaryRow ? (
+      {!isStandardView && showSummaryRow ? (
         <div className="card-api-summary-row">
           <div className="card-api-summary-left">
             {hasTimeline ? <span className="card-api-timeline">{card.timeLeft}</span> : null}
@@ -676,6 +685,39 @@ function ApiKanbanCardFull({
     </>
   );
 }
+
+/** Level 3 (Compact) card body: title + avatar (with blocker badge) + optional select toggle on one row. */
+function CardCompactRow({ card, setSelectedCard, selectToggle = null }) {
+  const displayTitle = getApiCardDisplayTitle(card);
+  const usernameInitial = getUsernameInitial(card.user);
+
+  return (
+    <div className="card-compact-row">
+      <span
+        className="card-compact-row-title"
+        onClick={() => setSelectedCard(card)}
+        title={displayTitle || undefined}
+      >
+        {displayTitle}
+      </span>
+      {usernameInitial ? (
+        <span className="card-api-avatar-wrap">
+          <span className="card-api-user-avatar" title={String(card.user).trim()} aria-hidden>
+            {usernameInitial}
+          </span>
+          <ApiCardBlockerBadge card={card} />
+        </span>
+      ) : null}
+      {selectToggle}
+    </div>
+  );
+}
+
+CardCompactRow.propTypes = {
+  card: PropTypes.object.isRequired,
+  setSelectedCard: PropTypes.func.isRequired,
+  selectToggle: PropTypes.node,
+};
 
 function CardItem({
   card,
@@ -695,6 +737,12 @@ function CardItem({
   isDragDisabled = false,
 }) {
   const isApiCard = card.cardSource === "api";
+  /* Board card density (sidebar 1/2/3/4). Shrunk columns keep their own compact layout for levels 1–3. */
+  const viewLevel = useKanbanCardViewStore((state) => state.level);
+  const isMinimalView = viewLevel === 4;
+  const isCompactView = viewLevel === 3 && !isShrunk;
+  const isStandardView = viewLevel === 2 && !isShrunk;
+  const showFullDetails = viewLevel === 1 || isShrunk;
   const isDaBoardCard = String(card?.da_board ?? card?.raw?.da_board ?? "").trim() === "1";
   /* SAIPEM Backlog cards whose export approval is still pending (or being read) carry no checkbox,
      so they can't be added to a batch. */
@@ -727,7 +775,7 @@ function CardItem({
   };
 
   const fixedBoardSizeStyle =
-    fixedDimensions != null
+    fixedDimensions != null && !isMinimalView
       ? (() => {
         const w = fixedDimensions.width;
         const base = {
@@ -759,20 +807,83 @@ function CardItem({
     (Array.isArray(ed) && ed.includes("waste")) ||
     (Array.isArray(ed) && ed.includes("launch"));
 
+  const selectToggle = canSelectForAction ? (
+    <button
+      type="button"
+      className={`kanban-card-select-toggle ${isSelectedForAction ? "is-selected" : ""}`}
+      onMouseDown={(e) => {
+        // Stops the card's own drag-handle from starting a reorder-drag, then
+        // starts a select-drag instead (see onMouseEnter on the card root above,
+        // which "paints" every card the pointer passes over next).
+        e.stopPropagation();
+        e.preventDefault();
+        if (typeof onSelectDragStart === "function") {
+          onSelectDragStart(card);
+        } else {
+          onToggleSelectForAction(card);
+        }
+      }}
+      onClick={(e) => e.stopPropagation()}
+      aria-pressed={isSelectedForAction}
+      aria-label={isSelectedForAction ? "Deselect card" : "Select card"}
+      title={isSelectedForAction ? "Deselect card" : "Select card"}
+    >
+      <span className="kanban-card-select-toggle-box" aria-hidden="true" />
+    </button>
+  ) : null;
+
+  const selectDragEnterHandler =
+    canSelectForAction && typeof onSelectDragEnter === "function"
+      ? () => onSelectDragEnter(card)
+      : undefined;
+
   return (
     <Draggable draggableId={card.id} index={index} isDragDisabled={KANBAN_DND_DISABLED || isDragDisabled}>
-      {(provided, snapshot) => (
+      {(provided, snapshot) => isMinimalView ? (
+        /* Level 4 (Minimal): colour tile only. Same Draggable/id as every other level, so DnD is
+           unchanged; click / Enter opens the same card form. Hover text comes from the board-level
+           shared tooltip (MINIMAL_CARD_TOOLTIP_ID) instead of one Tooltip per card. */
         <div
-          className={`kanban-card ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""} ${isSignatureMissing ? "kanban-card--signature-missing" : ""}`}
+          className={`kanban-card kanban-card--minimal ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""} ${isSignatureMissing ? "kanban-card--signature-missing" : ""}`}
+          ref={provided.innerRef}
+          {...(KANBAN_DND_DISABLED ? {} : provided.draggableProps)}
+          {...(KANBAN_DND_DISABLED ? {} : provided.dragHandleProps)}
+          role="button"
+          tabIndex={0}
+          aria-label={getMinimalCardTooltip(card).replace(/\n/g, ", ")}
+          data-tooltip-id={MINIMAL_CARD_TOOLTIP_ID}
+          data-tooltip-content={getMinimalCardTooltip(card)}
+          onClick={() => setSelectedCard(card)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") setSelectedCard(card);
+          }}
+          onMouseEnter={selectDragEnterHandler}
+          data-select-card-id={canSelectForAction ? card.id : undefined}
+          data-select-scope={
+            canSelectForAction && typeof onSelectDragEnter !== "function" ? "local" : undefined
+          }
+          style={{
+            ...(KANBAN_DND_DISABLED ? {} : provided.draggableProps.style),
+            "--card-color": cardColor,
+          }}
+        >
+          {hasText(card.blockerIcon) ? (
+            <span
+              className="kanban-card-minimal-blocker"
+              style={{ backgroundColor: card.blockerColor || "#dc3545" }}
+              title={card.blockerName}
+              aria-hidden
+            />
+          ) : null}
+        </div>
+      ) : (
+        <div
+          className={`kanban-card kanban-card--level-${viewLevel} ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""} ${isSignatureMissing ? "kanban-card--signature-missing" : ""}`}
           title={signatureTooltip}
           ref={provided.innerRef}
           {...(KANBAN_DND_DISABLED ? {} : provided.draggableProps)}
           {...(KANBAN_DND_DISABLED ? {} : provided.dragHandleProps)}
-          onMouseEnter={
-            canSelectForAction && typeof onSelectDragEnter === "function"
-              ? () => onSelectDragEnter(card)
-              : undefined
-          }
+          onMouseEnter={selectDragEnterHandler}
           data-select-card-id={canSelectForAction ? card.id : undefined}
           data-select-scope={
             canSelectForAction && typeof onSelectDragEnter !== "function" ? "local" : undefined
@@ -783,7 +894,7 @@ function CardItem({
             "--card-color": cardColor,
           }}
         >
-          {(canSelectForAction ||
+          {!isCompactView && (canSelectForAction ||
             (isApiCard && !isShrunk)) && (
             <div className="kanban-card-top-row">
               <div className="kanban-card-top-row-left">
@@ -815,34 +926,13 @@ function CardItem({
                     <ApiCardBlockerBadge card={card} />
                   </span>
                 ) : null}
-                {canSelectForAction && (
-                  <button
-                    type="button"
-                    className={`kanban-card-select-toggle ${isSelectedForAction ? "is-selected" : ""}`}
-                    onMouseDown={(e) => {
-                      // Stops the card's own drag-handle from starting a reorder-drag, then
-                      // starts a select-drag instead (see onMouseEnter on the card root above,
-                      // which "paints" every card the pointer passes over next).
-                      e.stopPropagation();
-                      e.preventDefault();
-                      if (typeof onSelectDragStart === "function") {
-                        onSelectDragStart(card);
-                      } else {
-                        onToggleSelectForAction(card);
-                      }
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    aria-pressed={isSelectedForAction}
-                    aria-label={isSelectedForAction ? "Deselect card" : "Select card"}
-                    title={isSelectedForAction ? "Deselect card" : "Select card"}
-                  >
-                    <span className="kanban-card-select-toggle-box" aria-hidden="true" />
-                  </button>
-                )}
+                {selectToggle}
               </div>
             </div>
           )}
-          {isApiCard ? (
+          {isCompactView ? (
+            <CardCompactRow card={card} setSelectedCard={setSelectedCard} selectToggle={selectToggle} />
+          ) : isApiCard ? (
             isShrunk ? (
               <ApiKanbanCardShrunk card={card} setSelectedCard={setSelectedCard} />
             ) : (
@@ -852,6 +942,7 @@ function CardItem({
                 cardsById={cardsById}
                 transportOnlyIcons={isTransportCoordinatorWorkflow}
                 showInvoiceDownload={isDaBoardCard}
+                isStandardView={isStandardView}
               />
             )
           ) : isShrunk ? (
@@ -957,7 +1048,7 @@ function CardItem({
               </div>
 
               {/* Footer-1: deadline, link; ETA only in Enroute column – hidden when hideExtraDetails (e.g. GRO); at least one icon always shown */}
-              {!hideExtraDetails && (() => {
+              {showFullDetails && !hideExtraDetails && (() => {
                 const hasDeadline = card.footerShowIcons?.includes("deadline");
                 const hasLink = card.footerShowIcons?.includes("link");
                 const isEnroute = (columnTitle || "").toLowerCase() === "enroute";
@@ -988,7 +1079,7 @@ function CardItem({
               })()}
 
               {/* Invoice Amount */}
-              {invoiceAmount != null && !isShrunk && (
+              {showFullDetails && invoiceAmount != null && !isShrunk && (
                 <div className="card-invoice-amount">
                   <span className="card-invoice-label">Invoice Amount</span>{" "}
                   <span className="card-invoice-amount-value">
@@ -1008,6 +1099,7 @@ function CardItem({
               )}
 
               {/* Footer: time left + progress */}
+              {showFullDetails && (
               <div className="card-footer">
                 <span className="card-time-left">{card?.timeLeft}</span>
                 <div className="footer-progress">
@@ -1029,14 +1121,15 @@ function CardItem({
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Separator only when extra-details row has content (avoids orphan line + empty padding). */}
-              {!hideExtraDetails && hasExtraDetailsIcons && (
+              {showFullDetails && !hideExtraDetails && hasExtraDetailsIcons && (
                 <div className="card-eta-footer-separator" aria-hidden="true" />
               )}
 
               {/* Extra Details Section — same visibility as separator */}
-              {!hideExtraDetails && hasExtraDetailsIcons && (
+              {showFullDetails && !hideExtraDetails && hasExtraDetailsIcons && (
                 <div className="card-extra-details" style={{ display: "flex", gap: "12px", alignItems: "center", justifyContent: "flex-start", padding: "8px 0" }}>
                   {/* Render transport only when BE/card payload provides it; otherwise hide */}
                   {card.transport != null && card.transport !== "" && (

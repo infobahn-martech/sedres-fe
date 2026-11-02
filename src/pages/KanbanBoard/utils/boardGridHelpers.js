@@ -21,6 +21,11 @@ export const BOARD_COLUMN_GAP_PX = 6;
 /** Fixed track width for a collapsed column (title rotated vertically, cards hidden). */
 export const COLLAPSED_COLUMN_WIDTH = 44;
 
+/** Level 4 (Minimal) card view: tiles pack into as many tracks as fit the column's existing width. */
+export const MINIMAL_TILE_WIDTH = 34;
+export const MINIMAL_TILE_GAP = 6;
+export const MINIMAL_GRID_TEMPLATE = `repeat(auto-fill, ${MINIMAL_TILE_WIDTH}px)`;
+
 /** Baseline min-height for every workflow's swimlane row, so rows look consistent board-wide
  *  even when a workflow's content is shorter than this (content can still grow it taller). */
 export const WORKFLOW_ROW_MIN_HEIGHT = 240;

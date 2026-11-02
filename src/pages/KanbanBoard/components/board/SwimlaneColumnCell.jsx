@@ -6,7 +6,15 @@ import TaxiBoatSmallCard from "../cards/components/TaxiBoat/TaxiBoatSmallCard";
 import DASmallCard from "../cards/components/DA/DASmallCard";
 import BatchGroup from "./BatchGroup";
 import { buildSwimlaneDroppableId } from "../../hooks/useKanbanDnD";
-import { CARD_GAP, CELL_PADDING_X, getCardsPerRow, getCardWidth } from "../../utils/boardGridHelpers";
+import {
+  CARD_GAP,
+  CELL_PADDING_X,
+  MINIMAL_GRID_TEMPLATE,
+  MINIMAL_TILE_GAP,
+  getCardsPerRow,
+  getCardWidth,
+} from "../../utils/boardGridHelpers";
+import useKanbanCardViewStore from "@/store/kanbanCardViewStore";
 import usePermissions from "@/shared/hooks/usePermissions";
 import { PERMISSION_MODULES } from "@/shared/constants/permissions";
 import { isSubmittedInvoicesColumnTitle } from "../../utils/columnTitles";
@@ -47,6 +55,7 @@ export default function SwimlaneColumnCell({
 }) {
   const { hasModule } = usePermissions();
   const canViewCards = hasModule(PERMISSION_MODULES.KANBAN_CARD);
+  const isMinimalView = useKanbanCardViewStore((state) => state.level === 4);
   const EMPTY_DROP_ZONE_MIN_HEIGHT = 240;
   /* Only fall back to the big placeholder height when nothing else in the row sets a
      height — otherwise an empty column would stretch the whole swimlane row to 720px
@@ -173,8 +182,10 @@ export default function SwimlaneColumnCell({
                 ? {}
                 : {
                     display: "grid",
-                    gridTemplateColumns: `repeat(${perRow}, ${cardWidth}px)`,
-                    gap: `${CARD_GAP}px`,
+                    gridTemplateColumns: isMinimalView
+                      ? MINIMAL_GRID_TEMPLATE
+                      : `repeat(${perRow}, ${cardWidth}px)`,
+                    gap: `${isMinimalView ? MINIMAL_TILE_GAP : CARD_GAP}px`,
                     padding: `${CELL_PADDING_X}px`,
                   }),
               justifyItems: "start",

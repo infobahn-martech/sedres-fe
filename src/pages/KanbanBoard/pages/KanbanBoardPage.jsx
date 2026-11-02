@@ -57,6 +57,9 @@ import useZamilMarineFinalInvoiceStore from "../../../store/zamilMarineFinalInvo
 import usePoReviewStore from "../../../store/poReviewStore";
 import useSccReviewStore from "../../../store/sccReviewStore";
 import useDispatchProofReviewStore from "../../../store/dispatchProofReviewStore";
+import useKanbanCardViewStore from "../../../store/kanbanCardViewStore";
+import { Tooltip } from "react-tooltip";
+import { MINIMAL_CARD_TOOLTIP_ID } from "../utils/cardDisplayHelpers";
 import "../../../design/scss/pages/kanban-board/marquee-select.scss";
 
 /* "SE Received" bulk invoice upload: PDFs only. da/upload_ar_invoices takes max_files_per_request
@@ -305,6 +308,13 @@ export default function KanbanBoardPage() {
   );
 
   useSyncKanbanSidebarWorkflows(workflows, selectedBoardId);
+
+  // Card density (sidebar 1/2/3/4): restore this board's saved level; reset when leaving the board.
+  const hydrateCardViewLevel = useKanbanCardViewStore((s) => s.hydrateForBoard);
+  useEffect(() => {
+    hydrateCardViewLevel(selectedBoardId);
+    return () => hydrateCardViewLevel(null);
+  }, [selectedBoardId, hydrateCardViewLevel]);
   useKanbanAddCardFromSidebar({
     setSelectedCard,
     setIsAddMode,
@@ -2378,6 +2388,8 @@ export default function KanbanBoardPage() {
       )}
       <div style={{ position: "relative" }} onMouseDown={handleMarqueeMouseDown}>
         <div ref={marqueeRef} className="kanban-marquee-select" aria-hidden="true" />
+        {/* One shared tooltip for every Level 4 (minimal) card tile — cheaper than one per card */}
+        <Tooltip id={MINIMAL_CARD_TOOLTIP_ID} place="top" className="kanban-card-minimal-tooltip" />
         {boardLoading && !isOperatorBoard && (
           <div
             aria-busy="true"

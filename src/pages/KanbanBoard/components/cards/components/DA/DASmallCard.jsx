@@ -1,6 +1,8 @@
 import { Draggable } from "@hello-pangea/dnd";
 import { KANBAN_DND_DISABLED } from "@/shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
+import useKanbanCardViewStore from "@/store/kanbanCardViewStore";
+import { getMinimalCardTooltip, MINIMAL_CARD_TOOLTIP_ID } from "@/pages/KanbanBoard/utils/cardDisplayHelpers";
 import "@/design/scss/pages/kanban-board/taxi-boat-small-card.scss";
 import saudimarcapLogo from "@/assets/images/saudimarcap.png";
 import saipemLogo      from "@/assets/images/saipem.png";
@@ -40,6 +42,34 @@ export default function DASmallCard({ card, index, setSelectedCard }) {
   const svcInitial  = serviceType.charAt(0).toUpperCase();
   const avatarBg    = avatarColor(custName);
   const logoSrc     = getCompanyLogo(custName, card?.entityLogo);
+  /* Board card density (sidebar 1/2/3/4) — see kanbanCardViewStore */
+  const viewLevel   = useKanbanCardViewStore((state) => state.level);
+
+  if (viewLevel === 4) {
+    const tooltip = getMinimalCardTooltip(card);
+    return (
+      <Draggable draggableId={card.id} index={index} isDragDisabled={KANBAN_DND_DISABLED}>
+        {(provided) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            {...provided.dragHandleProps}
+            className="kanban-card kanban-card--minimal"
+            style={{ ...provided.draggableProps.style, "--card-color": "#2666be" }}
+            role="button"
+            tabIndex={0}
+            aria-label={tooltip.replace(/\n/g, ", ")}
+            data-tooltip-id={MINIMAL_CARD_TOOLTIP_ID}
+            data-tooltip-content={tooltip}
+            onClick={() => setSelectedCard(card)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") setSelectedCard(card);
+            }}
+          />
+        )}
+      </Draggable>
+    );
+  }
 
   return (
     <Draggable draggableId={card.id} index={index} isDragDisabled={KANBAN_DND_DISABLED}>
@@ -48,14 +78,14 @@ export default function DASmallCard({ card, index, setSelectedCard }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className="tb-sc"
+          className={`tb-sc tb-sc--level-${viewLevel}`}
           style={provided.draggableProps.style}
           onClick={() => setSelectedCard(card)}
         >
-          {/* Top: accent line + logo merged in the same row */}
+          {/* Top: accent line + logo merged in the same row (Level 3 shows only the accent line) */}
           <div className="tb-sc-top">
             <div className="tb-sc-accent-line" />
-            {logoSrc ? (
+            {viewLevel === 3 ? null : logoSrc ? (
               <img src={logoSrc} alt={custName} className="tb-sc-avatar-img" />
             ) : (
               <div className="tb-sc-avatar" style={{ background: avatarBg }}>
@@ -72,11 +102,12 @@ export default function DASmallCard({ card, index, setSelectedCard }) {
                 <span className="tb-sc-svc-badge">{svcInitial}</span>
               )}
             </div>
-            {custName    && <div className="tb-sc-customer">{custName}</div>}
-            {serviceType && <div className="tb-sc-service">{serviceType}</div>}
+            {viewLevel <= 2 && custName && <div className="tb-sc-customer">{custName}</div>}
+            {viewLevel === 1 && serviceType && <div className="tb-sc-service">{serviceType}</div>}
           </div>
 
-          {/* Footer: time left | circular progress */}
+          {/* Footer: time left | circular progress — Level 1 only */}
+          {viewLevel === 1 && (
           <div className="tb-sc-footer">
             {timeLeft && <span className="tb-sc-time">{timeLeft}</span>}
             <div className="tb-sc-progress-wrap">
@@ -91,6 +122,7 @@ export default function DASmallCard({ card, index, setSelectedCard }) {
               <span className="tb-sc-progress-text">{progress}%</span>
             </div>
           </div>
+          )}
         </div>
       )}
     </Draggable>
