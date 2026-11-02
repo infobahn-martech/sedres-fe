@@ -7,7 +7,7 @@ const getActivityLogData = (config = {}) => {
     typeof params === 'object' &&
     !Array.isArray(params) &&
     Object.keys(params).length > 0;
-  return Gateway.get('/users/update_log', hasParams ? { params } : undefined);
+  return Gateway.get('/activity_log/get_all_activity_logs', hasParams ? { params } : undefined);
 };
 
 export default {

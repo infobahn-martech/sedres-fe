@@ -300,6 +300,14 @@ function GeneralAdd({
         if (cancelled) return;
         setTemplateFields(mapTemplateTabFields(data?.tab?.fields));
         setTemplateFieldValues(extractTemplateFieldValues(data?.tab?.fields));
+        // Preselect the template's card type in the topbar; the topbar resolves its name / icon.
+        const templateCardTypeId = firstNonEmptyString(data?.card_type_id);
+        if (templateCardTypeId) {
+          ["type_name", "type_color_code", "type_icon_name"].forEach((name) =>
+            handleChange(name)({ target: { value: "", name } })
+          );
+          handleChange("card_type_id")({ target: { value: templateCardTypeId, name: "card_type_id" } });
+        }
       },
     }).finally(() => {
       if (!cancelled) setSettledTemplateId(selectedTemplateId);
@@ -307,7 +315,7 @@ function GeneralAdd({
     return () => {
       cancelled = true;
     };
-  }, [selectedTemplateId, getTemplateFirstTab]);
+  }, [selectedTemplateId, getTemplateFirstTab, handleChange]);
 
   const getFieldValue = (fieldName) =>
     hasMeaningfulValue(formValues?.[fieldName]) ? formValues[fieldName] : "";

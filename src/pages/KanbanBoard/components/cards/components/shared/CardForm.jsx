@@ -739,6 +739,17 @@ const TopBar = ({
     [resolvedBoardId]
   );
 
+  // A card type preselected without the picker (e.g. from the template's first_tab) needs the
+  // board's type list to resolve its name / icon; fetch it once per id.
+  const autoResolvedTypeIdRef = useRef(null);
+  useEffect(() => {
+    const typeId = selectedIds.type;
+    if (!isAddMode || !typeId || autoResolvedTypeIdRef.current === typeId) return;
+    if (pickerLists.type.some((row) => row.id === typeId)) return;
+    autoResolvedTypeIdRef.current = typeId;
+    fetchPickerList("type");
+  }, [isAddMode, selectedIds.type, pickerLists.type, fetchPickerList]);
+
   useLayoutEffect(() => {
     if (!isEditingTitle) return;
     titleInputRef.current?.focus();

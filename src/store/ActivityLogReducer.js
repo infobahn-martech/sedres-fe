@@ -11,9 +11,11 @@ const useActivityLogReducer = create((set) => ({
     try {
       set({ isLoading: true });
       const { data } = await activityLogService.getActivityLogData({ params });
+      const list = data?.data ?? [];
       set({
-        activityLogData: data?.data ?? [],
-        totalActivityLogCount: data?.pagination?.total ?? data?.total ?? 0,
+        activityLogData: list,
+        totalActivityLogCount:
+          data?.pagination?.total ?? data?.total ?? list.length,
         isLoading: false,
       });
     } catch (error) {
