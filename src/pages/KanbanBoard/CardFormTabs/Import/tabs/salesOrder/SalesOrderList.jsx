@@ -37,6 +37,8 @@ const SALES_ORDER_PAGE_SIZE = 10;
 const POSH_WORKFLOW_PATTERN = /posh/i;
 const CREW_HUB_WORKFLOW_PATTERN = /crew\s*hub/i;
 const LAMPRELL_WORKFLOW_PATTERN = /lamprell\s*saudi\s*flow/i;
+const LAMPRELL_UAE_WORKFLOW_PATTERN = /lamprell\s*uae/i;
+const SEND_FOR_PO_APPROVAL_COLUMN_PATTERN = /send for po approval/i;
 const SEND_FOR_SO_APPROVAL_COLUMN_PATTERN = /send for so approval|awaiting so\/pr approval/i;
 const SUBSEA_WORKFLOW_PATTERN = /subsea/i;
 const ZAKHER_WORKFLOW_PATTERN = /zakher/i;
@@ -860,9 +862,18 @@ const SalesOrderList = ({
     Array.isArray(stepLabels) &&
     currentStep != null &&
     SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
+  // Lamprell UAE Flow: Verify/Delete show only while the card is on its "Send for PO Approval" column, and
+  // verifying the last line item closes the card.
+  const isLamprellUaeWorkflowCard = LAMPRELL_UAE_WORKFLOW_PATTERN.test(card?.workflow_name ?? "");
+  const isAtSendForPoApprovalColumn =
+    Array.isArray(stepLabels) &&
+    currentStep != null &&
+    SEND_FOR_PO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
   const showActionColumn =
     canViewActionColumn &&
-    (isZakherWorkflowCard
+    (isLamprellUaeWorkflowCard
+      ? isAtSendForPoApprovalColumn
+      : isZakherWorkflowCard
       ? isAtSubmittedToDaColumn
       : hasAwaitingSrtColumn
       ? isAtAwaitingSrtColumn
@@ -1716,7 +1727,9 @@ const SalesOrderList = ({
       // a successful verify alone never closes it.
       const wasMovedToDa = Array.isArray(body?.moved_to_da) && body.moved_to_da.length > 0;
       // Subsea 7 (srt_flow) cards stay put after the last tick: "Send SRT request" takes over there.
-      if (allVerified && isBeforeSubmittedToDa && !isPoshWorkflowCard && !hasSendForSoApprovalColumn && !isSrtFlow) {
+      if (isLamprellUaeWorkflowCard) {
+        if (allVerified && isAtSendForPoApprovalColumn) onCloseCard?.();
+      } else if (allVerified && isBeforeSubmittedToDa && !isPoshWorkflowCard && !hasSendForSoApprovalColumn && !isSrtFlow) {
         onAdvanceDaStage?.({ label: stepLabels[submittedToDaStepIndex], skipStatusUpdate: true });
         if (wasMovedToDa) onCloseCard?.();
       } else if (

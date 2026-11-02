@@ -122,8 +122,16 @@ const PO_REQUESTED_COLUMN_PATTERN = /^po[^a-z]*requested$/i;
 const PO_RECEIVED_SUBMITTED_TO_DA_COLUMN_PATTERN = /^po\W*rec(ei|ie)ved(\W+submitted\W*to\W*da)?$/i;
 const isZamilMarineWorkflow = (workflow) => ZAMIL_MARINE_WORKFLOW_PATTERN.test(workflow?.title ?? "");
 
+/* Lamprell UAE Operations has no batches: "Request for PO" on "Send for PO Approval" opens the same PO request
+   email draft as Zamil Marine for every card the user ticks. */
+const LAMPRELL_UAE_WORKFLOW_PATTERN = /lamprell\s*uae/i;
+const SEND_FOR_PO_APPROVAL_COLUMN_PATTERN = /^send\s+for\s+po\s+approval$/i;
+
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
+  if (LAMPRELL_UAE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && SEND_FOR_PO_APPROVAL_COLUMN_PATTERN.test(title)) {
+    return "requestLamprellUaePo";
+  }
   if (ZAMIL_MARINE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && PO_REQUESTED_COLUMN_PATTERN.test(title)) {
     return "uploadZamilMarinePo";
   }
@@ -195,6 +203,7 @@ const INVOICE_ACTION_BUTTONS = {
   moveCards: { label: "Move the Cards", icon: <FiArrowRight size={16} aria-hidden /> },
   requestPo: { label: "Request PO", icon: <FiSend size={16} aria-hidden /> },
   requestZamilMarinePo: { label: "Send for PO Request", icon: <FiSend size={16} aria-hidden /> },
+  requestLamprellUaePo: { label: "Request for PO", icon: <FiSend size={16} aria-hidden /> },
   uploadZamilMarinePo: { label: "Upload PO", icon: <FiUploadCloud size={16} aria-hidden /> },
   enterServiceSheetNo: { label: "Enter Service Sheet No", icon: <FiFileText size={16} aria-hidden /> },
   checkSignatures: { label: "Check Signatures", icon: <FiEdit3 size={16} aria-hidden /> },
@@ -563,6 +572,7 @@ export default function WorkflowColumns({
                 sendSccApproval: onColumnSendSccApproval,
                 requestPo: onColumnRequestPo,
                 requestZamilMarinePo: handleZamilMarinePoRequest,
+                requestLamprellUaePo: handleZamilMarinePoRequest,
                 uploadZamilMarinePo: handleZamilMarinePoUpload,
                 merge: onColumnMergeInvoice,
                 downloadInvoices: onColumnDownloadInvoices,
