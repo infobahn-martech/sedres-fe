@@ -71,3 +71,19 @@ $primary-font: "Manrope", sans-serif;
     margin-top: 12px;
   }
 }
+
+// Dark theme — driver details panel used a hard-coded light gradient (#f9fcfd).
+[data-theme="dark"] .transport-company-modal {
+  .transport-company-drivers {
+    background: var(--bg-inset);
+    border-color: var(--border);
+  }
+
+  .transport-company-drivers__header {
+    border-bottom-color: var(--border);
+  }
+
+  .transport-company-drivers__header-title {
+    color: var(--text-heading);
+  }
+}

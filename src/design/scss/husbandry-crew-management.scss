@@ -4137,3 +4137,87 @@
     border-color: transparent;
   }
 }
+
+// ==========================================================
+// Dark theme — manual crew entry grid (CrewEntryGrid) + crew list links
+// ==========================================================
+// The grid was hard-coded to a white sheet; the "Upload crew list" /
+// "Enter crew details manually" links and the "What services do you need?"
+// back link used --card-color, which is often a dark navy that disappears.
+[data-theme="dark"] {
+  .husb-crew-grid {
+    background: var(--bg-inset);
+    border-color: var(--border);
+
+    &__table {
+      th {
+        background: var(--bg-highlight);
+        color: var(--text-label);
+        border-bottom-color: var(--border);
+      }
+
+      td {
+        border-bottom-color: var(--divider-row);
+        border-right-color: var(--divider-row);
+      }
+
+      input {
+        color: var(--text-control);
+
+        &::placeholder {
+          color: var(--text-faint);
+        }
+
+        &:focus {
+          background: var(--bg-highlight);
+          box-shadow: inset 0 0 0 2px var(--brand-bright);
+        }
+      }
+    }
+
+    &__index {
+      color: var(--text-subtle);
+      background: var(--bg-highlight);
+    }
+
+    &__remove {
+      color: var(--text-subtle);
+
+      &:hover:not(:disabled) {
+        color: var(--danger);
+      }
+    }
+
+    &__footer {
+      background: var(--bg-highlight);
+      border-top-color: var(--border);
+    }
+
+    &__hint {
+      color: var(--text-subtle);
+    }
+
+    &__link {
+      color: var(--tint-brand-text);
+    }
+
+    &__submit {
+      background: var(--brand);
+      color: #ffffff;
+    }
+  }
+
+  .husb-crew-link-hint,
+  .husb-crew-upload-summary {
+    color: var(--text-subtle) !important;
+  }
+
+  .husb-crew-link {
+    color: var(--tint-brand-text) !important;
+  }
+
+  .husbandry-back-link-small,
+  .husbandry-back-link-small:hover {
+    color: var(--tint-brand-text);
+  }
+}

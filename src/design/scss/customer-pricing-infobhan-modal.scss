@@ -415,7 +415,59 @@ body .customer-pricing-infobhan-modal {
 
 // Dark theme — modal section title was hard-coded to dark blue (#00368C / #0c234c)
 [data-theme="dark"] {
-  body .customer-pricing-infobhan-modal .cpi-section-title {
-    color: var(--text-heading);
+  body .customer-pricing-infobhan-modal {
+    .cpi-section-title {
+      color: var(--text-heading);
+    }
+
+    .modal-footer {
+      background: transparent;
+      border-top-color: var(--border);
+    }
+
+    .cpi-btn-outline {
+      background: transparent;
+      border-color: var(--border-strong);
+      color: var(--text-control);
+
+      &:hover {
+        background: var(--tint-neutral-bg);
+      }
+    }
+
+    .cpi-client-table {
+      tbody tr {
+        border-bottom-color: var(--divider-row);
+
+        &:hover {
+          background: var(--bg-row-hover);
+        }
+      }
+
+      td {
+        color: var(--text-body);
+      }
+    }
+
+    .cpi-table-wrapper {
+      border-color: var(--border);
+
+      &::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+      }
+
+      &::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-thumb-hover);
+      }
+    }
+
+    .cpi-entity-name {
+      color: var(--text-control);
+    }
+
+    .cpi-badge {
+      background: var(--tint-brand-bg);
+      color: var(--tint-brand-text);
+    }
   }
 }

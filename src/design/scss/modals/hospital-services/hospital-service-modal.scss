@@ -1,1 +1,26 @@
 @import "../../master-modal-form.scss";
+
+// Dark theme — chip text used --text-inverse (dark in dark mode) on a dark
+// blue chip, and the "(N selected)" hint used Bootstrap's dim .text-muted.
+[data-theme="dark"] .role-modal-sm.master-modal-form .lead-form {
+  .phone-wrapper .phone-label .text-muted {
+    color: var(--text-subtle) !important;
+  }
+
+  .phone-wrapper .hospital-service-multi-select .react-select__multi-value {
+    background-color: var(--tint-brand-bg);
+  }
+
+  .phone-wrapper .hospital-service-multi-select .react-select__multi-value__label {
+    color: var(--text-brand-soft);
+  }
+
+  .phone-wrapper .hospital-service-multi-select .react-select__multi-value__remove {
+    color: var(--text-brand-soft);
+
+    &:hover {
+      background: var(--tint-brand-bg-hover);
+      color: var(--text-heading);
+    }
+  }
+}

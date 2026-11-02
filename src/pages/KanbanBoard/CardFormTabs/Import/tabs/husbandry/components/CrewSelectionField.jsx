@@ -137,9 +137,9 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
               onSelectFile={handleCrewListUpload}
             />
           )}
-          <div style={{ marginTop: 6, fontSize: 12, color: "#64748b" }}>
+          <div className="husb-crew-link-hint" style={{ marginTop: 6, fontSize: 12, color: "#64748b" }}>
             {isManualEntry ? "Have a crew list file? " : "No file? "}
-            <button type="button" style={linkButtonStyle} onClick={() => setIsManualEntry((prev) => !prev)}>
+            <button type="button" className="husb-crew-link" style={linkButtonStyle} onClick={() => setIsManualEntry((prev) => !prev)}>
               {isManualEntry ? "Upload crew list" : "Enter crew details manually"}
             </button>
           </div>
@@ -171,9 +171,9 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
           disabled={loading || crewOptions.length === 0}
         />
         {!loading && crewOptions.length === 0 && onGoToCrew && (
-          <div style={{ marginTop: 6, fontSize: 12, color: "#64748b" }}>
+          <div className="husb-crew-link-hint" style={{ marginTop: 6, fontSize: 12, color: "#64748b" }}>
             No crew uploaded yet.{" "}
-            <button type="button" onClick={onGoToCrew} style={linkButtonStyle}>
+            <button type="button" className="husb-crew-link" onClick={onGoToCrew} style={linkButtonStyle}>
               Upload crew list
             </button>
           </div>
