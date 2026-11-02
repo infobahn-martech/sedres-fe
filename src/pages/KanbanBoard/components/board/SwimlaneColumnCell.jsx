@@ -7,12 +7,12 @@ import DASmallCard from "../cards/components/DA/DASmallCard";
 import BatchGroup from "./BatchGroup";
 import { buildSwimlaneDroppableId } from "../../hooks/useKanbanDnD";
 import {
-  CARD_GAP,
-  CELL_PADDING_X,
   MINIMAL_GRID_TEMPLATE,
   MINIMAL_TILE_GAP,
+  getCardGap,
   getCardsPerRow,
   getCardWidth,
+  getCellPaddingX,
 } from "../../utils/boardGridHelpers";
 import useKanbanCardViewStore from "@/store/kanbanCardViewStore";
 import usePermissions from "@/shared/hooks/usePermissions";
@@ -55,7 +55,8 @@ export default function SwimlaneColumnCell({
 }) {
   const { hasModule } = usePermissions();
   const canViewCards = hasModule(PERMISSION_MODULES.KANBAN_CARD);
-  const isMinimalView = useKanbanCardViewStore((state) => state.level === 4);
+  const cardViewLevel = useKanbanCardViewStore((state) => state.level);
+  const isMinimalView = cardViewLevel === 4;
   const EMPTY_DROP_ZONE_MIN_HEIGHT = 240;
   /* Only fall back to the big placeholder height when nothing else in the row sets a
      height — otherwise an empty column would stretch the whole swimlane row to 720px
@@ -71,7 +72,7 @@ export default function SwimlaneColumnCell({
   const droppableId = buildSwimlaneDroppableId(laneId, column.id);
   /* Inner card grid: repeat(cardsPerRow, …) — layout inside the cell; board row width uses the same ratio via boardGridHelpers */
   const perRow = getCardsPerRow(column);
-  const cardWidth = getCardWidth(layoutView);
+  const cardWidth = getCardWidth(layoutView, cardViewLevel);
   /* Custom column colour from Edit workflow → `--cell-bg` (swimlaneBoard.scss; the card list
      inherits it). Default white stays unset so the dark theme can tell it apart. */
   const hasCustomCellBg =
@@ -185,8 +186,8 @@ export default function SwimlaneColumnCell({
                     gridTemplateColumns: isMinimalView
                       ? MINIMAL_GRID_TEMPLATE
                       : `repeat(${perRow}, ${cardWidth}px)`,
-                    gap: `${isMinimalView ? MINIMAL_TILE_GAP : CARD_GAP}px`,
-                    padding: `${CELL_PADDING_X}px`,
+                    gap: `${isMinimalView ? MINIMAL_TILE_GAP : getCardGap(cardViewLevel)}px`,
+                    padding: `${getCellPaddingX(cardViewLevel)}px`,
                   }),
               justifyItems: "start",
               alignItems: "start",

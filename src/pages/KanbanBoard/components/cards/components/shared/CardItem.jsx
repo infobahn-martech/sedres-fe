@@ -613,7 +613,6 @@ function ApiKanbanCardFull({
   cardsById,
   transportOnlyIcons = false,
   showInvoiceDownload = false,
-  isStandardView = false,
 }) {
   const displayTitle = getApiCardDisplayTitle(card);
   const secondary = hasText(card.billingEntity)
@@ -648,7 +647,7 @@ function ApiKanbanCardFull({
             />
           )}
         </div>
-        {!isStandardView && <ApiCardTaskLine card={card} />}
+        <ApiCardTaskLine card={card} />
         {hasText(secondary) ? (
           <p className="card-api-secondary" title={secondary}>
             {hasText(card.billingEntityColor) ? (
@@ -663,16 +662,11 @@ function ApiKanbanCardFull({
         ) : null}
       </div>
 
-      {/* Level 2 (Standard) stops here: linked card, subtasks, reference no., age and progress are Level 1 only */}
-      {isStandardView ? null : (
-        <>
-          <ApiCardCountIconsRow card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} transportOnly={transportOnlyIcons} />
+      <ApiCardCountIconsRow card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} transportOnly={transportOnlyIcons} />
 
-          <ApiCardSalesOrderRow card={card} showInvoiceDownload={showInvoiceDownload} />
-        </>
-      )}
+      <ApiCardSalesOrderRow card={card} showInvoiceDownload={showInvoiceDownload} />
 
-      {!isStandardView && showSummaryRow ? (
+      {showSummaryRow ? (
         <div className="card-api-summary-row">
           <div className="card-api-summary-left">
             {hasTimeline ? <span className="card-api-timeline">{card.timeLeft}</span> : null}
@@ -737,12 +731,12 @@ function CardItem({
   isDragDisabled = false,
 }) {
   const isApiCard = card.cardSource === "api";
-  /* Board card density (sidebar 1/2/3/4). Shrunk columns keep their own compact layout for levels 1–3. */
+  /* Board card density (sidebar 1/2/3/4). Levels 1 and 2 render the same full card — Level 2 is
+     only denser/narrower (CSS + board widths). Shrunk columns keep their own layout for levels 1–3. */
   const viewLevel = useKanbanCardViewStore((state) => state.level);
   const isMinimalView = viewLevel === 4;
   const isCompactView = viewLevel === 3 && !isShrunk;
-  const isStandardView = viewLevel === 2 && !isShrunk;
-  const showFullDetails = viewLevel === 1 || isShrunk;
+  const showFullDetails = viewLevel <= 2 || isShrunk;
   const isDaBoardCard = String(card?.da_board ?? card?.raw?.da_board ?? "").trim() === "1";
   /* SAIPEM Backlog cards whose export approval is still pending (or being read) carry no checkbox,
      so they can't be added to a batch. */
@@ -942,7 +936,6 @@ function CardItem({
                 cardsById={cardsById}
                 transportOnlyIcons={isTransportCoordinatorWorkflow}
                 showInvoiceDownload={isDaBoardCard}
-                isStandardView={isStandardView}
               />
             )
           ) : isShrunk ? (

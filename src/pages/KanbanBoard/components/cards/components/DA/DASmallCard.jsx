@@ -103,11 +103,11 @@ export default function DASmallCard({ card, index, setSelectedCard }) {
               )}
             </div>
             {viewLevel <= 2 && custName && <div className="tb-sc-customer">{custName}</div>}
-            {viewLevel === 1 && serviceType && <div className="tb-sc-service">{serviceType}</div>}
+            {viewLevel <= 2 && serviceType && <div className="tb-sc-service">{serviceType}</div>}
           </div>
 
-          {/* Footer: time left | circular progress — Level 1 only */}
-          {viewLevel === 1 && (
+          {/* Footer: time left | circular progress — Levels 1–2 (Level 2 only tightens spacing) */}
+          {viewLevel <= 2 && (
           <div className="tb-sc-footer">
             {timeLeft && <span className="tb-sc-time">{timeLeft}</span>}
             <div className="tb-sc-progress-wrap">

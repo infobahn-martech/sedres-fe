@@ -4,7 +4,7 @@ import { FiChevronDown } from "react-icons/fi";
 import CardItem from "../cards/components/shared/CardItem";
 import useBatchMoveStore from "@/store/batchMoveStore";
 import useKanbanCardViewStore from "@/store/kanbanCardViewStore";
-import { MINIMAL_GRID_TEMPLATE, MINIMAL_TILE_GAP } from "../../utils/boardGridHelpers";
+import { MINIMAL_GRID_TEMPLATE, MINIMAL_TILE_GAP, getCardGap } from "../../utils/boardGridHelpers";
 import { isSubmittedInvoicesColumnTitle } from "../../utils/columnTitles";
 import "@/design/scss/pages/kanban-board/batch-group.scss";
 
@@ -55,7 +55,8 @@ export default function BatchGroup({
   /* Submitted Invoices holds many batches, so there they start collapsed and the header opens one;
      every other column starts expanded. */
   const [isExpanded, setIsExpanded] = useState(() => !isSubmittedInvoicesColumnTitle(columnTitle));
-  const isMinimalView = useKanbanCardViewStore((state) => state.level === 4);
+  const cardViewLevel = useKanbanCardViewStore((state) => state.level);
+  const isMinimalView = cardViewLevel === 4;
 
   /* Loose cards render as a plain grid: no header, never collapsed. */
   const isUngrouped = Boolean(batch.isUngrouped);
@@ -296,7 +297,9 @@ export default function BatchGroup({
           style={
             isMinimalView
               ? { gridTemplateColumns: MINIMAL_GRID_TEMPLATE, gap: `${MINIMAL_TILE_GAP}px` }
-              : { gridTemplateColumns: `repeat(${perRow}, ${cardWidth}px)` }
+              : cardViewLevel >= 2
+                ? { gridTemplateColumns: `repeat(${perRow}, ${cardWidth}px)`, gap: `${getCardGap(cardViewLevel)}px` }
+                : { gridTemplateColumns: `repeat(${perRow}, ${cardWidth}px)` }
           }
         >
           {batch.cards.map((card, i) => (

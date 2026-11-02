@@ -200,3 +200,41 @@
 .tb-sc.tb-sc--level-3 .tb-sc-top {
     height: 14px;
 }
+
+/* Card view Level 2: same content as Level 1, moderately denser (~85%). Level 1 value in comments. */
+.tb-sc.tb-sc--level-2 {
+    .tb-sc-top {
+        height: 38px; /* 42px */
+    }
+
+    .tb-sc-avatar,
+    .tb-sc-avatar-img {
+        top: 13px; /* 14px */
+        width: 25px; /* 28px */
+        height: 25px;
+        font-size: 11px; /* 12px */
+    }
+
+    .tb-sc-content {
+        padding: 3px 7px 5px 7px; /* 4px 8px 6px 8px */
+    }
+
+    .tb-sc-title-row {
+        gap: 5px; /* 6px */
+    }
+
+    .tb-sc-vessel {
+        font-size: 12px; /* 13px */
+    }
+
+    .tb-sc-svc-badge {
+        width: 23px; /* 25px */
+        height: 23px;
+        font-size: 10.5px; /* 11px */
+    }
+
+    .tb-sc-customer,
+    .tb-sc-service {
+        font-size: 10.5px; /* 11px */
+    }
+}

@@ -72,6 +72,7 @@ export default function ColumnHeader({
         <h2
           className={`column-title ${column.description ? "column-title--has-description" : ""}`}
           data-tooltip-id={column.description ? descriptionTooltipId : undefined}
+          title={column.description ? undefined : column.title}
         >
           {column.title}
         </h2>

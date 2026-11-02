@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { FiArrowRight, FiChevronDown, FiDownload, FiEdit3, FiFileText, FiMail, FiSend, FiUpload, FiUploadCloud } from "react-icons/fi";
 import { MdCallMerge } from "react-icons/md";
@@ -14,9 +14,10 @@ import {
   BOARD_COLUMN_GAP_PX,
   WORKFLOW_ROW_MIN_HEIGHT,
   getBoardGridTemplateColumns,
-  getColumnWidth,
+  getColumnTrack,
 } from "../../utils/boardGridHelpers";
 import useBatchMoveStore from "@/store/batchMoveStore";
+import useKanbanCardViewStore from "@/store/kanbanCardViewStore";
 import useExportApprovalStatusStore from "@/store/exportApprovalStatusStore";
 import useSignatureCheckStore from "@/store/signatureCheckStore";
 import useServiceSheetStore from "@/store/serviceSheetStore";
@@ -265,6 +266,28 @@ export default function WorkflowColumns({
      name however the board is scrolled (whichever ancestor does the scrolling). */
   const scrollContainerRef = useRef(null);
   const boardRef = useRef(null);
+  /* Card view level (sidebar 1/2/3/4) drives column/card widths; levels 2–4 are the dense board. */
+  const cardViewLevel = useKanbanCardViewStore((state) => state.level);
+
+  /* Keep the horizontal scroll position proportional when the level changes column widths, so
+     the user stays over roughly the same columns instead of the board jumping. */
+  const hScrollRatioRef = useRef(0);
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return undefined;
+    const record = () => {
+      const max = container.scrollWidth - container.clientWidth;
+      hScrollRatioRef.current = max > 0 ? container.scrollLeft / max : 0;
+    };
+    container.addEventListener("scroll", record, { passive: true });
+    return () => container.removeEventListener("scroll", record);
+  }, [layoutView]);
+  useLayoutEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const max = container.scrollWidth - container.clientWidth;
+    if (max > 0) container.scrollLeft = Math.round(hScrollRatioRef.current * max);
+  }, [cardViewLevel]);
   useEffect(() => {
     const container = scrollContainerRef.current;
     const board = boardRef.current;
@@ -422,9 +445,10 @@ export default function WorkflowColumns({
         workflow.columns,
         workflow.columnOrder,
         collapsedColumnIds,
-        layoutView
+        layoutView,
+        cardViewLevel
       ),
-    [workflow.columns, workflow.columnOrder, collapsedColumnIds, layoutView]
+    [workflow.columns, workflow.columnOrder, collapsedColumnIds, layoutView, cardViewLevel]
   );
 
   const headerGroups = useMemo(
@@ -453,7 +477,7 @@ export default function WorkflowColumns({
       <DragDropContext onDragEnd={KANBAN_DND_DISABLED ? () => {} : onDragEnd}>
         <div
           ref={boardRef}
-          className={`kanban-board kanban-board--swimlanes ${!shouldShowSwimlaneTitle ? "kanban-board--single-swimlane" : ""}`}
+          className={`kanban-board kanban-board--swimlanes kanban-board--level-${cardViewLevel} ${cardViewLevel >= 2 ? "kanban-board--dense" : ""} ${!shouldShowSwimlaneTitle ? "kanban-board--single-swimlane" : ""}`}
         >
           {/* --- Column headers (workflow stages): same grid tracks as swimlane rows below --- */}
           <div className="kanban-board__header-row" style={boardRowGridStyle}>
@@ -618,11 +642,9 @@ export default function WorkflowColumns({
                       style={{
                         display: "grid",
                         gridTemplateColumns: group.colKeys
-                          .map((k) => {
-                            const child = workflow.columns[k];
-                            const w = getColumnWidth(child, collapsedColumnIds, layoutView);
-                            return collapsedColumnIds.has(child.id) ? `${w}px` : `minmax(${w}px, 1fr)`;
-                          })
+                          .map((k) =>
+                            getColumnTrack(workflow.columns[k], collapsedColumnIds, layoutView, cardViewLevel)
+                          )
                           .join(" "),
                         gap: `${BOARD_COLUMN_GAP_PX}px`,
                       }}

@@ -1457,3 +1457,154 @@
   line-height: 1.45;
   z-index: 1100;
 }
+
+/* Level 2 — same full card as Level 1, moderately denser (~85%): spacing, type and icons are
+   one step smaller, never compact. Width comes from the board (LEVEL2_CARD_WIDTH in
+   boardGridHelpers). Level 1 value noted in each comment. */
+.kanban-card.kanban-card--level-2 {
+  padding: 7px; /* 8px */
+}
+
+.kanban-card.kanban-card--level-2.kanban-card--api {
+  padding-top: 9px; /* 10px */
+}
+
+.kanban-card--level-2 .kanban-card-top-row {
+  gap: 5px; /* 6px */
+}
+
+.kanban-card--level-2.kanban-card--api:not(.card-shrunk) .kanban-card-top-row {
+  padding-bottom: 5px; /* 6px */
+  margin-bottom: 5px; /* 6px */
+}
+
+.kanban-card--level-2 .kanban-card-top-row-right {
+  gap: 5px; /* 6px */
+}
+
+.kanban-card--level-2 .kanban-card-top-row-title {
+  font-size: 10.5px; /* 11px */
+}
+
+.kanban-card--level-2 .card-type-icon-badge {
+  width: 22px; /* 24px */
+  height: 22px;
+}
+
+.kanban-card--level-2 .card-api-user-avatar {
+  width: 20px; /* 22px */
+  height: 20px;
+  font-size: 10.5px; /* 11px */
+}
+
+.kanban-card--level-2 .card-api-sticker-row {
+  margin: 0 0 5px 0; /* 6px */
+  padding: 5px 0; /* 6px */
+}
+
+.kanban-card--level-2 .card-api-sticker-badge {
+  width: 20px; /* 22px */
+  height: 20px;
+}
+
+.kanban-card--level-2 .card-api-title-row {
+  gap: 6px; /* 8px */
+  margin-bottom: 3px; /* 4px */
+}
+
+.kanban-card--level-2 .card-api-logo {
+  width: 18px; /* 20px */
+  height: 18px;
+}
+
+.kanban-card--level-2 .card-title--api.card-api-title-text,
+.kanban-card--level-2 .card-title {
+  font-size: 12px; /* 13px */
+}
+
+.kanban-card--level-2 .card-api-task-name,
+.kanban-card--level-2 .card-api-secondary,
+.kanban-card--level-2 .card-api-sales-order-label,
+.kanban-card--level-2 .card-api-timeline,
+.kanban-card--level-2 .card-api-count-badge,
+.kanban-card--level-2 .card-footer {
+  font-size: 10.5px; /* 11px */
+}
+
+.kanban-card--level-2 .card-api-secondary {
+  margin-bottom: 3px; /* 4px */
+}
+
+.kanban-card--level-2 .card-api-count-icons-row {
+  gap: 8px; /* 10px */
+  padding: 5px 0; /* 6px */
+}
+
+.kanban-card--level-2 .card-api-link-badge-wrap {
+  padding-top: 5px; /* 6px */
+}
+
+.kanban-card--level-2 .card-api-sales-order-row {
+  padding: 5px 0; /* 6px */
+}
+
+.kanban-card--level-2 .card-api-summary-row {
+  gap: 6px; /* 8px */
+  padding: 5px 0 3px 0; /* 6px 0 4px */
+}
+
+/* API KPI svg has a viewBox, so it scales cleanly */
+.kanban-card--level-2 .card-api-kpi .circular-progress,
+.kanban-card--level-2 .card-api-kpi .progress-svg {
+  width: 24px; /* 26px */
+  height: 24px;
+}
+
+.kanban-card--level-2 .card-header {
+  margin-bottom: 5px; /* 6px */
+}
+
+.kanban-card--level-2 .card-title-row {
+  margin: 3px 0; /* 4px */
+}
+
+.kanban-card--level-2 .card-footer {
+  margin-top: 5px; /* 6px */
+  padding-top: 5px; /* 6px */
+}
+
+/* Dense board (levels 2–4): narrower column headers keep the centred title clear of the
+   count/actions and ellipsize long names (full name in the title attribute). */
+.kanban-board--dense .column-header {
+  padding: 8px 8px;
+}
+
+.kanban-board--dense .column-left {
+  left: 30px;
+  right: 30px;
+}
+
+.kanban-board--dense .column-title {
+  font-size: 12.5px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+.kanban-board--dense .column-count {
+  font-size: 12px;
+}
+
+.kanban-board--level-2 .column-header {
+  padding: 9px 10px; /* Level 1: 10px 12px */
+}
+
+.kanban-board--level-2 .column-title {
+  font-size: 13px; /* Level 1: 14px */
+}
+
+.kanban-board--level-2 .column-count {
+  font-size: 12.5px; /* Level 1: 13px */
+}
