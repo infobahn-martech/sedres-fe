@@ -45,7 +45,7 @@ import {
 // 🆕 Kanban sidebar icons + tooltip
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
-import { FiPlus, FiInbox, FiFilter, FiPlusCircle, FiActivity, FiMail, FiEdit3, FiMapPin, FiLayers, FiList } from 'react-icons/fi';
+import { FiPlus, FiInbox, FiFilter, FiPlusCircle, FiActivity, FiMail, FiEdit3, FiMapPin, FiLayers, FiList, FiChevronUp, FiChevronDown } from 'react-icons/fi';
 import TaskCardModal from '../../pages/TaskCard';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
@@ -56,6 +56,8 @@ import { hasKanbanFullSidebar } from '../../shared/helpers/restrictedBoardUser';
 import { isMasterMenuAllowed, filterMasterSubMenus } from '../../shared/helpers/roleMasterMenuAccess';
 import usePermissions from '../../shared/hooks/usePermissions';
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from '../../shared/constants/permissions';
+
+const SIDEBAR_PAGE_COUNT = 4;
 
 function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   const { pathname } = useLocation();
@@ -210,6 +212,15 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   const [selectedSwimlaneId, setSelectedSwimlaneId] = useState(null);
   const [addModalWorkflows, setAddModalWorkflows] = useState([]);
   const [swimlanePhaseWorkflow, setSwimlanePhaseWorkflow] = useState(null);
+  const [activeSidebarPage, setActiveSidebarPage] = useState(1);
+
+  // Board pager at the bottom of the icon rail; the board listens for
+  // `kanban:sidebar-page` to react to the selected page.
+  const selectSidebarPage = useCallback((page) => {
+    const next = Math.min(SIDEBAR_PAGE_COUNT, Math.max(1, page));
+    setActiveSidebarPage(next);
+    window.dispatchEvent(new CustomEvent('kanban:sidebar-page', { detail: { page: next } }));
+  }, []);
 
   const sidebarWorkflows = useKanbanSidebarBridge((s) => s.boardWorkflows);
   const pendingAddCardFromWorkflowRef = useRef(null);
@@ -926,6 +937,45 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
           })}
 
           <ToolsMenu variant="sidebar" onSelect={setActiveTool} />
+
+          <nav className="kanban-sidebar-pager" aria-label="Board pages">
+            <button
+              type="button"
+              className="kanban-sidebar-pager-arrow"
+              onClick={() => selectSidebarPage(activeSidebarPage - 1)}
+              disabled={activeSidebarPage === 1}
+              aria-label="Previous page"
+            >
+              <FiChevronUp size={18} />
+            </button>
+            <div
+              className="kanban-sidebar-pager-track"
+              style={{ '--pager-index': activeSidebarPage - 1 }}
+            >
+              <span className="kanban-sidebar-pager-indicator" aria-hidden />
+              {Array.from({ length: SIDEBAR_PAGE_COUNT }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  className={`kanban-sidebar-pager-page ${activeSidebarPage === page ? 'active' : ''}`}
+                  onClick={() => selectSidebarPage(page)}
+                  aria-current={activeSidebarPage === page ? 'page' : undefined}
+                  aria-label={`Page ${page}`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="kanban-sidebar-pager-arrow"
+              onClick={() => selectSidebarPage(activeSidebarPage + 1)}
+              disabled={activeSidebarPage === SIDEBAR_PAGE_COUNT}
+              aria-label="Next page"
+            >
+              <FiChevronDown size={18} />
+            </button>
+          </nav>
 
           <Tooltip
             id="sidebar-tooltip"
