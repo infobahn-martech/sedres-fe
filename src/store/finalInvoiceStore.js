@@ -4,11 +4,17 @@ import daService from "../services/daService";
 const getErrorMessage = (error, fallback) =>
   error?.response?.data?.message || error?.message || fallback;
 
+/* The final invoice routes answer { status: true } (older DA routes answer "success"). */
+const isSuccess = (data) => data?.status === true || data?.status === "success";
+
+/** A page is identified by its source and 1-based page number; that pair is also what the backend takes. */
+export const getPageKey = (page) => `${page.source}:${page.page}`;
+
 /**
- * Check Invoice on the Default DA workflow's "AR Invoice Issued" column, for the one ticked card. The popup
- * loads the pages the final invoice PDF is made of (da/final_invoice_pages), lets the user drag them into
- * order or remove them, and Save sends that order to da/save_final_invoice, which builds the PDF and moves
- * the card on.
+ * "Arrange invoice pages" on the Default DA workflow's "AR Invoice Issued" column, for the one ticked card.
+ * The full-screen editor loads the pages the final invoice PDF is made of (da/final_invoice_pages), the user
+ * drags them into order or moves them to the removed tray, and Save sends that order to
+ * da/save_final_invoice, which builds the PDF and moves the card on.
  */
 const useFinalInvoiceStore = create((set, get) => ({
   showFinalInvoiceModal: false,
@@ -16,29 +22,34 @@ const useFinalInvoiceStore = create((set, get) => ({
   selectedFinalInvoiceCard: null,
   /** [{ source, name, url, page_count }] - the PDFs the pages come from. */
   finalInvoiceSources: [],
+  /** [{ source, page }] - the pages in the starting order the backend suggested. */
+  originalFinalInvoicePages: [],
   /** [{ source, page }] - the pages in the order the user arranged them. */
   finalInvoicePages: [],
-  /** da/save_final_invoice's data once saved: { document, zip, moved, page_count, size_mb, warnings }. */
-  savedFinalInvoice: null,
+  /** [{ source, page }] - pages moved out of the invoice; they can be dragged back. */
+  removedFinalInvoicePages: [],
   isLoadingFinalInvoicePages: false,
   isSavingFinalInvoice: false,
 
-  /** Opens the popup and loads the pages. Resolves to an error message on failure. */
+  /** Opens the editor and loads the pages. Resolves to an error message on failure. */
   openFinalInvoiceModal: async (card) => {
     set({
       showFinalInvoiceModal: true,
       selectedFinalInvoiceCard: card,
       finalInvoiceSources: [],
+      originalFinalInvoicePages: [],
       finalInvoicePages: [],
-      savedFinalInvoice: null,
+      removedFinalInvoicePages: [],
       isLoadingFinalInvoicePages: true,
     });
     try {
       const { data } = await daService.getFinalInvoicePages(card.call_id, card.card_id);
-      if (data?.status !== "success") return data?.message || "Failed to load the invoice pages";
+      if (!isSuccess(data)) return data?.message || "Failed to load the invoice pages";
+      const pages = data.data?.pages ?? [];
       set({
         finalInvoiceSources: data.data?.sources ?? [],
-        finalInvoicePages: data.data?.pages ?? [],
+        originalFinalInvoicePages: pages,
+        finalInvoicePages: pages,
       });
       return undefined;
     } catch (error) {
@@ -53,20 +64,45 @@ const useFinalInvoiceStore = create((set, get) => ({
       showFinalInvoiceModal: false,
       selectedFinalInvoiceCard: null,
       finalInvoiceSources: [],
+      originalFinalInvoicePages: [],
       finalInvoicePages: [],
-      savedFinalInvoice: null,
+      removedFinalInvoicePages: [],
     }),
 
-  movePage: (fromIndex, toIndex) =>
+  /** Moves the pages with these keys (kept in their grid order) so they start at insertIndex of the pages
+   *  left after taking them out. Pages from the removed tray are restored there too. */
+  movePages: (keys, insertIndex) =>
     set((state) => {
-      const pages = [...state.finalInvoicePages];
-      const [moved] = pages.splice(fromIndex, 1);
-      pages.splice(toIndex, 0, moved);
-      return { finalInvoicePages: pages };
+      const keySet = new Set(keys);
+      const moving = [...state.finalInvoicePages, ...state.removedFinalInvoicePages].filter((page) =>
+        keySet.has(getPageKey(page))
+      );
+      const rest = state.finalInvoicePages.filter((page) => !keySet.has(getPageKey(page)));
+      const removedBefore = state.finalInvoicePages
+        .slice(0, insertIndex)
+        .filter((page) => keySet.has(getPageKey(page))).length;
+      const target = Math.max(0, Math.min(insertIndex - removedBefore, rest.length));
+      rest.splice(target, 0, ...moving);
+      return {
+        finalInvoicePages: rest,
+        removedFinalInvoicePages: state.removedFinalInvoicePages.filter((page) => !keySet.has(getPageKey(page))),
+      };
     }),
 
-  removePage: (index) =>
-    set((state) => ({ finalInvoicePages: state.finalInvoicePages.filter((_, pageIndex) => pageIndex !== index) })),
+  removePages: (keys) =>
+    set((state) => {
+      const keySet = new Set(keys);
+      return {
+        finalInvoicePages: state.finalInvoicePages.filter((page) => !keySet.has(getPageKey(page))),
+        removedFinalInvoicePages: [
+          ...state.removedFinalInvoicePages,
+          ...state.finalInvoicePages.filter((page) => keySet.has(getPageKey(page))),
+        ],
+      };
+    }),
+
+  resetPages: () =>
+    set((state) => ({ finalInvoicePages: state.originalFinalInvoicePages, removedFinalInvoicePages: [] })),
 
   /** Resolves to { errorMessage } on failure, or { result } with da/save_final_invoice's data. */
   saveFinalInvoice: async () => {
@@ -83,10 +119,17 @@ const useFinalInvoiceStore = create((set, get) => ({
       } catch (error) {
         data = error?.response?.data;
       }
-      if (data?.status !== "success") {
+      if (!isSuccess(data)) {
         return { errorMessage: data?.message || "Failed to save the final invoice" };
       }
-      set({ savedFinalInvoice: data.data });
+      set({
+        showFinalInvoiceModal: false,
+        selectedFinalInvoiceCard: null,
+        finalInvoiceSources: [],
+        originalFinalInvoicePages: [],
+        finalInvoicePages: [],
+        removedFinalInvoicePages: [],
+      });
       return { result: data.data };
     } finally {
       set({ isSavingFinalInvoice: false });
