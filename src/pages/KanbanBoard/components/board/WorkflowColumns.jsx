@@ -193,7 +193,7 @@ const getInvoiceAction = (workflow, column) => {
 
 const POSH_WORKFLOW_PATTERN = /posh/i;
 /* POSH, BGP, Subsea 7, Lamprell Saudi and the DA Default workflow name the "Issue AR Invoice" column action "Upload SAP Invoices". */
-const SAP_INVOICES_LABEL_WORKFLOW_PATTERN = /posh|bgp|subsea|lamprell\s*saudi|zamil.*marine|default.*\bda\b|\bda\b.*default/i;
+const SAP_INVOICES_LABEL_WORKFLOW_PATTERN = /posh|bgp|subsea|lamprell\s*(saudi|uae)|zamil.*marine|default.*\bda\b|\bda\b.*default/i;
 const ISSUE_AR_INVOICE_SAP_LABEL = "Upload SAP Invoices";
 
 const INVOICE_ACTION_BUTTONS = {
