@@ -26,7 +26,7 @@ import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLamprellUaeUploadedToPortalColumn, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow } from "../../utils/columnTitles";
+import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -133,9 +133,10 @@ const getInvoiceAction = (workflow, column) => {
   if (LAMPRELL_UAE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && SEND_FOR_PO_APPROVAL_COLUMN_PATTERN.test(title)) {
     return "requestLamprellUaePo";
   }
-  /* Lamprell UAE: "Download Invoices" on "Uploaded to the Portal" downloads the ticked cards' invoice files as a
-     zip, then moves them to the next column (da/portal_files does not move them for this workflow). */
-  if (isLamprellUaeUploadedToPortalColumn(workflow?.title, title)) {
+  /* Lamprell UAE: "Download Invoices" on "To be Uploaded to the Portal" downloads the ticked cards' invoice files
+     as a zip, then moves them to "Uploaded to the Portal" (da/portal_files does not move them for this workflow).
+     "Uploaded to the Portal" itself keeps the one-card dispatch proof upload. */
+  if (LAMPRELL_UAE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && TO_BE_UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(title)) {
     return "downloadAndMoveInvoices";
   }
   /* "Upload PO" on Lamprell UAE's "PO Received / Submitted to DA" takes the client's reply for every card the
