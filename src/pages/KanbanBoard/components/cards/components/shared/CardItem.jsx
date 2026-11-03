@@ -25,7 +25,7 @@ import {
   MINIMAL_CARD_TOOLTIP_ID,
 } from "@/pages/KanbanBoard/utils/cardDisplayHelpers";
 import { downloadRemoteFile } from "@/shared/utils/utils";
-import { isLamprellUaePoReceivedColumn, isLamprellAlgihazPoReceivedColumn } from "../../../../utils/columnTitles";
+import { isLamprellUaePoReceivedColumn, isLamprellAlgihazPoReceivedColumn, isLamprellAlgihazArInvoiceIssuedColumn } from "../../../../utils/columnTitles";
 
 /* SNAMPROGETTI is the name the SAIPEM workflow is being renamed from. */
 const SAIPEM_WORKFLOW_PATTERN = /saipem|snamprogetti/i;
@@ -754,7 +754,8 @@ function CardItem({
   const canSelectForAction =
     (isDaBoardCard ||
       isLamprellUaePoReceivedColumn(workflowTitle, columnTitle) ||
-      isLamprellAlgihazPoReceivedColumn(workflowTitle, columnTitle)) &&
+      isLamprellAlgihazPoReceivedColumn(workflowTitle, columnTitle) ||
+      isLamprellAlgihazArInvoiceIssuedColumn(workflowTitle, columnTitle)) &&
     typeof onToggleSelectForAction === "function" &&
     !isExportApprovalHeld;
   const topRowUsernameInitial = isApiCard && !isShrunk ? getUsernameInitial(card.user) : null;

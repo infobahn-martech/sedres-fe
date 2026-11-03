@@ -38,6 +38,12 @@ const PO_RECEIVED_COLUMN_PATTERN = /^po\s+received$/i;
 export const isLamprellAlgihazPoReceivedColumn = (workflowTitle, columnTitle) =>
   isLamprellAlgihazWorkflowTitle(workflowTitle) && PO_RECEIVED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
+const AR_INVOICES_ISSUED_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
+
+/* Lamprell Algihaz "AR Invoice Issued": its cards are ticked for "Create documents" for the same reason. */
+export const isLamprellAlgihazArInvoiceIssuedColumn = (workflowTitle, columnTitle) =>
+  isLamprellAlgihazWorkflowTitle(workflowTitle) && AR_INVOICES_ISSUED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
 const ARCHIVE_COLUMN_PATTERN = /archive/i;
 const SRF_SOURCE_COLUMN_PATTERN = /^submitted\s+to\s+da$/i;
 const SUBMIT_BY_EMAIL_COLUMN_PATTERN = /^submit\s+by\s+email$/i;
@@ -58,7 +64,8 @@ export const isColumnBeforeArchive = (workflow, colKey) => {
     !SUBMIT_BY_EMAIL_COLUMN_PATTERN.test(title) &&
     !isLntSubmittedToDa(workflow?.title, title) &&
     !isLamprellUaePoReceivedColumn(workflow?.title, title) &&
-    !isLamprellAlgihazPoReceivedColumn(workflow?.title, title)
+    !isLamprellAlgihazPoReceivedColumn(workflow?.title, title) &&
+    !isLamprellAlgihazArInvoiceIssuedColumn(workflow?.title, title)
   );
 };
 
