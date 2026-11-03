@@ -1946,21 +1946,29 @@ export default function KanbanBoardPage() {
 
         (data.data?.moved_to_be_uploaded ?? []).forEach((card) => removeCardSelectionId(String(card.card_id)));
 
-        /* Lamprell UAE: da/portal_files leaves the cards where they are, so they are moved to the next column
-           with da/advance_stage once the zip is downloaded. */
+        /* Lamprell UAE: cards da/portal_files did not move itself (any moved_* list in its response) are moved to
+           the next column with da/advance_stage once the zip is downloaded, so no card is moved twice. */
         if (moveAfterDownload) {
-          let moveData;
-          try {
-            ({ data: moveData } = await daService.advanceStageCards({
-              cards: downloadCards.map((card) => ({ call_id: Number(card.callId), card_id: Number(card.id) })),
-            }));
-          } catch (error) {
-            moveData = error?.response?.data;
-          }
-          if (moveData?.status !== "success") {
-            notify(moveData?.message || "Failed to move the cards", "error");
-          } else {
-            (moveData.data?.moved ?? []).forEach((card) => removeCardSelectionId(String(card.card_id)));
+          const movedByBackend = new Set(
+            Object.entries(data.data ?? {})
+              .filter(([key, value]) => key.startsWith("moved") && Array.isArray(value))
+              .flatMap(([, value]) => value.map((card) => String(card.card_id)))
+          );
+          const cardsToMove = downloadCards.filter((card) => !movedByBackend.has(String(card.id)));
+          if (cardsToMove.length) {
+            let moveData;
+            try {
+              ({ data: moveData } = await daService.advanceStageCards({
+                cards: cardsToMove.map((card) => ({ call_id: Number(card.callId), card_id: Number(card.id) })),
+              }));
+            } catch (error) {
+              moveData = error?.response?.data;
+            }
+            if (moveData?.status !== "success") {
+              notify(moveData?.message || "Failed to move the cards", "error");
+            } else {
+              (moveData.data?.moved ?? []).forEach((card) => removeCardSelectionId(String(card.card_id)));
+            }
           }
         }
         refetchBoard?.();
