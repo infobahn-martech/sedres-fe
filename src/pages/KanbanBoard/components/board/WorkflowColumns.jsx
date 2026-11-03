@@ -26,7 +26,7 @@ import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow } from "../../utils/columnTitles";
+import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLamprellUaeUploadedToPortalColumn, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -133,6 +133,11 @@ const getInvoiceAction = (workflow, column) => {
   if (LAMPRELL_UAE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && SEND_FOR_PO_APPROVAL_COLUMN_PATTERN.test(title)) {
     return "requestLamprellUaePo";
   }
+  /* Lamprell UAE: "Download Invoices" on "Uploaded to the Portal" downloads the ticked cards' invoice files as a
+     zip, then moves them to the next column (da/portal_files does not move them for this workflow). */
+  if (isLamprellUaeUploadedToPortalColumn(workflow?.title, title)) {
+    return "downloadAndMoveInvoices";
+  }
   /* "Upload PO" on Lamprell UAE's "PO Received / Submitted to DA" takes the client's reply for every card the
      user ticks; confirming the review moves them to the DA board. */
   if (isLamprellUaePoReceivedColumn(workflow?.title, title)) {
@@ -205,6 +210,7 @@ const INVOICE_ACTION_BUTTONS = {
   sendInvoice: { label: "Send Invoice", icon: <FiSend size={16} aria-hidden /> },
   sendSccApproval: { label: "Send for SCC Approval", icon: <FiSend size={16} aria-hidden /> },
   downloadInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
+  downloadAndMoveInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
   uploadDispatchProof: { label: "Upload Dispatch Proof", icon: <FiUpload size={16} aria-hidden /> },
   moveCards: { label: "Move the Cards", icon: <FiArrowRight size={16} aria-hidden /> },
   requestPo: { label: "Request PO", icon: <FiSend size={16} aria-hidden /> },
@@ -591,6 +597,7 @@ export default function WorkflowColumns({
                 uploadLamprellUaePo: handleLamprellUaePoUpload,
                 merge: onColumnMergeInvoice,
                 downloadInvoices: onColumnDownloadInvoices,
+                downloadAndMoveInvoices: (cards) => onColumnDownloadInvoices?.(cards, { moveAfterDownload: true }),
                 uploadDispatchProof: onUploadDispatchProof,
                 moveCards: onColumnMoveCards,
                 checkInvoice: handleCheckInvoice,
