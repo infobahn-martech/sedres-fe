@@ -100,7 +100,7 @@ const LocationAutocomplete = ({ value, onChange, placeholder, className = "", on
   };
 
   return (
-    <div className={`cf-input location-autocomplete ${className}`}>
+    <div className={`cf-input location-autocomplete ${className}`} title={error || undefined}>
       <input
         ref={inputRef}
         type="text"
