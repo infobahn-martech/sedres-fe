@@ -53,7 +53,7 @@ const User = () => {
     page: 1,
     searchTerm: "",
     limit: 10,
-    sortBy: "name",
+    sortBy: "",
     sortOrder: 1,
   });
 
