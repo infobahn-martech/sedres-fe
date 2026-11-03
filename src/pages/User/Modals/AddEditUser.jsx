@@ -267,7 +267,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
 
       formData.append("name", data.name);
       formData.append("username", data.username);
-      formData.append("email", data.email);
+      formData.append("email", data.email || "");
       formData.append("phone", data.phone);
       formData.append("address", data.address || "");
       formData.append("roleid", data.roleid);
@@ -386,16 +386,13 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
                       placeholder="Email"
                       autoComplete="off"
                       {...register("email", {
-                        required: "Email is required",
                         pattern: {
                           value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                           message: "Enter a valid email",
                         },
                       })}
                     />
-                    <label>
-                      Email <span className="text-danger">*</span>
-                    </label>
+                    <label>Email</label>
                   </div>
                   {errors.email && (
                     <span className="field-error">
