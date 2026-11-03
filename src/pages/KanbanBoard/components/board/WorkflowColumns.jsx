@@ -142,6 +142,8 @@ const getInvoiceAction = (workflow, column) => {
   if (isLamprellAlgihazWorkflowTitle(workflow?.title)) {
     if (SO_APPROVAL_RECEIVED_COLUMN_PATTERN.test(title)) return "requestZamilMarinePo";
     if (REQUESTED_FOR_PO_COLUMN_PATTERN.test(title)) return "uploadZamilMarinePo";
+    /* "Upload Invoices" on "PO Received": the same bulk AR invoice upload and review as the other workflows. */
+    if (PO_RECEIVED_COLUMN_PATTERN.test(title)) return "issueArInvoice";
   }
   if (LAMPRELL_UAE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && SEND_FOR_PO_APPROVAL_COLUMN_PATTERN.test(title)) {
     return "requestLamprellUaePo";
