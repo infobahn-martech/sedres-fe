@@ -58,10 +58,14 @@ const reorderWorkspace = (data) =>
 const getWorkspaceBoards = () =>
   Gateway.get('/kanban_workspace/workspace_boards');
 
+const getActiveBoards = () =>
+  Gateway.get('/kanban_workspace/active_boards');
+
 export default {
   createWorkspace,
   listAllWorkspaces,
   getWorkspaceBoards,
+  getActiveBoards,
   renameWorkspace,
   archiveWorkspace,
   getWorkspaceArchiveLog,

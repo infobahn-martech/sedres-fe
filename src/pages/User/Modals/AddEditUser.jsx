@@ -11,10 +11,10 @@ import userIcon from "../../../assets/images/DummyProPic.avif";
 import edit from "../../../assets/images/edit.svg";
 import useUserReducer from "../../../store/UserReducer";
 import useRoleReducer from "../../../store/RoleReducer";
-import useWorkSpaceReducer from "../../../store/WorkSpaceReducer";
 import useWorkFlowReducer from "../../../store/WorkFlowReducer";
 import usePortReducer from "../../../store/PortReducer";
 import Gateway from "../../../gateway/gateway";
+import workSpaceService from "../../../services/workSpaceService";
 
 // Accepts an array, a comma-separated string, or a single id and returns string ids
 const toIdArray = (value) => {
@@ -62,9 +62,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
   const { fetchRoles, roles, isLoading: isLoadingRoles } = useRoleReducer(
     (state) => state
   );
-  const { workspaces, listAllWorkspaces } = useWorkSpaceReducer(
-    (state) => state
-  );
+  const [activeBoards, setActiveBoards] = useState([]);
   const { boardsWorkflows, isLoadingBoardsWorkflows, getWorkflowsByBoards } =
     useWorkFlowReducer((state) => state);
   const { ports, getPorts, isLoading: isLoadingPorts } = usePortReducer(
@@ -96,13 +94,11 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
 
   const boardSelectOptions = useMemo(
     () =>
-      (workspaces || []).flatMap((w) =>
-        (w.boards ?? []).map((b) => ({
-          value: String(b.board_id),
-          label: b.board_name,
-        }))
-      ),
-    [workspaces]
+      (activeBoards || []).map((b) => ({
+        value: String(b.board_id),
+        label: b.board_name,
+      })),
+    [activeBoards]
   );
 
   // With several boards selected, suffix the board name so same-named workflows stay distinguishable
@@ -126,7 +122,10 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
   // Fetch roles when modal opens
   useEffect(() => {
     fetchRoles({ params: { page: 1, limit: 100 } });
-    if (!workspaces?.length) listAllWorkspaces();
+    workSpaceService
+      .getActiveBoards()
+      .then(({ data }) => setActiveBoards(data?.data || []))
+      .catch(() => setActiveBoards([]));
     getPorts({ params: { limit: 1000 } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
