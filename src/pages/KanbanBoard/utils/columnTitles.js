@@ -68,10 +68,19 @@ export const isUploadedToPortalColumnTitle = (title) =>
 const HARD_COPIES_DISPATCH_WORKFLOW_PATTERN = /bgp|lamprell\s*saudi/i;
 const DISPATCH_HARD_COPIES_COLUMN_PATTERN = /^dispatch\s+the\s+hard\s+copies$/i;
 
-/* BGP's and Lamprell Saudi's "Dispatch the Hard Copies" keep multi-select: one dispatch proof is attached to every ticked card. */
+const UPLOADED_TO_THE_PORTAL_COLUMN_PATTERN = /^uploaded\s+to\s+(the\s+)?portal$/i;
+
+/* Lamprell UAE's "Uploaded to the Portal" keeps multi-select: "Download Invoices" takes every ticked card. */
+export const isLamprellUaeUploadedToPortalColumn = (workflowTitle, columnTitle) =>
+  LAMPRELL_UAE_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
+  UPLOADED_TO_THE_PORTAL_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
+/* BGP's and Lamprell Saudi's "Dispatch the Hard Copies" keep multi-select: one dispatch proof is attached to every
+   ticked card. Lamprell UAE's "Uploaded to the Portal" is multi-select too. */
 export const isMultiCardDispatchProofColumn = (workflow, columnTitle) =>
-  HARD_COPIES_DISPATCH_WORKFLOW_PATTERN.test(String(workflow?.title ?? "")) &&
-  DISPATCH_HARD_COPIES_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+  (HARD_COPIES_DISPATCH_WORKFLOW_PATTERN.test(String(workflow?.title ?? "")) &&
+    DISPATCH_HARD_COPIES_COLUMN_PATTERN.test(String(columnTitle ?? "").trim())) ||
+  isLamprellUaeUploadedToPortalColumn(workflow?.title, columnTitle);
 
 const POSH_WORKFLOW_PATTERN = /posh/i;
 const POSH_ONE_CARD_COLUMN_PATTERN = /^(ar\s+invoices?\s+issued|po\s+received)$/i;

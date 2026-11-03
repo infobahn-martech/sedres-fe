@@ -1914,7 +1914,7 @@ export default function KanbanBoardPage() {
   );
 
   const handleColumnDownloadInvoices = useCallback(
-    async (cards) => {
+    async (cards, { moveAfterDownload = false } = {}) => {
       if (!cards?.length || isDownloadingInvoices) return;
       const downloadCards = cards
         .map((card) => ({ id: card.id, callId: card.callId ?? card.call_id ?? cardsById[card.id]?.callId }))
@@ -1945,6 +1945,24 @@ export default function KanbanBoardPage() {
         notify(`${fileCount ?? ""} ${fileCount === 1 ? "file" : "files"} downloaded`.trim(), "success");
 
         (data.data?.moved_to_be_uploaded ?? []).forEach((card) => removeCardSelectionId(String(card.card_id)));
+
+        /* Lamprell UAE: da/portal_files leaves the cards where they are, so they are moved to the next column
+           with da/advance_stage once the zip is downloaded. */
+        if (moveAfterDownload) {
+          let moveData;
+          try {
+            ({ data: moveData } = await daService.advanceStageCards({
+              cards: downloadCards.map((card) => ({ call_id: Number(card.callId), card_id: Number(card.id) })),
+            }));
+          } catch (error) {
+            moveData = error?.response?.data;
+          }
+          if (moveData?.status !== "success") {
+            notify(moveData?.message || "Failed to move the cards", "error");
+          } else {
+            (moveData.data?.moved ?? []).forEach((card) => removeCardSelectionId(String(card.card_id)));
+          }
+        }
         refetchBoard?.();
       } finally {
         setIsDownloadingInvoices(false);
