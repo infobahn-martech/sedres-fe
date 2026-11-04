@@ -1,30 +1,34 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
-import { FiAlertTriangle, FiCheck, FiLayers, FiX } from "react-icons/fi";
+import { FiAlertTriangle, FiCheck, FiLayers, FiUploadCloud, FiX } from "react-icons/fi";
 import CustomModal from "@/components/CustomModal";
-import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
+import useLamprellUaePoApprovalStore, { LAMPRELL_UAE_PO_COLUMNS } from "@/store/lamprellUaePoApprovalStore";
 import { notify } from "@/components/Toaster";
 import "@/design/scss/blockers-modal.scss";
 import "@/design/scss/pages/kanban-board/seReviewMoveModal.scss";
 import "@/design/scss/pages/kanban-board/arInvoiceReviewModal.scss";
 import "@/design/scss/pages/kanban-board/lamprellUaePoReviewModal.scss";
 
-/* Editable review columns, in display order; name is the da/confirm_po_approval field. */
-const COLUMNS = [
-  { name: "sales_order_no", label: "SO No" },
-  { name: "po_number", label: "PO #" },
-  { name: "received_qty", label: "Received Qty" },
-  { name: "srn_no", label: "SRN No" },
-];
+const COLUMNS = LAMPRELL_UAE_PO_COLUMNS;
 
-// Opened after a Lamprell UAE "Upload PO" (pre-filled from the client's reply) or with no file (blank rows).
-// One row per sales order, every field editable. Confirm sends the ticked cards to da/confirm_po_approval.
+const ACCEPTED_REPLY_EXTENSIONS = ["pdf", "eml", "msg", "jpg", "jpeg", "png"];
+const ACCEPTED_REPLY_TYPES = ACCEPTED_REPLY_EXTENSIONS.map((extension) => `.${extension}`).join(",");
+
+// Opened by a Lamprell UAE "Upload PO": one blank row per ticked card to fill by hand, or upload the client's
+// reply to pre-fill one row per sales order. Every field is editable. Confirm sends the ticked cards to
+// da/confirm_po_approval, with the uploaded reply's document_id when there is one.
 const LamprellUaePoReviewModal = ({ onConfirmed }) => {
   const show = useLamprellUaePoApprovalStore((state) => state.showPoReviewModal);
   const reviewCards = useLamprellUaePoApprovalStore((state) => state.poReviewCards);
   const onClose = useLamprellUaePoApprovalStore((state) => state.closePoReviewModal);
   const isConfirming = useLamprellUaePoApprovalStore((state) => state.isPoConfirming);
   const confirmPo = useLamprellUaePoApprovalStore((state) => state.confirmPo);
+  const uploadPo = useLamprellUaePoApprovalStore((state) => state.uploadPo);
+  const isUploading = useLamprellUaePoApprovalStore((state) => state.isPoUploading);
+  const documentName = useLamprellUaePoApprovalStore((state) => state.poReviewDocumentName);
+  const isBusy = isConfirming || isUploading;
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
 
   const [cards, setCards] = useState([]);
   const [uncheckedCardIds, setUncheckedCardIds] = useState({});
@@ -59,6 +63,16 @@ const LamprellUaePoReviewModal = ({ onConfirmed }) => {
       )
     );
 
+  const uploadReply = async (file) => {
+    if (!file || isBusy) return;
+    if (!ACCEPTED_REPLY_EXTENSIONS.includes(file.name.split(".").pop().toLowerCase())) {
+      notify("Unsupported file type. Use PDF, EML, MSG, JPG or PNG", "error");
+      return;
+    }
+    const { ok, message } = await uploadPo(file);
+    if (!ok) notify(message, "error");
+  };
+
   const handleConfirm = async () => {
     if (isConfirming || !checkedCards.length) return;
     const payload = checkedCards.map((card) => ({
@@ -92,7 +106,7 @@ const LamprellUaePoReviewModal = ({ onConfirmed }) => {
               className="form-check-input ar-invoice-review__checkbox"
               checked={isCardChecked(card)}
               onChange={() => toggleCard(card)}
-              disabled={isConfirming}
+              disabled={isBusy}
               aria-label={`Select card ${card.card_id}`}
             />
           </td>
@@ -104,7 +118,7 @@ const LamprellUaePoReviewModal = ({ onConfirmed }) => {
               className="form-control form-control-sm ar-invoice-review__input"
               value={salesOrder[column.name] ?? ""}
               onChange={(event) => updateField(card.card_id, rowIndex, column.name, event.target.value)}
-              disabled={isConfirming}
+              disabled={isBusy}
               aria-label={`${column.label} for card ${card.card_id}`}
             />
             {column.name === "srn_no" && salesOrder.srn_used_by?.used_on && (
@@ -128,6 +142,64 @@ const LamprellUaePoReviewModal = ({ onConfirmed }) => {
         </div>
       </div>
 
+      <div
+        className={`lamprell-po-dropzone${isDragging ? " lamprell-po-dropzone--active" : ""}${
+          isBusy ? " lamprell-po-dropzone--disabled" : ""
+        }`}
+        role="button"
+        tabIndex={0}
+        onClick={() => fileInputRef.current?.click()}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+          setIsDragging(true);
+        }}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setIsDragging(false);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsDragging(false);
+          const file = event.dataTransfer?.files?.[0];
+          if (!file) {
+            notify("No file received. Save the file to your computer first, then drag it here", "error");
+            return;
+          }
+          uploadReply(file);
+        }}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="d-none"
+          accept={ACCEPTED_REPLY_TYPES}
+          onClick={(event) => event.stopPropagation()}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            uploadReply(file);
+          }}
+        />
+        <FiUploadCloud size={22} aria-hidden />
+        <span className="lamprell-po-dropzone__text">
+          {isUploading ? "Reading the document..." : documentName || "Drag and drop the client's reply here"}
+        </span>
+        <span className="lamprell-po-dropzone__hint">
+          {documentName ? "The table below is filled from this file. Edit if needed." : "or click to browse - PDF, EML, MSG, JPG, PNG"}
+        </span>
+      </div>
+
       <div className="blockers-table-section">
         <div className="blockers-table-wrapper">
           <table className="blockers-table ar-invoice-review__grid">
@@ -142,7 +214,7 @@ const LamprellUaePoReviewModal = ({ onConfirmed }) => {
                       if (element) element.indeterminate = isSomeChecked;
                     }}
                     onChange={toggleAllCards}
-                    disabled={!cards.length || isConfirming}
+                    disabled={!cards.length || isBusy}
                     aria-label="Select all cards"
                   />
                 </th>
@@ -171,10 +243,12 @@ const LamprellUaePoReviewModal = ({ onConfirmed }) => {
   const renderHeader = () => (
     <div className="blockers-modal-header">
       <div className="blockers-modal-header-text">
-        <h5 className="blockers-modal-title">PO Review</h5>
-        <p className="blockers-modal-subtitle">Check or edit the PO details, then confirm the ticked cards</p>
+        <h5 className="blockers-modal-title">Upload PO</h5>
+        <p className="blockers-modal-subtitle">
+          Upload the client's reply or enter the PO details by hand, then confirm the ticked cards
+        </p>
       </div>
-      <button type="button" className="blockers-modal-close" onClick={onClose} disabled={isConfirming} aria-label="Close">
+      <button type="button" className="blockers-modal-close" onClick={onClose} disabled={isBusy} aria-label="Close">
         <FiX size={20} />
       </button>
     </div>
@@ -182,14 +256,14 @@ const LamprellUaePoReviewModal = ({ onConfirmed }) => {
 
   const renderFooter = () => (
     <div className="modal-footer se-review-move-footer">
-      <button type="button" className="btn btn-outline" onClick={onClose} disabled={isConfirming}>
+      <button type="button" className="btn btn-outline" onClick={onClose} disabled={isBusy}>
         Close
       </button>
       <button
         type="button"
         className="btn btn-primary"
         onClick={handleConfirm}
-        disabled={isConfirming || !checkedCards.length}
+        disabled={isBusy || !checkedCards.length}
       >
         <FiCheck className="me-2" />
         {isConfirming ? "Confirming..." : `Confirm (${checkedCards.length})`}

@@ -53,7 +53,6 @@ import useZamilMarineArInvoiceStore from "../../../store/zamilMarineArInvoiceSto
 import useZamilCrewArInvoiceStore from "../../../store/zamilCrewArInvoiceStore";
 import useZamilMarinePoRequestStore from "../../../store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "../../../store/zamilMarinePoUploadStore";
-import useLamprellUaePoApprovalStore from "../../../store/lamprellUaePoApprovalStore";
 import useZamilCrewFinalInvoiceStore from "../../../store/zamilCrewFinalInvoiceStore";
 import useZamilMarineFinalInvoiceStore from "../../../store/zamilMarineFinalInvoiceStore";
 import usePoReviewStore from "../../../store/poReviewStore";
@@ -168,15 +167,6 @@ const zamilMarinePoUploadFields = [
     accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
     formatsHint: "PDF, EML, MSG, JPG, PNG",
     multiple: true,
-  },
-];
-/* da/upload_po_approval for Lamprell UAE takes the client's reply as one file. */
-const lamprellUaePoUploadFields = [
-  {
-    name: ZAMIL_MARINE_PO_FIELD_NAME,
-    accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
-    formatsHint: "PDF, EML, MSG, JPG, PNG",
-    multiple: false,
   },
 ];
 const poUploadFields = [
@@ -763,33 +753,9 @@ export default function KanbanBoardPage() {
     [zamilMarinePoUploadCards, uploadZamilMarinePo, clearCardColumns, removeCardSelectionId, refetchBoard]
   );
 
-  /* Lamprell UAE "Upload PO" on "PO Received / Submitted to DA": the client's reply goes to da/upload_po_approval and
-     pre-fills the PO review; with no file the review opens blank to fill by hand. Confirming the review
-     saves it via da/confirm_po_approval, and the backend moves the cards on. */
-  const showLamprellUaePoUploadModal = useLamprellUaePoApprovalStore((state) => state.showPoUploadModal);
-  const lamprellUaePoUploadCards = useLamprellUaePoApprovalStore((state) => state.selectedPoUploadCards);
-  const isUploadingLamprellUaePo = useLamprellUaePoApprovalStore((state) => state.isPoUploading);
-  const closeLamprellUaePoUploadModal = useLamprellUaePoApprovalStore((state) => state.closePoUploadModal);
-  const uploadLamprellUaePo = useLamprellUaePoApprovalStore((state) => state.uploadPo);
-  const openLamprellUaeManualPoReview = useLamprellUaePoApprovalStore((state) => state.openManualPoReview);
-
-  const handleUploadLamprellUaePo = useCallback(
-    async ({ [ZAMIL_MARINE_PO_FIELD_NAME]: files = [] }) => {
-      if (!files.length) {
-        openLamprellUaeManualPoReview();
-        return;
-      }
-      const formData = new FormData();
-      formData.append("call_ids", lamprellUaePoUploadCards.map((card) => card.callId).join(","));
-      formData.append("card_ids", lamprellUaePoUploadCards.map((card) => card.id).join(","));
-      files.forEach((file) => formData.append("po_approval[]", file));
-
-      const { ok, message } = await uploadLamprellUaePo(formData);
-      if (!ok) notify(message, "error");
-    },
-    [lamprellUaePoUploadCards, uploadLamprellUaePo, openLamprellUaeManualPoReview]
-  );
-
+  /* Lamprell UAE "Upload PO" on "PO Received / Submitted to DA" opens one PO popup: fill the rows by hand or
+     upload the client's reply to pre-fill them. Both are saved via da/confirm_po_approval, and the backend moves
+     the cards on. */
   const handleLamprellUaePoConfirmed = useCallback(
     (cardIds) => {
       clearCardColumns(cardIds);
@@ -2688,19 +2654,6 @@ export default function KanbanBoardPage() {
         subtitle="Attach the PO for the selected cards"
         submitLabel="Upload PO"
         fields={zamilMarinePoUploadFields}
-      />
-
-      <SeApprovalUploadModal
-        show={showLamprellUaePoUploadModal}
-        onClose={closeLamprellUaePoUploadModal}
-        onUpload={handleUploadLamprellUaePo}
-        isSubmitting={isUploadingLamprellUaePo}
-        selectedCardCount={lamprellUaePoUploadCards.length}
-        title="Upload PO"
-        subtitle="Attach the client's reply, or continue without a file to enter the PO details by hand"
-        submitLabel="Continue"
-        fields={lamprellUaePoUploadFields}
-        allowEmptyUpload
       />
 
       <LamprellUaePoReviewModal onConfirmed={handleLamprellUaePoConfirmed} />
