@@ -80,7 +80,7 @@ const formatDateTime = (iso) =>
 const share = (part, total) => (total ? (part / total) * 100 : 0);
 
 const TransportCoordinatorDashboard = () => {
-  const [overview, setOverview] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
   const [requestTab, setRequestTab] = useState(REQUEST_TABS[0].key);
   const [requestPort, setRequestPort] = useState("all");
   const [requestCompany, setRequestCompany] = useState("all");
@@ -91,15 +91,20 @@ const TransportCoordinatorDashboard = () => {
 
   useEffect(() => {
     let isMounted = true;
-    transportDashboardService.getTransportDashboardOverview().then((response) => {
-      if (isMounted) setOverview(response.data.data);
-    });
+    transportDashboardService
+      .getTransportDashboard()
+      .then((response) => {
+        if (isMounted) setDashboard(response.data.data);
+      })
+      .catch(() => {
+        if (isMounted) setDashboard({});
+      });
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const requests = useMemo(() => overview?.transport_requests ?? [], [overview]);
+  const requests = useMemo(() => dashboard?.transport_requests ?? [], [dashboard]);
   const activeTab = REQUEST_TABS.find((tab) => tab.key === requestTab);
 
   const tabCounts = useMemo(() => {
@@ -135,37 +140,57 @@ const TransportCoordinatorDashboard = () => {
     setRequestStatus("all");
   };
 
-  if (!overview) {
+  if (!dashboard) {
     return <div className="dashboard-container">Loading dashboard...</div>;
   }
 
-  const { summary, fleet } = overview;
+  const fleet = dashboard.fleet ?? {};
+  const drivers = fleet.drivers ?? {};
+  const vehiclesByType = fleet.vehicles_by_type ?? [];
+  const monthSummary = dashboard.month_summary ?? {};
+  const today = dashboard.today ?? {};
 
-  const totalTrips = overview.trips_by_company.reduce((sum, company) => sum + company.trips, 0);
-  const companySegments = overview.trips_by_company.map((company, index) => ({
+  // In-house fleet first, then each external transport company.
+  const tripsByCompany = [
+    { key: "inhouse", name: "In-house", trips: monthSummary.inhouse_trips ?? 0 },
+    ...(monthSummary.company_wise_trips ?? []).map((company) => ({
+      key: `company-${company.transport_company_id}`,
+      name: company.name,
+      trips: company.trips ?? 0,
+    })),
+  ];
+  const totalTrips = tripsByCompany.reduce((sum, company) => sum + company.trips, 0);
+  const companySegments = tripsByCompany.map((company, index) => ({
     ...company,
     color: seriesColors[index % seriesColors.length],
     share: share(company.trips, totalTrips),
   }));
   const topCompany = companySegments.reduce((top, segment) => (segment.trips > top.trips ? segment : top), companySegments[0]);
-  const currentMonthLabel = new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  const currentMonthLabel =
+    dashboard.month_label ?? new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 
-  const tripTrend = filterByPeriod(overview.trip_trend, tripPeriod);
+  const tripTrend = filterByPeriod(dashboard.trip_trend ?? [], tripPeriod);
 
-  const totalDrivers = fleet.drivers.available + fleet.drivers.on_trip + fleet.drivers.off_duty;
   const driverSegments = [
-    { key: "available", name: "Available", value: fleet.drivers.available, color: seriesColors[2] },
-    { key: "on_trip", name: "On Trip", value: fleet.drivers.on_trip, color: seriesColors[0] },
-    { key: "off_duty", name: "Off Duty", value: fleet.drivers.off_duty, color: seriesColors[1] },
+    { key: "available", name: "Available", value: drivers.available ?? 0, color: seriesColors[2] },
+    { key: "on_trip", name: "On Trip", value: drivers.on_trip ?? 0, color: seriesColors[0] },
+    { key: "off_duty", name: "Off Duty", value: drivers.off_duty ?? 0, color: seriesColors[1] },
   ];
+  const totalDrivers = driverSegments.reduce((sum, segment) => sum + segment.value, 0);
 
   const stats = [
-    { title: "Today's Pickups", value: summary.todays_pickups, icon: <CalendarClock />, tone: "blue" },
-    { title: "Pending Assignment", value: summary.pending_assignment, icon: <Hourglass />, tone: "amber" },
-    { title: "In Transit", value: summary.in_transit, icon: <Truck />, tone: "violet" },
-    { title: "Completed (MTD)", value: summary.completed_mtd, icon: <CircleCheck />, tone: "green" },
-    { title: "Active Drivers", value: summary.active_drivers, icon: <UserRound />, tone: "blue" },
-    { title: "Available Vehicles", value: summary.available_vehicles, icon: <Car />, tone: "red" },
+    { title: "Today's Pickups", value: today.total_trips ?? 0, icon: <CalendarClock />, tone: "blue" },
+    { title: "Pending Assignment", value: today.pending_trips ?? 0, icon: <Hourglass />, tone: "amber" },
+    { title: "In Transit", value: today.in_progress_trips ?? 0, icon: <Truck />, tone: "violet" },
+    { title: "Completed (MTD)", value: dashboard.completed_mtd ?? 0, icon: <CircleCheck />, tone: "green" },
+    { title: "Active Drivers", value: dashboard.active_inhouse_drivers ?? 0, icon: <UserRound />, tone: "blue" },
+    {
+      title: "Available Vehicles",
+      value: dashboard.available_vehicles ?? 0,
+      hint: dashboard.total_vehicles != null ? `of ${dashboard.total_vehicles} total` : null,
+      icon: <Car />,
+      tone: "red",
+    },
   ];
 
   return (
@@ -177,7 +202,7 @@ const TransportCoordinatorDashboard = () => {
         </div>
         <span className="dashboard-date">
           <CalendarDays />
-          {formatDate(Date.now())}
+          {formatDate(dashboard.date ?? Date.now())}
         </span>
       </div>
 
@@ -260,6 +285,7 @@ const TransportCoordinatorDashboard = () => {
               <p className="stat-title">{stat.title}</p>
             </div>
             <h3 className="stat-value">{stat.value.toLocaleString()}</h3>
+            {stat.hint && <span className="stat-hint">{stat.hint}</span>}
           </div>
         ))}
       </div>
@@ -341,7 +367,7 @@ const TransportCoordinatorDashboard = () => {
                           <span>
                             {r.vessel}
                             <br />
-                            <span className="stat-hint">{PORT_LABELS[r.port]}</span>
+                            <span className="stat-hint">{PORT_LABELS[r.port] ?? r.port}</span>
                           </span>
                         </span>
                       </td>
@@ -434,7 +460,7 @@ const TransportCoordinatorDashboard = () => {
                 </div>
               </li>
             ))}
-            {fleet.vehicles_by_type.map((vehicle) => (
+            {vehiclesByType.map((vehicle) => (
               <li key={vehicle.type} className="revenue-segment">
                 <div className="revenue-segment-head">
                   <span className="revenue-dot" style={{ background: seriesColors[3] }} />
