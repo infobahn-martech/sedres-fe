@@ -26,8 +26,7 @@ import {
   FiFileText,
   FiX,
 } from 'react-icons/fi';
-import { Tooltip } from 'react-tooltip';
-import 'react-tooltip/dist/react-tooltip.css';
+import HeaderTooltip from './HeaderTooltip';
 
 import logo from '../../assets/images/SedresLogoWhite.png';
 import { useBreakpoint } from '../../shared/hooks/useWindowSize';
@@ -405,7 +404,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
         <>
           {(roleMasterModuleUser || !portOperatorUser) && (
             <>
-              <Tooltip id="master-module" place="bottom" content="Master Module" />
+              <HeaderTooltip id="master-module" place="bottom" content="Master Module" />
               <NavTabButton
                 className="icon-btn icon-btn-hide-mobile"
                 active={!activePortal}
@@ -416,7 +415,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
               >
                 <FiLayout />
               </NavTabButton>
-              <Tooltip id="vendor-portal" place="bottom" content="Vendor Portal" />
+              <HeaderTooltip id="vendor-portal" place="bottom" content="Vendor Portal" />
               {/* <NavTabButton
                 className="icon-btn icon-btn-hide-mobile"
                 active={activePortal === 'vendor'}
@@ -427,7 +426,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
               >
                 <FiShoppingBag />
               </NavTabButton> */}
-              {/* <Tooltip id="medical-portal" place="bottom" content="Medical" />
+              {/* <HeaderTooltip id="medical-portal" place="bottom" content="Medical" />
               <NavTabButton
                 className="icon-btn icon-btn-hide-mobile"
                 active={activePortal === 'medical'}
@@ -438,7 +437,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
               >
                 <FiActivity />
               </NavTabButton> */}
-              {/* <Tooltip id="transport-portal" place="bottom" content="Transport Company" />
+              {/* <HeaderTooltip id="transport-portal" place="bottom" content="Transport Company" />
               <NavTabButton
                 className="icon-btn icon-btn-hide-mobile"
                 active={activePortal === 'transport'}
@@ -449,7 +448,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
               >
                 <FiTruck />
               </NavTabButton>
-              <Tooltip id="inhouse-driver-portal" place="bottom" content="Inhouse Driver" />
+              <HeaderTooltip id="inhouse-driver-portal" place="bottom" content="Inhouse Driver" />
               <NavTabButton
                 className="icon-btn icon-btn-hide-mobile"
                 active={activePortal === 'inhouse-driver'}
@@ -462,7 +461,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
               </NavTabButton> */}
             </>
           )}
-          {/* <Tooltip id="board" place="bottom" content="Board" />
+          {/* <HeaderTooltip id="board" place="bottom" content="Board" />
           <NavTabButton
             className="icon-btn icon-btn-hide-mobile"
             active={pathname === '/kanban-board/operator'}
@@ -477,7 +476,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
       )}
       {!vendorDashboardUser && (
         <>
-          <Tooltip id="kpi-dashboard" place="bottom" content="KPI Dashboard" />
+          <HeaderTooltip id="kpi-dashboard" place="bottom" content="KPI Dashboard" />
           <NavTabButton
             className="icon-btn icon-btn-hide-mobile"
             active={pathname === '/kpi-dashboard'}
@@ -489,7 +488,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           </NavTabButton>
         </>
       )}
-      <Tooltip id="theme-toggle" place="bottom" content={isDark ? 'Switch to light mode' : 'Switch to dark mode'} />
+      <HeaderTooltip id="theme-toggle" place="bottom" content={isDark ? 'Switch to light mode' : 'Switch to dark mode'} />
       <button
         type="button"
         className="icon-btn"
@@ -501,7 +500,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
         {isDark ? <FiSun /> : <FiMoon />}
       </button>
 
-      <Tooltip id="help" place="bottom" content="Help" />
+      <HeaderTooltip id="help" place="bottom" content="Help" />
       <button
         className="icon-btn icon-btn-hide-mobile"
         aria-label="Help"
@@ -512,7 +511,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
       </button>
 
       <div className="notification-btn-wrapper">
-        <Tooltip id="notifications" place="bottom" content="Notifications" />
+        <HeaderTooltip id="notifications" place="bottom" content="Notifications" />
         <button
           className={`icon-btn ${showNotificationsModal ? 'active' : ''}`}
           aria-label="Notifications"
@@ -528,7 +527,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
 
       {showKanbanSettingsItems && (
         <div className="settings-btn-wrapper" ref={settingsDropdownRef}>
-          <Tooltip id="settings" place="bottom" content="Settings" />
+          <HeaderTooltip id="settings" place="bottom" content="Settings" />
           <button
             type="button"
             className={`icon-btn ${showSettingsSubmenu ? 'active' : ''}`}
@@ -580,7 +579,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
         </div>
       )}
 
-      <Tooltip id="user-profile" place="bottom" content="User Profile" />
+      <HeaderTooltip id="user-profile" place="bottom" content="User Profile" />
       <div className="user-circle-wrapper" ref={dropdownRef}>
         <div
           className={`user-circle ${showUserDropdown ? 'active' : ''}`}
@@ -639,7 +638,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
         {/* Mobile Menu Toggle Button */}
         {isMobile && !restrictedBoardUser && (
           <>
-            <Tooltip id="mobile-menu-toggle" place="bottom" content="Toggle menu" />
+            <HeaderTooltip id="mobile-menu-toggle" place="bottom" content="Toggle menu" />
             <button
               className={`mobile-menu-toggle ${mobileMenuOpen ? 'active' : ''}`}
               onClick={handleMenuToggle}

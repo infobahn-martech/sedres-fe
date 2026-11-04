@@ -3,6 +3,7 @@ import { FiAnchor, FiBookOpen, FiCalendar, FiCloud, FiHash, FiTool } from 'react
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
 import ToolModal from './ToolModal';
+import HeaderTooltip from './HeaderTooltip';
 
 const CalculatorModal = lazy(() => import('./CalculatorModal'));
 const DictionaryModal = lazy(() => import('./DictionaryModal'));
@@ -119,7 +120,7 @@ function ToolsMenu({ variant = 'header', onSelect }) {
   // Reuses the settings dropdown styles so both header menus look identical
   return (
     <div className="settings-btn-wrapper" ref={menuRef}>
-      <Tooltip id="tools" place="bottom" content="Tools" />
+      <HeaderTooltip id="tools" place="bottom" content="Tools" />
       <button
         type="button"
         className={`icon-btn ${showMenu ? 'active' : ''}`}
