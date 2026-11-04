@@ -35,6 +35,17 @@ const confirmArInvoices = (payload) => Gateway.post('/da/confirm_ar_invoices', p
 const getFinalInvoiceEmailDraft = (callId, cardId) =>
   Gateway.get('/da/final_invoice_email_draft', { params: { call_id: callId, card_id: cardId } });
 
+/** @param {Array<number|string>} callIds
+ * @param {Array<number|string>} cardIds - ticked "AR Invoice Issued" cards, sent as call_ids=1,2&card_ids=3,4
+ * @returns {Promise<{ data: { status: 'success', data: { cards: { call_id: number, card_id: number }[], to: string,
+ *   cc: string, subject: string, body: string, attachments: { stage_document_id: number, name: string,
+ *   url: string }[] } } | { status: 'error', message: string } }>}
+ * One final invoice email for several cards; data.cards lists the cards the draft covers. */
+const getCombinedFinalInvoiceEmailDraft = (callIds, cardIds) =>
+  Gateway.get('/da/final_invoice_email_draft', {
+    params: { call_ids: callIds.join(','), card_ids: cardIds.join(',') },
+  });
+
 /** @param {FormData} formData - call_id, card_id, stage_document_id, to, cc, subject, body, attachments[]?,
  *   multipart/form-data.
  * @returns {Promise<{ data: { status: 'success', data: { moved: { call_id: number, card_id: number,
@@ -51,5 +62,6 @@ export default {
   getArInvoiceReview,
   confirmArInvoices,
   getFinalInvoiceEmailDraft,
+  getCombinedFinalInvoiceEmailDraft,
   sendFinalInvoiceEmail,
 };

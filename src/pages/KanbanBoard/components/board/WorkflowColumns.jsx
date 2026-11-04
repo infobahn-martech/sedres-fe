@@ -577,8 +577,10 @@ export default function WorkflowColumns({
                   onClick: () => onColumnSendInvoice?.(invoiceCards[0], { isFinalInvoice: true }),
                 };
               }
+              /* Zamil Crew sends the final invoice for one or several ticked cards, one email after the other. */
+              const isZamilCrewColumn = isZamilWorkflow(workflow) && !isZamilMarineWorkflow(workflow);
               const hasInvoiceButton =
-                invoiceAction === "sendInvoice" ||
+                (invoiceAction === "sendInvoice" && !isZamilCrewColumn) ||
                 invoiceAction === "requestPo" ||
                 invoiceAction === "checkInvoice" ||
                 invoiceAction === "submitViaPortal" ||
@@ -598,10 +600,11 @@ export default function WorkflowColumns({
                   onUploadSrf?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 uploadSccDocuments: (cards) =>
                   onUploadSccDocuments?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
-                sendInvoice: ([card]) => onColumnSendInvoice?.(card, {
+                sendInvoice: ([card, ...queuedCards]) => onColumnSendInvoice?.(card, {
                     isFinalInvoice: isSubseaWorkflow(workflow),
-                    isZamilCrew: isZamilWorkflow(workflow) && !isZamilMarineWorkflow(workflow),
+                    isZamilCrew: isZamilCrewColumn,
                     isZamilMarine: isZamilMarineWorkflow(workflow),
+                    queuedCards: isZamilCrewColumn ? queuedCards : [],
                   }),
                 sendSccApproval: onColumnSendSccApproval,
                 requestPo: onColumnRequestPo,
