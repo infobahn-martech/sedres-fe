@@ -1,6 +1,11 @@
 // "PO Review" modal for Lamprell UAE "Upload PO". Reuses the Invoice Review shell (arInvoiceReviewModal.scss);
 // every cell is an input the user fills by hand, so the inputs keep a visible box instead of reading as plain text.
 .blockers-modal.se-review-move-modal.ar-invoice-review-modal.lamprell-uae-po-review-modal {
+  // The table sizes to its rows instead of stretching to the modal height.
+  .blockers-table-section {
+    flex: 0 1 auto;
+  }
+
   .blockers-table-wrapper .ar-invoice-review__grid {
     .ar-invoice-review__input {
       width: 100%;
@@ -14,5 +19,43 @@
     tbody td:nth-child(2) .ar-invoice-review__input {
       min-width: 220px;
     }
+  }
+
+  // Drop the client's reply here; the backend reads it and the table below is filled from it.
+  .lamprell-po-dropzone {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 14px;
+    color: #0f2f8f;
+    text-align: center;
+    background: #f5f8ff;
+    border: 1px dashed #94a3b8;
+    border-radius: 8px;
+    cursor: pointer;
+
+    &--active {
+      background: #e8f0ff;
+      border-color: #0f2f8f;
+    }
+
+    &--disabled {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+  }
+
+  .lamprell-po-dropzone__text {
+    font-size: 13px;
+    font-weight: 600;
+    word-break: break-all;
+  }
+
+  .lamprell-po-dropzone__hint {
+    color: #64748b;
+    font-size: 12px;
   }
 }
