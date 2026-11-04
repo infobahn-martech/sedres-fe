@@ -14,6 +14,23 @@ export const isLamprellUaePoReceivedColumn = (workflowTitle, columnTitle) =>
   LAMPRELL_UAE_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
   PO_RECEIVED_SUBMITTED_TO_DA_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
+const LAMPRELL_ALGIHAZ_WORKFLOW_PATTERN = /lamprell\s*al[\s-]?gihaz/i;
+const TO_BE_SENT_FOR_SO_APPROVAL_COLUMN_PATTERN = /^to\s+be\s+sent\s+for\s+so\s+approval\b/i;
+const AWAITING_SO_COLUMN_PATTERN = /^awaiting\s+(for\s+)?so\b/i;
+
+export const isLamprellAlgihazWorkflowTitle = (workflowTitle) =>
+  LAMPRELL_ALGIHAZ_WORKFLOW_PATTERN.test(String(workflowTitle ?? ""));
+
+/* Lamprell Algihaz batches: "Send SO" on "To be sent for SO Approval" (the live title may carry the
+   category, e.g. "... Port Call"), "Upload approved SOs" on "Awaiting SO". */
+export const isLamprellAlgihazSendSoColumn = (workflowTitle, columnTitle) =>
+  isLamprellAlgihazWorkflowTitle(workflowTitle) &&
+  TO_BE_SENT_FOR_SO_APPROVAL_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
+export const isLamprellAlgihazAwaitingSoColumn = (workflowTitle, columnTitle) =>
+  isLamprellAlgihazWorkflowTitle(workflowTitle) &&
+  AWAITING_SO_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
 const ARCHIVE_COLUMN_PATTERN = /archive/i;
 const SRF_SOURCE_COLUMN_PATTERN = /^submitted\s+to\s+da$/i;
 const SUBMIT_BY_EMAIL_COLUMN_PATTERN = /^submit\s+by\s+email$/i;

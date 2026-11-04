@@ -53,6 +53,7 @@ import useZamilMarineArInvoiceStore from "../../../store/zamilMarineArInvoiceSto
 import useZamilCrewArInvoiceStore from "../../../store/zamilCrewArInvoiceStore";
 import useZamilMarinePoRequestStore from "../../../store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "../../../store/zamilMarinePoUploadStore";
+import useLamprellAlgihazSoApprovalStore from "../../../store/lamprellAlgihazSoApprovalStore";
 import useZamilCrewFinalInvoiceStore from "../../../store/zamilCrewFinalInvoiceStore";
 import useZamilMarineFinalInvoiceStore from "../../../store/zamilMarineFinalInvoiceStore";
 import usePoReviewStore from "../../../store/poReviewStore";
@@ -72,6 +73,17 @@ const AR_INVOICE_NOT_PLACED_PREVIEW = 5;
 const arInvoiceUploadFields = [
   {
     name: AR_INVOICE_FIELD_NAME,
+    accept: ".pdf",
+    formatsHint: "PDF",
+    multiple: true,
+  },
+];
+/* Lamprell Algihaz "Upload approved SOs" on "Awaiting SO": the client-approved SOs go to da/upload_approved_so
+   as approved_sos[]. */
+const LAMPRELL_ALGIHAZ_APPROVED_SO_FIELD_NAME = "approved_sos";
+const lamprellAlgihazApprovedSoUploadFields = [
+  {
+    name: LAMPRELL_ALGIHAZ_APPROVED_SO_FIELD_NAME,
     accept: ".pdf",
     formatsHint: "PDF",
     multiple: true,
@@ -763,6 +775,117 @@ export default function KanbanBoardPage() {
       refetchBoard?.();
     },
     [clearCardColumns, removeCardSelectionId, refetchBoard]
+  );
+
+  /* Lamprell Algihaz "Send SO" on "To be sent for SO Approval": the SO approval email is drafted and sent per
+     batch (da/po_request_draft/{batch_id}, da/send_po_request); the backend moves the cards on. The modal
+     state lives in its own store, opened from the batch header. */
+  const showLamprellAlgihazSoEmailModal = useLamprellAlgihazSoApprovalStore((state) => state.showSoEmailModal);
+  const lamprellAlgihazSoEmailBatch = useLamprellAlgihazSoApprovalStore((state) => state.soEmailBatch);
+  const lamprellAlgihazSoEmailDraft = useLamprellAlgihazSoApprovalStore((state) => state.soEmailDraft);
+  const isSendingLamprellAlgihazSo = useLamprellAlgihazSoApprovalStore((state) => state.isSoSending);
+  const closeLamprellAlgihazSoEmailModal = useLamprellAlgihazSoApprovalStore((state) => state.closeSoEmailModal);
+  const sendLamprellAlgihazSoEmail = useLamprellAlgihazSoApprovalStore((state) => state.sendSoEmail);
+
+  const handleSendLamprellAlgihazSoEmail = useCallback(
+    async (emailData) => {
+      const batchCards = lamprellAlgihazSoEmailBatch?.cards ?? [];
+      const formData = new FormData();
+      formData.append("batch_id", lamprellAlgihazSoEmailBatch?.batchId ?? "");
+      /* Only the ticked cards move on; the unticked ones stay in the batch. */
+      if (lamprellAlgihazSoEmailBatch?.isPartial) {
+        formData.append("call_ids", getBatchCallIds(lamprellAlgihazSoEmailBatch).join(","));
+      }
+      if (lamprellAlgihazSoEmailDraft?.stage_document_id != null) {
+        formData.append("stage_document_id", lamprellAlgihazSoEmailDraft.stage_document_id);
+      }
+      formData.append("to", emailData?.to ?? "");
+      formData.append("cc", emailData?.cc ?? "");
+      formData.append("subject", emailData?.subject ?? "");
+      formData.append("body", emailData?.message ?? "");
+      (emailData?.attachments || []).forEach((file) => formData.append("attachments[]", file));
+
+      const { ok, message } = await sendLamprellAlgihazSoEmail(formData);
+      if (!ok) {
+        notify(message, "error");
+        return;
+      }
+      notify(message || "SO approval request sent successfully", "success");
+      clearCardColumns(batchCards.map((card) => card.id));
+      batchCards.forEach((card) => removeCardSelectionId(card.id));
+      refetchBoard?.();
+    },
+    [
+      lamprellAlgihazSoEmailBatch,
+      lamprellAlgihazSoEmailDraft,
+      sendLamprellAlgihazSoEmail,
+      getBatchCallIds,
+      clearCardColumns,
+      removeCardSelectionId,
+      refetchBoard,
+    ]
+  );
+
+  /* Lamprell Algihaz "Upload approved SOs" on "Awaiting SO": for the whole batch (batch_id) or its ticked cards
+     (call_ids + card_ids). No review: the backend moves every card whose SOs are all covered to the next column. */
+  const showLamprellAlgihazSoUploadModal = useLamprellAlgihazSoApprovalStore((state) => state.showSoUploadModal);
+  const lamprellAlgihazSoUploadBatch = useLamprellAlgihazSoApprovalStore((state) => state.soUploadBatch);
+  const isUploadingLamprellAlgihazSo = useLamprellAlgihazSoApprovalStore((state) => state.isSoUploading);
+  const closeLamprellAlgihazSoUploadModal = useLamprellAlgihazSoApprovalStore((state) => state.closeSoUploadModal);
+  const uploadLamprellAlgihazApprovedSos = useLamprellAlgihazSoApprovalStore((state) => state.uploadApprovedSos);
+
+  const handleUploadLamprellAlgihazApprovedSos = useCallback(
+    async ({ [LAMPRELL_ALGIHAZ_APPROVED_SO_FIELD_NAME]: files = [] }) => {
+      const batchCards = lamprellAlgihazSoUploadBatch?.cards ?? [];
+      const formData = new FormData();
+      if (lamprellAlgihazSoUploadBatch?.isPartial) {
+        formData.append("call_ids", getBatchCallIds(lamprellAlgihazSoUploadBatch).join(","));
+        formData.append("card_ids", batchCards.map((card) => card.id).join(","));
+      } else {
+        formData.append("batch_id", lamprellAlgihazSoUploadBatch?.batchId ?? "");
+      }
+      files.forEach((file) => formData.append("approved_sos[]", file));
+
+      const { ok, message, result } = await uploadLamprellAlgihazApprovedSos(formData);
+      if (!ok) {
+        notify(message, "error");
+        return;
+      }
+      const movedCount = result?.moved?.length ?? 0;
+      const notPlacedFiles = result?.not_placed_files ?? [];
+      const stillWaitingCount = result?.still_waiting?.length ?? 0;
+      notify(
+        movedCount
+          ? `${movedCount} ${movedCount === 1 ? "card" : "cards"} moved to the next column`
+          : "Approved SOs uploaded, no card is complete yet",
+        "success"
+      );
+      if (notPlacedFiles.length) {
+        notify(
+          `${notPlacedFiles.length} ${notPlacedFiles.length === 1 ? "file" : "files"} not placed: ${notPlacedFiles
+            .map((file) => file.file_name)
+            .join(", ")}`,
+          "warn"
+        );
+      }
+      if (stillWaitingCount) {
+        notify(
+          `${stillWaitingCount} ${stillWaitingCount === 1 ? "card is" : "cards are"} still waiting for more SOs`,
+          "warn"
+        );
+      }
+      clearCardColumns(batchCards.map((card) => card.id));
+      batchCards.forEach((card) => removeCardSelectionId(card.id));
+      refetchBoard?.();
+    },
+    [
+      lamprellAlgihazSoUploadBatch,
+      uploadLamprellAlgihazApprovedSos,
+      getBatchCallIds,
+      clearCardColumns,
+      removeCardSelectionId,
+      refetchBoard,
+    ]
   );
 
   /* Sends the PO request via da/send_po_request; the backend moves the batch's cards to "Requested PO". */
@@ -2560,11 +2683,52 @@ export default function KanbanBoardPage() {
         defaultBody={zamilMarinePoRequestDraft?.body ?? ""}
         documentUrl={zamilMarinePoRequestDraft?.document_url ?? ""}
         documents={zamilMarinePoRequestDraft?.attachments}
+        folderLink={zamilMarinePoRequestDraft?.folder_link ?? ""}
         title="PO Request Email"
         subtitle="Request the purchase order for the selected cards"
         sendLabel="Send PO Request"
         subjectPrefix="Request for PO"
         allowTables
+      />
+
+      <SeCreationEmailModal
+        show={showLamprellAlgihazSoEmailModal}
+        onClose={closeLamprellAlgihazSoEmailModal}
+        onSend={handleSendLamprellAlgihazSoEmail}
+        isSubmitting={isSendingLamprellAlgihazSo}
+        batchTitle={lamprellAlgihazSoEmailDraft?.batch_number || lamprellAlgihazSoEmailBatch?.title || ""}
+        defaultTo={lamprellAlgihazSoEmailDraft?.to ?? ""}
+        defaultCc={lamprellAlgihazSoEmailDraft?.cc ?? ""}
+        defaultSubject={lamprellAlgihazSoEmailDraft?.subject ?? ""}
+        defaultBody={lamprellAlgihazSoEmailDraft?.body ?? ""}
+        documents={lamprellAlgihazSoEmailDraft?.attachments}
+        folderLink={lamprellAlgihazSoEmailDraft?.folder_link ?? ""}
+        title="SO Approval Email"
+        subtitle={
+          lamprellAlgihazSoEmailBatch?.isPartial
+            ? "Request SO approval for the selected cards"
+            : "Request SO approval for this batch"
+        }
+        sendLabel="Send SO"
+        subjectPrefix="Sales order Approval request"
+        allowTables
+      />
+
+      <SeApprovalUploadModal
+        show={showLamprellAlgihazSoUploadModal}
+        onClose={closeLamprellAlgihazSoUploadModal}
+        onUpload={handleUploadLamprellAlgihazApprovedSos}
+        isSubmitting={isUploadingLamprellAlgihazSo}
+        batchTitle={lamprellAlgihazSoUploadBatch?.title ?? ""}
+        selectedCardCount={lamprellAlgihazSoUploadBatch?.isPartial ? lamprellAlgihazSoUploadBatch.cards.length : 0}
+        title="Upload approved SOs"
+        subtitle={
+          lamprellAlgihazSoUploadBatch?.isPartial
+            ? "Attach the approved SOs for the selected cards"
+            : "Attach the approved SOs for this batch"
+        }
+        submitLabel="Upload approved SOs"
+        fields={lamprellAlgihazApprovedSoUploadFields}
       />
 
       <SeCreationEmailModal

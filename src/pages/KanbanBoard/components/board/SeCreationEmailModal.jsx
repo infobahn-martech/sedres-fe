@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { FiCheck, FiFileText, FiMail, FiPaperclip, FiPlus, FiSend, FiUploadCloud, FiX } from "react-icons/fi";
+import { FiCheck, FiCopy, FiFileText, FiMail, FiPaperclip, FiPlus, FiSend, FiUploadCloud, FiX } from "react-icons/fi";
 import CustomModal from "@/components/CustomModal";
+import { notify } from "@/components/Toaster";
 import {
   OPERATION_EMAIL_MESSAGE_QUILL_FORMATS,
   OPERATION_EMAIL_MESSAGE_QUILL_MODULES,
@@ -54,6 +55,7 @@ const SeCreationEmailModal = ({
   defaultSubject = "",
   defaultBody = "",
   documentUrl = "",
+  folderLink = "",
   title = "New SE Creation Email",
   subtitle = "Compose sales order confirmation",
   sendLabel = "Send for SE Creation",
@@ -125,6 +127,15 @@ const SeCreationEmailModal = ({
     (fileFields ?? []).filter((field) => field.auto && field.document).length +
     (documentUrl ? 1 : 0) +
     Object.values(fieldFiles).reduce((sum, files) => sum + files.length, 0);
+
+  const handleCopyFolderLink = async () => {
+    try {
+      await navigator.clipboard.writeText(folderLink);
+      notify("Folder link copied", "success");
+    } catch {
+      notify("Failed to copy the folder link", "error");
+    }
+  };
 
   const handleOpenAttachment = (file) => {
     const url = URL.createObjectURL(file);
@@ -231,6 +242,32 @@ const SeCreationEmailModal = ({
           {errors.subject && <div className="se-email-field__error">{errors.subject}</div>}
         </div>
       </div>
+
+      {folderLink && (
+        <div className="se-email-field">
+          <label className="se-email-field__label">Folder</label>
+          <div className="se-email-field__control d-flex align-items-center gap-2">
+            <a
+              href={folderLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="se-email-attachments__name text-truncate"
+              title={folderLink}
+            >
+              {folderLink}
+            </a>
+            <button
+              type="button"
+              className="se-email-attachments__remove"
+              onClick={handleCopyFolderLink}
+              aria-label="Copy folder link"
+              title="Copy folder link"
+            >
+              <FiCopy />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="se-email-attachments">
         <div className="se-email-attachments__toolbar">
@@ -524,6 +561,7 @@ SeCreationEmailModal.propTypes = {
   defaultSubject: PropTypes.string,
   defaultBody: PropTypes.string,
   documentUrl: PropTypes.string,
+  folderLink: PropTypes.string,
   title: PropTypes.string,
   subtitle: PropTypes.string,
   sendLabel: PropTypes.string,
