@@ -26,7 +26,7 @@ import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow } from "../../utils/columnTitles";
+import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -48,11 +48,14 @@ const isBatchWorkflow = (workflow) => {
 const BATCH_CREATE_WORKFLOWS = [...BATCH_ACTION_WORKFLOWS, "MCDERMOTT", "BGP", "ZAMIL"];
 const LAMPRELL_SAUDI_WORKFLOW_PATTERN = /lamprell\s*saudi/i;
 
+/* Lamprell Algihaz creates batches from Backlog by call category (Crewing / Port Call) like SAIPEM; the backend
+   moves each batch to its category column. */
 const isBatchCreateWorkflow = (workflow) => {
   const workflowTitle = String(workflow?.title ?? "").trim().toUpperCase();
   return (
     BATCH_CREATE_WORKFLOWS.some((name) => workflowTitle.includes(name)) ||
-    LAMPRELL_SAUDI_WORKFLOW_PATTERN.test(workflowTitle)
+    LAMPRELL_SAUDI_WORKFLOW_PATTERN.test(workflowTitle) ||
+    isLamprellAlgihazWorkflowTitle(workflowTitle)
   );
 };
 
@@ -128,8 +131,18 @@ const isZamilMarineWorkflow = (workflow) => ZAMIL_MARINE_WORKFLOW_PATTERN.test(w
 const LAMPRELL_UAE_WORKFLOW_PATTERN = /lamprell\s*uae/i;
 const SEND_FOR_PO_APPROVAL_COLUMN_PATTERN = /^send\s+for\s+po\s+approval$/i;
 
+/* Lamprell Algihaz has no batches after "To be sent for SO Approval": "Send for PO Request" on "SO Approval Received"
+   opens the same PO request email draft as Zamil Marine, and "Upload PO" on "Requested for PO" takes one PO for
+   every ticked card; the backend moves the cards on in both. */
+const SO_APPROVAL_RECEIVED_COLUMN_PATTERN = /^so\s+approval\s+received$/i;
+const REQUESTED_FOR_PO_COLUMN_PATTERN = /^requested[^a-z]*for[^a-z]*po$/i;
+
 const getInvoiceAction = (workflow, column) => {
   const title = String(column?.title ?? "").trim();
+  if (isLamprellAlgihazWorkflowTitle(workflow?.title)) {
+    if (SO_APPROVAL_RECEIVED_COLUMN_PATTERN.test(title)) return "requestZamilMarinePo";
+    if (REQUESTED_FOR_PO_COLUMN_PATTERN.test(title)) return "uploadZamilMarinePo";
+  }
   if (LAMPRELL_UAE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && SEND_FOR_PO_APPROVAL_COLUMN_PATTERN.test(title)) {
     return "requestLamprellUaePo";
   }

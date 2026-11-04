@@ -4,16 +4,23 @@ import { FiChevronDown } from "react-icons/fi";
 import CardItem from "../cards/components/shared/CardItem";
 import useBatchMoveStore from "@/store/batchMoveStore";
 import useKanbanCardViewStore from "@/store/kanbanCardViewStore";
+import useLamprellAlgihazSoApprovalStore from "@/store/lamprellAlgihazSoApprovalStore";
+import useAlertReducer from "@/store/AlertReducer";
 import { MINIMAL_GRID_TEMPLATE, MINIMAL_TILE_GAP, getCardGap } from "../../utils/boardGridHelpers";
-import { isSubmittedInvoicesColumnTitle } from "../../utils/columnTitles";
+import {
+  isSubmittedInvoicesColumnTitle,
+  isLamprellAlgihazSendSoColumn,
+  isLamprellAlgihazAwaitingSoColumn,
+} from "../../utils/columnTitles";
 import "@/design/scss/pages/kanban-board/batch-group.scss";
 
 const noop = () => {};
 const EMPTY_SELECTED_IDS = [];
 const AWAITING_SE_COLUMN_PATTERN = /^awaiting\s+(for\s+)?se$/i;
 const SE_RECEIVED_COLUMN_PATTERN = /^se\s+received$/i;
-/* McDermott, BGP, Zamil Crew and Lamprell Saudi batches skip SAIPEM's SE steps, so their header has no SE actions. */
-const MCDERMOTT_WORKFLOW_PATTERN = /mcdermott|bgp|zamil|lamprell\s*saudi/i;
+/* McDermott, BGP, Zamil Crew, Lamprell Saudi and Lamprell Algihaz batches skip SAIPEM's SE steps, so their header
+   has no SE actions. */
+const MCDERMOTT_WORKFLOW_PATTERN = /mcdermott|bgp|zamil|lamprell\s*saudi|lamprell\s*al[\s-]?gihaz/i;
 /* Compared on letters only, so stray spaces, punctuation or invisible characters in the live
    column title don't hide the "Request PO" button. */
 const REQUESTED_PO_COLUMN_PATTERN = /^requested\s+po$/i;
@@ -69,6 +76,10 @@ export default function BatchGroup({
   /* McDermott batches in "Requested PO" upload their POs from the header, for the batch's ticked cards. */
   const isUploadPosBatch =
     !isUngrouped && !isSeFlowBatch && REQUESTED_PO_COLUMN_PATTERN.test((columnTitle ?? "").trim());
+  /* Lamprell Algihaz: "Send SO" and "Upload approved SOs" work on the ticked cards, or on the whole batch when
+     none is ticked. */
+  const isSendSoBatch = !isUngrouped && isLamprellAlgihazSendSoColumn(workflowTitle, columnTitle);
+  const isUploadApprovedSosBatch = !isUngrouped && isLamprellAlgihazAwaitingSoColumn(workflowTitle, columnTitle);
   const isIssueArInvoiceBatch =
     !isUngrouped &&
     ZAMIL_WORKFLOW_PATTERN.test(workflowTitle ?? "") &&
@@ -180,6 +191,27 @@ export default function BatchGroup({
     ? batch.cards
     : batch.cards.filter((card) => selectedActionCardIds.includes(card.id));
 
+  const openSoEmailModal = useLamprellAlgihazSoApprovalStore((state) => state.openSoEmailModal);
+  const openSoUploadModal = useLamprellAlgihazSoApprovalStore((state) => state.openSoUploadModal);
+  const isSoDraftLoading = useLamprellAlgihazSoApprovalStore((state) => state.isSoDraftLoading);
+
+  const getSoActionBatch = () => ({
+    batchId,
+    title: batch.title,
+    cards: tickedActionCards.length ? tickedActionCards : batch.cards,
+    isPartial: tickedActionCards.length > 0 && tickedActionCards.length < batch.cards.length,
+  });
+
+  const handleSendSo = async () => {
+    const { ok, message } = await openSoEmailModal(getSoActionBatch());
+    if (!ok) useAlertReducer.getState().error(message);
+  };
+
+  const handleUploadApprovedSos = () => {
+    const { ok, message } = openSoUploadModal(getSoActionBatch());
+    if (!ok) useAlertReducer.getState().error(message);
+  };
+
   const handleSendSeRequest =() => onSendSeRequest?.({ ...batch, cards: tickedSeCards });
 
   return (
@@ -200,7 +232,15 @@ export default function BatchGroup({
             <span className="batch-group__title">{batch.title}</span>
           </button>
 
-          {isIssueArInvoiceBatch ? (
+          {isSendSoBatch ? (
+            <button type="button" className="batch-group__action" onClick={handleSendSo} disabled={isSoDraftLoading}>
+              Send SO
+            </button>
+          ) : isUploadApprovedSosBatch ? (
+            <button type="button" className="batch-group__action" onClick={handleUploadApprovedSos}>
+              Upload approved SOs
+            </button>
+          ) : isIssueArInvoiceBatch ? (
             <button
               type="button"
               className="batch-group__action"
