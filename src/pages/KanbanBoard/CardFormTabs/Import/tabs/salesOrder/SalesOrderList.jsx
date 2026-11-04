@@ -1442,9 +1442,16 @@ const SalesOrderList = ({
         onCloseCard?.();
       }
     } catch (err) {
-      setApprovedSoUploadError(
-        err?.response?.data?.message || err?.message || "Upload failed. Please try again."
-      );
+      const errorMessage = err?.response?.data?.message || err?.message || "Upload failed. Please try again.";
+      if (isSrtFlow) {
+        /* An SRT without the signature is rejected and the card stays in its column; closing the card reloads
+           the board so it turns red (signature_status "missing") and the SRT can be uploaded again. */
+        handleCloseApprovedSoUploadModal();
+        useAlertReducer.getState().error(errorMessage);
+        onCloseCard?.();
+      } else {
+        setApprovedSoUploadError(errorMessage);
+      }
     } finally {
       setIsUploadingApprovedSo(false);
     }
