@@ -1960,6 +1960,12 @@ export default function KanbanBoardPage() {
 
         if (!receivedCount) {
           notify(failedMessage || "Failed to upload dispatch proofs", "error");
+          /* A "Dispatch the Hard Copies" proof without the signature is rejected and the card stays in its column;
+             the board reload marks it red (signature_status "missing") so the proof can be uploaded again. */
+          if (isMultiCardDispatchProofUpload(cards)) {
+            handleCloseDispatchProofUpload();
+            refetchBoard?.();
+          }
           return;
         }
         if (failedMessage) {
@@ -1997,6 +2003,7 @@ export default function KanbanBoardPage() {
       removeCardSelectionId,
       handleCloseDispatchProofUpload,
       isLntDispatchProofUpload,
+      isMultiCardDispatchProofUpload,
       openDispatchProofReviewModal,
       refetchBoard,
     ]
