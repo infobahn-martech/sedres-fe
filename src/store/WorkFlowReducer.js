@@ -161,9 +161,15 @@ const useWorkFlowReducer = create((set, get) => ({
         }
     },
 
-    createSwimlane: async ({ workflow_id, swimlane_name, cb, onSettled }) => {
+    createSwimlane: async ({ workflow_id, swimlane_name, entity_id, sub_entity_id, position, cb, onSettled }) => {
         try {
-            const { data } = await workflowService.createSwimlane({ workflow_id, swimlane_name });
+            const { data } = await workflowService.createSwimlane({
+                workflow_id,
+                swimlane_name,
+                entity_id: entity_id ?? null,
+                sub_entity_id: sub_entity_id ?? null,
+                position,
+            });
             const { success } = useAlertReducer.getState();
             success(data && data.message);
             cb && cb();

@@ -7,6 +7,7 @@ import '../../design/scss/EditWorkflows.scss';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 import CreateWorkflowModal from './CreateWorkflowModal';
 import CopyWorkflowModal from './CopyWorkflowModal';
+import CreateSwimlaneModal from './CreateSwimlaneModal';
 import WorkflowBoard from './WorkflowBoard';
 import {
   getColumnKey,
@@ -117,6 +118,8 @@ function EditWorkflows() {
   const [deleteModal, setDeleteModal] = useState(null);
   const [copyWorkflowTarget, setCopyWorkflowTarget] = useState(null);
   const [copyWorkflowSaving, setCopyWorkflowSaving] = useState(false);
+  const [addSwimlaneTarget, setAddSwimlaneTarget] = useState(null);
+  const [addSwimlaneSaving, setAddSwimlaneSaving] = useState(false);
   const mutationInflightRef = useRef(new Set());
   const boardId = searchParams.get('boardId');
 
@@ -600,14 +603,31 @@ function EditWorkflows() {
     });
   };
 
-  const handleAddSwimlane = (workflowId, insertAtIndex, swimlaneName = 'New Swimlane') => {
+  const handleAddSwimlane = (workflowId, insertAtIndex) => {
+    setAddSwimlaneTarget({ workflowId, insertAtIndex });
+  };
+
+  const confirmAddSwimlane = ({ swimlane_name, entity_id, sub_entity_id }) => {
+    if (!addSwimlaneTarget) return;
+    const { workflowId, insertAtIndex } = addSwimlaneTarget;
     const k = `swimlane-add:${workflowId}:${insertAtIndex}`;
     if (!startMutation(k, true)) return;
+    setAddSwimlaneSaving(true);
     createSwimlane({
       workflow_id: workflowId,
-      swimlane_name: swimlaneName,
-      cb: refetchBoardWorkflows,
-      onSettled: () => clearMutationKey(k),
+      swimlane_name,
+      entity_id,
+      sub_entity_id,
+      // API expects a 1-based row position
+      position: insertAtIndex + 1,
+      cb: () => {
+        refetchBoardWorkflows();
+        setAddSwimlaneTarget(null);
+      },
+      onSettled: () => {
+        clearMutationKey(k);
+        setAddSwimlaneSaving(false);
+      },
     });
   };
 
@@ -1076,6 +1096,13 @@ function EditWorkflows() {
         onClose={() => setCopyWorkflowTarget(null)}
         onSave={confirmCopyWorkflow}
         isSaving={copyWorkflowSaving}
+      />
+
+      <CreateSwimlaneModal
+        show={!!addSwimlaneTarget}
+        onClose={() => setAddSwimlaneTarget(null)}
+        onSave={confirmAddSwimlane}
+        isSaving={addSwimlaneSaving}
       />
 
       <DeleteConfirmationModal
