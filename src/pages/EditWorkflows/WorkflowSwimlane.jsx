@@ -447,7 +447,7 @@ function WorkflowSwimlane({
                   >
                     <div className="workflow-swimlane-cell-fields">
                       <div className="workflow-swimlane-cell-field">
-                        <span className="workflow-swimlane-cell-label">Limit:</span>
+                        <span className="workflow-swimlane-cell-label">Limit</span>
                         <span className="workflow-swimlane-cell-value-slot">
                           {isEditingLimit ? (
                             <input
