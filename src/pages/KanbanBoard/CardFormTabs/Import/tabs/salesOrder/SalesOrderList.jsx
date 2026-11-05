@@ -1431,14 +1431,9 @@ const SalesOrderList = ({
       onDaStatusRefresh?.();
       const wasMovedToDa =
         (Array.isArray(data?.moved_to_da) && data.moved_to_da.length > 0) || Boolean(data?.moved_to_column);
-      // Subsea 7: the card must end up on "Submitted to DA" once the SRT is in, so when the backend
-      // did not move it (moved_to_da empty) it is moved one column forward here.
-      const nextColumnLabel =
-        Array.isArray(stepLabels) && currentStep != null ? stepLabels[currentStep] : null;
-      if (isSrtFlow && !wasMovedToDa && nextColumnLabel) {
-        onAdvanceDaStage?.({ label: nextColumnLabel, skipStatusUpdate: true });
-        onCloseCard?.();
-      } else if (wasMovedToDa) {
+      // Subsea 7: the upload itself checks the SRT for a signature. A signed SRT moves the card to DA; an
+      // unsigned one is rejected (handled in the catch below). The card closes either way so the board reloads.
+      if (isSrtFlow || wasMovedToDa) {
         onCloseCard?.();
       }
     } catch (err) {
