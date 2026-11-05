@@ -12,6 +12,7 @@ import {
 import { ensureHtmlForQuill } from "../../CardFormTabs/Import/tabs/operation/operationReportMessageHtml";
 import EmailTableEditor from "./EmailTableEditor";
 import { getEmailHtml } from "../../utils/emailHtml";
+import { viewUploadedFile } from "@/shared/utils/viewUploadedFile";
 import "@/design/scss/pages/kanban-board/seCreationEmailModal.scss";
 
 const DEFAULT_FROM = "operations@shipping.com";
@@ -328,6 +329,10 @@ const SeCreationEmailModal = ({
                   rel="noopener noreferrer"
                   className="se-email-attachments__name"
                   title={`Open ${document.name}`}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    viewUploadedFile(document.url);
+                  }}
                 >
                   {document.name}
                 </a>
