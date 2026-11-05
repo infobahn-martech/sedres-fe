@@ -142,6 +142,10 @@ const getInvoiceAction = (workflow, column) => {
   if (isLamprellAlgihazWorkflowTitle(workflow?.title)) {
     if (SO_APPROVAL_RECEIVED_COLUMN_PATTERN.test(title)) return "requestZamilMarinePo";
     if (REQUESTED_FOR_PO_COLUMN_PATTERN.test(title)) return "uploadZamilMarinePo";
+    /* "Upload Invoices" on "PO Received": the same bulk AR invoice upload and review as the other workflows. */
+    if (PO_RECEIVED_COLUMN_PATTERN.test(title)) return "issueArInvoice";
+    /* "Create documents" on "AR Invoice Issued": the submission documents zip is downloaded and the backend moves the cards on. */
+    if (AR_INVOICES_ISSUED_COLUMN_PATTERN.test(title)) return "createSubmissionDocuments";
   }
   if (LAMPRELL_UAE_WORKFLOW_PATTERN.test(workflow?.title ?? "") && SEND_FOR_PO_APPROVAL_COLUMN_PATTERN.test(title)) {
     return "requestLamprellUaePo";
@@ -231,6 +235,7 @@ const INVOICE_ACTION_BUTTONS = {
   requestZamilMarinePo: { label: "Send for PO Request", icon: <FiSend size={16} aria-hidden /> },
   requestLamprellUaePo: { label: "Request for PO", icon: <FiSend size={16} aria-hidden /> },
   uploadZamilMarinePo: { label: "Upload PO", icon: <FiUploadCloud size={16} aria-hidden /> },
+  createSubmissionDocuments: { label: "Create documents", icon: <FiDownload size={16} aria-hidden /> },
   uploadLamprellUaePo: { label: "Upload PO", icon: <FiUploadCloud size={16} aria-hidden /> },
   enterServiceSheetNo: { label: "Enter Service Sheet No", icon: <FiFileText size={16} aria-hidden /> },
   checkSignatures: { label: "Check Signatures", icon: <FiEdit3 size={16} aria-hidden /> },
@@ -637,6 +642,7 @@ export default function WorkflowColumns({
                       }))
                   ),
                 prepareSubmission: onColumnPrepareSubmission,
+                createSubmissionDocuments: (cards) => onColumnPrepareSubmission?.(cards, { openEmail: false }),
                 sendSubmission: onColumnSendSubmission,
               };
 
