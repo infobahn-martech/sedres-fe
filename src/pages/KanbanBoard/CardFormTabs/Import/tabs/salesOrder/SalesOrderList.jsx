@@ -45,6 +45,7 @@ const ZAKHER_WORKFLOW_PATTERN = /zakher/i;
 const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil\s*marine/i;
 const AWAITING_SRT_COLUMN_PATTERN = /awaiting srt|srt requested/i;
 const SRT_RECEIVED_COLUMN_PATTERN = /srt rec(?:ie|ei)ved/i;
+const AWAITING_SO_PR_APPROVAL_COLUMN_PATTERN = /awaiting so\s*\/\s*pr approval/i;
 const PR_RECEIVED_COLUMN_PATTERN = /pr received/i;
 const OPS_COMPLETED_COLUMN_PATTERN = /ops completed|sailed\s*\/\s*awaiting 3rd party invoices/i;
 const SO_SENT_FOR_APPROVAL_COLUMN_PATTERN = /so sent for approval|so in progress/i;
@@ -693,6 +694,13 @@ const SalesOrderList = ({
   // Verify tick.
   const hasSendForSoApprovalColumn =
     Array.isArray(stepLabels) && stepLabels.some((label) => SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(label || ""));
+  // Flows with an "Awaiting SO/PR Approval" column (Zamil Crew): the SO approval email is sent from the column
+  // before it, the client's Approve / Reject shows on it, and approving moves the card on to the column where
+  // the approved SO is uploaded.
+  const awaitingSoPrStepIndex = Array.isArray(stepLabels)
+    ? stepLabels.findIndex((label) => AWAITING_SO_PR_APPROVAL_COLUMN_PATTERN.test(label || ""))
+    : -1;
+  const isAtAwaitingSoPrColumn = awaitingSoPrStepIndex !== -1 && currentStep != null && currentStep === awaitingSoPrStepIndex + 1;
   // api/da/action_state's srt_flow marks the Subsea 7 flow: the column after "Ops Completed"
   // ("Awaiting SRT") has no SO approval process, only a "Send SRT request" email (same
   // da_action_email_draft + da_send_action_email path), and no Approve / Reject.
@@ -722,6 +730,7 @@ const SalesOrderList = ({
     PR_RECEIVED_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
   const isCardAtSoApprovalColumn =
     isAtPrReceivedColumn ||
+    isAtAwaitingSoPrColumn ||
     (isSrtFlow && (isAtColumnAfterOpsCompleted || isAtAwaitingSrtColumn || isAtSrtReceivedColumn)) ||
     (Array.isArray(stepLabels) && currentStep != null && SO_SENT_FOR_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
     (Array.isArray(stepLabels) && currentStep != null && SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
@@ -919,7 +928,9 @@ const SalesOrderList = ({
     ? stepLabels.findIndex((label) => SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(label || ""))
     : -1;
   const isAtColumnAfterSendForSoApproval =
-    sendForSoApprovalStepIndex !== -1 && currentStep != null && currentStep === sendForSoApprovalStepIndex + 2;
+    awaitingSoPrStepIndex !== -1
+      ? currentStep != null && currentStep === awaitingSoPrStepIndex + 2
+      : sendForSoApprovalStepIndex !== -1 && currentStep != null && currentStep === sendForSoApprovalStepIndex + 2;
   // SAIPEM's own "SO Sent for approval" flow lands on the column after it (isAtSoApprovalDecisionColumn).
   const isAtApprovedSoUploadColumn =
     isPoshAtSoApprovedColumn || isAtColumnAfterSendForSoApproval || isAtSoApprovalDecisionColumn;
@@ -1228,6 +1239,11 @@ const SalesOrderList = ({
         // this just avoids a flash back to "Send For SO approval" while that refetch is in flight.
         setSoActionState((prev) => ({ ...prev, button_state: "awaiting_approval" }));
         setDidApproveSoInSession(false);
+        // Zamil Crew: sending the email moves the card on to "Awaiting SO/PR Approval".
+        const awaitingSoPrLabel = Array.isArray(stepLabels) && currentStep != null ? stepLabels[currentStep] : null;
+        if (awaitingSoPrStepIndex !== -1 && !isAtAwaitingSoPrColumn && awaitingSoPrLabel) {
+          onAdvanceDaStage?.({ statusId: data.status_id, label: awaitingSoPrLabel, skipStatusUpdate: true });
+        }
       }
       // Deliberately NOT moving the board column here (no onAdvanceDaStage call) — sending the
       // SO approval email keeps the card on "SO Sent for approval" (column 4) itself; the
@@ -1306,6 +1322,7 @@ const SalesOrderList = ({
     // desync guesswork needed here anymore.
     const wasSoApprovalDecision =
       isAtSoApprovalDecisionColumn ||
+      isAtAwaitingSoPrColumn ||
       (isCardAtSoApprovalColumn && soActionState?.button_state === "awaiting_approval");
     const data = await recordDaClientDecision(1);
     if (data && wasSoApprovalDecision) {
@@ -1352,6 +1369,7 @@ const SalesOrderList = ({
     // unreliable).
     const wasSoApprovalPendingAtColumn4 =
       isCardAtSoApprovalColumn && soActionState?.button_state === "awaiting_approval";
+    const wasAwaitingSoPrColumn = isAtAwaitingSoPrColumn;
     const data = await recordDaClientDecision(0);
     if (data && wasSoApprovalPendingAtColumn4) {
       // Optimistic — fetchSoActionState() inside recordDaClientDecision above will confirm/
@@ -1360,6 +1378,13 @@ const SalesOrderList = ({
       setDidApproveSoInSession(false);
     }
     if (data && wasInvoiceDispatchedStage) setShowInvoiceIssuanceModal(true);
+    if (data && wasAwaitingSoPrColumn) {
+      // Rejected: back to the column the SO approval email is sent from.
+      const sendForSoApprovalLabel = findBoardColumnLabel(SEND_FOR_SO_APPROVAL_COLUMN_PATTERN);
+      if (sendForSoApprovalLabel) {
+        onAdvanceDaStage?.({ statusId: data.status_id, label: sendForSoApprovalLabel, skipStatusUpdate: true });
+      }
+    }
     if (data && wasSoApprovalDecisionColumn) {
       const soSentForApprovalLabel = findBoardColumnLabel(SO_SENT_FOR_APPROVAL_COLUMN_PATTERN);
       if (soSentForApprovalLabel) {
@@ -2738,7 +2763,7 @@ const SalesOrderList = ({
                     Send SRT request
                   </button>
                 ) : null
-              ) : effectiveSoButtonState === "awaiting_approval" ? (
+              ) : effectiveSoButtonState === "awaiting_approval" || isAtAwaitingSoPrColumn ? (
                 <div className="sales-order-da-status-group">
                   <span className="sales-order-da-status-button sales-order-da-status-button--label">
                     <FiClipboard />
