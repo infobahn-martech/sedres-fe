@@ -116,6 +116,7 @@ function EditWorkflows() {
   const [collapsedWorkflowIds, setCollapsedWorkflowIds] = useState({});
   const [createWorkflowSaving, setCreateWorkflowSaving] = useState(false);
   const [deleteModal, setDeleteModal] = useState(null);
+  const [deleteModalLoading, setDeleteModalLoading] = useState(false);
   const [copyWorkflowTarget, setCopyWorkflowTarget] = useState(null);
   const [copyWorkflowSaving, setCopyWorkflowSaving] = useState(false);
   const [addSwimlaneTarget, setAddSwimlaneTarget] = useState(null);
@@ -353,7 +354,7 @@ function EditWorkflows() {
     setDeleteModal({ type: 'stage', workflowId, swimlaneId, stageId });
   };
 
-  const confirmDeleteStage = (workflowId, swimlaneId, stageId) => {
+  const confirmDeleteStage = (workflowId, swimlaneId, stageId, onDone) => {
     const workflow = workflows.find((w) => w.id === workflowId || String(w.id) === String(workflowId));
     const swimlane = workflow?.swimlanes.find(
       (sl) => sl.id === swimlaneId || String(sl.id) === String(swimlaneId)
@@ -363,11 +364,14 @@ function EditWorkflows() {
 
     if (boardId && columnId != null && String(columnId) !== '') {
       const colKey = getColumnKey(workflowId, swimlaneId, stageId);
-      if (!startMutation(colKey, 'deleting')) return;
+      if (!startMutation(colKey, 'deleting')) return onDone?.();
       removeWorkflowColumn({
         column_id: columnId,
         cb: () => getWorkflowByBoard({ boardId, silent: true }),
-        onSettled: () => clearMutationKey(colKey),
+        onSettled: () => {
+          clearMutationKey(colKey);
+          onDone?.();
+        },
       });
       return;
     }
@@ -387,6 +391,7 @@ function EditWorkflows() {
         };
       })
     );
+    onDone?.();
   };
 
   const handleStageLimitChange = (workflowId, swimlaneId, stageId, value) => {
@@ -548,13 +553,16 @@ function EditWorkflows() {
     setDeleteModal({ type: 'workflow', workflowId });
   };
 
-  const confirmDeleteWorkflow = (workflowId) => {
+  const confirmDeleteWorkflow = (workflowId, onDone) => {
     const wfKey = `wf:${workflowId}`;
-    if (!startMutation(wfKey, 'delete')) return;
+    if (!startMutation(wfKey, 'delete')) return onDone?.();
     deleteWorkflow({
       workflow_id: workflowId,
       cb: () => refetchBoardWorkflows(),
-      onSettled: () => clearMutationKey(wfKey),
+      onSettled: () => {
+        clearMutationKey(wfKey);
+        onDone?.();
+      },
     });
   };
 
@@ -562,9 +570,9 @@ function EditWorkflows() {
     setDeleteModal({ type: 'toggle', workflowId: workflow.id, isDisabled: workflow.is_active == 0 });
   };
 
-  const confirmDisableWorkflow = (workflowId) => {
+  const confirmDisableWorkflow = (workflowId, onDone) => {
     const wfKey = `wf:${workflowId}`;
-    if (!startMutation(wfKey, 'disable')) return;
+    if (!startMutation(wfKey, 'disable')) return onDone?.();
     disableWorkflow({
       workflow_id: workflowId,
       cb: (data) => {
@@ -578,7 +586,10 @@ function EditWorkflows() {
         }
         refetchBoardWorkflows();
       },
-      onSettled: () => clearMutationKey(wfKey),
+      onSettled: () => {
+        clearMutationKey(wfKey);
+        onDone?.();
+      },
     });
   };
 
@@ -663,28 +674,38 @@ function EditWorkflows() {
     setDeleteModal({ type: 'swimlane', workflowId, swimlaneId });
   };
 
-  const confirmDeleteSwimlane = (swimlaneId) => {
+  const confirmDeleteSwimlane = (swimlaneId, onDone) => {
     const slKey = `sl:${swimlaneId}`;
-    if (!startMutation(slKey, 'deleting')) return;
+    if (!startMutation(slKey, 'deleting')) return onDone?.();
     deleteSwimlane({
       swimlane_id: swimlaneId,
       cb: refetchBoardWorkflows,
-      onSettled: () => clearMutationKey(slKey),
+      onSettled: () => {
+        clearMutationKey(slKey);
+        onDone?.();
+      },
     });
   };
 
   const handleConfirmDeleteModal = () => {
-    if (!deleteModal) return;
+    if (!deleteModal || deleteModalLoading) return;
+    // Keep the modal open with a spinner until the request settles
+    setDeleteModalLoading(true);
+    const onDone = () => {
+      setDeleteModalLoading(false);
+      setDeleteModal(null);
+    };
     if (deleteModal.type === 'workflow') {
-      confirmDeleteWorkflow(deleteModal.workflowId);
+      confirmDeleteWorkflow(deleteModal.workflowId, onDone);
     } else if (deleteModal.type === 'swimlane') {
-      confirmDeleteSwimlane(deleteModal.swimlaneId);
+      confirmDeleteSwimlane(deleteModal.swimlaneId, onDone);
     } else if (deleteModal.type === 'stage') {
-      confirmDeleteStage(deleteModal.workflowId, deleteModal.swimlaneId, deleteModal.stageId);
+      confirmDeleteStage(deleteModal.workflowId, deleteModal.swimlaneId, deleteModal.stageId, onDone);
     } else if (deleteModal.type === 'toggle') {
-      confirmDisableWorkflow(deleteModal.workflowId);
+      confirmDisableWorkflow(deleteModal.workflowId, onDone);
+    } else {
+      onDone();
     }
-    setDeleteModal(null);
   };
 
   const handleSwimlaneColorChange = (workflowId, swimlaneId, colorHex) => {
@@ -783,7 +804,12 @@ function EditWorkflows() {
     }
   };
 
-  const showNoWorkflowEmptyState = Boolean(boardId) && !isLoading && workflows.length === 0;
+  // Keep the last modal content while it fades out, so it doesn't flash default text/icon on close
+  const lastDeleteModalRef = useRef(null);
+  if (deleteModal) lastDeleteModalRef.current = deleteModal;
+  const confirmModal = deleteModal ?? lastDeleteModalRef.current;
+
+  const showNoWorkflowEmptyState =Boolean(boardId) && !isLoading && workflows.length === 0;
 
   return (
     <div className="edit-workflows-container">
@@ -1113,23 +1139,24 @@ function EditWorkflows() {
 
       <DeleteConfirmationModal
         show={!!deleteModal}
-        onCancel={() => setDeleteModal(null)}
+        onCancel={() => !deleteModalLoading && setDeleteModal(null)}
         onConfirm={handleConfirmDeleteModal}
+        isLoading={deleteModalLoading}
         icon={
-          deleteModal?.type === 'toggle'
-            ? deleteModal.isDisabled
+          confirmModal?.type === 'toggle'
+            ? confirmModal.isDisabled
               ? <FiCheckCircle size="100%" color="#ff3e3e" strokeWidth={1.25} />
               : <FiSlash size="100%" color="#ff3e3e" strokeWidth={1.25} />
             : undefined
         }
         deleteText={
-          deleteModal?.type === 'toggle'
-            ? deleteModal.isDisabled
+          confirmModal?.type === 'toggle'
+            ? confirmModal.isDisabled
               ? 'Enable this workflow?'
               : 'Disable this workflow?'
-            : deleteModal?.type === 'workflow'
+            : confirmModal?.type === 'workflow'
               ? 'Delete this workflow? This cannot be undone.'
-              : deleteModal?.type === 'swimlane'
+              : confirmModal?.type === 'swimlane'
                 ? 'Delete this swimlane? This cannot be undone.'
                 : 'Delete this stage? This cannot be undone.'
         }
