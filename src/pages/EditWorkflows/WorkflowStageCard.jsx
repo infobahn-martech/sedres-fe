@@ -291,7 +291,7 @@ function WorkflowStageCard({
           </div>
           <div className="stage-box-details">
             <div className="stage-detail-row">
-              <span className="stage-detail-label">Limit</span>
+              <span className="stage-detail-label">Limit:</span>
               <span className="stage-detail-value-slot">
                 {editingField === 'limit' ? (
                   <input
@@ -325,7 +325,7 @@ function WorkflowStageCard({
             </div>
             {!hasChildren ? (
               <div className="stage-detail-row">
-                <span className="stage-detail-label">Cards per row</span>
+                <span className="stage-detail-label">Cards per row:</span>
                 <span className="stage-detail-value-slot">
                   {editingField === 'cardsPerRow' ? (
                     <input

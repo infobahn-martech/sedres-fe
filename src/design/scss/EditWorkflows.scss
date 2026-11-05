@@ -746,7 +746,7 @@ div[role="tooltip"][id^="workflow-info-"] {
 
 .workflow-header-right {
   display: flex;
-  gap: 8px;
+  gap: 16px;
   flex-wrap: wrap;
 
   @media ($sm-991) {
@@ -755,30 +755,19 @@ div[role="tooltip"][id^="workflow-info-"] {
 }
 
 .workflow-action-link {
-  background: var(--surface-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid transparent;
+  border-radius: 7px;
   color: #2563eb;
   font: normal normal 600 13px/1.4 $font-primary;
   cursor: pointer;
-  padding: 6px 14px;
+  padding: 6px 12px;
   text-decoration: none;
   transition: all 0.15s ease;
 
   &:hover {
     color: #1d4ed8;
-    border-color: rgba(37, 99, 235, 0.35);
-    background: rgba(37, 99, 235, 0.06);
-  }
-
-  &.workflow-action-link-toggle {
-    color: var(--text-secondary);
-
-    &:hover {
-      color: var(--text-primary);
-      border-color: var(--text-muted);
-      background: var(--bg-secondary);
-    }
+    background: rgba(37, 99, 235, 0.1);
   }
 
   &:disabled {
@@ -792,8 +781,7 @@ div[role="tooltip"][id^="workflow-info-"] {
 
     &:hover {
       color: #dc2626;
-      border-color: rgba(239, 68, 68, 0.35);
-      background: rgba(239, 68, 68, 0.06);
+      background: rgba(239, 68, 68, 0.08);
     }
   }
 }
@@ -857,12 +845,12 @@ div[role="tooltip"][id^="workflow-info-"] {
 .workflow-board-area-header {
   flex: 0 0 auto;
   flex-shrink: 0;
-  padding: 11px 14px;
-  font: normal normal 700 11.5px/1.35 $font-primary;
+  padding: 10px 14px;
+  font: normal normal 700 12px/1.35 $font-primary;
   text-align: center;
-  border-radius: 10px 10px 0 0;
+  border-radius: 8px 8px 0 0;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1160,35 +1148,23 @@ div[role="tooltip"][id^="workflow-info-"] {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 12px 8px 15px;
+  padding: 8px 12px;
   border: 1px solid var(--border-primary);
-  border-radius: 10px;
-  background: var(--surface-primary);
-  font: normal normal 700 13.5px/1.35 $font-primary;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  font: normal normal 700 13px/1.35 $font-primary;
   color: var(--text-primary);
   text-align: center;
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
-
-  // Left accent stripe in the lane color (neutral when no color is set)
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: var(--lane-color, var(--border-primary));
-    filter: brightness(0.85);
-  }
 
   &:hover {
     border-color: #42af49;
-    box-shadow: 0 0 0 1px #42af49, 0 4px 12px rgba(66, 175, 73, 0.14);
+    border-width: 2px;
+    padding: 7px 11px; // compensate for 2px border so layout doesn't shift
+    box-shadow: 0 2px 8px rgba(66, 175, 73, 0.12);
   }
 }
 
@@ -1235,7 +1211,6 @@ div[role="tooltip"][id^="workflow-info-"] {
 
 .workflow-swimlane-label-text {
   display: block;
-  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1261,15 +1236,9 @@ div[role="tooltip"][id^="workflow-info-"] {
 
 .workflow-swimlane-label-icons {
   display: flex;
-  gap: 2px;
+  gap: 6px;
   justify-content: center;
-  opacity: 0.55;
-  transition: opacity 0.15s ease;
-
-  .workflow-swimlane-label-cell:hover &,
-  .workflow-swimlane-label-cell:focus-within & {
-    opacity: 1;
-  }
+  margin-top: 4px;
 }
 
 .workflow-swimlane-icon {
@@ -1279,24 +1248,21 @@ div[role="tooltip"][id^="workflow-info-"] {
 
 // Swimlane label icons - smaller, lighter, clean (live-style)
 .workflow-swimlane-icon-btn {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: none;
-  border-radius: 6px;
   background: transparent;
-  color: inherit;
-  opacity: 0.7;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease, opacity 0.15s ease;
+  transition: color 0.2s ease;
   flex-shrink: 0;
 
   &:hover {
-    opacity: 1;
-    background: rgba(15, 23, 42, 0.07);
+    color: var(--text-secondary);
   }
 
   &:disabled {
@@ -1307,12 +1273,11 @@ div[role="tooltip"][id^="workflow-info-"] {
 
   &.workflow-swimlane-icon-btn-delete:hover {
     color: #ef4444;
-    background: rgba(239, 68, 68, 0.1);
   }
 
   svg {
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
   }
 }
 
@@ -1340,10 +1305,9 @@ div[role="tooltip"][id^="workflow-info-"] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 8px 10px 10px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
   // Lane fill: inline `backgroundColor` from stage `bgColor` / picker (default matches `DEFAULT_STAGE_SWATCH_HEX`)
   // — always a light swatch color regardless of app theme, so the text inside must stay a fixed
   // dark color too rather than a theme token (it would otherwise flip to light-on-light in dark mode).
@@ -1352,12 +1316,6 @@ div[role="tooltip"][id^="workflow-info-"] {
   min-height: 0;
   box-sizing: border-box;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-
-  .workflow-swimlane-row:hover & {
-    border-color: rgba(66, 175, 73, 0.45);
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
-  }
 }
 
 .workflow-swimlane-cell-limit {
@@ -1375,24 +1333,23 @@ div[role="tooltip"][id^="workflow-info-"] {
   gap: 4px;
   width: 100%;
   flex-shrink: 0;
+  padding-bottom: 4px;
 }
 
 .workflow-swimlane-cell-field {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 6px;
   cursor: default;
   width: 100%;
 }
 
 .workflow-swimlane-cell-label {
-  font: normal normal 600 10.5px/1.4 $font-primary;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  flex: 1 1 auto;
-  min-width: 0;
+  font: normal normal 400 12px/1.4 $font-primary;
+  color: #475569;
+  flex: 0 0 88px;
+  width: 88px;
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
@@ -1455,15 +1412,13 @@ div[role="tooltip"][id^="workflow-info-"] {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  border: 1px solid rgba(71, 85, 105, 0.18);
-  background: rgba(255, 255, 255, 0.75);
-  color: #1e293b;
+  border: 1px solid rgba(71, 85, 105, 0.25);
   font-size: 12px;
   font-weight: 600;
   transition: background 0.15s ease, border-color 0.15s ease;
 
   &:hover {
-    background: #fff;
+    background: rgba(255, 255, 255, 0.6);
     border-color: #3b82f6;
   }
 }
@@ -1471,12 +1426,12 @@ div[role="tooltip"][id^="workflow-info-"] {
 .workflow-swimlane-dashed-placeholder {
   position: relative;
   flex: 1 1 auto;
-  min-height: 36px;
+  min-height: 40px;
   width: 100%;
   max-height: 56px;
-  border: 1px dashed rgba(71, 85, 105, 0.22);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.35);
+  border: 1px dashed var(--border-primary);
+  border-radius: 2px;
+  background: transparent;
   box-sizing: border-box;
 }
 
@@ -1577,9 +1532,9 @@ div[role="tooltip"][id^="workflow-info-"] {
 }
 
 .workflow-stage-box {
-  background: var(--surface-primary);
+  // background: var(--surface-primary);
   border: 1px solid var(--border-primary);
-  border-radius: 0 0 10px 10px;
+  border-radius: 0 0 8px 8px;
   padding: 12px 14px 16px;
   min-height: 108px;
   min-width: 0;
@@ -1624,7 +1579,7 @@ div[role="tooltip"][id^="workflow-info-"] {
 }
 
 .stage-box-header {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   width: 100%;
   text-align: center;
 }
@@ -1640,14 +1595,12 @@ div[role="tooltip"][id^="workflow-info-"] {
   display: block;
   width: 100%;
   padding: 4px 8px;
-  border: 1px dashed transparent;
-  border-radius: 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
   box-sizing: border-box;
-  transition: background 0.15s ease, border-color 0.15s ease;
 
   &:hover {
-    background: var(--bg-secondary);
-    border-color: var(--border-primary);
+    text-decoration: underline;
   }
 }
 
@@ -1673,31 +1626,27 @@ div[role="tooltip"][id^="workflow-info-"] {
 .stage-box-details {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 8px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: var(--bg-secondary);
+  gap: 8px;
+  margin-bottom: 10px;
   font: normal normal 500 12px/1.4 $font-primary;
   color: var(--text-secondary);
   align-items: center;
   text-align: center;
   width: 100%;
-  box-sizing: border-box;
 }
 
 .stage-detail-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 6px;
   cursor: default;
   width: 100%;
 }
 
 .stage-detail-label {
-  flex: 1 1 auto;
-  min-width: 0;
+  flex: 0 0 88px;
+  width: 88px;
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
@@ -1727,12 +1676,13 @@ div[role="tooltip"][id^="workflow-info-"] {
   justify-content: center;
   box-sizing: border-box;
   border: 1px solid var(--border-primary);
-  background: var(--surface-primary);
+  background: var(--bg-secondary);
   color: var(--text-primary);
   font-weight: 600;
   transition: background 0.15s ease, border-color 0.15s ease;
 
   &:hover {
+    background: var(--surface-primary);
     border-color: #3b82f6;
   }
 }
@@ -1773,20 +1723,17 @@ div[role="tooltip"][id^="workflow-info-"] {
 
 .stage-box-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   justify-content: center;
   align-items: center;
   width: 100%;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-primary);
 }
 
-// Minimal icon buttons with a soft hover target
+// Minimal icon buttons - smaller, lighter, no boxed appearance
 .stage-action-icon {
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   border: none;
-  border-radius: 6px;
   background: transparent;
   color: var(--text-muted);
   display: flex;
@@ -1794,12 +1741,11 @@ div[role="tooltip"][id^="workflow-info-"] {
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition: color 0.2s ease;
   flex-shrink: 0;
 
   &:hover {
-    color: var(--text-primary);
-    background: var(--bg-secondary);
+    color: var(--text-secondary);
   }
 
   svg {
@@ -1809,7 +1755,6 @@ div[role="tooltip"][id^="workflow-info-"] {
 
   &.stage-action-icon-delete:hover {
     color: #ef4444;
-    background: rgba(239, 68, 68, 0.1);
   }
 }
 
@@ -1819,8 +1764,8 @@ div[role="tooltip"][id^="workflow-info-"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   margin: 0;
   border: none;
@@ -1828,11 +1773,6 @@ div[role="tooltip"][id^="workflow-info-"] {
   cursor: pointer;
   flex-shrink: 0;
   border-radius: 6px;
-  transition: background 0.15s ease;
-
-  &:hover:not(:disabled) {
-    background: rgba(15, 23, 42, 0.07);
-  }
 
   &:focus-visible {
     outline: 2px solid rgba(37, 99, 235, 0.45);
@@ -2222,40 +2162,11 @@ div[role="tooltip"][id^="workflow-info-"] {
 
   // Column settings card
   .workflow-stage-box {
-    background: var(--bg-card);
     border-color: var(--border-strong);
 
     &:hover {
       border-color: var(--border-hover);
     }
-  }
-
-  .stage-box-details {
-    background: var(--bg-inset);
-  }
-
-  .stage-box-actions {
-    border-top-color: var(--border);
-  }
-
-  .stage-name:hover {
-    background: var(--bg-highlight);
-    border-color: var(--border-strong);
-  }
-
-  .stage-action-icon:hover,
-  .stage-action-color-trigger:hover:not(:disabled),
-  .workflow-swimlane-icon-btn:hover {
-    background: rgba(255, 255, 255, 0.06);
-  }
-
-  .workflow-action-link {
-    border-color: transparent;
-  }
-
-  .workflow-swimlane-row:hover .workflow-swimlane-content-cell {
-    border-color: var(--border-hover);
-    box-shadow: none;
   }
 
   .stage-name {
@@ -2358,7 +2269,6 @@ div[role="tooltip"][id^="workflow-info-"] {
 
   .workflow-swimlane-dashed-placeholder {
     border-color: var(--border-strong);
-    background: transparent;
   }
 
   .workflow-add-grid-bar {
