@@ -558,7 +558,11 @@ function EditWorkflows() {
     });
   };
 
-  const handleDisableWorkflow = (workflowId) => {
+  const handleDisableWorkflow = (workflow) => {
+    setDeleteModal({ type: 'toggle', workflowId: workflow.id, isDisabled: workflow.is_active == 0 });
+  };
+
+  const confirmDisableWorkflow = (workflowId) => {
     const wfKey = `wf:${workflowId}`;
     if (!startMutation(wfKey, 'disable')) return;
     disableWorkflow({
@@ -677,6 +681,8 @@ function EditWorkflows() {
       confirmDeleteSwimlane(deleteModal.swimlaneId);
     } else if (deleteModal.type === 'stage') {
       confirmDeleteStage(deleteModal.workflowId, deleteModal.swimlaneId, deleteModal.stageId);
+    } else if (deleteModal.type === 'toggle') {
+      confirmDisableWorkflow(deleteModal.workflowId);
     }
     setDeleteModal(null);
   };
@@ -1015,7 +1021,7 @@ function EditWorkflows() {
                         type="button"
                         className="workflow-action-link workflow-action-link-toggle"
                         disabled={wfMutationPending}
-                        onClick={() => handleDisableWorkflow(workflow.id)}
+                        onClick={() => handleDisableWorkflow(workflow)}
                       >
                         {workflowIsDisabled ? 'Enable' : 'Disable'}
                       </button>
@@ -1109,12 +1115,17 @@ function EditWorkflows() {
         show={!!deleteModal}
         onCancel={() => setDeleteModal(null)}
         onConfirm={handleConfirmDeleteModal}
+        showIcon={deleteModal?.type !== 'toggle'}
         deleteText={
-          deleteModal?.type === 'workflow'
-            ? 'Delete this workflow? This cannot be undone.'
-            : deleteModal?.type === 'swimlane'
-              ? 'Delete this swimlane? This cannot be undone.'
-              : 'Delete this stage? This cannot be undone.'
+          deleteModal?.type === 'toggle'
+            ? deleteModal.isDisabled
+              ? 'Enable this workflow?'
+              : 'Disable this workflow?'
+            : deleteModal?.type === 'workflow'
+              ? 'Delete this workflow? This cannot be undone.'
+              : deleteModal?.type === 'swimlane'
+                ? 'Delete this swimlane? This cannot be undone.'
+                : 'Delete this stage? This cannot be undone.'
         }
       />
     </div>
