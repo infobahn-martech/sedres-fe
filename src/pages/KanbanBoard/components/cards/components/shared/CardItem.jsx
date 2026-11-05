@@ -3,6 +3,7 @@ import { Draggable } from "@hello-pangea/dnd";
 import { KANBAN_DND_DISABLED } from "@/shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
 import useExportApprovalStatusStore from "@/store/exportApprovalStatusStore";
+import useSignatureCheckStore from "@/store/signatureCheckStore";
 import useKanbanCardViewStore from "@/store/kanbanCardViewStore";
 import "@/design/scss/pages/kanban-board/signatureCheck.scss";
 import { Tooltip } from "react-tooltip";
@@ -754,7 +755,12 @@ function CardItem({
   const isExportApprovalHeld =
     isSaipemBacklogCard && (exportApprovalStatus === "pending" || exportApprovalStatus === "loading");
   /* get_full_board's per-card signature_status "missing" turns the card red; no key keeps the common colour. */
-  const isSignatureMissing = card?.signature_status === "missing";
+  const isSrtRejectedForSignature = useSignatureCheckStore(
+    (state) => state.unsignedSrtCallIds[String(card?.callId ?? card?.call_id)] === true
+  );
+  const isSignatureMissing =
+    card?.signature_status === "missing" ||
+    (isSrtRejectedForSignature && SRT_RECEIVED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim()));
   /* The tooltip names the document the column takes: the dispatch proof, the SRT, or (L&T) the SCC. */
   const signatureDocumentName = isUploadedToPortalColumnTitle(columnTitle)
     ? "dispatch proof"

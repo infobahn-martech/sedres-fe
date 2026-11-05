@@ -16,6 +16,18 @@ const useSignatureCheckStore = create((set, get) => ({
   handSignedByCardId: {},
   isSignatureCheckLoading: false,
   isConfirmingSignatureCheck: false,
+  /* Calls whose SRT upload was just rejected for a missing signature; their cards show red until the board
+     data (signature_status) takes over. Not persisted. */
+  unsignedSrtCallIds: {},
+
+  markSrtSignatureMissing: (callId) =>
+    set((state) => ({ unsignedSrtCallIds: { ...state.unsignedSrtCallIds, [String(callId)]: true } })),
+
+  clearSrtSignatureMissing: (callId) =>
+    set((state) => {
+      const { [String(callId)]: _cleared, ...rest } = state.unsignedSrtCallIds;
+      return { unsignedSrtCallIds: rest };
+    }),
 
   openSignatureCheckModal: (cards) =>
     set({

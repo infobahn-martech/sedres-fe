@@ -16,6 +16,7 @@ import useVendorReducer from "@/store/VendorReducer";
 import DatePickerField from "../../../shared/components/DatePickerField";
 import PremiumSelect from "@/components/form/PremiumSelect";
 import useAlertReducer from "@/store/AlertReducer";
+import useSignatureCheckStore from "@/store/signatureCheckStore";
 import useAuthReducer from "@/store/AuthReducer";
 import { useDaLocalSoApproval, useDaLocalVerifiedItems } from "@/store/daStore";
 import { getFirstUserRoleId } from "@/shared/helpers/groUserRoles";
@@ -44,6 +45,8 @@ const SUBSEA_WORKFLOW_PATTERN = /subsea/i;
 const ZAKHER_WORKFLOW_PATTERN = /zakher/i;
 const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil\s*marine/i;
 const AWAITING_SRT_COLUMN_PATTERN = /awaiting srt|srt requested/i;
+const SIGNATURE_ERROR_PATTERN = /signature/i;
+const SRT_SIGNATURE_MISSING_MESSAGE = "This SRT does not have a signature";
 const SRT_RECEIVED_COLUMN_PATTERN = /srt rec(?:ie|ei)ved/i;
 const AWAITING_SO_PR_APPROVAL_COLUMN_PATTERN = /awaiting so\s*\/\s*pr approval/i;
 const PR_RECEIVED_COLUMN_PATTERN = /pr received/i;
@@ -1451,13 +1454,23 @@ const SalesOrderList = ({
         throw new Error(data?.message || (isSrtFlow ? "Failed to upload the SRT." : "Failed to upload the approved SO."));
       }
       handleCloseApprovedSoUploadModal();
-      useAlertReducer.getState().success(isSrtFlow ? "SRT uploaded." : "Approved SO uploaded.");
-      if (refreshSalesOrder) refreshSalesOrder();
-      onDaStatusRefresh?.();
       const wasMovedToDa =
         (Array.isArray(data?.moved_to_da) && data.moved_to_da.length > 0) || Boolean(data?.moved_to_column);
+      if (isSrtFlow && !wasMovedToDa) {
+        useAlertReducer.getState().error(SRT_SIGNATURE_MISSING_MESSAGE);
+      } else {
+        useAlertReducer.getState().success(isSrtFlow ? "SRT uploaded." : "Approved SO uploaded.");
+      }
+      if (refreshSalesOrder) refreshSalesOrder();
+      onDaStatusRefresh?.();
       // Subsea 7: the upload itself checks the SRT for a signature. A signed SRT moves the card to DA; an
       // unsigned one is rejected (handled in the catch below). The card closes either way so the board reloads.
+      if (isSrtFlow) {
+        // The backend moves a signed SRT on; a card left in "SRT Recieved" is shown red as missing its signature.
+        const signatureStore = useSignatureCheckStore.getState();
+        if (wasMovedToDa) signatureStore.clearSrtSignatureMissing(callId);
+        else signatureStore.markSrtSignatureMissing(callId);
+      }
       if (isSrtFlow || wasMovedToDa) {
         onCloseCard?.();
       }
@@ -1467,6 +1480,7 @@ const SalesOrderList = ({
         /* An SRT without the signature is rejected and the card stays in its column; closing the card reloads
            the board so it turns red (signature_status "missing") and the SRT can be uploaded again. */
         handleCloseApprovedSoUploadModal();
+        if (SIGNATURE_ERROR_PATTERN.test(errorMessage)) useSignatureCheckStore.getState().markSrtSignatureMissing(callId);
         useAlertReducer.getState().error(errorMessage);
         onCloseCard?.();
       } else {
