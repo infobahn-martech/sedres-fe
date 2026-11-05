@@ -13,6 +13,7 @@ import {
   DEFAULT_STAGE_SWATCH_HEX,
 } from './workflow.utils';
 import WorkflowAreaGrid, { STAGE_CELL_WIDTH, STAGE_GAP } from './WorkflowAreaGrid';
+import StageDecisionModal from './StageDecisionModal';
 
 const SWIMLANE_COLOR_PICKER_WIDTH = 308;
 const SWIMLANE_COLOR_PICKER_Z = 10050;
@@ -50,7 +51,9 @@ function WorkflowSwimlane({
   onRenameSwimlane,
   onDeleteSwimlane,
   onSwimlaneColorSelect,
+  onSwimlaneDescriptionChange,
   swimlaneIndex,
+  dragHandleProps,
   mutationTargets = {},
   canAddColumns,
   canUpdateColumnColor,
@@ -184,6 +187,9 @@ function WorkflowSwimlane({
   };
 
   const slColorMutationPending = Boolean(mutationTargets[`sl-color:${swimlane.id}`]);
+  const slDescriptionMutationPending = Boolean(mutationTargets[`sl-desc:${swimlane.id}`]);
+  const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
+  const swimlaneDescription = swimlane.description ?? '';
 
   const contentRow = (
     <div className="workflow-swimlane-row">
@@ -254,6 +260,20 @@ function WorkflowSwimlane({
           <span className="workflow-swimlane-label-text">{swimlane.name}</span>
         )}
         <div className="workflow-swimlane-label-icons">
+          {dragHandleProps && (
+            <button
+              type="button"
+              className="workflow-swimlane-icon-btn workflow-swimlane-icon-btn--drag"
+              title="Drag to reorder swimlane"
+              aria-label="Drag to reorder swimlane"
+              disabled={slMutationPending}
+              {...dragHandleProps}
+            >
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 5L10 2L13 5M13 15L10 18L7 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
           {onRenameSwimlane && !editingSwimlaneName && (
             <button
               type="button"
@@ -327,6 +347,44 @@ function WorkflowSwimlane({
               </div>,
               document.body
             )}
+          {onSwimlaneDescriptionChange && (
+            <>
+              <button
+                type="button"
+                className="workflow-swimlane-icon-btn"
+                aria-label={swimlaneDescription ? `Description: ${swimlaneDescription}` : 'Add description'}
+                data-tooltip-id="workflow-stage-name-tooltip"
+                data-tooltip-content={
+                  swimlaneDescription
+                    ? swimlaneDescription.length > 10
+                      ? `${swimlaneDescription.slice(0, 10)}...`
+                      : swimlaneDescription
+                    : 'Add description'
+                }
+                disabled={slMutationPending}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDescriptionModalOpen(true);
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 1.5L14.5 8L8 14.5L1.5 8L8 1.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <StageDecisionModal
+                show={isDescriptionModalOpen}
+                stageName={swimlane.name}
+                initialValue={swimlaneDescription}
+                isSaving={slDescriptionMutationPending}
+                onClose={() => setIsDescriptionModalOpen(false)}
+                onSave={(value) =>
+                  onSwimlaneDescriptionChange(workflowId, swimlane.id, value, () =>
+                    setIsDescriptionModalOpen(false)
+                  )
+                }
+              />
+            </>
+          )}
           {onDeleteSwimlane && (
             <button
               type="button"

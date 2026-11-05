@@ -235,6 +235,7 @@ function transformApiSwimlanes(apiSwimlanes, apiStages, workflowIdForKey) {
     return {
       id: swimlaneId,
       name: swimlaneName,
+      description: sl?.swimlane_description ?? '',
       ...(colorCode ? { colorCode } : {}),
       stages: defaultStages.map((stage) => ({ ...stage })),
     };
@@ -958,4 +959,21 @@ export function buildCreateWorkflowColumnPayload(stages, targetInternalId, actio
   }
 
   return { ok: false, message: 'Unsupported column action.' };
+}
+
+// Must match `zoom` on .workflows-content in EditWorkflows.scss
+export const WORKFLOWS_ZOOM = 0.8;
+
+// dnd measures zoomed (screen) px but applies inline styles inside the zoomed container, so scale them back
+export function getZoomCorrectedDragStyle(style) {
+  if (!style) return style;
+  const unzoom = (v) => (typeof v === 'number' ? v / WORKFLOWS_ZOOM : v);
+  return {
+    ...style,
+    width: unzoom(style.width),
+    height: unzoom(style.height),
+    top: unzoom(style.top),
+    left: unzoom(style.left),
+    transform: style.transform?.replace(/(-?\d*\.?\d+)px/g, (_, n) => `${parseFloat(n) / WORKFLOWS_ZOOM}px`),
+  };
 }

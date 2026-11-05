@@ -16,6 +16,7 @@ import {
   isWorkflowStageChildColumn,
   rgbToHex,
   sanitizeSwimlaneColorCode,
+  getZoomCorrectedDragStyle,
 } from './workflow.utils';
 
 function isNodeInColumnZone(node, colStackKey) {
@@ -28,22 +29,6 @@ function isNodeInColumnZone(node, colStackKey) {
   return false;
 }
 
-// Must match `zoom` on .workflows-content in EditWorkflows.scss
-const WORKFLOWS_ZOOM = 0.8;
-
-// dnd measures zoomed (screen) px but applies inline styles inside the zoomed container, so scale them back
-function getZoomCorrectedDragStyle(style) {
-  if (!style) return style;
-  const unzoom = (v) => (typeof v === 'number' ? v / WORKFLOWS_ZOOM : v);
-  return {
-    ...style,
-    width: unzoom(style.width),
-    height: unzoom(style.height),
-    top: unzoom(style.top),
-    left: unzoom(style.left),
-    transform: style.transform?.replace(/(-?\d*\.?\d+)px/g, (_, n) => `${parseFloat(n) / WORKFLOWS_ZOOM}px`),
-  };
-}
 import useWorkFlowReducer from '../../store/WorkFlowReducer';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
 import useAlertReducer from '../../store/AlertReducer';
@@ -90,6 +75,8 @@ function EditWorkflows() {
     renameSwimlane,
     deleteSwimlane,
     updateSwimlaneColor,
+    updateSwimlaneDescription,
+    reorderSwimlanes,
     createWorkflowColumn,
     renameWorkflowColumn,
     updateWorkflowColumn,
@@ -703,14 +690,64 @@ function EditWorkflows() {
     });
   };
 
+  const handleSwimlaneDescriptionChange = (workflowId, swimlaneId, description, onSuccess) => {
+    const key = `sl-desc:${swimlaneId}`;
+    if (!startMutation(key, 'description')) return;
+    updateSwimlaneDescription({
+      swimlane_id: swimlaneId,
+      swimlane_description: description,
+      cb: () => {
+        setWorkflows((prevWorkflows) =>
+          prevWorkflows.map((w) => {
+            if (w.id !== workflowId) return w;
+            return {
+              ...w,
+              swimlanes: w.swimlanes.map((sl) =>
+                sl.id === swimlaneId ? { ...sl, description } : sl
+              ),
+            };
+          })
+        );
+        onSuccess?.();
+        refetchBoardWorkflows();
+      },
+      onSettled: () => clearMutationKey(key),
+    });
+  };
+
   const handleToggleCollapseWorkflow = (workflowId) => {
     setCollapsedWorkflowIds((prev) => ({ ...prev, [workflowId]: !prev[workflowId] }));
     setHoveredColumn(null);
   };
 
+  const handleSwimlaneDragEnd = ({ source, destination }) => {
+    if (source.droppableId !== destination.droppableId) return;
+    const workflowId = source.droppableId.replace('swimlanes-', '');
+    const workflow = workflows.find((w) => String(w.id) === workflowId);
+    if (!workflow) return;
+    const nextSwimlanes = Array.from(workflow.swimlanes);
+    const [moved] = nextSwimlanes.splice(source.index, 1);
+    nextSwimlanes.splice(destination.index, 0, moved);
+    setWorkflows((prev) =>
+      prev.map((w) => (w.id === workflow.id ? { ...w, swimlanes: nextSwimlanes } : w))
+    );
+    if (boardId) {
+      reorderSwimlanes({
+        workflow_id: workflow.id,
+        swimlane_ids: nextSwimlanes.map((sl) => sl.id),
+        // Re-sync from the server if the reorder was rejected
+        onSettled: refetchBoardWorkflows,
+      });
+    }
+  };
+
   const handleWorkflowDragEnd = (result) => {
-    const { source, destination } = result;
+    const { source, destination, type } = result;
     if (!destination || source.index === destination.index) return;
+    if (type === 'SWIMLANE') {
+      handleSwimlaneDragEnd(result);
+      return;
+    }
     const next = Array.from(workflows);
     const [moved] = next.splice(source.index, 1);
     next.splice(destination.index, 0, moved);
@@ -828,7 +865,7 @@ function EditWorkflows() {
           <div className="workflows-empty">No workflow found. Add boardId to the URL to load a workflow.</div>
         ) : (
           <DragDropContext onDragEnd={handleWorkflowDragEnd}>
-            <Droppable droppableId="workflows-list">
+            <Droppable droppableId="workflows-list" type="WORKFLOW">
               {(droppableProvided) => (
                 <div ref={droppableProvided.innerRef} {...droppableProvided.droppableProps}>
                   {workflows.map((workflow, workflowIndex) => {
@@ -997,6 +1034,8 @@ function EditWorkflows() {
                       onRenameSwimlane={canRenameSwimlane ? handleRenameSwimlane : undefined}
                       onDeleteSwimlane={canDeleteSwimlane ? handleDeleteSwimlane : undefined}
                       onSwimlaneColorSelect={canUpdateSwimlaneColor ? handleSwimlaneColorChange : undefined}
+                      onSwimlaneDescriptionChange={canRenameSwimlane ? handleSwimlaneDescriptionChange : undefined}
+                      canReorderSwimlanes={canRenameSwimlane}
                       canAddColumns={canAddColumns}
                       canUpdateColumnColor={canUpdateColumnColor}
                       canDeleteColumn={canDeleteColumn}

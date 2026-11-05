@@ -1,4 +1,11 @@
-import { getAreaBlockWidth, getBoardColumnStructure, getGlobalRowsForSwimlane, getWorkflowAreaHeaderStyles } from './workflow.utils';
+import { Droppable, Draggable } from '@hello-pangea/dnd';
+import {
+  getAreaBlockWidth,
+  getBoardColumnStructure,
+  getGlobalRowsForSwimlane,
+  getWorkflowAreaHeaderStyles,
+  getZoomCorrectedDragStyle,
+} from './workflow.utils';
 import WorkflowSwimlane from './WorkflowSwimlane';
 import WorkflowAreaGrid, { STAGE_CELL_WIDTH, STAGE_GAP } from './WorkflowAreaGrid';
 
@@ -31,6 +38,8 @@ function WorkflowBoard({
   onRenameSwimlane,
   onDeleteSwimlane,
   onSwimlaneColorSelect,
+  onSwimlaneDescriptionChange,
+  canReorderSwimlanes,
   canAddColumns,
   canUpdateColumnColor,
   canDeleteColumn,
@@ -123,44 +132,68 @@ function WorkflowBoard({
           })}
         </div>
       )}
-      {/* Swimlane rows with add-grid bars inside each swimlane label card (visible on hover) */}
-      {workflow.swimlanes.map((swimlane, index) => (
-        <WorkflowSwimlane
-          key={swimlane.id}
-          workflowId={workflow.id}
-          swimlane={swimlane}
-          boardStructure={boardStructure}
-          stageCellWidth={stageCellWidth}
-          stageGap={stageGap}
-          contentRowOnly
-          hoveredColumn={hoveredColumn}
-          editingStageId={editingStageId}
-          editingStageName={editingStageName}
-          onStageMouseEnter={onStageMouseEnter}
-          onStageMouseLeave={onStageMouseLeave}
-          onAddColumnLeft={onAddColumnLeft}
-          onAddColumnRight={onAddColumnRight}
-          onAddSubcolumn={onAddSubcolumn}
-          onStartEditStage={onStartEditStage}
-          onEditingStageNameChange={onEditingStageNameChange}
-          onSaveStageName={onSaveStageName}
-          onStageNameKeyPress={onStageNameKeyPress}
-          onColorSelect={onColorSelect}
-          onDeleteStage={onDeleteStage}
-          onStageLimitChange={onStageLimitChange}
-          onStageCardsPerRowChange={onStageCardsPerRowChange}
-          onStageDescriptionChange={onStageDescriptionChange}
-          onAddSwimlane={onAddSwimlane}
-          onRenameSwimlane={onRenameSwimlane}
-          onDeleteSwimlane={onDeleteSwimlane}
-          onSwimlaneColorSelect={onSwimlaneColorSelect}
-          swimlaneIndex={index}
-          mutationTargets={mutationTargets}
-          canAddColumns={canAddColumns}
-          canUpdateColumnColor={canUpdateColumnColor}
-          canDeleteColumn={canDeleteColumn}
-        />
-      ))}
+      {/* Swimlane rows with add-grid bars inside each swimlane label card (visible on hover); drag the grip to reorder */}
+      <Droppable droppableId={`swimlanes-${workflow.id}`} type="SWIMLANE">
+        {(droppableProvided) => (
+          <div ref={droppableProvided.innerRef} {...droppableProvided.droppableProps}>
+            {workflow.swimlanes.map((swimlane, index) => (
+              <Draggable
+                key={swimlane.id}
+                draggableId={`swimlane-${workflow.id}-${swimlane.id}`}
+                index={index}
+                isDragDisabled={!canReorderSwimlanes || Boolean(mutationTargets[`sl:${swimlane.id}`])}
+              >
+                {(draggableProvided, draggableSnapshot) => (
+                  <div
+                    ref={draggableProvided.innerRef}
+                    {...draggableProvided.draggableProps}
+                    style={getZoomCorrectedDragStyle(draggableProvided.draggableProps.style)}
+                    className={`workflow-swimlane-draggable${draggableSnapshot.isDragging ? ' workflow-swimlane-draggable--dragging' : ''}`}
+                  >
+                    <WorkflowSwimlane
+                      workflowId={workflow.id}
+                      swimlane={swimlane}
+                      boardStructure={boardStructure}
+                      stageCellWidth={stageCellWidth}
+                      stageGap={stageGap}
+                      contentRowOnly
+                      hoveredColumn={hoveredColumn}
+                      editingStageId={editingStageId}
+                      editingStageName={editingStageName}
+                      onStageMouseEnter={onStageMouseEnter}
+                      onStageMouseLeave={onStageMouseLeave}
+                      onAddColumnLeft={onAddColumnLeft}
+                      onAddColumnRight={onAddColumnRight}
+                      onAddSubcolumn={onAddSubcolumn}
+                      onStartEditStage={onStartEditStage}
+                      onEditingStageNameChange={onEditingStageNameChange}
+                      onSaveStageName={onSaveStageName}
+                      onStageNameKeyPress={onStageNameKeyPress}
+                      onColorSelect={onColorSelect}
+                      onDeleteStage={onDeleteStage}
+                      onStageLimitChange={onStageLimitChange}
+                      onStageCardsPerRowChange={onStageCardsPerRowChange}
+                      onStageDescriptionChange={onStageDescriptionChange}
+                      onAddSwimlane={onAddSwimlane}
+                      onRenameSwimlane={onRenameSwimlane}
+                      onDeleteSwimlane={onDeleteSwimlane}
+                      onSwimlaneColorSelect={onSwimlaneColorSelect}
+                      onSwimlaneDescriptionChange={onSwimlaneDescriptionChange}
+                      swimlaneIndex={index}
+                      dragHandleProps={canReorderSwimlanes ? draggableProvided.dragHandleProps : null}
+                      mutationTargets={mutationTargets}
+                      canAddColumns={canAddColumns}
+                      canUpdateColumnColor={canUpdateColumnColor}
+                      canDeleteColumn={canDeleteColumn}
+                    />
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {droppableProvided.placeholder}
+          </div>
+        )}
+      </Droppable>
     </div>
   );
 }

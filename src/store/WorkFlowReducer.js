@@ -333,6 +333,39 @@ const useWorkFlowReducer = create((set, get) => ({
         }
     },
 
+    updateSwimlaneDescription: async ({ swimlane_id, swimlane_description, cb, onSettled }) => {
+        try {
+            const { data } = await workflowService.updateSwimlaneDescription(swimlane_id, { swimlane_description });
+            const { success } = useAlertReducer.getState();
+            success(data && data.message);
+            cb && cb();
+        } catch (err) {
+            set({
+                errorMessage: err?.response?.data?.message ?? err.message,
+            });
+            const { error } = useAlertReducer.getState();
+            error(err?.response?.data?.message ?? err.message);
+        } finally {
+            onSettled && onSettled();
+        }
+    },
+
+    // No success toast: reorder is a passive drag outcome, not an explicit user action.
+    reorderSwimlanes: async ({ workflow_id, swimlane_ids, cb, onSettled }) => {
+        try {
+            await workflowService.reorderSwimlanes({ workflow_id, swimlane_ids });
+            cb && cb();
+        } catch (err) {
+            set({
+                errorMessage: err?.response?.data?.message ?? err.message,
+            });
+            const { error } = useAlertReducer.getState();
+            error(err?.response?.data?.message ?? err.message);
+        } finally {
+            onSettled && onSettled();
+        }
+    },
+
     // No success toast: reorder is a passive drag outcome, not an explicit user action.
     reorderWorkflows: async ({ workflow_ids, cb, onSettled }) => {
         try {
