@@ -19,6 +19,19 @@ const useZamilCrewFinalInvoiceStore = create(() => ({
       : { errorMessage: data?.message || "Failed to load invoice email draft" };
   },
 
+  /** Resolves to { errorMessage } on failure, or { draft } covering several cards (draft.cards lists them). */
+  fetchCombinedFinalInvoiceDraft: async (callIds, cardIds) => {
+    let data;
+    try {
+      ({ data } = await zamilCrewService.getCombinedFinalInvoiceEmailDraft(callIds, cardIds));
+    } catch (error) {
+      data = error?.response?.data;
+    }
+    return data?.status === "success" && data?.data
+      ? { draft: data.data }
+      : { errorMessage: data?.message || "Failed to load invoice email draft" };
+  },
+
   /** Resolves to { errorMessage } on failure, or { message } with the success message. */
   sendFinalInvoice: async (formData) => {
     let data;

@@ -112,6 +112,7 @@ const SUBSEA_WORKFLOW_PATTERN = /subsea/i;
 const SUBSEA_ONE_CARD_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
 
 const ZAMIL_ONE_CARD_COLUMN_PATTERN = /^ar\s+invoices?\s+issued$/i;
+const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil.*marine/i;
 
 export const isSubseaWorkflow = (workflow) => SUBSEA_WORKFLOW_PATTERN.test(String(workflow?.title ?? ""));
 
@@ -124,14 +125,16 @@ export const isDaDefaultWorkflow = (workflow) => DA_DEFAULT_WORKFLOW_PATTERN.tes
 /* POSH DA requests the PO and sends the invoice one card at a time, so only one card in
    "AR Invoices Issued" or "PO Received" can stay ticked. The POs are uploaded in bulk, so
    "Requested/ Awaiting for PO" takes several. Subsea 7 DA sends the invoice one card at a time
-   from "AR Invoices Issued", and so does Zamil Crew DA. The Default DA workflow checks the invoice of one
+   from "AR Invoices Issued", and so does Zamil Marine DA (Zamil Crew DA takes several). The Default DA workflow checks the invoice of one
    card at a time from "AR Invoice Issued", and submits one card at a time from "Ready for Submission". */
 export const isPoshOneCardColumn = (workflow, columnTitle) => {
   const title = String(columnTitle ?? "").trim();
   return (
     (POSH_WORKFLOW_PATTERN.test(String(workflow?.title ?? "")) && POSH_ONE_CARD_COLUMN_PATTERN.test(title)) ||
     (isSubseaWorkflow(workflow) && SUBSEA_ONE_CARD_COLUMN_PATTERN.test(title)) ||
-    (isZamilWorkflow(workflow) && ZAMIL_ONE_CARD_COLUMN_PATTERN.test(title)) ||
+    (isZamilWorkflow(workflow) &&
+      ZAMIL_MARINE_WORKFLOW_PATTERN.test(String(workflow?.title ?? "")) &&
+      ZAMIL_ONE_CARD_COLUMN_PATTERN.test(title)) ||
     (isDaDefaultWorkflow(workflow) && DEFAULT_DA_ONE_CARD_COLUMN_PATTERN.test(title))
   );
 };

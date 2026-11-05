@@ -1456,13 +1456,38 @@ export default function KanbanBoardPage() {
   const fetchZamilMarineFinalInvoiceDraft = useZamilMarineFinalInvoiceStore((state) => state.fetchFinalInvoiceDraft);
   const sendZamilMarineFinalInvoice = useZamilMarineFinalInvoiceStore((state) => state.sendFinalInvoice);
 
-  const handleColumnSendInvoice = useCallback(async (card, { isFinalInvoice = false, isZamilCrew = false, isZamilMarine = false } = {}) => {
+  /* Zamil Crew can tick several cards: their invoice emails open one after the other, the rest wait here. */
+  const [queuedInvoiceDispatchCards, setQueuedInvoiceDispatchCards] = useState([]);
+  /* When the backend drafts one email for every ticked card, those cards are sent together. */
+  const [combinedInvoiceDispatchCards, setCombinedInvoiceDispatchCards] = useState([]);
+  const fetchZamilCrewCombinedFinalInvoiceDraft = useZamilCrewFinalInvoiceStore(
+    (state) => state.fetchCombinedFinalInvoiceDraft
+  );
+
+  const handleColumnSendInvoice = useCallback(async (card, { isFinalInvoice = false, isZamilCrew = false, isZamilMarine = false, queuedCards = [] } = {}) => {
     if (!card?.callId) {
       notify("The selected card has no call to send the invoice for", "error");
       return;
     }
     let draft;
-    if (isZamilCrew || isZamilMarine) {
+    let combinedCards = [];
+    let remainingCards = queuedCards;
+    if (isZamilCrew && queuedCards.length) {
+      const allCards = [card, ...queuedCards];
+      if (allCards.every((item) => item.callId)) {
+        const combined = await fetchZamilCrewCombinedFinalInvoiceDraft(
+          allCards.map((item) => item.callId),
+          allCards.map((item) => item.id)
+        );
+        /* Only when the draft covers every ticked card is it one email; otherwise each card gets its own. */
+        if (combined.draft && combined.draft.cards?.length === allCards.length) {
+          draft = combined.draft;
+          combinedCards = allCards;
+          remainingCards = [];
+        }
+      }
+    }
+    if (!draft && (isZamilCrew || isZamilMarine)) {
       const fetchFinalInvoiceDraft = isZamilMarine ? fetchZamilMarineFinalInvoiceDraft : fetchZamilCrewFinalInvoiceDraft;
       const result = await fetchFinalInvoiceDraft(card.callId, card.id);
       if (result.errorMessage) {
@@ -1470,7 +1495,7 @@ export default function KanbanBoardPage() {
         return;
       }
       draft = result.draft;
-    } else {
+    } else if (!draft) {
       let data;
       try {
         ({ data } = isFinalInvoice
@@ -1490,13 +1515,17 @@ export default function KanbanBoardPage() {
     setIsZamilCrewInvoiceDispatch(isZamilCrew);
     setIsZamilMarineInvoiceDispatch(isZamilMarine);
     setSelectedInvoiceDispatchCard(card);
+    setQueuedInvoiceDispatchCards(remainingCards);
+    setCombinedInvoiceDispatchCards(combinedCards);
     setShowInvoiceDispatchEmailModal(true);
-  }, [fetchZamilCrewFinalInvoiceDraft, fetchZamilMarineFinalInvoiceDraft]);
+  }, [fetchZamilCrewFinalInvoiceDraft, fetchZamilCrewCombinedFinalInvoiceDraft, fetchZamilMarineFinalInvoiceDraft]);
 
   const handleCloseInvoiceDispatchEmail = useCallback(() => {
     setShowInvoiceDispatchEmailModal(false);
     setSelectedInvoiceDispatchCard(null);
     setInvoiceDispatchDraft(null);
+    setQueuedInvoiceDispatchCards([]);
+    setCombinedInvoiceDispatchCards([]);
   }, []);
 
   /* Sends the invoice email; the backend moves the card to "Invoice Dispatched". */
@@ -1509,11 +1538,21 @@ export default function KanbanBoardPage() {
         return;
       }
 
+      const isCombinedSend = combinedInvoiceDispatchCards.length > 1;
       const formData = new FormData();
-      formData.append("call_id", callId);
-      formData.append("card_id", cardId);
-      if (invoiceDispatchDraft?.stage_document_id != null) {
-        formData.append("stage_document_id", invoiceDispatchDraft.stage_document_id);
+      if (isCombinedSend) {
+        formData.append("call_ids", combinedInvoiceDispatchCards.map((card) => card.callId).join(","));
+        formData.append("card_ids", combinedInvoiceDispatchCards.map((card) => card.id).join(","));
+        const stageDocumentIds = (invoiceDispatchDraft?.attachments ?? [])
+          .map((attachment) => attachment.stage_document_id)
+          .filter((id) => id != null);
+        if (stageDocumentIds.length) formData.append("stage_document_ids", stageDocumentIds.join(","));
+      } else {
+        formData.append("call_id", callId);
+        formData.append("card_id", cardId);
+        if (invoiceDispatchDraft?.stage_document_id != null) {
+          formData.append("stage_document_id", invoiceDispatchDraft.stage_document_id);
+        }
       }
       formData.append("to", emailData?.to ?? "");
       formData.append("cc", emailData?.cc ?? "");
@@ -1547,9 +1586,15 @@ export default function KanbanBoardPage() {
           return;
         }
         notify(result.message || "Invoice sent successfully", "success");
-        removeCardSelectionId(selectedInvoiceDispatchCard?.id);
+        (isCombinedSend ? combinedInvoiceDispatchCards : [selectedInvoiceDispatchCard]).forEach((card) =>
+          removeCardSelectionId(card?.id)
+        );
+        const [nextCard, ...remainingCards] = queuedInvoiceDispatchCards;
         handleCloseInvoiceDispatchEmail();
         refetchBoard?.();
+        if (nextCard) {
+          await handleColumnSendInvoice(nextCard, { isZamilCrew: true, queuedCards: remainingCards });
+        }
       } finally {
         setIsSendingInvoiceDispatch(false);
       }
@@ -1562,6 +1607,9 @@ export default function KanbanBoardPage() {
       isZamilMarineInvoiceDispatch,
       sendZamilMarineFinalInvoice,
       selectedInvoiceDispatchCard,
+      queuedInvoiceDispatchCards,
+      combinedInvoiceDispatchCards,
+      handleColumnSendInvoice,
       removeCardSelectionId,
       handleCloseInvoiceDispatchEmail,
       refetchBoard,
@@ -1571,7 +1619,9 @@ export default function KanbanBoardPage() {
   /* The invoice PDF the backend already holds for the email, shown under its document name. */
   const invoiceDispatchDocuments = useMemo(
     () =>
-      invoiceDispatchDraft?.document_url
+      combinedInvoiceDispatchCards.length > 1 && invoiceDispatchDraft?.attachments?.length
+        ? invoiceDispatchDraft.attachments.map((attachment) => ({ name: attachment.name, url: attachment.url }))
+        : invoiceDispatchDraft?.document_url
         ? [
             {
               name: invoiceDispatchDraft.document_name || "Invoice",
@@ -1579,7 +1629,7 @@ export default function KanbanBoardPage() {
             },
           ]
         : [],
-    [invoiceDispatchDraft]
+    [invoiceDispatchDraft, combinedInvoiceDispatchCards]
   );
 
   /* "Send for SCC Approval" on L&T's "SO sent for SCC" column header, for the cards ticked there, opens one
