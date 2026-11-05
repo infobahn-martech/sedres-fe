@@ -25,7 +25,14 @@ import {
   MINIMAL_CARD_TOOLTIP_ID,
 } from "@/pages/KanbanBoard/utils/cardDisplayHelpers";
 import { downloadRemoteFile } from "@/shared/utils/utils";
-import { isLamprellUaePoReceivedColumn, isLamprellAlgihazPoReceivedColumn, isLamprellAlgihazArInvoiceIssuedColumn } from "../../../../utils/columnTitles";
+import {
+  isLamprellUaePoReceivedColumn,
+  isLamprellAlgihazPoReceivedColumn,
+  isLamprellAlgihazArInvoiceIssuedColumn,
+  isUploadedToPortalColumnTitle,
+} from "../../../../utils/columnTitles";
+
+const SRT_RECEIVED_COLUMN_PATTERN = /^srt rec(?:ie|ei)ved$/i;
 
 /* SNAMPROGETTI is the name the SAIPEM workflow is being renamed from. */
 const SAIPEM_WORKFLOW_PATTERN = /saipem|snamprogetti/i;
@@ -748,8 +755,14 @@ function CardItem({
     isSaipemBacklogCard && (exportApprovalStatus === "pending" || exportApprovalStatus === "loading");
   /* get_full_board's per-card signature_status "missing" turns the card red; no key keeps the common colour. */
   const isSignatureMissing = card?.signature_status === "missing";
+  /* The tooltip names the document the column takes: the dispatch proof, the SRT, or (L&T) the SCC. */
+  const signatureDocumentName = isUploadedToPortalColumnTitle(columnTitle)
+    ? "dispatch proof"
+    : SRT_RECEIVED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim())
+      ? "SRT"
+      : "SCC";
   const signatureTooltip = isSignatureMissing
-    ? "Signature missing on the SCC — upload the signed SCC again"
+    ? `This ${signatureDocumentName} does not have a signature`
     : undefined;
   const canSelectForAction =
     (isDaBoardCard ||

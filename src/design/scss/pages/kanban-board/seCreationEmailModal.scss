@@ -477,6 +477,19 @@
   }
 
   .se-email-message {
+    position: relative;
+
+    &__copy-link {
+      position: absolute;
+      top: var(--copy-top);
+      left: var(--copy-left);
+      z-index: 2;
+      width: 22px;
+      height: 22px;
+      justify-content: center;
+      background: #ffffff;
+    }
+
     .quill {
       border: 1px solid #cbd5e1;
       border-radius: 6px;

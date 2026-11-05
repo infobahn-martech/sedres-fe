@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -17,6 +17,10 @@ import "@/design/scss/pages/kanban-board/seCreationEmailModal.scss";
 const DEFAULT_FROM = "operations@shipping.com";
 
 const EMPTY_LIST = [];
+
+/* Size of the copy icon button (px) and its gap from the end of the "Documents:" link; match the SCSS. */
+const COPY_BUTTON_SIZE = 22;
+const COPY_BUTTON_GAP = 6;
 
 const DEFAULT_MESSAGE_HTML =
   "<p>Greetings from Sedres.</p>" +
@@ -87,6 +91,54 @@ const SeCreationEmailModal = ({
     setErrors({});
   }, [show, batchTitle, defaultTo, defaultCc, defaultSubject, defaultBody, subjectPrefix]);
 
+  /* The copy icon sits right after the "Documents:" link inside the message body. The body is an editor that can't
+     hold a button, so the icon is placed over it from the link's own position; it is not part of the sent HTML. */
+  const messageWrapRef = useRef(null);
+  const copyButtonRef = useRef(null);
+  const [copyPosition, setCopyPosition] = useState(null);
+
+  useEffect(() => {
+    const wrap = messageWrapRef.current;
+    const editor = wrap?.querySelector(".ql-editor");
+    if (!show || !folderLink || !editor) {
+      setCopyPosition(null);
+      return undefined;
+    }
+    const updatePosition = () => {
+      const anchor = [...editor.querySelectorAll("a")].find((link) => link.getAttribute("href") === folderLink);
+      if (!anchor) {
+        setCopyPosition(null);
+        return;
+      }
+      const wrapRect = wrap.getBoundingClientRect();
+      const editorRect = editor.getBoundingClientRect();
+      const anchorRects = anchor.getClientRects();
+      const lastRect = anchorRects[anchorRects.length - 1];
+      const isVisible = lastRect.top >= editorRect.top && lastRect.bottom <= editorRect.bottom;
+      setCopyPosition(
+        isVisible
+          ? { top: lastRect.top - wrapRect.top + (lastRect.height - COPY_BUTTON_SIZE) / 2, left: lastRect.right - wrapRect.left + COPY_BUTTON_GAP }
+          : null
+      );
+    };
+    updatePosition();
+    const contentObserver = new MutationObserver(updatePosition);
+    contentObserver.observe(editor, { childList: true, subtree: true, characterData: true });
+    editor.addEventListener("scroll", updatePosition);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      contentObserver.disconnect();
+      editor.removeEventListener("scroll", updatePosition);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [show, folderLink, message]);
+
+  useLayoutEffect(() => {
+    if (!copyPosition || !copyButtonRef.current) return;
+    copyButtonRef.current.style.setProperty("--copy-top", `${copyPosition.top}px`);
+    copyButtonRef.current.style.setProperty("--copy-left", `${copyPosition.left}px`);
+  }, [copyPosition]);
+
   const clearError = (field) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
@@ -131,9 +183,9 @@ const SeCreationEmailModal = ({
   const handleCopyFolderLink = async () => {
     try {
       await navigator.clipboard.writeText(folderLink);
-      notify("Folder link copied", "success");
+      notify("Documents link copied", "success");
     } catch {
-      notify("Failed to copy the folder link", "error");
+      notify("Failed to copy the documents link", "error");
     }
   };
 
@@ -242,32 +294,6 @@ const SeCreationEmailModal = ({
           {errors.subject && <div className="se-email-field__error">{errors.subject}</div>}
         </div>
       </div>
-
-      {folderLink && (
-        <div className="se-email-field">
-          <label className="se-email-field__label">Folder</label>
-          <div className="se-email-field__control d-flex align-items-center gap-2">
-            <a
-              href={folderLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="se-email-attachments__name text-truncate"
-              title={folderLink}
-            >
-              {folderLink}
-            </a>
-            <button
-              type="button"
-              className="se-email-attachments__remove"
-              onClick={handleCopyFolderLink}
-              aria-label="Copy folder link"
-              title="Copy folder link"
-            >
-              <FiCopy />
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="se-email-attachments">
         <div className="se-email-attachments__toolbar">
@@ -495,7 +521,7 @@ const SeCreationEmailModal = ({
         )}
       </div>
 
-      <div className="se-email-message">
+      <div className="se-email-message" ref={messageWrapRef}>
         {allowTables ? (
           <EmailTableEditor
             value={message}
@@ -521,6 +547,18 @@ const SeCreationEmailModal = ({
           />
         )}
         {errors.message && <div className="se-email-field__error">{errors.message}</div>}
+        {copyPosition && (
+          <button
+            type="button"
+            ref={copyButtonRef}
+            className="se-email-attachments__remove se-email-message__copy-link"
+            onClick={handleCopyFolderLink}
+            aria-label="Copy documents link"
+            title="Copy documents link"
+          >
+            <FiCopy />
+          </button>
+        )}
       </div>
     </div>
   );
