@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiChevronDown } from 'react-icons/fi';
+import { FiArrowLeft, FiChevronDown, FiSlash, FiCheckCircle } from 'react-icons/fi';
 import { Tooltip } from 'react-tooltip';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import '../../design/scss/EditWorkflows.scss';
@@ -1115,7 +1115,13 @@ function EditWorkflows() {
         show={!!deleteModal}
         onCancel={() => setDeleteModal(null)}
         onConfirm={handleConfirmDeleteModal}
-        showIcon={deleteModal?.type !== 'toggle'}
+        icon={
+          deleteModal?.type === 'toggle'
+            ? deleteModal.isDisabled
+              ? <FiCheckCircle size="100%" color="#ff3e3e" strokeWidth={1.25} />
+              : <FiSlash size="100%" color="#ff3e3e" strokeWidth={1.25} />
+            : undefined
+        }
         deleteText={
           deleteModal?.type === 'toggle'
             ? deleteModal.isDisabled
