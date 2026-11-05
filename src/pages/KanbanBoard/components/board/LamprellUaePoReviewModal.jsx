@@ -11,6 +11,16 @@ import "@/design/scss/pages/kanban-board/lamprellUaePoReviewModal.scss";
 
 const COLUMNS = LAMPRELL_UAE_PO_COLUMNS;
 
+const ENTRY_MODES = {
+  AI: "ai",
+  MANUAL: "manual",
+};
+
+const ENTRY_MODE_OPTIONS = [
+  { value: ENTRY_MODES.MANUAL, label: "Enter manually" },
+  { value: ENTRY_MODES.AI, label: "Upload with AI" },
+];
+
 const ACCEPTED_REPLY_EXTENSIONS = ["pdf", "eml", "msg", "jpg", "jpeg", "png"];
 const ACCEPTED_REPLY_TYPES = ACCEPTED_REPLY_EXTENSIONS.map((extension) => `.${extension}`).join(",");
 
@@ -28,6 +38,7 @@ const LamprellUaePoReviewModal = ({ onConfirmed }) => {
   const documentName = useLamprellUaePoApprovalStore((state) => state.poReviewDocumentName);
   const isBusy = isConfirming || isUploading;
   const [isDragging, setIsDragging] = useState(false);
+  const [entryMode, setEntryMode] = useState(ENTRY_MODES.MANUAL);
   const fileInputRef = useRef(null);
 
   const [cards, setCards] = useState([]);
@@ -35,6 +46,7 @@ const LamprellUaePoReviewModal = ({ onConfirmed }) => {
 
   useEffect(() => {
     if (!show) return;
+    setEntryMode(ENTRY_MODES.MANUAL);
     setCards(reviewCards);
     setUncheckedCardIds({});
   }, [show, reviewCards]);
@@ -131,17 +143,7 @@ const LamprellUaePoReviewModal = ({ onConfirmed }) => {
       </tr>
     ));
 
-  const renderBody = () => (
-    <>
-      <div className="blockers-toolbar-section">
-        <div className="se-review-move-batch">
-          <FiLayers className="se-review-move-batch__icon" />
-          <span className="se-review-move-batch__caption">Cards:</span>
-          <span className="se-review-move-batch__title">{cards.length}</span>
-          <span className="se-review-move-batch__count">{checkedCards.length} selected</span>
-        </div>
-      </div>
-
+  const renderDropzone = () => (
       <div
         className={`lamprell-po-dropzone${isDragging ? " lamprell-po-dropzone--active" : ""}${
           isBusy ? " lamprell-po-dropzone--disabled" : ""
@@ -193,13 +195,46 @@ const LamprellUaePoReviewModal = ({ onConfirmed }) => {
         />
         <FiUploadCloud size={22} aria-hidden />
         <span className="lamprell-po-dropzone__text">
-          {isUploading ? "Reading the document..." : documentName || "Drag and drop the client's reply here"}
+          {isUploading ? "Reading the document..." : documentName || "Drag and drop the email screenshot here"}
         </span>
         <span className="lamprell-po-dropzone__hint">
-          {documentName ? "The table below is filled from this file. Edit if needed." : "or click to browse - PDF, EML, MSG, JPG, PNG"}
+          {documentName ? "PO, SRN and Qty were read into the table below. Edit if needed." : "AI reads PO, SRN and Qty into a table you can edit - click to browse - PDF, EML, MSG, JPG, PNG"}
         </span>
       </div>
+  );
 
+  const isAiMode = entryMode === ENTRY_MODES.AI;
+  const showTable = !isAiMode || Boolean(documentName);
+
+  const renderBody = () => (
+    <>
+      <div className="blockers-toolbar-section">
+        <div className="se-review-move-batch">
+          <FiLayers className="se-review-move-batch__icon" />
+          <span className="se-review-move-batch__caption">Cards:</span>
+          <span className="se-review-move-batch__title">{cards.length}</span>
+          <span className="se-review-move-batch__count">{checkedCards.length} selected</span>
+        </div>
+      </div>
+
+      <div className="lamprell-po-mode" role="group" aria-label="PO entry mode">
+        {ENTRY_MODE_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={`lamprell-po-mode__btn${entryMode === option.value ? " is-active" : ""}`}
+            onClick={() => setEntryMode(option.value)}
+            disabled={isBusy}
+            aria-pressed={entryMode === option.value}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      {isAiMode && renderDropzone()}
+
+      {showTable && (
       <div className="blockers-table-section">
         <div className="blockers-table-wrapper">
           <table className="blockers-table ar-invoice-review__grid">
@@ -237,6 +272,7 @@ const LamprellUaePoReviewModal = ({ onConfirmed }) => {
           </table>
         </div>
       </div>
+      )}
     </>
   );
 

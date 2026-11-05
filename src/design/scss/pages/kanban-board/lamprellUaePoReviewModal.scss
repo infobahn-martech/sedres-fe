@@ -21,6 +21,46 @@
     }
   }
 
+  // Segmented switch between the two entry modes.
+  .lamprell-po-mode {
+    flex: 0 0 auto;
+    display: flex;
+    align-self: flex-start;
+    gap: 4px;
+    margin-bottom: 12px;
+    padding: 4px;
+    background: #f1f5f9;
+    border-radius: 10px;
+  }
+
+  .lamprell-po-mode__btn {
+    padding: 7px 16px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover:not(:disabled) {
+      color: #0f2f8f;
+    }
+
+    &.is-active {
+      color: #0f2f8f;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
   // Drop the client's reply here; the backend reads it and the table below is filled from it.
   .lamprell-po-dropzone {
     flex: 0 0 auto;
@@ -29,6 +69,7 @@
     align-items: center;
     justify-content: center;
     gap: 2px;
+    margin-bottom: 12px;
     padding: 14px;
     color: #0f2f8f;
     text-align: center;
