@@ -329,6 +329,46 @@ export default function WorkflowColumns({
     const max = container.scrollWidth - container.clientWidth;
     if (max > 0) container.scrollLeft = Math.round(hScrollRatioRef.current * max);
   }, [cardViewLevel]);
+  /* Sticky column headers: the board container scrolls horizontally, which traps
+     `position: sticky` inside it. So the container also scrolls vertically, capped at the
+     page viewport height left under the (sticky) board name bar; the header row then sticks
+     to the container's top while the swimlanes scroll beneath it. */
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const header = container?.closest(".kanban-accordion")?.querySelector(".kanban-accordion-header");
+    if (!container || !header) return undefined;
+    const pageScroller = container.closest(".page-cont-wrp");
+
+    let frame = 0;
+    const fit = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        let available = window.innerHeight - header.getBoundingClientRect().bottom;
+        if (pageScroller) {
+          const style = getComputedStyle(pageScroller);
+          available =
+            pageScroller.clientHeight -
+            parseFloat(style.paddingTop || 0) -
+            parseFloat(style.paddingBottom || 0) -
+            header.offsetHeight;
+        }
+        container.style.maxHeight = `${Math.max(240, Math.floor(available))}px`;
+      });
+    };
+
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(header);
+    if (pageScroller) observer.observe(pageScroller);
+    window.addEventListener("resize", fit);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("resize", fit);
+      container.style.maxHeight = "";
+    };
+  }, [layoutView]);
+
   useEffect(() => {
     const container = scrollContainerRef.current;
     const board = boardRef.current;

@@ -11,12 +11,24 @@
  */
 .kanban-container.kanban-container--board-hscroll {
   overflow-x: auto;
-  overflow-y: visible;
+  /* max-height is set inline by WorkflowColumns.jsx (viewport space under the board name bar),
+     so the board scrolls vertically here and the column header row can stick to its top.
+     The stable gutter stops a vertical scrollbar from tipping the columns into h-overflow. */
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   width: 100%;
   max-width: 100%;
   height: auto;
   max-height: none;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Board name bar stays at the top of the page while scrolling between workflows. */
+.kanban-accordion-header {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  backdrop-filter: blur(8px);
 }
 
 .kanban-board--swimlanes {
@@ -42,6 +54,11 @@
 .kanban-board__header-row {
   width: max-content;
   min-width: 100%;
+  /* Stage headers stay visible while the swimlanes scroll under them (above lane titles, z 2). */
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  backdrop-filter: blur(8px);
 }
 
 .kanban-board__header-slot {
