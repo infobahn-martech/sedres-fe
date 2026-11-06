@@ -118,9 +118,105 @@ export const useGeneralMasterData = () => {
   };
 };
 
+// Short-lived cache for the small catalogues used by the read-only view, so reopening cards
+// doesn't refetch the same lists every time.
+const VIEW_LOOKUP_TTL_MS = 5 * 60 * 1000;
+const viewLookupCache = new Map();
+const cachedLookup = (key, loader) => {
+  const hit = viewLookupCache.get(key);
+  if (hit && Date.now() - hit.at < VIEW_LOOKUP_TTL_MS) return hit.promise;
+  const promise = loader().catch((err) => {
+    viewLookupCache.delete(key);
+    throw err;
+  });
+  viewLookupCache.set(key, { at: Date.now(), promise });
+  return promise;
+};
+
+const loadOptions = (key, request, mapFn) =>
+  cachedLookup(key, async () => {
+    const { data } = await request();
+    return mapFn(unwrapListResponse(data));
+  }).catch(() => []);
+
+const loadBillingEntityOption = (entityId) =>
+  cachedLookup(`billingEntity:${entityId}`, async () => {
+    const { data } = await billingEntityService.getEntityDetailById(entityId);
+    const raw = data?.data ?? data;
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    if (!row) return [];
+    return mapBillingEntitiesToOptions([{ ...row, entity_id: row.entity_id ?? entityId }]);
+  }).catch(() => []);
+
+const VIEW_LOOKUP_LOADERS = {
+  operators: () => loadOptions("operators", callFileService.getAllOperators, mapOperatorsToOptions),
+  managers: () => loadOptions("managers", callFileService.getAllManagers, mapOperatorsToOptions),
+  ports: () => loadOptions("ports", () => portService.getPorts({ params: { limit: 1000 } }), mapPortsToOptions),
+  callTypes: () => loadOptions("callTypes", CommonService.getCallTypes, mapCallTypesToOptions),
+  vesselTypes: () =>
+    loadOptions("vesselTypes", () => vesselTypeService.getVesselTypes({ params: { limit: 1000 } }), mapVesselTypesToOptions),
+  bargeTypes: () =>
+    loadOptions("bargeTypes", () => bargeTypeService.getBargeTypes({ params: { limit: 1000 } }), mapBargeTypesToOptions),
+  tugTypes: () =>
+    loadOptions("tugTypes", () => tugTypeService.getTugTypes({ params: { limit: 1000 } }), mapTugTypesToOptions),
+  vessels: () => loadOptions("vessels", vesselService.getAllVessels, mapVesselsToOptions),
+};
+
+// Read-only variant of useGeneralMasterData: only loads the catalogues whose labels the view will
+// actually display (`catalogues`), and resolves billing entities one-by-one instead of pulling the full list.
+export const useGeneralViewLookups = ({ enabled, catalogues = [], billingEntityIds = [] }) => {
+  const [lookups, setLookups] = useState({});
+  const [loading, setLoading] = useState(false);
+  const cataloguesKey = [...new Set(catalogues.filter((name) => VIEW_LOOKUP_LOADERS[name]))].sort().join(",");
+  const entityKey = [...new Set(billingEntityIds.map((id) => String(id ?? "").trim()).filter(Boolean))].sort().join(",");
+
+  useEffect(() => {
+    if (!enabled) return undefined;
+    const names = cataloguesKey ? cataloguesKey.split(",") : [];
+    const entityIds = entityKey ? entityKey.split(",") : [];
+    if (!names.length && !entityIds.length) {
+      setLookups({});
+      setLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([
+      Promise.all(names.map((name) => VIEW_LOOKUP_LOADERS[name]())),
+      Promise.all(entityIds.map(loadBillingEntityOption)),
+    ]).then(([catalogueResults, entityResults]) => {
+      if (cancelled) return;
+      const next = {};
+      names.forEach((name, index) => {
+        next[name] = catalogueResults[index];
+      });
+      next.billingEntities = entityResults.flat();
+      setLookups(next);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, cataloguesKey, entityKey]);
+
+  return {
+    lookupsLoading: loading,
+    operatorOptions: lookups.operators ?? [],
+    ownerOptions: lookups.managers ?? [],
+    portSelectOptions: lookups.ports ?? [],
+    callTypeOptions: lookups.callTypes ?? [],
+    billingEntitySelectOptions: lookups.billingEntities ?? [],
+    vesselTypeSelectOptions: lookups.vesselTypes ?? [],
+    bargeTypeSelectOptions: lookups.bargeTypes ?? [],
+    tugTypeSelectOptions: lookups.tugTypes ?? [],
+    allVesselOptions: lookups.vessels ?? [],
+  };
+};
+
 // Checklist options depend only on Call Type + Port; refetch whenever either changes and let the
 // caller clear its selections (onSelectionsReset) when a previous pair has been replaced.
-export const useChecklistOptions = ({ callTypeId, portId, onSelectionsReset }) => {
+export const useChecklistOptions = ({ callTypeId, portId, onSelectionsReset, enabled = true }) => {
   const [checklistOptions, setChecklistOptions] = useState([]);
   const [checklistLoading, setChecklistLoading] = useState(false);
   const checklistRequestIdRef = useRef(0);
@@ -129,7 +225,7 @@ export const useChecklistOptions = ({ callTypeId, portId, onSelectionsReset }) =
   onSelectionsResetRef.current = onSelectionsReset;
 
   useEffect(() => {
-    if (!callTypeId || !portId) {
+    if (!enabled || !callTypeId || !portId) {
       checklistRequestIdRef.current += 1;
       lastChecklistFetchKeyRef.current = "";
       setChecklistOptions([]);
@@ -160,7 +256,7 @@ export const useChecklistOptions = ({ callTypeId, portId, onSelectionsReset }) =
       }
     };
     void loadChecklists();
-  }, [callTypeId, portId]);
+  }, [enabled, callTypeId, portId]);
 
   return { checklistOptions, checklistLoading };
 };

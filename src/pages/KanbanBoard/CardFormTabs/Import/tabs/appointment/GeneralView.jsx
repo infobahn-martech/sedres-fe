@@ -21,12 +21,7 @@ import {
   mapCallDetailToFormFields,
   normalizeAppointmentTypeValue,
 } from "./generalHelpers";
-import {
-  useBillingEntityEmails,
-  useChecklistOptions,
-  useEntityFields,
-  useGeneralMasterData,
-} from "./useGeneralData";
+import { useChecklistOptions, useEntityFields, useGeneralViewLookups } from "./useGeneralData";
 
 const GeneralViewSectionShimmer = () => (
   <div className="general-info-three-column general-info-view-with-tasks general-tab-form-layout general-view-section-shimmer" aria-live="polite">
@@ -123,19 +118,9 @@ function GeneralView({ card, formValues, handleChange }) {
   });
   const accentColor = card?.color || "#2A00FF";
 
-  const {
-    ownerOptions,
-    operatorOptions,
-    portSelectOptions,
-    callTypeOptions,
-    billingEntitySelectOptions,
-    vesselTypeSelectOptions,
-    bargeTypeSelectOptions,
-    tugTypeSelectOptions,
-    allVesselOptions,
-  } = useGeneralMasterData();
   const { entityFields, entityFieldValues, setEntityFieldValues, fetchEntityFields } = useEntityFields();
-  const { dailyReportEmailOptions, setDailyReportEmailOptions, fetchBillingEntityEmails } = useBillingEntityEmails();
+  // Daily report emails come with the call detail ({ id, email }), so no per-entity email lookup is needed.
+  const [dailyReportEmailOptions, setDailyReportEmailOptions] = useState([]);
   const [billingInstructionType, setBillingInstructionType] = useState("");
   const [billingInstructionEmailOptions, setBillingInstructionEmailOptions] = useState([]);
   const [callDetailLoading, setCallDetailLoading] = useState(false);
@@ -393,7 +378,11 @@ function GeneralView({ card, formValues, handleChange }) {
     setBillingInstructionType("email");
   }, [callDetailData?.billing_instruction_emails]);
 
+  const hasSelectedChecklists = ["selectedChecklists", "bargeSelectedChecklists"].some((key) =>
+    hasMeaningfulValue(getFieldValue(key))
+  );
   const { checklistOptions } = useChecklistOptions({
+    enabled: canViewGeneralInformation && Boolean(callDetailData) && hasSelectedChecklists,
     callTypeId: firstNonEmptyString(getFieldValue("call_type_id"), getFieldValue("typeOfCall")),
     portId: firstNonEmptyString(getFieldValue("port")),
     onSelectionsReset: () => {
@@ -405,22 +394,70 @@ function GeneralView({ card, formValues, handleChange }) {
   const selectedAppointmentType = normalizeAppointmentTypeValue(getFieldValue("appointmentType"));
   const isTugAndBargeSelected = appointmentTypeShowsBargeFields(selectedAppointmentType);
   const isSingleVesselSection = appointmentTypeShowsSingleVesselSection(selectedAppointmentType);
-  // "Vessel type" catalogue depends on appointment type: Taxi Tug -> tug types, Vessel -> vessel types.
-  const singleVesselTypeOptions = appointmentTypeUsesTugTypeSource(selectedAppointmentType)
-    ? tugTypeSelectOptions
-    : vesselTypeSelectOptions;
+  const singleVesselUsesTugTypes = appointmentTypeUsesTugTypeSource(selectedAppointmentType);
 
-  // Entity-dependent lookups (dynamic entity fields, daily report emails) follow the vessel billing entity
-  // for single Vessel/Taxi Tug appointments, or the tug billing entity for Tug and Barge appointments.
+  // Only fetch the catalogues needed to label fields that actually have a value on this call.
+  const viewCatalogues = [];
+  const needs = (fieldName, catalogue) => {
+    if (hasMeaningfulValue(getFieldValue(fieldName))) viewCatalogues.push(catalogue);
+  };
+  if (canViewGeneralInformation) {
+    needs("owner", "managers");
+    needs("assignedOperator", "operators");
+    needs("port", "ports");
+    if (isSingleVesselSection) {
+      needs("vesselType", singleVesselUsesTugTypes ? "tugTypes" : "vesselTypes");
+      needs("vesselName", "vessels");
+    } else if (isTugAndBargeSelected) {
+      needs("tugType", "tugTypes");
+      needs("bargeType", "bargeTypes");
+      needs("tugVesselName", "vessels");
+      needs("bargeVesselName", "vessels");
+    }
+  }
+  if (canViewGeneralInformation || canViewOperationTasks) {
+    if (firstNonEmptyString(getFieldValue("call_type_id"), getFieldValue("typeOfCall"))) {
+      viewCatalogues.push("callTypes");
+    }
+  }
+  const viewBillingEntityIds = !canViewGeneralInformation
+    ? []
+    : isSingleVesselSection
+      ? [getFieldValue("vesselBillingEntity")]
+      : isTugAndBargeSelected
+        ? [getFieldValue("tugBillingEntity"), getFieldValue("bargeBillingEntity")]
+        : [];
+
+  const {
+    lookupsLoading,
+    ownerOptions,
+    operatorOptions,
+    portSelectOptions,
+    callTypeOptions,
+    billingEntitySelectOptions,
+    vesselTypeSelectOptions,
+    bargeTypeSelectOptions,
+    tugTypeSelectOptions,
+    allVesselOptions,
+  } = useGeneralViewLookups({
+    enabled: Boolean(callDetailData),
+    catalogues: viewCatalogues,
+    billingEntityIds: viewBillingEntityIds,
+  });
+
+  // "Vessel type" catalogue depends on appointment type: Taxi Tug -> tug types, Vessel -> vessel types.
+  const singleVesselTypeOptions = singleVesselUsesTugTypes ? tugTypeSelectOptions : vesselTypeSelectOptions;
+
+  // Dynamic entity fields follow the vessel billing entity for single Vessel/Taxi Tug appointments,
+  // or the tug billing entity for Tug and Barge appointments.
   const selectedEntityId = isTugAndBargeSelected
     ? getFieldValue("tugBillingEntity")
     : getFieldValue("vesselBillingEntity");
 
   useEffect(() => {
-    if (!selectedEntityId) return;
+    if (!selectedEntityId || !canViewGeneralInformation) return;
     void fetchEntityFields(selectedEntityId);
-    void fetchBillingEntityEmails(selectedEntityId);
-  }, [selectedEntityId, fetchEntityFields, fetchBillingEntityEmails]);
+  }, [selectedEntityId, canViewGeneralInformation, fetchEntityFields]);
 
   return (
     <div className="cardform-body card-form-panel general-tab-body general-tab-body--view-mode">
@@ -430,7 +467,7 @@ function GeneralView({ card, formValues, handleChange }) {
             <div className="cf-section-title">General Information</div>
           </div>
           <div className="cf-section-body">
-            {callDetailLoading ? (
+            {callDetailLoading || lookupsLoading ? (
               <GeneralViewSectionShimmer />
             ) : (
               <div className="general-view-mode-wrapper">
