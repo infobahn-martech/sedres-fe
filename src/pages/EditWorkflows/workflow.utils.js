@@ -282,6 +282,7 @@ function normalizeSingleWorkflow(workflow, idx = 0) {
     name: workflowName,
     swimlanes: normalizedSwimlanes,
     is_active: normalizeIsActive(workflow?.is_active),
+    clientSwimlane: Number(workflow?.client_swimlane) === 1,
     areaOrder,
     areaMeta,
   };

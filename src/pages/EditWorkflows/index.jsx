@@ -1082,7 +1082,7 @@ function EditWorkflows() {
                       onStageLimitChange={handleStageLimitChange}
                       onStageCardsPerRowChange={handleStageCardsPerRowChange}
                       onStageDescriptionChange={handleStageDescriptionChange}
-                      onAddSwimlane={canCreateSwimlane ? handleAddSwimlane : undefined}
+                      onAddSwimlane={canCreateSwimlane && workflow.clientSwimlane ? handleAddSwimlane : undefined}
                       onRenameSwimlane={canRenameSwimlane ? handleRenameSwimlane : undefined}
                       onDeleteSwimlane={canDeleteSwimlane ? handleDeleteSwimlane : undefined}
                       onSwimlaneColorSelect={canUpdateSwimlaneColor ? handleSwimlaneColorChange : undefined}
