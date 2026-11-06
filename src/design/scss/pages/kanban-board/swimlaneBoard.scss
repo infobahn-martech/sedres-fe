@@ -10,17 +10,33 @@
  * horizontal overflow (too many columns) should ever trigger this container's scrollbar.
  */
 .kanban-container.kanban-container--board-hscroll {
+  /* Only two scrollbars on the board page: this container scrolls horizontally, the page
+     (.page-cont-wrp) scrolls vertically. The container grows to its content height, so it never
+     scrolls vertically; the column header row is kept pinned by WorkflowColumns.jsx instead. */
   overflow-x: auto;
-  /* max-height is set inline by WorkflowColumns.jsx (viewport space under the board name bar),
-     so the board scrolls vertically here and the column header row can stick to its top.
-     The stable gutter stops a vertical scrollbar from tipping the columns into h-overflow. */
-  overflow-y: auto;
-  scrollbar-gutter: stable;
+  overflow-y: hidden;
+  box-sizing: border-box;
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   height: auto;
   max-height: none;
+  /* Keep the wide board out of the page's intrinsic width (.page-cont-wrp uses
+     min-width: fit-content), which otherwise gives the page a second horizontal scrollbar. */
+  contain: inline-size;
   -webkit-overflow-scrolling: touch;
+}
+
+/* The board scrolls horizontally inside its own container; the page only scrolls vertically. */
+/* Outranks `.main-layout.kanban-board-layout .dashboard-wrp .page-cont-wrp`
+   (dashboard.scss), which sets min-width: fit-content + overflow-x: auto. */
+.main-layout .dashboard-wrp.dashboard-wrp:has(.kanban-container--board-hscroll),
+.main-layout .dashboard-wrp .page-cont-wrp.page-cont-wrp:has(.kanban-container--board-hscroll) {
+  min-width: 0;
+}
+
+.main-layout .dashboard-wrp .page-cont-wrp.page-cont-wrp:has(.kanban-container--board-hscroll) {
+  overflow-x: hidden;
 }
 
 /* Board name bar stays at the top of the page while scrolling between workflows. */
