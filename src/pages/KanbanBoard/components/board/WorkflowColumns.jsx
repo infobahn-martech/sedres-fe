@@ -369,6 +369,44 @@ export default function WorkflowColumns({
     };
   }, [layoutView]);
 
+  /* CSS sticky only covers scrolling *inside* the board container. When the board is shorter
+     than the viewport the page itself scrolls instead, so push the header row down by however
+     far the container has slid under the sticky board name bar (clamped to the board content,
+     so the transform never grows the container's scroll area). */
+  const headerRowRef = useRef(null);
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const board = boardRef.current;
+    const headerRow = headerRowRef.current;
+    const header = container?.closest(".kanban-accordion")?.querySelector(".kanban-accordion-header");
+    if (!container || !board || !headerRow || !header) return undefined;
+
+    let applied = 0;
+    const sync = () => {
+      const pinLine = header.getBoundingClientRect().bottom;
+      // Where the row sits with CSS sticky alone (our own transform taken out).
+      const naturalTop = headerRow.getBoundingClientRect().top - applied;
+      const maxOffset = board.getBoundingClientRect().bottom - naturalTop - headerRow.offsetHeight;
+      const offset = Math.round(Math.max(0, Math.min(pinLine - naturalTop, maxOffset)));
+      if (offset === applied) return;
+      applied = offset;
+      headerRow.style.transform = offset > 0 ? `translateY(${offset}px)` : "";
+    };
+
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(board);
+    observer.observe(header);
+    window.addEventListener("scroll", sync, { capture: true, passive: true });
+    window.addEventListener("resize", sync);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", sync, { capture: true });
+      window.removeEventListener("resize", sync);
+      headerRow.style.transform = "";
+    };
+  }, [layoutView]);
+
   useEffect(() => {
     const container = scrollContainerRef.current;
     const board = boardRef.current;
@@ -568,7 +606,7 @@ export default function WorkflowColumns({
           className={`kanban-board kanban-board--swimlanes kanban-board--level-${cardViewLevel} ${cardViewLevel >= 2 ? "kanban-board--dense" : ""} ${!shouldShowSwimlaneTitle ? "kanban-board--single-swimlane" : ""}`}
         >
           {/* --- Column headers (workflow stages): same grid tracks as swimlane rows below --- */}
-          <div className="kanban-board__header-row" style={boardRowGridStyle}>
+          <div ref={headerRowRef} className="kanban-board__header-row" style={boardRowGridStyle}>
             {headerGroups.map((group) => {
               const firstColumn = workflow.columns[group.colKeys[0]];
               const isGrouped = group.colKeys.length > 1;
