@@ -5,13 +5,11 @@ import '../../design/scss/structure/side-nav/AddDashboardModal.scss';
 import '../../design/scss/EditWorkflows.scss';
 import workflowService from '../../services/workflowService';
 import portService from '../../services/portService';
-import billingEntityService from '../../services/billingEntityService';
 import PremiumSelect from '../../components/form/PremiumSelect';
 
 /** API default row: `{ role_id: "", role: "N/A" }` — valid selection, posted as empty string */
 const DEFAULT_ROLE_ID = '';
 const DEFAULT_PORT_ID = '';
-const DEFAULT_ENTITY_ID = '';
 
 const WORKFLOW_NAME_MAX_LEN = 200;
 
@@ -34,9 +32,6 @@ const CreateWorkflowModal = ({ show, onClose, onSave, isSaving = false }) => {
   const [portId, setPortId] = useState(DEFAULT_PORT_ID);
   const [ports, setPorts] = useState([]);
   const [isPortsLoading, setIsPortsLoading] = useState(false);
-  const [entityId, setEntityId] = useState(DEFAULT_ENTITY_ID);
-  const [entities, setEntities] = useState([]);
-  const [isEntitiesLoading, setIsEntitiesLoading] = useState(false);
 
   useEffect(() => {
     if (!show) {
@@ -44,7 +39,6 @@ const CreateWorkflowModal = ({ show, onClose, onSave, isSaving = false }) => {
       setNameError('');
       setRoleId(DEFAULT_ROLE_ID);
       setPortId(DEFAULT_PORT_ID);
-      setEntityId(DEFAULT_ENTITY_ID);
     }
   }, [show]);
 
@@ -116,35 +110,6 @@ const CreateWorkflowModal = ({ show, onClose, onSave, isSaving = false }) => {
     };
   }, [show]);
 
-  useEffect(() => {
-    if (!show) return;
-
-    let isMounted = true;
-    setIsEntitiesLoading(true);
-
-    billingEntityService
-      .getAllEntity()
-      .then((res) => {
-        if (!isMounted) return;
-        const responseData = Array.isArray(res?.data?.data)
-          ? res.data.data
-          : Array.isArray(res?.data)
-            ? res.data
-            : [];
-        setEntities(responseData);
-      })
-      .catch(() => {
-        if (isMounted) setEntities([]);
-      })
-      .finally(() => {
-        if (isMounted) setIsEntitiesLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [show]);
-
   const handleSubmit = (e) => {
     e.preventDefault();
     const err = validateWorkflowName(workflowName);
@@ -153,13 +118,12 @@ const CreateWorkflowModal = ({ show, onClose, onSave, isSaving = false }) => {
       return;
     }
     setNameError('');
-    if (isSaving || isRolesLoading || isPortsLoading || isEntitiesLoading) return;
+    if (isSaving || isRolesLoading || isPortsLoading) return;
     if (onSave) {
       onSave({
         workflow_name: workflowName.trim(),
         role_id: roleId,
         port_id: portId || null,
-        entity_id: entityId || null,
       });
     }
   };
@@ -170,7 +134,6 @@ const CreateWorkflowModal = ({ show, onClose, onSave, isSaving = false }) => {
     setNameError('');
     setRoleId(DEFAULT_ROLE_ID);
     setPortId(DEFAULT_PORT_ID);
-    setEntityId(DEFAULT_ENTITY_ID);
     onClose();
   };
 
@@ -204,7 +167,7 @@ const CreateWorkflowModal = ({ show, onClose, onSave, isSaving = false }) => {
         <div className="add-dashboard-modal-body">
           <div className="add-dashboard-field">
             <label htmlFor="workflowName" className="add-dashboard-label">
-              Name
+              Name <span className="add-dashboard-required" aria-hidden="true">*</span>
             </label>
             <input
               type="text"
@@ -287,34 +250,6 @@ const CreateWorkflowModal = ({ show, onClose, onSave, isSaving = false }) => {
               <div className="add-dashboard-field-hint">No ports found.</div>
             ) : null}
           </div>
-
-          <div className="add-dashboard-field">
-            <label htmlFor="workflowBillingEntity" className="add-dashboard-label">
-              Billing Entity
-            </label>
-            <PremiumSelect
-              value={String(entityId)}
-              onChange={(e) => {
-                const v = e.target?.value;
-                setEntityId(v === undefined || v === null ? DEFAULT_ENTITY_ID : String(v));
-              }}
-              options={entities.map((entity) => ({
-                value: String(entity?.entity_id ?? ''),
-                label: String(entity?.billing_entity ?? entity?.customer_code ?? entity?.entity_id ?? ''),
-              }))}
-              placeholder={isEntitiesLoading ? 'Loading billing entities...' : 'Select billing entity'}
-              searchPlaceholder="Search billing entity..."
-              disabled={isSaving || isEntitiesLoading}
-              className="add-dashboard-premium-select"
-              menuPortalTarget={
-                typeof document !== 'undefined' ? document.body : undefined
-              }
-              menuClassName="user-modal-premium-select-menu"
-            />
-            {!isEntitiesLoading && entities.length === 0 ? (
-              <div className="add-dashboard-field-hint">No billing entities found.</div>
-            ) : null}
-          </div>
         </div>
 
         <div className="add-dashboard-modal-footer">
@@ -329,7 +264,7 @@ const CreateWorkflowModal = ({ show, onClose, onSave, isSaving = false }) => {
           <button
             type="submit"
             className="add-dashboard-btn add-dashboard-btn--text"
-            disabled={isSaving || isRolesLoading || isPortsLoading || isEntitiesLoading}
+            disabled={isSaving || isRolesLoading || isPortsLoading}
           >
             Save
           </button>
