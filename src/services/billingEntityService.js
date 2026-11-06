@@ -40,7 +40,7 @@ const getVendors = () => Gateway.get('/billingentity/getvendors');
 const getAllEntity = () => Gateway.get('/billingentity/all_entity');
 
 // TODO: confirm sub-entity endpoint with backend
-const getSubEntities = (entityId) => Gateway.get(`/billingentity/sub_entity/${entityId}`);
+const getSubEntities = (entityId) => Gateway.get(`/billingentity/get_sub_entities/${entityId}`);
 
 export default {
   getBillingEntities,

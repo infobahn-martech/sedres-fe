@@ -14,6 +14,12 @@ function extractList(res) {
   return [];
 }
 
+/* get_sub_entities responds { status, data: { entity_id, billing_entity, sub_entities: [...] } } */
+function extractSubEntities(res) {
+  const list = res?.data?.data?.sub_entities ?? res?.data?.sub_entities;
+  return Array.isArray(list) ? list : [];
+}
+
 function getEntityLabel(entity) {
   return String(entity?.billing_entity ?? entity?.customer_code ?? entity?.entity_id ?? '');
 }
@@ -84,7 +90,7 @@ const CreateSwimlaneModal = ({ show, onClose, onSave, isSaving = false }) => {
     billingEntityService
       .getSubEntities(entityId)
       .then((res) => {
-        if (isMounted) setSubEntities(extractList(res));
+        if (isMounted) setSubEntities(extractSubEntities(res));
       })
       .catch(() => {
         if (isMounted) setSubEntities([]);
@@ -187,6 +193,8 @@ const CreateSwimlaneModal = ({ show, onClose, onSave, isSaving = false }) => {
             ) : null}
           </div>
 
+          {/* Only shown when the selected billing entity has sub entities */}
+          {entityId && !isSubEntitiesLoading && subEntities.length > 0 ? (
           <div className="add-dashboard-field">
             <label htmlFor="swimlaneSubEntity" className="add-dashboard-label">
               Sub Entity
@@ -201,23 +209,15 @@ const CreateSwimlaneModal = ({ show, onClose, onSave, isSaving = false }) => {
                 value: String(getSubEntityId(subEntity)),
                 label: getSubEntityLabel(subEntity),
               }))}
-              placeholder={
-                !entityId
-                  ? 'Select a billing entity first'
-                  : isSubEntitiesLoading
-                    ? 'Loading sub entities...'
-                    : 'Select sub entity'
-              }
+              placeholder="Select sub entity"
               searchPlaceholder="Search sub entity..."
-              disabled={isSaving || !entityId || isSubEntitiesLoading}
+              disabled={isSaving}
               className="add-dashboard-premium-select"
               menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
               menuClassName="user-modal-premium-select-menu"
             />
-            {entityId && !isSubEntitiesLoading && subEntities.length === 0 ? (
-              <div className="add-dashboard-field-hint">No sub entities found.</div>
-            ) : null}
           </div>
+          ) : null}
 
           <div className="add-dashboard-field">
             <label htmlFor="swimlaneName" className="add-dashboard-label">
