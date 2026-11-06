@@ -331,6 +331,68 @@ export default function WorkflowColumns({
     const max = container.scrollWidth - container.clientWidth;
     if (max > 0) container.scrollLeft = Math.round(hScrollRatioRef.current * max);
   }, [cardViewLevel]);
+
+  /* Horizontal scrollbar pinned to the bottom of the screen: the board's own scrollbar sits under
+     its tallest column, so it is hidden and mirrored by a sticky proxy bar below the board. When
+     the page is shorter than the screen, the last workflow is stretched so the bar lands at the
+     bottom of the page instead of right under the cards. */
+  const hScrollbarRef = useRef(null);
+  const hScrollbarInnerRef = useRef(null);
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const bar = hScrollbarRef.current;
+    const inner = hScrollbarInnerRef.current;
+    if (!container || !bar || !inner) return undefined;
+    const scroller = container.closest(".page-cont-wrp");
+    const accordion = container.closest(".kanban-accordion");
+
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        inner.style.width = `${container.scrollWidth}px`;
+        bar.style.display = container.scrollWidth > container.clientWidth + 1 ? "" : "none";
+        if (bar.scrollLeft !== container.scrollLeft) bar.scrollLeft = container.scrollLeft;
+
+        if (scroller && accordion && !accordion.nextElementSibling) {
+          const slack = scroller.clientHeight - scroller.scrollHeight;
+          const current = parseFloat(container.style.minHeight) || 0;
+          if (slack > 0 || current > 0) {
+            const next = Math.max(0, container.offsetHeight + slack);
+            if (Math.abs(next - current) >= 1) container.style.minHeight = next > 0 ? `${next}px` : "";
+          }
+        } else if (container.style.minHeight) {
+          container.style.minHeight = "";
+        }
+      });
+    };
+    const fromContainer = () => {
+      if (bar.scrollLeft !== container.scrollLeft) bar.scrollLeft = container.scrollLeft;
+    };
+    const fromBar = () => {
+      if (container.scrollLeft !== bar.scrollLeft) container.scrollLeft = bar.scrollLeft;
+    };
+
+    measure();
+    container.addEventListener("scroll", fromContainer, { passive: true });
+    bar.addEventListener("scroll", fromBar, { passive: true });
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    if (boardRef.current) observer.observe(boardRef.current);
+    if (scroller) observer.observe(scroller);
+    // Other workflows expanding/collapsing change how much room is left for this one.
+    if (accordion?.parentElement) observer.observe(accordion.parentElement);
+    window.addEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      container.removeEventListener("scroll", fromContainer);
+      bar.removeEventListener("scroll", fromBar);
+      window.removeEventListener("resize", measure);
+      container.style.minHeight = "";
+    };
+  }, [layoutView]);
+
   /* Sticky column headers: the board container only scrolls horizontally (the page owns the
      vertical scroll), which traps `position: sticky` inside it. So push the header row down by
      however far the container has slid under the sticky board name bar (clamped to the board
@@ -557,6 +619,7 @@ export default function WorkflowColumns({
   );
 
   return (
+    <>
     <div
       ref={scrollContainerRef}
       className={`kanban-container kanban-container--board-hscroll ${layoutView === "normal" ? "kanban-normal-layout" : ""}`}
@@ -866,5 +929,9 @@ export default function WorkflowColumns({
         </div>
       </DragDropContext>
     </div>
+    <div ref={hScrollbarRef} className="kanban-board-hscrollbar" aria-hidden="true">
+      <div ref={hScrollbarInnerRef} className="kanban-board-hscrollbar__track" />
+    </div>
+    </>
   );
 }
