@@ -90,7 +90,7 @@ export const isZamilWorkflow = (workflow) =>
   String(workflow?.title ?? "").trim().toUpperCase().includes(ZAMIL_WORKFLOW);
 
 const UPLOADED_TO_PORTAL_COLUMN_PATTERN =
-  /^((uploaded|invoice\s+submitted)\s+to\s+(the\s+)?portal|dispatch\s+the\s+hard\s+copies)$/i;
+  /^((uploaded|invoice\s+submitted)\s+to\s+(the\s+)?portal|dispatch\s+the\s+hard\s+copies|consolidated\s+invoice\s+uploaded\s+to\s+i-?portal)$/i;
 
 /* "Uploaded to Portal" / "Invoice Submitted to Portal" / BGP's "Dispatch the Hard Copies" take one dispatch
    proof for one ticked card. */
@@ -100,10 +100,20 @@ export const isUploadedToPortalColumnTitle = (title) =>
 const HARD_COPIES_DISPATCH_WORKFLOW_PATTERN = /bgp|lamprell\s*saudi/i;
 const DISPATCH_HARD_COPIES_COLUMN_PATTERN = /^dispatch\s+the\s+hard\s+copies$/i;
 
-/* BGP's and Lamprell Saudi's "Dispatch the Hard Copies" keep multi-select: one dispatch proof is attached to every ticked card. */
+const CONSOLIDATED_INVOICE_UPLOADED_COLUMN_PATTERN = /^consolidated\s+invoice\s+uploaded\s+to\s+i-?portal$/i;
+
+/* Lamprell Algihaz "Consolidated Invoice Uploaded to I-Portal": one dispatch proof file is saved to every ticked card
+   of the batch, with no review. */
+export const isLamprellAlgihazDispatchProofColumn = (workflow, columnTitle) =>
+  isLamprellAlgihazWorkflowTitle(workflow?.title) &&
+  CONSOLIDATED_INVOICE_UPLOADED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
+/* BGP's and Lamprell Saudi's "Dispatch the Hard Copies" and Lamprell Algihaz's consolidated invoice column keep
+   multi-select: one dispatch proof is attached to every ticked card. */
 export const isMultiCardDispatchProofColumn = (workflow, columnTitle) =>
-  HARD_COPIES_DISPATCH_WORKFLOW_PATTERN.test(String(workflow?.title ?? "")) &&
-  DISPATCH_HARD_COPIES_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+  (HARD_COPIES_DISPATCH_WORKFLOW_PATTERN.test(String(workflow?.title ?? "")) &&
+    DISPATCH_HARD_COPIES_COLUMN_PATTERN.test(String(columnTitle ?? "").trim())) ||
+  isLamprellAlgihazDispatchProofColumn(workflow, columnTitle);
 
 const POSH_WORKFLOW_PATTERN = /posh/i;
 const POSH_ONE_CARD_COLUMN_PATTERN = /^(ar\s+invoices?\s+issued|po\s+received)$/i;

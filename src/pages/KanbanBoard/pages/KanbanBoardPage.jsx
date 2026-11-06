@@ -21,7 +21,7 @@ import ServiceSheetModal from "../components/board/ServiceSheetModal";
 import FinalInvoiceModal from "../components/board/FinalInvoiceModal";
 import SccReviewModal from "../components/board/SccReviewModal";
 import DispatchProofReviewModal from "../components/board/DispatchProofReviewModal";
-import { isLntWorkflow, isMultiCardDispatchProofColumn, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
+import { isLamprellAlgihazDispatchProofColumn, isLntWorkflow, isMultiCardDispatchProofColumn, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -1943,6 +1943,16 @@ export default function KanbanBoardPage() {
     [workflows, cardsById]
   );
 
+  const isSingleFileDispatchProofUpload = useCallback(
+    (cards) =>
+      cards.some((card) => {
+        const boardCard = cardsById[card.id];
+        const workflow = workflows.find((wf) => String(wf.id) === String(boardCard?.workflow_id));
+        return isLamprellAlgihazDispatchProofColumn(workflow, workflow?.columns?.[boardCard?.columnId]?.title);
+      }),
+    [workflows, cardsById]
+  );
+
   const handleUploadDispatchProofClick = useCallback((cards) => {
     if (!cards?.length) return;
     setSelectedDispatchProofUploadCards(cards);
@@ -2945,7 +2955,8 @@ export default function KanbanBoardPage() {
         fields={
           isLntDispatchProofUpload(selectedDispatchProofUploadCards)
             ? lntDispatchProofUploadFields
-            : isMultiCardDispatchProofUpload(selectedDispatchProofUploadCards)
+            : isMultiCardDispatchProofUpload(selectedDispatchProofUploadCards) &&
+                !isSingleFileDispatchProofUpload(selectedDispatchProofUploadCards)
               ? multiDispatchProofUploadFields
               : dispatchProofUploadFields
         }
