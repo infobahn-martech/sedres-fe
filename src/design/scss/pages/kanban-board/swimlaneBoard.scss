@@ -107,7 +107,7 @@
   font-family: "Manrope", sans-serif;
   color: var(--text-primary);
   padding: 10px 16px;
-  background: rgba(234, 241, 251, 0.82);
+  background: rgba(234, 241, 251, 0.5);
   border: 1px solid var(--kanban-wallpaper-border, var(--border-primary));
   border-radius: 4px;
   cursor: pointer;
@@ -259,7 +259,7 @@
 
 .kanban-dark-mode .kanban-swimlane__title {
   color: #fafafa;
-  background: rgba(24, 24, 27, 0.82);
+  background: rgba(24, 24, 27, 0.5);
   border-color: var(--kanban-wallpaper-border);
 }
 
@@ -280,16 +280,16 @@
 // instead of a full (often light) fill.
 [data-theme="dark"] .kanban-swimlane__title {
   color: var(--text-heading);
-  background: var(--bg-card);
+  background: color-mix(in srgb, var(--bg-card) 50%, transparent);
   border-color: var(--kanban-wallpaper-border, var(--border));
   filter: none;
 
   &:hover {
-    background: var(--bg-tile-hover);
+    background: color-mix(in srgb, var(--bg-tile-hover) 65%, transparent);
   }
 
   &.kanban-swimlane__title--colored {
-    background: color-mix(in srgb, var(--lane-color) 12%, var(--bg-card));
+    background: color-mix(in srgb, color-mix(in srgb, var(--lane-color) 12%, var(--bg-card)) 55%, transparent);
     border-left-color: var(--lane-color);
   }
 }

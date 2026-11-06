@@ -294,9 +294,11 @@ export default function WorkflowColumns({
 
   const shouldShowSwimlaneTitle = swimlaneOrder.length > 1;
 
-  const [collapsedLaneIds, setCollapsedLaneIds] = useState(() => new Set());
+  /* Swimlanes start closed: track the lanes the user has opened, so lanes that arrive later
+     (board reload, new swimlane) are closed by default too. */
+  const [expandedLaneIds, setExpandedLaneIds] = useState(() => new Set());
   const toggleLane = (laneId) =>
-    setCollapsedLaneIds((prev) => {
+    setExpandedLaneIds((prev) => {
       const next = new Set(prev);
       if (next.has(laneId)) next.delete(laneId);
       else next.add(laneId);
@@ -811,7 +813,7 @@ export default function WorkflowColumns({
             /* Only real (non-default) swimlane colors get the colored title band — see workflow-swimlane-label-cell / board-minimap-lane-label for the same convention */
             const laneColorHex = sanitizeSwimlaneColorCode(lane.color);
             const hasLaneColor = Boolean(laneColorHex) && laneColorHex !== "#ffffff";
-            const isLaneCollapsed = shouldShowSwimlaneTitle && collapsedLaneIds.has(laneId);
+            const isLaneCollapsed = shouldShowSwimlaneTitle && !expandedLaneIds.has(laneId);
 
             return (
               <section
