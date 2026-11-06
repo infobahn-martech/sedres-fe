@@ -16,9 +16,23 @@ const useSignatureCheckStore = create((set, get) => ({
   handSignedByCardId: {},
   isSignatureCheckLoading: false,
   isConfirmingSignatureCheck: false,
-  /* Calls whose SRT upload was just rejected for a missing signature; their cards show red until the board
-     data (signature_status) takes over. Not persisted. */
+  /* Calls whose SRT was uploaded but did not move the card on (no signature); their cards show red. Filled right
+     after an upload and, for a reloaded board, from da/action_state's approval_proof_uploaded. Not persisted. */
   unsignedSrtCallIds: {},
+  srtUploadStateLoaded: {},
+
+  /* Reads, once per call, whether an SRT was already uploaded for a card still waiting in "SRT Recieved". */
+  loadSrtUploadState: async (callId) => {
+    const key = String(callId);
+    if (get().srtUploadStateLoaded[key]) return;
+    set((state) => ({ srtUploadStateLoaded: { ...state.srtUploadStateLoaded, [key]: true } }));
+    try {
+      const { data } = await daService.getActionState(callId);
+      if (data?.data?.approval_proof_uploaded === true) get().markSrtSignatureMissing(callId);
+    } catch {
+      /* The card keeps its normal colour when the state cannot be read. */
+    }
+  },
 
   markSrtSignatureMissing: (callId) =>
     set((state) => ({ unsignedSrtCallIds: { ...state.unsignedSrtCallIds, [String(callId)]: true } })),

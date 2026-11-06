@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { KANBAN_DND_DISABLED } from "@/shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
@@ -30,6 +30,7 @@ import {
   isLamprellUaePoReceivedColumn,
   isLamprellAlgihazPoReceivedColumn,
   isLamprellAlgihazArInvoiceIssuedColumn,
+  isSubseaWorkflow,
   isUploadedToPortalColumnTitle,
 } from "../../../../utils/columnTitles";
 
@@ -755,12 +756,19 @@ function CardItem({
   const isExportApprovalHeld =
     isSaipemBacklogCard && (exportApprovalStatus === "pending" || exportApprovalStatus === "loading");
   /* get_full_board's per-card signature_status "missing" turns the card red; no key keeps the common colour. */
+  const loadSrtUploadState = useSignatureCheckStore((state) => state.loadSrtUploadState);
+  const srtCallId = card?.callId ?? card?.call_id;
+  const isSubseaSrtReceivedCard =
+    isSubseaWorkflow({ title: workflowTitle }) && SRT_RECEIVED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+  useEffect(() => {
+    if (isSubseaSrtReceivedCard && srtCallId) loadSrtUploadState(srtCallId);
+  }, [isSubseaSrtReceivedCard, srtCallId, loadSrtUploadState]);
   const isSrtRejectedForSignature = useSignatureCheckStore(
     (state) => state.unsignedSrtCallIds[String(card?.callId ?? card?.call_id)] === true
   );
   const isSignatureMissing =
     card?.signature_status === "missing" ||
-    (isSrtRejectedForSignature && SRT_RECEIVED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim()));
+    (isSrtRejectedForSignature && isSubseaSrtReceivedCard);
   /* The tooltip names the document the column takes: the dispatch proof, the SRT, or (L&T) the SCC. */
   const signatureDocumentName = isUploadedToPortalColumnTitle(columnTitle)
     ? "dispatch proof"
