@@ -4,7 +4,8 @@ const getFieldTypes = () => Gateway.get('/form_template/field_types');
 
 const getMasterLookups = () => Gateway.get('/form_template/master_lookups');
 
-const getSystemBindings = () => Gateway.get('/form_template/system_bindings');
+const getSystemBindings = (callTypeId) =>
+  Gateway.get('/form_template/system_bindings', { params: { call_type_id: callTypeId } });
 
 const getCallTypes = () => Gateway.get('/calltype');
 

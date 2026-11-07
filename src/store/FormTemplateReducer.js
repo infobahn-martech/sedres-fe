@@ -8,7 +8,6 @@ const useFormTemplateReducer = create((set) => ({
   isLoadingMasterLookups: false,
   masterLookups: null,
   isLoadingSystemBindings: false,
-  systemBindings: null,
   isLoadingCallTypes: false,
   callTypes: null,
   isLoadingTemplates: false,
@@ -47,16 +46,20 @@ const useFormTemplateReducer = create((set) => ({
     }
   },
 
-  getSystemBindings: async () => {
+  // System bindings depend on the call type, so they're returned to the caller
+  // (the template builder keeps them per call type) rather than cached globally.
+  // Resolves to null on failure.
+  getSystemBindings: async ({ callTypeId }) => {
     try {
       set({ isLoadingSystemBindings: true });
-      const { data } = await formTemplateService.getSystemBindings();
-      set({ systemBindings: data?.data ?? [], isLoadingSystemBindings: false });
+      const { data } = await formTemplateService.getSystemBindings(callTypeId);
+      set({ isLoadingSystemBindings: false });
+      return data?.data ?? [];
     } catch (error) {
       const { error: showError } = useAlertReducer.getState();
-      // Fall back to [] so the builder (which waits on this) still opens.
-      set({ systemBindings: [], isLoadingSystemBindings: false });
+      set({ isLoadingSystemBindings: false });
       showError(error?.response?.data?.message ?? error?.message ?? 'Failed to fetch default fields');
+      return null;
     }
   },
 

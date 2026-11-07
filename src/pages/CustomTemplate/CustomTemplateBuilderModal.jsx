@@ -253,8 +253,10 @@ const buildDefaultTabs = (systemBindings) => MAIN_TAB_NAMES.map((name, idx) => {
 
 // Same dual-shape acceptance as mapTemplateField, for a tab/subtab's own name
 // (name vs. tab_label) and its list of subtabs (subTabs vs. the API's subtabs).
+// A template with no tabs yields none — the default structure is only built
+// once a call type is chosen (see applySystemBindings in the builder).
 const buildTabsFromTemplate = (template, systemBindings = []) => {
-    if (!template?.tabs?.length) return buildDefaultTabs(systemBindings);
+    if (!template?.tabs?.length) return [];
     return template.tabs.map((tab, tabIndex) => ({
         id: makeId("tab"),
         tabId: tab.tabId ?? tab.tab_id ?? null,
@@ -659,35 +661,14 @@ const MAX_UNDO_STEPS = 50;
 // Builder form + live preview, with no overlay/topbar of its own — the caller
 // (either the standalone modal below, or CustomTemplateListModal reusing its
 // own single panel) owns the surrounding chrome and decides what onClose does.
-// Waits for the system bindings first, since the form seeds its tabs (and
-// locked fields) from them on mount.
+// A new template starts empty; its tabs, subtabs and locked Appointment
+// Details fields are loaded once a call type is selected.
 function TemplateBuilderBody({ initialTemplate = null, onClose }) {
-    const { getSystemBindings, systemBindings } = useFormTemplateReducer((s) => s);
-
-    useEffect(() => {
-        if (systemBindings === null) {
-            getSystemBindings();
-        }
-    }, [systemBindings, getSystemBindings]);
-
-    if (systemBindings === null) {
-        return (
-            <div className="ct-split-body">
-                <div className="ct-preview-empty">
-                    <p>Loading default fields...</p>
-                </div>
-            </div>
-        );
-    }
-
-    return <TemplateBuilderForm initialTemplate={initialTemplate} systemBindings={systemBindings} onClose={onClose} />;
-}
-
-function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
     const {
         getFieldTypes, fieldTypes, isLoadingFieldTypes,
         getMasterLookups, masterLookups, isLoadingMasterLookups,
         getCallTypes, callTypes, isLoadingCallTypes: callTypesLoading,
+        getSystemBindings,
         saveCardTemplate, isSaving,
     } = useFormTemplateReducer((s) => s);
     const isEditMode = Boolean(initialTemplate);
@@ -701,7 +682,15 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
     const [billingEntityId, setBillingEntityId] = useState(() => getTemplateSeed(initialTemplate).billingEntityId);
     const [templateId] = useState(() => getTemplateSeed(initialTemplate).templateId);
 
-    const [tabs, setTabs] = useState(() => buildTabsFromTemplate(initialTemplate, systemBindings));
+    // System bindings (locked Appointment Details fields) of the selected call type.
+    const [systemBindings, setSystemBindings] = useState([]);
+    const [isLoadingBindings, setIsLoadingBindings] = useState(false);
+    // Ignores stale responses when the call type changes again mid-request.
+    const bindingsRequestRef = useRef(0);
+    const [tabs, setTabs] = useState(() => buildTabsFromTemplate(initialTemplate));
+    // Latest state for the async bindings callback, which would otherwise see a stale closure.
+    const latestRef = useRef({ tabs, systemBindings });
+    latestRef.current = { tabs, systemBindings };
     const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id);
     const [activeSubTabId, setActiveSubTabId] = useState(() => tabs[0]?.subTabs?.[0]?.id ?? null);
     const [addingTab, setAddingTab] = useState(false);
@@ -777,7 +766,7 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
         if (groupKey && groupKey === lastUndoGroupRef.current) return;
         lastUndoGroupRef.current = groupKey;
         const snapshot = {
-            templateName, billingEntityId, callTypeId, tabs, hiddenEmailPreviewIds, activeTabId, activeSubTabId,
+            templateName, billingEntityId, callTypeId, systemBindings, tabs, hiddenEmailPreviewIds, activeTabId, activeSubTabId,
         };
         setUndoStack((prev) => [...prev.slice(-(MAX_UNDO_STEPS - 1)), snapshot]);
     };
@@ -790,6 +779,10 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
         setTemplateName(snapshot.templateName);
         setBillingEntityId(snapshot.billingEntityId);
         setCallTypeId(snapshot.callTypeId);
+        // Drop any bindings request still in flight for the call type being undone.
+        bindingsRequestRef.current += 1;
+        setIsLoadingBindings(false);
+        setSystemBindings(snapshot.systemBindings);
         setTabs(snapshot.tabs);
         setHiddenEmailPreviewIds(snapshot.hiddenEmailPreviewIds);
         const tab = snapshot.tabs.find((t) => t.id === snapshot.activeTabId) ?? snapshot.tabs[0];
@@ -863,10 +856,13 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
         setCallTypeId(seed.callTypeId);
         setCallTypeTouched(false);
         setBillingEntityId(seed.billingEntityId);
-        const defaultTabs = buildTabsFromTemplate(initialTemplate, systemBindings);
+        bindingsRequestRef.current += 1;
+        setIsLoadingBindings(false);
+        setSystemBindings([]);
+        const defaultTabs = buildTabsFromTemplate(initialTemplate);
         setTabs(defaultTabs);
-        setActiveTabId(defaultTabs[0].id);
-        setActiveSubTabId(defaultTabs[0].subTabs?.[0]?.id ?? null);
+        setActiveTabId(defaultTabs[0]?.id);
+        setActiveSubTabId(defaultTabs[0]?.subTabs?.[0]?.id ?? null);
         setAddingTab(false);
         setNewTabName("");
         setEditingTabId(null);
@@ -879,6 +875,64 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
         setHiddenEmailPreviewIds(new Set());
         setUndoStack([]);
         lastUndoGroupRef.current = null;
+    };
+
+    // Applies a call type's system bindings. With no tabs yet (new template) the
+    // default card structure is built around them; otherwise only the first
+    // tab's locked fields are swapped — fields bound to the previous call type
+    // that the new one doesn't have are dropped, matching ones keep their spot,
+    // and new ones are appended. Ordinary fields and other tabs are untouched.
+    const applySystemBindings = (bindings) => {
+        const { tabs: currentTabs, systemBindings: previousBindings } = latestRef.current;
+        setSystemBindings(bindings);
+
+        if (!currentTabs.length) {
+            const nextTabs = buildDefaultTabs(bindings);
+            setTabs(nextTabs);
+            setActiveTabId(nextTabs[0]?.id);
+            setActiveSubTabId(nextTabs[0]?.subTabs?.[0]?.id ?? null);
+            return;
+        }
+
+        const [firstTab, ...restTabs] = currentTabs;
+        if (firstTab.subTabs?.length) return;
+        const resolvePrevious = buildSystemBindingResolver(previousBindings);
+        const resolveNext = buildSystemBindingResolver(bindings);
+        const keptFields = firstTab.fields.filter((f) => !resolvePrevious(f, true) || resolveNext(f, true));
+        setTabs([
+            { ...firstTab, fields: sortFieldsByLayout(syncSystemBindingFields(keptFields, bindings)) },
+            ...restTabs,
+        ]);
+    };
+
+    const loadSystemBindings = async (nextCallTypeId) => {
+        const requestId = ++bindingsRequestRef.current;
+        setIsLoadingBindings(true);
+        const bindings = await getSystemBindings({ callTypeId: nextCallTypeId });
+        if (requestId !== bindingsRequestRef.current) return;
+        setIsLoadingBindings(false);
+        if (bindings) {
+            applySystemBindings(bindings);
+        } else if (!latestRef.current.tabs.length) {
+            // Request failed — still give a new template its default structure.
+            applySystemBindings([]);
+        }
+    };
+
+    // Editing an existing template: load its call type's bindings so the
+    // locked fields are recognised and kept in step with the API.
+    useEffect(() => {
+        const seedCallTypeId = getTemplateSeed(initialTemplate).callTypeId;
+        if (seedCallTypeId) loadSystemBindings(seedCallTypeId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleCallTypeChange = (value) => {
+        setCallTypeTouched(true);
+        if (value === callTypeId) return;
+        recordHistory();
+        setCallTypeId(value);
+        if (value) loadSystemBindings(value);
     };
 
     // Writes to the currently active fields scope — the active sub-tab's fields
@@ -1323,7 +1377,7 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
                                 </label>
                                 <SearchableSelect
                                     value={callTypeId}
-                                    onChange={(e) => { recordHistory(); setCallTypeId(e.target.value); setCallTypeTouched(true); }}
+                                    onChange={(e) => handleCallTypeChange(e.target.value)}
                                     options={callTypeOptions}
                                     placeholder={callTypesLoading ? "Loading..." : "Select call type"}
                                     hasError={isCallTypeInvalid}
@@ -1367,6 +1421,16 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
                  
                         </div>
 
+                        {!tabs.length ? (
+                            <div className="ctm-fields-empty">
+                                <p>
+                                    {isLoadingBindings
+                                        ? "Loading template structure..."
+                                        : "Select a call type to load the template structure."}
+                                </p>
+                            </div>
+                        ) : (
+                        <>
                         <div className="ctm-fields-header">
                             <p className="ctm-section-title" style={{ margin: 0 }}>Template Structure</p>
                             {!addingTab && (
@@ -1614,6 +1678,8 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
                                 ))}
                             </div>
                         )}
+                        </>
+                        )}
                     </div>
                     </div>
                     </div>
@@ -1690,7 +1756,11 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
                                     )}
 
                                     <div className={`operation-right${featurePreviewKind ? " operation-right--feature-preview" : ""}`}>
-                                        {featurePreviewKind ? (
+                                        {!activeTab ? (
+                                            <p className="ct-summary-no-fields">
+                                                {isLoadingBindings ? "Loading template structure..." : "Select a call type to load the template structure."}
+                                            </p>
+                                        ) : featurePreviewKind ? (
                                             <TemplateFeaturePreview kind={featurePreviewKind} />
                                         ) : emailSubject ? (
                                             <div className="ct-preview-custom-fields-grid ctm-email-split">
