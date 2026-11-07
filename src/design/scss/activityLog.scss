@@ -3,13 +3,44 @@
    ========================================================== */
 
 .activity-log-tab {
+  // Tone palette for timeline nodes (light defaults; dark overrides below).
+  --al-move: var(--cf-accent-solid, #4f46e5);
+  --al-move-bg: var(--cf-accent-tint, rgba(79, 70, 229, 0.1));
+  --al-create: #16a34a;
+  --al-create-bg: rgba(22, 163, 74, 0.12);
+  --al-delete: #dc2626;
+  --al-delete-bg: rgba(220, 38, 38, 0.1);
+  --al-warn: #d97706;
+  --al-warn-bg: rgba(217, 119, 6, 0.12);
+  --al-info: #0284c7;
+  --al-info-bg: rgba(2, 132, 199, 0.1);
+  --al-neutral: var(--text-secondary);
+  --al-neutral-bg: var(--bg-tertiary, #eef2f7);
+  --al-rail: var(--border-primary);
+
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
   height: 100%;
   width: 100%;
+  text-align: left;
 }
+
+[data-theme="dark"] .activity-log-tab {
+  --al-move: var(--cf-accent-text);
+  --al-create: #5be0b0;
+  --al-create-bg: rgba(91, 224, 176, 0.14);
+  --al-delete: #ff8a8e;
+  --al-delete-bg: rgba(229, 72, 77, 0.16);
+  --al-warn: #f5c063;
+  --al-warn-bg: rgba(245, 192, 99, 0.14);
+  --al-info: #8fb9ff;
+  --al-info-bg: rgba(76, 141, 255, 0.14);
+  --al-neutral-bg: rgba(154, 170, 196, 0.14);
+}
+
+/* ---------- Panel ---------- */
 
 .activity-log-panel {
   background: var(--surface-primary);
@@ -27,8 +58,30 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 18px;
+  gap: 12px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--border-primary);
+  background: var(--surface-secondary, var(--surface-primary));
+}
+
+.activity-log-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.activity-log-heading-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--al-move-bg);
+  color: var(--al-move);
+  font-size: 16px;
 }
 
 .activity-log-title {
@@ -37,11 +90,14 @@
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
+  line-height: 1.3;
   color: var(--text-primary);
+}
 
-  svg {
-    color: var(--cf-accent-text, var(--text-secondary));
-  }
+.activity-log-subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .activity-log-count {
@@ -51,25 +107,29 @@
   font-size: 11px;
   font-weight: 600;
   text-align: center;
-  background: var(--cf-accent-tint, rgba(42, 0, 255, 0.08));
-  color: var(--cf-accent-text, var(--text-secondary));
+  background: var(--al-move-bg);
+  color: var(--al-move);
 }
 
 .activity-log-refresh {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
   border-radius: 8px;
   border: 1px solid var(--border-primary);
-  background: transparent;
+  background: var(--surface-primary);
   color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 
   &:hover:not(:disabled) {
     color: var(--text-primary);
-    background: var(--cf-accent-tint-soft, rgba(15, 23, 42, 0.04));
+    border-color: var(--cf-accent-ring, var(--border-primary));
+    background: var(--cf-accent-tint-subtle, rgba(15, 23, 42, 0.04));
   }
 
   &:disabled {
@@ -88,23 +148,50 @@
   }
 }
 
+/* ---------- Body ---------- */
+
 .activity-log-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 18px;
+  padding: 8px 20px 24px;
 }
 
-.activity-log-status {
-  margin: 24px 0;
-  text-align: center;
-  font-size: 13px;
+.activity-log-inner {
+  width: 100%;
+}
+
+/* ---------- Day groups ---------- */
+
+.activity-log-group + .activity-log-group {
+  margin-top: 4px;
+}
+
+.activity-log-day {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 0 10px;
+  background: var(--surface-primary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--text-muted);
 
-  &--error {
-    color: var(--danger);
+  &::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-secondary, var(--border-primary));
   }
 }
+
+/* ---------- Timeline ---------- */
 
 .activity-log-timeline {
   list-style: none;
@@ -115,19 +202,24 @@
 
 .activity-log-item {
   position: relative;
-  display: flex;
-  gap: 12px;
-  padding-bottom: 18px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: start;
+  width: 100%;
+  padding-bottom: 12px;
+  text-align: left;
 
-  // Vertical connector between avatars.
+  // Continuous rail: runs from this node down to the next one.
   &:not(:last-child)::before {
     content: "";
     position: absolute;
     left: 15px;
-    top: 34px;
-    bottom: 2px;
+    top: 32px;
+    bottom: 0;
     width: 2px;
-    background: var(--border-primary);
+    border-radius: 2px;
+    background: var(--al-rail);
   }
 
   &:last-child {
@@ -135,34 +227,90 @@
   }
 }
 
-.activity-log-avatar {
-  flex: 0 0 32px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+.activity-log-node {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
-  color: #fff;
+  width: 32px;
+  height: 32px;
+  margin-top: 6px;
+  border-radius: 50%;
+  font-size: 14px;
+  background: var(--al-neutral-bg);
+  color: var(--al-neutral);
+  box-shadow: 0 0 0 4px var(--surface-primary);
 }
 
-.activity-log-content {
-  flex: 1;
+.activity-log-item--move .activity-log-node {
+  background: var(--al-move-bg);
+  color: var(--al-move);
+}
+.activity-log-item--create .activity-log-node {
+  background: var(--al-create-bg);
+  color: var(--al-create);
+}
+.activity-log-item--delete .activity-log-node {
+  background: var(--al-delete-bg);
+  color: var(--al-delete);
+}
+.activity-log-item--warn .activity-log-node {
+  background: var(--al-warn-bg);
+  color: var(--al-warn);
+}
+.activity-log-item--info .activity-log-node {
+  background: var(--al-info-bg);
+  color: var(--al-info);
+}
+
+/* ---------- Entry card ---------- */
+
+.activity-log-card {
   min-width: 0;
   padding: 10px 14px;
   border: 1px solid var(--border-primary);
   border-radius: 12px;
-  background: var(--bg-secondary, transparent);
+  background: var(--surface-primary);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: var(--cf-accent-ring, var(--border-primary));
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  }
 }
 
-.activity-log-meta {
+.activity-log-card-head {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  gap: 10px;
+  min-height: 26px;
+}
+
+.activity-log-avatar {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+
+.activity-log-sentence {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .activity-log-user {
@@ -170,78 +318,259 @@
   color: var(--text-primary);
 }
 
-.activity-log-action {
-  padding: 1px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  background: var(--cf-accent-tint, rgba(42, 0, 255, 0.08));
-  color: var(--cf-accent-text, var(--text-secondary));
-}
-
 .activity-log-time {
-  margin-left: auto;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
   color: var(--text-muted);
   white-space: nowrap;
+  cursor: default;
+
+  svg {
+    font-size: 12px;
+  }
+}
+
+.activity-log-time-rel {
+  color: var(--text-muted);
+}
+
+.activity-log-card-body {
+  margin-top: 8px;
+  padding-left: 36px; // aligns with text after the avatar
 }
 
 .activity-log-description {
-  margin: 6px 0 0;
+  margin: 0;
   font-size: 13px;
+  line-height: 1.5;
   color: var(--text-primary);
 }
 
+/* ---------- Stage transition ---------- */
+
 .activity-log-move {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
 }
 
-.activity-log-chip {
-  padding: 3px 10px;
-  border-radius: 6px;
+.activity-log-stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
   font-size: 12px;
+  line-height: 1.3;
   border: 1px solid var(--border-primary);
-  background: var(--surface-primary);
-  color: var(--text-secondary);
+
+  &--from {
+    background: var(--bg-secondary, transparent);
+    color: var(--text-muted);
+  }
 
   &--to {
-    border-color: var(--cf-accent-ring, var(--border-primary));
-    color: var(--cf-accent-text, var(--text-primary));
+    background: var(--al-move-bg);
+    border-color: transparent;
+    color: var(--al-move);
     font-weight: 600;
   }
 }
 
+.activity-log-stage-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 .activity-log-move-arrow {
   color: var(--text-muted);
+  font-size: 14px;
 }
 
 .activity-log-notes {
   margin: 8px 0 0;
+  padding: 6px 10px;
+  border-left: 3px solid var(--border-primary);
+  border-radius: 0 6px 6px 0;
+  background: var(--bg-secondary, transparent);
   font-size: 12px;
-  font-style: italic;
+  line-height: 1.5;
   color: var(--text-secondary);
 }
+
+/* ---------- Load more ---------- */
 
 .activity-log-more {
   display: flex;
   justify-content: center;
-  margin-top: 16px;
+  margin-top: 20px;
 }
 
 .activity-log-more-btn {
-  padding: 6px 16px;
+  padding: 7px 16px;
   border-radius: 8px;
   border: 1px solid var(--border-primary);
   background: var(--surface-primary);
   color: var(--text-primary);
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--cf-accent-ring, var(--border-primary));
+    background: var(--cf-accent-tint-subtle, rgba(15, 23, 42, 0.04));
+  }
 
   &:disabled {
     opacity: 0.6;
     cursor: default;
+  }
+}
+
+/* ---------- Empty / error ---------- */
+
+.activity-log-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 56px 16px;
+  text-align: center;
+
+  &--error .activity-log-empty-icon {
+    background: var(--al-delete-bg);
+    color: var(--al-delete);
+  }
+
+  &--error .activity-log-more-btn {
+    margin-top: 8px;
+  }
+}
+
+.activity-log-empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 6px;
+  border-radius: 14px;
+  font-size: 22px;
+  background: var(--al-neutral-bg);
+  color: var(--text-muted);
+}
+
+.activity-log-empty-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.activity-log-empty-text {
+  margin: 0;
+  max-width: 320px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ---------- Skeleton ---------- */
+
+.activity-log-skeleton {
+  padding-top: 16px;
+}
+
+.activity-log-skeleton-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: 14px;
+  margin-bottom: 12px;
+}
+
+.activity-log-skeleton-node,
+.activity-log-skeleton-line {
+  background: linear-gradient(
+    90deg,
+    var(--al-neutral-bg) 25%,
+    var(--surface-hover, #f2f4f7) 50%,
+    var(--al-neutral-bg) 75%
+  );
+  background-size: 200% 100%;
+  animation: activity-log-shimmer 1.4s ease-in-out infinite;
+}
+
+.activity-log-skeleton-node {
+  width: 32px;
+  height: 32px;
+  margin-top: 6px;
+  border-radius: 50%;
+}
+
+.activity-log-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+}
+
+.activity-log-skeleton-line {
+  height: 10px;
+  width: 70%;
+  border-radius: 6px;
+
+  &--short {
+    width: 35%;
+  }
+}
+
+@keyframes activity-log-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-log-skeleton-node,
+  .activity-log-skeleton-line,
+  .activity-log-refresh .is-spinning {
+    animation: none;
+  }
+}
+
+/* ---------- Narrow widths ---------- */
+
+@media (max-width: 640px) {
+  .activity-log-body {
+    padding: 4px 12px 16px;
+  }
+
+  .activity-log-subtitle,
+  .activity-log-refresh span {
+    display: none;
+  }
+
+  .activity-log-card-head {
+    flex-wrap: wrap;
+  }
+
+  .activity-log-sentence {
+    white-space: normal;
+  }
+
+  .activity-log-card-body {
+    padding-left: 0;
   }
 }
