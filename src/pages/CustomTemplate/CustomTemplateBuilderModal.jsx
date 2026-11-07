@@ -1316,6 +1316,24 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
             <div className="ct-split-scroll-area" onDragOver={handleScrollAreaDragOver}>
             <div className="ctm-body">
                         <div className="ctm-top-grid">
+
+                                       <div className="cf-field">
+                                <label>
+                                    Call Type <span className="text-danger">*</span>
+                                </label>
+                                <SearchableSelect
+                                    value={callTypeId}
+                                    onChange={(e) => { recordHistory(); setCallTypeId(e.target.value); setCallTypeTouched(true); }}
+                                    options={callTypeOptions}
+                                    placeholder={callTypesLoading ? "Loading..." : "Select call type"}
+                                    hasError={isCallTypeInvalid}
+                                    disabled={callTypesLoading}
+                                    className="ctm-billing-select"
+                                    menuPortalTarget={document.body}
+                                    menuPlacement="auto"
+                                />
+                                {isCallTypeInvalid && <span className="cf-field-error">Call type is required</span>}
+                            </div>
                             <div className="cf-field">
                                 <label>
                                     Template Name <span className="text-danger">*</span>
@@ -1346,23 +1364,7 @@ function TemplateBuilderForm({ initialTemplate, systemBindings, onClose }) {
                                 />
                             </div>
 
-                            <div className="cf-field">
-                                <label>
-                                    Call Type <span className="text-danger">*</span>
-                                </label>
-                                <SearchableSelect
-                                    value={callTypeId}
-                                    onChange={(e) => { recordHistory(); setCallTypeId(e.target.value); setCallTypeTouched(true); }}
-                                    options={callTypeOptions}
-                                    placeholder={callTypesLoading ? "Loading..." : "Select call type"}
-                                    hasError={isCallTypeInvalid}
-                                    disabled={callTypesLoading}
-                                    className="ctm-billing-select"
-                                    menuPortalTarget={document.body}
-                                    menuPlacement="auto"
-                                />
-                                {isCallTypeInvalid && <span className="cf-field-error">Call type is required</span>}
-                            </div>
+                 
                         </div>
 
                         <div className="ctm-fields-header">
