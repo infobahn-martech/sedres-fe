@@ -173,6 +173,7 @@ const mapSystemBindingField = (binding) => ({
     type: String(binding.field_type ?? "text").toLowerCase(),
     required: true,
     options: (binding.options ?? []).map((opt) => opt?.option_label ?? ""),
+    optionIds: (binding.options ?? []).map(() => null),
     optionsSource: binding.option_source === "master" ? "master" : "manual",
     masterModule: binding.master_key ?? "",
     systemBindingKey: binding.system_binding_key ?? null,
@@ -189,6 +190,41 @@ const buildSystemBindingResolver = (systemBindings) => {
         if (field.systemBindingKey && keys.has(field.systemBindingKey)) return field.systemBindingKey;
         return keyByLabel.get(field.label.trim().toLowerCase()) ?? null;
     };
+};
+
+// Keeps a saved template's first tab in step with the system_bindings API:
+// fields matching a binding (by key, else by label) take the API's label/type/
+// source while keeping their saved id, layout and static options; bindings the
+// template doesn't have yet are appended (auto-placed into the grid).
+const syncSystemBindingFields = (fields, systemBindings) => {
+    if (!systemBindings.length) return fields;
+    const byKey = new Map(systemBindings.map((b) => [b.system_binding_key, b]));
+    const keyByLabel = new Map(systemBindings.map((b) => [String(b.label ?? "").trim().toLowerCase(), b.system_binding_key]));
+    const seen = new Set();
+    const synced = fields.map((field) => {
+        const key = field.systemBindingKey && byKey.has(field.systemBindingKey)
+            ? field.systemBindingKey
+            : keyByLabel.get(field.label.trim().toLowerCase());
+        if (!key || seen.has(key)) return field;
+        seen.add(key);
+        const fromApi = mapSystemBindingField(byKey.get(key));
+        const keepSavedOptions = fromApi.optionsSource === "manual" && field.options?.length;
+        return {
+            ...field,
+            label: fromApi.label,
+            type: fromApi.type,
+            required: true,
+            optionsSource: fromApi.optionsSource,
+            masterModule: fromApi.masterModule,
+            systemBindingKey: key,
+            options: keepSavedOptions ? field.options : fromApi.options,
+            optionIds: keepSavedOptions ? field.optionIds : fromApi.optionIds,
+        };
+    });
+    const missing = systemBindings
+        .filter((b) => !seen.has(b.system_binding_key))
+        .map(mapSystemBindingField);
+    return [...synced, ...missing];
 };
 
 const buildDefaultFields = (defs = []) => defs.map(([label, type, extra]) => ({
@@ -219,11 +255,17 @@ const buildDefaultTabs = (systemBindings) => MAIN_TAB_NAMES.map((name, idx) => {
 // (name vs. tab_label) and its list of subtabs (subTabs vs. the API's subtabs).
 const buildTabsFromTemplate = (template, systemBindings = []) => {
     if (!template?.tabs?.length) return buildDefaultTabs(systemBindings);
-    return template.tabs.map((tab) => ({
+    return template.tabs.map((tab, tabIndex) => ({
         id: makeId("tab"),
         tabId: tab.tabId ?? tab.tab_id ?? null,
         name: tab.name ?? tab.tab_label ?? "",
-        fields: sortFieldsByLayout((tab.fields ?? []).map(mapTemplateField)),
+        fields: (() => {
+            const fields = (tab.fields ?? []).map(mapTemplateField);
+            const hasSubTabs = Boolean((tab.subTabs ?? tab.subtabs ?? []).length);
+            // System fields live on the first tab (see buildDefaultTabs).
+            const withSystem = tabIndex === 0 && !hasSubTabs ? syncSystemBindingFields(fields, systemBindings) : fields;
+            return sortFieldsByLayout(withSystem);
+        })(),
         subTabs: (tab.subTabs ?? tab.subtabs ?? []).map((sub) => ({
             id: makeId("subtab"),
             tabId: sub.tabId ?? sub.tab_id ?? null,
@@ -330,7 +372,7 @@ function FieldOptionsEditor({ field, onAddOption, onUpdateOption, onRemoveOption
 
 // Dropdown-only: lets the user choose between typing options manually and
 // sourcing them from an existing master module (e.g. Vessel Types).
-function OptionsSourceEditor({ field, masterModuleOptions, masterModulesLoading, dependencyFieldOptions, onSetSource, onSetMasterModule, onSetDependsOn, onAddOption, onUpdateOption, onRemoveOption }) {
+function OptionsSourceEditor({ field, masterModuleOptions, masterModulesLoading, dependencyFieldOptions, isLocked = false, onSetSource, onSetMasterModule, onSetDependsOn, onAddOption, onUpdateOption, onRemoveOption }) {
     const source = field.optionsSource ?? "manual";
     return (
         <div className="ctm-options-source">
@@ -342,9 +384,10 @@ function OptionsSourceEditor({ field, masterModuleOptions, masterModulesLoading,
                         type="button"
                         role="radio"
                         aria-checked={source === card.value}
-                        title={card.desc}
+                        title={isLocked ? "Set by the default field" : card.desc}
                         className={`ctm-segmented-btn ${source === card.value ? "is-active" : ""}`}
-                        onClick={() => onSetSource(card.value)}
+                        disabled={isLocked && source !== card.value}
+                        onClick={() => !isLocked && onSetSource(card.value)}
                     >
                         {card.title}
                     </button>
@@ -369,7 +412,7 @@ function OptionsSourceEditor({ field, masterModuleOptions, masterModulesLoading,
                         onChange={(e) => onSetMasterModule(e.target.value)}
                         options={masterModuleOptions}
                         placeholder={masterModulesLoading ? "Loading..." : "Select module..."}
-                        disabled={masterModulesLoading}
+                        disabled={masterModulesLoading || isLocked}
                         menuPortalTarget={document.body}
                         menuPlacement="auto"
                     />
@@ -530,7 +573,7 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
                             onChange={(e) => onUpdate(field.id, "type", e.target.value)}
                             options={fieldTypeOptions}
                             placeholder={fieldTypesLoading ? "Loading..." : "Select type..."}
-                            disabled={fieldTypesLoading}
+                            disabled={fieldTypesLoading || isLocked}
                             menuPortalTarget={document.body}
                             menuPlacement="auto"
                         />
@@ -569,6 +612,7 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
                             masterModuleOptions={masterModuleOptions}
                             masterModulesLoading={masterModulesLoading}
                             dependencyFieldOptions={dependencyFieldOptions}
+                            isLocked={isLocked}
                             onSetSource={(source) => onSetOptionsSource(field.id, source)}
                             onSetMasterModule={(mod) => onSetMasterModule(field.id, mod)}
                             onSetDependsOn={(label) => onUpdate(field.id, "dependsOnFieldLabel", label)}
