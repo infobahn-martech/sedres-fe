@@ -784,7 +784,7 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
       show={show}
       onHide={onClose}
       className="card-property-match-modal"
-      dialogClassName="card-property-match-modal-dialog"
+      dialogClassName="card-property-match-modal-dialog card-property-match-modal-dialog--full"
       backdropClassName="card-property-match-modal-backdrop"
       centered
       scrollable

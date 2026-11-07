@@ -2955,6 +2955,39 @@ body .modal.card-property-match-modal.show {
   .modal-body {
     padding: 0;
   }
+
+  // Card property match only — sized to match the Add business rule modal
+  // (business-rule-form-modal) it opens from.
+  .modal-dialog.card-property-match-modal-dialog--full {
+    max-width: calc(100vw - 48px);
+    width: calc(100vw - 48px);
+    margin: 24px auto;
+    height: calc(100vh - 48px);
+    max-height: calc(100vh - 48px);
+    min-height: 0;
+
+    @media ($sm-991) {
+      max-width: calc(100vw - 24px);
+      width: calc(100vw - 24px);
+      margin: 12px auto;
+      height: calc(100vh - 24px);
+      max-height: calc(100vh - 24px);
+    }
+
+    .modal-content {
+      height: 100%;
+    }
+
+    .modal-body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .card-property-match-modal-shell {
+      height: 100%;
+      max-height: none;
+    }
+  }
 }
 
 .card-property-match-modal-shell {
