@@ -49,7 +49,7 @@ const updateSwimlaneDescription = (swimlaneId, data) =>
     Gateway.post(`/kanban_workflow/update_swimlane_description/${swimlaneId}`, data);
 
 const reorderSwimlanes = (data) =>
-    Gateway.post('/kanban_workflow/reorder_swimlanes', data);
+    Gateway.post('/kanban_workflow/reorder_swimlane', data);
 
 const createWorkflowColumn = (data) =>
     Gateway.post('/kanban_workflow/create_workflow_column', data);

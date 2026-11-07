@@ -137,16 +137,20 @@ const useWorkFlowReducer = create((set, get) => ({
         }
     },
 
-    createWorkflow: async ({ board_id, workflow_name, role_id, port_id, call_type_id, entity_id, cb, onSettled }) => {
+    createWorkflow: async ({ board_id, workflow_name, role_id, port_id, cb, onSettled }) => {
+        // board_id + workflow_name are required; role_id / port_id are optional and omitted when empty
+        const toId = (v) => {
+            if (v === undefined || v === null || String(v).trim() === '') return undefined;
+            const n = Number(v);
+            return Number.isNaN(n) ? v : n;
+        };
+        const payload = { board_id: toId(board_id), workflow_name };
+        const roleId = toId(role_id);
+        const portId = toId(port_id);
+        if (roleId !== undefined) payload.role_id = roleId;
+        if (portId !== undefined) payload.port_id = portId;
         try {
-            const { data } = await workflowService.createWorkflow({
-                board_id,
-                workflow_name,
-                role_id: role_id ?? '',
-                port_id,
-                call_type_id,
-                entity_id,
-            });
+            const { data } = await workflowService.createWorkflow(payload);
             const { success } = useAlertReducer.getState();
             success(data && data.message);
             cb && cb();
@@ -341,7 +345,7 @@ const useWorkFlowReducer = create((set, get) => ({
 
     updateSwimlaneDescription: async ({ swimlane_id, swimlane_description, cb, onSettled }) => {
         try {
-            const { data } = await workflowService.updateSwimlaneDescription(swimlane_id, { swimlane_description });
+            const { data } = await workflowService.updateSwimlaneDescription(swimlane_id, { swimlane_desc: swimlane_description });
             const { success } = useAlertReducer.getState();
             success(data && data.message);
             cb && cb();
@@ -357,9 +361,11 @@ const useWorkFlowReducer = create((set, get) => ({
     },
 
     // No success toast: reorder is a passive drag outcome, not an explicit user action.
-    reorderSwimlanes: async ({ workflow_id, swimlane_ids, cb, onSettled }) => {
+    reorderSwimlanes: async ({ swimlane_ids, cb, onSettled }) => {
         try {
-            await workflowService.reorderSwimlanes({ workflow_id, swimlane_ids });
+            await workflowService.reorderSwimlanes({
+                swimlane_ids: (swimlane_ids ?? []).map((id) => (Number.isNaN(Number(id)) ? id : Number(id))),
+            });
             cb && cb();
         } catch (err) {
             set({

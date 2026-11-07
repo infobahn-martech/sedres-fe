@@ -531,16 +531,14 @@ function EditWorkflows() {
     }
   };
 
-  const handleCreateWorkflow = ({ workflow_name, role_id, port_id, entity_id }) => {
+  const handleCreateWorkflow = ({ workflow_name, role_id, port_id }) => {
     if (!boardId || !workflow_name?.trim()) return;
     setCreateWorkflowSaving(true);
     createWorkflow({
       board_id: boardId,
       workflow_name: workflow_name.trim(),
-      role_id: role_id ?? '',
-      port_id: port_id ?? null,
-      call_type_id: null,
-      entity_id: entity_id ?? null,
+      role_id,
+      port_id,
       cb: () => {
         getWorkflowByBoard({ boardId, silent: true });
         setShowCreateWorkflowModal(false);
@@ -780,7 +778,6 @@ function EditWorkflows() {
     );
     if (boardId) {
       reorderSwimlanes({
-        workflow_id: workflow.id,
         swimlane_ids: nextSwimlanes.map((sl) => sl.id),
         // Re-sync from the server if the reorder was rejected
         onSettled: refetchBoardWorkflows,
