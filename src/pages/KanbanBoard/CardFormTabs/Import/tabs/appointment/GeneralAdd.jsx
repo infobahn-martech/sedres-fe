@@ -123,12 +123,13 @@ const mapTemplateTabFields = (fields) =>
     });
 
 // Changing a field bound to one of these params re-fetches first_tab so the backend can resolve
-// the remaining field values for that email / vessel / billing entity. Keyed by the normalized
-// system_binding_key / master_key / label (e.g. "billing_entity_id", "Billing Entity", "Vessel Name").
+// the remaining field values for that email / vessel / billing entity / port. Keyed by the normalized
+// system_binding_key / master_key / label (e.g. "billing_entity_id", "Billing Entity", "Vessel Name", "Port").
 const TEMPLATE_REFETCH_PARAMS = {
   appointment_email: "appointment_email_file",
   vessel: "vessel_id",
   billing_entity: "billing_entity_id",
+  port: "port_id",
 };
 
 const normalizeBindingKey = (value) =>
