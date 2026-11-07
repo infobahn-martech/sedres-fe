@@ -9728,6 +9728,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           .map((c) => c.fieldLabel.trim().toLowerCase()),
       ]}
       triggerTypeId={rule.id}
+      showTimeUnit={false}
     />
 
     <CardPropertyMatchModal
@@ -9807,6 +9808,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       onSelect={handleAddRelatedFilterProperty}
       existingFieldLabels={activeRelatedFilterExistingLabels}
       triggerTypeId={rule.id}
+      showTimeUnit={false}
     />
 
     <NotificationSettingsModal
