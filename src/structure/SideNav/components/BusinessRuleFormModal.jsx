@@ -4838,7 +4838,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState([]);
-  const [tagInput, setTagInput] = useState('');
   const [owner, setOwner] = useState('');
   const [ownerUserId, setOwnerUserId] = useState(null);
   const [saveError, setSaveError] = useState('');
@@ -5248,7 +5247,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setName(rule.name ?? '');
     setDescription(rule.description ?? '');
     setTags([]);
-    setTagInput('');
     setOwner(loggedInUserName);
     setOwnerUserId(loggedInUserId);
     setIsOwnerPickerOpen(false);
@@ -6201,26 +6199,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     return perm && (perm.viewer || perm.editor);
   });
 
-  const handleAddTag = () => {
-    const value = tagInput.trim();
-    if (!value) return;
-    setTags((prev) => (prev.includes(value) ? prev : [...prev, value]));
-    setTagInput('');
-  };
-
-  const handleTagInputKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      handleAddTag();
-    } else if (e.key === 'Backspace' && tagInput === '' && tags.length > 0) {
-      setTags((prev) => prev.slice(0, -1));
-    }
-  };
-
-  const handleRemoveTag = (idx) => {
-    setTags((prev) => prev.filter((_, i) => i !== idx));
-  };
-
   const handleOpenPropertyPicker = () => {
     editingConditionIdRef.current = null;
     setShowPropertyPicker(true);
@@ -7119,34 +7097,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
-            </div>
-
-            <div className="business-rule-form-field">
-              <label htmlFor="br-form-tags" className="business-rule-form-label">Tags</label>
-              <div className="business-rule-form-input business-rule-form-control business-rule-form-tags-input">
-                {tags.map((tag, idx) => (
-                  <span key={`${tag}-${idx}`} className="business-rule-form-tag-pill">
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(idx)}
-                      aria-label={`Remove tag ${tag}`}
-                    >
-                      <FiX size={12} />
-                    </button>
-                  </span>
-                ))}
-                <input
-                  id="br-form-tags"
-                  type="text"
-                  className="business-rule-form-tags-input-field"
-                  placeholder={tags.length === 0 ? 'Add tags' : ''}
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={handleTagInputKeyDown}
-                  onBlur={handleAddTag}
-                />
-              </div>
             </div>
 
             <div className="business-rule-form-secondary-grid">
