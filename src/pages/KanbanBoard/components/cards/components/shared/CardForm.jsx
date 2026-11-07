@@ -33,7 +33,7 @@ import {
 } from "@/shared/constants/permissions";
 
 // Import Tab Components
-import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Reports, KPI, Comments, Subtasks, Notes, DA } from "@/pages/KanbanBoard/CardFormTabs/Import";
+import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Reports, KPI, Comments, Subtasks, Notes, DA, ActivityLog } from "@/pages/KanbanBoard/CardFormTabs/Import";
 import { Approval } from "@/pages/KanbanBoard/CardFormTabs/Export";
 import { DEFAULT_PRE_ARRIVAL_DOCUMENT_HANDLING } from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/operation/preArrivalDocumentHandling";
 import { isExportCall } from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callTypes";
@@ -60,13 +60,21 @@ const ALL_TOP_TABS = [
   "Notes",
   "Reports",
   "Document Library",
+  "Activity Log",
 ];
 
-const ALL_ENABLED_TABS = ["Appointment Details", "Operation", "Husbandry", "Sales Order", "Comments", "Subtasks", "Notes","Reports", "Document Library"];
+const ALL_ENABLED_TABS = ["Appointment Details", "Operation", "Husbandry", "Sales Order", "Comments", "Subtasks", "Notes", "Reports", "Document Library", "Activity Log"];
 
 // "DA" tab is appended to the default tab bar only for viewers the backend grants
 // KANBAN_CARD:DA - see showDAOnlyTab.
 const DA_ONLY_TAB = "DA";
+
+// Insert "DA" before the trailing "Activity Log" tab so Activity Log always stays last.
+const withDAOnlyTab = (tabs) => {
+  const activityIndex = tabs.indexOf("Activity Log");
+  if (activityIndex < 0) return [...tabs, DA_ONLY_TAB];
+  return [...tabs.slice(0, activityIndex), DA_ONLY_TAB, ...tabs.slice(activityIndex)];
+};
 
 const EXPORT_ONLY_TABS = ["Export Approval"];
 
@@ -103,9 +111,10 @@ const DA_TOP_TABS = [
   "Comments",
   "Subtasks",
   "Notes",
+  "Activity Log",
 ];
 
-const DA_ENABLED_TABS = ["General", "Operation", "Husbandry", "Sales Order", "Reports", "KPI", "Invoice", "Document Library", "Comments", "Subtasks", "Notes"];
+const DA_ENABLED_TABS = ["General", "Operation", "Husbandry", "Sales Order", "Reports", "KPI", "Invoice", "Document Library", "Comments", "Subtasks", "Notes", "Activity Log"];
 
 const DEFAULT_ACCENT_COLOR = "#2A00FF";
 const ADD_CARD_TOPBAR_DEFAULT_HEX = "#00368c";
@@ -1747,6 +1756,8 @@ const renderTabContent = (
         return <Reports {...commonProps} />;
               case "Document Library":
         return <DocumentLibrary {...commonProps} />;
+      case "Activity Log":
+        return <ActivityLog {...commonProps} />;
       default:
         return <General {...commonProps} />;
     }
@@ -1795,6 +1806,8 @@ const renderTabContent = (
         return <Notes {...commonProps} />;
       case "DA":
         return <DA {...commonProps} />;
+      case "Activity Log":
+        return <ActivityLog {...commonProps} />;
       default:
         return <General {...commonProps} />;
     }
@@ -2365,7 +2378,7 @@ function CardForm({
 
   const TOP_TABS = useMemo(() => {
     const base = isDAModule ? DA_TOP_TABS : (isSimplifiedMode ? SIMPLIFIED_TOP_TABS : ALL_TOP_TABS);
-    const withDAOnly = showDAOnlyTab ? [...base, DA_ONLY_TAB] : base;
+    const withDAOnly = showDAOnlyTab ? withDAOnlyTab(base) : base;
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
       ? withExportTabs(withDAOnly)
       : withDAOnly;
@@ -2375,7 +2388,7 @@ function CardForm({
 
   const ENABLED_TABS = useMemo(() => {
     const base = isDAModule ? DA_ENABLED_TABS : (isSimplifiedMode ? SIMPLIFIED_ENABLED_TABS : ALL_ENABLED_TABS);
-    const withDAOnly = showDAOnlyTab ? [...base, DA_ONLY_TAB] : base;
+    const withDAOnly = showDAOnlyTab ? withDAOnlyTab(base) : base;
     const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
       ? withExportTabs(withDAOnly)
       : withDAOnly;

@@ -11,3 +11,4 @@ export { default as Comments } from "./tabs/comments/Comments";
 export { default as Subtasks } from "./tabs/subTasks/SubTasks";
 export { default as Notes } from "./tabs/notes/Notes";
 export { default as DA } from "./tabs/da/DA";
+export { default as ActivityLog } from "./tabs/activityLog/ActivityLog";
