@@ -285,11 +285,46 @@ function GeneralAdd({
   const [settledTemplateId, setSettledTemplateId] = useState("");
   const selectedTemplateId = firstNonEmptyString(formValues?.template_id);
   const isTemplateFieldsLoading = Boolean(selectedTemplateId) && settledTemplateId !== selectedTemplateId;
+  const isPreviewMessageDirtyRef = useRef(isPreviewMessageDirty);
+  isPreviewMessageDirtyRef.current = isPreviewMessageDirty;
+
+  // Binds first_tab's email_preview into the Email Preview panel. Fields the user already edited
+  // (and a user-edited message body) are kept across re-fetches.
+  const applyTemplateEmailPreview = useCallback((emailPreview) => {
+    if (!emailPreview || typeof emailPreview !== "object") return;
+    const resolved = resolveEmailPreviewPayload(emailPreview);
+    if (!resolved) return;
+    setEmailPreviewData(resolved);
+    setAppointmentAcceptanceFromApi(emailPreview);
+    setDefaultEmailAttachments(normalizeEmailAttachmentList(resolved.attachments));
+    setTouchedPreviewFields((touched) => {
+      setEditablePreviewFields((prev) => ({
+        from_email: touched.from_email ? prev.from_email : firstNonEmptyString(resolved.from),
+        to_email: touched.to_email ? prev.to_email : firstNonEmptyString(resolved.to),
+        cc_emails: touched.cc_emails ? prev.cc_emails : firstNonEmptyString(resolved.cc),
+        subject: touched.subject ? prev.subject : firstNonEmptyString(resolved.subject),
+      }));
+      return touched;
+    });
+    if (!isPreviewMessageDirtyRef.current) {
+      setPreviewMessageText(firstNonEmptyString(resolved.messageHtml));
+      setPreviewMessageEditorKey((key) => key + 1);
+    }
+  }, []);
 
   useEffect(() => {
     setTemplateFields(null);
     setTemplateFieldValues({});
     setTemplateFieldErrors({});
+    // A new template starts from a clean email preview.
+    setEmailPreviewData(null);
+    setAppointmentAcceptanceFromApi(null);
+    setDefaultEmailAttachments([]);
+    setTouchedPreviewFields(UNTOUCHED_PREVIEW_FIELDS);
+    setEditablePreviewFields(EMPTY_PREVIEW_FIELDS);
+    setPreviewMessageText("");
+    setIsPreviewMessageDirty(false);
+    isPreviewMessageDirtyRef.current = false;
     // Drop any in-flight re-fetch for the previous template.
     templateRefetchRequestIdRef.current += 1;
     setIsTemplateRefetching(false);
@@ -301,6 +336,7 @@ function GeneralAdd({
         if (cancelled) return;
         setTemplateFields(mapTemplateTabFields(data?.tab?.fields));
         setTemplateFieldValues(extractTemplateFieldValues(data?.tab?.fields));
+        applyTemplateEmailPreview(data?.email_preview);
         // Preselect the template's card type in the topbar; the topbar resolves its name / icon.
         const templateCardTypeId = firstNonEmptyString(data?.card_type_id);
         if (templateCardTypeId) {
@@ -316,7 +352,7 @@ function GeneralAdd({
     return () => {
       cancelled = true;
     };
-  }, [selectedTemplateId, getTemplateFirstTab, handleChange]);
+  }, [selectedTemplateId, getTemplateFirstTab, handleChange, applyTemplateEmailPreview]);
 
   const getFieldValue = (fieldName) =>
     hasMeaningfulValue(formValues?.[fieldName]) ? formValues[fieldName] : "";
@@ -524,6 +560,7 @@ function GeneralAdd({
           if (Array.isArray(fields) && fields.length) setTemplateFields(mapTemplateTabFields(fields));
           const boundValues = extractTemplateFieldValues(fields);
           setTemplateFieldValues((prev) => ({ ...prev, ...boundValues, ...triggerValues }));
+          applyTemplateEmailPreview(data?.email_preview);
           setTemplateFieldErrors((prev) => {
             const next = { ...prev };
             Object.keys(boundValues).forEach((id) => delete next[id]);
@@ -534,7 +571,7 @@ function GeneralAdd({
         if (requestId === templateRefetchRequestIdRef.current) setIsTemplateRefetching(false);
       });
     },
-    [selectedTemplateId, templateFields, getTemplateFirstTab]
+    [selectedTemplateId, templateFields, getTemplateFirstTab, applyTemplateEmailPreview]
   );
 
   const handleTemplateFieldChange = useCallback(
@@ -1737,6 +1774,8 @@ function GeneralAdd({
   );
 
   useEffect(() => {
+    // Template mode: the preview comes from form_template/first_tab's email_preview.
+    if (selectedTemplateId) return;
     const hasAllRequiredPreviewFields =
       Boolean(previewVesselId) &&
       Boolean(previewPortId) &&
@@ -1818,10 +1857,11 @@ function GeneralAdd({
     isPreviewMessageDirty,
     populateEditablePreviewFields,
     resetTouchedPreviewFields,
+    selectedTemplateId,
   ]);
 
   useEffect(() => {
-
+    if (selectedTemplateId) return;
     const payload = buildAllDetailPayload();
     const hasRequiredIds = Boolean(payload.port_id && payload.call_type_id);
     if (!hasRequiredIds) return;
@@ -1860,6 +1900,7 @@ function GeneralAdd({
     previewLastPort,
     stageTimeObjects,
     stageTimeObjectValues,
+    selectedTemplateId,
   ]);
 
   const buildEntityFieldsPayload = useCallback(
