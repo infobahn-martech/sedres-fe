@@ -37,6 +37,14 @@ import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Re
 import { Approval } from "@/pages/KanbanBoard/CardFormTabs/Export";
 import { DEFAULT_PRE_ARRIVAL_DOCUMENT_HANDLING } from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/operation/preArrivalDocumentHandling";
 import { isExportCall } from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callTypes";
+import { CallDetailContext, normalizeCallId } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
+import {
+  getTemplateTopTabs,
+  isUnmappedTemplateTabId,
+  resolveTemplateCallTypeId,
+} from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callDetailTemplate";
+import { TemplateTabPanel } from "@/pages/KanbanBoard/CardFormTabs/shared/components/TemplateFieldsView";
+import CardTabListLoading from "@/components/CardTabListLoading";
 import NavTabButton from "@/components/NavTabButton";
 import GROCardView from "../GRO/User/GROCardView";
 import CoordinatorTransportCardView from "../CoordinatorTransport/CoordinatorTransportCardView";
@@ -117,6 +125,7 @@ const DA_TOP_TABS = [
 const DA_ENABLED_TABS = ["General", "Operation", "Husbandry", "Sales Order", "Reports", "KPI", "Invoice", "Document Library", "Comments", "Subtasks", "Notes", "Activity Log"];
 
 const DEFAULT_ACCENT_COLOR = "#2A00FF";
+const EMPTY_CALL_DETAIL_STATE = { callId: "", detail: null, loading: false, error: "" };
 const ADD_CARD_TOPBAR_DEFAULT_HEX = "#00368c";
 /** GRO / custom pass task card modal — default header until user picks another in SedresColorPicker. */
 const GRO_TASK_HEADER_DEFAULT_HEX = "#10b981";
@@ -1295,7 +1304,7 @@ TopBar.propTypes = {
   onCardStickerChange: PropTypes.func,
 };
 
-const TopTabs = ({ tabs, activeTab, onTabChange, enabledTabs }) => {
+const TopTabs = ({ tabs, activeTab, onTabChange, enabledTabs, tabLabels = {} }) => {
   return (
     <div className="cardform-tabs">
       {tabs.map((tab) => {
@@ -1309,7 +1318,7 @@ const TopTabs = ({ tabs, activeTab, onTabChange, enabledTabs }) => {
             onClick={() => onTabChange(tab)}
             disabled={!isEnabled}
           >
-            {tab}
+            {tabLabels[tab] || tab}
             {tab === "Sales Order" && (
               <span
                 className="tab-status-dot"
@@ -1328,6 +1337,7 @@ TopTabs.propTypes = {
   activeTab: PropTypes.string.isRequired,
   onTabChange: PropTypes.func.isRequired,
   enabledTabs: PropTypes.arrayOf(PropTypes.string).isRequired,
+  tabLabels: PropTypes.objectOf(PropTypes.string),
 };
 
 
@@ -1701,7 +1711,9 @@ const renderTabContent = (
   currentStep,
   stepLabels,
   soActionStateResetToken,
-  onCloseCard
+  onCloseCard,
+  templateTabById,
+  callDetail
 ) => {
   const commonProps = {
     card,
@@ -1780,6 +1792,11 @@ const renderTabContent = (
         return <General {...commonProps} />;
     }
   } else {
+    // Template tab whose tab_key has no existing component: show its configured fields
+    // read-only instead of falling through to another tab's content.
+    if (isUnmappedTemplateTabId(activeTab)) {
+      return <TemplateTabPanel tab={templateTabById?.get(activeTab)} detail={callDetail} />;
+    }
     // Full mode - all tabs
     switch (activeTab) {
       case "Appointment Details":
@@ -2205,8 +2222,10 @@ function CardForm({
     setFormValues(initialFormValuesRef.current);
   }, [cardFormSyncKey]);
 
-  const [callDetailSnapshot, setCallDetailSnapshot] = useState(null);
-
+  // One GET call_file/get_call_detail/{callId} per open card, shared with every tab through
+  // CallDetailContext (tabs no longer fetch it themselves). State is keyed by call id so a
+  // previous card's detail can never be read while the next card's request is in flight.
+  //
   // Taxi board (Shalman, 2026-08-27): call_file/get_call_detail must never fire for
   // the taxi-boat variant — TaxiBoatCardView now binds everything it needs from
   // launch_hire/get_taxiboat_booking_detail instead. The snapshot this feeds
@@ -2214,40 +2233,52 @@ function CardForm({
   // export/husbandry-tab machinery that isTaxiBoatVariant's render branch never reaches,
   // and the TopBar's type/tag/blocker/sticker resolvers already fall back to card.raw's
   // own fields (see resolveCardTypeIdFromCard etc.), so skipping this costs nothing there.
-  useEffect(() => {
-    if (!show || isAddMode || isTaxiBoatVariant) {
-      setCallDetailSnapshot(null);
-      return undefined;
-    }
+  const snapshotCallId =
+    !show || isAddMode || isTaxiBoatVariant ? "" : normalizeCallId(card?.call_id ?? card?.callId);
+  const [callDetailState, setCallDetailState] = useState(EMPTY_CALL_DETAIL_STATE);
 
-    const callIdRaw = card?.call_id ?? card?.callId;
-    const callId = callIdRaw != null ? String(callIdRaw).trim() : "";
-    if (!callId) {
-      setCallDetailSnapshot(null);
+  useEffect(() => {
+    if (!snapshotCallId) {
+      setCallDetailState(EMPTY_CALL_DETAIL_STATE);
       return undefined;
     }
 
     let cancelled = false;
+    // Same call (re-sync): keep showing its detail while refreshing. New call: start empty.
+    setCallDetailState((prev) =>
+      prev.callId === snapshotCallId
+        ? { ...prev, loading: true, error: "" }
+        : { callId: snapshotCallId, detail: null, loading: true, error: "" }
+    );
 
-    const loadCallDetail = async () => {
-      try {
-        const { data } = await callFileService.getCallDetail(callId);
+    callFileService
+      .getCallDetail(snapshotCallId)
+      .then(({ data }) => {
         if (!cancelled) {
-          setCallDetailSnapshot(data?.data ?? null);
+          setCallDetailState({ callId: snapshotCallId, detail: data?.data ?? null, loading: false, error: "" });
         }
-      } catch {
+      })
+      .catch((error) => {
         if (!cancelled) {
-          setCallDetailSnapshot(null);
+          setCallDetailState({
+            callId: snapshotCallId,
+            detail: null,
+            loading: false,
+            error: error?.message || "Unable to load call details.",
+          });
         }
-      }
-    };
-
-    loadCallDetail();
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [show, isAddMode, isTaxiBoatVariant, card?.call_id, card?.callId, cardFormSyncKey]);
+  }, [snapshotCallId, cardFormSyncKey]);
+
+  const isCallDetailCurrent = Boolean(snapshotCallId) && callDetailState.callId === snapshotCallId;
+  const callDetailSnapshot = isCallDetailCurrent ? callDetailState.detail : null;
+  // Not yet requested for this call counts as loading, so nothing renders from stale state.
+  const isCallDetailLoading = Boolean(snapshotCallId) && (!isCallDetailCurrent || callDetailState.loading);
+  const callDetailError = isCallDetailCurrent ? callDetailState.error : "";
 
   // callDetailSnapshot only loads once per modal-open (effect above) — it has
   // no reason to refetch on its own while the same card stays open. The
@@ -2256,22 +2287,47 @@ function CardForm({
   // without this, approving/proceeding/holding inside that tab would leave
   // the Operation tab lock stale until the modal is closed and reopened.
   const refetchCallDetailSnapshot = useCallback(async () => {
-    if (isAddMode || isTaxiBoatVariant) return;
-    const callIdRaw = card?.call_id ?? card?.callId;
-    const callId = callIdRaw != null ? String(callIdRaw).trim() : "";
-    if (!callId) return;
+    if (!snapshotCallId) return;
+    setCallDetailState((prev) =>
+      prev.callId === snapshotCallId ? { ...prev, loading: true, error: "" } : prev
+    );
     try {
-      const { data } = await callFileService.getCallDetail(callId);
-      setCallDetailSnapshot(data?.data ?? null);
-    } catch {
+      const { data } = await callFileService.getCallDetail(snapshotCallId);
+      setCallDetailState((prev) =>
+        prev.callId === snapshotCallId
+          ? { callId: snapshotCallId, detail: data?.data ?? null, loading: false, error: "" }
+          : prev
+      );
+    } catch (error) {
       // Keep whatever snapshot is already displayed rather than blanking it
-      // out on a transient refetch failure.
+      // out on a transient refetch failure; only a call with no detail shows the error.
+      setCallDetailState((prev) =>
+        prev.callId === snapshotCallId
+          ? {
+            ...prev,
+            loading: false,
+            error: prev.detail ? "" : error?.message || "Unable to load call details.",
+          }
+          : prev
+      );
     }
-  }, [isAddMode, isTaxiBoatVariant, card?.call_id, card?.callId]);
+  }, [snapshotCallId]);
+
+  const callDetailContextValue = useMemo(
+    () => ({
+      callId: snapshotCallId,
+      detail: callDetailSnapshot,
+      loading: isCallDetailLoading,
+      error: callDetailError,
+      refetch: refetchCallDetailSnapshot,
+    }),
+    [snapshotCallId, callDetailSnapshot, isCallDetailLoading, callDetailError, refetchCallDetailSnapshot]
+  );
 
   useEffect(() => {
-    if (isAddMode || !callDetailSnapshot?.call_type_id) return;
-    const callTypeId = String(callDetailSnapshot.call_type_id).trim();
+    if (isAddMode || !callDetailSnapshot) return;
+    // Root call_type_id when present, else the template's Call Type field / template call type.
+    const callTypeId = resolveTemplateCallTypeId(callDetailSnapshot);
     if (!callTypeId) return;
 
     setFormValues((prev) => {
@@ -2376,26 +2432,57 @@ function CardForm({
     String(callDetailSnapshot?.export_approval_status ?? "") === "1";
   const lockOperationForExport = showExportTabs && !isExportApprovalCompleted;
 
+  // Standard drawer (not DA / simplified / add mode): the tab set comes from the call's
+  // custom template (data.template.tabs, ordered by display_order). tab_key resolves the
+  // existing component and tab_label is the title; keys without a component get a
+  // namespaced "template:<tab_id>" id rendered by TemplateTabPanel. Calls whose detail
+  // has no template keep the built-in tab list. Export Approval and DA are not template
+  // tabs — they stay driven by export status / the da_board flag as before.
+  const usesTemplateTabs = !isDAModule && !isSimplifiedMode && !isAddMode;
+  const templateTopTabs = useMemo(
+    () => (usesTemplateTabs ? getTemplateTopTabs(callDetailSnapshot) : null),
+    [usesTemplateTabs, callDetailSnapshot]
+  );
+  // This call's template hasn't arrived yet, so its tab set is unknown.
+  const isTemplateTabsPending = usesTemplateTabs && isCallDetailLoading && !callDetailSnapshot;
+  const templateTabLoadFailed = usesTemplateTabs && !isCallDetailLoading && !callDetailSnapshot && Boolean(callDetailError);
+  const templateTabById = useMemo(
+    () => new Map((templateTopTabs ?? []).map((tab) => [tab.id, tab])),
+    [templateTopTabs]
+  );
+  const topTabLabels = useMemo(
+    () => Object.fromEntries((templateTopTabs ?? []).map((tab) => [tab.id, tab.label])),
+    [templateTopTabs]
+  );
+
+  const buildTabList = useCallback(
+    (base, { lockOperation }) => {
+      const withDAOnly = showDAOnlyTab ? withDAOnlyTab(base) : base;
+      const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
+        ? withExportTabs(withDAOnly)
+        : withDAOnly;
+      const withHusbandryCall = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
+      const withLockOperation = lockOperation ? withHusbandryCall.filter((tab) => tab !== "Operation") : withHusbandryCall;
+      return filterTabsByCardPermission(withLockOperation);
+    },
+    [showDAOnlyTab, showExportTabs, isDAModule, isSimplifiedMode, isHusbandryCall, filterTabsByCardPermission]
+  );
+
   const TOP_TABS = useMemo(() => {
-    const base = isDAModule ? DA_TOP_TABS : (isSimplifiedMode ? SIMPLIFIED_TOP_TABS : ALL_TOP_TABS);
-    const withDAOnly = showDAOnlyTab ? withDAOnlyTab(base) : base;
-    const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
-      ? withExportTabs(withDAOnly)
-      : withDAOnly;
-    const withHusbandryCall = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
-    return filterTabsByCardPermission(withHusbandryCall);
-  }, [isDAModule, isSimplifiedMode, showDAOnlyTab, showExportTabs, isHusbandryCall, filterTabsByCardPermission]);
+    if (isTemplateTabsPending) return [];
+    const base = templateTopTabs
+      ? templateTopTabs.map((tab) => tab.id)
+      : isDAModule ? DA_TOP_TABS : (isSimplifiedMode ? SIMPLIFIED_TOP_TABS : ALL_TOP_TABS);
+    return buildTabList(base, { lockOperation: false });
+  }, [isTemplateTabsPending, templateTopTabs, isDAModule, isSimplifiedMode, buildTabList]);
 
   const ENABLED_TABS = useMemo(() => {
-    const base = isDAModule ? DA_ENABLED_TABS : (isSimplifiedMode ? SIMPLIFIED_ENABLED_TABS : ALL_ENABLED_TABS);
-    const withDAOnly = showDAOnlyTab ? withDAOnlyTab(base) : base;
-    const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
-      ? withExportTabs(withDAOnly)
-      : withDAOnly;
-    const withHusbandry = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
-    const withLockOperation = lockOperationForExport ? withHusbandry.filter((tab) => tab !== "Operation") : withHusbandry;
-    return filterTabsByCardPermission(withLockOperation);
-  }, [isDAModule, isSimplifiedMode, showDAOnlyTab, showExportTabs, isHusbandryCall, lockOperationForExport, filterTabsByCardPermission]);
+    if (isTemplateTabsPending) return [];
+    const base = templateTopTabs
+      ? templateTopTabs.map((tab) => tab.id)
+      : isDAModule ? DA_ENABLED_TABS : (isSimplifiedMode ? SIMPLIFIED_ENABLED_TABS : ALL_ENABLED_TABS);
+    return buildTabList(base, { lockOperation: lockOperationForExport });
+  }, [isTemplateTabsPending, templateTopTabs, isDAModule, isSimplifiedMode, lockOperationForExport, buildTabList]);
 
   useEffect(() => {
     setActiveTopTab(defaultTab);
@@ -2406,6 +2493,21 @@ function CardForm({
       setActiveTopTab(defaultTab);
     }
   }, [showExportTabs, activeTopTab, defaultTab]);
+
+  // Once a call's template tabs arrive, select its first permitted tab (or the requested
+  // initialTab when the template has it). Runs once per call so it never overrides a
+  // tab the user picked; later template changes are handled by the recovery effect below.
+  const templateTabsAppliedForRef = useRef("");
+  useEffect(() => {
+    if (!snapshotCallId) {
+      templateTabsAppliedForRef.current = "";
+      return;
+    }
+    if (!templateTopTabs || TOP_TABS.length === 0) return;
+    if (templateTabsAppliedForRef.current === snapshotCallId) return;
+    templateTabsAppliedForRef.current = snapshotCallId;
+    setActiveTopTab(initialTab && TOP_TABS.includes(initialTab) ? initialTab : TOP_TABS[0]);
+  }, [templateTopTabs, TOP_TABS, snapshotCallId, initialTab]);
 
   // Force-select Export Approval once its tab actually becomes available
   // (showExportTabs resolves async after callDetailSnapshot loads) — lets
@@ -3174,6 +3276,7 @@ function CardForm({
   if (!show) return null;
 
   return (
+    <CallDetailContext.Provider value={callDetailContextValue}>
     <div className="cardform-overlay">
       <div className={`cardform-panel ${isAddMode ? 'add-mode' : ''}`}>
         <TopBar
@@ -3228,10 +3331,27 @@ function CardForm({
                 activeTab={activeTopTab}
                 onTabChange={handleTopTabChange}
                 enabledTabs={ENABLED_TABS}
+                tabLabels={topTabLabels}
               />
+            )}
+            {templateTabLoadFailed && (
+              <div
+                className="cardform-template-error"
+                role="alert"
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 16px", color: "#b42318", fontSize: 13 }}
+              >
+                <span>Couldn&apos;t load this card&apos;s template, so the default tabs are shown.</span>
+                <button type="button" className="btn btn-sm btn-outline-danger" onClick={refetchCallDetailSnapshot}>
+                  Retry
+                </button>
+              </div>
+            )}
+            {isTemplateTabsPending && (
+              <CardTabListLoading message="Loading card details..." cardColor={accentColor} />
             )}
             {!isMWPVariant &&
               !isGROStyleView &&
+              !isTemplateTabsPending &&
               (!isAddMode || isFormRevealed) &&
               renderTabContent(
                 activeTopTab,
@@ -3261,7 +3381,9 @@ function CardForm({
                 currentStep,
                 stepLabels,
                 soActionStateResetToken,
-                handleClose
+                handleClose,
+                templateTabById,
+                callDetailSnapshot
               )}
           </>
         )}
@@ -3283,6 +3405,7 @@ function CardForm({
         )}
       </div>
     </div>
+    </CallDetailContext.Provider>
   );
 }
 

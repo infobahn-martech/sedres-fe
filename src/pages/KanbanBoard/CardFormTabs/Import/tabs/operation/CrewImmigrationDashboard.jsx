@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useContext, useState, useCallback, useRef, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { FiSearch, FiChevronLeft, FiChevronRight, FiCheck, FiNavigation, FiEdit2, FiX, FiTrash2 } from "react-icons/fi";
 import CrewListUploadBox from "../husbandry/components/CrewListUploadBox";
@@ -12,6 +12,7 @@ import useCrewImmigrationReducer from "@/store/CrewImmigrationReducer";
 import useCommonReducer from "@/store/CommonReducer";
 import useLaunchHireServiceReducer from "@/store/LaunchHireServiceReducer";
 import callFileService from "@/services/callFileService";
+import { CallDetailContext } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
 import { buildApiDateTime } from "@/shared/helpers/dateTimeFieldUtils";
 import { notify } from "@/components/Toaster";
 import PermissionGuard from "@/components/PermissionGuard";
@@ -254,6 +255,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
   const [isSubmittingLaunchHire, setIsSubmittingLaunchHire] = useState(false);
   const [launchHireRequested, setLaunchHireRequested] = useState(false);
   const [launchHireEnabled, setLaunchHireEnabled] = useState(false);
+  const sharedCallDetail = useContext(CallDetailContext);
   const [launchBatches, setLaunchBatches] = useState([]);
   const [launchLocation, setLaunchLocation] = useState("");
 
@@ -296,6 +298,11 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
     (async () => {
       const { resolvedCallId } = await resolveCallAndVesselIds();
       if (cancelled || !resolvedCallId) return;
+      // The drawer already has this call's detail — no need to request it again.
+      if (sharedCallDetail?.callId === String(resolvedCallId) && sharedCallDetail.detail) {
+        setLaunchHireEnabled(Number(sharedCallDetail.detail.launch_hire) === 1);
+        return;
+      }
       try {
         const { data: callDetailResponse } = await callFileService.getCallDetail(resolvedCallId);
         const callDetailData =
@@ -308,7 +315,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
     return () => {
       cancelled = true;
     };
-  }, [resolveCallAndVesselIds]);
+  }, [resolveCallAndVesselIds, sharedCallDetail]);
 
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedListingSearch(listingSearch.trim()), 350);

@@ -3,7 +3,12 @@ import PropTypes from "prop-types";
 import { notify } from "@/components/Toaster";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import Gateway from "@/gateway/gateway";
-import callFileService from "@/services/callFileService";
+import { useCallDetail } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
+import { TemplateTabPanel } from "@/pages/KanbanBoard/CardFormTabs/shared/components/TemplateFieldsView";
+import {
+  getTemplateOperationSubtabs,
+  isUnmappedTemplateTabId,
+} from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callDetailTemplate";
 import stageTimeMappingService from "@/services/stageTimeMappingService";
 import preArrivalInfoService from "@/services/preArrivalInfoService";
 import "@/design/scss/operations.scss";
@@ -123,6 +128,15 @@ const getDummyValues = () => ({
   departureDescription: "<p><strong>Departure Summary:</strong></p><p>Vessel departed successfully. All outward clearance documents have been delivered and verified. The vessel SS Central Bay has completed all port formalities and is now en route to the next destination.</p><p><strong>Clearance Status:</strong></p><ul><li>Outward clearance request: Received and processed</li><li>Outward clearance issued: Completed on schedule</li><li>Outward clearance delivered: All documents delivered to vessel</li><li>Vessel sailing: Departed on time without any issues</li></ul><p><strong>Next Port Information:</strong></p><p>The vessel is proceeding to Jeddah Port as scheduled. All required documentation for the next port has been prepared and is ready. The crew has been briefed on the next port procedures. Weather conditions are favorable for the journey.</p>",
 });
 
+// Built-in sub-tab order/labels, used when the call detail has no custom template.
+const DEFAULT_OPERATION_TAB_DEFINITIONS = [
+  { id: OPERATION_TABS.PRE_ARRIVAL, label: "Pre Arrival" },
+  { id: OPERATION_TABS.CREW_IMMIGRATION, label: "Crew Immigration" },
+  { id: OPERATION_TABS.ARRIVAL, label: "Arrival" },
+  { id: OPERATION_TABS.DEPARTURE, label: "Departure" },
+  { id: OPERATION_TABS.CHECK_LIST, label: "Check List" },
+];
+
 // Sub-tabs with a tab-level Save button; Crew Immigration persists each action immediately.
 const UNSAVED_CHANGES_TRACKED_TABS = [
   OPERATION_TABS.PRE_ARRIVAL,
@@ -190,29 +204,75 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
   const canSendArrivalReport = hasCardPermission(PERMISSION_SUBMODULES.ARRIVAL, PERMISSION_ACTIONS.SEND_REPORT);
   const canSendDepartureReport = hasCardPermission(PERMISSION_SUBMODULES.DEPARTURE, PERMISSION_ACTIONS.SEND_REPORT);
 
-  const allowedOperationTabIds = useMemo(
+  const currentCallId = useMemo(
+    () => card?.call_id ?? formValues?.call_id ?? card?.callId ?? "",
+    [card?.call_id, card?.callId, formValues?.call_id]
+  );
+  // Shared with the rest of the drawer (CardForm fetches it once per card).
+  const { detail: callDetailData, loading: isCallDetailFetching } = useCallDetail(currentCallId, {
+    enabled: !isAddMode,
+  });
+  // Only the first load gates the sub-tabs; a background refresh keeps the current detail.
+  const callDetailLoading = isCallDetailFetching && !callDetailData;
+
+  // Subtabs come from the template's Operation tab (ordered by display_order, titled by
+  // tab_label); calls without a template keep the built-in order and labels.
+  const templateOperationSubtabs = useMemo(
+    () => getTemplateOperationSubtabs(callDetailData),
+    [callDetailData]
+  );
+  const operationTabDefinitions = useMemo(
     () =>
-      [
-        canViewPreArrivalTab && OPERATION_TABS.PRE_ARRIVAL,
-        canViewCrewImmigrationTab && OPERATION_TABS.CREW_IMMIGRATION,
-        canViewArrivalTab && OPERATION_TABS.ARRIVAL,
-        canViewDepartureTab && OPERATION_TABS.DEPARTURE,
-        canViewChecklistTab && OPERATION_TABS.CHECK_LIST,
-      ].filter(Boolean),
-    [canViewPreArrivalTab, canViewCrewImmigrationTab, canViewArrivalTab, canViewDepartureTab, canViewChecklistTab]
+      templateOperationSubtabs
+        ? templateOperationSubtabs.map((tab) => ({ id: tab.id, label: tab.label, template: tab }))
+        : DEFAULT_OPERATION_TAB_DEFINITIONS,
+    [templateOperationSubtabs]
   );
 
-  const [activeOperationTab, setActiveOperationTab] = useState(OPERATION_TABS.PRE_ARRIVAL);
+  const allowedOperationTabIds = useMemo(() => {
+    const canView = {
+      [OPERATION_TABS.PRE_ARRIVAL]: canViewPreArrivalTab,
+      [OPERATION_TABS.CREW_IMMIGRATION]: canViewCrewImmigrationTab,
+      [OPERATION_TABS.ARRIVAL]: canViewArrivalTab,
+      [OPERATION_TABS.DEPARTURE]: canViewDepartureTab,
+      [OPERATION_TABS.CHECK_LIST]: canViewChecklistTab,
+    };
+    // Template subtabs without an existing component have no permission of their own.
+    return operationTabDefinitions
+      .filter((tab) => (tab.id in canView ? canView[tab.id] : isUnmappedTemplateTabId(tab.id)))
+      .map((tab) => tab.id);
+  }, [
+    operationTabDefinitions,
+    canViewPreArrivalTab,
+    canViewCrewImmigrationTab,
+    canViewArrivalTab,
+    canViewDepartureTab,
+    canViewChecklistTab,
+  ]);
 
-  // KANBAN_CARD sub-tab permissions removed the active sub-tab — fall back to
-  // the first sub-tab the user still has permission for.
+  const [activeOperationTab, setActiveOperationTab] = useState(OPERATION_TABS.PRE_ARRIVAL);
+  // Until the user picks a sub-tab, follow the first permitted one (template order can differ).
+  const userPickedOperationTabRef = useRef(false);
   useEffect(() => {
-    if (allowedOperationTabIds.length > 0 && !allowedOperationTabIds.includes(activeOperationTab)) {
+    userPickedOperationTabRef.current = false;
+  }, [currentCallId]);
+
+  // KANBAN_CARD sub-tab permissions (or a template change) removed the active sub-tab —
+  // fall back to the first sub-tab the user still has permission for.
+  useEffect(() => {
+    if (allowedOperationTabIds.length === 0) return;
+    if (!allowedOperationTabIds.includes(activeOperationTab)) {
+      setActiveOperationTab(allowedOperationTabIds[0]);
+      return;
+    }
+    if (!userPickedOperationTabRef.current && activeOperationTab !== allowedOperationTabIds[0]) {
       setActiveOperationTab(allowedOperationTabIds[0]);
     }
   }, [allowedOperationTabIds, activeOperationTab]);
-  const [callDetailData, setCallDetailData] = useState(null);
-  const [callDetailLoading, setCallDetailLoading] = useState(false);
+  const activeTemplateSubtab = useMemo(
+    () => operationTabDefinitions.find((tab) => tab.id === activeOperationTab)?.template ?? null,
+    [operationTabDefinitions, activeOperationTab]
+  );
   const [eventTypeFieldsByStage, setEventTypeFieldsByStage] = useState({
     2: [],
     3: [],
@@ -222,10 +282,6 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
   const lastEtaDependentRequestRef = useRef("");
   const cardColor = card?.color || "#2A00FF";
 
-  const currentCallId = useMemo(
-    () => card?.call_id ?? formValues?.call_id ?? card?.callId ?? "",
-    [card?.call_id, card?.callId, formValues?.call_id]
-  );
   const preArrivalPortId = useMemo(
     () =>
       callDetailData?.port_id ??
@@ -290,33 +346,6 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
       card?.mainBillingEntity,
     ]
   );
-
-  useEffect(() => {
-    if (isAddMode || !currentCallId) {
-      setCallDetailData(null);
-      setCallDetailLoading(false);
-      return;
-    }
-    let cancelled = false;
-    const load = async () => {
-      setCallDetailLoading(true);
-      try {
-        const { data } = await callFileService.getCallDetail(currentCallId);
-        const detail = data?.data ?? data ?? null;
-        if (!cancelled) {
-          setCallDetailData(detail);
-        }
-      } catch {
-        if (!cancelled) setCallDetailData(null);
-      } finally {
-        if (!cancelled) setCallDetailLoading(false);
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [isAddMode, currentCallId]);
 
   // Key the stage fields were last loaded for — PreArrival waits for this to match the
   // current key before fetching get_prearrival_detail, so it doesn't fetch once with empty
@@ -528,6 +557,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
   const handleTabChange = useCallback(
     (tab) => {
       if (tab === activeOperationTab) return;
+      userPickedOperationTabRef.current = true;
       if (hasUnsavedChanges) {
         setPendingTab(tab);
         return;
@@ -571,6 +601,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
           activeTab={activeOperationTab}
           onTabChange={handleTabChange}
           allowedTabIds={allowedOperationTabIds}
+          tabs={operationTabDefinitions}
         />
         <div
           className="operation-right"
@@ -579,6 +610,9 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
           onChangeCapture={markDirtyFromInput}
           onInputCapture={markDirtyFromInput}
         >
+          {isUnmappedTemplateTabId(activeOperationTab) && (
+            <TemplateTabPanel tab={activeTemplateSubtab} detail={callDetailData} />
+          )}
           {activeOperationTab === OPERATION_TABS.CREW_IMMIGRATION && (
             <CrewImmigrationDashboard
               card={card}

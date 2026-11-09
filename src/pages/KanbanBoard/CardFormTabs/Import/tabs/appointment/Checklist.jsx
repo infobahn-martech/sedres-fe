@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SendReportButton } from "../../services/sendReportFullWidthView";
-import callFileService from "@/services/callFileService";
+import { useCallDetail } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
 import checklistService from "@/services/checklistService";
 import { notify } from "@/components/Toaster";
 import "@/design/scss/checklist.scss";
@@ -187,12 +187,6 @@ const filterLocalsNotReflectedOnBackend = (localEntries, backendEntries) => {
   });
 };
 
-const fetchCallDetail = async (callId) => {
-  if (!callId) return null;
-  const { data } = await callFileService.getCallDetail(callId);
-  return data?.data ?? data ?? null;
-};
-
 const fetchChecklistTypes = async ({ vessel_type_id, barge_type_id, calltype, port_id }) => {
   const isNoChecklistError = (error) => {
     const status = error?.response?.status;
@@ -310,9 +304,13 @@ function Checklist({
     [card?.call_id, card?.callId, formValues?.call_id]
   );
 
-  const [localCallDetail, setLocalCallDetail] = useState(null);
-  const [callDetailLoad, setCallDetailLoad] = useState(false);
-  const [callDetailError, setCallDetailError] = useState("");
+  // Used only when the parent didn't pass `cardDetail`: the drawer's shared call detail.
+  const hasCardDetailProp = Boolean(cardDetail && typeof cardDetail === "object");
+  const {
+    detail: localCallDetail,
+    loading: callDetailLoad,
+    error: callDetailError,
+  } = useCallDetail(currentCallId, { enabled: !hasCardDetailProp });
   const [checklistTypeOptions, setChecklistTypeOptions] = useState([]);
   const [selectedChecklistTypeIds, setSelectedChecklistTypeIds] = useState([]);
   const [checklistBlocks, setChecklistBlocks] = useState([]);
@@ -328,37 +326,6 @@ function Checklist({
   const [saveLoading, setSaveLoading] = useState(false);
   const [checklistError, setChecklistError] = useState("");
   const userChangedSelectionRef = useRef(false);
-
-  useEffect(() => {
-    if (cardDetail && typeof cardDetail === "object") {
-      setLocalCallDetail(cardDetail);
-      return;
-    }
-    if (!currentCallId) {
-      setLocalCallDetail(null);
-      return;
-    }
-    let cancelled = false;
-    const loadCallDetail = async () => {
-      setCallDetailLoad(true);
-      setCallDetailError("");
-      try {
-        const detail = await fetchCallDetail(currentCallId);
-        if (!cancelled) setLocalCallDetail(detail);
-      } catch (error) {
-        if (!cancelled) {
-          setLocalCallDetail(null);
-          setCallDetailError(error?.message || "Failed to load call detail.");
-        }
-      } finally {
-        if (!cancelled) setCallDetailLoad(false);
-      }
-    };
-    loadCallDetail();
-    return () => {
-      cancelled = true;
-    };
-  }, [cardDetail, currentCallId]);
 
   const effectiveCallDetailLoading = callDetailLoading || callDetailLoad;
 

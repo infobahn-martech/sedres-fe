@@ -21,7 +21,7 @@ const openAppointmentEmail = (url) => {
 };
 
 // Reveals each detail box with a fade/slide-in the first time it scrolls into view.
-const DetailBox = ({ title, children }) => {
+export const DetailBox = ({ title, children }) => {
   const boxRef = useRef(null);
   const [isRevealed, setIsRevealed] = useState(false);
 
@@ -72,7 +72,7 @@ const isEmptyDetailValue = (value) =>
   value === "" ||
   (Array.isArray(value) && value.length === 0);
 
-const DetailRow = ({ label, value, span = false }) => (
+export const DetailRow = ({ label, value, span = false }) => (
   <div className={`detail-row ${span ? "detail-row--span" : ""}`}>
     <span className="detail-row-label">{label}</span>
     <div className="detail-row-value">
@@ -95,7 +95,7 @@ DetailSubsectionTitle.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-const DetailChips = ({ items }) => {
+export const DetailChips = ({ items }) => {
   if (!items || items.length === 0) return <span className="detail-row-empty">Not set</span>;
   return (
     <div className="detail-chip-list">

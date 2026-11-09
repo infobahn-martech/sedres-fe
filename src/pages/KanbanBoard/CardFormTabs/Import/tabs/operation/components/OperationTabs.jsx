@@ -42,14 +42,17 @@ OperationTabIcon.propTypes = {
   id: PropTypes.string.isRequired,
 };
 
-const OperationTabs = ({ activeTab, onTabChange, allowedTabIds }) => {
-  const allTabs = [
-    { id: OPERATION_TABS.PRE_ARRIVAL, label: "Pre Arrival" },
-    { id: OPERATION_TABS.CREW_IMMIGRATION, label: "Crew Immigration" },
-    { id: OPERATION_TABS.ARRIVAL, label: "Arrival" },
-    { id: OPERATION_TABS.DEPARTURE, label: "Departure" },
-    { id: OPERATION_TABS.CHECK_LIST, label: "Check List" },
-  ];
+const DEFAULT_TABS = [
+  { id: OPERATION_TABS.PRE_ARRIVAL, label: "Pre Arrival" },
+  { id: OPERATION_TABS.CREW_IMMIGRATION, label: "Crew Immigration" },
+  { id: OPERATION_TABS.ARRIVAL, label: "Arrival" },
+  { id: OPERATION_TABS.DEPARTURE, label: "Departure" },
+  { id: OPERATION_TABS.CHECK_LIST, label: "Check List" },
+];
+
+// `tabs` (from the call's template) sets the order and labels; defaults to the built-in list.
+const OperationTabs = ({ activeTab, onTabChange, allowedTabIds, tabs: tabDefinitions }) => {
+  const allTabs = Array.isArray(tabDefinitions) ? tabDefinitions : DEFAULT_TABS;
   // KANBAN_CARD sub-tab permissions (PRE_ARRIVAL/CREW_IMMIGRATION/ARRIVAL/
   // DEPARTURE/CHECKLIST VIEW) — when omitted, all tabs show (existing behavior).
   const tabs = allowedTabIds ? allTabs.filter((tab) => allowedTabIds.includes(tab.id)) : allTabs;
@@ -77,6 +80,12 @@ OperationTabs.propTypes = {
   activeTab: PropTypes.string.isRequired,
   onTabChange: PropTypes.func.isRequired,
   allowedTabIds: PropTypes.arrayOf(PropTypes.string),
+  tabs: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      label: PropTypes.string.isRequired,
+    })
+  ),
 };
 
 export default OperationTabs;

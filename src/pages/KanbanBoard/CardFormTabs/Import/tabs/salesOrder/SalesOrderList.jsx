@@ -7,7 +7,7 @@ import "@/design/scss/salesOrder.scss";
 import { PORT_OPTIONS_WITH_ID } from "@/shared/constants/ports";
 import salesOrderService from "@/services/salesOrderService";
 import billingEntityService from "@/services/billingEntityService";
-import callFileService from "@/services/callFileService";
+import { useCallDetail } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
 import daService from "@/services/daService";
 import zamilMarineService from "@/services/zamilMarineService";
 import useZamilMarineStore from "@/store/zamilMarineStore";
@@ -403,30 +403,9 @@ const SalesOrderList = ({
   const [isSavingItem, setIsSavingItem] = useState(false);
   const [itemNoError, setItemNoError] = useState("");
 
-  // card_file/get_call_detail — the kanban `card` prop doesn't carry port_id/main_billing_entity_id,
-  // so fetch it directly (same pattern used by Operation.jsx / General.jsx).
-  const [callDetailData, setCallDetailData] = useState(null);
-
-  useEffect(() => {
-    if (!callId) {
-      setCallDetailData(null);
-      return;
-    }
-    let cancelled = false;
-    callFileService
-      .getCallDetail(callId)
-      .then((response) => {
-        if (cancelled) return;
-        const body = response?.data;
-        setCallDetailData(body?.data ?? body ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setCallDetailData(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [callId]);
+  // call_file/get_call_detail — the kanban `card` prop doesn't carry port_id/main_billing_entity_id;
+  // read the drawer's shared copy (fetched once by CardForm) instead of fetching it again.
+  const { detail: callDetailData } = useCallDetail(callId);
 
   // attachments/get_all_supporting_docs/{call_id} — always offered as pickable options in the
   // Select Supporting Documents modal, alongside whatever's already attached to the item.

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import PropTypes from "prop-types";
 import { FiSearch, FiEdit2, FiCheck, FiX, FiTrash2, FiChevronLeft, FiChevronRight, FiNavigation } from "react-icons/fi";
 import { CREW_MANAGEMENT_SUBTABS } from "./Husbandry.constants";
@@ -14,6 +14,7 @@ import useCrewReducer from "@/store/CrewReducer";
 import useCommonReducer from "@/store/CommonReducer";
 import useLaunchHireServiceReducer from "@/store/LaunchHireServiceReducer";
 import callFileService from "@/services/callFileService";
+import { CallDetailContext } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
 import { buildApiDateTime } from "@/shared/helpers/dateTimeFieldUtils";
 import { notify } from "@/components/Toaster";
 import usePermissions from "@/shared/hooks/usePermissions";
@@ -324,6 +325,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   const [isSubmittingLaunchHire, setIsSubmittingLaunchHire] = useState(false);
   const [launchHireRequested, setLaunchHireRequested] = useState(false);
   const [launchHireEnabled, setLaunchHireEnabled] = useState(false);
+  const sharedCallDetail = useContext(CallDetailContext);
 
   const resolveCallAndVesselIds = useCallback(async () => {
     let resolvedCallId = Number(formValues?.call_id ?? formValues?.callId);
@@ -358,6 +360,11 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     (async () => {
       const { resolvedCallId } = await resolveCallAndVesselIds();
       if (cancelled || !resolvedCallId) return;
+      // The drawer already has this call's detail — no need to request it again.
+      if (sharedCallDetail?.callId === String(resolvedCallId) && sharedCallDetail.detail) {
+        setLaunchHireEnabled(Number(sharedCallDetail.detail.launch_hire) === 1);
+        return;
+      }
       try {
         const { data: callDetailResponse } = await callFileService.getCallDetail(resolvedCallId);
         const callDetailData =
@@ -370,7 +377,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     return () => {
       cancelled = true;
     };
-  }, [resolveCallAndVesselIds]);
+  }, [resolveCallAndVesselIds, sharedCallDetail]);
 
   const nationalityOptions = useMemo(
     () =>

@@ -9,7 +9,7 @@ import hotelService, {
   extractHotelRequestsFromEnvelope,
   flattenHotelRequestRows,
 } from "@/services/hotelService";
-import callFileService from "@/services/callFileService";
+import { useCallDetail } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
 import { buildPickupDateTime } from "@/store/TransportContent";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import CrewSelectionField from "./CrewSelectionField";
@@ -70,7 +70,8 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
 
   const callId = formValues.call_id || formValues.callId || formValues.card_call_id;
 
-  const [callDetails, setCallDetails] = useState(null);
+  // Shared with the rest of the drawer (CardForm fetches it once per card).
+  const { detail: callDetails } = useCallDetail(callId);
   const launchHireEnabled = Number(callDetails?.launch_hire) === 1;
   const isLaunchHire = launchHireEnabled && formValues.hotelLaunchHire !== false;
 
@@ -99,28 +100,6 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
     void fetchHotelRequests();
   }, [fetchHotelRequests]);
 
-  useEffect(() => {
-    if (!callId) {
-      setCallDetails(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    callFileService
-      .getCallDetail(callId)
-      .then(({ data }) => {
-        const details = data?.data || null;
-        if (!cancelled) setCallDetails(details);
-      })
-      .catch(() => {
-        if (!cancelled) setCallDetails(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [callId]);
 
   useEffect(() => {
     let cancelled = false;
