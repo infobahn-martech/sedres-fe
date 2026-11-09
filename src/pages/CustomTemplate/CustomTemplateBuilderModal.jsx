@@ -108,6 +108,11 @@ const getTemplateSeed = (template) => ({
 // (e.g. Operation > Pre Arrival). Nothing about the tab layout is hardcoded.
 // ---------------------------------------------------------------------------
 
+// Operation subtabs (Pre Arrival, Arrival, Departure, ...) lay their fields out in a single column.
+const isOperationTab = (tab) =>
+    String(tab?.tabKey ?? "").trim().toLowerCase() === "operation" ||
+    String(tab?.name ?? "").trim().toLowerCase() === "operation";
+
 const byDisplayOrder = (a, b) => (Number(a.display_order ?? a.displayOrder) || 0) - (Number(b.display_order ?? b.displayOrder) || 0);
 
 // Loose name comparison so "Check List" / "Checklist" / "check_list" all match.
@@ -763,6 +768,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         ? null
         : getEmailPreviewSubject(activeTab?.name, activeSubTab?.name);
     const featurePreviewKind = getFeaturePreviewKind(activeTab?.name, activeSubTab?.name);
+    const isSingleColumnScope = isOperationTab(activeTab);
     const recordHistory = (groupKey = null) => {
         if (groupKey && groupKey === lastUndoGroupRef.current) return;
         lastUndoGroupRef.current = groupKey;
@@ -1313,7 +1319,18 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         return payload;
     };
 
-    const buildFieldsPayload = (fields) => {
+    // Grid scopes send each field's resolved cell. Single-column scopes (Operation subtabs)
+    // send their reading order as rows 1..n in column 1, matching the stacked preview —
+    // whether or not a field was ever dragged.
+    const buildFieldsPayload = (fields, { singleColumn = false } = {}) => {
+        if (singleColumn) {
+            const rowByIndex = new Map(getReadingOrder(fields).map((fieldIndex, pos) => [fieldIndex, pos + 1]));
+            return fields.map((field, index) => ({
+                ...buildFieldPayload(field, index),
+                row_no: rowByIndex.get(index),
+                col_no: 1,
+            }));
+        }
         const layout = resolveFieldLayout(fields);
         return fields.map((field, index) => ({
             ...buildFieldPayload(field, index),
@@ -1330,7 +1347,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             display_order: tabIndex + 1,
             // Section tabs (e.g. Export Approval) keep their system sections on
             // their own save API — only the custom fields added here are sent.
-            fields: tab.subTabs?.length ? [] : buildFieldsPayload(tab.fields),
+            fields: tab.subTabs?.length ? [] : buildFieldsPayload(tab.fields, { singleColumn: isOperationTab(tab) }),
         };
         if (tab.tabKey) payload.tab_key = tab.tabKey;
         if (tab.tabId) payload.tab_id = Number(tab.tabId);
@@ -1341,7 +1358,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                     is_system: sub.tabKey ? 1 : 0,
                     email_preview: getEmailPreviewSubject(tab.name, sub.name) ? 1 : 0,
                     display_order: subIndex + 1,
-                    fields: buildFieldsPayload(sub.fields),
+                    fields: buildFieldsPayload(sub.fields, { singleColumn: isOperationTab(tab) }),
                 };
                 if (sub.tabKey) subPayload.tab_key = sub.tabKey;
                 if (sub.tabId) subPayload.tab_id = Number(sub.tabId);
@@ -1372,6 +1389,41 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             },
         });
     };
+
+    // Single stacked column (email-preview scopes and Operation subtabs). Dropping a field
+    // re-numbers every field into column 1 in the new order.
+    const renderSingleColumnFields = () => (
+        <>
+            {getReadingOrder(previewFields).map((index) => {
+                const field = previewFields[index];
+                const isOver = dragOverCell === field.id && dragIndex !== index;
+                return (
+                    <div
+                        key={field.id}
+                        className={`ctm-preview-drag-item ${dragIndex === index ? "is-dragging" : ""} ${isOver ? "is-drag-over" : ""}`}
+                        draggable
+                        title="Drag to reposition"
+                        onDragStart={() => handleDragStart(index)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => { e.preventDefault(); setDragOverCell(field.id); }}
+                        onDrop={(e) => { e.preventDefault(); handleDropInColumn(index); }}
+                    >
+                        <TemplateFieldPreview field={field} />
+                        {isFieldRemovable(field) && (
+                            <PreviewCloseButton label="Delete field" onClick={() => handleRequestDeleteField(field.id)} />
+                        )}
+                    </div>
+                );
+            })}
+            {dragIndex !== null && (
+                <div
+                    className={`ctm-preview-empty-cell is-drop-target ${dragOverCell === "email-column-end" ? "is-drag-over" : ""}`}
+                    onDragOver={(e) => { e.preventDefault(); setDragOverCell("email-column-end"); }}
+                    onDrop={(e) => { e.preventDefault(); handleDropInColumn(null); }}
+                />
+            )}
+        </>
+    );
 
     // Custom-field grid of the live preview. Shares dragIndex with the left
     // field list, so a field can be dragged from either side onto any cell.
@@ -1856,36 +1908,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                             <div className="ct-preview-custom-fields-grid ctm-email-split">
                                                 <div className="ctm-email-fields">
                                                     {previewFields.length > 0 ? (
-                                                        <>
-                                                            {getReadingOrder(previewFields).map((index) => {
-                                                                const field = previewFields[index];
-                                                                const isOver = dragOverCell === field.id && dragIndex !== index;
-                                                                return (
-                                                                    <div
-                                                                        key={field.id}
-                                                                        className={`ctm-preview-drag-item ${dragIndex === index ? "is-dragging" : ""} ${isOver ? "is-drag-over" : ""}`}
-                                                                        draggable
-                                                                        title="Drag to reposition"
-                                                                        onDragStart={() => handleDragStart(index)}
-                                                                        onDragEnd={handleDragEnd}
-                                                                        onDragOver={(e) => { e.preventDefault(); setDragOverCell(field.id); }}
-                                                                        onDrop={(e) => { e.preventDefault(); handleDropInColumn(index); }}
-                                                                    >
-                                                                        <TemplateFieldPreview field={field} />
-                                                                        {isFieldRemovable(field) && (
-                                                                            <PreviewCloseButton label="Delete field" onClick={() => handleRequestDeleteField(field.id)} />
-                                                                        )}
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                            {dragIndex !== null && (
-                                                                <div
-                                                                    className={`ctm-preview-empty-cell is-drop-target ${dragOverCell === "email-column-end" ? "is-drag-over" : ""}`}
-                                                                    onDragOver={(e) => { e.preventDefault(); setDragOverCell("email-column-end"); }}
-                                                                    onDrop={(e) => { e.preventDefault(); handleDropInColumn(null); }}
-                                                                />
-                                                            )}
-                                                        </>
+                                                        renderSingleColumnFields()
                                                     ) : (
                                                         <p className="ct-summary-no-fields">No fields yet — add fields on the left.</p>
                                                     )}
@@ -1896,7 +1919,11 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                                 />
                                             </div>
                                         ) : previewFields.length > 0 ? (
-                                            renderCustomFieldGrid()
+                                            isSingleColumnScope ? (
+                                                <div className="ctm-email-fields">{renderSingleColumnFields()}</div>
+                                            ) : (
+                                                renderCustomFieldGrid()
+                                            )
                                         ) : (
                                             <p className="ct-summary-no-fields">No fields yet — add fields on the left.</p>
                                         )}

@@ -446,17 +446,6 @@ function TemplateStageForm({
     );
   };
 
-  // Rows from row_no; inside a row, col_no order. Columns collapse responsively.
-  const rows = useMemo(() => {
-    const byRow = new Map();
-    fields.forEach((field) => {
-      const rowKey = Number.isFinite(Number(field.row_no)) ? Number(field.row_no) : Number.MAX_SAFE_INTEGER;
-      if (!byRow.has(rowKey)) byRow.set(rowKey, []);
-      byRow.get(rowKey).push(field);
-    });
-    return [...byRow.entries()].sort((a, b) => a[0] - b[0]).map(([rowKey, rowFields]) => ({ rowKey, rowFields }));
-  }, [fields]);
-
   const formClassName = `${String(stageKey).replace(/_/g, "-")}-form`;
 
   return (
@@ -469,24 +458,18 @@ function TemplateStageForm({
           <div className={formClassName}>
             <div className="operation-two-column-grid operation-two-column-grid--split-scroll">
               <OperationFormCard className="operation-form-column">
-                {rows.length === 0 ? (
+                {/* Operation stages are a single column: fields stack in row_no, then col_no order. */}
+                {fields.length === 0 ? (
                   <span className="detail-row-empty">No fields are configured for this stage.</span>
                 ) : (
-                  rows.map(({ rowKey, rowFields }) => (
-                    <div
-                      key={rowKey}
-                      style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", columnGap: 16 }}
+                  fields.map((field) => (
+                    <FormField
+                      key={field.field_id}
+                      label={`${field.field_label || field.field_key || "Field"}${isTemplateFieldRequired(field) ? " *" : ""}`}
                     >
-                      {rowFields.map((field) => (
-                        <FormField
-                          key={field.field_id}
-                          label={`${field.field_label || field.field_key || "Field"}${isTemplateFieldRequired(field) ? " *" : ""}`}
-                        >
-                          {renderInput(field)}
-                          {errors[field.field_id] && <span className="cf-field-error">{errors[field.field_id]}</span>}
-                        </FormField>
-                      ))}
-                    </div>
+                      {renderInput(field)}
+                      {errors[field.field_id] && <span className="cf-field-error">{errors[field.field_id]}</span>}
+                    </FormField>
                   ))
                 )}
               </OperationFormCard>
