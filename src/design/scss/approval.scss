@@ -193,11 +193,24 @@
       border: 1px solid var(--border-primary);
       border-radius: 12px;
       padding: 16px 18px;
+      background: var(--surface-primary);
       box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 
+      // Form sub-cards shouldn't jump while the user is typing in them —
+      // just a soft border/shadow cue on hover.
       &:hover {
-        box-shadow: 0 8px 20px -12px rgba(76, 70, 190, 0.3);
-        transform: translateY(-1px);
+        transform: none;
+        border-color: var(--af-border-hover);
+        box-shadow: 0 6px 16px -12px rgba(76, 70, 190, 0.28);
+      }
+
+      .form-group-title {
+        margin: -16px -18px 16px;
+        padding: 12px 18px;
+        border-bottom: 1px solid var(--border-primary);
+        background: var(--bg-secondary);
+        border-radius: 12px 12px 0 0;
+        font-size: 12px;
       }
 
       &::before {
@@ -488,64 +501,215 @@
     }
 
     label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--text-secondary);
       transition: color 0.2s ease;
     }
-  }
 
-  .cf-input {
-    background: var(--surface-primary);
-    border: 1.5px solid var(--border-primary);
-    box-shadow: none;
-  }
+    &:focus-within label {
+      color: var(--approval-accent-2);
 
-  .cf-input:hover {
-    background: var(--bg-secondary);
-    border-color: var(--border-primary);
-  }
-
-  .cf-input:focus-within {
-    background: var(--surface-primary);
-    border-color: #9ca3af;
-    box-shadow: none;
-  }
-
-  // Branch select (.cf-multi-select-email-input) and the date/time pickers
-  // (MUI root) both default to a transparent border and rely on a faint
-  // near-black inset shadow to read as a border — that trick only works on
-  // a light surface, so in dark mode the field edge disappears entirely.
-  // Give them the same explicit var(--border-primary) border as .cf-input
-  // above so they stay visible in both themes.
-  .cf-multi-select-email-input {
-    border-color: var(--border-primary);
-    box-shadow: none;
-  }
-
-  .cf-datetime-input-field {
-    .MuiPickersInputBase-root,
-    .MuiOutlinedInput-root,
-    .MuiInputBase-root {
-      border-color: var(--border-primary) !important;
-      box-shadow: none !important;
+      [data-theme="dark"] & {
+        color: #a5b4fc;
+      }
     }
   }
 
-  // Read-only Basic Details fields (Date, Requested by, Vessel Name, ETD,
-  // Billing entity) keep the same look as editable fields so the layout
-  // stays visually consistent — only the text and cursor signal "view only".
-  .cf-input:has(input[readonly]) {
-    cursor: default;
+  /* --------------------------------------------------------
+     UNIFIED FIELD LOOK
+     Text inputs, textareas, the Branch select and the MUI
+     date/time pickers each pulled in a different global style
+     (gradient "disabled" fills, transparent borders + inset
+     shadows, 14px vs 13px text). Every field in this tab now
+     shares one set of tokens: same surface, border, radius,
+     height, font, hover and focus. Locked fields (read-only or
+     disabled) keep that same surface — only muted text and the
+     cursor say "view only".
+     -------------------------------------------------------- */
+  --af-height: 42px;
+  --af-radius: 10px;
+  --af-bg: var(--surface-primary);
+  --af-border: var(--border-primary);
+  --af-border-hover: #cdd2e1;
+  --af-text: var(--text-primary);
+  --af-text-locked: var(--text-secondary);
+  --af-placeholder: var(--text-muted);
+  --af-font-size: 13px;
+  --af-focus-ring: 0 0 0 3px var(--approval-accent-soft);
 
-    input {
-      color: var(--text-secondary);
-      cursor: default;
+  [data-theme="dark"] & {
+    --af-border-hover: var(--border-strong, #3a4a66);
+  }
+
+  // Shared box for every field type.
+  .cf-input:not(.cf-datetime-picker),
+  .cf-multi-select-email-input,
+  .cf-datetime-input-field .MuiPickersInputBase-root,
+  .cf-datetime-input-field .MuiOutlinedInput-root,
+  .cf-datetime-input-field .MuiInputBase-root {
+    min-height: var(--af-height) !important;
+    padding: 0 14px !important;
+    background: var(--af-bg) !important;
+    border: 1px solid var(--af-border) !important;
+    border-radius: var(--af-radius) !important;
+    box-shadow: none !important;
+    font-family: "Manrope", sans-serif;
+    font-size: var(--af-font-size) !important;
+    color: var(--af-text);
+    box-sizing: border-box;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .cf-input:not(.cf-datetime-picker):hover,
+  .cf-multi-select-email-input:not(.disabled):hover,
+  .cf-datetime-input-field .MuiPickersInputBase-root:not(.Mui-disabled):hover,
+  .cf-datetime-input-field .MuiOutlinedInput-root:not(.Mui-disabled):hover {
+    background: var(--af-bg) !important;
+    border-color: var(--af-border-hover) !important;
+  }
+
+  .cf-input:not(.cf-datetime-picker):focus-within,
+  .cf-multi-select-email-input:focus-within,
+  .cf-datetime-input-field .MuiPickersInputBase-root.Mui-focused,
+  .cf-datetime-input-field .MuiOutlinedInput-root.Mui-focused {
+    background: var(--af-bg) !important;
+    border-color: var(--approval-accent) !important;
+    box-shadow: var(--af-focus-ring) !important;
+  }
+
+  // Text inside every field: same size, weight and colours.
+  .cf-input input,
+  .cf-multi-select-selected-value,
+  .cf-datetime-input-field .MuiOutlinedInput-input,
+  .cf-datetime-input-field .MuiPickersSectionList-root,
+  .cf-datetime-input-field .MuiPickersSectionList-root * {
+    font-family: "Manrope", sans-serif !important;
+    font-size: var(--af-font-size) !important;
+    font-weight: 500 !important;
+    letter-spacing: normal !important;
+  }
+
+  .cf-input input,
+  .cf-multi-select-selected-value {
+    color: var(--af-text);
+  }
+
+  .cf-input input::placeholder,
+  .cf-multi-select-placeholder,
+  .cf-datetime-input-field .MuiOutlinedInput-input::placeholder {
+    color: var(--af-placeholder) !important;
+    -webkit-text-fill-color: var(--af-placeholder) !important;
+    font-size: var(--af-font-size) !important;
+    font-weight: 400 !important;
+    opacity: 1;
+  }
+
+  .cf-input input {
+    padding: 0;
+    height: calc(var(--af-height) - 2px);
+  }
+
+  .cf-datetime-input-field .MuiPickersSectionList-root,
+  .cf-datetime-input-field .MuiPickersInputBase-sectionsContainer {
+    padding: 0 !important;
+  }
+
+  .cf-multi-select-arrow,
+  .cf-datetime-input-field .MuiSvgIcon-root {
+    color: var(--text-muted) !important;
+    font-size: 11px;
+    opacity: 1 !important;
+  }
+
+  .cf-datetime-input-field .MuiSvgIcon-root {
+    font-size: 18px !important;
+  }
+
+  // MUI v9 pickers draw their border with a separate <fieldset>
+  // (.MuiPickersOutlinedInput-notchedOutline) layered over the root — that
+  // was the darker, thicker outline on Vessel's ETD / Latest Payment Date.
+  // Hide it so the root's shared border above is the only one.
+  .cf-datetime-input-field .MuiPickersOutlinedInput-notchedOutline,
+  .cf-datetime-input-field .MuiOutlinedInput-notchedOutline,
+  .cf-datetime-input-field fieldset {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .cf-datetime-input-field .MuiPickersOutlinedInput-root,
+  .cf-datetime-input-field .MuiPickersInputBase-root {
+    outline: none !important;
+  }
+
+  // Locked state — identical surface, muted text, not-allowed cursor.
+  .cf-input:has(input[readonly]),
+  .cf-input:has(input:disabled),
+  .cf-multi-select-email.disabled .cf-multi-select-email-input,
+  .cf-multi-select-email-input.disabled,
+  .cf-datetime-input-field .MuiPickersInputBase-root.Mui-disabled,
+  .cf-datetime-input-field .MuiOutlinedInput-root.Mui-disabled,
+  .cf-datetime-input-field .MuiInputBase-root.Mui-disabled {
+    background: var(--af-bg) !important;
+    border-color: var(--af-border) !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+  }
+
+  .cf-input input[readonly],
+  .cf-input input:disabled,
+  .cf-multi-select-email.disabled .cf-multi-select-selected-value,
+  .cf-multi-select-email.disabled .cf-multi-select-placeholder,
+  .cf-datetime-input-field .Mui-disabled .MuiPickersSectionList-root,
+  .cf-datetime-input-field .Mui-disabled .MuiPickersSectionList-root *,
+  .cf-datetime-input-field .MuiInputBase-input.Mui-disabled {
+    color: var(--af-text-locked) !important;
+    -webkit-text-fill-color: var(--af-text-locked) !important;
+    cursor: not-allowed !important;
+  }
+
+  // An empty locked select should still read as a placeholder, not a value.
+  .cf-multi-select-email.disabled .cf-multi-select-placeholder {
+    color: var(--af-placeholder) !important;
+    font-weight: 400;
+  }
+
+  .cf-input:has(input[readonly]):hover,
+  .cf-input:has(input:disabled):hover {
+    border-color: var(--af-border) !important;
+  }
+
+  // general.scss forces every disabled picker/select value inside
+  // `.cardform-body.card-form-panel.general-tab-body` to near-black
+  // rgb(26,26,26) — this tab uses that wrapper too, which is why the ETD
+  // value and the Branch placeholder looked darker than the other locked
+  // fields. Out-rank it here so every locked value uses the same colour.
+  .cardform-body.card-form-panel.general-tab-body {
+    .cf-input input[readonly],
+    .cf-input input:disabled,
+    .approval-textarea-wrap textarea:disabled,
+    .cf-multi-select-email.disabled .cf-multi-select-selected-value,
+    .cf-datetime-input-field .Mui-disabled .MuiPickersSectionList-root,
+    .cf-datetime-input-field .Mui-disabled .MuiPickersSectionList-root * {
+      color: var(--af-text-locked) !important;
+      -webkit-text-fill-color: var(--af-text-locked) !important;
+    }
+
+    .cf-multi-select-email.disabled .cf-multi-select-placeholder,
+    .cf-multi-select-email.disabled .cf-multi-select-arrow {
+      color: var(--af-placeholder) !important;
+      -webkit-text-fill-color: var(--af-placeholder) !important;
     }
   }
 
   .approval-textarea-wrap.cf-input {
     display: block;
     align-items: stretch;
-    padding: 11px 14px;
-    min-height: 0;
+    padding: 11px 14px !important;
+    min-height: 0 !important;
 
     textarea {
       display: block;
@@ -557,15 +721,18 @@
       padding: 0;
       margin: 0;
       font-family: "Manrope", sans-serif;
-      font-size: 13px;
-      color: var(--text-primary);
+      font-size: var(--af-font-size);
+      font-weight: 500;
+      line-height: 1.5;
+      color: var(--af-text);
       resize: vertical;
       box-sizing: border-box;
       box-shadow: none;
 
       &::placeholder {
-        color: var(--text-muted);
-        font-size: 12px;
+        color: var(--af-placeholder);
+        font-size: var(--af-font-size);
+        font-weight: 400;
       }
 
       &:focus {
@@ -574,29 +741,22 @@
       }
     }
 
-    &:focus-within {
-      border-color: #9ca3af;
-      background: var(--surface-primary);
-    }
-
-    // .cf-input's shared disabled styling (general.scss) only covers input/select,
-    // not textarea — this mirrors it here so role-locked comment fields look
-    // consistently disabled instead of plain/enabled-looking, while still
-    // matching the same neutral background as every other field.
+    // Locked comment/details fields: same surface as every other locked field.
     &:has(textarea:disabled) {
-      background: var(--surface-primary) !important;
-      border-color: var(--border-primary) !important;
+      background: var(--af-bg) !important;
+      border-color: var(--af-border) !important;
       opacity: 1;
       cursor: not-allowed;
-      box-shadow: none;
+      box-shadow: none !important;
     }
 
     textarea:disabled {
       background: transparent !important;
-      color: var(--text-secondary) !important;
+      color: var(--af-text-locked) !important;
+      -webkit-text-fill-color: var(--af-text-locked) !important;
       cursor: not-allowed !important;
       opacity: 1;
-      font-weight: 500;
+      resize: none;
     }
   }
 
@@ -687,9 +847,9 @@
   .approval-upload-field,
   .approval-document-upload {
     width: 100%;
-    height: 48px;
-    min-height: 48px;
-    max-height: 48px;
+    height: var(--af-height);
+    min-height: var(--af-height);
+    max-height: var(--af-height);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -699,12 +859,12 @@
   .approval-document-upload-zone {
     position: relative;
     width: 100%;
-    height: 48px;
-    min-height: 48px;
-    max-height: 48px;
-    border: 2px dashed var(--border-primary);
-    border-radius: 10px;
-    background: var(--surface-primary);
+    height: var(--af-height);
+    min-height: var(--af-height);
+    max-height: var(--af-height);
+    border: 1.5px dashed var(--af-border);
+    border-radius: var(--af-radius);
+    background: var(--af-bg);
     cursor: pointer;
     transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
     padding: 0 16px;
@@ -715,8 +875,8 @@
 
     &:hover,
     &:focus-visible {
-      border-color: #9ca3af;
-      background: var(--bg-secondary);
+      border-color: var(--approval-accent);
+      background: var(--approval-accent-soft);
       box-shadow: none;
       outline: none;
     }
@@ -724,13 +884,13 @@
 
   .approval-document-upload-zone--disabled {
     cursor: not-allowed;
-    background: var(--bg-secondary);
-    opacity: 0.7;
+    background: var(--af-bg);
+    opacity: 0.75;
 
     &:hover,
     &:focus-visible {
-      border-color: var(--border-primary);
-      background: var(--bg-secondary);
+      border-color: var(--af-border);
+      background: var(--af-bg);
       box-shadow: none;
     }
   }
