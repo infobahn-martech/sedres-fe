@@ -1,0 +1,300 @@
+// Card drawer loading skeleton (CardFormLoadingSkeleton.jsx).
+// Mirrors the drawer: tab bar → "General Information" section → three columns.
+
+.cfl-skeleton {
+  --cfl-bone: #eef1f7;
+  --cfl-bone-highlight: #f8f9fc;
+  --cfl-card-bg: #ffffff;
+  --cfl-card-border: #e6e9f2;
+  --cfl-body-bg: #f6f7fb;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--cfl-body-bg);
+
+  [data-theme="dark"] & {
+    --cfl-bone: var(--surface-hover, #2a2f3a);
+    --cfl-bone-highlight: var(--surface-secondary, #343a47);
+    --cfl-card-bg: var(--surface-primary, #1f232c);
+    --cfl-card-border: var(--border-color, #2f3542);
+    --cfl-body-bg: var(--bg-secondary, #181b22);
+  }
+}
+
+.cfl-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+// Thin indeterminate bar in the card's colour, directly under the header.
+.cfl-progress {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  overflow: hidden;
+  z-index: 1;
+  background: color-mix(in srgb, var(--cfl-accent) 14%, transparent);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 35%;
+    border-radius: 999px;
+    background: var(--cfl-accent);
+    animation: cflProgress 1.4s ease-in-out infinite;
+  }
+}
+
+.cfl-bone {
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--cfl-bone) 20%, var(--cfl-bone-highlight) 45%, var(--cfl-bone) 70%);
+  background-size: 200% 100%;
+  animation: cflShimmer 1.3s linear infinite;
+}
+
+// Tab bar — reuses .cardform-tabs spacing/background.
+.cfl-tabs {
+  min-height: 56px;
+}
+
+.cfl-tab {
+  height: 30px;
+  border-radius: 8px;
+  flex-shrink: 0;
+
+  &--active {
+    background: color-mix(in srgb, var(--cfl-accent) 12%, var(--cfl-card-bg));
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    animation: none;
+  }
+}
+
+.cfl-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 18px 24px 24px;
+}
+
+.cfl-section {
+  height: 100%;
+  border: 1px solid var(--cfl-card-border);
+  border-left: 4px solid color-mix(in srgb, var(--cfl-accent) 45%, var(--cfl-card-border));
+  border-radius: 12px;
+  background: var(--cfl-card-bg);
+  overflow: hidden;
+}
+
+.cfl-section-header {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--cfl-card-border);
+}
+
+.cfl-section-title {
+  width: 170px;
+  height: 14px;
+}
+
+.cfl-columns {
+  display: grid;
+  // Same proportions as .general-info-three-column.
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.35fr) minmax(0, 0.8fr);
+  gap: 24px;
+  padding: 16px 18px;
+  align-items: start;
+}
+
+.cfl-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.cfl-card {
+  border: 1px solid var(--cfl-card-border);
+  border-radius: 10px;
+  background: var(--cfl-card-bg);
+}
+
+// Left column: detail boxes with a two-column label/value grid.
+.cfl-detail-box {
+  border-left: 3px solid color-mix(in srgb, var(--cfl-accent) 35%, var(--cfl-card-border));
+  overflow: hidden;
+}
+
+.cfl-detail-box-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--cfl-card-border);
+  background: color-mix(in srgb, var(--cfl-accent) 4%, var(--cfl-card-bg));
+}
+
+.cfl-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 20px;
+  padding: 16px;
+}
+
+.cfl-detail-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cfl-heading {
+  height: 12px;
+}
+
+.cfl-label {
+  height: 8px;
+}
+
+.cfl-value {
+  height: 12px;
+}
+
+// Middle / right columns: task panels.
+.cfl-panel {
+  padding: 16px;
+  border-top: 3px solid color-mix(in srgb, var(--cfl-accent) 55%, var(--cfl-card-border));
+}
+
+.cfl-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+
+  .cfl-heading {
+    flex: 0 0 auto;
+  }
+}
+
+.cfl-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  background: var(--cfl-accent);
+  opacity: 0.45;
+  animation: none;
+}
+
+.cfl-task {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--cfl-card-border);
+  border-radius: 10px;
+
+  & + & {
+    margin-top: 10px;
+  }
+}
+
+.cfl-check {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 5px;
+}
+
+.cfl-task-lines {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+
+.cfl-pill {
+  width: 76px;
+  height: 18px;
+}
+
+.cfl-panel-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--cfl-card-border);
+}
+
+.cfl-op-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  & + & {
+    margin-top: 18px;
+  }
+}
+
+.cfl-op-row {
+  height: 44px;
+  border-radius: 8px;
+}
+
+// Responsive: stack the columns like the real view.
+@media (max-width: 1199px) {
+  .cfl-columns {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .cfl-column--details {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 767px) {
+  .cfl-body {
+    padding: 12px 14px 16px;
+  }
+
+  .cfl-columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding: 14px;
+  }
+
+  .cfl-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cfl-bone,
+  .cfl-progress::after {
+    animation: none;
+  }
+}
+
+@keyframes cflShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes cflProgress {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(290%);
+  }
+}

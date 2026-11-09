@@ -44,7 +44,7 @@ import {
   resolveTemplateCallTypeId,
 } from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callDetailTemplate";
 import { TemplateTabPanel } from "@/pages/KanbanBoard/CardFormTabs/shared/components/TemplateFieldsView";
-import CardTabListLoading from "@/components/CardTabListLoading";
+import CardFormLoadingSkeleton from "@/pages/KanbanBoard/CardFormTabs/shared/components/CardFormLoadingSkeleton";
 import NavTabButton from "@/components/NavTabButton";
 import GROCardView from "../GRO/User/GROCardView";
 import CoordinatorTransportCardView from "../CoordinatorTransport/CoordinatorTransportCardView";
@@ -3325,7 +3325,7 @@ function CardForm({
           )
         ) : (
           <>
-            {!isAddMode && !isMWPVariant && !isGROStyleView && (
+            {!isAddMode && !isMWPVariant && !isGROStyleView && !isTemplateTabsPending && (
               <TopTabs
                 tabs={TOP_TABS}
                 activeTab={activeTopTab}
@@ -3347,7 +3347,7 @@ function CardForm({
               </div>
             )}
             {isTemplateTabsPending && (
-              <CardTabListLoading message="Loading card details..." cardColor={accentColor} />
+              <CardFormLoadingSkeleton accentColor={accentColor} />
             )}
             {!isMWPVariant &&
               !isGROStyleView &&
