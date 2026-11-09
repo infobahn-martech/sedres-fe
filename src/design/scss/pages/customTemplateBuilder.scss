@@ -1316,3 +1316,113 @@ body .modal.ctm-delete-confirm-modal.show .modal-dialog {
     col.cl-col-remarks { width: 24%; }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Fixed system sections (e.g. Export Approval) — read-only preview + summary.
+// ---------------------------------------------------------------------------
+.ctm-sys-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ctm-sys-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border-primary);
+  border-radius: 10px;
+  background: var(--surface-primary);
+
+  &--depth-1,
+  &--depth-2 {
+    padding: 12px 14px;
+    border-style: dashed;
+  }
+}
+
+.ctm-sys-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ctm-sys-section-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ctm-sys-section-desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ctm-sys-field.is-read-only {
+  opacity: 0.75;
+}
+
+.ctm-sys-section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ctm-sys-section-action {
+  padding: 6px 14px;
+  border: 1.5px solid var(--border-primary);
+  border-radius: 6px;
+  background: var(--tint-brand-bg);
+  color: var(--tint-brand-text);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: default;
+}
+
+.ctm-sys-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.ctm-sys-summary-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ctm-sys-summary-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border-primary);
+    border-radius: 8px;
+    font-size: 13px;
+  }
+}
+
+.ctm-sys-summary-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.ctm-sys-summary-meta {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}

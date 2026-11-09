@@ -6,6 +6,7 @@ import TemplateFieldPreview from "./TemplateFieldPreview";
 import TemplateEmailPreview from "./TemplateEmailPreview";
 import { getEmailPreviewSubject } from "./emailPreviewSubjects";
 import TemplateFeaturePreview from "./TemplateFeaturePreview";
+import TemplateSectionsPreview, { TemplateSectionsSummary } from "./TemplateSectionsPreview";
 import { getFeaturePreviewKind } from "./templateFeaturePreviews";
 import { alignLayoutToOrder, buildFieldGrid, getReadingOrder, resolveFieldLayout, sortFieldsByLayout } from "./templateFieldGrid";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
@@ -40,21 +41,6 @@ const TIME_OBJECT_SOURCE_CARDS = [
 
 // master_key sent for a Time Object field that is linked to a master time object.
 const TIME_OBJECT_MASTER_KEY = "time_object";
-
-// Level 1 of the template structure — mirrors the real Sedres card's top-level tabs.
-// A main tab optionally owns Level 2 sub-tabs (e.g. Operation > Pre Arrival); fields
-// live on the sub-tab when any exist, otherwise directly on the main tab.
-const MAIN_TAB_NAMES = [
-    "Appointment Details",
-    "Operation",
-    "Husbandry",
-    "Sales Order",
-    "Comments",
-    "Subtasks",
-    "Notes",
-    "Reports",
-    "Document Library",
-];
 
 const makeId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -115,58 +101,49 @@ const getTemplateSeed = (template) => ({
     templateId: template?.templateId ?? template?.template_id ?? null,
 });
 
-// Seed fields/subtabs for a new template, mirroring the real Sedres card.
-// Each entry is [label, type, extra?]; extra overrides any createBlankField key.
-// Appointment Details' locked fields come from the system_bindings API; the
-// fields listed here are ordinary (removable) ones appended after them.
-const DEFAULT_TAB_STRUCTURE = {
-    "Appointment Details": {
-        fields: [
-            ["Expected Time of Arrival", "datetime"],
-            ["Expected Commencement of Custom Inspection", "datetime"],
-            ["Expected Time of Departure", "datetime"],
-            ["Checklist", "dropdown"],
-        ],
-    },
-    Operation: {
-        subTabs: {
-            "Pre Arrival": [
-                ["Expected Time of Arrival", "datetime", { required: true }],
-                ["Expected Commencement of Custom Inspection", "datetime", { required: true }],
-                ["Expected Commencement of Immigration Clearance for Crew", "datetime", { required: true }],
-                ["Expected Completion of Inward Clearance", "datetime", { required: true }],
-                ["SABER Status", "dropdown"],
-                ["Weather Forecast", "dropdown"],
-                ["Coordinates Type", "dropdown"],
-            ],
-            "Crew Immigration": [],
-            Arrival: [
-                ["Actual Time of Arrival", "datetime", { required: true }],
-                ["Crew Immigration Commenced", "datetime"],
-                ["Crew Immigration Completed", "datetime"],
-                ["Custom Inspection Commenced", "datetime"],
-                ["Custom Inspection Completed", "datetime"],
-                ["Custom Clearance Time", "datetime"],
-                ["Custom Inspection Status", "dropdown"],
-                ["Crew Immigration Status", "dropdown"],
-                ["Inward Clearance", "radio", { options: ["Received", "Not Received"] }],
-            ],
-            Departure: [
-                ["Email Requested Accept", "file"],
-                ["Request for Outward Clearance Received", "datetime", { required: true }],
-                ["Outward Clearance Issued", "datetime", { required: true }],
-                ["Outward Clearance Delivered", "dropdown", { options: ["By Email", "By Hand"] }],
-                ["Vessel Sailed", "datetime", { required: true }],
-                ["Next Port", "text"],
-                ["Attachments", "file"],
-            ],
-            "Check List": [],
-        },
-    },
+// ---------------------------------------------------------------------------
+// Template structure — driven entirely by form_template/system_bindings.
+// The API returns the card's tabs in display order; each tab carries its locked
+// system fields, optional fixed sections (e.g. Export Approval) and sub_tabs
+// (e.g. Operation > Pre Arrival). Nothing about the tab layout is hardcoded.
+// ---------------------------------------------------------------------------
+
+const byDisplayOrder = (a, b) => (Number(a.display_order ?? a.displayOrder) || 0) - (Number(b.display_order ?? b.displayOrder) || 0);
+
+// Loose name comparison so "Check List" / "Checklist" / "check_list" all match.
+const compactName = (v) => String(v ?? "").toLowerCase().replace(/[\s_-]+/g, "");
+
+const normalizeStructureTab = (tab) => ({
+    key: tab.tab_key ?? compactName(tab.tab_name),
+    name: tab.tab_name ?? tab.tab_key ?? "",
+    displayOrder: tab.display_order ?? 0,
+    fields: tab.fields ?? [],
+    sections: [...(tab.sections ?? [])].sort(byDisplayOrder),
+    subTabs: [...(tab.sub_tabs ?? [])].sort(byDisplayOrder).map(normalizeStructureTab),
+});
+
+// Accepts the tabbed system_bindings response. An older flat list of binding
+// fields is treated as the Appointment Details tab's fields.
+const normalizeTemplateStructure = (data) => {
+    if (!Array.isArray(data) || !data.length) return [];
+    const isTabbed = data.some((d) => d && ("tab_name" in d || "tab_key" in d));
+    const tabs = isTabbed
+        ? data
+        : [{ tab_key: "appointment_details", tab_name: "Appointment Details", display_order: 1, fields: data }];
+    return [...tabs].sort(byDisplayOrder).map(normalizeStructureTab);
 };
 
-// A form_template/system_bindings entry as a builder field. These are the
-// fixed Appointment Details fields of the real card — always required.
+// Every tab/subtab key in a structure — used to tell the previous call type's
+// system tabs apart from tabs the user added.
+const collectStructureTabKeys = (structure) => {
+    const keys = new Set();
+    const walk = (tabs) => tabs.forEach((t) => { keys.add(t.key); walk(t.subTabs); });
+    walk(structure);
+    return keys;
+};
+
+// A system_bindings field as a builder field. System fields are locked:
+// always required and never deletable.
 const mapSystemBindingField = (binding) => ({
     ...createBlankField(),
     label: binding.label ?? "",
@@ -179,37 +156,26 @@ const mapSystemBindingField = (binding) => ({
     systemBindingKey: binding.system_binding_key ?? null,
 });
 
-// Resolves a first-tab field's system_binding_key (null when it isn't a
-// system field). Falls back to matching by label for templates saved before
-// fields carried a binding key.
-const buildSystemBindingResolver = (systemBindings) => {
-    const keys = new Set(systemBindings.map((b) => b.system_binding_key));
-    const keyByLabel = new Map(systemBindings.map((b) => [String(b.label ?? "").trim().toLowerCase(), b.system_binding_key]));
-    return (field, isFirstTab) => {
-        if (!isFirstTab) return null;
-        if (field.systemBindingKey && keys.has(field.systemBindingKey)) return field.systemBindingKey;
-        return keyByLabel.get(field.label.trim().toLowerCase()) ?? null;
-    };
-};
-
-// Keeps a saved template's first tab in step with the system_bindings API:
-// fields matching a binding (by key, else by label) take the API's label/type/
-// source while keeping their saved id, layout and static options; bindings the
-// template doesn't have yet are appended (auto-placed into the grid).
-const syncSystemBindingFields = (fields, systemBindings) => {
-    if (!systemBindings.length) return fields;
-    const byKey = new Map(systemBindings.map((b) => [b.system_binding_key, b]));
-    const keyByLabel = new Map(systemBindings.map((b) => [String(b.label ?? "").trim().toLowerCase(), b.system_binding_key]));
+// Keeps one tab/subtab's fields in step with its system bindings: fields
+// matching a binding (by key, else by label for templates saved before fields
+// carried a key) take the API's label/type/source while keeping their saved id,
+// layout and static options; fields bound to keys this scope no longer has are
+// dropped; bindings not yet present are appended (auto-placed into the grid).
+const syncSystemBindingFields = (fields, bindings) => {
+    const byKey = new Map(bindings.map((b) => [b.system_binding_key, b]));
+    const keyByLabel = new Map(bindings.map((b) => [String(b.label ?? "").trim().toLowerCase(), b.system_binding_key]));
     const seen = new Set();
-    const synced = fields.map((field) => {
+    const synced = fields.flatMap((field) => {
         const key = field.systemBindingKey && byKey.has(field.systemBindingKey)
             ? field.systemBindingKey
             : keyByLabel.get(field.label.trim().toLowerCase());
-        if (!key || seen.has(key)) return field;
+        if (!key || seen.has(key)) {
+            return field.systemBindingKey ? [] : [field];
+        }
         seen.add(key);
         const fromApi = mapSystemBindingField(byKey.get(key));
         const keepSavedOptions = fromApi.optionsSource === "manual" && field.options?.length;
-        return {
+        return [{
             ...field,
             label: fromApi.label,
             type: fromApi.type,
@@ -219,62 +185,90 @@ const syncSystemBindingFields = (fields, systemBindings) => {
             systemBindingKey: key,
             options: keepSavedOptions ? field.options : fromApi.options,
             optionIds: keepSavedOptions ? field.optionIds : fromApi.optionIds,
-        };
+        }];
     });
-    const missing = systemBindings
-        .filter((b) => !seen.has(b.system_binding_key))
+    const missing = bindings
+        .filter((b) => b.system_binding_key && !seen.has(b.system_binding_key))
         .map(mapSystemBindingField);
     return [...synced, ...missing];
 };
 
-const buildDefaultFields = (defs = []) => defs.map(([label, type, extra]) => ({
-    ...createBlankField(),
-    label,
-    type,
-    ...extra,
-}));
-
-const buildDefaultTabs = (systemBindings) => MAIN_TAB_NAMES.map((name, idx) => {
-    const seed = DEFAULT_TAB_STRUCTURE[name] ?? {};
-    const systemFields = idx === 0 ? systemBindings.map(mapSystemBindingField) : [];
-    return {
-        id: makeId("tab"),
-        tabId: null,
-        name,
-        fields: [...systemFields, ...buildDefaultFields(seed.fields)],
-        subTabs: Object.entries(seed.subTabs ?? {}).map(([subName, defs]) => ({
-            id: makeId("subtab"),
-            tabId: null,
-            name: subName,
-            fields: buildDefaultFields(defs),
-        })),
-    };
+const buildTabFromStructure = (st, prefix = "tab") => ({
+    id: makeId(prefix),
+    tabId: null,
+    tabKey: st.key,
+    name: st.name,
+    sections: st.sections,
+    fields: st.fields.map(mapSystemBindingField),
+    subTabs: st.subTabs.map((sub) => buildTabFromStructure(sub, "subtab")),
 });
+
+const buildTabsFromStructure = (structure) => structure.map((st) => buildTabFromStructure(st));
+
+const matchesStructureTab = (tab, st) => (tab.tabKey
+    ? tab.tabKey === st.key
+    : compactName(tab.name) === compactName(st.name) || compactName(tab.name) === compactName(st.key));
+
+// Whether a tab holds anything the user added (an unlocked field, or a subtab
+// that does) — such tabs survive a call type change even if not in the new structure.
+const hasUserContent = (tab) => (tab.fields ?? []).some((f) => !f.systemBindingKey)
+    || (tab.subTabs ?? []).some((sub) => !sub.tabKey || hasUserContent(sub));
+
+// Merges builder tabs (or subtabs) with one structure level. Matching tabs are
+// synced in place (keeping their id, renames and user fields); system tabs of
+// the previous call type that this one lacks are dropped when untouched; with
+// addMissing, structure tabs not present yet are inserted after their
+// structure predecessor.
+const syncTabList = (tabs, structureTabs, previousTabKeys, addMissing, prefix = "tab") => {
+    const used = new Set();
+    const result = [];
+    tabs.forEach((tab) => {
+        const st = structureTabs.find((s) => !used.has(s.key) && matchesStructureTab(tab, s));
+        if (st) {
+            used.add(st.key);
+            result.push({
+                ...tab,
+                tabKey: st.key,
+                sections: st.sections,
+                fields: sortFieldsByLayout(syncSystemBindingFields(tab.fields ?? [], st.fields)),
+                subTabs: syncTabList(tab.subTabs ?? [], st.subTabs, previousTabKeys, addMissing, "subtab"),
+            });
+            return;
+        }
+        if (tab.tabKey && previousTabKeys.has(tab.tabKey) && !hasUserContent(tab)) return;
+        result.push(tab);
+    });
+    if (addMissing) {
+        structureTabs.forEach((st, i) => {
+            if (used.has(st.key)) return;
+            const prevKey = structureTabs.slice(0, i).reverse().map((s) => s.key)
+                .find((k) => result.some((t) => t.tabKey === k));
+            const at = prevKey ? result.findIndex((t) => t.tabKey === prevKey) + 1 : 0;
+            result.splice(at, 0, buildTabFromStructure(st, prefix));
+        });
+    }
+    return result;
+};
 
 // Same dual-shape acceptance as mapTemplateField, for a tab/subtab's own name
 // (name vs. tab_label) and its list of subtabs (subTabs vs. the API's subtabs).
-// A template with no tabs yields none — the default structure is only built
-// once a call type is chosen (see applySystemBindings in the builder).
-const buildTabsFromTemplate = (template, systemBindings = []) => {
+// A template with no tabs yields none — the structure is only built once a
+// call type is chosen (see applyStructure in the builder). Sections and locked
+// fields are synced from system_bindings once it loads.
+const buildTabsFromTemplate = (template) => {
     if (!template?.tabs?.length) return [];
-    return template.tabs.map((tab, tabIndex) => ({
-        id: makeId("tab"),
+    const mapTab = (tab, prefix) => ({
+        id: makeId(prefix),
         tabId: tab.tabId ?? tab.tab_id ?? null,
+        tabKey: tab.tabKey ?? tab.tab_key ?? null,
         name: tab.name ?? tab.tab_label ?? "",
-        fields: (() => {
-            const fields = (tab.fields ?? []).map(mapTemplateField);
-            const hasSubTabs = Boolean((tab.subTabs ?? tab.subtabs ?? []).length);
-            // System fields live on the first tab (see buildDefaultTabs).
-            const withSystem = tabIndex === 0 && !hasSubTabs ? syncSystemBindingFields(fields, systemBindings) : fields;
-            return sortFieldsByLayout(withSystem);
-        })(),
-        subTabs: (tab.subTabs ?? tab.subtabs ?? []).map((sub) => ({
-            id: makeId("subtab"),
-            tabId: sub.tabId ?? sub.tab_id ?? null,
-            name: sub.name ?? sub.tab_label ?? "",
-            fields: sortFieldsByLayout((sub.fields ?? []).map(mapTemplateField)),
-        })),
-    }));
+        sections: tab.sections ?? [],
+        fields: sortFieldsByLayout((tab.fields ?? []).map(mapTemplateField)),
+        subTabs: prefix === "tab"
+            ? (tab.subTabs ?? tab.subtabs ?? []).map((sub) => mapTab(sub, "subtab"))
+            : [],
+    });
+    return template.tabs.map((tab) => mapTab(tab, "tab"));
 };
 
 // Field types now come entirely from the field_types API — no local static list.
@@ -682,17 +676,19 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const [billingEntityId, setBillingEntityId] = useState(() => getTemplateSeed(initialTemplate).billingEntityId);
     const [templateId] = useState(() => getTemplateSeed(initialTemplate).templateId);
 
-    // System bindings (locked Appointment Details fields) of the selected call type.
-    const [systemBindings, setSystemBindings] = useState([]);
+    // Card structure (tabs, subtabs, locked fields, sections) of the selected
+    // call type, normalised from form_template/system_bindings.
+    const [structure, setStructure] = useState([]);
     const [isLoadingBindings, setIsLoadingBindings] = useState(false);
+    const [bindingsError, setBindingsError] = useState(false);
     // Ignores stale responses when the call type changes again mid-request.
     const bindingsRequestRef = useRef(0);
     const [tabs, setTabs] = useState(() => buildTabsFromTemplate(initialTemplate));
-    // Latest state for the async bindings callback, which would otherwise see a stale closure.
-    const latestRef = useRef({ tabs, systemBindings });
-    latestRef.current = { tabs, systemBindings };
     const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id);
     const [activeSubTabId, setActiveSubTabId] = useState(() => tabs[0]?.subTabs?.[0]?.id ?? null);
+    // Latest state for the async bindings callback, which would otherwise see a stale closure.
+    const latestRef = useRef({ tabs, structure, activeTabId });
+    latestRef.current = { tabs, structure, activeTabId };
     const [addingTab, setAddingTab] = useState(false);
     const [newTabName, setNewTabName] = useState("");
     const [editingTabId, setEditingTabId] = useState(null);
@@ -733,19 +729,24 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const masterModuleOptions = useMemo(() => buildMasterModuleOptions(masterLookups), [masterLookups]);
     const timeObjectTypeKey = useMemo(() => buildTimeObjectTypeKey(fieldTypes), [fieldTypes]);
     const timeObjectOptions = useMemo(() => buildTimeObjectOptions(timeObjects), [timeObjects]);
-    const resolveSystemBindingKey = useMemo(() => buildSystemBindingResolver(systemBindings), [systemBindings]);
-    // System-bound Appointment Details fields can't be deleted and are always required.
-    const isLockedField = (field, isFirstTab) => Boolean(resolveSystemBindingKey(field, isFirstTab));
+    // System-bound fields (from system_bindings, on any tab or subtab) can't be
+    // deleted and are always required. Fields bound to keys the current call
+    // type doesn't have are dropped during sync, so the key alone decides.
+    const isLockedField = (field) => Boolean(field.systemBindingKey);
 
     const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
     // The first tab is the template's default — it and its email preview can't be removed.
     const isFirstTabActive = activeTab?.id === tabs[0]?.id;
-    const isFieldRemovable = (field) => !isLockedField(field, isFirstTabActive);
+    const isFieldRemovable = (field) => !isLockedField(field);
     const hasSubTabs = Boolean(activeTab?.subTabs?.length);
     const activeSubTab = hasSubTabs
         ? (activeTab.subTabs.find((s) => s.id === activeSubTabId) ?? activeTab.subTabs[0])
         : null;
     const activeFields = hasSubTabs ? (activeSubTab?.fields ?? []) : (activeTab?.fields ?? []);
+    // Fixed system sections (e.g. Export Approval) of the active tab/subtab —
+    // rendered read-only instead of the editable field list.
+    const activeSections = (hasSubTabs ? activeSubTab?.sections : activeTab?.sections) ?? [];
+    const isSectionScope = activeSections.length > 0;
     // Candidate parents for a Dependency dropdown: the other dropdowns in this tab.
     const dropdownFieldLabels = [...new Set(activeFields
         .filter((f) => f.type === dropdownTypeKey && f.label.trim())
@@ -755,7 +756,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const previewFields = activeFields.map((f) => ({
         ...f,
         label: f.label.trim() || "Untitled Field",
-        required: f.required || isLockedField(f, isFirstTabActive),
+        required: f.required || isLockedField(f),
     }));
     const emailScopeId = hasSubTabs ? activeSubTab?.id : activeTab?.id;
     const emailSubject = hiddenEmailPreviewIds.has(emailScopeId)
@@ -766,7 +767,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         if (groupKey && groupKey === lastUndoGroupRef.current) return;
         lastUndoGroupRef.current = groupKey;
         const snapshot = {
-            templateName, billingEntityId, callTypeId, systemBindings, tabs, hiddenEmailPreviewIds, activeTabId, activeSubTabId,
+            templateName, billingEntityId, callTypeId, structure, tabs, hiddenEmailPreviewIds, activeTabId, activeSubTabId,
         };
         setUndoStack((prev) => [...prev.slice(-(MAX_UNDO_STEPS - 1)), snapshot]);
     };
@@ -782,7 +783,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         // Drop any bindings request still in flight for the call type being undone.
         bindingsRequestRef.current += 1;
         setIsLoadingBindings(false);
-        setSystemBindings(snapshot.systemBindings);
+        setBindingsError(false);
+        setStructure(snapshot.structure);
         setTabs(snapshot.tabs);
         setHiddenEmailPreviewIds(snapshot.hiddenEmailPreviewIds);
         const tab = snapshot.tabs.find((t) => t.id === snapshot.activeTabId) ?? snapshot.tabs[0];
@@ -858,7 +860,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         setBillingEntityId(seed.billingEntityId);
         bindingsRequestRef.current += 1;
         setIsLoadingBindings(false);
-        setSystemBindings([]);
+        setBindingsError(false);
+        setStructure([]);
         const defaultTabs = buildTabsFromTemplate(initialTemplate);
         setTabs(defaultTabs);
         setActiveTabId(defaultTabs[0]?.id);
@@ -877,45 +880,46 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         lastUndoGroupRef.current = null;
     };
 
-    // Applies a call type's system bindings. With no tabs yet (new template) the
-    // default card structure is built around them; otherwise only the first
-    // tab's locked fields are swapped — fields bound to the previous call type
-    // that the new one doesn't have are dropped, matching ones keep their spot,
-    // and new ones are appended. Ordinary fields and other tabs are untouched.
-    const applySystemBindings = (bindings) => {
-        const { tabs: currentTabs, systemBindings: previousBindings } = latestRef.current;
-        setSystemBindings(bindings);
+    // Applies a call type's card structure. With no tabs yet (new template) the
+    // whole structure is built from it. Otherwise tabs/subtabs are matched to the
+    // structure (by key, else by name) and their locked fields and sections are
+    // synced; fields and tabs the user added are kept. With addMissing (a call
+    // type change) structure tabs the template lacks are added, and untouched
+    // system tabs of the previous call type are dropped.
+    const applyStructure = (nextStructure, { addMissing }) => {
+        const { tabs: currentTabs, structure: previousStructure, activeTabId: currentActiveTabId } = latestRef.current;
+        setStructure(nextStructure);
 
         if (!currentTabs.length) {
-            const nextTabs = buildDefaultTabs(bindings);
+            const nextTabs = buildTabsFromStructure(nextStructure);
             setTabs(nextTabs);
             setActiveTabId(nextTabs[0]?.id);
             setActiveSubTabId(nextTabs[0]?.subTabs?.[0]?.id ?? null);
             return;
         }
 
-        const [firstTab, ...restTabs] = currentTabs;
-        if (firstTab.subTabs?.length) return;
-        const resolvePrevious = buildSystemBindingResolver(previousBindings);
-        const resolveNext = buildSystemBindingResolver(bindings);
-        const keptFields = firstTab.fields.filter((f) => !resolvePrevious(f, true) || resolveNext(f, true));
-        setTabs([
-            { ...firstTab, fields: sortFieldsByLayout(syncSystemBindingFields(keptFields, bindings)) },
-            ...restTabs,
-        ]);
+        const nextTabs = syncTabList(currentTabs, nextStructure, collectStructureTabKeys(previousStructure), addMissing);
+        setTabs(nextTabs);
+        const active = nextTabs.find((t) => t.id === currentActiveTabId);
+        if (!active) {
+            setActiveTabId(nextTabs[0]?.id);
+            setActiveSubTabId(nextTabs[0]?.subTabs?.[0]?.id ?? null);
+        } else {
+            setActiveSubTabId((prev) => (active.subTabs?.some((s) => s.id === prev) ? prev : (active.subTabs?.[0]?.id ?? null)));
+        }
     };
 
-    const loadSystemBindings = async (nextCallTypeId) => {
+    const loadSystemBindings = async (nextCallTypeId, { addMissing = true } = {}) => {
         const requestId = ++bindingsRequestRef.current;
         setIsLoadingBindings(true);
-        const bindings = await getSystemBindings({ callTypeId: nextCallTypeId });
+        setBindingsError(false);
+        const data = await getSystemBindings({ callTypeId: nextCallTypeId });
         if (requestId !== bindingsRequestRef.current) return;
         setIsLoadingBindings(false);
-        if (bindings) {
-            applySystemBindings(bindings);
-        } else if (!latestRef.current.tabs.length) {
-            // Request failed — still give a new template its default structure.
-            applySystemBindings([]);
+        if (data) {
+            applyStructure(normalizeTemplateStructure(data), { addMissing });
+        } else {
+            setBindingsError(true);
         }
     };
 
@@ -923,7 +927,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     // locked fields are recognised and kept in step with the API.
     useEffect(() => {
         const seedCallTypeId = getTemplateSeed(initialTemplate).callTypeId;
-        if (seedCallTypeId) loadSystemBindings(seedCallTypeId);
+        // Existing templates keep the tabs they were saved with (no re-adding deleted ones).
+        if (seedCallTypeId) loadSystemBindings(seedCallTypeId, { addMissing: false });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -967,7 +972,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             return;
         }
         recordHistory();
-        const tab = { id: makeId("tab"), name: trimmed, fields: [createBlankField()], subTabs: [] };
+        const tab = { id: makeId("tab"), tabId: null, tabKey: null, name: trimmed, sections: [], fields: [createBlankField()], subTabs: [] };
         setTabs((prev) => [...prev, tab]);
         setActiveTabId(tab.id);
         setActiveSubTabId(null);
@@ -1046,7 +1051,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             return;
         }
         recordHistory();
-        const sub = { id: makeId("subtab"), name: trimmed, fields: [createBlankField()] };
+        const sub = { id: makeId("subtab"), tabId: null, tabKey: null, name: trimmed, sections: [], fields: [createBlankField()], subTabs: [] };
         setTabs((prev) => prev.map((t) => (
             t.id === activeTabId ? { ...t, subTabs: [...(t.subTabs ?? []), sub] } : t
         )));
@@ -1264,8 +1269,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         onClose();
     };
 
-    const buildFieldPayload = (field, index, isFirstTab) => {
-        const systemBindingKey = resolveSystemBindingKey(field, isFirstTab);
+    const buildFieldPayload = (field, index) => {
+        const systemBindingKey = field.systemBindingKey || null;
         const payload = {
             field_type_id: resolveFieldTypeId(field.type),
             field_label: field.label.trim(),
@@ -1308,10 +1313,10 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         return payload;
     };
 
-    const buildFieldsPayload = (fields, isFirstTab = false) => {
+    const buildFieldsPayload = (fields) => {
         const layout = resolveFieldLayout(fields);
         return fields.map((field, index) => ({
-            ...buildFieldPayload(field, index, isFirstTab),
+            ...buildFieldPayload(field, index),
             row_no: layout[index].row,
             col_no: layout[index].col,
         }));
@@ -1320,20 +1325,25 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const buildTabPayload = (tab, tabIndex) => {
         const payload = {
             tab_label: tab.name,
-            is_system: MAIN_TAB_NAMES.includes(tab.name) ? 1 : 0,
+            is_system: tab.tabKey ? 1 : 0,
             email_preview: getEmailPreviewSubject(tab.name) ? 1 : 0,
             display_order: tabIndex + 1,
-            fields: tab.subTabs?.length ? [] : buildFieldsPayload(tab.fields, tabIndex === 0),
+            // Section tabs (e.g. Export Approval) are fixed system screens with
+            // their own save API — only the tab itself is part of the template.
+            fields: tab.subTabs?.length || tab.sections?.length ? [] : buildFieldsPayload(tab.fields),
         };
+        if (tab.tabKey) payload.tab_key = tab.tabKey;
         if (tab.tabId) payload.tab_id = Number(tab.tabId);
         if (tab.subTabs?.length) {
             payload.subtabs = tab.subTabs.map((sub, subIndex) => {
                 const subPayload = {
                     tab_label: sub.name,
+                    is_system: sub.tabKey ? 1 : 0,
                     email_preview: getEmailPreviewSubject(tab.name, sub.name) ? 1 : 0,
                     display_order: subIndex + 1,
-                    fields: buildFieldsPayload(sub.fields),
+                    fields: sub.sections?.length ? [] : buildFieldsPayload(sub.fields),
                 };
+                if (sub.tabKey) subPayload.tab_key = sub.tabKey;
                 if (sub.tabId) subPayload.tab_id = Number(sub.tabId);
                 return subPayload;
             });
@@ -1421,13 +1431,28 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                  
                         </div>
 
-                        {!tabs.length ? (
+                        {!tabs.length && !addingTab ? (
                             <div className="ctm-fields-empty">
                                 <p>
                                     {isLoadingBindings
                                         ? "Loading template structure..."
-                                        : "Select a call type to load the template structure."}
+                                        : !callTypeId
+                                            ? "Select a call type to load the template structure."
+                                            : bindingsError
+                                                ? "Couldn't load the template structure for this call type."
+                                                : "No tabs are configured for this call type."}
                                 </p>
+                                {!isLoadingBindings && callTypeId && (
+                                    bindingsError ? (
+                                        <button type="button" className="ctm-add-tab-btn" onClick={() => loadSystemBindings(callTypeId)}>
+                                            <FiRotateCcw size={13} /> Retry
+                                        </button>
+                                    ) : (
+                                        <button type="button" className="ctm-add-tab-btn" onClick={handleAddTabClick}>
+                                            <FiPlus size={13} /> Add Tab
+                                        </button>
+                                    )
+                                )}
                             </div>
                         ) : (
                         <>
@@ -1619,12 +1644,18 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                     <FiX size={14} />
                                 </button>
                             </div>
-                        ) : (
+                        ) : isSectionScope ? null : (
                             <button type="button" className="ctm-add-subtab-link" onClick={handleAddSubTabClick}>
                                 <FiPlus size={12} /> Add Subtab
                             </button>
                         ))}
 
+                        {activeTab && isSectionScope && (
+                            <TemplateSectionsSummary sections={activeSections} />
+                        )}
+
+                        {activeTab && !isSectionScope && (
+                        <>
                         <div className="ctm-fields-header">
                             <p className="ctm-section-title" style={{ margin: 0 }}>Fields</p>
                             {activeFields.length > 0 && (
@@ -1668,7 +1699,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         onDragEnd={handleDragEnd}
                                         onUpdate={handleUpdateField}
                                         onRequestDelete={handleRequestDeleteField}
-                                        isLocked={isLockedField(field, isFirstTabActive)}
+                                        isLocked={isLockedField(field)}
                                         onAddOption={handleAddOption}
                                         onUpdateOption={handleUpdateOption}
                                         onRemoveOption={handleRemoveOption}
@@ -1677,6 +1708,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                     />
                                 ))}
                             </div>
+                        )}
+                        </>
                         )}
                         </>
                         )}
@@ -1760,6 +1793,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                             <p className="ct-summary-no-fields">
                                                 {isLoadingBindings ? "Loading template structure..." : "Select a call type to load the template structure."}
                                             </p>
+                                        ) : isSectionScope ? (
+                                            <TemplateSectionsPreview sections={activeSections} />
                                         ) : featurePreviewKind ? (
                                             <TemplateFeaturePreview kind={featurePreviewKind} />
                                         ) : emailSubject ? (
