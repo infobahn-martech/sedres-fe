@@ -25,7 +25,9 @@ import { normalizeEntityEmailOptions, normalizeEntityFields } from "./generalHel
 // Dropdown catalogues shared by the Add and View variants of the Appointment Details tab, loaded once on mount.
 // Vessel/Tug/Barge Name all pull from the same full vessel catalogue (vessel/all_vessels),
 // independent of Billing Entity / Vessel Type selections.
-export const useGeneralMasterData = () => {
+// `enabled: false` (template mode, where form_template/first_tab supplies every field and option)
+// skips the catalogue requests; they load once, the first time the hook becomes enabled.
+export const useGeneralMasterData = ({ enabled = true } = {}) => {
   const [masterDataLoading, setMasterDataLoading] = useState(false);
   const [operatorOptions, setOperatorOptions] = useState([]);
   const [ownerOptions, setOwnerOptions] = useState([]);
@@ -37,8 +39,10 @@ export const useGeneralMasterData = () => {
   const [tugTypeSelectOptions, setTugTypeSelectOptions] = useState([]);
   const [allVesselOptions, setAllVesselOptions] = useState([]);
   const [allVesselsLoading, setAllVesselsLoading] = useState(false);
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
+    if (!enabled || hasLoadedRef.current) return undefined;
     let cancelled = false;
 
     const fetchRow = async (label, request, mapFn) => {
@@ -96,12 +100,14 @@ export const useGeneralMasterData = () => {
       }
     };
 
-    loadMasterData();
-    void loadAllVessels();
+    // Marked loaded only once both requests finish, so an abandoned run (unmount / disabled) retries later.
+    Promise.all([loadMasterData(), loadAllVessels()]).then(() => {
+      if (!cancelled) hasLoadedRef.current = true;
+    });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   return {
     masterDataLoading,

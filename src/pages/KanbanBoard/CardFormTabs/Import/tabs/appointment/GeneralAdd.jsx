@@ -202,6 +202,11 @@ function GeneralAdd({
     actionKey: PERMISSION_ACTIONS.EMAIL,
   });
 
+  // Template mode: form_template/first_tab supplies every field and its options, so the default form's
+  // master catalogues / checklist / stage-time lookups are not requested.
+  const selectedTemplateId = firstNonEmptyString(formValues?.template_id);
+  const isTemplateMode = Boolean(selectedTemplateId);
+
   const {
     masterDataLoading,
     operatorOptions,
@@ -214,7 +219,7 @@ function GeneralAdd({
     tugTypeSelectOptions,
     allVesselOptions,
     allVesselsLoading,
-  } = useGeneralMasterData();
+  } = useGeneralMasterData({ enabled: !isTemplateMode });
   const {
     entityFields,
     setEntityFields,
@@ -283,7 +288,6 @@ function GeneralAdd({
   const [isTemplateRefetching, setIsTemplateRefetching] = useState(false);
   // Id whose fetch has finished (success or failure); derived loading avoids flashing the default form.
   const [settledTemplateId, setSettledTemplateId] = useState("");
-  const selectedTemplateId = firstNonEmptyString(formValues?.template_id);
   const isTemplateFieldsLoading = Boolean(selectedTemplateId) && settledTemplateId !== selectedTemplateId;
   const isPreviewMessageDirtyRef = useRef(isPreviewMessageDirty);
   isPreviewMessageDirtyRef.current = isPreviewMessageDirty;
@@ -1607,6 +1611,7 @@ function GeneralAdd({
   const { checklistOptions, checklistLoading } = useChecklistOptions({
     callTypeId: previewCallTypeId,
     portId: previewPortId,
+    enabled: !isTemplateMode,
     onSelectionsReset: () => {
       handleChange("selectedChecklists")({ target: { value: [], name: "selectedChecklists" } });
       handleChange("bargeSelectedChecklists")({ target: { value: [], name: "bargeSelectedChecklists" } });
@@ -1659,7 +1664,7 @@ function GeneralAdd({
     setStageTimeObjectValues({});
     setIsEtaDependentTimesLoading(false);
 
-    if (!previewPortId || !previewCallType) {
+    if (isTemplateMode || !previewPortId || !previewCallType) {
       setStageTimeObjectsLoading(false);
       return;
     }
@@ -1699,7 +1704,7 @@ function GeneralAdd({
     return () => {
       cancelled = true;
     };
-  }, [previewPortId, previewCallType, currentCallId]);
+  }, [isTemplateMode, previewPortId, previewCallType, currentCallId]);
 
   const handleStageTimeObjectChange = useCallback(
     (timeObjectId) => async (nextValues) => {
@@ -1968,11 +1973,12 @@ function GeneralAdd({
   const selectedEntityId = getPrimaryBillingEntityId();
 
   useEffect(() => {
-    if (!selectedEntityId) return;
+    if (isTemplateMode || !selectedEntityId) return;
     void fetchEntityFields(selectedEntityId);
     void fetchBillingEntityEmails(selectedEntityId);
     void fetchBillingInstructionByEntity(selectedEntityId);
   }, [
+    isTemplateMode,
     selectedEntityId,
     fetchEntityFields,
     fetchBillingEntityEmails,
