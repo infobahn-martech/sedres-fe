@@ -614,11 +614,12 @@ const createEmptyPartySection = () => ({
     hideActions: PropTypes.bool,
   };
 
-  function PartySectionCard({ title, fields, values, onChange, imageFiles, onImageFilesChange, imagesDisabled, fieldsDisabled = false, showImageUpload = true }) {
+  function PartySectionCard({ title, leadingContent, fields, values, onChange, imageFiles, onImageFilesChange, imagesDisabled, fieldsDisabled = false, showImageUpload = true }) {
     return (
       <section className="approval-form-card approval-party-card">
         <h3 className="form-group-title">{title}</h3>
         <div className="approval-card-body approval-fields-stack">
+          {leadingContent}
           <FormField label={fields.detailsLabel}>
             <FormTextarea
               value={values.details}
@@ -682,6 +683,7 @@ const createEmptyPartySection = () => ({
 
   PartySectionCard.propTypes = {
     title: PropTypes.string.isRequired,
+    leadingContent: PropTypes.node,
     fields: PropTypes.shape({
       detailsLabel: PropTypes.string.isRequired,
       detailsPlaceholder: PropTypes.string,
@@ -1024,87 +1026,24 @@ const createEmptyPartySection = () => ({
                 On Hold by CEO — approval is paused until CEO resumes it
               </div>
             ) : null}
-            <div className="approval-columns">
-            <section className="approval-column">
-              <header className="approval-column-header">
-                <div className="approval-column-header-row">
-                  <h3 className="approval-column-title">Basic Details</h3>
-                  <AutoSaveStatus status={saveStatus} />
-                </div>
-                <p className="approval-column-subtitle">Vessel call and billing information.</p>
-              </header>
-              <div className="approval-column-body">
-              <div className="approval-fields-grid approval-basic-fields-grid">
-                <FormField label="Date">
-                  <FormInput
-                    value={basicDetails.date}
-                    onChange={(e) => handleBasicChange("date", e.target.value)}
-                    placeholder="DD-MMM-YYYY"
-                    readOnly
-                  />
-                </FormField>
-                <FormField label="Requested by">
-                  <FormInput
-                    value={basicDetails.requestedBy}
-                    onChange={(e) => handleBasicChange("requestedBy", e.target.value)}
-                    placeholder="Requested by"
-                    readOnly
-                  />
-                </FormField>
-                <FormField label="Branch">
-                  <FormSelect
-                    value={basicDetails.branch}
-                    onChange={(e) => handleBasicChange("branch", e.target.value)}
-                    options={branchOptions}
-                    placeholder={loadingBranches ? "Loading..." : "Select branch..."}
-                    disabled={loadingBranches || !canEditSharedDetails}
-                  />
-                </FormField>
-                <FormField label="Vessel Name">
-                  <FormInput
-                    value={basicDetails.vesselName}
-                    onChange={(e) => handleBasicChange("vesselName", e.target.value)}
-                    placeholder="Vessel name"
-                    readOnly
-                  />
-                </FormField>
-                <FormField label="Vessel's ETD">
-                  <DateTimePickerField
-                    dateValue={basicDetails.vesselEtdDate}
-                    timeValue={basicDetails.vesselEtdTime}
-                    onDateTimeChange={(value) => {
-                      setBasicDetails((prev) => ({
-                        ...prev,
-                        vesselEtdDate: value.date,
-                        vesselEtdTime: value.time,
-                      }));
-                    }}
-                    dateFieldName="vessel_etd_date"
-                    timeFieldName="vessel_etd_time"
-                    placeholder="Select date and time"
-                    disabled
-                  />
-                </FormField>
-                <FormField label="Billing entity">
-                  <FormInput
-                    value={basicDetails.billingEntity}
-                    onChange={(e) => handleBasicChange("billingEntity", e.target.value)}
-                    placeholder="Billing entity"
-                    readOnly
-                  />
-                </FormField>
-              </div>
-              </div>
-            </section>
+            <div className="approval-section-header justify-content-end">
+              <AutoSaveStatus status={saveStatus} />
+            </div>
 
-            <section className="approval-column">
-              <header className="approval-column-header">
-                <h3 className="approval-column-title">Vessel Parties</h3>
-                <p className="approval-column-subtitle">Owner, principal/manager and charterer credit details.</p>
-              </header>
-              <div className="approval-column-body">
+            <div className="approval-party-cards-row">
               <PartySectionCard
                 title="Vessel Owner's"
+                leadingContent={
+                  <FormField label="Branch">
+                    <FormSelect
+                      value={basicDetails.branch}
+                      onChange={(e) => handleBasicChange("branch", e.target.value)}
+                      options={branchOptions}
+                      placeholder={loadingBranches ? "Loading..." : "Select branch..."}
+                      disabled={loadingBranches || !canEditSharedDetails}
+                    />
+                  </FormField>
+                }
                 fields={VESSEL_OWNER_FIELDS}
                 values={vesselOwner}
                 onChange={handleVesselOwnerChange}
@@ -1138,15 +1077,9 @@ const createEmptyPartySection = () => ({
                 fieldsDisabled={!canEditSharedDetails}
                 showImageUpload={false}
               />
-              </div>
-            </section>
+            </div>
 
-            <section className="approval-column">
-              <header className="approval-column-header">
-                <h3 className="approval-column-title">Approvals</h3>
-                <p className="approval-column-subtitle">Credit Controller, Manager and CEO sign-off.</p>
-              </header>
-              <div className="approval-column-body">
+            <div className="approval-action-cards-row">
               <ApprovalCard
                 title="Remarks / Recommendation"
                 commentsLabel={
@@ -1358,8 +1291,6 @@ const createEmptyPartySection = () => ({
                   hideActions={!isCeoRole || ceoApproved}
                 />
               ) : null}
-              </div>
-            </section>
             </div>
           </div>
         </div>
