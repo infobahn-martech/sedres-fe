@@ -1793,10 +1793,10 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                             <p className="ct-summary-no-fields">
                                                 {isLoadingBindings ? "Loading template structure..." : "Select a call type to load the template structure."}
                                             </p>
-                                        ) : isSectionScope ? (
-                                            <TemplateSectionsPreview sections={activeSections} />
                                         ) : featurePreviewKind ? (
                                             <TemplateFeaturePreview kind={featurePreviewKind} />
+                                        ) : isSectionScope ? (
+                                            <TemplateSectionsPreview sections={activeSections} />
                                         ) : emailSubject ? (
                                             <div className="ct-preview-custom-fields-grid ctm-email-split">
                                                 <div className="ctm-email-fields">

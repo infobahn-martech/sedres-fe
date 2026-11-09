@@ -13,6 +13,7 @@
   import "@/design/scss/approval.scss";
 
   const AUTO_SAVE_DEBOUNCE_MS = 1200;
+  const NO_BRANCHES = [];
 
   const formatToday = () =>
     new Date().toLocaleDateString("en-GB", {
@@ -745,7 +746,10 @@ const createEmptyPartySection = () => ({
     latestPaymentDateLabel: "Latest Payment Received Date",
   };
 
-  function Approval({ card, formValues, onWorkflowActionCompleted }) {
+  // previewDetails: static get_details-shaped data for read-only previews
+  // (e.g. the Custom Template builder) — used instead of the shared store and
+  // skips every fetch, so no other card's approval data can leak in.
+  function Approval({ card, formValues, onWorkflowActionCompleted, previewDetails }) {
     const [basicDetails, setBasicDetails] = useState(() =>
       getInitialBasicDetails(formValues, card)
     );
@@ -766,8 +770,11 @@ const createEmptyPartySection = () => ({
     const [saveStatus, setSaveStatus] = useState("idle");
 
     const callId = getCallId(card, formValues);
-    const details = useExportApprovalReducer((state) => state.details);
-    const branches = useExportApprovalReducer((state) => state.branches);
+    const storeDetails = useExportApprovalReducer((state) => state.details);
+    const details = previewDetails ?? storeDetails;
+    const isPreview = Boolean(previewDetails);
+    const storeBranches = useExportApprovalReducer((state) => state.branches);
+    const branches = isPreview ? NO_BRANCHES : storeBranches;
     const loadingBranches = useExportApprovalReducer((state) => state.loadingBranches);
     const fetchBranches = useExportApprovalReducer((state) => state.fetchBranches);
     const getExportApprovalDetails = useExportApprovalReducer(
@@ -832,14 +839,14 @@ const createEmptyPartySection = () => ({
     const ceoApproved = details?.ceo?.status === "approved";
 
     useEffect(() => {
-      if (callId) {
+      if (callId && !isPreview) {
         getExportApprovalDetails(callId);
       }
-    }, [callId, getExportApprovalDetails]);
+    }, [callId, isPreview, getExportApprovalDetails]);
 
     useEffect(() => {
-      fetchBranches();
-    }, [fetchBranches]);
+      if (!isPreview) fetchBranches();
+    }, [isPreview, fetchBranches]);
 
     // Skips the very next autosave-triggering effect run — used whenever form
     // state is being programmatically hydrated (initial mount, data reload)
@@ -1384,6 +1391,7 @@ const createEmptyPartySection = () => ({
       billing_entity: PropTypes.string,
     }),
     onWorkflowActionCompleted: PropTypes.func,
+    previewDetails: PropTypes.object,
   };
 
   export default Approval;

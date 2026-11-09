@@ -122,10 +122,14 @@ function ActivityLogSkeleton() {
   );
 }
 
-function ActivityLog({ card }) {
+// sampleEntries: static rows for read-only previews (e.g. the Custom Template
+// builder) — with no card id nothing is fetched, so these stay as shown.
+function ActivityLog({ card, sampleEntries }) {
   const cardId = getCardId(card);
-  const [entries, setEntries] = useState([]);
-  const [pagination, setPagination] = useState(null);
+  const [entries, setEntries] = useState(() => sampleEntries ?? []);
+  const [pagination, setPagination] = useState(() =>
+    sampleEntries ? { page: 1, total_pages: 1, total: sampleEntries.length } : null
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState(null);
@@ -349,6 +353,7 @@ function ActivityLog({ card }) {
 
 ActivityLog.propTypes = {
   card: PropTypes.object,
+  sampleEntries: PropTypes.arrayOf(PropTypes.object),
 };
 
 export default ActivityLog;
