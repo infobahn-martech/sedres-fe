@@ -1139,8 +1139,12 @@ export const OperationEmailPreviewPanel = ({
   attachmentsAccept,
   billingEntityId,
   canSend = true,
+  // Optional subset of "from" | "to" | "cc" | "subject" | "attachments" | "message" to show;
+  // omitted = all (existing behavior). Lets a caller hide fields its API does not send.
+  visibleFields,
 }) => {
   const attachmentInputRef = useRef(null);
+  const isVisible = (name) => !Array.isArray(visibleFields) || visibleFields.includes(name);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
   const attachmentList = Array.isArray(attachments) ? attachments : [];
   const canEditAttachments = !isViewOnly && typeof onAttachmentsChange === "function";
@@ -1221,18 +1225,27 @@ export const OperationEmailPreviewPanel = ({
       </div>
 
       <div className="operation-email-preview-body">
+        {isVisible("from") && (
         <FormField label="From">
           <FormInput type="text" value={from || ""} onChange={(e) => onChange?.("from", e.target.value)} placeholder="Sender email" />
         </FormField>
+        )}
+        {isVisible("to") && (
         <FormField label="To">
           <FormInput type="text" value={to || ""} onChange={(e) => onChange?.("to", e.target.value)} placeholder="Recipient emails" />
         </FormField>
+        )}
+        {isVisible("cc") && (
         <FormField label="Cc">
           <FormInput type="text" value={cc || ""} onChange={(e) => onChange?.("cc", e.target.value)} placeholder="CC emails" />
         </FormField>
+        )}
+        {isVisible("subject") && (
         <FormField label="Subject">
           <FormInput type="text" value={subject || ""} onChange={(e) => onChange?.("subject", e.target.value)} placeholder="Email subject" />
         </FormField>
+        )}
+        {isVisible("attachments") && (
         <FormField label="Attachments" className="operation-email-preview-attachments-field">
           <div className="email-preview-attachments-list">
             {attachmentList.map((attachment) => (
@@ -1275,6 +1288,8 @@ export const OperationEmailPreviewPanel = ({
             ) : null}
           </div>
         </FormField>
+        )}
+        {isVisible("message") && (
         <FormField label="Message" className="operation-email-preview-message-field">
           <div className="react-quill-wrapper operation-email-preview-message-quill operation-email-quill">
             <ReactQuill
@@ -1288,6 +1303,7 @@ export const OperationEmailPreviewPanel = ({
             />
           </div>
         </FormField>
+        )}
       </div>
     </div>
   );
@@ -1316,6 +1332,7 @@ OperationEmailPreviewPanel.propTypes = {
   attachmentsAccept: PropTypes.string,
   billingEntityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   canSend: PropTypes.bool,
+  visibleFields: PropTypes.arrayOf(PropTypes.string),
 };
 
 export const OperationFileUpload = ({

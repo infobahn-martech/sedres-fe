@@ -21,6 +21,11 @@ const getCallDetail = (callId) => {
   pendingCallDetailRequests.set(key, request);
   return request;
 };
+// Operation stage save (Pre Arrival / Arrival / Departure) for template-driven calls.
+// multipart/form-data: call_id, tab_id (the stage subtab id), fields (JSON keyed by field_id),
+// field_<field_id> (new File uploads) and, only when sending a report, report (JSON).
+// No explicit Content-Type: the gateway drops it for FormData so the boundary is generated.
+const saveStage = (formData) => Gateway.post('/call_file/save_stage', formData);
 const allDetailByVesselId = (payload) => Gateway.post('/call_file/all_detail_by_vessel_id', payload);
 const getAllDetailByVesselId = allDetailByVesselId;
 const getAllTransportCoordinators = () => Gateway.get('/call_file/get_all_transport_coordinators');
@@ -38,6 +43,7 @@ export default {
   createCallFile,
   createCallFileNew,
   getCallDetail,
+  saveStage,
   allDetailByVesselId,
   getAllDetailByVesselId,
   getAllTransportCoordinators,

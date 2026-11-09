@@ -321,3 +321,111 @@ export const resolveTemplateCallTypeLabel = (detail) => {
   const templateLabel = detail?.template?.call_type;
   return isEmptyTemplateValue(templateLabel) ? "" : String(templateLabel).trim();
 };
+
+// ---------------------------------------------------------------------------
+// Editable stage forms (Operation → Pre Arrival / Arrival / Departure)
+// ---------------------------------------------------------------------------
+
+export const TEMPLATE_STAGE_KEYS = ["pre_arrival", "arrival", "departure"];
+
+// One Operation subtab (normalized, with its real tab_id and fields), or null.
+export const getTemplateOperationStage = (detail, stageKey) => {
+  const subtabs = getTemplateOperationSubtabs(detail);
+  if (!subtabs) return null;
+  const key = normalizeTemplateKey(stageKey);
+  return subtabs.find((tab) => tab.key === key) ?? null;
+};
+
+const DATETIME_PATTERN = /^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}))?/;
+
+// "YYYY-MM-DD HH:mm" from any "YYYY-MM-DD[ T]HH:mm[:ss]" string, without Date parsing.
+export const toStageDateTimeValue = (value) => {
+  if (isEmptyTemplateValue(value)) return "";
+  const match = String(value).trim().match(DATETIME_PATTERN);
+  if (!match) return String(value).trim();
+  return match[2] ? `${match[1]} ${match[2]}` : `${match[1]} 00:00`;
+};
+
+const optionValueOf = (opt) => String(typeof opt === "object" ? opt?.option_value ?? "" : opt).trim();
+const optionLabelOf = (opt) => String(typeof opt === "object" ? opt?.option_label ?? "" : opt).trim();
+
+// Saved value → the option_value it refers to (value match, then exact/ci label match).
+// Unmatched values are returned as-is so they are never silently dropped.
+export const toStageOptionValue = (field, value) => {
+  if (isEmptyTemplateValue(value)) return "";
+  const options = Array.isArray(field?.options) ? field.options : [];
+  const target = String(value).trim();
+  if (options.some((opt) => optionValueOf(opt) === target)) return target;
+  const byLabel =
+    options.find((opt) => optionLabelOf(opt) === target) ??
+    options.find((opt) => optionLabelOf(opt).toLowerCase() === target.toLowerCase());
+  return byLabel ? optionValueOf(byLabel) : target;
+};
+
+const isMultiOptionField = (field, type) =>
+  (type === "checkbox" && Array.isArray(field?.options) && field.options.length > 0) ||
+  type === "multiselect" ||
+  type === "multi_select";
+
+// Initial editable value for a stage field (file fields are handled separately).
+export const toStageFormValue = (field, context = {}) => {
+  const type = getTemplateFieldType(field);
+  const value = resolveTemplateFieldValue(field, context);
+  if (type === "file") return null;
+  if (type === "datetime" || type === "timeobject") return toStageDateTimeValue(value);
+  if (type === "date") {
+    const match = isEmptyTemplateValue(value) ? null : String(value).trim().match(DATETIME_PATTERN);
+    return match ? match[1] : isEmptyTemplateValue(value) ? "" : String(value);
+  }
+  if (isMultiOptionField(field, type)) {
+    const list = Array.isArray(value) ? value : isEmptyTemplateValue(value) ? [] : [value];
+    return list.map((item) => toStageOptionValue(field, item));
+  }
+  if (type === "checkbox") {
+    // Single checkbox without options: keep booleans, interpret 1/0 strings.
+    if (typeof value === "boolean") return value;
+    if (isEmptyTemplateValue(value)) return false;
+    return ["1", "true", "yes"].includes(String(value).trim().toLowerCase());
+  }
+  if (SELECT_TYPES.has(type)) return toStageOptionValue(field, value);
+  // Text-like: keep numbers/booleans as their type; null/undefined become "".
+  return value === null || value === undefined ? "" : value;
+};
+
+// Value as sent in the save_stage `fields` JSON. Empty → null; numbers stay numbers.
+export const toStagePayloadValue = (field, value) => {
+  const type = getTemplateFieldType(field);
+  if (Array.isArray(value)) return value;
+  if (typeof value === "boolean") return value;
+  if (isEmptyTemplateValue(value)) return null;
+  if (type === "datetime" || type === "timeobject") return toStageDateTimeValue(value);
+  if (type === "number" && typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))) {
+    return Number(value);
+  }
+  return value;
+};
+
+export const isTemplateFieldRequired = (field) =>
+  field?.is_required === true || String(field?.is_required ?? "").trim() === "1";
+
+// A file field already holds an attachment when the API returns a filename or file_url.
+export const hasExistingTemplateFile = (field) =>
+  !isEmptyTemplateValue(field?.value) || !isEmptyTemplateValue(field?.file_url);
+
+// The time_objects row backing a timeobject field (for report-template payloads), or null.
+export const findTimeObjectRowForField = (field, timeObjects) => {
+  if (!Array.isArray(timeObjects)) return null;
+  const explicitId = String(field?.time_object_id ?? field?.timeobject_id ?? "").trim();
+  if (explicitId) return timeObjects.find((row) => row.id === explicitId) ?? null;
+  const candidates = [normalizeTemplateKey(field?.field_key), normalizeTemplateKey(field?.field_label)].filter(Boolean);
+  return timeObjects.find((row) => candidates.includes(row.normalizedLabel)) ?? null;
+};
+
+// Option value of a field in another template tab (e.g. appointment_details → port),
+// used where a stage needs the call's port / call type and the root has no id.
+export const resolveTemplateTabFieldOptionValue = (detail, tabKey, fieldKey) => {
+  const tab = findTemplateTabByKey(detail, tabKey);
+  const field = tab?.fields.find((item) => normalizeTemplateKey(item?.field_key) === normalizeTemplateKey(fieldKey));
+  if (!field) return "";
+  return toStageOptionValue(field, field.value);
+};

@@ -8,7 +8,10 @@ import { TemplateTabPanel } from "@/pages/KanbanBoard/CardFormTabs/shared/compon
 import {
   getTemplateOperationSubtabs,
   isUnmappedTemplateTabId,
+  resolveTemplateCallTypeId,
+  resolveTemplateTabFieldOptionValue,
 } from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callDetailTemplate";
+import CardTabListLoading from "@/components/CardTabListLoading";
 import stageTimeMappingService from "@/services/stageTimeMappingService";
 import preArrivalInfoService from "@/services/preArrivalInfoService";
 import "@/design/scss/operations.scss";
@@ -18,6 +21,7 @@ import PreArrival from "./PreArrival";
 import Arrival from "./Arrival";
 import Departure from "./Departure";
 import CheckListTab from "./CheckListTab";
+import TemplateStageForm from "./TemplateStageForm";
 import { buildSendReportRequestBody } from "./components/OperationCommon";
 import usePermissions from "@/shared/hooks/usePermissions";
 import {
@@ -209,7 +213,11 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
     [card?.call_id, card?.callId, formValues?.call_id]
   );
   // Shared with the rest of the drawer (CardForm fetches it once per card).
-  const { detail: callDetailData, loading: isCallDetailFetching } = useCallDetail(currentCallId, {
+  const {
+    detail: callDetailData,
+    loading: isCallDetailFetching,
+    refetch: refetchCallDetail,
+  } = useCallDetail(currentCallId, {
     enabled: !isAddMode,
   });
   // Only the first load gates the sub-tabs; a background refresh keeps the current detail.
@@ -273,6 +281,13 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
     () => operationTabDefinitions.find((tab) => tab.id === activeOperationTab)?.template ?? null,
     [operationTabDefinitions, activeOperationTab]
   );
+  // With a template, Pre Arrival / Arrival / Departure render from its subtab fields and save
+  // through call_file/save_stage (TemplateStageForm). The legacy stage components — and the
+  // stage-time-object / detail / save requests they need — are only used for calls without one.
+  const usesTemplateStages = Boolean(templateOperationSubtabs);
+  const legacyStagesEnabled = !callDetailLoading && !usesTemplateStages;
+  const isStageTab = (tabId) => [OPERATION_TABS.PRE_ARRIVAL, OPERATION_TABS.ARRIVAL, OPERATION_TABS.DEPARTURE].includes(tabId);
+  const isTemplateStageTab = (tabId) => usesTemplateStages && isStageTab(tabId);
   const [eventTypeFieldsByStage, setEventTypeFieldsByStage] = useState({
     2: [],
     3: [],
@@ -357,7 +372,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
   useEffect(() => {
     let cancelled = false;
 
-    if (!preArrivalPortId || !preArrivalCallTypeId) {
+    if (!legacyStagesEnabled || !preArrivalPortId || !preArrivalCallTypeId) {
       setEventTypeFieldsByStage({ 2: [], 3: [], 4: [], 5: [] });
       setEventFieldsLoadedKey(eventFieldsKey);
       return () => {
@@ -418,7 +433,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
     };
     // eventFieldsKey is derived from exactly these three deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preArrivalPortId, preArrivalCallTypeId, currentCallId]);
+  }, [preArrivalPortId, preArrivalCallTypeId, currentCallId, legacyStagesEnabled]);
 
   const preArrivalEventFields = eventTypeFieldsByStage[2] || [];
   const firstPreArrivalField = preArrivalEventFields[0];
@@ -442,7 +457,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
   const isViewOnly = isDAModule;
 
   useEffect(() => {
-    if (isViewOnly || !etaDateValue || !etaTimeValue) return;
+    if (!legacyStagesEnabled || isViewOnly || !etaDateValue || !etaTimeValue) return;
 
     if (formValues.preArrivalEtaAutofillDisabled) return;
 
@@ -506,6 +521,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
       cancelled = true;
     };
   }, [
+    legacyStagesEnabled,
     isViewOnly,
     etaDateValue,
     etaTimeValue,
@@ -531,9 +547,12 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
   }, []);
 
   // Check List reports its own dirty state (compared against its saved snapshot) via onDirtyChange.
+  // Template stages also report their own dirty state (edits vs. the saved call detail).
+  const activeReportsOwnDirtyState =
+    activeOperationTab === OPERATION_TABS.CHECK_LIST || isTemplateStageTab(activeOperationTab);
   const markDirtyFromInput = useCallback(() => {
-    if (isTrackedTab && activeOperationTab !== OPERATION_TABS.CHECK_LIST) setHasUnsavedChanges(true);
-  }, [isTrackedTab, activeOperationTab]);
+    if (isTrackedTab && !activeReportsOwnDirtyState) setHasUnsavedChanges(true);
+  }, [isTrackedTab, activeReportsOwnDirtyState]);
 
   const handleChecklistDirtyChange = useCallback(
     (isDirty) => {
@@ -553,6 +572,42 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
   const handleSaveSuccess = useCallback(() => {
     setHasUnsavedChanges(false);
   }, []);
+
+  const handleStageDirtyChange = useCallback(
+    (isDirty) => {
+      if (!isViewOnly) setHasUnsavedChanges(isDirty);
+    },
+    [isViewOnly]
+  );
+
+  // Port / call type for the stage report-template prefill: root ids, else the call's own
+  // Appointment Details template values (the template response has no root port_id).
+  const templateReportPortId =
+    preArrivalPortId || resolveTemplateTabFieldOptionValue(callDetailData, "appointment_details", "port");
+  const templateReportCallTypeId = resolveTemplateCallTypeId(callDetailData) || preArrivalCallTypeId;
+
+  const renderTemplateStage = (tabId, { canEdit, canPreviewEmail, canSendReport }) => {
+    const stage = operationTabDefinitions.find((tab) => tab.id === tabId)?.template;
+    if (!stage) return null;
+    return (
+      <TemplateStageForm
+        key={`${currentCallId}:${stage.tabId}`}
+        stageKey={stage.key}
+        stage={stage}
+        detail={callDetailData}
+        callId={currentCallId}
+        portId={templateReportPortId}
+        callTypeId={templateReportCallTypeId}
+        refetchCallDetail={refetchCallDetail}
+        cardColor={cardColor}
+        isViewOnly={isViewOnly || !canEdit}
+        canPreviewEmail={canPreviewEmail}
+        canSendReport={canSendReport}
+        onDirtyChange={handleStageDirtyChange}
+        onSaveSuccess={handleSaveSuccess}
+      />
+    );
+  };
 
   const handleTabChange = useCallback(
     (tab) => {
@@ -620,7 +675,28 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               cardColor="#00368c"
             />
           )}
-          {activeOperationTab === OPERATION_TABS.PRE_ARRIVAL && (
+          {isStageTab(activeOperationTab) && callDetailLoading && (
+            <CardTabListLoading message="Loading stage details..." cardColor={cardColor} />
+          )}
+          {isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.PRE_ARRIVAL &&
+            renderTemplateStage(OPERATION_TABS.PRE_ARRIVAL, {
+              canEdit: canEditPreArrival,
+              canPreviewEmail: canPreviewPreArrivalEmail,
+              canSendReport: canSendPreArrivalReport,
+            })}
+          {isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.ARRIVAL &&
+            renderTemplateStage(OPERATION_TABS.ARRIVAL, {
+              canEdit: canEditArrival,
+              canPreviewEmail: canPreviewArrivalEmail,
+              canSendReport: canSendArrivalReport,
+            })}
+          {isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.DEPARTURE &&
+            renderTemplateStage(OPERATION_TABS.DEPARTURE, {
+              canEdit: canEditDeparture,
+              canPreviewEmail: canPreviewDepartureEmail,
+              canSendReport: canSendDepartureReport,
+            })}
+          {activeOperationTab === OPERATION_TABS.PRE_ARRIVAL && legacyStagesEnabled && (
             <PreArrival
               card={card}
               formValues={viewOnlyFormValues}
@@ -646,7 +722,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               onSaveSuccess={handleSaveSuccess}
             />
           )}
-          {activeOperationTab === OPERATION_TABS.ARRIVAL && (
+          {activeOperationTab === OPERATION_TABS.ARRIVAL && legacyStagesEnabled && (
             <Arrival
               formValues={viewOnlyFormValues}
               handleChange={trackedHandleChange}
@@ -671,7 +747,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               onSaveSuccess={handleSaveSuccess}
             />
           )}
-          {activeOperationTab === OPERATION_TABS.DEPARTURE && (
+          {activeOperationTab === OPERATION_TABS.DEPARTURE && legacyStagesEnabled && (
             <Departure
               formValues={viewOnlyFormValues}
               handleChange={trackedHandleChange}
