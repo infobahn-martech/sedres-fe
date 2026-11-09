@@ -1328,9 +1328,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             is_system: tab.tabKey ? 1 : 0,
             email_preview: getEmailPreviewSubject(tab.name) ? 1 : 0,
             display_order: tabIndex + 1,
-            // Section tabs (e.g. Export Approval) are fixed system screens with
-            // their own save API — only the tab itself is part of the template.
-            fields: tab.subTabs?.length || tab.sections?.length ? [] : buildFieldsPayload(tab.fields),
+            // Section tabs (e.g. Export Approval) keep their system sections on
+            // their own save API — only the custom fields added here are sent.
+            fields: tab.subTabs?.length ? [] : buildFieldsPayload(tab.fields),
         };
         if (tab.tabKey) payload.tab_key = tab.tabKey;
         if (tab.tabId) payload.tab_id = Number(tab.tabId);
@@ -1341,7 +1341,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                     is_system: sub.tabKey ? 1 : 0,
                     email_preview: getEmailPreviewSubject(tab.name, sub.name) ? 1 : 0,
                     display_order: subIndex + 1,
-                    fields: sub.sections?.length ? [] : buildFieldsPayload(sub.fields),
+                    fields: buildFieldsPayload(sub.fields),
                 };
                 if (sub.tabKey) subPayload.tab_key = sub.tabKey;
                 if (sub.tabId) subPayload.tab_id = Number(sub.tabId);
@@ -1372,6 +1372,46 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             },
         });
     };
+
+    // Custom-field grid of the live preview. Shares dragIndex with the left
+    // field list, so a field can be dragged from either side onto any cell.
+    const renderCustomFieldGrid = () => (
+        <div className="ct-preview-custom-fields-grid">
+            {buildFieldGrid(previewFields, dragIndex !== null ? 1 : 0).map(({ row, col, key, index }) => {
+                const dropProps = {
+                    onDragOver: (e) => { e.preventDefault(); setDragOverCell(key); },
+                    onDrop: (e) => { e.preventDefault(); handleDropOnCell(row, col); },
+                };
+                const isOver = dragOverCell === key && dragIndex !== index;
+                if (index === null) {
+                    return (
+                        <div
+                            key={key}
+                            className={`ctm-preview-empty-cell ${dragIndex !== null ? "is-drop-target" : ""} ${isOver ? "is-drag-over" : ""}`}
+                            {...dropProps}
+                        />
+                    );
+                }
+                const field = previewFields[index];
+                return (
+                    <div
+                        key={field.id}
+                        className={`ctm-preview-drag-item ${dragIndex === index ? "is-dragging" : ""} ${isOver ? "is-drag-over" : ""}`}
+                        draggable
+                        title="Drag to reposition"
+                        onDragStart={() => handleDragStart(index)}
+                        onDragEnd={handleDragEnd}
+                        {...dropProps}
+                    >
+                        <TemplateFieldPreview field={field} />
+                        {isFieldRemovable(field) && (
+                            <PreviewCloseButton label="Delete field" onClick={() => handleRequestDeleteField(field.id)} />
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
 
     return (
         <>
@@ -1654,10 +1694,10 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                             <TemplateSectionsSummary sections={activeSections} />
                         )}
 
-                        {activeTab && !isSectionScope && (
+                        {activeTab && (
                         <>
                         <div className="ctm-fields-header">
-                            <p className="ctm-section-title" style={{ margin: 0 }}>Fields</p>
+                            <p className="ctm-section-title" style={{ margin: 0 }}>{isSectionScope ? "Custom Fields" : "Fields"}</p>
                             {activeFields.length > 0 && (
                                 <button type="button" className="ctm-add-field-btn ctm-add-field-btn--sm" onClick={handleAddField} aria-label="Add field" title="Add field">
                                     <FiPlus size={14} />
@@ -1667,7 +1707,11 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
 
                         {activeFields.length === 0 && (
                             <div className="ctm-fields-empty">
-                                <p>No fields added yet. Add fields to capture the required information.</p>
+                                <p>
+                                    {isSectionScope
+                                        ? "No custom fields yet. Add fields to capture information beyond the system sections."
+                                        : "No fields added yet. Add fields to capture the required information."}
+                                </p>
                                 <button type="button" className="ctm-add-field-btn" onClick={handleAddField} aria-label="Add field" title="Add field">
                                     <FiPlus size={16} />
                                 </button>
@@ -1796,7 +1840,18 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         ) : featurePreviewKind ? (
                                             <TemplateFeaturePreview kind={featurePreviewKind} />
                                         ) : isSectionScope ? (
-                                            <TemplateSectionsPreview sections={activeSections} />
+                                            <div className="ctm-sys-scope">
+                                                <TemplateSectionsPreview sections={activeSections} />
+                                                {previewFields.length > 0 && (
+                                                    <section className="ctm-sys-section ctm-sys-section--depth-0 ctm-sys-custom-section">
+                                                        <header className="ctm-sys-section-head">
+                                                            <h4 className="ctm-sys-section-title">Custom Fields</h4>
+                                                            <p className="ctm-sys-section-desc">Fields added to this template.</p>
+                                                        </header>
+                                                        {renderCustomFieldGrid()}
+                                                    </section>
+                                                )}
+                                            </div>
                                         ) : emailSubject ? (
                                             <div className="ct-preview-custom-fields-grid ctm-email-split">
                                                 <div className="ctm-email-fields">
@@ -1841,43 +1896,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                                 />
                                             </div>
                                         ) : previewFields.length > 0 ? (
-                                            <div className="ct-preview-custom-fields-grid">
-                                                {/* Shares dragIndex with the left field list, so a field can be
-                                                    dragged from either side onto any cell, empty or occupied. */}
-                                                {buildFieldGrid(previewFields, dragIndex !== null ? 1 : 0).map(({ row, col, key, index }) => {
-                                                    const dropProps = {
-                                                        onDragOver: (e) => { e.preventDefault(); setDragOverCell(key); },
-                                                        onDrop: (e) => { e.preventDefault(); handleDropOnCell(row, col); },
-                                                    };
-                                                    const isOver = dragOverCell === key && dragIndex !== index;
-                                                    if (index === null) {
-                                                        return (
-                                                            <div
-                                                                key={key}
-                                                                className={`ctm-preview-empty-cell ${dragIndex !== null ? "is-drop-target" : ""} ${isOver ? "is-drag-over" : ""}`}
-                                                                {...dropProps}
-                                                            />
-                                                        );
-                                                    }
-                                                    const field = previewFields[index];
-                                                    return (
-                                                        <div
-                                                            key={field.id}
-                                                            className={`ctm-preview-drag-item ${dragIndex === index ? "is-dragging" : ""} ${isOver ? "is-drag-over" : ""}`}
-                                                            draggable
-                                                            title="Drag to reposition"
-                                                            onDragStart={() => handleDragStart(index)}
-                                                            onDragEnd={handleDragEnd}
-                                                            {...dropProps}
-                                                        >
-                                                            <TemplateFieldPreview field={field} />
-                                                            {isFieldRemovable(field) && (
-                                                                <PreviewCloseButton label="Delete field" onClick={() => handleRequestDeleteField(field.id)} />
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
+                                            renderCustomFieldGrid()
                                         ) : (
                                             <p className="ct-summary-no-fields">No fields yet — add fields on the left.</p>
                                         )}

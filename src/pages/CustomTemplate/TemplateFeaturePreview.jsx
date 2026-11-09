@@ -11,7 +11,6 @@ import { CREW_MANAGEMENT_SUBTABS } from "../KanbanBoard/CardFormTabs/Import/tabs
 import SalesOrderList from "../KanbanBoard/CardFormTabs/Import/tabs/salesOrder/SalesOrderList";
 import { ReportsLibrary } from "../KanbanBoard/CardFormTabs/Import/tabs/reports/Reports";
 import ActivityLog from "../KanbanBoard/CardFormTabs/Import/tabs/activityLog/ActivityLog";
-import Approval from "../KanbanBoard/CardFormTabs/Export/tabs/approval/Approval";
 import { mapSalesOrderResponse } from "../../shared/helpers/mapSalesOrderResponse";
 import "../../design/scss/checklist.scss";
 
@@ -242,37 +241,6 @@ const SAMPLE_ACTIVITY = [
     },
 ];
 
-// Sample Export Approval in the get_details response shape — Credit
-// Controller still to act, as on a freshly requested export card.
-const SAMPLE_EXPORT_APPROVAL = {
-    basic_details: {
-        date: "2026-06-14",
-        requested_by: "Operations",
-        vessel_name: "Sample Vessel 2000",
-        vessel_etd: "2026-06-16 00:00:00",
-        billing_entity: "Horizon Shipping Co.",
-    },
-    vessel_owner: {
-        owner_details: "Horizon Shipping Co.",
-        no_of_vessels_chartered: 12,
-        outstanding_balance_soa: 4500,
-        latest_payment_amount: 2000,
-        latest_payment_received_date: "2026-06-01 10:00:00",
-    },
-    vessel_principal: {
-        principal_details: "Horizon Ship Management",
-        no_of_vessels_chartered: 5,
-    },
-    vessel_charterer: {
-        charterer_details: "Gulf Offshore Charters",
-        no_of_vessels_chartered: 3,
-    },
-    credit_controller: { remarks: "" },
-    manager_ofm: {},
-    ceo: {},
-    documents: {},
-};
-
 // The real card's Husbandry dashboard (services, requests chart, history).
 const HusbandryPreview = () => (
     <ServiceSelection
@@ -312,9 +280,6 @@ const SubtasksPreview = () => <Subtasks card={{}} />;
 const NotesPreview = () => <Notes card={{ notes: [] }} />;
 
 const ActivityLogPreview = () => <ActivityLog card={{}} sampleEntries={SAMPLE_ACTIVITY} />;
-// The real Export Approval tab with sample data and no call id, so it never
-// fetches or saves.
-const ExportApprovalPreview = () => <Approval card={{}} previewDetails={SAMPLE_EXPORT_APPROVAL} />;
 
 const PREVIEWS = {
     "crew-immigration": CrewImmigrationPreview,
@@ -327,7 +292,6 @@ const PREVIEWS = {
     subtasks: SubtasksPreview,
     notes: NotesPreview,
     "activity-log": ActivityLogPreview,
-    "export-approval": ExportApprovalPreview,
 };
 
 function TemplateFeaturePreview({ kind }) {

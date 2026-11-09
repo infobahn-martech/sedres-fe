@@ -9,7 +9,6 @@ const FEATURE_PREVIEWS_BY_TAB = {
     subtasks: "subtasks",
     notes: "notes",
     "activity log": "activity-log",
-    "export approval": "export-approval",
 };
 const FEATURE_PREVIEWS_BY_SUBTAB = {
     "crew immigration": "crew-immigration",
