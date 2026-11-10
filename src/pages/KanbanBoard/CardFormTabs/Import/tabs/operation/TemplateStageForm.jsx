@@ -25,7 +25,7 @@ import {
   AdditionalTimeObjectsFields,
   appendAdditionalTimeObject,
   commitAdditionalTimeObject,
-  refreshAdditionalTimeObjectsByCall,
+  mapCallTimeObjectsToAdditionalRows,
   FormField,
   FormInput,
   FormSection,
@@ -218,36 +218,23 @@ function TemplateStageForm({
   const stageId = STAGE_ID_BY_KEY[stageKey];
   const saveCallTimeObjectAction = useArrivalReducer((s) => s.saveCallTimeObject);
   const deleteCallTimeObjectAction = useArrivalReducer((s) => s.deleteCallTimeObject);
-  const getTimeObjectsByCallAction = useArrivalReducer((s) => s.getTimeObjectsByCall);
   const [additionalRows, setAdditionalRows] = useState([]);
   const additionalRowsRef = useRef(additionalRows);
   additionalRowsRef.current = additionalRows;
 
-  const reloadAdditionalRows = useCallback(
-    async ({ currentRows = [], committedIndex = -1 } = {}) => {
-      const resolvedCallId = String(callId ?? "").trim();
-      if (!resolvedCallId) return null;
-      const rows = await refreshAdditionalTimeObjectsByCall({
-        callId: resolvedCallId,
-        stageId,
-        portId: portId ?? "",
-        callTypeId: callTypeId ?? "",
-        getTimeObjectsByCall: getTimeObjectsByCallAction,
-        currentRows,
-        committedIndex,
-      });
-      if (rows && aliveRef.current) setAdditionalRows(rows);
-      return rows;
-    },
-    [callId, stageId, portId, callTypeId, getTimeObjectsByCallAction]
-  );
+  // Saved additional rows come from the call detail (call_file/get_call_detail) `time_objects`.
+  const savedAdditionalRows = useMemo(() => {
+    const source = Array.isArray(detail?.time_objects) ? detail.time_objects.flat(Infinity) : [];
+    return mapCallTimeObjectsToAdditionalRows(source, { stageId });
+  }, [detail, stageId]);
 
-  // Load saved additional rows for this call/stage on mount.
+  // Whenever the call detail refreshes, show its saved rows plus any unsaved local drafts.
   useEffect(() => {
-    reloadAdditionalRows({ currentRows: additionalRowsRef.current }).catch(() => {
-      // Saved rows just won't show; adding new ones still works.
-    });
-  }, [reloadAdditionalRows]);
+    setAdditionalRows((prev) => [
+      ...savedAdditionalRows,
+      ...prev.filter((row) => row?.id == null || String(row.id).trim() === ""),
+    ]);
+  }, [savedAdditionalRows]);
 
   const handleCommitAdditionalTimeObject = async (row, index) => {
     const resolvedCallId = String(callId ?? "").trim();
@@ -259,35 +246,33 @@ function TemplateStageForm({
         stageId,
         saveCallTimeObject: saveCallTimeObjectAction,
       });
-      const refreshed = await reloadAdditionalRows({
-        currentRows: additionalRowsRef.current,
-        committedIndex: index,
-      });
-      if (!refreshed && newId != null && String(row?.id ?? "") !== String(newId) && aliveRef.current) {
-        setAdditionalRows((prev) => prev.map((r, i) => (i === index ? { ...r, id: newId } : r)));
-      }
+      if (!aliveRef.current) return;
+      // The saved row now comes back from the call detail, so drop the local draft copy.
+      setAdditionalRows((prev) => prev.filter((_, i) => i !== index));
+      await refetchCallDetail?.();
       // Time objects feed the report template body.
       if (aliveRef.current) setReportTemplateVersion((version) => version + 1);
+      return newId;
     } catch (error) {
       notify(getApiErrorMessage(error, "Failed to save time object."), "error");
     }
   };
 
   const handleRemoveAdditionalTimeObject = async (row, index) => {
-    const next = additionalRowsRef.current.filter((_, rowIndex) => rowIndex !== index);
     const resolvedCallId = String(callId ?? "").trim();
     if (row?.id != null && String(row.id).trim() !== "" && resolvedCallId) {
       try {
         await deleteCallTimeObjectAction({ timeObjectId: row.id, callId: resolvedCallId, stageId });
-        const refreshed = await reloadAdditionalRows({ currentRows: next });
+        if (!aliveRef.current) return;
+        setAdditionalRows((prev) => prev.filter((_, i) => i !== index));
+        await refetchCallDetail?.();
         if (aliveRef.current) setReportTemplateVersion((version) => version + 1);
-        if (refreshed) return;
       } catch (error) {
         notify(getApiErrorMessage(error, "Failed to delete time object."), "error");
-        return;
       }
+      return;
     }
-    if (aliveRef.current) setAdditionalRows(next);
+    setAdditionalRows((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleReportDraftChange = (name, value) => {
