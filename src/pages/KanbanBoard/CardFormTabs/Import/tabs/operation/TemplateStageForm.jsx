@@ -5,6 +5,7 @@ import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
 import callFileService from "@/services/callFileService";
 import appointmentAcceptanceService from "@/services/appointmentAcceptanceService";
+import useArrivalReducer from "@/store/ArrivalReducer";
 import DateTimePickerField from "../../../shared/components/DateTimePickerField";
 import {
   buildTemplateFieldDisplay,
@@ -20,6 +21,11 @@ import {
   toStagePayloadValue,
 } from "../../../shared/utils/callDetailTemplate";
 import {
+  AdditionalTimeObjectAddButton,
+  AdditionalTimeObjectsFields,
+  appendAdditionalTimeObject,
+  commitAdditionalTimeObject,
+  refreshAdditionalTimeObjectsByCall,
   FormField,
   FormInput,
   FormSection,
@@ -30,6 +36,7 @@ import {
   OperationFormCard,
   OperationSaveSection,
 } from "./components/OperationCommon";
+import { OPERATION_STAGE_IDS } from "./operationConstants";
 import { extractReportTemplateFields } from "./operationReportTemplate";
 import { resolveReportBodyHtml } from "./operationReportMessageHtml";
 
@@ -43,7 +50,14 @@ const REPORT_TEMPLATE_BY_STAGE = {
 // save_stage's `report` carries only to_email, subject and body, so the composer shows just those.
 const REPORT_COMPOSER_FIELDS = ["to", "subject", "message"];
 
-const SELECT_TYPES = new Set(["dropdown", "select", "multiselect", "multi_select"]);
+// Stage ids for the shared time_object endpoints (additional "+" time objects).
+const STAGE_ID_BY_KEY = {
+  pre_arrival: OPERATION_STAGE_IDS.PRE_ARRIVAL,
+  arrival: OPERATION_STAGE_IDS.ARRIVAL,
+  departure: OPERATION_STAGE_IDS.DEPARTURE,
+};
+
+const SELECT_TYPES =new Set(["dropdown", "select", "multiselect", "multi_select"]);
 const TEXT_INPUT_TYPES = { text: "text", email: "email", number: "number", phone: "tel", tel: "tel", url: "url" };
 
 const toOptionList = (field) =>
@@ -77,6 +91,8 @@ function TemplateStageForm({
   isViewOnly = false,
   canPreviewEmail = true,
   canSendReport = true,
+  canAddTimeObject = true,
+  canDeleteTimeObject = true,
   onDirtyChange,
   onSaveSuccess,
 }) {
@@ -197,6 +213,82 @@ function TemplateStageForm({
       cancelled = true;
     };
   }, [isViewOnly, canPreviewEmail, reportConfig, callId, portId, callTypeId, reportTemplateVersion]);
+
+  // ---- Additional time objects ("+" button): saved/deleted per row via time_object endpoints ----
+  const stageId = STAGE_ID_BY_KEY[stageKey];
+  const saveCallTimeObjectAction = useArrivalReducer((s) => s.saveCallTimeObject);
+  const deleteCallTimeObjectAction = useArrivalReducer((s) => s.deleteCallTimeObject);
+  const getTimeObjectsByCallAction = useArrivalReducer((s) => s.getTimeObjectsByCall);
+  const [additionalRows, setAdditionalRows] = useState([]);
+  const additionalRowsRef = useRef(additionalRows);
+  additionalRowsRef.current = additionalRows;
+
+  const reloadAdditionalRows = useCallback(
+    async ({ currentRows = [], committedIndex = -1 } = {}) => {
+      const resolvedCallId = String(callId ?? "").trim();
+      if (!resolvedCallId) return null;
+      const rows = await refreshAdditionalTimeObjectsByCall({
+        callId: resolvedCallId,
+        stageId,
+        portId: portId ?? "",
+        callTypeId: callTypeId ?? "",
+        getTimeObjectsByCall: getTimeObjectsByCallAction,
+        currentRows,
+        committedIndex,
+      });
+      if (rows && aliveRef.current) setAdditionalRows(rows);
+      return rows;
+    },
+    [callId, stageId, portId, callTypeId, getTimeObjectsByCallAction]
+  );
+
+  // Load saved additional rows for this call/stage on mount.
+  useEffect(() => {
+    reloadAdditionalRows({ currentRows: additionalRowsRef.current }).catch(() => {
+      // Saved rows just won't show; adding new ones still works.
+    });
+  }, [reloadAdditionalRows]);
+
+  const handleCommitAdditionalTimeObject = async (row, index) => {
+    const resolvedCallId = String(callId ?? "").trim();
+    if (!resolvedCallId) return;
+    try {
+      const newId = await commitAdditionalTimeObject({
+        row,
+        callId: resolvedCallId,
+        stageId,
+        saveCallTimeObject: saveCallTimeObjectAction,
+      });
+      const refreshed = await reloadAdditionalRows({
+        currentRows: additionalRowsRef.current,
+        committedIndex: index,
+      });
+      if (!refreshed && newId != null && String(row?.id ?? "") !== String(newId) && aliveRef.current) {
+        setAdditionalRows((prev) => prev.map((r, i) => (i === index ? { ...r, id: newId } : r)));
+      }
+      // Time objects feed the report template body.
+      if (aliveRef.current) setReportTemplateVersion((version) => version + 1);
+    } catch (error) {
+      notify(getApiErrorMessage(error, "Failed to save time object."), "error");
+    }
+  };
+
+  const handleRemoveAdditionalTimeObject = async (row, index) => {
+    const next = additionalRowsRef.current.filter((_, rowIndex) => rowIndex !== index);
+    const resolvedCallId = String(callId ?? "").trim();
+    if (row?.id != null && String(row.id).trim() !== "" && resolvedCallId) {
+      try {
+        await deleteCallTimeObjectAction({ timeObjectId: row.id, callId: resolvedCallId, stageId });
+        const refreshed = await reloadAdditionalRows({ currentRows: next });
+        if (aliveRef.current) setReportTemplateVersion((version) => version + 1);
+        if (refreshed) return;
+      } catch (error) {
+        notify(getApiErrorMessage(error, "Failed to delete time object."), "error");
+        return;
+      }
+    }
+    if (aliveRef.current) setAdditionalRows(next);
+  };
 
   const handleReportDraftChange = (name, value) => {
     reportTouchedRef.current = true;
@@ -457,7 +549,16 @@ function TemplateStageForm({
         <div className="operation-tab-layout">
           <div className={formClassName}>
             <div className="operation-two-column-grid operation-two-column-grid--split-scroll">
-              <OperationFormCard className="operation-form-column">
+              <OperationFormCard
+                className="operation-form-column"
+                topRightAction={
+                  !isViewOnly && canAddTimeObject ? (
+                    <AdditionalTimeObjectAddButton
+                      onClick={() => setAdditionalRows((prev) => appendAdditionalTimeObject(prev))}
+                    />
+                  ) : null
+                }
+              >
                 {/* Operation stages are a single column: fields stack in row_no, then col_no order. */}
                 {fields.length === 0 ? (
                   <span className="detail-row-empty">No fields are configured for this stage.</span>
@@ -472,6 +573,16 @@ function TemplateStageForm({
                     </FormField>
                   ))
                 )}
+                <AdditionalTimeObjectsFields
+                  value={additionalRows}
+                  onChange={setAdditionalRows}
+                  onRemoveRow={handleRemoveAdditionalTimeObject}
+                  onCommitRow={handleCommitAdditionalTimeObject}
+                  isViewOnly={isViewOnly}
+                  hideAddButton
+                  canAdd={canAddTimeObject}
+                  canDelete={canDeleteTimeObject}
+                />
               </OperationFormCard>
               {canPreviewEmail && (
                 <OperationFormCard className="operation-email-column">
@@ -517,6 +628,8 @@ TemplateStageForm.propTypes = {
   isViewOnly: PropTypes.bool,
   canPreviewEmail: PropTypes.bool,
   canSendReport: PropTypes.bool,
+  canAddTimeObject: PropTypes.bool,
+  canDeleteTimeObject: PropTypes.bool,
   onDirtyChange: PropTypes.func,
   onSaveSuccess: PropTypes.func,
 };

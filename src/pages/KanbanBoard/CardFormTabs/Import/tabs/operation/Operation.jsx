@@ -586,7 +586,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
     preArrivalPortId || resolveTemplateTabFieldOptionValue(callDetailData, "appointment_details", "port");
   const templateReportCallTypeId = resolveTemplateCallTypeId(callDetailData) || preArrivalCallTypeId;
 
-  const renderTemplateStage = (tabId, { canEdit, canPreviewEmail, canSendReport }) => {
+  const renderTemplateStage = (tabId, { canEdit, canPreviewEmail, canSendReport, canAddTimeObject, canDeleteTimeObject }) => {
     const stage = operationTabDefinitions.find((tab) => tab.id === tabId)?.template;
     if (!stage) return null;
     return (
@@ -603,6 +603,8 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
         isViewOnly={isViewOnly || !canEdit}
         canPreviewEmail={canPreviewEmail}
         canSendReport={canSendReport}
+        canAddTimeObject={canAddTimeObject}
+        canDeleteTimeObject={canDeleteTimeObject}
         onDirtyChange={handleStageDirtyChange}
         onSaveSuccess={handleSaveSuccess}
       />
@@ -683,18 +685,24 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               canEdit: canEditPreArrival,
               canPreviewEmail: canPreviewPreArrivalEmail,
               canSendReport: canSendPreArrivalReport,
+              canAddTimeObject: canAddPreArrivalTimeObject,
+              canDeleteTimeObject: canDeletePreArrivalTimeObject,
             })}
           {isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.ARRIVAL &&
             renderTemplateStage(OPERATION_TABS.ARRIVAL, {
               canEdit: canEditArrival,
               canPreviewEmail: canPreviewArrivalEmail,
               canSendReport: canSendArrivalReport,
+              canAddTimeObject: canAddArrivalTimeObject,
+              canDeleteTimeObject: canDeleteArrivalTimeObject,
             })}
           {isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.DEPARTURE &&
             renderTemplateStage(OPERATION_TABS.DEPARTURE, {
               canEdit: canEditDeparture,
               canPreviewEmail: canPreviewDepartureEmail,
               canSendReport: canSendDepartureReport,
+              canAddTimeObject: canAddDepartureTimeObject,
+              canDeleteTimeObject: canDeleteDepartureTimeObject,
             })}
           {activeOperationTab === OPERATION_TABS.PRE_ARRIVAL && legacyStagesEnabled && (
             <PreArrival
