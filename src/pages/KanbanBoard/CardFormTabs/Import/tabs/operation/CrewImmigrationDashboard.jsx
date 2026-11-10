@@ -1,6 +1,7 @@
 import { useContext, useState, useCallback, useRef, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import { FiSearch, FiChevronLeft, FiChevronRight, FiCheck, FiNavigation, FiEdit2, FiX, FiTrash2 } from "react-icons/fi";
+import { FiSearch, FiChevronLeft, FiChevronRight, FiCheck, FiNavigation, FiEdit2, FiX, FiTrash2, FiUsers } from "react-icons/fi";
+import CardFormEmptyState from "../../../shared/components/CardFormEmptyState";
 import CrewListUploadBox from "../husbandry/components/CrewListUploadBox";
 import CrewUploadDropzones from "../husbandry/components/CrewUploadDropzones";
 import LaunchHireInlineForm from "../husbandry/components/LaunchHireInlineForm";
@@ -988,9 +989,23 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
           {canViewCrewList && (isListingLoading && listingRows.length === 0 ? (
             <p className="crew-summary-empty">Loading crew…</p>
           ) : !isListingLoading && totalListingItems === 0 ? (
-            <p className="crew-summary-empty">
-              {debouncedListingSearch || listingBatchFilter ? "No crew match your search." : "No crew uploaded yet. Upload a crew list to see it here."}
-            </p>
+            <div style={{ marginTop: 12 }}>
+              {debouncedListingSearch || listingBatchFilter ? (
+                <CardFormEmptyState
+                  className="cf-empty-state--framed"
+                  icon={FiSearch}
+                  title="No matching crew"
+                  message="Try a different name or clear the filter."
+                />
+              ) : (
+                <CardFormEmptyState
+                  className="cf-empty-state--framed"
+                  icon={FiUsers}
+                  title="No crew uploaded yet"
+                  message="Upload a crew list above and the crew members will be listed here."
+                />
+              )}
+            </div>
           ) : (
             <div className="crew-table-wrapper">
               <div className="table-wrapper table-responsive crew-table-container crew-table-scroll">
