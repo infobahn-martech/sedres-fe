@@ -1040,6 +1040,7 @@
     0 1px 2px rgba(15, 23, 42, 0.04),
     0 4px 12px rgba(15, 23, 42, 0.06);
   border: 1px solid var(--border-primary);
+  border-top: 3px solid #00368c;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -1048,22 +1049,11 @@
     background: linear-gradient(180deg, var(--surface-primary) 0%, var(--surface-secondary) 100%);
   }
 
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    height: 3px;
-    border-radius: 12px 12px 0 0;
-    background: #00368c;
-  }
-
   &:hover {
     box-shadow:
       0 1px 2px rgba(15, 23, 42, 0.05),
       0 6px 16px rgba(15, 23, 42, 0.08);
-    border-color: var(--border-primary);
+    border-color: #00368c var(--border-primary) var(--border-primary);
   }
 
   >.cf-field {

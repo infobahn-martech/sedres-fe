@@ -2,6 +2,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useState } from "react";
 import PropTypes from "prop-types";
+import { FiAlertCircle, FiClipboard } from "react-icons/fi";
+import CardFormEmptyState from "@/pages/KanbanBoard/CardFormTabs/shared/components/CardFormEmptyState";
 import { TASK_STATUS } from "./operationTasksMapper";
 import "@/design/scss/operations.scss";
 
@@ -465,11 +467,20 @@ function OperationTasksPanel({
             </li>
           ) : error ? (
             <li className="operation-task-empty">
-              <p>{error}</p>
+              <CardFormEmptyState
+                variant="error"
+                icon={FiAlertCircle}
+                title="Couldn't load operation tasks"
+                message={error}
+              />
             </li>
           ) : taskSections.length === 0 ? (
             <li className="operation-task-empty">
-              <p>No operation tasks available.</p>
+              <CardFormEmptyState
+                icon={FiClipboard}
+                title="No operation tasks yet"
+                message="Tasks for this call will show up here once they're created."
+              />
             </li>
           ) : null}
           {!isLoading && !error && taskSections.map((section) => (

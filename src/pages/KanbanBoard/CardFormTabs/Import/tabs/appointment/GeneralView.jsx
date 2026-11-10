@@ -7,7 +7,9 @@ import useCallTaskReducer from "@/store/CallTaskReducer";
 import usePermissions from "@/shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "@/shared/constants/permissions";
 import { useCallDetail } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
+import { FiAlertCircle, FiFileText } from "react-icons/fi";
 import TemplateFieldsView from "@/pages/KanbanBoard/CardFormTabs/shared/components/TemplateFieldsView";
+import CardFormEmptyState from "@/pages/KanbanBoard/CardFormTabs/shared/components/CardFormEmptyState";
 import {
   findTemplateTabByKey,
   resolveTemplateCallTypeLabel,
@@ -184,7 +186,12 @@ function GeneralView({ card, formValues, handleChange }) {
                           detail={callDetailData}
                         />
                       ) : (
-                        <span className="detail-row-empty">No appointment fields are configured for this template.</span>
+                        <CardFormEmptyState
+                          className="cf-empty-state--framed"
+                          icon={FiFileText}
+                          title="No appointment fields"
+                          message="This call's template doesn't have any appointment fields configured yet."
+                        />
                       )}
                     </div>
                   </div>
@@ -219,9 +226,22 @@ function GeneralView({ card, formValues, handleChange }) {
           {canViewGeneralInformation && (
             <div className="general-info-left">
               <div className="general-view-form-scroll">
-                <span className="detail-row-empty">
-                  {callDetailError ? "Unable to load appointment details." : "No appointment details available."}
-                </span>
+                {callDetailError ? (
+                  <CardFormEmptyState
+                    className="cf-empty-state--framed"
+                    variant="error"
+                    icon={FiAlertCircle}
+                    title="Couldn't load appointment details"
+                    message="Close and reopen the card to try again."
+                  />
+                ) : (
+                  <CardFormEmptyState
+                    className="cf-empty-state--framed"
+                    icon={FiFileText}
+                    title="No appointment details"
+                    message="Appointment details for this call will appear here."
+                  />
+                )}
               </div>
             </div>
           )}

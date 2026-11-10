@@ -1,0 +1,68 @@
+.cf-empty-state {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 240px;
+  height: 100%;
+  padding: 32px 20px;
+  box-sizing: border-box;
+  text-align: center;
+  font-style: normal;
+}
+
+// Standalone use (not inside a bordered card): give the empty area a soft frame.
+.cf-empty-state--framed {
+  border: 1.5px dashed var(--border-primary);
+  border-radius: 12px;
+  background: color-mix(in srgb, #00368c 3%, var(--surface-primary));
+}
+
+.cf-empty-state__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  color: #00368c;
+  background: color-mix(in srgb, #00368c 9%, var(--surface-primary));
+  box-shadow: 0 0 0 6px color-mix(in srgb, #00368c 4%, var(--surface-primary));
+}
+
+.cf-empty-state__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cf-empty-state__message {
+  margin: 0;
+  max-width: 300px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.cf-empty-state--error .cf-empty-state__badge {
+  color: #dc2626;
+  background: color-mix(in srgb, #dc2626 9%, var(--surface-primary));
+  box-shadow: 0 0 0 6px color-mix(in srgb, #dc2626 4%, var(--surface-primary));
+}
+
+[data-theme="dark"] {
+  .cf-empty-state--default .cf-empty-state__badge {
+    color: #7aa7ff;
+    background: color-mix(in srgb, #7aa7ff 14%, var(--surface-primary));
+    box-shadow: 0 0 0 6px color-mix(in srgb, #7aa7ff 6%, var(--surface-primary));
+  }
+
+  .cf-empty-state--framed {
+    background: var(--surface-secondary);
+  }
+}

@@ -1,6 +1,7 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiEye } from "react-icons/fi";
+import { FiEye, FiLayers } from "react-icons/fi";
+import CardFormEmptyState from "../../../shared/components/CardFormEmptyState";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
 import callFileService from "@/services/callFileService";
@@ -546,7 +547,15 @@ function TemplateStageForm({
               >
                 {/* Operation stages are a single column: fields stack in row_no, then col_no order. */}
                 {fields.length === 0 ? (
-                  <span className="detail-row-empty">No fields are configured for this stage.</span>
+                  <CardFormEmptyState
+                    icon={FiLayers}
+                    title="No fields for this stage"
+                    message={
+                      !isViewOnly && canAddTimeObject
+                        ? "Use the + button above to add a time object for this stage."
+                        : "This stage has no fields configured in the call's template."
+                    }
+                  />
                 ) : (
                   fields.map((field) => (
                     <FormField
