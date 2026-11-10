@@ -2435,8 +2435,9 @@ function CardForm({
   // custom template (data.template.tabs, ordered by display_order). tab_key resolves the
   // existing component and tab_label is the title; keys without a component get a
   // namespaced "template:<tab_id>" id rendered by TemplateTabPanel. Calls whose detail
-  // has no template keep the built-in tab list. Export Approval and DA are not template
-  // tabs — they stay driven by export status / the da_board flag as before.
+  // has no template keep the built-in tab list. With a template, Export Approval comes
+  // from the API (tab_key export_approval); without one it is still injected by export
+  // status. DA stays driven by the da_board flag.
   const usesTemplateTabs = !isDAModule && !isSimplifiedMode && !isAddMode;
   const templateTopTabs = useMemo(
     () => (usesTemplateTabs ? getTemplateTopTabs(callDetailSnapshot) : null),
@@ -2455,9 +2456,11 @@ function CardForm({
   );
 
   const buildTabList = useCallback(
-    (base, { lockOperation }) => {
+    (base, { lockOperation, fromTemplate }) => {
       const withDAOnly = showDAOnlyTab ? withDAOnlyTab(base) : base;
-      const withExport = showExportTabs && !isDAModule && !isSimplifiedMode
+      // Template tab sets already carry Export Approval (tab_key export_approval) from the
+      // API, so only inject the built-in one for calls without a template.
+      const withExport = !fromTemplate && showExportTabs && !isDAModule && !isSimplifiedMode
         ? withExportTabs(withDAOnly)
         : withDAOnly;
       const withHusbandryCall = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
@@ -2472,7 +2475,7 @@ function CardForm({
     const base = templateTopTabs
       ? templateTopTabs.map((tab) => tab.id)
       : isDAModule ? DA_TOP_TABS : (isSimplifiedMode ? SIMPLIFIED_TOP_TABS : ALL_TOP_TABS);
-    return buildTabList(base, { lockOperation: false });
+    return buildTabList(base, { lockOperation: false, fromTemplate: Boolean(templateTopTabs) });
   }, [isTemplateTabsPending, templateTopTabs, isDAModule, isSimplifiedMode, buildTabList]);
 
   const ENABLED_TABS = useMemo(() => {
@@ -2480,7 +2483,7 @@ function CardForm({
     const base = templateTopTabs
       ? templateTopTabs.map((tab) => tab.id)
       : isDAModule ? DA_ENABLED_TABS : (isSimplifiedMode ? SIMPLIFIED_ENABLED_TABS : ALL_ENABLED_TABS);
-    return buildTabList(base, { lockOperation: lockOperationForExport });
+    return buildTabList(base, { lockOperation: lockOperationForExport, fromTemplate: Boolean(templateTopTabs) });
   }, [isTemplateTabsPending, templateTopTabs, isDAModule, isSimplifiedMode, lockOperationForExport, buildTabList]);
 
   useEffect(() => {
