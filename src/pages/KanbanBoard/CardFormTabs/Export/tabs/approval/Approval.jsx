@@ -114,6 +114,10 @@ const EXPORT_APPROVAL_SECTION_ROLES = Object.freeze({
   ceo: ["23"],
 });
 
+// TEMPORARY: emails treated as Credit Controller regardless of role_id (Port
+// Operator test account). Remove this list once the account has the real role.
+const TEMP_CREDIT_CONTROLLER_EMAILS = Object.freeze(["infobahnoperator@gmail.com"]);
+
 const createEmptyPartySection = () => ({
   details: "",
   vesselCountUnderAgency: "",
@@ -800,7 +804,12 @@ const createEmptyPartySection = () => ({
     // EXPORT_APPROVAL_SECTION_ROLES; every other role gets it locked
     // (view-only), regardless of workflow stage.
     const roleKey = String(userRoleId);
-    const isControllerRole = EXPORT_APPROVAL_SECTION_ROLES.creditController.includes(roleKey);
+    const userEmail = useAuthReducer((state) => state.profileData?.email);
+    const isTempControllerEmail = TEMP_CREDIT_CONTROLLER_EMAILS.includes(
+      String(userEmail || "").trim().toLowerCase()
+    );
+    const isControllerRole =
+      EXPORT_APPROVAL_SECTION_ROLES.creditController.includes(roleKey) || isTempControllerEmail;
     const isManagerRole = EXPORT_APPROVAL_SECTION_ROLES.manager.includes(roleKey);
     const isCeoRole = EXPORT_APPROVAL_SECTION_ROLES.ceo.includes(roleKey);
     // Vessel party image uploads are restricted to Credit Controller and CEO
