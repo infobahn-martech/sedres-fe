@@ -48,8 +48,17 @@ const REPORT_TEMPLATE_BY_STAGE = {
   departure: { reportTypeId: 5, load: appointmentAcceptanceService.getArrivalTemplateByPortCallType },
 };
 
-// save_stage's `report` carries only to_email, subject and body, so the composer shows just those.
-const REPORT_COMPOSER_FIELDS = ["to", "subject", "message"];
+// Composer fields; each one is sent in save_stage's `report` (from_email, to_email, cc_emails, subject, body).
+const REPORT_COMPOSER_FIELDS = ["from", "to", "cc", "subject", "message"];
+
+// Template values win; empty ones keep what the composer already has.
+const mergeReportTemplate = (prev, template) => ({
+  from: template.from || prev.from,
+  to: template.to || prev.to,
+  cc: template.cc || prev.cc,
+  subject: template.subject || prev.subject,
+  message: template.message || prev.message,
+});
 
 // Stage ids for the shared time_object endpoints (additional "+" time objects).
 const STAGE_ID_BY_KEY = {
@@ -115,10 +124,14 @@ function TemplateStageForm({
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(null); // "save" | "report" | null
   const submittingRef = useRef(false);
-  const [reportDraft, setReportDraft] = useState({
-    to: "",
-    subject: `Report - ${stage?.label ?? ""}`.trim(),
-    message: "",
+  // The call detail's subtab `email_template` is the composer's source; the report template
+  // endpoints are only a fallback for templates that don't carry one.
+  const detailEmailTemplate = stage?.emailTemplate ?? null;
+  const showEmailPreview = canPreviewEmail && stage?.emailPreview !== false;
+  const [reportDraft, setReportDraft] = useState(() => {
+    const defaults = { from: "", to: "", cc: "", subject: `Report - ${stage?.label ?? ""}`.trim(), message: "" };
+    if (!detailEmailTemplate) return defaults;
+    return mergeReportTemplate(defaults, extractReportTemplateFields(detailEmailTemplate));
   });
   const reportTouchedRef = useRef(false);
   const [reportTemplateVersion, setReportTemplateVersion] = useState(0);
@@ -182,8 +195,16 @@ function TemplateStageForm({
     })
     .filter(Boolean);
 
+  // Rebind from the call detail whenever it refreshes (e.g. after a save), unless the user
+  // has already edited the composer.
   useEffect(() => {
-    if (isViewOnly || !canPreviewEmail || !reportConfig) return undefined;
+    if (!detailEmailTemplate || reportTouchedRef.current) return;
+    const template = extractReportTemplateFields(detailEmailTemplate);
+    setReportDraft((prev) => mergeReportTemplate(prev, template));
+  }, [detailEmailTemplate]);
+
+  useEffect(() => {
+    if (detailEmailTemplate || isViewOnly || !showEmailPreview || !reportConfig) return undefined;
     const resolvedCallId = String(callId ?? "").trim();
     const resolvedPortId = String(portId ?? "").trim();
     const resolvedCallTypeId = String(callTypeId ?? "").trim();
@@ -201,11 +222,7 @@ function TemplateStageForm({
       .then((response) => {
         if (cancelled || !aliveRef.current || reportTouchedRef.current) return;
         const template = extractReportTemplateFields(response);
-        setReportDraft((prev) => ({
-          to: template.to || prev.to,
-          subject: template.subject || prev.subject,
-          message: template.message || prev.message,
-        }));
+        setReportDraft((prev) => mergeReportTemplate(prev, template));
       })
       .catch(() => {
         // Composer keeps its defaults; the user can still type the report.
@@ -213,7 +230,7 @@ function TemplateStageForm({
     return () => {
       cancelled = true;
     };
-  }, [isViewOnly, canPreviewEmail, reportConfig, callId, portId, callTypeId, reportTemplateVersion]);
+  }, [detailEmailTemplate, isViewOnly, showEmailPreview, reportConfig, callId, portId, callTypeId, reportTemplateVersion]);
 
   // ---- Additional time objects ("+" button): saved/deleted per row via time_object endpoints ----
   const stageId = STAGE_ID_BY_KEY[stageKey];
@@ -336,13 +353,16 @@ function TemplateStageForm({
       if (file instanceof File) formData.append(`field_${fieldId}`, file);
     });
     // The composer's report goes with every save_stage call (Save and Send) once it has a recipient,
-    // e.g. report = {"to_email":"agent@x.com","subject":"Departure - MV ALNEHEM","body":"<p>...</p>"}.
+    // e.g. report = {"from_email":"info@x.com","to_email":"agent@x.com","cc_emails":"ops@x.com",
+    //               "subject":"Departure - MV ALNEHEM","body":"<p>...</p>"}.
     const report = {
+      from_email: String(reportDraft.from || "").trim(),
       to_email: String(reportDraft.to || "").trim(),
+      cc_emails: String(reportDraft.cc || "").trim(),
       subject: String(reportDraft.subject || "").trim(),
       body: resolveReportBodyHtml(reportDraft.message, "") || "",
     };
-    if (canPreviewEmail && report.to_email) {
+    if (showEmailPreview && report.to_email) {
       formData.append("report", JSON.stringify(report));
     }
 
@@ -578,10 +598,12 @@ function TemplateStageForm({
                   canDelete={canDeleteTimeObject}
                 />
               </OperationFormCard>
-              {canPreviewEmail && (
+              {showEmailPreview && (
                 <OperationFormCard className="operation-email-column">
                   <OperationEmailPreviewPanel
+                    from={reportDraft.from}
                     to={reportDraft.to}
+                    cc={reportDraft.cc}
                     subject={reportDraft.subject}
                     message={reportDraft.message}
                     onChange={handleReportDraftChange}

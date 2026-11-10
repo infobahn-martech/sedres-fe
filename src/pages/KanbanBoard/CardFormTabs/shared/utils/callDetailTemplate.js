@@ -72,6 +72,11 @@ const normalizeTab = (tab, keyMap) => {
     fields: Array.isArray(tab?.fields) ? tab.fields : [],
     // Subtabs are kept raw; callers normalize them with their own key map.
     rawSubtabs: Array.isArray(tab?.subtabs) ? tab.subtabs : [],
+    // Stage subtabs: `email_preview` (0/1) toggles the composer; `email_template` prefills it
+    // ({ report_type_id, subject, body, to_email, from_email, cc_emails }).
+    emailPreview:
+      tab?.email_preview === undefined || tab?.email_preview === null ? null : Number(tab.email_preview) === 1,
+    emailTemplate: tab?.email_template && typeof tab.email_template === "object" ? tab.email_template : null,
     // `id` is what the drawer switches on: the existing tab name, or a namespaced template id.
     id: mapped ?? `${TEMPLATE_TAB_ID_PREFIX}${tabId}`,
     isMapped: Boolean(mapped),
