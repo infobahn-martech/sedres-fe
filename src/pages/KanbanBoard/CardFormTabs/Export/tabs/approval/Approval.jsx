@@ -1038,26 +1038,10 @@ const createEmptyPartySection = () => ({
                   <h3 className="approval-column-title">Basic Details</h3>
                   <AutoSaveStatus status={saveStatus} />
                 </div>
-                <p className="approval-column-subtitle">Vessel call and billing information.</p>
+                <p className="approval-column-subtitle">Select the branch for this call.</p>
               </header>
               <div className="approval-column-body">
               <div className="approval-fields-grid approval-basic-fields-grid">
-                <FormField label="Date">
-                  <FormInput
-                    value={basicDetails.date}
-                    onChange={(e) => handleBasicChange("date", e.target.value)}
-                    placeholder="DD-MMM-YYYY"
-                    readOnly
-                  />
-                </FormField>
-                <FormField label="Requested by">
-                  <FormInput
-                    value={basicDetails.requestedBy}
-                    onChange={(e) => handleBasicChange("requestedBy", e.target.value)}
-                    placeholder="Requested by"
-                    readOnly
-                  />
-                </FormField>
                 <FormField label="Branch">
                   <FormSelect
                     value={basicDetails.branch}
@@ -1065,39 +1049,6 @@ const createEmptyPartySection = () => ({
                     options={branchOptions}
                     placeholder={loadingBranches ? "Loading..." : "Select branch..."}
                     disabled={loadingBranches || !canEditSharedDetails}
-                  />
-                </FormField>
-                <FormField label="Vessel Name">
-                  <FormInput
-                    value={basicDetails.vesselName}
-                    onChange={(e) => handleBasicChange("vesselName", e.target.value)}
-                    placeholder="Vessel name"
-                    readOnly
-                  />
-                </FormField>
-                <FormField label="Vessel's ETD">
-                  <DateTimePickerField
-                    dateValue={basicDetails.vesselEtdDate}
-                    timeValue={basicDetails.vesselEtdTime}
-                    onDateTimeChange={(value) => {
-                      setBasicDetails((prev) => ({
-                        ...prev,
-                        vesselEtdDate: value.date,
-                        vesselEtdTime: value.time,
-                      }));
-                    }}
-                    dateFieldName="vessel_etd_date"
-                    timeFieldName="vessel_etd_time"
-                    placeholder="Select date and time"
-                    disabled
-                  />
-                </FormField>
-                <FormField label="Billing entity">
-                  <FormInput
-                    value={basicDetails.billingEntity}
-                    onChange={(e) => handleBasicChange("billingEntity", e.target.value)}
-                    placeholder="Billing entity"
-                    readOnly
                   />
                 </FormField>
               </div>
