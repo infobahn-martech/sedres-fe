@@ -1340,25 +1340,31 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     };
 
     const buildTabPayload = (tab, tabIndex) => {
+        const hasEmailPreview = Boolean(getEmailPreviewSubject(tab.name));
         const payload = {
             tab_label: tab.name,
             is_system: tab.tabKey ? 1 : 0,
-            email_preview: getEmailPreviewSubject(tab.name) ? 1 : 0,
+            email_preview: hasEmailPreview ? 1 : 0,
             display_order: tabIndex + 1,
             // Section tabs (e.g. Export Approval) keep their system sections on
             // their own save API — only the custom fields added here are sent.
-            fields: tab.subTabs?.length ? [] : buildFieldsPayload(tab.fields, { singleColumn: isOperationTab(tab) }),
+            // Email-preview tabs (e.g. Appointment Details) stack their fields in
+            // one column beside the preview, so they save as column 1 like Operation.
+            fields: tab.subTabs?.length
+                ? []
+                : buildFieldsPayload(tab.fields, { singleColumn: isOperationTab(tab) || hasEmailPreview }),
         };
         if (tab.tabKey) payload.tab_key = tab.tabKey;
         if (tab.tabId) payload.tab_id = Number(tab.tabId);
         if (tab.subTabs?.length) {
             payload.subtabs = tab.subTabs.map((sub, subIndex) => {
+                const subHasEmailPreview = Boolean(getEmailPreviewSubject(tab.name, sub.name));
                 const subPayload = {
                     tab_label: sub.name,
                     is_system: sub.tabKey ? 1 : 0,
-                    email_preview: getEmailPreviewSubject(tab.name, sub.name) ? 1 : 0,
+                    email_preview: subHasEmailPreview ? 1 : 0,
                     display_order: subIndex + 1,
-                    fields: buildFieldsPayload(sub.fields, { singleColumn: isOperationTab(tab) }),
+                    fields: buildFieldsPayload(sub.fields, { singleColumn: isOperationTab(tab) || subHasEmailPreview }),
                 };
                 if (sub.tabKey) subPayload.tab_key = sub.tabKey;
                 if (sub.tabId) subPayload.tab_id = Number(sub.tabId);
