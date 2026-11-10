@@ -147,13 +147,13 @@ const collectStructureTabKeys = (structure) => {
     return keys;
 };
 
-// A system_bindings field as a builder field. System fields are locked:
-// always required and never deletable.
+// A system_bindings field as a builder field. System fields are locked (never
+// deletable); whether they're required comes from the API's is_required flag.
 const mapSystemBindingField = (binding) => ({
     ...createBlankField(),
     label: binding.label ?? "",
     type: String(binding.field_type ?? "text").toLowerCase(),
-    required: true,
+    required: isFlagTrue(binding.is_required),
     options: (binding.options ?? []).map((opt) => opt?.option_label ?? ""),
     optionIds: (binding.options ?? []).map(() => null),
     optionsSource: binding.option_source === "master" ? "master" : "manual",
@@ -184,7 +184,7 @@ const syncSystemBindingFields = (fields, bindings) => {
             ...field,
             label: fromApi.label,
             type: fromApi.type,
-            required: true,
+            required: fromApi.required,
             optionsSource: fromApi.optionsSource,
             masterModule: fromApi.masterModule,
             systemBindingKey: key,
@@ -505,7 +505,7 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
     // New (unlabelled) fields open ready to edit; existing ones start collapsed
     // so long templates stay scannable.
     const [expanded, setExpanded] = useState(() => !field.label.trim());
-    const isRequired = field.required || isLocked;
+    const isRequired = Boolean(field.required);
     const isTimeObject = field.type === timeObjectTypeKey;
     const showOptionsSource = field.type === dropdownTypeKey;
     const showManualOptions = !showOptionsSource && !isTimeObject && optionsFieldTypes.has(field.type);
@@ -584,7 +584,9 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
                         <span className="ctm-field-required-text">
                             <span className="ctm-field-control-label">Required</span>
                             <span className="ctm-field-control-hint">
-                                {isLocked ? "Always mandatory for this default field" : "Mandatory field"}
+                                {isLocked
+                                    ? (isRequired ? "Always mandatory for this default field" : "Optional for this default field")
+                                    : "Mandatory field"}
                             </span>
                         </span>
                         <span className="ctm-toggle">
@@ -761,7 +763,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const previewFields = activeFields.map((f) => ({
         ...f,
         label: f.label.trim() || "Untitled Field",
-        required: f.required || isLockedField(f),
+        required: Boolean(f.required),
     }));
     const emailScopeId = hasSubTabs ? activeSubTab?.id : activeTab?.id;
     const emailSubject = hiddenEmailPreviewIds.has(emailScopeId)
@@ -1280,7 +1282,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         const payload = {
             field_type_id: resolveFieldTypeId(field.type),
             field_label: field.label.trim(),
-            is_required: field.required || systemBindingKey ? 1 : 0,
+            is_required: field.required ? 1 : 0,
             display_order: index + 1,
         };
         if (systemBindingKey) {
