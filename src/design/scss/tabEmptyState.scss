@@ -1,0 +1,339 @@
+/* ==========================================================
+   TAB EMPTY STATE — shared by Document Library & Reports tabs
+   Accent follows the card color (--card-color); tints are mixed
+   against --surface-primary so they work in light and dark themes.
+   ========================================================== */
+
+.tab-empty-state {
+  --tes-accent: var(--card-color, #2a00ff);
+  --tes-tint: color-mix(in srgb, var(--tes-accent) 10%, var(--surface-primary, #fff));
+  --tes-tint-strong: color-mix(in srgb, var(--tes-accent) 18%, var(--surface-primary, #fff));
+  --tes-paper: var(--surface-primary, #fff);
+  --tes-line: color-mix(in srgb, var(--tes-accent) 22%, var(--border-primary, #e2e8f0));
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  text-align: center;
+  animation: tes-fade-in 0.4s ease-out both;
+
+  &--error {
+    --tes-accent: #d97706;
+  }
+}
+
+.tab-empty-state__title {
+  margin: 22px 0 0;
+  color: var(--text-primary, #1a273c);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.tab-empty-state__desc {
+  margin: 8px 0 0;
+  max-width: 360px;
+  color: var(--text-secondary, #64748b);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.tab-empty-state__hints {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border: 1px dashed var(--tes-line);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tes-accent) 4%, var(--surface-primary, #fff));
+    color: var(--text-secondary, #64748b);
+    font-size: 12px;
+    font-weight: 500;
+
+    svg {
+      color: var(--tes-accent);
+      flex-shrink: 0;
+    }
+  }
+}
+
+.tab-empty-state__action {
+  margin-top: 20px;
+}
+
+/* ---------- Illustration shell ---------- */
+
+.tes-art {
+  position: relative;
+  width: 140px;
+  height: 120px;
+}
+
+.tes-art__halo {
+  position: absolute;
+  inset: 6px 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--tes-tint-strong) 0%, var(--tes-tint) 55%, transparent 72%);
+}
+
+/* ---------- Documents: folder with stacked sheets ---------- */
+
+.tes-art__sheet {
+  position: absolute;
+  left: 50%;
+  width: 56px;
+  height: 70px;
+  border-radius: 8px;
+  background: var(--tes-paper);
+  border: 1px solid var(--tes-line);
+  box-shadow: 0 6px 14px -6px rgba(15, 23, 42, 0.18);
+
+  &--back {
+    top: 12px;
+    transform: translateX(-62%) rotate(-10deg);
+    animation: tes-sheet-back 3.2s ease-in-out infinite;
+  }
+
+  &--mid {
+    top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 10px;
+    transform: translateX(-38%) rotate(7deg);
+    animation: tes-sheet-mid 3.2s ease-in-out infinite;
+
+    i {
+      display: block;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--tes-tint-strong);
+
+      &:first-child {
+        width: 70%;
+        background: var(--tes-accent);
+        opacity: 0.55;
+      }
+
+      &:last-child {
+        width: 55%;
+      }
+    }
+  }
+}
+
+.tes-art__folder {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 92px;
+  height: 56px;
+  transform: translateX(-50%);
+  border-radius: 6px 10px 10px 10px;
+  background: linear-gradient(160deg,
+      color-mix(in srgb, var(--tes-accent) 78%, #fff) 0%,
+      var(--tes-accent) 100%);
+  color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 14px 24px -12px color-mix(in srgb, var(--tes-accent) 70%, transparent);
+}
+
+.tes-art__folder-tab {
+  position: absolute;
+  top: -8px;
+  left: 0;
+  width: 36px;
+  height: 12px;
+  border-radius: 6px 6px 0 0;
+  background: color-mix(in srgb, var(--tes-accent) 78%, #fff);
+}
+
+.tes-art__badge {
+  position: absolute;
+  right: 18px;
+  top: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--tes-paper);
+  color: var(--tes-accent);
+  border: 1px solid var(--tes-line);
+  box-shadow: 0 4px 10px -4px rgba(15, 23, 42, 0.25);
+  animation: tes-bob 2.8s ease-in-out infinite;
+}
+
+/* ---------- Reports: chart sheet + paper plane ---------- */
+
+.tes-art__report {
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 78px;
+  height: 96px;
+  padding: 10px;
+  transform: translateX(-50%) rotate(-4deg);
+  border-radius: 10px;
+  background: var(--tes-paper);
+  border: 1px solid var(--tes-line);
+  box-shadow: 0 14px 26px -14px rgba(15, 23, 42, 0.35);
+}
+
+.tes-art__report-head {
+  display: block;
+  width: 60%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--tes-accent);
+  opacity: 0.6;
+}
+
+.tes-art__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 40px;
+  padding: 0 2px 3px;
+  border-bottom: 1px solid var(--tes-line);
+
+  i {
+    display: block;
+    flex: 1;
+    height: var(--h);
+    border-radius: 3px 3px 0 0;
+    background: var(--tes-tint-strong);
+    transform-origin: bottom;
+    animation: tes-bar-grow 2.6s ease-in-out infinite;
+
+    &:nth-child(2) { animation-delay: 0.15s; }
+    &:nth-child(3) { animation-delay: 0.3s; }
+
+    &:nth-child(4) {
+      animation-delay: 0.45s;
+      background: var(--tes-accent);
+      opacity: 0.75;
+    }
+  }
+}
+
+.tes-art__report-line {
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--tes-tint-strong);
+
+  &--short {
+    width: 65%;
+  }
+}
+
+.tes-art__plane {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--tes-accent);
+  color: #fff;
+  box-shadow: 0 8px 16px -8px color-mix(in srgb, var(--tes-accent) 80%, transparent);
+  animation: tes-fly 3s ease-in-out infinite;
+
+  svg {
+    margin: 1px 1px 0 0;
+  }
+}
+
+.tes-art__trail {
+  position: absolute;
+  right: 30px;
+  top: 34px;
+  width: 30px;
+  height: 18px;
+  border-top: 2px dashed var(--tes-line);
+  border-radius: 50% 0 0 0;
+  transform: rotate(-18deg);
+}
+
+/* ---------- Error ---------- */
+
+.tes-art__error-icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  transform: translate(-50%, -50%);
+  border-radius: 18px;
+  background: var(--tes-paper);
+  border: 1px solid var(--tes-line);
+  color: var(--tes-accent);
+  box-shadow: 0 12px 24px -12px rgba(15, 23, 42, 0.3);
+}
+
+/* ---------- Animations ---------- */
+
+@keyframes tes-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tes-sheet-back {
+  0%, 100% { transform: translateX(-62%) rotate(-10deg); }
+  50% { transform: translateX(-66%) translateY(-4px) rotate(-13deg); }
+}
+
+@keyframes tes-sheet-mid {
+  0%, 100% { transform: translateX(-38%) rotate(7deg); }
+  50% { transform: translateX(-34%) translateY(-6px) rotate(10deg); }
+}
+
+@keyframes tes-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes tes-bar-grow {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.72); }
+}
+
+@keyframes tes-fly {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(4px, -5px) rotate(6deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-empty-state,
+  .tab-empty-state * {
+    animation: none !important;
+  }
+}

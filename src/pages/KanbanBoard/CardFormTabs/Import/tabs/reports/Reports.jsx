@@ -1,6 +1,7 @@
 import PropTypes from "prop-types";
 import { useEffect, useMemo, useState } from "react";
-import { FiDownload, FiFileText, FiInbox, FiSearch, FiLayers } from "react-icons/fi";
+import { FiDownload, FiFileText, FiSearch, FiLayers, FiSend, FiUsers } from "react-icons/fi";
+import TabEmptyState from "@/components/TabEmptyState";
 import reportsService from "@/services/reportsService";
 import "@/design/scss/operations.scss";
 
@@ -207,17 +208,25 @@ ReportPreview.propTypes = {
   onDownload: PropTypes.func.isRequired,
 };
 
-const ReportsEmptyState = ({ message }) => (
-  <div className="reports-empty-state">
-    <span className="reports-empty-state-icon">
-      <FiInbox size={26} />
-    </span>
-    <p className="reports-empty-state-text">{message}</p>
-  </div>
-);
+const ReportsEmptyState = ({ message, variant = "reports" }) =>
+  variant === "error" ? (
+    <TabEmptyState variant="error" title="Couldn't load reports" description={message} />
+  ) : (
+    <TabEmptyState
+      variant="reports"
+      title={message}
+      description="Reports emailed for this call will appear here with their recipients, send time and a preview you can download."
+      hints={[
+        { icon: FiSend, label: "Sent reports" },
+        { icon: FiUsers, label: "Recipients" },
+        { icon: FiDownload, label: "Downloadable copies" },
+      ]}
+    />
+  );
 
 ReportsEmptyState.propTypes = {
   message: PropTypes.string.isRequired,
+  variant: PropTypes.oneOf(["reports", "error"]),
 };
 
 const ReportsSkeleton = () => (
@@ -423,13 +432,13 @@ function Reports({ card, formValues }) {
     <div className="cardform-body">
       <div className="cardform-left-full reports-view" style={{ "--card-color": cardColor }}>
         {!callId ? (
-          <ReportsEmptyState message="No call identifier available for reports." />
+          <ReportsEmptyState message="Save this call to start sending reports" />
         ) : loading ? (
           <ReportsSkeleton />
         ) : error ? (
-          <ReportsEmptyState message={error} />
+          <ReportsEmptyState variant="error" message={error} />
         ) : reports.length === 0 ? (
-          <ReportsEmptyState message="No reports available." />
+          <ReportsEmptyState message="No reports sent yet" />
         ) : (
           <ReportsLibrary reports={reports} />
         )}

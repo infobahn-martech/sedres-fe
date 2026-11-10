@@ -10,6 +10,8 @@ import {
   resolveLibraryDefaults,
 } from "./documentLibraryData";
 import attachmentsService from "@/services/attachmentsService";
+import TabEmptyState from "@/components/TabEmptyState";
+import { FiFileText, FiMail, FiUploadCloud } from "react-icons/fi";
 import "@/design/scss/documentLibrary.scss";
 
 const buildFolderIndex = (folderTree) => {
@@ -198,11 +200,24 @@ function DocumentLibrary({ card, formValues, onAttachDocument }) {
           </div>
         ) : error ? (
           <div className="document-library document-library--message">
-            <p>{error}</p>
+            <TabEmptyState
+              variant="error"
+              title="Couldn't load documents"
+              description={error}
+            />
           </div>
         ) : isEmpty ? (
           <div className="document-library document-library--message">
-            <p>No documents available for this call.</p>
+            <TabEmptyState
+              variant="documents"
+              title="Your document library is empty"
+              description="Files attached to this call will be organised into folders here, ready to preview, download or attach to emails."
+              hints={[
+                { icon: FiUploadCloud, label: "Uploaded files" },
+                { icon: FiMail, label: "Email attachments" },
+                { icon: FiFileText, label: "Generated documents" },
+              ]}
+            />
           </div>
         ) : (
           <div className="document-library">
