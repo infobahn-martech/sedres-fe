@@ -157,10 +157,25 @@ const resolveTemplateRefetchParam = (field) =>
 const isFileValue = (value) =>
   value instanceof File || (typeof Blob !== "undefined" && value instanceof Blob);
 
+// first_tab also returns resolved ids at the top level of `data` (call_type_id, billing_entity_id,
+// port_id, ...) that are not always copied into the matching field's `value`. Resolve them by the
+// field's binding key / master key / label, e.g. "Call Type" -> data.call_type_id.
+const resolveTopLevelTemplateValue = (field, data) => {
+  if (!data || typeof data !== "object") return undefined;
+  for (const candidate of [field?.system_binding_key, field?.master_key, field?.field_label]) {
+    const key = normalizeBindingKey(candidate);
+    if (!key) continue;
+    const value = data[`${key}_id`];
+    if (typeof value === "string" || typeof value === "number") return value;
+  }
+  return undefined;
+};
+
 // Values returned by first_tab, keyed by field_id. File fields are skipped: the uploaded File stays local.
-const extractTemplateFieldValues = (fields) =>
+const extractTemplateFieldValues = (fields, data) =>
   (Array.isArray(fields) ? fields : []).reduce((acc, field) => {
-    const value = field?.value ?? field?.field_value;
+    const ownValue = field?.value ?? field?.field_value;
+    const value = hasMeaningfulValue(ownValue) ? ownValue : resolveTopLevelTemplateValue(field, data);
     if (field?.field_id == null || String(field?.type_key ?? "").toLowerCase() === "file") return acc;
     if (!hasMeaningfulValue(value)) return acc;
     acc[field.field_id] = Array.isArray(value) ? value.map((item) => String(item)) : String(value);
@@ -357,7 +372,7 @@ function GeneralAdd({
       cb: (data) => {
         if (cancelled) return;
         setTemplateFields(mapTemplateTabFields(data?.tab?.fields));
-        setTemplateFieldValues(extractTemplateFieldValues(data?.tab?.fields));
+        setTemplateFieldValues(extractTemplateFieldValues(data?.tab?.fields, data));
         applyTemplateEmailPreview(data?.email_preview);
         // Preselect the template's card type in the topbar; the topbar resolves its name / icon.
         const templateCardTypeId = firstNonEmptyString(data?.card_type_id);
@@ -580,7 +595,7 @@ function GeneralAdd({
           if (requestId !== templateRefetchRequestIdRef.current) return;
           const fields = data?.tab?.fields;
           if (Array.isArray(fields) && fields.length) setTemplateFields(mapTemplateTabFields(fields));
-          const boundValues = extractTemplateFieldValues(fields);
+          const boundValues = extractTemplateFieldValues(fields, data);
           // Trigger fields keep their latest value (the user may have kept typing during the request).
           triggerIds.forEach((id) => delete boundValues[id]);
           setTemplateFieldValues((prev) => {
