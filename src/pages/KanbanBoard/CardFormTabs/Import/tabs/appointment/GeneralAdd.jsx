@@ -119,8 +119,22 @@ const mapTemplateTabFields = (fields) =>
         optionsSource: field?.option_source === "master" ? "master" : "manual",
         masterModule: field?.master_key ?? "",
         refetchParam: resolveTemplateRefetchParam(field),
+        // Fields sourced from a time object (e.g. ETA / ETD) are sent back in first_tab's `time_objects`.
+        timeObjectId:
+          field?.field_source === "time_object" ? String(field?.source_time_object_id ?? "").trim() : "",
       };
     });
+
+// Template datetime values are "YYYY-MM-DDTHH:mm"; first_tab expects "YYYY-MM-DD HH:mm".
+// Partial values (date picked, time not yet) return "".
+const toTemplateTimeObjectValue = (value) => {
+  const match = String(value ?? "").trim().match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+  return match ? `${match[1]} ${match[2]}` : "";
+};
+
+// A time-object field re-fetches only once its value is complete, or when it is cleared.
+const shouldRefetchForTimeObjectValue = (value) =>
+  !hasMeaningfulValue(value) || Boolean(toTemplateTimeObjectValue(value));
 
 // Changing a field bound to one of these params re-fetches first_tab so the backend can resolve
 // the remaining field values (email / vessel / billing entity / port / last port / requestor email /
@@ -579,12 +593,26 @@ function GeneralAdd({
       if (!selectedTemplateId || !templateFields) return;
       const payload = new FormData();
       const triggerIds = [];
+      const timeObjects = [];
       templateFields.forEach((field) => {
-        if (!field.refetchParam) return;
         const value = values[field.id];
+        if (field.timeObjectId) {
+          triggerIds.push(field.id);
+          const timeObjectValue = toTemplateTimeObjectValue(value);
+          if (timeObjectValue) {
+            timeObjects.push({
+              time_object_id: Number(field.timeObjectId) || field.timeObjectId,
+              time_object_value: timeObjectValue,
+            });
+          }
+          return;
+        }
+        if (!field.refetchParam) return;
         triggerIds.push(field.id);
         if (isFileValue(value) || hasMeaningfulValue(value)) payload.append(field.refetchParam, value);
       });
+      // Multipart (for appointment_email_file), so the array goes as a JSON string like create_call_file.
+      if (timeObjects.length) payload.append("time_objects", JSON.stringify(timeObjects));
 
       const requestId = ++templateRefetchRequestIdRef.current;
       setIsTemplateRefetching(true);
@@ -629,7 +657,11 @@ function GeneralAdd({
         delete next[fieldId];
         return next;
       });
-      if (!field.refetchParam) return;
+      if (field.timeObjectId) {
+        if (!shouldRefetchForTimeObjectValue(nextValue)) return;
+      } else if (!field.refetchParam) {
+        return;
+      }
       clearTemplateRefetchTimer();
       if (TEMPLATE_DEBOUNCED_REFETCH_TYPES.has(field.type)) {
         templateRefetchTimerRef.current = window.setTimeout(() => {

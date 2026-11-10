@@ -15,7 +15,8 @@ const getAllTemplates = () => Gateway.get('/form_template/all_templates');
 
 const getTemplateById = (templateId) => Gateway.get(`/form_template/${templateId}`);
 
-// With a payload (FormData carrying appointment_email_file / vessel_id / billing_entity_id) the
+// With a payload (FormData carrying appointment_email_file / vessel_id / billing_entity_id / port_id /
+// last_port / service_requestor_email / assigned_operator_id and `time_objects` as a JSON string) the
 // backend resolves field values for the selection; multipart is required for the email file.
 const getTemplateFirstTab = (templateId, payload) =>
   payload
