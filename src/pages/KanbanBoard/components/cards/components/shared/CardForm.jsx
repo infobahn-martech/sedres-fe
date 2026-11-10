@@ -88,11 +88,14 @@ const EXPORT_ONLY_TABS = ["Export Approval"];
 
 const withExportTabs = (tabs) => {
   const next = [...tabs];
+  // A call template can already list the export tab; don't add it a second time.
+  const missingExportTabs = EXPORT_ONLY_TABS.filter((tab) => !next.includes(tab));
+  if (missingExportTabs.length === 0) return next;
   const appointmentIndex = next.indexOf("Appointment Details");
   if (appointmentIndex >= 0) {
-    next.splice(appointmentIndex + 1, 0, ...EXPORT_ONLY_TABS);
+    next.splice(appointmentIndex + 1, 0, ...missingExportTabs);
   } else {
-    next.push(...EXPORT_ONLY_TABS);
+    next.push(...missingExportTabs);
   }
   return next;
 };
