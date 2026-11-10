@@ -334,15 +334,15 @@ function TemplateStageForm({
     Object.entries(newFiles).forEach(([fieldId, file]) => {
       if (file instanceof File) formData.append(`field_${fieldId}`, file);
     });
-    if (withReport) {
-      formData.append(
-        "report",
-        JSON.stringify({
-          to_email: String(reportDraft.to || "").trim(),
-          subject: String(reportDraft.subject || "").trim(),
-          body: resolveReportBodyHtml(reportDraft.message, "") || "",
-        })
-      );
+    // The composer's report goes with every save_stage call (Save and Send) once it has a recipient,
+    // e.g. report = {"to_email":"agent@x.com","subject":"Departure - MV ALNEHEM","body":"<p>...</p>"}.
+    const report = {
+      to_email: String(reportDraft.to || "").trim(),
+      subject: String(reportDraft.subject || "").trim(),
+      body: resolveReportBodyHtml(reportDraft.message, "") || "",
+    };
+    if (canPreviewEmail && report.to_email) {
+      formData.append("report", JSON.stringify(report));
     }
 
     submittingRef.current = true;
