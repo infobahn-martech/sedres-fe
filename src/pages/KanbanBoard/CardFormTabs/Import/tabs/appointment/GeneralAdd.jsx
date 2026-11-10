@@ -123,14 +123,23 @@ const mapTemplateTabFields = (fields) =>
     });
 
 // Changing a field bound to one of these params re-fetches first_tab so the backend can resolve
-// the remaining field values for that email / vessel / billing entity / port. Keyed by the normalized
-// system_binding_key / master_key / label (e.g. "billing_entity_id", "Billing Entity", "Vessel Name", "Port").
+// the remaining field values (email / vessel / billing entity / port / last port / requestor email /
+// operator). Keyed by the normalized system_binding_key / master_key / label
+// (e.g. "billing_entity_id", "Billing Entity", "Vessel Name", "Port", "Assigned Operator").
 const TEMPLATE_REFETCH_PARAMS = {
   appointment_email: "appointment_email_file",
   vessel: "vessel_id",
   billing_entity: "billing_entity_id",
   port: "port_id",
+  last_port: "last_port",
+  service_requestor_email: "service_requestor_email",
+  assigned_operator: "assigned_operator_id",
+  operator: "assigned_operator_id",
 };
+
+// Typed inputs re-fetch after the user pauses instead of on every keystroke.
+const TEMPLATE_DEBOUNCED_REFETCH_TYPES = new Set(["text", "textarea", "email", "number"]);
+const TEMPLATE_REFETCH_DEBOUNCE_MS = 600;
 
 const normalizeBindingKey = (value) =>
   String(value ?? "")
@@ -285,7 +294,15 @@ function GeneralAdd({
   const [templateFieldValues, setTemplateFieldValues] = useState({});
   const [templateFieldErrors, setTemplateFieldErrors] = useState({});
   const templateRefetchRequestIdRef = useRef(0);
+  const templateRefetchTimerRef = useRef(null);
   const [isTemplateRefetching, setIsTemplateRefetching] = useState(false);
+  const clearTemplateRefetchTimer = useCallback(() => {
+    if (templateRefetchTimerRef.current) {
+      window.clearTimeout(templateRefetchTimerRef.current);
+      templateRefetchTimerRef.current = null;
+    }
+  }, []);
+  useEffect(() => clearTemplateRefetchTimer, [clearTemplateRefetchTimer]);
   // Id whose fetch has finished (success or failure); derived loading avoids flashing the default form.
   const [settledTemplateId, setSettledTemplateId] = useState("");
   const isTemplateFieldsLoading = Boolean(selectedTemplateId) && settledTemplateId !== selectedTemplateId;
@@ -329,7 +346,8 @@ function GeneralAdd({
     setPreviewMessageText("");
     setIsPreviewMessageDirty(false);
     isPreviewMessageDirtyRef.current = false;
-    // Drop any in-flight re-fetch for the previous template.
+    // Drop any pending / in-flight re-fetch for the previous template.
+    clearTemplateRefetchTimer();
     templateRefetchRequestIdRef.current += 1;
     setIsTemplateRefetching(false);
     if (!selectedTemplateId) return;
@@ -356,7 +374,7 @@ function GeneralAdd({
     return () => {
       cancelled = true;
     };
-  }, [selectedTemplateId, getTemplateFirstTab, handleChange, applyTemplateEmailPreview]);
+  }, [selectedTemplateId, getTemplateFirstTab, handleChange, applyTemplateEmailPreview, clearTemplateRefetchTimer]);
 
   const getFieldValue = (fieldName) =>
     hasMeaningfulValue(formValues?.[fieldName]) ? formValues[fieldName] : "";
@@ -545,11 +563,11 @@ function GeneralAdd({
     (values) => {
       if (!selectedTemplateId || !templateFields) return;
       const payload = new FormData();
-      const triggerValues = {};
+      const triggerIds = [];
       templateFields.forEach((field) => {
         if (!field.refetchParam) return;
         const value = values[field.id];
-        triggerValues[field.id] = value;
+        triggerIds.push(field.id);
         if (isFileValue(value) || hasMeaningfulValue(value)) payload.append(field.refetchParam, value);
       });
 
@@ -563,7 +581,13 @@ function GeneralAdd({
           const fields = data?.tab?.fields;
           if (Array.isArray(fields) && fields.length) setTemplateFields(mapTemplateTabFields(fields));
           const boundValues = extractTemplateFieldValues(fields);
-          setTemplateFieldValues((prev) => ({ ...prev, ...boundValues, ...triggerValues }));
+          // Trigger fields keep their latest value (the user may have kept typing during the request).
+          triggerIds.forEach((id) => delete boundValues[id]);
+          setTemplateFieldValues((prev) => {
+            const next = { ...prev, ...boundValues };
+            templateFieldValuesRef.current = next;
+            return next;
+          });
           applyTemplateEmailPreview(data?.email_preview);
           setTemplateFieldErrors((prev) => {
             const next = { ...prev };
@@ -590,9 +614,18 @@ function GeneralAdd({
         delete next[fieldId];
         return next;
       });
-      if (field.refetchParam) refetchTemplateFirstTab(nextValues);
+      if (!field.refetchParam) return;
+      clearTemplateRefetchTimer();
+      if (TEMPLATE_DEBOUNCED_REFETCH_TYPES.has(field.type)) {
+        templateRefetchTimerRef.current = window.setTimeout(() => {
+          templateRefetchTimerRef.current = null;
+          refetchTemplateFirstTab(templateFieldValuesRef.current);
+        }, TEMPLATE_REFETCH_DEBOUNCE_MS);
+        return;
+      }
+      refetchTemplateFirstTab(nextValues);
     },
-    [refetchTemplateFirstTab]
+    [refetchTemplateFirstTab, clearTemplateRefetchTimer]
   );
 
   // Template fields submitted as-is; single checkboxes always carry an explicit "1" / "0".
