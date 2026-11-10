@@ -1,4 +1,3 @@
-import React from 'react';
 import useKPIDashboardReducer from '../../../store/KPIDashboard';
 import '../../../design/scss/pages/kpi-dashboard/components/TaskListCard.scss';
 

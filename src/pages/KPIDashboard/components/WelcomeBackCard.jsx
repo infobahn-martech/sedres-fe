@@ -1,4 +1,3 @@
-import React from 'react';
 import GoldenIcon from '../../../assets/images/GoldenIcon.png';
 import useKPIDashboardReducer from '../../../store/KPIDashboard';
 import '../../../design/scss/pages/kpi-dashboard/components/WelcomeBackCard.scss';

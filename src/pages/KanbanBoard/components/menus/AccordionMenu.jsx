@@ -11,6 +11,22 @@ function AccordionMenu({
   isExpanded,
   isPinned,
 }) {
+  // Close on Escape key
+  useEffect(() => {
+    if (!position) return undefined;
+
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [position, onClose]);
+
   if (!position) return null;
 
   const handleClick = (e) => {
@@ -67,20 +83,6 @@ function AccordionMenu({
   };
 
   const menuPosition = getMenuPosition();
-
-  // Close on Escape key
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [onClose]);
 
   return (
     <>

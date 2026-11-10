@@ -6,23 +6,11 @@ import { PermissionModal } from "../Permission/Modals/AddEditPermission";
 import { RenderAction, RenderName } from "./RenderCells";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import useUserReducer from "../../store/UserReducer";
-import useAuthReducer from "../../store/AuthReducer";
 import usePermissions from "../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../shared/constants/permissions";
 
 const User = () => {
-  // User Management → Users is fully migrated to the new permission system:
-  // the backend permission response (profileData.permissions.sections) for
-  // the CURRENTLY LOGGED-IN user is authoritative here — no legacy role OR.
-  // Do not confuse this with PermissionModal below, which edits a target
-  // row's own permissions via the legacy per-user permission admin feature.
-  const profileData = useAuthReducer((state) => state.profileData);
   const { hasPermission } = usePermissions();
-  const canViewUsers = hasPermission({
-    moduleKey: PERMISSION_MODULES.USER_MANAGEMENT,
-    submoduleKey: PERMISSION_SUBMODULES.USERS,
-    actionKey: PERMISSION_ACTIONS.VIEW,
-  });
   const canAddUser = hasPermission({
     moduleKey: PERMISSION_MODULES.USER_MANAGEMENT,
     submoduleKey: PERMISSION_SUBMODULES.USERS,

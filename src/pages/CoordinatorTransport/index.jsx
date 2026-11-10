@@ -660,11 +660,6 @@ export default function CoordinatorTransport() {
         });
     }, [handleSelectCard, expandedColumns, handleColumnHeaderClick, handleColumnContextMenu, maxColumnHeights, columnHeights, handleColumnHeightChange, isSelectionMode, selectedCardIds, handleToggleCardSelect]);
 
-    // Show Workspaces view when Workspaces icon is clicked
-    if (showWorkspaces) {
-        return <Workspaces />;
-    }
-
     const getSelectedCardWorkflow = useCallback(() => {
         if (!selectedCard) return null;
         return workflows.find(workflow =>
@@ -681,6 +676,11 @@ export default function CoordinatorTransport() {
 
     const columnsForCardForm = addModeCardWorkflow?.columns;
     const columnOrderForCardForm = addModeCardWorkflow?.columnOrder;
+
+    // Show Workspaces view when Workspaces icon is clicked
+    if (showWorkspaces) {
+        return <Workspaces />;
+    }
 
     if (isLoading) {
         return (

@@ -1,4 +1,3 @@
-import React from 'react';
 import SatisfactionRateCard from './SatisfactionRateCard';
 import TaskCompletionSpeedCard from './TaskCompletionSpeedCard';
 import '../../../design/scss/pages/kpi-dashboard/components/MiddleRowCards.scss';

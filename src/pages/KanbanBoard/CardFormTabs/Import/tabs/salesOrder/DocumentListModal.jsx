@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { FiFileText, FiSearch, FiUploadCloud, FiUpload, FiX, FiCheck, FiPaperclip } from "react-icons/fi";
 import useAlertReducer from "@/store/AlertReducer";

@@ -17,7 +17,6 @@ const dummyCustomFields = CUSTOM_FIELDS.map((customField, index) => ({
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date(),
-    updatedAt: new Date(),
 }));
 
 const CustomFields = () => {

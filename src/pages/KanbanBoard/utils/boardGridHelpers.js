@@ -12,9 +12,6 @@ export const CARD_GAP = 12;
 /** One side of horizontal padding inside the card-list cell (L+R total = 2× this). */
 export const CELL_PADDING_X = 10;
 
-/** Total horizontal padding inside a column cell (matches L+R padding of .card-list--swimlane-grid). */
-export const CELL_HORIZONTAL_PADDING_TOTAL = CELL_PADDING_X * 2;
-
 /** Gap between workflow columns on the outer board grid (not the same as CARD_GAP). */
 export const BOARD_COLUMN_GAP_PX = 6;
 

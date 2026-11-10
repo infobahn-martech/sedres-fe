@@ -1,4 +1,3 @@
-import React from 'react';
 import '../../../design/scss/pages/kpi-dashboard/components/TaskCompletionSpeedCard.scss';
 
 const ThreeDotsIcon = () => (

@@ -14,7 +14,6 @@ import "@/design/scss/general.scss";
 import ColorPickerIcon from "@/assets/images/ColorPicker.png";
 import SedresColorPicker from "@/components/SedresColorPicker/SedresColorPicker";
 import { normalizeHexColor } from "@/components/SedresColorPicker/sedresColorPickerConstants";
-import PriorityIcon from "@/assets/images/Priority.png";
 import { getItem } from "@/shared/helpers/localStorage";
 import {
   isGROSupervisorRole,

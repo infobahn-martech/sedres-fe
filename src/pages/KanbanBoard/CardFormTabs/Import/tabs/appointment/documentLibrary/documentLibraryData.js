@@ -327,9 +327,6 @@ export const DOCUMENTS = [
   },
 ];
 
-export const DEFAULT_FOLDER = "Appointment Email";
-export const DEFAULT_PARENT_FOLDER = "Appointment Acceptance";
-export const DEFAULT_DOCUMENT_ID = 1;
 
 const getFileExtension = (fileName = "") => {
   const match = String(fileName).toLowerCase().match(/\.([a-z0-9]+)$/);

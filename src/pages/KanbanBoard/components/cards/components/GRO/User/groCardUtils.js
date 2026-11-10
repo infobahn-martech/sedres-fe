@@ -1,17 +1,5 @@
 // GRO Board card view helpers (no JSX)
 
-/** Document type labels used when API returns no list */
-export const GRO_DOCUMENT_TYPES = [
-  "Registry",
-  "Tonnage",
-  "Ship Radio Station License",
-  "Maritime Health Declaration",
-  "Sanitation Certificate",
-  "Last Port clearance",
-  "Crew List",
-  "Immigration Batches",
-];
-
 export const GRO_MAIN_VIEWS = {
   inward: "inward",
   cg: "cg",
@@ -23,33 +11,6 @@ export const GRO_ACTIVE_TABS = {
   crewImmigration: "crewImmigration",
   vesselInwardRegistration: "vesselInwardRegistration",
   crewChange: "crewChange",
-};
-
-/** Custom Clearance Supervisor desk (role_id 5) uses Documents + Bayan only — no CG/Zawil pass tabs. Role 9 (Custom Clearance User) uses GRO-style UI. */
-export const isGroCustomClearanceRole = (userProfile) => {
-  const role = userProfile?.role;
-  if (!role || typeof role !== "object") return false;
-  const rid = Number(role.role_id);
-  if (!Number.isNaN(rid)) {
-    if (rid === 9) return false;
-    if (rid === 5) return true;
-  }
-  const label = String(role.role ?? role.role_name ?? role.name ?? "")
-    .trim()
-    .toLowerCase();
-  if (!label) return false;
-  if (label.includes("custom clearance user")) return false;
-  return label === "custom clearance supervisor" || label.includes("custom clearance supervisor");
-};
-
-export const splitInwardDateTimeString = (value) => {
-  if (value == null || String(value).trim() === "") return { date: "", time: "" };
-  const normalized = String(value).trim().includes("T") ? String(value).trim().replace("T", " ") : String(value).trim();
-  const [datePart = "", timeRaw = ""] = normalized.split(/\s+/);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return { date: "", time: "" };
-  const timeMatch = String(timeRaw).match(/^(\d{1,2}):(\d{2})/);
-  const timePart = timeMatch ? `${String(timeMatch[1]).padStart(2, "0")}:${timeMatch[2]}` : "00:00";
-  return { date: datePart, time: timePart };
 };
 
 export const resolveGroCallId = (card) => {
@@ -89,20 +50,6 @@ export const resolveGroPortId = (detail, card) => {
   }
   return null;
 };
-
-export const buildGroFallbackDocuments = () =>
-  GRO_DOCUMENT_TYPES.map((document_name) => ({
-    document_name,
-    document_id: null,
-    call_task_document_id: null,
-    is_uploaded: false,
-    status: 0,
-    file_name: null,
-    file_url: null,
-    uploaded_by: null,
-    uploaded_by_name: null,
-    uploaded_at: null,
-  }));
 
 export const enrichGroDocWithRowKey = (doc, index) => ({
   ...doc,
@@ -157,18 +104,6 @@ export const parseDocumentsByTaskPayload = (res) => {
     documents: Array.isArray(docs) ? docs : [],
     isFirstColumn: parseIsFirstColumnFromPayload(payload),
     taskName: parseTaskNameFromPayload(payload),
-  };
-};
-
-/** GET task_card/get_documents_by_task — payload: response.data.data.documents */
-export const parseDocumentsByTaskResponse = (res) => parseDocumentsByTaskPayload(res).documents;
-
-export const parseDocumentsByTaskMeta = (res) => {
-  const payload = res?.data?.data ?? res?.data ?? {};
-  const { taskName } = parseDocumentsByTaskPayload(res);
-  return {
-    taskId: payload?.task_id != null ? String(payload.task_id) : null,
-    taskName,
   };
 };
 
@@ -308,9 +243,6 @@ export function getGroDocumentResolvedExtension(...hints) {
   }
   return "";
 }
-
-/** @returns {"pdf"|"mail"|"excel"|"word"|"image"|"default"} */
-export const getGroFileType = (fileNameOrUrl) => groExtensionToIconKind(groExtractFileExtension(fileNameOrUrl));
 
 export const GRO_FILE_BADGE = {
   pdf: "PDF",
@@ -588,12 +520,6 @@ export const groPassStatusBadgeTone = (raw) => {
   return "neutral";
 };
 
-export const groPassTaskDocUrl = (td) =>
-  firstNonEmptyGroDisplay(td?.file_url, td?.document_url, td?.url, td?.download_url);
-
-export const groPassTaskDocLabel = (td, index) =>
-  firstNonEmptyGroDisplay(td?.document_name, td?.file_name, td?.name, td?.title, `File ${index + 1}`);
-
 /** GRO task name → arrival stage id for time_object/get_stage_time_objects */
 const GRO_TASK_STAGE_ID_BY_NAME = {
   "vessel inward registration": 6,
@@ -669,9 +595,6 @@ export const buildGroArrivalTimeObjectsPayload = (timeObjects, timeObjectValues)
       };
     })
     .filter(Boolean);
-
-/** @deprecated Use buildGroArrivalTimeObjectsPayload */
-export const buildGroTimeObjectsSubmitPayload = buildGroArrivalTimeObjectsPayload;
 
 export const validateGroRequiredTimeObjects = (timeObjects, timeObjectValues) => {
   const errors = {};

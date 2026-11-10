@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, Fragment } from 'react';
+import { useEffect, useState, useMemo, Fragment } from 'react';
 import PropTypes from 'prop-types';
 
 import CustomLoader from './CustomLoader';

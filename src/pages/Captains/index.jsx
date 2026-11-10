@@ -3,7 +3,7 @@ import { debounce } from "lodash";
 import CommonHeader from "../../components/CommonHeader";
 import CustomTable from "../../components/customTable";
 import { CaptainModal } from "./Modals/AddEditCaptain";
-import { RenderAction, RenderName } from "./RenderCells";
+import { RenderAction } from "./RenderCells";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import StatusConfirmationModal from "../../components/StatusConfirmationModal";
 import useCaptainReducer from "../../store/CaptainReducer";

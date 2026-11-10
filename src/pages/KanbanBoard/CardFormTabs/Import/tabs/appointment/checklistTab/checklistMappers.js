@@ -413,59 +413,9 @@ export const flattenTreeItems = (nodes) => {
   return out;
 };
 
-/**
- * @deprecated use mapApiSectionsToTree — kept for reference during migration
- */
-export const flattenApiSectionsToUi = (sections, checklistTypeIdStr, checklistName) => {
-  const tree = mapApiSectionsToTree(sections, checklistTypeIdStr, checklistName);
-  const flat = [];
-  const walk = (list) => {
-    list.forEach((node) => {
-      flat.push({
-        id: node.id,
-        title: node.title,
-        items: node.items,
-        checklistType: node.checklistType,
-        checklistTypeTitle: node.checklistTypeTitle,
-      });
-      if (node.subSections?.length) walk(node.subSections);
-    });
-  };
-  walk(tree);
-  return flat;
-};
-
 const itemIsDone = (itemId, itemsData) => {
   const d = itemsData[itemId] || {};
   return d.checked === true;
-};
-
-export const countTreeItems = (nodes) => {
-  let n = 0;
-  const walk = (list) => {
-    if (!Array.isArray(list)) return;
-    list.forEach((node) => {
-      n += node.items?.length ?? 0;
-      if (node.subSections?.length) walk(node.subSections);
-    });
-  };
-  walk(nodes);
-  return n;
-};
-
-export const countTreeCompleted = (nodes, itemsData) => {
-  let c = 0;
-  const walk = (list) => {
-    if (!Array.isArray(list)) return;
-    list.forEach((node) => {
-      (node.items || []).forEach((it) => {
-        if (itemIsDone(it.id, itemsData)) c += 1;
-      });
-      if (node.subSections?.length) walk(node.subSections);
-    });
-  };
-  walk(nodes);
-  return c;
 };
 
 export const countNodeItems = (node) => {
@@ -485,19 +435,6 @@ export const countNodeCompleted = (node, itemsData) => {
     c += countNodeCompleted(s, itemsData);
   });
   return c;
-};
-
-export const collectItemIds = (nodes) => {
-  const ids = [];
-  const walk = (list) => {
-    if (!Array.isArray(list)) return;
-    list.forEach((node) => {
-      (node.items || []).forEach((it) => ids.push(it.id));
-      if (node.subSections?.length) walk(node.subSections);
-    });
-  };
-  walk(nodes);
-  return ids;
 };
 
 export const collectTreeSectionIds = (nodes) => {
@@ -566,47 +503,3 @@ export const filterFilesExcludingRemovedBackend = (files, removedKeys) => {
   });
 };
 
-export const buildChecklistReportLines = (blocks, itemsData) => {
-  const lines = [];
-  const list = (d) => (Array.isArray(d.uploadedFiles) ? d.uploadedFiles : []);
-  const newUploadLabels = (d) =>
-    list(d)
-      .filter((e) => {
-        const f = e instanceof File ? e : e?.file;
-        return f instanceof File;
-      })
-      .map((e) => (e instanceof File ? e.name : e.file?.name))
-      .filter(Boolean);
-  const itemLine = (item) => {
-    const d = itemsData[item.id] || {};
-    const newLabels = newUploadLabels(d);
-    const fn = newLabels.length ? newLabels.join(", ") : "";
-    const hasApi = list(d).some((e) => {
-      if (e instanceof File) return false;
-      const f = e?.file;
-      if (f instanceof File) return false;
-      return Boolean(e?.fromApi === true || e?.url || e?.file_url || e?.link);
-    });
-    const markedDone = d.checked === true;
-    lines.push(`  • ${item.fullLabel || item.title}`);
-    lines.push(
-      `    Done (manual): ${markedDone ? "Yes" : "No"} | New upload: ${fn || "—"} | Existing on file: ${hasApi ? "Yes" : "No"}`
-    );
-    if (d.expiryDate) lines.push(`    Expiry: ${d.expiryDate}`);
-    if (d.remarks) lines.push(`    Remarks: ${d.remarks}`);
-  };
-  const walk = (nodes, depth) => {
-    (nodes || []).forEach((n) => {
-      const pad = "  ".repeat(Math.min(depth, 4));
-      lines.push(`${pad}— ${n.title || "Section"}`);
-      (n.items || []).forEach(itemLine);
-      if (n.subSections?.length) walk(n.subSections, depth + 1);
-    });
-  };
-  (blocks || []).forEach((b) => {
-    lines.push(b.typeName || "Checklist", "");
-    walk(b.tree, 0);
-    lines.push("");
-  });
-  return lines;
-};

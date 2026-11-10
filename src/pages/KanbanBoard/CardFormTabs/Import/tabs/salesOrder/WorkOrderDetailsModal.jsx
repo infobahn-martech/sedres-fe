@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import PropTypes from "prop-types";
 import { FaWhatsapp } from "react-icons/fa";
 import salesOrderService from "@/services/salesOrderService";

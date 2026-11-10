@@ -41,13 +41,6 @@ const REQUIRED_DOCUMENTS_CONFIG = [
   { key: "cargo_final_bayan", label: "Cargo Final Bayan", icon: Package },
 ];
 
-const MWP_REQUIRED_DOCUMENTS_CONFIG = REQUIRED_DOCUMENTS_CONFIG.filter((doc) => doc.section === "mwp");
-const FINAL_BAYAN_REQUIRED_DOCUMENTS_CONFIG = REQUIRED_DOCUMENTS_CONFIG.filter(
-  (doc) => doc.key === "final_bayan_doc" || doc.key === "cargo_final_bayan"
-);
-const OTHER_REQUIRED_DOCUMENTS_CONFIG = REQUIRED_DOCUMENTS_CONFIG.filter(
-  (doc) => doc.section !== "mwp" && doc.key !== "final_bayan_doc" && doc.key !== "cargo_final_bayan"
-);
 
 const TYPE_ICON = {
   text: Hash,

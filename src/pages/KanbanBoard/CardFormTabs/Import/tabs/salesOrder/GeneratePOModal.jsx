@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import salesOrderService from "@/services/salesOrderService";
 import billingEntityService from "@/services/billingEntityService";
@@ -19,8 +19,6 @@ const getStatusPillColors = (status) => {
   if (s.includes("open") || s.includes("draft")) return { color: "#1d4ed8", background: "#dbeafe" };
   return { color: "#475569", background: "#f1f5f9" };
 };
-
-const TABS = ["Contents"];
 
 // Generate PO Modal - printable PO preview only; submission result is reported via toast
 const GeneratePOModal = ({

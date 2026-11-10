@@ -3,5 +3,3 @@ export const findWorkflowByCardId = (workflows, cardId) =>
     Object.values(workflow.cards).some((card) => card.id === cardId)
   ) || null;
 
-export const resolveCardFormBoardId = (workflow) =>
-  workflow?.boardId ?? workflow?.id;

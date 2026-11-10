@@ -1,11 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
-import {
-  DEFAULT_PICKER_COLOR,
-  PRIMARY_PRESET_COLORS,
-  SECONDARY_PRESET_COLORS,
-  normalizeHexColor,
-} from './sedresColorPickerConstants';
+import { PRIMARY_PRESET_COLORS, SECONDARY_PRESET_COLORS, normalizeHexColor } from './sedresColorPickerConstants';
 
 /**
  * Shared Sedres color picker (presets, advanced HexColorPicker, hex field, preview, Apply/Cancel).

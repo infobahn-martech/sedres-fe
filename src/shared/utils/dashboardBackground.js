@@ -16,8 +16,6 @@
 
 import DEFAULT_BOARD_WALLPAPER from '../../assets/images/kanban-board-default-bg.jpg';
 
-const DEFAULT_CANVAS_COLOR = '#eef1f4';
-
 /** Colour saved by "Remove background" (backend has no clear endpoint); rendered as the default wallpaper. */
 export const REMOVED_BOARD_BACKGROUND_COLOR = '#fbfbf5';
 
@@ -56,32 +54,6 @@ export function normalizeDashboardBackground(background) {
   }
 
   return null;
-}
-
-/**
- * Inline styles for the dashboard canvas (Workspaces page).
- * @param {unknown} background
- * @returns {Record<string, string | number>}
- */
-export function getDashboardCanvasStyle(background) {
-  const n = normalizeDashboardBackground(background);
-  if (!n) {
-    return { backgroundColor: DEFAULT_CANVAS_COLOR };
-  }
-  if (n.type === 'color') {
-    return {
-      backgroundColor: n.color,
-      backgroundImage: 'none',
-    };
-  }
-  const v = n.url.startsWith('url(') ? n.url : `url(${n.url})`;
-  return {
-    backgroundColor: DEFAULT_CANVAS_COLOR,
-    backgroundImage: v,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-  };
 }
 
 function cleanBackgroundField(value) {

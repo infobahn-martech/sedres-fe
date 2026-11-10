@@ -55,62 +55,6 @@ export function getEligibleWorkflowsForAdd(workflows) {
 }
 
 /**
- * @param {unknown} workflows - Sidebar / board workflow descriptors
- * @returns {{
- *   kind: 'dispatch',
- *   detail: object,
- * } | {
- *   kind: 'modal',
- *   initialStep: 'workflow' | 'swimlane',
- *   workflowsForWorkflowStep: object[],
- *   swimlaneContextWorkflow: object | null,
- * }}
- */
-export function resolveSidebarAddCardAction(workflows) {
-  const eligible = getEligibleWorkflowsForAdd(workflows);
-  const n = eligible.length;
-
-  if (n === 0) {
-    return {
-      kind: "modal",
-      initialStep: "workflow",
-      workflowsForWorkflowStep: [],
-      swimlaneContextWorkflow: null,
-    };
-  }
-
-  if (n > 1) {
-    return {
-      kind: "modal",
-      initialStep: "workflow",
-      workflowsForWorkflowStep: eligible,
-      swimlaneContextWorkflow: null,
-    };
-  }
-
-  const w = eligible[0];
-  const lanes = getSwimlaneOptionsFromWorkflow(w);
-  if (lanes.length > 1) {
-    return {
-      kind: "modal",
-      initialStep: "swimlane",
-      workflowsForWorkflowStep: [],
-      swimlaneContextWorkflow: w,
-    };
-  }
-  if (lanes.length === 1) {
-    return {
-      kind: "dispatch",
-      detail: buildKanbanAddCardEventDetail(w, lanes[0]),
-    };
-  }
-  return {
-    kind: "dispatch",
-    detail: buildKanbanAddCardEventDetail(w, null),
-  };
-}
-
-/**
  * Payload for `kanban:add-card` / CardForm follow-up.
  * @param {object} workflow - Descriptor with id, name/title, swimlanes, swimlaneOrder
  * @param {{ id: string, name?: string, title?: string } | null | undefined} swimlaneOption

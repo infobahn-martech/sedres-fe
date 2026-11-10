@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import GroupSettingsIcon from "@/assets/images/cv.png";
 import { MAIN_TABS, CREW_MANAGEMENT_SUBTABS, MATERIAL_MANAGEMENT_SUBTABS, LAUNCH_HIRE_SUBTABS, TAB_ICON_COLORS, TAB_ICON_PATHS } from "./Husbandry.constants";
 import NavTabButton from "@/components/NavTabButton";
 import { getInitials } from "@/shared/utils/utils";
@@ -639,21 +638,6 @@ FormTextarea.propTypes = {
   className: PropTypes.string,
   rows: PropTypes.number,
 };
-
-// Yes/No Icon Components
-export const YesIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="10" cy="10" r="9" fill="#00B894" stroke="#00B894" strokeWidth="2" />
-    <path d="M6 10L9 13L14 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-export const NoIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="10" cy="10" r="9" fill="#FF0000" stroke="#FF0000" strokeWidth="2" />
-    <path d="M7 7L13 13M13 7L7 13" stroke="white" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
 
 // React Quill Editor Component
 export const ReactQuillEditor = ({ value, onChange, placeholder, name = "description", className = "" }) => {

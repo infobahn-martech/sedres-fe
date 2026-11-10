@@ -272,20 +272,6 @@ const normalizeAdditionalTimeValue = (date, time) => {
   return `${dateValue} ${normalizedTime}`;
 };
 
-export const buildAdditionalTimeObjectsPayload = (items = []) =>
-  (Array.isArray(items) ? items : [])
-    .map((row) => {
-      const label = String(row?.label || "").trim();
-      const timeObjectValue = normalizeAdditionalTimeValue(row?.date, row?.time);
-      if (!label || !timeObjectValue) return null;
-      return {
-        time_object_name: label,
-        time_object_value: timeObjectValue,
-        is_additional: true,
-      };
-    })
-    .filter(Boolean);
-
 /**
  * Build the `time_object` payload for `time_object/save_call_time_object` from a
  * single additional time-object row. Requires a name; the date/time value is
@@ -906,10 +892,6 @@ export const getAttachmentFile = (item) => {
   if (item instanceof File) return item;
   return null;
 };
-
-/** True when an attachment list contains at least one uploadable File. */
-export const hasAttachmentFiles = (attachments = []) =>
-  (Array.isArray(attachments) ? attachments : []).some((item) => getAttachmentFile(item));
 
 /**
  * Format an attachment size for display. Accepts a byte count (number) or an

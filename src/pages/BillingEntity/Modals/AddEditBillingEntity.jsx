@@ -1,6 +1,5 @@
 import { useForm, Controller } from "react-hook-form";
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
-import { createPortal } from "react-dom";
 import CustomModal from "../../../components/CustomModal";
 import PremiumSelect from "../../../components/form/PremiumSelect";
 import SedresColorPicker from "../../../components/SedresColorPicker/SedresColorPicker";

@@ -19,17 +19,6 @@ export const resolvePassCallId = (formValues, card, routeParams) => {
   return String(raw).trim();
 };
 
-export const resolvePassVesselId = (formValues, card, routeParams) => {
-  const raw =
-    formValues?.vessel_id ??
-    formValues?.vesselId ??
-    card?.vessel_id ??
-    card?.vesselId ??
-    routeParams?.vessel_id;
-  if (raw === undefined || raw === null) return "";
-  return String(raw).trim();
-};
-
 const pickBackendErrorMessage = (error) => {
   const data = error?.response?.data;
   if (typeof data === "string" && data.trim()) return data.trim();

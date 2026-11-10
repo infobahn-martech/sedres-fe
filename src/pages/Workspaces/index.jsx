@@ -6,7 +6,6 @@ import { FiLayers, FiImage, FiChevronRight } from 'react-icons/fi';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import '../../design/scss/Workspaces.scss';
 import GroupIcon from '../../assets/images/Group.svg';
-import AnalyticsIcon from '../../assets/images/analytics 1.svg';
 import ClockIcon from '../../assets/images/ClockIcon.svg';
 import filterIcon from '../../assets/images/filter.svg';
 import NewWorkspaceModal from './NewWorkspaceModal';

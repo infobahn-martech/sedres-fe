@@ -1,31 +1,8 @@
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../../design/scss/header.scss";
-import {
-  FiFolder,
-  FiHelpCircle,
-  FiBell,
-  FiLayout,
-  FiTool,
-  FiMoon,
-  FiSun,
-  FiBarChart2,
-  FiShoppingBag,
-  FiActivity,
-  FiTruck,
-  FiNavigation,
-  FiSettings,
-  FiSliders,
-  FiLayers,
-  FiChevronDown,
-  FiAlertOctagon,
-  FiBookmark,
-  FiTag,
-  FiList,
-  FiFileText,
-  FiX,
-} from 'react-icons/fi';
+import { FiHelpCircle, FiBell, FiLayout, FiTool, FiMoon, FiSun, FiBarChart2, FiShoppingBag, FiActivity, FiTruck, FiNavigation, FiSettings, FiSliders, FiLayers, FiChevronDown, FiAlertOctagon, FiBookmark, FiTag, FiList, FiFileText, FiX } from 'react-icons/fi';
 import HeaderTooltip from './HeaderTooltip';
 
 import logo from '../../assets/images/SedresLogoWhite.png';

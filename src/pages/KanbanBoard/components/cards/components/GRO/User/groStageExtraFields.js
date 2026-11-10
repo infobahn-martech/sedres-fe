@@ -10,25 +10,6 @@ export const GRO_CUSTOM_INSPECTION_STATUS = {
   FAILED: "Failed",
 };
 
-export const GRO_EXTRA_STAGE_FIELD_KEYS = {
-  CREW_IMMIGRATION_STATUS: "crew_immigration_status",
-  ON_HOLD_REASON: "on_hold_reason",
-  INWARD_CLEARANCE_COPY: "inward_clearance_copy",
-  CUSTOM_INSPECTION_STATUS: "custom_inspection_status",
-  FAILED_REASON: "failed_reason",
-  INITIAL_BAYAN_DOC: "initial_bayan_doc",
-  FINAL_BAYAN_DOC: "final_bayan_doc",
-  MWP_APPLICATION_NO: "mwp_application_no",
-  SADAD_NO: "sadad_no",
-  SADAD_DOC: "sadad_doc",
-  MWP_SUBSCRIPTION_SADAD_NO: "mwp_subscription_sadad_no",
-  MWP_SUBSCRIPTION_SADAD_DOC: "mwp_subscription_sadad_doc",
-  MWP_COPY: "mwp_copy",
-  MWP_SUBSCRIPTION_TAX_INVOICE: "mwp_subscription_tax_invoice",
-  OUTWARD_CLEARANCE_COPY: "outward_clearance_copy",
-  MWP_CANCELLATION_DOC: "mwp_cancellation_doc",
-};
-
 export const createEmptyExtraStageFields = () => ({
   crew_immigration_status: "",
   on_hold_reason: "",
@@ -154,9 +135,6 @@ export const appendGroArrivalStageFieldsToFormData = (formData, stageId, fields 
     appendFileField(formData, "mwp_cancellation_doc", data.mwp_cancellation_doc);
   }
 };
-
-/** @deprecated Use appendGroArrivalStageFieldsToFormData */
-export const appendGroExtraStageFieldsToFormData = appendGroArrivalStageFieldsToFormData;
 
 /** Normalizes an arrival/get_task_details file value (URL string, or {file_name|name, file_url|url}) for display. */
 const resolveGroSavedFileInfo = (value) => {

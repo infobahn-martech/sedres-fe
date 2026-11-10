@@ -134,13 +134,3 @@ export const hasRouteAccess = (userRoleId, routePath) => {
   return allowedRoles.includes(userRoleId);
 };
 
-// Get all allowed routes for a role
-export const getAllowedRoutesForRole = (userRoleId) => {
-  if (hasUnrestrictedRouteAccess(userRoleId)) {
-    return Object.keys(routePermissions); // All routes
-  }
-
-  return Object.keys(routePermissions).filter(route =>
-    routePermissions[route].includes(userRoleId)
-  );
-};

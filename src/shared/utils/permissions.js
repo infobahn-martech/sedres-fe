@@ -10,13 +10,6 @@
 
 export const buildCompoundKey = (...parts) => parts.filter(Boolean).join(":");
 
-export const EMPTY_PERMISSION_MAP = {
-  modules: new Set(),
-  moduleActions: new Set(),
-  submodules: new Set(),
-  submoduleActions: new Set(),
-};
-
 /**
  * @param {Array} sections - data.permissions.sections from getuserdetail
  * @returns {{modules: Set, moduleActions: Set, submodules: Set, submoduleActions: Set}}

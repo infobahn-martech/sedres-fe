@@ -45,7 +45,7 @@ import {
 // 🆕 Kanban sidebar icons + tooltip
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
-import { FiPlus, FiInbox, FiFilter, FiPlusCircle, FiActivity, FiMail, FiEdit3, FiMapPin, FiLayers, FiList, FiChevronUp, FiChevronDown } from 'react-icons/fi';
+import { FiPlus, FiInbox, FiPlusCircle, FiMail, FiEdit3, FiMapPin, FiLayers, FiList, FiChevronUp, FiChevronDown } from 'react-icons/fi';
 import TaskCardModal from '../../pages/TaskCard';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';

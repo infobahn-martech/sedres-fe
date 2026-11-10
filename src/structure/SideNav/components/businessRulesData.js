@@ -264,9 +264,6 @@ export const INVOKE_METHODS_WITH_BODY = ['POST', 'PUT', 'PATCH', 'DELETE'];
 // Regular-field options offered by the "Select a field" modal (Url's "add card fields" trigger).
 export const DUMMY_URL_FIELD_OPTIONS = ['Card ID', 'Custom card ID', 'Internal card id'];
 
-// Fields insertable into a Params row's value (the payload sent to the service).
-export const DUMMY_INVOKE_PAYLOAD_FIELDS = ['Kanbanize Payload', 'Card ID', 'Card Title', 'Board ID'];
-
 // Dev-only fallback data for the "Notification Message Settings" modal.
 export const DUMMY_NOTIFICATION_FROM_EMAIL = 'sedres_notifications@kanbanize.com';
 
@@ -275,22 +272,6 @@ export const DUMMY_INTERNAL_USERS = ['John Smith', 'Sarah Ahmed', 'Mohammed Al-F
 // Static role/group pills shown alongside individual users in the "Select
 // Internal Users" modal.
 export const INTERNAL_USER_ROLE_OPTIONS = ['Self', 'Owner', 'Owners', 'Watchers', 'Contributors', 'Reporter', 'Co-owners'];
-
-// Dev-only fallback data for the "Shared with" permissions modal.
-export const DUMMY_SHARE_USERS = [
-  { id: 'u1', name: 'Sedres Maritime', username: 'sarim.asaf' },
-  { id: 'u2', name: 'Shuaib', username: 'Shuaib' },
-  { id: 'u3', name: 'Rejeesh Krishnan', username: 'Rejeesh Krishnan' },
-  { id: 'u4', name: 'Junaid Altaf Khan', username: 'Junaidkhan' },
-  { id: 'u5', name: 'Omer Fennan', username: 'omer.fennan' },
-  { id: 'u6', name: 'abdulhakim', username: 'hakimabdul' },
-  { id: 'u7', name: 'MohammedMifzalHusain', username: 'Mifzalmanna' },
-  { id: 'u8', name: 'Nandu dinesh', username: 'Nandu' },
-  { id: 'u9', name: 'Nadir Shah', username: 'Nadir' },
-  { id: 'u10', name: 'YASIR KHAN', username: 'YASIRKHAN' },
-  { id: 'u11', name: 'FDA', username: 'DA Hub' },
-  { id: 'u12', name: 'GRO OPERATIONS', username: 'GRO' },
-];
 
 export const DUMMY_NOTIFICATION_SUBJECT_PARTS = [
   { type: 'text', value: '{' },

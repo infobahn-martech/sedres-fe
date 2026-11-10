@@ -1,4 +1,4 @@
-import { FiActivity, FiCalendar, FiClock, FiAlertCircle, FiList, FiFileText } from 'react-icons/fi';
+import { FiActivity, FiCalendar, FiClock, FiAlertCircle, FiFileText } from 'react-icons/fi';
 import PortalDashboard from '../../../components/PortalDashboard';
 
 const summaryCards = [

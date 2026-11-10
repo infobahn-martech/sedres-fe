@@ -1,6 +1,7 @@
 import { Tooltip } from 'react-tooltip';
 import edit from '../../assets/images/edit.svg';
 import trash from '../../assets/images/delete.svg';
+import { getInitials } from '../../shared/utils/utils';
 
 export const RenderAction = ({ onEditClick, row, onDeleteClick }) => {
     return (

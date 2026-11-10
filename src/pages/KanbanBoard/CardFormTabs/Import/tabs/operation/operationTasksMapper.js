@@ -133,5 +133,3 @@ export function mapTasksToSections(apiData) {
   return sectionOrder.map((key) => sectionMap.get(key));
 }
 
-/** @deprecated Use mapTasksToSections */
-export const mapCallTasksToSections = mapTasksToSections;

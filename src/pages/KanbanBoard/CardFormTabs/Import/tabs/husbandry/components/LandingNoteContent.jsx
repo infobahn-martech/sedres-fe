@@ -5,7 +5,7 @@ import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import CustomModal from "@/components/CustomModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
-import { FormField, FormInput, FormSelect, FormTextarea, ReactQuillEditor } from "./Husbandry.components";
+import { FormField, FormInput, FormSelect, ReactQuillEditor } from "./Husbandry.components";
 import { LAUNCH_HIRE_LOCATION_OPTIONS, validateDocumentFiles } from "./Husbandry.constants";
 import { splitApiDateTimeParts, nextDayOf } from "@/shared/helpers/dateTimeFieldUtils";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";

@@ -1,4 +1,3 @@
-import React from 'react';
 import YellowColorIcon from '../../../assets/images/YellowColorIcon.png';
 import BlueColorIcon from '../../../assets/images/BlueColorIcon.png';
 import VioletColorIcon from '../../../assets/images/VioletColorIcon.png';

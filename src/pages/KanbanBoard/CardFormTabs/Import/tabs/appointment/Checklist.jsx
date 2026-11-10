@@ -1,6 +1,5 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SendReportButton } from "../../services/sendReportFullWidthView";
 import { useCallDetail } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
 import checklistService from "@/services/checklistService";
 import { notify } from "@/components/Toaster";

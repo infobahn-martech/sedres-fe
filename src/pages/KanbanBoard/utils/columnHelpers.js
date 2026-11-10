@@ -1,11 +1,6 @@
 import { findWorkflowByCardId } from "./boardHelpers";
 
 /**
- * Resolves the stable column id used by CardForm / DnD (e.g. workflow-1-col-1).
- */
-export const getColumnStableId = (column) => column?.id;
-
-/**
  * Cards for one swimlane cell (column key + lane).
  */
 export const getSwimlaneColumnCards = (workflow, laneId, columnKey) => {
@@ -142,20 +137,3 @@ export const movePureCardToColumn = (workflows, cardId, targetColumnId) => {
   });
 };
 
-export const findColumnLocationById = (workflows, columnId) => {
-  for (let workflowIndex = 0; workflowIndex < workflows.length; workflowIndex += 1) {
-    const workflow = workflows[workflowIndex];
-    const columnKey = Object.keys(workflow.columns || {}).find(
-      (key) => workflow.columns[key].id === columnId
-    );
-    if (columnKey) {
-      return {
-        workflowIndex,
-        workflow,
-        columnKey,
-        column: workflow.columns[columnKey],
-      };
-    }
-  }
-  return null;
-};

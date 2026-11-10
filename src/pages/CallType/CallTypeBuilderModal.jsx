@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { FiX, FiChevronDown, FiChevronRight, FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiChevronDown, FiChevronRight, FiPlus, FiTrash2 } from "react-icons/fi";
 import SearchableSelect from "../../components/form/SearchableSelect";
 import useCallTypeReducer from "../../store/CallTypeReducer";
 import { DailyTaskTodo } from "../KanbanBoard/CardFormTabs/Import/tabs/appointment/General";

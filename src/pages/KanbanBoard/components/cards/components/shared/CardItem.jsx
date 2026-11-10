@@ -451,13 +451,6 @@ const LaunchHireIcon = ({ size = 20, color = "#666" }) => (
   </svg>
 );
 
-// Footer-1 status icons (from 1st image: priority, subtasks, deadline, watchers)
-const PriorityTriangleIcon = ({ size = 16, color = "#666" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color }}>
-    <path d="M12 5L4 19H20L12 5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-  </svg>
-);
-
 const SubtasksIcon = ({ size = 16, color = "#666" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color }}>
     <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
@@ -468,13 +461,6 @@ const ClockIcon = ({ size = 16, color = "#666" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color }}>
     <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="none" />
     <path d="M12 7V12L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const EyeIcon = ({ size = 16, color = "#666" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color }}>
-    <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" fill="none" />
   </svg>
 );
 
@@ -549,12 +535,6 @@ const getCompanyIcon = (cardId, cardName, entityLogo) => {
 
   // Default fallback - return null or a placeholder if no match
   return null;
-};
-
-// Status icon component
-const StatusIcon = ({ status = "pending", IconComponent, size = 20 }) => {
-  const color = STATUS_COLORS[status] || STATUS_COLORS.pending;
-  return <IconComponent size={size} color={color} />;
 };
 
 // Taxi Boat Captain (21) / Taxi Boat Operator (20): show card_name here instead of task_name.
@@ -792,14 +772,6 @@ function CardItem({
   const highlightInvoice = !!card.highlightInvoice; // 1st card (DA board): show invoice trend icon, no border pulse
   const formatInvoiceAmount = (val) =>
     new Intl.NumberFormat("en-SA", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val) + " SAR";
-
-  // Helper function to truncate text
-  const TruncatedText = ({ text, maxLength = 20 }) => {
-    if (!text) return null;
-    const isTruncated = text.length > maxLength;
-    const displayText = isTruncated ? text.substring(0, maxLength) + "..." : text;
-    return <span>{displayText}</span>;
-  };
 
   const fixedBoardSizeStyle =
     fixedDimensions != null && !isMinimalView

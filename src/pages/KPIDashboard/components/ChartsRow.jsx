@@ -1,4 +1,3 @@
-import React from 'react';
 import ImportExportCallChart from './ImportExportCallChart';
 import MonthlyTasksChart from './MonthlyTasksChart';
 import OurTeam from './OurTeam';

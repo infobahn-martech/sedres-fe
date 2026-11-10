@@ -26,13 +26,13 @@ const KPIUsers = () => {
 
     // ✅ normalize API response safely
     const tableData = useMemo(() => {
-        if (!crews) return { rows: [], total: 0 };
+        if (!KPIUsers) return { rows: [], total: 0 };
 
-        const rows = crews?.data || crews?.docs || crews?.results || [];
-        const total = crews?.total || crews?.count || crews?.totalDocs || rows.length;
+        const rows = KPIUsers?.data || KPIUsers?.docs || KPIUsers?.results || [];
+        const total = KPIUsers?.total || KPIUsers?.count || KPIUsers?.totalDocs || rows.length;
 
         return { rows, total };
-    }, [crews]);
+    }, [KPIUsers]);
     const cols = [
         {
             name: "Crew Name",

@@ -326,16 +326,6 @@ export const resolveTemplateCallTypeLabel = (detail) => {
 // Editable stage forms (Operation → Pre Arrival / Arrival / Departure)
 // ---------------------------------------------------------------------------
 
-export const TEMPLATE_STAGE_KEYS = ["pre_arrival", "arrival", "departure"];
-
-// One Operation subtab (normalized, with its real tab_id and fields), or null.
-export const getTemplateOperationStage = (detail, stageKey) => {
-  const subtabs = getTemplateOperationSubtabs(detail);
-  if (!subtabs) return null;
-  const key = normalizeTemplateKey(stageKey);
-  return subtabs.find((tab) => tab.key === key) ?? null;
-};
-
 const DATETIME_PATTERN = /^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}))?/;
 
 // "YYYY-MM-DD HH:mm" from any "YYYY-MM-DD[ T]HH:mm[:ss]" string, without Date parsing.

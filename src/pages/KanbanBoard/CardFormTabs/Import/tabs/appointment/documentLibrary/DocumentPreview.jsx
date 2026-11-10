@@ -21,28 +21,6 @@ const DownloadIcon = () => (
   </svg>
 );
 
-const LinkIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-    <path
-      d="M6.25 8.75L8.75 6.25M5.5 10.25L4.25 11.5C3.42157 12.3284 3.42157 13.6716 4.25 14.5C5.07843 15.3284 6.42157 15.3284 7.25 14.5L8.5 13.25M9.75 4.75L11 3.5C11.8284 2.67157 13.1716 2.67157 14 3.5C14.8284 4.32843 14.8284 5.67157 14 6.5L12.75 7.75"
-      stroke="currentColor"
-      strokeWidth="1.3"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-const StarIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-    <path
-      d="M7.5 2.25L8.89711 5.81802L12.75 6.10983L9.875 8.68198L10.7942 12.5157L7.5 10.568L4.20577 12.5157L5.125 8.68198L2.25 6.10983L6.10289 5.81802L7.5 2.25Z"
-      stroke="currentColor"
-      strokeWidth="1.3"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 const getTypeLabel = (type) => {
   if (type === "pdf") return "PDF Document";
   if (type === "doc") return "Word Document";

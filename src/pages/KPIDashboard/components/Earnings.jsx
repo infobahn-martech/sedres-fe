@@ -1,4 +1,3 @@
-import React from 'react';
 import BankCard from './BankCard';
 import PendingBalanceCard from './PendingBalanceCard';
 import PaymentMethod from './PaymentMethod';

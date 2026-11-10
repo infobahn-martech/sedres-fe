@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FiMoreVertical, FiChevronLeft, FiPlus } from 'react-icons/fi';
 import '../../design/scss/pages/compact/Compact.scss';
 

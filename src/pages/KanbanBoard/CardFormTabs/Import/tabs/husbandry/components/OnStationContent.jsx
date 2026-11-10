@@ -96,7 +96,7 @@ const OnStationContent = ({ formValues, handleChange, cardColor }) => {
           type="file"
           id={fieldName}
           multiple
-          onChange={fieldName === "onStationRequestEmailDocuments" ? handleRequestEmailFileChange : handleOnStationDocumentsFileChange}
+          onChange={handleOnStationDocumentsFileChange}
           className="file-input-hidden"
           accept={accept}
         />

@@ -2,13 +2,6 @@ import { create } from "zustand";
 import { saveArrivalDocument } from "../services/groService";
 
 /**
- * Pure helpers for GRO task-card documents (numeric status from API).
- */
-export const isGroDocumentApproved = (doc) => Number(doc?.status) === 1;
-
-export const isGroDocumentRejected = (doc) => Number(doc?.status) === 2;
-
-/**
  * Zustand store for GRO card arrival popover save.
  * Toasts remain in GROCardView for consistent UX with the rest of the board.
  */

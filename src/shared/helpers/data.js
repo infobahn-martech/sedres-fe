@@ -482,26 +482,3 @@ export function normalizeWorkflowFromApi(payload) {
 /** Empty initial state for the Kanban board before a board id is selected or after a failed load. */
 export const initialData = [];
 
-/** Static template for the Task Workflow injected on the frontend. */
-export const TASK_WORKFLOW_TEMPLATE = {
-  id: "wf-demo",
-  title: "Task Workflow",
-  columnOrder: ["col-todo", "col-progress", "col-done"],
-  columns: {
-    "col-todo":     { id: "col-todo",     title: "To Do",       color: "#3b82f6", stageId: "stage-1", stageTitle: "To Do",       wipLimit: null, cardsPerRow: 2, backgroundColor: "#ffffff" },
-    "col-progress": { id: "col-progress", title: "In Progress", color: "#f59e0b", stageId: "stage-2", stageTitle: "In Progress", wipLimit: null, cardsPerRow: 2, backgroundColor: "#ffffff" },
-    "col-done":     { id: "col-done",     title: "Completed",   color: "#22c55e", stageId: "stage-3", stageTitle: "Completed",   wipLimit: null, cardsPerRow: 2, backgroundColor: "#ffffff" },
-  },
-  swimlaneOrder: ["default"],
-  swimlanes: {
-    default: { id: "default", title: "Default", color: "#ffffff", cardMap: { "col-todo": [], "col-progress": [], "col-done": [] } },
-  },
-  cards: {},
-};
-
-/** Ensures the Task Workflow is always present in the workflows array. */
-export const ensureTaskWorkflow = (mapped) => {
-  const has = mapped.some((wf) => wf.id === "wf-demo" || wf.title === "Task Workflow");
-  if (has) return mapped;
-  return [...mapped, TASK_WORKFLOW_TEMPLATE];
-};

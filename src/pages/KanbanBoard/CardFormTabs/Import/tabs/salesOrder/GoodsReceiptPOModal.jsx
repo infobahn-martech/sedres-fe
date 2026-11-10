@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import salesOrderService from "@/services/salesOrderService";
 
@@ -8,8 +8,6 @@ const formatCurrencySAR = (amount) =>
     currency: "SAR",
     minimumFractionDigits: 2,
   }).format(amount || 0);
-
-const TABS = ["Contents", "Logistics", "Accounting", "Attachments"];
 
 // Goods Receipt PO (GRN) preview modal - opened via "Copy To" from GeneratePOModal.
 // "Add & New" calls sales_order/generate_grn against the purchase_order_id captured when the

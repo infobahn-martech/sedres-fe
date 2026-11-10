@@ -21,10 +21,6 @@ export function isGROUserRole(roleId) {
   );
 }
 
-export function isMWPUserRole(roleId) {
-  return roleId === "10" || roleId === 10;
-}
-
 export function isGROSupervisorRole(roleId) {
   return (
     roleId === "6" || roleId === 6 ||
@@ -49,16 +45,6 @@ export function isPortSupervisorRole(roleId) {
   );
 }
 
-/** GRO/MWP Supervisor or Custom Clearance Supervisor — assign-user + verify actions when not first column. */
-export function isDeskSupervisorRole(roleId) {
-  return (
-    isGROSupervisorRole(roleId) ||
-    isGROSupervisorRole(Number(roleId)) ||
-    isCustomClearanceSupervisorRole(roleId) ||
-    isCustomClearanceSupervisorRole(Number(roleId))
-  );
-}
-
 export function collectUserRoleIdCandidates(user) {
   if (!user || typeof user !== "object") return [];
   const ids = [];
@@ -76,34 +62,6 @@ export function collectUserRoleIdCandidates(user) {
 export function getFirstUserRoleId(user) {
   const candidates = collectUserRoleIdCandidates(user);
   return candidates.length > 0 ? candidates[0] : null;
-}
-
-export function userHasGROUserRole(user) {
-  for (const id of collectUserRoleIdCandidates(user)) {
-    if (isGROUserRole(id) || isGROUserRole(Number(id))) return true;
-  }
-  return false;
-}
-
-export function userHasGROSupervisorRole(user) {
-  for (const id of collectUserRoleIdCandidates(user)) {
-    if (isGROSupervisorRole(id) || isGROSupervisorRole(Number(id))) return true;
-  }
-  return false;
-}
-
-export function userHasCustomClearanceSupervisorRole(user) {
-  for (const id of collectUserRoleIdCandidates(user)) {
-    if (isCustomClearanceSupervisorRole(id) || isCustomClearanceSupervisorRole(Number(id))) return true;
-  }
-  return false;
-}
-
-export function userHasDeskSupervisorRole(user) {
-  for (const id of collectUserRoleIdCandidates(user)) {
-    if (isDeskSupervisorRole(id)) return true;
-  }
-  return false;
 }
 
 /** Roles that call task_card/start_task when dragging a card from To Do → In Progress. */

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { FiMail, FiPaperclip, FiSend, FiX } from "react-icons/fi";
 import CustomModal from "@/components/CustomModal";

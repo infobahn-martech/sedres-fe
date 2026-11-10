@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { FiSearch, FiFilter, FiChevronDown, FiChevronUp, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import YellowColorIcon from '../../../assets/images/YellowColorIcon.png';
 import BlueColorIcon from '../../../assets/images/BlueColorIcon.png';

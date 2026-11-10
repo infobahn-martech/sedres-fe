@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { FiSearch, FiFilter, FiChevronDown, FiChevronUp, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import '../../../design/scss/pages/kpi-dashboard/components/Tasks.scss';
 import PremiumSelect from '../../../components/form/PremiumSelect';

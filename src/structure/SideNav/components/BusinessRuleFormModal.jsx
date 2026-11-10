@@ -119,8 +119,6 @@ const CRON_SYMBOL_LEGEND = [
   { symbol: '(,) List', desc: 'The comma (,) symbol allows you to specify a list of discrete values within a particular field.' },
 ];
 
-const CRON_DOW_INDEX_TO_LABEL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
 // Advanced schedule's stored value is an RRULE-style string (FREQ=...;INTERVAL=...;BYDAY=...)
 // rather than a real 5-field cron expression — standard cron can't express "every N weeks" or
 // "every N months", both of which the generator supports, and RRULE is the established format

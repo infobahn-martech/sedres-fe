@@ -58,16 +58,6 @@ export function buildApiDateTime(dateStr, timeStr) {
   return `${datePart} ${hh}:${mm}:00`;
 }
 
-export function buildApiDateTimeIso(dateStr, timeStr) {
-  const datePart = String(dateStr ?? "").trim();
-  if (!datePart) return "";
-  const rawTime = String(timeStr ?? "00:00").trim() || "00:00";
-  const segs = rawTime.split(":");
-  const hh = pad2(Number(segs[0]) || 0);
-  const mm = pad2(Number(segs[1]) || 0);
-  return `${datePart}T${hh}:${mm}:00`;
-}
-
 export function nextDayOf(rawDate) {
   const datePart = (rawDate || "").split(" ")[0].split("T")[0];
   if (!datePart) return undefined;
