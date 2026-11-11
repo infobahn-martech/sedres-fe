@@ -70,11 +70,11 @@ const DispatchProofReviewModal = ({ onConfirmed }) => {
       notify(errorMessage, "error");
       return;
     }
-    const movedCount = result?.moved_to_dispatched?.length ?? payload.length;
-    notify(
-      `${movedCount} ${movedCount === 1 ? "card" : "cards"} moved to Dispatch Proof Uploaded`,
-      "success"
-    );
+    /* "Uploaded to Portal" answers with moved_to_dispatched, L&T "Ready to Submit" with card_positions. */
+    const movedCards = result?.card_positions ?? result?.moved_to_dispatched;
+    const movedCount = movedCards?.length ?? payload.length;
+    const columnName = result?.card_positions?.[0]?.column_name ?? "Dispatch Proof Uploaded";
+    notify(`${movedCount} ${movedCount === 1 ? "card" : "cards"} moved to ${columnName}`, "success");
     onClose();
     onConfirmed?.(payload);
   };

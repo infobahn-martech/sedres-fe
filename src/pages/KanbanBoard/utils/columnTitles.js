@@ -79,6 +79,13 @@ export const isLntSubmittedToDa = (workflowTitle, columnTitle) =>
   LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
   SUBMITTED_TO_DA_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
+const READY_TO_SUBMIT_COLUMN_PATTERN = /^ready\s+to\s+submit$/i;
+
+/* The L&T DA "Ready to Submit" column: its ticked cards take the bulk portal submission proof upload. */
+export const isLntReadyToSubmit = (workflowTitle, columnTitle) =>
+  LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
+  READY_TO_SUBMIT_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
 const MCDERMOTT_WORKFLOW = "MCDERMOTT";
 
 export const isMcDermottWorkflow = (workflow) =>
