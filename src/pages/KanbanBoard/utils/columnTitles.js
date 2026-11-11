@@ -79,6 +79,18 @@ export const isLntSubmittedToDa = (workflowTitle, columnTitle) =>
   LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
   SUBMITTED_TO_DA_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
+const APPROVAL_REQUESTED_COLUMN_PATTERN = /^approval\s+requested$/i;
+
+export const isApprovalRequestedColumnTitle = (columnTitle) =>
+  APPROVAL_REQUESTED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
+/* Operator board: L&T is a swimlane of the shared Operator workflow. Its cards on "Approval Requested" are
+   ticked for "Send SCC for approval" (no Approve / Reject; the backend moves them to the next column). */
+export const isLntSwimlane = (lane) => LNT_WORKFLOW_PATTERN.test(String(lane?.title ?? ""));
+
+export const isLntApprovalRequestedCell = (laneTitle, columnTitle) =>
+  isLntSwimlane({ title: laneTitle }) && isApprovalRequestedColumnTitle(columnTitle);
+
 const MCDERMOTT_WORKFLOW = "MCDERMOTT";
 
 export const isMcDermottWorkflow = (workflow) =>
