@@ -28,6 +28,7 @@ const EMPTY_BATCHES = [];
  */
 export default function SwimlaneColumnCell({
   laneId,
+  laneTitle = "",
   column,
   cards,
   setSelectedCard,
@@ -243,6 +244,7 @@ export default function SwimlaneColumnCell({
                   cardsById={cardsById}
                   columnTitle={column.title}
                   workflowTitle={workflowTitle}
+                  laneTitle={laneTitle}
                   fixedDimensions={{ width: cardWidth }}
                   isSelectedForAction={selectedActionCardIds.includes(card.id)}
                   onToggleSelectForAction={hideCardSelect || isSubmittedInvoicesColumnTitle(column.title) ? undefined : onToggleCardSelect}
@@ -261,6 +263,7 @@ export default function SwimlaneColumnCell({
 
 SwimlaneColumnCell.propTypes = {
   laneId: PropTypes.string.isRequired,
+  laneTitle: PropTypes.string,
   column: PropTypes.shape({
     id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,

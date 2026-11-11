@@ -26,7 +26,7 @@ import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
+import { isApprovalRequestedColumnTitle, isLntSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -227,6 +227,7 @@ const INVOICE_ACTION_BUTTONS = {
   uploadSrf: { label: "Upload SRF", icon: <FiUploadCloud size={16} aria-hidden /> },
   sendInvoice: { label: "Send Invoice", icon: <FiSend size={16} aria-hidden /> },
   sendSccApproval: { label: "Send for SCC Approval", icon: <FiSend size={16} aria-hidden /> },
+  sendSccForApproval: { label: "Send SCC for approval", icon: <FiSend size={16} aria-hidden /> },
   downloadInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
   downloadAndMoveInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
   uploadDispatchProof: { label: "Upload Dispatch Proof", icon: <FiUpload size={16} aria-hidden /> },
@@ -650,10 +651,20 @@ export default function WorkflowColumns({
                 0
               );
               const wipDisplay = String(cardCount);
-              const invoiceAction = isGrouped ? null : getInvoiceAction(workflow, firstColumn);
-              const invoiceCards = invoiceAction
-                ? getColumnCards(group.colKeys[0]).filter((card) => selectedActionCardIds?.includes(card.id))
-                : [];
+              /* Operator board "Approval Requested": "Send SCC for approval" for the ticked cards of the L&T
+                 swimlane only; the other clients' lanes keep their own handling. */
+              const lntLaneIds = swimlaneOrder.filter((laneId) => isLntSwimlane(workflow.swimlanes?.[laneId]));
+              const isLntApprovalRequestedColumn =
+                !isGrouped && lntLaneIds.length > 0 && isApprovalRequestedColumnTitle(firstColumn.title);
+              let invoiceAction = null;
+              if (isLntApprovalRequestedColumn) invoiceAction = "sendSccForApproval";
+              else if (!isGrouped) invoiceAction = getInvoiceAction(workflow, firstColumn);
+              const actionSourceCards = isLntApprovalRequestedColumn
+                ? lntLaneIds.flatMap((laneId) => getSwimlaneColumnCards(workflow, laneId, group.colKeys[0]))
+                : invoiceAction
+                  ? getColumnCards(group.colKeys[0])
+                  : [];
+              const invoiceCards = actionSourceCards.filter((card) => selectedActionCardIds?.includes(card.id));
               /* "Consolidated": ticked cards whose submission documents are not created yet get "Create
                  Submission Documents"; creating them opens the Final Submission Email. Ticked cards that
                  already have a submission get "Send For Final Submission", which reopens that email: it is
@@ -715,6 +726,7 @@ export default function WorkflowColumns({
                     queuedCards: isZamilCrewColumn ? queuedCards : [],
                   }),
                 sendSccApproval: onColumnSendSccApproval,
+                sendSccForApproval: onColumnSendSccApproval,
                 requestPo: onColumnRequestPo,
                 requestZamilMarinePo: handleZamilMarinePoRequest,
                 requestLamprellUaePo: handleZamilMarinePoRequest,
@@ -887,6 +899,7 @@ export default function WorkflowColumns({
                       <SwimlaneColumnCell
                         key={`${laneId}-${column.id}`}
                         laneId={laneId}
+                        laneTitle={lane.title}
                         column={column}
                         cards={cards}
                         setSelectedCard={onSelectCard}

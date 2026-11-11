@@ -343,9 +343,12 @@ const getSccApprovalEmailDraft = (callIds, cardIds) =>
   });
 
 /** @param {FormData} formData - call_ids, card_ids, to, cc, subject, body, attachments[]?, multipart/form-data.
- * @returns {Promise<{ data: { status: 'success', data: { moved_to_scc_received: { call_id: number,
- *   card_id: number }[] } } | { status: 'error', message: string } }>}
- * Sends the SCC approval email; the cards move to "SCC received". */
+ * @returns {Promise<{ data: { status: 'success', data: { moved_to_scc_received?: { call_id: number,
+ *   card_id: number }[], card_positions?: { call_id: number, card_id: number, board_id: number,
+ *   swimlane_id: number, column_id: number, column_name: string, da_flow_id: number|null, da_step: string|null,
+ *   card_sticker_id: number|null, sticker_name: string|null }[] } } | { status: 'error', message: string } }>}
+ * Sends the SCC approval email; the cards move to "SCC received" (DA board) or, from the Operator board's
+ * L&T "Approval Requested", to the next column ("Approval Received"). */
 const sendSccApprovalEmail = (formData) =>
   Gateway.post('/da/send_scc_approval_email', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
