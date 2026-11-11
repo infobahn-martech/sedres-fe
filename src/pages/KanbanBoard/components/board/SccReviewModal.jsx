@@ -18,7 +18,23 @@ const COLUMNS = [
   { name: "approval_email", label: "Approval Email" },
 ];
 
+/* Approved-SCC review (Operator board L&T "Approval Received"): one row per card, each sales order with the SCC
+   found for it and its signature status. */
+const APPROVED_COLUMNS = [
+  { name: "sales_orders", label: "Sales Order" },
+  { name: "scc", label: "SCC" },
+  { name: "signature", label: "Signature" },
+  { name: "approval_email", label: "Approval Email" },
+];
+
 const REVIEW_PAGE_SIZE = 20;
+
+const getSalesOrderObjects = (card) =>
+  (card.sales_orders ?? []).map((salesOrder) =>
+    typeof salesOrder === "object" ? salesOrder : { sales_order_no: salesOrder }
+  );
+
+const hasSccDocument = (card) => getSalesOrderObjects(card).some((salesOrder) => salesOrder.scc?.document_id != null);
 
 // Opened after an L&T "SCC Received" bulk upload. One row per card with the signed SO, SCC and
 // approval email placed on it; cards with everything placed start ticked. Confirm sends the ticked
@@ -28,6 +44,7 @@ const SccReviewModal = ({ onConfirmed }) => {
   const cards = useSccReviewStore((state) => state.selectedSccReviewCards);
   const notPlacedFiles = useSccReviewStore((state) => state.selectedSccReviewNotPlacedFiles);
   const onClose = useSccReviewStore((state) => state.closeSccReviewModal);
+  const isApproved = useSccReviewStore((state) => state.isApprovedSccReview);
   const isConfirming = useSccReviewStore((state) => state.isConfirmingScc);
   const confirmSccDocuments = useSccReviewStore((state) => state.confirmSccDocuments);
   const isLoading = useSccReviewStore((state) => state.isSccReviewLoading);
@@ -45,7 +62,11 @@ const SccReviewModal = ({ onConfirmed }) => {
     });
   }, [show, fetchSccReview]);
 
-  const isCardChecked = (card) => Boolean(card.ready) && !uncheckedCardIds[card.card_id];
+  /* The approved-SCC review lets every card with an SCC be confirmed: the backend moves only the signed ones
+     and answers not_moved for the rest. The DA-board review needs every document placed first (ready). */
+  const isCardSelectable = (card) => (isApproved ? hasSccDocument(card) : Boolean(card.ready));
+
+  const isCardChecked = (card) => isCardSelectable(card) && !uncheckedCardIds[card.card_id];
 
   const toggleCard = (card) =>
     setUncheckedCardIds((prev) => ({ ...prev, [card.card_id]: !prev[card.card_id] }));
@@ -56,7 +77,7 @@ const SccReviewModal = ({ onConfirmed }) => {
   const page = Math.min(currentPage, totalPages);
   const pageCards = cards.slice((page - 1) * REVIEW_PAGE_SIZE, page * REVIEW_PAGE_SIZE);
 
-  const readyCards = cards.filter((card) => card.ready);
+  const readyCards = cards.filter(isCardSelectable);
   const isAllChecked = readyCards.length > 0 && checkedCards.length === readyCards.length;
   const isSomeChecked = checkedCards.length > 0 && !isAllChecked;
 
@@ -67,17 +88,31 @@ const SccReviewModal = ({ onConfirmed }) => {
 
   const handleConfirm = async () => {
     if (isConfirming || !checkedCards.length) return;
-    const payload = checkedCards.map((card) => ({ call_id: card.call_id, card_id: card.card_id }));
+    const payload = checkedCards.map((card) => ({
+      call_id: card.call_id,
+      card_id: card.card_id,
+      ...(isApproved && {
+        sales_orders: getSalesOrderObjects(card)
+          .filter((salesOrder) => salesOrder.scc?.document_id != null)
+          .map((salesOrder) => ({
+            sales_order_no: salesOrder.sales_order_no,
+            scc_id: salesOrder.scc.document_id,
+          })),
+      }),
+    }));
     const { errorMessage, result } = await confirmSccDocuments(payload);
     if (errorMessage) {
       notify(errorMessage, "error");
       return;
     }
-    const movedCount = result?.moved_to_da?.length ?? payload.length;
-    const notMovedCount = result?.not_moved?.length ?? 0;
-    notify(`${movedCount} ${movedCount === 1 ? "card" : "cards"} confirmed and moved on`, "success");
-    if (notMovedCount) {
-      notify(`${notMovedCount} ${notMovedCount === 1 ? "card was" : "cards were"} not moved`, "error");
+    const notMoved = result?.not_moved ?? [];
+    const movedCount = result?.card_positions?.length ?? result?.moved_to_da?.length ?? payload.length - notMoved.length;
+    if (movedCount > 0) {
+      notify(`${movedCount} ${movedCount === 1 ? "card" : "cards"} confirmed and moved on`, "success");
+    }
+    if (notMoved.length) {
+      notify(`${notMoved.length} ${notMoved.length === 1 ? "card was" : "cards were"} not moved`, "error");
+      notMoved.forEach((card) => card.reason && notify(card.reason, "error"));
     }
     onClose();
     onConfirmed?.();
@@ -101,6 +136,44 @@ const SccReviewModal = ({ onConfirmed }) => {
       typeof salesOrder === "object" ? salesOrder.sales_order_no : salesOrder
     );
     return salesOrders.length ? salesOrders.join(", ") : "-";
+  };
+
+  /* One line per sales order in each cell, so the SCC and its signature status stay level with their sales order. */
+  const renderApprovedCardRow = (card) => {
+    const salesOrders = getSalesOrderObjects(card);
+    return (
+      <tr key={card.card_id ?? card.call_id}>
+        <td className="ar-invoice-review__card-cell">
+          <input
+            type="checkbox"
+            className="form-check-input ar-invoice-review__checkbox"
+            checked={isCardChecked(card)}
+            onChange={() => toggleCard(card)}
+            disabled={!isCardSelectable(card) || isConfirming}
+            title={isCardSelectable(card) ? undefined : "No SCC was placed on this card"}
+            aria-label={`Select card ${card.card_id}`}
+          />
+        </td>
+        <td>
+          {salesOrders.length
+            ? salesOrders.map((salesOrder) => <div key={salesOrder.sales_order_no}>{salesOrder.sales_order_no}</div>)
+            : "-"}
+        </td>
+        <td>
+          {salesOrders.length
+            ? salesOrders.map((salesOrder) => <div key={salesOrder.sales_order_no}>{renderDocument(salesOrder.scc)}</div>)
+            : renderDocument(null)}
+        </td>
+        <td>
+          {salesOrders.map((salesOrder) => (
+            <div key={salesOrder.sales_order_no}>
+              {salesOrder.scc ? (salesOrder.scc.signed ? "Signed" : "Not signed") : "-"}
+            </div>
+          ))}
+        </td>
+        <td>{renderDocument(card.approval_email ?? card.documents?.approval_email)}</td>
+      </tr>
+    );
   };
 
   const renderCardRow = (card) => (
@@ -177,17 +250,17 @@ const SccReviewModal = ({ onConfirmed }) => {
                     aria-label="Select all cards"
                   />
                 </th>
-                {COLUMNS.map((column) => (
+                {(isApproved ? APPROVED_COLUMNS : COLUMNS).map((column) => (
                   <th key={column.name}>{column.label}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {cards.length ? (
-                pageCards.map(renderCardRow)
+                pageCards.map(isApproved ? renderApprovedCardRow : renderCardRow)
               ) : (
                 <tr>
-                  <td colSpan={COLUMNS.length + 1} className="ar-invoice-review__empty">
+                  <td colSpan={(isApproved ? APPROVED_COLUMNS : COLUMNS).length + 1} className="ar-invoice-review__empty">
                     {isLoading ? "Loading..." : "No cards to review"}
                   </td>
                 </tr>

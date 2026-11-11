@@ -26,7 +26,7 @@ import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isApprovalRequestedColumnTitle, isLntSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
+import { isApprovalReceivedColumnTitle, isApprovalRequestedColumnTitle, isLntSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -224,6 +224,7 @@ const INVOICE_ACTION_BUTTONS = {
   issueArInvoice: { label: "Upload Invoices", icon: <FiUploadCloud size={16} aria-hidden /> },
   uploadPos: { label: "Upload POs", icon: <FiUploadCloud size={16} aria-hidden /> },
   uploadSccDocuments: { label: "Upload SCC Documents", icon: <FiUploadCloud size={16} aria-hidden /> },
+  uploadApprovedSccDocuments: { label: "Upload SCC Documents", icon: <FiUploadCloud size={16} aria-hidden /> },
   uploadSrf: { label: "Upload SRF", icon: <FiUploadCloud size={16} aria-hidden /> },
   sendInvoice: { label: "Send Invoice", icon: <FiSend size={16} aria-hidden /> },
   sendSccApproval: { label: "Send for SCC Approval", icon: <FiSend size={16} aria-hidden /> },
@@ -651,15 +652,19 @@ export default function WorkflowColumns({
                 0
               );
               const wipDisplay = String(cardCount);
-              /* Operator board "Approval Requested": "Send SCC for approval" for the ticked cards of the L&T
-                 swimlane only; the other clients' lanes keep their own handling. */
+              /* Operator board, ticked cards of the L&T swimlane only (the other clients' lanes keep their own
+                 handling): "Approval Requested" shows "Send SCC for approval", "Approval Received" shows
+                 "Upload SCC Documents" for the approved SCCs. */
               const lntLaneIds = swimlaneOrder.filter((laneId) => isLntSwimlane(workflow.swimlanes?.[laneId]));
-              const isLntApprovalRequestedColumn =
-                !isGrouped && lntLaneIds.length > 0 && isApprovalRequestedColumnTitle(firstColumn.title);
+              let lntLaneAction = null;
+              if (!isGrouped && lntLaneIds.length > 0) {
+                if (isApprovalRequestedColumnTitle(firstColumn.title)) lntLaneAction = "sendSccForApproval";
+                else if (isApprovalReceivedColumnTitle(firstColumn.title)) lntLaneAction = "uploadApprovedSccDocuments";
+              }
               let invoiceAction = null;
-              if (isLntApprovalRequestedColumn) invoiceAction = "sendSccForApproval";
+              if (lntLaneAction) invoiceAction = lntLaneAction;
               else if (!isGrouped) invoiceAction = getInvoiceAction(workflow, firstColumn);
-              const actionSourceCards = isLntApprovalRequestedColumn
+              const actionSourceCards = lntLaneAction
                 ? lntLaneIds.flatMap((laneId) => getSwimlaneColumnCards(workflow, laneId, group.colKeys[0]))
                 : invoiceAction
                   ? getColumnCards(group.colKeys[0])
@@ -719,6 +724,8 @@ export default function WorkflowColumns({
                   onUploadSrf?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 uploadSccDocuments: (cards) =>
                   onUploadSccDocuments?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
+                uploadApprovedSccDocuments: (cards) =>
+                  onUploadSccDocuments?.(cards, { workflowId: workflow.workflow_id ?? workflow.id, isApprovedScc: true }),
                 sendInvoice: ([card, ...queuedCards]) => onColumnSendInvoice?.(card, {
                     isFinalInvoice: isSubseaWorkflow(workflow),
                     isZamilCrew: isZamilCrewColumn,

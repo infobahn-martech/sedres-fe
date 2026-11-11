@@ -172,6 +172,17 @@ const sccDocumentUploadFields = [
     multiple: false,
   },
 ];
+/* Operator board L&T "Approval Received": only the approved SCCs (PDF) and an optional approval email are taken. */
+const approvedSccUploadFields = [
+  { name: SCC_FIELD_NAME, label: "Approved SCCs", accept: ".pdf", formatsHint: "PDF", multiple: true, required: true },
+  {
+    name: SCC_APPROVAL_EMAIL_FIELD_NAME,
+    label: "Approval email (optional)",
+    accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
+    formatsHint: "PDF, EML, MSG, JPG, PNG",
+    multiple: false,
+  },
+];
 const ZAMIL_MARINE_PO_FIELD_NAME = "po_approval";
 const zamilMarinePoUploadFields = [
   {
@@ -1361,13 +1372,15 @@ export default function KanbanBoardPage() {
   const [showSccUploadModal, setShowSccUploadModal] = useState(false);
   const [selectedSccUploadCards, setSelectedSccUploadCards] = useState([]);
   const [selectedSccUploadWorkflowId, setSelectedSccUploadWorkflowId] = useState(null);
+  const [isApprovedSccUpload, setIsApprovedSccUpload] = useState(false);
   const [isUploadingSccDocuments, setIsUploadingSccDocuments] = useState(false);
   const openSccReviewModal = useSccReviewStore((state) => state.openSccReviewModal);
 
-  const handleUploadSccDocumentsClick = useCallback((cards, { workflowId = null } = {}) => {
+  const handleUploadSccDocumentsClick = useCallback((cards, { workflowId = null, isApprovedScc = false } = {}) => {
     if (!cards?.length) return;
     setSelectedSccUploadCards(cards);
     setSelectedSccUploadWorkflowId(workflowId);
+    setIsApprovedSccUpload(isApprovedScc);
     setShowSccUploadModal(true);
   }, []);
 
@@ -1375,12 +1388,14 @@ export default function KanbanBoardPage() {
     setShowSccUploadModal(false);
     setSelectedSccUploadCards([]);
     setSelectedSccUploadWorkflowId(null);
+    setIsApprovedSccUpload(false);
   }, []);
 
   const handleUploadSccDocuments = useCallback(
     async (filesByField) => {
       const cards = selectedSccUploadCards;
       const workflowId = selectedSccUploadWorkflowId;
+      const isApprovedScc = isApprovedSccUpload;
       const callIds = getBatchCallIds({ cards });
       if (!callIds.length) {
         notify("The selected cards have no call to upload SCC documents for", "error");
@@ -1420,7 +1435,7 @@ export default function KanbanBoardPage() {
         handleCloseSccUpload();
         openSccReviewModal(
           cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
-          { notPlacedFiles: data.data?.not_placed_files ?? [], workflowId }
+          { notPlacedFiles: data.data?.not_placed_files ?? [], workflowId, isApprovedScc }
         );
       } finally {
         setIsUploadingSccDocuments(false);
@@ -1429,6 +1444,7 @@ export default function KanbanBoardPage() {
     [
       selectedSccUploadCards,
       selectedSccUploadWorkflowId,
+      isApprovedSccUpload,
       getBatchCallIds,
       removeCardSelectionId,
       handleCloseSccUpload,
@@ -2925,9 +2941,13 @@ export default function KanbanBoardPage() {
         ].join(", ")}
         selectedCardCount={selectedSccUploadCards.length}
         title="Upload SCC Documents"
-        subtitle="Attach the signed SOs, SCCs and approval email for the selected cards"
+        subtitle={
+          isApprovedSccUpload
+            ? "Attach the approved SCCs and, if you have it, the approval email for the selected cards"
+            : "Attach the signed SOs, SCCs and approval email for the selected cards"
+        }
         submitLabel="Upload"
-        fields={sccDocumentUploadFields}
+        fields={isApprovedSccUpload ? approvedSccUploadFields : sccDocumentUploadFields}
       />
 
       <SccReviewModal onConfirmed={refetchBoard} />
