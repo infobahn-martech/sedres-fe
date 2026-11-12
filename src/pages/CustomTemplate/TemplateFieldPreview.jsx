@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import SearchableSelect from "../../components/form/SearchableSelect";
 import DatePickerField from "../KanbanBoard/CardFormTabs/shared/components/DatePickerField";
 import DateTimePickerField from "../KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
-import { DocumentUpload, OwnerField } from "../KanbanBoard/CardFormTabs/Import/tabs/appointment/GeneralFormFields";
+import { DocumentUpload, MultiSelectField, OwnerField } from "../KanbanBoard/CardFormTabs/Import/tabs/appointment/GeneralFormFields";
 
 // A required checkbox group only needs one ticked option, not every checkbox.
 export const isCheckboxGroupValid = (field, selected) => !field.required || selected.length > 0;
@@ -59,6 +59,33 @@ function CheckboxGroupPreview({ field, label, requiredMark, value, onChange, fie
         </div>
     );
 }
+
+// Multi-select dropdown: the selection is kept as an array of option values.
+// Controlled when onChange is given, otherwise keeps its own selection (builder preview).
+function MultiSelectPreview({ value, onChange, options, placeholder, hasError }) {
+    const [localSelected, setLocalSelected] = useState([]);
+    const isControlled = typeof onChange === "function";
+    const selected = isControlled
+        ? (Array.isArray(value) ? value : hasMeaningfulScalar(value) ? String(value).split(",").map((v) => v.trim()) : [])
+        : localSelected;
+    return (
+        <MultiSelectField
+            value={selected}
+            onChange={(e) => {
+                const next = Array.isArray(e?.target?.value) ? e.target.value.map(String) : [];
+                if (isControlled) onChange(next);
+                else setLocalSelected(next);
+            }}
+            options={options}
+            placeholder={placeholder}
+            hasError={hasError}
+            className="checklist-multi-select"
+            menuMaxHeight={260}
+        />
+    );
+}
+
+const hasMeaningfulScalar = (value) => value !== undefined && value !== null && String(value).trim() !== "";
 
 // Renders a template field the same way the live kanban card renders it
 // (cf-field/cf-input, matching Call Type Builder's own live-preview fields)
@@ -188,6 +215,27 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                             <polyline points="6 9 12 15 18 9" />
                         </svg>
                     </div>
+                    {errorNode}
+                </div>
+            );
+        }
+        case "multiselect": {
+            const usesMasterData = (field.optionsSource === "master" || field.optionsSource === "dependency") && field.masterModule;
+            const placeholder = usesMasterData ? `Select ${label.trim().toLowerCase()}...` : "Select options...";
+            const options = (field.options || []).map((opt, i) => ({
+                value: String(getOptionValue(field, i, opt)),
+                label: opt,
+            }));
+            return (
+                <div className={fieldClassName}>
+                    <label>{label}{requiredMark}</label>
+                    <MultiSelectPreview
+                        value={value}
+                        onChange={isControlled ? onChange : undefined}
+                        options={options}
+                        placeholder={placeholder}
+                        hasError={Boolean(error)}
+                    />
                     {errorNode}
                 </div>
             );
