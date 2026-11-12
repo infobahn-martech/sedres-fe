@@ -29,38 +29,8 @@
   box-sizing: border-box;
 }
 
-.checklist-page-header {
-  min-height: 58px;
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  background: var(--surface-primary);
-  border-bottom: 1px solid var(--border-primary);
-}
-
-.checklist-page-header .operation-content-title {
-  position: relative;
-  margin: 0;
-  padding-left: 14px;
-  color: var(--text-primary);
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.checklist-page-header .operation-content-title::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 1px;
-  width: 4px;
-  height: 20px;
-  border-radius: 4px;
-  background: #262832;
-}
+// The checklist header uses the shared .operation-content-header / -title styles as-is,
+// so it matches the other Operation sub-tabs (Pre Arrival, Arrival, ...).
 
 .checklist-header-right {
   display: flex;
@@ -5355,12 +5325,6 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
 }
 
 @media (max-width: 768px) {
-  .checklist-page-header {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 8px 10px 6px;
-  }
-
   .checklist-header-right {
     align-items: stretch;
     width: 100%;
