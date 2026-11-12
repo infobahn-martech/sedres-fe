@@ -994,10 +994,6 @@
 }
 
 /* Multi-select user field: selected users stacked in front of the field like the Owner avatar. */
-.cf-owner-row--multi {
-  align-items: flex-start;
-}
-
 .cf-owner-row--multi > .cf-multi-select-email {
   flex: 1;
   min-width: 0;
@@ -1020,6 +1016,47 @@
 
 .cf-owner-avatar-stack > .cf-owner-avatar--more {
   font-size: 12px;
+}
+
+.cf-owner-row--multi {
+  align-items: center;
+}
+
+/* Single-line multi-select: tags never wrap; overflow collapses into a "…" chip with a tooltip. */
+.cf-multi-select-email-tags.cf-multi-select-email-tags--single-line {
+  position: relative;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cf-multi-select-email-tags--single-line > .cf-email-tag {
+  flex-shrink: 0;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.cf-multi-select-email-tags--single-line > .cf-email-tag:first-child {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.cf-multi-select-email-tags--single-line .cf-email-tag-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Rendered off-flow so its width can still be measured. */
+.cf-multi-select-email-tags--single-line > .cf-email-tag--measure-only {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.cf-multi-select-email-tags--single-line > .cf-email-tag--more {
+  cursor: help;
+  letter-spacing: 1px;
 }
 
 .cf-searchable-option-with-avatar {

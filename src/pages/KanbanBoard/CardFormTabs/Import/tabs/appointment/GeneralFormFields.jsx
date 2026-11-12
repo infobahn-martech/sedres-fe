@@ -844,10 +844,15 @@ const MultiSelectField = ({
   isLoading = false,
   emptyMessage = "No options found",
   showAvatars = false,
+  singleLine = showAvatars,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState("");
   const dropdownRef = useRef(null);
+  const tagsRef = useRef(null);
+  const tagRefs = useRef([]);
+  const moreTagRef = useRef(null);
+  const [visibleTagCount, setVisibleTagCount] = useState(Infinity);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -875,6 +880,44 @@ const MultiSelectField = ({
   const valueToOption = (val) => options.find((o) => valuesEqual(o.value, val));
   const valueToLabel = (val) => valueToOption(val)?.label ?? String(val);
 
+  const selectedLabelsKey = selectedValues.map(valueToLabel).join(" ");
+
+  // Single-line mode: show as many tags as fit on one row; the rest collapse into a "…" chip.
+  useLayoutEffect(() => {
+    if (!singleLine) return undefined;
+    const container = tagsRef.current;
+    if (!container) return undefined;
+    const measure = () => {
+      const widths = tagRefs.current.slice(0, selectedValues.length).map((el) => el?.offsetWidth ?? 0);
+      const styles = window.getComputedStyle(container);
+      const gap = parseFloat(styles.columnGap) || 6;
+      const available = container.clientWidth;
+      const total = widths.reduce((sum, w) => sum + w, 0) + gap * Math.max(widths.length - 1, 0);
+      if (total <= available) {
+        setVisibleTagCount(Infinity);
+        return;
+      }
+      const moreWidth = (moreTagRef.current?.offsetWidth || 28) + gap;
+      let used = 0;
+      let count = 0;
+      for (const w of widths) {
+        const next = used + (count ? gap : 0) + w;
+        if (next + moreWidth > available) break;
+        used = next;
+        count += 1;
+      }
+      // Always keep at least one tag; it truncates with an ellipsis if it is too wide on its own.
+      setVisibleTagCount(Math.max(count, 1));
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [singleLine, selectedLabelsKey, selectedValues.length]);
+
+  const hiddenTagValues = singleLine ? selectedValues.slice(visibleTagCount) : [];
+
   const handleToggle = (optionValue) => {
     const newValue = selectedValues.some((v) => valuesEqual(v, optionValue))
       ? selectedValues.filter((entry) => !valuesEqual(entry, optionValue))
@@ -897,11 +940,22 @@ const MultiSelectField = ({
         className={`cf-multi-select-email-input ${disabled ? "disabled" : ""} ${hasError ? "has-error" : ""}`}
         onClick={disabled ? undefined : () => setIsOpen((prev) => !prev)}
       >
-        <div className="cf-multi-select-email-tags">
+        <div
+          ref={tagsRef}
+          className={`cf-multi-select-email-tags${singleLine ? " cf-multi-select-email-tags--single-line" : ""}`}
+        >
           {selectedValues.length > 0 ? (
-            selectedValues.map((entryVal) => (
-              <span key={String(entryVal)} className="cf-email-tag">
-                {valueToLabel(entryVal)}
+            selectedValues.map((entryVal, index) => (
+              <span
+                key={String(entryVal)}
+                ref={(el) => {
+                  tagRefs.current[index] = el;
+                }}
+                className={`cf-email-tag${singleLine && index >= visibleTagCount ? " cf-email-tag--measure-only" : ""}`}
+                title={singleLine ? valueToLabel(entryVal) : undefined}
+                aria-hidden={singleLine && index >= visibleTagCount ? true : undefined}
+              >
+                <span className="cf-email-tag-label">{valueToLabel(entryVal)}</span>
                 {!disabled && (
                   <button
                     type="button"
@@ -915,6 +969,16 @@ const MultiSelectField = ({
             ))
           ) : (
             <span className="cf-multi-select-placeholder">{placeholder || "Select..."}</span>
+          )}
+          {singleLine && selectedValues.length > 0 && (
+            <span
+              ref={moreTagRef}
+              className={`cf-email-tag cf-email-tag--more${hiddenTagValues.length ? "" : " cf-email-tag--measure-only"}`}
+              title={hiddenTagValues.map(valueToLabel).join(", ") || undefined}
+              aria-hidden={hiddenTagValues.length ? undefined : true}
+            >
+              …
+            </span>
           )}
         </div>
         <span className="cf-multi-select-arrow">▼</span>
@@ -1021,6 +1085,7 @@ MultiSelectField.propTypes = {
   hasError: PropTypes.bool,
   className: PropTypes.string,
   showAvatars: PropTypes.bool,
+  singleLine: PropTypes.bool,
   menuMaxHeight: PropTypes.number,
   isLoading: PropTypes.bool,
   emptyMessage: PropTypes.string,
