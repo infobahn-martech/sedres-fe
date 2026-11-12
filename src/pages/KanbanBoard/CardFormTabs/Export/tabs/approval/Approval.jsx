@@ -1032,24 +1032,23 @@ const createEmptyPartySection = () => ({
                 On Hold by CEO — approval is paused until CEO resumes it
               </div>
             ) : null}
-            <div className="approval-section-header justify-content-end">
-              <AutoSaveStatus status={saveStatus} />
-            </div>
-
-            <section className="approval-form-card">
-              <h3 className="form-group-title">Basic Details</h3>
-              <div className="approval-card-body approval-fields-stack">
-                <FormField label="Branch">
-                  <FormSelect
-                    value={basicDetails.branch}
-                    onChange={(e) => handleBasicChange("branch", e.target.value)}
-                    options={branchOptions}
-                    placeholder={loadingBranches ? "Loading..." : "Select branch..."}
-                    disabled={loadingBranches || !canEditSharedDetails}
-                  />
-                </FormField>
+            <div className="cf-section approval-title-section">
+              <div className="cf-section-header approval-title-header">
+                <div className="cf-section-title">Export Approval</div>
+                <div className="approval-title-header-actions">
+                  <AutoSaveStatus status={saveStatus} />
+                  <div className="approval-branch-select">
+                    <FormSelect
+                      value={basicDetails.branch}
+                      onChange={(e) => handleBasicChange("branch", e.target.value)}
+                      options={branchOptions}
+                      placeholder={loadingBranches ? "Loading..." : "Select branch..."}
+                      disabled={loadingBranches || !canEditSharedDetails}
+                    />
+                  </div>
+                </div>
               </div>
-            </section>
+            </div>
 
             <div className="approval-party-cards-row">
               <PartySectionCard
