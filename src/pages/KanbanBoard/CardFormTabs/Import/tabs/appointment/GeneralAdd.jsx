@@ -90,6 +90,16 @@ const UNTOUCHED_PREVIEW_FIELDS = {
   subject: false,
 };
 
+// Field types that render with another type's input (time-object fields use the datetime picker).
+const TEMPLATE_FIELD_TYPE_ALIASES = {
+  timeobject: "datetime",
+};
+
+const normalizeTemplateFieldType = (typeKey) => {
+  const type = String(typeKey ?? "text").toLowerCase();
+  return TEMPLATE_FIELD_TYPE_ALIASES[type] ?? type;
+};
+
 // Maps a form_template/first_tab field to the shape TemplateFieldPreview renders,
 // ordered by grid row, then column, then display order.
 const mapTemplateTabFields = (fields) =>
@@ -106,7 +116,7 @@ const mapTemplateTabFields = (fields) =>
       return {
         id: field?.field_id,
         label: field?.field_label ?? "",
-        type: String(field?.type_key ?? "text").toLowerCase(),
+        type: normalizeTemplateFieldType(field?.type_key),
         required: String(field?.is_required ?? "0") === "1",
         options: options.map((opt) => (typeof opt === "string" ? opt : opt?.option_label ?? "")),
         // option_value is what create_call_file_new expects for radio/dropdown/checkbox selections.
