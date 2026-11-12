@@ -97,6 +97,16 @@ export const isApprovalRequestedColumnTitle = (columnTitle) =>
    ticked for "Send SCC for approval" (no Approve / Reject; the backend moves them to the next column). */
 export const isLntSwimlane = (lane) => LNT_WORKFLOW_PATTERN.test(String(lane?.title ?? ""));
 
+const APPROVAL_RECEIVED_COLUMN_PATTERN = /^approval\s+received$/i;
+
+export const isApprovalReceivedColumnTitle = (columnTitle) =>
+  APPROVAL_RECEIVED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
+/* Operator board L&T "Approval Received": its cards are ticked for the bulk "Upload SCC Documents" (approved
+   SCCs and an optional approval email); the cards with a signed SCC then move on to the DA board. */
+export const isLntApprovalReceivedCell = (laneTitle, columnTitle) =>
+  isLntSwimlane({ title: laneTitle }) && isApprovalReceivedColumnTitle(columnTitle);
+
 export const isLntApprovalRequestedCell = (laneTitle, columnTitle) =>
   isLntSwimlane({ title: laneTitle }) && isApprovalRequestedColumnTitle(columnTitle);
 
