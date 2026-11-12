@@ -26,7 +26,7 @@ import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
+import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isLntInvoiceIssued, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -181,6 +181,7 @@ const getInvoiceAction = (workflow, column) => {
   /* L&T DA "Received from Ops": the bulk SAP invoice upload, with L&T's own upload and review store. */
   if (isLntReceivedFromOps(workflow?.title, title)) return "issueArInvoice";
   if (isLntSubmittedToDa(workflow?.title, title)) return "checkSignatures";
+  if (isLntInvoiceIssued(workflow?.title, title)) return "downloadPortalFiles";
   if (SCC_RECEIVED_COLUMN_PATTERN.test(title)) return "uploadSccDocuments";
   /* Zamil Crew uploads from each batch header (BatchGroup), so its column header has no upload button. */
   if (CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test(title)) return isZamilWorkflow(workflow) ? null : "issueArInvoice";
@@ -230,6 +231,7 @@ const INVOICE_ACTION_BUTTONS = {
   sendInvoice: { label: "Send Invoice", icon: <FiSend size={16} aria-hidden /> },
   sendSccApproval: { label: "Send for SCC Approval", icon: <FiSend size={16} aria-hidden /> },
   downloadInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
+  downloadPortalFiles: { label: "Download portal files", icon: <FiDownload size={16} aria-hidden /> },
   downloadAndMoveInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
   uploadDispatchProof: { label: "Upload Dispatch Proof", icon: <FiUpload size={16} aria-hidden /> },
   moveCards: { label: "Move the Cards", icon: <FiArrowRight size={16} aria-hidden /> },
@@ -725,6 +727,7 @@ export default function WorkflowColumns({
                 uploadLamprellUaePo: handleLamprellUaePoUpload,
                 merge: onColumnMergeInvoice,
                 downloadInvoices: onColumnDownloadInvoices,
+                downloadPortalFiles: onColumnDownloadInvoices,
                 downloadAndMoveInvoices: (cards) => onColumnDownloadInvoices?.(cards, { moveAfterDownload: true }),
                 uploadDispatchProof: onUploadDispatchProof,
                 moveCards: onColumnMoveCards,

@@ -86,6 +86,14 @@ export const isLntSubmittedToDa = (workflowTitle, columnTitle) =>
   LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
   SUBMITTED_TO_DA_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
+const INVOICE_ISSUED_COLUMN_PATTERN = /^invoice\s+issued$/i;
+
+/* The L&T DA "Invoice Issued" column: "Download portal files" downloads the ticked cards' portal files as a zip
+   and the backend moves the cards to the next column. */
+export const isLntInvoiceIssued = (workflowTitle, columnTitle) =>
+  LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
+  INVOICE_ISSUED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
 const MCDERMOTT_WORKFLOW = "MCDERMOTT";
 
 export const isMcDermottWorkflow = (workflow) =>
