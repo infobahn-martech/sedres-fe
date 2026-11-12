@@ -83,13 +83,22 @@ export const isLntReceivedFromOps = (workflowTitle, columnTitle) =>
   DA_SUPERVISOR_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
   RECEIVED_FROM_OPS_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
-/* L&T is a swimlane of the DA Supervisor workflow, not a workflow of its own. */
-export const isLntSwimlaneTitle = (laneTitle) => LNT_WORKFLOW_PATTERN.test(String(laneTitle ?? ""));
-
 /* The L&T "Submitted to DA" (Operations board: "Submitted to FDA") column, whose cards get the SCC signature check. */
 export const isLntSubmittedToDa = (workflowTitle, columnTitle) =>
   LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
   SUBMITTED_TO_DA_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
+const APPROVAL_REQUESTED_COLUMN_PATTERN = /^approval\s+requested$/i;
+
+export const isApprovalRequestedColumnTitle = (columnTitle) =>
+  APPROVAL_REQUESTED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
+/* Operator board: L&T is a swimlane of the shared Operator workflow. Its cards on "Approval Requested" are
+   ticked for "Send SCC for approval" (no Approve / Reject; the backend moves them to the next column). */
+export const isLntSwimlane = (lane) => LNT_WORKFLOW_PATTERN.test(String(lane?.title ?? ""));
+
+export const isLntApprovalRequestedCell = (laneTitle, columnTitle) =>
+  isLntSwimlane({ title: laneTitle }) && isApprovalRequestedColumnTitle(columnTitle);
 
 const INVOICE_ISSUED_COLUMN_PATTERN = /^invoice\s+issued$/i;
 

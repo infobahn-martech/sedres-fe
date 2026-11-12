@@ -30,6 +30,7 @@ import {
   isLamprellUaePoReceivedColumn,
   isLamprellAlgihazPoReceivedColumn,
   isLamprellAlgihazArInvoiceIssuedColumn,
+  isLntApprovalRequestedCell,
   isSubseaWorkflow,
   isUploadedToPortalColumnTitle,
 } from "../../../../utils/columnTitles";
@@ -713,6 +714,7 @@ function CardItem({
   isDarkMode = false,
   columnTitle = "",
   workflowTitle = "",
+  laneTitle = "",
   fixedDimensions = null,
   isSelectedForAction = false,
   onToggleSelectForAction,
@@ -762,7 +764,8 @@ function CardItem({
     (isDaBoardCard ||
       isLamprellUaePoReceivedColumn(workflowTitle, columnTitle) ||
       isLamprellAlgihazPoReceivedColumn(workflowTitle, columnTitle) ||
-      isLamprellAlgihazArInvoiceIssuedColumn(workflowTitle, columnTitle)) &&
+      isLamprellAlgihazArInvoiceIssuedColumn(workflowTitle, columnTitle) ||
+      isLntApprovalRequestedCell(laneTitle, columnTitle)) &&
     typeof onToggleSelectForAction === "function" &&
     !isExportApprovalHeld;
   const topRowUsernameInitial = isApiCard && !isShrunk ? getUsernameInitial(card.user) : null;
@@ -1331,6 +1334,7 @@ CardItem.propTypes = {
   isDarkMode: PropTypes.bool,
   columnTitle: PropTypes.string,
   workflowTitle: PropTypes.string,
+  laneTitle: PropTypes.string,
   fixedDimensions: PropTypes.shape({
     width: PropTypes.number.isRequired,
     height: PropTypes.number,
