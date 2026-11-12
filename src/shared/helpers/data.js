@@ -243,7 +243,7 @@ export function mapBoardWorkflowFromApi(workflow) {
             workflow_id: wfId,
             workflow_role_id: workflowRoleId,
             workflow_name: title,
-            // get_full_board per-card flag: 1 enables the card modal's "DA" tab.
+            // get_full_board per-card flag: 1 marks a DA board card (see CardItem).
             // Carried through raw (backend sends 1 / "1") and interpreted at the use site.
             da_board: card.da_board ?? null,
             // get_full_board per-card flag: "missing" when the SCC signature check found no signature.

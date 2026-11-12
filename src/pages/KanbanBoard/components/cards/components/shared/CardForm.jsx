@@ -32,7 +32,7 @@ import {
 } from "@/shared/constants/permissions";
 
 // Import Tab Components
-import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Reports, KPI, Comments, Subtasks, Notes, DA, ActivityLog } from "@/pages/KanbanBoard/CardFormTabs/Import";
+import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Reports, KPI, Comments, Subtasks, Notes, ActivityLog } from "@/pages/KanbanBoard/CardFormTabs/Import";
 import { Approval } from "@/pages/KanbanBoard/CardFormTabs/Export";
 import { DEFAULT_PRE_ARRIVAL_DOCUMENT_HANDLING } from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/operation/preArrivalDocumentHandling";
 import { isExportCall } from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callTypes";
@@ -71,17 +71,6 @@ const ALL_TOP_TABS = [
 ];
 
 const ALL_ENABLED_TABS = ["Appointment Details", "Operation", "Husbandry", "Sales Order", "Comments", "Subtasks", "Notes", "Reports", "Document Library", "Activity Log"];
-
-// "DA" tab is appended to the default tab bar only for viewers the backend grants
-// KANBAN_CARD:DA - see showDAOnlyTab.
-const DA_ONLY_TAB = "DA";
-
-// Insert "DA" before the trailing "Activity Log" tab so Activity Log always stays last.
-const withDAOnlyTab = (tabs) => {
-  const activityIndex = tabs.indexOf("Activity Log");
-  if (activityIndex < 0) return [...tabs, DA_ONLY_TAB];
-  return [...tabs.slice(0, activityIndex), DA_ONLY_TAB, ...tabs.slice(activityIndex)];
-};
 
 const EXPORT_ONLY_TABS = ["Export Approval"];
 
@@ -1820,8 +1809,6 @@ const renderTabContent = (
         return <Subtasks {...commonProps} />;
       case "Notes":
         return <Notes {...commonProps} />;
-      case "DA":
-        return <DA {...commonProps} />;
       case "Activity Log":
         return <ActivityLog {...commonProps} />;
       default:
@@ -2027,13 +2014,6 @@ function CardForm({
   // Enable DA mode only for explicit DA routes, not generic /kanban-board/:boardId.
   const isDAModule = /^\/kanban-board\/(centralized-da-desk|jubail-operations|rastanura-dammam-operations|coordinator-transport|ras-tanura-operations)$/.test(location.pathname);
 
-  // "DA" tab visibility is backend-driven, never role_id: get_full_board returns a
-  // per-card da_board flag (1 = enabled). Read from the mapped card, falling back to
-  // the raw API card for entry points that pass one straight through. Backend sends
-  // it as a number, so compare as a string to tolerate 1 and "1" alike.
-  const canViewDATab =
-    String(card?.da_board ?? card?.raw?.da_board ?? "").trim() === "1";
-  const showDAOnlyTab = !isDAModule && !isSimplifiedMode && canViewDATab;
 
 
   const defaultTab = isDAModule ? "General" : (isSimplifiedMode ? "General" : "Appointment Details");
@@ -2437,7 +2417,7 @@ function CardForm({
   // namespaced "template:<tab_id>" id rendered by TemplateTabPanel. Calls whose detail
   // has no template keep the built-in tab list. With a template, Export Approval comes
   // from the API (tab_key export_approval); without one it is still injected by export
-  // status. DA stays driven by the da_board flag.
+  // status.
   const usesTemplateTabs = !isDAModule && !isSimplifiedMode && !isAddMode;
   const templateTopTabs = useMemo(
     () => (usesTemplateTabs ? getTemplateTopTabs(callDetailSnapshot) : null),
@@ -2457,17 +2437,16 @@ function CardForm({
 
   const buildTabList = useCallback(
     (base, { lockOperation, fromTemplate }) => {
-      const withDAOnly = showDAOnlyTab ? withDAOnlyTab(base) : base;
       // Template tab sets already carry Export Approval (tab_key export_approval) from the
       // API, so only inject the built-in one for calls without a template.
       const withExport = !fromTemplate && showExportTabs && !isDAModule && !isSimplifiedMode
-        ? withExportTabs(withDAOnly)
-        : withDAOnly;
+        ? withExportTabs(base)
+        : base;
       const withHusbandryCall = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
       const withLockOperation = lockOperation ? withHusbandryCall.filter((tab) => tab !== "Operation") : withHusbandryCall;
       return filterTabsByCardPermission(withLockOperation);
     },
-    [showDAOnlyTab, showExportTabs, isDAModule, isSimplifiedMode, isHusbandryCall, filterTabsByCardPermission]
+    [showExportTabs, isDAModule, isSimplifiedMode, isHusbandryCall, filterTabsByCardPermission]
   );
 
   const TOP_TABS = useMemo(() => {
