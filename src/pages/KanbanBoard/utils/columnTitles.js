@@ -74,6 +74,13 @@ const SUBMITTED_TO_DA_COLUMN_PATTERN = /^submitted\s+to\s+f?da$/i;
 
 export const isLntWorkflow = (workflow) => LNT_WORKFLOW_PATTERN.test(String(workflow?.title ?? ""));
 
+const RECEIVED_FROM_OPS_COLUMN_PATTERN = /^received\s+from\s+ops$/i;
+
+/* The L&T DA "Received from Ops" column: its cards are ticked for the bulk SAP invoice upload and review. */
+export const isLntReceivedFromOps = (workflowTitle, columnTitle) =>
+  LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
+  RECEIVED_FROM_OPS_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
 /* The L&T "Submitted to DA" (Operations board: "Submitted to FDA") column, whose cards get the SCC signature check. */
 export const isLntSubmittedToDa = (workflowTitle, columnTitle) =>
   LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
