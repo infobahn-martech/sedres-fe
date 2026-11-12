@@ -112,10 +112,13 @@ export const isLntApprovalRequestedCell = (laneTitle, columnTitle) =>
 
 const INVOICE_ISSUED_COLUMN_PATTERN = /^invoice\s+issued$/i;
 
-/* The L&T DA "Invoice Issued" column: "Download portal files" downloads the ticked cards' portal files as a zip
-   and the backend moves the cards to the next column. */
+export const isDaSupervisorWorkflow = (workflowTitle) => DA_SUPERVISOR_WORKFLOW_PATTERN.test(String(workflowTitle ?? ""));
+
+/* The L&T DA "Invoice Issued" column (an L&T workflow, or the L&T swimlane of the DA Supervisor workflow):
+   "Download portal files" downloads the ticked cards' portal files as a zip and the backend moves the cards
+   to the next column. */
 export const isLntInvoiceIssued = (workflowTitle, columnTitle) =>
-  LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
+  (LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) || isDaSupervisorWorkflow(workflowTitle)) &&
   INVOICE_ISSUED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
 const MCDERMOTT_WORKFLOW = "MCDERMOTT";
