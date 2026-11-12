@@ -180,19 +180,23 @@ function TemplateStageForm({
   }, [fields]);
   const templateRequestSeqRef = useRef(0);
 
-  const refreshEmailTemplateForTriggers = async (overrides) => {
+  // Current saber / weather_forecast values as query params; the JSON key drives the effect below.
+  const triggerParams = {};
+  EMAIL_TEMPLATE_TRIGGER_KEYS.forEach((key) => {
+    const field = triggerFields[key];
+    if (!field) return;
+    const value = getValue(field.field_id);
+    triggerParams[key] = value === null || value === undefined ? "" : String(value);
+  });
+  const triggerParamsKey = JSON.stringify(triggerParams);
+  const hasTriggerEdit = Object.values(triggerFields).some((field) =>
+    Object.prototype.hasOwnProperty.call(edits, field.field_id)
+  );
+  const lastTriggerParamsKeyRef = useRef(triggerParamsKey);
+
+  const refreshEmailTemplateForTriggers = async (params) => {
     const resolvedCallId = String(callId ?? "").trim();
     if (!resolvedCallId) return;
-    const params = {};
-    EMAIL_TEMPLATE_TRIGGER_KEYS.forEach((key) => {
-      const field = triggerFields[key];
-      if (!field) return;
-      const value = Object.prototype.hasOwnProperty.call(overrides, field.field_id)
-        ? overrides[field.field_id]
-        : getValue(field.field_id);
-      params[key] = value === null || value === undefined ? "" : String(value);
-    });
-
     const seq = ++templateRequestSeqRef.current;
     try {
       const { data } = await callFileService.getCallDetail(resolvedCallId, params);
@@ -213,13 +217,18 @@ function TemplateStageForm({
     }
   };
 
+  // Re-request get_call_detail whenever the user changes SABER / Weather Forecast.
+  useEffect(() => {
+    if (triggerParamsKey === lastTriggerParamsKeyRef.current) return;
+    lastTriggerParamsKeyRef.current = triggerParamsKey;
+    if (!hasTriggerEdit || isViewOnly) return;
+    refreshEmailTemplateForTriggers(JSON.parse(triggerParamsKey));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerParamsKey]);
+
   const setFieldValue = (fieldId, value) => {
     setEdits((prev) => ({ ...prev, [fieldId]: value }));
     clearError(fieldId);
-    const isTrigger = Object.values(triggerFields).some((field) => String(field.field_id) === String(fieldId));
-    if (isTrigger && !isViewOnly && String(getValue(fieldId) ?? "") !== String(value ?? "")) {
-      refreshEmailTemplateForTriggers({ [fieldId]: value });
-    }
   };
 
   const setFieldFile = (fieldId, file) => {
