@@ -117,7 +117,8 @@ const mergeArInvoices = (payload) => Gateway.post('/da/merge_ar_invoices', paylo
 /** @param {{ call_ids: number[], card_ids: number[] }} params - the ticked cards, sent comma separated.
  * @returns {Promise<{ data: { status: 'success', data: { cards: Array<{ call_id: number, card_id: number,
  *   invoices: Array<{ sales_order_no: string, invoice_no: string, pdf: { name: string, url: string },
- *   xml: { name: string, url: string } }> }>, file_count: number, zip: { name: string, url: string } } }
+ *   xml: { name: string, url: string } | null }> }>, card_positions: Array<{ call_id: number, card_id: number,
+ *   column_name: string }>, file_count: number, zip: { name: string, url: string } } }
  *   | { status: 'error', message: string } }>}
  * The cards' invoice PDF and XML portal files, bundled into one zip. */
 const getPortalFiles = ({ call_ids: callIds, card_ids: cardIds }) =>
