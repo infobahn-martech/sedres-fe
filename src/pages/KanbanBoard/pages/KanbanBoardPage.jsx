@@ -51,6 +51,8 @@ import useBatchMoveStore from "../../../store/batchMoveStore";
 import useArInvoiceReviewStore from "../../../store/arInvoiceReviewStore";
 import useZamilMarineArInvoiceStore from "../../../store/zamilMarineArInvoiceStore";
 import useZamilCrewArInvoiceStore from "../../../store/zamilCrewArInvoiceStore";
+import useLntArInvoiceStore from "../../../store/lntArInvoiceStore";
+import lntArInvoiceService from "../../../services/lntArInvoiceService";
 import useZamilMarinePoRequestStore from "../../../store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "../../../store/zamilMarinePoUploadStore";
 import useLamprellAlgihazSoApprovalStore from "../../../store/lamprellAlgihazSoApprovalStore";
@@ -1077,7 +1079,7 @@ export default function KanbanBoardPage() {
      (loose cards have no batch header to carry the button). McDermott's "Issue AR Invoice" uses it
      too, with its workflowId: its invoice review is read per workflow. */
   const handleColumnUploadInvoice = useCallback(
-    (cards, { workflowId = null, isZamilCrew = false, isZamilMarine = false } = {}) => {
+    (cards, { workflowId = null, isZamilCrew = false, isZamilMarine = false, isLnt = false } = {}) => {
       if (!cards?.length) return;
       const batchNumbers = [...new Set(cards.map((card) => batchByCardId[card.id]).filter(Boolean))];
       handleBatchUploadInvoice({
@@ -1087,6 +1089,7 @@ export default function KanbanBoardPage() {
         workflowId,
         isZamilCrew,
         isZamilMarine,
+        isLnt,
       });
     },
     [batchByCardId, handleBatchUploadInvoice]
@@ -1096,6 +1099,7 @@ export default function KanbanBoardPage() {
   const openArInvoiceReviewModal = useArInvoiceReviewStore((state) => state.openArInvoiceReviewModal);
   const openZamilCrewArInvoiceReviewModal = useZamilCrewArInvoiceStore((state) => state.openArInvoiceReviewModal);
   const openZamilMarineArInvoiceReviewModal = useZamilMarineArInvoiceStore((state) => state.openArInvoiceReviewModal);
+  const openLntArInvoiceReviewModal = useLntArInvoiceStore((state) => state.openArInvoiceReviewModal);
 
   /* Bulk AR invoice upload for the ticked cards: the backend matches each PDF to a card's sales
      order. Files go in chunks of AR_INVOICE_FILES_PER_REQUEST; each response carries the latest
@@ -1108,12 +1112,21 @@ export default function KanbanBoardPage() {
       const callIds = getBatchCallIds(selectedInvoiceBatch);
       const isZamilCrew = Boolean(selectedInvoiceBatch?.isZamilCrew);
       const isZamilMarine = Boolean(selectedInvoiceBatch?.isZamilMarine);
-      const uploadService = isZamilMarine ? zamilMarineArInvoiceService : isZamilCrew ? zamilCrewService : daService;
-      const openReviewModal = isZamilMarine
-        ? openZamilMarineArInvoiceReviewModal
-        : isZamilCrew
-          ? openZamilCrewArInvoiceReviewModal
-          : openArInvoiceReviewModal;
+      const isLnt = Boolean(selectedInvoiceBatch?.isLnt);
+      const uploadService = isLnt
+        ? lntArInvoiceService
+        : isZamilMarine
+          ? zamilMarineArInvoiceService
+          : isZamilCrew
+            ? zamilCrewService
+            : daService;
+      const openReviewModal = isLnt
+        ? openLntArInvoiceReviewModal
+        : isZamilMarine
+          ? openZamilMarineArInvoiceReviewModal
+          : isZamilCrew
+            ? openZamilCrewArInvoiceReviewModal
+            : openArInvoiceReviewModal;
       if (!callIds.length) {
         notify("The selected cards have no call to upload invoices for", "error");
         return;
@@ -1203,6 +1216,7 @@ export default function KanbanBoardPage() {
       openArInvoiceReviewModal,
       openZamilCrewArInvoiceReviewModal,
       openZamilMarineArInvoiceReviewModal,
+      openLntArInvoiceReviewModal,
       refetchBoard,
     ]
   );
@@ -2878,6 +2892,7 @@ export default function KanbanBoardPage() {
       <ArInvoiceReviewModal onConfirmed={refetchBoard} />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilCrewArInvoiceStore} />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilMarineArInvoiceStore} />
+      <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useLntArInvoiceStore} />
       <SignatureCheckModal
         onConfirmed={(result) => {
           [...(result?.moved_to_da ?? []), ...(result?.returned_to_scc_received ?? [])].forEach((card) => removeCardSelectionId(String(card.card_id)));

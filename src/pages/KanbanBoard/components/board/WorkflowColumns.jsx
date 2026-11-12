@@ -26,7 +26,7 @@ import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isApprovalReceivedColumnTitle, isApprovalRequestedColumnTitle, isLntSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntSubmittedToDa, isLntInvoiceIssued, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
+import { isApprovalReceivedColumnTitle, isApprovalRequestedColumnTitle, isLntSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isLntInvoiceIssued, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -178,6 +178,8 @@ const getInvoiceAction = (workflow, column) => {
     return null;
   }
   if (ISSUE_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
+  /* L&T DA "Received from Ops": the bulk SAP invoice upload, with L&T's own upload and review store. */
+  if (isLntReceivedFromOps(workflow?.title, title)) return "issueArInvoice";
   if (isLntSubmittedToDa(workflow?.title, title)) return "checkSignatures";
   if (isLntInvoiceIssued(workflow?.title, title)) return "downloadPortalFiles";
   if (SCC_RECEIVED_COLUMN_PATTERN.test(title)) return "uploadSccDocuments";
@@ -719,6 +721,7 @@ export default function WorkflowColumns({
                     workflowId: workflow.workflow_id ?? workflow.id,
                     isZamilCrew: isZamilWorkflow(workflow) && !isZamilMarineWorkflow(workflow),
                     isZamilMarine: isZamilMarineWorkflow(workflow),
+                    isLnt: isLntReceivedFromOps(workflow?.title, firstColumn?.title),
                   }),
                 uploadPos: (cards) =>
                   onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
