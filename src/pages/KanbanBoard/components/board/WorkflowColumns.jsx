@@ -26,7 +26,7 @@ import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isLntInvoiceIssued, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
+import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSwimlaneTitle, isLntSubmittedToDa, isLntInvoiceIssued, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -655,8 +655,15 @@ export default function WorkflowColumns({
               );
               const wipDisplay = String(cardCount);
               const invoiceAction = isGrouped ? null : getInvoiceAction(workflow, firstColumn);
+              const isLntUploadColumn = isLntReceivedFromOps(workflow?.title, firstColumn?.title);
+              /* Only the L&T swimlane's ticks count for L&T's SAP invoice upload; other clients' cards stay out of it. */
+              const invoiceColumnCards = isLntUploadColumn
+                ? swimlaneOrder
+                    .filter((laneId) => isLntSwimlaneTitle(workflow.swimlanes?.[laneId]?.title))
+                    .flatMap((laneId) => getSwimlaneColumnCards(workflow, laneId, group.colKeys[0]))
+                : getColumnCards(group.colKeys[0]);
               const invoiceCards = invoiceAction
-                ? getColumnCards(group.colKeys[0]).filter((card) => selectedActionCardIds?.includes(card.id))
+                ? invoiceColumnCards.filter((card) => selectedActionCardIds?.includes(card.id))
                 : [];
               /* "Consolidated": ticked cards whose submission documents are not created yet get "Create
                  Submission Documents"; creating them opens the Final Submission Email. Ticked cards that
@@ -705,7 +712,7 @@ export default function WorkflowColumns({
                     workflowId: workflow.workflow_id ?? workflow.id,
                     isZamilCrew: isZamilWorkflow(workflow) && !isZamilMarineWorkflow(workflow),
                     isZamilMarine: isZamilMarineWorkflow(workflow),
-                    isLnt: isLntReceivedFromOps(workflow?.title, firstColumn?.title),
+                    isLnt: isLntUploadColumn,
                   }),
                 uploadPos: (cards) =>
                   onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
