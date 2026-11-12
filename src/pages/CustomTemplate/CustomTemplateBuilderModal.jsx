@@ -11,7 +11,6 @@ import { getFeaturePreviewKind } from "./templateFeaturePreviews";
 import { alignLayoutToOrder, buildFieldGrid, getReadingOrder, resolveFieldLayout, sortFieldsByLayout } from "./templateFieldGrid";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
-import useTimeObjectReducer from "../../store/TimeObjectReducer";
 import { mapBillingEntitiesToOptions } from "../../shared/helpers/callFileFormOptions";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/general.scss";
@@ -693,7 +692,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     } = useFormTemplateReducer((s) => s);
     const isEditMode = Boolean(initialTemplate);
     const { getBillingEntities, billingEntities, isLoading: billingEntitiesLoading } = useBillingEntityReducer((s) => s);
-    const { getTimeObjects, timeObjects, isLoadingGet: timeObjectsLoading } = useTimeObjectReducer((s) => s);
 
     const [templateName, setTemplateName] = useState(() => getTemplateSeed(initialTemplate).name);
     const [nameTouched, setNameTouched] = useState(false);
@@ -755,7 +753,8 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const optionsSourceTypes = useMemo(() => buildOptionsSourceTypeSet(fieldTypes), [fieldTypes]);
     const masterModuleOptions = useMemo(() => buildMasterModuleOptions(masterLookups), [masterLookups]);
     const timeObjectTypeKey = useMemo(() => buildTimeObjectTypeKey(fieldTypes), [fieldTypes]);
-    const timeObjectOptions = useMemo(() => buildTimeObjectOptions(timeObjects), [timeObjects]);
+    // The time_object master list is no longer fetched by the builder.
+    const timeObjectOptions = useMemo(() => buildTimeObjectOptions([]), []);
     // System-bound fields (from system_bindings, on any tab or subtab) can't be
     // deleted and are always required. Fields bound to keys the current call
     // type doesn't have are dropped during sync, so the key alone decides.
@@ -861,23 +860,33 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         }
     }, [billingEntities, getBillingEntities]);
 
-    useEffect(() => {
-        if (fieldTypes === null) {
-            getFieldTypes();
-        }
-    }, [fieldTypes, getFieldTypes]);
+    // The field editor's lookups load lazily — opening the builder only needs the
+    // call type / billing entity lists; the structure comes from system_bindings.
+    const allFields = tabs.flatMap((t) => [
+        ...(t.fields ?? []),
+        ...(t.subTabs ?? []).flatMap((s) => s.fields ?? []),
+    ]);
+    // Field types resolve each field's field_type_id on save and feed the type select,
+    // so they're needed as soon as the template has any tabs.
+    const needsFieldTypes = tabs.length > 0;
+    const needsMasterLookups = allFields.some(
+        (f) => f.type !== timeObjectTypeKey && isMasterBackedSource(f.optionsSource)
+    );
 
+    // At most one request per builder session; the store keeps the result for later opens.
+    const fieldTypesRequestedRef = useRef(false);
     useEffect(() => {
-        if (masterLookups === null) {
-            getMasterLookups();
-        }
-    }, [masterLookups, getMasterLookups]);
+        if (!needsFieldTypes || fieldTypes !== null || fieldTypesRequestedRef.current) return;
+        fieldTypesRequestedRef.current = true;
+        getFieldTypes();
+    }, [needsFieldTypes, fieldTypes, getFieldTypes]);
 
-    // Always refetch the full list: the shared store may only hold one
-    // paginated page left behind by the Time Objects screen.
+    const masterLookupsRequestedRef = useRef(false);
     useEffect(() => {
-        getTimeObjects({ page: 1, limit: 1000 });
-    }, [getTimeObjects]);
+        if (!needsMasterLookups || masterLookups !== null || masterLookupsRequestedRef.current) return;
+        masterLookupsRequestedRef.current = true;
+        getMasterLookups();
+    }, [needsMasterLookups, masterLookups, getMasterLookups]);
 
     const resetState = () => {
         const seed = getTemplateSeed(initialTemplate);
@@ -1811,7 +1820,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         masterModulesLoading={isLoadingMasterLookups}
                                         dropdownFieldLabels={dropdownFieldLabels}
                                         timeObjectOptions={timeObjectOptions}
-                                        timeObjectsLoading={timeObjectsLoading}
+                                        timeObjectsLoading={false}
                                         optionsFieldTypes={optionsFieldTypes}
                                         optionsSourceTypes={optionsSourceTypes}
                                         timeObjectTypeKey={timeObjectTypeKey}
