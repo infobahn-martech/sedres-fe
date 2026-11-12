@@ -112,17 +112,27 @@ function TemplateStageForm({
   onDirtyChange,
   onSaveSuccess,
 }) {
-  const fields = useMemo(() => sortTemplateFields(stage?.fields), [stage]);
-  const timeObjects = useMemo(() => flattenTimeObjects(detail), [detail]);
+  // A SABER / Weather Forecast change re-requests get_call_detail with those values; its response
+  // ({ detail, stage }) then drives this stage's fields, values and email template until the shared
+  // call detail refreshes again (e.g. after a save).
+  const [freshData, setFreshData] = useState(null);
+  useEffect(() => {
+    setFreshData(null);
+  }, [detail]);
+  const activeDetail = freshData?.detail ?? detail;
+  const activeStage = freshData?.stage ?? stage;
+
+  const fields = useMemo(() => sortTemplateFields(activeStage?.fields), [activeStage]);
+  const timeObjects = useMemo(() => flattenTimeObjects(activeDetail), [activeDetail]);
 
   // Saved values from the (shared) call detail; recomputed after a save refreshes it.
   const baselineValues = useMemo(() => {
     const values = {};
     fields.forEach((field) => {
-      values[field.field_id] = toStageFormValue(field, { detail, timeObjects });
+      values[field.field_id] = toStageFormValue(field, { detail: activeDetail, timeObjects });
     });
     return values;
-  }, [fields, detail, timeObjects]);
+  }, [fields, activeDetail, timeObjects]);
 
   // Only fields the user changed live here, so a background refresh never overwrites them.
   const [edits, setEdits] = useState({});
@@ -132,7 +142,7 @@ function TemplateStageForm({
   const submittingRef = useRef(false);
   // The call detail's subtab `email_template` is the composer's source; the report template
   // endpoints are only a fallback for templates that don't carry one.
-  const detailEmailTemplate = stage?.emailTemplate ?? null;
+  const detailEmailTemplate = activeStage?.emailTemplate ?? null;
   const showEmailPreview = canPreviewEmail && stage?.emailPreview !== false;
   const [reportDraft, setReportDraft] = useState(() => {
     const defaults = { from: "", to: "", cc: "", subject: `Report - ${stage?.label ?? ""}`.trim(), message: "" };
@@ -202,14 +212,31 @@ function TemplateStageForm({
       const { data } = await callFileService.getCallDetail(resolvedCallId, params);
       // Only the latest selection's response is bound.
       if (!aliveRef.current || seq !== templateRequestSeqRef.current) return;
-      const freshStage = (getTemplateOperationSubtabs(data?.data) || []).find(
+      const freshDetail = data?.data ?? null;
+      const freshStage = (getTemplateOperationSubtabs(freshDetail) || []).find(
         (tab) => String(tab.tabId) === String(stage?.tabId)
       );
-      if (!freshStage?.emailTemplate) return;
-      const template = extractReportTemplateFields(freshStage.emailTemplate);
-      // An explicit saber / weather change re-applies the template even over composer edits.
-      reportTouchedRef.current = false;
-      setReportDraft((prev) => mergeReportTemplate(prev, template));
+      if (!freshDetail || !freshStage) return;
+
+      // Rebind this stage's fields and values from the fresh response. The SABER / Weather
+      // selections stay as picked; every other field takes the response's value.
+      const triggerIds = new Set(Object.values(triggerFields).map((field) => String(field.field_id)));
+      setFreshData({ detail: freshDetail, stage: freshStage });
+      setEdits((prev) => {
+        const kept = {};
+        Object.entries(prev).forEach(([fieldId, value]) => {
+          if (triggerIds.has(String(fieldId))) kept[fieldId] = value;
+        });
+        return kept;
+      });
+      setErrors({});
+
+      if (freshStage.emailTemplate) {
+        const template = extractReportTemplateFields(freshStage.emailTemplate);
+        // An explicit saber / weather change re-applies the template even over composer edits.
+        reportTouchedRef.current = false;
+        setReportDraft((prev) => mergeReportTemplate(prev, template));
+      }
     } catch (error) {
       if (aliveRef.current && seq === templateRequestSeqRef.current) {
         notify(getApiErrorMessage(error, "Failed to refresh the email template."), "error");
@@ -225,6 +252,18 @@ function TemplateStageForm({
     refreshEmailTemplateForTriggers(JSON.parse(triggerParamsKey));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerParamsKey]);
+
+  // Conditional fields (`show_when_field_id` / `show_when_value`, e.g. the SABER attachment shown
+  // only for "by_sedres") render, validate and save only while their condition holds.
+  const isFieldVisible = (field) => {
+    const dependsOn = field?.show_when_field_id;
+    if (dependsOn === null || dependsOn === undefined || String(dependsOn).trim() === "") return true;
+    const current = getValue(dependsOn);
+    const expected = String(field.show_when_value ?? "").trim();
+    if (Array.isArray(current)) return current.map(String).includes(expected);
+    return String(current ?? "").trim() === expected;
+  };
+  const visibleFields = fields.filter(isFieldVisible);
 
   const setFieldValue = (fieldId, value) => {
     setEdits((prev) => ({ ...prev, [fieldId]: value }));
@@ -305,9 +344,9 @@ function TemplateStageForm({
 
   // Saved additional rows come from the call detail (call_file/get_call_detail) `time_objects`.
   const savedAdditionalRows = useMemo(() => {
-    const source = Array.isArray(detail?.time_objects) ? detail.time_objects.flat(Infinity) : [];
+    const source = Array.isArray(activeDetail?.time_objects) ? activeDetail.time_objects.flat(Infinity) : [];
     return mapCallTimeObjectsToAdditionalRows(source, { stageId });
-  }, [detail, stageId]);
+  }, [activeDetail, stageId]);
 
   // Whenever the call detail refreshes, show its saved rows plus any unsaved local drafts.
   useEffect(() => {
@@ -364,7 +403,7 @@ function TemplateStageForm({
   // ---- Validation & submit ----
   const validate = () => {
     const nextErrors = {};
-    fields.forEach((field) => {
+    visibleFields.forEach((field) => {
       if (!isTemplateFieldRequired(field)) return;
       const type = getTemplateFieldType(field);
       const id = field.field_id;
@@ -391,7 +430,7 @@ function TemplateStageForm({
 
     const nextErrors = validate();
     setErrors(nextErrors);
-    const missingLabels = fields.filter((field) => nextErrors[field.field_id]).map((field) => field.field_label);
+    const missingLabels = visibleFields.filter((field) => nextErrors[field.field_id]).map((field) => field.field_label);
     if (missingLabels.length) {
       notify(`Please fill the required fields: ${missingLabels.join(", ")}.`, "error");
       return;
@@ -402,7 +441,7 @@ function TemplateStageForm({
     }
 
     const fieldsPayload = {};
-    fields.forEach((field) => {
+    visibleFields.forEach((field) => {
       if (getTemplateFieldType(field) === "file") return;
       fieldsPayload[field.field_id] = toStagePayloadValue(field, getValue(field.field_id));
     });
@@ -412,8 +451,9 @@ function TemplateStageForm({
     formData.append("tab_id", String(stage.tabId));
     formData.append("fields", JSON.stringify(fieldsPayload));
     // Only newly selected files are uploaded; existing attachments are left untouched.
+    const visibleFieldIds = new Set(visibleFields.map((field) => String(field.field_id)));
     Object.entries(newFiles).forEach(([fieldId, file]) => {
-      if (file instanceof File) formData.append(`field_${fieldId}`, file);
+      if (file instanceof File && visibleFieldIds.has(String(fieldId))) formData.append(`field_${fieldId}`, file);
     });
     // The composer's report goes with every save_stage call (Save and Send) once it has a recipient,
     // e.g. report = {"from_email":"info@x.com","to_email":"agent@x.com","cc_emails":"ops@x.com",
@@ -599,7 +639,7 @@ function TemplateStageForm({
       );
     }
     // Unsupported type: show the saved value read-only; it is still sent back unchanged.
-    const display = buildTemplateFieldDisplay(field, { detail, timeObjects });
+    const display = buildTemplateFieldDisplay(field, { detail: activeDetail, timeObjects });
     return (
       <span className="detail-row-empty">
         {display.kind === "text" ? display.text : `Can't edit this field type (${type}).`}
@@ -629,7 +669,7 @@ function TemplateStageForm({
                 }
               >
                 {/* Operation stages are a single column: fields stack in row_no, then col_no order. */}
-                {fields.length === 0 ? (
+                {visibleFields.length === 0 ? (
                   <CardFormEmptyState
                     icon={FiLayers}
                     title="No fields for this stage"
@@ -640,7 +680,7 @@ function TemplateStageForm({
                     }
                   />
                 ) : (
-                  fields.map((field) => (
+                  visibleFields.map((field) => (
                     <FormField
                       key={field.field_id}
                       label={`${field.field_label || field.field_key || "Field"}${isTemplateFieldRequired(field) ? " *" : ""}`}

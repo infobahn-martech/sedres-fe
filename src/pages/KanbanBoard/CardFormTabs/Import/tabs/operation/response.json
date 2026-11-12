@@ -6465,7 +6465,24 @@
                                             "option_label": "By Sedres"
                                         }
                                     ],
-                                    "value": null
+                                    "value": "by_client"
+                                },
+                                {
+                                    "field_id": "saber_attachment",
+                                    "field_key": "saber_attachment",
+                                    "field_label": "SABER Attachment",
+                                    "field_type": "file",
+                                    "is_required": 1,
+                                    "row_no": null,
+                                    "col_no": null,
+                                    "option_source": null,
+                                    "master_key": null,
+                                    "depends_on_field_id": null,
+                                    "show_when_field_id": 63,
+                                    "show_when_value": "by_sedres",
+                                    "options": [],
+                                    "value": null,
+                                    "upload_key": "saber_attachments[]"
                                 },
                                 {
                                     "field_id": 64,
@@ -6490,7 +6507,7 @@
                                             "option_label": "Bad Weather"
                                         }
                                     ],
-                                    "value": null
+                                    "value": "normal_weather"
                                 },
                                 {
                                     "field_id": 65,
@@ -6527,7 +6544,7 @@
                                     "show_when_field_id": null,
                                     "show_when_value": null,
                                     "options": [],
-                                    "value": null
+                                    "value": ""
                                 }
                             ],
                             "subtabs": [],
@@ -6538,7 +6555,8 @@
                                 "body": "<p><br><\/p><p><br><\/p><p><strong>Vessel Name:     Marcap Galaxy<\/strong><\/p><p>Port of call:            Jubail<\/p><p>Activity:                 Import Call<\/p><p>Previous Port :      Bahrain<\/p><p>Next Port :            Domestic Port KSA<\/p><p> <\/p><p><strong>ETA : 13 Nov 2026 19:35<\/strong><\/p><p><strong><u>Action Points for Vessel Master:<\/u><\/strong><\/p><p> <\/p><p>\u00b7        Kindly ensure that there are <strong>NO UNDECLARED<\/strong> items on board apart from provided on board. <strong>And make sure that all materials on board are declared either in consumable invoice or in inventory.<\/strong><\/p><p>\u00b7        Kindly provide us with the complete on-board <strong>Inventory soft copy<\/strong> on priority in order for us to review.<\/p><p>\u00b7        Kindly provide the documents as per the attached checklist, <strong>ensuring they are sent as a separate file rather than included within the checklist.<\/strong><\/p><p>\u00b7        Kindly ensure that you have gone through the <strong>Master Pre-Arrival<\/strong> <strong>Info<\/strong> and <strong>kindly acknowledge<\/strong> it with your stamp and sign once you have read it.<\/p><p>\u00b7        Attached updated document checklist.<\/p><p>  <\/p><p><strong>NOTE<\/strong> \u201cAll import documents need to be finalized minimum 72 hours prior vessel arrival RT, and submitted to us for verification and submission to customs in order to ensure smooth custom inspection, If any delays in finalizing documents, then the given time frame then there could be delays in custom clearance\u201d.<\/p><p> <\/p><p>\u00b7        <strong style=\"color: red;\">Importing Oxygen, Acetylene cylinders, and Freon is restricted<\/strong><span style=\"color: red;\"> <\/span>and it requires approval from Ministry of energy. Kindly ensure to offload such cylinders <strong>if any onboard<\/strong> prior departing for Rastanura, KSA.<\/p><p>\u00b7        Vessel coming for projects is strictly prohibited from carrying Items <span style=\"color: red;\">such as <\/span><strong style=\"color: red;\">alcohol \/ alcohol content \/ Tobacco items\/pork \/ pornographic material <\/strong><span style=\"color: red;\">on-board fine shall be <\/span><strong style=\"color: red;\">imposed <\/strong><span style=\"color: red;\">if found. <\/span><\/p><p>\u00b7        Allowance for self-consumption of <strong style=\"color: red;\">cigarettes is only 1 Rim i.e. 200 cigarettes per smoking crew<\/strong><strong>. <\/strong><\/p><p> <\/p><p><strong><u>Action Points for (<\/u><\/strong><strong style=\"color: red;\"><u>Principal LARSEN TOUBRO ARABIA LLC<\/u><\/strong><strong><u>) Saudi:<\/u><\/strong><\/p><p> <\/p><p>\u00b7        Kindly provide us the documents as per the attached checklist.<\/p><p>\u00b7        Kindly provide us with the draft of the Vessel Invoice &amp; BL in order to review before finalizing.<\/p><p>\u00b7        Kindly arrange to keep the custom duty payment for consumable\/cargo ready, once the bayan is activated we will advise, you may arrange the payment thru SADAD.<\/p><p> <\/p><p><strong><u>Weather condition:<\/u><\/strong><\/p><p> <\/p><p>Please click this link <a href=\"https:\/\/eur05.safelinks.protection.outlook.com\/?url=https%3A%2F%2Fwww.windy.com%2F26.604%2F50.191%3F26.615%2C50.167%2C12&amp;data=05%7C02%7Cshuaib.md%40sedres.com%7Ce2ffeeb752fb4832caf108ddf02b48f3%7C85851e990b8d40588e6650366b1c9127%7C0%7C0%7C638930791784560116%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=AANDuuCAUNBrMakI4EalQZKCUuz4wjsZeabggJhVw7E%3D&amp;reserved=0\" rel=\"noopener noreferrer\" target=\"_blank\">link<\/a> to see detail of Weather Forecast.<\/p><p><br><\/p><p><img src=\"https:\/\/onlinebareed.com\/sedres\/uploads\/Template Logo\/sedres-logo2.png\"><\/p>",
                                 "to_email": "prog2@infobahnworld.com",
                                 "from_email": "info@onlinebareed.com",
-                                "cc_emails": ""
+                                "cc_emails": "",
+                                "attachments": []
                             }
                         },
                         {
@@ -6732,7 +6750,8 @@
                                 "body": "<p><strong style=\"color: rgb(0, 32, 96);\">Vessel Name:      Marcap Galaxy<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Port:<\/strong><span style=\"color: rgb(0, 32, 96);\">                     Rastanura, KSA<\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Activity:<\/strong><span style=\"color: rgb(0, 32, 96);\">                Import Call<\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Previous Port:      Bahrain<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Next Port:<\/strong><span style=\"color: rgb(0, 32, 96);\">          Domestic Port KSA<\/span><\/p><p><br><\/p><p><br><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Dear Captain,<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><\/p><p><span style=\"color: rgb(0, 32, 96);\">We welcome you to Rastanura port and wish you have a pleasant stay ahead, if you need anything during your entire stay you can send us an email on <\/span><a href=\"mailto:operations.rastanura@sedres.com\" rel=\"noopener noreferrer\" target=\"_blank\">operations.rastanura@sedres.com<\/a> <span style=\"color: rgb(0, 32, 96);\"> or call us at any point of time. <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>UPDATE:<\/u><\/strong><span style=\"color: rgb(33, 33, 33);\"> <\/span><\/p><p><br><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Vessel ATA to RT7\/FT at {ata}<\/span><\/p><p>\u00b7        <strong style=\"color: rgb(0, 32, 96);\">Kindly note that vessel must be present in freighter anchorage at 0800hrs on  , we will arrange custom inspection and crew immigration.<\/strong><\/p><p><br><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>Weather condition:<\/u><\/strong><\/p><p> <\/p><p><span style=\"color: rgb(0, 32, 96);\">Please click this link <\/span>____LINK ____ <span style=\"color: rgb(0, 32, 96);\"> to see more detail.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>REMARKS:<\/u><\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        As all pre arrival formalities was completed prior your arrival, west pier port control has been kept well informed of your arrival.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Kindly keep the<\/span> <strong style=\"color: rgb(0, 32, 96);\">yellow flag<\/strong> <span style=\"color: rgb(0, 32, 96);\">hoisted until the Vessel clears from Inspection.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96); background-color: yellow;\">\u00b7        Please ensure that you are available at Freighter Anchorage by 08:00hrs on  we will arrange Custom Inspection and crew immigration.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        <\/span><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><span style=\"color: rgb(0, 32, 96);\">has been assigned from our office as agent representative, he shall fully assist you during inspection with authorities. <\/span><\/p><p>\u00b7        <strong>{assigned_custom}<\/strong><strong style=\"color: rgb(0, 32, 96);\"> will be proposed crew boat for Custom Inspection.<\/strong><strong> <\/strong><\/p><p>\u00b7        <span style=\"color: rgb(0, 32, 96);\">If Master \/ any of the crew have any queries, kindly direct the questions to our GRO only, he will further take care of your needs.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        At the time of Custom Inspection, if Custom Authorities ask for the Import documents, then kindly provide them the same as attached. <\/span><span style=\"color: red;\">(Required option to enclose document) <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Kindly ensure there is no any restricted items onboard and no any undeclared items to be found.<\/span><\/p><p><br><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><img src=\"https:\/\/onlinebareed.com\/sedres\/uploads\/Template Logo\/sedres-logo3.png\"><\/p>",
                                 "to_email": "prog2@infobahnworld.com",
                                 "from_email": "info@onlinebareed.com",
-                                "cc_emails": ""
+                                "cc_emails": "",
+                                "attachments": []
                             }
                         },
                         {
@@ -6865,7 +6884,8 @@
                                 "body": "",
                                 "to_email": "prog2@infobahnworld.com",
                                 "from_email": "info@onlinebareed.com",
-                                "cc_emails": ""
+                                "cc_emails": "",
+                                "attachments": []
                             }
                         },
                         {
