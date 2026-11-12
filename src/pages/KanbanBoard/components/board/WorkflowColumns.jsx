@@ -26,7 +26,7 @@ import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isApprovalReceivedColumnTitle, isApprovalRequestedColumnTitle, isLntSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isLntInvoiceIssued, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
+import { isApprovalReceivedColumnTitle, isApprovalRequestedColumnTitle, isLntSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isLntInvoiceIssued, isDaSupervisorWorkflow, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -662,6 +662,9 @@ export default function WorkflowColumns({
               const lntLaneIds = swimlaneOrder.filter((laneId) => isLntSwimlane(workflow.swimlanes?.[laneId]));
               /* DA Supervisor "Received from Ops": only the L&T swimlane's ticks count for L&T's SAP invoice upload. */
               const isLntUploadColumn = !isGrouped && isLntReceivedFromOps(workflow?.title, firstColumn?.title);
+              /* DA Supervisor "Invoice Issued": "Download portal files" counts only the L&T swimlane's ticks too. */
+              const isLntDownloadColumn =
+                !isGrouped && isDaSupervisorWorkflow(workflow?.title) && isLntInvoiceIssued(workflow?.title, firstColumn?.title);
               let lntLaneAction = null;
               if (!isGrouped && lntLaneIds.length > 0) {
                 if (isApprovalRequestedColumnTitle(firstColumn.title)) lntLaneAction = "sendSccForApproval";
@@ -670,7 +673,7 @@ export default function WorkflowColumns({
               let invoiceAction = null;
               if (lntLaneAction) invoiceAction = lntLaneAction;
               else if (!isGrouped) invoiceAction = getInvoiceAction(workflow, firstColumn);
-              const actionSourceCards = lntLaneAction || isLntUploadColumn
+              const actionSourceCards = lntLaneAction || isLntUploadColumn || isLntDownloadColumn
                 ? lntLaneIds.flatMap((laneId) => getSwimlaneColumnCards(workflow, laneId, group.colKeys[0]))
                 : invoiceAction
                   ? getColumnCards(group.colKeys[0])
