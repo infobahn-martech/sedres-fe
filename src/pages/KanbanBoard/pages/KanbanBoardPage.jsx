@@ -2101,6 +2101,7 @@ export default function KanbanBoardPage() {
         notify(`${fileCount ?? ""} ${fileCount === 1 ? "file" : "files"} downloaded`.trim(), "success");
 
         (data.data?.moved_to_be_uploaded ?? []).forEach((card) => removeCardSelectionId(String(card.card_id)));
+        (data.data?.card_positions ?? []).forEach((card) => removeCardSelectionId(String(card.card_id)));
 
         /* Lamprell UAE: cards da/portal_files did not move itself (any moved_* list in its response) are moved to
            the next column with da/advance_stage once the zip is downloaded, so no card is moved twice. */
