@@ -30,6 +30,7 @@ import {
   isLamprellUaePoReceivedColumn,
   isLamprellAlgihazPoReceivedColumn,
   isLamprellAlgihazArInvoiceIssuedColumn,
+  isLntApprovalReceivedCell,
   isLntApprovalRequestedCell,
   isSubseaWorkflow,
   isUploadedToPortalColumnTitle,
@@ -765,7 +766,8 @@ function CardItem({
       isLamprellUaePoReceivedColumn(workflowTitle, columnTitle) ||
       isLamprellAlgihazPoReceivedColumn(workflowTitle, columnTitle) ||
       isLamprellAlgihazArInvoiceIssuedColumn(workflowTitle, columnTitle) ||
-      isLntApprovalRequestedCell(laneTitle, columnTitle)) &&
+      isLntApprovalRequestedCell(laneTitle, columnTitle) ||
+      isLntApprovalReceivedCell(laneTitle, columnTitle)) &&
     typeof onToggleSelectForAction === "function" &&
     !isExportApprovalHeld;
   const topRowUsernameInitial = isApiCard && !isShrunk ? getUsernameInitial(card.user) : null;

@@ -19,21 +19,27 @@ const mergeReviewCard = (card, review) => {
  */
 const useSccReviewStore = create((set, get) => ({
   showSccReviewModal: false,
-  /** [{ call_id, card_id, ready, sales_orders: [string], documents: { signed_so, scc, approval_email } }] */
+  /** [{ call_id, card_id, ready, sales_orders: [string], documents: { signed_so, scc, approval_email } }]
+   *  or, for the approved-SCC upload, [{ call_id, card_id, ready, approval_email,
+   *  sales_orders: [{ sales_order_no, scc: { document_id, name, url, signed } }] }] */
   selectedSccReviewCards: [],
   /** File names the backend could not place on any selected card. */
   selectedSccReviewNotPlacedFiles: [],
   /** The L&T workflow the review is for, sent to da/scc_document_review. */
   selectedSccReviewWorkflowId: null,
+  /** True for the Operator board's L&T "Approval Received" upload: per sales order SCC and signature status,
+   *  and unsigned cards can be confirmed too (the backend leaves them in the column). */
+  isApprovedSccReview: false,
   isSccReviewLoading: false,
   isConfirmingScc: false,
 
-  openSccReviewModal: (cards, { notPlacedFiles = [], workflowId = null } = {}) =>
+  openSccReviewModal: (cards, { notPlacedFiles = [], workflowId = null, isApprovedScc = false } = {}) =>
     set({
       showSccReviewModal: true,
       selectedSccReviewCards: Array.isArray(cards) ? cards : [],
       selectedSccReviewNotPlacedFiles: Array.isArray(notPlacedFiles) ? notPlacedFiles : [],
       selectedSccReviewWorkflowId: workflowId,
+      isApprovedSccReview: isApprovedScc,
     }),
 
   closeSccReviewModal: () =>
@@ -42,6 +48,7 @@ const useSccReviewStore = create((set, get) => ({
       selectedSccReviewCards: [],
       selectedSccReviewNotPlacedFiles: [],
       selectedSccReviewWorkflowId: null,
+      isApprovedSccReview: false,
       isSccReviewLoading: false,
     }),
 

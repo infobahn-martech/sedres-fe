@@ -258,9 +258,13 @@ const getPoReview = (params) => Gateway.get('/da/po_review', { params });
 /** @param {FormData} formData - call_ids, card_ids (ticked SCC Received cards, comma separated), signed_sos[], sccs[],
  * approval_email, multipart/form-data.
  * @returns {Promise<{ data: { status: 'success', data: { received_files: string[], not_placed_files: string[],
- *   cards: { call_id: number, card_id: number, sales_orders: string[], ready: boolean }[] } }
+ *   cards: { call_id: number, card_id: number, ready: boolean,
+ *     sales_orders: (string | { sales_order_no: string, scc: { document_id: number, name: string, url: string,
+ *       signed: boolean } })[],
+ *     approval_email?: { document_id: number, name: string, url: string } }[] } }
  *   | { status: 'error', message: string } }>}
- * Bulk upload of the signed SOs, SCCs and approval email of the ticked cards. */
+ * Bulk upload of the signed SOs, SCCs and approval email of the ticked cards. The Operator board's L&T
+ * "Approval Received" sends only sccs[] and an optional approval_email. */
 const uploadSccDocuments = (formData) =>
   Gateway.post('/da/upload_scc_documents', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -270,8 +274,12 @@ const uploadSccDocuments = (formData) =>
  * SCC review of the ticked cards: which signed SO, SCC and approval email are placed on each. */
 const getSccDocumentReview = (params) => Gateway.get('/da/scc_document_review', { params });
 
-/** @param {{ cards: { call_id: number, card_id: number }[] }} payload
- * Confirms the reviewed SCC documents (ticked cards only); the response lists the moved cards in moved_to_da. */
+/** @param {{ cards: { call_id: number, card_id: number, sales_orders?: { sales_order_no: string, scc_id: number }[] }[] }} payload
+ * @returns {Promise<{ data: { status: 'success', data: { moved_to_da?: object[], card_positions?: { card_id: number,
+ *   board_id: number, swimlane_id: number, column_id: number, column_name: string }[],
+ *   not_moved?: { call_id: number, card_id: number, reason: string }[] } } | { status: 'error', message: string } }>}
+ * Confirms the reviewed SCC documents (ticked cards only); moved cards come back in moved_to_da or card_positions,
+ * cards without a signed SCC in not_moved. */
 const confirmSccDocuments = (payload) => Gateway.post('/da/confirm_scc_documents', payload);
 
 /** @param {{ cards: { call_id: number, card_id: number, sales_orders: { sales_order_id: number, sales_order_no: string, po_id: number }[] }[] }} payload
