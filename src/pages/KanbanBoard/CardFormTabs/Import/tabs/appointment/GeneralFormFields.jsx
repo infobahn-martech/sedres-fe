@@ -843,6 +843,7 @@ const MultiSelectField = ({
   menuMaxHeight,
   isLoading = false,
   emptyMessage = "No options found",
+  showAvatars = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState("");
@@ -871,7 +872,8 @@ const MultiSelectField = ({
 
   const valuesEqual = (a, b) => String(a) === String(b);
   const selectedValues = Array.isArray(value) ? value : (value ? [value] : []);
-  const valueToLabel = (val) => options.find((o) => valuesEqual(o.value, val))?.label ?? String(val);
+  const valueToOption = (val) => options.find((o) => valuesEqual(o.value, val));
+  const valueToLabel = (val) => valueToOption(val)?.label ?? String(val);
 
   const handleToggle = (optionValue) => {
     const newValue = selectedValues.some((v) => valuesEqual(v, optionValue))
@@ -885,7 +887,7 @@ const MultiSelectField = ({
     onChange({ target: { value: selectedValues.filter((entry) => !valuesEqual(entry, rawVal)), name } });
   };
 
-  return (
+  const select = (
     <div
       className={`cf-multi-select-email ${disabled ? "disabled" : ""} ${hasError ? "has-error" : ""} ${className}`.trim()}
       ref={dropdownRef}
@@ -950,7 +952,18 @@ const MultiSelectField = ({
                       <span className="cf-multi-select-checkbox">
                         {isSelected && "✓"}
                       </span>
-                      <span>{option.label}</span>
+                      {showAvatars ? (
+                        <div className="cf-searchable-option-with-avatar">
+                          <UserOptionAvatar
+                            avatarUrl={option.avatar ?? undefined}
+                            label={option.label}
+                            className="cf-owner-avatar--sm"
+                          />
+                          <span>{option.label}</span>
+                        </div>
+                      ) : (
+                        <span>{option.label}</span>
+                      )}
                     </div>
                   );
                 })
@@ -959,6 +972,35 @@ const MultiSelectField = ({
           </div>
         </div>
       )}
+    </div>
+  );
+
+  if (!showAvatars) return select;
+
+  // Selected users shown in front of the field like the Owner avatar; several overlap as a stack.
+  const AVATAR_STACK_LIMIT = 3;
+  const visibleAvatars = selectedValues.slice(0, AVATAR_STACK_LIMIT);
+  const hiddenCount = selectedValues.length - visibleAvatars.length;
+  return (
+    <div className={`cf-owner-row cf-owner-row--multi ${hasError ? "is-invalid" : ""}`.trim()}>
+      <div
+        className="cf-owner-avatar-stack"
+        title={selectedValues.map(valueToLabel).join(", ") || undefined}
+      >
+        {visibleAvatars.length ? (
+          visibleAvatars.map((entryVal) => (
+            <UserOptionAvatar
+              key={String(entryVal)}
+              avatarUrl={valueToOption(entryVal)?.avatar ?? undefined}
+              label={valueToLabel(entryVal)}
+            />
+          ))
+        ) : (
+          <UserOptionAvatar />
+        )}
+        {hiddenCount > 0 && <div className="cf-owner-avatar cf-owner-avatar--more">+{hiddenCount}</div>}
+      </div>
+      {select}
     </div>
   );
 };
@@ -970,6 +1012,7 @@ MultiSelectField.propTypes = {
     PropTypes.shape({
       value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
       label: PropTypes.string.isRequired,
+      avatar: PropTypes.string,
     })
   ),
   placeholder: PropTypes.string,
@@ -977,6 +1020,7 @@ MultiSelectField.propTypes = {
   name: PropTypes.string,
   hasError: PropTypes.bool,
   className: PropTypes.string,
+  showAvatars: PropTypes.bool,
   menuMaxHeight: PropTypes.number,
   isLoading: PropTypes.bool,
   emptyMessage: PropTypes.string,
