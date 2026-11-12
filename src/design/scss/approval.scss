@@ -22,12 +22,8 @@
     flex: 1;
     min-height: 0;
     overflow: hidden;
-    padding: 20px 24px;
-    background: linear-gradient(180deg, #fafbff 0%, #f6f7fc 100%);
-
-    [data-theme="dark"] & {
-      background: linear-gradient(180deg, var(--bg-app) 0%, var(--bg-secondary) 100%);
-    }
+    // Same outer spacing/background as the Appointment Details tab body.
+    padding: 18px 22px;
   }
 
   .approval-sections-wrapper {
