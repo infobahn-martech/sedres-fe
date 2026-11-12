@@ -1,6 +1,7 @@
 // Tabs/subtabs that render a fixed feature screen on the real card instead of
 // custom fields. Keyed by lowercased tab/subtab name.
 const FEATURE_PREVIEWS_BY_TAB = {
+    "export approval": "export-approval",
     husbandry: "husbandry",
     "sales order": "sales-order",
     reports: "reports",
