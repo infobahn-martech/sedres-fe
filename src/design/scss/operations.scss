@@ -2469,24 +2469,50 @@ $send-report-optional: var(--text-muted);
   padding-right: 0;
 }
 
-.operation-two-column-grid--split-scroll .operation-form-column,
-.operation-two-column-grid--split-scroll .operation-email-column,
-.operation-prearrival-grid--split-scroll .operation-form-column,
-.operation-prearrival-grid--split-scroll .operation-email-column {
+/* Split-scroll columns use the same slim floating scrollbar as the Add Card
+   form (.general-add-form-scroll in CardForm.css): no arrows, transparent
+   track, a 4px pill inset inside a 10px hit area. Chrome 121+ ignores
+   ::-webkit-scrollbar once scrollbar-width/-color are set (falling back to
+   the native grey track with arrows), so the standard properties are reset
+   here and only applied where the WebKit pseudos don't exist (Firefox). */
+$op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column, .operation-two-column-grid--split-scroll .operation-email-column, .operation-prearrival-grid--split-scroll .operation-form-column, .operation-prearrival-grid--split-scroll .operation-email-column";
+
+#{$op-split-cols} {
   height: 100%;
   min-height: 0;
-  overflow-y: scroll;
+  overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: #a8b0bd #f1f3f5;
-}
+  scrollbar-width: auto;
+  scrollbar-color: auto;
 
-[data-theme="dark"] .operation-two-column-grid--split-scroll .operation-form-column,
-[data-theme="dark"] .operation-two-column-grid--split-scroll .operation-email-column,
-[data-theme="dark"] .operation-prearrival-grid--split-scroll .operation-form-column,
-[data-theme="dark"] .operation-prearrival-grid--split-scroll .operation-email-column {
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-button {
+    display: none;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 10px 0;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb) padding-box;
+    border: 3px solid transparent;
+    border-radius: 999px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover) padding-box;
+    border-width: 2px;
+  }
 }
 
 /* The Save section sits outside the scrolling columns, so the left form
@@ -2494,53 +2520,8 @@ $send-report-optional: var(--text-muted);
    the body, so the clipped column doesn't hide their options. */
 .operation-two-column-grid--split-scroll .operation-form-column,
 .operation-prearrival-grid--split-scroll .operation-form-column {
-  overflow-y: auto;
   padding-bottom: 12px;
   scroll-padding-bottom: 12px;
-}
-
-.operation-two-column-grid--split-scroll .operation-form-column::-webkit-scrollbar,
-.operation-two-column-grid--split-scroll .operation-email-column::-webkit-scrollbar,
-.operation-prearrival-grid--split-scroll .operation-form-column::-webkit-scrollbar,
-.operation-prearrival-grid--split-scroll .operation-email-column::-webkit-scrollbar {
-  width: 8px;
-}
-
-.operation-two-column-grid--split-scroll .operation-form-column::-webkit-scrollbar-track,
-.operation-two-column-grid--split-scroll .operation-email-column::-webkit-scrollbar-track,
-.operation-prearrival-grid--split-scroll .operation-form-column::-webkit-scrollbar-track,
-.operation-prearrival-grid--split-scroll .operation-email-column::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-  border-radius: 10px;
-}
-
-.operation-two-column-grid--split-scroll .operation-form-column::-webkit-scrollbar-thumb,
-.operation-two-column-grid--split-scroll .operation-email-column::-webkit-scrollbar-thumb,
-.operation-prearrival-grid--split-scroll .operation-form-column::-webkit-scrollbar-thumb,
-.operation-prearrival-grid--split-scroll .operation-email-column::-webkit-scrollbar-thumb {
-  background: #a8b0bd;
-  border-radius: 10px;
-}
-
-[data-theme="dark"] .operation-two-column-grid--split-scroll .operation-form-column::-webkit-scrollbar-thumb,
-[data-theme="dark"] .operation-two-column-grid--split-scroll .operation-email-column::-webkit-scrollbar-thumb,
-[data-theme="dark"] .operation-prearrival-grid--split-scroll .operation-form-column::-webkit-scrollbar-thumb,
-[data-theme="dark"] .operation-prearrival-grid--split-scroll .operation-email-column::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-}
-
-.operation-two-column-grid--split-scroll .operation-form-column::-webkit-scrollbar-thumb:hover,
-.operation-two-column-grid--split-scroll .operation-email-column::-webkit-scrollbar-thumb:hover,
-.operation-prearrival-grid--split-scroll .operation-form-column::-webkit-scrollbar-thumb:hover,
-.operation-prearrival-grid--split-scroll .operation-email-column::-webkit-scrollbar-thumb:hover {
-  background: #7d8794;
-}
-
-[data-theme="dark"] .operation-two-column-grid--split-scroll .operation-form-column::-webkit-scrollbar-thumb:hover,
-[data-theme="dark"] .operation-two-column-grid--split-scroll .operation-email-column::-webkit-scrollbar-thumb:hover,
-[data-theme="dark"] .operation-prearrival-grid--split-scroll .operation-form-column::-webkit-scrollbar-thumb:hover,
-[data-theme="dark"] .operation-prearrival-grid--split-scroll .operation-email-column::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
 }
 
 .operation-form-column,
