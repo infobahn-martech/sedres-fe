@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiEye, FiLayers } from "react-icons/fi";
+import { FiAlertTriangle, FiExternalLink, FiEye, FiLayers } from "react-icons/fi";
 import CardFormEmptyState from "../../../shared/components/CardFormEmptyState";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
@@ -72,6 +72,43 @@ const STAGE_ID_BY_KEY = {
 // Changing one of these fields re-requests call_file/get_call_detail/{callId} with the current
 // values as query params, and the stage's returned email_template is rebound into the composer.
 const EMAIL_TEMPLATE_TRIGGER_KEYS = ["saber", "weather_forecast"];
+
+// Live wind map shown under Weather Forecast when "Bad Weather" is selected (as in the legacy
+// Pre Arrival form).
+const WINDY_EMBED_URL =
+  "https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=8&overlay=wind&product=ecmwf&level=surface&lat=27.284&lon=49.109&detailLat=29.0525682775337&detailLon=48.087158203125&marker=true";
+const WINDY_OPEN_URL = "https://www.windy.com/27.284/49.109?wind,27.284,49.109,8";
+
+const isBadWeatherValue = (value) => normalizeTemplateKey(value) === "bad_weather";
+
+const WindyWeatherMap = () => (
+  <div className="stage-windy-card">
+    <div className="stage-windy-card__header">
+      <span className="stage-windy-card__icon" aria-hidden>
+        <FiAlertTriangle size={14} strokeWidth={2.4} />
+      </span>
+      <div className="stage-windy-card__text">
+        <span className="stage-windy-card__title">Bad weather forecast</span>
+        <span className="stage-windy-card__hint">Re-check ETA and clearance time objects.</span>
+      </div>
+      <a
+        className="stage-windy-card__link"
+        href={WINDY_OPEN_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Open in Windy"
+      >
+        <FiExternalLink size={13} strokeWidth={2.2} aria-hidden />
+        <span>Windy</span>
+      </a>
+    </div>
+    <div className="stage-windy-card__map">
+      <iframe title="Windy weather map" src={WINDY_EMBED_URL} loading="lazy" allowFullScreen />
+    </div>
+  </div>
+);
+
+const HIDDEN_FIELD_TYPES = new Set(["iframe"]);
 
 const SELECT_TYPES =new Set(["dropdown", "select", "multiselect", "multi_select"]);
 const TEXT_INPUT_TYPES = { text: "text", email: "email", number: "number", phone: "tel", tel: "tel", url: "url" };
@@ -263,7 +300,11 @@ function TemplateStageForm({
     if (Array.isArray(current)) return current.map(String).includes(expected);
     return String(current ?? "").trim() === expected;
   };
-  const visibleFields = fields.filter(isFieldVisible);
+  // `iframe` fields (e.g. "Weather Map") are display-only from the template; the Windy card under
+  // Weather Forecast already shows the map, so they are neither rendered nor saved.
+  const visibleFields = fields.filter(
+    (field) => !HIDDEN_FIELD_TYPES.has(getTemplateFieldType(field)) && isFieldVisible(field)
+  );
 
   const setFieldValue = (fieldId, value) => {
     setEdits((prev) => ({ ...prev, [fieldId]: value }));
@@ -687,6 +728,8 @@ function TemplateStageForm({
                     >
                       {renderInput(field)}
                       {errors[field.field_id] && <span className="cf-field-error">{errors[field.field_id]}</span>}
+                      {normalizeTemplateKey(field.field_key) === "weather_forecast" &&
+                        isBadWeatherValue(getValue(field.field_id)) && <WindyWeatherMap />}
                     </FormField>
                   ))
                 )}
