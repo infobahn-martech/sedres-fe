@@ -2500,7 +2500,9 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
 
   &::-webkit-scrollbar-track {
     background: transparent;
-    margin: 10px 0;
+    // Inset the track well clear of the card's rounded top/bottom (and the
+    // 3px accent border) so the bar reads as a short floating pill.
+    margin: 24px 0;
   }
 
   &::-webkit-scrollbar-thumb {
@@ -2520,8 +2522,20 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
    the body, so the clipped column doesn't hide their options. */
 .operation-two-column-grid--split-scroll .operation-form-column,
 .operation-prearrival-grid--split-scroll .operation-form-column {
-  padding-bottom: 12px;
-  scroll-padding-bottom: 12px;
+  padding-bottom: 14px;
+  scroll-padding-bottom: 14px;
+}
+
+/* The last field's 16px bottom margin stacked on the column padding pushed
+   content a few px past the column height, so a column whose fields actually
+   fit still scrolled — with a near-full-height thumb. Drop that trailing margin
+   (also when the last field sits inside a wrapper) so the column only scrolls
+   when content genuinely overflows. */
+.operation-form-column > :last-child,
+.operation-form-column > :last-child > .cf-field:last-child,
+.operation-email-column > :last-child,
+.operation-email-preview-body > .cf-field:last-child {
+  margin-bottom: 0;
 }
 
 .operation-form-column,
