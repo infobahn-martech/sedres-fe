@@ -157,6 +157,26 @@
   box-sizing: border-box;
 }
 
+// Empty / error state: stretch the card over the whole panel so the message is centred.
+.checklist-tab-layout--empty {
+  display: flex;
+  flex-direction: column;
+  // Same gap above the card as the layout's bottom padding, so it isn't glued to the header line.
+  padding-top: 12px;
+}
+
+.checklist-form--empty {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding-bottom: 0;
+
+  .cl-empty {
+    flex: 1 1 auto;
+    min-height: 360px;
+  }
+}
+
 .checklist-actions {
   position: absolute;
   right: 24px;
@@ -347,41 +367,127 @@
   justify-content: center;
   text-align: center;
   gap: 6px;
-  padding: 36px 24px;
-  border: 1px solid var(--border-primary);
+  padding: 40px 24px 36px;
+  border: 1px dashed #d5dae8;
   border-radius: 12px;
   background: var(--surface-primary);
 }
 
 .cl-empty--error {
-  border-color: var(--border-primary);
-  background: var(--surface-primary);
+  border: 1px solid #fecaca;
+  background: #fffafa;
+
+  .cl-empty-ico {
+    color: #dc2626;
+    background: #fee2e2;
+  }
 }
 
 .cl-empty--prerequisite {
-  border-color: var(--border-primary);
-  background: #eef0ff;
+  background: linear-gradient(180deg, #f7f8ff 0%, var(--surface-primary) 100%);
 }
 
 .cl-empty-ico {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 4px;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  color: #4f46e5;
+  background: #eef0ff;
+  box-shadow: 0 0 0 6px rgba(79, 70, 229, 0.06);
 }
 
 .cl-empty__title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
 .cl-empty__msg {
   margin: 0;
-  max-width: 420px;
-  font-size: 12.5px;
-  line-height: 1.5;
+  max-width: 440px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.cl-empty__reqs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.cl-empty__req {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid #e5e8f2;
+  border-radius: 8px;
+  background: var(--surface-primary);
+  font-size: 13px;
+}
+
+.cl-empty__req-dot {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px dashed #b6bdd3;
+  border-radius: 50%;
+}
+
+.cl-empty__req-label {
+  flex: 1 1 auto;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.cl-empty__req-status {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.cl-empty__req.is-done {
+  .cl-empty__req-dot {
+    border: none;
+    color: #fff;
+    background: #16a34a;
+  }
+
+  .cl-empty__req-label {
+    color: var(--text-secondary);
+  }
+
+  .cl-empty__req-status {
+    color: #16a34a;
+  }
+}
+
+.cl-empty__req.is-pending {
+  border-color: #fde4b8;
+  background: #fffbf3;
+
+  .cl-empty__req-status {
+    color: #b45309;
+  }
+}
+
+.cl-empty__hint {
+  margin: 10px 0 0;
+  font-size: 12px;
   color: var(--text-secondary);
 }
 
@@ -5284,22 +5390,65 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
 // ==========================================================
 [data-theme="dark"] {
   .cl-empty,
-  .cl-empty--error,
   .cl-empty--prerequisite {
     background: var(--bg-card);
     border: 1px dashed var(--border-strong);
   }
 
-  // The icon SVG uses presentation attributes, which any CSS rule outranks
-  .cl-empty-ico svg {
-    rect {
-      fill: var(--bg-inset);
-      stroke: var(--text-faint);
+  .cl-empty--error {
+    background: var(--bg-card);
+    border: 1px solid rgba(248, 113, 113, 0.35);
+
+    .cl-empty-ico {
+      color: #f87171;
+      background: rgba(248, 113, 113, 0.12);
+    }
+  }
+
+  .cl-empty-ico {
+    color: var(--brand-bright, #818cf8);
+    background: var(--bg-inset);
+    box-shadow: 0 0 0 6px rgba(129, 140, 248, 0.08);
+  }
+
+  .cl-empty__req {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+  }
+
+  .cl-empty__req-label {
+    color: var(--text-heading);
+  }
+
+  .cl-empty__req-dot {
+    border-color: var(--text-faint);
+  }
+
+  .cl-empty__req.is-done {
+    .cl-empty__req-dot {
+      background: #22c55e;
     }
 
-    path {
-      stroke: var(--text-faint);
+    .cl-empty__req-label {
+      color: var(--text-subtle);
     }
+
+    .cl-empty__req-status {
+      color: #4ade80;
+    }
+  }
+
+  .cl-empty__req.is-pending {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.3);
+
+    .cl-empty__req-status {
+      color: #fbbf24;
+    }
+  }
+
+  .cl-empty__hint {
+    color: var(--text-subtle);
   }
 
   .cl-empty__title {
