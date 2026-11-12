@@ -1,50 +1,5 @@
-export const BUSINESS_RULES = [
-  {
-    id: 1,
-    name: 'Card is created',
-    icon: 'create',
-    description:
-      'Triggers when a new card is created. Use this to send notifications, assign defaults, or start workflows automatically.',
-  },
-  {
-    id: 2,
-    name: 'Card is updated',
-    icon: 'update',
-    description:
-      'Triggers when any field on a card changes. Use this to track changes, update related cards, or send change notifications.',
-  },
-  {
-    id: 3,
-    name: 'Card is moved',
-    icon: 'moved',
-    description:
-      'Triggers when a card moves between columns or lanes. Use this to update status, notify stakeholders, or run location-based workflows.',
-  },
-  {
-    id: 4,
-    name: 'Child card is blocked',
-    icon: 'child-blocked',
-    description:
-      'Triggers when a child card is marked blocked. Use this to notify stakeholders, pause parent progress, or escalate blocked work.',
-  },
-  {
-    id: 5,
-    name: 'Child card is moved',
-    icon: 'child-moved',
-    description:
-      'Triggers when a child card moves. Use this to sync parent status, align child movement with parent workflows, or send updates.',
-  },
-  {
-    id: 6,
-    name: 'All children are moved',
-    icon: 'all-children-moved',
-    description:
-      'Triggers when every child card has moved to the target location or status. Use this to complete parents or start the next phase.',
-  },
-];
-
 // Maps a business rule's trigger_code (e.g. from get_business_rule_list/get_business_rule_by_id)
-// to the same icon-type strings used by BUSINESS_RULES[].icon above, so both the trigger-type
+// to the icon-type strings DynamicIcon understands, so both the trigger-type
 // picker grid and any other rule listing/detail view can resolve the same icon from either shape.
 export const TRIGGER_CODE_TO_ICON = {
   card_created: 'create',
@@ -70,17 +25,6 @@ export const TRIGGER_CODE_TO_ICON = {
   task_card_moved: 'task-moved',
   task_card_updated: 'task-updated',
 };
-
-// Dev-only fallback for the THEN column, used when get_trigger_config hasn't
-// returned an `actions` list yet (e.g. local dev without a live backend).
-export const THEN_ACTION_SECTIONS = [
-  { id: 'create', title: 'Create subtasks' },
-  { id: 'update', title: 'Update the card details' },
-  { id: 'link', title: 'Link the card' },
-  { id: 'copy_values', title: 'Copy the values of these fields from the child into the parent' },
-  { id: 'notify', title: 'Send notifications' },
-  { id: 'invoke', title: 'Create the UI Invoke web service' },
-];
 
 // Maps a get_trigger_config `actions[].group_type` to the THEN section id the form
 // already knows how to render, so the THEN column can be built from the trigger
@@ -126,10 +70,6 @@ export const UNSUPPORTED_ACTION_GROUP_TYPES = [
   'create_card_recurring',
 ];
 
-export const CREATE_ACTION_OPTIONS = [
-  { key: 'subtask', label: 'Create subtask' },
-];
-
 export const LINK_ACTION_OPTIONS = [
   { key: 'child', label: 'Link as child' },
   { key: 'parent', label: 'Link as parent' },
@@ -147,25 +87,6 @@ export const LINK_REMOVE_OTHERS_OPTIONS = [
   { key: 'predecessor', label: 'Remove all other predecessor links' },
   { key: 'relative', label: 'Remove all other relative links' },
   { key: 'successor', label: 'Remove all other successor links' },
-];
-
-// Dev-only fallback data for the Linked Card action operator dropdown, used when the
-// real business_rule/get_link_card_possible_action_operators endpoint returns nothing.
-export const DUMMY_LINK_ACTION_OPERATORS = [
-  { operator_id: '1', operator_key: 'card_id', operator_label: 'to card with id', has_input_value: '1', is_dynamic: '0', display_order: '1' },
-  { operator_id: '2', operator_key: 'card_custom_id', operator_label: 'to card with custom id', has_input_value: '1', is_dynamic: '0', display_order: '2' },
-  { operator_id: '3', operator_key: 'dynamic_1', operator_label: 'Dynamic Picker 1', has_input_value: '0', is_dynamic: '1', display_order: '3' },
-  { operator_id: '4', operator_key: 'dynamic_2', operator_label: 'Dynamic Picker 2', has_input_value: '0', is_dynamic: '1', display_order: '4' },
-  { operator_id: '5', operator_key: 'dynamic_3', operator_label: 'Dynamic Picker 3', has_input_value: '0', is_dynamic: '1', display_order: '5' },
-];
-
-// Dev-only fallback operators for a condition row's field-details fetch (business_rule/get_field_details),
-// used when that endpoint returns nothing, e.g. local dev without a live backend. Never shown in production.
-export const DUMMY_FIELD_OPERATORS = [
-  { field_operator_id: '1', operator_label: 'is' },
-  { field_operator_id: '2', operator_label: 'is not' },
-  { field_operator_id: '3', operator_label: 'contains' },
-  { field_operator_id: '4', operator_label: 'does not contain' },
 ];
 
 // Execution-frequency picker shown next to the "Add stickers"/"Remove stickers" update
@@ -264,58 +185,9 @@ export const INVOKE_METHODS_WITH_BODY = ['POST', 'PUT', 'PATCH', 'DELETE'];
 // Regular-field options offered by the "Select a field" modal (Url's "add card fields" trigger).
 export const DUMMY_URL_FIELD_OPTIONS = ['Card ID', 'Custom card ID', 'Internal card id'];
 
-// Dev-only fallback data for the "Notification Message Settings" modal.
-export const DUMMY_NOTIFICATION_FROM_EMAIL = 'sedres_notifications@kanbanize.com';
-
-export const DUMMY_INTERNAL_USERS = ['John Smith', 'Sarah Ahmed', 'Mohammed Al-Farsi'];
-
 // Static role/group pills shown alongside individual users in the "Select
 // Internal Users" modal.
 export const INTERNAL_USER_ROLE_OPTIONS = ['Self', 'Owner', 'Owners', 'Watchers', 'Contributors', 'Reporter', 'Co-owners'];
-
-export const DUMMY_NOTIFICATION_SUBJECT_PARTS = [
-  { type: 'text', value: '{' },
-  { type: 'pill', value: 'Title' },
-  { type: 'text', value: '} - {' },
-  { type: 'pill', value: 'Board Name' },
-  { type: 'text', value: '}{' },
-  { type: 'pill', value: 'Internal Card Id' },
-  { type: 'text', value: '} New card created' },
-];
-
-// Quill strips unrecognized classes/attributes when parsing raw HTML (it only keeps
-// known formats), so pill spans would render as plain text if passed to the editor as
-// an HTML string. Building the initial content as Quill Delta ops instead (with a
-// custom "pill" format registered in BusinessRuleFormModal.jsx) preserves them.
-function bulletPillLine(label, pillText) {
-  return [
-    { insert: `${label}: ` },
-    { insert: { pill: pillText } },
-    { insert: '\n', attributes: { list: 'bullet' } },
-  ];
-}
-
-export const DUMMY_NOTIFICATION_BODY_DELTA_OPS = [
-  { insert: 'New card has been created by ', attributes: { bold: true } },
-  { insert: { pill: 'Author' } },
-  { insert: '\n\n' },
-  { insert: { pill: 'Card URL' } },
-  { insert: '\n\n' },
-  { insert: 'Card details', attributes: { bold: true } },
-  { insert: '\n' },
-  ...bulletPillLine('Title', 'Title'),
-  ...bulletPillLine('Description', 'Description'),
-  ...bulletPillLine('Color', 'Color'),
-  ...bulletPillLine('Owner', 'Owner'),
-  ...bulletPillLine('Priority', 'Priority'),
-  ...bulletPillLine('Size', 'Size'),
-  ...bulletPillLine('Deadline', 'Deadline'),
-  ...bulletPillLine('Tags', 'Tags'),
-  ...bulletPillLine('Milestones', 'Milestones'),
-  ...bulletPillLine('Board', 'Board Name'),
-  ...bulletPillLine('Column', 'Column Name'),
-  ...bulletPillLine('Subtasks', 'Total Subtasks Count'),
-];
 
 export const UPDATE_ACTION_OPTIONS = [
   { key: 'add_co_owners', label: 'Add co-owners', field: 'Co-owners' },
@@ -337,85 +209,3 @@ export const UPDATE_ACTION_OPTIONS = [
   { key: 'set_type', label: 'Set type', field: 'Type' },
   { key: 'unblock_card', label: 'Unblock card', field: 'Card' },
 ];
-
-// Dev-only fallback data for the "Card property match" modal, used when the
-// real business_rule field endpoints return nothing (e.g. local dev without
-// a live backend). Never shown in production builds.
-export const DUMMY_REGULAR_FIELDS = [
-  'Attachments', 'Block time', 'Blocked', 'Blocker', 'Board', 'Card ID', 'Child cards', 'Co-owners',
-  'Color', 'Column', 'Comments', 'Created at', 'Custom card ID', 'Cycle time', 'Deadline', 'Description',
-  'Finished subtasks count', 'First blocked date', 'First date moved to',
-  'Internal card id', 'Lane', 'Last blocked date', 'Last date moved out of', 'Last date moved to',
-  'Last modified', 'Last moved', 'Logged time', 'Milestones', 'Owner', 'Owners', 'Parent cards',
-  'Position', 'Priority', 'Relative cards', 'Reporter', 'Section', 'Size', 'Stickers',
-  'Subtasks progress', 'Tags', 'Title', 'Total subtasks count', 'Type', 'Unfinished subtasks count',
-  'Watchers', 'Workflow',
-].map((label, idx) => ({ regular_field_id: idx + 1, field_label: label, field_key: label }));
-
-export const DUMMY_TIME_UNITS = ['Days', 'Hours', 'Minutes', 'Seconds']
-  .map((label, idx) => ({ time_unit_id: idx + 1, unit_label: label, unit_key: label }));
-
-// Dev-only sample workspace/board groups appended after the real API results in the
-// board picker, so the picker has enough groups/tiles to test scrolling and layout
-// even when the connected backend only has a couple of real workspaces set up.
-// IDs are namespaced ('dummy-...') so they can never collide with a real workspace/board id.
-export const DUMMY_WORKSPACE_BOARDS = [
-  {
-    workspace_id: 'dummy-ws-1',
-    workspace_name: 'SEDRES - CHANDLING - WORK SPACE',
-    boards: [
-      { board_id: 'dummy-board-1', board_name: 'CHANDLING OPERATIONS' },
-      { board_id: 'dummy-board-2', board_name: 'FROZEN' },
-      { board_id: 'dummy-board-3', board_name: 'LOGISTICS' },
-      { board_id: 'dummy-board-4', board_name: 'DRY AND CABIN ITEMS' },
-      { board_id: 'dummy-board-5', board_name: 'DN' },
-      { board_id: 'dummy-board-6', board_name: 'CHILLER' },
-      { board_id: 'dummy-board-7', board_name: 'SUPER MARKET MAIN BOARD' },
-    ],
-  },
-  {
-    workspace_id: 'dummy-ws-2',
-    workspace_name: 'New Offshore Marine Logistics',
-    boards: [
-      { board_id: 'dummy-board-8', board_name: 'Rastanura/ Dammam Operations' },
-      { board_id: 'dummy-board-9', board_name: 'Jubail Operations' },
-      { board_id: 'dummy-board-10', board_name: 'Centralized DA DESK' },
-    ],
-  },
-  {
-    workspace_id: 'dummy-ws-3',
-    workspace_name: 'Limousine',
-    boards: [
-      { board_id: 'dummy-board-11', board_name: 'Coordinator Transport' },
-    ],
-  },
-  {
-    workspace_id: 'dummy-ws-4',
-    workspace_name: 'Bunkering Services',
-    boards: [
-      { board_id: 'dummy-board-12', board_name: 'Bunker Operations' },
-      { board_id: 'dummy-board-13', board_name: 'Fuel Delivery' },
-    ],
-  },
-  {
-    workspace_id: 'dummy-ws-5',
-    workspace_name: 'Documentation',
-    boards: [
-      { board_id: 'dummy-board-14', board_name: 'Customs Clearance' },
-      { board_id: 'dummy-board-15', board_name: 'Port Documentation' },
-    ],
-  },
-];
-
-export const DUMMY_CUSTOM_FIELDS = [
-  '3rd Party Items', '3rd Party Launch hire (If any)', 'Additional Assignee', 'Airway bill no.',
-  'Amount (In SAR)', 'any additional requirment will be based on cargo type', 'AP Number',
-  'Appointment Email', 'Arrival procedure copy', 'Assigned Driver', 'ASSSIGNED VEHICLE', 'ATD', 'AWB',
-  'AWBL copy from Agent/ shipping line', 'Bah Inv No', 'Bayan', 'Bidding Documents from client',
-  'Billing Entity- -', 'BL copy from Agent/ shipping line', 'BL number', 'Buying Price [Excl. VAT]',
-  'Card Picker', 'Cargo bayan copy', 'Cargo collection date', 'Cargo Invoice & BL', 'CG PERMIT COPY',
-  'CIPL / BL - Vessel', 'CIPL FFD', 'CLIENT', 'Client Acknowledgment', 'Client Name (FFD)',
-  'Commercial invoice', 'Commercial Proposal', 'Commodity', 'Consumable Invoice & BL',
-  'COO certificate of origin', 'Copy of Export Bayan', 'Copy of Sales order', 'Costing for Bid',
-  'Costing Issued On', 'Credit Terms', 'Crew Documents',
-].map((label, idx) => ({ custom_field_id: idx + 1, field_label: label }));
