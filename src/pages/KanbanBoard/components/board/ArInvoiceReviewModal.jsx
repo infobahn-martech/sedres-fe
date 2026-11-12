@@ -228,6 +228,7 @@ const ArInvoiceReviewModal = ({ onConfirmed, useReviewStore = useArInvoiceReview
     }
     /* The response names where the cards went; with neither list present they are only reported as confirmed. */
     const movedTo = [
+      { cards: result?.card_positions, column: result?.card_positions?.[0]?.column_name },
       { cards: result?.moved_to_backlog, column: "Backlog" },
       { cards: result?.moved_to_be_uploaded, column: "To Be Uploaded" },
       { cards: result?.moved_to_ar_invoices_issued, column: "AR Invoices Issued" },
