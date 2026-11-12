@@ -1,8 +1,8 @@
 {
     "status": "success",
     "data": {
-        "call_id": 505,
-        "kanban_card_id": 694,
+        "call_id": 510,
+        "kanban_card_id": 713,
         "linked_call_id": null,
         "launch_hire": 0,
         "export_approval_status": 0,
@@ -15,24 +15,23 @@
         "card_blocker": null,
         "card_sticker": null,
         "card_tag": null,
-        "checklists": [],
         "template": {
-            "template_id": 1,
-            "template_name": "L&T Import Call",
+            "template_id": 4,
+            "template_name": "L  & T Import Call",
             "call_type_id": 1,
             "call_type": "Import Call",
             "billing_entity_id": 24,
             "billing_entity": "LARSEN TOUBRO ARABIA LLC",
             "tabs": [
                 {
-                    "tab_id": 1,
+                    "tab_id": 18,
                     "tab_key": "appointment_details",
                     "tab_label": "Appointment Details",
                     "display_order": 1,
                     "email_preview": 1,
                     "fields": [
                         {
-                            "field_id": 1,
+                            "field_id": 41,
                             "field_key": "owner",
                             "field_label": "Owner",
                             "field_type": "dropdown",
@@ -42,6 +41,8 @@
                             "option_source": "master",
                             "master_key": "users",
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [
                                 {
                                     "option_value": "83",
@@ -77,16 +78,18 @@
                             "value": "83"
                         },
                         {
-                            "field_id": 2,
+                            "field_id": 42,
                             "field_key": "assigned_operator",
                             "field_label": "Assigned Operator",
-                            "field_type": "dropdown",
+                            "field_type": "multiselect",
                             "is_required": 1,
                             "row_no": 2,
                             "col_no": 1,
                             "option_source": "master",
                             "master_key": "users",
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [
                                 {
                                     "option_value": "4",
@@ -114,10 +117,13 @@
                                     "avatar": null
                                 }
                             ],
-                            "value": "85"
+                            "value": [
+                                85,
+                                3
+                            ]
                         },
                         {
-                            "field_id": 3,
+                            "field_id": 43,
                             "field_key": "appointment_email",
                             "field_label": "Appointment Email",
                             "field_type": "file",
@@ -127,12 +133,14 @@
                             "option_source": "static",
                             "master_key": null,
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [],
-                            "value": "505_IMP_-_Zamil_Client_Appointment_email.pdf",
-                            "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Call File Open\/505_IMP_-_Zamil_Client_Appointment_email.pdf"
+                            "value": "510_IMP_-_MCD_Client_Appointment_email.pdf",
+                            "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Call File Open\/510_IMP_-_MCD_Client_Appointment_email.pdf"
                         },
                         {
-                            "field_id": 4,
+                            "field_id": 44,
                             "field_key": "appointment_received",
                             "field_label": "Appointment Received",
                             "field_type": "datetime",
@@ -142,11 +150,13 @@
                             "option_source": "static",
                             "master_key": null,
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [],
-                            "value": "2026-11-10 15:15:00"
+                            "value": "2026-11-12 14:45:00"
                         },
                         {
-                            "field_id": 5,
+                            "field_id": 45,
                             "field_key": "port",
                             "field_label": "Port",
                             "field_type": "dropdown",
@@ -156,6 +166,8 @@
                             "option_source": "master",
                             "master_key": "port",
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [
                                 {
                                     "option_value": "2",
@@ -181,7 +193,7 @@
                             "value": "1"
                         },
                         {
-                            "field_id": 6,
+                            "field_id": 46,
                             "field_key": "call_type",
                             "field_label": "Call Type",
                             "field_type": "dropdown",
@@ -191,6 +203,8 @@
                             "option_source": "master",
                             "master_key": "call_type",
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [
                                 {
                                     "option_value": "3",
@@ -212,16 +226,18 @@
                             "value": "1"
                         },
                         {
-                            "field_id": 7,
+                            "field_id": 47,
                             "field_key": "billing_entity",
                             "field_label": "Billing Entity",
                             "field_type": "dropdown",
-                            "is_required": 1,
+                            "is_required": 0,
                             "row_no": 7,
                             "col_no": 1,
                             "option_source": "master",
                             "master_key": "billing_entity",
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [
                                 {
                                     "option_value": "1286",
@@ -5509,8 +5525,10 @@
                             "option_source": "static",
                             "master_key": null,
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [],
-                            "value": "Project Code"
+                            "value": "Code"
                         },
                         {
                             "field_id": "po_number",
@@ -5523,8 +5541,10 @@
                             "option_source": "static",
                             "master_key": null,
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [],
-                            "value": "1"
+                            "value": "PO number"
                         },
                         {
                             "field_id": "project_name",
@@ -5537,6 +5557,8 @@
                             "option_source": "static",
                             "master_key": null,
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [],
                             "value": "Project"
                         },
@@ -5551,20 +5573,24 @@
                             "option_source": "static",
                             "master_key": null,
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [],
                             "value": null
                         },
                         {
-                            "field_id": 8,
+                            "field_id": 48,
                             "field_key": "appointment_type",
                             "field_label": "Appointment Type",
                             "field_type": "dropdown",
-                            "is_required": 1,
+                            "is_required": 0,
                             "row_no": 8,
                             "col_no": 1,
                             "option_source": "static",
                             "master_key": null,
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [
                                 {
                                     "option_value": "vessel",
@@ -5586,58 +5612,121 @@
                             "value": "Vessel"
                         },
                         {
-                            "field_id": 9,
+                            "field_id": 49,
                             "field_key": "last_port",
                             "field_label": "Last Port",
                             "field_type": "text",
-                            "is_required": 1,
+                            "is_required": 0,
                             "row_no": 9,
                             "col_no": 1,
                             "option_source": "static",
                             "master_key": null,
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [],
                             "value": "Bahrain"
                         },
                         {
-                            "field_id": 10,
+                            "field_id": 50,
                             "field_key": "expected_time_of_arrival",
                             "field_label": "Expected Time of Arrival",
-                            "field_type": "datetime",
-                            "is_required": 1,
+                            "field_type": "timeobject",
+                            "is_required": 0,
                             "row_no": 10,
                             "col_no": 1,
                             "option_source": "static",
                             "master_key": null,
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [],
-                            "value": "2026-11-11 16:15:00"
+                            "value": "2026-11-13 19:35:00"
                         },
                         {
-                            "field_id": 11,
+                            "field_id": 51,
                             "field_key": "expected_time_of_departure",
                             "field_label": "Expected Time of Departure",
-                            "field_type": "datetime",
-                            "is_required": 1,
+                            "field_type": "timeobject",
+                            "is_required": 0,
                             "row_no": 11,
                             "col_no": 1,
                             "option_source": "static",
                             "master_key": null,
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [],
-                            "value": "2026-12-31 14:10:00"
+                            "value": "2026-12-31 04:15:00"
                         },
                         {
-                            "field_id": 12,
+                            "field_id": 52,
+                            "field_key": "checklist",
+                            "field_label": "Checklist",
+                            "field_type": "multiselect",
+                            "is_required": 0,
+                            "row_no": 12,
+                            "col_no": 1,
+                            "option_source": "master",
+                            "master_key": "checklist_type",
+                            "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
+                            "options": [
+                                {
+                                    "option_value": "3",
+                                    "option_label": "ACCOMODATION\/CONSTRUCITON BARGE IMPORT CHECKLIST "
+                                },
+                                {
+                                    "option_value": "6",
+                                    "option_label": "AL JUBAIL PORT "
+                                },
+                                {
+                                    "option_value": "7",
+                                    "option_label": "BOAT ARRIVING ONBOARD IMPORT CHECKLIST"
+                                },
+                                {
+                                    "option_value": "8",
+                                    "option_label": "EXPORT BARGE CHECKLIST "
+                                },
+                                {
+                                    "option_value": "9",
+                                    "option_label": "EXPORT VESSEL CHECKLIST"
+                                },
+                                {
+                                    "option_value": "2",
+                                    "option_label": "FLAT BARGE IMPORT CHECKLIST"
+                                },
+                                {
+                                    "option_value": "4",
+                                    "option_label": "JACK UP BARGE IMPORT CHECKLIST"
+                                },
+                                {
+                                    "option_value": "1",
+                                    "option_label": "SAUDI FLAG VESSEL IMPORT CHECKLIST "
+                                },
+                                {
+                                    "option_value": "10",
+                                    "option_label": "TEMPORARY EXPORT VESSEL CHECKLIST"
+                                }
+                            ],
+                            "value": [
+                                "6"
+                            ]
+                        },
+                        {
+                            "field_id": 53,
                             "field_key": "vessel_type",
                             "field_label": "Vessel Type",
                             "field_type": "dropdown",
-                            "is_required": 1,
-                            "row_no": 12,
+                            "is_required": 0,
+                            "row_no": 13,
                             "col_no": 1,
                             "option_source": "master",
                             "master_key": "vessel_type",
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [
                                 {
                                     "option_value": "3",
@@ -5663,16 +5752,18 @@
                             "value": "3"
                         },
                         {
-                            "field_id": 13,
+                            "field_id": 54,
                             "field_key": "vessel_name",
                             "field_label": "Vessel Name",
                             "field_type": "dropdown",
-                            "is_required": 1,
-                            "row_no": 13,
+                            "is_required": 0,
+                            "row_no": 14,
                             "col_no": 1,
                             "option_source": "master",
                             "master_key": "vessel",
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [
                                 {
                                     "option_value": "101",
@@ -6203,61 +6294,69 @@
                                     "option_label": "ZAMIL 82"
                                 }
                             ],
-                            "value": "34"
+                            "value": "118"
                         },
                         {
-                            "field_id": 14,
+                            "field_id": 55,
                             "field_key": "vessel_owner",
                             "field_label": "Vessel Owner",
                             "field_type": "text",
-                            "is_required": 1,
-                            "row_no": 14,
-                            "col_no": 1,
-                            "option_source": "static",
-                            "master_key": null,
-                            "depends_on_field_id": null,
-                            "options": [],
-                            "value": "HANGYUN"
-                        },
-                        {
-                            "field_id": 15,
-                            "field_key": "vessel_charterer",
-                            "field_label": "Vessel Charterer",
-                            "field_type": "text",
-                            "is_required": 1,
+                            "is_required": 0,
                             "row_no": 15,
                             "col_no": 1,
                             "option_source": "static",
                             "master_key": null,
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [],
-                            "value": "BGP"
+                            "value": "Pelican Offshore Malaysia"
                         },
                         {
-                            "field_id": 16,
-                            "field_key": "service_requestor_name",
-                            "field_label": "Service Requestor Name",
+                            "field_id": 56,
+                            "field_key": "vessel_charterer",
+                            "field_label": "Vessel Charterer",
                             "field_type": "text",
-                            "is_required": 1,
+                            "is_required": 0,
                             "row_no": 16,
                             "col_no": 1,
                             "option_source": "static",
                             "master_key": null,
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [],
-                            "value": "requestor"
+                            "value": "SAUDI MARCAP"
                         },
                         {
-                            "field_id": 17,
-                            "field_key": "service_requestor_email",
-                            "field_label": "Service Requestor Email",
+                            "field_id": 57,
+                            "field_key": "service_requestor_name",
+                            "field_label": "Service Requestor Name",
                             "field_type": "text",
-                            "is_required": 1,
+                            "is_required": 0,
                             "row_no": 17,
                             "col_no": 1,
                             "option_source": "static",
                             "master_key": null,
                             "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
+                            "options": [],
+                            "value": "requestor"
+                        },
+                        {
+                            "field_id": 58,
+                            "field_key": "service_requestor_email",
+                            "field_label": "Service Requestor Email",
+                            "field_type": "email",
+                            "is_required": 0,
+                            "row_no": 18,
+                            "col_no": 1,
+                            "option_source": "static",
+                            "master_key": null,
+                            "depends_on_field_id": null,
+                            "show_when_field_id": null,
+                            "show_when_value": null,
                             "options": [],
                             "value": "prog2@infobahnworld.com"
                         }
@@ -6265,7 +6364,7 @@
                     "subtabs": []
                 },
                 {
-                    "tab_id": 2,
+                    "tab_id": 19,
                     "tab_key": "operation",
                     "tab_label": "Operation",
                     "display_order": 2,
@@ -6273,79 +6372,89 @@
                     "fields": [],
                     "subtabs": [
                         {
-                            "tab_id": 3,
+                            "tab_id": 20,
                             "tab_key": "pre_arrival",
                             "tab_label": "Pre Arrival",
                             "display_order": 1,
                             "email_preview": 1,
                             "fields": [
                                 {
-                                    "field_id": 18,
+                                    "field_id": 59,
                                     "field_key": "expected_time_of_arrival",
                                     "field_label": "Expected Time of Arrival",
-                                    "field_type": "datetime",
-                                    "is_required": 1,
+                                    "field_type": "timeobject",
+                                    "is_required": 0,
                                     "row_no": 1,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
-                                    "value": "2026-11-11 16:15:00"
+                                    "value": "2026-11-13 19:35:00"
                                 },
                                 {
-                                    "field_id": 19,
+                                    "field_id": 60,
                                     "field_key": "expected_commencement_of_custom_inspection",
                                     "field_label": "Expected Commencement of Custom Inspection",
-                                    "field_type": "datetime",
-                                    "is_required": 1,
+                                    "field_type": "timeobject",
+                                    "is_required": 0,
                                     "row_no": 2,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
-                                    "value": null
+                                    "value": "2026-11-14 10:00:00"
                                 },
                                 {
-                                    "field_id": 20,
+                                    "field_id": 61,
                                     "field_key": "expected_commencement_of_immigration_clearance_for_crew",
                                     "field_label": "Expected Commencement of Immigration Clearance for Crew",
-                                    "field_type": "datetime",
-                                    "is_required": 1,
+                                    "field_type": "timeobject",
+                                    "is_required": 0,
                                     "row_no": 3,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
-                                    "value": null
+                                    "value": "2026-11-14 12:00:00"
                                 },
                                 {
-                                    "field_id": 21,
+                                    "field_id": 62,
                                     "field_key": "expected_completion_of_inward_clearance",
                                     "field_label": "Expected Completion of Inward Clearance",
-                                    "field_type": "datetime",
-                                    "is_required": 1,
+                                    "field_type": "timeobject",
+                                    "is_required": 0,
                                     "row_no": 4,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
                                     "value": null
                                 },
                                 {
-                                    "field_id": 22,
-                                    "field_key": "saber_status",
-                                    "field_label": "SABER Status",
+                                    "field_id": 63,
+                                    "field_key": "saber",
+                                    "field_label": "SABER",
                                     "field_type": "dropdown",
-                                    "is_required": 1,
+                                    "is_required": 0,
                                     "row_no": 5,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [
                                         {
                                             "option_value": "by_client",
@@ -6359,16 +6468,18 @@
                                     "value": null
                                 },
                                 {
-                                    "field_id": 23,
+                                    "field_id": 64,
                                     "field_key": "weather_forecast",
                                     "field_label": "Weather Forecast",
                                     "field_type": "dropdown",
-                                    "is_required": 1,
+                                    "is_required": 0,
                                     "row_no": 6,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [
                                         {
                                             "option_value": "normal_weather",
@@ -6382,16 +6493,18 @@
                                     "value": null
                                 },
                                 {
-                                    "field_id": 24,
+                                    "field_id": 65,
                                     "field_key": "coordinates_type",
                                     "field_label": "Coordinates Type",
                                     "field_type": "dropdown",
-                                    "is_required": 1,
+                                    "is_required": 0,
                                     "row_no": 7,
                                     "col_no": 1,
                                     "option_source": "master",
                                     "master_key": "coordinates",
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [
                                         {
                                             "option_value": "1",
@@ -6399,107 +6512,135 @@
                                         }
                                     ],
                                     "value": null
+                                },
+                                {
+                                    "field_id": 66,
+                                    "field_key": "remarks",
+                                    "field_label": "Remarks",
+                                    "field_type": "text",
+                                    "is_required": 0,
+                                    "row_no": 8,
+                                    "col_no": 1,
+                                    "option_source": "static",
+                                    "master_key": null,
+                                    "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
+                                    "options": [],
+                                    "value": null
                                 }
                             ],
                             "subtabs": [],
                             "email_template": {
                                 "report_type_id": 2,
                                 "template_id": 25,
-                                "subject": "Pre Arrival Notification - BGP GLORY",
-                                "body": "<p><br><\/p><p><br><\/p><p><strong>Vessel Name:     BGP GLORY<\/strong><\/p><p>Port of call:            Jubail<\/p><p>Activity:                 Import Call<\/p><p>Previous Port :      Bahrain<\/p><p>Next Port :            Domestic Port KSA<\/p><p> <\/p><p><strong>ETA : 11 Nov 2026 16:15<\/strong><\/p><p><strong><u>Action Points for Vessel Master:<\/u><\/strong><\/p><p> <\/p><p>\u00b7        Kindly ensure that there are <strong>NO UNDECLARED<\/strong> items on board apart from provided on board. <strong>And make sure that all materials on board are declared either in consumable invoice or in inventory.<\/strong><\/p><p>\u00b7        Kindly provide us with the complete on-board <strong>Inventory soft copy<\/strong> on priority in order for us to review.<\/p><p>\u00b7        Kindly provide the documents as per the attached checklist, <strong>ensuring they are sent as a separate file rather than included within the checklist.<\/strong><\/p><p>\u00b7        Kindly ensure that you have gone through the <strong>Master Pre-Arrival<\/strong> <strong>Info<\/strong> and <strong>kindly acknowledge<\/strong> it with your stamp and sign once you have read it.<\/p><p>\u00b7        Attached updated document checklist.<\/p><p>  <\/p><p><strong>NOTE<\/strong> \u201cAll import documents need to be finalized minimum 72 hours prior vessel arrival RT, and submitted to us for verification and submission to customs in order to ensure smooth custom inspection, If any delays in finalizing documents, then the given time frame then there could be delays in custom clearance\u201d.<\/p><p> <\/p><p>\u00b7        <strong style=\"color: red;\">Importing Oxygen, Acetylene cylinders, and Freon is restricted<\/strong><span style=\"color: red;\"> <\/span>and it requires approval from Ministry of energy. Kindly ensure to offload such cylinders <strong>if any onboard<\/strong> prior departing for Rastanura, KSA.<\/p><p>\u00b7        Vessel coming for projects is strictly prohibited from carrying Items <span style=\"color: red;\">such as <\/span><strong style=\"color: red;\">alcohol \/ alcohol content \/ Tobacco items\/pork \/ pornographic material <\/strong><span style=\"color: red;\">on-board fine shall be <\/span><strong style=\"color: red;\">imposed <\/strong><span style=\"color: red;\">if found. <\/span><\/p><p>\u00b7        Allowance for self-consumption of <strong style=\"color: red;\">cigarettes is only 1 Rim i.e. 200 cigarettes per smoking crew<\/strong><strong>. <\/strong><\/p><p> <\/p><p><strong><u>Action Points for (<\/u><\/strong><strong style=\"color: red;\"><u>Principal LARSEN TOUBRO ARABIA LLC<\/u><\/strong><strong><u>) Saudi:<\/u><\/strong><\/p><p> <\/p><p>\u00b7        Kindly provide us the documents as per the attached checklist.<\/p><p>\u00b7        Kindly provide us with the draft of the Vessel Invoice &amp; BL in order to review before finalizing.<\/p><p>\u00b7        Kindly arrange to keep the custom duty payment for consumable\/cargo ready, once the bayan is activated we will advise, you may arrange the payment thru SADAD.<\/p><p> <\/p><p><strong><u>Weather condition:<\/u><\/strong><\/p><p> <\/p><p>Please click this link <a href=\"https:\/\/eur05.safelinks.protection.outlook.com\/?url=https%3A%2F%2Fwww.windy.com%2F26.604%2F50.191%3F26.615%2C50.167%2C12&amp;data=05%7C02%7Cshuaib.md%40sedres.com%7Ce2ffeeb752fb4832caf108ddf02b48f3%7C85851e990b8d40588e6650366b1c9127%7C0%7C0%7C638930791784560116%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=AANDuuCAUNBrMakI4EalQZKCUuz4wjsZeabggJhVw7E%3D&amp;reserved=0\" rel=\"noopener noreferrer\" target=\"_blank\">link<\/a> to see detail of Weather Forecast.<\/p><p><br><\/p><p><img src=\"https:\/\/onlinebareed.com\/sedres\/uploads\/Template Logo\/sedres-logo2.png\"><\/p>",
+                                "subject": "Pre Arrival Notification - Marcap Galaxy",
+                                "body": "<p><br><\/p><p><br><\/p><p><strong>Vessel Name:     Marcap Galaxy<\/strong><\/p><p>Port of call:            Jubail<\/p><p>Activity:                 Import Call<\/p><p>Previous Port :      Bahrain<\/p><p>Next Port :            Domestic Port KSA<\/p><p> <\/p><p><strong>ETA : 13 Nov 2026 19:35<\/strong><\/p><p><strong><u>Action Points for Vessel Master:<\/u><\/strong><\/p><p> <\/p><p>\u00b7        Kindly ensure that there are <strong>NO UNDECLARED<\/strong> items on board apart from provided on board. <strong>And make sure that all materials on board are declared either in consumable invoice or in inventory.<\/strong><\/p><p>\u00b7        Kindly provide us with the complete on-board <strong>Inventory soft copy<\/strong> on priority in order for us to review.<\/p><p>\u00b7        Kindly provide the documents as per the attached checklist, <strong>ensuring they are sent as a separate file rather than included within the checklist.<\/strong><\/p><p>\u00b7        Kindly ensure that you have gone through the <strong>Master Pre-Arrival<\/strong> <strong>Info<\/strong> and <strong>kindly acknowledge<\/strong> it with your stamp and sign once you have read it.<\/p><p>\u00b7        Attached updated document checklist.<\/p><p>  <\/p><p><strong>NOTE<\/strong> \u201cAll import documents need to be finalized minimum 72 hours prior vessel arrival RT, and submitted to us for verification and submission to customs in order to ensure smooth custom inspection, If any delays in finalizing documents, then the given time frame then there could be delays in custom clearance\u201d.<\/p><p> <\/p><p>\u00b7        <strong style=\"color: red;\">Importing Oxygen, Acetylene cylinders, and Freon is restricted<\/strong><span style=\"color: red;\"> <\/span>and it requires approval from Ministry of energy. Kindly ensure to offload such cylinders <strong>if any onboard<\/strong> prior departing for Rastanura, KSA.<\/p><p>\u00b7        Vessel coming for projects is strictly prohibited from carrying Items <span style=\"color: red;\">such as <\/span><strong style=\"color: red;\">alcohol \/ alcohol content \/ Tobacco items\/pork \/ pornographic material <\/strong><span style=\"color: red;\">on-board fine shall be <\/span><strong style=\"color: red;\">imposed <\/strong><span style=\"color: red;\">if found. <\/span><\/p><p>\u00b7        Allowance for self-consumption of <strong style=\"color: red;\">cigarettes is only 1 Rim i.e. 200 cigarettes per smoking crew<\/strong><strong>. <\/strong><\/p><p> <\/p><p><strong><u>Action Points for (<\/u><\/strong><strong style=\"color: red;\"><u>Principal LARSEN TOUBRO ARABIA LLC<\/u><\/strong><strong><u>) Saudi:<\/u><\/strong><\/p><p> <\/p><p>\u00b7        Kindly provide us the documents as per the attached checklist.<\/p><p>\u00b7        Kindly provide us with the draft of the Vessel Invoice &amp; BL in order to review before finalizing.<\/p><p>\u00b7        Kindly arrange to keep the custom duty payment for consumable\/cargo ready, once the bayan is activated we will advise, you may arrange the payment thru SADAD.<\/p><p> <\/p><p><strong><u>Weather condition:<\/u><\/strong><\/p><p> <\/p><p>Please click this link <a href=\"https:\/\/eur05.safelinks.protection.outlook.com\/?url=https%3A%2F%2Fwww.windy.com%2F26.604%2F50.191%3F26.615%2C50.167%2C12&amp;data=05%7C02%7Cshuaib.md%40sedres.com%7Ce2ffeeb752fb4832caf108ddf02b48f3%7C85851e990b8d40588e6650366b1c9127%7C0%7C0%7C638930791784560116%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=AANDuuCAUNBrMakI4EalQZKCUuz4wjsZeabggJhVw7E%3D&amp;reserved=0\" rel=\"noopener noreferrer\" target=\"_blank\">link<\/a> to see detail of Weather Forecast.<\/p><p><br><\/p><p><img src=\"https:\/\/onlinebareed.com\/sedres\/uploads\/Template Logo\/sedres-logo2.png\"><\/p>",
                                 "to_email": "prog2@infobahnworld.com",
                                 "from_email": "info@onlinebareed.com",
-                                "cc_emails": "nabeela.infobahn@gmail.com"
+                                "cc_emails": ""
                             }
                         },
                         {
-                            "tab_id": 4,
+                            "tab_id": 21,
                             "tab_key": "arrival",
                             "tab_label": "Arrival",
                             "display_order": 2,
                             "email_preview": 1,
                             "fields": [
                                 {
-                                    "field_id": 25,
+                                    "field_id": 67,
                                     "field_key": "actual_time_of_arrival",
                                     "field_label": "Actual Time of Arrival",
-                                    "field_type": "datetime",
-                                    "is_required": 1,
+                                    "field_type": "timeobject",
+                                    "is_required": 0,
                                     "row_no": 1,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
                                     "value": null
                                 },
                                 {
-                                    "field_id": 26,
+                                    "field_id": 68,
                                     "field_key": "crew_immigration_commenced",
                                     "field_label": "Crew Immigration Commenced",
-                                    "field_type": "datetime",
-                                    "is_required": 1,
+                                    "field_type": "timeobject",
+                                    "is_required": 0,
                                     "row_no": 2,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
                                     "value": null
                                 },
                                 {
-                                    "field_id": 27,
+                                    "field_id": 69,
                                     "field_key": "crew_immigration_completed",
                                     "field_label": "Crew Immigration Completed",
-                                    "field_type": "datetime",
-                                    "is_required": 1,
+                                    "field_type": "timeobject",
+                                    "is_required": 0,
                                     "row_no": 3,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
                                     "value": null
                                 },
                                 {
-                                    "field_id": 28,
+                                    "field_id": 70,
                                     "field_key": "custom_inspection_commenced",
                                     "field_label": "Custom Inspection Commenced",
-                                    "field_type": "datetime",
-                                    "is_required": 1,
+                                    "field_type": "timeobject",
+                                    "is_required": 0,
                                     "row_no": 4,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
                                     "value": null
                                 },
                                 {
-                                    "field_id": 29,
+                                    "field_id": 71,
                                     "field_key": "custom_inspection_completed",
                                     "field_label": "Custom Inspection Completed",
-                                    "field_type": "datetime",
-                                    "is_required": 1,
+                                    "field_type": "timeobject",
+                                    "is_required": 0,
                                     "row_no": 5,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
                                     "value": null
                                 },
                                 {
-                                    "field_id": 30,
+                                    "field_id": 72,
                                     "field_key": "custom_inspection_status",
                                     "field_label": "Custom Inspection Status",
                                     "field_type": "dropdown",
-                                    "is_required": 1,
+                                    "is_required": 0,
                                     "row_no": 6,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [
                                         {
                                             "option_value": "pending",
@@ -6517,16 +6658,18 @@
                                     "value": null
                                 },
                                 {
-                                    "field_id": 31,
+                                    "field_id": 73,
                                     "field_key": "crew_immigration_status",
                                     "field_label": "Crew Immigration Status",
                                     "field_type": "dropdown",
-                                    "is_required": 1,
+                                    "is_required": 0,
                                     "row_no": 7,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [
                                         {
                                             "option_value": "pending",
@@ -6540,30 +6683,34 @@
                                     "value": null
                                 },
                                 {
-                                    "field_id": 32,
+                                    "field_id": 74,
                                     "field_key": "crew_immigration_remarks",
                                     "field_label": "Crew Immigration Remarks",
                                     "field_type": "textarea",
-                                    "is_required": 1,
+                                    "is_required": 0,
                                     "row_no": 8,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
                                     "value": null
                                 },
                                 {
-                                    "field_id": 33,
+                                    "field_id": 75,
                                     "field_key": "inward_clearance",
                                     "field_label": "Inward Clearance",
                                     "field_type": "radio",
-                                    "is_required": 1,
+                                    "is_required": 0,
                                     "row_no": 9,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [
                                         {
                                             "option_value": "received",
@@ -6581,15 +6728,15 @@
                             "email_template": {
                                 "report_type_id": 4,
                                 "template_id": 28,
-                                "subject": "Arrival Report - BGP GLORY",
-                                "body": "<p><strong style=\"color: rgb(0, 32, 96);\">Vessel Name:      BGP GLORY<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Port:<\/strong><span style=\"color: rgb(0, 32, 96);\">                     Rastanura, KSA<\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Activity:<\/strong><span style=\"color: rgb(0, 32, 96);\">                Import Call<\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Previous Port:      Bahrain<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Next Port:<\/strong><span style=\"color: rgb(0, 32, 96);\">          Domestic Port KSA<\/span><\/p><p><br><\/p><p><br><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Dear Captain,<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><\/p><p><span style=\"color: rgb(0, 32, 96);\">We welcome you to Rastanura port and wish you have a pleasant stay ahead, if you need anything during your entire stay you can send us an email on <\/span><a href=\"mailto:operations.rastanura@sedres.com\" rel=\"noopener noreferrer\" target=\"_blank\">operations.rastanura@sedres.com<\/a> <span style=\"color: rgb(0, 32, 96);\"> or call us at any point of time. <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>UPDATE:<\/u><\/strong><span style=\"color: rgb(33, 33, 33);\"> <\/span><\/p><p><br><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Vessel ATA to RT7\/FT at {ata}<\/span><\/p><p>\u00b7        <strong style=\"color: rgb(0, 32, 96);\">Kindly note that vessel must be present in freighter anchorage at 0800hrs on  , we will arrange custom inspection and crew immigration.<\/strong><\/p><p><br><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>Weather condition:<\/u><\/strong><\/p><p> <\/p><p><span style=\"color: rgb(0, 32, 96);\">Please click this link <\/span>____LINK ____ <span style=\"color: rgb(0, 32, 96);\"> to see more detail.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>REMARKS:<\/u><\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        As all pre arrival formalities was completed prior your arrival, west pier port control has been kept well informed of your arrival.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Kindly keep the<\/span> <strong style=\"color: rgb(0, 32, 96);\">yellow flag<\/strong> <span style=\"color: rgb(0, 32, 96);\">hoisted until the Vessel clears from Inspection.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96); background-color: yellow;\">\u00b7        Please ensure that you are available at Freighter Anchorage by 08:00hrs on  we will arrange Custom Inspection and crew immigration.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        <\/span><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><span style=\"color: rgb(0, 32, 96);\">has been assigned from our office as agent representative, he shall fully assist you during inspection with authorities. <\/span><\/p><p>\u00b7        <strong>{assigned_custom}<\/strong><strong style=\"color: rgb(0, 32, 96);\"> will be proposed crew boat for Custom Inspection.<\/strong><strong> <\/strong><\/p><p>\u00b7        <span style=\"color: rgb(0, 32, 96);\">If Master \/ any of the crew have any queries, kindly direct the questions to our GRO only, he will further take care of your needs.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        At the time of Custom Inspection, if Custom Authorities ask for the Import documents, then kindly provide them the same as attached. <\/span><span style=\"color: red;\">(Required option to enclose document) <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Kindly ensure there is no any restricted items onboard and no any undeclared items to be found.<\/span><\/p><p><br><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><img src=\"https:\/\/onlinebareed.com\/sedres\/uploads\/Template Logo\/sedres-logo3.png\"><\/p>",
+                                "subject": "Arrival Report - Marcap Galaxy",
+                                "body": "<p><strong style=\"color: rgb(0, 32, 96);\">Vessel Name:      Marcap Galaxy<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Port:<\/strong><span style=\"color: rgb(0, 32, 96);\">                     Rastanura, KSA<\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Activity:<\/strong><span style=\"color: rgb(0, 32, 96);\">                Import Call<\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Previous Port:      Bahrain<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Next Port:<\/strong><span style=\"color: rgb(0, 32, 96);\">          Domestic Port KSA<\/span><\/p><p><br><\/p><p><br><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Dear Captain,<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><\/p><p><span style=\"color: rgb(0, 32, 96);\">We welcome you to Rastanura port and wish you have a pleasant stay ahead, if you need anything during your entire stay you can send us an email on <\/span><a href=\"mailto:operations.rastanura@sedres.com\" rel=\"noopener noreferrer\" target=\"_blank\">operations.rastanura@sedres.com<\/a> <span style=\"color: rgb(0, 32, 96);\"> or call us at any point of time. <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>UPDATE:<\/u><\/strong><span style=\"color: rgb(33, 33, 33);\"> <\/span><\/p><p><br><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Vessel ATA to RT7\/FT at {ata}<\/span><\/p><p>\u00b7        <strong style=\"color: rgb(0, 32, 96);\">Kindly note that vessel must be present in freighter anchorage at 0800hrs on  , we will arrange custom inspection and crew immigration.<\/strong><\/p><p><br><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>Weather condition:<\/u><\/strong><\/p><p> <\/p><p><span style=\"color: rgb(0, 32, 96);\">Please click this link <\/span>____LINK ____ <span style=\"color: rgb(0, 32, 96);\"> to see more detail.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>REMARKS:<\/u><\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        As all pre arrival formalities was completed prior your arrival, west pier port control has been kept well informed of your arrival.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Kindly keep the<\/span> <strong style=\"color: rgb(0, 32, 96);\">yellow flag<\/strong> <span style=\"color: rgb(0, 32, 96);\">hoisted until the Vessel clears from Inspection.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96); background-color: yellow;\">\u00b7        Please ensure that you are available at Freighter Anchorage by 08:00hrs on  we will arrange Custom Inspection and crew immigration.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        <\/span><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><span style=\"color: rgb(0, 32, 96);\">has been assigned from our office as agent representative, he shall fully assist you during inspection with authorities. <\/span><\/p><p>\u00b7        <strong>{assigned_custom}<\/strong><strong style=\"color: rgb(0, 32, 96);\"> will be proposed crew boat for Custom Inspection.<\/strong><strong> <\/strong><\/p><p>\u00b7        <span style=\"color: rgb(0, 32, 96);\">If Master \/ any of the crew have any queries, kindly direct the questions to our GRO only, he will further take care of your needs.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        At the time of Custom Inspection, if Custom Authorities ask for the Import documents, then kindly provide them the same as attached. <\/span><span style=\"color: red;\">(Required option to enclose document) <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Kindly ensure there is no any restricted items onboard and no any undeclared items to be found.<\/span><\/p><p><br><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><img src=\"https:\/\/onlinebareed.com\/sedres\/uploads\/Template Logo\/sedres-logo3.png\"><\/p>",
                                 "to_email": "prog2@infobahnworld.com",
                                 "from_email": "info@onlinebareed.com",
-                                "cc_emails": "nabeela.infobahn@gmail.com"
+                                "cc_emails": ""
                             }
                         },
                         {
-                            "tab_id": 5,
+                            "tab_id": 22,
                             "tab_key": "crew_immigration",
                             "tab_label": "Crew Immigration",
                             "display_order": 3,
@@ -6598,80 +6745,115 @@
                             "subtabs": []
                         },
                         {
-                            "tab_id": 6,
+                            "tab_id": 23,
                             "tab_key": "departure",
                             "tab_label": "Departure",
                             "display_order": 4,
                             "email_preview": 1,
                             "fields": [
                                 {
-                                    "field_id": 34,
+                                    "field_id": 76,
                                     "field_key": "outward_clearance_request_email",
                                     "field_label": "Outward Clearance Request Email",
                                     "field_type": "file",
-                                    "is_required": 1,
+                                    "is_required": 0,
                                     "row_no": 1,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
                                     "value": null
                                 },
                                 {
-                                    "field_id": 35,
+                                    "field_id": 77,
                                     "field_key": "request_for_outward_clearance_received",
                                     "field_label": "Request for Outward Clearance Received",
-                                    "field_type": "datetime",
-                                    "is_required": 1,
+                                    "field_type": "timeobject",
+                                    "is_required": 0,
                                     "row_no": 2,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
                                     "value": null
                                 },
                                 {
-                                    "field_id": 36,
-                                    "field_key": "outward_clearance_issued",
-                                    "field_label": "Outward Clearance Issued",
-                                    "field_type": "datetime",
-                                    "is_required": 1,
+                                    "field_id": 78,
+                                    "field_key": "actual_time_of_departure",
+                                    "field_label": "Actual Time of Departure",
+                                    "field_type": "timeobject",
+                                    "is_required": 0,
                                     "row_no": 3,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
                                     "value": null
                                 },
                                 {
-                                    "field_id": 37,
-                                    "field_key": "next_port",
-                                    "field_label": "Next Port",
-                                    "field_type": "text",
-                                    "is_required": 1,
+                                    "field_id": 79,
+                                    "field_key": "outward_clearance_issued",
+                                    "field_label": "Outward Clearance Issued",
+                                    "field_type": "timeobject",
+                                    "is_required": 0,
                                     "row_no": 4,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
                                     "value": null
                                 },
                                 {
-                                    "field_id": 38,
-                                    "field_key": "clearance_delivered_by",
-                                    "field_label": "Clearance Delivered By",
+                                    "field_id": 80,
+                                    "field_key": "next_port",
+                                    "field_label": "Next Port",
                                     "field_type": "text",
-                                    "is_required": 1,
+                                    "is_required": 0,
                                     "row_no": 5,
                                     "col_no": 1,
                                     "option_source": "static",
                                     "master_key": null,
                                     "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
                                     "options": [],
+                                    "value": null
+                                },
+                                {
+                                    "field_id": 81,
+                                    "field_key": "clearance_delivered_by",
+                                    "field_label": "Clearance Delivered By",
+                                    "field_type": "dropdown",
+                                    "is_required": 0,
+                                    "row_no": 6,
+                                    "col_no": 1,
+                                    "option_source": "static",
+                                    "master_key": null,
+                                    "depends_on_field_id": null,
+                                    "show_when_field_id": null,
+                                    "show_when_value": null,
+                                    "options": [
+                                        {
+                                            "option_value": "by_email",
+                                            "option_label": "By Email"
+                                        },
+                                        {
+                                            "option_value": "by_launch",
+                                            "option_label": "By Launch"
+                                        }
+                                    ],
                                     "value": null
                                 }
                             ],
@@ -6683,11 +6865,11 @@
                                 "body": "",
                                 "to_email": "prog2@infobahnworld.com",
                                 "from_email": "info@onlinebareed.com",
-                                "cc_emails": "nabeela.infobahn@gmail.com"
+                                "cc_emails": ""
                             }
                         },
                         {
-                            "tab_id": 7,
+                            "tab_id": 24,
                             "tab_key": "checklist",
                             "tab_label": "Checklist",
                             "display_order": 5,
@@ -6698,7 +6880,7 @@
                     ]
                 },
                 {
-                    "tab_id": 8,
+                    "tab_id": 25,
                     "tab_key": "husbandry",
                     "tab_label": "Husbandry",
                     "display_order": 3,
@@ -6707,7 +6889,7 @@
                     "subtabs": []
                 },
                 {
-                    "tab_id": 9,
+                    "tab_id": 26,
                     "tab_key": "sales_order",
                     "tab_label": "Sales Order",
                     "display_order": 4,
@@ -6716,7 +6898,7 @@
                     "subtabs": []
                 },
                 {
-                    "tab_id": 10,
+                    "tab_id": 27,
                     "tab_key": "comments",
                     "tab_label": "Comments",
                     "display_order": 5,
@@ -6725,7 +6907,7 @@
                     "subtabs": []
                 },
                 {
-                    "tab_id": 11,
+                    "tab_id": 28,
                     "tab_key": "subtasks",
                     "tab_label": "Subtasks",
                     "display_order": 6,
@@ -6734,7 +6916,7 @@
                     "subtabs": []
                 },
                 {
-                    "tab_id": 12,
+                    "tab_id": 29,
                     "tab_key": "notes",
                     "tab_label": "Notes",
                     "display_order": 7,
@@ -6743,7 +6925,7 @@
                     "subtabs": []
                 },
                 {
-                    "tab_id": 13,
+                    "tab_id": 30,
                     "tab_key": "reports",
                     "tab_label": "Reports",
                     "display_order": 8,
@@ -6752,7 +6934,7 @@
                     "subtabs": []
                 },
                 {
-                    "tab_id": 14,
+                    "tab_id": 31,
                     "tab_key": "document_library",
                     "tab_label": "Document Library",
                     "display_order": 9,
@@ -6761,7 +6943,7 @@
                     "subtabs": []
                 },
                 {
-                    "tab_id": 15,
+                    "tab_id": 32,
                     "tab_key": "activity_log",
                     "tab_label": "Activity Log",
                     "display_order": 10,

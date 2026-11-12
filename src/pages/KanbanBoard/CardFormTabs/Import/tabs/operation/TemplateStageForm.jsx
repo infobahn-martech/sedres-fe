@@ -12,6 +12,8 @@ import {
   buildTemplateFieldDisplay,
   findTimeObjectRowForField,
   flattenTimeObjects,
+  getTemplateOperationSubtabs,
+  normalizeTemplateKey,
   getTemplateFieldType,
   hasExistingTemplateFile,
   isEmptyTemplateValue,
@@ -66,6 +68,10 @@ const STAGE_ID_BY_KEY = {
   arrival: OPERATION_STAGE_IDS.ARRIVAL,
   departure: OPERATION_STAGE_IDS.DEPARTURE,
 };
+
+// Changing one of these fields re-requests call_file/get_call_detail/{callId} with the current
+// values as query params, and the stage's returned email_template is rebound into the composer.
+const EMAIL_TEMPLATE_TRIGGER_KEYS = ["saber", "weather_forecast"];
 
 const SELECT_TYPES =new Set(["dropdown", "select", "multiselect", "multi_select"]);
 const TEXT_INPUT_TYPES = { text: "text", email: "email", number: "number", phone: "tel", tel: "tel", url: "url" };
@@ -163,9 +169,57 @@ function TemplateStageForm({
       return next;
     });
 
+  // field_key → field for the email-template trigger fields present on this stage.
+  const triggerFields = useMemo(() => {
+    const map = {};
+    fields.forEach((field) => {
+      const key = normalizeTemplateKey(field?.field_key);
+      if (EMAIL_TEMPLATE_TRIGGER_KEYS.includes(key)) map[key] = field;
+    });
+    return map;
+  }, [fields]);
+  const templateRequestSeqRef = useRef(0);
+
+  const refreshEmailTemplateForTriggers = async (overrides) => {
+    const resolvedCallId = String(callId ?? "").trim();
+    if (!resolvedCallId) return;
+    const params = {};
+    EMAIL_TEMPLATE_TRIGGER_KEYS.forEach((key) => {
+      const field = triggerFields[key];
+      if (!field) return;
+      const value = Object.prototype.hasOwnProperty.call(overrides, field.field_id)
+        ? overrides[field.field_id]
+        : getValue(field.field_id);
+      params[key] = value === null || value === undefined ? "" : String(value);
+    });
+
+    const seq = ++templateRequestSeqRef.current;
+    try {
+      const { data } = await callFileService.getCallDetail(resolvedCallId, params);
+      // Only the latest selection's response is bound.
+      if (!aliveRef.current || seq !== templateRequestSeqRef.current) return;
+      const freshStage = (getTemplateOperationSubtabs(data?.data) || []).find(
+        (tab) => String(tab.tabId) === String(stage?.tabId)
+      );
+      if (!freshStage?.emailTemplate) return;
+      const template = extractReportTemplateFields(freshStage.emailTemplate);
+      // An explicit saber / weather change re-applies the template even over composer edits.
+      reportTouchedRef.current = false;
+      setReportDraft((prev) => mergeReportTemplate(prev, template));
+    } catch (error) {
+      if (aliveRef.current && seq === templateRequestSeqRef.current) {
+        notify(getApiErrorMessage(error, "Failed to refresh the email template."), "error");
+      }
+    }
+  };
+
   const setFieldValue = (fieldId, value) => {
     setEdits((prev) => ({ ...prev, [fieldId]: value }));
     clearError(fieldId);
+    const isTrigger = Object.values(triggerFields).some((field) => String(field.field_id) === String(fieldId));
+    if (isTrigger && !isViewOnly && String(getValue(fieldId) ?? "") !== String(value ?? "")) {
+      refreshEmailTemplateForTriggers({ [fieldId]: value });
+    }
   };
 
   const setFieldFile = (fieldId, file) => {
