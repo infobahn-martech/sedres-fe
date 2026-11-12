@@ -1036,20 +1036,24 @@ const createEmptyPartySection = () => ({
               <AutoSaveStatus status={saveStatus} />
             </div>
 
+            <section className="approval-form-card">
+              <h3 className="form-group-title">Basic Details</h3>
+              <div className="approval-card-body approval-fields-stack">
+                <FormField label="Branch">
+                  <FormSelect
+                    value={basicDetails.branch}
+                    onChange={(e) => handleBasicChange("branch", e.target.value)}
+                    options={branchOptions}
+                    placeholder={loadingBranches ? "Loading..." : "Select branch..."}
+                    disabled={loadingBranches || !canEditSharedDetails}
+                  />
+                </FormField>
+              </div>
+            </section>
+
             <div className="approval-party-cards-row">
               <PartySectionCard
                 title="Vessel Owner's"
-                leadingContent={
-                  <FormField label="Branch">
-                    <FormSelect
-                      value={basicDetails.branch}
-                      onChange={(e) => handleBasicChange("branch", e.target.value)}
-                      options={branchOptions}
-                      placeholder={loadingBranches ? "Loading..." : "Select branch..."}
-                      disabled={loadingBranches || !canEditSharedDetails}
-                    />
-                  </FormField>
-                }
                 fields={VESSEL_OWNER_FIELDS}
                 values={vesselOwner}
                 onChange={handleVesselOwnerChange}
