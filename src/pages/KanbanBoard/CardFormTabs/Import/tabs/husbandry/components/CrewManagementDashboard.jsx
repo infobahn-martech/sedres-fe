@@ -200,7 +200,7 @@ ServiceStatusIcon.propTypes = {
 // opens a "Select Crew" popup fed by the crew list already uploaded here;
 // on submit the selection is saved to the matching service field and the
 // existing service form is opened via onNavigateToTab.
-const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNavigateToTab, onBackToServiceSelection }) => {
+const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, onNavigateToTab, onBackToServiceSelection }) => {
   const { hasPermission, hasSubmodule } = usePermissions();
   // KANBAN_CARD > CREW_MANAGEMENT per-action gates — absence of the module/
   // submodule/action in the permissions response means false (deny by default).
@@ -328,8 +328,8 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   const sharedCallDetail = useContext(CallDetailContext);
 
   const resolveCallAndVesselIds = useCallback(async () => {
-    let resolvedCallId = Number(formValues?.call_id ?? formValues?.callId);
-    let resolvedVesselId = Number(formValues?.vessel_id ?? formValues?.vesselId);
+    let resolvedCallId = Number(formValues?.call_id ?? formValues?.callId ?? card?.call_id ?? card?.callId);
+    let resolvedVesselId = Number(formValues?.vessel_id ?? formValues?.vesselId ?? card?.vessel_id ?? card?.vesselId);
 
     if ((!resolvedCallId || !resolvedVesselId) && resolvedCallId) {
       try {
@@ -347,7 +347,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     }
 
     return { resolvedCallId, resolvedVesselId };
-  }, [formValues?.call_id, formValues?.callId, formValues?.vessel_id, formValues?.vesselId]);
+  }, [formValues?.call_id, formValues?.callId, formValues?.vessel_id, formValues?.vesselId, card?.call_id, card?.callId, card?.vessel_id, card?.vesselId]);
 
   useEffect(() => {
     fetchAllNationalities();
@@ -397,8 +397,8 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
-      if (cancelled || !resolvedCallId || !resolvedVesselId) return;
+      const { resolvedCallId } = await resolveCallAndVesselIds();
+      if (cancelled || !resolvedCallId) return;
       const list = await fetchCallCrewList({
         payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
       });
@@ -467,8 +467,8 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
-      if (cancelled || !resolvedCallId || !resolvedVesselId) return;
+      const { resolvedCallId } = await resolveCallAndVesselIds();
+      if (cancelled || !resolvedCallId) return;
       setIsSummaryLoading(true);
       const list = await fetchCallCrewList({
         payload: {
@@ -624,7 +624,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 
     setUploadSteps((prev) => ({ ...prev, [stepKey]: { ...prev[stepKey], status: "uploading" } }));
 
-    const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
+    const { resolvedCallId } = await resolveCallAndVesselIds();
     if (!resolvedCallId) {
       setUploadSteps((prev) => ({ ...prev, [stepKey]: { ...prev[stepKey], status: "failed" } }));
       notify("Unable to upload: missing call information.", "error");
@@ -641,7 +641,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 
     try {
       await uploadAction({ formData });
-      if (resolvedCallId && resolvedVesselId) {
+      if (resolvedCallId) {
         const list = await fetchCallCrewList({
           payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
         });
@@ -670,7 +670,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   // the real result. Shared by the dropzone and the Crew Summary bulk
   // action below.
   const uploadVisaFiles = async (files) => {
-    const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
+    const { resolvedCallId } = await resolveCallAndVesselIds();
     if (!resolvedCallId) {
       notify("Unable to upload: missing call information.", "error");
       return 0;
@@ -689,7 +689,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
       }
     }
 
-    if (resolvedCallId && resolvedVesselId) {
+    if (resolvedCallId) {
       const list = await fetchCallCrewList({
         payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
       });
@@ -900,7 +900,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     const uploadAction = kind === "passport" ? uploadPassportCopies : uploadIqamaCopies;
     const label = kind === "passport" ? "Passport" : "Iqama";
 
-    const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
+    const { resolvedCallId } = await resolveCallAndVesselIds();
     if (!resolvedCallId) {
       notify("Unable to upload: missing call information.", "error");
       return;
@@ -917,7 +917,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     setUploading(true);
     try {
       await uploadAction({ formData });
-      if (resolvedCallId && resolvedVesselId) {
+      if (resolvedCallId) {
         const list = await fetchCallCrewList({
           payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
         });
@@ -983,8 +983,8 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
         },
       });
 
-      const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
-      if (resolvedCallId && resolvedVesselId) {
+      const { resolvedCallId } = await resolveCallAndVesselIds();
+      if (resolvedCallId) {
         const list = await fetchCallCrewList({
           payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
         });
@@ -1022,8 +1022,8 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     try {
       await deleteCrew({ crewId: crewIdNum });
 
-      const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
-      if (resolvedCallId && resolvedVesselId) {
+      const { resolvedCallId } = await resolveCallAndVesselIds();
+      if (resolvedCallId) {
         const list = await fetchCallCrewList({
           payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
         });
@@ -1047,7 +1047,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   // Enabled once we at least know the call — vessel_id is resolved lazily
   // by resolveCallAndVesselIds() at submit time (same as every other upload
   // flow on this dashboard), so it isn't required just to open the panel.
-  const hasCallInfo = Boolean(formValues?.call_id ?? formValues?.callId);
+  const hasCallInfo = Boolean(formValues?.call_id ?? formValues?.callId ?? card?.call_id ?? card?.callId);
 
   const handleCancelLaunchHire = () => {
     if (isSubmittingLaunchHire) return;
@@ -1582,6 +1582,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 };
 
 CrewManagementDashboard.propTypes = {
+  card: PropTypes.object,
   formValues: PropTypes.object.isRequired,
   handleChange: PropTypes.func.isRequired,
   cardColor: PropTypes.string,
