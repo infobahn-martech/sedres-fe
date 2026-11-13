@@ -168,6 +168,9 @@ const ZAMIL_MARINE_WORKFLOW_PATTERN = /zamil.*marine/i;
 
 export const isSubseaWorkflow = (workflow) => SUBSEA_WORKFLOW_PATTERN.test(String(workflow?.title ?? ""));
 
+/* Operator board: Subsea 7 is a swimlane of the shared Operator workflow, not a workflow of its own. */
+export const isSubseaSwimlane = (lane) => SUBSEA_WORKFLOW_PATTERN.test(String(lane?.title ?? ""));
+
 const DEFAULT_DA_ONE_CARD_COLUMN_PATTERN = /^(ar\s+invoices?\s+issued|ready\s+for\s+submission|submit\s+invoice)$/i;
 
 const DA_DEFAULT_WORKFLOW_PATTERN = /default.*\bda\b|\bda\b.*default/i;
