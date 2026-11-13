@@ -5,6 +5,7 @@ import CardFormEmptyState from "../../../shared/components/CardFormEmptyState";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
 import callFileService from "@/services/callFileService";
+import arrivalService from "@/services/arrivalService";
 import appointmentAcceptanceService from "@/services/appointmentAcceptanceService";
 import useArrivalReducer from "@/store/ArrivalReducer";
 import DateTimePickerField from "../../../shared/components/DateTimePickerField";
@@ -27,6 +28,7 @@ import {
   AdditionalTimeObjectAddButton,
   AdditionalTimeObjectsFields,
   appendAdditionalTimeObject,
+  buildSendReportRequestBody,
   commitAdditionalTimeObject,
   extractUploadedAttachments,
   mapAttachmentsForSave,
@@ -555,6 +557,53 @@ function TemplateStageForm({
     }
   };
 
+  // Email preview "Send": posts the composer to arrival/send_report (no stage save).
+  const sendReport = async () => {
+    if (submittingRef.current || isViewOnly) return;
+    const resolvedCallId = String(callId ?? "").trim();
+    if (!resolvedCallId) {
+      notify("Call ID is required to send the report.", "error");
+      return;
+    }
+    const toEmail = String(reportDraft.to || "").trim();
+    if (!toEmail) {
+      notify("Add a recipient in the email preview before sending the report.", "error");
+      return;
+    }
+
+    const reportTypeId = activeStage?.emailTemplate?.report_type_id ?? reportConfig?.reportTypeId;
+    const body = resolveReportBodyHtml(reportDraft.message, "") || "";
+    const requestBody = buildSendReportRequestBody(
+      {
+        call_id: resolvedCallId,
+        report_type_id: reportTypeId,
+        from_email: String(reportDraft.from || "").trim(),
+        to_email: toEmail,
+        cc_emails: String(reportDraft.cc || "").trim(),
+        subject: String(reportDraft.subject || "").trim(),
+        body,
+        message: body,
+      },
+      reportDraft.attachments
+    );
+
+    submittingRef.current = true;
+    setSubmitting("report");
+    try {
+      const response = await arrivalService.sendReport(requestBody);
+      const resBody = response?.data;
+      if (resBody?.status === "error" || resBody?.status === false) {
+        throw new Error(resBody?.message || "Unable to send the report.");
+      }
+      if (aliveRef.current) notify(resBody?.message || "Report sent successfully.", "success");
+    } catch (error) {
+      if (aliveRef.current) notify(getApiErrorMessage(error, "Failed to send the report."), "error");
+    } finally {
+      submittingRef.current = false;
+      if (aliveRef.current) setSubmitting(null);
+    }
+  };
+
   // ---- Field rendering ----
   const renderInput = (field) => {
     const id = field.field_id;
@@ -772,7 +821,7 @@ function TemplateStageForm({
                     onAttachmentsChange={(list) => handleReportDraftChange("attachments", list)}
                     billingEntityId={activeDetail?.template?.billing_entity_id}
                     onChange={handleReportDraftChange}
-                    onSend={() => submit({ withReport: true })}
+                    onSend={sendReport}
                     isSending={submitting === "report"}
                     isViewOnly={isViewOnly}
                     canSend={canSendReport}
