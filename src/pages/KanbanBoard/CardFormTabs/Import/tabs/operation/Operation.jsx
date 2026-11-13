@@ -11,7 +11,7 @@ import {
   resolveTemplateCallTypeId,
   resolveTemplateTabFieldOptionValue,
 } from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callDetailTemplate";
-import CardTabListLoading from "@/components/CardTabListLoading";
+import StageFormSkeleton from "./components/StageFormSkeleton";
 import stageTimeMappingService from "@/services/stageTimeMappingService";
 import preArrivalInfoService from "@/services/preArrivalInfoService";
 import "@/design/scss/operations.scss";
@@ -678,7 +678,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
             />
           )}
           {isStageTab(activeOperationTab) && callDetailLoading && (
-            <CardTabListLoading message="Loading stage details..." cardColor={cardColor} />
+            <StageFormSkeleton />
           )}
           {isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.PRE_ARRIVAL &&
             renderTemplateStage(OPERATION_TABS.PRE_ARRIVAL, {

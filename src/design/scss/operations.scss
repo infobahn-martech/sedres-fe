@@ -2256,7 +2256,6 @@ $send-report-optional: var(--text-muted);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: operation-field-reveal 0.4s ease both;
 
   &::before {
     content: "";
@@ -2775,40 +2774,6 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
 
 .operation-form-card {
   min-width: 0;
-  opacity: 0;
-}
-
-.operation-form-card--revealed {
-  animation: operation-card-reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.operation-form-card--revealed > .cf-field,
-.operation-form-card--revealed > .operation-datetime-card,
-.operation-form-card--revealed .operation-email-preview-body > .cf-field {
-  opacity: 0;
-  animation: operation-field-reveal 0.4s ease both;
-  animation-delay: calc(var(--reveal-index, 0) * 0.05s + 0.1s);
-}
-
-@for $i from 1 through 14 {
-  .operation-form-card--revealed > .cf-field:nth-child(#{$i}),
-  .operation-form-card--revealed > .operation-datetime-card:nth-child(#{$i}),
-  .operation-form-card--revealed .operation-email-preview-body > .cf-field:nth-child(#{$i}) {
-    animation-delay: #{0.1 + ($i * 0.045)}s;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-
-  .operation-form-card,
-  .operation-form-card--revealed,
-  .operation-form-card--revealed > .cf-field,
-  .operation-form-card--revealed > .operation-datetime-card,
-  .operation-form-card--revealed .operation-email-preview-body > .cf-field {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
 }
 
 .operation-form-card--has-action {

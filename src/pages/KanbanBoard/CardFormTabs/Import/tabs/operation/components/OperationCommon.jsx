@@ -67,41 +67,12 @@ FormField.propTypes = {
 
 export const OperationFormCard = ({ className = "", children, topRightAction = null }) => {
   const hasAction = Boolean(topRightAction);
-  const cardRef = useRef(null);
-  const [isRevealed, setIsRevealed] = useState(false);
 
-  useEffect(() => {
-    const node = cardRef.current;
-    if (!node || typeof IntersectionObserver === "undefined") {
-      setIsRevealed(true);
-      return undefined;
-    }
-
-    // Safety net: never leave the card invisible if the observer is slow/misses.
-    const fallbackTimer = window.setTimeout(() => setIsRevealed(true), 900);
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsRevealed(true);
-          observer.disconnect();
-          window.clearTimeout(fallbackTimer);
-        }
-      },
-      { threshold: 0.1 }
-    );
-    observer.observe(node);
-
-    return () => {
-      observer.disconnect();
-      window.clearTimeout(fallbackTimer);
-    };
-  }, []);
-
+  // Renders immediately with no staggered field reveal — the stage
+  // skeleton (StageFormSkeleton) covers the loading state instead.
   return (
     <div
-      ref={cardRef}
-      className={`operation-form-card${hasAction ? " operation-form-card--has-action" : ""}${isRevealed ? " operation-form-card--revealed" : ""} ${className}`.trim()}
+      className={`operation-form-card${hasAction ? " operation-form-card--has-action" : ""} ${className}`.trim()}
     >
       {hasAction ? <div className="operation-form-card-header-action">{topRightAction}</div> : null}
       {children}
