@@ -21,7 +21,7 @@ import ServiceSheetModal from "../components/board/ServiceSheetModal";
 import FinalInvoiceModal from "../components/board/FinalInvoiceModal";
 import SccReviewModal from "../components/board/SccReviewModal";
 import DispatchProofReviewModal from "../components/board/DispatchProofReviewModal";
-import { isLamprellAlgihazDispatchProofColumn, isLntWorkflow, isMultiCardDispatchProofColumn, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
+import { isLamprellAlgihazDispatchProofColumn, isLntReadyToSubmit, isLntWorkflow, isMultiCardDispatchProofColumn, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -51,6 +51,8 @@ import useBatchMoveStore from "../../../store/batchMoveStore";
 import useArInvoiceReviewStore from "../../../store/arInvoiceReviewStore";
 import useZamilMarineArInvoiceStore from "../../../store/zamilMarineArInvoiceStore";
 import useZamilCrewArInvoiceStore from "../../../store/zamilCrewArInvoiceStore";
+import useLntArInvoiceStore from "../../../store/lntArInvoiceStore";
+import lntArInvoiceService from "../../../services/lntArInvoiceService";
 import useZamilMarinePoRequestStore from "../../../store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "../../../store/zamilMarinePoUploadStore";
 import useLamprellAlgihazSoApprovalStore from "../../../store/lamprellAlgihazSoApprovalStore";
@@ -167,6 +169,17 @@ const sccDocumentUploadFields = [
   {
     name: SCC_APPROVAL_EMAIL_FIELD_NAME,
     label: "Approval email",
+    accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
+    formatsHint: "PDF, EML, MSG, JPG, PNG",
+    multiple: false,
+  },
+];
+/* Operator board L&T "Approval Received": only the approved SCCs (PDF) and an optional approval email are taken. */
+const approvedSccUploadFields = [
+  { name: SCC_FIELD_NAME, label: "Approved SCCs", accept: ".pdf", formatsHint: "PDF", multiple: true, required: true },
+  {
+    name: SCC_APPROVAL_EMAIL_FIELD_NAME,
+    label: "Approval email (optional)",
     accept: ".pdf,.eml,.msg,.jpg,.jpeg,.png",
     formatsHint: "PDF, EML, MSG, JPG, PNG",
     multiple: false,
@@ -1066,7 +1079,7 @@ export default function KanbanBoardPage() {
      (loose cards have no batch header to carry the button). McDermott's "Issue AR Invoice" uses it
      too, with its workflowId: its invoice review is read per workflow. */
   const handleColumnUploadInvoice = useCallback(
-    (cards, { workflowId = null, isZamilCrew = false, isZamilMarine = false } = {}) => {
+    (cards, { workflowId = null, isZamilCrew = false, isZamilMarine = false, isLnt = false } = {}) => {
       if (!cards?.length) return;
       const batchNumbers = [...new Set(cards.map((card) => batchByCardId[card.id]).filter(Boolean))];
       handleBatchUploadInvoice({
@@ -1076,6 +1089,7 @@ export default function KanbanBoardPage() {
         workflowId,
         isZamilCrew,
         isZamilMarine,
+        isLnt,
       });
     },
     [batchByCardId, handleBatchUploadInvoice]
@@ -1085,6 +1099,7 @@ export default function KanbanBoardPage() {
   const openArInvoiceReviewModal = useArInvoiceReviewStore((state) => state.openArInvoiceReviewModal);
   const openZamilCrewArInvoiceReviewModal = useZamilCrewArInvoiceStore((state) => state.openArInvoiceReviewModal);
   const openZamilMarineArInvoiceReviewModal = useZamilMarineArInvoiceStore((state) => state.openArInvoiceReviewModal);
+  const openLntArInvoiceReviewModal = useLntArInvoiceStore((state) => state.openArInvoiceReviewModal);
 
   /* Bulk AR invoice upload for the ticked cards: the backend matches each PDF to a card's sales
      order. Files go in chunks of AR_INVOICE_FILES_PER_REQUEST; each response carries the latest
@@ -1097,12 +1112,21 @@ export default function KanbanBoardPage() {
       const callIds = getBatchCallIds(selectedInvoiceBatch);
       const isZamilCrew = Boolean(selectedInvoiceBatch?.isZamilCrew);
       const isZamilMarine = Boolean(selectedInvoiceBatch?.isZamilMarine);
-      const uploadService = isZamilMarine ? zamilMarineArInvoiceService : isZamilCrew ? zamilCrewService : daService;
-      const openReviewModal = isZamilMarine
-        ? openZamilMarineArInvoiceReviewModal
-        : isZamilCrew
-          ? openZamilCrewArInvoiceReviewModal
-          : openArInvoiceReviewModal;
+      const isLnt = Boolean(selectedInvoiceBatch?.isLnt);
+      const uploadService = isLnt
+        ? lntArInvoiceService
+        : isZamilMarine
+          ? zamilMarineArInvoiceService
+          : isZamilCrew
+            ? zamilCrewService
+            : daService;
+      const openReviewModal = isLnt
+        ? openLntArInvoiceReviewModal
+        : isZamilMarine
+          ? openZamilMarineArInvoiceReviewModal
+          : isZamilCrew
+            ? openZamilCrewArInvoiceReviewModal
+            : openArInvoiceReviewModal;
       if (!callIds.length) {
         notify("The selected cards have no call to upload invoices for", "error");
         return;
@@ -1192,6 +1216,7 @@ export default function KanbanBoardPage() {
       openArInvoiceReviewModal,
       openZamilCrewArInvoiceReviewModal,
       openZamilMarineArInvoiceReviewModal,
+      openLntArInvoiceReviewModal,
       refetchBoard,
     ]
   );
@@ -1361,13 +1386,15 @@ export default function KanbanBoardPage() {
   const [showSccUploadModal, setShowSccUploadModal] = useState(false);
   const [selectedSccUploadCards, setSelectedSccUploadCards] = useState([]);
   const [selectedSccUploadWorkflowId, setSelectedSccUploadWorkflowId] = useState(null);
+  const [isApprovedSccUpload, setIsApprovedSccUpload] = useState(false);
   const [isUploadingSccDocuments, setIsUploadingSccDocuments] = useState(false);
   const openSccReviewModal = useSccReviewStore((state) => state.openSccReviewModal);
 
-  const handleUploadSccDocumentsClick = useCallback((cards, { workflowId = null } = {}) => {
+  const handleUploadSccDocumentsClick = useCallback((cards, { workflowId = null, isApprovedScc = false } = {}) => {
     if (!cards?.length) return;
     setSelectedSccUploadCards(cards);
     setSelectedSccUploadWorkflowId(workflowId);
+    setIsApprovedSccUpload(isApprovedScc);
     setShowSccUploadModal(true);
   }, []);
 
@@ -1375,12 +1402,14 @@ export default function KanbanBoardPage() {
     setShowSccUploadModal(false);
     setSelectedSccUploadCards([]);
     setSelectedSccUploadWorkflowId(null);
+    setIsApprovedSccUpload(false);
   }, []);
 
   const handleUploadSccDocuments = useCallback(
     async (filesByField) => {
       const cards = selectedSccUploadCards;
       const workflowId = selectedSccUploadWorkflowId;
+      const isApprovedScc = isApprovedSccUpload;
       const callIds = getBatchCallIds({ cards });
       if (!callIds.length) {
         notify("The selected cards have no call to upload SCC documents for", "error");
@@ -1420,7 +1449,7 @@ export default function KanbanBoardPage() {
         handleCloseSccUpload();
         openSccReviewModal(
           cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
-          { notPlacedFiles: data.data?.not_placed_files ?? [], workflowId }
+          { notPlacedFiles: data.data?.not_placed_files ?? [], workflowId, isApprovedScc }
         );
       } finally {
         setIsUploadingSccDocuments(false);
@@ -1429,6 +1458,7 @@ export default function KanbanBoardPage() {
     [
       selectedSccUploadCards,
       selectedSccUploadWorkflowId,
+      isApprovedSccUpload,
       getBatchCallIds,
       removeCardSelectionId,
       handleCloseSccUpload,
@@ -1927,9 +1957,11 @@ export default function KanbanBoardPage() {
   );
   const isLntDispatchProofUpload = useCallback(
     (cards) =>
-      cards.some((card) =>
-        isLntWorkflow(workflows.find((wf) => String(wf.id) === String(cardsById[card.id]?.workflow_id)))
-      ),
+      cards.some((card) => {
+        const boardCard = cardsById[card.id];
+        const workflow = workflows.find((wf) => String(wf.id) === String(boardCard?.workflow_id));
+        return isLntWorkflow(workflow) || isLntReadyToSubmit(workflow?.title, workflow?.columns?.[boardCard?.columnId]?.title);
+      }),
     [workflows, cardsById]
   );
 
@@ -2101,6 +2133,7 @@ export default function KanbanBoardPage() {
         notify(`${fileCount ?? ""} ${fileCount === 1 ? "file" : "files"} downloaded`.trim(), "success");
 
         (data.data?.moved_to_be_uploaded ?? []).forEach((card) => removeCardSelectionId(String(card.card_id)));
+        (data.data?.card_positions ?? []).forEach((card) => removeCardSelectionId(String(card.card_id)));
 
         /* Lamprell UAE: cards da/portal_files did not move itself (any moved_* list in its response) are moved to
            the next column with da/advance_stage once the zip is downloaded, so no card is moved twice. */
@@ -2861,6 +2894,7 @@ export default function KanbanBoardPage() {
       <ArInvoiceReviewModal onConfirmed={refetchBoard} />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilCrewArInvoiceStore} />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilMarineArInvoiceStore} />
+      <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useLntArInvoiceStore} />
       <SignatureCheckModal
         onConfirmed={(result) => {
           [...(result?.moved_to_da ?? []), ...(result?.returned_to_scc_received ?? [])].forEach((card) => removeCardSelectionId(String(card.card_id)));
@@ -2925,9 +2959,13 @@ export default function KanbanBoardPage() {
         ].join(", ")}
         selectedCardCount={selectedSccUploadCards.length}
         title="Upload SCC Documents"
-        subtitle="Attach the signed SOs, SCCs and approval email for the selected cards"
+        subtitle={
+          isApprovedSccUpload
+            ? "Attach the approved SCCs and, if you have it, the approval email for the selected cards"
+            : "Attach the signed SOs, SCCs and approval email for the selected cards"
+        }
         submitLabel="Upload"
-        fields={sccDocumentUploadFields}
+        fields={isApprovedSccUpload ? approvedSccUploadFields : sccDocumentUploadFields}
       />
 
       <SccReviewModal onConfirmed={refetchBoard} />

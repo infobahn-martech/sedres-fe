@@ -49,7 +49,7 @@ export function AddEditCustomerPricing({ showModal, closeModal, onSuccess }) {
     const renderHeader = () => (
         <>
             <h1 className="modal-title">
-                {showModal?._id ? "Edit Customer Pricing" : "Add Customer Pricing"}
+                {showModal?._id ? "Edit Client Tariff" : "Add Client Tariff"}
             </h1>
         </>
     );

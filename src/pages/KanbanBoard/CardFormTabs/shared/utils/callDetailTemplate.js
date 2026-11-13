@@ -42,7 +42,6 @@ const TOP_TAB_BY_KEY = {
   kpi: "KPI",
   document_library: "Document Library",
   activity_log: "Activity Log",
-  da: "DA",
 };
 
 // Operation subtabs: template tab_key → OPERATION_TABS id (see operationConstants.js).

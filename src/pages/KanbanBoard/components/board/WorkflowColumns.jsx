@@ -26,7 +26,7 @@ import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntSubmittedToDa, isLntReadyToSubmit, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
+import { isApprovalReceivedColumnTitle, isApprovalRequestedColumnTitle, isLntSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isLntInvoiceIssued, isLntReadyToSubmit, isDaSupervisorWorkflow, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -178,7 +178,10 @@ const getInvoiceAction = (workflow, column) => {
     return null;
   }
   if (ISSUE_AR_INVOICE_COLUMN_PATTERN.test(title)) return "issueArInvoice";
+  /* L&T DA "Received from Ops": the bulk SAP invoice upload, with L&T's own upload and review store. */
+  if (isLntReceivedFromOps(workflow?.title, title)) return "issueArInvoice";
   if (isLntSubmittedToDa(workflow?.title, title)) return "checkSignatures";
+  if (isLntInvoiceIssued(workflow?.title, title)) return "downloadPortalFiles";
   if (SCC_RECEIVED_COLUMN_PATTERN.test(title)) return "uploadSccDocuments";
   /* Zamil Crew uploads from each batch header (BatchGroup), so its column header has no upload button. */
   if (CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test(title)) return isZamilWorkflow(workflow) ? null : "issueArInvoice";
@@ -224,10 +227,13 @@ const INVOICE_ACTION_BUTTONS = {
   issueArInvoice: { label: "Upload Invoices", icon: <FiUploadCloud size={16} aria-hidden /> },
   uploadPos: { label: "Upload POs", icon: <FiUploadCloud size={16} aria-hidden /> },
   uploadSccDocuments: { label: "Upload SCC Documents", icon: <FiUploadCloud size={16} aria-hidden /> },
+  uploadApprovedSccDocuments: { label: "Upload SCC Documents", icon: <FiUploadCloud size={16} aria-hidden /> },
   uploadSrf: { label: "Upload SRF", icon: <FiUploadCloud size={16} aria-hidden /> },
   sendInvoice: { label: "Send Invoice", icon: <FiSend size={16} aria-hidden /> },
   sendSccApproval: { label: "Send for SCC Approval", icon: <FiSend size={16} aria-hidden /> },
+  sendSccForApproval: { label: "Send SCC for approval", icon: <FiSend size={16} aria-hidden /> },
   downloadInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
+  downloadPortalFiles: { label: "Download portal files", icon: <FiDownload size={16} aria-hidden /> },
   downloadAndMoveInvoices: { label: "Download Invoices", icon: <FiDownload size={16} aria-hidden /> },
   uploadDispatchProof: { label: "Upload Dispatch Proof", icon: <FiUpload size={16} aria-hidden /> },
   moveCards: { label: "Move the Cards", icon: <FiArrowRight size={16} aria-hidden /> },
@@ -650,10 +656,32 @@ export default function WorkflowColumns({
                 0
               );
               const wipDisplay = String(cardCount);
-              const invoiceAction = isGrouped ? null : getInvoiceAction(workflow, firstColumn);
-              const invoiceCards = invoiceAction
-                ? getColumnCards(group.colKeys[0]).filter((card) => selectedActionCardIds?.includes(card.id))
-                : [];
+              /* Operator board, ticked cards of the L&T swimlane only (the other clients' lanes keep their own
+                 handling): "Approval Requested" shows "Send SCC for approval", "Approval Received" shows
+                 "Upload SCC Documents" for the approved SCCs. */
+              const lntLaneIds = swimlaneOrder.filter((laneId) => isLntSwimlane(workflow.swimlanes?.[laneId]));
+              /* DA Supervisor "Received from Ops": only the L&T swimlane's ticks count for L&T's SAP invoice upload. */
+              const isLntUploadColumn = !isGrouped && isLntReceivedFromOps(workflow?.title, firstColumn?.title);
+              /* DA Supervisor "Invoice Issued": "Download portal files" counts only the L&T swimlane's ticks too. */
+              const isLntDownloadColumn =
+                !isGrouped && isDaSupervisorWorkflow(workflow?.title) && isLntInvoiceIssued(workflow?.title, firstColumn?.title);
+              /* DA Supervisor "Ready to Submit": the portal submission proof upload counts only the L&T swimlane's ticks. */
+              const isLntSubmitColumn =
+                !isGrouped && isDaSupervisorWorkflow(workflow?.title) && isLntReadyToSubmit(workflow?.title, firstColumn?.title);
+              let lntLaneAction = null;
+              if (!isGrouped && lntLaneIds.length > 0) {
+                if (isApprovalRequestedColumnTitle(firstColumn.title)) lntLaneAction = "sendSccForApproval";
+                else if (isApprovalReceivedColumnTitle(firstColumn.title)) lntLaneAction = "uploadApprovedSccDocuments";
+              }
+              let invoiceAction = null;
+              if (lntLaneAction) invoiceAction = lntLaneAction;
+              else if (!isGrouped) invoiceAction = getInvoiceAction(workflow, firstColumn);
+              const actionSourceCards = lntLaneAction || isLntUploadColumn || isLntDownloadColumn || isLntSubmitColumn
+                ? lntLaneIds.flatMap((laneId) => getSwimlaneColumnCards(workflow, laneId, group.colKeys[0]))
+                : invoiceAction
+                  ? getColumnCards(group.colKeys[0])
+                  : [];
+              const invoiceCards = actionSourceCards.filter((card) => selectedActionCardIds?.includes(card.id));
               /* "Consolidated": ticked cards whose submission documents are not created yet get "Create
                  Submission Documents"; creating them opens the Final Submission Email. Ticked cards that
                  already have a submission get "Send For Final Submission", which reopens that email: it is
@@ -692,7 +720,7 @@ export default function WorkflowColumns({
                 invoiceAction === "requestPo" ||
                 invoiceAction === "checkInvoice" ||
                 invoiceAction === "submitViaPortal" ||
-                (invoiceAction === "uploadDispatchProof" && !isLntWorkflow(workflow) && !isMultiCardDispatchProofColumn(workflow, firstColumn?.title))
+                (invoiceAction === "uploadDispatchProof" && !isLntWorkflow(workflow) && !isLntSubmitColumn && !isMultiCardDispatchProofColumn(workflow, firstColumn?.title))
                   ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
               const invoiceActionHandlers = {
                 upload: onColumnUploadInvoice,
@@ -701,6 +729,7 @@ export default function WorkflowColumns({
                     workflowId: workflow.workflow_id ?? workflow.id,
                     isZamilCrew: isZamilWorkflow(workflow) && !isZamilMarineWorkflow(workflow),
                     isZamilMarine: isZamilMarineWorkflow(workflow),
+                    isLnt: isLntUploadColumn,
                   }),
                 uploadPos: (cards) =>
                   onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
@@ -708,6 +737,8 @@ export default function WorkflowColumns({
                   onUploadSrf?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
                 uploadSccDocuments: (cards) =>
                   onUploadSccDocuments?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
+                uploadApprovedSccDocuments: (cards) =>
+                  onUploadSccDocuments?.(cards, { workflowId: workflow.workflow_id ?? workflow.id, isApprovedScc: true }),
                 sendInvoice: ([card, ...queuedCards]) => onColumnSendInvoice?.(card, {
                     isFinalInvoice: isSubseaWorkflow(workflow),
                     isZamilCrew: isZamilCrewColumn,
@@ -715,6 +746,7 @@ export default function WorkflowColumns({
                     queuedCards: isZamilCrewColumn ? queuedCards : [],
                   }),
                 sendSccApproval: onColumnSendSccApproval,
+                sendSccForApproval: onColumnSendSccApproval,
                 requestPo: onColumnRequestPo,
                 requestZamilMarinePo: handleZamilMarinePoRequest,
                 requestLamprellUaePo: handleZamilMarinePoRequest,
@@ -722,6 +754,7 @@ export default function WorkflowColumns({
                 uploadLamprellUaePo: handleLamprellUaePoUpload,
                 merge: onColumnMergeInvoice,
                 downloadInvoices: onColumnDownloadInvoices,
+                downloadPortalFiles: onColumnDownloadInvoices,
                 downloadAndMoveInvoices: (cards) => onColumnDownloadInvoices?.(cards, { moveAfterDownload: true }),
                 uploadDispatchProof: onUploadDispatchProof,
                 moveCards: onColumnMoveCards,
@@ -887,6 +920,7 @@ export default function WorkflowColumns({
                       <SwimlaneColumnCell
                         key={`${laneId}-${column.id}`}
                         laneId={laneId}
+                        laneTitle={lane.title}
                         column={column}
                         cards={cards}
                         setSelectedCard={onSelectCard}

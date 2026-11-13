@@ -74,16 +74,59 @@ const SUBMITTED_TO_DA_COLUMN_PATTERN = /^submitted\s+to\s+f?da$/i;
 
 export const isLntWorkflow = (workflow) => LNT_WORKFLOW_PATTERN.test(String(workflow?.title ?? ""));
 
+const RECEIVED_FROM_OPS_COLUMN_PATTERN = /^received\s+from\s+ops$/i;
+
+const DA_SUPERVISOR_WORKFLOW_PATTERN = /da\s+supervisor/i;
+
+/* The DA Supervisor "Received from Ops" column: the cards of its L&T swimlane are ticked for the bulk SAP invoice upload and review. */
+export const isLntReceivedFromOps = (workflowTitle, columnTitle) =>
+  DA_SUPERVISOR_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
+  RECEIVED_FROM_OPS_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
 /* The L&T "Submitted to DA" (Operations board: "Submitted to FDA") column, whose cards get the SCC signature check. */
 export const isLntSubmittedToDa = (workflowTitle, columnTitle) =>
   LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
   SUBMITTED_TO_DA_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
+const APPROVAL_REQUESTED_COLUMN_PATTERN = /^approval\s+requested$/i;
+
+export const isApprovalRequestedColumnTitle = (columnTitle) =>
+  APPROVAL_REQUESTED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
+/* Operator board: L&T is a swimlane of the shared Operator workflow. Its cards on "Approval Requested" are
+   ticked for "Send SCC for approval" (no Approve / Reject; the backend moves them to the next column). */
+export const isLntSwimlane = (lane) => LNT_WORKFLOW_PATTERN.test(String(lane?.title ?? ""));
+
+const APPROVAL_RECEIVED_COLUMN_PATTERN = /^approval\s+received$/i;
+
+export const isApprovalReceivedColumnTitle = (columnTitle) =>
+  APPROVAL_RECEIVED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
+/* Operator board L&T "Approval Received": its cards are ticked for the bulk "Upload SCC Documents" (approved
+   SCCs and an optional approval email); the cards with a signed SCC then move on to the DA board. */
+export const isLntApprovalReceivedCell = (laneTitle, columnTitle) =>
+  isLntSwimlane({ title: laneTitle }) && isApprovalReceivedColumnTitle(columnTitle);
+
+export const isLntApprovalRequestedCell = (laneTitle, columnTitle) =>
+  isLntSwimlane({ title: laneTitle }) && isApprovalRequestedColumnTitle(columnTitle);
+
+const INVOICE_ISSUED_COLUMN_PATTERN = /^invoice\s+issued$/i;
+
+export const isDaSupervisorWorkflow = (workflowTitle) => DA_SUPERVISOR_WORKFLOW_PATTERN.test(String(workflowTitle ?? ""));
+
+/* The L&T DA "Invoice Issued" column (an L&T workflow, or the L&T swimlane of the DA Supervisor workflow):
+   "Download portal files" downloads the ticked cards' portal files as a zip and the backend moves the cards
+   to the next column. */
+export const isLntInvoiceIssued = (workflowTitle, columnTitle) =>
+  (LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) || isDaSupervisorWorkflow(workflowTitle)) &&
+  INVOICE_ISSUED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
 const READY_TO_SUBMIT_COLUMN_PATTERN = /^ready\s+to\s+submit$/i;
 
-/* The L&T DA "Ready to Submit" column: its ticked cards take the bulk portal submission proof upload. */
+/* The L&T DA "Ready to Submit" column (an L&T workflow, or the L&T swimlane of the DA Supervisor workflow): its
+   ticked cards take the bulk portal submission proof upload. */
 export const isLntReadyToSubmit = (workflowTitle, columnTitle) =>
-  LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
+  (LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) || isDaSupervisorWorkflow(workflowTitle)) &&
   READY_TO_SUBMIT_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
 const MCDERMOTT_WORKFLOW = "MCDERMOTT";

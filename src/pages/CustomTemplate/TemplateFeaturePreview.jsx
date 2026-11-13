@@ -11,6 +11,7 @@ import { CREW_MANAGEMENT_SUBTABS } from "../KanbanBoard/CardFormTabs/Import/tabs
 import SalesOrderList from "../KanbanBoard/CardFormTabs/Import/tabs/salesOrder/SalesOrderList";
 import { ReportsLibrary } from "../KanbanBoard/CardFormTabs/Import/tabs/reports/Reports";
 import ActivityLog from "../KanbanBoard/CardFormTabs/Import/tabs/activityLog/ActivityLog";
+import Approval from "../KanbanBoard/CardFormTabs/Export/tabs/approval/Approval";
 import { mapSalesOrderResponse } from "../../shared/helpers/mapSalesOrderResponse";
 import "../../design/scss/checklist.scss";
 
@@ -281,7 +282,43 @@ const NotesPreview = () => <Notes card={{ notes: [] }} />;
 
 const ActivityLogPreview = () => <ActivityLog card={{}} sampleEntries={SAMPLE_ACTIVITY} />;
 
+// Sample export approval in the get_details shape. Both stages are proceeded so
+// all three party cards and the Credit Controller / Manager / CEO cards render.
+const SAMPLE_EXPORT_APPROVAL = {
+    basic_details: {},
+    vessel_owner: {
+        owner_details: "PJS OFFSHORE",
+        no_of_vessels_chartered: 120,
+    },
+    vessel_principal: {
+        principal_details: "MCD",
+        no_of_vessels_chartered: 130,
+    },
+    vessel_charterer: {
+        charterer_details: "Dialog Jubail Supply Base Co. Ltd.",
+        no_of_vessels_chartered: 132,
+    },
+    credit_controller: {
+        status: "proceed_to_operator",
+        remarks: "Credit history verified. Recommended for approval.",
+    },
+    manager_ofm: {
+        status: "proceed_to_ceo",
+        comments: "Reviewed and forwarded to the CEO.",
+    },
+    ceo: {
+        status: null,
+        comments: "",
+    },
+    documents: {},
+};
+
+// The real card's Export Approval tab in preview mode: previewDetails replaces
+// the store, and with no call id it skips every fetch and save.
+const ExportApprovalPreview = () => <Approval card={{}} previewDetails={SAMPLE_EXPORT_APPROVAL} />;
+
 const PREVIEWS = {
+    "export-approval": ExportApprovalPreview,
     "crew-immigration": CrewImmigrationPreview,
     checklist: ChecklistPreview,
     husbandry: HusbandryPreview,

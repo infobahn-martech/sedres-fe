@@ -127,7 +127,28 @@ const getGrnByPO = (purchaseOrderId) =>
  */
 const updateSalesOrder = (payload) => Gateway.post("sales_order/update_sales_order", payload);
 
+/**
+ * Default line items suggested for a newly created call.
+ * @param {string|number} callId
+ * @returns {Promise<{ data: { status: string, data: { call_id: number, sales_order_id: number,
+ *   sales_order_no: string, entity_id: number, port_id: number, call_type_id: number, currency: string,
+ *   conversion_rate: number, items: Array<{ tariff_id: number, so_item_id: number|null, item_code: string,
+ *   item_name: string, unit_price: number, tax_percentage: number, total_price: number }>,
+ *   totals: { subtotal: number, total_tax: number, grand_total: number } } } }>}
+ * so_item_id is null for an item that is not on the sales order yet.
+ */
+const getDefaultLineItems = (callId) =>
+  Gateway.get(`sales_order/get_default_line_items/${encodeURIComponent(String(callId))}`);
+
+/**
+ * Adds a tariff item to the call's sales order.
+ * @param {{ call_id: string|number, tariff_id: string|number }} payload
+ */
+const addCallLineItem = (payload) => Gateway.post("sales_order/add_call_line_item", payload);
+
 export default {
+  getDefaultLineItems,
+  addCallLineItem,
   getSoItemsByCall,
   generateWorkOrder,
   getWorkOrder,

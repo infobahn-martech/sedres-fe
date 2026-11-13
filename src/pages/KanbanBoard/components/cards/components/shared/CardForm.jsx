@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import salesOrderService from "@/services/salesOrderService";
 import kanbanBoardService from "@/services/kanbanBoardService";
 import callFileService from "@/services/callFileService";
+import groService from "@/services/groService";
+import { resolveGroCardId } from "../GRO/User/groCardUtils";
 import daService from "@/services/daService";
 import { mapSalesOrderResponse } from "@/shared/helpers/mapSalesOrderResponse";
 import { useLocation } from "react-router-dom";
@@ -32,7 +34,7 @@ import {
 } from "@/shared/constants/permissions";
 
 // Import Tab Components
-import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Reports, KPI, Comments, Subtasks, Notes, DA, ActivityLog } from "@/pages/KanbanBoard/CardFormTabs/Import";
+import { General, Operation, Husbandry, DocumentLibrary, Invoice, SalesOrder, Reports, KPI, Comments, Subtasks, Notes, ActivityLog } from "@/pages/KanbanBoard/CardFormTabs/Import";
 import { Approval } from "@/pages/KanbanBoard/CardFormTabs/Export";
 import { DEFAULT_PRE_ARRIVAL_DOCUMENT_HANDLING } from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/operation/preArrivalDocumentHandling";
 import { isExportCall } from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callTypes";
@@ -46,6 +48,7 @@ import { TemplateTabPanel } from "@/pages/KanbanBoard/CardFormTabs/shared/compon
 import CardFormLoadingSkeleton from "@/pages/KanbanBoard/CardFormTabs/shared/components/CardFormLoadingSkeleton";
 import NavTabButton from "@/components/NavTabButton";
 import GROCardView from "../GRO/User/GROCardView";
+import GroCardViewSkeleton from "../GRO/User/GroCardViewSkeleton";
 import CoordinatorTransportCardView from "../CoordinatorTransport/CoordinatorTransportCardView";
 import CustomCardView from "../Custom/User/CustomCardView";
 import MWPCardView from "../MWP/User/MWPCardView";
@@ -71,17 +74,6 @@ const ALL_TOP_TABS = [
 ];
 
 const ALL_ENABLED_TABS = ["Appointment Details", "Operation", "Husbandry", "Sales Order", "Comments", "Subtasks", "Notes", "Reports", "Document Library", "Activity Log"];
-
-// "DA" tab is appended to the default tab bar only for viewers the backend grants
-// KANBAN_CARD:DA - see showDAOnlyTab.
-const DA_ONLY_TAB = "DA";
-
-// Insert "DA" before the trailing "Activity Log" tab so Activity Log always stays last.
-const withDAOnlyTab = (tabs) => {
-  const activityIndex = tabs.indexOf("Activity Log");
-  if (activityIndex < 0) return [...tabs, DA_ONLY_TAB];
-  return [...tabs.slice(0, activityIndex), DA_ONLY_TAB, ...tabs.slice(activityIndex)];
-};
 
 const EXPORT_ONLY_TABS = ["Export Approval"];
 
@@ -1820,8 +1812,6 @@ const renderTabContent = (
         return <Subtasks {...commonProps} />;
       case "Notes":
         return <Notes {...commonProps} />;
-      case "DA":
-        return <DA {...commonProps} />;
       case "Activity Log":
         return <ActivityLog {...commonProps} />;
       default:
@@ -1923,23 +1913,33 @@ function CardForm({
   const needsGroViewAppointmentTypeCheck = isGroSupervisorRoleViewer;
   const [groViewAppointmentType, setGroViewAppointmentType] = useState(null);
   const [isGroViewCallTypeLoading, setIsGroViewCallTypeLoading] = useState(false);
+  // The get_call_detail_by_id response fetched here is handed to GROCardView (prefetchedDetail)
+  // so it binds from it instead of requesting the same API again once it mounts.
+  const [groPrefetchedDetail, setGroPrefetchedDetail] = useState(null);
+  const groCheckCallIdRaw = card?.call_id ?? card?.callId;
+  const groCheckCallId = groCheckCallIdRaw != null ? String(groCheckCallIdRaw).trim() : "";
+  const groCheckCardIdRaw = resolveGroCardId(card);
+  const groCheckCardId = groCheckCardIdRaw != null ? String(groCheckCardIdRaw).trim() : "";
   useEffect(() => {
     if (!show || isAddMode || !needsGroViewAppointmentTypeCheck) {
       setIsGroViewCallTypeLoading(false);
       return undefined;
     }
-    const callIdRaw = card?.call_id ?? card?.callId;
-    const callId = callIdRaw != null ? String(callIdRaw).trim() : "";
-    if (!callId) {
+    if (!groCheckCallId || !groCheckCardId) {
       setIsGroViewCallTypeLoading(false);
       return undefined;
     }
     let cancelled = false;
     setIsGroViewCallTypeLoading(true);
-    callFileService
-      .getCallDetail(callId)
-      .then(({ data }) => {
-        if (!cancelled) setGroViewAppointmentType(data?.data?.appointment_type ?? null);
+    setGroPrefetchedDetail(null);
+    // Light common bind API instead of the heavy get_call_detail.
+    groService
+      .getCallDetailById(groCheckCallId, groCheckCardId)
+      .then((res) => {
+        if (cancelled) return;
+        const data = res?.data?.data;
+        setGroViewAppointmentType(data?.call?.appointment_type ?? data?.appointment_type ?? null);
+        setGroPrefetchedDetail({ callId: groCheckCallId, cardId: groCheckCardId, response: res });
       })
       .catch(() => {
         if (!cancelled) setGroViewAppointmentType(null);
@@ -1950,8 +1950,10 @@ function CardForm({
     return () => {
       cancelled = true;
     };
-  }, [show, isAddMode, needsGroViewAppointmentTypeCheck, card?.call_id, card?.callId]);
-  const isVesselAppointmentForGroView = String(groViewAppointmentType ?? "").trim() === "vessel";
+  }, [show, isAddMode, needsGroViewAppointmentTypeCheck, groCheckCallId, groCheckCardId]);
+  // get_call_detail_by_id returns "Vessel" (capitalised) — compare case-insensitively.
+  const isVesselAppointmentForGroView =
+    String(groViewAppointmentType ?? "").trim().toLowerCase() === "vessel";
   // While the appointment type is still loading, hold off rendering either the GRO
   // view or the tab view — otherwise a GRO-role viewer briefly sees the wrong one
   // flash before this resolves and the real view swaps in.
@@ -2027,13 +2029,6 @@ function CardForm({
   // Enable DA mode only for explicit DA routes, not generic /kanban-board/:boardId.
   const isDAModule = /^\/kanban-board\/(centralized-da-desk|jubail-operations|rastanura-dammam-operations|coordinator-transport|ras-tanura-operations)$/.test(location.pathname);
 
-  // "DA" tab visibility is backend-driven, never role_id: get_full_board returns a
-  // per-card da_board flag (1 = enabled). Read from the mapped card, falling back to
-  // the raw API card for entry points that pass one straight through. Backend sends
-  // it as a number, so compare as a string to tolerate 1 and "1" alike.
-  const canViewDATab =
-    String(card?.da_board ?? card?.raw?.da_board ?? "").trim() === "1";
-  const showDAOnlyTab = !isDAModule && !isSimplifiedMode && canViewDATab;
 
 
   const defaultTab = isDAModule ? "General" : (isSimplifiedMode ? "General" : "Appointment Details");
@@ -2232,8 +2227,16 @@ function CardForm({
   // export/husbandry-tab machinery that isTaxiBoatVariant's render branch never reaches,
   // and the TopBar's type/tag/blocker/sticker resolvers already fall back to card.raw's
   // own fields (see resolveCardTypeIdFromCard etc.), so skipping this costs nothing there.
+  //
+  // Same for the GRO / Custom Clearance task card views: GROCardView binds everything from
+  // call_file/get_call_detail_by_id (light, per card), so the heavy get_call_detail snapshot
+  // would only seed TopBar metadata, which already falls back to card.raw. Coordinator
+  // Transport (also a GRO-style view) keeps the snapshot.
+  const isGroTaskCardView = isGROStyleView && !isCoordinatorTransport;
   const snapshotCallId =
-    !show || isAddMode || isTaxiBoatVariant ? "" : normalizeCallId(card?.call_id ?? card?.callId);
+    !show || isAddMode || isTaxiBoatVariant || isGroTaskCardView
+      ? ""
+      : normalizeCallId(card?.call_id ?? card?.callId);
   const [callDetailState, setCallDetailState] = useState(EMPTY_CALL_DETAIL_STATE);
 
   useEffect(() => {
@@ -2437,7 +2440,7 @@ function CardForm({
   // namespaced "template:<tab_id>" id rendered by TemplateTabPanel. Calls whose detail
   // has no template keep the built-in tab list. With a template, Export Approval comes
   // from the API (tab_key export_approval); without one it is still injected by export
-  // status. DA stays driven by the da_board flag.
+  // status.
   const usesTemplateTabs = !isDAModule && !isSimplifiedMode && !isAddMode;
   const templateTopTabs = useMemo(
     () => (usesTemplateTabs ? getTemplateTopTabs(callDetailSnapshot) : null),
@@ -2457,17 +2460,16 @@ function CardForm({
 
   const buildTabList = useCallback(
     (base, { lockOperation, fromTemplate }) => {
-      const withDAOnly = showDAOnlyTab ? withDAOnlyTab(base) : base;
       // Template tab sets already carry Export Approval (tab_key export_approval) from the
       // API, so only inject the built-in one for calls without a template.
       const withExport = !fromTemplate && showExportTabs && !isDAModule && !isSimplifiedMode
-        ? withExportTabs(withDAOnly)
-        : withDAOnly;
+        ? withExportTabs(base)
+        : base;
       const withHusbandryCall = isHusbandryCall ? withExport.filter((tab) => tab !== "Operation") : withExport;
       const withLockOperation = lockOperation ? withHusbandryCall.filter((tab) => tab !== "Operation") : withHusbandryCall;
       return filterTabsByCardPermission(withLockOperation);
     },
-    [showDAOnlyTab, showExportTabs, isDAModule, isSimplifiedMode, isHusbandryCall, filterTabsByCardPermission]
+    [showExportTabs, isDAModule, isSimplifiedMode, isHusbandryCall, filterTabsByCardPermission]
   );
 
   const TOP_TABS = useMemo(() => {
@@ -3312,18 +3314,20 @@ function CardForm({
         ) : isMWPVariant ? (
           <MWPCardView card={card} />
         ) : isDecidingGroExportView ? (
-          <div className="d-flex justify-content-center align-items-center py-5">
-            <div className="spinner-border" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-          </div>
+          <GroCardViewSkeleton />
         ) : isGROStyleView ? (
           isCustomVariant ? (
             <CustomCardView ref={groCardViewRef} card={card} userRoleId={userRoleId} />
           ) : isCoordinatorTransport ? (
             <CoordinatorTransportCardView cardData={card} cardColor={topbarColor} />
           ) : (
-            <GROCardView ref={groCardViewRef} card={card} mode="gro" userRoleId={userRoleId} />
+            <GROCardView
+              ref={groCardViewRef}
+              card={card}
+              mode="gro"
+              userRoleId={userRoleId}
+              prefetchedDetail={groPrefetchedDetail}
+            />
           )
         ) : (
           <>

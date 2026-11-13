@@ -11,7 +11,7 @@ import {
   resolveTemplateCallTypeId,
   resolveTemplateTabFieldOptionValue,
 } from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callDetailTemplate";
-import CardTabListLoading from "@/components/CardTabListLoading";
+import StageFormSkeleton from "./components/StageFormSkeleton";
 import stageTimeMappingService from "@/services/stageTimeMappingService";
 import preArrivalInfoService from "@/services/preArrivalInfoService";
 import "@/design/scss/operations.scss";
@@ -346,6 +346,8 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
 
   const billingEntityId = useMemo(
     () =>
+      callDetailData?.entity_id ??
+      callDetailData?.template?.billing_entity_id ??
       callDetailData?.main_billing_entity_id ??
       callDetailData?.mainBillingEntity ??
       formValues?.mainBillingEntity ??
@@ -677,8 +679,8 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               cardColor="#00368c"
             />
           )}
-          {isStageTab(activeOperationTab) && callDetailLoading && (
-            <CardTabListLoading message="Loading stage details..." cardColor={cardColor} />
+          {isStageTab(activeOperationTab) && (callDetailLoading || (legacyStagesEnabled && !eventFieldsReady)) && (
+            <StageFormSkeleton />
           )}
           {isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.PRE_ARRIVAL &&
             renderTemplateStage(OPERATION_TABS.PRE_ARRIVAL, {
@@ -704,7 +706,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               canAddTimeObject: canAddDepartureTimeObject,
               canDeleteTimeObject: canDeleteDepartureTimeObject,
             })}
-          {activeOperationTab === OPERATION_TABS.PRE_ARRIVAL && legacyStagesEnabled && (
+          {activeOperationTab === OPERATION_TABS.PRE_ARRIVAL && legacyStagesEnabled && eventFieldsReady && (
             <PreArrival
               card={card}
               formValues={viewOnlyFormValues}
@@ -730,7 +732,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               onSaveSuccess={handleSaveSuccess}
             />
           )}
-          {activeOperationTab === OPERATION_TABS.ARRIVAL && legacyStagesEnabled && (
+          {activeOperationTab === OPERATION_TABS.ARRIVAL && legacyStagesEnabled && eventFieldsReady && (
             <Arrival
               formValues={viewOnlyFormValues}
               handleChange={trackedHandleChange}
@@ -755,7 +757,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               onSaveSuccess={handleSaveSuccess}
             />
           )}
-          {activeOperationTab === OPERATION_TABS.DEPARTURE && legacyStagesEnabled && (
+          {activeOperationTab === OPERATION_TABS.DEPARTURE && legacyStagesEnabled && eventFieldsReady && (
             <Departure
               formValues={viewOnlyFormValues}
               handleChange={trackedHandleChange}

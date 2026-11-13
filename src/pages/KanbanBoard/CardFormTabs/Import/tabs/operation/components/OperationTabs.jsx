@@ -58,7 +58,7 @@ const OperationTabs = ({ activeTab, onTabChange, allowedTabIds, tabs: tabDefinit
   const tabs = allowedTabIds ? allTabs.filter((tab) => allowedTabIds.includes(tab.id)) : allTabs;
 
   return (
-    <div className="operation-left op-tab-nav--main">
+    <nav className="operation-left op-tab-nav--main" aria-label="Operation stages">
       <div className="op-tab-list">
         {tabs.map((tab) => (
           <NavTabButton
@@ -69,10 +69,13 @@ const OperationTabs = ({ activeTab, onTabChange, allowedTabIds, tabs: tabDefinit
           >
             <OperationTabIcon id={tab.id} />
             <span className="op-tab-label">{tab.label}</span>
+            <svg className="op-tab-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </NavTabButton>
         ))}
       </div>
-    </div>
+    </nav>
   );
 };
 

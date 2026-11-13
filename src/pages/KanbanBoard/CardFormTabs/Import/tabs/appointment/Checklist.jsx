@@ -341,6 +341,16 @@ function Checklist({
 
   const prerequisiteState = useMemo(() => getPrerequisiteStateFromContext(dataContext), [dataContext]);
 
+  // Per-requirement status for the empty state, so the user sees exactly what is still missing.
+  const prerequisiteRequirements = useMemo(() => {
+    const filled = (v) => v !== undefined && v !== null && String(v).trim() !== "";
+    return [
+      { label: "Call type", done: filled(dataContext?.calltypePayload) },
+      { label: "Port", done: filled(dataContext?.portIdForApi) },
+      { label: "Vessel or barge", done: Boolean(dataContext?.hasVessel || dataContext?.hasBarge) },
+    ];
+  }, [dataContext]);
+
   // Reset all checklist state before loading a new call so one call's options/selection
   // can never leak into another while the new call's data is still in flight.
   useEffect(() => {
@@ -707,6 +717,8 @@ function Checklist({
 
   const isLoading = effectiveCallDetailLoading || typeLoading || detailLoading || savedLoading;
   const hasChecklistData = checklistBlocks.some((b) => (b.tree || []).length > 0);
+  // Any empty / error state: the card stretches to fill the panel so its content sits centred.
+  const isEmptyView = !isLoading && (Boolean(callDetailError) || Boolean(checklistError) || !hasChecklistData);
 
   return (
     <>
@@ -714,8 +726,10 @@ function Checklist({
         <h3 className="operation-content-title">Checklist Information</h3>
       </div>
 
-      <div className="checklist-tab-layout checklist-tab-layout--full">
-        <div className="checklist-form checklist-form--compact">
+      <div
+        className={`checklist-tab-layout checklist-tab-layout--full${isEmptyView ? " checklist-tab-layout--empty" : ""}`}
+      >
+        <div className={`checklist-form checklist-form--compact${isEmptyView ? " checklist-form--empty" : ""}`}>
           {isLoading ? <ChecklistLoadingState /> : null}
           {!isLoading && callDetailError ? (
             <ChecklistEmptyState title="Call detail error" message={callDetailError} variant="error" />
@@ -725,9 +739,10 @@ function Checklist({
             !prerequisiteState.canLoadChecklists &&
             savedChecklistRows.length === 0 ? (
             <ChecklistEmptyState
-              title="Checklist prerequisites"
-              message="Checklist types will load after call type, port, and vessel/barge are available."
+              title="Checklist not available yet"
+              message="Add the details below in Appointment Details to load checklist types for this call."
               variant="prerequisite"
+              requirements={prerequisiteRequirements}
             />
           ) : null}
           {!isLoading && prerequisiteState.canLoadChecklists && checklistError ? (
@@ -739,7 +754,7 @@ function Checklist({
             selectedChecklistTypeIds.length === 0 ? (
             <ChecklistEmptyState
               title="No checklist selected"
-              message="Select checklist type(s) to render checklist items."
+              message="Select one or more checklist types in Appointment Details to see their items here."
               variant="noData"
             />
           ) : null}
@@ -749,8 +764,8 @@ function Checklist({
             selectedChecklistTypeIds.length > 0 &&
             !hasChecklistData ? (
             <ChecklistEmptyState
-              title="No checklist details returned"
-              message="Selected checklist type(s) returned empty detail."
+              title="No checklist items"
+              message="The selected checklist types don't have any items configured yet."
               variant="noData"
             />
           ) : null}
@@ -774,7 +789,7 @@ function Checklist({
               </div>
             ))}
 
-          {!isViewOnly && !isLoading ? (
+          {!isViewOnly && !isLoading && hasChecklistData ? (
             <div className="checklist-actions">
               <ChecklistFooterActions
                 disabled={saveLoading || selectedChecklistTypeIds.length === 0}

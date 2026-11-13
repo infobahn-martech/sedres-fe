@@ -11,7 +11,6 @@ import { getFeaturePreviewKind } from "./templateFeaturePreviews";
 import { alignLayoutToOrder, buildFieldGrid, getReadingOrder, resolveFieldLayout, sortFieldsByLayout } from "./templateFieldGrid";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
-import useTimeObjectReducer from "../../store/TimeObjectReducer";
 import { mapBillingEntitiesToOptions } from "../../shared/helpers/callFileFormOptions";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/general.scss";
@@ -299,6 +298,8 @@ const CHECKBOX_TYPE_KEY = "checkbox";
 const buildOptionsFieldTypeSet = (apiFieldTypes) => new Set([
     ...(apiFieldTypes ?? []).filter((ft) => isFlagTrue(ft.has_options)).map((ft) => String(ft.type_key ?? "").toLowerCase()),
     CHECKBOX_TYPE_KEY,
+    // Multi Select always carries options (manual or master-backed).
+    buildMultiSelectTypeKey(apiFieldTypes),
 ]);
 
 // Among the options-capable types, "Dropdown" is the one that additionally offers
@@ -312,6 +313,23 @@ const buildDropdownTypeKey = (apiFieldTypes) => {
     });
     return match ? String(match.type_key ?? "").toLowerCase() : "dropdown";
 };
+
+// "Multi Select" offers the same Manual / Dependency / Master Data options
+// source as Dropdown. Identified by key/label for the same reason.
+const buildMultiSelectTypeKey = (apiFieldTypes) => {
+    const match = (apiFieldTypes ?? []).find((ft) => {
+        const key = String(ft.type_key ?? "").toLowerCase().replace(/[\s_-]+/g, "");
+        const label = String(ft.type_label ?? "").toLowerCase().replace(/[\s_-]+/g, "");
+        return key === "multiselect" || label.includes("multiselect");
+    });
+    return match ? String(match.type_key ?? "").toLowerCase() : "multiselect";
+};
+
+// Field types whose options can come from Manual / Dependency / Master Data.
+const buildOptionsSourceTypeSet = (apiFieldTypes) => new Set([
+    buildDropdownTypeKey(apiFieldTypes),
+    buildMultiSelectTypeKey(apiFieldTypes),
+]);
 
 // "Time Object" offers a Manual / Master Data source, where Master Data links
 // the field to a time object from the time_object master. Identified by
@@ -501,13 +519,13 @@ const getFieldSummary = (field, typeLabel, isDropdown, hasOptions, masterModuleO
     return parts.join(" · ");
 };
 
-function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterModuleOptions, masterModulesLoading, dropdownFieldLabels, timeObjectOptions, timeObjectsLoading, optionsFieldTypes, dropdownTypeKey, timeObjectTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, isLocked = false, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
+function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterModuleOptions, masterModulesLoading, dropdownFieldLabels, timeObjectOptions, timeObjectsLoading, optionsFieldTypes, optionsSourceTypes, timeObjectTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, isLocked = false, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
     // New (unlabelled) fields open ready to edit; existing ones start collapsed
     // so long templates stay scannable.
     const [expanded, setExpanded] = useState(() => !field.label.trim());
     const isRequired = Boolean(field.required);
     const isTimeObject = field.type === timeObjectTypeKey;
-    const showOptionsSource = field.type === dropdownTypeKey;
+    const showOptionsSource = optionsSourceTypes.has(field.type);
     const showManualOptions = !showOptionsSource && !isTimeObject && optionsFieldTypes.has(field.type);
     const typeLabel = fieldTypeOptions.find((o) => o.value === field.type)?.label ?? "";
     const summary = getFieldSummary(field, typeLabel, showOptionsSource, showManualOptions || showOptionsSource, masterModuleOptions, isTimeObject, timeObjectOptions);
@@ -674,7 +692,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     } = useFormTemplateReducer((s) => s);
     const isEditMode = Boolean(initialTemplate);
     const { getBillingEntities, billingEntities, isLoading: billingEntitiesLoading } = useBillingEntityReducer((s) => s);
-    const { getTimeObjects, timeObjects, isLoadingGet: timeObjectsLoading } = useTimeObjectReducer((s) => s);
 
     const [templateName, setTemplateName] = useState(() => getTemplateSeed(initialTemplate).name);
     const [nameTouched, setNameTouched] = useState(false);
@@ -733,9 +750,11 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const fieldTypeOptions = useMemo(() => buildFieldTypeOptions(fieldTypes), [fieldTypes]);
     const optionsFieldTypes = useMemo(() => buildOptionsFieldTypeSet(fieldTypes), [fieldTypes]);
     const dropdownTypeKey = useMemo(() => buildDropdownTypeKey(fieldTypes), [fieldTypes]);
+    const optionsSourceTypes = useMemo(() => buildOptionsSourceTypeSet(fieldTypes), [fieldTypes]);
     const masterModuleOptions = useMemo(() => buildMasterModuleOptions(masterLookups), [masterLookups]);
     const timeObjectTypeKey = useMemo(() => buildTimeObjectTypeKey(fieldTypes), [fieldTypes]);
-    const timeObjectOptions = useMemo(() => buildTimeObjectOptions(timeObjects), [timeObjects]);
+    // The time_object master list is no longer fetched by the builder.
+    const timeObjectOptions = useMemo(() => buildTimeObjectOptions([]), []);
     // System-bound fields (from system_bindings, on any tab or subtab) can't be
     // deleted and are always required. Fields bound to keys the current call
     // type doesn't have are dropped during sync, so the key alone decides.
@@ -841,23 +860,33 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         }
     }, [billingEntities, getBillingEntities]);
 
-    useEffect(() => {
-        if (fieldTypes === null) {
-            getFieldTypes();
-        }
-    }, [fieldTypes, getFieldTypes]);
+    // The field editor's lookups load lazily — opening the builder only needs the
+    // call type / billing entity lists; the structure comes from system_bindings.
+    const allFields = tabs.flatMap((t) => [
+        ...(t.fields ?? []),
+        ...(t.subTabs ?? []).flatMap((s) => s.fields ?? []),
+    ]);
+    // Field types resolve each field's field_type_id on save and feed the type select,
+    // so they're needed as soon as the template has any tabs.
+    const needsFieldTypes = tabs.length > 0;
+    const needsMasterLookups = allFields.some(
+        (f) => f.type !== timeObjectTypeKey && isMasterBackedSource(f.optionsSource)
+    );
 
+    // At most one request per builder session; the store keeps the result for later opens.
+    const fieldTypesRequestedRef = useRef(false);
     useEffect(() => {
-        if (masterLookups === null) {
-            getMasterLookups();
-        }
-    }, [masterLookups, getMasterLookups]);
+        if (!needsFieldTypes || fieldTypes !== null || fieldTypesRequestedRef.current) return;
+        fieldTypesRequestedRef.current = true;
+        getFieldTypes();
+    }, [needsFieldTypes, fieldTypes, getFieldTypes]);
 
-    // Always refetch the full list: the shared store may only hold one
-    // paginated page left behind by the Time Objects screen.
+    const masterLookupsRequestedRef = useRef(false);
     useEffect(() => {
-        getTimeObjects({ page: 1, limit: 1000 });
-    }, [getTimeObjects]);
+        if (!needsMasterLookups || masterLookups !== null || masterLookupsRequestedRef.current) return;
+        masterLookupsRequestedRef.current = true;
+        getMasterLookups();
+    }, [needsMasterLookups, masterLookups, getMasterLookups]);
 
     const resetState = () => {
         const seed = getTemplateSeed(initialTemplate);
@@ -1128,7 +1157,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                 next.options = ["Option 1"];
                 next.optionIds = [null];
             }
-            if (key === "type" && value === dropdownTypeKey && !next.optionsSource) {
+            if (key === "type" && optionsSourceTypes.has(value) && !next.optionsSource) {
                 next.optionsSource = "manual";
             }
             return next;
@@ -1299,7 +1328,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                 payload.time_object_id = Number(field.timeObjectId);
             }
         } else if (optionsFieldTypes.has(field.type) && !isLegacyCheckbox) {
-            payload.option_source = field.type === dropdownTypeKey && isMasterBackedSource(field.optionsSource) ? "master" : "static";
+            payload.option_source = optionsSourceTypes.has(field.type) && isMasterBackedSource(field.optionsSource) ? "master" : "static";
             if (payload.option_source === "master") {
                 payload.master_key = field.masterModule;
                 if (field.optionsSource === "dependency" && field.dependsOnFieldLabel) {
@@ -1791,9 +1820,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         masterModulesLoading={isLoadingMasterLookups}
                                         dropdownFieldLabels={dropdownFieldLabels}
                                         timeObjectOptions={timeObjectOptions}
-                                        timeObjectsLoading={timeObjectsLoading}
+                                        timeObjectsLoading={false}
                                         optionsFieldTypes={optionsFieldTypes}
-                                        dropdownTypeKey={dropdownTypeKey}
+                                        optionsSourceTypes={optionsSourceTypes}
                                         timeObjectTypeKey={timeObjectTypeKey}
                                         isDragging={dragIndex === index}
                                         isDragOver={dragOverIndex === index && dragIndex !== index}

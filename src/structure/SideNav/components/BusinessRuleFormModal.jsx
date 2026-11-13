@@ -9,18 +9,15 @@ import QuillTableBetter from 'quill-table-better';
 import 'react-quill-new/dist/quill.snow.css';
 import 'quill-table-better/dist/quill-table-better.css';
 import {
-  THEN_ACTION_SECTIONS, ACTION_GROUP_TYPE_TO_SECTION_ID, CREATE_ACTION_OPTIONS, LINK_ACTION_OPTIONS, LINK_REMOVE_OTHERS_OPTIONS, NOTIFY_ACTION_OPTIONS, UPDATE_ACTION_OPTIONS, STICKER_ACTION_FREQUENCY_OPTIONS,
+  ACTION_GROUP_TYPE_TO_SECTION_ID, LINK_ACTION_OPTIONS, LINK_REMOVE_OTHERS_OPTIONS, NOTIFY_ACTION_OPTIONS, UPDATE_ACTION_OPTIONS, STICKER_ACTION_FREQUENCY_OPTIONS,
   LIST_UPDATE_MODE_OPTIONS, DEADLINE_MODE_OPTIONS, WHEN_DEADLINE_COMPARISON_OPTIONS, WEEKDAY_OPTIONS, PRIORITY_OPTIONS, classifyCustomFieldUiKind,
-  INVOKE_ACTION_OPTIONS, DUMMY_INVOKE_METHOD_OPTIONS, DUMMY_INVOKE_AUTH_OPTIONS, INVOKE_METHODS_WITH_BODY, DUMMY_URL_FIELD_OPTIONS,
-  DUMMY_REGULAR_FIELDS, DUMMY_TIME_UNITS, DUMMY_CUSTOM_FIELDS,
-  DUMMY_WORKSPACE_BOARDS,
-  DUMMY_NOTIFICATION_FROM_EMAIL, DUMMY_INTERNAL_USERS,
-  DUMMY_NOTIFICATION_SUBJECT_PARTS, DUMMY_NOTIFICATION_BODY_DELTA_OPS, INTERNAL_USER_ROLE_OPTIONS,
-  DUMMY_LINK_ACTION_OPERATORS, DUMMY_FIELD_OPERATORS,
+  INVOKE_ACTION_OPTIONS, DUMMY_INVOKE_METHOD_OPTIONS, DUMMY_INVOKE_AUTH_OPTIONS, INVOKE_METHODS_WITH_BODY,
+  INTERNAL_USER_ROLE_OPTIONS,
   TRIGGER_CODE_TO_ICON, UNSUPPORTED_ACTION_GROUP_TYPES,
 } from './businessRulesData';
 import { buildCreateBusinessRulePayload, buildUpdateBusinessRulePayload, getUnconfiguredActionLabels, isCreateSubtaskAction, RECURRENCE_REGULAR_FIELD_IDS, buildAdvancedScheduleFields } from './buildBusinessRulePayload';
 import ThenGroupRawSummary from './ThenGroupRawSummary';
+import GenericThenActionFields from './GenericThenActionFields';
 import DynamicIcon from './DynamicIcon';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import useAlertReducer from '../../../store/AlertReducer';
@@ -501,14 +498,11 @@ function BoardFilterPicker({ workspaces, value, onChange, wrapClassName, trigger
   const triggerRef = useRef(null);
   const panelRef = useRef(null);
 
-  // Sample groups appended after the real workspaces so the picker has enough
-  // content to test scrolling/layout even with a sparsely-populated backend.
-  const displayWorkspaces = [...workspaces, ...DUMMY_WORKSPACE_BOARDS];
-  const boards = displayWorkspaces.flatMap((w) => w.boards ?? []);
+  const boards = workspaces.flatMap((w) => w.boards ?? []);
   const selectedBoard = boards.find((b) => String(b.board_id) === String(value));
 
   const filterQuery = filterText.trim().toLowerCase();
-  const filteredGroups = displayWorkspaces
+  const filteredGroups = workspaces
     .map((w) => {
       const wsMatch = w.workspace_name.toLowerCase().includes(filterQuery);
       const groupBoards = wsMatch
@@ -701,17 +695,9 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
 
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
 
-  // Dev-only fallback so the modal can be visually tested without a live backend.
-  const displayRegularFields = regularFields.length > 0 ? regularFields : DUMMY_REGULAR_FIELDS;
-  const displayTimeUnits = timeUnits.length > 0 ? timeUnits : DUMMY_TIME_UNITS;
-  // Only fall back to dummy data in the untouched/no-filter state — once a board,
-  // the disabled toggle, or a search term narrows the results, an empty response is a
-  // real answer (e.g. "no disabled fields on this board") and must be shown as empty,
-  // not masked by an unrelated generic dummy list.
-  const isCustomFieldsUnfiltered = !selectedBoardId && !showDisabled && !debouncedSearch;
-  const displayCustomFields = customFields.length > 0
-    ? customFields
-    : (isCustomFieldsUnfiltered ? DUMMY_CUSTOM_FIELDS : []);
+  const displayRegularFields = regularFields;
+  const displayTimeUnits = timeUnits;
+  const displayCustomFields = customFields;
 
   const isFieldUsed = (field) =>
     (existingFieldLabels ?? []).includes(getFieldLabel(field).trim().toLowerCase());
@@ -984,10 +970,8 @@ function CreateActionModal({ show, onClose, onSelect, actionTypeId }) {
   }, [show, actionTypeId]);
 
   const mappedOptions = thenActionRegularFields.map((field) => ({ key: field.field_key, label: field.field_label }));
-  // Dev-only fallback so the modal can be visually tested without a live backend. Only
-  // "Create subtask" is still supported — destination-based create variants are hidden.
-  const createActionOptions = (mappedOptions.length > 0 ? mappedOptions : (import.meta.env.DEV ? CREATE_ACTION_OPTIONS : []))
-    .filter(isCreateSubtaskAction);
+  // Only "Create subtask" is still supported — destination-based create variants are hidden.
+  const createActionOptions = mappedOptions.filter(isCreateSubtaskAction);
 
   const filterQuery = filterText.trim().toLowerCase();
   const filteredOptions = filterQuery
@@ -1533,8 +1517,7 @@ function LinkActionModal({ show, onClose, onSelect }) {
     label: action.relation_label,
   }));
 
-  // Dev-only fallback so the modal can be visually tested without a live backend.
-  const linkActionOptions = mappedActions.length > 0 ? mappedActions : (import.meta.env.DEV ? LINK_ACTION_OPTIONS : []);
+  const linkActionOptions = mappedActions;
 
   const filterQuery = filterText.trim().toLowerCase();
   const filteredOptions = filterQuery
@@ -1652,21 +1635,13 @@ function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabel
   const { thenActionRegularFields, isLoadingThenActionFields, getThenActionFields } = useBusinessRuleReducer((s) => s);
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
 
-  // Only fall back to dummy data in the untouched/no-filter state — once a board,
-  // the disabled toggle, or a search term narrows the results, an empty response is a
-  // real answer (e.g. "no disabled fields on this board") and must be shown as empty,
-  // not masked by an unrelated generic dummy list.
-  const isCustomFieldsUnfiltered = !selectedBoardId && !showDisabled && !debouncedSearch;
-  const displayCustomFields = customFields.length > 0
-    ? customFields
-    : (isCustomFieldsUnfiltered ? DUMMY_CUSTOM_FIELDS : []);
+  const displayCustomFields = customFields;
 
   const isFieldUsed = (field) =>
     (existingFieldLabels ?? []).includes(getFieldLabel(field).trim().toLowerCase());
 
   const mappedRegularOptions = thenActionRegularFields.map((field) => ({ key: field.field_key, label: field.field_label, field: field.field_label }));
-  // Dev-only fallback so the modal can be visually tested without a live backend.
-  const updateActionOptions = mappedRegularOptions.length > 0 ? mappedRegularOptions : (import.meta.env.DEV ? UPDATE_ACTION_OPTIONS : []);
+  const updateActionOptions = mappedRegularOptions;
 
   const filterQuery = filterText.trim().toLowerCase();
   const filteredRegularOptions = filterQuery
@@ -1902,9 +1877,7 @@ function InternalUsersPickerModal({ show, onClose, onApply }) {
   const realUserOptions = users
     .filter((u) => u.name)
     .map((u) => ({ key: `user-${u.user_id}`, label: u.name, id: u.user_id }));
-  const displayUserOptions = realUserOptions.length > 0
-    ? realUserOptions
-    : (import.meta.env.DEV ? DUMMY_INTERNAL_USERS.map((name, idx) => ({ key: `dummy-${idx}`, label: name, id: null })) : []);
+  const displayUserOptions = realUserOptions;
   const roleOptions = INTERNAL_USER_ROLE_OPTIONS.map((label) => ({ key: `role-${label}`, label, id: null }));
   const allOptions = [...roleOptions, ...displayUserOptions];
 
@@ -2031,14 +2004,7 @@ function CustomFieldPickerModal({ show, onClose, onApply, triggerTypeId }) {
   });
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
 
-  // Only fall back to dummy data in the untouched/no-filter state — once a board,
-  // the disabled toggle, or a search term narrows the results, an empty response is a
-  // real answer (e.g. "no disabled fields on this board") and must be shown as empty,
-  // not masked by an unrelated generic dummy list.
-  const isCustomFieldsUnfiltered = !selectedBoardId && !showDisabled && !debouncedSearch;
-  const displayCustomFields = customFields.length > 0
-    ? customFields
-    : (isCustomFieldsUnfiltered ? DUMMY_CUSTOM_FIELDS : []);
+  const displayCustomFields = customFields;
 
   useEffect(() => {
     if (!show) return;
@@ -2208,7 +2174,7 @@ CustomFieldPickerModal.propTypes = {
 // separate board-filterable custom-fields lookup. Used for then-action contexts
 // (e.g. "Invoke web service") where the available fields are scoped to that action,
 // not to the rule's trigger.
-function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTypeId, allowedRegularFieldLabels }) {
+function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTypeId }) {
   const [selectedKeys, setSelectedKeys] = useState([]);
   const [expandedRegularFields, setExpandedRegularFields] = useState(true);
   const [expandedTimeUnit, setExpandedTimeUnit] = useState(true);
@@ -2220,10 +2186,6 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
   const [includeLoggedTimeSubtasks, setIncludeLoggedTimeSubtasks] = useState(false);
 
   const isActionMode = actionTypeId != null;
-  // Url tokens can only carry simple id-like values, so its trigger passes a fixed
-  // label whitelist (Card ID/Custom card ID/Internal card id) and neither Time unit
-  // nor Custom fields apply there — unlike Params, which accepts any card field.
-  const isRestricted = allowedRegularFieldLabels != null;
 
   const {
     regularFields, isLoadingRegularFields, getRegularFields,
@@ -2233,7 +2195,7 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
   } = useBusinessRuleReducer((s) => s);
 
   const { customFields, isLoadingCustomFields } = useCustomFieldsByTrigger({
-    show: show && !isActionMode && !isRestricted, triggerTypeId, boardId: selectedBoardId, showDisabled, search: debouncedSearch,
+    show: show && !isActionMode, triggerTypeId, boardId: selectedBoardId, showDisabled, search: debouncedSearch,
   });
 
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
@@ -2245,31 +2207,17 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
     ? list.filter((field) => getFieldLabel(field).toLowerCase().includes(filterQuery))
     : list;
 
-  // Card ID/Custom card ID/Internal card id are fixed system fields, not board data —
-  // rendered directly from the whitelist instead of depending on get_regular_fields
-  // actually including them for this trigger.
-  const restrictedRegularFields = isRestricted
-    ? allowedRegularFieldLabels.map((label, idx) => ({ regular_field_id: `url-${idx}`, field_label: label, field_key: label }))
-    : null;
-
-  const displayRegularFields = isRestricted
-    ? applyClientFilter(restrictedRegularFields)
-    : (isActionMode
-      ? applyClientFilter(thenActionRegularFields)
-      : (regularFields.length > 0 ? regularFields : DUMMY_REGULAR_FIELDS));
+  const displayRegularFields = isActionMode
+    ? applyClientFilter(thenActionRegularFields)
+    : regularFields;
   const displayTimeUnits = isActionMode
     ? applyClientFilter(thenActionTimeUnits)
-    : (timeUnits.length > 0 ? timeUnits : DUMMY_TIME_UNITS);
-  // Only fall back to dummy data in the untouched/no-filter state — once a board,
-  // the disabled toggle, or a search term narrows the results, an empty response is a
-  // real answer (e.g. "no disabled fields on this board") and must be shown as empty,
-  // not masked by an unrelated generic dummy list.
-  const isCustomFieldsUnfiltered = !selectedBoardId && !showDisabled && !debouncedSearch;
+    : timeUnits;
   const displayCustomFields = isActionMode
     ? applyClientFilter(thenActionCustomFields)
-    : (customFields.length > 0 ? customFields : (isCustomFieldsUnfiltered ? DUMMY_CUSTOM_FIELDS : []));
+    : customFields;
 
-  const regularFieldsLoading = isRestricted ? false : (isActionMode ? isLoadingThenActionFields : isLoadingRegularFields);
+  const regularFieldsLoading = isActionMode ? isLoadingThenActionFields : isLoadingRegularFields;
   const timeUnitsLoading = isActionMode ? isLoadingThenActionFields : isLoadingTimeUnits;
   const customFieldsLoading = isActionMode ? isLoadingThenActionFields : isLoadingCustomFields;
 
@@ -2297,14 +2245,14 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
   }, [show, isActionMode, actionTypeId]);
 
   useEffect(() => {
-    if (!show || isActionMode || isRestricted) return;
+    if (!show || isActionMode) return;
     getRegularFields({ params: { trigger_type_id: triggerTypeId, search: debouncedSearch || undefined } });
-  }, [show, isActionMode, isRestricted, debouncedSearch, triggerTypeId]);
+  }, [show, isActionMode, debouncedSearch, triggerTypeId]);
 
   useEffect(() => {
-    if (!show || isActionMode || isRestricted) return;
+    if (!show || isActionMode) return;
     getTimeUnits({ params: { trigger_type_id: triggerTypeId, search: debouncedSearch || undefined } });
-  }, [show, isActionMode, isRestricted, debouncedSearch, triggerTypeId]);
+  }, [show, isActionMode, debouncedSearch, triggerTypeId]);
 
   const handleToggleKey = (key) => {
     setSelectedKeys((prev) =>
@@ -2425,115 +2373,113 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
             )}
           </div>
 
-          {!isRestricted && (
-            <>
-              <div className="br-property-section">
-                <button
-                  type="button"
-                  className="br-property-section-toggle"
-                  onClick={() => setExpandedTimeUnit((v) => !v)}
-                >
-                  <span className="br-property-section-toggle-icon">
-                    {expandedTimeUnit ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-                  </span>
-                  Time unit
-                </button>
-                {expandedTimeUnit && (
-                  <div className="br-property-pill-grid">
-                    {timeUnitsLoading ? (
-                      <div className="br-property-picker-empty">Loading...</div>
-                    ) : displayTimeUnits.length === 0 ? (
-                      <div className="br-property-picker-empty">No fields found</div>
-                    ) : (
-                      displayTimeUnits.map((field, idx) => {
-                        const key = `time_unit-${field.time_unit_id ?? idx}`;
-                        return (
-                          <PropertyPill
-                            key={key}
-                            pillKey={key}
-                            label={getFieldLabel(field)}
-                            selected={selectedKeys.includes(key)}
-                            onClick={() => handleToggleTimeUnitKey(key)}
-                          />
-                        );
-                      })
-                    )}
-                  </div>
+          <>
+          <div className="br-property-section">
+            <button
+              type="button"
+              className="br-property-section-toggle"
+              onClick={() => setExpandedTimeUnit((v) => !v)}
+            >
+              <span className="br-property-section-toggle-icon">
+                {expandedTimeUnit ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+              </span>
+              Time unit
+            </button>
+            {expandedTimeUnit && (
+              <div className="br-property-pill-grid">
+                {timeUnitsLoading ? (
+                  <div className="br-property-picker-empty">Loading...</div>
+                ) : displayTimeUnits.length === 0 ? (
+                  <div className="br-property-picker-empty">No fields found</div>
+                ) : (
+                  displayTimeUnits.map((field, idx) => {
+                    const key = `time_unit-${field.time_unit_id ?? idx}`;
+                    return (
+                      <PropertyPill
+                        key={key}
+                        pillKey={key}
+                        label={getFieldLabel(field)}
+                        selected={selectedKeys.includes(key)}
+                        onClick={() => handleToggleTimeUnitKey(key)}
+                      />
+                    );
+                  })
                 )}
               </div>
+            )}
+          </div>
 
-              <div className="br-property-section">
-                <button
-                  type="button"
-                  className="br-property-section-toggle"
-                  onClick={() => setExpandedCustomFields((v) => !v)}
-                >
-                  <span className="br-property-section-toggle-icon">
-                    {expandedCustomFields ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-                  </span>
-                  Custom fields
-                </button>
-                {expandedCustomFields && (
+          <div className="br-property-section">
+            <button
+              type="button"
+              className="br-property-section-toggle"
+              onClick={() => setExpandedCustomFields((v) => !v)}
+            >
+              <span className="br-property-section-toggle-icon">
+                {expandedCustomFields ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+              </span>
+              Custom fields
+            </button>
+            {expandedCustomFields && (
+              <>
+                {!isActionMode && (
                   <>
-                    {!isActionMode && (
-                      <>
-                        <div className="br-property-board-filter">
-                          <span className="br-property-board-filter-label">Show fields from board:</span>
-                          <div className="br-property-board-filter-row">
-                            <BoardFilterPicker
-                              workspaces={workspaces ?? []}
-                              value={selectedBoardId}
-                              onChange={setSelectedBoardId}
-                            />
-                            <button
-                              type="button"
-                              className="br-property-board-clear-btn"
-                              onClick={() => setSelectedBoardId('')}
-                              aria-label="Reset board filter"
-                            >
-                              <FiTrash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-
-                        <label className="business-rule-form-toggle br-property-disabled-toggle">
-                          <input
-                            type="checkbox"
-                            checked={showDisabled}
-                            onChange={(e) => setShowDisabled(e.target.checked)}
-                          />
-                          <span className="business-rule-form-toggle-track" aria-hidden />
-                          <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
-                        </label>
-                      </>
-                    )}
-
-                    <div className="br-property-pill-grid">
-                      {customFieldsLoading ? (
-                        <div className="br-property-picker-empty">Loading...</div>
-                      ) : displayCustomFields.length === 0 ? (
-                        <div className="br-property-picker-empty">No custom fields found</div>
-                      ) : (
-                        displayCustomFields.map((field, idx) => {
-                          const key = `custom-${field.custom_field_id ?? idx}`;
-                          return (
-                            <PropertyPill
-                              key={key}
-                              pillKey={key}
-                              label={getFieldLabel(field)}
-                              selected={selectedKeys.includes(key)}
-                              dotColor={getPropertyDotColor(idx)}
-                              onClick={() => handleToggleKey(key)}
-                            />
-                          );
-                        })
-                      )}
+                    <div className="br-property-board-filter">
+                      <span className="br-property-board-filter-label">Show fields from board:</span>
+                      <div className="br-property-board-filter-row">
+                        <BoardFilterPicker
+                          workspaces={workspaces ?? []}
+                          value={selectedBoardId}
+                          onChange={setSelectedBoardId}
+                        />
+                        <button
+                          type="button"
+                          className="br-property-board-clear-btn"
+                          onClick={() => setSelectedBoardId('')}
+                          aria-label="Reset board filter"
+                        >
+                          <FiTrash2 size={14} />
+                        </button>
+                      </div>
                     </div>
+
+                    <label className="business-rule-form-toggle br-property-disabled-toggle">
+                      <input
+                        type="checkbox"
+                        checked={showDisabled}
+                        onChange={(e) => setShowDisabled(e.target.checked)}
+                      />
+                      <span className="business-rule-form-toggle-track" aria-hidden />
+                      <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
+                    </label>
                   </>
                 )}
-              </div>
-            </>
-          )}
+
+                <div className="br-property-pill-grid">
+                  {customFieldsLoading ? (
+                    <div className="br-property-picker-empty">Loading...</div>
+                  ) : displayCustomFields.length === 0 ? (
+                    <div className="br-property-picker-empty">No custom fields found</div>
+                  ) : (
+                    displayCustomFields.map((field, idx) => {
+                      const key = `custom-${field.custom_field_id ?? idx}`;
+                      return (
+                        <PropertyPill
+                          key={key}
+                          pillKey={key}
+                          label={getFieldLabel(field)}
+                          selected={selectedKeys.includes(key)}
+                          dotColor={getPropertyDotColor(idx)}
+                          onClick={() => handleToggleKey(key)}
+                        />
+                      );
+                    })
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          </>
         </div>
 
         <footer className="card-property-match-modal-footer">
@@ -2557,7 +2503,6 @@ CardFieldPickerModal.propTypes = {
   onApply: PropTypes.func.isRequired,
   triggerTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   actionTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  allowedRegularFieldLabels: PropTypes.arrayOf(PropTypes.string),
 };
 
 const NOTIFICATION_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -2570,7 +2515,7 @@ function NotificationSettingsModal({
   const [from, setFrom] = useState('');
   const [toRecipientError, setToRecipientError] = useState(false);
   const [ccRecipientError, setCcRecipientError] = useState(false);
-  const [bodyContent, setBodyContent] = useState(() => new QuillDelta(DUMMY_NOTIFICATION_BODY_DELTA_OPS));
+  const [bodyContent, setBodyContent] = useState(() => new QuillDelta());
   const [showInternalUsersModal, setShowInternalUsersModal] = useState(false);
   const [internalUsersTarget, setInternalUsersTarget] = useState(null);
   const [showCustomFieldModal, setShowCustomFieldModal] = useState(false);
@@ -2586,8 +2531,7 @@ function NotificationSettingsModal({
   const { saveNotificationSettings, updateNotificationSettings, isSavingNotificationSettings } = useBusinessRuleReducer((s) => s);
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
 
-  // get_custom_fields comes back empty when called unscoped (see the DUMMY_CUSTOM_FIELDS
-  // fallback in CustomFieldPickerModal, needed for the exact same reason) — it only ever
+  // get_custom_fields comes back empty when called unscoped — it only ever
   // returns real data when filtered by board_ids. A saved recipient custom field can belong
   // to any board, not just whichever one was selected in the picker at add-time and never
   // persisted back, so every known board id has to be sent to have a chance of covering it.
@@ -2663,9 +2607,7 @@ function NotificationSettingsModal({
   const realFromOptions = (users ?? [])
     .filter((u) => u.email)
     .map((u) => ({ value: u.email, label: u.name ? `${u.name} (${u.email})` : u.email }));
-  const fromOptions = realFromOptions.length > 0
-    ? realFromOptions
-    : [{ value: DUMMY_NOTIFICATION_FROM_EMAIL, label: DUMMY_NOTIFICATION_FROM_EMAIL }];
+  const fromOptions = realFromOptions;
 
   const resolveEmailTokens = (emails) => emails.map((email) => ({ label: email, id: null, type: 'email' }));
 
@@ -2673,10 +2615,10 @@ function NotificationSettingsModal({
     if (!show) return;
     if (fetchedSettings) {
       setFrom(fetchedSettings.from_email ?? '');
-      setBodyContent(fetchedSettings.body || new QuillDelta(DUMMY_NOTIFICATION_BODY_DELTA_OPS));
+      setBodyContent(fetchedSettings.body || new QuillDelta());
     } else {
       setFrom(initialSettings?.from ?? '');
-      setBodyContent(initialSettings?.bodyContent ?? new QuillDelta(DUMMY_NOTIFICATION_BODY_DELTA_OPS));
+      setBodyContent(initialSettings?.bodyContent ?? new QuillDelta());
     }
     setToRecipientError(false);
     setCcRecipientError(false);
@@ -2832,7 +2774,7 @@ function NotificationSettingsModal({
     el.replaceChildren();
     const subjectParts = fetchedSettings
       ? parseSubjectString(fetchedSettings.subject ?? '')
-      : (initialSettings?.subjectParts ?? DUMMY_NOTIFICATION_SUBJECT_PARTS);
+      : (initialSettings?.subjectParts ?? []);
     subjectParts.forEach((part) => {
       if (part.type === 'pill') {
         el.appendChild(buildSubjectFieldPill(part.value));
@@ -2942,7 +2884,7 @@ function NotificationSettingsModal({
   // Mirrors handleAddBodyField's cursor-based insert, but the subject box is a plain
   // contentEditable div (not Quill), so the caret is managed via the Selection API.
   // Wrapped in literal "{"/"}" text nodes to match the placeholder-token look every
-  // other card field pill in the subject uses (see DUMMY_NOTIFICATION_SUBJECT_PARTS).
+  // other card field pill in the subject uses.
   const handleAddSubjectField = (field) => {
     const el = subjectBoxRef.current;
     if (!el) return;
@@ -3071,7 +3013,7 @@ function NotificationSettingsModal({
 
   const handleSave = () => {
     const subjectParts = parseSubjectParts(subjectBoxRef.current);
-    const fromEmail = from || fromOptions[0].value;
+    const fromEmail = from || (fromOptions[0]?.value ?? '');
     const toTokens = parseRecipientTokens(toBoxRef.current);
     const ccTokens = parseRecipientTokens(ccBoxRef.current);
     const payload = {
@@ -3183,7 +3125,7 @@ function NotificationSettingsModal({
             <div className="business-rule-form-select-wrap">
               <select
                 className="business-rule-form-select"
-                value={from || fromOptions[0].value}
+                value={from || (fromOptions[0]?.value ?? '')}
                 onChange={(e) => setFrom(e.target.value)}
               >
                 {fromOptions.map((option) => (
@@ -4251,7 +4193,6 @@ function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetche
       onClose={() => setFieldPickerTarget(null)}
       onApply={handleApplyFieldPicker}
       triggerTypeId={triggerTypeId}
-      allowedRegularFieldLabels={fieldPickerTarget === 'url' ? DUMMY_URL_FIELD_OPTIONS : undefined}
     />
 
     <Modal
@@ -5178,17 +5119,14 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
   // Drives the AND section from the selected trigger type's own config instead of
   // always showing the "Card is created" (trigger_type_id 1) layout.
-  const andHeaderText = triggerConfig?.and_header || 'the created card matches this filter';
+  const andHeaderText = triggerConfig?.and_header ?? '';
   const hasBoardDefaultCondition = (triggerConfig?.default_conditions ?? [])
     .some((c) => String(c.field_label ?? '').trim().toLowerCase() === 'board');
 
   // Drives the THEN column from the selected trigger type's own action catalog
   // (get_trigger_config's `actions`, ordered by display_order) instead of always
   // showing every action section for every trigger type.
-  // Destination-based actions (move/convert/create card) are no longer supported, so they're
-  // dropped here instead of falling through to the generic read-only section below.
-  const triggerActions = (triggerConfig?.actions ?? [])
-    .filter((a) => !UNSUPPORTED_ACTION_GROUP_TYPES.includes(a.group_type));
+  const triggerActions = triggerConfig?.actions ?? [];
   const sortedTriggerActions = [...triggerActions].sort(
     (a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0)
   );
@@ -5204,7 +5142,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         ? { id: mappedId, title: action.action_name }
         : { id: 'generic', key: `generic-${action.action_type_id}`, title: action.action_name, action };
     })
-    : (import.meta.env.DEV ? THEN_ACTION_SECTIONS : []);
+    : [];
 
   // Each THEN action section fetches its own regular/custom/time-unit field catalog
   // from get_then_action_fields, keyed by this trigger's action_type_id for that
@@ -6436,10 +6374,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     }));
   };
 
-  // Dev-only fallback so the operator dropdown can be visually tested without a live backend.
-  const rawLinkOperatorOptions = linkCardActionOperators.length > 0
-    ? linkCardActionOperators
-    : (import.meta.env.DEV ? DUMMY_LINK_ACTION_OPERATORS : []);
+  const rawLinkOperatorOptions = linkCardActionOperators;
   // get_link_card_possible_action_operators has been observed returning entries with
   // distinct operator_id/operator_key but identical operator_label (e.g. two separate
   // "to card with id" rows) — dedupe by the visible label itself, since that's what
@@ -7556,13 +7491,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                   const details = detailsKey ? fieldDetailsByKey[detailsKey] : null;
                   const detailsLoading = detailsKey ? Boolean(isLoadingFieldDetails[detailsKey]) : false;
                   const rawOperators = details?.operators ?? [];
-                  // Dev-only fallback so the operator dropdown can be visually tested for every
-                  // field (regular or custom) without a live get_field_details backend response.
-                  // Shown immediately (not gated on detailsLoading) since a real request that
-                  // never resolves would otherwise leave the dropdown permanently hidden.
-                  const operators = rawOperators.length > 0
-                    ? rawOperators
-                    : (import.meta.env.DEV ? DUMMY_FIELD_OPERATORS : []);
+                  const operators = rawOperators;
                   const showOperator = operators.length > 0 && details?.has_operator !== '0';
                   const showValueInput = !details || details?.has_input_value !== '0';
                   const isOperatorOpen = openConditionOperatorId === cond.id;
@@ -7756,11 +7685,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                     <h4 className="business-rule-form-action-title">{section.title}</h4>
 
                     {section.id === 'generic' && (
-                      <p className="business-rule-form-footer-note">
-                        This action type ({section.action?.group_type}) isn't supported in this form yet —
-                        it can't be configured or saved from here. Add it to ACTION_GROUP_TYPE_TO_SECTION_ID
-                        (and build its picker) to enable it.
-                      </p>
+                      <GenericThenActionFields actionTypeId={section.action.action_type_id} />
                     )}
 
                     {section.id === 'create' && createActions.length > 0 && (

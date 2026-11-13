@@ -4221,3 +4221,205 @@
     color: var(--tint-brand-text);
   }
 }
+
+/* ==========================================================
+   CREW IMMIGRATION + CREW MANAGEMENT — compact layout so the
+   upload card, listing header, table and pagination all fit in
+   the initial view without page scroll (the table body scrolls
+   internally).
+   ========================================================== */
+.husbandry-service-selection.crew-immigration-dashboard,
+.husbandry-service-selection.crew-management-dashboard {
+  padding-top: 8px;
+  padding-bottom: 8px;
+
+  .husbandry-service-hero,
+  .husbandry-service-hero:has(> .crew-mgmt-hero-row:only-child) {
+    padding: 10px 16px;
+    margin-bottom: 8px;
+    border-radius: 14px;
+  }
+
+  .crew-mgmt-hero-row {
+    gap: 16px;
+    align-items: center;
+  }
+
+  .crew-mgmt-hero-left {
+    gap: 8px;
+  }
+
+  .husbandry-service-selection-title {
+    font-size: 22px;
+    margin: 0;
+  }
+
+  // Uploaded Crew Lists panel — drop the 150px min-height and trim padding
+  // so it hugs its file cards instead of reserving empty space above/below.
+  .crew-uploaded-lists-panel {
+    min-height: 0;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .crew-uploaded-card {
+    padding: 6px 10px;
+    row-gap: 4px;
+  }
+
+  .crew-mgmt-summary-section {
+    margin-top: 0;
+  }
+
+  .crew-listing-header {
+    align-items: center;
+    margin: 0 0 8px;
+  }
+
+  .crew-listing-title {
+    font-size: 18px;
+  }
+
+  // Crew Management — All / Sign On / Sign Off filter sits right beside the
+  // "Crew Summary" title instead of with the search on the far right.
+  .crew-listing-header__left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    min-width: 0;
+
+    .crew-listing-title {
+      margin: 0;
+    }
+  }
+
+  // Denser rows: smaller cell padding + action buttons.
+  .crew-table.crew-immigration-listing-table,
+  .crew-table.crew-summary-table {
+    th {
+      height: 34px;
+    }
+
+    td {
+      padding-top: 4px !important;
+      padding-bottom: 4px !important;
+      vertical-align: middle;
+    }
+  }
+
+  .crew-immigration-listing-table .crew-action-btn,
+  .crew-summary-table .crew-action-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  // Crew Management extras — back link, Today's History panel and the
+  // movement-type pill / doc preview icon are what made its rows and hero
+  // taller than Crew Immigration's.
+  .husbandry-back-link-small {
+    margin: 0 0 2px;
+    padding: 0;
+  }
+
+  .crew-uploaded-panels-row {
+    gap: 12px;
+  }
+
+  .crew-uploaded-lists-panel__empty {
+    padding: 8px;
+    min-height: 0;
+  }
+
+  .crew-summary-table .crew-movement-pill {
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+
+  .crew-summary-table .crew-doc-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  // Size to the rows (pagination sits right under the last row), capped at
+  // the remaining viewport height so long lists scroll inside the table and
+  // the pagination bar stays visible without scrolling the page.
+  .crew-mgmt-summary-section .crew-table-wrapper {
+    height: auto;
+    max-height: max(240px, calc(100vh - 450px));
+  }
+}
+
+/* Crew Immigration — skeleton table shown while the Crew Listing loads.
+   Mirrors the real table's columns so the layout doesn't jump on load. */
+@keyframes crew-skeleton-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.crew-skeleton {
+  display: inline-block;
+  height: 12px;
+  border-radius: 6px;
+  vertical-align: middle;
+  background: linear-gradient(90deg, #eef1f6 25%, #e1e6ef 37%, #eef1f6 63%);
+  background-size: 200% 100%;
+  animation: crew-skeleton-shimmer 1.4s ease-in-out infinite;
+
+  [data-theme="dark"] & {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.06) 25%, rgba(255, 255, 255, 0.12) 37%, rgba(255, 255, 255, 0.06) 63%);
+    background-size: 200% 100%;
+  }
+}
+
+.crew-skeleton--box {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.crew-skeleton--dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+
+.crew-skeleton--btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+}
+
+.crew-skeleton-actions {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.crew-listing-skeleton {
+  .crew-immigration-listing-table td {
+    height: 36px;
+  }
+
+  .crew-pagination-info,
+  .crew-pagination-actions {
+    display: flex;
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crew-skeleton {
+    animation: none;
+  }
+}
+
+.crew-skeleton-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

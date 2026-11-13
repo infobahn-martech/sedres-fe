@@ -28,6 +28,7 @@ import SoApprovalEmailModal from "./SoApprovalEmailModal";
 import DocumentListModal from "./DocumentListModal";
 import UploadInvoiceModal from "@/components/UploadInvoiceModal";
 import { compressPdfFiles } from "@/shared/utils/compressPdf";
+import { isApprovalRequestedColumnTitle } from "@/pages/KanbanBoard/utils/columnTitles";
 import SeApprovalUploadModal from "@/pages/KanbanBoard/components/board/SeApprovalUploadModal";
 import CustomModal from "@/components/CustomModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
@@ -419,6 +420,8 @@ const SalesOrderList = ({
   }, [callId, getAllSupportingDocs]);
 
   const entityId =
+    callDetailData?.entity_id ??
+    callDetailData?.template?.billing_entity_id ??
     callDetailData?.main_billing_entity_id ??
     formValues.mainBillingEntity ??
     card?.main_billing_entity_id ??
@@ -835,6 +838,9 @@ const SalesOrderList = ({
   // that column is not guaranteed to sit directly after "Ops Completed".
   const isAtSoSentForSccColumn =
     Array.isArray(stepLabels) && currentStep != null && /so sent for scc/i.test(stepLabels[currentStep - 1] || "");
+  // Operator board: the Action column (Verify/Delete) also shows on its "Approval Requested" column.
+  const isAtApprovalRequestedColumn =
+    Array.isArray(stepLabels) && currentStep != null && isApprovalRequestedColumnTitle(stepLabels[currentStep - 1]);
   const isAtSccReceivedColumn =
     Array.isArray(stepLabels) && currentStep != null && /scc received/i.test(stepLabels[currentStep - 1] || "");
   // Zamil Marine's "PR Received / Submitted to FDA" column is the PR Received column, which keeps the Upload Documents action.
@@ -860,8 +866,11 @@ const SalesOrderList = ({
     Array.isArray(stepLabels) &&
     currentStep != null &&
     SEND_FOR_PO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
+  // "Approval Requested" shows the usual Action column (verify tick + delete bin) to every user.
+  const canUseActionColumn = canViewActionColumn || isAtApprovalRequestedColumn;
   const showActionColumn =
-    canViewActionColumn &&
+    isAtApprovalRequestedColumn ||
+    (canViewActionColumn &&
     (isLamprellUaeWorkflowCard
       ? isAtSendForPoApprovalColumn
       : isZakherWorkflowCard
@@ -870,7 +879,7 @@ const SalesOrderList = ({
       ? isAtAwaitingSrtColumn
       : hasSendForSoApprovalColumn
       ? isAtSendForSoApprovalColumn
-      : isAtColumnAfterOpsCompleted || isBeforeSubmittedToDa || isAtSubmittedToDaColumn || isAtSoSentForSccColumn);
+      : isAtColumnAfterOpsCompleted || isBeforeSubmittedToDa || isAtSubmittedToDaColumn || isAtSoSentForSccColumn));
 
   // Zakher Marine: moving a card to "Submitted to DA" (footer step click) while all its line items are
   // already verified closes the card, same as ticking the last item there. Only a change of column
@@ -2637,10 +2646,10 @@ const SalesOrderList = ({
               className="sales-order-verify-checkbox"
               checked={isItemVerified(order)}
               onChange={() => handleToggleVerified(order)}
-              disabled={verifyingItemIds.has(order.id)}
+              disabled={verifyingItemIds.has(order.id) || !canUseActionColumn}
               aria-label="Verify line item"
             />
-            {!readOnly && (
+            {!readOnly && canUseActionColumn && (
               <button
                 type="button"
                 className="sales-order-delete-item-btn"

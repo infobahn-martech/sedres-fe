@@ -143,6 +143,39 @@ const useBusinessRuleReducer = create((set) => ({
         }
     },
 
+    thenActionFieldsByType: {},
+
+    getThenActionFieldsByType: async (actionTypeId) => {
+        const key = String(actionTypeId);
+        set((state) => ({
+            thenActionFieldsByType: {
+                ...state.thenActionFieldsByType,
+                [key]: { ...(state.thenActionFieldsByType[key] ?? {}), isLoading: true },
+            },
+        }));
+        try {
+            const { data } = await businessRuleService.getThenActionFields(actionTypeId);
+            set((state) => ({
+                thenActionFieldsByType: {
+                    ...state.thenActionFieldsByType,
+                    [key]: {
+                        isLoading: false,
+                        regularFields: data?.data?.regular_fields ?? [],
+                        customFields: data?.data?.custom_fields ?? [],
+                        timeUnits: data?.data?.time_units ?? [],
+                    },
+                },
+            }));
+        } catch {
+            set((state) => ({
+                thenActionFieldsByType: {
+                    ...state.thenActionFieldsByType,
+                    [key]: { isLoading: false, regularFields: [], customFields: [], timeUnits: [] },
+                },
+            }));
+        }
+    },
+
     isLoadingBusinessRules: false,
     businessRules: [],
     businessRulesCount: 0,

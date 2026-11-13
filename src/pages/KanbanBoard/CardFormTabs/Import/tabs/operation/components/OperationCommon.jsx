@@ -67,41 +67,12 @@ FormField.propTypes = {
 
 export const OperationFormCard = ({ className = "", children, topRightAction = null }) => {
   const hasAction = Boolean(topRightAction);
-  const cardRef = useRef(null);
-  const [isRevealed, setIsRevealed] = useState(false);
 
-  useEffect(() => {
-    const node = cardRef.current;
-    if (!node || typeof IntersectionObserver === "undefined") {
-      setIsRevealed(true);
-      return undefined;
-    }
-
-    // Safety net: never leave the card invisible if the observer is slow/misses.
-    const fallbackTimer = window.setTimeout(() => setIsRevealed(true), 900);
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsRevealed(true);
-          observer.disconnect();
-          window.clearTimeout(fallbackTimer);
-        }
-      },
-      { threshold: 0.1 }
-    );
-    observer.observe(node);
-
-    return () => {
-      observer.disconnect();
-      window.clearTimeout(fallbackTimer);
-    };
-  }, []);
-
+  // Renders immediately with no staggered field reveal — the stage
+  // skeleton (StageFormSkeleton) covers the loading state instead.
   return (
     <div
-      ref={cardRef}
-      className={`operation-form-card${hasAction ? " operation-form-card--has-action" : ""}${isRevealed ? " operation-form-card--revealed" : ""} ${className}`.trim()}
+      className={`operation-form-card${hasAction ? " operation-form-card--has-action" : ""} ${className}`.trim()}
     >
       {hasAction ? <div className="operation-form-card-header-action">{topRightAction}</div> : null}
       {children}
@@ -1176,19 +1147,23 @@ export const OperationEmailPreviewPanel = ({
         <h4>Email Preview</h4>
         <div className="operation-email-preview-header-tools">
           {reportTypeOptions?.length > 0 && (
-            <div className="operation-email-report-type">
-              <label htmlFor="operation-report-type">Report Type</label>
-              <select
-                id="operation-report-type"
-                value={reportType || reportTypeOptions[0]?.value}
-                onChange={(e) => onReportTypeChange?.(e.target.value)}
-              >
-                {reportTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
+            <div className="operation-email-report-type" role="radiogroup" aria-label="Report type">
+              {reportTypeOptions.map((option) => {
+                const isActive = (reportType || reportTypeOptions[0]?.value) === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={isActive}
+                    className={`operation-email-report-type__option${isActive ? " is-active" : ""}`}
+                    onClick={() => !isActive && onReportTypeChange?.(option.value)}
+                    disabled={isSending}
+                  >
                     {option.label}
-                  </option>
-                ))}
-              </select>
+                  </button>
+                );
+              })}
             </div>
           )}
           {showSend && (
@@ -1208,28 +1183,31 @@ export const OperationEmailPreviewPanel = ({
 
       <div className="operation-email-preview-body">
         {isVisible("from") && (
-        <FormField label="From">
+        <FormField label="From" className="operation-email-preview-inline-field">
           <FormInput type="text" value={from || ""} onChange={(e) => onChange?.("from", e.target.value)} placeholder="Sender email" />
         </FormField>
         )}
         {isVisible("to") && (
-        <FormField label="To">
+        <FormField label="To" className="operation-email-preview-inline-field">
           <FormInput type="text" value={to || ""} onChange={(e) => onChange?.("to", e.target.value)} placeholder="Recipient emails" />
         </FormField>
         )}
         {isVisible("cc") && (
-        <FormField label="Cc">
+        <FormField label="Cc" className="operation-email-preview-inline-field">
           <FormInput type="text" value={cc || ""} onChange={(e) => onChange?.("cc", e.target.value)} placeholder="CC emails" />
         </FormField>
         )}
         {isVisible("subject") && (
-        <FormField label="Subject">
+        <FormField label="Subject" className="operation-email-preview-inline-field">
           <FormInput type="text" value={subject || ""} onChange={(e) => onChange?.("subject", e.target.value)} placeholder="Email subject" />
         </FormField>
         )}
         {isVisible("attachments") && (
-        <FormField label="Attachments" className="operation-email-preview-attachments-field">
-          <div className="email-preview-attachments-list">
+        <FormField label="Attachments" className="operation-email-preview-attachments-field operation-email-preview-inline-field">
+          <div className="cf-input email-preview-attachments-list operation-email-preview-attachments-box">
+            {attachmentList.length === 0 && !isUploadingAttachments ? (
+              <span className="operation-email-preview-attachments-empty">No attachments</span>
+            ) : null}
             {attachmentList.map((attachment) => (
               <EmailPreviewAttachmentChip
                 key={attachment.id}
@@ -1272,7 +1250,7 @@ export const OperationEmailPreviewPanel = ({
         </FormField>
         )}
         {isVisible("message") && (
-        <FormField label="Message" className="operation-email-preview-message-field">
+        <FormField className="operation-email-preview-message-field">
           <div className="react-quill-wrapper operation-email-preview-message-quill operation-email-quill">
             <ReactQuill
               theme="snow"

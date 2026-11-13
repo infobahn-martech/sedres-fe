@@ -1,10 +1,11 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiEye, FiLayers } from "react-icons/fi";
+import { FiAlertTriangle, FiExternalLink, FiEye, FiLayers } from "react-icons/fi";
 import CardFormEmptyState from "../../../shared/components/CardFormEmptyState";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
 import callFileService from "@/services/callFileService";
+import arrivalService from "@/services/arrivalService";
 import appointmentAcceptanceService from "@/services/appointmentAcceptanceService";
 import useArrivalReducer from "@/store/ArrivalReducer";
 import DateTimePickerField from "../../../shared/components/DateTimePickerField";
@@ -12,6 +13,8 @@ import {
   buildTemplateFieldDisplay,
   findTimeObjectRowForField,
   flattenTimeObjects,
+  getTemplateOperationSubtabs,
+  normalizeTemplateKey,
   getTemplateFieldType,
   hasExistingTemplateFile,
   isEmptyTemplateValue,
@@ -25,7 +28,10 @@ import {
   AdditionalTimeObjectAddButton,
   AdditionalTimeObjectsFields,
   appendAdditionalTimeObject,
+  buildSendReportRequestBody,
   commitAdditionalTimeObject,
+  extractUploadedAttachments,
+  mapAttachmentsForSave,
   mapCallTimeObjectsToAdditionalRows,
   FormField,
   FormInput,
@@ -48,17 +54,38 @@ const REPORT_TEMPLATE_BY_STAGE = {
   departure: { reportTypeId: 5, load: appointmentAcceptanceService.getArrivalTemplateByPortCallType },
 };
 
-// Composer fields; each one is sent in save_stage's `report` (from_email, to_email, cc_emails, subject, body).
-const REPORT_COMPOSER_FIELDS = ["from", "to", "cc", "subject", "message"];
+// Arrival offers an Arrival / Daily report switch in the composer (as in the legacy Arrival form).
+// Daily reports use report_type_id 3.
+const ARRIVAL_REPORT_TYPE_OPTIONS = [
+  { value: "arrival", label: "Arrival Report" },
+  { value: "daily", label: "Daily Report" },
+];
+const DAILY_REPORT_TYPE_ID = 3;
 
-// Template values win; empty ones keep what the composer already has.
-const mergeReportTemplate = (prev, template) => ({
-  from: template.from || prev.from,
-  to: template.to || prev.to,
-  cc: template.cc || prev.cc,
-  subject: template.subject || prev.subject,
-  message: template.message || prev.message,
-});
+const escapeHtml = (text) =>
+  String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+// Composer fields; each one is sent in save_stage's `report`
+// (from_email, to_email, cc_emails, subject, body, attachments).
+const REPORT_COMPOSER_FIELDS = ["from", "to", "cc", "subject", "attachments", "message"];
+
+// Template values win; empty ones keep what the composer already has. Template attachments
+// ({ file_name, file_url }) get local ids so the preview chips can be removed individually.
+const mergeReportTemplate = (prev, template) => {
+  const templateAttachments = extractUploadedAttachments(template.attachments);
+  return {
+    from: template.from || prev.from,
+    to: template.to || prev.to,
+    cc: template.cc || prev.cc,
+    subject: template.subject || prev.subject,
+    message: template.message || prev.message,
+    attachments: templateAttachments.length ? templateAttachments : prev.attachments || [],
+  };
+};
 
 // Stage ids for the shared time_object endpoints (additional "+" time objects).
 const STAGE_ID_BY_KEY = {
@@ -66,6 +93,47 @@ const STAGE_ID_BY_KEY = {
   arrival: OPERATION_STAGE_IDS.ARRIVAL,
   departure: OPERATION_STAGE_IDS.DEPARTURE,
 };
+
+// Changing one of these fields re-requests call_file/get_call_detail/{callId} with the current
+// values as query params, and the stage's returned email_template is rebound into the composer.
+const EMAIL_TEMPLATE_TRIGGER_KEYS = ["saber", "weather_forecast"];
+
+// Live wind map shown under Weather Forecast when "Bad Weather" is selected (as in the legacy
+// Pre Arrival form).
+const WINDY_EMBED_URL =
+  "https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=8&overlay=wind&product=ecmwf&level=surface&lat=27.284&lon=49.109&detailLat=29.0525682775337&detailLon=48.087158203125&marker=true";
+const WINDY_OPEN_URL = "https://www.windy.com/27.284/49.109?wind,27.284,49.109,8";
+
+const isBadWeatherValue = (value) => normalizeTemplateKey(value) === "bad_weather";
+
+const WindyWeatherMap = () => (
+  <div className="stage-windy-card">
+    <div className="stage-windy-card__header">
+      <span className="stage-windy-card__icon" aria-hidden>
+        <FiAlertTriangle size={14} strokeWidth={2.4} />
+      </span>
+      <div className="stage-windy-card__text">
+        <span className="stage-windy-card__title">Bad weather forecast</span>
+        <span className="stage-windy-card__hint">Re-check ETA and clearance time objects.</span>
+      </div>
+      <a
+        className="stage-windy-card__link"
+        href={WINDY_OPEN_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Open in Windy"
+      >
+        <FiExternalLink size={13} strokeWidth={2.2} aria-hidden />
+        <span>Windy</span>
+      </a>
+    </div>
+    <div className="stage-windy-card__map">
+      <iframe title="Windy weather map" src={WINDY_EMBED_URL} loading="lazy" allowFullScreen />
+    </div>
+  </div>
+);
+
+const HIDDEN_FIELD_TYPES = new Set(["iframe"]);
 
 const SELECT_TYPES =new Set(["dropdown", "select", "multiselect", "multi_select"]);
 const TEXT_INPUT_TYPES = { text: "text", email: "email", number: "number", phone: "tel", tel: "tel", url: "url" };
@@ -106,17 +174,27 @@ function TemplateStageForm({
   onDirtyChange,
   onSaveSuccess,
 }) {
-  const fields = useMemo(() => sortTemplateFields(stage?.fields), [stage]);
-  const timeObjects = useMemo(() => flattenTimeObjects(detail), [detail]);
+  // A SABER / Weather Forecast change re-requests get_call_detail with those values; its response
+  // ({ detail, stage }) then drives this stage's fields, values and email template until the shared
+  // call detail refreshes again (e.g. after a save).
+  const [freshData, setFreshData] = useState(null);
+  useEffect(() => {
+    setFreshData(null);
+  }, [detail]);
+  const activeDetail = freshData?.detail ?? detail;
+  const activeStage = freshData?.stage ?? stage;
+
+  const fields = useMemo(() => sortTemplateFields(activeStage?.fields), [activeStage]);
+  const timeObjects = useMemo(() => flattenTimeObjects(activeDetail), [activeDetail]);
 
   // Saved values from the (shared) call detail; recomputed after a save refreshes it.
   const baselineValues = useMemo(() => {
     const values = {};
     fields.forEach((field) => {
-      values[field.field_id] = toStageFormValue(field, { detail, timeObjects });
+      values[field.field_id] = toStageFormValue(field, { detail: activeDetail, timeObjects });
     });
     return values;
-  }, [fields, detail, timeObjects]);
+  }, [fields, activeDetail, timeObjects]);
 
   // Only fields the user changed live here, so a background refresh never overwrites them.
   const [edits, setEdits] = useState({});
@@ -126,15 +204,29 @@ function TemplateStageForm({
   const submittingRef = useRef(false);
   // The call detail's subtab `email_template` is the composer's source; the report template
   // endpoints are only a fallback for templates that don't carry one.
-  const detailEmailTemplate = stage?.emailTemplate ?? null;
+  const detailEmailTemplate = activeStage?.emailTemplate ?? null;
   const showEmailPreview = canPreviewEmail && stage?.emailPreview !== false;
   const [reportDraft, setReportDraft] = useState(() => {
-    const defaults = { from: "", to: "", cc: "", subject: `Report - ${stage?.label ?? ""}`.trim(), message: "" };
+    const defaults = {
+      from: "",
+      to: "",
+      cc: "",
+      subject: `Report - ${stage?.label ?? ""}`.trim(),
+      message: "",
+      attachments: [],
+    };
     if (!detailEmailTemplate) return defaults;
     return mergeReportTemplate(defaults, extractReportTemplateFields(detailEmailTemplate));
   });
   const reportTouchedRef = useRef(false);
   const [reportTemplateVersion, setReportTemplateVersion] = useState(0);
+  // Arrival only: "arrival" | "daily". The arrival draft is kept aside while Daily is shown.
+  const hasReportTypeSwitch = stageKey === "arrival";
+  const [reportType, setReportType] = useState("arrival");
+  const reportTypeRef = useRef(reportType);
+  reportTypeRef.current = reportType;
+  const arrivalDraftRef = useRef(null);
+  const arrivalTouchedRef = useRef(false);
   const aliveRef = useRef(true);
 
   useEffect(() => {
@@ -162,6 +254,96 @@ function TemplateStageForm({
       delete next[fieldId];
       return next;
     });
+
+  // field_key → field for the email-template trigger fields present on this stage.
+  const triggerFields = useMemo(() => {
+    const map = {};
+    fields.forEach((field) => {
+      const key = normalizeTemplateKey(field?.field_key);
+      if (EMAIL_TEMPLATE_TRIGGER_KEYS.includes(key)) map[key] = field;
+    });
+    return map;
+  }, [fields]);
+  const templateRequestSeqRef = useRef(0);
+
+  // Current saber / weather_forecast values as query params; the JSON key drives the effect below.
+  const triggerParams = {};
+  EMAIL_TEMPLATE_TRIGGER_KEYS.forEach((key) => {
+    const field = triggerFields[key];
+    if (!field) return;
+    const value = getValue(field.field_id);
+    triggerParams[key] = value === null || value === undefined ? "" : String(value);
+  });
+  const triggerParamsKey = JSON.stringify(triggerParams);
+  const hasTriggerEdit = Object.values(triggerFields).some((field) =>
+    Object.prototype.hasOwnProperty.call(edits, field.field_id)
+  );
+  const lastTriggerParamsKeyRef = useRef(triggerParamsKey);
+
+  const refreshEmailTemplateForTriggers = async (params) => {
+    const resolvedCallId = String(callId ?? "").trim();
+    if (!resolvedCallId) return;
+    const seq = ++templateRequestSeqRef.current;
+    try {
+      const { data } = await callFileService.getCallDetail(resolvedCallId, params);
+      // Only the latest selection's response is bound.
+      if (!aliveRef.current || seq !== templateRequestSeqRef.current) return;
+      const freshDetail = data?.data ?? null;
+      const freshStage = (getTemplateOperationSubtabs(freshDetail) || []).find(
+        (tab) => String(tab.tabId) === String(stage?.tabId)
+      );
+      if (!freshDetail || !freshStage) return;
+
+      // Rebind this stage's fields and values from the fresh response. The SABER / Weather
+      // selections stay as picked; every other field takes the response's value.
+      const triggerIds = new Set(Object.values(triggerFields).map((field) => String(field.field_id)));
+      setFreshData({ detail: freshDetail, stage: freshStage });
+      setEdits((prev) => {
+        const kept = {};
+        Object.entries(prev).forEach(([fieldId, value]) => {
+          if (triggerIds.has(String(fieldId))) kept[fieldId] = value;
+        });
+        return kept;
+      });
+      setErrors({});
+
+      if (freshStage.emailTemplate && reportTypeRef.current === "arrival") {
+        const template = extractReportTemplateFields(freshStage.emailTemplate);
+        // An explicit saber / weather change re-applies the template even over composer edits.
+        reportTouchedRef.current = false;
+        setReportDraft((prev) => mergeReportTemplate(prev, template));
+      }
+    } catch (error) {
+      if (aliveRef.current && seq === templateRequestSeqRef.current) {
+        notify(getApiErrorMessage(error, "Failed to refresh the email template."), "error");
+      }
+    }
+  };
+
+  // Re-request get_call_detail whenever the user changes SABER / Weather Forecast.
+  useEffect(() => {
+    if (triggerParamsKey === lastTriggerParamsKeyRef.current) return;
+    lastTriggerParamsKeyRef.current = triggerParamsKey;
+    if (!hasTriggerEdit || isViewOnly) return;
+    refreshEmailTemplateForTriggers(JSON.parse(triggerParamsKey));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerParamsKey]);
+
+  // Conditional fields (`show_when_field_id` / `show_when_value`, e.g. the SABER attachment shown
+  // only for "by_sedres") render, validate and save only while their condition holds.
+  const isFieldVisible = (field) => {
+    const dependsOn = field?.show_when_field_id;
+    if (dependsOn === null || dependsOn === undefined || String(dependsOn).trim() === "") return true;
+    const current = getValue(dependsOn);
+    const expected = String(field.show_when_value ?? "").trim();
+    if (Array.isArray(current)) return current.map(String).includes(expected);
+    return String(current ?? "").trim() === expected;
+  };
+  // `iframe` fields (e.g. "Weather Map") are display-only from the template; the Windy card under
+  // Weather Forecast already shows the map, so they are neither rendered nor saved.
+  const visibleFields = fields.filter(
+    (field) => !HIDDEN_FIELD_TYPES.has(getTemplateFieldType(field)) && isFieldVisible(field)
+  );
 
   const setFieldValue = (fieldId, value) => {
     setEdits((prev) => ({ ...prev, [fieldId]: value }));
@@ -198,7 +380,7 @@ function TemplateStageForm({
   // Rebind from the call detail whenever it refreshes (e.g. after a save), unless the user
   // has already edited the composer.
   useEffect(() => {
-    if (!detailEmailTemplate || reportTouchedRef.current) return;
+    if (!detailEmailTemplate || reportTouchedRef.current || reportTypeRef.current !== "arrival") return;
     const template = extractReportTemplateFields(detailEmailTemplate);
     setReportDraft((prev) => mergeReportTemplate(prev, template));
   }, [detailEmailTemplate]);
@@ -220,7 +402,7 @@ function TemplateStageForm({
         time_objects: templateTimeObjectsRef.current,
       })
       .then((response) => {
-        if (cancelled || !aliveRef.current || reportTouchedRef.current) return;
+        if (cancelled || !aliveRef.current || reportTouchedRef.current || reportTypeRef.current !== "arrival") return;
         const template = extractReportTemplateFields(response);
         setReportDraft((prev) => mergeReportTemplate(prev, template));
       })
@@ -242,9 +424,9 @@ function TemplateStageForm({
 
   // Saved additional rows come from the call detail (call_file/get_call_detail) `time_objects`.
   const savedAdditionalRows = useMemo(() => {
-    const source = Array.isArray(detail?.time_objects) ? detail.time_objects.flat(Infinity) : [];
+    const source = Array.isArray(activeDetail?.time_objects) ? activeDetail.time_objects.flat(Infinity) : [];
     return mapCallTimeObjectsToAdditionalRows(source, { stageId });
-  }, [detail, stageId]);
+  }, [activeDetail, stageId]);
 
   // Whenever the call detail refreshes, show its saved rows plus any unsaved local drafts.
   useEffect(() => {
@@ -298,10 +480,80 @@ function TemplateStageForm({
     setReportDraft((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Daily report body: every filled, visible stage field as "Label: value".
+  const buildDailyReportBody = () => {
+    const rows = visibleFields
+      .filter((field) => getTemplateFieldType(field) !== "file")
+      .map((field) => {
+        const raw = getValue(field.field_id);
+        if (isEmptyTemplateValue(raw)) return null;
+        const options = toOptionList(field);
+        const values = (Array.isArray(raw) ? raw : [raw]).map((item) => {
+          const match = options.find((opt) => opt.value === String(item));
+          return match ? match.label : String(item);
+        });
+        return `<p><strong>${escapeHtml(field.field_label || field.field_key)}:</strong> ${escapeHtml(values.join(", "))}</p>`;
+      })
+      .filter(Boolean);
+    return `<p><strong>Daily Report - ${escapeHtml(stage?.label || "Arrival")}</strong></p><p><br></p>${rows.join("")}`;
+  };
+
+  const handleReportTypeChange = (nextType) => {
+    if (nextType === reportType) return;
+    if (nextType === "daily") {
+      // Keep the arrival draft (with any edits) to restore when switching back.
+      arrivalDraftRef.current = reportDraft;
+      arrivalTouchedRef.current = reportTouchedRef.current;
+      setReportType("daily");
+      // "Arrival Report - AESEN GALAXY" → "Daily Report - AESEN GALAXY".
+      const arrivalSubject = String(reportDraft.subject || "").trim();
+      const dailySubject = /^Arrival Report/i.test(arrivalSubject)
+        ? arrivalSubject.replace(/^Arrival Report/i, "Daily Report")
+        : "Daily Report";
+      setReportDraft((prev) => ({
+        ...prev,
+        subject: dailySubject,
+        message: buildDailyReportBody(),
+        attachments: [],
+      }));
+      // A configured Daily (report_type_id 3) template, if any, replaces the generated body.
+      const resolvedCallId = String(callId ?? "").trim();
+      const resolvedPortId = String(portId ?? "").trim();
+      const resolvedCallTypeId = String(callTypeId ?? "").trim();
+      if (resolvedCallId && resolvedPortId && resolvedCallTypeId) {
+        appointmentAcceptanceService
+          .getArrivalTemplateByPortCallType({
+            call_id: resolvedCallId,
+            port_id: resolvedPortId,
+            call_type_id: resolvedCallTypeId,
+            report_type_id: DAILY_REPORT_TYPE_ID,
+            time_objects: templateTimeObjectsRef.current,
+          })
+          .then((response) => {
+            if (!aliveRef.current || reportTypeRef.current !== "daily") return;
+            const template = extractReportTemplateFields(response);
+            if (template.subject || template.message) {
+              setReportDraft((prev) => mergeReportTemplate(prev, template));
+            }
+          })
+          .catch(() => {
+            // Generated daily body stays in place.
+          });
+      }
+      return;
+    }
+    setReportType("arrival");
+    reportTouchedRef.current = arrivalTouchedRef.current;
+    if (arrivalDraftRef.current) setReportDraft(arrivalDraftRef.current);
+    else if (detailEmailTemplate) {
+      setReportDraft((prev) => mergeReportTemplate(prev, extractReportTemplateFields(detailEmailTemplate)));
+    }
+  };
+
   // ---- Validation & submit ----
   const validate = () => {
     const nextErrors = {};
-    fields.forEach((field) => {
+    visibleFields.forEach((field) => {
       if (!isTemplateFieldRequired(field)) return;
       const type = getTemplateFieldType(field);
       const id = field.field_id;
@@ -328,7 +580,7 @@ function TemplateStageForm({
 
     const nextErrors = validate();
     setErrors(nextErrors);
-    const missingLabels = fields.filter((field) => nextErrors[field.field_id]).map((field) => field.field_label);
+    const missingLabels = visibleFields.filter((field) => nextErrors[field.field_id]).map((field) => field.field_label);
     if (missingLabels.length) {
       notify(`Please fill the required fields: ${missingLabels.join(", ")}.`, "error");
       return;
@@ -339,7 +591,7 @@ function TemplateStageForm({
     }
 
     const fieldsPayload = {};
-    fields.forEach((field) => {
+    visibleFields.forEach((field) => {
       if (getTemplateFieldType(field) === "file") return;
       fieldsPayload[field.field_id] = toStagePayloadValue(field, getValue(field.field_id));
     });
@@ -349,8 +601,9 @@ function TemplateStageForm({
     formData.append("tab_id", String(stage.tabId));
     formData.append("fields", JSON.stringify(fieldsPayload));
     // Only newly selected files are uploaded; existing attachments are left untouched.
+    const visibleFieldIds = new Set(visibleFields.map((field) => String(field.field_id)));
     Object.entries(newFiles).forEach(([fieldId, file]) => {
-      if (file instanceof File) formData.append(`field_${fieldId}`, file);
+      if (file instanceof File && visibleFieldIds.has(String(fieldId))) formData.append(`field_${fieldId}`, file);
     });
     // The composer's report goes with every save_stage call (Save and Send) once it has a recipient,
     // e.g. report = {"from_email":"info@x.com","to_email":"agent@x.com","cc_emails":"ops@x.com",
@@ -361,8 +614,10 @@ function TemplateStageForm({
       cc_emails: String(reportDraft.cc || "").trim(),
       subject: String(reportDraft.subject || "").trim(),
       body: resolveReportBodyHtml(reportDraft.message, "") || "",
+      attachments: mapAttachmentsForSave(reportDraft.attachments),
     };
-    if (showEmailPreview && report.to_email) {
+    // The stage's saved report is the Arrival one; a Daily draft is only ever sent, not saved.
+    if (showEmailPreview && report.to_email && reportType === "arrival") {
       formData.append("report", JSON.stringify(report));
     }
 
@@ -389,6 +644,56 @@ function TemplateStageForm({
       if (aliveRef.current) {
         notify(getApiErrorMessage(error, withReport ? "Failed to save and send the report." : "Failed to save."), "error");
       }
+    } finally {
+      submittingRef.current = false;
+      if (aliveRef.current) setSubmitting(null);
+    }
+  };
+
+  // Email preview "Send": posts the composer to arrival/send_report (no stage save).
+  const sendReport = async () => {
+    if (submittingRef.current || isViewOnly) return;
+    const resolvedCallId = String(callId ?? "").trim();
+    if (!resolvedCallId) {
+      notify("Call ID is required to send the report.", "error");
+      return;
+    }
+    const toEmail = String(reportDraft.to || "").trim();
+    if (!toEmail) {
+      notify("Add a recipient in the email preview before sending the report.", "error");
+      return;
+    }
+
+    const reportTypeId =
+      hasReportTypeSwitch && reportType === "daily"
+        ? DAILY_REPORT_TYPE_ID
+        : activeStage?.emailTemplate?.report_type_id ?? reportConfig?.reportTypeId;
+    const body = resolveReportBodyHtml(reportDraft.message, "") || "";
+    const requestBody = buildSendReportRequestBody(
+      {
+        call_id: resolvedCallId,
+        report_type_id: reportTypeId,
+        from_email: String(reportDraft.from || "").trim(),
+        to_email: toEmail,
+        cc_emails: String(reportDraft.cc || "").trim(),
+        subject: String(reportDraft.subject || "").trim(),
+        body,
+        message: body,
+      },
+      reportDraft.attachments
+    );
+
+    submittingRef.current = true;
+    setSubmitting("report");
+    try {
+      const response = await arrivalService.sendReport(requestBody);
+      const resBody = response?.data;
+      if (resBody?.status === "error" || resBody?.status === false) {
+        throw new Error(resBody?.message || "Unable to send the report.");
+      }
+      if (aliveRef.current) notify(resBody?.message || "Report sent successfully.", "success");
+    } catch (error) {
+      if (aliveRef.current) notify(getApiErrorMessage(error, "Failed to send the report."), "error");
     } finally {
       submittingRef.current = false;
       if (aliveRef.current) setSubmitting(null);
@@ -536,7 +841,7 @@ function TemplateStageForm({
       );
     }
     // Unsupported type: show the saved value read-only; it is still sent back unchanged.
-    const display = buildTemplateFieldDisplay(field, { detail, timeObjects });
+    const display = buildTemplateFieldDisplay(field, { detail: activeDetail, timeObjects });
     return (
       <span className="detail-row-empty">
         {display.kind === "text" ? display.text : `Can't edit this field type (${type}).`}
@@ -566,7 +871,7 @@ function TemplateStageForm({
                 }
               >
                 {/* Operation stages are a single column: fields stack in row_no, then col_no order. */}
-                {fields.length === 0 ? (
+                {visibleFields.length === 0 ? (
                   <CardFormEmptyState
                     icon={FiLayers}
                     title="No fields for this stage"
@@ -577,13 +882,15 @@ function TemplateStageForm({
                     }
                   />
                 ) : (
-                  fields.map((field) => (
+                  visibleFields.map((field) => (
                     <FormField
                       key={field.field_id}
                       label={`${field.field_label || field.field_key || "Field"}${isTemplateFieldRequired(field) ? " *" : ""}`}
                     >
                       {renderInput(field)}
                       {errors[field.field_id] && <span className="cf-field-error">{errors[field.field_id]}</span>}
+                      {normalizeTemplateKey(field.field_key) === "weather_forecast" &&
+                        isBadWeatherValue(getValue(field.field_id)) && <WindyWeatherMap />}
                     </FormField>
                   ))
                 )}
@@ -601,13 +908,19 @@ function TemplateStageForm({
               {showEmailPreview && (
                 <OperationFormCard className="operation-email-column">
                   <OperationEmailPreviewPanel
+                    reportType={hasReportTypeSwitch ? reportType : undefined}
+                    reportTypeOptions={hasReportTypeSwitch ? ARRIVAL_REPORT_TYPE_OPTIONS : undefined}
+                    onReportTypeChange={hasReportTypeSwitch ? handleReportTypeChange : undefined}
                     from={reportDraft.from}
                     to={reportDraft.to}
                     cc={reportDraft.cc}
                     subject={reportDraft.subject}
                     message={reportDraft.message}
+                    attachments={reportDraft.attachments}
+                    onAttachmentsChange={(list) => handleReportDraftChange("attachments", list)}
+                    billingEntityId={activeDetail?.template?.billing_entity_id}
                     onChange={handleReportDraftChange}
-                    onSend={() => submit({ withReport: true })}
+                    onSend={sendReport}
                     isSending={submitting === "report"}
                     isViewOnly={isViewOnly}
                     canSend={canSendReport}

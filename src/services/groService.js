@@ -1,10 +1,19 @@
 import Gateway from "../gateway/gateway";
 import taskCardService from "./taskCardService";
 
+// Common task-card bind API. Opening a card mounts CardForm (appointment-type check) and
+// GROCardView (header/arrival) together — share one in-flight request per call/card pair.
+const pendingCallDetailByIdRequests = new Map();
 export const getCallDetailById = (callId, cardId) => {
   const callSegment = encodeURIComponent(String(callId));
   const cardSegment = encodeURIComponent(String(cardId));
-  return Gateway.get(`call_file/get_call_detail_by_id/${callSegment}/${cardSegment}`);
+  const key = `${callSegment}/${cardSegment}`;
+  if (pendingCallDetailByIdRequests.has(key)) return pendingCallDetailByIdRequests.get(key);
+  const request = Gateway.get(`call_file/get_call_detail_by_id/${key}`).finally(() => {
+    pendingCallDetailByIdRequests.delete(key);
+  });
+  pendingCallDetailByIdRequests.set(key, request);
+  return request;
 };
 
 export const getDocumentsByTask = (taskId, callId) => {

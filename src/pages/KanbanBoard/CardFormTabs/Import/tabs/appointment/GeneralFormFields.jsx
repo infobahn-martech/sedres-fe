@@ -843,10 +843,16 @@ const MultiSelectField = ({
   menuMaxHeight,
   isLoading = false,
   emptyMessage = "No options found",
+  showAvatars = false,
+  singleLine = showAvatars,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState("");
   const dropdownRef = useRef(null);
+  const tagsRef = useRef(null);
+  const tagRefs = useRef([]);
+  const moreTagRef = useRef(null);
+  const [visibleTagCount, setVisibleTagCount] = useState(Infinity);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -871,7 +877,46 @@ const MultiSelectField = ({
 
   const valuesEqual = (a, b) => String(a) === String(b);
   const selectedValues = Array.isArray(value) ? value : (value ? [value] : []);
-  const valueToLabel = (val) => options.find((o) => valuesEqual(o.value, val))?.label ?? String(val);
+  const valueToOption = (val) => options.find((o) => valuesEqual(o.value, val));
+  const valueToLabel = (val) => valueToOption(val)?.label ?? String(val);
+
+  const selectedLabelsKey = selectedValues.map(valueToLabel).join(" ");
+
+  // Single-line mode: show as many tags as fit on one row; the rest collapse into a "…" chip.
+  useLayoutEffect(() => {
+    if (!singleLine) return undefined;
+    const container = tagsRef.current;
+    if (!container) return undefined;
+    const measure = () => {
+      const widths = tagRefs.current.slice(0, selectedValues.length).map((el) => el?.offsetWidth ?? 0);
+      const styles = window.getComputedStyle(container);
+      const gap = parseFloat(styles.columnGap) || 6;
+      const available = container.clientWidth;
+      const total = widths.reduce((sum, w) => sum + w, 0) + gap * Math.max(widths.length - 1, 0);
+      if (total <= available) {
+        setVisibleTagCount(Infinity);
+        return;
+      }
+      const moreWidth = (moreTagRef.current?.offsetWidth || 28) + gap;
+      let used = 0;
+      let count = 0;
+      for (const w of widths) {
+        const next = used + (count ? gap : 0) + w;
+        if (next + moreWidth > available) break;
+        used = next;
+        count += 1;
+      }
+      // Always keep at least one tag; it truncates with an ellipsis if it is too wide on its own.
+      setVisibleTagCount(Math.max(count, 1));
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [singleLine, selectedLabelsKey, selectedValues.length]);
+
+  const hiddenTagValues = singleLine ? selectedValues.slice(visibleTagCount) : [];
 
   const handleToggle = (optionValue) => {
     const newValue = selectedValues.some((v) => valuesEqual(v, optionValue))
@@ -885,7 +930,7 @@ const MultiSelectField = ({
     onChange({ target: { value: selectedValues.filter((entry) => !valuesEqual(entry, rawVal)), name } });
   };
 
-  return (
+  const select = (
     <div
       className={`cf-multi-select-email ${disabled ? "disabled" : ""} ${hasError ? "has-error" : ""} ${className}`.trim()}
       ref={dropdownRef}
@@ -895,11 +940,22 @@ const MultiSelectField = ({
         className={`cf-multi-select-email-input ${disabled ? "disabled" : ""} ${hasError ? "has-error" : ""}`}
         onClick={disabled ? undefined : () => setIsOpen((prev) => !prev)}
       >
-        <div className="cf-multi-select-email-tags">
+        <div
+          ref={tagsRef}
+          className={`cf-multi-select-email-tags${singleLine ? " cf-multi-select-email-tags--single-line" : ""}`}
+        >
           {selectedValues.length > 0 ? (
-            selectedValues.map((entryVal) => (
-              <span key={String(entryVal)} className="cf-email-tag">
-                {valueToLabel(entryVal)}
+            selectedValues.map((entryVal, index) => (
+              <span
+                key={String(entryVal)}
+                ref={(el) => {
+                  tagRefs.current[index] = el;
+                }}
+                className={`cf-email-tag${singleLine && index >= visibleTagCount ? " cf-email-tag--measure-only" : ""}`}
+                title={singleLine ? valueToLabel(entryVal) : undefined}
+                aria-hidden={singleLine && index >= visibleTagCount ? true : undefined}
+              >
+                <span className="cf-email-tag-label">{valueToLabel(entryVal)}</span>
                 {!disabled && (
                   <button
                     type="button"
@@ -913,6 +969,16 @@ const MultiSelectField = ({
             ))
           ) : (
             <span className="cf-multi-select-placeholder">{placeholder || "Select..."}</span>
+          )}
+          {singleLine && selectedValues.length > 0 && (
+            <span
+              ref={moreTagRef}
+              className={`cf-email-tag cf-email-tag--more${hiddenTagValues.length ? "" : " cf-email-tag--measure-only"}`}
+              title={hiddenTagValues.map(valueToLabel).join(", ") || undefined}
+              aria-hidden={hiddenTagValues.length ? undefined : true}
+            >
+              …
+            </span>
           )}
         </div>
         <span className="cf-multi-select-arrow">▼</span>
@@ -950,7 +1016,18 @@ const MultiSelectField = ({
                       <span className="cf-multi-select-checkbox">
                         {isSelected && "✓"}
                       </span>
-                      <span>{option.label}</span>
+                      {showAvatars ? (
+                        <div className="cf-searchable-option-with-avatar">
+                          <UserOptionAvatar
+                            avatarUrl={option.avatar ?? undefined}
+                            label={option.label}
+                            className="cf-owner-avatar--sm"
+                          />
+                          <span>{option.label}</span>
+                        </div>
+                      ) : (
+                        <span>{option.label}</span>
+                      )}
                     </div>
                   );
                 })
@@ -959,6 +1036,35 @@ const MultiSelectField = ({
           </div>
         </div>
       )}
+    </div>
+  );
+
+  if (!showAvatars) return select;
+
+  // Selected users shown in front of the field like the Owner avatar; several overlap as a stack.
+  const AVATAR_STACK_LIMIT = 3;
+  const visibleAvatars = selectedValues.slice(0, AVATAR_STACK_LIMIT);
+  const hiddenCount = selectedValues.length - visibleAvatars.length;
+  return (
+    <div className={`cf-owner-row cf-owner-row--multi ${hasError ? "is-invalid" : ""}`.trim()}>
+      <div
+        className="cf-owner-avatar-stack"
+        title={selectedValues.map(valueToLabel).join(", ") || undefined}
+      >
+        {visibleAvatars.length ? (
+          visibleAvatars.map((entryVal) => (
+            <UserOptionAvatar
+              key={String(entryVal)}
+              avatarUrl={valueToOption(entryVal)?.avatar ?? undefined}
+              label={valueToLabel(entryVal)}
+            />
+          ))
+        ) : (
+          <UserOptionAvatar />
+        )}
+        {hiddenCount > 0 && <div className="cf-owner-avatar cf-owner-avatar--more">+{hiddenCount}</div>}
+      </div>
+      {select}
     </div>
   );
 };
@@ -970,6 +1076,7 @@ MultiSelectField.propTypes = {
     PropTypes.shape({
       value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
       label: PropTypes.string.isRequired,
+      avatar: PropTypes.string,
     })
   ),
   placeholder: PropTypes.string,
@@ -977,6 +1084,8 @@ MultiSelectField.propTypes = {
   name: PropTypes.string,
   hasError: PropTypes.bool,
   className: PropTypes.string,
+  showAvatars: PropTypes.bool,
+  singleLine: PropTypes.bool,
   menuMaxHeight: PropTypes.number,
   isLoading: PropTypes.bool,
   emptyMessage: PropTypes.string,

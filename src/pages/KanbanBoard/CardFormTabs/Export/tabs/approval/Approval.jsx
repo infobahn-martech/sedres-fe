@@ -114,10 +114,6 @@ const EXPORT_APPROVAL_SECTION_ROLES = Object.freeze({
   ceo: ["23"],
 });
 
-// TEMPORARY: emails treated as Credit Controller regardless of role_id (Port
-// Operator test account). Remove this list once the account has the real role.
-const TEMP_CREDIT_CONTROLLER_EMAILS = Object.freeze(["infobahnoperator@gmail.com"]);
-
 const createEmptyPartySection = () => ({
   details: "",
   vesselCountUnderAgency: "",
@@ -804,12 +800,7 @@ const createEmptyPartySection = () => ({
     // EXPORT_APPROVAL_SECTION_ROLES; every other role gets it locked
     // (view-only), regardless of workflow stage.
     const roleKey = String(userRoleId);
-    const userEmail = useAuthReducer((state) => state.profileData?.email);
-    const isTempControllerEmail = TEMP_CREDIT_CONTROLLER_EMAILS.includes(
-      String(userEmail || "").trim().toLowerCase()
-    );
-    const isControllerRole =
-      EXPORT_APPROVAL_SECTION_ROLES.creditController.includes(roleKey) || isTempControllerEmail;
+    const isControllerRole = EXPORT_APPROVAL_SECTION_ROLES.creditController.includes(roleKey);
     const isManagerRole = EXPORT_APPROVAL_SECTION_ROLES.manager.includes(roleKey);
     const isCeoRole = EXPORT_APPROVAL_SECTION_ROLES.ceo.includes(roleKey);
     // Vessel party image uploads are restricted to Credit Controller and CEO
@@ -1034,278 +1025,281 @@ const createEmptyPartySection = () => ({
     return (
       <div className="general-tab-content approval-tab-content">
         <div className="cardform-body card-form-panel general-tab-body">
-          <div className="approval-sections-wrapper">
-            {isOnHold ? (
-              <div className="approval-hold-banner">
-                <FiPauseCircle size={18} />
-                On Hold by CEO — approval is paused until CEO resumes it
+          <div className="cf-section approval-main-section">
+            <div className="cf-section-header approval-title-header">
+              <div className="cf-section-title">Export Approval</div>
+              <div className="approval-title-header-actions">
+                <AutoSaveStatus status={saveStatus} />
+                <div className="approval-branch-select">
+                  <FormSelect
+                    value={basicDetails.branch}
+                    onChange={(e) => handleBasicChange("branch", e.target.value)}
+                    options={branchOptions}
+                    placeholder={loadingBranches ? "Loading..." : "Select branch..."}
+                    disabled={loadingBranches || !canEditSharedDetails}
+                  />
+                </div>
               </div>
-            ) : null}
-            <div className="approval-section-header justify-content-end">
-              <AutoSaveStatus status={saveStatus} />
             </div>
+            <div className="cf-section-body approval-sections-wrapper">
+              {isOnHold ? (
+                <div className="approval-hold-banner">
+                  <FiPauseCircle size={18} />
+                  On Hold by CEO — approval is paused until CEO resumes it
+                </div>
+              ) : null}
 
-            <div className="approval-party-cards-row">
-              <PartySectionCard
-                title="Vessel Owner's"
-                leadingContent={
-                  <FormField label="Branch">
-                    <FormSelect
-                      value={basicDetails.branch}
-                      onChange={(e) => handleBasicChange("branch", e.target.value)}
-                      options={branchOptions}
-                      placeholder={loadingBranches ? "Loading..." : "Select branch..."}
-                      disabled={loadingBranches || !canEditSharedDetails}
-                    />
-                  </FormField>
-                }
-                fields={VESSEL_OWNER_FIELDS}
-                values={vesselOwner}
-                onChange={handleVesselOwnerChange}
-                imageFiles={vesselOwnerImages}
-                onImageFilesChange={setVesselOwnerImages}
-                imagesDisabled={!canEditPartyImages}
-                fieldsDisabled={!canEditSharedDetails}
-                showImageUpload={false}
-              />
+              <div className="approval-party-cards-row">
+                <PartySectionCard
+                  title="Vessel Owner's"
+                  fields={VESSEL_OWNER_FIELDS}
+                  values={vesselOwner}
+                  onChange={handleVesselOwnerChange}
+                  imageFiles={vesselOwnerImages}
+                  onImageFilesChange={setVesselOwnerImages}
+                  imagesDisabled={!canEditPartyImages}
+                  fieldsDisabled={!canEditSharedDetails}
+                  showImageUpload={false}
+                />
 
-              <PartySectionCard
-                title="Vessel Principal/Manager"
-                fields={VESSEL_PRINCIPAL_FIELDS}
-                values={vesselPrincipal}
-                onChange={handleVesselPrincipalChange}
-                imageFiles={vesselPrincipalImages}
-                onImageFilesChange={setVesselPrincipalImages}
-                imagesDisabled={!canEditPartyImages}
-                fieldsDisabled={!canEditSharedDetails}
-                showImageUpload={false}
-              />
+                <PartySectionCard
+                  title="Vessel Principal/Manager"
+                  fields={VESSEL_PRINCIPAL_FIELDS}
+                  values={vesselPrincipal}
+                  onChange={handleVesselPrincipalChange}
+                  imageFiles={vesselPrincipalImages}
+                  onImageFilesChange={setVesselPrincipalImages}
+                  imagesDisabled={!canEditPartyImages}
+                  fieldsDisabled={!canEditSharedDetails}
+                  showImageUpload={false}
+                />
 
-              <PartySectionCard
-                title="Vessel Charterer"
-                fields={VESSEL_CHARTERER_FIELDS}
-                values={vesselCharterer}
-                onChange={handleVesselChartererChange}
-                imageFiles={vesselChartererImages}
-                onImageFilesChange={setVesselChartererImages}
-                imagesDisabled={!canEditPartyImages}
-                fieldsDisabled={!canEditSharedDetails}
-                showImageUpload={false}
-              />
-            </div>
+                <PartySectionCard
+                  title="Vessel Charterer"
+                  fields={VESSEL_CHARTERER_FIELDS}
+                  values={vesselCharterer}
+                  onChange={handleVesselChartererChange}
+                  imageFiles={vesselChartererImages}
+                  onImageFilesChange={setVesselChartererImages}
+                  imagesDisabled={!canEditPartyImages}
+                  fieldsDisabled={!canEditSharedDetails}
+                  showImageUpload={false}
+                />
+              </div>
 
-            <div className="approval-action-cards-row">
-              <ApprovalCard
-                title="Remarks / Recommendation"
-                commentsLabel={
-                  <>
-                    Remarks / recommendation from Credit Controller <span className="text-danger">*</span>
-                  </>
-                }
-                commentsValue={creditControllerRemarks}
-                onCommentsChange={(e) => setCreditControllerRemarks(e.target.value)}
-                commentsPlaceholder="Enter remarks / recommendation from Credit Controller"
-                documents={creditControllerDocuments}
-                onDocumentsChange={setCreditControllerDocuments}
-                existingDocuments={details?.documents?.credit_controller}
-                primaryActionLabel="Approved"
-                secondaryActionLabel="Proceed to Manager"
-                onPrimaryAction={handleCreditControllerApproved}
-                onSecondaryAction={handleCreditControllerProceedToOperator}
-                actionsDisabled={
-                  saveStatus === "saving" ||
-                  !canEditCreditControllerSection ||
-                  !creditControllerRemarks.trim()
-                }
-                primaryDisabled={
-                  saveStatus === "saving" ||
-                  !canEditCreditControllerSection ||
-                  !creditControllerRemarks.trim()
-                }
-                fieldsDisabled={
-                  !canEditCreditControllerSection ||
-                  creditControllerApproved ||
-                  !stageActive.credit_controller
-                }
-                stageWaitMessage={getStageWaitMessage(effectiveStage, "credit_controller")}
-                statusBadge={
-                  creditControllerApproved
-                    ? { type: "approved", text: "Approved by Credit Controller" }
-                    : !stageActive.credit_controller
-                    ? { type: "proceeded", text: "Proceeded to Manager" }
-                    // "Still processing by Credit Controller" is only useful to
-                    // someone waiting on this stage — Controller is the one
-                    // who'd act on it, so telling them it's "still processing
-                    // by Credit Controller" is just noise about their own
-                    // pending action, per explicit user request.
-                    : canEditCreditControllerSection
-                    ? null
-                    : { type: "pending", text: "Still processing by Credit Controller" }
-                }
-                // Viewers who can't edit this section (Manager, CEO, generic
-                // viewers) see the "Still processing by Credit Controller"
-                // badge instead — the buttons would just sit there disabled,
-                // which reads as confusing dead UI (same reasoning as the
-                // Manager card's hideActions below).
-                hideActions={
-                  creditControllerApproved ||
-                  !stageActive.credit_controller ||
-                  !canEditCreditControllerSection
-                }
-              />
-
-              {/* Nobody — Controller, Manager, CEO, or generic
-                  viewers — sees the Manager card until Credit Controller has
-                  actually clicked
-                  "Proceed to Manager" (workflow moved past credit_controller).
-                  Credit Controller clicking "Approved" alone does not count;
-                  effectiveStage only leaves "credit_controller" once its
-                  status is "proceed_to_operator" (see getEffectiveStage).
-                  Once proceeded, the card becomes visible to everyone, locked
-                  (view-only) via the existing fieldsDisabled/actionsDisabled
-                  role checks below for anyone who isn't the Manager. */}
-              {!stageActive.credit_controller ? (
+              <div className="approval-action-cards-row">
                 <ApprovalCard
-                  title="Manager - Offshore Marine Logistics Comments"
+                  title="Remarks / Recommendation"
                   commentsLabel={
                     <>
-                      Manager - Offshore Marine Logistics comments <span className="text-danger">*</span>
+                      Remarks / recommendation from Credit Controller <span className="text-danger">*</span>
                     </>
                   }
-                  commentsValue={managerComments}
-                  onCommentsChange={(e) => setManagerComments(e.target.value)}
-                  commentsPlaceholder="Enter manager comments"
-                  commentsClassName="approval-textarea--blue"
-                  documents={managerDocuments}
-                  onDocumentsChange={setManagerDocuments}
-                  existingDocuments={details?.documents?.manager_ofm}
+                  commentsValue={creditControllerRemarks}
+                  onCommentsChange={(e) => setCreditControllerRemarks(e.target.value)}
+                  commentsPlaceholder="Enter remarks / recommendation from Credit Controller"
+                  documents={creditControllerDocuments}
+                  onDocumentsChange={setCreditControllerDocuments}
+                  existingDocuments={details?.documents?.credit_controller}
                   primaryActionLabel="Approved"
-                  secondaryActionLabel="Proceed to CEO"
-                  onPrimaryAction={handleManagerApproved}
-                  onSecondaryAction={handleManagerProceedToCeo}
+                  secondaryActionLabel="Proceed to Manager"
+                  onPrimaryAction={handleCreditControllerApproved}
+                  onSecondaryAction={handleCreditControllerProceedToOperator}
                   actionsDisabled={
-                    saveStatus === "saving" || !isManagerRole || !managerComments.trim()
+                    saveStatus === "saving" ||
+                    !canEditCreditControllerSection ||
+                    !creditControllerRemarks.trim()
                   }
                   primaryDisabled={
-                    saveStatus === "saving" || !isManagerRole || !managerComments.trim()
+                    saveStatus === "saving" ||
+                    !canEditCreditControllerSection ||
+                    !creditControllerRemarks.trim()
                   }
                   fieldsDisabled={
-                    !isManagerRole ||
-                    managerApproved ||
-                    isStagePassed(effectiveStage, "manager_ofm")
+                    !canEditCreditControllerSection ||
+                    creditControllerApproved ||
+                    !stageActive.credit_controller
                   }
-                  stageWaitMessage={getStageWaitMessage(effectiveStage, "manager_ofm")}
+                  stageWaitMessage={getStageWaitMessage(effectiveStage, "credit_controller")}
                   statusBadge={
-                    managerApproved
-                      ? { type: "approved", text: "Approved by Manager" }
-                      : isStagePassed(effectiveStage, "manager_ofm")
-                      ? { type: "proceeded", text: "Proceeded to CEO" }
-                      : stageActive.manager_ofm
-                      // Same reasoning as Credit Controller's badge above:
-                      // "Still processing by Manager" is noise to the Manager
-                      // themselves (it's their own pending action) — only
-                      // show it to viewers who are waiting on Manager.
-                      ? isManagerRole
-                        ? null
-                        : { type: "pending", text: "Still processing by Manager" }
-                      : null
+                    creditControllerApproved
+                      ? { type: "approved", text: "Approved by Credit Controller" }
+                      : !stageActive.credit_controller
+                      ? { type: "proceeded", text: "Proceeded to Manager" }
+                      // "Still processing by Credit Controller" is only useful to
+                      // someone waiting on this stage — Controller is the one
+                      // who'd act on it, so telling them it's "still processing
+                      // by Credit Controller" is just noise about their own
+                      // pending action, per explicit user request.
+                      : canEditCreditControllerSection
+                      ? null
+                      : { type: "pending", text: "Still processing by Credit Controller" }
                   }
-                  // Non-Manager viewers (CEO, Controller, generic
-                  // viewers) never see these buttons at all — only the
-                  // "Still processing by Manager" badge/wait text — since
-                  // they could never click them anyway (actionsDisabled
-                  // already locks them via !isManagerRole); showing greyed
-                  // buttons to everyone just read as confusing dead UI.
+                  // Viewers who can't edit this section (Manager, CEO, generic
+                  // viewers) see the "Still processing by Credit Controller"
+                  // badge instead — the buttons would just sit there disabled,
+                  // which reads as confusing dead UI (same reasoning as the
+                  // Manager card's hideActions below).
                   hideActions={
-                    !isManagerRole ||
-                    managerApproved ||
-                    isStagePassed(effectiveStage, "manager_ofm")
+                    creditControllerApproved ||
+                    !stageActive.credit_controller ||
+                    !canEditCreditControllerSection
                   }
                 />
-              ) : null}
 
-              {/* Same phased reveal as the Manager card above, applied to
-                  every viewer (Controller, Manager, CEO, generic viewers
-                  alike): the CEO card only appears once Manager has
-                  actually proceeded to CEO (isStagePassed handles the
-                  "Manager clicked Approved but didn't proceed" case
-                  correctly — that keeps effectiveStage at "manager_ofm", so
-                  it stays hidden). Controller sees it locked/read-only with
-                  the "Still processing by CEO" badge, same as any other
-                  non-CEO viewer (hideActions/fieldsDisabled below already
-                  gate on isCeoRole). */}
-              {isStagePassed(effectiveStage, "manager_ofm") ? (
-                <ApprovalCard
-                  title="CEO Comments"
-                  commentsLabel={
-                    <>
-                      CEO comments <span className="text-danger">*</span>
-                    </>
-                  }
-                  commentsValue={ceoComments}
-                  onCommentsChange={(e) => setCeoComments(e.target.value)}
-                  commentsPlaceholder="Enter CEO comments"
-                  commentsClassName="approval-textarea--blue"
-                  documents={ceoDocuments}
-                  onDocumentsChange={setCeoDocuments}
-                  existingDocuments={details?.documents?.ceo}
-                  primaryActionLabel="Approved"
-                  secondaryActionLabel="On Hold"
-                  onPrimaryAction={handleCeoApproved}
-                  onSecondaryAction={handleCeoOnHold}
-                  actionsDisabled={
-                    saveStatus === "saving" ||
-                    !stageActive.ceo ||
-                    !isCeoRole ||
-                    !ceoComments.trim()
-                  }
-                  // Being on hold locks stageActive.ceo (it's not any of the three
-                  // named stages), but the CEO is the one who put it on hold and
-                  // must still be able to click Approved to resume — isCeoStageUsable
-                  // (stageActive.ceo || isOnHold) covers that case, unlike the
-                  // secondary "On Hold" button above which stays locked via
-                  // actionsDisabled/stageActive.ceo alone.
-                  primaryDisabled={
-                    saveStatus === "saving" ||
-                    !isCeoRole ||
-                    ceoApproved ||
-                    !isCeoStageUsable ||
-                    !ceoComments.trim()
-                  }
-                  // ceoApproved locks fields once CEO is done — not isOnHold,
-                  // since the CEO must still be able to edit comments/upload
-                  // documents while on hold to actually resolve it (same
-                  // reasoning as primaryDisabled/isCeoStageUsable above).
-                  fieldsDisabled={!isCeoRole || ceoApproved}
-                  stageWaitMessage={
-                    isOnHold || ceoApproved ? null : getStageWaitMessage(effectiveStage, "ceo")
-                  }
-                  statusBadge={
-                    isOnHold
-                      ? { type: "hold", text: "On hold by CEO" }
-                      : ceoApproved
-                      ? { type: "approved", text: "Approved by CEO" }
-                      : stageActive.ceo
-                      // Same reasoning as Manager's badge above: "Still
-                      // processing by CEO" is noise to the CEO themselves —
-                      // only show it to viewers (Manager, generic viewers)
-                      // who are waiting on CEO.
-                      ? isCeoRole
-                        ? null
-                        : { type: "pending", text: "Still processing by CEO" }
-                      : null
-                  }
-                  // Non-CEO viewers (Manager, generic viewers) never see
-                  // these buttons at all — only the "Still processing by
-                  // CEO" badge — since they could never click them anyway
-                  // (actionsDisabled already locks them via !isCeoRole);
-                  // showing greyed buttons to everyone just read as
-                  // confusing dead UI. The terminal "approved" outcome
-                  // hides them for the CEO too; on hold keeps them visible
-                  // for the CEO so they can still click Approved to resume.
-                  hideActions={!isCeoRole || ceoApproved}
-                />
-              ) : null}
+                {/* Nobody — Controller, Manager, CEO, or generic
+                    viewers — sees the Manager card until Credit Controller has
+                    actually clicked
+                    "Proceed to Manager" (workflow moved past credit_controller).
+                    Credit Controller clicking "Approved" alone does not count;
+                    effectiveStage only leaves "credit_controller" once its
+                    status is "proceed_to_operator" (see getEffectiveStage).
+                    Once proceeded, the card becomes visible to everyone, locked
+                    (view-only) via the existing fieldsDisabled/actionsDisabled
+                    role checks below for anyone who isn't the Manager. */}
+                {!stageActive.credit_controller ? (
+                  <ApprovalCard
+                    title="Manager - Offshore Marine Logistics Comments"
+                    commentsLabel={
+                      <>
+                        Manager - Offshore Marine Logistics comments <span className="text-danger">*</span>
+                      </>
+                    }
+                    commentsValue={managerComments}
+                    onCommentsChange={(e) => setManagerComments(e.target.value)}
+                    commentsPlaceholder="Enter manager comments"
+                    commentsClassName="approval-textarea--blue"
+                    documents={managerDocuments}
+                    onDocumentsChange={setManagerDocuments}
+                    existingDocuments={details?.documents?.manager_ofm}
+                    primaryActionLabel="Approved"
+                    secondaryActionLabel="Proceed to CEO"
+                    onPrimaryAction={handleManagerApproved}
+                    onSecondaryAction={handleManagerProceedToCeo}
+                    actionsDisabled={
+                      saveStatus === "saving" || !isManagerRole || !managerComments.trim()
+                    }
+                    primaryDisabled={
+                      saveStatus === "saving" || !isManagerRole || !managerComments.trim()
+                    }
+                    fieldsDisabled={
+                      !isManagerRole ||
+                      managerApproved ||
+                      isStagePassed(effectiveStage, "manager_ofm")
+                    }
+                    stageWaitMessage={getStageWaitMessage(effectiveStage, "manager_ofm")}
+                    statusBadge={
+                      managerApproved
+                        ? { type: "approved", text: "Approved by Manager" }
+                        : isStagePassed(effectiveStage, "manager_ofm")
+                        ? { type: "proceeded", text: "Proceeded to CEO" }
+                        : stageActive.manager_ofm
+                        // Same reasoning as Credit Controller's badge above:
+                        // "Still processing by Manager" is noise to the Manager
+                        // themselves (it's their own pending action) — only
+                        // show it to viewers who are waiting on Manager.
+                        ? isManagerRole
+                          ? null
+                          : { type: "pending", text: "Still processing by Manager" }
+                        : null
+                    }
+                    // Non-Manager viewers (CEO, Controller, generic
+                    // viewers) never see these buttons at all — only the
+                    // "Still processing by Manager" badge/wait text — since
+                    // they could never click them anyway (actionsDisabled
+                    // already locks them via !isManagerRole); showing greyed
+                    // buttons to everyone just read as confusing dead UI.
+                    hideActions={
+                      !isManagerRole ||
+                      managerApproved ||
+                      isStagePassed(effectiveStage, "manager_ofm")
+                    }
+                  />
+                ) : null}
+
+                {/* Same phased reveal as the Manager card above, applied to
+                    every viewer (Controller, Manager, CEO, generic viewers
+                    alike): the CEO card only appears once Manager has
+                    actually proceeded to CEO (isStagePassed handles the
+                    "Manager clicked Approved but didn't proceed" case
+                    correctly — that keeps effectiveStage at "manager_ofm", so
+                    it stays hidden). Controller sees it locked/read-only with
+                    the "Still processing by CEO" badge, same as any other
+                    non-CEO viewer (hideActions/fieldsDisabled below already
+                    gate on isCeoRole). */}
+                {isStagePassed(effectiveStage, "manager_ofm") ? (
+                  <ApprovalCard
+                    title="CEO Comments"
+                    commentsLabel={
+                      <>
+                        CEO comments <span className="text-danger">*</span>
+                      </>
+                    }
+                    commentsValue={ceoComments}
+                    onCommentsChange={(e) => setCeoComments(e.target.value)}
+                    commentsPlaceholder="Enter CEO comments"
+                    commentsClassName="approval-textarea--blue"
+                    documents={ceoDocuments}
+                    onDocumentsChange={setCeoDocuments}
+                    existingDocuments={details?.documents?.ceo}
+                    primaryActionLabel="Approved"
+                    secondaryActionLabel="On Hold"
+                    onPrimaryAction={handleCeoApproved}
+                    onSecondaryAction={handleCeoOnHold}
+                    actionsDisabled={
+                      saveStatus === "saving" ||
+                      !stageActive.ceo ||
+                      !isCeoRole ||
+                      !ceoComments.trim()
+                    }
+                    // Being on hold locks stageActive.ceo (it's not any of the three
+                    // named stages), but the CEO is the one who put it on hold and
+                    // must still be able to click Approved to resume — isCeoStageUsable
+                    // (stageActive.ceo || isOnHold) covers that case, unlike the
+                    // secondary "On Hold" button above which stays locked via
+                    // actionsDisabled/stageActive.ceo alone.
+                    primaryDisabled={
+                      saveStatus === "saving" ||
+                      !isCeoRole ||
+                      ceoApproved ||
+                      !isCeoStageUsable ||
+                      !ceoComments.trim()
+                    }
+                    // ceoApproved locks fields once CEO is done — not isOnHold,
+                    // since the CEO must still be able to edit comments/upload
+                    // documents while on hold to actually resolve it (same
+                    // reasoning as primaryDisabled/isCeoStageUsable above).
+                    fieldsDisabled={!isCeoRole || ceoApproved}
+                    stageWaitMessage={
+                      isOnHold || ceoApproved ? null : getStageWaitMessage(effectiveStage, "ceo")
+                    }
+                    statusBadge={
+                      isOnHold
+                        ? { type: "hold", text: "On hold by CEO" }
+                        : ceoApproved
+                        ? { type: "approved", text: "Approved by CEO" }
+                        : stageActive.ceo
+                        // Same reasoning as Manager's badge above: "Still
+                        // processing by CEO" is noise to the CEO themselves —
+                        // only show it to viewers (Manager, generic viewers)
+                        // who are waiting on CEO.
+                        ? isCeoRole
+                          ? null
+                          : { type: "pending", text: "Still processing by CEO" }
+                        : null
+                    }
+                    // Non-CEO viewers (Manager, generic viewers) never see
+                    // these buttons at all — only the "Still processing by
+                    // CEO" badge — since they could never click them anyway
+                    // (actionsDisabled already locks them via !isCeoRole);
+                    // showing greyed buttons to everyone just read as
+                    // confusing dead UI. The terminal "approved" outcome
+                    // hides them for the CEO too; on hold keeps them visible
+                    // for the CEO so they can still click Approved to resume.
+                    hideActions={!isCeoRole || ceoApproved}
+                  />
+                ) : null}
+              </div>
             </div>
           </div>
         </div>

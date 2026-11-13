@@ -1629,6 +1629,168 @@
   text-align: center;
 }
 
+/* ---------- GRO skeleton loading ---------- */
+.gro-skeleton {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.16) 25%,
+    rgba(148, 163, 184, 0.3) 37%,
+    rgba(148, 163, 184, 0.16) 63%
+  );
+  background-size: 400% 100%;
+  animation: gro-skeleton-shimmer 1.4s ease infinite;
+}
+
+@keyframes gro-skeleton-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gro-skeleton { animation: none; }
+}
+
+.gro-card-view--skeleton {
+  flex: 1;
+  min-height: 0;
+}
+
+.gro-card-view--skeleton .gro-summary-card:hover {
+  transform: none;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+}
+
+.gro-skeleton-label { width: 45%; height: 12px; }
+.gro-skeleton-value { width: 75%; height: 20px; margin-top: 14px; }
+.gro-skeleton-heading { width: 130px; height: 20px; }
+.gro-skeleton-tabs { width: 240px; height: 38px; border-radius: 12px; }
+
+.gro-skeleton-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gro-skeleton-doc-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-primary);
+}
+
+.gro-skeleton-doc-icon { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0; }
+.gro-skeleton-line { height: 14px; }
+.gro-skeleton-doc-actions { display: flex; gap: 8px; margin-left: auto; }
+.gro-skeleton-action { width: 36px; height: 34px; border-radius: 8px; }
+
+/* ---------- GRO documents empty state ---------- */
+/* Empty list stretches to fill the remaining card height */
+.gro-card-view .gro-document-section:has(> .gro-document-list--empty),
+.gro-card-view .gro-document-list--empty {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.gro-document-list--empty .gro-document-empty {
+  flex: 1 1 auto;
+  min-height: 260px;
+}
+
+.gro-document-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 16px 52px;
+  margin: 2px;
+  border-radius: 14px;
+  border: 1.5px dashed var(--border-primary);
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-primary) 6%, transparent), transparent 60%),
+    var(--surface-primary);
+  animation: gro-empty-enter 0.35s ease both;
+}
+
+@keyframes gro-empty-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.gro-document-empty-art {
+  position: relative;
+  width: 112px;
+  height: 92px;
+  margin-bottom: 18px;
+}
+
+.gro-document-empty-halo {
+  position: absolute;
+  inset: 4px 10px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 9%, transparent);
+}
+
+.gro-document-empty-sheet {
+  position: absolute;
+  left: 50%;
+  width: 52px;
+  height: 64px;
+  border-radius: 10px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+}
+
+.gro-document-empty-sheet--back {
+  top: 10px;
+  transform: translateX(-36%) rotate(9deg);
+  opacity: 0.75;
+}
+
+.gro-document-empty-sheet--front {
+  top: 16px;
+  transform: translateX(-62%) rotate(-5deg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+}
+
+.gro-document-empty-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+.gro-document-empty-dot--a { width: 8px; height: 8px; top: 6px; right: 14px; }
+.gro-document-empty-dot--b { width: 5px; height: 5px; bottom: 14px; left: 10px; }
+.gro-document-empty-dot--c { width: 6px; height: 6px; bottom: 4px; right: 22px; opacity: 0.6; }
+
+.gro-document-empty-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.gro-document-empty-hint {
+  margin: 6px 0 0;
+  max-width: 440px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gro-document-empty { animation: none; }
+}
+
 .gro-card-view .gro-document-row {
   align-items: center;
   justify-content: space-between;

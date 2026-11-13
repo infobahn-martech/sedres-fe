@@ -1,17 +1,5 @@
 import Gateway from '../gateway/gateway';
 
-const getDaDetails = (callId) => Gateway.get(`/da/da_details/${callId}`);
-const saveDaDetails = (callId, payload) => Gateway.post(`/da/save_da_details/${callId}`, payload);
-const saveOperationTab = (callId, formData) => Gateway.post(`/da/save_operation_tab/${callId}`, formData);
-const getRequiredDocuments = (callId) => Gateway.get(`/da/required_documents/${callId}`);
-const saveDocumentsTab = (callId, formData) => Gateway.post(`/da/save_documents_tab/${callId}`, formData);
-const deleteDocument = (documentId) => Gateway.post('/da/delete_document', { document_id: documentId });
-const downloadSectionZip = (callId, documentName) =>
-  Gateway.get(`/da/download_section_zip/${callId}`, {
-    params: { document_name: documentName },
-    responseType: 'blob',
-  });
-const getTimeObjects = (callId) => Gateway.get(`/da/time_objects/${callId}`);
 const getCardStage = (callId) => Gateway.get(`/da/card/${callId}`);
 const getStatusTimeline = (callId) => Gateway.get(`/da/status_timeline/${callId}`);
 /** @param {{ call_id: string|number, column_id: string|number }} payload */
@@ -117,7 +105,8 @@ const mergeArInvoices = (payload) => Gateway.post('/da/merge_ar_invoices', paylo
 /** @param {{ call_ids: number[], card_ids: number[] }} params - the ticked cards, sent comma separated.
  * @returns {Promise<{ data: { status: 'success', data: { cards: Array<{ call_id: number, card_id: number,
  *   invoices: Array<{ sales_order_no: string, invoice_no: string, pdf: { name: string, url: string },
- *   xml: { name: string, url: string } }> }>, file_count: number, zip: { name: string, url: string } } }
+ *   xml: { name: string, url: string } | null }> }>, card_positions: Array<{ call_id: number, card_id: number,
+ *   column_name: string }>, file_count: number, zip: { name: string, url: string } } }
  *   | { status: 'error', message: string } }>}
  * The cards' invoice PDF and XML portal files, bundled into one zip. */
 const getPortalFiles = ({ call_ids: callIds, card_ids: cardIds }) =>
@@ -259,9 +248,13 @@ const getPoReview = (params) => Gateway.get('/da/po_review', { params });
 /** @param {FormData} formData - call_ids, card_ids (ticked SCC Received cards, comma separated), signed_sos[], sccs[],
  * approval_email, multipart/form-data.
  * @returns {Promise<{ data: { status: 'success', data: { received_files: string[], not_placed_files: string[],
- *   cards: { call_id: number, card_id: number, sales_orders: string[], ready: boolean }[] } }
+ *   cards: { call_id: number, card_id: number, ready: boolean,
+ *     sales_orders: (string | { sales_order_no: string, scc: { document_id: number, name: string, url: string,
+ *       signed: boolean } })[],
+ *     approval_email?: { document_id: number, name: string, url: string } }[] } }
  *   | { status: 'error', message: string } }>}
- * Bulk upload of the signed SOs, SCCs and approval email of the ticked cards. */
+ * Bulk upload of the signed SOs, SCCs and approval email of the ticked cards. The Operator board's L&T
+ * "Approval Received" sends only sccs[] and an optional approval_email. */
 const uploadSccDocuments = (formData) =>
   Gateway.post('/da/upload_scc_documents', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -271,8 +264,12 @@ const uploadSccDocuments = (formData) =>
  * SCC review of the ticked cards: which signed SO, SCC and approval email are placed on each. */
 const getSccDocumentReview = (params) => Gateway.get('/da/scc_document_review', { params });
 
-/** @param {{ cards: { call_id: number, card_id: number }[] }} payload
- * Confirms the reviewed SCC documents (ticked cards only); the response lists the moved cards in moved_to_da. */
+/** @param {{ cards: { call_id: number, card_id: number, sales_orders?: { sales_order_no: string, scc_id: number }[] }[] }} payload
+ * @returns {Promise<{ data: { status: 'success', data: { moved_to_da?: object[], card_positions?: { card_id: number,
+ *   board_id: number, swimlane_id: number, column_id: number, column_name: string }[],
+ *   not_moved?: { call_id: number, card_id: number, reason: string }[] } } | { status: 'error', message: string } }>}
+ * Confirms the reviewed SCC documents (ticked cards only); moved cards come back in moved_to_da or card_positions,
+ * cards without a signed SCC in not_moved. */
 const confirmSccDocuments = (payload) => Gateway.post('/da/confirm_scc_documents', payload);
 
 /** @param {{ cards: { call_id: number, card_id: number, sales_orders: { sales_order_id: number, sales_order_no: string, po_id: number }[] }[] }} payload
@@ -345,9 +342,12 @@ const getSccApprovalEmailDraft = (callIds, cardIds) =>
   });
 
 /** @param {FormData} formData - call_ids, card_ids, to, cc, subject, body, attachments[]?, multipart/form-data.
- * @returns {Promise<{ data: { status: 'success', data: { moved_to_scc_received: { call_id: number,
- *   card_id: number }[] } } | { status: 'error', message: string } }>}
- * Sends the SCC approval email; the cards move to "SCC received". */
+ * @returns {Promise<{ data: { status: 'success', data: { moved_to_scc_received?: { call_id: number,
+ *   card_id: number }[], card_positions?: { call_id: number, card_id: number, board_id: number,
+ *   swimlane_id: number, column_id: number, column_name: string, da_flow_id: number|null, da_step: string|null,
+ *   card_sticker_id: number|null, sticker_name: string|null }[] } } | { status: 'error', message: string } }>}
+ * Sends the SCC approval email; the cards move to "SCC received" (DA board) or, from the Operator board's
+ * L&T "Approval Requested", to the next column ("Approval Received"). */
 const sendSccApprovalEmail = (formData) =>
   Gateway.post('/da/send_scc_approval_email', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -399,14 +399,6 @@ export default {
   checkSignatures,
   getSignatureChecks,
   confirmSignatureCheck,
-  getDaDetails,
-  saveDaDetails,
-  saveOperationTab,
-  getRequiredDocuments,
-  saveDocumentsTab,
-  deleteDocument,
-  downloadSectionZip,
-  getTimeObjects,
   getCardStage,
   advanceStage,
   advanceStageCards,

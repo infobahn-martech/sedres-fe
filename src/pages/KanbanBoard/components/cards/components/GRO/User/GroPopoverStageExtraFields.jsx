@@ -303,7 +303,7 @@ function GroPopoverStageExtraFields({
     );
   }
 
-  if (stageId === 12) {
+  if (stageId === 13) {
     return (
       <PopoverFileUploadField
         label="Outward Clearance Copy"
@@ -319,7 +319,7 @@ function GroPopoverStageExtraFields({
     );
   }
 
-  if (stageId === 13) {
+  if (stageId === 15) {
     return (
       <PopoverFileUploadField
         label="MWP Cancellation"

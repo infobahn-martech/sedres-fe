@@ -12,6 +12,7 @@ import MyAccountsModal from './MyAccountsModal';
 import ChangePasswordModal from './ChangePasswordModal';
 import LogoutConfirmationModal from '../../components/LogoutConfirmationModal';
 import NotificationsModal from './NotificationsModal';
+import notificationService from '../../services/notificationService';
 import DocumentsModal from './DocumentsModal';
 import AdvancedSearch from './AdvancedSearch';
 import BusinessRulesModal from '../SideNav/components/BusinessRulesModal';
@@ -68,7 +69,26 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const { layoutView } = useLayoutView();
   const isDark = useThemeStore((state) => state.isDark);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
-  const [notificationCount] = useState(3); // Default count, can be updated with real data
+  const [notificationCount, setNotificationCount] = useState(0);
+
+  // Badge count: load on mount and refresh every minute (limit 1 — only unread_count is needed).
+  useEffect(() => {
+    let cancelled = false;
+    const fetchUnreadCount = () => {
+      notificationService
+        .getNotifications({ page: 1, limit: 1 })
+        .then((res) => {
+          if (!cancelled) setNotificationCount(Number(res?.data?.unread_count) || 0);
+        })
+        .catch(() => {});
+    };
+    fetchUnreadCount();
+    const intervalId = setInterval(fetchUnreadCount, 60000);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, []);
   const dropdownRef = useRef(null);
   const settingsDropdownRef = useRef(null);
   const quickActionsRef = useRef(null);
@@ -719,6 +739,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
         <NotificationsModal
           show={showNotificationsModal}
           onClose={() => setShowNotificationsModal(false)}
+          onUnreadCountChange={setNotificationCount}
         />
       )}
 
