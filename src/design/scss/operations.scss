@@ -754,7 +754,7 @@ $send-report-optional: var(--text-muted);
   /* Override all buttons to use #00368c */
   .checklist-btn-primary,
   .btn-primary,
-  button[class*="btn"]:not(.landing-action-btn):not(.print-action-icon-wrap):not(.note-action-btn):not(.note-dropdown-btn):not(.dispatch-note-action-btn):not(.dispatch-note-dropdown-btn):not(.crew-summary-movement-filter__btn) {
+  button[class*="btn"]:not(.landing-action-btn):not(.print-action-icon-wrap):not(.note-action-btn):not(.note-dropdown-btn):not(.dispatch-note-action-btn):not(.dispatch-note-dropdown-btn):not(.crew-summary-movement-filter__btn):not(.crew-pagination-btn) {
     background: #e2e6ff !important;
     border-color: var(--border-primary) !important;
     color: var(--text-primary) !important;
@@ -10750,7 +10750,7 @@ a.operation-task-document-name--link {
   .operation-wrapper:not(.husbandry-wrapper) .checklist-btn-primary,
   .operation-wrapper.husbandry-wrapper .checklist-btn-primary,
   .operation-wrapper.husbandry-wrapper .btn-primary,
-  .operation-wrapper.husbandry-wrapper button[class*="btn"]:not(.landing-action-btn):not(.print-action-icon-wrap):not(.note-action-btn):not(.note-dropdown-btn):not(.dispatch-note-action-btn):not(.dispatch-note-dropdown-btn):not(.crew-summary-movement-filter__btn) {
+  .operation-wrapper.husbandry-wrapper button[class*="btn"]:not(.landing-action-btn):not(.print-action-icon-wrap):not(.note-action-btn):not(.note-dropdown-btn):not(.dispatch-note-action-btn):not(.dispatch-note-dropdown-btn):not(.crew-summary-movement-filter__btn):not(.crew-pagination-btn) {
     background: var(--cf-accent-tint) !important;
     border-color: var(--cf-accent-ring) !important;
     color: var(--cf-accent-text) !important;

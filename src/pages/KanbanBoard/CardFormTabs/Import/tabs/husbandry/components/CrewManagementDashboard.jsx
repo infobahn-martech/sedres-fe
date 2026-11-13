@@ -116,25 +116,21 @@ const hasDocumentUrl = (url) =>
 const EDITABLE_SUMMARY_FIELDS = ["crewName", "dateOfBirth", "nationality", "rank"];
 
 // Read-only doc status icon for the Passport/Iqama, Visa, CG Pass and Zawil
-// Pass columns — green preview icon when the document is available, blank
+// Pass columns — a "document ✓" icon in the same green pill as the
+// Transport/Hotel/Medical service icons when the document is on file, blank
 // cell when it's missing (no red "missing" indicator).
 const DocStatusIcon = ({ available, label }) => {
   if (!available) {
-    return <div className="crew-table-cell crew-table-cell--doc-action" aria-hidden="true" />;
+    return <div className="crew-table-cell crew-service-cell crew-service-cell--empty" aria-hidden="true" />;
   }
   return (
-    <div className="crew-table-cell crew-table-cell--doc-action">
-      <div className="crew-doc-cell__inner">
-        <span
-          className="crew-doc-btn crew-doc-btn--preview"
-          aria-label={`${label} available`}
-          title={`${label} available`}
-        >
-          <svg className="crew-doc-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ stroke: "#00AA00" }} />
-            <circle cx="12" cy="12" r="3" strokeWidth="2" style={{ stroke: "#00AA00" }} />
-          </svg>
-        </span>
+    <div className="crew-table-cell crew-service-cell" aria-label={`${label} on file`} title={`${label} on file`}>
+      <div className="crew-status-icon crew-status-icon--done">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M9 15L11 17L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
     </div>
   );
