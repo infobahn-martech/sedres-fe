@@ -1176,19 +1176,23 @@ export const OperationEmailPreviewPanel = ({
         <h4>Email Preview</h4>
         <div className="operation-email-preview-header-tools">
           {reportTypeOptions?.length > 0 && (
-            <div className="operation-email-report-type">
-              <label htmlFor="operation-report-type">Report Type</label>
-              <select
-                id="operation-report-type"
-                value={reportType || reportTypeOptions[0]?.value}
-                onChange={(e) => onReportTypeChange?.(e.target.value)}
-              >
-                {reportTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
+            <div className="operation-email-report-type" role="radiogroup" aria-label="Report type">
+              {reportTypeOptions.map((option) => {
+                const isActive = (reportType || reportTypeOptions[0]?.value) === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={isActive}
+                    className={`operation-email-report-type__option${isActive ? " is-active" : ""}`}
+                    onClick={() => !isActive && onReportTypeChange?.(option.value)}
+                    disabled={isSending}
+                  >
                     {option.label}
-                  </option>
-                ))}
-              </select>
+                  </button>
+                );
+              })}
             </div>
           )}
           {showSend && (
