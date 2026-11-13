@@ -599,6 +599,9 @@
     &:last-child { border-bottom: none; }
     &:hover { background: var(--hover-bg); }
 
+    // Loading / empty message row isn't a record, so it must not turn gray on hover.
+    &.br-table-state-row:hover { background: transparent; }
+
     td {
       padding: 12px 16px;
       color: var(--text-primary);

@@ -10,9 +10,8 @@ import 'react-quill-new/dist/quill.snow.css';
 import 'quill-table-better/dist/quill-table-better.css';
 import {
   ACTION_GROUP_TYPE_TO_SECTION_ID, LINK_ACTION_OPTIONS, LINK_REMOVE_OTHERS_OPTIONS, NOTIFY_ACTION_OPTIONS, UPDATE_ACTION_OPTIONS, STICKER_ACTION_FREQUENCY_OPTIONS,
-  LIST_UPDATE_MODE_OPTIONS, DEADLINE_MODE_OPTIONS, WHEN_DEADLINE_COMPARISON_OPTIONS, WEEKDAY_OPTIONS, PRIORITY_OPTIONS, classifyCustomFieldUiKind,
+  LIST_UPDATE_MODE_OPTIONS, DEADLINE_MODE_OPTIONS, WEEKDAY_OPTIONS, PRIORITY_OPTIONS, classifyCustomFieldUiKind,
   INVOKE_ACTION_OPTIONS, DUMMY_INVOKE_METHOD_OPTIONS, DUMMY_INVOKE_AUTH_OPTIONS, INVOKE_METHODS_WITH_BODY, DUMMY_URL_FIELD_OPTIONS,
-  INTERNAL_USER_ROLE_OPTIONS,
   TRIGGER_CODE_TO_ICON, UNSUPPORTED_ACTION_GROUP_TYPES,
 } from './businessRulesData';
 import { buildCreateBusinessRulePayload, buildUpdateBusinessRulePayload, getUnconfiguredActionLabels, isCreateSubtaskAction, RECURRENCE_REGULAR_FIELD_IDS, buildAdvancedScheduleFields } from './buildBusinessRulePayload';
@@ -1880,8 +1879,7 @@ function InternalUsersPickerModal({ show, onClose, onApply }) {
     .filter((u) => u.name)
     .map((u) => ({ key: `user-${u.user_id}`, label: u.name, id: u.user_id }));
   const displayUserOptions = realUserOptions;
-  const roleOptions = INTERNAL_USER_ROLE_OPTIONS.map((label) => ({ key: `role-${label}`, label, id: null }));
-  const allOptions = [...roleOptions, ...displayUserOptions];
+  const allOptions = displayUserOptions;
 
   const filterQuery = filterText.trim().toLowerCase();
   const filteredOptions = filterQuery
@@ -5081,16 +5079,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   const executeTimeTriggerRef = useRef(null);
   const executeTimePanelRef = useRef(null);
 
-  // Deadline-based triggers (when_type 'deadline', e.g. "Time-based rule", trigger_type_id 9)
-  // — "Deadline is in/was more than [N] day(s)". No backend catalog for the comparison word
-  // or a when-side property shape yet, so the comparison list is a fixed local set and the
-  // day count is a plain number, both best-effort until confirmed against a real save payload.
-  const [whenDeadlineComparison, setWhenDeadlineComparison] = useState(WHEN_DEADLINE_COMPARISON_OPTIONS[0].key);
-  const [whenDeadlineDays, setWhenDeadlineDays] = useState(0);
-  const [showWhenDeadlineComparisonPicker, setShowWhenDeadlineComparisonPicker] = useState(false);
-  const [whenDeadlineComparisonFilterText, setWhenDeadlineComparisonFilterText] = useState('');
-  const whenDeadlineComparisonTriggerRef = useRef(null);
-  const whenDeadlineComparisonPanelRef = useRef(null);
 
   const {
     getTriggerConfig, triggerConfig, isLoadingTriggerConfig, getFieldDetails, fieldDetailsByKey, isLoadingFieldDetails,
@@ -5882,18 +5870,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     document.addEventListener('mousedown', onDocMouseDown);
     return () => document.removeEventListener('mousedown', onDocMouseDown);
   }, [openConditionOperatorId]);
-
-  useEffect(() => {
-    if (!showWhenDeadlineComparisonPicker) return undefined;
-    const onDocMouseDown = (event) => {
-      const t = event.target;
-      if (whenDeadlineComparisonPanelRef.current?.contains(t)) return;
-      if (whenDeadlineComparisonTriggerRef.current?.contains(t)) return;
-      setShowWhenDeadlineComparisonPicker(false);
-    };
-    document.addEventListener('mousedown', onDocMouseDown);
-    return () => document.removeEventListener('mousedown', onDocMouseDown);
-  }, [showWhenDeadlineComparisonPicker]);
 
   useEffect(() => {
     if (!showExecuteTimePicker) return undefined;
@@ -7449,71 +7425,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                       </div>
                     </div>
                   )}
-                </div>
-              ) : triggerConfig?.when_type === 'deadline' ? (
-                <div className="business-rule-form-column-card business-rule-form-when-fields business-rule-form-when-deadline">
-                  <div className="business-rule-form-when-deadline-label-row business-rule-form-condition-operator-group">
-                    <span className="business-rule-form-condition-label">Deadline</span>
-                    <div className="board-minimap-picker-wrap br-condition-operator-wrap">
-                      <button
-                        type="button"
-                        ref={showWhenDeadlineComparisonPicker ? whenDeadlineComparisonTriggerRef : undefined}
-                        className="br-condition-operator-trigger"
-                        onClick={() => setShowWhenDeadlineComparisonPicker((prev) => !prev)}
-                        aria-haspopup="listbox"
-                        aria-expanded={showWhenDeadlineComparisonPicker}
-                      >
-                        {WHEN_DEADLINE_COMPARISON_OPTIONS.find((o) => o.key === whenDeadlineComparison)?.label
-                          ?? WHEN_DEADLINE_COMPARISON_OPTIONS[0].label}
-                        <FiChevronDown size={14} aria-hidden />
-                      </button>
-
-                      {showWhenDeadlineComparisonPicker && (
-                        <div className="board-minimap-picker-panel br-condition-operator-panel" ref={whenDeadlineComparisonPanelRef}>
-                          <div className="board-minimap-picker-search">
-                            <FiFilter size={16} className="board-minimap-picker-search-icon" aria-hidden />
-                            <input
-                              type="text"
-                              placeholder="Filter"
-                              value={whenDeadlineComparisonFilterText}
-                              onChange={(e) => setWhenDeadlineComparisonFilterText(e.target.value)}
-                              autoFocus
-                            />
-                          </div>
-                          <div className="board-minimap-picker-scroll">
-                            {WHEN_DEADLINE_COMPARISON_OPTIONS
-                              .filter((opt) => opt.label.toLowerCase().includes(whenDeadlineComparisonFilterText.trim().toLowerCase()))
-                              .map((opt) => (
-                                <button
-                                  type="button"
-                                  key={opt.key}
-                                  className="br-condition-operator-option"
-                                  onClick={() => {
-                                    setWhenDeadlineComparison(opt.key);
-                                    setShowWhenDeadlineComparisonPicker(false);
-                                  }}
-                                >
-                                  {opt.label}
-                                </button>
-                              ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="business-rule-form-when-deadline-input-row">
-                    <input
-                      type="number"
-                      min="0"
-                      className="business-rule-form-when-deadline-input"
-                      value={whenDeadlineDays}
-                      onChange={(e) => setWhenDeadlineDays(e.target.value)}
-                    />
-                    <span className="business-rule-form-when-deadline-suffix">
-                      {whenDeadlineComparison === 'was_more_than' ? 'day(s) ago' : 'day(s)'}
-                    </span>
-                  </div>
                 </div>
               ) : triggerConfig?.has_when_fields === '1' && (
                 <div className="business-rule-form-column-card business-rule-form-when-fields">
