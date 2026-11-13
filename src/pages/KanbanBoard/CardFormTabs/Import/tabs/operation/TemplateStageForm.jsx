@@ -28,6 +28,8 @@ import {
   AdditionalTimeObjectsFields,
   appendAdditionalTimeObject,
   commitAdditionalTimeObject,
+  extractUploadedAttachments,
+  mapAttachmentsForSave,
   mapCallTimeObjectsToAdditionalRows,
   FormField,
   FormInput,
@@ -50,17 +52,23 @@ const REPORT_TEMPLATE_BY_STAGE = {
   departure: { reportTypeId: 5, load: appointmentAcceptanceService.getArrivalTemplateByPortCallType },
 };
 
-// Composer fields; each one is sent in save_stage's `report` (from_email, to_email, cc_emails, subject, body).
-const REPORT_COMPOSER_FIELDS = ["from", "to", "cc", "subject", "message"];
+// Composer fields; each one is sent in save_stage's `report`
+// (from_email, to_email, cc_emails, subject, body, attachments).
+const REPORT_COMPOSER_FIELDS = ["from", "to", "cc", "subject", "attachments", "message"];
 
-// Template values win; empty ones keep what the composer already has.
-const mergeReportTemplate = (prev, template) => ({
-  from: template.from || prev.from,
-  to: template.to || prev.to,
-  cc: template.cc || prev.cc,
-  subject: template.subject || prev.subject,
-  message: template.message || prev.message,
-});
+// Template values win; empty ones keep what the composer already has. Template attachments
+// ({ file_name, file_url }) get local ids so the preview chips can be removed individually.
+const mergeReportTemplate = (prev, template) => {
+  const templateAttachments = extractUploadedAttachments(template.attachments);
+  return {
+    from: template.from || prev.from,
+    to: template.to || prev.to,
+    cc: template.cc || prev.cc,
+    subject: template.subject || prev.subject,
+    message: template.message || prev.message,
+    attachments: templateAttachments.length ? templateAttachments : prev.attachments || [],
+  };
+};
 
 // Stage ids for the shared time_object endpoints (additional "+" time objects).
 const STAGE_ID_BY_KEY = {
@@ -182,7 +190,14 @@ function TemplateStageForm({
   const detailEmailTemplate = activeStage?.emailTemplate ?? null;
   const showEmailPreview = canPreviewEmail && stage?.emailPreview !== false;
   const [reportDraft, setReportDraft] = useState(() => {
-    const defaults = { from: "", to: "", cc: "", subject: `Report - ${stage?.label ?? ""}`.trim(), message: "" };
+    const defaults = {
+      from: "",
+      to: "",
+      cc: "",
+      subject: `Report - ${stage?.label ?? ""}`.trim(),
+      message: "",
+      attachments: [],
+    };
     if (!detailEmailTemplate) return defaults;
     return mergeReportTemplate(defaults, extractReportTemplateFields(detailEmailTemplate));
   });
@@ -505,6 +520,7 @@ function TemplateStageForm({
       cc_emails: String(reportDraft.cc || "").trim(),
       subject: String(reportDraft.subject || "").trim(),
       body: resolveReportBodyHtml(reportDraft.message, "") || "",
+      attachments: mapAttachmentsForSave(reportDraft.attachments),
     };
     if (showEmailPreview && report.to_email) {
       formData.append("report", JSON.stringify(report));
@@ -752,6 +768,9 @@ function TemplateStageForm({
                     cc={reportDraft.cc}
                     subject={reportDraft.subject}
                     message={reportDraft.message}
+                    attachments={reportDraft.attachments}
+                    onAttachmentsChange={(list) => handleReportDraftChange("attachments", list)}
+                    billingEntityId={activeDetail?.template?.billing_entity_id}
                     onChange={handleReportDraftChange}
                     onSend={() => submit({ withReport: true })}
                     isSending={submitting === "report"}
