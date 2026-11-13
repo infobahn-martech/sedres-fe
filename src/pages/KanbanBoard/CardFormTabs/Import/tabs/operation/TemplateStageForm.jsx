@@ -54,6 +54,21 @@ const REPORT_TEMPLATE_BY_STAGE = {
   departure: { reportTypeId: 5, load: appointmentAcceptanceService.getArrivalTemplateByPortCallType },
 };
 
+// Arrival offers an Arrival / Daily report switch in the composer (as in the legacy Arrival form).
+// Daily reports use report_type_id 3.
+const ARRIVAL_REPORT_TYPE_OPTIONS = [
+  { value: "arrival", label: "Arrival Report" },
+  { value: "daily", label: "Daily Report" },
+];
+const DAILY_REPORT_TYPE_ID = 3;
+
+const escapeHtml = (text) =>
+  String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
 // Composer fields; each one is sent in save_stage's `report`
 // (from_email, to_email, cc_emails, subject, body, attachments).
 const REPORT_COMPOSER_FIELDS = ["from", "to", "cc", "subject", "attachments", "message"];
@@ -205,6 +220,13 @@ function TemplateStageForm({
   });
   const reportTouchedRef = useRef(false);
   const [reportTemplateVersion, setReportTemplateVersion] = useState(0);
+  // Arrival only: "arrival" | "daily". The arrival draft is kept aside while Daily is shown.
+  const hasReportTypeSwitch = stageKey === "arrival";
+  const [reportType, setReportType] = useState("arrival");
+  const reportTypeRef = useRef(reportType);
+  reportTypeRef.current = reportType;
+  const arrivalDraftRef = useRef(null);
+  const arrivalTouchedRef = useRef(false);
   const aliveRef = useRef(true);
 
   useEffect(() => {
@@ -285,7 +307,7 @@ function TemplateStageForm({
       });
       setErrors({});
 
-      if (freshStage.emailTemplate) {
+      if (freshStage.emailTemplate && reportTypeRef.current === "arrival") {
         const template = extractReportTemplateFields(freshStage.emailTemplate);
         // An explicit saber / weather change re-applies the template even over composer edits.
         reportTouchedRef.current = false;
@@ -358,7 +380,7 @@ function TemplateStageForm({
   // Rebind from the call detail whenever it refreshes (e.g. after a save), unless the user
   // has already edited the composer.
   useEffect(() => {
-    if (!detailEmailTemplate || reportTouchedRef.current) return;
+    if (!detailEmailTemplate || reportTouchedRef.current || reportTypeRef.current !== "arrival") return;
     const template = extractReportTemplateFields(detailEmailTemplate);
     setReportDraft((prev) => mergeReportTemplate(prev, template));
   }, [detailEmailTemplate]);
@@ -380,7 +402,7 @@ function TemplateStageForm({
         time_objects: templateTimeObjectsRef.current,
       })
       .then((response) => {
-        if (cancelled || !aliveRef.current || reportTouchedRef.current) return;
+        if (cancelled || !aliveRef.current || reportTouchedRef.current || reportTypeRef.current !== "arrival") return;
         const template = extractReportTemplateFields(response);
         setReportDraft((prev) => mergeReportTemplate(prev, template));
       })
@@ -458,6 +480,76 @@ function TemplateStageForm({
     setReportDraft((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Daily report body: every filled, visible stage field as "Label: value".
+  const buildDailyReportBody = () => {
+    const rows = visibleFields
+      .filter((field) => getTemplateFieldType(field) !== "file")
+      .map((field) => {
+        const raw = getValue(field.field_id);
+        if (isEmptyTemplateValue(raw)) return null;
+        const options = toOptionList(field);
+        const values = (Array.isArray(raw) ? raw : [raw]).map((item) => {
+          const match = options.find((opt) => opt.value === String(item));
+          return match ? match.label : String(item);
+        });
+        return `<p><strong>${escapeHtml(field.field_label || field.field_key)}:</strong> ${escapeHtml(values.join(", "))}</p>`;
+      })
+      .filter(Boolean);
+    return `<p><strong>Daily Report - ${escapeHtml(stage?.label || "Arrival")}</strong></p><p><br></p>${rows.join("")}`;
+  };
+
+  const handleReportTypeChange = (nextType) => {
+    if (nextType === reportType) return;
+    if (nextType === "daily") {
+      // Keep the arrival draft (with any edits) to restore when switching back.
+      arrivalDraftRef.current = reportDraft;
+      arrivalTouchedRef.current = reportTouchedRef.current;
+      setReportType("daily");
+      // "Arrival Report - AESEN GALAXY" → "Daily Report - AESEN GALAXY".
+      const arrivalSubject = String(reportDraft.subject || "").trim();
+      const dailySubject = /^Arrival Report/i.test(arrivalSubject)
+        ? arrivalSubject.replace(/^Arrival Report/i, "Daily Report")
+        : "Daily Report";
+      setReportDraft((prev) => ({
+        ...prev,
+        subject: dailySubject,
+        message: buildDailyReportBody(),
+        attachments: [],
+      }));
+      // A configured Daily (report_type_id 3) template, if any, replaces the generated body.
+      const resolvedCallId = String(callId ?? "").trim();
+      const resolvedPortId = String(portId ?? "").trim();
+      const resolvedCallTypeId = String(callTypeId ?? "").trim();
+      if (resolvedCallId && resolvedPortId && resolvedCallTypeId) {
+        appointmentAcceptanceService
+          .getArrivalTemplateByPortCallType({
+            call_id: resolvedCallId,
+            port_id: resolvedPortId,
+            call_type_id: resolvedCallTypeId,
+            report_type_id: DAILY_REPORT_TYPE_ID,
+            time_objects: templateTimeObjectsRef.current,
+          })
+          .then((response) => {
+            if (!aliveRef.current || reportTypeRef.current !== "daily") return;
+            const template = extractReportTemplateFields(response);
+            if (template.subject || template.message) {
+              setReportDraft((prev) => mergeReportTemplate(prev, template));
+            }
+          })
+          .catch(() => {
+            // Generated daily body stays in place.
+          });
+      }
+      return;
+    }
+    setReportType("arrival");
+    reportTouchedRef.current = arrivalTouchedRef.current;
+    if (arrivalDraftRef.current) setReportDraft(arrivalDraftRef.current);
+    else if (detailEmailTemplate) {
+      setReportDraft((prev) => mergeReportTemplate(prev, extractReportTemplateFields(detailEmailTemplate)));
+    }
+  };
+
   // ---- Validation & submit ----
   const validate = () => {
     const nextErrors = {};
@@ -524,7 +616,8 @@ function TemplateStageForm({
       body: resolveReportBodyHtml(reportDraft.message, "") || "",
       attachments: mapAttachmentsForSave(reportDraft.attachments),
     };
-    if (showEmailPreview && report.to_email) {
+    // The stage's saved report is the Arrival one; a Daily draft is only ever sent, not saved.
+    if (showEmailPreview && report.to_email && reportType === "arrival") {
       formData.append("report", JSON.stringify(report));
     }
 
@@ -571,7 +664,10 @@ function TemplateStageForm({
       return;
     }
 
-    const reportTypeId = activeStage?.emailTemplate?.report_type_id ?? reportConfig?.reportTypeId;
+    const reportTypeId =
+      hasReportTypeSwitch && reportType === "daily"
+        ? DAILY_REPORT_TYPE_ID
+        : activeStage?.emailTemplate?.report_type_id ?? reportConfig?.reportTypeId;
     const body = resolveReportBodyHtml(reportDraft.message, "") || "";
     const requestBody = buildSendReportRequestBody(
       {
@@ -812,6 +908,9 @@ function TemplateStageForm({
               {showEmailPreview && (
                 <OperationFormCard className="operation-email-column">
                   <OperationEmailPreviewPanel
+                    reportType={hasReportTypeSwitch ? reportType : undefined}
+                    reportTypeOptions={hasReportTypeSwitch ? ARRIVAL_REPORT_TYPE_OPTIONS : undefined}
+                    onReportTypeChange={hasReportTypeSwitch ? handleReportTypeChange : undefined}
                     from={reportDraft.from}
                     to={reportDraft.to}
                     cc={reportDraft.cc}
