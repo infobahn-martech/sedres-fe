@@ -4228,16 +4228,41 @@
    view without page scroll (the table body scrolls internally).
    ========================================================== */
 .husbandry-service-selection.crew-immigration-dashboard {
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding-top: 8px;
+  padding-bottom: 8px;
 
-  .husbandry-service-hero {
-    padding: 16px 20px;
-    margin-bottom: 12px;
+  .husbandry-service-hero,
+  .husbandry-service-hero:has(> .crew-mgmt-hero-row:only-child) {
+    padding: 10px 16px;
+    margin-bottom: 8px;
+    border-radius: 14px;
+  }
+
+  .crew-mgmt-hero-row {
+    gap: 16px;
+    align-items: center;
   }
 
   .crew-mgmt-hero-left {
-    gap: 12px;
+    gap: 8px;
+  }
+
+  .husbandry-service-selection-title {
+    font-size: 22px;
+    margin: 0;
+  }
+
+  // Uploaded Crew Lists panel — drop the 150px min-height and trim padding
+  // so it hugs its file cards instead of reserving empty space above/below.
+  .crew-uploaded-lists-panel {
+    min-height: 0;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .crew-uploaded-card {
+    padding: 6px 10px;
+    row-gap: 4px;
   }
 
   .crew-mgmt-summary-section {
@@ -4246,17 +4271,35 @@
 
   .crew-listing-header {
     align-items: center;
-    margin: 0 0 10px;
+    margin: 0 0 8px;
   }
 
   .crew-listing-title {
-    font-size: 20px;
+    font-size: 18px;
+  }
+
+  // Denser rows: smaller cell padding + action buttons.
+  .crew-table.crew-immigration-listing-table {
+    th {
+      height: 34px;
+    }
+
+    td {
+      padding-top: 4px !important;
+      padding-bottom: 4px !important;
+      vertical-align: middle;
+    }
+  }
+
+  .crew-immigration-listing-table .crew-action-btn {
+    width: 26px;
+    height: 26px;
   }
 
   // Fill the remaining viewport height instead of a fixed 480px box, so the
   // pagination bar stays visible without scrolling the page.
   .crew-mgmt-summary-section .crew-table-wrapper {
-    height: calc(100vh - 470px);
-    min-height: 260px;
+    height: calc(100vh - 450px);
+    min-height: 240px;
   }
 }
