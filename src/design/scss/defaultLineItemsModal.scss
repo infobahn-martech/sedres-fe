@@ -6,15 +6,68 @@
   z-index: 1300;
 }
 
+$dli-primary: #00368c;
+$dli-primary-hover: #002a6d;
+
 .so-doc-modal.dli-modal {
-  max-width: 1080px;
-  width: min(1080px, 94vw);
-  max-height: 88vh;
+  max-width: 1320px;
+  width: min(1320px, 96vw);
+  min-height: min(620px, 90vh);
+  max-height: 92vh;
+  // No light border around the modal — it showed as a white rim around the blue header.
+  border: none;
+  box-shadow: 0 24px 60px -12px rgba(15, 23, 42, 0.45);
+
+  // Coloured header
+  .so-doc-modal-header {
+    padding: 20px 24px;
+    border-bottom: none;
+    // Hug the modal's rounded corners exactly so no white shows at the edges.
+    border-radius: 14px 14px 0 0;
+    margin: -1px -1px 0;
+    background: linear-gradient(135deg, $dli-primary 0%, #1650b0 100%);
+  }
+
+  .so-doc-modal-header-icon {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+  }
+
+  .so-doc-modal-title {
+    color: #fff;
+    font-size: 17px;
+  }
+
+  .so-doc-modal-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .so-doc-modal-footer {
+    padding: 16px 24px;
+  }
+
+  // Primary buttons
+  .sales-order-add-form-save,
+  .dli-add-btn {
+    background: $dli-primary;
+    box-shadow: 0 3px 10px rgba(0, 54, 140, 0.25);
+
+    &:hover:not(:disabled) {
+      background: $dli-primary-hover;
+      filter: none;
+      box-shadow: 0 6px 16px rgba(0, 54, 140, 0.32);
+    }
+  }
+
+  .sales-order-add-form-cancel:hover:not(:disabled) {
+    border-color: $dli-primary;
+    color: $dli-primary;
+  }
 }
 
 .dli-modal-body {
-  padding: 18px 22px;
-  min-height: 280px;
+  padding: 22px 24px;
+  min-height: 360px;
 }
 
 .dli-modal-state {
@@ -164,8 +217,8 @@
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.3px;
-    color: #2c3a6e;
-    background: linear-gradient(180deg, #eef1ff, #e2e7ff);
+    color: $dli-primary;
+    background: #e8eef8;
     border-bottom: 1px solid var(--border-primary);
     white-space: nowrap;
   }
@@ -219,8 +272,8 @@
   display: inline-block;
   padding: 3px 8px;
   border-radius: 6px;
-  background: rgba(42, 0, 255, 0.07);
-  color: #2a00ff;
+  background: rgba(0, 54, 140, 0.08);
+  color: $dli-primary;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
