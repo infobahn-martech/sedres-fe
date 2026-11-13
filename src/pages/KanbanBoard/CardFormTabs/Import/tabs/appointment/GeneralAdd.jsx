@@ -35,6 +35,7 @@ import {
   MultiSelectField,
 } from "./GeneralFormFields";
 import EmailPreviewPanel from "./EmailPreviewPanel";
+import DefaultLineItemsModal from "./DefaultLineItemsModal";
 import {
   APPOINTMENT_TYPE_OPTIONS,
   appointmentTypeShowsBargeFields,
@@ -209,6 +210,13 @@ const extractTemplateFieldValues = (fields, data) =>
 // A checkbox with no options is a legacy single checkbox, submitted as "1" / "0".
 const isSingleCheckboxField = (field) => field.type === "checkbox" && !field.options.length;
 
+// create_call_file / create_call_file_new return the new call's id in `data` (or at the top level).
+const resolveCreatedCallId = (response) => {
+  const body = response?.data ?? response;
+  const id = body?.data?.call_id ?? body?.call_id ?? body?.data?.callId ?? body?.callId;
+  return id === undefined || id === null || String(id).trim() === "" ? "" : id;
+};
+
 const hasMeaningfulValue = (value) => {
   if (value === undefined || value === null) return false;
   if (Array.isArray(value)) return value.length > 0;
@@ -319,6 +327,22 @@ function GeneralAdd({
   // Per-field (vesselName / tugVesselName / bargeVesselName) request counters guarding against
   // a stale vessel-detail response overwriting a newer selection.
   const vesselDetailRequestIdRef = useRef({});
+  // After a successful create, the default line items modal is shown first; the parent's onSave
+  // (which closes the card form) runs once the user confirms or skips it.
+  const [createdCall, setCreatedCall] = useState(null);
+  const handleCallFileCreated = (response) => {
+    const createdCallId = resolveCreatedCallId(response);
+    if (createdCallId) {
+      setCreatedCall({ callId: createdCallId, response });
+      return;
+    }
+    if (onSave) onSave(response);
+  };
+  const handleDefaultLineItemsDone = () => {
+    const response = createdCall?.response;
+    setCreatedCall(null);
+    if (onSave) onSave(response);
+  };
   const clearCallTasks = useCallTaskReducer((state) => state.clearCallTasks);
   const currentCallId = card?.call_id ?? formValues?.call_id ?? card?.callId ?? "";
 
@@ -741,7 +765,7 @@ function GeneralAdd({
         emailAttachments: [...defaultEmailAttachments, ...uploadedEmailAttachments],
       });
       const response = await callFileService.createCallFileNew(formData);
-      if (onSave) onSave(response);
+      handleCallFileCreated(response);
     } catch (error) {
       const msg =
         error?.response?.data?.message ||
@@ -895,7 +919,7 @@ function GeneralAdd({
         console.groupEnd();
       }
       const response = await callFileService.createCallFile(formData);
-      if (onSave) onSave(response);
+      handleCallFileCreated(response);
     } catch (error) {
       const msg =
         error?.response?.data?.message ||
@@ -2742,6 +2766,9 @@ function GeneralAdd({
                     {isSavingGeneral ? "Saving..." : "Add Card"}
                   </button>
                 </div>
+              )}
+              {createdCall && (
+                <DefaultLineItemsModal callId={createdCall.callId} onDone={handleDefaultLineItemsDone} />
               )}
             </div>
           </div>

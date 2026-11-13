@@ -1,0 +1,120 @@
+// Default line items modal shown after a call file is created (GeneralAdd).
+// Builds on the shared .so-doc-modal shell from salesOrder.scss.
+
+// Above the card form overlay (.cardform-overlay, z-index 1200).
+.dli-modal-overlay {
+  z-index: 1300;
+}
+
+.dli-modal {
+  max-width: 720px;
+}
+
+.dli-modal-state {
+  padding: 32px 8px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+
+  &--error {
+    color: #dc2626;
+  }
+}
+
+.dli-modal-table-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dli-modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  color: var(--text-primary);
+
+  th {
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-primary);
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: var(--surface-secondary, rgba(15, 23, 42, 0.04));
+    }
+
+    &:not(.is-selected) td:not(.dli-col-check) {
+      opacity: 0.55;
+    }
+  }
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+}
+
+.dli-col-check {
+  width: 36px;
+}
+
+.dli-col-num {
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.dli-item-name {
+  font-weight: 600;
+}
+
+.dli-item-code {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.dli-modal-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-left: auto;
+  min-width: 240px;
+  font-size: 13px;
+  color: var(--text-secondary);
+
+  > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  &-grand {
+    padding-top: 6px;
+    border-top: 1px solid var(--border-primary);
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+}
+
+@media (max-width: 600px) {
+  .dli-modal-totals {
+    min-width: 0;
+    width: 100%;
+  }
+}
