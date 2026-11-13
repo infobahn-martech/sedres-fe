@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import salesOrderService from "@/services/salesOrderService";
 import kanbanBoardService from "@/services/kanbanBoardService";
 import callFileService from "@/services/callFileService";
+import groService from "@/services/groService";
+import { resolveGroCardId } from "../GRO/User/groCardUtils";
 import daService from "@/services/daService";
 import { mapSalesOrderResponse } from "@/shared/helpers/mapSalesOrderResponse";
 import { useLocation } from "react-router-dom";
@@ -46,6 +48,7 @@ import { TemplateTabPanel } from "@/pages/KanbanBoard/CardFormTabs/shared/compon
 import CardFormLoadingSkeleton from "@/pages/KanbanBoard/CardFormTabs/shared/components/CardFormLoadingSkeleton";
 import NavTabButton from "@/components/NavTabButton";
 import GROCardView from "../GRO/User/GROCardView";
+import GroCardViewSkeleton from "../GRO/User/GroCardViewSkeleton";
 import CoordinatorTransportCardView from "../CoordinatorTransport/CoordinatorTransportCardView";
 import CustomCardView from "../Custom/User/CustomCardView";
 import MWPCardView from "../MWP/User/MWPCardView";
@@ -1910,23 +1913,33 @@ function CardForm({
   const needsGroViewAppointmentTypeCheck = isGroSupervisorRoleViewer;
   const [groViewAppointmentType, setGroViewAppointmentType] = useState(null);
   const [isGroViewCallTypeLoading, setIsGroViewCallTypeLoading] = useState(false);
+  // The get_call_detail_by_id response fetched here is handed to GROCardView (prefetchedDetail)
+  // so it binds from it instead of requesting the same API again once it mounts.
+  const [groPrefetchedDetail, setGroPrefetchedDetail] = useState(null);
+  const groCheckCallIdRaw = card?.call_id ?? card?.callId;
+  const groCheckCallId = groCheckCallIdRaw != null ? String(groCheckCallIdRaw).trim() : "";
+  const groCheckCardIdRaw = resolveGroCardId(card);
+  const groCheckCardId = groCheckCardIdRaw != null ? String(groCheckCardIdRaw).trim() : "";
   useEffect(() => {
     if (!show || isAddMode || !needsGroViewAppointmentTypeCheck) {
       setIsGroViewCallTypeLoading(false);
       return undefined;
     }
-    const callIdRaw = card?.call_id ?? card?.callId;
-    const callId = callIdRaw != null ? String(callIdRaw).trim() : "";
-    if (!callId) {
+    if (!groCheckCallId || !groCheckCardId) {
       setIsGroViewCallTypeLoading(false);
       return undefined;
     }
     let cancelled = false;
     setIsGroViewCallTypeLoading(true);
-    callFileService
-      .getCallDetail(callId)
-      .then(({ data }) => {
-        if (!cancelled) setGroViewAppointmentType(data?.data?.appointment_type ?? null);
+    setGroPrefetchedDetail(null);
+    // Light common bind API instead of the heavy get_call_detail.
+    groService
+      .getCallDetailById(groCheckCallId, groCheckCardId)
+      .then((res) => {
+        if (cancelled) return;
+        const data = res?.data?.data;
+        setGroViewAppointmentType(data?.call?.appointment_type ?? data?.appointment_type ?? null);
+        setGroPrefetchedDetail({ callId: groCheckCallId, cardId: groCheckCardId, response: res });
       })
       .catch(() => {
         if (!cancelled) setGroViewAppointmentType(null);
@@ -1937,8 +1950,10 @@ function CardForm({
     return () => {
       cancelled = true;
     };
-  }, [show, isAddMode, needsGroViewAppointmentTypeCheck, card?.call_id, card?.callId]);
-  const isVesselAppointmentForGroView = String(groViewAppointmentType ?? "").trim() === "vessel";
+  }, [show, isAddMode, needsGroViewAppointmentTypeCheck, groCheckCallId, groCheckCardId]);
+  // get_call_detail_by_id returns "Vessel" (capitalised) — compare case-insensitively.
+  const isVesselAppointmentForGroView =
+    String(groViewAppointmentType ?? "").trim().toLowerCase() === "vessel";
   // While the appointment type is still loading, hold off rendering either the GRO
   // view or the tab view — otherwise a GRO-role viewer briefly sees the wrong one
   // flash before this resolves and the real view swaps in.
@@ -2212,8 +2227,16 @@ function CardForm({
   // export/husbandry-tab machinery that isTaxiBoatVariant's render branch never reaches,
   // and the TopBar's type/tag/blocker/sticker resolvers already fall back to card.raw's
   // own fields (see resolveCardTypeIdFromCard etc.), so skipping this costs nothing there.
+  //
+  // Same for the GRO / Custom Clearance task card views: GROCardView binds everything from
+  // call_file/get_call_detail_by_id (light, per card), so the heavy get_call_detail snapshot
+  // would only seed TopBar metadata, which already falls back to card.raw. Coordinator
+  // Transport (also a GRO-style view) keeps the snapshot.
+  const isGroTaskCardView = isGROStyleView && !isCoordinatorTransport;
   const snapshotCallId =
-    !show || isAddMode || isTaxiBoatVariant ? "" : normalizeCallId(card?.call_id ?? card?.callId);
+    !show || isAddMode || isTaxiBoatVariant || isGroTaskCardView
+      ? ""
+      : normalizeCallId(card?.call_id ?? card?.callId);
   const [callDetailState, setCallDetailState] = useState(EMPTY_CALL_DETAIL_STATE);
 
   useEffect(() => {
@@ -3291,18 +3314,20 @@ function CardForm({
         ) : isMWPVariant ? (
           <MWPCardView card={card} />
         ) : isDecidingGroExportView ? (
-          <div className="d-flex justify-content-center align-items-center py-5">
-            <div className="spinner-border" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-          </div>
+          <GroCardViewSkeleton />
         ) : isGROStyleView ? (
           isCustomVariant ? (
             <CustomCardView ref={groCardViewRef} card={card} userRoleId={userRoleId} />
           ) : isCoordinatorTransport ? (
             <CoordinatorTransportCardView cardData={card} cardColor={topbarColor} />
           ) : (
-            <GROCardView ref={groCardViewRef} card={card} mode="gro" userRoleId={userRoleId} />
+            <GROCardView
+              ref={groCardViewRef}
+              card={card}
+              mode="gro"
+              userRoleId={userRoleId}
+              prefetchedDetail={groPrefetchedDetail}
+            />
           )
         ) : (
           <>

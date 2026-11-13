@@ -162,9 +162,9 @@ const CustomerPricing = () => {
                 <div className="prospect employee">
                     <div className="container-fluid">
                         <CommonHeader
-                            tableTitle="Customer Pricing"
+                            tableTitle="Client Tariff"
                             isAddEnabled={false}
-                            addModalLabel="Add Customer Pricing"
+                            addModalLabel="Add Client Tariff"
                             setSearch={(e) =>
                                 setParams({ ...params, searchTerm: e, page: 1 })
                             }
@@ -218,7 +218,7 @@ const CustomerPricing = () => {
                             show={showDeleteModal}
                             onCancel={() => setShowDeleteModal(false)}
                             onConfirm={() => { }}
-                            deleteText="Are you sure you want to delete this customer pricing?"
+                            deleteText="Are you sure you want to delete this client tariff?"
                         />
                     )}
                 </div>

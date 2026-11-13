@@ -1028,6 +1028,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
       case CREW_MANAGEMENT_SUBTABS.CREW:
         return (
           <CrewManagementDashboard
+            card={card}
             formValues={formValues}
             handleChange={handleChange}
             cardColor={cardColor}
@@ -1117,6 +1118,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
         // No form exists yet for these services — fall back to the dashboard.
         return (
           <CrewManagementDashboard
+            card={card}
             formValues={formValues}
             handleChange={handleChange}
             cardColor={cardColor}
@@ -1128,6 +1130,7 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
       default:
         return (
           <CrewManagementDashboard
+            card={card}
             formValues={formValues}
             handleChange={handleChange}
             cardColor={cardColor}

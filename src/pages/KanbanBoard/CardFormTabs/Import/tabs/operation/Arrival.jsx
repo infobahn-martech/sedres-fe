@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import StageFormSkeleton from "./components/StageFormSkeleton";
 import PropTypes from "prop-types";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
@@ -286,6 +287,11 @@ function Arrival({
     emailPreviewFromDetailRef.current = false;
   }, [callId]);
 
+  // callId whose arrival detail has finished loading — until it matches, the
+  // stage skeleton is shown instead of the half-populated form.
+  const detailCallId = resolveFormId(callId, formValues?.call_id, formValues?.callId);
+  const [detailLoadedFor, setDetailLoadedFor] = useState(null);
+
   useEffect(() => {
     if (isViewOnly) return undefined;
     const resolvedCallId = resolveFormId(callId, formValues?.call_id, formValues?.callId);
@@ -294,7 +300,12 @@ function Arrival({
     let cancelled = false;
 
     const run = async () => {
-      const detail = await fetchArrivalDetail({ callId: resolvedCallId });
+      let detail;
+      try {
+        detail = await fetchArrivalDetail({ callId: resolvedCallId });
+      } finally {
+        if (!cancelled) setDetailLoadedFor(resolvedCallId);
+      }
       if (cancelled || !detail) return;
 
       applyArrivalGetDetailToForm({
@@ -590,6 +601,8 @@ function Arrival({
 
     handleChange("arrivalAdditionalTimeObjects")({ target: { value: next } });
   };
+
+  if (!isViewOnly && detailCallId && detailLoadedFor !== detailCallId) return <StageFormSkeleton />;
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>

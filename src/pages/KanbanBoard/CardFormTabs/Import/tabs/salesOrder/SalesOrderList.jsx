@@ -420,6 +420,8 @@ const SalesOrderList = ({
   }, [callId, getAllSupportingDocs]);
 
   const entityId =
+    callDetailData?.entity_id ??
+    callDetailData?.template?.billing_entity_id ??
     callDetailData?.main_billing_entity_id ??
     formValues.mainBillingEntity ??
     card?.main_billing_entity_id ??

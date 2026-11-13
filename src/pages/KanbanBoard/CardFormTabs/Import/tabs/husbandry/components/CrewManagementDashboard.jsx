@@ -116,25 +116,21 @@ const hasDocumentUrl = (url) =>
 const EDITABLE_SUMMARY_FIELDS = ["crewName", "dateOfBirth", "nationality", "rank"];
 
 // Read-only doc status icon for the Passport/Iqama, Visa, CG Pass and Zawil
-// Pass columns — green preview icon when the document is available, blank
+// Pass columns — a "document ✓" icon in the same green pill as the
+// Transport/Hotel/Medical service icons when the document is on file, blank
 // cell when it's missing (no red "missing" indicator).
 const DocStatusIcon = ({ available, label }) => {
   if (!available) {
-    return <div className="crew-table-cell crew-table-cell--doc-action" aria-hidden="true" />;
+    return <div className="crew-table-cell crew-service-cell crew-service-cell--empty" aria-hidden="true" />;
   }
   return (
-    <div className="crew-table-cell crew-table-cell--doc-action">
-      <div className="crew-doc-cell__inner">
-        <span
-          className="crew-doc-btn crew-doc-btn--preview"
-          aria-label={`${label} available`}
-          title={`${label} available`}
-        >
-          <svg className="crew-doc-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ stroke: "#00AA00" }} />
-            <circle cx="12" cy="12" r="3" strokeWidth="2" style={{ stroke: "#00AA00" }} />
-          </svg>
-        </span>
+    <div className="crew-table-cell crew-service-cell" aria-label={`${label} on file`} title={`${label} on file`}>
+      <div className="crew-status-icon crew-status-icon--done">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M9 15L11 17L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
     </div>
   );
@@ -200,7 +196,7 @@ ServiceStatusIcon.propTypes = {
 // opens a "Select Crew" popup fed by the crew list already uploaded here;
 // on submit the selection is saved to the matching service field and the
 // existing service form is opened via onNavigateToTab.
-const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNavigateToTab, onBackToServiceSelection }) => {
+const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, onNavigateToTab, onBackToServiceSelection }) => {
   const { hasPermission, hasSubmodule } = usePermissions();
   // KANBAN_CARD > CREW_MANAGEMENT per-action gates — absence of the module/
   // submodule/action in the permissions response means false (deny by default).
@@ -328,8 +324,8 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   const sharedCallDetail = useContext(CallDetailContext);
 
   const resolveCallAndVesselIds = useCallback(async () => {
-    let resolvedCallId = Number(formValues?.call_id ?? formValues?.callId);
-    let resolvedVesselId = Number(formValues?.vessel_id ?? formValues?.vesselId);
+    let resolvedCallId = Number(formValues?.call_id ?? formValues?.callId ?? card?.call_id ?? card?.callId);
+    let resolvedVesselId = Number(formValues?.vessel_id ?? formValues?.vesselId ?? card?.vessel_id ?? card?.vesselId);
 
     if ((!resolvedCallId || !resolvedVesselId) && resolvedCallId) {
       try {
@@ -347,7 +343,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     }
 
     return { resolvedCallId, resolvedVesselId };
-  }, [formValues?.call_id, formValues?.callId, formValues?.vessel_id, formValues?.vesselId]);
+  }, [formValues?.call_id, formValues?.callId, formValues?.vessel_id, formValues?.vesselId, card?.call_id, card?.callId, card?.vessel_id, card?.vesselId]);
 
   useEffect(() => {
     fetchAllNationalities();
@@ -397,8 +393,8 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
-      if (cancelled || !resolvedCallId || !resolvedVesselId) return;
+      const { resolvedCallId } = await resolveCallAndVesselIds();
+      if (cancelled || !resolvedCallId) return;
       const list = await fetchCallCrewList({
         payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
       });
@@ -467,8 +463,8 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
-      if (cancelled || !resolvedCallId || !resolvedVesselId) return;
+      const { resolvedCallId } = await resolveCallAndVesselIds();
+      if (cancelled || !resolvedCallId) return;
       setIsSummaryLoading(true);
       const list = await fetchCallCrewList({
         payload: {
@@ -624,7 +620,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 
     setUploadSteps((prev) => ({ ...prev, [stepKey]: { ...prev[stepKey], status: "uploading" } }));
 
-    const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
+    const { resolvedCallId } = await resolveCallAndVesselIds();
     if (!resolvedCallId) {
       setUploadSteps((prev) => ({ ...prev, [stepKey]: { ...prev[stepKey], status: "failed" } }));
       notify("Unable to upload: missing call information.", "error");
@@ -641,7 +637,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 
     try {
       await uploadAction({ formData });
-      if (resolvedCallId && resolvedVesselId) {
+      if (resolvedCallId) {
         const list = await fetchCallCrewList({
           payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
         });
@@ -670,7 +666,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   // the real result. Shared by the dropzone and the Crew Summary bulk
   // action below.
   const uploadVisaFiles = async (files) => {
-    const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
+    const { resolvedCallId } = await resolveCallAndVesselIds();
     if (!resolvedCallId) {
       notify("Unable to upload: missing call information.", "error");
       return 0;
@@ -689,7 +685,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
       }
     }
 
-    if (resolvedCallId && resolvedVesselId) {
+    if (resolvedCallId) {
       const list = await fetchCallCrewList({
         payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
       });
@@ -900,7 +896,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     const uploadAction = kind === "passport" ? uploadPassportCopies : uploadIqamaCopies;
     const label = kind === "passport" ? "Passport" : "Iqama";
 
-    const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
+    const { resolvedCallId } = await resolveCallAndVesselIds();
     if (!resolvedCallId) {
       notify("Unable to upload: missing call information.", "error");
       return;
@@ -917,7 +913,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     setUploading(true);
     try {
       await uploadAction({ formData });
-      if (resolvedCallId && resolvedVesselId) {
+      if (resolvedCallId) {
         const list = await fetchCallCrewList({
           payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
         });
@@ -983,8 +979,8 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
         },
       });
 
-      const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
-      if (resolvedCallId && resolvedVesselId) {
+      const { resolvedCallId } = await resolveCallAndVesselIds();
+      if (resolvedCallId) {
         const list = await fetchCallCrewList({
           payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
         });
@@ -1022,8 +1018,8 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
     try {
       await deleteCrew({ crewId: crewIdNum });
 
-      const { resolvedCallId, resolvedVesselId } = await resolveCallAndVesselIds();
-      if (resolvedCallId && resolvedVesselId) {
+      const { resolvedCallId } = await resolveCallAndVesselIds();
+      if (resolvedCallId) {
         const list = await fetchCallCrewList({
           payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
         });
@@ -1047,7 +1043,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   // Enabled once we at least know the call — vessel_id is resolved lazily
   // by resolveCallAndVesselIds() at submit time (same as every other upload
   // flow on this dashboard), so it isn't required just to open the panel.
-  const hasCallInfo = Boolean(formValues?.call_id ?? formValues?.callId);
+  const hasCallInfo = Boolean(formValues?.call_id ?? formValues?.callId ?? card?.call_id ?? card?.callId);
 
   const handleCancelLaunchHire = () => {
     if (isSubmittingLaunchHire) return;
@@ -1141,7 +1137,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
   const crewListStatus = crewUploads[movementType]?.status || "pending";
 
   return (
-    <div className="husbandry-service-selection" style={{ "--card-color": cardColor }}>
+    <div className="husbandry-service-selection crew-management-dashboard" style={{ "--card-color": cardColor }}>
       <div className="husbandry-service-selection-content">
         <div className="husbandry-service-hero">
           <div className="crew-mgmt-hero-row">
@@ -1234,9 +1230,33 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 
         <div className="crew-mgmt-summary-section">
           <div className="crew-listing-header">
-            <div>
+            <div className="crew-listing-header__left">
               <h2 className="crew-listing-title">Crew Summary</h2>
-              <p className="crew-listing-subtitle">Overview of crew documents and assigned services.</p>
+              <div className="crew-summary-movement-filter" role="tablist" aria-label="Filter by movement type">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={summaryMovementTypeFilter === ""}
+                  className={`crew-summary-movement-filter__btn${summaryMovementTypeFilter === "" ? " crew-summary-movement-filter__btn--active" : ""}`}
+                  style={summaryMovementTypeFilter === "" ? { background: cardColor || "#00368c", color: "#fff" } : undefined}
+                  onClick={() => setSummaryMovementTypeFilter("")}
+                >
+                  All
+                </button>
+                {MOVEMENT_TYPE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={summaryMovementTypeFilter === option.value}
+                    className={`crew-summary-movement-filter__btn${summaryMovementTypeFilter === option.value ? " crew-summary-movement-filter__btn--active" : ""}`}
+                    style={summaryMovementTypeFilter === option.value ? { background: cardColor || "#00368c", color: "#fff" } : undefined}
+                    onClick={() => setSummaryMovementTypeFilter(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="crew-summary-header-actions">
@@ -1271,32 +1291,6 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
                   value={summarySearch}
                   onChange={handleSummarySearchChange}
                 />
-              </div>
-
-              <div className="crew-summary-movement-filter" role="tablist" aria-label="Filter by movement type">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={summaryMovementTypeFilter === ""}
-                  className={`crew-summary-movement-filter__btn${summaryMovementTypeFilter === "" ? " crew-summary-movement-filter__btn--active" : ""}`}
-                  style={summaryMovementTypeFilter === "" ? { background: cardColor || "#00368c", color: "#fff" } : undefined}
-                  onClick={() => setSummaryMovementTypeFilter("")}
-                >
-                  All
-                </button>
-                {MOVEMENT_TYPE_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    role="tab"
-                    aria-selected={summaryMovementTypeFilter === option.value}
-                    className={`crew-summary-movement-filter__btn${summaryMovementTypeFilter === option.value ? " crew-summary-movement-filter__btn--active" : ""}`}
-                    style={summaryMovementTypeFilter === option.value ? { background: cardColor || "#00368c", color: "#fff" } : undefined}
-                    onClick={() => setSummaryMovementTypeFilter(option.value)}
-                  >
-                    {option.label}
-                  </button>
-                ))}
               </div>
 
               {summarySelectedIds.length > 0 && (
@@ -1582,6 +1576,7 @@ const CrewManagementDashboard = ({ formValues, handleChange, cardColor, onNaviga
 };
 
 CrewManagementDashboard.propTypes = {
+  card: PropTypes.object,
   formValues: PropTypes.object.isRequired,
   handleChange: PropTypes.func.isRequired,
   cardColor: PropTypes.string,

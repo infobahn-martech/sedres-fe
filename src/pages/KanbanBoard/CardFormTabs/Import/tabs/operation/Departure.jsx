@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import StageFormSkeleton from "./components/StageFormSkeleton";
 import PropTypes from "prop-types";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { buildDepartureReportBody } from "../../services/sendReportBodyBuilder";
@@ -130,13 +131,22 @@ function Departure({
     reportDraftFromDetailRef.current = false;
   }, [resolvedCallId]);
 
+  // callId whose departure detail has finished loading — until it matches,
+  // the stage skeleton is shown instead of the half-populated form.
+  const [detailLoadedFor, setDetailLoadedFor] = useState(null);
+
   useEffect(() => {
     if (isViewOnly || !resolvedCallId) return undefined;
 
     let cancelled = false;
 
     const run = async () => {
-      const detail = await fetchDepartureDetail({ callId: resolvedCallId });
+      let detail;
+      try {
+        detail = await fetchDepartureDetail({ callId: resolvedCallId });
+      } finally {
+        if (!cancelled) setDetailLoadedFor(resolvedCallId);
+      }
       if (cancelled || !detail) return;
 
       applyDepartureGetDetailToForm({ responseBody: detail, eventFields, handleChange });
@@ -452,6 +462,8 @@ function Departure({
       setIsSavingDeparture(false);
     }
   };
+
+  if (!isViewOnly && resolvedCallId && detailLoadedFor !== resolvedCallId) return <StageFormSkeleton />;
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>

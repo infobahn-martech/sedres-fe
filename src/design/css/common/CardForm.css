@@ -986,6 +986,80 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
+/* operations.scss redefines .cf-owner-avatar at 36px after this file; keep option avatars small. */
+.cf-multi-select-option .cf-owner-avatar.cf-owner-avatar--sm {
+  width: 22px;
+  height: 22px;
+  font-size: 10px;
+}
+
+/* Multi-select user field: selected users stacked in front of the field like the Owner avatar. */
+.cf-owner-row--multi > .cf-multi-select-email {
+  flex: 1;
+  min-width: 0;
+}
+
+.cf-owner-avatar-stack {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
+/* Separator ring drawn outside the circle so stacked avatars keep the Owner avatar's 36px size. */
+.cf-owner-avatar-stack > .cf-owner-avatar + .cf-owner-avatar {
+  box-shadow: 0 0 0 2px var(--surface-primary, #fff), 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cf-owner-avatar-stack > .cf-owner-avatar + .cf-owner-avatar {
+  margin-left: -14px;
+}
+
+.cf-owner-avatar-stack > .cf-owner-avatar--more {
+  font-size: 12px;
+}
+
+.cf-owner-row--multi {
+  align-items: center;
+}
+
+/* Single-line multi-select: tags never wrap; overflow collapses into a "…" chip with a tooltip. */
+.cf-multi-select-email-tags.cf-multi-select-email-tags--single-line {
+  position: relative;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cf-multi-select-email-tags--single-line > .cf-email-tag {
+  flex-shrink: 0;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.cf-multi-select-email-tags--single-line > .cf-email-tag:first-child {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.cf-multi-select-email-tags--single-line .cf-email-tag-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Rendered off-flow so its width can still be measured. */
+.cf-multi-select-email-tags--single-line > .cf-email-tag--measure-only {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.cf-multi-select-email-tags--single-line > .cf-email-tag--more {
+  cursor: help;
+  letter-spacing: 1px;
+}
+
 .cf-searchable-option-with-avatar {
   display: flex;
   align-items: center;

@@ -62,7 +62,7 @@ function CheckboxGroupPreview({ field, label, requiredMark, value, onChange, fie
 
 // Multi-select dropdown: the selection is kept as an array of option values.
 // Controlled when onChange is given, otherwise keeps its own selection (builder preview).
-function MultiSelectPreview({ value, onChange, options, placeholder, hasError }) {
+function MultiSelectPreview({ value, onChange, options, placeholder, hasError, showAvatars = false }) {
     const [localSelected, setLocalSelected] = useState([]);
     const isControlled = typeof onChange === "function";
     const selected = isControlled
@@ -79,6 +79,7 @@ function MultiSelectPreview({ value, onChange, options, placeholder, hasError })
             options={options}
             placeholder={placeholder}
             hasError={hasError}
+            showAvatars={showAvatars}
             className="checklist-multi-select"
             menuMaxHeight={260}
         />
@@ -225,6 +226,7 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
             const options = (field.options || []).map((opt, i) => ({
                 value: String(getOptionValue(field, i, opt)),
                 label: opt,
+                ...(field.hasAvatars ? { avatar: field.optionAvatars?.[i] ?? undefined } : {}),
             }));
             return (
                 <div className={fieldClassName}>
@@ -235,6 +237,7 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                         options={options}
                         placeholder={placeholder}
                         hasError={Boolean(error)}
+                        showAvatars={Boolean(field.hasAvatars)}
                     />
                     {errorNode}
                 </div>

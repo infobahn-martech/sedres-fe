@@ -21,6 +21,7 @@ import usePermissions from "@/shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "@/shared/constants/permissions";
 
 const LISTING_PAGE_SIZE = 10;
+const SKELETON_ROW_COUNT = 6;
 
 const createUploadSteps = () => ({
   crewList: { status: "pending", files: [], progress: 0 },
@@ -769,7 +770,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
   const hasCallInfo = Boolean(formValues?.call_id ?? formValues?.callId ?? card?.call_id ?? card?.callId);
 
   return (
-    <div className="husbandry-service-selection" style={{ "--card-color": cardColor }}>
+    <div className="husbandry-service-selection crew-immigration-dashboard" style={{ "--card-color": cardColor }}>
       <div className="husbandry-service-selection-content">
         <div className="husbandry-service-hero">
           <div className="crew-mgmt-hero-row">
@@ -827,10 +828,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
 
         <div className="crew-mgmt-summary-section">
           <div className="crew-listing-header">
-            <div>
-              <h2 className="crew-listing-title">Crew Listing</h2>
-              <p className="crew-listing-subtitle">Crew documents uploaded so far.</p>
-            </div>
+            <h2 className="crew-listing-title">Crew Listing</h2>
             <div className="crew-summary-header-actions">
               {launchHireEnabled && (
                 <PermissionGuard
@@ -987,7 +985,48 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
           />
 
           {canViewCrewList && (isListingLoading && listingRows.length === 0 ? (
-            <p className="crew-summary-empty">Loading crew…</p>
+            <div className="crew-table-wrapper crew-listing-skeleton" role="status" aria-live="polite" aria-busy="true">
+              <span className="crew-skeleton-sr-only">Loading crew…</span>
+              <div className="table-wrapper table-responsive crew-table-container crew-table-scroll">
+                <table className="table crew-table crew-immigration-listing-table" style={{ "--card-color": cardColor, tableLayout: "fixed", width: "100%" }} aria-hidden="true">
+                  <thead>
+                    <tr>
+                      <th className="crew-checkbox-cell-header"><span className="crew-skeleton crew-skeleton--box" /></th>
+                      <th><span className="crew-th">Crew name</span></th>
+                      <th><span className="crew-th">Date of birth</span></th>
+                      <th><span className="crew-th">Nationality</span></th>
+                      <th><span className="crew-th">Rank</span></th>
+                      <th><span className="crew-th">Passport / Iqama</span></th>
+                      <th><span className="crew-th">Visa</span></th>
+                      <th><span className="crew-th">Action</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: SKELETON_ROW_COUNT }, (_, rowIndex) => (
+                      <tr key={rowIndex}>
+                        <td className="crew-checkbox-cell"><span className="crew-skeleton crew-skeleton--box" /></td>
+                        <td><span className="crew-skeleton" style={{ width: `${[78, 62, 70, 55, 66, 74][rowIndex % 6]}%` }} /></td>
+                        <td><span className="crew-skeleton" style={{ width: "60%" }} /></td>
+                        <td><span className="crew-skeleton" style={{ width: `${[50, 64, 45, 58, 52, 60][rowIndex % 6]}%` }} /></td>
+                        <td><span className="crew-skeleton" style={{ width: `${[55, 40, 62, 48, 35, 58][rowIndex % 6]}%` }} /></td>
+                        <td><span className="crew-skeleton crew-skeleton--dot" /></td>
+                        <td><span className="crew-skeleton crew-skeleton--dot" /></td>
+                        <td>
+                          <div className="crew-skeleton-actions">
+                            <span className="crew-skeleton crew-skeleton--btn" />
+                            <span className="crew-skeleton crew-skeleton--btn" />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="crew-pagination">
+                <div className="crew-pagination-info"><span className="crew-skeleton" style={{ width: 160 }} /></div>
+                <div className="crew-pagination-actions"><span className="crew-skeleton" style={{ width: 120, height: 26 }} /></div>
+              </div>
+            </div>
           ) : !isListingLoading && totalListingItems === 0 ? (
             <div style={{ marginTop: 12 }}>
               {debouncedListingSearch || listingBatchFilter ? (

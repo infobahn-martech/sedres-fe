@@ -65,13 +65,13 @@ export const validateGroExtraStageFields = (stageId, fields = {}) => {
     }
   }
 
-  if (stageId === 12) {
+  if (stageId === 13) {
     if (!hasFile(data.outward_clearance_copy)) {
       errors.outward_clearance_copy = "Outward Clearance Copy is required.";
     }
   }
 
-  if (stageId === 13) {
+  if (stageId === 15) {
     if (!hasFile(data.mwp_cancellation_doc)) {
       errors.mwp_cancellation_doc = "MWP Cancellation Doc is required.";
     }
@@ -127,11 +127,11 @@ export const appendGroArrivalStageFieldsToFormData = (formData, stageId, fields 
     appendFileField(formData, "mwp_subscription_tax_invoice", data.mwp_subscription_tax_invoice);
   }
 
-  if (stageId === 12) {
+  if (stageId === 13) {
     appendFileField(formData, "outward_clearance_doc", data.outward_clearance_copy);
   }
 
-  if (stageId === 13) {
+  if (stageId === 15) {
     appendFileField(formData, "mwp_cancellation_doc", data.mwp_cancellation_doc);
   }
 };
@@ -216,13 +216,13 @@ export const extractGroSavedExtraStageFields = (stageId, taskDetails = {}) => {
       resolveGroDocumentByName(t, "MWP Subscription Tax Invoice");
   }
 
-  if (stageId === 12) {
+  if (stageId === 13) {
     fileInfo.outward_clearance_copy =
       resolveGroSavedFileInfo(t.outward_clearance_doc) ??
       resolveGroDocumentByName(t, "Outward Clearance");
   }
 
-  if (stageId === 13) {
+  if (stageId === 15) {
     fileInfo.mwp_cancellation_doc =
       resolveGroSavedFileInfo(t.mwp_cancellation_doc) ??
       resolveGroDocumentByName(t, "MWP Cancellation");
@@ -231,7 +231,7 @@ export const extractGroSavedExtraStageFields = (stageId, taskDetails = {}) => {
   return { scalarValues, fileInfo };
 };
 
-export const groStageHasExtraFields = (stageId) => [7, 8, 9, 10, 11, 12, 13].includes(Number(stageId));
+export const groStageHasExtraFields = (stageId) => [7, 8, 9, 10, 11, 13, 15].includes(Number(stageId));
 
 export const buildGroArrivalSaveFormData = ({
   callId,

@@ -12,7 +12,12 @@ const createCallFileNew = (formData) =>
 // Opening a card mounts several components (CardForm, General, Checklist, ...) that each
 // request the same call's detail at once — share one in-flight request per callId.
 const pendingCallDetailRequests = new Map();
-const getCallDetail = (callId) => {
+// `params` (optional) are sent as query params, e.g. { saber, weather_forecast } so the backend
+// renders the stage email templates for those values. Param requests are never shared.
+const getCallDetail = (callId, params) => {
+  if (params && Object.keys(params).length) {
+    return Gateway.get(`/call_file/get_call_detail/${callId}`, { params });
+  }
   const key = String(callId);
   if (pendingCallDetailRequests.has(key)) return pendingCallDetailRequests.get(key);
   const request = Gateway.get(`/call_file/get_call_detail/${callId}`).finally(() => {

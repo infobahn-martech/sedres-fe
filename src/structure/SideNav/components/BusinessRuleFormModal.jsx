@@ -11,11 +11,12 @@ import 'quill-table-better/dist/quill-table-better.css';
 import {
   ACTION_GROUP_TYPE_TO_SECTION_ID, LINK_ACTION_OPTIONS, LINK_REMOVE_OTHERS_OPTIONS, NOTIFY_ACTION_OPTIONS, UPDATE_ACTION_OPTIONS, STICKER_ACTION_FREQUENCY_OPTIONS,
   LIST_UPDATE_MODE_OPTIONS, DEADLINE_MODE_OPTIONS, WEEKDAY_OPTIONS, PRIORITY_OPTIONS, classifyCustomFieldUiKind,
-  INVOKE_ACTION_OPTIONS, DUMMY_INVOKE_METHOD_OPTIONS, DUMMY_INVOKE_AUTH_OPTIONS, INVOKE_METHODS_WITH_BODY, DUMMY_URL_FIELD_OPTIONS,
+  INVOKE_ACTION_OPTIONS, DUMMY_INVOKE_METHOD_OPTIONS, DUMMY_INVOKE_AUTH_OPTIONS, INVOKE_METHODS_WITH_BODY,
   TRIGGER_CODE_TO_ICON, UNSUPPORTED_ACTION_GROUP_TYPES,
 } from './businessRulesData';
 import { buildCreateBusinessRulePayload, buildUpdateBusinessRulePayload, getUnconfiguredActionLabels, isCreateSubtaskAction, RECURRENCE_REGULAR_FIELD_IDS, buildAdvancedScheduleFields } from './buildBusinessRulePayload';
 import ThenGroupRawSummary from './ThenGroupRawSummary';
+import GenericThenActionFields from './GenericThenActionFields';
 import DynamicIcon from './DynamicIcon';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import useAlertReducer from '../../../store/AlertReducer';
@@ -2174,7 +2175,7 @@ CustomFieldPickerModal.propTypes = {
 // separate board-filterable custom-fields lookup. Used for then-action contexts
 // (e.g. "Invoke web service") where the available fields are scoped to that action,
 // not to the rule's trigger.
-function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTypeId, allowedRegularFieldLabels }) {
+function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTypeId }) {
   const [selectedKeys, setSelectedKeys] = useState([]);
   const [expandedRegularFields, setExpandedRegularFields] = useState(true);
   const [expandedTimeUnit, setExpandedTimeUnit] = useState(true);
@@ -2186,10 +2187,6 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
   const [includeLoggedTimeSubtasks, setIncludeLoggedTimeSubtasks] = useState(false);
 
   const isActionMode = actionTypeId != null;
-  // Url tokens can only carry simple id-like values, so its trigger passes a fixed
-  // label whitelist (Card ID/Custom card ID/Internal card id) and neither Time unit
-  // nor Custom fields apply there — unlike Params, which accepts any card field.
-  const isRestricted = allowedRegularFieldLabels != null;
 
   const {
     regularFields, isLoadingRegularFields, getRegularFields,
@@ -2199,7 +2196,7 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
   } = useBusinessRuleReducer((s) => s);
 
   const { customFields, isLoadingCustomFields } = useCustomFieldsByTrigger({
-    show: show && !isActionMode && !isRestricted, triggerTypeId, boardId: selectedBoardId, showDisabled, search: debouncedSearch,
+    show: show && !isActionMode, triggerTypeId, boardId: selectedBoardId, showDisabled, search: debouncedSearch,
   });
 
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
@@ -2211,18 +2208,9 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
     ? list.filter((field) => getFieldLabel(field).toLowerCase().includes(filterQuery))
     : list;
 
-  // Card ID/Custom card ID/Internal card id are fixed system fields, not board data —
-  // rendered directly from the whitelist instead of depending on get_regular_fields
-  // actually including them for this trigger.
-  const restrictedRegularFields = isRestricted
-    ? allowedRegularFieldLabels.map((label, idx) => ({ regular_field_id: `url-${idx}`, field_label: label, field_key: label }))
-    : null;
-
-  const displayRegularFields = isRestricted
-    ? applyClientFilter(restrictedRegularFields)
-    : (isActionMode
-      ? applyClientFilter(thenActionRegularFields)
-      : regularFields);
+  const displayRegularFields = isActionMode
+    ? applyClientFilter(thenActionRegularFields)
+    : regularFields;
   const displayTimeUnits = isActionMode
     ? applyClientFilter(thenActionTimeUnits)
     : timeUnits;
@@ -2230,7 +2218,7 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
     ? applyClientFilter(thenActionCustomFields)
     : customFields;
 
-  const regularFieldsLoading = isRestricted ? false : (isActionMode ? isLoadingThenActionFields : isLoadingRegularFields);
+  const regularFieldsLoading = isActionMode ? isLoadingThenActionFields : isLoadingRegularFields;
   const timeUnitsLoading = isActionMode ? isLoadingThenActionFields : isLoadingTimeUnits;
   const customFieldsLoading = isActionMode ? isLoadingThenActionFields : isLoadingCustomFields;
 
@@ -2258,14 +2246,14 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
   }, [show, isActionMode, actionTypeId]);
 
   useEffect(() => {
-    if (!show || isActionMode || isRestricted) return;
+    if (!show || isActionMode) return;
     getRegularFields({ params: { trigger_type_id: triggerTypeId, search: debouncedSearch || undefined } });
-  }, [show, isActionMode, isRestricted, debouncedSearch, triggerTypeId]);
+  }, [show, isActionMode, debouncedSearch, triggerTypeId]);
 
   useEffect(() => {
-    if (!show || isActionMode || isRestricted) return;
+    if (!show || isActionMode) return;
     getTimeUnits({ params: { trigger_type_id: triggerTypeId, search: debouncedSearch || undefined } });
-  }, [show, isActionMode, isRestricted, debouncedSearch, triggerTypeId]);
+  }, [show, isActionMode, debouncedSearch, triggerTypeId]);
 
   const handleToggleKey = (key) => {
     setSelectedKeys((prev) =>
@@ -2386,115 +2374,113 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
             )}
           </div>
 
-          {!isRestricted && (
-            <>
-              <div className="br-property-section">
-                <button
-                  type="button"
-                  className="br-property-section-toggle"
-                  onClick={() => setExpandedTimeUnit((v) => !v)}
-                >
-                  <span className="br-property-section-toggle-icon">
-                    {expandedTimeUnit ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-                  </span>
-                  Time unit
-                </button>
-                {expandedTimeUnit && (
-                  <div className="br-property-pill-grid">
-                    {timeUnitsLoading ? (
-                      <div className="br-property-picker-empty">Loading...</div>
-                    ) : displayTimeUnits.length === 0 ? (
-                      <div className="br-property-picker-empty">No fields found</div>
-                    ) : (
-                      displayTimeUnits.map((field, idx) => {
-                        const key = `time_unit-${field.time_unit_id ?? idx}`;
-                        return (
-                          <PropertyPill
-                            key={key}
-                            pillKey={key}
-                            label={getFieldLabel(field)}
-                            selected={selectedKeys.includes(key)}
-                            onClick={() => handleToggleTimeUnitKey(key)}
-                          />
-                        );
-                      })
-                    )}
-                  </div>
+          <>
+          <div className="br-property-section">
+            <button
+              type="button"
+              className="br-property-section-toggle"
+              onClick={() => setExpandedTimeUnit((v) => !v)}
+            >
+              <span className="br-property-section-toggle-icon">
+                {expandedTimeUnit ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+              </span>
+              Time unit
+            </button>
+            {expandedTimeUnit && (
+              <div className="br-property-pill-grid">
+                {timeUnitsLoading ? (
+                  <div className="br-property-picker-empty">Loading...</div>
+                ) : displayTimeUnits.length === 0 ? (
+                  <div className="br-property-picker-empty">No fields found</div>
+                ) : (
+                  displayTimeUnits.map((field, idx) => {
+                    const key = `time_unit-${field.time_unit_id ?? idx}`;
+                    return (
+                      <PropertyPill
+                        key={key}
+                        pillKey={key}
+                        label={getFieldLabel(field)}
+                        selected={selectedKeys.includes(key)}
+                        onClick={() => handleToggleTimeUnitKey(key)}
+                      />
+                    );
+                  })
                 )}
               </div>
+            )}
+          </div>
 
-              <div className="br-property-section">
-                <button
-                  type="button"
-                  className="br-property-section-toggle"
-                  onClick={() => setExpandedCustomFields((v) => !v)}
-                >
-                  <span className="br-property-section-toggle-icon">
-                    {expandedCustomFields ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-                  </span>
-                  Custom fields
-                </button>
-                {expandedCustomFields && (
+          <div className="br-property-section">
+            <button
+              type="button"
+              className="br-property-section-toggle"
+              onClick={() => setExpandedCustomFields((v) => !v)}
+            >
+              <span className="br-property-section-toggle-icon">
+                {expandedCustomFields ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+              </span>
+              Custom fields
+            </button>
+            {expandedCustomFields && (
+              <>
+                {!isActionMode && (
                   <>
-                    {!isActionMode && (
-                      <>
-                        <div className="br-property-board-filter">
-                          <span className="br-property-board-filter-label">Show fields from board:</span>
-                          <div className="br-property-board-filter-row">
-                            <BoardFilterPicker
-                              workspaces={workspaces ?? []}
-                              value={selectedBoardId}
-                              onChange={setSelectedBoardId}
-                            />
-                            <button
-                              type="button"
-                              className="br-property-board-clear-btn"
-                              onClick={() => setSelectedBoardId('')}
-                              aria-label="Reset board filter"
-                            >
-                              <FiTrash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-
-                        <label className="business-rule-form-toggle br-property-disabled-toggle">
-                          <input
-                            type="checkbox"
-                            checked={showDisabled}
-                            onChange={(e) => setShowDisabled(e.target.checked)}
-                          />
-                          <span className="business-rule-form-toggle-track" aria-hidden />
-                          <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
-                        </label>
-                      </>
-                    )}
-
-                    <div className="br-property-pill-grid">
-                      {customFieldsLoading ? (
-                        <div className="br-property-picker-empty">Loading...</div>
-                      ) : displayCustomFields.length === 0 ? (
-                        <div className="br-property-picker-empty">No custom fields found</div>
-                      ) : (
-                        displayCustomFields.map((field, idx) => {
-                          const key = `custom-${field.custom_field_id ?? idx}`;
-                          return (
-                            <PropertyPill
-                              key={key}
-                              pillKey={key}
-                              label={getFieldLabel(field)}
-                              selected={selectedKeys.includes(key)}
-                              dotColor={getPropertyDotColor(idx)}
-                              onClick={() => handleToggleKey(key)}
-                            />
-                          );
-                        })
-                      )}
+                    <div className="br-property-board-filter">
+                      <span className="br-property-board-filter-label">Show fields from board:</span>
+                      <div className="br-property-board-filter-row">
+                        <BoardFilterPicker
+                          workspaces={workspaces ?? []}
+                          value={selectedBoardId}
+                          onChange={setSelectedBoardId}
+                        />
+                        <button
+                          type="button"
+                          className="br-property-board-clear-btn"
+                          onClick={() => setSelectedBoardId('')}
+                          aria-label="Reset board filter"
+                        >
+                          <FiTrash2 size={14} />
+                        </button>
+                      </div>
                     </div>
+
+                    <label className="business-rule-form-toggle br-property-disabled-toggle">
+                      <input
+                        type="checkbox"
+                        checked={showDisabled}
+                        onChange={(e) => setShowDisabled(e.target.checked)}
+                      />
+                      <span className="business-rule-form-toggle-track" aria-hidden />
+                      <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
+                    </label>
                   </>
                 )}
-              </div>
-            </>
-          )}
+
+                <div className="br-property-pill-grid">
+                  {customFieldsLoading ? (
+                    <div className="br-property-picker-empty">Loading...</div>
+                  ) : displayCustomFields.length === 0 ? (
+                    <div className="br-property-picker-empty">No custom fields found</div>
+                  ) : (
+                    displayCustomFields.map((field, idx) => {
+                      const key = `custom-${field.custom_field_id ?? idx}`;
+                      return (
+                        <PropertyPill
+                          key={key}
+                          pillKey={key}
+                          label={getFieldLabel(field)}
+                          selected={selectedKeys.includes(key)}
+                          dotColor={getPropertyDotColor(idx)}
+                          onClick={() => handleToggleKey(key)}
+                        />
+                      );
+                    })
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          </>
         </div>
 
         <footer className="card-property-match-modal-footer">
@@ -2518,7 +2504,6 @@ CardFieldPickerModal.propTypes = {
   onApply: PropTypes.func.isRequired,
   triggerTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   actionTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  allowedRegularFieldLabels: PropTypes.arrayOf(PropTypes.string),
 };
 
 const NOTIFICATION_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -4209,7 +4194,6 @@ function WebInvokeSettingsModal({ show, onClose, onSave, initialSettings, fetche
       onClose={() => setFieldPickerTarget(null)}
       onApply={handleApplyFieldPicker}
       triggerTypeId={triggerTypeId}
-      allowedRegularFieldLabels={fieldPickerTarget === 'url' ? DUMMY_URL_FIELD_OPTIONS : undefined}
     />
 
     <Modal
@@ -5224,17 +5208,14 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
   // Drives the AND section from the selected trigger type's own config instead of
   // always showing the "Card is created" (trigger_type_id 1) layout.
-  const andHeaderText = triggerConfig?.and_header || 'the created card matches this filter';
+  const andHeaderText = triggerConfig?.and_header ?? '';
   const hasBoardDefaultCondition = (triggerConfig?.default_conditions ?? [])
     .some((c) => String(c.field_label ?? '').trim().toLowerCase() === 'board');
 
   // Drives the THEN column from the selected trigger type's own action catalog
   // (get_trigger_config's `actions`, ordered by display_order) instead of always
   // showing every action section for every trigger type.
-  // Destination-based actions (move/convert/create card) are no longer supported, so they're
-  // dropped here instead of falling through to the generic read-only section below.
-  const triggerActions = (triggerConfig?.actions ?? [])
-    .filter((a) => !UNSUPPORTED_ACTION_GROUP_TYPES.includes(a.group_type));
+  const triggerActions = triggerConfig?.actions ?? [];
   const sortedTriggerActions = [...triggerActions].sort(
     (a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0)
   );
@@ -7716,11 +7697,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                     <h4 className="business-rule-form-action-title">{section.title}</h4>
 
                     {section.id === 'generic' && (
-                      <p className="business-rule-form-footer-note">
-                        This action type ({section.action?.group_type}) isn't supported in this form yet —
-                        it can't be configured or saved from here. Add it to ACTION_GROUP_TYPE_TO_SECTION_ID
-                        (and build its picker) to enable it.
-                      </p>
+                      <GenericThenActionFields actionTypeId={section.action.action_type_id} />
                     )}
 
                     {section.id === 'create' && createActions.length > 0 && (

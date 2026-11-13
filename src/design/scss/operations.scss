@@ -754,7 +754,7 @@ $send-report-optional: var(--text-muted);
   /* Override all buttons to use #00368c */
   .checklist-btn-primary,
   .btn-primary,
-  button[class*="btn"]:not(.landing-action-btn):not(.print-action-icon-wrap):not(.note-action-btn):not(.note-dropdown-btn):not(.dispatch-note-action-btn):not(.dispatch-note-dropdown-btn):not(.crew-summary-movement-filter__btn) {
+  button[class*="btn"]:not(.landing-action-btn):not(.print-action-icon-wrap):not(.note-action-btn):not(.note-dropdown-btn):not(.dispatch-note-action-btn):not(.dispatch-note-dropdown-btn):not(.crew-summary-movement-filter__btn):not(.crew-pagination-btn) {
     background: #e2e6ff !important;
     border-color: var(--border-primary) !important;
     color: var(--text-primary) !important;
@@ -2101,15 +2101,18 @@ $send-report-optional: var(--text-muted);
    full (flex-stretched) sidebar height.
    ========================================================== */
 .operation-left.op-tab-nav--main {
-  background: $table-header-bg;
+  --op-nav-accent: #{$colorPrimary};
+
+  background: linear-gradient(180deg, #f6f8fc 0%, #f1f4fa 100%);
   border-right: 1px solid $border-color-default;
-  padding: $space-3 $space-3;
-  gap: $space-1;
-  width: 200px;
-  min-width: 200px;
-  max-width: 200px;
+  padding: 14px 10px;
+  gap: 10px;
+  width: 210px;
+  min-width: 210px;
+  max-width: 210px;
 
   [data-theme="dark"] & {
+    --op-nav-accent: var(--color-primary-accent);
     background: var(--bg-secondary);
     border-right-color: var(--border-primary);
   }
@@ -2117,74 +2120,92 @@ $send-report-optional: var(--text-muted);
   .op-tab-list {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    margin-left: $space-1;
-    padding-left: $space-2;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    border-left: 2px solid rgba(0, 54, 140, 0.15);
-
-    [data-theme="dark"] & {
-      border-left-color: color-mix(in srgb, var(--color-primary-accent) 30%, transparent);
-    }
+    gap: 4px;
   }
 
   .op-tab {
     position: relative;
-    isolation: isolate;
-    z-index: 0;
     display: flex;
     align-items: center;
-    gap: $space-2;
-    padding: 8px 10px;
-    font-size: 12px;
+    gap: 10px;
+    width: 100%;
+    min-height: 40px;
+    padding: 6px 10px 6px 6px;
+    font-size: 12.5px;
     font-weight: 500;
-    border-radius: $radius-sm;
-    border-left: 2px solid transparent;
+    text-align: left;
+    border: 1px solid transparent;
+    border-radius: 10px;
     background: transparent;
     color: $txtColor;
-    overflow: hidden;
-    transition: background-color 0.18s ease, color 0.18s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
 
     [data-theme="dark"] & {
-      color: var(--text-primary);
+      color: var(--text-secondary);
     }
   }
 
-  // Fixed to Crew Management's blue ($colorPrimary), not var(--card-color)
-  // — this nav is shared by every Operation sub-tab and should always match
-  // Crew Management's sidenav rather than tint with the current card's color.
+  .op-tab-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .op-tab-chevron {
+    flex-shrink: 0;
+    color: var(--op-nav-accent);
+    opacity: 0;
+    transform: translateX(-3px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
   .op-tab:hover {
-    background: rgba(0, 54, 140, 0.06);
-    color: $colorPrimary;
+    background: rgba(255, 255, 255, 0.7);
+    border-color: $border-color-default;
+    color: var(--op-nav-accent);
 
     [data-theme="dark"] & {
-      background: color-mix(in srgb, var(--color-primary-accent) 12%, transparent);
-      color: var(--color-primary-accent);
+      background: color-mix(in srgb, var(--color-primary-accent) 8%, transparent);
+      border-color: var(--border-primary);
     }
   }
 
-  // isolation + z-index keep each tab's background/color transition (and the
-  // hover/active highlight) painting strictly within its own box — without
-  // this, the active tab's highlight could visually bleed into the
-  // neighboring tab's row while the color transition was still animating.
   .op-tab.active {
-    z-index: 1;
-    background: rgba(0, 54, 140, 0.08);
-    color: $colorPrimary;
-    border-left-color: $colorPrimary;
+    background: var(--surface-primary, #fff);
+    border-color: $border-color-default;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 12px -6px rgba(0, 54, 140, 0.18);
+    color: var(--op-nav-accent);
     font-weight: 700;
 
     [data-theme="dark"] & {
-      background: color-mix(in srgb, var(--color-primary-accent) 16%, transparent);
-      color: var(--color-primary-accent);
-      border-left-color: var(--color-primary-accent);
+      background: color-mix(in srgb, var(--color-primary-accent) 14%, var(--surface-primary));
+      border-color: color-mix(in srgb, var(--color-primary-accent) 35%, transparent);
+      box-shadow: none;
+    }
+
+    .op-tab-icon {
+      background: var(--tab-icon-color, var(--op-nav-accent));
+      color: #fff;
+    }
+
+    .op-tab-chevron {
+      opacity: 1;
+      transform: none;
     }
   }
 
   .op-tab:focus-visible {
     outline: none;
     box-shadow: $shadow-focus;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .op-tab,
+    .op-tab-icon,
+    .op-tab-chevron {
+      transition: none;
+    }
   }
 }
 
@@ -2256,7 +2277,6 @@ $send-report-optional: var(--text-muted);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: operation-field-reveal 0.4s ease both;
 
   &::before {
     content: "";
@@ -2440,6 +2460,116 @@ $send-report-optional: var(--text-muted);
   border: 0;
 }
 
+// Template Pre Arrival: Windy map card under Weather Forecast when "Bad Weather" is selected.
+.stage-windy-card {
+  margin-top: 10px;
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface-primary, #fff);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  animation: stage-windy-in 0.2s ease-out;
+}
+
+.stage-windy-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.14), rgba(245, 158, 11, 0.04));
+  border-bottom: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.stage-windy-card__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: #d97706;
+  color: #fff;
+}
+
+.stage-windy-card__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.stage-windy-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #b45309;
+}
+
+.stage-windy-card__hint {
+  font-size: 11.5px;
+  color: var(--text-muted, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage-windy-card__link {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  background: var(--surface-primary, #fff);
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: #d97706;
+    color: #fff;
+  }
+}
+
+.stage-windy-card__map {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  min-height: 240px;
+  max-height: 420px;
+  background: var(--surface-secondary, #f1f5f9);
+
+  iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+}
+
+@keyframes stage-windy-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-windy-card {
+    animation: none;
+  }
+}
+
 .operation-two-column-grid {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
@@ -2462,9 +2592,15 @@ $send-report-optional: var(--text-muted);
 
 // Header and Save bar are ~30px shorter than before — give that height back
 // to the scrolling columns instead of leaving it as blank space.
+/* Fill the stage form's remaining height instead of a fixed viewport calc —
+   a fixed calc(100vh - 290px) / min-height 500px grid grew taller than its
+   overflow:hidden parent on shorter viewports, clipping the bottom of each
+   column so the last fields could not be scrolled into view. */
 .operation-two-column-grid--split-scroll {
-  height: calc(100vh - 290px);
-  min-height: 500px;
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
   overflow: hidden;
   padding-right: 0;
 }
@@ -2659,40 +2795,6 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
 
 .operation-form-card {
   min-width: 0;
-  opacity: 0;
-}
-
-.operation-form-card--revealed {
-  animation: operation-card-reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.operation-form-card--revealed > .cf-field,
-.operation-form-card--revealed > .operation-datetime-card,
-.operation-form-card--revealed .operation-email-preview-body > .cf-field {
-  opacity: 0;
-  animation: operation-field-reveal 0.4s ease both;
-  animation-delay: calc(var(--reveal-index, 0) * 0.05s + 0.1s);
-}
-
-@for $i from 1 through 14 {
-  .operation-form-card--revealed > .cf-field:nth-child(#{$i}),
-  .operation-form-card--revealed > .operation-datetime-card:nth-child(#{$i}),
-  .operation-form-card--revealed .operation-email-preview-body > .cf-field:nth-child(#{$i}) {
-    animation-delay: #{0.1 + ($i * 0.045)}s;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-
-  .operation-form-card,
-  .operation-form-card--revealed,
-  .operation-form-card--revealed > .cf-field,
-  .operation-form-card--revealed > .operation-datetime-card,
-  .operation-form-card--revealed .operation-email-preview-body > .cf-field {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
 }
 
 .operation-form-card--has-action {
@@ -3037,26 +3139,51 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
   }
 }
 
+// Segmented Arrival / Daily report switch next to the send button.
 .operation-email-report-type {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 2px;
+  height: 36px;
+  padding: 3px;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  background: var(--surface-secondary, var(--surface-primary));
 
-  label {
-    margin: 0;
-    font-size: 12px;
+  &__option {
+    height: 100%;
+    padding: 0 14px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
     color: var(--text-secondary);
+    font-size: 12.5px;
     font-weight: 600;
-  }
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 
-  select {
-    border: 1px solid var(--border-primary);
-    border-radius: 8px;
-    min-height: 34px;
-    padding: 0 10px;
-    font-size: 13px;
-    color: var(--text-primary);
-    background: var(--surface-primary);
+    &:hover:not(.is-active):not(:disabled) {
+      color: var(--text-primary);
+      background: var(--surface-primary);
+    }
+
+    &:focus-visible {
+      outline: 2px solid #00368c;
+      outline-offset: 1px;
+    }
+
+    &.is-active {
+      background: #00368c;
+      color: #fff;
+      box-shadow: 0 1px 3px rgba(0, 54, 140, 0.3);
+      cursor: default;
+    }
+
+    &:disabled:not(.is-active) {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   }
 }
 
@@ -3077,6 +3204,70 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
 
 .operation-email-preview-message-field {
   flex: 0 0 auto;
+}
+
+/* Compact composer: label on the left, field on the right (Message stays stacked). */
+.operation-email-preview-body .cf-field.operation-email-preview-inline-field {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  margin-bottom: 8px;
+
+  > label {
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  > .cf-input {
+    min-height: 38px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+}
+
+/* Attachments may wrap onto several lines; keep its label aligned with the first line. */
+.operation-email-preview-body .cf-field.operation-email-preview-attachments-field {
+  align-items: start;
+
+  > label {
+    padding-top: 10px;
+  }
+}
+
+/* Message keeps its stacked label, with a little room after the compact rows. */
+.operation-email-preview-body .operation-email-preview-message-field {
+  margin-top: 4px;
+}
+
+@media (max-width: 576px) {
+  .operation-email-preview-body .cf-field.operation-email-preview-inline-field {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 4px;
+
+    > label {
+      padding-top: 0;
+    }
+  }
+}
+
+/* Attachments row styled like the From/To/Cc/Subject inputs: chips wrap inside the box,
+   the add button sits on the right. */
+.operation-email-preview-panel .operation-email-preview-attachments-box {
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 38px;
+  padding: 4px 6px 4px 14px;
+
+  .email-preview-attachment-add {
+    margin-left: auto;
+    padding: 4px 8px;
+  }
+}
+
+.operation-email-preview-attachments-empty {
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .operation-email-preview-panel .operation-email-preview-message-quill {
@@ -3172,6 +3363,10 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
 .arrival-form,
 .departure-form {
   overflow: hidden;
+  /* Flex column so the split-scroll grid can fill exactly the space left
+     above the Save bar (see .operation-two-column-grid--split-scroll). */
+  display: flex;
+  flex-direction: column;
 }
 
 /* Override ReactQuill min-height for Pre-Arrival tab to match right section */
@@ -4008,9 +4203,18 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
 
   .operation-prearrival-grid--split-scroll,
   .operation-two-column-grid--split-scroll {
+    flex: none;
     height: auto;
     min-height: 0;
+    grid-template-rows: none;
     overflow: visible;
+  }
+
+  /* Stacked layout: columns no longer scroll on their own, so the form scrolls. */
+  .pre-arrival-form,
+  .arrival-form,
+  .departure-form {
+    overflow-y: auto;
   }
 
   .operation-prearrival-grid--split-scroll .operation-form-column,
@@ -10546,7 +10750,7 @@ a.operation-task-document-name--link {
   .operation-wrapper:not(.husbandry-wrapper) .checklist-btn-primary,
   .operation-wrapper.husbandry-wrapper .checklist-btn-primary,
   .operation-wrapper.husbandry-wrapper .btn-primary,
-  .operation-wrapper.husbandry-wrapper button[class*="btn"]:not(.landing-action-btn):not(.print-action-icon-wrap):not(.note-action-btn):not(.note-dropdown-btn):not(.dispatch-note-action-btn):not(.dispatch-note-dropdown-btn):not(.crew-summary-movement-filter__btn) {
+  .operation-wrapper.husbandry-wrapper button[class*="btn"]:not(.landing-action-btn):not(.print-action-icon-wrap):not(.note-action-btn):not(.note-dropdown-btn):not(.dispatch-note-action-btn):not(.dispatch-note-dropdown-btn):not(.crew-summary-movement-filter__btn):not(.crew-pagination-btn) {
     background: var(--cf-accent-tint) !important;
     border-color: var(--cf-accent-ring) !important;
     color: var(--cf-accent-text) !important;

@@ -183,7 +183,7 @@ function InwardClearanceView({
     <TaskDocumentList
       isLoading={isGroLoading}
       isEmpty={documents.length === 0}
-      emptyMessage="No documents found."
+      emptyMessage="No documents yet"
     >
       {documents.map((doc) => (
         <TaskDocumentItem

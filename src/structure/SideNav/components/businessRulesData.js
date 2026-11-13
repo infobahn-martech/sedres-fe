@@ -174,8 +174,6 @@ export const DUMMY_INVOKE_AUTH_OPTIONS = ['NONE', 'BASIC', 'API_KEY'];
 // only ever send parameters as a URL query string.
 export const INVOKE_METHODS_WITH_BODY = ['POST', 'PUT', 'PATCH', 'DELETE'];
 
-// Regular-field options offered by the "Select a field" modal (Url's "add card fields" trigger).
-export const DUMMY_URL_FIELD_OPTIONS = ['Card ID', 'Custom card ID', 'Internal card id'];
 
 export const UPDATE_ACTION_OPTIONS = [
   { key: 'add_co_owners', label: 'Add co-owners', field: 'Co-owners' },
