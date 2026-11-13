@@ -84,7 +84,14 @@ const EMPTY_WORK_ORDERS = [];
 const CREW_IMMIGRATION_PAGE_SIZE = 10;
 
 const GROCardView = forwardRef(function GROCardView(
-  { card, mode = "gro", userRoleId = null, selectedTask: selectedTaskProp = null },
+  {
+    card,
+    mode = "gro",
+    userRoleId = null,
+    selectedTask: selectedTaskProp = null,
+    // get_call_detail_by_id response CardForm already fetched: { callId, cardId, response }.
+    prefetchedDetail = null,
+  },
   ref
 ) {
   const isCustomClearance = mode === "custom";
@@ -181,6 +188,11 @@ const GROCardView = forwardRef(function GROCardView(
 
   const callId = resolveGroCallId(card);
   const cardId = resolveGroCardId(card);
+  const cardRef = useRef(card);
+  cardRef.current = card;
+  const prefetchedDetailRef = useRef(prefetchedDetail);
+  prefetchedDetailRef.current = prefetchedDetail;
+  const prefetchConsumedKeyRef = useRef(null);
   const taskId = useMemo(() => resolveGroTaskId(card), [card]);
   const groPortId = useMemo(() => resolveGroPortId(callDetail, card), [callDetail, card]);
 
@@ -1099,14 +1111,27 @@ const GROCardView = forwardRef(function GROCardView(
       setTimeObjectsLoading(true);
       try {
         // Single task-card bind API: header, documents, saved values, time fields, users.
-        const detailRes = await groService.getCallDetailById(callId, cardId);
+        // Reuse CardForm's response for this exact card (once) instead of requesting it again.
+        const loadKey = `${callId}/${cardId}`;
+        const prefetch = prefetchedDetailRef.current;
+        const canUsePrefetch =
+          prefetch?.response &&
+          `${prefetch.callId}/${prefetch.cardId}` === loadKey &&
+          prefetchConsumedKeyRef.current !== loadKey;
+        let detailRes;
+        if (canUsePrefetch) {
+          prefetchConsumedKeyRef.current = loadKey;
+          detailRes = prefetch.response;
+        } else {
+          detailRes = await groService.getCallDetailById(callId, cardId);
+        }
         if (cancelled) return;
         const parsed = applyCallDetailResponse(detailRes);
 
         if (!taskId && !parsed.hasTask) {
           // Export calls don't go through the GRO task workflow, so a missing
           // task_id there is expected, not an error — only alarm otherwise.
-          if (!isExportCallType(resolveCallTypeId(card, null, parsed.detail))) {
+          if (!isExportCallType(resolveCallTypeId(cardRef.current, null, parsed.detail))) {
             notify("Unable to load documents: missing task id.", "error");
           }
         }
@@ -1126,7 +1151,9 @@ const GROCardView = forwardRef(function GROCardView(
     return () => {
       cancelled = true;
     };
-  }, [callId, cardId, taskId, applyCallDetailResponse, clearCallDetailBindings, card]);
+    // `card` / `prefetchedDetail` are read through refs: a new card object for the same
+    // call/card (parent re-render) must not re-request get_call_detail_by_id.
+  }, [callId, cardId, taskId, applyCallDetailResponse, clearCallDetailBindings]);
 
   const handleInwardCancel = () => {
     setShowInwardClearance(false);
@@ -1912,6 +1939,11 @@ const GROCardView = forwardRef(function GROCardView(
 
 GROCardView.propTypes = {
   card: PropTypes.object,
+  prefetchedDetail: PropTypes.shape({
+    callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    cardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    response: PropTypes.object,
+  }),
   mode: PropTypes.oneOf(["gro", "custom"]),
   userRoleId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   selectedTask: PropTypes.shape({

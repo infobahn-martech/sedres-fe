@@ -1913,29 +1913,33 @@ function CardForm({
   const needsGroViewAppointmentTypeCheck = isGroSupervisorRoleViewer;
   const [groViewAppointmentType, setGroViewAppointmentType] = useState(null);
   const [isGroViewCallTypeLoading, setIsGroViewCallTypeLoading] = useState(false);
+  // The get_call_detail_by_id response fetched here is handed to GROCardView (prefetchedDetail)
+  // so it binds from it instead of requesting the same API again once it mounts.
+  const [groPrefetchedDetail, setGroPrefetchedDetail] = useState(null);
+  const groCheckCallIdRaw = card?.call_id ?? card?.callId;
+  const groCheckCallId = groCheckCallIdRaw != null ? String(groCheckCallIdRaw).trim() : "";
+  const groCheckCardIdRaw = resolveGroCardId(card);
+  const groCheckCardId = groCheckCardIdRaw != null ? String(groCheckCardIdRaw).trim() : "";
   useEffect(() => {
     if (!show || isAddMode || !needsGroViewAppointmentTypeCheck) {
       setIsGroViewCallTypeLoading(false);
       return undefined;
     }
-    const callIdRaw = card?.call_id ?? card?.callId;
-    const callId = callIdRaw != null ? String(callIdRaw).trim() : "";
-    const cardId = resolveGroCardId(card);
-    if (!callId || cardId == null) {
+    if (!groCheckCallId || !groCheckCardId) {
       setIsGroViewCallTypeLoading(false);
       return undefined;
     }
     let cancelled = false;
     setIsGroViewCallTypeLoading(true);
-    // Light common bind API (shared in-flight with GROCardView) instead of the heavy get_call_detail.
+    setGroPrefetchedDetail(null);
+    // Light common bind API instead of the heavy get_call_detail.
     groService
-      .getCallDetailById(callId, cardId)
-      .then(({ data }) => {
-        if (!cancelled) {
-          setGroViewAppointmentType(
-            data?.data?.call?.appointment_type ?? data?.data?.appointment_type ?? null
-          );
-        }
+      .getCallDetailById(groCheckCallId, groCheckCardId)
+      .then((res) => {
+        if (cancelled) return;
+        const data = res?.data?.data;
+        setGroViewAppointmentType(data?.call?.appointment_type ?? data?.appointment_type ?? null);
+        setGroPrefetchedDetail({ callId: groCheckCallId, cardId: groCheckCardId, response: res });
       })
       .catch(() => {
         if (!cancelled) setGroViewAppointmentType(null);
@@ -1946,7 +1950,7 @@ function CardForm({
     return () => {
       cancelled = true;
     };
-  }, [show, isAddMode, needsGroViewAppointmentTypeCheck, card]);
+  }, [show, isAddMode, needsGroViewAppointmentTypeCheck, groCheckCallId, groCheckCardId]);
   // get_call_detail_by_id returns "Vessel" (capitalised) — compare case-insensitively.
   const isVesselAppointmentForGroView =
     String(groViewAppointmentType ?? "").trim().toLowerCase() === "vessel";
@@ -2223,8 +2227,16 @@ function CardForm({
   // export/husbandry-tab machinery that isTaxiBoatVariant's render branch never reaches,
   // and the TopBar's type/tag/blocker/sticker resolvers already fall back to card.raw's
   // own fields (see resolveCardTypeIdFromCard etc.), so skipping this costs nothing there.
+  //
+  // Same for the GRO / Custom Clearance task card views: GROCardView binds everything from
+  // call_file/get_call_detail_by_id (light, per card), so the heavy get_call_detail snapshot
+  // would only seed TopBar metadata, which already falls back to card.raw. Coordinator
+  // Transport (also a GRO-style view) keeps the snapshot.
+  const isGroTaskCardView = isGROStyleView && !isCoordinatorTransport;
   const snapshotCallId =
-    !show || isAddMode || isTaxiBoatVariant ? "" : normalizeCallId(card?.call_id ?? card?.callId);
+    !show || isAddMode || isTaxiBoatVariant || isGroTaskCardView
+      ? ""
+      : normalizeCallId(card?.call_id ?? card?.callId);
   const [callDetailState, setCallDetailState] = useState(EMPTY_CALL_DETAIL_STATE);
 
   useEffect(() => {
@@ -3309,7 +3321,13 @@ function CardForm({
           ) : isCoordinatorTransport ? (
             <CoordinatorTransportCardView cardData={card} cardColor={topbarColor} />
           ) : (
-            <GROCardView ref={groCardViewRef} card={card} mode="gro" userRoleId={userRoleId} />
+            <GROCardView
+              ref={groCardViewRef}
+              card={card}
+              mode="gro"
+              userRoleId={userRoleId}
+              prefetchedDetail={groPrefetchedDetail}
+            />
           )
         ) : (
           <>
