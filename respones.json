@@ -3,6 +3,7 @@
     "data": {
         "call_id": 515,
         "port_id": 1,
+        "entity_id": 24,
         "kanban_card_id": 734,
         "linked_call_id": null,
         "launch_hire": 0,

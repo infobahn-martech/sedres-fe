@@ -346,6 +346,8 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
 
   const billingEntityId = useMemo(
     () =>
+      callDetailData?.entity_id ??
+      callDetailData?.template?.billing_entity_id ??
       callDetailData?.main_billing_entity_id ??
       callDetailData?.mainBillingEntity ??
       formValues?.mainBillingEntity ??
