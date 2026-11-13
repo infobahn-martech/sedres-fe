@@ -3195,6 +3195,70 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
   flex: 0 0 auto;
 }
 
+/* Compact composer: label on the left, field on the right (Message stays stacked). */
+.operation-email-preview-body .cf-field.operation-email-preview-inline-field {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  margin-bottom: 8px;
+
+  > label {
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  > .cf-input {
+    min-height: 38px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+}
+
+/* Attachments may wrap onto several lines; keep its label aligned with the first line. */
+.operation-email-preview-body .cf-field.operation-email-preview-attachments-field {
+  align-items: start;
+
+  > label {
+    padding-top: 10px;
+  }
+}
+
+/* Message keeps its stacked label, with a little room after the compact rows. */
+.operation-email-preview-body .operation-email-preview-message-field {
+  margin-top: 4px;
+}
+
+@media (max-width: 576px) {
+  .operation-email-preview-body .cf-field.operation-email-preview-inline-field {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 4px;
+
+    > label {
+      padding-top: 0;
+    }
+  }
+}
+
+/* Attachments row styled like the From/To/Cc/Subject inputs: chips wrap inside the box,
+   the add button sits on the right. */
+.operation-email-preview-panel .operation-email-preview-attachments-box {
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 38px;
+  padding: 4px 6px 4px 14px;
+
+  .email-preview-attachment-add {
+    margin-left: auto;
+    padding: 4px 8px;
+  }
+}
+
+.operation-email-preview-attachments-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 .operation-email-preview-panel .operation-email-preview-message-quill {
   border: 1px solid var(--border-primary);
   border-radius: 12px;

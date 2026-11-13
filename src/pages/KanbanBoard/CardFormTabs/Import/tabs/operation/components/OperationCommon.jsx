@@ -1208,28 +1208,31 @@ export const OperationEmailPreviewPanel = ({
 
       <div className="operation-email-preview-body">
         {isVisible("from") && (
-        <FormField label="From">
+        <FormField label="From" className="operation-email-preview-inline-field">
           <FormInput type="text" value={from || ""} onChange={(e) => onChange?.("from", e.target.value)} placeholder="Sender email" />
         </FormField>
         )}
         {isVisible("to") && (
-        <FormField label="To">
+        <FormField label="To" className="operation-email-preview-inline-field">
           <FormInput type="text" value={to || ""} onChange={(e) => onChange?.("to", e.target.value)} placeholder="Recipient emails" />
         </FormField>
         )}
         {isVisible("cc") && (
-        <FormField label="Cc">
+        <FormField label="Cc" className="operation-email-preview-inline-field">
           <FormInput type="text" value={cc || ""} onChange={(e) => onChange?.("cc", e.target.value)} placeholder="CC emails" />
         </FormField>
         )}
         {isVisible("subject") && (
-        <FormField label="Subject">
+        <FormField label="Subject" className="operation-email-preview-inline-field">
           <FormInput type="text" value={subject || ""} onChange={(e) => onChange?.("subject", e.target.value)} placeholder="Email subject" />
         </FormField>
         )}
         {isVisible("attachments") && (
-        <FormField label="Attachments" className="operation-email-preview-attachments-field">
-          <div className="email-preview-attachments-list">
+        <FormField label="Attachments" className="operation-email-preview-attachments-field operation-email-preview-inline-field">
+          <div className="cf-input email-preview-attachments-list operation-email-preview-attachments-box">
+            {attachmentList.length === 0 && !isUploadingAttachments ? (
+              <span className="operation-email-preview-attachments-empty">No attachments</span>
+            ) : null}
             {attachmentList.map((attachment) => (
               <EmailPreviewAttachmentChip
                 key={attachment.id}
@@ -1272,7 +1275,7 @@ export const OperationEmailPreviewPanel = ({
         </FormField>
         )}
         {isVisible("message") && (
-        <FormField label="Message" className="operation-email-preview-message-field">
+        <FormField className="operation-email-preview-message-field">
           <div className="react-quill-wrapper operation-email-preview-message-quill operation-email-quill">
             <ReactQuill
               theme="snow"
