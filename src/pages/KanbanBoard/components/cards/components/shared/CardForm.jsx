@@ -46,6 +46,7 @@ import { TemplateTabPanel } from "@/pages/KanbanBoard/CardFormTabs/shared/compon
 import CardFormLoadingSkeleton from "@/pages/KanbanBoard/CardFormTabs/shared/components/CardFormLoadingSkeleton";
 import NavTabButton from "@/components/NavTabButton";
 import GROCardView from "../GRO/User/GROCardView";
+import GroCardViewSkeleton from "../GRO/User/GroCardViewSkeleton";
 import CoordinatorTransportCardView from "../CoordinatorTransport/CoordinatorTransportCardView";
 import CustomCardView from "../Custom/User/CustomCardView";
 import MWPCardView from "../MWP/User/MWPCardView";
@@ -3291,11 +3292,7 @@ function CardForm({
         ) : isMWPVariant ? (
           <MWPCardView card={card} />
         ) : isDecidingGroExportView ? (
-          <div className="d-flex justify-content-center align-items-center py-5">
-            <div className="spinner-border" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-          </div>
+          <GroCardViewSkeleton />
         ) : isGROStyleView ? (
           isCustomVariant ? (
             <CustomCardView ref={groCardViewRef} card={card} userRoleId={userRoleId} />
