@@ -2,6 +2,7 @@
     "status": "success",
     "data": {
         "call_id": 515,
+        "port_id": 1,
         "kanban_card_id": 734,
         "linked_call_id": null,
         "launch_hire": 0,
@@ -6583,7 +6584,7 @@
                                     "show_when_field_id": null,
                                     "show_when_value": null,
                                     "options": [],
-                                    "value": null
+                                    "value": "2026-11-14 20:20:00"
                                 },
                                 {
                                     "field_id": 68,
@@ -6599,7 +6600,7 @@
                                     "show_when_field_id": null,
                                     "show_when_value": null,
                                     "options": [],
-                                    "value": null
+                                    "value": "2026-11-15 14:05:00"
                                 },
                                 {
                                     "field_id": 69,
@@ -6615,7 +6616,7 @@
                                     "show_when_field_id": null,
                                     "show_when_value": null,
                                     "options": [],
-                                    "value": null
+                                    "value": "2026-11-16 16:20:00"
                                 },
                                 {
                                     "field_id": 70,
@@ -6676,7 +6677,7 @@
                                             "option_label": "Failed"
                                         }
                                     ],
-                                    "value": null
+                                    "value": "pending"
                                 },
                                 {
                                     "field_id": 73,
@@ -6701,7 +6702,7 @@
                                             "option_label": "Completed"
                                         }
                                     ],
-                                    "value": null
+                                    "value": "Completed"
                                 },
                                 {
                                     "field_id": 74,
@@ -6742,7 +6743,7 @@
                                             "option_label": "Not Received"
                                         }
                                     ],
-                                    "value": null
+                                    "value": "pending"
                                 }
                             ],
                             "subtabs": [],
@@ -6750,7 +6751,7 @@
                                 "report_type_id": 4,
                                 "template_id": 28,
                                 "subject": "Arrival Report - HEA AL MUZN",
-                                "body": "<p><strong style=\"color: rgb(0, 32, 96);\">Vessel Name:      HEA AL MUZN<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Port:<\/strong><span style=\"color: rgb(0, 32, 96);\">                     Rastanura, KSA<\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Activity:<\/strong><span style=\"color: rgb(0, 32, 96);\">                Import Call<\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Previous Port:      Bahrain<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Next Port:<\/strong><span style=\"color: rgb(0, 32, 96);\">          Domestic Port KSA<\/span><\/p><p><br><\/p><p><br><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Dear Captain,<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><\/p><p><span style=\"color: rgb(0, 32, 96);\">We welcome you to Rastanura port and wish you have a pleasant stay ahead, if you need anything during your entire stay you can send us an email on <\/span><a href=\"mailto:operations.rastanura@sedres.com\" rel=\"noopener noreferrer\" target=\"_blank\">operations.rastanura@sedres.com<\/a> <span style=\"color: rgb(0, 32, 96);\"> or call us at any point of time. <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>UPDATE:<\/u><\/strong><span style=\"color: rgb(33, 33, 33);\"> <\/span><\/p><p><br><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Vessel ATA to RT7\/FT at {ata}<\/span><\/p><p>\u00b7        <strong style=\"color: rgb(0, 32, 96);\">Kindly note that vessel must be present in freighter anchorage at 0800hrs on  , we will arrange custom inspection and crew immigration.<\/strong><\/p><p><br><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>Weather condition:<\/u><\/strong><\/p><p> <\/p><p><span style=\"color: rgb(0, 32, 96);\">Please click this link <\/span>____LINK ____ <span style=\"color: rgb(0, 32, 96);\"> to see more detail.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>REMARKS:<\/u><\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        As all pre arrival formalities was completed prior your arrival, west pier port control has been kept well informed of your arrival.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Kindly keep the<\/span> <strong style=\"color: rgb(0, 32, 96);\">yellow flag<\/strong> <span style=\"color: rgb(0, 32, 96);\">hoisted until the Vessel clears from Inspection.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96); background-color: yellow;\">\u00b7        Please ensure that you are available at Freighter Anchorage by 08:00hrs on  we will arrange Custom Inspection and crew immigration.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        <\/span><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><span style=\"color: rgb(0, 32, 96);\">has been assigned from our office as agent representative, he shall fully assist you during inspection with authorities. <\/span><\/p><p>\u00b7        <strong>{assigned_custom}<\/strong><strong style=\"color: rgb(0, 32, 96);\"> will be proposed crew boat for Custom Inspection.<\/strong><strong> <\/strong><\/p><p>\u00b7        <span style=\"color: rgb(0, 32, 96);\">If Master \/ any of the crew have any queries, kindly direct the questions to our GRO only, he will further take care of your needs.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        At the time of Custom Inspection, if Custom Authorities ask for the Import documents, then kindly provide them the same as attached. <\/span><span style=\"color: red;\">(Required option to enclose document) <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Kindly ensure there is no any restricted items onboard and no any undeclared items to be found.<\/span><\/p><p><br><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><img src=\"https:\/\/onlinebareed.com\/sedres\/uploads\/Template Logo\/sedres-logo3.png\"><\/p>",
+                                "body": "<p><strong style=\"color: rgb(0, 32, 96);\">Vessel Name:      HEA AL MUZN<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Port:<\/strong><span style=\"color: rgb(0, 32, 96);\">                     Rastanura, KSA<\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Activity:<\/strong><span style=\"color: rgb(0, 32, 96);\">                Import Call<\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Previous Port:      Bahrain<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Next Port:<\/strong><span style=\"color: rgb(0, 32, 96);\">          Domestic Port KSA<\/span><\/p><p><br><\/p><p><br><\/p><p><strong style=\"color: rgb(0, 32, 96);\">Dear Captain,<\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><\/p><p><span style=\"color: rgb(0, 32, 96);\">We welcome you to Rastanura port and wish you have a pleasant stay ahead, if you need anything during your entire stay you can send us an email on <\/span><a href=\"mailto:operations.rastanura@sedres.com\" rel=\"noopener noreferrer\" target=\"_blank\">operations.rastanura@sedres.com<\/a> <span style=\"color: rgb(0, 32, 96);\"> or call us at any point of time. <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>UPDATE:<\/u><\/strong><span style=\"color: rgb(33, 33, 33);\"> <\/span><\/p><p><br><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Vessel ATA to RT7\/FT at 14 Nov 2026 20:20<\/span><\/p><p>\u00b7        <strong style=\"color: rgb(0, 32, 96);\">Kindly note that vessel must be present in freighter anchorage at 0800hrs on 15 Nov 2026 , we will arrange custom inspection and crew immigration.<\/strong><\/p><p><br><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>Weather condition:<\/u><\/strong><\/p><p> <\/p><p><span style=\"color: rgb(0, 32, 96);\">Please click this link <\/span>____LINK ____ <span style=\"color: rgb(0, 32, 96);\"> to see more detail.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><\/p><p><strong style=\"color: rgb(0, 32, 96);\"><u>REMARKS:<\/u><\/strong><\/p><p><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        As all pre arrival formalities was completed prior your arrival, west pier port control has been kept well informed of your arrival.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Kindly keep the<\/span> <strong style=\"color: rgb(0, 32, 96);\">yellow flag<\/strong> <span style=\"color: rgb(0, 32, 96);\">hoisted until the Vessel clears from Inspection.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96); background-color: yellow;\">\u00b7        Please ensure that you are available at Freighter Anchorage by 08:00hrs on 15 Nov 2026 we will arrange Custom Inspection and crew immigration.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        <\/span><strong style=\"color: rgb(0, 32, 96);\"> <\/strong><span style=\"color: rgb(0, 32, 96);\">has been assigned from our office as agent representative, he shall fully assist you during inspection with authorities. <\/span><\/p><p>\u00b7        <strong>{assigned_custom}<\/strong><strong style=\"color: rgb(0, 32, 96);\"> will be proposed crew boat for Custom Inspection.<\/strong><strong> <\/strong><\/p><p>\u00b7        <span style=\"color: rgb(0, 32, 96);\">If Master \/ any of the crew have any queries, kindly direct the questions to our GRO only, he will further take care of your needs.<\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        At the time of Custom Inspection, if Custom Authorities ask for the Import documents, then kindly provide them the same as attached. <\/span><span style=\"color: red;\">(Required option to enclose document) <\/span><\/p><p><span style=\"color: rgb(0, 32, 96);\">\u00b7        Kindly ensure there is no any restricted items onboard and no any undeclared items to be found.<\/span><\/p><p><br><\/p><p><span style=\"color: rgb(0, 32, 96);\"> <\/span><img src=\"https:\/\/onlinebareed.com\/sedres\/uploads\/Template Logo\/sedres-logo3.png\"><\/p>",
                                 "to_email": "prog2@infobahnworld.com",
                                 "from_email": "info@onlinebareed.com",
                                 "cc_emails": "",

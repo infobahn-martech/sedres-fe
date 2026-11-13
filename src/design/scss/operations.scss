@@ -2101,90 +2101,120 @@ $send-report-optional: var(--text-muted);
    full (flex-stretched) sidebar height.
    ========================================================== */
 .operation-left.op-tab-nav--main {
-  background: $table-header-bg;
+  --op-nav-accent: #{$colorPrimary};
+
+  background: linear-gradient(180deg, #f6f8fc 0%, #f1f4fa 100%);
   border-right: 1px solid $border-color-default;
-  padding: $space-3 $space-3;
-  gap: $space-1;
-  width: 200px;
-  min-width: 200px;
-  max-width: 200px;
+  padding: 14px 10px;
+  gap: 10px;
+  width: 210px;
+  min-width: 210px;
+  max-width: 210px;
 
   [data-theme="dark"] & {
+    --op-nav-accent: var(--color-primary-accent);
     background: var(--bg-secondary);
     border-right-color: var(--border-primary);
+  }
+
+  .op-tab-nav__heading {
+    padding: 0 10px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-tertiary, #94a3b8);
   }
 
   .op-tab-list {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    margin-left: $space-1;
-    padding-left: $space-2;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    border-left: 2px solid rgba(0, 54, 140, 0.15);
-
-    [data-theme="dark"] & {
-      border-left-color: color-mix(in srgb, var(--color-primary-accent) 30%, transparent);
-    }
+    gap: 4px;
   }
 
   .op-tab {
     position: relative;
-    isolation: isolate;
-    z-index: 0;
     display: flex;
     align-items: center;
-    gap: $space-2;
-    padding: 8px 10px;
-    font-size: 12px;
+    gap: 10px;
+    width: 100%;
+    min-height: 40px;
+    padding: 6px 10px 6px 6px;
+    font-size: 12.5px;
     font-weight: 500;
-    border-radius: $radius-sm;
-    border-left: 2px solid transparent;
+    text-align: left;
+    border: 1px solid transparent;
+    border-radius: 10px;
     background: transparent;
     color: $txtColor;
-    overflow: hidden;
-    transition: background-color 0.18s ease, color 0.18s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
 
     [data-theme="dark"] & {
-      color: var(--text-primary);
+      color: var(--text-secondary);
     }
   }
 
-  // Fixed to Crew Management's blue ($colorPrimary), not var(--card-color)
-  // — this nav is shared by every Operation sub-tab and should always match
-  // Crew Management's sidenav rather than tint with the current card's color.
+  .op-tab-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .op-tab-chevron {
+    flex-shrink: 0;
+    color: var(--op-nav-accent);
+    opacity: 0;
+    transform: translateX(-3px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
   .op-tab:hover {
-    background: rgba(0, 54, 140, 0.06);
-    color: $colorPrimary;
+    background: rgba(255, 255, 255, 0.7);
+    border-color: $border-color-default;
+    color: var(--op-nav-accent);
 
     [data-theme="dark"] & {
-      background: color-mix(in srgb, var(--color-primary-accent) 12%, transparent);
-      color: var(--color-primary-accent);
+      background: color-mix(in srgb, var(--color-primary-accent) 8%, transparent);
+      border-color: var(--border-primary);
     }
   }
 
-  // isolation + z-index keep each tab's background/color transition (and the
-  // hover/active highlight) painting strictly within its own box — without
-  // this, the active tab's highlight could visually bleed into the
-  // neighboring tab's row while the color transition was still animating.
   .op-tab.active {
-    z-index: 1;
-    background: rgba(0, 54, 140, 0.08);
-    color: $colorPrimary;
-    border-left-color: $colorPrimary;
+    background: var(--surface-primary, #fff);
+    border-color: $border-color-default;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 12px -6px rgba(0, 54, 140, 0.18);
+    color: var(--op-nav-accent);
     font-weight: 700;
 
     [data-theme="dark"] & {
-      background: color-mix(in srgb, var(--color-primary-accent) 16%, transparent);
-      color: var(--color-primary-accent);
-      border-left-color: var(--color-primary-accent);
+      background: color-mix(in srgb, var(--color-primary-accent) 14%, var(--surface-primary));
+      border-color: color-mix(in srgb, var(--color-primary-accent) 35%, transparent);
+      box-shadow: none;
+    }
+
+    .op-tab-icon {
+      background: var(--tab-icon-color, var(--op-nav-accent));
+      color: #fff;
+    }
+
+    .op-tab-chevron {
+      opacity: 1;
+      transform: none;
     }
   }
 
   .op-tab:focus-visible {
     outline: none;
     box-shadow: $shadow-focus;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .op-tab,
+    .op-tab-icon,
+    .op-tab-chevron {
+      transition: none;
+    }
   }
 }
 
