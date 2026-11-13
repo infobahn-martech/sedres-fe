@@ -677,7 +677,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               cardColor="#00368c"
             />
           )}
-          {isStageTab(activeOperationTab) && callDetailLoading && (
+          {isStageTab(activeOperationTab) && (callDetailLoading || (legacyStagesEnabled && !eventFieldsReady)) && (
             <StageFormSkeleton />
           )}
           {isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.PRE_ARRIVAL &&
@@ -704,7 +704,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               canAddTimeObject: canAddDepartureTimeObject,
               canDeleteTimeObject: canDeleteDepartureTimeObject,
             })}
-          {activeOperationTab === OPERATION_TABS.PRE_ARRIVAL && legacyStagesEnabled && (
+          {activeOperationTab === OPERATION_TABS.PRE_ARRIVAL && legacyStagesEnabled && eventFieldsReady && (
             <PreArrival
               card={card}
               formValues={viewOnlyFormValues}
@@ -730,7 +730,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               onSaveSuccess={handleSaveSuccess}
             />
           )}
-          {activeOperationTab === OPERATION_TABS.ARRIVAL && legacyStagesEnabled && (
+          {activeOperationTab === OPERATION_TABS.ARRIVAL && legacyStagesEnabled && eventFieldsReady && (
             <Arrival
               formValues={viewOnlyFormValues}
               handleChange={trackedHandleChange}
@@ -755,7 +755,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               onSaveSuccess={handleSaveSuccess}
             />
           )}
-          {activeOperationTab === OPERATION_TABS.DEPARTURE && legacyStagesEnabled && (
+          {activeOperationTab === OPERATION_TABS.DEPARTURE && legacyStagesEnabled && eventFieldsReady && (
             <Departure
               formValues={viewOnlyFormValues}
               handleChange={trackedHandleChange}

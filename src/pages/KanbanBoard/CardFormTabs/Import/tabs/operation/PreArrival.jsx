@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import StageFormSkeleton from "./components/StageFormSkeleton";
 import PropTypes from "prop-types";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
@@ -594,10 +595,17 @@ function PreArrival({
     fetchPreArrivalDetailRef.current = fetchPreArrivalDetail;
   }, [fetchPreArrivalDetail]);
 
+  // callId whose get_prearrival_detail has finished — until it matches, the
+  // stage skeleton is shown instead of the half-populated form.
+  const [detailLoadedFor, setDetailLoadedFor] = useState(null);
+
   useEffect(() => {
     if (!eventFieldsReady) return undefined;
     const ac = new AbortController();
-    fetchPreArrivalDetailRef.current(ac.signal);
+    const requestedFor = callId;
+    Promise.resolve(fetchPreArrivalDetailRef.current(ac.signal)).finally(() => {
+      if (!ac.signal.aborted) setDetailLoadedFor(requestedFor);
+    });
     return () => ac.abort();
   }, [callId, isViewOnly, eventFieldsApplyKey, eventFieldsReady]);
 
@@ -1098,6 +1106,9 @@ function PreArrival({
       setIsSendingReport(false);
     }
   };
+
+  const isInitialDetailLoading = !eventFieldsReady || (!isViewOnly && Boolean(callId) && detailLoadedFor !== callId);
+  if (isInitialDetailLoading) return <StageFormSkeleton />;
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
