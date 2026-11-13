@@ -1688,7 +1688,7 @@ const GROCardView = forwardRef(function GROCardView(
                         {taskPanelTitle}
                       </button>
                     ) : null}
-                    {isVesselInwardRegistrationStage && !hasVesselRegistrationSignedDoc ? (
+                    {isVesselInwardRegistrationStage ? (
                       <button
                         type="button"
                         role="tab"
