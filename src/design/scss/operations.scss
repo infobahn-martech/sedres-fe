@@ -2572,9 +2572,15 @@ $send-report-optional: var(--text-muted);
 
 // Header and Save bar are ~30px shorter than before — give that height back
 // to the scrolling columns instead of leaving it as blank space.
+/* Fill the stage form's remaining height instead of a fixed viewport calc —
+   a fixed calc(100vh - 290px) / min-height 500px grid grew taller than its
+   overflow:hidden parent on shorter viewports, clipping the bottom of each
+   column so the last fields could not be scrolled into view. */
 .operation-two-column-grid--split-scroll {
-  height: calc(100vh - 290px);
-  min-height: 500px;
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
   overflow: hidden;
   padding-right: 0;
 }
@@ -3282,6 +3288,10 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
 .arrival-form,
 .departure-form {
   overflow: hidden;
+  /* Flex column so the split-scroll grid can fill exactly the space left
+     above the Save bar (see .operation-two-column-grid--split-scroll). */
+  display: flex;
+  flex-direction: column;
 }
 
 /* Override ReactQuill min-height for Pre-Arrival tab to match right section */
@@ -4118,9 +4128,18 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
 
   .operation-prearrival-grid--split-scroll,
   .operation-two-column-grid--split-scroll {
+    flex: none;
     height: auto;
     min-height: 0;
+    grid-template-rows: none;
     overflow: visible;
+  }
+
+  /* Stacked layout: columns no longer scroll on their own, so the form scrolls. */
+  .pre-arrival-form,
+  .arrival-form,
+  .departure-form {
+    overflow-y: auto;
   }
 
   .operation-prearrival-grid--split-scroll .operation-form-column,
