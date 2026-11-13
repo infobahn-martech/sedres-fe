@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import salesOrderService from "@/services/salesOrderService";
 import kanbanBoardService from "@/services/kanbanBoardService";
 import callFileService from "@/services/callFileService";
+import groService from "@/services/groService";
+import { resolveGroCardId } from "../GRO/User/groCardUtils";
 import daService from "@/services/daService";
 import { mapSalesOrderResponse } from "@/shared/helpers/mapSalesOrderResponse";
 import { useLocation } from "react-router-dom";
@@ -1918,14 +1920,16 @@ function CardForm({
     }
     const callIdRaw = card?.call_id ?? card?.callId;
     const callId = callIdRaw != null ? String(callIdRaw).trim() : "";
-    if (!callId) {
+    const cardId = resolveGroCardId(card);
+    if (!callId || cardId == null) {
       setIsGroViewCallTypeLoading(false);
       return undefined;
     }
     let cancelled = false;
     setIsGroViewCallTypeLoading(true);
-    callFileService
-      .getCallDetail(callId)
+    // Light common bind API (shared in-flight with GROCardView) instead of the heavy get_call_detail.
+    groService
+      .getCallDetailById(callId, cardId)
       .then(({ data }) => {
         if (!cancelled) setGroViewAppointmentType(data?.data?.appointment_type ?? null);
       })
@@ -1938,8 +1942,10 @@ function CardForm({
     return () => {
       cancelled = true;
     };
-  }, [show, isAddMode, needsGroViewAppointmentTypeCheck, card?.call_id, card?.callId]);
-  const isVesselAppointmentForGroView = String(groViewAppointmentType ?? "").trim() === "vessel";
+  }, [show, isAddMode, needsGroViewAppointmentTypeCheck, card]);
+  // get_call_detail_by_id returns "Vessel" (capitalised) — compare case-insensitively.
+  const isVesselAppointmentForGroView =
+    String(groViewAppointmentType ?? "").trim().toLowerCase() === "vessel";
   // While the appointment type is still loading, hold off rendering either the GRO
   // view or the tab view — otherwise a GRO-role viewer briefly sees the wrong one
   // flash before this resolves and the real view swaps in.
