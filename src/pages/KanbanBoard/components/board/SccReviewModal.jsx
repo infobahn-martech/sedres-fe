@@ -24,7 +24,6 @@ const APPROVED_COLUMNS = [
   { name: "sales_orders", label: "Sales Order" },
   { name: "scc", label: "SCC" },
   { name: "signature", label: "Signature" },
-  { name: "approval_email", label: "Approval Email" },
 ];
 
 const REVIEW_PAGE_SIZE = 20;
@@ -166,12 +165,11 @@ const SccReviewModal = ({ onConfirmed }) => {
         </td>
         <td>
           {salesOrders.map((salesOrder) => (
-            <div key={salesOrder.sales_order_no}>
+            <div key={salesOrder.sales_order_no} className={salesOrder.scc && !salesOrder.scc.signed ? "text-danger" : undefined}>
               {salesOrder.scc ? (salesOrder.scc.signed ? "Signed" : "Not signed") : "-"}
             </div>
           ))}
         </td>
-        <td>{renderDocument(card.approval_email ?? card.documents?.approval_email)}</td>
       </tr>
     );
   };
