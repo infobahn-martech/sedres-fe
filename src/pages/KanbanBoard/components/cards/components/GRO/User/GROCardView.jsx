@@ -1432,15 +1432,8 @@ const GROCardView = forwardRef(function GROCardView(
     }
   }, [isGeneratingVesselPdf, callId, cardId, taskId, userRoleId, applyDocumentsByTaskResponse]);
 
-  const hasVesselRegistrationSignedDoc = Boolean(
-    callDetail?.arrival?.vessel_registration_document?.file_url
-  );
-
-  const isVesselInwardRegistrationActive =
-    hidePassTabs &&
-    activeTab === GRO_ACTIVE_TABS.vesselInwardRegistration &&
-    isVesselInwardRegistrationStage;
-  const showDynamicUploadIcon = isVesselInwardRegistrationActive && !hasVesselRegistrationSignedDoc;
+  // Upload Signed Document button is always visible (conditions removed).
+  const showDynamicUploadIcon = true;
 
   const dynamicUploadTitle = "Upload Signed Document";
 
@@ -1450,12 +1443,11 @@ const GROCardView = forwardRef(function GROCardView(
   );
 
   const openDynamicUploadModal = useCallback(() => {
-    if (!isVesselInwardRegistrationActive) return;
     setDynamicUploadType("vessel_inward_registration");
     setDynamicUploadFile(null);
     if (dynamicUploadFileInputRef.current) dynamicUploadFileInputRef.current.value = "";
     setShowDynamicUploadModal(true);
-  }, [isVesselInwardRegistrationActive]);
+  }, []);
 
   const closeDynamicUploadModal = useCallback(() => {
     if (isDynamicUploadSubmitting) return;
