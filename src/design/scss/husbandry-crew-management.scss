@@ -4296,10 +4296,85 @@
     height: 26px;
   }
 
-  // Fill the remaining viewport height instead of a fixed 480px box, so the
-  // pagination bar stays visible without scrolling the page.
+  // Size to the rows (pagination sits right under the last row), capped at
+  // the remaining viewport height so long lists scroll inside the table and
+  // the pagination bar stays visible without scrolling the page.
   .crew-mgmt-summary-section .crew-table-wrapper {
-    height: calc(100vh - 450px);
-    min-height: 240px;
+    height: auto;
+    max-height: max(240px, calc(100vh - 450px));
   }
+}
+
+/* Crew Immigration — skeleton table shown while the Crew Listing loads.
+   Mirrors the real table's columns so the layout doesn't jump on load. */
+@keyframes crew-skeleton-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.crew-skeleton {
+  display: inline-block;
+  height: 12px;
+  border-radius: 6px;
+  vertical-align: middle;
+  background: linear-gradient(90deg, #eef1f6 25%, #e1e6ef 37%, #eef1f6 63%);
+  background-size: 200% 100%;
+  animation: crew-skeleton-shimmer 1.4s ease-in-out infinite;
+
+  [data-theme="dark"] & {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.06) 25%, rgba(255, 255, 255, 0.12) 37%, rgba(255, 255, 255, 0.06) 63%);
+    background-size: 200% 100%;
+  }
+}
+
+.crew-skeleton--box {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.crew-skeleton--dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+
+.crew-skeleton--btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+}
+
+.crew-skeleton-actions {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.crew-listing-skeleton {
+  .crew-immigration-listing-table td {
+    height: 36px;
+  }
+
+  .crew-pagination-info,
+  .crew-pagination-actions {
+    display: flex;
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crew-skeleton {
+    animation: none;
+  }
+}
+
+.crew-skeleton-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
