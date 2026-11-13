@@ -706,6 +706,13 @@ const SalesOrderList = ({
     Array.isArray(stepLabels) &&
     currentStep != null &&
     SRT_RECEIVED_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "");
+  // Operator board: a Subsea 7 swimlane card on "Approval Requested" sends the SRT request from there. The card
+  // stays on the column with the Awaiting approval sticker until the client's Approved / Rejected is recorded.
+  const isOperatorSrtApprovalFlow =
+    isSubseaSwimlane({ title: card?.swimlaneTitle }) &&
+    Array.isArray(stepLabels) &&
+    currentStep != null &&
+    isApprovalRequestedColumnTitle(stepLabels[currentStep - 1]);
   // Operator board: a Subsea 7 swimlane card on "Approval Received" takes the signed SO, the signed SRT and the
   // optional approval email. A card whose SRT had no signature stays here (get_full_board signature_status
   // "missing") and takes only the SRT again.
@@ -716,7 +723,11 @@ const SalesOrderList = ({
     isApprovalReceivedColumnTitle(stepLabels[currentStep - 1]);
   const isSrtResubmit = isOperatorSrtReceivedFlow && card?.signature_status === "missing";
   const isSrtFlow =
-    soActionState?.srt_flow === true || isAtAwaitingSrtColumn || isAtSrtReceivedColumn || isOperatorSrtReceivedFlow;
+    soActionState?.srt_flow === true ||
+    isAtAwaitingSrtColumn ||
+    isAtSrtReceivedColumn ||
+    isOperatorSrtApprovalFlow ||
+    isOperatorSrtReceivedFlow;
   const srtActiveUploadFields = isSrtResubmit ? srtUploadFields.slice(0, 1) : srtUploadFields;
   // Once the PR email is sent the Zamil Marine card sits on "PR Received", where the documents are uploaded.
   const isAtPrReceivedColumn =
@@ -727,6 +738,7 @@ const SalesOrderList = ({
   const isCardAtSoApprovalColumn =
     isAtPrReceivedColumn ||
     isAtAwaitingSoPrColumn ||
+    isOperatorSrtApprovalFlow ||
     isOperatorSrtReceivedFlow ||
     (isSrtFlow && (isAtColumnAfterOpsCompleted || isAtAwaitingSrtColumn || isAtSrtReceivedColumn)) ||
     (Array.isArray(stepLabels) && currentStep != null && SO_SENT_FOR_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
@@ -1234,7 +1246,7 @@ const SalesOrderList = ({
         setSoActionState((prev) => ({ ...prev, button_state: "awaiting_approval" }));
         const srtReceivedLabel =
           Array.isArray(stepLabels) && currentStep != null ? stepLabels[currentStep] : null;
-        if (!isAtSrtReceivedColumn && srtReceivedLabel) {
+        if (!isOperatorSrtApprovalFlow && !isAtSrtReceivedColumn && srtReceivedLabel) {
           onAdvanceDaStage?.({ label: srtReceivedLabel, skipStatusUpdate: true });
         }
       } else {
@@ -1339,6 +1351,11 @@ const SalesOrderList = ({
       // the card's current column), not straight to a hardcoded "AR invoice issued" match —
       // that used to skip over "SO/PO Approval Received" entirely, jumping the card 2 steps
       // ahead in one Approve click.
+      // Operator Subsea 7: the backend moves the card itself; closing refetches the board to show it.
+      if (isOperatorSrtApprovalFlow) {
+        onCloseCard?.();
+        return;
+      }
       const nextColumnLabel =
         Array.isArray(stepLabels) && currentStep != null ? stepLabels[currentStep] : null;
       if (nextColumnLabel) {
@@ -2758,9 +2775,34 @@ const SalesOrderList = ({
                   </button>
                 ) : null
               ) : isSrtFlow ? (
-                // No Approve / Reject in this flow. The signed SRT upload belongs to "SRT Received"
+                // DA board: no Approve / Reject. The signed SRT upload belongs to "SRT Received"
                 // only; "Awaiting SRT" with every item verified offers the request.
-                (isAtSrtReceivedColumn || isOperatorSrtReceivedFlow) && hasVerifiedAllItems ? (
+                isOperatorSrtApprovalFlow && effectiveSoButtonState === "awaiting_approval" ? (
+                  <div className="sales-order-da-status-group">
+                    <span className="sales-order-da-status-button sales-order-da-status-button--label">
+                      <FiClipboard />
+                      Awaiting Approval
+                    </span>
+                    <button
+                      type="button"
+                      className="sales-order-da-decision-btn sales-order-da-decision-btn--approve"
+                      title="Record the client's approval"
+                      disabled={isRecordingDaClientDecision}
+                      onClick={handleApproveDaClientDecision}
+                    >
+                      <FiCheck /> Approved
+                    </button>
+                    <button
+                      type="button"
+                      className="sales-order-da-decision-btn sales-order-da-decision-btn--reject"
+                      title="Record the client's rejection"
+                      disabled={isRecordingDaClientDecision}
+                      onClick={handleRejectDaClientDecision}
+                    >
+                      <FiX /> Rejected
+                    </button>
+                  </div>
+                ) : (isAtSrtReceivedColumn || isOperatorSrtReceivedFlow) && hasVerifiedAllItems ? (
                   <button
                     type="button"
                     className="sales-order-da-status-button"
