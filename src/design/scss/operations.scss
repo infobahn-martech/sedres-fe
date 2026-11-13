@@ -2117,15 +2117,6 @@ $send-report-optional: var(--text-muted);
     border-right-color: var(--border-primary);
   }
 
-  .op-tab-nav__heading {
-    padding: 0 10px;
-    font-size: 10.5px;
-    font-weight: 700;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    color: var(--text-tertiary, #94a3b8);
-  }
-
   .op-tab-list {
     display: flex;
     flex-direction: column;

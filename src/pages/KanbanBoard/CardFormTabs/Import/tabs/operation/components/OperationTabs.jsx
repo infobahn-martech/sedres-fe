@@ -59,7 +59,6 @@ const OperationTabs = ({ activeTab, onTabChange, allowedTabIds, tabs: tabDefinit
 
   return (
     <nav className="operation-left op-tab-nav--main" aria-label="Operation stages">
-      <span className="op-tab-nav__heading">Stages</span>
       <div className="op-tab-list">
         {tabs.map((tab) => (
           <NavTabButton
