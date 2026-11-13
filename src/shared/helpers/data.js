@@ -380,6 +380,7 @@ export function mapBoardWorkflowFromApi(workflow) {
               card.subtask_status != null && String(card.subtask_status).trim() !== ""
                 ? String(card.subtask_status).trim()
                 : null,
+            swimlaneTitle: swimlanes[laneKey]?.title,
             raw: card,
             cardSource: "api",
             // Task Card modal (kanban_card/create_task_card) cards always live under the
