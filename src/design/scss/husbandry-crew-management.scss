@@ -4223,11 +4223,13 @@
 }
 
 /* ==========================================================
-   CREW IMMIGRATION — compact layout so the upload card, Crew
-   Listing header, table and pagination all fit in the initial
-   view without page scroll (the table body scrolls internally).
+   CREW IMMIGRATION + CREW MANAGEMENT — compact layout so the
+   upload card, listing header, table and pagination all fit in
+   the initial view without page scroll (the table body scrolls
+   internally).
    ========================================================== */
-.husbandry-service-selection.crew-immigration-dashboard {
+.husbandry-service-selection.crew-immigration-dashboard,
+.husbandry-service-selection.crew-management-dashboard {
   padding-top: 8px;
   padding-bottom: 8px;
 
@@ -4278,8 +4280,23 @@
     font-size: 18px;
   }
 
+  // Crew Management — All / Sign On / Sign Off filter sits right beside the
+  // "Crew Summary" title instead of with the search on the far right.
+  .crew-listing-header__left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    min-width: 0;
+
+    .crew-listing-title {
+      margin: 0;
+    }
+  }
+
   // Denser rows: smaller cell padding + action buttons.
-  .crew-table.crew-immigration-listing-table {
+  .crew-table.crew-immigration-listing-table,
+  .crew-table.crew-summary-table {
     th {
       height: 34px;
     }
@@ -4291,7 +4308,35 @@
     }
   }
 
-  .crew-immigration-listing-table .crew-action-btn {
+  .crew-immigration-listing-table .crew-action-btn,
+  .crew-summary-table .crew-action-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  // Crew Management extras — back link, Today's History panel and the
+  // movement-type pill / doc preview icon are what made its rows and hero
+  // taller than Crew Immigration's.
+  .husbandry-back-link-small {
+    margin: 0 0 2px;
+    padding: 0;
+  }
+
+  .crew-uploaded-panels-row {
+    gap: 12px;
+  }
+
+  .crew-uploaded-lists-panel__empty {
+    padding: 8px;
+    min-height: 0;
+  }
+
+  .crew-summary-table .crew-movement-pill {
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+
+  .crew-summary-table .crew-doc-btn {
     width: 26px;
     height: 26px;
   }

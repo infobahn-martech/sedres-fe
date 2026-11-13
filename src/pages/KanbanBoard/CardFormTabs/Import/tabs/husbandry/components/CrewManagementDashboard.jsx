@@ -1141,7 +1141,7 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
   const crewListStatus = crewUploads[movementType]?.status || "pending";
 
   return (
-    <div className="husbandry-service-selection" style={{ "--card-color": cardColor }}>
+    <div className="husbandry-service-selection crew-management-dashboard" style={{ "--card-color": cardColor }}>
       <div className="husbandry-service-selection-content">
         <div className="husbandry-service-hero">
           <div className="crew-mgmt-hero-row">
@@ -1234,9 +1234,33 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
 
         <div className="crew-mgmt-summary-section">
           <div className="crew-listing-header">
-            <div>
+            <div className="crew-listing-header__left">
               <h2 className="crew-listing-title">Crew Summary</h2>
-              <p className="crew-listing-subtitle">Overview of crew documents and assigned services.</p>
+              <div className="crew-summary-movement-filter" role="tablist" aria-label="Filter by movement type">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={summaryMovementTypeFilter === ""}
+                  className={`crew-summary-movement-filter__btn${summaryMovementTypeFilter === "" ? " crew-summary-movement-filter__btn--active" : ""}`}
+                  style={summaryMovementTypeFilter === "" ? { background: cardColor || "#00368c", color: "#fff" } : undefined}
+                  onClick={() => setSummaryMovementTypeFilter("")}
+                >
+                  All
+                </button>
+                {MOVEMENT_TYPE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={summaryMovementTypeFilter === option.value}
+                    className={`crew-summary-movement-filter__btn${summaryMovementTypeFilter === option.value ? " crew-summary-movement-filter__btn--active" : ""}`}
+                    style={summaryMovementTypeFilter === option.value ? { background: cardColor || "#00368c", color: "#fff" } : undefined}
+                    onClick={() => setSummaryMovementTypeFilter(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="crew-summary-header-actions">
@@ -1271,32 +1295,6 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
                   value={summarySearch}
                   onChange={handleSummarySearchChange}
                 />
-              </div>
-
-              <div className="crew-summary-movement-filter" role="tablist" aria-label="Filter by movement type">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={summaryMovementTypeFilter === ""}
-                  className={`crew-summary-movement-filter__btn${summaryMovementTypeFilter === "" ? " crew-summary-movement-filter__btn--active" : ""}`}
-                  style={summaryMovementTypeFilter === "" ? { background: cardColor || "#00368c", color: "#fff" } : undefined}
-                  onClick={() => setSummaryMovementTypeFilter("")}
-                >
-                  All
-                </button>
-                {MOVEMENT_TYPE_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    role="tab"
-                    aria-selected={summaryMovementTypeFilter === option.value}
-                    className={`crew-summary-movement-filter__btn${summaryMovementTypeFilter === option.value ? " crew-summary-movement-filter__btn--active" : ""}`}
-                    style={summaryMovementTypeFilter === option.value ? { background: cardColor || "#00368c", color: "#fff" } : undefined}
-                    onClick={() => setSummaryMovementTypeFilter(option.value)}
-                  >
-                    {option.label}
-                  </button>
-                ))}
               </div>
 
               {summarySelectedIds.length > 0 && (
