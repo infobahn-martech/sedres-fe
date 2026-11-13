@@ -1931,7 +1931,11 @@ function CardForm({
     groService
       .getCallDetailById(callId, cardId)
       .then(({ data }) => {
-        if (!cancelled) setGroViewAppointmentType(data?.data?.appointment_type ?? null);
+        if (!cancelled) {
+          setGroViewAppointmentType(
+            data?.data?.call?.appointment_type ?? data?.data?.appointment_type ?? null
+          );
+        }
       })
       .catch(() => {
         if (!cancelled) setGroViewAppointmentType(null);

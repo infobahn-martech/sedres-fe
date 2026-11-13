@@ -51,7 +51,7 @@ import {
   GRO_MAIN_VIEWS,
   enrichGroDocWithRowKey,
   normalizeGroApiDocuments,
-  parseDocumentsByTaskPayload,
+  parseGroCallDetailByIdPayload,
   buildSelectedTaskFromCard,
   resolveTaskDocumentsTitle,
   groApiErrorMessage,
@@ -62,7 +62,6 @@ import {
   resolveGroStageIdFromTaskName,
   resolveGroTimeObjectValueKey,
   resolveGroNowDateTimeParts,
-  parseGroStageTimeObjectsResponse,
   validateGroRequiredTimeObjects,
   buildGroArrivalTimeObjectsPayload,
   applyGroSavedTimeObjectValues,
@@ -161,6 +160,8 @@ const GROCardView = forwardRef(function GROCardView(
   const [assignedUserError, setAssignedUserError] = useState("");
   const [groUserOptions, setGroUserOptions] = useState([]);
   const [groUsersLoading, setGroUsersLoading] = useState(false);
+  // task.assignable_users from get_call_detail_by_id; null until the response arrives.
+  const [assignableUsersFromApi, setAssignableUsersFromApi] = useState(null);
   const [isAssigningUser, setIsAssigningUser] = useState(false);
   const [crewImmigrationRows, setCrewImmigrationRows] = useState([]);
   const [crewImmigrationLoading, setCrewImmigrationLoading] = useState(false);
@@ -188,15 +189,35 @@ const GROCardView = forwardRef(function GROCardView(
     setDocuments(normalized.map((d, i) => enrichGroDocWithRowKey(d, i)));
   }, []);
 
-  const applyDocumentsByTaskResponse = useCallback(
+  /**
+   * Binds the whole card from get_call_detail_by_id: header, documents, saved stage values,
+   * stage time-object fields and assignable users. Returns the parsed payload.
+   */
+  const applyCallDetailResponse = useCallback(
     (res) => {
-      const { documents: rawList, isFirstColumn: firstColumn, taskName } = parseDocumentsByTaskPayload(res);
-      setIsFirstColumn(firstColumn);
-      setTaskDocumentsData(taskName ? { task_name: taskName } : null);
-      applyTaskDocuments(rawList);
+      const parsed = parseGroCallDetailByIdPayload(res);
+      setCallDetail(parsed.detail);
+      setIsFirstColumn(parsed.isFirstColumn);
+      setTaskDocumentsData(parsed.taskName ? { task_name: parsed.taskName } : null);
+      applyTaskDocuments(parsed.documents);
+      setTaskDetails(parsed.hasTask ? parsed.taskDetails : null);
+      setTimeObjects(parsed.stageTimeObjects);
+      setStage11TimeObjects(parsed.stage11TimeObjects);
+      setAssignableUsersFromApi(parsed.assignableUsers);
+      return parsed;
     },
     [applyTaskDocuments]
   );
+
+  const clearCallDetailBindings = useCallback(() => {
+    setCallDetail(null);
+    setIsFirstColumn(false);
+    setTaskDocumentsData(null);
+    setDocuments([]);
+    setTaskDetails(null);
+    setTimeObjects([]);
+    setStage11TimeObjects([]);
+  }, []);
 
   const selectedTask = useMemo(
     () => selectedTaskProp ?? buildSelectedTaskFromCard(card),
@@ -239,13 +260,6 @@ const GROCardView = forwardRef(function GROCardView(
     if (import.meta.env.VITE_GRO_ENABLE_DOC_VERIFY_GATE === "false") return true;
     return documents.length > 0 && documents.every((doc) => getGroDocumentVerifyStatus(doc) === 2);
   }, [documents]);
-
-  const groCallTypeId = useMemo(() => {
-    const raw = callDetail?.call_type_id;
-    if (raw == null || String(raw).trim() === "") return null;
-    const num = Number(raw);
-    return Number.isFinite(num) && num > 0 ? num : null;
-  }, [callDetail?.call_type_id]);
 
   const callTypeSummary = firstNonEmptyGroDisplay(
     callDetail?.call_type,
@@ -323,26 +337,19 @@ const GROCardView = forwardRef(function GROCardView(
     resetExtraStageFileInputs();
   };
 
-  const fetchTaskDetails = useCallback(async () => {
-    if (callId == null || callId === "" || cardId == null || cardId === "" || !taskId) return null;
+  /**
+   * Re-fetches get_call_detail_by_id and re-binds the whole card (documents, saved values, time
+   * fields, header) — call after every save/verify. Returns the fresh taskDetails (or null).
+   */
+  const refreshTaskDetails = useCallback(async () => {
+    if (callId == null || callId === "" || cardId == null || cardId === "") return null;
     try {
-      const res = await groService.getTaskDetails({
-        call_id: Number(callId),
-        card_id: Number(cardId),
-        task_id: Number(taskId),
-      });
-      return res?.data?.data ?? res?.data ?? {};
+      const res = await groService.getCallDetailById(callId, cardId);
+      return applyCallDetailResponse(res).taskDetails;
     } catch {
       return null;
     }
-  }, [callId, cardId, taskId]);
-
-  /** Re-fetches arrival/get_task_details and binds the latest saved values — call after every arrival/save_arrival_document. */
-  const refreshTaskDetails = useCallback(async () => {
-    const data = await fetchTaskDetails();
-    setTaskDetails(data);
-    return data;
-  }, [fetchTaskDetails]);
+  }, [callId, cardId, applyCallDetailResponse]);
 
   const handleTimeObjectChange = useCallback(
     (fieldKey) =>
@@ -599,79 +606,19 @@ const GROCardView = forwardRef(function GROCardView(
     existingStageFiles,
   ]);
 
+  // Switching to another card clears the popover's editable values. The time-object fields
+  // (task.stage_time_objects) and saved values (taskDetails) both come from get_call_detail_by_id,
+  // bound in applyCallDetailResponse; the effect below copies saved values into the editable state.
   useEffect(() => {
-    setTimeObjects([]);
     setTimeObjectValues({});
     setTimeObjectErrors({});
-    setStage11TimeObjects([]);
     setStage11TimeObjectValues({});
     setStage11TimeObjectErrors({});
     setExtraStageFields(createEmptyExtraStageFields());
     setExtraStageFieldErrors({});
     setExistingStageFiles({});
     resetExtraStageFileInputs();
-
-    const portId = Number(groPortId);
-    if (groStageId == null || !Number.isFinite(portId) || portId <= 0 || groCallTypeId == null) {
-      setTimeObjectsLoading(false);
-      return undefined;
-    }
-
-    let cancelled = false;
-    setTimeObjectsLoading(true);
-
-    const isApplyingMwp = groStageId === 10;
-    const calls = [
-      groService.getStageTimeObjects({
-        stage_id: groStageId,
-        port_id: portId,
-        call_type_id: groCallTypeId,
-        call_id: callId,
-      }),
-      ...(isApplyingMwp
-        ? [groService.getStageTimeObjects({
-            stage_id: 11,
-            port_id: portId,
-            call_type_id: groCallTypeId,
-            call_id: callId,
-          })]
-        : []),
-    ];
-
-    Promise.allSettled(calls)
-      .then(([result10, result11]) => {
-        if (cancelled) return;
-        setTimeObjects(
-          result10?.status === "fulfilled" ? parseGroStageTimeObjectsResponse(result10.value) : []
-        );
-        if (isApplyingMwp) {
-          setStage11TimeObjects(
-            result11?.status === "fulfilled" ? parseGroStageTimeObjectsResponse(result11.value) : []
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setTimeObjectsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [groStageId, groPortId, groCallTypeId, callId, resetExtraStageFileInputs]);
-
-  // Previously saved arrival popover values for this task (any stage) — bound into the editable
-  // state below once loaded, without clobbering anything the user has already typed in this session.
-  useEffect(() => {
-    setTaskDetails(null);
-    if (callId == null || callId === "" || cardId == null || cardId === "" || !taskId) return undefined;
-    let cancelled = false;
-    fetchTaskDetails().then((data) => {
-      if (!cancelled) setTaskDetails(data);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [callId, cardId, taskId, fetchTaskDetails]);
+  }, [callId, cardId, taskId, resetExtraStageFileInputs]);
 
   useEffect(() => {
     if (!taskDetails || groStageId == null) return;
@@ -733,6 +680,15 @@ const GROCardView = forwardRef(function GROCardView(
       setGroUsersLoading(false);
       return undefined;
     }
+    // Not loaded yet — wait for get_call_detail_by_id.
+    if (assignableUsersFromApi == null) return undefined;
+    // Normal path: task.assignable_users from get_call_detail_by_id — no extra request.
+    if (assignableUsersFromApi.length > 0) {
+      setGroUserOptions(assignableUsersFromApi);
+      setGroUsersLoading(false);
+      return undefined;
+    }
+    // Fallback only when the bind API returned no users for a supervisor viewer.
     const portId = Number(groPortId);
     if (!Number.isFinite(portId) || portId <= 0) {
       setGroUserOptions([]);
@@ -755,7 +711,7 @@ const GROCardView = forwardRef(function GROCardView(
     return () => {
       cancelled = true;
     };
-  }, [showAssignedUserSelect, groPortId, assigneeRoleId]);
+  }, [showAssignedUserSelect, groPortId, assigneeRoleId, assignableUsersFromApi]);
 
   useImperativeHandle(
     ref,
@@ -1117,17 +1073,8 @@ const GROCardView = forwardRef(function GROCardView(
     };
   }, [showPassBulkPopover, syncBulkPassPopoverRect]);
 
-  const refreshGroDocuments = useCallback(async () => {
-    if (!taskId) return;
-    try {
-      const docsRes = await groService.getDocumentsByTask(taskId, callId);
-      applyDocumentsByTaskResponse(docsRes);
-    } catch {
-      setIsFirstColumn(false);
-      setTaskDocumentsData(null);
-      setDocuments([]);
-    }
-  }, [taskId, callId, applyDocumentsByTaskResponse]);
+  /** Documents now come from get_call_detail_by_id — same single re-fetch as refreshTaskDetails. */
+  const refreshGroDocuments = refreshTaskDetails;
 
   useEffect(() => {
     setTaskDocumentsData(null);
@@ -1136,56 +1083,42 @@ const GROCardView = forwardRef(function GROCardView(
   useEffect(() => {
     if (callId == null || callId === "") {
       notify("Unable to load GRO data: missing call id.", "error");
-      setCallDetail(null);
-      setTaskDocumentsData(null);
-      setDocuments([]);
+      clearCallDetailBindings();
       return undefined;
     }
 
     if (cardId == null || cardId === "") {
       notify("Unable to load GRO data: missing card id.", "error");
-      setCallDetail(null);
-      setTaskDocumentsData(null);
-      setDocuments([]);
+      clearCallDetailBindings();
       return undefined;
-    }
-
-    if (!taskId) {
-      setTaskDocumentsData(null);
-      setDocuments([]);
     }
 
     let cancelled = false;
     const load = async () => {
       setIsGroLoading(true);
+      setTimeObjectsLoading(true);
       try {
+        // Single task-card bind API: header, documents, saved values, time fields, users.
         const detailRes = await groService.getCallDetailById(callId, cardId);
         if (cancelled) return;
-        const detail = detailRes?.data?.data ?? detailRes?.data ?? {};
-        setCallDetail(detail);
+        const parsed = applyCallDetailResponse(detailRes);
 
-        if (!taskId) {
+        if (!taskId && !parsed.hasTask) {
           // Export calls don't go through the GRO task workflow, so a missing
           // task_id there is expected, not an error — only alarm otherwise.
-          if (!isExportCallType(resolveCallTypeId(card, null, detail))) {
+          if (!isExportCallType(resolveCallTypeId(card, null, parsed.detail))) {
             notify("Unable to load documents: missing task id.", "error");
           }
-          setTaskDocumentsData(null);
-          setDocuments([]);
-          return;
         }
-
-        const docsRes = await groService.getDocumentsByTask(taskId, callId);
-        if (cancelled) return;
-        applyDocumentsByTaskResponse(docsRes);
       } catch (err) {
         if (cancelled) return;
         notify(groApiErrorMessage(err, "Failed to load GRO card data."), "error");
-        setCallDetail(null);
-        setTaskDocumentsData(null);
-        setDocuments([]);
+        clearCallDetailBindings();
       } finally {
-        if (!cancelled) setIsGroLoading(false);
+        if (!cancelled) {
+          setIsGroLoading(false);
+          setTimeObjectsLoading(false);
+        }
       }
     };
 
@@ -1193,7 +1126,7 @@ const GROCardView = forwardRef(function GROCardView(
     return () => {
       cancelled = true;
     };
-  }, [callId, cardId, taskId, applyDocumentsByTaskResponse, card]);
+  }, [callId, cardId, taskId, applyCallDetailResponse, clearCallDetailBindings, card]);
 
   const handleInwardCancel = () => {
     setShowInwardClearance(false);
@@ -1260,18 +1193,10 @@ const GROCardView = forwardRef(function GROCardView(
     try {
       const saveRes = await saveArrivalDocument({ formData });
       notify(saveRes?.message || "Arrival document saved successfully.", "success");
+      // One re-fetch of get_call_detail_by_id refreshes saved values, documents and header.
       const freshTaskDetails = await refreshTaskDetails();
       setShowInwardClearance(false);
       resetInwardClearanceFields(freshTaskDetails);
-      await refreshGroDocuments();
-      try {
-        if (cardId != null && cardId !== "") {
-          const detailRes = await groService.getCallDetailById(callId, cardId);
-          setCallDetail(detailRes?.data?.data ?? detailRes?.data ?? {});
-        }
-      } catch {
-        /* optional refresh */
-      }
     } catch (err) {
       notify(groApiErrorMessage(err, "Failed to save arrival document."), "error");
     }
@@ -1404,9 +1329,8 @@ const GROCardView = forwardRef(function GROCardView(
         html: vesselRegistrationRef.current?.getPreviewHtml(),
       });
 
-      const docsRes = await groService.getDocumentsByTask(taskId, callId);
-      applyDocumentsByTaskResponse(docsRes);
-      const freshDocuments = parseDocumentsByTaskPayload(docsRes).documents;
+      const detailRes = await groService.getCallDetailById(callId, cardId);
+      const freshDocuments = applyCallDetailResponse(detailRes).documents;
       const vesselRegDoc = freshDocuments.find(
         (d) => String(d?.document_name ?? "").trim().toLowerCase() === "vessel registration"
       );
@@ -1430,7 +1354,7 @@ const GROCardView = forwardRef(function GROCardView(
     } finally {
       setIsGeneratingVesselPdf(false);
     }
-  }, [isGeneratingVesselPdf, callId, cardId, taskId, userRoleId, applyDocumentsByTaskResponse]);
+  }, [isGeneratingVesselPdf, callId, cardId, taskId, userRoleId, applyCallDetailResponse]);
 
   // Upload Signed Document button is always visible (conditions removed).
   const showDynamicUploadIcon = true;
@@ -1509,7 +1433,6 @@ const GROCardView = forwardRef(function GROCardView(
         setDynamicUploadType(null);
         if (dynamicUploadFileInputRef.current) dynamicUploadFileInputRef.current.value = "";
         resetInwardClearanceFields(freshTaskDetails);
-        await refreshGroDocuments();
       } catch (err) {
         notify(groApiErrorMessage(err, "Failed to upload document."), "error");
       } finally {
@@ -1526,7 +1449,6 @@ const GROCardView = forwardRef(function GROCardView(
       timeObjectValues,
       saveArrivalDocument,
       refreshTaskDetails,
-      refreshGroDocuments,
       resetInwardClearanceFields,
     ]
   );

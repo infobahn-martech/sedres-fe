@@ -107,6 +107,73 @@ export const parseDocumentsByTaskPayload = (res) => {
   };
 };
 
+/**
+ * `details` sends a stored file as a bare name (`immigration_doc: "x.pdf"`) plus a sibling
+ * `<key>_url`. Merge each pair into `{ file_name, file_url }` so the saved-file display gets a real link.
+ */
+const mergeGroDetailFileUrls = (details = {}) => {
+  const merged = { ...details };
+  Object.keys(details).forEach((key) => {
+    if (key.endsWith("_url")) return;
+    const url = details[`${key}_url`];
+    const value = details[key];
+    if (typeof url === "string" && url.trim() && typeof value === "string" && value.trim()) {
+      merged[key] = { file_name: value.trim(), file_url: url.trim() };
+    }
+  });
+  return merged;
+};
+
+const asArray = (value) => (Array.isArray(value) ? value : []);
+
+/**
+ * GET call_file/get_call_detail_by_id/{call_id}/{card_id} — the task card's single bind API.
+ * Response: data.{ call, vessel, task }. Returns everything the GRO card needs:
+ * - detail: flat call + vessel + assigned user (header fields, port/call type ids)
+ * - documents / isFirstColumn / taskName (was task_card/get_documents_by_task)
+ * - taskDetails: saved stage fields + documents + saved time objects (was arrival/get_task_details)
+ * - stageTimeObjects / stage11TimeObjects (was time_object/get_stage_time_objects)
+ * - assignableUsers: [{ value, label }] (was users/get_users_by_role)
+ */
+export const parseGroCallDetailByIdPayload = (res) => {
+  const payload = res?.data?.data ?? res?.data ?? {};
+  const call = payload?.call ?? {};
+  const vessel = payload?.vessel ?? {};
+  const task = payload?.task ?? {};
+
+  const detail = {
+    ...call,
+    ...vessel,
+    assigned_user_id: task.assigned_user_id ?? null,
+    assigned_user_name: task.assigned_user_name ?? null,
+  };
+
+  const sortByOrder = (rows) =>
+    [...rows].sort((a, b) => Number(a?.sort_order ?? 0) - Number(b?.sort_order ?? 0));
+  const stageTimeObjects = sortByOrder(asArray(task.stage_time_objects));
+  const stage11TimeObjects = sortByOrder(asArray(task.stage_11_time_objects));
+  const documents = asArray(task.documents);
+
+  const taskDetails = {
+    ...mergeGroDetailFileUrls(task.details ?? {}),
+    documents,
+    // Stage time objects carry their saved `time_object_value` inline.
+    time_objects: [...asArray(call.time_objects), ...stageTimeObjects, ...stage11TimeObjects],
+  };
+
+  return {
+    detail,
+    hasTask: Boolean(payload?.task),
+    taskName: parseTaskNameFromPayload(task),
+    isFirstColumn: parseIsFirstColumnFromPayload(task),
+    documents,
+    taskDetails,
+    stageTimeObjects,
+    stage11TimeObjects,
+    assignableUsers: parseGroUsersByRoleResponse({ data: asArray(task.assignable_users) }),
+  };
+};
+
 /** Card-level task label before documents API resolves. */
 export const buildSelectedTaskFromCard = (card) => {
   if (!card) return null;
