@@ -769,7 +769,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
   const hasCallInfo = Boolean(formValues?.call_id ?? formValues?.callId ?? card?.call_id ?? card?.callId);
 
   return (
-    <div className="husbandry-service-selection" style={{ "--card-color": cardColor }}>
+    <div className="husbandry-service-selection crew-immigration-dashboard" style={{ "--card-color": cardColor }}>
       <div className="husbandry-service-selection-content">
         <div className="husbandry-service-hero">
           <div className="crew-mgmt-hero-row">
@@ -827,10 +827,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
 
         <div className="crew-mgmt-summary-section">
           <div className="crew-listing-header">
-            <div>
-              <h2 className="crew-listing-title">Crew Listing</h2>
-              <p className="crew-listing-subtitle">Crew documents uploaded so far.</p>
-            </div>
+            <h2 className="crew-listing-title">Crew Listing</h2>
             <div className="crew-summary-header-actions">
               {launchHireEnabled && (
                 <PermissionGuard
