@@ -26,7 +26,7 @@ import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isApprovalReceivedColumnTitle, isApprovalRequestedColumnTitle, isLntSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isLntInvoiceIssued, isDaSupervisorWorkflow, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
+import { isApprovalReceivedColumnTitle, isApprovalRequestedColumnTitle, isLntSwimlane, isSubseaSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isLntInvoiceIssued, isDaSupervisorWorkflow, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -665,6 +665,12 @@ export default function WorkflowColumns({
               /* DA Supervisor "Invoice Issued": "Download portal files" counts only the L&T swimlane's ticks too. */
               const isLntDownloadColumn =
                 !isGrouped && isDaSupervisorWorkflow(workflow?.title) && isLntInvoiceIssued(workflow?.title, firstColumn?.title);
+              /* The same columns' Subsea 7 swimlane has its own actions (Subsea 7 DA): "Received from Ops" uploads
+                 the SAP invoices through its own review, "Invoice Issued" sends the final invoice for one card. */
+              const subseaLaneIds =
+                isLntUploadColumn || isLntDownloadColumn
+                  ? swimlaneOrder.filter((laneId) => isSubseaSwimlane(workflow.swimlanes?.[laneId]))
+                  : [];
               let lntLaneAction = null;
               if (!isGrouped && lntLaneIds.length > 0) {
                 if (isApprovalRequestedColumnTitle(firstColumn.title)) lntLaneAction = "sendSccForApproval";
@@ -678,7 +684,15 @@ export default function WorkflowColumns({
                 : invoiceAction
                   ? getColumnCards(group.colKeys[0])
                   : [];
-              const invoiceCards = actionSourceCards.filter((card) => selectedActionCardIds?.includes(card.id));
+              const lntTickedCards = actionSourceCards.filter((card) => selectedActionCardIds?.includes(card.id));
+              const subseaTickedCards = subseaLaneIds
+                .flatMap((laneId) => getSwimlaneColumnCards(workflow, laneId, group.colKeys[0]))
+                .filter((card) => selectedActionCardIds?.includes(card.id));
+              /* Ticked L&T cards keep the L&T upload; otherwise the ticked Subsea 7 cards take it. */
+              const isSubseaLaneAction = lntTickedCards.length === 0 && subseaTickedCards.length > 0;
+              const isSubseaUpload = isSubseaLaneAction && isLntUploadColumn;
+              const invoiceCards = isSubseaLaneAction ? subseaTickedCards : lntTickedCards;
+              if (isSubseaLaneAction && isLntDownloadColumn) invoiceAction = "sendInvoice";
               /* "Consolidated": ticked cards whose submission documents are not created yet get "Create
                  Submission Documents"; creating them opens the Final Submission Email. Ticked cards that
                  already have a submission get "Send For Final Submission", which reopens that email: it is
@@ -726,7 +740,8 @@ export default function WorkflowColumns({
                     workflowId: workflow.workflow_id ?? workflow.id,
                     isZamilCrew: isZamilWorkflow(workflow) && !isZamilMarineWorkflow(workflow),
                     isZamilMarine: isZamilMarineWorkflow(workflow),
-                    isLnt: isLntUploadColumn,
+                    isLnt: isLntUploadColumn && !isSubseaUpload,
+                    isSubsea7: isSubseaUpload,
                   }),
                 uploadPos: (cards) =>
                   onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
@@ -737,7 +752,7 @@ export default function WorkflowColumns({
                 uploadApprovedSccDocuments: (cards) =>
                   onUploadSccDocuments?.(cards, { workflowId: workflow.workflow_id ?? workflow.id, isApprovedScc: true }),
                 sendInvoice: ([card, ...queuedCards]) => onColumnSendInvoice?.(card, {
-                    isFinalInvoice: isSubseaWorkflow(workflow),
+                    isFinalInvoice: isSubseaWorkflow(workflow) || isSubseaLaneAction,
                     isZamilCrew: isZamilCrewColumn,
                     isZamilMarine: isZamilMarineWorkflow(workflow),
                     queuedCards: isZamilCrewColumn ? queuedCards : [],

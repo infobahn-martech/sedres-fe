@@ -21,7 +21,7 @@ import ServiceSheetModal from "../components/board/ServiceSheetModal";
 import FinalInvoiceModal from "../components/board/FinalInvoiceModal";
 import SccReviewModal from "../components/board/SccReviewModal";
 import DispatchProofReviewModal from "../components/board/DispatchProofReviewModal";
-import { isLamprellAlgihazDispatchProofColumn, isLntWorkflow, isMultiCardDispatchProofColumn, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
+import { isDaSupervisorWorkflow, isLamprellAlgihazDispatchProofColumn, isLntInvoiceIssued, isLntWorkflow, isSubseaSwimlane, isMultiCardDispatchProofColumn, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -53,6 +53,8 @@ import useZamilMarineArInvoiceStore from "../../../store/zamilMarineArInvoiceSto
 import useZamilCrewArInvoiceStore from "../../../store/zamilCrewArInvoiceStore";
 import useLntArInvoiceStore from "../../../store/lntArInvoiceStore";
 import lntArInvoiceService from "../../../services/lntArInvoiceService";
+import useSubsea7ArInvoiceStore from "../../../store/subsea7ArInvoiceStore";
+import subsea7ArInvoiceService from "../../../services/subsea7ArInvoiceService";
 import useZamilMarinePoRequestStore from "../../../store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "../../../store/zamilMarinePoUploadStore";
 import useLamprellAlgihazSoApprovalStore from "../../../store/lamprellAlgihazSoApprovalStore";
@@ -1079,7 +1081,7 @@ export default function KanbanBoardPage() {
      (loose cards have no batch header to carry the button). McDermott's "Issue AR Invoice" uses it
      too, with its workflowId: its invoice review is read per workflow. */
   const handleColumnUploadInvoice = useCallback(
-    (cards, { workflowId = null, isZamilCrew = false, isZamilMarine = false, isLnt = false } = {}) => {
+    (cards, { workflowId = null, isZamilCrew = false, isZamilMarine = false, isLnt = false, isSubsea7 = false } = {}) => {
       if (!cards?.length) return;
       const batchNumbers = [...new Set(cards.map((card) => batchByCardId[card.id]).filter(Boolean))];
       handleBatchUploadInvoice({
@@ -1090,6 +1092,7 @@ export default function KanbanBoardPage() {
         isZamilCrew,
         isZamilMarine,
         isLnt,
+        isSubsea7,
       });
     },
     [batchByCardId, handleBatchUploadInvoice]
@@ -1100,6 +1103,7 @@ export default function KanbanBoardPage() {
   const openZamilCrewArInvoiceReviewModal = useZamilCrewArInvoiceStore((state) => state.openArInvoiceReviewModal);
   const openZamilMarineArInvoiceReviewModal = useZamilMarineArInvoiceStore((state) => state.openArInvoiceReviewModal);
   const openLntArInvoiceReviewModal = useLntArInvoiceStore((state) => state.openArInvoiceReviewModal);
+  const openSubsea7ArInvoiceReviewModal = useSubsea7ArInvoiceStore((state) => state.openArInvoiceReviewModal);
 
   /* Bulk AR invoice upload for the ticked cards: the backend matches each PDF to a card's sales
      order. Files go in chunks of AR_INVOICE_FILES_PER_REQUEST; each response carries the latest
@@ -1113,14 +1117,19 @@ export default function KanbanBoardPage() {
       const isZamilCrew = Boolean(selectedInvoiceBatch?.isZamilCrew);
       const isZamilMarine = Boolean(selectedInvoiceBatch?.isZamilMarine);
       const isLnt = Boolean(selectedInvoiceBatch?.isLnt);
-      const uploadService = isLnt
+      const isSubsea7 = Boolean(selectedInvoiceBatch?.isSubsea7);
+      const uploadService = isSubsea7
+        ? subsea7ArInvoiceService
+        : isLnt
         ? lntArInvoiceService
         : isZamilMarine
           ? zamilMarineArInvoiceService
           : isZamilCrew
             ? zamilCrewService
             : daService;
-      const openReviewModal = isLnt
+      const openReviewModal = isSubsea7
+        ? openSubsea7ArInvoiceReviewModal
+        : isLnt
         ? openLntArInvoiceReviewModal
         : isZamilMarine
           ? openZamilMarineArInvoiceReviewModal
@@ -1217,6 +1226,7 @@ export default function KanbanBoardPage() {
       openZamilCrewArInvoiceReviewModal,
       openZamilMarineArInvoiceReviewModal,
       openLntArInvoiceReviewModal,
+      openSubsea7ArInvoiceReviewModal,
       refetchBoard,
     ]
   );
@@ -2541,8 +2551,16 @@ export default function KanbanBoardPage() {
     selectedCardIds.forEach((id) => {
       const card = cardsById[id];
       const workflow = workflows.find((wf) => String(wf.id) === String(card?.workflow_id));
-      if (!card || !isPoshOneCardColumn(workflow, workflow?.columns?.[card.columnId]?.title)) return;
-      (cardIdsByColumn[`${workflow.id}:${card.columnId}`] ??= []).push(id);
+      const columnTitle = workflow?.columns?.[card.columnId]?.title;
+      /* Subsea 7 sends the final invoice from the DA Supervisor "Invoice Issued" column one card at a time;
+         its lane is keyed apart so L&T's multi-card download there is untouched. */
+      const isSubseaInvoiceIssuedCard =
+        card &&
+        isDaSupervisorWorkflow(workflow?.title) &&
+        isLntInvoiceIssued(workflow?.title, columnTitle) &&
+        isSubseaSwimlane({ title: card.swimlaneTitle });
+      if (!card || !(isPoshOneCardColumn(workflow, columnTitle) || isSubseaInvoiceIssuedCard)) return;
+      (cardIdsByColumn[`${workflow.id}:${card.columnId}${isSubseaInvoiceIssuedCard ? ":subsea" : ""}`] ??= []).push(id);
     });
     Object.values(cardIdsByColumn).forEach((ids) => {
       ids.slice(0, -1).forEach((id) => removeCardSelectionId(id));
@@ -2893,6 +2911,7 @@ export default function KanbanBoardPage() {
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilCrewArInvoiceStore} />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilMarineArInvoiceStore} />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useLntArInvoiceStore} />
+      <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useSubsea7ArInvoiceStore} />
       <SignatureCheckModal
         onConfirmed={(result) => {
           [...(result?.moved_to_da ?? []), ...(result?.returned_to_scc_received ?? [])].forEach((card) => removeCardSelectionId(String(card.card_id)));
