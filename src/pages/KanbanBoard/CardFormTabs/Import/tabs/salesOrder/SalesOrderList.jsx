@@ -3525,14 +3525,19 @@ const SalesOrderList = ({
           <div className="so-summary-da-fields">
             <div className="so-header-field">
               <label className="so-header-label">DA Supervisor</label>
+              {/* Single select in the UI; still stored/sent as a one-item da_supervisor_ids array. */}
               <PremiumSelect
-                isMulti
-                value={soDaSupervisorIds}
+                value={soDaSupervisorIds[0] ?? ""}
                 options={daSupervisorOptions}
-                placeholder={daSupervisorsLoading ? "Loading users..." : "Select DA supervisors"}
+                placeholder={daSupervisorsLoading ? "Loading users..." : "Select DA supervisor"}
                 noResultsText={daSupervisorsLoading ? "Loading users..." : "No DA supervisors found"}
                 disabled={readOnly}
-                onChange={handleDaUsersChange("soDaSupervisorIds", "da_supervisor_ids")}
+                onChange={(e) => {
+                  const id = e?.target?.value;
+                  handleDaUsersChange("soDaSupervisorIds", "da_supervisor_ids")({
+                    target: { value: id === undefined || id === null || id === "" ? [] : [id] },
+                  });
+                }}
               />
             </div>
             <div className="so-header-field">
