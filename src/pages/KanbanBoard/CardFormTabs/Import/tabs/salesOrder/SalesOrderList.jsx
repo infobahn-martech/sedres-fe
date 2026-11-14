@@ -18,6 +18,7 @@ import PremiumSelect from "@/components/form/PremiumSelect";
 import useAlertReducer from "@/store/AlertReducer";
 import useSignatureCheckStore from "@/store/signatureCheckStore";
 import useAuthReducer from "@/store/AuthReducer";
+import userService from "@/services/userService";
 import { useDaLocalSoApproval, useDaLocalVerifiedItems } from "@/store/daStore";
 import { getFirstUserRoleId } from "@/shared/helpers/groUserRoles";
 import WorkOrderCreationModal from "./WorkOrderCreationModal";
@@ -36,6 +37,43 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 const BP_CURRENCY_OPTIONS = ["SAR", "USD", "EURO"];
 const USD_TO_SAR_RATE = 3.75;
 const SALES_ORDER_PAGE_SIZE = 10;
+/* users/get_users_by_role roles listed in the DA Supervisor / DA Coordinator multi-selects. */
+const DA_SUPERVISOR_ROLE_ID = 22;
+const DA_COORDINATOR_ROLE_ID = 26;
+
+/** Users of one role as { value: user_id, label: name } select options. */
+function useUserOptionsByRole(roleId) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    userService
+      .getUsersByRole({ role_id: roleId })
+      .then(({ data }) => {
+        if (cancelled) return;
+        const list = data?.data ?? [];
+        setUsers(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {
+        if (!cancelled) setUsers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [roleId]);
+  const options = useMemo(
+    () =>
+      users
+        .filter((u) => u?.user_id != null)
+        .map((u) => ({ value: String(u.user_id), label: u.name ?? "" })),
+    [users]
+  );
+  return { options, loading };
+}
 const POSH_WORKFLOW_PATTERN = /posh/i;
 const CREW_HUB_WORKFLOW_PATTERN = /crew\s*hub/i;
 const LAMPRELL_WORKFLOW_PATTERN = /lamprell\s*saudi\s*flow/i;
@@ -385,6 +423,12 @@ const SalesOrderList = ({
   const loggedInUserName = useAuthReducer((state) => state.profileData?.name || state.authData?.name || "");
   const soOwner = formValues.soOwner || loggedInUserName;
   const soRemarks = formValues.soRemarks || "";
+  const soDaSupervisorIds = Array.isArray(formValues.soDaSupervisorIds) ? formValues.soDaSupervisorIds : [];
+  const soDaCoordinatorIds = Array.isArray(formValues.soDaCoordinatorIds) ? formValues.soDaCoordinatorIds : [];
+
+  // Options for the DA Supervisor / DA Coordinator multi-selects (users/get_users_by_role).
+  const { options: daSupervisorOptions, loading: daSupervisorsLoading } = useUserOptionsByRole(DA_SUPERVISOR_ROLE_ID);
+  const { options: daCoordinatorOptions, loading: daCoordinatorsLoading } = useUserOptionsByRole(DA_COORDINATOR_ROLE_ID);
 
   const bpCurrencySelectOptions = useMemo(
     () => BP_CURRENCY_OPTIONS.map((c) => ({ value: c, label: c === "EURO" ? "EURO (€)" : c })),
@@ -1647,6 +1691,24 @@ const SalesOrderList = ({
         err?.response?.data?.error ||
         err?.message ||
         "Failed to update the sales order.";
+      useAlertReducer.getState().error(msg);
+    }
+  };
+
+  // DA Supervisor / DA Coordinator multi-selects: no blur event, so persist on every change.
+  // No sales order reload afterwards: the reload would overwrite the picked ids with the server's
+  // copy (and nothing else on the page depends on them). A failed save puts the previous ids back.
+  const handleDaUsersChange = (formKey, apiKey) => async (e) => {
+    const ids = Array.isArray(e?.target?.value) ? e.target.value : [];
+    const previous = Array.isArray(formValues[formKey]) ? formValues[formKey] : [];
+    handleChange(formKey)({ target: { value: ids } });
+    if (!formValues.salesOrderId) return;
+    try {
+      await updateSalesOrderReducer({ sales_order_id: formValues.salesOrderId, [apiKey]: ids });
+    } catch (err) {
+      handleChange(formKey)({ target: { value: previous } });
+      const msg =
+        err?.response?.data?.message || err?.response?.data?.error || err?.message || "Failed to update the sales order.";
       useAlertReducer.getState().error(msg);
     }
   };
@@ -3452,6 +3514,39 @@ const SalesOrderList = ({
                 {ungrouped.map((order) => renderOrderRow(order))}
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      {/* DA Assignment — its own section, above the Accounting Summary */}
+      <div className="so-summary-section so-da-assignment-section">
+        <h3 className="so-summary-section-title">DA Assignment</h3>
+        <div className="so-da-assignment-card">
+          <div className="so-summary-da-fields">
+            <div className="so-header-field">
+              <label className="so-header-label">DA Supervisor</label>
+              <PremiumSelect
+                isMulti
+                value={soDaSupervisorIds}
+                options={daSupervisorOptions}
+                placeholder={daSupervisorsLoading ? "Loading users..." : "Select DA supervisors"}
+                noResultsText={daSupervisorsLoading ? "Loading users..." : "No DA supervisors found"}
+                disabled={readOnly}
+                onChange={handleDaUsersChange("soDaSupervisorIds", "da_supervisor_ids")}
+              />
+            </div>
+            <div className="so-header-field">
+              <label className="so-header-label">DA Coordinator</label>
+              <PremiumSelect
+                isMulti
+                value={soDaCoordinatorIds}
+                options={daCoordinatorOptions}
+                placeholder={daCoordinatorsLoading ? "Loading users..." : "Select DA coordinators"}
+                noResultsText={daCoordinatorsLoading ? "Loading users..." : "No DA coordinators found"}
+                disabled={readOnly}
+                onChange={handleDaUsersChange("soDaCoordinatorIds", "da_coordinator_ids")}
+              />
+            </div>
           </div>
         </div>
       </div>

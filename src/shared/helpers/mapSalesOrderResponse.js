@@ -1,3 +1,10 @@
+// DA supervisor / coordinator come back as an array of user ids, or a comma-separated string.
+const toIdArray = (raw) => {
+  if (raw == null || raw === "") return [];
+  const list = Array.isArray(raw) ? raw : String(raw).split(",");
+  return list.map((v) => String(v).trim()).filter(Boolean);
+};
+
 /**
  * Maps GET sales_order/get_so_items_by_call/{call_id} `data` payload into the FE shape used by SalesOrderList.
  * @param {object} apiData - `response.data.data` from the API envelope
@@ -27,6 +34,8 @@ export function mapSalesOrderResponse(apiData) {
       billingEntity: "",
       lineItemTotal: 0,
       soOwner: "",
+      soDaSupervisorIds: [],
+      soDaCoordinatorIds: [],
       soSubtotal: "",
       soTotalDiscount: "",
       soDiscountPercentage: "",
@@ -160,6 +169,8 @@ export function mapSalesOrderResponse(apiData) {
     lineItemTotal,
     // SO owner & totals (do not use `owner` — that key is the card owner user id in CardForm)
     soOwner: apiData.owner != null ? String(apiData.owner).trim() : "",
+    soDaSupervisorIds: toIdArray(apiData.da_supervisor_ids),
+    soDaCoordinatorIds: toIdArray(apiData.da_coordinator_ids),
     soSubtotal: asNumString(apiData.subtotal),
     soTotalDiscount: asNumString(apiData.total_discount),
     soDiscountPercentage: apiData.discount_percentage != null ? String(apiData.discount_percentage).trim() : "",
