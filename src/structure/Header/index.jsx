@@ -31,6 +31,8 @@ import NavTabButton from '../../components/NavTabButton';
 import { isRestrictedBoardUser, isPortOperatorUser } from '../../shared/helpers/restrictedBoardUser';
 import { isVendorRole, getRoleId } from '../../shared/helpers/vendorDashboardRoles';
 import { hasMasterModuleAccess } from '../../shared/helpers/roleMasterMenuAccess';
+import usePermissions from '../../shared/hooks/usePermissions';
+import { PERMISSION_MODULES } from '../../shared/constants/permissions';
 
 // Pointer travel (px) before a press on the quick tools button counts as a drag, not a click.
 const QUICK_FAB_DRAG_THRESHOLD = 4;
@@ -98,6 +100,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const userProfile = useAuthReducer((state) => state.userProfile);
   const restrictedBoardUser = isRestrictedBoardUser(userProfile);
   const portOperatorUser = isPortOperatorUser(userProfile);
+  const { hasModule } = usePermissions();
   const vendorDashboardUser = isVendorRole(getRoleId());
   // Roles configured in roleMasterMenuAccess get the Master Module icon even when otherwise restricted.
   const roleMasterModuleUser = hasMasterModuleAccess(userProfile);
@@ -112,11 +115,12 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   // DA (22) granted the same settings-icon access as Port Manager, per
   // explicit user confirmation.
   const isDARole = String(userRoleId) === '22';
-  // Settings icon is admin-only; Tools has its own icon visible to everyone.
+  // Settings icon: legacy admin roles OR the SETTINGS module permission
+  // (so custom roles get it when granted). Tools has its own icon visible to everyone.
   const showKanbanSettingsItems =
     !activePortal &&
     !restrictedBoardUser &&
-    (isPortManagerRole || isPortSupervisorRole || isDARole);
+    (isPortManagerRole || isPortSupervisorRole || isDARole || hasModule(PERMISSION_MODULES.SETTINGS));
   // Kanban board routes show Tools in the kanban sidebar instead (mirrors SideNav's board-route check).
   // While a card is open, the quick actions panel offers the tools directly.
   const isKanbanBoardRoute = pathname.startsWith('/kanban-board/') || pathname === '/compact';

@@ -162,9 +162,34 @@ const router = createBrowserRouter(
                 { path: "/kanban-board/operator", element: <RouteGuard><KanbanBoard /></RouteGuard> },
                 { path: "/compact", element: <RouteGuard><Compact /></RouteGuard> },
                 // Kanban Board Analytics
-                { path: "/kanban-board/:id/analytics", element: <RouteGuard><KanbanAnalytics /></RouteGuard> },
-                { path: "/kanban-board/analytics", element: <RouteGuard><KanbanAnalytics /></RouteGuard> },
-                { path: "/kanban-board/:boardId", element: <RouteGuard><KanbanBoard /></RouteGuard> },
+                // Board routes accept EITHER the legacy role table OR the
+                // KANBAN_WORKSPACE:VIEW_WORKSPACE permission, so custom roles
+                // (new role_ids not in rolePermissions.js) can open boards.
+                // Board-instance access is still enforced via canAccessKanbanBoard.
+                {
+                  path: "/kanban-board/:id/analytics",
+                  element: (
+                    <RouteGuard moduleKey={PERMISSION_MODULES.KANBAN_WORKSPACE} actionKey={PERMISSION_ACTIONS.VIEW_WORKSPACE}>
+                      <KanbanAnalytics />
+                    </RouteGuard>
+                  ),
+                },
+                {
+                  path: "/kanban-board/analytics",
+                  element: (
+                    <RouteGuard moduleKey={PERMISSION_MODULES.KANBAN_WORKSPACE} actionKey={PERMISSION_ACTIONS.VIEW_WORKSPACE}>
+                      <KanbanAnalytics />
+                    </RouteGuard>
+                  ),
+                },
+                {
+                  path: "/kanban-board/:boardId",
+                  element: (
+                    <RouteGuard moduleKey={PERMISSION_MODULES.KANBAN_WORKSPACE} actionKey={PERMISSION_ACTIONS.VIEW_WORKSPACE}>
+                      <KanbanBoard />
+                    </RouteGuard>
+                  ),
+                },
                 // DA Module
                 { path: "/da-module", element: <RouteGuard><DAModule /></RouteGuard> },
                 // Workspaces — fully migrated feature: the permission response is

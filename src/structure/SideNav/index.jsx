@@ -115,7 +115,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     userProfile?.user?.role_id ||
     userProfile?.data?.role_id;
   const isPortSupervisorRole = String(userRoleId) === '23';
-  const { hasPermission, hasAnyPermission } = usePermissions();
+  const { hasPermission, hasAnyPermission, hasModule } = usePermissions();
   // User Management → Users is fully migrated to the new permission system:
   // the backend permission response is authoritative here, no legacy OR.
   const canViewUsersMenu = hasPermission({
@@ -149,31 +149,27 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     Boolean(kanbanBoardIdForEditWorkflow) &&
     String(kanbanBoardIdForEditWorkflow).toLowerCase() !== 'operator';
 
+  // On Station: legacy full-sidebar roles OR the ON_STATION module permission,
+  // so custom roles (new role_ids) get it when granted in Permissions.
+  const canViewOnStation = kanbanFullSidebar || isPortSupervisorRole || hasModule(PERMISSION_MODULES.ON_STATION);
+
   const kanbanBoardIcons = useMemo(() => {
-    if (kanbanFullSidebar || isPortSupervisorRole) {
-      const icons = canAddCard ? [{ id: 1, icon: FiPlus, label: 'Add' }] : [];
-      if (showEditWorkflowSidebarIcon) {
-        icons.push({ id: 9, icon: FiEdit3, label: 'Edit Workflow' });
-        icons.push({ id: 12, icon: FiList, label: 'Select Workflow' });
-      }
-      icons.push(
-        { id: 10, icon: FiMapPin, label: 'On Station' },
-        { id: 11, icon: FiLayers, label: 'Task' }
-        // { id: 7, icon: FiMail, label: 'Outlook' },
-      );
-      return icons;
-    }
-    const icons = [];
+    // Add is driven purely by KANBAN_CARD/ADD_CARD permissions (it already was
+    // for full-sidebar roles); previously other roles never saw it at all.
+    const icons = canAddCard ? [{ id: 1, icon: FiPlus, label: 'Add' }] : [];
     if (showEditWorkflowSidebarIcon) {
       icons.push({ id: 9, icon: FiEdit3, label: 'Edit Workflow' });
       icons.push({ id: 12, icon: FiList, label: 'Select Workflow' });
     }
-    icons.push(
-      { id: 11, icon: FiLayers, label: 'Task' },
-      { id: 7, icon: FiMail, label: 'Outlook' }
-    );
+    if (canViewOnStation) {
+      icons.push({ id: 10, icon: FiMapPin, label: 'On Station' });
+    }
+    icons.push({ id: 11, icon: FiLayers, label: 'Task' });
+    if (!(kanbanFullSidebar || isPortSupervisorRole)) {
+      icons.push({ id: 7, icon: FiMail, label: 'Outlook' });
+    }
     return icons;
-  }, [showEditWorkflowSidebarIcon, kanbanFullSidebar, isPortSupervisorRole, canAddCard]);
+  }, [showEditWorkflowSidebarIcon, kanbanFullSidebar, isPortSupervisorRole, canAddCard, canViewOnStation]);
 
   const workspacesIcons = [
     { id: 4, icon: FiInbox, label: 'Workspaces' },
