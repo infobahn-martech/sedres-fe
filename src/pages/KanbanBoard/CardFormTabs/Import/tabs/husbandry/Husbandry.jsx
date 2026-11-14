@@ -519,7 +519,10 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
   ];
 
   const services = (showLaunchHire ? allServices : allServices.filter((service) => service.id !== "LAUNCH_HIRE"))
-    .filter((service) => !hiddenServiceIds.includes(service.id) && !hiddenServiceIds.includes(service.parentId));
+    .filter((service) => !hiddenServiceIds.includes(service.id) && !hiddenServiceIds.includes(service.parentId))
+    // Once get_service_counts has loaded, it decides which services this call
+    // offers — a card whose title it doesn't return is hidden.
+    .filter((service) => !serviceCounts || Object.prototype.hasOwnProperty.call(serviceCounts, service.label));
 
   const bookedServicesMap = bookedServices.reduce((acc, booked) => {
     acc[booked.id] = booked;
