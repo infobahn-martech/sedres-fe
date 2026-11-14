@@ -176,6 +176,41 @@ const HUSBANDRY_CREW_SERVICE_COUNTS = {
     [CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE]: 0,
 };
 
+// Sample call_file/get_requests_by_service `data` for the dashboard chart.
+const HUSBANDRY_REQUESTS_BY_SERVICE = {
+    total_requests: 19,
+    services: [
+        { title: "Crew Management", count: 8, percentage: 42 },
+        { title: "Material Management", count: 2, percentage: 11 },
+        { title: "Waste Disposal", count: 3, percentage: 16 },
+        { title: "Launch Hire", count: 2, percentage: 11 },
+        { title: "MWP Renewal", count: 1, percentage: 5 },
+        { title: "Third-Party Services", count: 2, percentage: 11 },
+        { title: "Add-on Services", count: 1, percentage: 5 },
+    ],
+    crew_management: {
+        total_requests: 8,
+        breakdown: [
+            { title: "Zawil Pass", count: 2 },
+            { title: "CG Pass", count: 1 },
+            { title: "Transport", count: 3 },
+            { title: "Hotel", count: 1 },
+            { title: "Medical", count: 1 },
+            { title: "Launch Hire", count: 0 },
+        ],
+    },
+};
+
+// Sample call_file/get_service_history `data` for the Recent History panel.
+const HUSBANDRY_SERVICE_HISTORY = {
+    total_updates: 3,
+    history: [
+        { service: "Zawil Pass", request_id: 1, status: "Issued", status_group: "Completed", description: "Zawil pass issued for 2 crew", user_name: "Ahmed", user_role: "Operations", activity_date: "2026-06-14 11:20:00" },
+        { service: "Transport", request_id: 2, status: "Pending", status_group: "Pending", description: "Transport request created for 4 crew", user_name: "Shalman", user_role: "Operator", activity_date: "2026-06-14 10:42:00" },
+        { service: "Material Management", request_id: 3, status: "submitted", status_group: "Pending", description: "Inbound order #IO-2031 received", user_name: "Ahmed", user_role: "Operations", activity_date: "2026-06-14 09:15:00" },
+    ],
+};
+
 // Sample sales order in the API's own shape, run through the card's real
 // mapper so SalesOrderList receives exactly what it gets on a live card.
 const SAMPLE_SALES_ORDER = mapSalesOrderResponse({
@@ -249,6 +284,8 @@ const HusbandryPreview = () => (
         cardColor={PREVIEW_CARD_COLOR}
         servicesSummary={HUSBANDRY_SERVICES_SUMMARY}
         crewServiceCounts={HUSBANDRY_CREW_SERVICE_COUNTS}
+        requestsByService={HUSBANDRY_REQUESTS_BY_SERVICE}
+        serviceHistory={HUSBANDRY_SERVICE_HISTORY}
         salesOrder={SAMPLE_SALES_ORDER}
     />
 );
