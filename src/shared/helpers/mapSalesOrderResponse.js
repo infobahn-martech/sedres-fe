@@ -60,6 +60,7 @@ export function mapSalesOrderResponse(apiData) {
       soDaSupervisorIds: [],
       soDaCoordinatorIds: [],
       soBillingEntityFields: [],
+      soDaCardId: "",
       soSubtotal: "",
       soTotalDiscount: "",
       soDiscountPercentage: "",
@@ -200,6 +201,8 @@ export function mapSalesOrderResponse(apiData) {
       ? (Array.isArray(apiData.da_team.coordinators) ? apiData.da_team.coordinators : []).map(toUserId).filter(Boolean)
       : toIdArray(apiData.da_coordinator_ids),
     soBillingEntityFields: mapBillingEntityFields(apiData.billing_entity_fields),
+    // card_id that da/assign_da_team expects for this sales order's card.
+    soDaCardId: apiData.da_team?.card_id != null ? String(apiData.da_team.card_id) : "",
     soSubtotal: asNumString(apiData.subtotal),
     soTotalDiscount: asNumString(apiData.total_discount),
     soDiscountPercentage: apiData.discount_percentage != null ? String(apiData.discount_percentage).trim() : "",

@@ -2575,21 +2575,27 @@ function CardForm({
 
   // Shared by the auto-fetch effect below and by refreshSalesOrder (called after actions
   // that change the SO items server-side, e.g. generating a Work Order or PO).
-  const loadSalesOrder = useCallback((callId, { markKey } = {}) => {
+  // `silent`: background refresh after a field edit — no "Loading sales order…" overlay, and a
+  // failed refresh keeps the table as it is instead of clearing it.
+  const loadSalesOrder = useCallback((callId, { markKey, silent = false } = {}) => {
     if (!callId) {
+      if (silent) return Promise.resolve();
       setSalesOrderApiError("No call identifier available for this card.");
       setSalesOrderApiLoading(false);
       return Promise.resolve();
     }
 
-    setSalesOrderApiLoading(true);
-    setSalesOrderApiError(null);
+    if (!silent) {
+      setSalesOrderApiLoading(true);
+      setSalesOrderApiError(null);
+    }
 
     return salesOrderService
       .getSoItemsByCall(callId)
       .then((response) => {
         const body = response?.data;
         if (body?.status !== "success" || !body?.data) {
+          if (silent) return;
           setSalesOrderApiError(
             typeof body?.message === "string" && body.message.trim()
               ? body.message
@@ -2611,6 +2617,7 @@ function CardForm({
           err?.response?.data?.error ||
           err?.message ||
           "Failed to load sales order.";
+        if (silent) return;
         setSalesOrderApiError(typeof msg === "string" ? msg : "Failed to load sales order.");
         setFormValues((prev) => ({
           ...prev,
@@ -2618,7 +2625,7 @@ function CardForm({
         }));
       })
       .finally(() => {
-        setSalesOrderApiLoading(false);
+        if (!silent) setSalesOrderApiLoading(false);
       });
   }, []);
 
@@ -2649,11 +2656,12 @@ function CardForm({
   // Re-fetches the current call's sales order items — used after actions that mutate SO
   // items server-side (e.g. sales_order/generate_work_order) so the table reflects the
   // updated Work Order No. / wo_status without requiring the tab to be closed and reopened.
-  const refreshSalesOrder = useCallback(() => {
+  // Pass { silent: true } after plain field edits so the table doesn't flash the loading overlay.
+  const refreshSalesOrder = useCallback(({ silent = false } = {}) => {
     const callIdRaw = card?.call_id ?? card?.callId;
     const callId = callIdRaw === undefined || callIdRaw === null ? "" : String(callIdRaw).trim();
     const key = `${card?.id ?? ""}:${callId}`;
-    return loadSalesOrder(callId, { markKey: key });
+    return loadSalesOrder(callId, { markKey: key, silent });
   }, [card?.call_id, card?.callId, card?.id, loadSalesOrder]);
 
   const [isSavingGeneral, setIsSavingGeneral] = useState(false);

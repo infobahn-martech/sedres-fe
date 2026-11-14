@@ -1681,7 +1681,7 @@ const SalesOrderList = ({
     };
     try {
       await updateSalesOrderItemAmount(payload);
-      if (refreshSalesOrder) await refreshSalesOrder();
+      if (refreshSalesOrder) await refreshSalesOrder({ silent: true });
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -1718,7 +1718,7 @@ const SalesOrderList = ({
     if (!formValues.salesOrderId) return;
     try {
       await updateSalesOrderReducer({ sales_order_id: formValues.salesOrderId, ...payloadFields });
-      if (refreshSalesOrder) await refreshSalesOrder();
+      if (refreshSalesOrder) await refreshSalesOrder({ silent: true });
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -1729,16 +1729,31 @@ const SalesOrderList = ({
     }
   };
 
-  // DA Supervisor / DA Coordinator multi-selects: no blur event, so persist on every change.
-  // No sales order reload afterwards: the reload would overwrite the picked ids with the server's
-  // copy (and nothing else on the page depends on them). A failed save puts the previous ids back.
-  const handleDaUsersChange = (formKey, apiKey) => async (e) => {
+  // DA Supervisor / DA Coordinator selects: no blur event, so persist on every change via
+  // da/assign_da_team, which replaces the whole team — so each save sends both the supervisor and
+  // the coordinators. On success the sales order is reloaded. A failed save puts the previous
+  // ids back.
+  const daCardId = formValues.soDaCardId || card?.card_id || card?.cardId || "";
+  const toApiUserId = (id) => (/^d+$/.test(String(id)) ? Number(id) : id);
+  const handleDaUsersChange = (formKey) => async (e) => {
     const ids = Array.isArray(e?.target?.value) ? e.target.value : [];
     const previous = Array.isArray(formValues[formKey]) ? formValues[formKey] : [];
     handleChange(formKey)({ target: { value: ids } });
-    if (!formValues.salesOrderId) return;
+    if (!daCardId) {
+      handleChange(formKey)({ target: { value: previous } });
+      useAlertReducer.getState().error("Unable to save the DA team: card id is missing.");
+      return;
+    }
+    const supervisorIds = formKey === "soDaSupervisorIds" ? ids : soDaSupervisorIds;
+    const coordinatorIds = formKey === "soDaCoordinatorIds" ? ids : soDaCoordinatorIds;
     try {
-      await updateSalesOrderReducer({ sales_order_id: formValues.salesOrderId, [apiKey]: ids });
+      await daService.assignDaTeam({
+        card_id: toApiUserId(daCardId),
+        supervisor_id: supervisorIds[0] != null && supervisorIds[0] !== "" ? toApiUserId(supervisorIds[0]) : null,
+        coordinator_ids: coordinatorIds.map(toApiUserId),
+      });
+      // Reload get_so_items_by_call so the page reflects the saved da_team.
+      if (refreshSalesOrder) await refreshSalesOrder({ silent: true });
     } catch (err) {
       handleChange(formKey)({ target: { value: previous } });
       const msg =
@@ -3560,7 +3575,7 @@ const SalesOrderList = ({
           <div className="so-summary-da-fields">
             <div className="so-header-field">
               <label className="so-header-label">DA Supervisor</label>
-              {/* Single select in the UI; still stored/sent as a one-item da_supervisor_ids array. */}
+              {/* Single select in the UI; kept as a one-item array in form state, sent as supervisor_id. */}
               <PremiumSelect
                 value={soDaSupervisorIds[0] ?? ""}
                 options={daSupervisorOptions}
@@ -3569,7 +3584,7 @@ const SalesOrderList = ({
                 disabled={readOnly}
                 onChange={(e) => {
                   const id = e?.target?.value;
-                  handleDaUsersChange("soDaSupervisorIds", "da_supervisor_ids")({
+                  handleDaUsersChange("soDaSupervisorIds")({
                     target: { value: id === undefined || id === null || id === "" ? [] : [id] },
                   });
                 }}
@@ -3584,7 +3599,7 @@ const SalesOrderList = ({
                 placeholder={daCoordinatorsLoading ? "Loading users..." : "Select DA coordinators"}
                 noResultsText={daCoordinatorsLoading ? "Loading users..." : "No DA coordinators found"}
                 disabled={readOnly}
-                onChange={handleDaUsersChange("soDaCoordinatorIds", "da_coordinator_ids")}
+                onChange={handleDaUsersChange("soDaCoordinatorIds")}
               />
             </div>
           </div>

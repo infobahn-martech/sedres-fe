@@ -8,6 +8,12 @@ const advanceStage = (payload) => Gateway.post('/da/advance_stage', payload);
 const advanceStageCards = (payload) => Gateway.post('/da/advance_stage', payload);
 /** @param {{ call_id: string|number, status_id: string|number }} payload */
 const updateStatus = (payload) => Gateway.post('/da/update_status', payload);
+
+/**
+ * Saves a card's DA team (replaces the whole team each call).
+ * @param {{ card_id: number, supervisor_id: number|null, coordinator_ids: number[] }} payload
+ */
+const assignDaTeam = (payload) => Gateway.post('/da/assign_da_team', payload);
 /** @param {{ so_item_id: string|number }} payload */
 const deleteSalesLineItem = (payload) => Gateway.post('/da/da_delete_sales_line_item', payload);
 /** @param {{ so_item_id: string|number }} payload */
@@ -450,4 +456,5 @@ export default {
   sendSccApprovalEmail,
   getInvoiceSubmissionDraft,
   sendInvoiceSubmission,
+  assignDaTeam,
 };
