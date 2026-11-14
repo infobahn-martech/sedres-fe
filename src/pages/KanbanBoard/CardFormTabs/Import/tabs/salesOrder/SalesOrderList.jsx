@@ -3627,7 +3627,9 @@ const SalesOrderList = ({
         const currencyLabel = soBpCurrency === "EURO" ? "EURO (€)" : soBpCurrency;
 
         const roundingEnabled = !!formValues.soRoundingEnabled;
-        const roundingAdjustment = Math.round(grandTotal) - grandTotal;
+        // Prefer the backend's own rounding_rate when it sent one; otherwise round locally.
+        const roundingAdjustment =
+          amountFromForm(formValues.soRoundingRate) ?? Math.round(grandTotal) - grandTotal;
         const finalGrandTotal = roundingEnabled ? grandTotal + roundingAdjustment : grandTotal;
 
         const headerDiscountPercentage = parseFloat(formValues.soDiscountPercentage) || 0;

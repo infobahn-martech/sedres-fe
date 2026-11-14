@@ -41,6 +41,9 @@ export function mapSalesOrderResponse(apiData) {
       soDiscountPercentage: "",
       soTotalTax: "",
       soGrandTotal: "",
+      soRoundingEnabled: false,
+      soRoundingRate: "",
+      soRemarks: "",
       salesOrderList: [],
     };
   }
@@ -176,6 +179,10 @@ export function mapSalesOrderResponse(apiData) {
     soDiscountPercentage: apiData.discount_percentage != null ? String(apiData.discount_percentage).trim() : "",
     soTotalTax: asNumString(apiData.total_tax),
     soGrandTotal: asNumString(apiData.grand_total),
+    // rounding is the 1/0 toggle; rounding_rate the adjustment the backend applied (may be "").
+    soRoundingEnabled: (Number(apiData.rounding) || 0) !== 0,
+    soRoundingRate: asNumString(apiData.rounding_rate),
+    soRemarks: apiData.remarks != null ? String(apiData.remarks) : "",
     salesOrderList,
   };
 }
