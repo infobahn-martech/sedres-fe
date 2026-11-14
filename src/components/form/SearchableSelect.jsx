@@ -42,6 +42,7 @@ const SearchableSelect = ({
   const [activeIndex, setActiveIndex] = useState(0);
   const [portalMenuBox, setPortalMenuBox] = useState({
     top: 0,
+    bottom: null,
     left: 0,
     width: 0,
     maxHeight: 320,
@@ -111,10 +112,12 @@ const SearchableSelect = ({
       (menuPlacement === "auto" && spaceBelow < 180 && spaceAbove > spaceBelow);
     const availableSpace = placeTop ? spaceAbove : spaceBelow;
     const maxHeight = Math.min(maxMenu, Math.max(80, availableSpace));
-    const top = placeTop ? Math.max(viewportPad, r.top - gap - maxHeight) : r.bottom + gap;
-
+    // An upward menu is anchored by its BOTTOM edge to just above the trigger. Anchoring its
+    // top at (trigger − maxHeight) left a short menu (e.g. 2 options) floating far above the
+    // field, since the real menu is usually much shorter than maxHeight.
     setPortalMenuBox({
-      top,
+      top: placeTop ? null : r.bottom + gap,
+      bottom: placeTop ? window.innerHeight - r.top + gap : null,
       left: r.left,
       width: r.width,
       maxHeight,
@@ -355,7 +358,8 @@ const SearchableSelect = ({
         className={dropdownClassName}
         style={{
           position: "fixed",
-          top: portalMenuBox.top,
+          top: portalMenuBox.top ?? "auto",
+          bottom: portalMenuBox.bottom ?? "auto",
           left: portalMenuBox.left,
           width: portalMenuBox.width,
           maxWidth: portalMenuBox.width,
