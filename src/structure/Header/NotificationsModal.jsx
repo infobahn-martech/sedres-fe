@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomModal from '../../components/CustomModal';
 import {
-  FiBell, FiBellOff, FiCheck, FiX, FiAlertCircle, FiPlusSquare, FiUserCheck, FiMessageSquare, FiRefreshCw,
+  FiBell, FiBellOff, FiCheck, FiCircle, FiX, FiAlertCircle, FiPlusSquare, FiUserCheck, FiMessageSquare, FiRefreshCw,
 } from 'react-icons/fi';
 import notificationService from '../../services/notificationService';
 import '../../design/scss/common.scss';
@@ -147,20 +147,46 @@ function NotificationsModal({ show, onClose, onUnreadCountChange }) {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: 1 })));
     updateUnread(0);
     try {
-      await notificationService.markAllAsRead();
+      const res = await notificationService.markAllAsRead();
+      if (res?.data?.status && res.data.status !== 'success') throw new Error(res.data.message);
     } catch {
       setNotifications(previous);
       updateUnread(previousCount);
     }
   };
 
+  /** Optimistically set read state for one notification; rolls back if the API call fails. */
+  const setReadStatus = async (notification, isRead) => {
+    const id = notification.notification_id;
+    const wasRead = Number(notification.is_read) === 1;
+    if (wasRead === isRead) return;
+
+    const apply = (read) => {
+      setNotifications((prev) => prev.map((n) => (n.notification_id === id ? { ...n, is_read: read ? 1 : 0 } : n)));
+      setUnreadCount((prev) => {
+        const next = Math.max(0, prev + (read ? -1 : 1));
+        onUnreadCountChange?.(next);
+        return next;
+      });
+    };
+
+    apply(isRead);
+    try {
+      const res = await notificationService.updateReadStatus([id], isRead);
+      if (res?.data?.status && res.data.status !== 'success') throw new Error(res.data.message);
+    } catch {
+      apply(wasRead);
+    }
+  };
+
+  const handleToggleRead = (e, notification) => {
+    e.stopPropagation();
+    setReadStatus(notification, Number(notification.is_read) !== 1);
+  };
+
   const handleNotificationClick = async (notification) => {
-    if (!Number(notification.is_read)) {
-      setNotifications((prev) => prev.map((n) => (
-        n.notification_id === notification.notification_id ? { ...n, is_read: 1 } : n
-      )));
-      updateUnread(Math.max(0, unreadCount - 1));
-      notificationService.markAsRead(notification.notification_id).catch(() => {});
+    if (Number(notification.is_read) !== 1) {
+      setReadStatus(notification, true);
     }
 
     const cardId = notification.card_id ?? (notification.reference_type === 'kanban_card' ? notification.reference_id : null);
@@ -234,6 +260,16 @@ function NotificationsModal({ show, onClose, onUnreadCountChange }) {
             <span className="notification-timestamp" title={notification.created_at}>
               {formatRelative(parseDate(notification.created_at))}
             </span>
+            <button
+              type="button"
+              className="notification-read-toggle"
+              onClick={(e) => handleToggleRead(e, notification)}
+              onKeyDown={(e) => e.stopPropagation()}
+              title={isRead ? 'Mark as unread' : 'Mark as read'}
+              aria-label={isRead ? 'Mark as unread' : 'Mark as read'}
+            >
+              {isRead ? <FiCircle /> : <FiCheck />}
+            </button>
           </div>
           <p className="notification-message">
             {formatMessage(notification.message, notification.created_by_name)}
