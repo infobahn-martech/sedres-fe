@@ -3622,18 +3622,39 @@ const SalesOrderList = ({
         const grandTotalCalc = subtotalCalc - totalDiscountCalc + totalTaxCalc;
 
         const subtotal = amountFromForm(formValues.soSubtotal) ?? subtotalCalc;
-        const totalTax = amountFromForm(formValues.soTotalTax) ?? totalTaxCalc;
-        const grandTotal = amountFromForm(formValues.soGrandTotal) ?? grandTotalCalc;
         const currencyLabel = soBpCurrency === "EURO" ? "EURO (€)" : soBpCurrency;
-
-        const roundingEnabled = !!formValues.soRoundingEnabled;
-        // Prefer the backend's own rounding_rate when it sent one; otherwise round locally.
-        const roundingAdjustment =
-          amountFromForm(formValues.soRoundingRate) ?? Math.round(grandTotal) - grandTotal;
-        const finalGrandTotal = roundingEnabled ? grandTotal + roundingAdjustment : grandTotal;
 
         const headerDiscountPercentage = parseFloat(formValues.soDiscountPercentage) || 0;
         const headerDiscountAmount = subtotal * (headerDiscountPercentage / 100);
+        const totalDiscount = amountFromForm(formValues.soTotalDiscount) ?? headerDiscountAmount;
+
+        // With rounding on, get_so_items_by_call returns grand_total ALREADY rounded (e.g. 2128.00
+        // for 2127.50), folds the difference into total_tax (278.00 for 277.50) and sends
+        // rounding_rate "0". So the API grand total is used as-is (never rounded again), the tax
+        // row shows the unrounded per-item tax, and the rounding row is whatever is left over —
+        // keeping the summary rows adding up to the grand total. A non-zero rounding_rate from
+        // the backend is used directly when present.
+        const roundingEnabled = !!formValues.soRoundingEnabled;
+        const apiGrandTotal = amountFromForm(formValues.soGrandTotal);
+        const apiRoundingRate = amountFromForm(formValues.soRoundingRate);
+        const hasApiRoundingRate = apiRoundingRate != null && apiRoundingRate !== 0;
+        const totalTax =
+          roundingEnabled && !hasApiRoundingRate
+            ? totalTaxCalc
+            : amountFromForm(formValues.soTotalTax) ?? totalTaxCalc;
+        const unroundedGrandTotal = subtotal - totalDiscount + totalTax;
+        const finalGrandTotal =
+          apiGrandTotal ??
+          (roundingEnabled
+            ? hasApiRoundingRate
+              ? unroundedGrandTotal + apiRoundingRate
+              : Math.round(unroundedGrandTotal)
+            : grandTotalCalc);
+        const roundingAdjustment = roundingEnabled
+          ? hasApiRoundingRate
+            ? apiRoundingRate
+            : Math.round((finalGrandTotal - unroundedGrandTotal) * 100) / 100
+          : 0;
 
         return (
           <div className="so-summary-section">
