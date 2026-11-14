@@ -658,8 +658,12 @@ function GeneralAdd({
           const fields = data?.tab?.fields;
           if (Array.isArray(fields) && fields.length) setTemplateFields(mapTemplateTabFields(fields));
           const boundValues = extractTemplateFieldValues(fields, data);
-          // Trigger fields keep their latest value (the user may have kept typing during the request).
-          triggerIds.forEach((id) => delete boundValues[id]);
+          // Trigger fields the user has filled keep their latest value (they may have kept typing during
+          // the request). Empty trigger fields accept the backend value, e.g. Service Requestor Email
+          // resolved from an uploaded appointment email.
+          triggerIds.forEach((id) => {
+            if (hasMeaningfulValue(templateFieldValuesRef.current[id])) delete boundValues[id];
+          });
           setTemplateFieldValues((prev) => {
             const next = { ...prev, ...boundValues };
             templateFieldValuesRef.current = next;
