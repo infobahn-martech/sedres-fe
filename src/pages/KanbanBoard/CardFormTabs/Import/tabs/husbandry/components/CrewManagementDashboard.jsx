@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import PropTypes from "prop-types";
-import { FiSearch, FiEdit2, FiCheck, FiX, FiTrash2, FiChevronLeft, FiChevronRight, FiNavigation } from "react-icons/fi";
+import { FiSearch, FiEdit2, FiCheck, FiX, FiTrash2, FiChevronLeft, FiChevronRight, FiNavigation, FiUsers } from "react-icons/fi";
+import CardFormEmptyState from "../../../../shared/components/CardFormEmptyState";
 import { CREW_MANAGEMENT_SUBTABS } from "./Husbandry.constants";
 import { HusbIcon } from "./Husbandry.components";
 import CrewServiceSelectPage from "./CrewServiceSelectPage";
@@ -1378,13 +1379,19 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
           />
 
           {canViewCrewSummary && (crewSummaryRows.length === 0 ? (
-            <p className="crew-summary-empty">
-              No crew uploaded yet. Select a movement type and upload a crew list to see it here.
-            </p>
+            <CardFormEmptyState
+              className="cf-empty-state--framed"
+              icon={FiUsers}
+              title="No crew uploaded yet"
+              message="Use Upload Crew List above. Uploaded crew members will be listed here."
+            />
           ) : !isSummaryLoading && summaryTotal === 0 ? (
-            <p className="crew-summary-empty">
-              No crew match your {summaryMovementTypeFilter ? "filter" : "search"}.
-            </p>
+            <CardFormEmptyState
+              className="cf-empty-state--framed"
+              icon={FiSearch}
+              title="No matching crew"
+              message={`Try a different ${summaryMovementTypeFilter ? "filter" : "name"} or clear the ${summaryMovementTypeFilter ? "filter" : "search"}.`}
+            />
           ) : (
             <div className="crew-table-wrapper">
               <div className="table-wrapper table-responsive crew-table-container crew-table-scroll">

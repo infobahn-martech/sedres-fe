@@ -1,4 +1,5 @@
-import { FiSearch } from "react-icons/fi";
+import { FiSearch, FiUsers } from "react-icons/fi";
+import CardFormEmptyState from "../KanbanBoard/CardFormTabs/shared/components/CardFormEmptyState";
 import CrewListUploadBox from "../KanbanBoard/CardFormTabs/Import/tabs/husbandry/components/CrewListUploadBox";
 import CrewUploadDropzones from "../KanbanBoard/CardFormTabs/Import/tabs/husbandry/components/CrewUploadDropzones";
 import ChecklistTypeBlock from "../KanbanBoard/CardFormTabs/Import/tabs/appointment/checklistTab/ChecklistTypeBlock";
@@ -120,7 +121,12 @@ function CrewImmigrationPreview() {
                             </div>
                         </div>
                     </div>
-                    <p className="crew-summary-empty">No crew uploaded yet. Upload a crew list to see it here.</p>
+                    <CardFormEmptyState
+                        className="cf-empty-state--framed"
+                        icon={FiUsers}
+                        title="No crew uploaded yet"
+                        message="Use Upload Crew List above. Uploaded crew members will be listed here."
+                    />
                 </div>
             </div>
         </div>
