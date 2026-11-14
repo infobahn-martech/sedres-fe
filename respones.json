@@ -1,39 +1,79 @@
 {
     "status": "success",
     "data": {
+        "billing_entity_id": "24",
         "customer_code": "Cust00024",
         "customer_name": "LARSEN TOUBRO ARABIA LLC",
         "contact_person": "requestor",
         "contact_email": "prog2@infobahnworld.com",
-        "currency": "SAR",
-        "conversion_rate": "",
+        "currency": "USD",
+        "conversion_rate": "3.75",
         "port": "Jubail",
         "branch": "Marine Offshore",
-        "sales_order_no": "TMP-SO-202611-00068",
-        "sales_order_date": "2026-11-13",
+        "sales_order_no": "TMP-SO-202611-00066",
+        "sales_order_date": "2026-11-12",
         "delivery_date": "0000-00-00",
         "document_date": "0000-00-00",
-        "ship_name": "HEA AL MUZN",
+        "ship_name": "Marcap Galaxy",
         "so_status": "Open",
-        "sales_order_id": "508",
+        "sales_order_id": "505",
         "owner": "Infobahn Test",
-        "subtotal": "1850.00",
+        "subtotal": "493.33",
         "total_discount": "0.00",
         "discount_percentage": "0.00",
-        "grand_total": "2128.00",
-        "total_tax": "278.00",
-        "rounding": "1",
-        "rounding_rate": "0",
+        "grand_total": "567.33",
+        "total_tax": "74.00",
+        "rounding": "0",
+        "rounding_rate": "",
         "remarks": "",
-        "project_name": "Test Flow",
-        "po_number": "7142562",
+        "project_code": "Code",
+        "po_number": "PO number",
+        "project_name": "Project",
+        "billing_entity_fields": [
+            {
+                "field_id": 4,
+                "field_name": "Project Code",
+                "field_key": "project_code",
+                "field_type": "text",
+                "is_required": 0,
+                "sequence_order": 1,
+                "field_value": "Code"
+            },
+            {
+                "field_id": 1,
+                "field_name": "PO No",
+                "field_key": "po_number",
+                "field_type": "text",
+                "is_required": 0,
+                "sequence_order": 2,
+                "field_value": "PO number"
+            },
+            {
+                "field_id": 2,
+                "field_name": "Project Name",
+                "field_key": "project_name",
+                "field_type": "text",
+                "is_required": 0,
+                "sequence_order": 3,
+                "field_value": "Project"
+            },
+            {
+                "field_id": 12,
+                "field_name": "SRN No",
+                "field_key": "srn_number",
+                "field_type": "text",
+                "is_required": 0,
+                "sequence_order": 4,
+                "field_value": null
+            }
+        ],
         "items": [
             {
-                "so_item_id": "1595",
+                "so_item_id": "1586",
                 "quantity": "1",
-                "unit_price": "400.00",
+                "unit_price": "106.67",
                 "discount_percentage": "",
-                "total_price": "460.00",
+                "total_price": "122.67",
                 "item_code": "OFM0031",
                 "item_name": "Hot Work Permit",
                 "tax_percentage": "15",
@@ -48,11 +88,11 @@
                 "po_status": 0
             },
             {
-                "so_item_id": "1596",
+                "so_item_id": "1587",
                 "quantity": "1",
-                "unit_price": "250.00",
+                "unit_price": "66.67",
                 "discount_percentage": "",
-                "total_price": "287.50",
+                "total_price": "76.67",
                 "item_code": "OFM0171",
                 "item_name": "Port pass per person or per vehicle",
                 "tax_percentage": "15",
@@ -67,11 +107,11 @@
                 "po_status": 0
             },
             {
-                "so_item_id": "1597",
+                "so_item_id": "1588",
                 "quantity": "1",
-                "unit_price": "1200.00",
+                "unit_price": "320.00",
                 "discount_percentage": "",
-                "total_price": "1380.00",
+                "total_price": "368.00",
                 "item_code": "OFM0055",
                 "item_name": "Inward Clearance fee + Agent Transport + Communication (In Kingdom\/Domestic)",
                 "tax_percentage": "15",
@@ -85,6 +125,11 @@
                 "purchase_order": null,
                 "po_status": 0
             }
-        ]
+        ],
+        "da_team": {
+            "card_id": 714,
+            "supervisor": null,
+            "coordinators": []
+        }
     }
 }

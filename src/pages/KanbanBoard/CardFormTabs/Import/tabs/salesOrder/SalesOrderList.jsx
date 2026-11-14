@@ -434,6 +434,7 @@ const SalesOrderList = ({
   const soShipName = formValues.soShipName || "";
   const branch = formValues.branch || "";
   const soContactEmail = formValues.email || "";
+  const soBillingEntityFields = Array.isArray(formValues.soBillingEntityFields) ? formValues.soBillingEntityFields : [];
   const loggedInUserName = useAuthReducer((state) => state.profileData?.name || state.authData?.name || "");
   const soOwner = formValues.soOwner || loggedInUserName;
   const soRemarks = formValues.soRemarks || "";
@@ -1754,6 +1755,16 @@ const SalesOrderList = ({
       e.target.blur();
     }
   };
+
+  // Billing-entity fields (billing_entity_fields in the SO response): edit locally, save on blur
+  // (or on pick, for dates) under `fields` keyed by the field's field_key.
+  const setBillingEntityFieldValue = (key, value) => {
+    const next = soBillingEntityFields.map((f) => (f.key === key ? { ...f, value } : f));
+    handleChange("soBillingEntityFields")({ target: { value: next } });
+  };
+
+  const saveBillingEntityField = (key, value) =>
+    handleUpdateSalesOrder({ fields: { [key]: value } });
 
   const handleSoDeliveryDateChange = (e) => {
     handleChange("soDeliveryDate")(e);
@@ -3197,6 +3208,38 @@ const SalesOrderList = ({
                 readOnly
               />
             </div>
+            {soBillingEntityFields.map((field) => (
+              <div className="so-header-field" key={field.fieldId}>
+                <label className="so-header-label">
+                  {field.name}
+                  {field.required && <> <span className="so-required">*</span></>}
+                </label>
+                {field.type === "date" ? (
+                  <DatePickerField
+                    dateValue={field.value}
+                    onDateChange={(e) => {
+                      setBillingEntityFieldValue(field.key, e.target.value);
+                      saveBillingEntityField(field.key, e.target.value);
+                    }}
+                    dateFieldName={`be_${field.key}`}
+                    disabled={readOnly}
+                    className="so-header-input"
+                  />
+                ) : (
+                  <input
+                    type={field.type === "number" ? "number" : "text"}
+                    className="so-header-input"
+                    placeholder={`Enter ${field.name}...`}
+                    value={field.value}
+                    onChange={(e) => setBillingEntityFieldValue(field.key, e.target.value)}
+                    onBlur={(e) => saveBillingEntityField(field.key, e.target.value)}
+                    onKeyDown={handleEnterBlur}
+                    readOnly={readOnly}
+                    required={field.required}
+                  />
+                )}
+              </div>
+            ))}
             <div className="so-header-field">
               <label className="so-header-label">Port</label>
               <input

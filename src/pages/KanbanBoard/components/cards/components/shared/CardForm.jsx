@@ -2184,6 +2184,7 @@ function CardForm({
       soBpCurrency: card?.soBpCurrency || "",
       soEuroRate: card?.soEuroRate || "",
       soPort: card?.soPort || card?.port || "",
+      soBillingEntityFields: Array.isArray(card?.soBillingEntityFields) ? card.soBillingEntityFields : [],
       soSoNo: card?.soSoNo || "",
       soPostingDate: card?.soPostingDate || "",
       soDeliveryDate: card?.soDeliveryDate || "",
