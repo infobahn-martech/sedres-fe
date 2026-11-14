@@ -41,6 +41,21 @@ const SALES_ORDER_PAGE_SIZE = 10;
 const DA_SUPERVISOR_ROLE_ID = 22;
 const DA_COORDINATOR_ROLE_ID = 26;
 
+/* Session-level request cache for lookup lists (users by role, vendors) that don't change while
+   the board is open — without it every Sales Order tab mount (tab switch, card reopen) refired
+   them. A failed request is evicted so the next mount retries. */
+const lookupCache = new Map();
+function cachedLookup(key, fetcher) {
+  if (!lookupCache.has(key)) {
+    const promise = fetcher().catch((err) => {
+      lookupCache.delete(key);
+      throw err;
+    });
+    lookupCache.set(key, promise);
+  }
+  return lookupCache.get(key);
+}
+
 /** Users of one role as { value: user_id, label: name } select options. */
 function useUserOptionsByRole(roleId) {
   const [users, setUsers] = useState([]);
@@ -48,12 +63,14 @@ function useUserOptionsByRole(roleId) {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    userService
-      .getUsersByRole({ role_id: roleId })
-      .then(({ data }) => {
-        if (cancelled) return;
+    cachedLookup(`usersByRole:${roleId}`, () =>
+      userService.getUsersByRole({ role_id: roleId }).then(({ data }) => {
         const list = data?.data ?? [];
-        setUsers(Array.isArray(list) ? list : []);
+        return Array.isArray(list) ? list : [];
+      })
+    )
+      .then((list) => {
+        if (!cancelled) setUsers(list);
       })
       .catch(() => {
         if (!cancelled) setUsers([]);
@@ -459,10 +476,6 @@ const SalesOrderList = ({
   const updateSalesOrderItemAmount = useVendorReducer((state) => state.updateSalesOrderItemAmount);
   const updateSalesOrderReducer = useVendorReducer((state) => state.updateSalesOrder);
 
-  useEffect(() => {
-    getAllSupportingDocs(callId);
-  }, [callId, getAllSupportingDocs]);
-
   const entityId =
     callDetailData?.entity_id ??
     callDetailData?.template?.billing_entity_id ??
@@ -593,20 +606,24 @@ const SalesOrderList = ({
     }, []);
   }, [itemCodeOptions]);
 
-  // Vendor list — billingentity/getvendors, [{ customer_code, customer_name }]
+  // Vendor list — billingentity/getvendors, [{ customer_code, customer_name }]. Only the Add Item
+  // form and the row-level supplier picker use it, so it's loaded the first time either opens
+  // (see needsVendors) and cached for the session instead of on every tab mount.
+  const needsVendors = isAccordionOpen || vendorModalTarget != null;
   useEffect(() => {
+    if (!needsVendors) return undefined;
     let cancelled = false;
-    billingEntityService
-      .getVendors()
-      .then((response) => {
-        if (cancelled) return;
+    cachedLookup("vendors", () =>
+      billingEntityService.getVendors().then((response) => {
         const rows = Array.isArray(response?.data?.data) ? response.data.data : [];
-        setVendors(
-          rows.map((v) => ({
-            code: v.customer_code != null ? String(v.customer_code) : "",
-            name: v.customer_name != null ? String(v.customer_name) : "",
-          }))
-        );
+        return rows.map((v) => ({
+          code: v.customer_code != null ? String(v.customer_code) : "",
+          name: v.customer_name != null ? String(v.customer_name) : "",
+        }));
+      })
+    )
+      .then((list) => {
+        if (!cancelled) setVendors(list);
       })
       .catch(() => {
         if (!cancelled) setVendors([]);
@@ -614,11 +631,18 @@ const SalesOrderList = ({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [needsVendors]);
 
   // State for document modal (row-level document picker) — documents themselves come from
   // each item's own `documents` array (mapped from the API), not a shared pool.
   const [documentModalTarget, setDocumentModalTarget] = useState(null); // orderId or "new"
+
+  // The supporting-doc library is only shown inside the document picker, so it's fetched when
+  // the picker opens (fresh each time, so newly uploaded docs show up) rather than on tab mount.
+  const isDocumentModalOpen = documentModalTarget != null;
+  useEffect(() => {
+    if (isDocumentModalOpen) getAllSupportingDocs(callId);
+  }, [isDocumentModalOpen, callId, getAllSupportingDocs]);
 
   // State for the line item delete confirmation modal
   const [showDeleteItemModal, setShowDeleteItemModal] = useState(false);
@@ -1583,14 +1607,26 @@ const SalesOrderList = ({
       });
   }, [portId]);
 
-  // Load item codes for the SO's port as soon as the Sales Order tab is opened
+  // Item codes only feed the Add Item form, so load them the first time it's opened for this port
+  // (fetchItemCodes changes identity with portId, so a port change reloads on next open).
+  const loadedItemCodesForRef = useRef(null);
   useEffect(() => {
+    if (!isAccordionOpen || loadedItemCodesForRef.current === fetchItemCodes) return undefined;
+    loadedItemCodesForRef.current = fetchItemCodes;
     const cancelledRef = { current: false };
-    fetchItemCodes(cancelledRef);
+    let settled = false;
+    fetchItemCodes(cancelledRef).finally(() => {
+      settled = true;
+    });
     return () => {
       cancelledRef.current = true;
+      // Closed (or port changed) mid-request: forget it so the next open fetches again.
+      if (!settled) {
+        loadedItemCodesForRef.current = null;
+        setIsLoadingItemCodes(false);
+      }
     };
-  }, [fetchItemCodes]);
+  }, [isAccordionOpen, fetchItemCodes]);
 
   // Toggle accordion for callFile
   const toggleCallFileAccordion = (callFile) => {
