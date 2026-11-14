@@ -121,6 +121,14 @@ export const isLntInvoiceIssued = (workflowTitle, columnTitle) =>
   (LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) || isDaSupervisorWorkflow(workflowTitle)) &&
   INVOICE_ISSUED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
+const READY_TO_SUBMIT_COLUMN_PATTERN = /^ready\s+to\s+submit$/i;
+
+/* The L&T DA "Ready to Submit" column (an L&T workflow, or the L&T swimlane of the DA Supervisor workflow): its
+   ticked cards take the bulk portal submission proof upload. */
+export const isLntReadyToSubmit = (workflowTitle, columnTitle) =>
+  (LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) || isDaSupervisorWorkflow(workflowTitle)) &&
+  READY_TO_SUBMIT_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
 const MCDERMOTT_WORKFLOW = "MCDERMOTT";
 
 export const isMcDermottWorkflow = (workflow) =>

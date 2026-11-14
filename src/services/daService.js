@@ -127,8 +127,10 @@ const uploadDispatchProof = (formData) =>
   });
 /** @param {{ cards: Array<{ call_id: number, card_id: number }> }} payload - the reviewed, ticked cards.
  * @returns {Promise<{ data: { status: 'success', data: { moved_to_dispatched: Array<{ call_id: number,
- *   card_id: number }> } } | { status: 'error', message: string } }>}
- * Confirms the reviewed dispatch proofs; the cards move to "Dispatch Proof Uploaded". */
+ *   card_id: number }>, card_positions: Array<{ call_id: number, card_id: number, column_name: string }> } }
+ *   | { status: 'error', message: string } }>}
+ * Confirms the reviewed dispatch proofs; the cards move on ("Dispatch Proof Uploaded", or "Submitted with Proof"
+ * for L&T "Ready to Submit"). */
 const confirmDispatchProofs = (payload) => Gateway.post('/da/confirm_dispatch_proofs', payload);
 /** @param {{ cards: Array<{ call_id: number, card_id: number }> }} payload - the ticked "Consolidated" cards.
  * @returns {Promise<{ data: { status: 'success', data: { submission_id: number, inv_no: string, zip_url: string } }

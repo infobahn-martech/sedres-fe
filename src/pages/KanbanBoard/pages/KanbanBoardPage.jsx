@@ -21,7 +21,7 @@ import ServiceSheetModal from "../components/board/ServiceSheetModal";
 import FinalInvoiceModal from "../components/board/FinalInvoiceModal";
 import SccReviewModal from "../components/board/SccReviewModal";
 import DispatchProofReviewModal from "../components/board/DispatchProofReviewModal";
-import { isLamprellAlgihazDispatchProofColumn, isLntWorkflow, isMultiCardDispatchProofColumn, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
+import { isLamprellAlgihazDispatchProofColumn, isLntReadyToSubmit, isLntWorkflow, isMultiCardDispatchProofColumn, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -1957,9 +1957,11 @@ export default function KanbanBoardPage() {
   );
   const isLntDispatchProofUpload = useCallback(
     (cards) =>
-      cards.some((card) =>
-        isLntWorkflow(workflows.find((wf) => String(wf.id) === String(cardsById[card.id]?.workflow_id)))
-      ),
+      cards.some((card) => {
+        const boardCard = cardsById[card.id];
+        const workflow = workflows.find((wf) => String(wf.id) === String(boardCard?.workflow_id));
+        return isLntWorkflow(workflow) || isLntReadyToSubmit(workflow?.title, workflow?.columns?.[boardCard?.columnId]?.title);
+      }),
     [workflows, cardsById]
   );
 

@@ -34,6 +34,7 @@ import {
   isLntApprovalRequestedCell,
   isSubseaWorkflow,
   isUploadedToPortalColumnTitle,
+  isLntReadyToSubmit,
 } from "../../../../utils/columnTitles";
 
 const SRT_RECEIVED_COLUMN_PATTERN = /^srt rec(?:ie|ei)ved$/i;
@@ -753,7 +754,7 @@ function CardItem({
     card?.signature_status === "missing" ||
     (isSrtRejectedForSignature && isSubseaSrtReceivedCard);
   /* The tooltip names the document the column takes: the dispatch proof, the SRT, or (L&T) the SCC. */
-  const signatureDocumentName = isUploadedToPortalColumnTitle(columnTitle)
+  const signatureDocumentName = isUploadedToPortalColumnTitle(columnTitle) || isLntReadyToSubmit(workflowTitle, columnTitle)
     ? "dispatch proof"
     : SRT_RECEIVED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim())
       ? "SRT"
