@@ -276,7 +276,7 @@ const MAIN_TABS = [
             {
                 label: "Header Fields",
                 fields: [
-                    "PO No", "Project Name", "Port",
+                    "Port",
                     "Delivery Date", "Document Date", "Ship Name", "BP Currency",
                 ],
             },
@@ -1564,9 +1564,9 @@ function CallTypeBuilderModal({ show, onClose }) {
                                                         };
                                                         const SO_READONLY_FIELDS = new Set([
                                                             "Customer Code", "Customer Name", "Contact Person", "Contact Email",
-                                                            "SRT Number", "Branch", "SO No", "Posting Date",
+                                                            "Branch", "SO No", "Posting Date",
                                                         ]);
-                                                        const SO_REQUIRED_FIELDS = new Set(["PO No", "Project Name"]);
+                                                        const SO_REQUIRED_FIELDS = new Set([]);
                                                         const SO_DATE_FIELDS = new Set(["Posting Date", "Delivery Date", "Document Date"]);
                                                         const SO_SELECT_FIELDS = { Port: "Select Port...", "BP Currency": "SAR / USD / EURO" };
                                                         const soGroups = effectivePreviewMain.groups ?? [];

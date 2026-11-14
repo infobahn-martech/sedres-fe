@@ -426,17 +426,14 @@ const SalesOrderList = ({
   const soContactPerson = formValues.soContactPerson || "";
   const soBpCurrency = formValues.soBpCurrency || "";
   const soEuroRate = formValues.soEuroRate || "";
-  const soPoNo = formValues.soPoNo || "";
   const soPort = formValues.soPort || "";
   const soSoNo = formValues.soSoNo || "";
   const soPostingDate = formValues.soPostingDate || "";
   const soDeliveryDate = formValues.soDeliveryDate || "";
   const soDocumentDate = formValues.soDocumentDate || "";
   const soShipName = formValues.soShipName || "";
-  const soProjectName = formValues.soProjectName || "";
   const branch = formValues.branch || "";
   const soContactEmail = formValues.email || "";
-  const srtNumber = formValues.srtNumber || "";
   const loggedInUserName = useAuthReducer((state) => state.profileData?.name || state.authData?.name || "");
   const soOwner = formValues.soOwner || loggedInUserName;
   const soRemarks = formValues.soRemarks || "";
@@ -3198,47 +3195,6 @@ const SalesOrderList = ({
                 className="so-header-input so-header-input-readonly"
                 value={soContactEmail}
                 readOnly
-              />
-            </div>
-            <div className="so-header-field">
-              <label className="so-header-label">PO No <span className="so-required">*</span></label>
-              <input
-                type="text"
-                className="so-header-input"
-                placeholder="Enter PO No..."
-                value={soPoNo}
-                onChange={handleChange("soPoNo")}
-                onBlur={() => handleUpdateSalesOrder({ fields: { po_number: soPoNo } })}
-                onKeyDown={handleEnterBlur}
-                readOnly={readOnly}
-                required
-              />
-            </div>
-            <div className="so-header-field">
-              <label className="so-header-label">SRT Number</label>
-              <input
-                type="text"
-                className="so-header-input"
-                placeholder="Enter SRT Number..."
-                value={srtNumber}
-                onChange={handleChange("srtNumber")}
-                onBlur={() => handleUpdateSalesOrder({ fields: { srt_number: srtNumber } })}
-                onKeyDown={handleEnterBlur}
-                readOnly={readOnly}
-              />
-            </div>
-            <div className="so-header-field">
-              <label className="so-header-label">Project Name <span className="so-required">*</span></label>
-              <input
-                type="text"
-                className="so-header-input"
-                placeholder="Enter project name..."
-                value={soProjectName}
-                onChange={handleChange("soProjectName")}
-                onBlur={() => handleUpdateSalesOrder({ fields: { project_name: soProjectName } })}
-                onKeyDown={handleEnterBlur}
-                readOnly={readOnly}
-                required
               />
             </div>
             <div className="so-header-field">
