@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiPlus, FiChevronDown, FiChevronUp, FiTrash2, FiFilter, FiUsers, FiInfo, FiCalendar, FiDownload } from 'react-icons/fi';
+import { FiX, FiPlus, FiUploadCloud, FiChevronDown, FiChevronUp, FiTrash2, FiFilter, FiUsers, FiInfo, FiCalendar, FiDownload } from 'react-icons/fi';
 import { LuTriangle } from 'react-icons/lu';
 import { Modal } from 'react-bootstrap';
 import PropTypes from 'prop-types';
@@ -10,9 +10,8 @@ import 'react-quill-new/dist/quill.snow.css';
 import 'quill-table-better/dist/quill-table-better.css';
 import {
   ACTION_GROUP_TYPE_TO_SECTION_ID, LINK_ACTION_OPTIONS, LINK_REMOVE_OTHERS_OPTIONS, NOTIFY_ACTION_OPTIONS, UPDATE_ACTION_OPTIONS, STICKER_ACTION_FREQUENCY_OPTIONS,
-  LIST_UPDATE_MODE_OPTIONS, DEADLINE_MODE_OPTIONS, WHEN_DEADLINE_COMPARISON_OPTIONS, WEEKDAY_OPTIONS, PRIORITY_OPTIONS, classifyCustomFieldUiKind,
+  LIST_UPDATE_MODE_OPTIONS, DEADLINE_MODE_OPTIONS, WEEKDAY_OPTIONS, PRIORITY_OPTIONS, classifyCustomFieldUiKind,
   INVOKE_ACTION_OPTIONS, DUMMY_INVOKE_METHOD_OPTIONS, DUMMY_INVOKE_AUTH_OPTIONS, INVOKE_METHODS_WITH_BODY,
-  INTERNAL_USER_ROLE_OPTIONS,
   TRIGGER_CODE_TO_ICON, UNSUPPORTED_ACTION_GROUP_TYPES,
 } from './businessRulesData';
 import { buildCreateBusinessRulePayload, buildUpdateBusinessRulePayload, getUnconfiguredActionLabels, isCreateSubtaskAction, RECURRENCE_REGULAR_FIELD_IDS, buildAdvancedScheduleFields } from './buildBusinessRulePayload';
@@ -27,6 +26,9 @@ import useKanbanManagementReducer, { isKanbanManagementRowDisabled } from '../..
 import useAuthReducer from '../../../store/AuthReducer';
 import { getInitials, stripHtmlTags } from '../../../shared/utils/utils';
 import DatePickerField from '../../../pages/KanbanBoard/CardFormTabs/shared/components/DatePickerField';
+import DateTimePickerField from '../../../pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField';
+import { DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS, DOCUMENT_UPLOAD_MAX_SIZE, validateDocumentFiles } from '../../../pages/KanbanBoard/CardFormTabs/Import/tabs/husbandry/components/Husbandry.constants';
+import '../../../design/scss/subtasks.scss';
 import SedresColorPicker from '../../../components/SedresColorPicker/SedresColorPicker';
 import { PRIMARY_PRESET_COLORS, SECONDARY_PRESET_COLORS, normalizeHexColor } from '../../../components/SedresColorPicker/sedresColorPickerConstants';
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
@@ -1878,8 +1880,7 @@ function InternalUsersPickerModal({ show, onClose, onApply }) {
     .filter((u) => u.name)
     .map((u) => ({ key: `user-${u.user_id}`, label: u.name, id: u.user_id }));
   const displayUserOptions = realUserOptions;
-  const roleOptions = INTERNAL_USER_ROLE_OPTIONS.map((label) => ({ key: `role-${label}`, label, id: null }));
-  const allOptions = [...roleOptions, ...displayUserOptions];
+  const allOptions = displayUserOptions;
 
   const filterQuery = filterText.trim().toLowerCase();
   const filteredOptions = filterQuery
@@ -4296,11 +4297,25 @@ WebInvokeSettingsModal.propTypes = {
   triggerTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
+const SUBTASK_DOCUMENT_ACCEPT = DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS.join(',');
+const SUBTASK_DOCUMENT_TYPE_LABELS = Array.from(
+  new Set(
+    DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS.map((ext) => {
+      const label = ext.replace('.', '').toUpperCase();
+      return label === 'JPEG' ? 'JPG' : label;
+    })
+  )
+);
+const SUBTASK_DOCUMENT_HINT = `Supports ${SUBTASK_DOCUMENT_TYPE_LABELS.join(', ')} (max ${DOCUMENT_UPLOAD_MAX_SIZE / (1024 * 1024)}MB)`;
+
 function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fetchedSettings, isLoadingSettings, users }) {
   const [ownerUserId, setOwnerUserId] = useState('');
   const [deadlineDate, setDeadlineDate] = useState('');
   const [deadlineTime, setDeadlineTime] = useState('00:00');
   const [description, setDescription] = useState('');
+  const [documentFile, setDocumentFile] = useState(null);
+  const [isDraggingDocument, setIsDraggingDocument] = useState(false);
+  const documentInputRef = useRef(null);
   const [isOwnerPickerOpen, setIsOwnerPickerOpen] = useState(false);
   const [ownerFilterText, setOwnerFilterText] = useState('');
   const [ownerPanelCoords, setOwnerPanelCoords] = useState({ top: 0, left: 0, width: 0, placement: 'bottom' });
@@ -4319,6 +4334,8 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
     setDeadlineDate(datePart ?? '');
     setDeadlineTime((timePart ?? '00:00').slice(0, 5));
     setDescription(source?.description ?? '');
+    setDocumentFile(null);
+    setIsDraggingDocument(false);
     setIsOwnerPickerOpen(false);
     setOwnerFilterText('');
   }, [show, initialSettings, fetchedSettings]);
@@ -4371,7 +4388,7 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
   }, [isOwnerPickerOpen]);
 
   const selectedOwnerUser = (users ?? []).find((u) => String(u.user_id) === String(ownerUserId));
-  const ownerName = selectedOwnerUser?.name || 'None';
+  const ownerName = selectedOwnerUser?.name || 'Select user';
   const ownerFilterQuery = ownerFilterText.trim().toLowerCase();
   const filteredOwnerUsers = ownerFilterQuery
     ? (users ?? []).filter((u) => u.name?.toLowerCase().includes(ownerFilterQuery))
@@ -4382,15 +4399,61 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
     setIsOwnerPickerOpen(false);
   };
 
+  const existingCreateSubtaskId = initialSettings?.createSubtaskId;
+  const canSave = Boolean(ownerUserId && deadlineDate && description.trim());
+
+  const acceptDocumentFile = (file) => {
+    if (!file) return;
+    const { validFiles, rejectedFiles } = validateDocumentFiles([file]);
+    if (rejectedFiles.length > 0) {
+      const { error } = useAlertReducer.getState();
+      error(`"${rejectedFiles[0].name}" — ${rejectedFiles[0].reason}`);
+      return;
+    }
+    setDocumentFile(validFiles[0]);
+  };
+
+  const handleDocumentChange = (event) => {
+    const file = event.target.files?.[0] || null;
+    event.target.value = '';
+    acceptDocumentFile(file);
+  };
+
+  const handleDocumentDragOver = (event) => {
+    event.preventDefault();
+    if (!isSavingCreateSubtaskSettings) setIsDraggingDocument(true);
+  };
+
+  const handleDocumentDragLeave = (event) => {
+    event.preventDefault();
+    setIsDraggingDocument(false);
+  };
+
+  const handleDocumentDrop = (event) => {
+    event.preventDefault();
+    setIsDraggingDocument(false);
+    if (isSavingCreateSubtaskSettings) return;
+    acceptDocumentFile(event.dataTransfer?.files?.[0] || null);
+  };
+
   const handleSave = () => {
-    const deadline = deadlineDate ? `${deadlineDate} ${deadlineTime || '00:00'}:00` : '';
-    const payload = {
-      ...(ownerUserId ? { owner_user_id: ownerUserId } : {}),
-      ...(deadline ? { deadline } : {}),
-      description,
+    if (!canSave) return;
+    const deadline = `${deadlineDate} ${deadlineTime || '00:00'}:00`;
+    const trimmedDescription = description.trim();
+    // save_create_subtask_settings is multipart (assigned_to, due_date, description,
+    // optional document); update_create_subtask_settings takes owner_user_id/deadline/description.
+    const savePayload = new FormData();
+    savePayload.append('assigned_to', String(ownerUserId));
+    savePayload.append('due_date', deadline);
+    savePayload.append('description', trimmedDescription);
+    if (documentFile) savePayload.append('document', documentFile);
+    const updatePayload = {
+      owner_user_id: ownerUserId,
+      deadline,
+      description: trimmedDescription,
     };
     const createFresh = () => {
-      saveCreateSubtaskSettings(payload, {
+      saveCreateSubtaskSettings(savePayload, {
         cb: (data) => {
           // Same flat-vs-nested inconsistency as the notification create response (see
           // NotificationSettingsModal's own dual-check above) — checking only the flat
@@ -4400,7 +4463,7 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
           onSave({
             ownerUserId,
             deadline,
-            description,
+            description: trimmedDescription,
             createSubtaskId,
           });
           onClose();
@@ -4411,11 +4474,10 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
     // A create-subtask action that already has a createSubtaskId (fetchedSettings was
     // loaded for it in handleOpenCreateSubtaskSettings) was previously saved on the
     // backend, so resaving it must update that record instead of creating a duplicate one.
-    const existingCreateSubtaskId = initialSettings?.createSubtaskId;
     if (existingCreateSubtaskId) {
-      updateCreateSubtaskSettings(existingCreateSubtaskId, payload, {
+      updateCreateSubtaskSettings(existingCreateSubtaskId, updatePayload, {
         cb: () => {
-          onSave({ ownerUserId, deadline, description, createSubtaskId: existingCreateSubtaskId });
+          onSave({ ownerUserId, deadline, description: trimmedDescription, createSubtaskId: existingCreateSubtaskId });
           onClose();
         },
         // The backend can lose track of that id's "temporary" record once the
@@ -4440,18 +4502,6 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
       createFresh();
     }
   };
-
-  const renderDeadlineTrigger = ({ disabled, onOpen, displayValue }) => (
-    <button
-      type="button"
-      className="br-subtask-deadline-trigger"
-      onClick={onOpen}
-      disabled={disabled}
-    >
-      <FiCalendar size={14} aria-hidden />
-      {displayValue || 'Not Set'}
-    </button>
-  );
 
   return (
     <Modal
@@ -4481,7 +4531,7 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
         <div className="card-property-match-modal-body notification-settings-body">
           <div className="br-invoke-two-col">
             <div className="business-rule-form-field">
-              <label className="business-rule-form-label">Owner</label>
+              <label className="business-rule-form-label">Assign User <span className="task-tab-required">*</span></label>
               <button
                 type="button"
                 ref={ownerPickerTriggerRef}
@@ -4491,7 +4541,7 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
                 aria-expanded={isOwnerPickerOpen}
               >
                 <span className="business-rule-form-owner-avatar" aria-hidden>
-                  {getInitials(ownerName)}
+                  {selectedOwnerUser ? getInitials(ownerName) : <FiUsers size={12} />}
                 </span>
                 <span className="br-owner-picker-trigger-name">{ownerName}</span>
                 <FiChevronDown className="business-rule-form-select-icon" aria-hidden />
@@ -4514,16 +4564,6 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
                     />
                   </div>
                   <div className="br-owner-picker-list">
-                    <div className="br-owner-picker-row">
-                      <button
-                        type="button"
-                        className={`br-owner-picker-row-btn${!ownerUserId ? ' br-owner-picker-row-btn--selected' : ''}`}
-                        onClick={() => handlePickOwner(null)}
-                      >
-                        <span className="business-rule-form-owner-avatar" aria-hidden>{getInitials('None')}</span>
-                        <span className="br-owner-picker-row-name">None</span>
-                      </button>
-                    </div>
                     {filteredOwnerUsers.length === 0 ? (
                       <div className="br-property-picker-empty">No matches</div>
                     ) : (
@@ -4547,18 +4587,77 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
             </div>
 
             <div className="notification-field">
-              <label className="business-rule-form-label">Deadline</label>
-              <DatePickerField
+              <label className="business-rule-form-label">Due Date &amp; Time <span className="task-tab-required">*</span></label>
+              <DateTimePickerField
                 dateValue={deadlineDate}
-                onDateChange={(e) => setDeadlineDate(e.target.value)}
+                timeValue={deadlineTime}
+                onDateTimeChange={({ date, time }) => {
+                  setDeadlineDate(date);
+                  setDeadlineTime(time || '00:00');
+                }}
+                dateFieldName="br-subtask-due-date"
+                timeFieldName="br-subtask-due-time"
+                placeholder="YYYY-MM-DD HH:mm"
                 popperClassName="br-subtask-deadline-popper"
-                renderTrigger={renderDeadlineTrigger}
+                disabled={isSavingCreateSubtaskSettings}
               />
             </div>
+
+            {!existingCreateSubtaskId && (
+              <div className="notification-field br-subtask-document-field">
+                <label className="business-rule-form-label" htmlFor="br-subtask-document">Document</label>
+                {documentFile ? (
+                  <div className="task-tab-doc-chip">
+                    <span className="task-tab-doc-name" title={documentFile.name}>{documentFile.name}</span>
+                    <button
+                      type="button"
+                      className="task-tab-doc-remove"
+                      onClick={() => setDocumentFile(null)}
+                      aria-label="Remove document"
+                      disabled={isSavingCreateSubtaskSettings}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className={`br-subtask-dropzone${isDraggingDocument ? ' br-subtask-dropzone--active' : ''}`}
+                    onDragOver={handleDocumentDragOver}
+                    onDragLeave={handleDocumentDragLeave}
+                    onDrop={handleDocumentDrop}
+                    onClick={() => documentInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        documentInputRef.current?.click();
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <input
+                      id="br-subtask-document"
+                      ref={documentInputRef}
+                      type="file"
+                      accept={SUBTASK_DOCUMENT_ACCEPT}
+                      className="d-none"
+                      onChange={handleDocumentChange}
+                      disabled={isSavingCreateSubtaskSettings}
+                    />
+                    <FiUploadCloud className="br-subtask-dropzone__icon" aria-hidden />
+                    <span className="br-subtask-dropzone__text">
+                      {isDraggingDocument ? 'Drop your file here' : 'Drag and drop your file here'}
+                    </span>
+                    <span className="br-subtask-dropzone__hint">or click to browse</span>
+                  </div>
+                )}
+                <span className="task-tab-doc-hint">{SUBTASK_DOCUMENT_HINT}</span>
+              </div>
+            )}
           </div>
 
-          <div className="notification-field">
-            <label className="business-rule-form-label">Description</label>
+          <div className="notification-field br-subtask-description-field">
+            <label className="business-rule-form-label">Task title / description <span className="task-tab-required">*</span></label>
             <textarea
               className="business-rule-form-textarea br-subtask-description-textarea"
               value={description}
@@ -4572,9 +4671,9 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
             type="button"
             className="br-property-add-btn"
             onClick={handleSave}
-            disabled={isLoadingSettings || isSavingCreateSubtaskSettings}
+            disabled={!canSave || isLoadingSettings || isSavingCreateSubtaskSettings}
           >
-            {isSavingCreateSubtaskSettings ? 'Saving...' : (isLoadingSettings ? 'Loading...' : (initialSettings?.createSubtaskId ? 'Update' : 'Save'))}
+            {isSavingCreateSubtaskSettings ? 'Saving...' : (isLoadingSettings ? 'Loading...' : (existingCreateSubtaskId ? 'Update' : 'Save'))}
           </button>
         </footer>
       </div>
@@ -4964,16 +5063,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   const executeTimeTriggerRef = useRef(null);
   const executeTimePanelRef = useRef(null);
 
-  // Deadline-based triggers (when_type 'deadline', e.g. "Time-based rule", trigger_type_id 9)
-  // — "Deadline is in/was more than [N] day(s)". No backend catalog for the comparison word
-  // or a when-side property shape yet, so the comparison list is a fixed local set and the
-  // day count is a plain number, both best-effort until confirmed against a real save payload.
-  const [whenDeadlineComparison, setWhenDeadlineComparison] = useState(WHEN_DEADLINE_COMPARISON_OPTIONS[0].key);
-  const [whenDeadlineDays, setWhenDeadlineDays] = useState(0);
-  const [showWhenDeadlineComparisonPicker, setShowWhenDeadlineComparisonPicker] = useState(false);
-  const [whenDeadlineComparisonFilterText, setWhenDeadlineComparisonFilterText] = useState('');
-  const whenDeadlineComparisonTriggerRef = useRef(null);
-  const whenDeadlineComparisonPanelRef = useRef(null);
 
   const {
     getTriggerConfig, triggerConfig, isLoadingTriggerConfig, getFieldDetails, fieldDetailsByKey, isLoadingFieldDetails,
@@ -5762,18 +5851,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     document.addEventListener('mousedown', onDocMouseDown);
     return () => document.removeEventListener('mousedown', onDocMouseDown);
   }, [openConditionOperatorId]);
-
-  useEffect(() => {
-    if (!showWhenDeadlineComparisonPicker) return undefined;
-    const onDocMouseDown = (event) => {
-      const t = event.target;
-      if (whenDeadlineComparisonPanelRef.current?.contains(t)) return;
-      if (whenDeadlineComparisonTriggerRef.current?.contains(t)) return;
-      setShowWhenDeadlineComparisonPicker(false);
-    };
-    document.addEventListener('mousedown', onDocMouseDown);
-    return () => document.removeEventListener('mousedown', onDocMouseDown);
-  }, [showWhenDeadlineComparisonPicker]);
 
   useEffect(() => {
     if (!showExecuteTimePicker) return undefined;
@@ -7329,71 +7406,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                       </div>
                     </div>
                   )}
-                </div>
-              ) : triggerConfig?.when_type === 'deadline' ? (
-                <div className="business-rule-form-column-card business-rule-form-when-fields business-rule-form-when-deadline">
-                  <div className="business-rule-form-when-deadline-label-row business-rule-form-condition-operator-group">
-                    <span className="business-rule-form-condition-label">Deadline</span>
-                    <div className="board-minimap-picker-wrap br-condition-operator-wrap">
-                      <button
-                        type="button"
-                        ref={showWhenDeadlineComparisonPicker ? whenDeadlineComparisonTriggerRef : undefined}
-                        className="br-condition-operator-trigger"
-                        onClick={() => setShowWhenDeadlineComparisonPicker((prev) => !prev)}
-                        aria-haspopup="listbox"
-                        aria-expanded={showWhenDeadlineComparisonPicker}
-                      >
-                        {WHEN_DEADLINE_COMPARISON_OPTIONS.find((o) => o.key === whenDeadlineComparison)?.label
-                          ?? WHEN_DEADLINE_COMPARISON_OPTIONS[0].label}
-                        <FiChevronDown size={14} aria-hidden />
-                      </button>
-
-                      {showWhenDeadlineComparisonPicker && (
-                        <div className="board-minimap-picker-panel br-condition-operator-panel" ref={whenDeadlineComparisonPanelRef}>
-                          <div className="board-minimap-picker-search">
-                            <FiFilter size={16} className="board-minimap-picker-search-icon" aria-hidden />
-                            <input
-                              type="text"
-                              placeholder="Filter"
-                              value={whenDeadlineComparisonFilterText}
-                              onChange={(e) => setWhenDeadlineComparisonFilterText(e.target.value)}
-                              autoFocus
-                            />
-                          </div>
-                          <div className="board-minimap-picker-scroll">
-                            {WHEN_DEADLINE_COMPARISON_OPTIONS
-                              .filter((opt) => opt.label.toLowerCase().includes(whenDeadlineComparisonFilterText.trim().toLowerCase()))
-                              .map((opt) => (
-                                <button
-                                  type="button"
-                                  key={opt.key}
-                                  className="br-condition-operator-option"
-                                  onClick={() => {
-                                    setWhenDeadlineComparison(opt.key);
-                                    setShowWhenDeadlineComparisonPicker(false);
-                                  }}
-                                >
-                                  {opt.label}
-                                </button>
-                              ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="business-rule-form-when-deadline-input-row">
-                    <input
-                      type="number"
-                      min="0"
-                      className="business-rule-form-when-deadline-input"
-                      value={whenDeadlineDays}
-                      onChange={(e) => setWhenDeadlineDays(e.target.value)}
-                    />
-                    <span className="business-rule-form-when-deadline-suffix">
-                      {whenDeadlineComparison === 'was_more_than' ? 'day(s) ago' : 'day(s)'}
-                    </span>
-                  </div>
                 </div>
               ) : triggerConfig?.has_when_fields === '1' && (
                 <div className="business-rule-form-column-card business-rule-form-when-fields">

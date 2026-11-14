@@ -113,14 +113,6 @@ export const DEADLINE_MODE_OPTIONS = [
   { key: 'absolute', label: 'to an absolute date' },
 ];
 
-// WHEN-side comparison for the "Deadline is in/was more than N day(s)" trigger
-// (when_type 'deadline', e.g. "Time-based rule", trigger_type_id 9). No backend
-// catalog for this yet, best-effort fixed set until confirmed against a real save payload.
-export const WHEN_DEADLINE_COMPARISON_OPTIONS = [
-  { key: 'is_in', label: 'is in' },
-  { key: 'was_more_than', label: 'was more than' },
-];
-
 // Static weekday catalog for the deadline action's "Non-working days" multi-select — no
 // backend catalog for this exists, so it's the fixed 7-day week rather than an invented
 // endpoint.
@@ -182,10 +174,6 @@ export const DUMMY_INVOKE_AUTH_OPTIONS = ['NONE', 'BASIC', 'API_KEY'];
 // only ever send parameters as a URL query string.
 export const INVOKE_METHODS_WITH_BODY = ['POST', 'PUT', 'PATCH', 'DELETE'];
 
-
-// Static role/group pills shown alongside individual users in the "Select
-// Internal Users" modal.
-export const INTERNAL_USER_ROLE_OPTIONS = ['Self', 'Owner', 'Owners', 'Watchers', 'Contributors', 'Reporter', 'Co-owners'];
 
 export const UPDATE_ACTION_OPTIONS = [
   { key: 'add_co_owners', label: 'Add co-owners', field: 'Co-owners' },
