@@ -2094,3 +2094,45 @@ $tb-fleet-success-border: #bbf7d0;
     border-color: var(--border-primary);
   }
 }
+
+/* Intermediate Trip popover — Sedres brand header band + primary action */
+.tb-add-trip-popover {
+  overflow: hidden;
+}
+
+.tb-add-trip-popover .tb-add-trip-form-title {
+  margin: -22px -22px 0;
+  padding: 14px 22px;
+  font-size: 14.5px;
+  color: #ffffff;
+  background:
+    linear-gradient(110deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--color-primary);
+}
+
+.tb-add-trip-popover .tb-add-trip-submit {
+  background: var(--color-primary);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+
+.tb-add-trip-popover .tb-add-trip-submit:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary) 86%, #000000);
+}
+
+.tb-add-trip-popover .tb-add-trip-cancel {
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--border-primary));
+}
+
+[data-theme="dark"] .tb-add-trip-popover .tb-add-trip-form-title {
+  background: color-mix(in srgb, var(--color-primary) 70%, var(--modal-bg, #0f172a));
+}
+
+[data-theme="dark"] .tb-add-trip-popover .tb-add-trip-submit {
+  background: var(--brand-bright, #3b82f6);
+}
+
+[data-theme="dark"] .tb-add-trip-popover .tb-add-trip-cancel {
+  color: var(--text-heading, #fff);
+  border-color: var(--border-strong, rgba(255, 255, 255, 0.16));
+}

@@ -3980,3 +3980,127 @@ $gro-supervisor-control-border: #d0d5dd;
     transform: translate(-3px, 4px);
   }
 }
+
+/* ==========================================================
+   Task-card popovers: Bayan, Upload Signed Document, Update Status,
+   CG / Zawil pass upload, bulk upload and the stage upload modal.
+   Sedres brand header + primary actions. Two-class selectors so they
+   also win for popovers portalled to <body> (outside .gro-card-view).
+   ========================================================== */
+.gro-inward-popover .gro-inward-popover-header,
+.gro-stage-upload-modal .gro-inward-popover-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: #ffffff;
+  border-bottom: none;
+  background:
+    linear-gradient(110deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--color-primary);
+}
+
+/* Small accent dot before the title */
+.gro-inward-popover .gro-inward-popover-header::before,
+.gro-stage-upload-modal .gro-inward-popover-header::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
+}
+
+.gro-inward-popover .gro-inward-popover-btn-submit,
+.gro-stage-upload-modal .gro-inward-popover-btn-submit {
+  min-width: 96px;
+  padding: 9px 22px;
+  border: 1px solid var(--color-primary);
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--color-primary);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 30%, transparent);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.gro-inward-popover .gro-inward-popover-btn-submit:hover:not(:disabled),
+.gro-stage-upload-modal .gro-inward-popover-btn-submit:hover:not(:disabled) {
+  filter: none;
+  background: color-mix(in srgb, var(--color-primary) 86%, #000000);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--color-primary) 38%, transparent);
+  transform: translateY(-1px);
+}
+
+.gro-inward-popover .gro-inward-popover-btn-submit:focus-visible,
+.gro-stage-upload-modal .gro-inward-popover-btn-submit:focus-visible,
+.gro-inward-popover .gro-inward-popover-btn-cancel:focus-visible,
+.gro-stage-upload-modal .gro-inward-popover-btn-cancel:focus-visible,
+.gro-inward-popover .gro-premium-upload-btn:focus-visible,
+.gro-stage-upload-modal .gro-premium-upload-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.gro-inward-popover .gro-inward-popover-btn-cancel,
+.gro-stage-upload-modal .gro-inward-popover-btn-cancel {
+  padding: 9px 20px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, var(--border-primary));
+  border-radius: 999px;
+  color: var(--color-primary);
+  background: var(--surface-primary);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.gro-inward-popover .gro-inward-popover-btn-cancel:hover:not(:disabled),
+.gro-stage-upload-modal .gro-inward-popover-btn-cancel:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--surface-primary));
+}
+
+/* "Choose file" — secondary brand button */
+.gro-inward-popover .gro-premium-upload-btn,
+.gro-stage-upload-modal .gro-premium-upload-btn {
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--border-primary));
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--surface-primary));
+}
+
+.gro-inward-popover .gro-premium-upload-btn:hover:not(:disabled),
+.gro-stage-upload-modal .gro-premium-upload-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--surface-primary));
+}
+
+.gro-inward-popover .gro-inward-popover-footer,
+.gro-stage-upload-modal .gro-inward-popover-footer {
+  background: var(--surface-secondary, var(--surface-primary));
+}
+
+/* Dark theme: navy is too dark on dark surfaces — lift it */
+[data-theme="dark"] .gro-inward-popover .gro-inward-popover-header,
+[data-theme="dark"] .gro-stage-upload-modal .gro-inward-popover-header {
+  background:
+    linear-gradient(110deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--color-primary) 70%, var(--modal-bg, #0f172a));
+  box-shadow: inset 0 -1px 0 var(--border-strong, rgba(255, 255, 255, 0.08));
+}
+
+[data-theme="dark"] .gro-inward-popover .gro-inward-popover-btn-submit,
+[data-theme="dark"] .gro-stage-upload-modal .gro-inward-popover-btn-submit {
+  background: var(--brand-bright, #3b82f6);
+  border-color: var(--brand-bright, #3b82f6);
+}
+
+[data-theme="dark"] .gro-inward-popover .gro-inward-popover-btn-cancel,
+[data-theme="dark"] .gro-stage-upload-modal .gro-inward-popover-btn-cancel,
+[data-theme="dark"] .gro-inward-popover .gro-premium-upload-btn,
+[data-theme="dark"] .gro-stage-upload-modal .gro-premium-upload-btn {
+  color: var(--text-heading, #fff);
+  border-color: var(--border-strong, rgba(255, 255, 255, 0.16));
+  background: transparent;
+}
