@@ -4350,6 +4350,35 @@
   }
 }
 
+/* Crew Immigration — when the Crew Listing is empty, stretch the empty
+   state to fill the remaining panel height instead of leaving blank space
+   below it. The populated table keeps its size-to-rows behaviour above. */
+.husbandry-service-selection.crew-immigration-dashboard {
+  align-items: stretch;
+
+  > .husbandry-service-selection-content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .husbandry-service-hero {
+    flex-shrink: 0;
+  }
+
+  .crew-mgmt-summary-section {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .crew-immigration-empty-wrap {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    margin-top: 4px;
+  }
+}
+
 /* Crew Immigration — skeleton table shown while the Crew Listing loads.
    Mirrors the real table's columns so the layout doesn't jump on load. */
 @keyframes crew-skeleton-shimmer {
