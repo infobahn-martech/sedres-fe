@@ -47,6 +47,11 @@ const getSaberAttachment = (callId, params) =>
   Gateway.get(`/call_file/get_saber_attachment/${encodeURIComponent(String(callId))}`, {
     ...(params && Object.keys(params).length ? { params } : {}),
   });
+// `params` (optional), e.g. { weather_forecast: "bad_weather" }, are sent as query params.
+const getWeatherMap = (callId, params) =>
+  Gateway.get(`/call_file/get_weather_map/${encodeURIComponent(String(callId))}`, {
+    ...(params && Object.keys(params).length ? { params } : {}),
+  });
 const uploadEmailAttachments = (formData) =>
   Gateway.post('/call_file/upload_email_attachments', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -69,4 +74,5 @@ export default {
   getRequestsByService,
   getServiceHistory,
   getSaberAttachment,
+  getWeatherMap,
 };

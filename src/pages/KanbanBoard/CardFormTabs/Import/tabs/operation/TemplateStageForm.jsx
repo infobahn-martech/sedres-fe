@@ -14,7 +14,6 @@ import {
   buildTemplateFieldDisplay,
   findTimeObjectRowForField,
   flattenTimeObjects,
-  getTemplateOperationSubtabs,
   normalizeTemplateKey,
   getTemplateFieldType,
   hasExistingTemplateFile,
@@ -107,7 +106,7 @@ const WINDY_OPEN_URL = "https://www.windy.com/27.284/49.109?wind,27.284,49.109,8
 
 const isBadWeatherValue = (value) => normalizeTemplateKey(value) === "bad_weather";
 
-const WindyWeatherMap = () => (
+const WindyWeatherMap = ({ iframe }) => (
   <div className="stage-windy-card">
     <div className="stage-windy-card__header">
       <span className="stage-windy-card__icon" aria-hidden>
@@ -129,10 +128,19 @@ const WindyWeatherMap = () => (
       </a>
     </div>
     <div className="stage-windy-card__map">
-      <iframe title="Windy weather map" src={WINDY_EMBED_URL} loading="lazy" allowFullScreen />
+      <iframe
+        title={iframe?.title || "Windy weather map"}
+        src={iframe?.src || WINDY_EMBED_URL}
+        loading="lazy"
+        allowFullScreen
+      />
     </div>
   </div>
 );
+
+WindyWeatherMap.propTypes = {
+  iframe: PropTypes.shape({ title: PropTypes.string, src: PropTypes.string }),
+};
 
 const HIDDEN_FIELD_TYPES = new Set(["iframe"]);
 
@@ -204,6 +212,9 @@ function TemplateStageForm({
   // A SABER change requests call_file/get_saber_attachment instead; its `saber_attachment`
   // field replaces the matching template field (saved file name / url) until the detail refreshes.
   const [saberAttachmentField, setSaberAttachmentField] = useState(null);
+  // A Weather Forecast change requests call_file/get_weather_map; its `weather_map` field
+  // (iframe title / src) is shown under the Weather Forecast select.
+  const [weatherMapField, setWeatherMapField] = useState(null);
   useEffect(() => {
     setFreshData(null);
   }, [detail]);
@@ -319,7 +330,6 @@ function TemplateStageForm({
     });
     return map;
   }, [fields]);
-  const templateRequestSeqRef = useRef(0);
 
   // Current saber / weather_forecast values as query params; the JSON key drives the effect below.
   const triggerParams = {};
@@ -334,46 +344,6 @@ function TemplateStageForm({
     Object.prototype.hasOwnProperty.call(edits, field.field_id)
   );
   const lastTriggerParamsKeyRef = useRef(triggerParamsKey);
-
-  const refreshEmailTemplateForTriggers = async (params) => {
-    const resolvedCallId = String(callId ?? "").trim();
-    if (!resolvedCallId) return;
-    const seq = ++templateRequestSeqRef.current;
-    try {
-      const { data } = await callFileService.getCallDetail(resolvedCallId, params);
-      // Only the latest selection's response is bound.
-      if (!aliveRef.current || seq !== templateRequestSeqRef.current) return;
-      const freshDetail = data?.data ?? null;
-      const freshStage = (getTemplateOperationSubtabs(freshDetail) || []).find(
-        (tab) => String(tab.tabId) === String(stage?.tabId)
-      );
-      if (!freshDetail || !freshStage) return;
-
-      // Rebind this stage's fields and values from the fresh response. The SABER / Weather
-      // selections stay as picked; every other field takes the response's value.
-      const triggerIds = new Set(Object.values(triggerFields).map((field) => String(field.field_id)));
-      setFreshData({ detail: freshDetail, stage: freshStage });
-      setEdits((prev) => {
-        const kept = {};
-        Object.entries(prev).forEach(([fieldId, value]) => {
-          if (triggerIds.has(String(fieldId))) kept[fieldId] = value;
-        });
-        return kept;
-      });
-      setErrors({});
-
-      if (freshStage.emailTemplate && reportTypeRef.current === "arrival") {
-        const template = extractReportTemplateFields(freshStage.emailTemplate);
-        // An explicit saber / weather change re-applies the template even over composer edits.
-        reportTouchedRef.current = false;
-        setReportDraft((prev) => mergeReportTemplate(prev, template));
-      }
-    } catch (error) {
-      if (aliveRef.current && seq === templateRequestSeqRef.current) {
-        notify(getApiErrorMessage(error, "Failed to refresh the email template."), "error");
-      }
-    }
-  };
 
   // SABER change → GET call_file/get_saber_attachment/{callId}?saber=<value> (not get_call_detail).
   const saberRequestSeqRef = useRef(0);
@@ -402,7 +372,40 @@ function TemplateStageForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [callId, detail, isViewOnly, Boolean(triggerFields.saber)]);
 
-  // SABER change → get_saber_attachment; Weather Forecast change → get_call_detail (email template).
+  // Weather Forecast change → GET call_file/get_weather_map/{callId}?weather_forecast=<value>.
+  const weatherRequestSeqRef = useRef(0);
+  const refreshWeatherMap = async (weatherForecast) => {
+    const resolvedCallId = String(callId ?? "").trim();
+    if (!resolvedCallId) return;
+    const seq = ++weatherRequestSeqRef.current;
+    try {
+      const { data } = await callFileService.getWeatherMap(resolvedCallId, {
+        weather_forecast: weatherForecast,
+      });
+      if (!aliveRef.current || seq !== weatherRequestSeqRef.current) return;
+      const payload = data?.data ?? {};
+      const mapField = payload.weather_map;
+      setWeatherMapField(
+        Number(payload.is_bad_weather) === 1 && mapField && typeof mapField === "object" ? mapField : null
+      );
+    } catch (error) {
+      if (aliveRef.current && seq === weatherRequestSeqRef.current) {
+        notify(getApiErrorMessage(error, "Failed to load the weather map."), "error");
+      }
+    }
+  };
+
+  // On open (and after the call detail refreshes), bind the weather map for the saved value.
+  const initialWeatherForecast = triggerFields.weather_forecast
+    ? JSON.parse(triggerParamsKey).weather_forecast ?? ""
+    : "";
+  useEffect(() => {
+    if (isViewOnly || !initialWeatherForecast) return;
+    refreshWeatherMap(initialWeatherForecast);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [callId, detail, isViewOnly, Boolean(triggerFields.weather_forecast)]);
+
+  // SABER change → get_saber_attachment; Weather Forecast change → get_weather_map.
   useEffect(() => {
     if (triggerParamsKey === lastTriggerParamsKeyRef.current) return;
     const prevParams = JSON.parse(lastTriggerParamsKeyRef.current || "{}");
@@ -413,7 +416,7 @@ function TemplateStageForm({
       refreshSaberAttachment(nextParams.saber ?? "");
     }
     if (nextParams.weather_forecast !== prevParams.weather_forecast) {
-      refreshEmailTemplateForTriggers(nextParams);
+      refreshWeatherMap(nextParams.weather_forecast ?? "");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerParamsKey]);
@@ -1022,7 +1025,8 @@ function TemplateStageForm({
                       {renderInput(field)}
                       {errors[field.field_id] && <span className="cf-field-error">{errors[field.field_id]}</span>}
                       {normalizeTemplateKey(field.field_key) === "weather_forecast" &&
-                        isBadWeatherValue(getValue(field.field_id)) && <WindyWeatherMap />}
+                        isBadWeatherValue(getValue(field.field_id)) &&
+                        weatherMapField?.iframe?.src && <WindyWeatherMap iframe={weatherMapField.iframe} />}
                     </FormField>
                   ))
                 )}
