@@ -46,9 +46,9 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
   }, [passRequests, onRequestCountChange]);
 
   // Discard any draft entered on a previous visit — this tab always opens blank.
+  // Crew is kept so a selection assigned from the Crew Management dashboard carries over.
   useEffect(() => {
     handleChange("zawilPassRequestEmailFile")({ target: { value: [] } });
-    handleChange("zawilPassSelectedCrew")({ target: { value: [] } });
     handleChange("zawilPassDocuments")({ target: { value: [] } });
     handleChange("zawilPassDescription")({ target: { value: "" } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
