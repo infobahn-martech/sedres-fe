@@ -608,7 +608,12 @@ function ApiKanbanCardFull({
   transportOnlyIcons = false,
   showInvoiceDownload = false,
 }) {
-  const displayTitle = getApiCardDisplayTitle(card);
+  // Full card: card name is the primary title (vessel name moves to the top row).
+  const displayTitle = hasText(card.title)
+    ? String(card.title).trim()
+    : hasText(card.cardName)
+      ? String(card.cardName).trim()
+      : getApiCardDisplayTitle(card);
   const secondary = hasText(card.billingEntity)
     ? card.billingEntity
     : hasText(card.name)
@@ -913,11 +918,11 @@ function CardItem({
               {isApiCard && !isShrunk ? (
                 <div
                   className="kanban-card-top-row-title"
-                  title={hasText(card.title) ? `ID : ${card.id}  ${card.title}` : `ID : ${card.id}`}
+                  title={hasText(card.vesselName) ? `ID : ${card.id}  ${card.vesselName}` : `ID : ${card.id}`}
                 >
                   <span className="kanban-card-top-row-id">ID : {card.id}</span>
-                  {hasText(card.title) ? (
-                    <span className="kanban-card-top-row-name">{card.title}</span>
+                  {hasText(card.vesselName) ? (
+                    <span className="kanban-card-top-row-name">{card.vesselName}</span>
                   ) : null}
                 </div>
               ) : null}
