@@ -52,6 +52,17 @@ const useSccReviewStore = create((set, get) => ({
       isSccReviewLoading: false,
     }),
 
+  /** Cards the approved-SCC confirm left in "Approval Received" for a missing signature; the board shows them red. */
+  unsignedSccCardIds: {},
+
+  markCardsUnsigned: (cardIds) =>
+    set((state) => ({
+      unsignedSccCardIds: {
+        ...state.unsignedSccCardIds,
+        ...Object.fromEntries(cardIds.map((id) => [String(id), true])),
+      },
+    })),
+
   /** Resolves to an error message when the review could not be loaded, otherwise null. */
   fetchSccReview: async () => {
     if (!get().selectedSccReviewCards.length) return null;

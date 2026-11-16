@@ -4,6 +4,7 @@ import { KANBAN_DND_DISABLED } from "@/shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
 import useExportApprovalStatusStore from "@/store/exportApprovalStatusStore";
 import useSignatureCheckStore from "@/store/signatureCheckStore";
+import useSccReviewStore from "@/store/sccReviewStore";
 import useKanbanCardViewStore from "@/store/kanbanCardViewStore";
 import "@/design/scss/pages/kanban-board/signatureCheck.scss";
 import { Tooltip } from "react-tooltip";
@@ -750,9 +751,11 @@ function CardItem({
   const isSrtRejectedForSignature = useSignatureCheckStore(
     (state) => state.unsignedSrtCallIds[String(card?.callId ?? card?.call_id)] === true
   );
+  const isSccLeftUnsigned = useSccReviewStore((state) => state.unsignedSccCardIds[String(card?.id)] === true);
   const isSignatureMissing =
     card?.signature_status === "missing" ||
-    (isSrtRejectedForSignature && isSubseaSrtReceivedCard);
+    (isSrtRejectedForSignature && isSubseaSrtReceivedCard) ||
+    isSccLeftUnsigned;
   /* The tooltip names the document the column takes: the dispatch proof, the SRT, or (L&T) the SCC. */
   const signatureDocumentName = isUploadedToPortalColumnTitle(columnTitle) || isLntReadyToSubmit(workflowTitle, columnTitle)
     ? "dispatch proof"
