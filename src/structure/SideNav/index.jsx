@@ -159,8 +159,9 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     const icons = canAddCard ? [{ id: 1, icon: FiPlus, label: 'Add' }] : [];
     if (showEditWorkflowSidebarIcon) {
       icons.push({ id: 9, icon: FiEdit3, label: 'Edit Workflow' });
-      icons.push({ id: 12, icon: FiList, label: 'Select Workflow' });
     }
+    // Select Workflow is navigation only, so every user gets it.
+    icons.push({ id: 12, icon: FiList, label: 'Select Workflow' });
     if (canViewOnStation) {
       icons.push({ id: 10, icon: FiMapPin, label: 'On Station' });
     }
