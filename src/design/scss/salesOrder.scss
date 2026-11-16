@@ -113,7 +113,7 @@
 }
 
 .sales-order-add-button {
-  background: linear-gradient(135deg, #2a00ff, #4c68d7) !important;
+  background: #00368c !important;
   border: none;
   padding: 10px 20px;
   border-radius: 9px;
@@ -122,7 +122,7 @@
   color: var(--text-inverse);
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
-  box-shadow: 0 3px 10px rgba(42, 0, 255, 0.28);
+  box-shadow: 0 3px 10px rgba(0, 54, 140, 0.28);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -132,23 +132,23 @@
 
 .sales-order-add-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(42, 0, 255, 0.36);
+  box-shadow: 0 6px 16px rgba(0, 54, 140, 0.36);
   filter: brightness(1.05);
 }
 
 .sales-order-add-button:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(42, 0, 255, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 54, 140, 0.3);
 }
 
 .sales-order-sync-sap-button {
   background: var(--surface-primary);
-  border: 1.5px solid #2a00ff;
+  border: 1.5px solid #00368c;
   padding: 9px 20px;
   border-radius: 9px;
   font-size: 13px;
   font-weight: 600;
-  color: #2a00ff;
+  color: #00368c;
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
   display: inline-flex;
@@ -159,23 +159,23 @@
 }
 
 .sales-order-sync-sap-button:hover {
-  background: rgba(42, 0, 255, 0.06);
+  background: rgba(0, 54, 140, 0.06);
   transform: translateY(-2px);
 }
 
 .sales-order-sync-sap-button:active {
   transform: translateY(0);
-  background: rgba(42, 0, 255, 0.1);
+  background: rgba(0, 54, 140, 0.1);
 }
 
 .sales-order-da-status-button {
   background: var(--surface-primary);
-  border: 1.5px solid #2a00ff;
+  border: 1.5px solid #00368c;
   padding: 9px 20px;
   border-radius: 9px;
   font-size: 13px;
   font-weight: 600;
-  color: #2a00ff;
+  color: #00368c;
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
   display: inline-flex;
@@ -186,13 +186,13 @@
 }
 
 .sales-order-da-status-button:hover {
-  background: rgba(42, 0, 255, 0.06);
+  background: rgba(0, 54, 140, 0.06);
   transform: translateY(-2px);
 }
 
 .sales-order-da-status-button:active {
   transform: translateY(0);
-  background: rgba(42, 0, 255, 0.1);
+  background: rgba(0, 54, 140, 0.1);
 }
 
 .sales-order-da-status-button:disabled {
@@ -913,15 +913,15 @@
 }
 
 .sales-order-add-form-save {
-  background: linear-gradient(135deg, #2a00ff, #4c68d7);
+  background: #00368c;
   color: var(--text-inverse);
-  box-shadow: 0 3px 10px rgba(42, 0, 255, 0.28);
+  box-shadow: 0 3px 10px rgba(0, 54, 140, 0.28);
 }
 
 .sales-order-add-form-save:hover {
   transform: translateY(-1px);
   filter: brightness(1.05);
-  box-shadow: 0 6px 16px rgba(42, 0, 255, 0.36);
+  box-shadow: 0 6px 16px rgba(0, 54, 140, 0.36);
 }
 
 .sales-order-add-form-save:active {
@@ -1075,7 +1075,7 @@
 }
 
 .so-pagination-page.is-active {
-  background: linear-gradient(135deg, #00368c, #1a56db);
+  background: #00368c;
   border-color: #00368c;
   color: var(--text-inverse);
   box-shadow: 0 3px 10px rgba(0, 54, 140, 0.32);
