@@ -81,8 +81,7 @@ const DA_ONLY_WORKFLOW_PATTERN = /^\s*da\s*$/i;
 
 /* The DA Supervisor "Received from Ops" column: the cards of its L&T swimlane are ticked for the bulk SAP invoice upload and review. */
 export const isLntReceivedFromOps = (workflowTitle, columnTitle) =>
-  (DA_SUPERVISOR_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) ||
-    DA_ONLY_WORKFLOW_PATTERN.test(String(workflowTitle ?? ""))) &&
+  isDaSupervisorWorkflow(workflowTitle) &&
   RECEIVED_FROM_OPS_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
 /* The L&T "Submitted to DA" (Operations board: "Submitted to FDA") column, whose cards get the SCC signature check. */
@@ -114,7 +113,10 @@ export const isLntApprovalRequestedCell = (laneTitle, columnTitle) =>
 
 const INVOICE_ISSUED_COLUMN_PATTERN = /^invoice\s+issued$/i;
 
-export const isDaSupervisorWorkflow = (workflowTitle) => DA_SUPERVISOR_WORKFLOW_PATTERN.test(String(workflowTitle ?? ""));
+/* The DA board's workflow is titled "DA Supervisor" or just "DA". */
+export const isDaSupervisorWorkflow = (workflowTitle) =>
+  DA_SUPERVISOR_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) ||
+  DA_ONLY_WORKFLOW_PATTERN.test(String(workflowTitle ?? ""));
 
 /* The L&T DA "Invoice Issued" column (an L&T workflow, or the L&T swimlane of the DA Supervisor workflow):
    "Download portal files" downloads the ticked cards' portal files as a zip and the backend moves the cards
