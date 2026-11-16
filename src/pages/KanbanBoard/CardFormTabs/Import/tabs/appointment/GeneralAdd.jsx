@@ -1445,17 +1445,21 @@ function GeneralAdd({
       );
       if (!validFiles.length) return;
 
-      const billingEntityId = getPrimaryBillingEntityId();
-      if (isEmptyValue(billingEntityId)) {
-        notify("Please select a Billing entity before uploading attachments.", "error");
-        return;
-      }
+      // Attachments can be added at any time; the billing entity is sent when one is selected.
+      const templateBillingField = (templateFields || []).find(
+        (field) => field.refetchParam === "billing_entity_id"
+      );
+      const billingEntityId = templateBillingField
+        ? templateFieldValuesRef.current[templateBillingField.id]
+        : getPrimaryBillingEntityId();
 
       const formData = new FormData();
       validFiles.forEach((file) => {
         formData.append("files[]", file);
       });
-      formData.append("billing_entity_id", billingEntityId ?? "");
+      if (!isEmptyValue(billingEntityId)) {
+        formData.append("billing_entity_id", billingEntityId);
+      }
 
       setIsUploadingEmailAttachments(true);
       try {
@@ -1492,7 +1496,7 @@ function GeneralAdd({
         setIsUploadingEmailAttachments(false);
       }
     },
-    [getFieldValue]
+    [getFieldValue, templateFields]
   );
 
   const handleRemoveEmailAttachment = useCallback((item) => {
@@ -2754,7 +2758,6 @@ function GeneralAdd({
                       onUploadEmailAttachments={handleEmailAttachmentUpload}
                       onRemoveEmailAttachment={handleRemoveEmailAttachment}
                       isUploadingEmailAttachments={isUploadingEmailAttachments}
-                      isBillingEntitySelected={!isEmptyValue(getPrimaryBillingEntityId())}
                     />
                   </div>
                 )}
