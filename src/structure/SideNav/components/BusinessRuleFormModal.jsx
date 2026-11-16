@@ -16,7 +16,11 @@ import {
 } from './businessRulesData';
 import { buildCreateBusinessRulePayload, buildUpdateBusinessRulePayload, getUnconfiguredActionLabels, isCreateSubtaskAction, RECURRENCE_REGULAR_FIELD_IDS, buildAdvancedScheduleFields } from './buildBusinessRulePayload';
 import ThenGroupRawSummary from './ThenGroupRawSummary';
-import GenericThenActionFields from './GenericThenActionFields';
+import GenericThenActionEditor from './GenericThenActionEditor';
+import { EMPTY_GENERIC_ACTION_VALUE, parseGenericThenAction } from './genericThenAction';
+import BusinessRuleFieldValue from './BusinessRuleFieldValue';
+import BoardFilterPicker from './BoardFilterPicker';
+import { fieldTakesValue, getOperatorId, operatorTakesValue } from './businessRuleFieldUtils';
 import DynamicIcon from './DynamicIcon';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import useAlertReducer from '../../../store/AlertReducer';
@@ -29,6 +33,7 @@ import DatePickerField from '../../../pages/KanbanBoard/CardFormTabs/shared/comp
 import DateTimePickerField from '../../../pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField';
 import { DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS, DOCUMENT_UPLOAD_MAX_SIZE, validateDocumentFiles } from '../../../pages/KanbanBoard/CardFormTabs/Import/tabs/husbandry/components/Husbandry.constants';
 import '../../../design/scss/subtasks.scss';
+import '../../../design/scss/business-rule-columns.scss';
 import SedresColorPicker from '../../../components/SedresColorPicker/SedresColorPicker';
 import { PRIMARY_PRESET_COLORS, SECONDARY_PRESET_COLORS, normalizeHexColor } from '../../../components/SedresColorPicker/sedresColorPickerConstants';
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
@@ -488,107 +493,6 @@ function useCustomFieldsByTrigger({ show, triggerTypeId, boardId, showDisabled, 
     : customFields;
 
   return { customFields: scopedCustomFields, isLoadingCustomFields };
-}
-
-// Anchored, workspace-grouped board picker used everywhere a "board is ..." filter
-// appears (custom field board filter, "Board is" rule condition, ...) — matches the
-// Board Minimap picker's design instead of a plain <select>, which doesn't scale once
-// a workspace has more than a handful of boards.
-function BoardFilterPicker({ workspaces, value, onChange, wrapClassName, triggerClassName, triggerIconSize, panelClassName, placeholder }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [filterText, setFilterText] = useState('');
-  const triggerRef = useRef(null);
-  const panelRef = useRef(null);
-
-  const boards = workspaces.flatMap((w) => w.boards ?? []);
-  const selectedBoard = boards.find((b) => String(b.board_id) === String(value));
-
-  const filterQuery = filterText.trim().toLowerCase();
-  const filteredGroups = workspaces
-    .map((w) => {
-      const wsMatch = w.workspace_name.toLowerCase().includes(filterQuery);
-      const groupBoards = wsMatch
-        ? (w.boards ?? [])
-        : (w.boards ?? []).filter((b) => b.board_name.toLowerCase().includes(filterQuery));
-      return { workspace_id: w.workspace_id, workspace_name: w.workspace_name, boards: groupBoards };
-    })
-    .filter((g) => g.boards.length > 0);
-
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const onDocMouseDown = (event) => {
-      const t = event.target;
-      if (panelRef.current?.contains(t)) return;
-      if (triggerRef.current?.contains(t)) return;
-      setIsOpen(false);
-    };
-    document.addEventListener('mousedown', onDocMouseDown);
-    return () => document.removeEventListener('mousedown', onDocMouseDown);
-  }, [isOpen]);
-
-  const handlePick = (board) => {
-    onChange(board.board_id);
-    setIsOpen(false);
-    setFilterText('');
-  };
-
-  return (
-    <div className={`board-minimap-picker-wrap ${wrapClassName || 'br-property-board-picker-wrap'}`}>
-      <button
-        type="button"
-        ref={triggerRef}
-        className={triggerClassName || 'board-minimap-board-trigger br-property-board-trigger'}
-        onClick={() => setIsOpen((v) => !v)}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-      >
-        <span>{selectedBoard ? selectedBoard.board_name : (placeholder || 'All Boards')}</span>
-        <FiChevronDown size={triggerIconSize} aria-hidden />
-      </button>
-
-      {isOpen && (
-        <div className={`board-minimap-picker-panel ${panelClassName || 'br-property-board-picker-panel'}`} ref={panelRef}>
-          <div className="board-minimap-picker-search">
-            <FiFilter size={20} className="board-minimap-picker-search-icon" aria-hidden />
-            <input
-              type="text"
-              placeholder="Filter"
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              autoFocus
-            />
-          </div>
-
-          <div className="board-minimap-picker-scroll">
-            {filteredGroups.length === 0 ? (
-              <div className="br-property-picker-empty">No matches</div>
-            ) : (
-              filteredGroups.map((ws) => (
-                <div key={ws.workspace_id} className="board-minimap-picker-group">
-                  <div className="board-minimap-picker-group-head">
-                    <FiUsers size={20} aria-hidden />
-                    <span>{ws.workspace_name}</span>
-                  </div>
-                  <div className="board-minimap-picker-grid">
-                    {ws.boards.map((board) => (
-                      <button
-                        type="button"
-                        key={`${ws.workspace_id}-${board.board_id}`}
-                        className={`board-minimap-picker-tile${String(board.board_id) === String(value) ? ' board-minimap-picker-tile--selected' : ''}`}
-                        onClick={() => handlePick(board)}
-                      >
-                        {board.board_name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 // Rendered via portal to document.body so the tooltip can escape the scrollable
@@ -5009,6 +4913,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   // execute_at, and create-subtask create actions) — rendered as a read-only key/value
   // dump instead, keyed by the THEN section id they'd otherwise belong to.
   const [rawSummaryBySectionId, setRawSummaryBySectionId] = useState({});
+  const [genericActionValues, setGenericActionValues] = useState({});
   const [boardConditionRows, setBoardConditionRows] = useState([{ id: 'board-0', boardId: '', joinWord: 'OR' }]);
   // The first-board auto-fill effect below must only ever apply once per modal-open
   // session — otherwise a late-resolving (or re-fetched) workspaces list can silently
@@ -5073,7 +4978,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     deleteNotificationSettings,
     getWebServiceSettings, webServiceSettings, isLoadingWebServiceSettings, resetWebServiceSettings,
     getWebServiceSettingsPreview,
-    timeUnits, getTimeUnits,
+    timeUnits, getTimeUnits, valueTimeUnits, getValueTimeUnits,
     deleteWebServiceSettings,
     deleteCreateSubtaskSettings,
     getCreateSubtaskSettings, createSubtaskSettings, isLoadingCreateSubtaskSettings, resetCreateSubtaskSettings,
@@ -5315,6 +5220,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setActiveCreateSubtaskActionId(null);
     setShowCancelConfirm(false);
     setRawSummaryBySectionId({});
+    setGenericActionValues({});
     setRecurrenceSchedule('every_day');
     setShowRecurrenceUnitPicker(false);
     setAdvancedSchedule('');
@@ -5332,6 +5238,10 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setExecuteThenActionId(null);
     if (timeUnits.length === 0) getTimeUnits();
   }, [show, rule, loggedInUserName, loggedInUserId]);
+
+  useEffect(() => {
+    if (show && rule?.id && valueTimeUnits.length === 0) getValueTimeUnits(rule.id);
+  }, [show, rule?.id]);
 
   // Overwrites the blank defaults the reset effect above just seeded, once the fetched
   // rule's data is ready — runs after that effect within the same commit (both are keyed
@@ -5494,6 +5404,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     const nextNotifyActions = [];
     const nextInvokeActions = [];
     const nextRawSummaryBySectionId = {};
+    const nextGenericActionValues = {};
     let nextExecuteThenActionId = null;
     let nextExecuteAtTime = null;
     let nextRecurrenceSchedule = null;
@@ -5738,6 +5649,16 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         return;
       }
 
+      // Groups with no dedicated section are edited by GenericThenActionEditor, so restore
+      // them into its own state instead of a read-only summary.
+      if (!sectionId) {
+        actions.forEach((action) => {
+          const actionTypeId = action.action_type_id ?? group.action_type_id;
+          if (actionTypeId != null) nextGenericActionValues[String(actionTypeId)] = parseGenericThenAction(action);
+        });
+        return;
+      }
+
       // update_related / copy_values / anything else — no reliable forward mapping exists
       // to invert (per confirmed scope), so it's always shown as a raw read-only summary
       // rather than forced into editable-looking fields.
@@ -5760,6 +5681,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     if (nextPredefinedIntervalDays) setPredefinedIntervalDays(nextPredefinedIntervalDays);
     if (nextPredefinedIntervalStartDate) setPredefinedIntervalStartDate(nextPredefinedIntervalStartDate);
     setRawSummaryBySectionId(nextRawSummaryBySectionId);
+    setGenericActionValues(nextGenericActionValues);
   }, [isEditMode, businessRuleDetailsReady, businessRuleDetails, triggerConfig, users, cardStickers]);
 
   // The THEN-column notify card shows the actual saved subject (as pills) instead of a
@@ -6090,7 +6012,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         const desiredMatch = cond.desiredOperatorLabel
           ? operators.find((op) => (op.operator_label || '').trim().toLowerCase() === cond.desiredOperatorLabel.trim().toLowerCase())
           : null;
-        return { ...cond, operatorId: (desiredMatch ?? operators[0]).field_operator_id };
+        return { ...cond, operatorId: getOperatorId(desiredMatch ?? operators[0]) };
       });
       return changed ? next : prev;
     });
@@ -6157,6 +6079,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       // Then-groups the routing effect couldn't invert into editable state (create-subtask,
       // update_parent/child_card, copy_values_to_*) — passed through as-is by buildThenActions'
       // raw fallback so an edit save doesn't wipe them from the rule.
+      genericActionValues,
       rawThenActionGroups: Object.values(rawSummaryBySectionId).flat(),
     };
 
@@ -6249,7 +6172,8 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     }
 
     if (fieldType && fieldId != null) {
-      getFieldDetails(fieldType, fieldId);
+      const selectedBoardIds = boardConditionRows.map((row) => row.boardId).filter(Boolean).join(',');
+      getFieldDetails(fieldType, fieldId, { boardIds: selectedBoardIds });
     }
   };
 
@@ -6332,6 +6256,16 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setOpenConditionOperatorId((prev) => (prev === id ? null : id));
   };
 
+  const handleChangeConditionValue = (conditionId, valueId, patch) => {
+    setConditions((prev) =>
+      prev.map((c) =>
+        c.id === conditionId
+          ? { ...c, values: c.values.map((item) => (item.id === valueId ? { ...item, ...patch } : item)) }
+          : c
+      )
+    );
+  };
+
   const handleSelectConditionOperator = (id, operator) => {
     // Negative operators ("is not", "does not contain", ...) imply AND across values
     // ("is not X AND is not Y"); any other operator implies OR ("is X OR Y") —
@@ -6341,7 +6275,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setConditions((prev) =>
       prev.map((c) =>
         c.id === id
-          ? { ...c, operatorId: operator.field_operator_id, values: c.values.map((v) => ({ ...v, joinWord: isNegation ? 'AND' : 'OR' })) }
+          ? { ...c, operatorId: getOperatorId(operator), values: c.values.map((v) => ({ ...v, joinWord: isNegation ? 'AND' : 'OR' })) }
           : c
       )
     );
@@ -7504,10 +7438,10 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                   const detailsLoading = detailsKey ? Boolean(isLoadingFieldDetails[detailsKey]) : false;
                   const rawOperators = details?.operators ?? [];
                   const operators = rawOperators;
-                  const showOperator = operators.length > 0 && details?.has_operator !== '0';
-                  const showValueInput = !details || details?.has_input_value !== '0';
+                  const showOperator = operators.length > 0 && Number(details?.has_operator) !== 0;
+                  const selectedOperator = operators.find((op) => getOperatorId(op) === cond.operatorId);
+                  const showValueInput = fieldTakesValue(details) && operatorTakesValue(selectedOperator);
                   const isOperatorOpen = openConditionOperatorId === cond.id;
-                  const selectedOperator = operators.find((op) => op.field_operator_id === cond.operatorId);
                   const operatorFilterQuery = conditionOperatorFilterText.trim().toLowerCase();
                   const filteredConditionOperators = operatorFilterQuery
                     ? operators.filter((op) => op.operator_label.toLowerCase().includes(operatorFilterQuery))
@@ -7565,7 +7499,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                                     filteredConditionOperators.map((op) => (
                                       <button
                                         type="button"
-                                        key={op.field_operator_id}
+                                        key={getOperatorId(op)}
                                         className="br-condition-operator-option"
                                         onClick={() => handleSelectConditionOperator(cond.id, op)}
                                       >
@@ -7618,21 +7552,15 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                                 )}
                               </div>
                             ) : (
-                              <input
-                                type="text"
-                                className="business-rule-form-condition-input"
-                                placeholder="Enter value"
+                              <BusinessRuleFieldValue
+                                details={details}
+                                operator={selectedOperator}
                                 value={v.value}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setConditions((prev) =>
-                                    prev.map((c) =>
-                                      c.id === cond.id
-                                        ? { ...c, values: c.values.map((item) => (item.id === v.id ? { ...item, value: val } : item)) }
-                                        : c
-                                    )
-                                  );
-                                }}
+                                timeUnitId={v.timeUnitId}
+                                timeUnits={valueTimeUnits}
+                                label={cond.fieldLabel}
+                                onChange={(val) => handleChangeConditionValue(cond.id, v.id, { value: val })}
+                                onTimeUnitChange={(unitId) => handleChangeConditionValue(cond.id, v.id, { timeUnitId: unitId })}
                               />
                             )
                           )}
@@ -7697,7 +7625,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                     <h4 className="business-rule-form-action-title">{section.title}</h4>
 
                     {section.id === 'generic' && (
-                      <GenericThenActionFields actionTypeId={section.action.action_type_id} />
+                      <GenericThenActionEditor
+                        action={section.action}
+                        value={genericActionValues[String(section.action.action_type_id)] ?? EMPTY_GENERIC_ACTION_VALUE}
+                        onChange={(next) => setGenericActionValues((prev) => ({ ...prev, [String(section.action.action_type_id)]: next }))}
+                      />
                     )}
 
                     {section.id === 'create' && createActions.length > 0 && (

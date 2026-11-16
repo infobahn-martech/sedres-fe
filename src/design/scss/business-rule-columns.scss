@@ -1,0 +1,35 @@
+// Smaller type for the WHEN / AND / THEN columns (one step down from the shared Business Rules
+// sizes). Scoped under the column wrapper so the shared styles stay unchanged.
+.business-rule-form-column {
+  .business-rule-form-trigger-name.business-rule-form-trigger-name--plain {
+    font-size: 14px;
+  }
+
+  // Helper text and links: 13px -> 12px
+  .business-rule-form-when-fields-header,
+  .business-rule-form-filter-hint,
+  .business-rule-form-add-link,
+  .business-rule-form-add-action,
+  .br-create-action-link,
+  .br-link-checkbox-row,
+  .business-rule-form-condition-label {
+    font-size: 12px;
+  }
+
+  // Titles, pills, values and inputs: 14px -> 13px
+  .business-rule-form-action-title,
+  .br-create-action-title,
+  .br-link-card-as-label,
+  .business-rule-form-when-fields-pill,
+  .business-rule-form-condition-value,
+  .br-link-operator-trigger,
+  .br-condition-operator-trigger,
+  .br-link-card-value-input,
+  .business-rule-form-condition-input {
+    font-size: 13px;
+  }
+
+  .business-rule-form-when-fields-pill {
+    padding: 8px 14px;
+  }
+}

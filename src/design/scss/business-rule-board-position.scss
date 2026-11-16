@@ -1,0 +1,71 @@
+// Compact board picker used by the AND "Board is" rows and the THEN "Move the card" action.
+// Scoped under their own wrappers so the shared board picker styles stay unchanged.
+.br-board-position-wrap,
+.br-board-condition-wrap {
+  width: 100%;
+
+  .business-rule-form-condition-value {
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+
+  .br-board-position-panel,
+  .br-board-condition-panel {
+    left: 0;
+    right: auto;
+    width: 100%;
+    max-width: 420px;
+    max-height: 260px;
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .board-minimap-picker-search {
+    padding: 6px 10px;
+
+    input {
+      font-size: 12px;
+    }
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .board-minimap-picker-group {
+    padding: 8px;
+  }
+
+  .board-minimap-picker-group-head {
+    margin-bottom: 8px;
+    gap: 6px;
+    font-size: 14px;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .board-minimap-picker-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 6px;
+  }
+
+  .board-minimap-picker-tile {
+    padding: 8px 10px;
+    min-height: 0;
+    font-size: 13px;
+  }
+}
+
+// AND "Board is" row: anchor the panel to the filter row itself (not the narrow trigger wrap)
+// so it opens exactly as wide as the AND section.
+.board-minimap-picker-wrap.br-board-condition-wrap {
+  position: static;
+
+  .br-board-condition-panel {
+    max-width: none;
+  }
+}

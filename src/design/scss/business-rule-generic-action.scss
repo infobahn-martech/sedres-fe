@@ -1,0 +1,35 @@
+// Fonts for the editable THEN actions drawn from the backend field catalog (Add the card to a
+// batch, Move the card, ...) so they match the other THEN sections (13px body text).
+.br-generic-action {
+  .business-rule-form-label {
+    font-weight: 500;
+    font-size: 13px;
+  }
+
+  .business-rule-form-condition-input,
+  .business-rule-form-condition-input::placeholder {
+    font-size: 13px;
+  }
+}
+
+// Dropdown values (New batch every, Type, ...) drawn with the shared select: same border,
+// radius and padding as the text inputs next to them.
+.br-value-select.cf-searchable-select {
+  .cf-multi-select-email-input {
+    padding: 8px 12px;
+    min-height: auto;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+
+    &:focus-within {
+      border-color: #00368c;
+      box-shadow: 0 0 0 2px rgba(0, 54, 140, 0.08);
+    }
+  }
+
+  .cf-multi-select-placeholder,
+  .cf-multi-select-selected-value,
+  .cf-searchable-select-input {
+    font-size: 13px;
+  }
+}

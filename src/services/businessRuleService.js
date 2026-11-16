@@ -60,8 +60,11 @@ const getLinkCardPossibleActions = ({ params } = {}) =>
 const getLinkCardPossibleActionOperators = ({ params } = {}) =>
   Gateway.get('/business_rule/get_link_card_possible_action_operators', { params });
 
-const getFieldDetails = (fieldType, fieldId) =>
-  Gateway.get(`/business_rule/get_field_details/${fieldType}/${fieldId}`);
+const getFieldDetails = (fieldType, fieldId, { params } = {}) =>
+  Gateway.get(`/business_rule/get_field_details/${fieldType}/${fieldId}`, { params });
+
+const getMasterOptions = (masterKey, { params } = {}) =>
+  Gateway.get(`/form_template/master_options/${masterKey}`, { params });
 
 const getNotificationSettings = (notificationId) =>
   Gateway.get(`/business_rule/get_notification_settings/${notificationId}`);
@@ -104,7 +107,7 @@ const getCreateSubtaskSettings = (createSubtaskId) =>
 
 export default {
   getTriggerTypes, getFields, getTimeUnits, getCustomFields, getRegularFields, getThenActionFields, getBusinessRules, getBusinessRuleById, getExecutionLogs, exportExecutionLogs, getBusinessRuleHistory, toggleBusinessRuleStatus, createBusinessRule, updateBusinessRule, deleteBusinessRule, duplicateBusinessRule, getTriggerConfig,
-  getBusinessRuleStats, getLinkCardPossibleActions, getLinkCardPossibleActionOperators, getFieldDetails,
+  getBusinessRuleStats, getLinkCardPossibleActions, getLinkCardPossibleActionOperators, getFieldDetails, getMasterOptions,
   getNotificationSettings, saveNotificationSettings, updateNotificationSettings, deleteNotificationSettings, updateWebServiceSettings, deleteWebServiceSettings, saveWebServiceSettings, getWebServiceSettings, testWebServiceSettings,
   saveCreateSubtaskSettings, updateCreateSubtaskSettings, deleteCreateSubtaskSettings, getCreateSubtaskSettings,
 };
