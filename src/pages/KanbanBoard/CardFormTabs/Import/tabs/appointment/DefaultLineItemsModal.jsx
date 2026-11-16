@@ -30,7 +30,8 @@ const EMPTY_ADD_FORM = { itemCode: "", tariffId: "", itemName: "", unitPrice: ""
 // port's tariff list; nothing is saved until Confirm. On Confirm, items not yet on the sales order
 // are added (sales_order/add_call_line_item) and removed items that were already on it are
 // cancelled (da/da_delete_sales_line_item). Skip leaves the sales order as is.
-function DefaultLineItemsModal({ callId, onDone }) {
+// readOnly: review-only (no Add Item / delete / Skip) — Confirm still adds the pending default items.
+function DefaultLineItemsModal({ callId, onDone, readOnly = false }) {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [details, setDetails] = useState(null);
@@ -336,7 +337,7 @@ function DefaultLineItemsModal({ callId, onDone }) {
           <span className="dli-toolbar-label">
             {items.length} line item{items.length === 1 ? "" : "s"}
           </span>
-          {!isAddOpen && (
+          {!readOnly && !isAddOpen && (
             <button type="button" className="dli-add-btn" onClick={openAddForm} disabled={isApplying}>
               <FiPlus />
               Add Item
@@ -344,7 +345,7 @@ function DefaultLineItemsModal({ callId, onDone }) {
           )}
         </div>
 
-        {isAddOpen && renderAddForm()}
+        {!readOnly && isAddOpen && renderAddForm()}
 
         <div className="dli-table-card">
           <table className="dli-modal-table">
@@ -356,14 +357,20 @@ function DefaultLineItemsModal({ callId, onDone }) {
                 <th className="dli-col-num">Unit Price</th>
                 <th className="dli-col-num">Tax %</th>
                 <th className="dli-col-num">Total</th>
-                <th className="dli-col-action" aria-label="Actions" />
+                {!readOnly && <th className="dli-col-action" aria-label="Actions" />}
               </tr>
             </thead>
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="dli-table-empty">
-                    No line items. Use <strong>Add Item</strong> to add one.
+                  <td colSpan={readOnly ? 6 : 7} className="dli-table-empty">
+                    {readOnly ? (
+                      "No line items."
+                    ) : (
+                      <>
+                        No line items. Use <strong>Add Item</strong> to add one.
+                      </>
+                    )}
                   </td>
                 </tr>
               ) : (
@@ -382,18 +389,20 @@ function DefaultLineItemsModal({ callId, onDone }) {
                     <td className="dli-col-num">{formatAmount(item.unit_price)}</td>
                     <td className="dli-col-num">{toNumber(item.tax_percentage)}%</td>
                     <td className="dli-col-num dli-col-total">{formatAmount(item.total_price)}</td>
-                    <td className="dli-col-action">
-                      <button
-                        type="button"
-                        className="dli-delete-btn"
-                        onClick={() => handleRemoveItem(item)}
-                        disabled={isApplying}
-                        title="Remove item"
-                        aria-label={`Remove ${item.item_name}`}
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </td>
+                    {!readOnly && (
+                      <td className="dli-col-action">
+                        <button
+                          type="button"
+                          className="dli-delete-btn"
+                          onClick={() => handleRemoveItem(item)}
+                          disabled={isApplying}
+                          title="Remove item"
+                          aria-label={`Remove ${item.item_name}`}
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -456,9 +465,11 @@ function DefaultLineItemsModal({ callId, onDone }) {
         <div className="so-doc-modal-footer">
           <span className="so-doc-modal-count">{!isLoading && !loadError ? pendingSummary : ""}</span>
           <div className="so-doc-modal-actions">
-            <button type="button" className="sales-order-add-form-cancel" onClick={onDone} disabled={isApplying}>
-              Skip
-            </button>
+            {!readOnly && (
+              <button type="button" className="sales-order-add-form-cancel" onClick={onDone} disabled={isApplying}>
+                Skip
+              </button>
+            )}
             <button
               type="button"
               className="sales-order-add-form-save dli-confirm-btn"
@@ -479,6 +490,7 @@ function DefaultLineItemsModal({ callId, onDone }) {
 DefaultLineItemsModal.propTypes = {
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   onDone: PropTypes.func.isRequired,
+  readOnly: PropTypes.bool,
 };
 
 export default DefaultLineItemsModal;

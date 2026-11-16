@@ -3030,6 +3030,133 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
   display: none;
 }
 
+// Template stage "file" field: saved / pending file shown as a card above the drop zone.
+.operation-file-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.operation-file-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 8px 8px 10px;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  background: var(--surface-primary);
+  transition: border-color 0.2s ease, opacity 0.2s ease;
+
+  &:hover {
+    border-color: #c7cbf5;
+  }
+
+  &--pending {
+    border-color: #a5b4fc;
+    background: #f5f6ff;
+
+    [data-theme="dark"] & {
+      background: var(--surface-secondary);
+    }
+  }
+
+  &--replaced {
+    opacity: 0.6;
+
+    .operation-file-card__name {
+      text-decoration: line-through;
+    }
+  }
+}
+
+.operation-file-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: #eef0ff;
+  color: #4f46e5;
+
+  [data-theme="dark"] & {
+    background: var(--surface-hover);
+    color: var(--cf-accent-icon, #a5b4fc);
+  }
+}
+
+.operation-file-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.operation-file-card__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.operation-file-card__meta {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.operation-file-card__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #4f46e5;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #eef0ff;
+    border-color: #c7cbf5;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #4f46e5;
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &--danger {
+    color: var(--text-secondary);
+
+    &:hover:not(:disabled) {
+      color: #dc2626;
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+  }
+
+  [data-theme="dark"] &:hover:not(:disabled) {
+    background: var(--surface-hover);
+    border-color: var(--border-strong, var(--border-primary));
+  }
+}
+
 // Compact footer: the button sits right under the columns with only a hairline
 // divider — no tall gradient band above/below it.
 .operation-sticky-actions {

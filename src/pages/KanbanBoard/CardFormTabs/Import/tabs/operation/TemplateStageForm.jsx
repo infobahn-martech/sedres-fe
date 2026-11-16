@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiAlertTriangle, FiExternalLink, FiEye, FiLayers } from "react-icons/fi";
+import { FiAlertTriangle, FiExternalLink, FiEye, FiFileText, FiLayers, FiX } from "react-icons/fi";
 import CardFormEmptyState from "../../../shared/components/CardFormEmptyState";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
@@ -9,6 +9,7 @@ import arrivalService from "@/services/arrivalService";
 import appointmentAcceptanceService from "@/services/appointmentAcceptanceService";
 import useArrivalReducer from "@/store/ArrivalReducer";
 import DateTimePickerField from "../../../shared/components/DateTimePickerField";
+import DefaultLineItemsModal from "../appointment/DefaultLineItemsModal";
 import {
   buildTemplateFieldDisplay,
   findTimeObjectRowForField,
@@ -154,6 +155,13 @@ const openFile = (url) => {
   if (url) window.open(url, "_blank", "noopener,noreferrer");
 };
 
+// The SABER certificate upload is a template "file" field labelled / keyed with "SABER".
+const isSaberField = (field) =>
+  getTemplateFieldType(field) === "file" &&
+  [field?.field_label, field?.field_key, field?.system_binding_key].some((value) =>
+    /saber/i.test(String(value ?? ""))
+  );
+
 // Pre Arrival / Arrival / Departure rendered from the call's template subtab (`stage`) and
 // saved through POST call_file/save_stage. Mounted with key `${callId}:${stage.tabId}`, so a
 // different call or stage always starts from fresh state.
@@ -202,6 +210,13 @@ function TemplateStageForm({
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(null); // "save" | "report" | null
   const submittingRef = useRef(false);
+  // Picking a SABER attachment opens the sales order line items modal (as after Add Card).
+  const [lineItemsCallId, setLineItemsCallId] = useState(null);
+  const handleLineItemsDone = () => setLineItemsCallId(null);
+  const openLineItemsForSaber = (field) => {
+    const resolvedCallId = String(callId ?? "").trim();
+    if (resolvedCallId && isSaberField(field)) setLineItemsCallId(resolvedCallId);
+  };
   // The call detail's subtab `email_template` is the composer's source; the report template
   // endpoints are only a fallback for templates that don't carry one.
   const detailEmailTemplate = activeStage?.emailTemplate ?? null;
@@ -800,34 +815,73 @@ function TemplateStageForm({
       const existingName = !isEmptyTemplateValue(field.value) ? String(field.value) : "";
       const existingUrl = String(field.file_url ?? "").trim();
       const pending = newFiles[id];
+      const savedName = existingName || existingUrl.split("/").pop();
+      const hasSaved = Boolean(existingName || existingUrl);
       return (
-        <>
-          {(existingName || existingUrl) && (
-            <div className="detail-attachment-row">
-              <span className="detail-attachment-name">{existingName || existingUrl.split("/").pop()}</span>
+        <div className="operation-file-field">
+          {hasSaved && (
+            <div className={`operation-file-card${pending ? " operation-file-card--replaced" : ""}`}>
+              <span className="operation-file-card__icon" aria-hidden>
+                <FiFileText size={16} />
+              </span>
+              <span className="operation-file-card__body">
+                <span className="operation-file-card__name" title={savedName}>
+                  {savedName}
+                </span>
+                <span className="operation-file-card__meta">
+                  {pending ? "Will be replaced on save" : "Uploaded"}
+                </span>
+              </span>
               <button
                 type="button"
-                className="detail-attachment-view-btn"
+                className="operation-file-card__action"
                 onClick={() => openFile(existingUrl)}
                 disabled={!existingUrl}
                 title={existingUrl ? "View attachment" : "File URL not available"}
+                aria-label={`View ${savedName}`}
               >
-                <FiEye size={14} strokeWidth={2.2} aria-hidden />
+                <FiEye size={15} strokeWidth={2.2} aria-hidden />
               </button>
             </div>
           )}
-          <OperationFileUpload
-            files={pending ? [{ name: pending.name }] : []}
-            onAddFiles={(attachments) => setFieldFile(id, attachments[0]?.file ?? null)}
-            isViewOnly={disabled}
-            ariaLabel={`Upload ${field.field_label || "file"}`}
-          />
-          {pending && !disabled && (
-            <button type="button" className="btn btn-link btn-sm p-0" onClick={() => setFieldFile(id, null)}>
-              Remove selected file
-            </button>
+          {pending && (
+            <div className="operation-file-card operation-file-card--pending">
+              <span className="operation-file-card__icon" aria-hidden>
+                <FiFileText size={16} />
+              </span>
+              <span className="operation-file-card__body">
+                <span className="operation-file-card__name" title={pending.name}>
+                  {pending.name}
+                </span>
+                <span className="operation-file-card__meta">New file · uploads on save</span>
+              </span>
+              {!disabled && (
+                <button
+                  type="button"
+                  className="operation-file-card__action operation-file-card__action--danger"
+                  onClick={() => setFieldFile(id, null)}
+                  title="Remove selected file"
+                  aria-label={`Remove ${pending.name}`}
+                >
+                  <FiX size={15} strokeWidth={2.2} aria-hidden />
+                </button>
+              )}
+            </div>
           )}
-        </>
+          {!disabled && (
+            <OperationFileUpload
+              files={[]}
+              onAddFiles={(attachments) => {
+                const file = attachments[0]?.file ?? null;
+                setFieldFile(id, file);
+                if (file) openLineItemsForSaber(field);
+              }}
+              isViewOnly={disabled}
+              ariaLabel={`Upload ${field.field_label || "file"}`}
+              prompt={hasSaved || pending ? "Drop a file to replace, or" : undefined}
+            />
+          )}
+        </div>
       );
     }
     if (TEXT_INPUT_TYPES[type]) {
@@ -937,6 +991,7 @@ function TemplateStageForm({
           />
         </div>
       </FormSection>
+      {lineItemsCallId && <DefaultLineItemsModal callId={lineItemsCallId} onDone={handleLineItemsDone} readOnly />}
     </div>
   );
 }

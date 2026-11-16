@@ -1301,6 +1301,7 @@ export const OperationFileUpload = ({
   isViewOnly = false,
   ariaLabel = "Upload files",
   accept,
+  prompt = "Drag and drop your files here, or",
 }) => {
   const inputRef = useRef(null);
 
@@ -1327,7 +1328,7 @@ export const OperationFileUpload = ({
       aria-label={ariaLabel}
     >
       <p className="operation-compact-upload-text">
-        Drag and drop your files here, or <span>click to browse</span>
+        {prompt} <span>click to browse</span>
       </p>
       {(files || []).length > 0 && <p className="operation-compact-upload-file">{files[0]?.name || `${files.length} file(s) selected`}</p>}
       <input
@@ -1350,6 +1351,7 @@ OperationFileUpload.propTypes = {
   isViewOnly: PropTypes.bool,
   ariaLabel: PropTypes.string,
   accept: PropTypes.string,
+  prompt: PropTypes.string,
 };
 
 export const OperationSaveSection = ({ isViewOnly = false, onSave, isSaving = false, className = "" }) => {
