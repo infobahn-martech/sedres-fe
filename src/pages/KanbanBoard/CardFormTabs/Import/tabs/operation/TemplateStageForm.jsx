@@ -162,6 +162,21 @@ const isSaberField = (field) =>
     /saber/i.test(String(value ?? ""))
   );
 
+// Moves the SABER attachment field directly under the SABER select it depends on
+// (`show_when_field_id`), regardless of its row_no / col_no.
+const placeSaberFieldUnderSelect = (fields) => {
+  const saberIndex = fields.findIndex(isSaberField);
+  if (saberIndex < 0) return fields;
+  const saberField = fields[saberIndex];
+  const controllerId = String(saberField.show_when_field_id ?? "").trim();
+  if (!controllerId) return fields;
+  const rest = fields.filter((_, index) => index !== saberIndex);
+  const controllerIndex = rest.findIndex((field) => String(field?.field_id) === controllerId);
+  if (controllerIndex < 0) return fields;
+  rest.splice(controllerIndex + 1, 0, saberField);
+  return rest;
+};
+
 // Pre Arrival / Arrival / Departure rendered from the call's template subtab (`stage`) and
 // saved through POST call_file/save_stage. Mounted with key `${callId}:${stage.tabId}`, so a
 // different call or stage always starts from fresh state.
@@ -197,7 +212,7 @@ function TemplateStageForm({
 
   const fields = useMemo(() => {
     const base = Array.isArray(activeStage?.fields) ? activeStage.fields : [];
-    if (!saberAttachmentField) return sortTemplateFields(base);
+    if (!saberAttachmentField) return placeSaberFieldUnderSelect(sortTemplateFields(base));
     const overrideId = String(saberAttachmentField.field_id ?? "").trim();
     const matchIndex = base.findIndex(
       (field) => (overrideId && String(field?.field_id) === overrideId) || isSaberField(field)
@@ -207,15 +222,16 @@ function TemplateStageForm({
       value: saberAttachmentField.value ?? null,
       file_url: saberAttachmentField.file_url ?? null,
     };
+    let next = base;
     if (matchIndex >= 0) {
       // Template already has the SABER file field — keep its id, take the response's data.
-      const merged = base.slice();
-      merged[matchIndex] = { ...base[matchIndex], ...responseField, field_id: base[matchIndex].field_id };
-      return sortTemplateFields(merged);
+      next = base.slice();
+      next[matchIndex] = { ...base[matchIndex], ...responseField, field_id: base[matchIndex].field_id };
+    } else if (overrideId) {
+      // Template has no SABER file field — render the one from get_saber_attachment.
+      next = [...base, responseField];
     }
-    // Template has no SABER file field — render the one from get_saber_attachment.
-    if (!overrideId) return sortTemplateFields(base);
-    return sortTemplateFields([...base, responseField]);
+    return placeSaberFieldUnderSelect(sortTemplateFields(next));
   }, [activeStage, saberAttachmentField]);
   const timeObjects = useMemo(() => flattenTimeObjects(activeDetail), [activeDetail]);
 
