@@ -107,6 +107,9 @@ const SERVICE_DISTRIBUTION_COLORS = {
 };
 const FALLBACK_DISTRIBUTION_COLOR = "#94a3b8";
 
+// Service ids that only apply when the call's `launch_hire` flag is 1.
+const LAUNCH_HIRE_SERVICE_IDS = ["LAUNCH_HIRE", CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE];
+
 // Crew Management breakdown titles (from get_requests_by_service) → subtab id,
 // so the breakdown bars reuse the left-nav icon colours.
 const CREW_BREAKDOWN_TITLE_TO_ID = CREW_DIRECT_SERVICES.reduce((acc, service) => {
@@ -249,8 +252,15 @@ SalesOrderPricing.propTypes = {
 };
 
 // Dashboard columns 2 & 3: request distribution donut + recent activity history.
-const ServiceInsights = ({ salesOrder, requestsByService, serviceHistory }) => {
-  const { total, distribution, crewBreakdown, crewBreakdownTotal } = parseRequestsByService(requestsByService);
+const ServiceInsights = ({ salesOrder, requestsByService, serviceHistory, showLaunchHire = true }) => {
+  const parsed = parseRequestsByService(requestsByService);
+  const { total, crewBreakdown, crewBreakdownTotal } = parsed;
+  const distribution = showLaunchHire
+    ? parsed.distribution
+    : parsed.distribution.filter((item) => item.name !== "Launch Hire");
+  const crewBreakdownServices = showLaunchHire
+    ? CREW_DIRECT_SERVICES
+    : CREW_DIRECT_SERVICES.filter((service) => !LAUNCH_HIRE_SERVICE_IDS.includes(service.id));
   const { entries: historyEntries, total: historyTotal } = parseServiceHistory(serviceHistory);
   // Zero-count slices are dropped from the donut (they'd render as gaps) but
   // stay in the legend.
@@ -322,7 +332,7 @@ const ServiceInsights = ({ salesOrder, requestsByService, serviceHistory }) => {
             <span className="husbandry-dashboard-panel-meta">{crewBreakdownTotal} requests</span>
           </div>
           <ul className="husbandry-dashboard-breakdown-list">
-            {CREW_DIRECT_SERVICES.map((service) => {
+            {crewBreakdownServices.map((service) => {
               const value = crewBreakdown[service.id] || 0;
               return (
                 <li
@@ -389,6 +399,7 @@ ServiceInsights.propTypes = {
   salesOrder: PropTypes.object,
   requestsByService: PropTypes.object,
   serviceHistory: PropTypes.object,
+  showLaunchHire: PropTypes.bool,
 };
 
 // Service Selection Component
@@ -518,7 +529,9 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
     },
   ];
 
-  const services = (showLaunchHire ? allServices : allServices.filter((service) => service.id !== "LAUNCH_HIRE"))
+  // Launch Hire (both the top-level card and the Crew Management one) only
+  // applies to calls flagged launch_hire = 1.
+  const services = (showLaunchHire ? allServices : allServices.filter((service) => !LAUNCH_HIRE_SERVICE_IDS.includes(service.id)))
     .filter((service) => !hiddenServiceIds.includes(service.id) && !hiddenServiceIds.includes(service.parentId))
     // Once get_service_counts has loaded, it decides which services this call
     // offers — a card whose title it doesn't return is hidden.
@@ -662,7 +675,7 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
           })}
         </div>
         </section>
-        <ServiceInsights salesOrder={salesOrder} requestsByService={requestsByService} serviceHistory={serviceHistory} />
+        <ServiceInsights salesOrder={salesOrder} requestsByService={requestsByService} serviceHistory={serviceHistory} showLaunchHire={showLaunchHire} />
         </div>
       </div>
     </div>

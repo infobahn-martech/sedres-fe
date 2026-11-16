@@ -1192,7 +1192,9 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
 
           {summarySelectedIds.length > 0 && (
             <div className="crew-mgmt-service-grid">
-              {CREW_SERVICE_CARDS.map((card) => {
+              {CREW_SERVICE_CARDS.filter(
+                (card) => launchHireEnabled || card.id !== CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE
+              ).map((card) => {
                 const assignedCount = selectedServiceCrewMap[card.tabName]?.length || 0;
                 const isAssigned = assignedCount > 0;
                 const isDisabled = crewWithIds.length === 0;
