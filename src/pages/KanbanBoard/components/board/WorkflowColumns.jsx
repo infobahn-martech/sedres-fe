@@ -754,7 +754,7 @@ export default function WorkflowColumns({
                 uploadLamprellUaePo: handleLamprellUaePoUpload,
                 merge: onColumnMergeInvoice,
                 downloadInvoices: onColumnDownloadInvoices,
-                downloadPortalFiles: (cards) => onColumnDownloadInvoices?.(cards, { moveAfterDownload: true }),
+                downloadPortalFiles: onColumnDownloadInvoices,
                 downloadAndMoveInvoices: (cards) => onColumnDownloadInvoices?.(cards, { moveAfterDownload: true }),
                 uploadDispatchProof: onUploadDispatchProof,
                 moveCards: onColumnMoveCards,
