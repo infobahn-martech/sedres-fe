@@ -2894,7 +2894,7 @@ export default function KanbanBoardPage() {
       <ArInvoiceReviewModal onConfirmed={refetchBoard} />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilCrewArInvoiceStore} />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilMarineArInvoiceStore} />
-      <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useLntArInvoiceStore} />
+      <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useLntArInvoiceStore} showDescription />
       <SignatureCheckModal
         onConfirmed={(result) => {
           [...(result?.moved_to_da ?? []), ...(result?.returned_to_scc_received ?? [])].forEach((card) => removeCardSelectionId(String(card.card_id)));

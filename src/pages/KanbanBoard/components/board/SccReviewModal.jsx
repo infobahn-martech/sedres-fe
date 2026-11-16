@@ -50,6 +50,7 @@ const SccReviewModal = ({ onConfirmed }) => {
   const fetchSccReview = useSccReviewStore((state) => state.fetchSccReview);
 
   const [uncheckedCardIds, setUncheckedCardIds] = useState({});
+  const markCardsUnsigned = useSccReviewStore((state) => state.markCardsUnsigned);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -113,6 +114,7 @@ const SccReviewModal = ({ onConfirmed }) => {
       notify(`${notMoved.length} ${notMoved.length === 1 ? "card was" : "cards were"} not moved`, "error");
       notMoved.forEach((card) => card.reason && notify(card.reason, "error"));
     }
+    if (isApproved) markCardsUnsigned(notMoved.map((card) => card.card_id), payload.map((card) => card.card_id));
     onClose();
     onConfirmed?.();
   };
@@ -165,7 +167,7 @@ const SccReviewModal = ({ onConfirmed }) => {
         </td>
         <td>
           {salesOrders.map((salesOrder) => (
-            <div key={salesOrder.sales_order_no} className={salesOrder.scc && !salesOrder.scc.signed ? "text-danger" : undefined}>
+            <div key={salesOrder.sales_order_no} className={salesOrder.scc ? (salesOrder.scc.signed ? "text-success" : "text-danger") : undefined}>
               {salesOrder.scc ? (salesOrder.scc.signed ? "Signed" : "Not signed") : "-"}
             </div>
           ))}

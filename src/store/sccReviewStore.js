@@ -52,6 +52,20 @@ const useSccReviewStore = create((set, get) => ({
       isSccReviewLoading: false,
     }),
 
+  /** Cards the approved-SCC confirm left in "Approval Received" for a missing signature; the board shows them red. */
+  unsignedSccCardIds: {},
+
+  /** Marks the cards left unsigned by a confirm and clears the mark on the other confirmed cards. */
+  markCardsUnsigned: (unsignedCardIds, confirmedCardIds = []) =>
+    set((state) => {
+      const next = { ...state.unsignedSccCardIds };
+      confirmedCardIds.forEach((id) => delete next[String(id)]);
+      unsignedCardIds.forEach((id) => {
+        next[String(id)] = true;
+      });
+      return { unsignedSccCardIds: next };
+    }),
+
   /** Resolves to an error message when the review could not be loaded, otherwise null. */
   fetchSccReview: async () => {
     if (!get().selectedSccReviewCards.length) return null;

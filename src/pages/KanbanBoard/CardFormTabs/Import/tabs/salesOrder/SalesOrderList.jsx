@@ -29,7 +29,7 @@ import SoApprovalEmailModal from "./SoApprovalEmailModal";
 import DocumentListModal from "./DocumentListModal";
 import UploadInvoiceModal from "@/components/UploadInvoiceModal";
 import { compressPdfFiles } from "@/shared/utils/compressPdf";
-import { isApprovalRequestedColumnTitle } from "@/pages/KanbanBoard/utils/columnTitles";
+import { isApprovalRequestedColumnTitle, isLntSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
 import SeApprovalUploadModal from "@/pages/KanbanBoard/components/board/SeApprovalUploadModal";
 import CustomModal from "@/components/CustomModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
@@ -1887,6 +1887,8 @@ const SalesOrderList = ({
         (isAtSubmittedToDaColumn || isAtSoSentForSccColumn) &&
         (wasMovedToDa || isZakherWorkflowCard)
       ) {
+        onCloseCard?.();
+      } else if (allVerified && isAtApprovalRequestedColumn && (isLntSwimlane({ title: card?.workflow_name }) || isLntSwimlane({ title: soCustomerName }))) {
         onCloseCard?.();
       }
     } catch (err) {
