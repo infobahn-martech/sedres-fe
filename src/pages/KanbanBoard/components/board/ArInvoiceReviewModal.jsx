@@ -40,19 +40,6 @@ const MCDERMOTT_COLUMN_ORDER = ["sales_order_no", "invoice_no", "invoice_file"];
 const MCDERMOTT_COLUMNS = MCDERMOTT_COLUMN_ORDER.map((name) =>
   COLUMNS.find((column) => column.name === name)
 );
-/* L&T review: a Description per sales order, sent to da/confirm_ar_invoices when the backend needs it
-   (a sales order with no SRN, PO or project). */
-const LNT_COLUMNS = [
-  MCDERMOTT_COLUMNS[0],
-  MCDERMOTT_COLUMNS[1],
-  {
-    name: "description",
-    label: "Description",
-    editable: "text",
-    placeholder: "Needed when the sales order has no SRN, PO or project",
-  },
-  MCDERMOTT_COLUMNS[2],
-];
 /* The invoice's tax details: one line per tax rate, each on its own row under the sales order
    (0% first), laid out like the invoice's own block. Every cell is editable.
    Hidden for now on request: restore the fields below, the SAR header rows and the tax-line split in
@@ -87,7 +74,7 @@ const getTaxLines = (salesOrder) =>
 // sends the ticked cards to da/confirm_ar_invoices, which moves them to "AR Invoices Issued"
 // (McDermott "Issue AR Invoice": back to Backlog).
 /* `useReviewStore` is the workflow's own review store (same state shape), so each workflow keeps its own API calls. */
-const ArInvoiceReviewModal = ({ onConfirmed, useReviewStore = useArInvoiceReviewStore, showDescription = false }) => {
+const ArInvoiceReviewModal = ({ onConfirmed, useReviewStore = useArInvoiceReviewStore }) => {
   const show = useReviewStore((state) => state.showArInvoiceReviewModal);
   const cards = useReviewStore((state) => state.selectedArInvoiceReviewCards);
   const isLoading = useReviewStore((state) => state.isArInvoiceReviewLoading);
@@ -101,7 +88,7 @@ const ArInvoiceReviewModal = ({ onConfirmed, useReviewStore = useArInvoiceReview
 
   /* A workflow id means the McDermott review; SAIPEM's has none. */
   const isMcDermottReview = workflowId != null;
-  const columns = isMcDermottReview ? (showDescription ? LNT_COLUMNS : MCDERMOTT_COLUMNS) : COLUMNS;
+  const columns = isMcDermottReview ? MCDERMOTT_COLUMNS : COLUMNS;
   const editableColumns = columns.filter((column) => column.editable);
   /* The card tick comes before the configured columns, the tax columns after them. */
   const columnCount = columns.length + TAX_FIELDS.length + 1;
@@ -531,7 +518,6 @@ const ArInvoiceReviewModal = ({ onConfirmed, useReviewStore = useArInvoiceReview
 ArInvoiceReviewModal.propTypes = {
   onConfirmed: PropTypes.func,
   useReviewStore: PropTypes.func,
-  showDescription: PropTypes.bool,
 };
 
 export default ArInvoiceReviewModal;
