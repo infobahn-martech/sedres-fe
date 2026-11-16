@@ -1383,8 +1383,16 @@ const GROCardView = forwardRef(function GROCardView(
     }
   }, [isGeneratingVesselPdf, callId, cardId, taskId, userRoleId, applyCallDetailResponse]);
 
-  // Upload Signed Document button is always visible (conditions removed).
-  const showDynamicUploadIcon = true;
+  // Upload Signed Document is only offered on the Vessel Inward Registration card, and only
+  // once the vessel registration doc exists (task.details.vessel_registration_doc). The value
+  // may be a plain file name or { file_name, file_url } after mergeGroDetailFileUrls.
+  const hasVesselRegistrationDoc = useMemo(() => {
+    const doc = taskDetails?.vessel_registration_doc;
+    const name = typeof doc === "string" ? doc : doc?.file_name;
+    return typeof name === "string" && name.trim() !== "";
+  }, [taskDetails]);
+
+  const showDynamicUploadIcon = isVesselInwardRegistrationStage && hasVesselRegistrationDoc;
 
   const dynamicUploadTitle = "Upload Signed Document";
 
