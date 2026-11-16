@@ -1334,8 +1334,9 @@ TopTabs.propTypes = {
 
 const StepsProgress = ({ totalSteps = TOTAL_STEPS, activeStep = 2, completedSteps = 1, stepLabels = STEP_LABELS, onStepClick, currentStep }) => {
   // Use green colors for all progress bars (ignoring accentColor)
-  const GREEN_COMPLETED = "#2e7d32"; // Dark green for completed/active steps
-  const GREEN_INACTIVE = "#8bc48a"; // Light green for inactive steps
+  const GREEN_COMPLETED = "#16a34a"; // Green for completed/active steps
+  const GREEN_INACTIVE = "#cbd5e1"; // Neutral slate for upcoming steps
+  const LABEL_INACTIVE = "#94a3b8";
 
   // Use currentStep as the actual current step (from card's column), fallback to activeStep
   const actualCurrentStep = currentStep !== null && currentStep !== undefined ? currentStep : activeStep;
@@ -1377,9 +1378,12 @@ const StepsProgress = ({ totalSteps = TOTAL_STEPS, activeStep = 2, completedStep
           ? { background: GREEN_COMPLETED }
           : { background: GREEN_INACTIVE };
 
-        const labelStyle = isStepCompletedOrCurrent
+        const labelStyle = isCurrentStep
           ? { color: GREEN_COMPLETED }
-          : { color: GREEN_INACTIVE };
+          : isStepCompletedOrCurrent
+            ? { color: "#15803d" }
+            : { color: LABEL_INACTIVE };
+        const showCheck = isStepCompletedOrCurrent && !isCurrentStep;
 
         const stepLabel = stepLabels[index] || `Step ${stepNumber}`;
         const handleStepClick = () => {
@@ -1397,7 +1401,7 @@ const StepsProgress = ({ totalSteps = TOTAL_STEPS, activeStep = 2, completedStep
           >
             <div className="step-content">
               <div className="step-circle" style={circleStyle}>
-                {stepNumber}
+                {showCheck ? <Check size={15} strokeWidth={3} aria-hidden /> : stepNumber}
               </div>
               {index < totalSteps - 1 && (
                 <span className={`step-line ${lineClass}`} style={lineStyle}></span>
@@ -1405,6 +1409,7 @@ const StepsProgress = ({ totalSteps = TOTAL_STEPS, activeStep = 2, completedStep
             </div>
             <div className="step-label" style={labelStyle}>
               {stepLabel}
+              {isCurrentStep ? <span className="step-current-tag">Current</span> : null}
             </div>
           </div>
         );
