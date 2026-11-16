@@ -114,7 +114,7 @@ const SccReviewModal = ({ onConfirmed }) => {
       notify(`${notMoved.length} ${notMoved.length === 1 ? "card was" : "cards were"} not moved`, "error");
       notMoved.forEach((card) => card.reason && notify(card.reason, "error"));
     }
-    if (isApproved && notMoved.length) markCardsUnsigned(notMoved.map((card) => card.card_id));
+    if (isApproved) markCardsUnsigned(notMoved.map((card) => card.card_id), payload.map((card) => card.card_id));
     onClose();
     onConfirmed?.();
   };
