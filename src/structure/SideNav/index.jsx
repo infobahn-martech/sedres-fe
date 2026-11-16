@@ -10,6 +10,7 @@ import SelectWorkflowModal from './components/SelectWorkflowModal';
 import WorkspacesSideNavPanel from './components/WorkspacesSideNavPanel';
 import OutlookModal from './components/OutlookModal';
 import MyAccountsModal from '../Header/MyAccountsModal';
+import LogoutConfirmationModal from '../../components/LogoutConfirmationModal';
 import OnStationModal from '../Header/OnStationModal';
 import ToolsMenu, { ToolModals } from '../Header/ToolsMenu';
 import '../../design/scss/common.scss';
@@ -195,6 +196,8 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   const [showDashboardsModal, setShowDashboardsModal] = useState(false);
   const [showAddDashboardModal, setShowAddDashboardModal] = useState(false);
   const [showMyAccountsModal, setShowMyAccountsModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const doLogout = useAuthReducer((state) => state.doLogout);
   const [showOnStationModal, setShowOnStationModal] = useState(false);
   const [showOutlookModal, setShowOutlookModal] = useState(false);
   const [showSelectWorkflowModal, setShowSelectWorkflowModal] = useState(false);
@@ -571,6 +574,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       subMenus: [
         { menu: 'My Accounts', to: '/my-accounts', hasPermission: true },
         { menu: 'Activity Log', to: '/activity-log', hasPermission: true },
+        { menu: 'Logout', to: '/logout', hasPermission: true },
         // { menu: 'Notification', to: '/notification', hasPermission: true },
         // { menu: 'Report Management', to: '/report-management', hasPermission: true },
         // { menu: 'Status Management', to: '/status-management', hasPermission: true },
@@ -662,7 +666,21 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       }
       return true;
     }
+    if (subMenu === 'Logout') {
+      setShowLogoutModal(true);
+      if (isMobile && expand && onCloseMobileMenu) {
+        setExpand(false);
+        onCloseMobileMenu();
+      }
+      return true;
+    }
     return false;
+  };
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutModal(false);
+    doLogout();
+    navigate('/');
   };
 
   const handleToggle = () => {
@@ -1132,6 +1150,16 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       {/* My Accounts Modal */}
       {!!showMyAccountsModal && (
         <MyAccountsModal show={showMyAccountsModal} onClose={() => setShowMyAccountsModal(false)} />
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {!!showLogoutModal && (
+        <LogoutConfirmationModal
+          show={showLogoutModal}
+          onCancel={() => setShowLogoutModal(false)}
+          onConfirm={handleLogoutConfirm}
+          logoutText="Are you sure you want to logout?"
+        />
       )}
     </>
   );
