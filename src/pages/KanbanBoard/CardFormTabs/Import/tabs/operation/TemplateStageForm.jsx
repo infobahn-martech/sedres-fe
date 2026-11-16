@@ -186,13 +186,37 @@ function TemplateStageForm({
   // ({ detail, stage }) then drives this stage's fields, values and email template until the shared
   // call detail refreshes again (e.g. after a save).
   const [freshData, setFreshData] = useState(null);
+  // A SABER change requests call_file/get_saber_attachment instead; its `saber_attachment`
+  // field replaces the matching template field (saved file name / url) until the detail refreshes.
+  const [saberAttachmentField, setSaberAttachmentField] = useState(null);
   useEffect(() => {
     setFreshData(null);
   }, [detail]);
   const activeDetail = freshData?.detail ?? detail;
   const activeStage = freshData?.stage ?? stage;
 
-  const fields = useMemo(() => sortTemplateFields(activeStage?.fields), [activeStage]);
+  const fields = useMemo(() => {
+    const base = Array.isArray(activeStage?.fields) ? activeStage.fields : [];
+    if (!saberAttachmentField) return sortTemplateFields(base);
+    const overrideId = String(saberAttachmentField.field_id ?? "").trim();
+    const matchIndex = base.findIndex(
+      (field) => (overrideId && String(field?.field_id) === overrideId) || isSaberField(field)
+    );
+    const responseField = {
+      ...saberAttachmentField,
+      value: saberAttachmentField.value ?? null,
+      file_url: saberAttachmentField.file_url ?? null,
+    };
+    if (matchIndex >= 0) {
+      // Template already has the SABER file field — keep its id, take the response's data.
+      const merged = base.slice();
+      merged[matchIndex] = { ...base[matchIndex], ...responseField, field_id: base[matchIndex].field_id };
+      return sortTemplateFields(merged);
+    }
+    // Template has no SABER file field — render the one from get_saber_attachment.
+    if (!overrideId) return sortTemplateFields(base);
+    return sortTemplateFields([...base, responseField]);
+  }, [activeStage, saberAttachmentField]);
   const timeObjects = useMemo(() => flattenTimeObjects(activeDetail), [activeDetail]);
 
   // Saved values from the (shared) call detail; recomputed after a save refreshes it.
@@ -335,12 +359,46 @@ function TemplateStageForm({
     }
   };
 
-  // Re-request get_call_detail whenever the user changes SABER / Weather Forecast.
+  // SABER change → GET call_file/get_saber_attachment/{callId}?saber=<value> (not get_call_detail).
+  const saberRequestSeqRef = useRef(0);
+  const refreshSaberAttachment = async (saber) => {
+    const resolvedCallId = String(callId ?? "").trim();
+    if (!resolvedCallId) return;
+    const seq = ++saberRequestSeqRef.current;
+    try {
+      const { data } = await callFileService.getSaberAttachment(resolvedCallId, { saber });
+      if (!aliveRef.current || seq !== saberRequestSeqRef.current) return;
+      const attachment = data?.data?.saber_attachment;
+      setSaberAttachmentField(attachment && typeof attachment === "object" ? attachment : { value: null, file_url: null });
+    } catch (error) {
+      if (aliveRef.current && seq === saberRequestSeqRef.current) {
+        notify(getApiErrorMessage(error, "Failed to load the SABER attachment."), "error");
+      }
+    }
+  };
+
+  // On open (and after the call detail refreshes, e.g. a save), bind the SABER attachment
+  // field for the saved SABER value.
+  const initialSaber = triggerFields.saber ? JSON.parse(triggerParamsKey).saber ?? "" : "";
+  useEffect(() => {
+    if (isViewOnly || !initialSaber) return;
+    refreshSaberAttachment(initialSaber);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [callId, detail, isViewOnly, Boolean(triggerFields.saber)]);
+
+  // SABER change → get_saber_attachment; Weather Forecast change → get_call_detail (email template).
   useEffect(() => {
     if (triggerParamsKey === lastTriggerParamsKeyRef.current) return;
+    const prevParams = JSON.parse(lastTriggerParamsKeyRef.current || "{}");
     lastTriggerParamsKeyRef.current = triggerParamsKey;
     if (!hasTriggerEdit || isViewOnly) return;
-    refreshEmailTemplateForTriggers(JSON.parse(triggerParamsKey));
+    const nextParams = JSON.parse(triggerParamsKey);
+    if (nextParams.saber !== prevParams.saber) {
+      refreshSaberAttachment(nextParams.saber ?? "");
+    }
+    if (nextParams.weather_forecast !== prevParams.weather_forecast) {
+      refreshEmailTemplateForTriggers(nextParams);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerParamsKey]);
 
@@ -616,9 +674,13 @@ function TemplateStageForm({
     formData.append("tab_id", String(stage.tabId));
     formData.append("fields", JSON.stringify(fieldsPayload));
     // Only newly selected files are uploaded; existing attachments are left untouched.
-    const visibleFieldIds = new Set(visibleFields.map((field) => String(field.field_id)));
+    const visibleFieldsById = new Map(visibleFields.map((field) => [String(field.field_id), field]));
     Object.entries(newFiles).forEach(([fieldId, file]) => {
-      if (file instanceof File && visibleFieldIds.has(String(fieldId))) formData.append(`field_${fieldId}`, file);
+      const field = visibleFieldsById.get(String(fieldId));
+      if (!(file instanceof File) || !field) return;
+      // Fields from get_saber_attachment carry their own upload key (e.g. "saber_attachments[]").
+      const uploadKey = String(field.upload_key ?? "").trim() || `field_${fieldId}`;
+      formData.append(uploadKey, file);
     });
     // The composer's report goes with every save_stage call (Save and Send) once it has a recipient,
     // e.g. report = {"from_email":"info@x.com","to_email":"agent@x.com","cc_emails":"ops@x.com",

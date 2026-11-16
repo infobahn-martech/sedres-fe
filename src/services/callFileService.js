@@ -42,6 +42,11 @@ const getRequestsByService = (callId) =>
   Gateway.get(`/call_file/get_requests_by_service/${encodeURIComponent(String(callId))}`);
 const getServiceHistory = (callId) =>
   Gateway.get(`/call_file/get_service_history/${encodeURIComponent(String(callId))}`);
+// `params` (optional), e.g. { saber: "by_sedres" }, are sent as query params.
+const getSaberAttachment = (callId, params) =>
+  Gateway.get(`/call_file/get_saber_attachment/${encodeURIComponent(String(callId))}`, {
+    ...(params && Object.keys(params).length ? { params } : {}),
+  });
 const uploadEmailAttachments = (formData) =>
   Gateway.post('/call_file/upload_email_attachments', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -63,4 +68,5 @@ export default {
   getServiceCounts,
   getRequestsByService,
   getServiceHistory,
+  getSaberAttachment,
 };
