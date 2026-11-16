@@ -45,7 +45,7 @@ import {
 // 🆕 Kanban sidebar icons + tooltip
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
-import { FiPlus, FiInbox, FiPlusCircle, FiMail, FiEdit3, FiMapPin, FiLayers, FiList, FiChevronUp, FiChevronDown } from 'react-icons/fi';
+import { FiPlus, FiInbox, FiPlusCircle, FiEdit3, FiMapPin, FiLayers, FiList, FiChevronUp, FiChevronDown } from 'react-icons/fi';
 import TaskCardModal from '../../pages/TaskCard';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
@@ -165,11 +165,9 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       icons.push({ id: 10, icon: FiMapPin, label: 'On Station' });
     }
     icons.push({ id: 11, icon: FiLayers, label: 'Task' });
-    if (!(kanbanFullSidebar || isPortSupervisorRole)) {
-      icons.push({ id: 7, icon: FiMail, label: 'Outlook' });
-    }
+    // Outlook menu is hidden for all roles.
     return icons;
-  }, [showEditWorkflowSidebarIcon, kanbanFullSidebar, isPortSupervisorRole, canAddCard, canViewOnStation]);
+  }, [showEditWorkflowSidebarIcon, canAddCard, canViewOnStation]);
 
   const workspacesIcons = [
     { id: 4, icon: FiInbox, label: 'Workspaces' },
