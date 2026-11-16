@@ -4350,10 +4350,12 @@
   }
 }
 
-/* Crew Immigration — when the Crew Listing is empty, stretch the empty
-   state to fill the remaining panel height instead of leaving blank space
-   below it. The populated table keeps its size-to-rows behaviour above. */
-.husbandry-service-selection.crew-immigration-dashboard {
+/* Crew Immigration + Crew Management — when the crew list is empty, stretch
+   the empty state to fill the remaining panel height instead of leaving
+   blank space below it. The populated table keeps its size-to-rows
+   behaviour above. */
+.husbandry-service-selection.crew-immigration-dashboard,
+.husbandry-service-selection.crew-management-dashboard {
   align-items: stretch;
 
   > .husbandry-service-selection-content {
@@ -4369,6 +4371,11 @@
     flex: 1 0 auto;
     display: flex;
     flex-direction: column;
+  }
+
+  .crew-mgmt-summary-section > .cf-empty-state {
+    flex: 1 0 auto;
+    height: auto;
   }
 
   .crew-immigration-empty-wrap {
