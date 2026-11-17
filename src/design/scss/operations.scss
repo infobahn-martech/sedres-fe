@@ -3232,6 +3232,21 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
   flex-shrink: 0;
 }
 
+.operation-email-send-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: operation-email-send-spin 0.7s linear infinite;
+}
+
+@keyframes operation-email-send-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .operation-email-send-btn {
   display: inline-flex;
   align-items: center;
@@ -3257,6 +3272,11 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
 
   &:active:not(:disabled) {
     transform: translateY(0);
+  }
+
+  &.is-sending:disabled {
+    opacity: 0.85;
+    cursor: progress;
   }
 
   &:disabled {

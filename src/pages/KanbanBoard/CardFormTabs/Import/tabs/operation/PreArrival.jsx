@@ -1313,7 +1313,7 @@ function PreArrival({
                     billingEntityId={billingEntityId ?? formValues.mainBillingEntity}
                     onChange={handleReportDraftChange}
                     onSend={handleSendPreArrivalReport}
-                    isSending={isSendingReport || isSavingPreArrival}
+                    isSending={isSendingReport}
                     isViewOnly={isViewOnly}
                     canSend={canSendReport}
                   />

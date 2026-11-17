@@ -1169,13 +1169,14 @@ export const OperationEmailPreviewPanel = ({
           {showSend && (
             <button
               type="button"
-              className="operation-email-send-btn"
+              className={`operation-email-send-btn${isSending ? " is-sending" : ""}`}
               onClick={onSend}
               disabled={isSending}
+              aria-busy={isSending}
               title={isSending ? "Sending…" : "Save and send report"}
               aria-label={isSending ? "Sending report" : "Save and send report"}
             >
-              <IconSendReport />
+              {isSending ? <span className="operation-email-send-spinner" aria-hidden /> : <IconSendReport />}
             </button>
           )}
         </div>

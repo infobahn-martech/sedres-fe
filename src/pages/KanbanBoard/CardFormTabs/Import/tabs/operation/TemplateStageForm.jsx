@@ -854,7 +854,7 @@ function TemplateStageForm({
     const type = getTemplateFieldType(field);
     const value = getValue(id);
     const hasError = Boolean(errors[id]);
-    const disabled = isViewOnly || Boolean(submitting);
+    const disabled = isViewOnly || submitting === "save";
 
     if (type === "datetime" || type === "timeobject") {
       const [datePart = "", timePart = ""] = String(value || "").split(" ");
@@ -1138,7 +1138,7 @@ function TemplateStageForm({
           <OperationSaveSection
             isViewOnly={isViewOnly}
             onSave={() => submit({ withReport: false })}
-            isSaving={Boolean(submitting)}
+            isSaving={submitting === "save"}
           />
         </div>
       </FormSection>
