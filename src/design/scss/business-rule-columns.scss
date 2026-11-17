@@ -32,4 +32,30 @@
   .business-rule-form-when-fields-pill {
     padding: 8px 14px;
   }
+
+  // Link operator dropdown ("to card with id"): same sizes as the rest of the column.
+  .br-link-operator-panel {
+    width: min(260px, calc(100vw - 120px));
+    padding: 10px;
+    gap: 8px;
+    border-radius: 12px;
+  }
+
+  .br-link-operator-search {
+    padding: 7px 12px;
+
+    input {
+      font-size: 13px;
+    }
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .br-link-operator-option {
+    padding: 7px 10px;
+    font-size: 13px;
+  }
 }
