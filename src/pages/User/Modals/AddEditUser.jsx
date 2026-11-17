@@ -162,7 +162,9 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
       setProfileImagePreview(showModal?.avatar_path || userIcon);
       setProfileImage(null);
       setSignaturePreview(
-        resolveFileUrl(showModal?.signature_path || showModal?.signature)
+        resolveFileUrl(
+          showModal?.signature_url || showModal?.signature_path || showModal?.signature
+        )
       );
       setSignatureFile(null);
       setRemoveSignature(false);
@@ -295,7 +297,10 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
     setSignaturePreview(null);
     // Only an existing signature needs a server-side removal
     setRemoveSignature(
-      Boolean(showModal?.user_id && (showModal?.signature_path || showModal?.signature))
+      Boolean(
+        showModal?.user_id &&
+          (showModal?.signature_url || showModal?.signature_path || showModal?.signature)
+      )
     );
   };
 

@@ -5,6 +5,7 @@ import { FiCamera } from 'react-icons/fi';
 import CustomModal from '../../components/CustomModal';
 import authService from '../../services/authService';
 import SignatureUpload from '../../components/form/SignatureUpload';
+import useAlertReducer from '../../store/AlertReducer';
 import { getItem } from '../../shared/helpers/localStorage';
 import '../../design/scss/profile.scss';
 import '../../design/scss/prospect-modal.scss';
@@ -30,7 +31,9 @@ function mapApiUserToForm(data) {
     email: data?.email || '',
     image: resolvedImage,
     avatarFile: null,
-    signature: resolveUserImageUrl(data?.signature_path || data?.signature),
+    signature: resolveUserImageUrl(
+      data?.signature_url || data?.signature_path || data?.signature,
+    ),
     signatureFile: null,
     removeSignature: false,
   };
@@ -221,7 +224,10 @@ function MyAccountsModal({ show, onClose }) {
     try {
       setProfileEditLoader(true);
       setFetchError('');
-      await authService.updateUserDetails(formDataToSend);
+      const res = await authService.updateUserDetails(formDataToSend);
+      useAlertReducer
+        .getState()
+        .success(res?.data?.message || 'User details updated successfully');
 
       // Re-fetch latest user details to bind fresh values
       try {
@@ -240,12 +246,13 @@ function MyAccountsModal({ show, onClose }) {
 
       setIsEditing(false);
     } catch (err) {
-      setFetchError(
+      const message =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
         err?.message ||
-        'Failed to update account details.',
-      );
+        'Failed to update account details.';
+      setFetchError(message);
+      useAlertReducer.getState().error(message);
     } finally {
       setProfileEditLoader(false);
     }
@@ -339,7 +346,7 @@ function MyAccountsModal({ show, onClose }) {
 
               <div className="profile-details my-accounts-fields">
                 <div className="row permInputs g-4">
-                  <div className="col-12">
+                  <div className="col-md-6">
                     <div className="form-field">
                       <div className="form-floating">
                         <input
@@ -360,28 +367,6 @@ function MyAccountsModal({ show, onClose }) {
                       </div>
                       {errors.firstName && (
                         <span className="field-error">{errors.firstName}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="col-md-6">
-                    <div className="form-field">
-                      <div className="phone-wrapper">
-                        <label className="phone-label">
-                          Phone
-                        </label>
-                        <PhoneInput
-                          country="sa"
-                          enableSearch
-                          value={formData.phone}
-                          onChange={handlePhoneChange}
-                          disabled={!isEditing}
-                          inputClass={`phone-input ${errors.phone ? 'is-invalid' : ''}`}
-                          buttonClass="phone-flag"
-                        />
-                      </div>
-                      {errors.phone && (
-                        <span className="field-error">{errors.phone}</span>
                       )}
                     </div>
                   </div>
@@ -414,8 +399,31 @@ function MyAccountsModal({ show, onClose }) {
                     </div>
                   </div>
 
-                  <div className="col-12">
+                  <div className="col-md-6">
+                    <div className="form-field">
+                      <div className="phone-wrapper">
+                        <label className="phone-label">
+                          Phone
+                        </label>
+                        <PhoneInput
+                          country="sa"
+                          enableSearch
+                          value={formData.phone}
+                          onChange={handlePhoneChange}
+                          disabled={!isEditing}
+                          inputClass={`phone-input ${errors.phone ? 'is-invalid' : ''}`}
+                          buttonClass="phone-flag"
+                        />
+                      </div>
+                      {errors.phone && (
+                        <span className="field-error">{errors.phone}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
                     <SignatureUpload
+                      compact
                       previewUrl={formData.signature}
                       onSelect={handleSignatureSelect}
                       onRemove={handleSignatureRemove}
