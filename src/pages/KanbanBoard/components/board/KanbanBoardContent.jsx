@@ -1,7 +1,10 @@
 import WorkflowAccordion from "./WorkflowAccordion";
 import WorkflowColumns from "./WorkflowColumns";
+import CardScopeToggle from "./CardScopeToggle";
+import { CARD_SCOPE, isWorkflowEmpty } from "../../utils/cardScopeFilter";
 
 const EMPTY_SELECTED_IDS = [];
+const EMPTY_SCOPES = {};
 
 export default function KanbanBoardContent({
   boardId,
@@ -12,7 +15,6 @@ export default function KanbanBoardContent({
   expandedWorkflows,
   collapsedColumns,
   maxColumnHeights,
-  pinnedWorkflows,
   createDragEndHandler,
   onSelectCard,
   onColumnHeaderClick,
@@ -39,13 +41,15 @@ export default function KanbanBoardContent({
   onHeightChange,
   onToggleWorkflow,
   onAccordionMenuClick,
-  onPinClick,
   isDarkMode,
   layoutView,
   selectedActionCardIds = EMPTY_SELECTED_IDS,
   onToggleCardSelect,
   onCardSelectDragStart,
   onCardSelectDragEnter,
+  /** { [workflowId]: "all" | "mine" } — workflows already filtered by the page; this only drives the toggle/empty state. */
+  cardScopeByWorkflow = EMPTY_SCOPES,
+  onCardScopeChange,
 }) {
   if (!boardLoading && workflows.length === 0 && !suppressEmptyMessage) {
     return (
@@ -63,17 +67,31 @@ export default function KanbanBoardContent({
   }
 
   return workflows.map((workflow) => {
+    const cardScope = cardScopeByWorkflow[workflow.id] ?? CARD_SCOPE.ALL;
+    const showMyCardsEmpty =
+      cardScope === CARD_SCOPE.MINE && !boardLoading && isWorkflowEmpty(workflow);
     return (
     <WorkflowAccordion
       key={workflow.id}
       workflow={workflow}
       isDarkMode={isDarkMode}
       isExpanded={expandedWorkflows[workflow.id]}
-      isPinned={Boolean(pinnedWorkflows?.[workflow.id])}
       onToggle={() => onToggleWorkflow(workflow.id)}
       onMenuClick={(event) => onAccordionMenuClick(event, workflow.id)}
-      onPinClick={() => onPinClick(workflow.id)}
+      headerExtra={
+        onCardScopeChange ? (
+          <CardScopeToggle
+            value={cardScope}
+            onChange={(scope) => onCardScopeChange(workflow.id, scope)}
+          />
+        ) : null
+      }
     >
+      {showMyCardsEmpty && (
+        <div className="card-scope-empty" role="status">
+          No cards are assigned to you in this workflow.
+        </div>
+      )}
       <WorkflowColumns
         boardId={boardId}
         workflow={workflow}

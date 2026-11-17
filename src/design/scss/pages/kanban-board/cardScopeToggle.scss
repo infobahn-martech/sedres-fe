@@ -1,0 +1,100 @@
+/* "All Cards | My Cards" segmented control in the workflow (accordion) header. */
+.card-scope-toggle {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 2px;
+  margin-right: 4px;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  cursor: default;
+}
+
+.card-scope-toggle__option {
+  height: 26px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover:not(.card-scope-toggle__option--active) {
+    background: var(--surface-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+}
+
+.card-scope-toggle__option--active {
+  background: var(--color-primary);
+  color: #ffffff;
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 767px) {
+  .card-scope-toggle__option {
+    height: 24px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+}
+
+/* Empty state shown under the header when "My Cards" has nothing assigned. */
+.card-scope-empty {
+  margin: 8px 0 0 74px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px dashed var(--border-primary);
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-size: 13px;
+
+  @media (max-width: 991px) {
+    margin-left: 60px;
+  }
+
+  @media (max-width: 767px) {
+    margin-left: 56px;
+  }
+
+  @media (max-width: 479px) {
+    margin-left: 50px;
+  }
+}
+
+[data-theme="dark"] {
+  .card-scope-toggle {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+  }
+
+  .card-scope-toggle__option {
+    color: var(--text-control);
+
+    &:hover:not(.card-scope-toggle__option--active) {
+      background: var(--bg-tile-hover, var(--surface-hover));
+    }
+  }
+
+  .card-scope-toggle__option--active {
+    background: var(--brand);
+    color: #ffffff;
+  }
+
+  .card-scope-empty {
+    background: color-mix(in srgb, var(--bg-card) 70%, transparent);
+    border-color: var(--border-strong);
+    color: var(--text-body);
+  }
+}

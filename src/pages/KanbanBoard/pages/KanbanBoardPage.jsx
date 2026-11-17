@@ -34,6 +34,12 @@ import usePermissions from "../../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../shared/constants/permissions";
 import { createNewCardDraft } from "../utils/cardHelpers";
 import { findWorkflowByCardId } from "../utils/boardHelpers";
+import {
+  CARD_SCOPE,
+  filterWorkflowByAssignee,
+  remapDragResultToFullWorkflow,
+} from "../utils/cardScopeFilter";
+import { getItem } from "../../../shared/helpers/localStorage";
 import { resolveCardFormVariant } from "../../../shared/helpers/cardFormVariant";
 import { getFirstUserRoleId } from "../../../shared/helpers/groUserRoles";
 import useAuthReducer from "../../../store/AuthReducer";
@@ -332,6 +338,41 @@ export default function KanbanBoardPage() {
     [workflows, workflowFilterId]
   );
 
+  /* "All Cards / My Cards" per workflow header. Purely client-side over the loaded board — no refetch. */
+  const currentUserId =
+    useAuthReducer((s) => s.userProfile?.userid ?? s.authData?.userid) || getItem("userid");
+  const [cardScopeByWorkflow, setCardScopeByWorkflow] = useState({});
+  useEffect(() => {
+    setCardScopeByWorkflow({});
+  }, [selectedBoardId]);
+  const handleCardScopeChange = useCallback((workflowId, scope) => {
+    setCardScopeByWorkflow((prev) => ({ ...prev, [workflowId]: scope }));
+  }, []);
+
+  const displayedWorkflows = useMemo(
+    () =>
+      visibleWorkflows.map((wf) =>
+        cardScopeByWorkflow[wf.id] === CARD_SCOPE.MINE
+          ? filterWorkflowByAssignee(wf, currentUserId)
+          : wf
+      ),
+    [visibleWorkflows, cardScopeByWorkflow, currentUserId]
+  );
+
+  /* In "My Cards" the drag indexes are positions in the filtered lists; translate them back to the
+     full lists before the shared drag-end handler splices them. */
+  const createScopedDragEndHandler = useCallback(
+    (workflowId) => {
+      const handleDragEnd = createDragEndHandler(workflowId);
+      if (cardScopeByWorkflow[workflowId] !== CARD_SCOPE.MINE) return handleDragEnd;
+      const fullWorkflow = workflows.find((wf) => wf.id === workflowId);
+      const filteredWorkflow = displayedWorkflows.find((wf) => wf.id === workflowId);
+      return (result) =>
+        handleDragEnd(remapDragResultToFullWorkflow(fullWorkflow, filteredWorkflow, result));
+    },
+    [createDragEndHandler, cardScopeByWorkflow, workflows, displayedWorkflows]
+  );
+
   useSyncKanbanSidebarWorkflows(workflows, selectedBoardId);
 
   // Card density (sidebar 1/2/3/4): restore this board's saved level; reset when leaving the board.
@@ -467,22 +508,6 @@ export default function KanbanBoardPage() {
     window.addEventListener("kanban:jump-to-workflow", handleJumpToWorkflowEvent);
     return () => window.removeEventListener("kanban:jump-to-workflow", handleJumpToWorkflowEvent);
   }, [handleJumpToWorkflow]);
-
-  const handleWorkflowPinClick = useCallback(
-    (workflowId) => {
-      if (!workflowId) return;
-      workflowService
-        .togglePinWorkflow(workflowId)
-        .then(() => {
-          toggleWorkflowPin(workflowId);
-        })
-        .catch((err) => {
-          const msg = err?.response?.data?.message ?? err.message ?? "Could not update pin.";
-          notify(msg, "error");
-        });
-    },
-    [toggleWorkflowPin]
-  );
 
   const handleColumnContextMenu = useCallback((event, column, laneId) => {
     event.preventDefault();
@@ -2732,15 +2757,14 @@ export default function KanbanBoardPage() {
         )}
         <KanbanBoardContent
           boardId={selectedBoardId}
-          workflows={visibleWorkflows}
+          workflows={displayedWorkflows}
           cardsById={cardsById}
           boardLoading={boardLoading}
           suppressEmptyMessage={isOperatorBoard}
           expandedWorkflows={expandedWorkflows}
           collapsedColumns={collapsedColumns}
           maxColumnHeights={maxColumnHeights}
-          pinnedWorkflows={pinnedWorkflows}
-          createDragEndHandler={createDragEndHandler}
+          createDragEndHandler={createScopedDragEndHandler}
           onSelectCard={handleSelectCard}
           onColumnHeaderClick={handleColumnHeaderClick}
           onColumnBatchAction={handleColumnBatchAction}
@@ -2766,13 +2790,14 @@ export default function KanbanBoardPage() {
           onHeightChange={handleWorkflowColumnHeightChange}
           onToggleWorkflow={handleToggleWorkflow}
           onAccordionMenuClick={handleAccordionMenuClick}
-          onPinClick={handleWorkflowPinClick}
           isDarkMode={isDarkMode}
           layoutView={layoutView}
           selectedActionCardIds={selectedCardIds}
           onToggleCardSelect={handleToggleCardSelection}
           onCardSelectDragStart={handleCardSelectDragStart}
           onCardSelectDragEnter={handleCardSelectDragEnter}
+          cardScopeByWorkflow={cardScopeByWorkflow}
+          onCardScopeChange={handleCardScopeChange}
         />
       </div>
 
