@@ -514,11 +514,45 @@ function TemplateStageForm({
   const additionalRowsRef = useRef(additionalRows);
   additionalRowsRef.current = additionalRows;
 
+  // Saved additional (user-added "+") time objects from the call detail, by id and by name.
+  const additionalTimeObjectIndex = useMemo(() => {
+    const byId = new Map();
+    const byLabel = new Map();
+    const source = Array.isArray(activeDetail?.time_objects) ? activeDetail.time_objects.flat(Infinity) : [];
+    source.forEach((to) => {
+      if (!to || typeof to !== "object" || !(to.is_additional ?? to.isAdditional)) return;
+      const id = String(to.time_object_id ?? to.timeObjectId ?? to.id ?? "").trim();
+      if (!id) return;
+      byId.set(id, id);
+      const label = normalizeTemplateKey(to.time_object_name ?? to.time_object ?? to.event_name ?? "");
+      if (label) byLabel.set(label, id);
+    });
+    return { byId, byLabel };
+  }, [activeDetail]);
+
+  // A template field that renders a saved additional time object → that time object's id
+  // (so it gets the same remove button as a freshly added row). Core fields return null.
+  const getAdditionalTimeObjectId = (field) => {
+    if (!["datetime", "timeobject"].includes(getTemplateFieldType(field))) return null;
+    const explicitId = String(field?.time_object_id ?? field?.timeobject_id ?? "").trim();
+    if (explicitId && additionalTimeObjectIndex.byId.has(explicitId)) return explicitId;
+    if (explicitId && (field?.is_additional ?? field?.isAdditional)) return explicitId;
+    if (explicitId) return null;
+    const candidates = [normalizeTemplateKey(field?.field_key), normalizeTemplateKey(field?.field_label)].filter(Boolean);
+    const match = candidates.find((key) => additionalTimeObjectIndex.byLabel.has(key));
+    return match ? additionalTimeObjectIndex.byLabel.get(match) : null;
+  };
+
   // Saved additional rows come from the call detail (call_file/get_call_detail) `time_objects`.
+  // Rows the template already renders as a field are skipped so they don't show twice.
   const savedAdditionalRows = useMemo(() => {
     const source = Array.isArray(activeDetail?.time_objects) ? activeDetail.time_objects.flat(Infinity) : [];
-    return mapCallTimeObjectsToAdditionalRows(source, { stageId });
-  }, [activeDetail, stageId]);
+    const renderedIds = new Set(fields.map(getAdditionalTimeObjectId).filter(Boolean));
+    return mapCallTimeObjectsToAdditionalRows(source, { stageId }).filter(
+      (row) => row?.id == null || !renderedIds.has(String(row.id).trim())
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDetail, stageId, fields, additionalTimeObjectIndex]);
 
   // Whenever the call detail refreshes, show its saved rows plus any unsaved local drafts.
   useEffect(() => {
@@ -565,6 +599,24 @@ function TemplateStageForm({
       return;
     }
     setAdditionalRows((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Remove a saved additional time object that the template renders as a regular field.
+  const [removingTimeObjectId, setRemovingTimeObjectId] = useState(null);
+  const handleRemoveTemplateTimeObject = async (timeObjectId) => {
+    const resolvedCallId = String(callId ?? "").trim();
+    if (!timeObjectId || !resolvedCallId || removingTimeObjectId) return;
+    setRemovingTimeObjectId(timeObjectId);
+    try {
+      await deleteCallTimeObjectAction({ timeObjectId, callId: resolvedCallId, stageId });
+      if (!aliveRef.current) return;
+      await refetchCallDetail?.();
+      if (aliveRef.current) setReportTemplateVersion((version) => version + 1);
+    } catch (error) {
+      notify(getApiErrorMessage(error, "Failed to delete time object."), "error");
+    } finally {
+      if (aliveRef.current) setRemovingTimeObjectId(null);
+    }
   };
 
   const handleReportDraftChange = (name, value) => {
@@ -1017,18 +1069,35 @@ function TemplateStageForm({
                     }
                   />
                 ) : (
-                  visibleFields.map((field) => (
-                    <FormField
-                      key={field.field_id}
-                      label={`${field.field_label || field.field_key || "Field"}${isTemplateFieldRequired(field) ? " *" : ""}`}
-                    >
+                  visibleFields.map((field) => {
+                    const fieldLabel = `${field.field_label || field.field_key || "Field"}${isTemplateFieldRequired(field) ? " *" : ""}`;
+                    const additionalTimeObjectId = getAdditionalTimeObjectId(field);
+                    const showRemove = Boolean(additionalTimeObjectId) && !isViewOnly && canDeleteTimeObject;
+                    return (
+                    <FormField key={field.field_id} label={showRemove ? undefined : fieldLabel}>
+                      {showRemove && (
+                        <div className="operation-additional-time-object-label-row">
+                          <label>{fieldLabel}</label>
+                          <button
+                            type="button"
+                            className="operation-additional-time-object-remove-btn"
+                            onClick={() => handleRemoveTemplateTimeObject(additionalTimeObjectId)}
+                            disabled={removingTimeObjectId === additionalTimeObjectId}
+                            aria-label={`Remove ${field.field_label || field.field_key || "time object"}`}
+                            title="Remove"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )}
                       {renderInput(field)}
                       {errors[field.field_id] && <span className="cf-field-error">{errors[field.field_id]}</span>}
                       {normalizeTemplateKey(field.field_key) === "weather_forecast" &&
                         isBadWeatherValue(getValue(field.field_id)) &&
                         weatherMapField?.iframe?.src && <WindyWeatherMap iframe={weatherMapField.iframe} />}
                     </FormField>
-                  ))
+                    );
+                  })
                 )}
                 <AdditionalTimeObjectsFields
                   value={additionalRows}
