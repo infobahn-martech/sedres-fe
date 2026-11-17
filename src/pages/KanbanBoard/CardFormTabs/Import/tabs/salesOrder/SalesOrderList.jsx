@@ -368,6 +368,9 @@ SalesOrderPagination.propTypes = {
   compact: PropTypes.bool,
 };
 
+// so_type values for sales_order/get_so_items_by_call (role_id 1 / 2 only).
+const SO_TYPE_OPTIONS = ["Marine", "Husbandry"];
+
 const SalesOrderList = ({
   card,
   formValues,
@@ -2798,6 +2801,29 @@ const SalesOrderList = ({
           SALES ORDER LIST
         </h3>
         <div className="sales-order-list-header-actions">
+          {isPortManagerOrOperator && (
+            <div className="sales-order-so-type-toggle" role="group" aria-label="Sales order type">
+              {SO_TYPE_OPTIONS.map((type) => {
+                const isActive = (formValues?.soType || "Marine") === type;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    className={`sales-order-so-type-btn${isActive ? " is-active" : ""}`}
+                    aria-pressed={isActive}
+                    disabled={isLoadingSalesOrder}
+                    onClick={() => {
+                      if (isActive) return;
+                      setCurrentPage(1);
+                      handleChange?.("soType")(type);
+                    }}
+                  >
+                    {type}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <SalesOrderPagination
             page={currentPage}
             total={totalOrderCount}

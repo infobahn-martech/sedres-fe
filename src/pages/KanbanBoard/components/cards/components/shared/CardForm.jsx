@@ -2587,7 +2587,12 @@ function CardForm({
   // that change the SO items server-side, e.g. generating a Work Order or PO).
   // `silent`: background refresh after a field edit — no "Loading sales order…" overlay, and a
   // failed refresh keeps the table as it is instead of clearing it.
-  const loadSalesOrder = useCallback((callId, { markKey, silent = false } = {}) => {
+  // Port Manager (role_id 1) / Port Operator (role_id 2) pick Marine or Husbandry in the Sales
+  // Order header; the choice lives in formValues.soType and is sent as so_type.
+  const canSelectSoType = ["1", "2"].includes(String(userRoleId ?? ""));
+  const salesOrderSoType = canSelectSoType ? formValues?.soType || "Marine" : undefined;
+
+  const loadSalesOrder = useCallback((callId, { markKey, silent = false, soType } = {}) => {
     if (!callId) {
       if (silent) return Promise.resolve();
       setSalesOrderApiError("No call identifier available for this card.");
@@ -2601,7 +2606,7 @@ function CardForm({
     }
 
     return salesOrderService
-      .getSoItemsByCall(callId)
+      .getSoItemsByCall(callId, soType)
       .then((response) => {
         const body = response?.data;
         if (body?.status !== "success" || !body?.data) {
@@ -2657,11 +2662,11 @@ function CardForm({
       return;
     }
 
-    const key = `${card?.id ?? ""}:${callId}`;
+    const key = `${card?.id ?? ""}:${callId}:${salesOrderSoType ?? ""}`;
     if (lastSalesOrderFetchKeyRef.current === key) return;
 
-    loadSalesOrder(callId, { markKey: key });
-  }, [show, activeTopTab, card?.call_id, card?.callId, card?.id, loadSalesOrder]);
+    loadSalesOrder(callId, { markKey: key, soType: salesOrderSoType });
+  }, [show, activeTopTab, card?.call_id, card?.callId, card?.id, loadSalesOrder, salesOrderSoType]);
 
   // Re-fetches the current call's sales order items — used after actions that mutate SO
   // items server-side (e.g. sales_order/generate_work_order) so the table reflects the
@@ -2670,9 +2675,9 @@ function CardForm({
   const refreshSalesOrder = useCallback(({ silent = false } = {}) => {
     const callIdRaw = card?.call_id ?? card?.callId;
     const callId = callIdRaw === undefined || callIdRaw === null ? "" : String(callIdRaw).trim();
-    const key = `${card?.id ?? ""}:${callId}`;
-    return loadSalesOrder(callId, { markKey: key, silent });
-  }, [card?.call_id, card?.callId, card?.id, loadSalesOrder]);
+    const key = `${card?.id ?? ""}:${callId}:${salesOrderSoType ?? ""}`;
+    return loadSalesOrder(callId, { markKey: key, silent, soType: salesOrderSoType });
+  }, [card?.call_id, card?.callId, card?.id, loadSalesOrder, salesOrderSoType]);
 
   const [isSavingGeneral, setIsSavingGeneral] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);

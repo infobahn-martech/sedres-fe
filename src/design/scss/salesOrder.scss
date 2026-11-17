@@ -158,6 +158,44 @@
   white-space: nowrap;
 }
 
+.sales-order-so-type-toggle {
+  display: inline-flex;
+  border: 1.5px solid #00368c;
+  border-radius: 9px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sales-order-so-type-btn {
+  background: var(--surface-primary);
+  border: 0;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #00368c;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s ease, color 0.18s ease;
+
+  & + & {
+    border-left: 1.5px solid #00368c;
+  }
+
+  &:hover:not(:disabled):not(.is-active) {
+    background: rgba(0, 54, 140, 0.06);
+  }
+
+  &.is-active {
+    background: #00368c;
+    color: #fff;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+}
+
 .sales-order-sync-sap-button:hover {
   background: rgba(0, 54, 140, 0.06);
   transform: translateY(-2px);
