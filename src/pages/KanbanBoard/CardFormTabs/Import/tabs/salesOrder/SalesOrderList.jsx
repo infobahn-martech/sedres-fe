@@ -2797,9 +2797,9 @@ const SalesOrderList = ({
     <div className="cardform-left-full sales-order-content-wrapper" style={{ "--card-color": cardColor }}>
       <div className="sales-order-list-header">
         <div className="sales-order-list-header-left">
-          <h3 className="sales-order-list-title">
+          <h3 className="sales-order-list-title" style={{ textTransform: "none", letterSpacing: "0.01em" }}>
             <span className="sales-order-list-title-bar"></span>
-            SALES ORDER LIST
+            Sales Order List
           </h3>
           {isPortManagerOrOperator && (
             <div className="sales-order-so-type-toggle" role="group" aria-label="Sales order type">
