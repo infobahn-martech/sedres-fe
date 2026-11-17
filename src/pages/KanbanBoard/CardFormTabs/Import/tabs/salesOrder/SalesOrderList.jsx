@@ -2796,11 +2796,11 @@ const SalesOrderList = ({
   return (
     <div className="cardform-left-full sales-order-content-wrapper" style={{ "--card-color": cardColor }}>
       <div className="sales-order-list-header">
-        <h3 className="sales-order-list-title">
-          <span className="sales-order-list-title-bar"></span>
-          SALES ORDER LIST
-        </h3>
-        <div className="sales-order-list-header-actions">
+        <div className="sales-order-list-header-left">
+          <h3 className="sales-order-list-title">
+            <span className="sales-order-list-title-bar"></span>
+            SALES ORDER LIST
+          </h3>
           {isPortManagerOrOperator && (
             <div className="sales-order-so-type-toggle" role="group" aria-label="Sales order type">
               {SO_TYPE_OPTIONS.map((type) => {
@@ -2824,6 +2824,8 @@ const SalesOrderList = ({
               })}
             </div>
           )}
+        </div>
+        <div className="sales-order-list-header-actions">
           <SalesOrderPagination
             page={currentPage}
             total={totalOrderCount}

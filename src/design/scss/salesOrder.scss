@@ -158,36 +158,48 @@
   white-space: nowrap;
 }
 
+.sales-order-list-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
 .sales-order-so-type-toggle {
   display: inline-flex;
-  border: 1.5px solid #00368c;
-  border-radius: 9px;
-  overflow: hidden;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(0, 54, 140, 0.07);
+  border: 1px solid rgba(0, 54, 140, 0.14);
+  border-radius: 999px;
   flex-shrink: 0;
 }
 
 .sales-order-so-type-btn {
-  background: var(--surface-primary);
+  background: transparent;
   border: 0;
-  padding: 9px 16px;
-  font-size: 13px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
   font-weight: 600;
-  color: #00368c;
+  letter-spacing: 0.2px;
+  line-height: 1.4;
+  color: var(--text-secondary, #5b6b8c);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.18s ease, color 0.18s ease;
-
-  & + & {
-    border-left: 1.5px solid #00368c;
-  }
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
 
   &:hover:not(:disabled):not(.is-active) {
-    background: rgba(0, 54, 140, 0.06);
+    color: #00368c;
+    background: rgba(0, 54, 140, 0.08);
   }
 
   &.is-active {
     background: #00368c;
     color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 54, 140, 0.25);
   }
 
   &:disabled {
