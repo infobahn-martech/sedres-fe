@@ -720,7 +720,23 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--surface-primary);
+  background: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.sales-order-add-popover .sales-order-add-accordion-title {
+  color: #ffffff;
+}
+
+.sales-order-add-popover .sales-order-add-accordion-close,
+.sales-order-add-popover .sales-order-add-accordion-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+}
+
+.sales-order-add-popover .sales-order-add-accordion-close:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .sales-order-add-popover .sales-order-add-form-grid {

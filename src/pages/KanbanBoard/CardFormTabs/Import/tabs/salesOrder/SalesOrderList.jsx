@@ -3014,7 +3014,6 @@ const SalesOrderList = ({
                       type="button"
                       onClick={handleCancel}
                       className="sales-order-add-accordion-close"
-                      style={{ color: cardColor }}
                     >
                       ×
                     </button>
