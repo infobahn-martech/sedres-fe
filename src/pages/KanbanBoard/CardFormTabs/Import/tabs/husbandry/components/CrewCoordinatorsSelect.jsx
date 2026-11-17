@@ -6,6 +6,8 @@ import { PREMIUM_SELECT_MODAL_Z_INDEX } from "@/components/form/PremiumSelect";
 import crewCoordinatorService from "@/services/crewCoordinatorService";
 import userService from "@/services/userService";
 import useAlertReducer from "@/store/AlertReducer";
+import useAuthReducer from "@/store/AuthReducer";
+import { getFirstUserRoleId } from "@/shared/helpers/groUserRoles";
 import "@/design/scss/husbandry-crew-coordinators.scss";
 
 // Visual styling lives in husbandry-crew-coordinators.scss (classNamePrefix based).
@@ -149,6 +151,17 @@ const CrewCoordinatorsSelect = ({ callId, value = [], onChange, assigned = null 
   );
 };
 
+// Only Port Manager (role_id 1) and Port Operator (role_id 2) see / manage Crew Coordinators.
+// Gated in a wrapper so other roles don't mount the select (no users fetch either).
+const CREW_COORDINATOR_EDITOR_ROLE_IDS = ["1", "2"];
+
+const RoleGatedCrewCoordinatorsSelect = (props) => {
+  const userProfile = useAuthReducer((state) => state.userProfile);
+  const userRoleId = String(getFirstUserRoleId(userProfile) ?? "");
+  if (!CREW_COORDINATOR_EDITOR_ROLE_IDS.includes(userRoleId)) return null;
+  return <CrewCoordinatorsSelect {...props} />;
+};
+
 CrewCoordinatorsSelect.propTypes = {
   callId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   value: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.number, PropTypes.string])),
@@ -161,4 +174,6 @@ CrewCoordinatorsSelect.propTypes = {
   ),
 };
 
-export default CrewCoordinatorsSelect;
+RoleGatedCrewCoordinatorsSelect.propTypes = CrewCoordinatorsSelect.propTypes;
+
+export default RoleGatedCrewCoordinatorsSelect;
