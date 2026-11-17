@@ -399,7 +399,7 @@ ServiceInsights.propTypes = {
 };
 
 // Service Selection Component
-export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, serviceCounts = null, requestsByService = null, serviceHistory = null, showLaunchHire = true, hiddenServiceIds = [], salesOrder = null, crewCoordinators = [], onCrewCoordinatorsChange }) => {
+export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, serviceCounts = null, requestsByService = null, serviceHistory = null, showLaunchHire = true, hiddenServiceIds = [], salesOrder = null, callId = null, crewCoordinators = [], onCrewCoordinatorsChange }) => {
   const categories = servicesSummary?.categories || {};
   const num = toCount;
   // call_file/get_service_counts, keyed by service title. A card whose title
@@ -619,7 +619,7 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
           </p>
         </header>
         {onCrewCoordinatorsChange && (
-          <CrewCoordinatorsSelect value={crewCoordinators} onChange={onCrewCoordinatorsChange} />
+          <CrewCoordinatorsSelect callId={callId} value={crewCoordinators} onChange={onCrewCoordinatorsChange} />
         )}
         <div className="husbandry-service-options">
           {services.map((service, index) => {
@@ -693,6 +693,7 @@ ServiceSelection.propTypes = {
   showLaunchHire: PropTypes.bool,
   hiddenServiceIds: PropTypes.arrayOf(PropTypes.string),
   salesOrder: PropTypes.object,
+  callId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   crewCoordinators: PropTypes.array,
   onCrewCoordinatorsChange: PropTypes.func,
 };
@@ -722,7 +723,7 @@ function Husbandry({
   onCrewCoordinatorsChange: onCrewCoordinatorsChangeProp,
 }) {
   const { hasPermission, hasSubmodule } = usePermissions();
-  // Crew Coordinators (UI-only). CardForm owns this state so it survives tab switches;
+  // Crew Coordinators (API-backed in CrewCoordinatorsSelect). CardForm owns this state so it survives tab switches;
   // fall back to local state when Husbandry is rendered without it.
   const [localCrewCoordinators, setLocalCrewCoordinators] = useState([]);
   const crewCoordinators = onCrewCoordinatorsChangeProp ? (crewCoordinatorsProp ?? []) : localCrewCoordinators;
@@ -1441,6 +1442,7 @@ function Husbandry({
           showLaunchHire={showLaunchHire}
           hiddenServiceIds={hiddenHusbandryMainTabIds}
           salesOrder={salesOrder}
+          callId={Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0) || null}
           crewCoordinators={crewCoordinators}
           onCrewCoordinatorsChange={onCrewCoordinatorsChange}
         />

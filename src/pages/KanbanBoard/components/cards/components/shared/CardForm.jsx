@@ -2040,7 +2040,8 @@ function CardForm({
   const defaultTab = isDAModule ? "General" : (isSimplifiedMode ? "General" : "Appointment Details");
 
   const [activeTopTab, setActiveTopTab] = useState(defaultTab);
-  // Husbandry → Crew Coordinators selection (UI-only, static options for now). Held here so
+  // Husbandry → Crew Coordinators selection (loaded/saved by CrewCoordinatorsSelect via the
+  // crew_coordinator APIs). Held here so
   // it survives switching tabs while the card form stays mounted.
   const [crewCoordinators, setCrewCoordinators] = useState([]);
 

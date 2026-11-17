@@ -4,6 +4,7 @@ import 'react-phone-input-2/lib/bootstrap.css';
 import { FiCamera } from 'react-icons/fi';
 import CustomModal from '../../components/CustomModal';
 import authService from '../../services/authService';
+import SignatureUpload from '../../components/form/SignatureUpload';
 import { getItem } from '../../shared/helpers/localStorage';
 import '../../design/scss/profile.scss';
 import '../../design/scss/prospect-modal.scss';
@@ -14,7 +15,7 @@ function resolveUserImageUrl(image) {
   if (!image || typeof image !== 'string') return null;
   const trimmed = image.trim();
   if (!trimmed) return null;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^(https?:|data:|blob:)/i.test(trimmed)) return trimmed;
   const root = (import.meta.env.VITE_API_ENDPOINT || '').replace(/\/?$/, '/');
   return `${root}${trimmed.replace(/^\//, '')}`;
 }
@@ -29,6 +30,9 @@ function mapApiUserToForm(data) {
     email: data?.email || '',
     image: resolvedImage,
     avatarFile: null,
+    signature: resolveUserImageUrl(data?.signature_path || data?.signature),
+    signatureFile: null,
+    removeSignature: false,
   };
 }
 
@@ -47,6 +51,9 @@ function MyAccountsModal({ show, onClose }) {
     email: '',
     image: null,
     avatarFile: null,
+    signature: null,
+    signatureFile: null,
+    removeSignature: false,
   });
 
   const applyFormFromUser = useCallback((userPayload) => {
@@ -142,6 +149,29 @@ function MyAccountsModal({ show, onClose }) {
     }
   };
 
+  const handleSignatureSelect = (file) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData((prev) => ({
+        ...prev,
+        signature: reader.result,
+        signatureFile: file,
+        removeSignature: false,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSignatureRemove = () => {
+    setFormData((prev) => ({
+      ...prev,
+      signature: null,
+      signatureFile: null,
+      // Only ask the server to remove a signature that was saved before
+      removeSignature: Boolean(baselineRef.current?.signature),
+    }));
+  };
+
   const validate = () => {
     const next = {};
     if (formData.firstName?.trim() && !/^[A-Za-z\s]+$/.test(formData.firstName.trim())) {
@@ -181,6 +211,11 @@ function MyAccountsModal({ show, onClose }) {
     formDataToSend.append('phone', (formData.phone || '').replace(/\D/g, ''));
     if (formData.avatarFile) {
       formDataToSend.append('avatar', formData.avatarFile);
+    }
+    if (formData.signatureFile) {
+      formDataToSend.append('signature', formData.signatureFile);
+    } else if (formData.removeSignature) {
+      formDataToSend.append('remove_signature', 1);
     }
 
     try {
@@ -377,6 +412,15 @@ function MyAccountsModal({ show, onClose }) {
                         <span className="field-error">{errors.email}</span>
                       )}
                     </div>
+                  </div>
+
+                  <div className="col-12">
+                    <SignatureUpload
+                      previewUrl={formData.signature}
+                      onSelect={handleSignatureSelect}
+                      onRemove={handleSignatureRemove}
+                      disabled={!isEditing}
+                    />
                   </div>
                 </div>
               </div>
