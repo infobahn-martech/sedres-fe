@@ -5,6 +5,7 @@ import PremiumSelect from "../../../components/form/PremiumSelect";
 import CustomModal from "../../../components/CustomModal";
 import useCustomerPricingInfobhanReducer from "../../../store/CustomerPricingInfobhanReducer";
 import useBillingEntityReducer from "../../../store/BillingEntityReducer";
+import usePortReducer from "../../../store/PortReducer";
 import "../../../design/scss/prospect-modal.scss";
 import "../../../design/scss/modal-designs.scss";
 import "../../../design/scss/form-designs.scss";
@@ -27,12 +28,15 @@ export function AddEditCustomerPricingInfobhan({ showModal, closeModal, onSucces
         getBillingEntities,
     } = useBillingEntityReducer((state) => state);
 
+    const { ports, getPorts, isLoading: isLoadingPorts } = usePortReducer((s) => s);
+
     const isEdit = !!(showModal && typeof showModal === "object" && showModal.tariff_id != null);
     const isSubmitting = isEdit ? isUpdating : isSaving;
 
     useEffect(() => {
         getAllServiceCodes();
         getBillingEntities({ params: { page: 1, limit: 1000 } });
+        getPorts({ params: { limit: 1000 } });
     }, []);
 
     const {
@@ -44,6 +48,7 @@ export function AddEditCustomerPricingInfobhan({ showModal, closeModal, onSucces
         defaultValues: isEdit
             ? {
                 service_code_id: showModal.service_code_id != null ? String(showModal.service_code_id) : "",
+                port_id: showModal.port_id != null ? String(showModal.port_id) : "",
                 item_code: showModal.item_code ?? "",
                 item_name: showModal.item_name ?? "",
                 default_price: showModal.default_price != null ? String(showModal.default_price) : "",
@@ -51,6 +56,7 @@ export function AddEditCustomerPricingInfobhan({ showModal, closeModal, onSucces
             }
             : {
                 service_code_id: "",
+                port_id: "",
                 item_code: "",
                 item_name: "",
                 default_price: "",
@@ -119,10 +125,16 @@ export function AddEditCustomerPricingInfobhan({ showModal, closeModal, onSucces
         };
     });
 
+    const portOptions = (ports ?? []).map((p) => ({
+        value: String(p.port_id ?? ""),
+        label: String(p.port_name ?? p.port ?? p.port_id ?? ""),
+    }));
+
     const onSubmit = (data) => {
         if (isEdit) {
             const payload = {
                 tariff_id: Number(showModal.tariff_id),
+                port_id: Number(data.port_id),
                 default_price: Number(data.default_price),
                 item_name: data.item_name.trim(),
                 entities: (data.entities ?? []).map((e) => ({
@@ -145,6 +157,7 @@ export function AddEditCustomerPricingInfobhan({ showModal, closeModal, onSucces
 
         const payload = {
             service_code_id: Number(data.service_code_id),
+            port_id: Number(data.port_id),
             item_code: data.item_code.trim(),
             item_name: data.item_name.trim(),
             default_price: Number(data.default_price),
@@ -214,6 +227,34 @@ export function AddEditCustomerPricingInfobhan({ showModal, closeModal, onSucces
                                         <span className="field-error">
                                             {errors.service_code_id.message}
                                         </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="cpi-field">
+                                <div className="form-field">
+                                    <div className="phone-wrapper">
+                                        <label className="phone-label">
+                                            Port <span className="text-danger">*</span>
+                                        </label>
+                                        <Controller
+                                            name="port_id"
+                                            control={control}
+                                            rules={{ required: "Port is required" }}
+                                            render={({ field }) => (
+                                                <PremiumSelect
+                                                    value={field.value != null ? String(field.value) : ""}
+                                                    onChange={(e) => field.onChange(e.target.value)}
+                                                    options={portOptions}
+                                                    placeholder={isLoadingPorts ? "Loading..." : "Select Port"}
+                                                    searchPlaceholder="Search port..."
+                                                    hasError={Boolean(errors.port_id)}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                    {errors.port_id && (
+                                        <span className="field-error">{errors.port_id.message}</span>
                                     )}
                                 </div>
                             </div>
