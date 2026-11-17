@@ -17,7 +17,8 @@ import {
 import { buildCreateBusinessRulePayload, buildUpdateBusinessRulePayload, getUnconfiguredActionLabels, isCreateSubtaskAction, RECURRENCE_REGULAR_FIELD_IDS, buildAdvancedScheduleFields } from './buildBusinessRulePayload';
 import ThenGroupRawSummary from './ThenGroupRawSummary';
 import GenericThenActionEditor from './GenericThenActionEditor';
-import { EMPTY_GENERIC_ACTION_VALUE, parseGenericThenAction } from './genericThenAction';
+import { CREATE_CARDS_GROUP_TYPE, EMPTY_GENERIC_ACTION_VALUE, makeCreateCardAction, parseCreateCardThenAction, parseGenericThenAction } from './genericThenAction';
+import CreateCardActionCard from './CreateCardActionCard';
 import BusinessRuleFieldValue from './BusinessRuleFieldValue';
 import BoardFilterPicker from './BoardFilterPicker';
 import { fieldTakesValue, getOperatorId, operatorTakesValue } from './businessRuleFieldUtils';
@@ -876,8 +877,7 @@ function CreateActionModal({ show, onClose, onSelect, actionTypeId }) {
   }, [show, actionTypeId]);
 
   const mappedOptions = thenActionRegularFields.map((field) => ({ key: field.field_key, label: field.field_label }));
-  // Only "Create subtask" is still supported — destination-based create variants are hidden.
-  const createActionOptions = mappedOptions.filter(isCreateSubtaskAction);
+  const createActionOptions = mappedOptions;
 
   const filterQuery = filterText.trim().toLowerCase();
   const filteredOptions = filterQuery
@@ -910,7 +910,7 @@ function CreateActionModal({ show, onClose, onSelect, actionTypeId }) {
     >
       <div className="card-property-match-modal-shell">
         <header className="card-property-match-modal-header">
-          <h2 className="card-property-match-modal-title">Create Subtask</h2>
+          <h2 className="card-property-match-modal-title">Add new action</h2>
           <button
             type="button"
             className="business-rule-form-modal-close"
@@ -4796,6 +4796,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   const [whenFields, setWhenFields] = useState([]);
   const [showWhenFieldPicker, setShowWhenFieldPicker] = useState(false);
   const [createActions, setCreateActions] = useState([]);
+  const [createCardActions, setCreateCardActions] = useState([]);
   const [showCreateActionPicker, setShowCreateActionPicker] = useState(false);
   const [linkActions, setLinkActions] = useState([]);
   const [showLinkActionPicker, setShowLinkActionPicker] = useState(false);
@@ -5142,6 +5143,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   // from get_then_action_fields, keyed by this trigger's action_type_id for that
   // group_type (get_trigger_config's actions[] carries one per group_type).
   const createActionTypeId = sortedTriggerActions.find((a) => a.group_type === 'create_cards')?.action_type_id;
+  const createCardCatalog = useBusinessRuleReducer((state) => state.thenActionFieldsByType[String(createActionTypeId)]);
+  const getThenActionFieldsByTypeForCreate = useBusinessRuleReducer((state) => state.getThenActionFieldsByType);
+  useEffect(() => {
+    if (createActionTypeId != null && createCardActions.length > 0) getThenActionFieldsByTypeForCreate(createActionTypeId);
+  }, [createActionTypeId, createCardActions.length]);
   const updateActionTypeId = sortedTriggerActions.find((a) => a.group_type === 'update_card')?.action_type_id;
 
   // Resolved once per trigger: which cross-card direction (if any) this trigger's own
@@ -5398,6 +5404,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       .sort((a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0));
 
     const nextCreateActions = [];
+    const nextCreateCardActions = [];
     const nextUpdateActions = [];
     const nextLinkActions = [];
     const nextRemoveOtherLinksByType = {};
@@ -5437,7 +5444,10 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           // destination-based creates (card/child/parent/...) are dropped.
           const relationType = propVal(action, 'relation_type');
           const restoredCreateSubtaskId = action.create_subtask_id ?? propVal(action, 'create_subtask_id');
-          if (relationType !== 'subtask' && restoredCreateSubtaskId == null) return;
+          if (relationType !== 'subtask' && restoredCreateSubtaskId == null) {
+            nextCreateCardActions.push(parseCreateCardThenAction(action, ''));
+            return;
+          }
           nextCreateActions.push({
             id: `create-${action.then_action_id}`,
             thenActionId: action.then_action_id ?? null,
@@ -5654,7 +5664,13 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       if (!sectionId) {
         actions.forEach((action) => {
           const actionTypeId = action.action_type_id ?? group.action_type_id;
-          if (actionTypeId != null) nextGenericActionValues[String(actionTypeId)] = parseGenericThenAction(action);
+          if (actionTypeId == null) return;
+          const parsed = parseGenericThenAction(action, group.group_type);
+          const previous = nextGenericActionValues[String(actionTypeId)];
+          // Each saved create-cards action is one more card of the same section.
+          nextGenericActionValues[String(actionTypeId)] = group.group_type === CREATE_CARDS_GROUP_TYPE
+            ? { ...parsed, cards: [...(previous?.cards ?? []), ...parsed.cards] }
+            : parsed;
         });
         return;
       }
@@ -5666,6 +5682,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     });
 
     setCreateActions(nextCreateActions);
+    setCreateCardActions(nextCreateCardActions);
     setUpdateActions(nextUpdateActions);
     setLinkActions(nextLinkActions);
     setRemoveOtherLinksByType(nextRemoveOtherLinksByType);
@@ -6061,6 +6078,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       boardConditionRows,
       conditions,
       createActions,
+      createCardActions,
       linkActions,
       removeOtherLinksByType,
       updateActions,
@@ -6283,6 +6301,12 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   };
 
   const handleSelectCreateAction = (option) => {
+    // Create card / child / parent have their own card (title, where, card fields); only the
+    // subtask keeps the settings-modal flow.
+    if (!isCreateSubtaskAction(option)) {
+      setCreateCardActions((prev) => [...prev, makeCreateCardAction(option.key, option.label)]);
+      return;
+    }
     setCreateActions((prev) => [
       ...prev,
       { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, key: option.key, label: option.label },
@@ -6304,6 +6328,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   };
 
   const handleClearCreateActions = () => {
+    setCreateCardActions([]);
     // Same rule as handleRemoveCreateAction: only "Create subtask" entries saved on
     // the backend (createSubtaskId) need a delete call before they can be cleared.
     const actionsToDelete = createActions.filter((a) => a.createSubtaskId);
@@ -7627,12 +7652,13 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                     {section.id === 'generic' && (
                       <GenericThenActionEditor
                         action={section.action}
+                        defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
                         value={genericActionValues[String(section.action.action_type_id)] ?? EMPTY_GENERIC_ACTION_VALUE}
                         onChange={(next) => setGenericActionValues((prev) => ({ ...prev, [String(section.action.action_type_id)]: next }))}
                       />
                     )}
 
-                    {section.id === 'create' && createActions.length > 0 && (
+                    {section.id === 'create' && (createActions.length > 0 || createCardActions.length > 0) && (
                       <div className="br-create-action-list">
                         {createActions.map((action) => (
                           <div key={action.id} className="br-create-action-card">
@@ -7683,6 +7709,21 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                           </div>
                         ))}
 
+                        {createCardActions.map((action) => (
+                          <CreateCardActionCard
+                            key={action.id}
+                            action={{
+                              ...action,
+                              label: createCardCatalog?.regularFields?.find((f) => f.field_key === action.relationType)?.field_label
+                                || action.label || action.relationType,
+                            }}
+                            catalog={createCardCatalog}
+                            defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
+                            onChange={(next) => setCreateCardActions((prev) => prev.map((a) => (a.id === action.id ? { ...next, label: a.label } : a)))}
+                            onRemove={() => setCreateCardActions((prev) => prev.filter((a) => a.id !== action.id))}
+                          />
+                        ))}
+
                         <div className="br-link-footer-actions">
                           <button
                             type="button"
@@ -7692,7 +7733,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                             <FiPlus size={14} aria-hidden />
                             Add new action
                           </button>
-                          {createActions.length > 1 && (
+                          {createActions.length + createCardActions.length > 1 && (
                             <button
                               type="button"
                               className="business-rule-form-add-link"
@@ -9315,7 +9356,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                       <ThenGroupRawSummary key={group.then_group_id ?? group.group_type} group={group} />
                     ))}
 
-                    {section.id !== 'execute' && section.id !== 'generic' && !(section.id === 'link' && linkActions.length > 0) && !(section.id === 'create' && createActions.length > 0) && (
+                    {section.id !== 'execute' && section.id !== 'generic' && !(section.id === 'link' && linkActions.length > 0) && !(section.id === 'create' && (createActions.length > 0 || createCardActions.length > 0)) && (
                       <div className="br-link-footer-actions">
                         <button
                           type="button"
