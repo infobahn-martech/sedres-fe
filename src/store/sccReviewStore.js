@@ -12,6 +12,24 @@ const mergeReviewCard = (card, review) => {
   };
 };
 
+export const getSalesOrderObjects = (card) =>
+  (card.sales_orders ?? []).map((salesOrder) =>
+    typeof salesOrder === "object" ? salesOrder : { sales_order_no: salesOrder }
+  );
+
+export const hasSccDocument = (card) =>
+  getSalesOrderObjects(card).some((salesOrder) => salesOrder.scc?.document_id != null);
+
+/* The approved-SCC confirm body: each card with the SCC placed on each of its sales orders. */
+export const buildApprovedSccPayload = (cards) =>
+  cards.map((card) => ({
+    call_id: card.call_id,
+    card_id: card.card_id,
+    sales_orders: getSalesOrderObjects(card)
+      .filter((salesOrder) => salesOrder.scc?.document_id != null)
+      .map((salesOrder) => ({ sales_order_no: salesOrder.sales_order_no, scc_id: salesOrder.scc.document_id })),
+  }));
+
 /**
  * SCC review popup, opened after a bulk da/upload_scc_documents upload on L&T "SCC Received".
  * Seeded with the upload response's cards, then refreshed from da/scc_document_review;
@@ -99,6 +117,36 @@ const useSccReviewStore = create((set, get) => ({
       ),
     }));
     return null;
+  },
+
+  /**
+   * Operator "Approval Received" upload: no review popup. The uploaded cards are refreshed from
+   * da/scc_document_review and every card with an SCC is sent straight to da/confirm_scc_documents,
+   * which moves the signed ones on and answers not_moved for the rest.
+   * Resolves to { errorMessage } on failure, or { result, payload } (payload is empty when no card has an SCC).
+   */
+  confirmApprovedSccUpload: async (cards, { workflowId = null } = {}) => {
+    let reviewCards = cards;
+    try {
+      const { data } = await daService.getSccDocumentReview({
+        ...(workflowId != null && { workflow_id: workflowId }),
+        card_ids: cards.map((card) => card.card_id).join(","),
+      });
+      if (data?.status === "success") {
+        const reviewByCardId = {};
+        (data.data?.cards ?? []).forEach((card) => {
+          reviewByCardId[String(card.card_id)] = card;
+        });
+        reviewCards = cards.map((card) => mergeReviewCard(card, reviewByCardId[String(card.card_id)]));
+      }
+    } catch {
+      reviewCards = cards;
+    }
+
+    const payload = buildApprovedSccPayload(reviewCards.filter(hasSccDocument));
+    if (!payload.length) return { payload };
+    const { errorMessage, result } = await get().confirmSccDocuments(payload);
+    return errorMessage ? { errorMessage } : { result, payload };
   },
 
   /** Resolves to { errorMessage } on failure, or { result } with da/confirm_scc_documents' moved cards. */

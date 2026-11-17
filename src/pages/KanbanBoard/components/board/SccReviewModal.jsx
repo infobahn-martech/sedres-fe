@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { FiAlertTriangle, FiCheck, FiFileText, FiLayers, FiX } from "react-icons/fi";
 import CustomModal from "@/components/CustomModal";
-import useSccReviewStore from "@/store/sccReviewStore";
+import useSccReviewStore, { getSalesOrderObjects, hasSccDocument } from "@/store/sccReviewStore";
 import { notify } from "@/components/Toaster";
 import MaterialTablePagination from "../../CardFormTabs/Import/tabs/husbandry/components/MaterialTablePagination";
 import "@/design/scss/blockers-modal.scss";
@@ -27,13 +27,6 @@ const APPROVED_COLUMNS = [
 ];
 
 const REVIEW_PAGE_SIZE = 20;
-
-const getSalesOrderObjects = (card) =>
-  (card.sales_orders ?? []).map((salesOrder) =>
-    typeof salesOrder === "object" ? salesOrder : { sales_order_no: salesOrder }
-  );
-
-const hasSccDocument = (card) => getSalesOrderObjects(card).some((salesOrder) => salesOrder.scc?.document_id != null);
 
 // Opened after an L&T "SCC Received" bulk upload. One row per card with the signed SO, SCC and
 // approval email placed on it; cards with everything placed start ticked. Confirm sends the ticked
