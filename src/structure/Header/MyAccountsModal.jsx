@@ -27,6 +27,7 @@ function mapApiUserToForm(data) {
 
   return {
     firstName: fullName,
+    username: data?.username || data?.user_name || '',
     phone: (data?.phone && String(data.phone).replace(/\D/g, '')) || '',
     email: data?.email || '',
     image: resolvedImage,
@@ -50,6 +51,7 @@ function MyAccountsModal({ show, onClose }) {
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     firstName: '',
+    username: '',
     phone: '',
     email: '',
     image: null,
@@ -210,6 +212,7 @@ function MyAccountsModal({ show, onClose }) {
 
     const formDataToSend = new FormData();
     formDataToSend.append('name', formData.firstName.trim());
+    formDataToSend.append('username', (formData.username || '').trim());
     formDataToSend.append('email', formData.email.trim());
     formDataToSend.append('phone', (formData.phone || '').replace(/\D/g, ''));
     if (formData.avatarFile) {
@@ -368,6 +371,28 @@ function MyAccountsModal({ show, onClose }) {
                       {errors.firstName && (
                         <span className="field-error">{errors.firstName}</span>
                       )}
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <div className="form-field">
+                      <div className="form-floating">
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="accountUsername"
+                          name="username"
+                          value={formData.username}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                          placeholder="Username"
+                          autoComplete="username"
+                          style={{ cursor: !isEditing ? 'not-allowed' : 'text' }}
+                        />
+                        <label htmlFor="accountUsername">
+                          Username
+                        </label>
+                      </div>
                     </div>
                   </div>
 
