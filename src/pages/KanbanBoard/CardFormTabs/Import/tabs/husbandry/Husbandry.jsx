@@ -597,16 +597,6 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
     }
   };
 
-  const getStatusBadgeClass = (status) => {
-    const statusMap = {
-      "Pending": "booked-status-pending",
-      "In Progress": "booked-status-in-progress",
-      "Completed": "booked-status-completed",
-      "Cancelled": "booked-status-cancelled",
-    };
-    return statusMap[status] || "booked-status-pending";
-  };
-
   return (
     <div className="husbandry-service-selection" style={{ "--card-color": cardColor }}>
       <div className="husbandry-service-selection-content">
@@ -630,7 +620,6 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
           {services.map((service, index) => {
             const bookedEntry = bookedServicesMap[service.id];
             const isBooked = Boolean(bookedEntry);
-            const status = bookedEntry?.status || "Pending";
 
             return (
               <button
@@ -644,14 +633,6 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
                   "--stagger-index": index,
                 }}
               >
-                {isBooked && (
-                  <span
-                    className={`husbandry-service-option-status ${getStatusBadgeClass(status)}`}
-                    aria-label={`${service.label} status: ${status}`}
-                  >
-                    {status}
-                  </span>
-                )}
                 <div className="husbandry-service-option-icon">
                   {service.iconPath ? (
                     <svg width="48" height="48" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
