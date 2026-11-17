@@ -44,11 +44,6 @@ import useDispatchNoteReducer from "@/store/DispatchNoteReducer";
 import callFileService from "@/services/callFileService";
 import salesOrderService from "@/services/salesOrderService";
 import { mapSalesOrderResponse } from "@/shared/helpers/mapSalesOrderResponse";
-import transportContentService, { extractTransportRequestsFromEnvelope } from "@/services/transportContentService";
-import hotelService, { extractHotelRequestsFromEnvelope } from "@/services/hotelService";
-import hospitalService, { extractMedicalRequestsFromEnvelope } from "@/services/hospitalService";
-import { getPassRequests, extractPassRequestsFromEnvelope } from "@/services/cgAndZwailpassService";
-import launchHireService from "@/services/launchHireService";
 import usePermissions from "@/shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "@/shared/constants/permissions";
 
@@ -797,7 +792,6 @@ function Husbandry({
     { id: "LAUNCH_HIRE", status: "In Progress", subService: null },
   ] : []);
   const cardColor = "#00368c"; // Fixed color for all buttons, effects, and backgrounds
-  const [servicesSummary, setServicesSummary] = useState(null);
   const [salesOrder, setSalesOrder] = useState(null);
   const [serviceCounts, setServiceCounts] = useState(null);
   const [requestsByService, setRequestsByService] = useState(null);
@@ -853,83 +847,16 @@ function Husbandry({
     getDispatchNotesTotal,
   ]);
 
-  // Fetch each crew-management service's saved request count up front, so the
-  // sidebar badges (Transport/Hotel/Medical/CG Pass/Zawil Pass) are correct on
-  // first render instead of only after the user opens that subtab (which is
-  // when each Content component's own fetch used to run).
+  // Per-service request counts (Transport/Hotel/Medical/CG Pass/Zawil Pass/
+  // Launch Hire) come from get_service_counts below — no separate per-service
+  // fetches on mount. Each service's Content component still reports its live
+  // count via the handle*RequestCount callbacks once opened.
   useEffect(() => {
     if (isDAModule) return undefined;
     const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
     if (!callId) return undefined;
 
     let cancelled = false;
-
-    transportContentService
-      .getTransportRequest(callId)
-      .then((response) => {
-        if (cancelled) return;
-        setRequestCount(CREW_MANAGEMENT_SUBTABS.TRANSPORT, extractTransportRequestsFromEnvelope(response).length);
-      })
-      .catch(() => {});
-
-    hotelService
-      .getHotelRequests(callId)
-      .then((response) => {
-        if (cancelled) return;
-        setRequestCount(CREW_MANAGEMENT_SUBTABS.HOTEL, extractHotelRequestsFromEnvelope(response).length);
-      })
-      .catch(() => {});
-
-    hospitalService
-      .getMedicalRequests(callId)
-      .then((response) => {
-        if (cancelled) return;
-        setRequestCount(CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE, extractMedicalRequestsFromEnvelope(response).length);
-      })
-      .catch(() => {});
-
-    getPassRequests(callId)
-      .then((response) => {
-        if (cancelled) return;
-        const { cg, zawil } = extractPassRequestsFromEnvelope(response);
-        setRequestCount(CREW_MANAGEMENT_SUBTABS.CG_PASS, cg?.length || 0);
-        setRequestCount(CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS, zawil?.length || 0);
-      })
-      .catch(() => {});
-
-    launchHireService
-      .getLaunchHireRequests(callId)
-      .then((response) => {
-        if (cancelled) return;
-        const payload = response?.data?.data ?? response?.data ?? [];
-        const list = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
-        setRequestCount(CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE, list.length);
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isDAModule, formValues?.call_id, formValues?.callId, formValues?.card_call_id, setRequestCount]);
-
-  useEffect(() => {
-    if (isDAModule) return undefined;
-    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
-    if (!callId) return undefined;
-
-    let cancelled = false;
-    callFileService
-      .getRequestedServicesSummary(callId)
-      .then((response) => {
-        if (cancelled) return;
-        const body = response?.data;
-        if (body?.status === "success" && body?.data) {
-          setServicesSummary(body.data);
-        }
-      })
-      .catch(() => {
-        // Non-critical: dashboard badges just fall back to 0 counts.
-      });
 
     salesOrderService
       .getSoItemsByCall(callId)
@@ -1437,17 +1364,24 @@ function Husbandry({
   };
 
   // Each service badge shows the number of requests already saved for this
-  // call, as fetched from its own API. Until that fetch resolves
-  // (requestCounts entry still null), fall back to the crew currently picked
-  // in the pending form. Shared by the dashboard rows and the left-nav.
+  // call. Priority: the live count reported by the service's own Content
+  // component (once opened) → get_service_counts (keyed by service title) →
+  // the crew currently picked in the pending form. Shared by the dashboard
+  // rows and the left-nav.
   const selectedCrewCount = (field) => (Array.isArray(formValues?.[field]) ? formValues[field].length : 0);
+  const crewServiceCount = (subTab, title, crewField) => {
+    if (requestCounts[subTab] != null) return requestCounts[subTab];
+    const apiCount = serviceCounts?.[title]?.requests;
+    if (apiCount != null) return toCount(apiCount);
+    return selectedCrewCount(crewField);
+  };
   const crewServiceCounts = {
-    [CREW_MANAGEMENT_SUBTABS.TRANSPORT]: requestCounts[CREW_MANAGEMENT_SUBTABS.TRANSPORT] ?? selectedCrewCount("selectedCrew"),
-    [CREW_MANAGEMENT_SUBTABS.HOTEL]: requestCounts[CREW_MANAGEMENT_SUBTABS.HOTEL] ?? selectedCrewCount("hotelSelectedCrew"),
-    [CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE]: requestCounts[CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE] ?? selectedCrewCount("medicalServiceSelectedCrew"),
-    [CREW_MANAGEMENT_SUBTABS.CG_PASS]: requestCounts[CREW_MANAGEMENT_SUBTABS.CG_PASS] ?? selectedCrewCount("cgPassSelectedCrew"),
-    [CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS]: requestCounts[CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS] ?? selectedCrewCount("zawilPassSelectedCrew"),
-    [CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE]: requestCounts[CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE] ?? selectedCrewCount("launchHireSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.TRANSPORT]: crewServiceCount(CREW_MANAGEMENT_SUBTABS.TRANSPORT, "Transport", "selectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.HOTEL]: crewServiceCount(CREW_MANAGEMENT_SUBTABS.HOTEL, "Hotel", "hotelSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE]: crewServiceCount(CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE, "Medical", "medicalServiceSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.CG_PASS]: crewServiceCount(CREW_MANAGEMENT_SUBTABS.CG_PASS, "CG Pass", "cgPassSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS]: crewServiceCount(CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS, "Zawil Pass", "zawilPassSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE]: crewServiceCount(CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE, "Launch Hire", "launchHireSelectedCrew"),
   };
 
   // DA module Husbandry: crew table only (no Booked Services)
@@ -1500,7 +1434,6 @@ function Husbandry({
           onSelectService={handleServiceSelect}
           cardColor={cardColor}
           bookedServices={bookedServices}
-          servicesSummary={servicesSummary}
           crewServiceCounts={crewServiceCounts}
           serviceCounts={serviceCounts}
           requestsByService={requestsByService}
