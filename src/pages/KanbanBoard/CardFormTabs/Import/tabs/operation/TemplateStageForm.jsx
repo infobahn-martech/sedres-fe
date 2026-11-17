@@ -533,6 +533,10 @@ function TemplateStageForm({
   // A template field that renders a saved additional time object → that time object's id
   // (so it gets the same remove button as a freshly added row). Core fields return null.
   const getAdditionalTimeObjectId = (field) => {
+    // The call detail injects saved additional time objects as fields "call_time_object_<id>";
+    // they are not part of the call's template, so save_stage rejects them.
+    const injected = /^call_time_object_(.+)$/.exec(String(field?.field_id ?? "").trim());
+    if (injected) return injected[1];
     if (!["datetime", "timeobject"].includes(getTemplateFieldType(field))) return null;
     const explicitId = String(field?.time_object_id ?? field?.timeobject_id ?? "").trim();
     if (explicitId && additionalTimeObjectIndex.byId.has(explicitId)) return explicitId;
@@ -735,8 +739,25 @@ function TemplateStageForm({
     }
 
     const fieldsPayload = {};
+    // Additional time objects aren't template fields: edited ones are saved through
+    // save_call_time_object instead of save_stage.
+    const editedTimeObjectRows = [];
     visibleFields.forEach((field) => {
       if (getTemplateFieldType(field) === "file") return;
+      const timeObjectId = getAdditionalTimeObjectId(field);
+      if (timeObjectId) {
+        if (Object.prototype.hasOwnProperty.call(edits, field.field_id)) {
+          const value = toStagePayloadValue(field, getValue(field.field_id));
+          if (value) {
+            editedTimeObjectRows.push({
+              id: timeObjectId,
+              label: String(field.field_label || field.field_key || "").trim(),
+              time_object_value: value,
+            });
+          }
+        }
+        return;
+      }
       fieldsPayload[field.field_id] = toStagePayloadValue(field, getValue(field.field_id));
     });
 
@@ -776,6 +797,14 @@ function TemplateStageForm({
       const body = response?.data;
       if (body?.status === "error" || body?.status === false) {
         throw new Error(body?.message || "Unable to save this stage.");
+      }
+      for (const row of editedTimeObjectRows) {
+        await commitAdditionalTimeObject({
+          row,
+          callId: resolvedCallId,
+          stageId,
+          saveCallTimeObject: saveCallTimeObjectAction,
+        });
       }
       if (!aliveRef.current) return;
       // Rebind saved values / attachment URLs from a fresh call detail before clearing edits.
@@ -854,7 +883,7 @@ function TemplateStageForm({
     const type = getTemplateFieldType(field);
     const value = getValue(id);
     const hasError = Boolean(errors[id]);
-    const disabled = isViewOnly || submitting === "save";
+    const disabled = isViewOnly;
 
     if (type === "datetime" || type === "timeobject") {
       const [datePart = "", timePart = ""] = String(value || "").split(" ");
