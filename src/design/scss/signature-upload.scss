@@ -137,3 +137,65 @@
     }
   }
 }
+
+// Dark theme — the field follows the floating-input look (form-designs.scss),
+// while the preview keeps a light pad so dark ink stays readable.
+[data-theme="dark"] .signature-upload {
+  background: var(--bg-inset);
+  border-color: var(--border-strong);
+
+  &.has-error {
+    border-color: var(--danger);
+  }
+
+  &.is-disabled {
+    background: var(--field-disabled-bg);
+  }
+
+  .signature-upload__label,
+  &.is-disabled .signature-upload__label {
+    background: var(--bg-card);
+    color: var(--text-subtle);
+  }
+
+  .signature-upload__empty {
+    border-color: var(--border-strong);
+    color: var(--text-subtle);
+
+    &:hover {
+      border-color: var(--brand-bright);
+      color: var(--brand-bright);
+    }
+  }
+
+  &.is-disabled .signature-upload__empty:hover {
+    border-color: var(--border-strong);
+    color: var(--text-subtle);
+  }
+
+  .signature-upload__preview {
+    background: #fff;
+    padding: 2px 6px;
+  }
+
+  .signature-upload__btn {
+    background: transparent;
+    border-color: var(--brand-bright);
+    color: var(--brand-bright);
+
+    &:hover {
+      background: var(--brand-bright);
+      color: #fff;
+    }
+
+    &--danger {
+      border-color: var(--danger);
+      color: var(--danger);
+
+      &:hover {
+        background: var(--danger);
+        color: #fff;
+      }
+    }
+  }
+}
