@@ -1709,7 +1709,8 @@ const renderTabContent = (
   soActionStateResetToken,
   onCloseCard,
   templateTabById,
-  callDetail
+  callDetail,
+  husbandryUiProps = {}
 ) => {
   const commonProps = {
     card,
@@ -1747,7 +1748,7 @@ const renderTabContent = (
       case "Operation":
         return <Operation {...commonProps} ownerInitial={ownerInitial} />;
       case "Husbandry":
-        return <Husbandry {...commonProps} />;
+        return <Husbandry {...commonProps} {...husbandryUiProps} />;
       case "Sales Order":
         return <SalesOrder {...commonProps} />;
       case "Invoice":
@@ -1802,7 +1803,7 @@ const renderTabContent = (
       case "Operation":
         return <Operation {...commonProps} ownerInitial={ownerInitial} />;
       case "Husbandry":
-        return <Husbandry {...commonProps} />;
+        return <Husbandry {...commonProps} {...husbandryUiProps} />;
       case "Document Library":
         return <DocumentLibrary {...commonProps} />;
       case "Sales Order":
@@ -2039,6 +2040,9 @@ function CardForm({
   const defaultTab = isDAModule ? "General" : (isSimplifiedMode ? "General" : "Appointment Details");
 
   const [activeTopTab, setActiveTopTab] = useState(defaultTab);
+  // Husbandry → Crew Coordinators selection (UI-only, static options for now). Held here so
+  // it survives switching tabs while the card form stays mounted.
+  const [crewCoordinators, setCrewCoordinators] = useState([]);
 
   // Header color: add mode defaults to ADD_CARD_TOPBAR_DEFAULT_HEX; else mirrors card.color (or GRO default).
   // In add mode, the color picker also updates formValues.cardColor so create_call_file sends card_color.
@@ -3400,7 +3404,8 @@ function CardForm({
                 soActionStateResetToken,
                 handleClose,
                 templateTabById,
-                callDetailSnapshot
+                callDetailSnapshot,
+                { crewCoordinators, onCrewCoordinatorsChange: setCrewCoordinators }
               )}
           </>
         )}

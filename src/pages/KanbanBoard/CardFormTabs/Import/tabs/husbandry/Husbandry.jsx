@@ -18,6 +18,7 @@ import {
 
 // Import shared components
 import { HusbandryTabs } from "./components/Husbandry.components";
+import CrewCoordinatorsSelect from "./components/CrewCoordinatorsSelect";
 
 // Import content components
 import CrewManagementDashboard from "./components/CrewManagementDashboard";
@@ -403,7 +404,7 @@ ServiceInsights.propTypes = {
 };
 
 // Service Selection Component
-export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, serviceCounts = null, requestsByService = null, serviceHistory = null, showLaunchHire = true, hiddenServiceIds = [], salesOrder = null }) => {
+export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, serviceCounts = null, requestsByService = null, serviceHistory = null, showLaunchHire = true, hiddenServiceIds = [], salesOrder = null, crewCoordinators = [], onCrewCoordinatorsChange }) => {
   const categories = servicesSummary?.categories || {};
   const num = toCount;
   // call_file/get_service_counts, keyed by service title. A card whose title
@@ -622,6 +623,9 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
             Select a service to initiate requests and monitor progress.
           </p>
         </header>
+        {onCrewCoordinatorsChange && (
+          <CrewCoordinatorsSelect value={crewCoordinators} onChange={onCrewCoordinatorsChange} />
+        )}
         <div className="husbandry-service-options">
           {services.map((service, index) => {
             const bookedEntry = bookedServicesMap[service.id];
@@ -694,6 +698,8 @@ ServiceSelection.propTypes = {
   showLaunchHire: PropTypes.bool,
   hiddenServiceIds: PropTypes.arrayOf(PropTypes.string),
   salesOrder: PropTypes.object,
+  crewCoordinators: PropTypes.array,
+  onCrewCoordinatorsChange: PropTypes.func,
 };
 
 // Dummy crew data for DA module Husbandry tab
@@ -711,8 +717,21 @@ const DAMODULE_CREW_DUMMY = [
 ];
 
 // Main Husbandry Component
-function Husbandry({ card, formValues, handleChange, isDAModule = false, showLaunchHire = true }) {
+function Husbandry({
+  card,
+  formValues,
+  handleChange,
+  isDAModule = false,
+  showLaunchHire = true,
+  crewCoordinators: crewCoordinatorsProp,
+  onCrewCoordinatorsChange: onCrewCoordinatorsChangeProp,
+}) {
   const { hasPermission, hasSubmodule } = usePermissions();
+  // Crew Coordinators (UI-only). CardForm owns this state so it survives tab switches;
+  // fall back to local state when Husbandry is rendered without it.
+  const [localCrewCoordinators, setLocalCrewCoordinators] = useState([]);
+  const crewCoordinators = onCrewCoordinatorsChangeProp ? (crewCoordinatorsProp ?? []) : localCrewCoordinators;
+  const onCrewCoordinatorsChange = onCrewCoordinatorsChangeProp ?? setLocalCrewCoordinators;
   // KANBAN_CARD > CREW_MANAGEMENT / MATERIAL_MANAGEMENT carry no VIEW action
   // of their own — submodule presence is the gate for their Husbandry main tab.
   const canViewCrewManagementTab = hasSubmodule(
@@ -1489,6 +1508,8 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
           showLaunchHire={showLaunchHire}
           hiddenServiceIds={hiddenHusbandryMainTabIds}
           salesOrder={salesOrder}
+          crewCoordinators={crewCoordinators}
+          onCrewCoordinatorsChange={onCrewCoordinatorsChange}
         />
       </div>
     );
@@ -1592,6 +1613,8 @@ Husbandry.propTypes = {
   handleChange: PropTypes.func.isRequired,
   isDAModule: PropTypes.bool,
   showLaunchHire: PropTypes.bool,
+  crewCoordinators: PropTypes.array,
+  onCrewCoordinatorsChange: PropTypes.func,
 };
 
 export default Husbandry;
