@@ -1,11 +1,11 @@
-import { CARD_SCOPE, CARD_SCOPE_OPTIONS } from "../../utils/cardScopeFilter";
+import { CARD_SCOPE_OPTIONS, DEFAULT_CARD_SCOPE } from "../../utils/cardScopeFilter";
 import "@/design/scss/pages/kanban-board/cardScopeToggle.scss";
 
 /**
- * Compact "All Cards | My Cards" segmented control for a workflow header. Clicks don't
+ * Compact "My Cards | All Cards" segmented control for a workflow header. Clicks don't
  * bubble, so switching scope never toggles the accordion it sits in.
  */
-export default function CardScopeToggle({ value = CARD_SCOPE.ALL, onChange }) {
+export default function CardScopeToggle({ value = DEFAULT_CARD_SCOPE, disabled = false, onChange }) {
   return (
     <div
       className="card-scope-toggle"
@@ -21,6 +21,7 @@ export default function CardScopeToggle({ value = CARD_SCOPE.ALL, onChange }) {
             type="button"
             role="radio"
             aria-checked={isActive}
+            disabled={disabled}
             className={`card-scope-toggle__option ${isActive ? "card-scope-toggle__option--active" : ""}`}
             onClick={() => {
               if (!isActive) onChange?.(option.value);

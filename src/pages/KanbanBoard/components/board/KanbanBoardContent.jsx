@@ -1,7 +1,7 @@
 import WorkflowAccordion from "./WorkflowAccordion";
 import WorkflowColumns from "./WorkflowColumns";
 import CardScopeToggle from "./CardScopeToggle";
-import { CARD_SCOPE, isWorkflowEmpty } from "../../utils/cardScopeFilter";
+import { DEFAULT_CARD_SCOPE } from "../../utils/cardScopeFilter";
 
 const EMPTY_SELECTED_IDS = [];
 const EMPTY_SCOPES = {};
@@ -47,8 +47,10 @@ export default function KanbanBoardContent({
   onToggleCardSelect,
   onCardSelectDragStart,
   onCardSelectDragEnter,
-  /** { [workflowId]: "all" | "mine" } — workflows already filtered by the page; this only drives the toggle/empty state. */
+  /** { [workflowId]: "all" | "my" } — workflows are already fetched with that scope; this only drives the toggle/empty state. */
   cardScopeByWorkflow = EMPTY_SCOPES,
+  /** { [workflowId]: true } while that workflow is refetching for a scope change. */
+  cardScopeLoadingByWorkflow = EMPTY_SCOPES,
   onCardScopeChange,
 }) {
   if (!boardLoading && workflows.length === 0 && !suppressEmptyMessage) {
@@ -67,9 +69,8 @@ export default function KanbanBoardContent({
   }
 
   return workflows.map((workflow) => {
-    const cardScope = cardScopeByWorkflow[workflow.id] ?? CARD_SCOPE.ALL;
-    const showMyCardsEmpty =
-      cardScope === CARD_SCOPE.MINE && !boardLoading && isWorkflowEmpty(workflow);
+    const cardScope = cardScopeByWorkflow[workflow.id] ?? DEFAULT_CARD_SCOPE;
+    const scopeLoading = Boolean(cardScopeLoadingByWorkflow[workflow.id]);
     return (
     <WorkflowAccordion
       key={workflow.id}
@@ -82,16 +83,12 @@ export default function KanbanBoardContent({
         onCardScopeChange ? (
           <CardScopeToggle
             value={cardScope}
+            disabled={scopeLoading}
             onChange={(scope) => onCardScopeChange(workflow.id, scope)}
           />
         ) : null
       }
     >
-      {showMyCardsEmpty && (
-        <div className="card-scope-empty" role="status">
-          No cards are assigned to you in this workflow.
-        </div>
-      )}
       <WorkflowColumns
         boardId={boardId}
         workflow={workflow}

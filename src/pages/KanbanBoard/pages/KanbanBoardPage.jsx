@@ -34,12 +34,6 @@ import usePermissions from "../../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "../../../shared/constants/permissions";
 import { createNewCardDraft } from "../utils/cardHelpers";
 import { findWorkflowByCardId } from "../utils/boardHelpers";
-import {
-  CARD_SCOPE,
-  filterWorkflowByAssignee,
-  remapDragResultToFullWorkflow,
-} from "../utils/cardScopeFilter";
-import { getItem } from "../../../shared/helpers/localStorage";
 import { resolveCardFormVariant } from "../../../shared/helpers/cardFormVariant";
 import { getFirstUserRoleId } from "../../../shared/helpers/groUserRoles";
 import useAuthReducer from "../../../store/AuthReducer";
@@ -266,6 +260,10 @@ export default function KanbanBoardPage() {
     setAddTargetWorkflowId,
     handleSelectCard,
     handleCloseCard,
+    /* "My Cards / All Cards" per workflow header — filtered server-side via get_full_board ?scope=. */
+    cardScopeByWorkflow,
+    cardScopeLoadingByWorkflow,
+    handleCardScopeChange,
   } = useKanbanBoardState(selectedBoardId);
 
   const {
@@ -336,41 +334,6 @@ export default function KanbanBoardPage() {
         ? workflows
         : workflows.filter((w) => String(w.id) === String(workflowFilterId)),
     [workflows, workflowFilterId]
-  );
-
-  /* "All Cards / My Cards" per workflow header. Purely client-side over the loaded board — no refetch. */
-  const currentUserId =
-    useAuthReducer((s) => s.userProfile?.userid ?? s.authData?.userid) || getItem("userid");
-  const [cardScopeByWorkflow, setCardScopeByWorkflow] = useState({});
-  useEffect(() => {
-    setCardScopeByWorkflow({});
-  }, [selectedBoardId]);
-  const handleCardScopeChange = useCallback((workflowId, scope) => {
-    setCardScopeByWorkflow((prev) => ({ ...prev, [workflowId]: scope }));
-  }, []);
-
-  const displayedWorkflows = useMemo(
-    () =>
-      visibleWorkflows.map((wf) =>
-        cardScopeByWorkflow[wf.id] === CARD_SCOPE.MINE
-          ? filterWorkflowByAssignee(wf, currentUserId)
-          : wf
-      ),
-    [visibleWorkflows, cardScopeByWorkflow, currentUserId]
-  );
-
-  /* In "My Cards" the drag indexes are positions in the filtered lists; translate them back to the
-     full lists before the shared drag-end handler splices them. */
-  const createScopedDragEndHandler = useCallback(
-    (workflowId) => {
-      const handleDragEnd = createDragEndHandler(workflowId);
-      if (cardScopeByWorkflow[workflowId] !== CARD_SCOPE.MINE) return handleDragEnd;
-      const fullWorkflow = workflows.find((wf) => wf.id === workflowId);
-      const filteredWorkflow = displayedWorkflows.find((wf) => wf.id === workflowId);
-      return (result) =>
-        handleDragEnd(remapDragResultToFullWorkflow(fullWorkflow, filteredWorkflow, result));
-    },
-    [createDragEndHandler, cardScopeByWorkflow, workflows, displayedWorkflows]
   );
 
   useSyncKanbanSidebarWorkflows(workflows, selectedBoardId);
@@ -2757,14 +2720,14 @@ export default function KanbanBoardPage() {
         )}
         <KanbanBoardContent
           boardId={selectedBoardId}
-          workflows={displayedWorkflows}
+          workflows={visibleWorkflows}
           cardsById={cardsById}
           boardLoading={boardLoading}
           suppressEmptyMessage={isOperatorBoard}
           expandedWorkflows={expandedWorkflows}
           collapsedColumns={collapsedColumns}
           maxColumnHeights={maxColumnHeights}
-          createDragEndHandler={createScopedDragEndHandler}
+          createDragEndHandler={createDragEndHandler}
           onSelectCard={handleSelectCard}
           onColumnHeaderClick={handleColumnHeaderClick}
           onColumnBatchAction={handleColumnBatchAction}
@@ -2797,6 +2760,7 @@ export default function KanbanBoardPage() {
           onCardSelectDragStart={handleCardSelectDragStart}
           onCardSelectDragEnter={handleCardSelectDragEnter}
           cardScopeByWorkflow={cardScopeByWorkflow}
+          cardScopeLoadingByWorkflow={cardScopeLoadingByWorkflow}
           onCardScopeChange={handleCardScopeChange}
         />
       </div>
