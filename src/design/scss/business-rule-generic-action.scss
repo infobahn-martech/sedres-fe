@@ -33,3 +33,15 @@
     font-size: 13px;
   }
 }
+
+// Value box of a field card (Add the card to a batch, ...): fills the row like the Link the
+// card input, with the delete button on its right.
+.br-generic-action-value {
+  flex: 1;
+  min-width: 0;
+
+  .business-rule-form-condition-input,
+  .br-value-select {
+    width: 100%;
+  }
+}

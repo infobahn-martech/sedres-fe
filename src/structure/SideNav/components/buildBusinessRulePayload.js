@@ -1,5 +1,5 @@
 import { ACTION_GROUP_TYPE_TO_SECTION_ID } from './businessRulesData';
-import { buildGenericThenActions } from './genericThenAction';
+import { buildCreateCardThenActions, buildGenericThenActions } from './genericThenAction';
 import { getOperatorId, getOperatorKey, operatorTakesValue, operatorNeedsTimeUnit } from './businessRuleFieldUtils';
 
 const findActionTypeId = (triggerActions, sectionId) =>
@@ -449,6 +449,7 @@ const buildThenActions = (formState, ctx) => {
   }
 
   thenActions.push(...buildGenericThenActions(triggerActions, formState.genericActionValues ?? {}));
+  thenActions.push(...buildCreateCardThenActions(createActionTypeId, formState.createCardActions ?? []));
   thenActions.push(...buildRawThenActions(formState.rawThenActionGroups, ctx));
 
   return thenActions;

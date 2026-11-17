@@ -165,6 +165,8 @@ const useBusinessRuleReducer = create((set, get) => ({
                         regularFields: data?.data?.regular_fields ?? [],
                         customFields: data?.data?.custom_fields ?? [],
                         timeUnits: data?.data?.time_units ?? [],
+                        cardFields: data?.data?.card_fields ?? [],
+                        copyFields: data?.data?.copy_fields ?? [],
                     },
                 },
             }));
@@ -172,7 +174,7 @@ const useBusinessRuleReducer = create((set, get) => ({
             set((state) => ({
                 thenActionFieldsByType: {
                     ...state.thenActionFieldsByType,
-                    [key]: { isLoading: false, regularFields: [], customFields: [], timeUnits: [] },
+                    [key]: { isLoading: false, regularFields: [], customFields: [], timeUnits: [], cardFields: [], copyFields: [] },
                 },
             }));
         }
@@ -478,16 +480,28 @@ const useBusinessRuleReducer = create((set, get) => ({
 
     boardWorkflowsByBoard: {},
 
-    getBoardWorkflows: async (boardId) => {
+    // Per board: 'loading', 'done', or the error message of a failed load. A failed load is not
+    // cached as an empty list, so opening the picker again retries it.
+    boardWorkflowsStatus: {},
+
+    // force: always call the API again (the Board Minimap uses it so it never shows stale structure).
+    getBoardWorkflows: async (boardId, { force = false } = {}) => {
         const key = String(boardId);
-        if (!boardId || get().boardWorkflowsByBoard[key] !== undefined) return;
+        if (!boardId || get().boardWorkflowsStatus[key] === 'loading') return;
+        if (!force && get().boardWorkflowsByBoard[key] !== undefined) return;
+        set((state) => ({ boardWorkflowsStatus: { ...state.boardWorkflowsStatus, [key]: 'loading' } }));
         try {
             const { data } = await workflowService.getWorkflowByBoard(boardId);
             const raw = data?.data;
             const workflows = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-            set((state) => ({ boardWorkflowsByBoard: { ...state.boardWorkflowsByBoard, [key]: workflows } }));
-        } catch {
-            set((state) => ({ boardWorkflowsByBoard: { ...state.boardWorkflowsByBoard, [key]: [] } }));
+            set((state) => ({
+                boardWorkflowsByBoard: { ...state.boardWorkflowsByBoard, [key]: workflows },
+                boardWorkflowsStatus: { ...state.boardWorkflowsStatus, [key]: 'done' },
+            }));
+        } catch (err) {
+            set((state) => ({
+                boardWorkflowsStatus: { ...state.boardWorkflowsStatus, [key]: err?.response?.data?.message ?? err.message ?? 'Could not load workflows' },
+            }));
         }
     },
 
