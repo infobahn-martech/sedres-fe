@@ -1,4 +1,6 @@
 import { ACTION_GROUP_TYPE_TO_SECTION_ID } from './businessRulesData';
+import { buildGenericThenActions } from './genericThenAction';
+import { getOperatorId, getOperatorKey, operatorTakesValue, operatorNeedsTimeUnit } from './businessRuleFieldUtils';
 
 const findActionTypeId = (triggerActions, sectionId) =>
   triggerActions.find((a) => ACTION_GROUP_TYPE_TO_SECTION_ID[a.group_type] === sectionId)?.action_type_id ?? null;
@@ -11,10 +13,10 @@ const findActionTypeId = (triggerActions, sectionId) =>
 export const isCreateSubtaskAction = (action) =>
   action?.key === 'subtask' || (action?.label ?? '').trim().toLowerCase().includes('subtask');
 
-const getOperatorLabel = (fieldDetailsByKey, fieldType, fieldId, operatorId) => {
+const findOperator = (fieldDetailsByKey, fieldType, fieldId, operatorId) => {
   if (!fieldType || fieldId == null) return null;
   const operators = fieldDetailsByKey[`${fieldType}-${fieldId}`]?.operators ?? [];
-  return operators.find((op) => String(op.field_operator_id) === String(operatorId))?.operator_label ?? null;
+  return operators.find((op) => String(getOperatorId(op)) === String(operatorId)) ?? null;
 };
 
 // Flat conditions[] list: one entry per condition-box value row, in field-details-derived
@@ -31,11 +33,13 @@ const buildConditions = (formState, ctx) => {
 
   conditions.forEach((cond) => {
     cond.values.forEach((row, index) => {
+      const operator = findOperator(fieldDetailsByKey, cond.fieldType, cond.fieldId, cond.operatorId);
       const entry = {
-        operator: getOperatorLabel(fieldDetailsByKey, cond.fieldType, cond.fieldId, cond.operatorId),
-        input_value: row.value,
+        operator: getOperatorKey(operator) ?? operator?.operator_label ?? null,
         connector: index === 0 ? 'AND' : row.joinWord,
       };
+      if (operatorTakesValue(operator)) entry.input_value = row.value;
+      if (operatorNeedsTimeUnit(operator) && row.timeUnitId) entry.time_unit_id = Number(row.timeUnitId);
       // A value row restored from an existing rule carries the backend's own condition_id
       // (see the edit-mode routing effect in BusinessRuleFormModal.jsx) — sending it back
       // lets an update target that exact row instead of the whole condition list being
@@ -444,6 +448,7 @@ const buildThenActions = (formState, ctx) => {
     thenActions.push(entry);
   }
 
+  thenActions.push(...buildGenericThenActions(triggerActions, formState.genericActionValues ?? {}));
   thenActions.push(...buildRawThenActions(formState.rawThenActionGroups, ctx));
 
   return thenActions;
