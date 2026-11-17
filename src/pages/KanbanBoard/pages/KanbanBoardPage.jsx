@@ -59,7 +59,6 @@ import useZamilCrewFinalInvoiceStore from "../../../store/zamilCrewFinalInvoiceS
 import useZamilMarineFinalInvoiceStore from "../../../store/zamilMarineFinalInvoiceStore";
 import usePoReviewStore from "../../../store/poReviewStore";
 import useSccReviewStore from "../../../store/sccReviewStore";
-import useDispatchProofReviewStore from "../../../store/dispatchProofReviewStore";
 import useKanbanCardViewStore from "../../../store/kanbanCardViewStore";
 import { Tooltip } from "react-tooltip";
 import { MINIMAL_CARD_TOOLTIP_ID } from "../utils/cardDisplayHelpers";
@@ -1376,8 +1375,6 @@ export default function KanbanBoardPage() {
   const [isApprovedSccUpload, setIsApprovedSccUpload] = useState(false);
   const [isUploadingSccDocuments, setIsUploadingSccDocuments] = useState(false);
   const openSccReviewModal = useSccReviewStore((state) => state.openSccReviewModal);
-  const confirmApprovedSccUpload = useSccReviewStore((state) => state.confirmApprovedSccUpload);
-  const markCardsUnsigned = useSccReviewStore((state) => state.markCardsUnsigned);
 
   const handleUploadSccDocumentsClick = useCallback((cards, { workflowId = null, isApprovedScc = false } = {}) => {
     if (!cards?.length) return;
@@ -1436,38 +1433,10 @@ export default function KanbanBoardPage() {
         });
         cards.forEach((card) => removeCardSelectionId(card.id));
         handleCloseSccUpload();
-        const uploadedCards = cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean);
-        if (!isApprovedScc) {
-          openSccReviewModal(uploadedCards, { notPlacedFiles: data.data?.not_placed_files ?? [], workflowId, isApprovedScc });
-          return;
-        }
-
-        /* Operator "Approval Received": no review, the cards with an SCC are confirmed and moved on right away. */
-        const notPlacedFiles = data.data?.not_placed_files ?? [];
-        if (notPlacedFiles.length) {
-          notify(
-            `Could not place: ${notPlacedFiles.map((file) => (typeof file === "string" ? file : file?.file_name)).join(", ")}`,
-            "error"
-          );
-        }
-        const { errorMessage, result, payload } = await confirmApprovedSccUpload(uploadedCards, { workflowId });
-        if (errorMessage) {
-          notify(errorMessage, "error");
-        } else if (!payload.length) {
-          notify("No SCC was identified for the selected cards", "error");
-        } else {
-          const notMoved = result?.not_moved ?? [];
-          const movedCount = result?.card_positions?.length ?? result?.moved_to_da?.length ?? payload.length - notMoved.length;
-          if (movedCount > 0) {
-            notify(`${movedCount} ${movedCount === 1 ? "card" : "cards"} moved on`, "success");
-          }
-          if (notMoved.length) {
-            notify(`${notMoved.length} ${notMoved.length === 1 ? "card was" : "cards were"} not moved`, "error");
-            notMoved.forEach((card) => card.reason && notify(card.reason, "error"));
-          }
-          markCardsUnsigned(notMoved.map((card) => card.card_id), payload.map((card) => card.card_id));
-        }
-        refetchBoard?.();
+        openSccReviewModal(
+          cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
+          { notPlacedFiles: data.data?.not_placed_files ?? [], workflowId, isApprovedScc }
+        );
       } finally {
         setIsUploadingSccDocuments(false);
       }
@@ -1480,9 +1449,6 @@ export default function KanbanBoardPage() {
       removeCardSelectionId,
       handleCloseSccUpload,
       openSccReviewModal,
-      confirmApprovedSccUpload,
-      markCardsUnsigned,
-      refetchBoard,
     ]
   );
 
@@ -1972,7 +1938,6 @@ export default function KanbanBoardPage() {
   const [selectedDispatchProofUploadCards, setSelectedDispatchProofUploadCards] = useState([]);
   const [isUploadingDispatchProof, setIsUploadingDispatchProof] = useState(false);
   const [dispatchProofUploadProgress, setDispatchProofUploadProgress] = useState(null);
-  const confirmDispatchProofs = useDispatchProofReviewStore((state) => state.confirmDispatchProofs);
   const isLntDispatchProofUpload = useCallback(
     (cards) =>
       cards.some((card) => {
@@ -2014,8 +1979,8 @@ export default function KanbanBoardPage() {
     setSelectedDispatchProofUploadCards([]);
   }, []);
 
-  /* Files go in chunks of DISPATCH_PROOF_FILES_PER_REQUEST; each response carries the latest state of every
-     card, so the last one wins per card, and unplaced files are collected for the review. */
+  /* Files go in chunks of DISPATCH_PROOF_FILES_PER_REQUEST. Each response says where the cards it placed a proof
+     on now sit (card_positions): the backend moves them on by itself, there is no review or confirm. */
   const handleUploadDispatchProof = useCallback(
     async ({ [DISPATCH_PROOF_FIELD_NAME]: proofs = [] }) => {
       const cards = selectedDispatchProofUploadCards;
@@ -2025,15 +1990,11 @@ export default function KanbanBoardPage() {
         return;
       }
 
-      /* L&T cards are moved on right after the upload (da/confirm_dispatch_proofs); other workflows upload
-         for one card, which moves on by itself. */
-      const isLntUpload = isLntDispatchProofUpload(cards);
-
       const chunks = [];
       for (let start = 0; start < proofs.length; start += DISPATCH_PROOF_FILES_PER_REQUEST) {
         chunks.push(proofs.slice(start, start + DISPATCH_PROOF_FILES_PER_REQUEST));
       }
-      const reviewCardById = {};
+      const cardPositions = [];
       const notPlacedFiles = [];
       let receivedCount = 0;
       let failedMessage = null;
@@ -2059,12 +2020,7 @@ export default function KanbanBoardPage() {
           }
           receivedCount += data.data?.received_files?.length ?? chunk.length;
           notPlacedFiles.push(...(data.data?.not_placed_files ?? []));
-          (data.data?.cards ?? []).forEach((card) => {
-            reviewCardById[String(card.card_id)] = {
-              ...card,
-              proof: card.proof ?? reviewCardById[String(card.card_id)]?.proof ?? null,
-            };
-          });
+          cardPositions.push(...(data.data?.card_positions ?? []));
           setDispatchProofUploadProgress((prev) => ({ ...prev, done: prev.done + chunk.length }));
         }
 
@@ -2097,30 +2053,12 @@ export default function KanbanBoardPage() {
             "error"
           );
         }
-        if (isLntUpload) {
-          const readyCards = cards
-            .map((card) => reviewCardById[String(card.id)])
-            .filter((card) => card?.ready)
-            .map((card) => ({ call_id: card.call_id, card_id: card.card_id }));
-          if (readyCards.length) {
-            const { errorMessage, result } = await confirmDispatchProofs(readyCards);
-            if (errorMessage) {
-              notify(errorMessage, "error");
-            } else {
-              /* "Uploaded to Portal" answers with moved_to_dispatched, L&T "Ready to Submit" with card_positions. */
-              const movedCards = result?.card_positions ?? result?.moved_to_dispatched;
-              const movedCount = movedCards?.length ?? readyCards.length;
-              const columnName = result?.card_positions?.[0]?.column_name ?? "Dispatch Proof Uploaded";
-              notify(`${movedCount} ${movedCount === 1 ? "card" : "cards"} moved to ${columnName}`, "success");
-            }
-          }
-          const unmatchedCount = cards.length - readyCards.length;
-          if (unmatchedCount > 0) {
-            notify(
-              `${unmatchedCount} ${unmatchedCount === 1 ? "card has" : "cards have"} no dispatch proof identified and stayed in the column`,
-              "error"
-            );
-          }
+        if (cardPositions.length) {
+          const columnName = cardPositions[0].column_name;
+          notify(
+            `${cardPositions.length} ${cardPositions.length === 1 ? "card" : "cards"} moved${columnName ? ` to ${columnName}` : " on"}`,
+            "success"
+          );
         }
         refetchBoard?.();
       } finally {
@@ -2133,9 +2071,7 @@ export default function KanbanBoardPage() {
       getBatchCallIds,
       removeCardSelectionId,
       handleCloseDispatchProofUpload,
-      isLntDispatchProofUpload,
       isMultiCardDispatchProofUpload,
-      confirmDispatchProofs,
       refetchBoard,
     ]
   );
