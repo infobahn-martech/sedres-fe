@@ -399,7 +399,7 @@ ServiceInsights.propTypes = {
 };
 
 // Service Selection Component
-export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, serviceCounts = null, requestsByService = null, serviceHistory = null, showLaunchHire = true, hiddenServiceIds = [], salesOrder = null, callId = null, crewCoordinators = [], onCrewCoordinatorsChange }) => {
+export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, serviceCounts = null, requestsByService = null, serviceHistory = null, showLaunchHire = true, hiddenServiceIds = [], salesOrder = null, callId = null, crewCoordinators = [], onCrewCoordinatorsChange, assignedCrewCoordinators = null }) => {
   const categories = servicesSummary?.categories || {};
   const num = toCount;
   // call_file/get_service_counts, keyed by service title. A card whose title
@@ -619,7 +619,12 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
           </p>
         </header>
         {onCrewCoordinatorsChange && (
-          <CrewCoordinatorsSelect callId={callId} value={crewCoordinators} onChange={onCrewCoordinatorsChange} />
+          <CrewCoordinatorsSelect
+            callId={callId}
+            value={crewCoordinators}
+            onChange={onCrewCoordinatorsChange}
+            assigned={assignedCrewCoordinators}
+          />
         )}
         <div className="husbandry-service-options">
           {services.map((service, index) => {
@@ -696,6 +701,7 @@ ServiceSelection.propTypes = {
   callId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   crewCoordinators: PropTypes.array,
   onCrewCoordinatorsChange: PropTypes.func,
+  assignedCrewCoordinators: PropTypes.array,
 };
 
 // Dummy crew data for DA module Husbandry tab
@@ -795,6 +801,8 @@ function Husbandry({
   const cardColor = "#00368c"; // Fixed color for all buttons, effects, and backgrounds
   const [salesOrder, setSalesOrder] = useState(null);
   const [serviceCounts, setServiceCounts] = useState(null);
+  // Call's assigned crew coordinators from get_service_counts (null while loading).
+  const [assignedCrewCoordinators, setAssignedCrewCoordinators] = useState(null);
   const [requestsByService, setRequestsByService] = useState(null);
   const [serviceHistory, setServiceHistory] = useState(null);
 
@@ -853,11 +861,14 @@ function Husbandry({
   // fetches on mount. Each service's Content component still reports its live
   // count via the handle*RequestCount callbacks once opened.
   useEffect(() => {
-    if (isDAModule) return undefined;
     const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
-    if (!callId) return undefined;
+    if (isDAModule || !callId) {
+      setAssignedCrewCoordinators([]);
+      return undefined;
+    }
 
     let cancelled = false;
+    setAssignedCrewCoordinators(null);
 
     salesOrderService
       .getSoItemsByCall(callId)
@@ -881,9 +892,12 @@ function Husbandry({
         if (Array.isArray(services)) {
           setServiceCounts(parseServiceCounts(services));
         }
+        const coordinators = body?.data?.crew_coordinators ?? body?.crew_coordinators;
+        setAssignedCrewCoordinators(Array.isArray(coordinators) ? coordinators : []);
       })
       .catch(() => {
         // Non-critical: service cards fall back to the summary counts.
+        if (!cancelled) setAssignedCrewCoordinators([]);
       });
 
     callFileService
@@ -1445,6 +1459,7 @@ function Husbandry({
           callId={Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0) || null}
           crewCoordinators={crewCoordinators}
           onCrewCoordinatorsChange={onCrewCoordinatorsChange}
+          assignedCrewCoordinators={assignedCrewCoordinators}
         />
       </div>
     );

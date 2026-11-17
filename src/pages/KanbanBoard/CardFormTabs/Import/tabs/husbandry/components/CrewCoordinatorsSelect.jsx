@@ -37,15 +37,15 @@ const fetchCoordinatorUsers = () => {
 const toId = (v) => String(v);
 const getErrorMessage = (err, fallback) => err?.response?.data?.message || err?.message || fallback;
 
-// Options come from users/get_users_by_role (role 25); the call's assigned coordinators come from
-// crew_coordinator/get_crew_coordinators/{call_id}. Every change is saved straight
-// away through crew_coordinator/assign_crew_coordinators (full replace).
-const CrewCoordinatorsSelect = ({ callId, value = [], onChange }) => {
+// Options come from users/get_users_by_role (role 25); the call's assigned coordinators
+// (`assigned`) come from the parent's call_file/get_service_counts response — null while
+// it is loading. Every change is saved straight away through
+// crew_coordinator/assign_crew_coordinators (full replace).
+const CrewCoordinatorsSelect = ({ callId, value = [], onChange, assigned = null }) => {
   const [coordinatorUsers, setCoordinatorUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
 
-  const [assigned, setAssigned] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const loading = Boolean(callId) && assigned === null;
   const [saving, setSaving] = useState(false);
   const saveSeq = useRef(0);
 
@@ -70,29 +70,12 @@ const CrewCoordinatorsSelect = ({ callId, value = [], onChange }) => {
     };
   }, []);
 
+  // Sync the selection whenever the parent delivers the call's assigned coordinators.
   useEffect(() => {
-    if (!callId) return undefined;
-    let cancelled = false;
-    setLoading(true);
-    crewCoordinatorService
-      .getCrewCoordinators(callId)
-      .then(({ data }) => {
-        if (cancelled) return;
-        const list = Array.isArray(data?.data?.crew_coordinators) ? data.data.crew_coordinators : [];
-        setAssigned(list);
-        onChange(list.map((c) => toId(c.user_id)));
-      })
-      .catch((err) => {
-        if (!cancelled) useAlertReducer.getState().error(getErrorMessage(err, "Failed to load crew coordinators"));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    if (!Array.isArray(assigned)) return;
+    onChange(assigned.map((c) => toId(c.user_id)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [callId]);
+  }, [assigned]);
 
   // Users list plus any assigned coordinator missing from it, so the chip still has a label.
   const options = useMemo(() => {
@@ -101,7 +84,7 @@ const CrewCoordinatorsSelect = ({ callId, value = [], onChange }) => {
       if (u?.user_id == null) return;
       byId.set(toId(u.user_id), { value: toId(u.user_id), label: u.name ?? "" });
     });
-    assigned.forEach((c) => {
+    (assigned ?? []).forEach((c) => {
       const id = toId(c.user_id);
       if (!byId.has(id)) byId.set(id, { value: id, label: c.name ?? "" });
     });
@@ -170,6 +153,12 @@ CrewCoordinatorsSelect.propTypes = {
   callId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   value: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.number, PropTypes.string])),
   onChange: PropTypes.func.isRequired,
+  assigned: PropTypes.arrayOf(
+    PropTypes.shape({
+      user_id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      name: PropTypes.string,
+    })
+  ),
 };
 
 export default CrewCoordinatorsSelect;
