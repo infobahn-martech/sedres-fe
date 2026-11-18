@@ -15,17 +15,6 @@ import '../../../design/scss/prospect-modal.scss';
 import '../../../design/scss/modal-designs.scss';
 import '../../../design/scss/form-designs.scss';
 
-const STAY_STATUS_CLASS_MAP = {
-    'pending': 'status-pending',
-    'checked in': 'status-approved',
-    'checked out': 'status-completed',
-    'completed': 'status-completed',
-    'cancelled': 'status-rejected',
-};
-
-const getStayStatusClass = (status) =>
-    STAY_STATUS_CLASS_MAP[(status || '').toLowerCase()] || '';
-
 const formatDate = (value) => {
     if (!value) return '—';
     const parsed = dayjs(value);
@@ -56,6 +45,23 @@ function HotelDashboard() {
 
     const [uploadOrder, setUploadOrder] = useState(null);
     const [showUploadModal, setShowUploadModal] = useState(false);
+    // Local check-in / check-out edits keyed by hotel_request_crew_id; untouched crew fall back to
+    // the order's checkin_datetime / checkout_datetime.
+    const [crewStayEdits, setCrewStayEdits] = useState({});
+
+    const getCrewKey = (row, crew, index) =>
+        crew.hotel_request_crew_id ?? `${row.hotelRequestId}-${index}`;
+
+    const getCrewStayValue = (row, crew, index, field) => {
+        const edited = crewStayEdits[getCrewKey(row, crew, index)]?.[field];
+        if (edited !== undefined) return edited;
+        return toDateTimeLocal(crew[field] ?? row[field]);
+    };
+
+    const setCrewStayValue = (row, crew, index, field, value) => {
+        const key = getCrewKey(row, crew, index);
+        setCrewStayEdits((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
+    };
 
     useEffect(() => {
         getHotelDashboard();
@@ -141,6 +147,9 @@ function HotelDashboard() {
     const tableRows = useMemo(
         () =>
             (hotelOrdersData || []).map((order) => ({
+                hotelRequestId: order.hotel_request_id,
+                checkin_datetime: order.checkin_datetime,
+                checkout_datetime: order.checkout_datetime,
                 poNo: order.po_number,
                 woNo: order.wo_number,
                 subject: `${order.hotel_name || 'Hotel'} - Accommodation`,
@@ -171,7 +180,7 @@ function HotelDashboard() {
                 isTableLoading={isHotelDashboardLoading || isHotelOrdersLoading}
                 emptyMessage="No orders found"
                 expandable
-                rowKey={(row) => row.poNo}
+                rowKey={(row) => row.hotelRequestId ?? row.poNo}
                 renderExpandedRow={(row) => (
                     <div className="vendor-table-scroll">
                         <table className="vendor-table" style={{ marginBottom: 0, minWidth: 960 }}>
@@ -181,7 +190,6 @@ function HotelDashboard() {
                                     <th>Rank</th>
                                     <th>Nationality</th>
                                     <th>Passport No</th>
-                                    <th>Stay Status</th>
                                     <th>CheckIn</th>
                                     <th>CheckOut</th>
                                 </tr>
@@ -189,39 +197,37 @@ function HotelDashboard() {
                             <tbody>
                                 {row.crew.length ? (
                                     row.crew.map((crew, i) => (
-                                        <tr key={`${row.poNo}-crew-${i}`}>
-                                            <td>{crew.crew_name}</td>
-                                            <td>{crew.rank ?? '—'}</td>
-                                            <td>{crew.nationality}</td>
-                                            <td>{crew.passport_no}</td>
-                                            <td>
-                                                <span className={`vendor-status-badge ${getStayStatusClass(crew.stay_status)}`}>
-                                                    {crew.stay_status ?? '—'}
-                                                </span>
-                                            </td>
+                                        <tr key={getCrewKey(row, crew, i)}>
+                                            <td>{crew.crew_name || '—'}</td>
+                                            <td>{crew.rank || '—'}</td>
+                                            <td>{crew.nationality || '—'}</td>
+                                            <td>{crew.passport_no || '—'}</td>
                                             <td>
                                                 <input
                                                     type="datetime-local"
-                                                    readOnly
-                                                    tabIndex={-1}
-                                                    className="form-control form-control-sm vendor-crew-datetime-input vendor-crew-datetime-input--readonly"
-                                                    value={toDateTimeLocal(crew.checkin_datetime)}
+                                                    className="form-control form-control-sm vendor-crew-datetime-input"
+                                                    value={getCrewStayValue(row, crew, i, 'checkin_datetime')}
+                                                    onChange={(e) =>
+                                                        setCrewStayValue(row, crew, i, 'checkin_datetime', e.target.value)
+                                                    }
                                                 />
                                             </td>
                                             <td>
                                                 <input
                                                     type="datetime-local"
-                                                    readOnly
-                                                    tabIndex={-1}
-                                                    className="form-control form-control-sm vendor-crew-datetime-input vendor-crew-datetime-input--readonly"
-                                                    value={toDateTimeLocal(crew.checkout_datetime)}
+                                                    className="form-control form-control-sm vendor-crew-datetime-input"
+                                                    value={getCrewStayValue(row, crew, i, 'checkout_datetime')}
+                                                    min={getCrewStayValue(row, crew, i, 'checkin_datetime') || undefined}
+                                                    onChange={(e) =>
+                                                        setCrewStayValue(row, crew, i, 'checkout_datetime', e.target.value)
+                                                    }
                                                 />
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={7} style={{ color: '#6b7280' }}>
+                                        <td colSpan={6} style={{ color: '#6b7280' }}>
                                             No crew details available
                                         </td>
                                     </tr>

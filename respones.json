@@ -1,28 +1,81 @@
 {
-    "status": true,
-    "message": "Pass request processed",
-    "data": {
-        "wo_id": 63,
-        "wo_number": "CG-2026-00009",
-        "created": [
-            {
-                "crew_pass_id": 40,
-                "crew_change_id": 185
-            },
-            {
-                "crew_pass_id": 41,
-                "crew_change_id": 190
-            }
-        ],
-        "skipped": [],
-        "documents": [],
-        "sales_order": {
-            "item_code": "OFM0523",
-            "item_name": "Sign on   Sign off CG Permit",
-            "quantity": 4,
-            "unit_price": 200,
-            "tax_percentage": 15,
-            "total_price": 920
+    "status": "success",
+    "data": [
+        {
+            "hotel_request_id": "4",
+            "checkin_datetime": "2026-11-21 04:00:00",
+            "checkout_datetime": "2026-11-21 05:00:00",
+            "po_number": "PO-000004",
+            "purchase_order_id": null,
+            "wo_number": "WO-000068",
+            "company": "LARSEN TOUBRO ARABIA LLC",
+            "order_date": "2026-11-18 14:30:15",
+            "requested_by": "Jubail Crew Coordinator 1",
+            "amount": "575.00",
+            "currency": "SAR",
+            "status": "Pending",
+            "hotel_name": "New Hotel",
+            "hotel_address": "Saudi Arabia",
+            "invoice_submitted": "0",
+            "invoice_id": null,
+            "invoice_number": null,
+            "invoice_amount": null,
+            "invoice_status": null,
+            "crew": [
+                {
+                    "hotel_request_crew_id": "15",
+                    "stay_status": "Reserved",
+                    "crew_name": "JUNMAR DELA ROSA",
+                    "rank": "ROUGH NECK",
+                    "passport_no": "P6391291B",
+                    "nationality": "Philippines"
+                },
+                {
+                    "hotel_request_crew_id": "16",
+                    "stay_status": "Reserved",
+                    "crew_name": "Madushanka Gedara",
+                    "rank": "ROUGH NECK",
+                    "passport_no": "N9496538",
+                    "nationality": "Sri Lanka"
+                }
+            ]
+        },
+        {
+            "hotel_request_id": "2",
+            "checkin_datetime": "2026-09-01 00:00:00",
+            "checkout_datetime": "2026-09-28 00:00:00",
+            "po_number": "PO-000002",
+            "purchase_order_id": null,
+            "wo_number": "WO-000040",
+            "company": "Zamil Offshore Services Company Closed Joint Stock",
+            "order_date": "2026-09-28 14:13:07",
+            "requested_by": "Nabeela",
+            "amount": "0.00",
+            "currency": "SAR",
+            "status": "Pending",
+            "hotel_name": "New Hotel",
+            "hotel_address": "Saudi Arabia",
+            "invoice_submitted": "0",
+            "invoice_id": null,
+            "invoice_number": null,
+            "invoice_amount": null,
+            "invoice_status": null,
+            "crew": [
+                {
+                    "hotel_request_crew_id": "4",
+                    "stay_status": "Reserved",
+                    "crew_name": "AGUSTINUS JONI SAPTANTO",
+                    "rank": "CH\/ENG",
+                    "passport_no": "E7210853",
+                    "nationality": "Indonesia"
+                }
+            ]
         }
+    ],
+    "pagination": {
+        "total": 2,
+        "page": 1,
+        "limit": 10,
+        "total_pages": 1
     }
 }
