@@ -12,6 +12,7 @@ import {
 import AttachmentsList from "../../appointment/AttachmentsList";
 import CrewPassRequestsTable from "./CrewPassRequestsTable";
 import CrewSelectionField from "./CrewSelectionField";
+import { manualCrewIdsField, manualCrewIdsFromChange } from "./crewPayloadIds";
 import { useCrewPassTabApi } from "./useCrewPassTabApi";
 import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT } from "./Husbandry.constants";
 
@@ -45,6 +46,7 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
     onSaved: () => {
       handleChange("zawilPassRequestEmailFile")({ target: { value: [] } });
       handleChange("zawilPassSelectedCrew")({ target: { value: [] } });
+      handleChange(manualCrewIdsField("zawilPassSelectedCrew"))({ target: { value: null } });
       handleChange("zawilPassDocuments")({ target: { value: [] } });
       handleChange("zawilPassDescription")({ target: { value: "" } });
     },
@@ -224,7 +226,10 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
                   <CrewSelectionField
                     callId={callId}
                     selected={formValues.zawilPassSelectedCrew || []}
-                    onChange={(ids) => handleChange("zawilPassSelectedCrew")({ target: { value: ids } })}
+                    onChange={(ids, meta) => {
+                    handleChange("zawilPassSelectedCrew")({ target: { value: ids } });
+                    handleChange(manualCrewIdsField("zawilPassSelectedCrew"))({ target: { value: manualCrewIdsFromChange(meta) } });
+                  }}
                     accent={ZAWIL_PASS_ACCENT}
                     onGoToCrew={onGoToCrew}
                     uploadMode={crewUploadMode}

@@ -12,6 +12,7 @@ import {
 import AttachmentsList from "../../appointment/AttachmentsList";
 import CrewPassRequestsTable from "./CrewPassRequestsTable";
 import CrewSelectionField from "./CrewSelectionField";
+import { manualCrewIdsField, manualCrewIdsFromChange } from "./crewPayloadIds";
 import { useCrewPassTabApi } from "./useCrewPassTabApi";
 import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT } from "./Husbandry.constants";
 
@@ -45,6 +46,7 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
     onSaved: () => {
       handleChange("cgPassRequestEmailFile")({ target: { value: [] } });
       handleChange("cgPassSelectedCrew")({ target: { value: [] } });
+      handleChange(manualCrewIdsField("cgPassSelectedCrew"))({ target: { value: null } });
       handleChange("cgPassDocuments")({ target: { value: [] } });
       handleChange("cgPassDescription")({ target: { value: "" } });
     },
@@ -224,7 +226,10 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
                   <CrewSelectionField
                     callId={callId}
                     selected={formValues.cgPassSelectedCrew || []}
-                    onChange={(ids) => handleChange("cgPassSelectedCrew")({ target: { value: ids } })}
+                    onChange={(ids, meta) => {
+                    handleChange("cgPassSelectedCrew")({ target: { value: ids } });
+                    handleChange(manualCrewIdsField("cgPassSelectedCrew"))({ target: { value: manualCrewIdsFromChange(meta) } });
+                  }}
                     accent={CG_PASS_ACCENT}
                     onGoToCrew={onGoToCrew}
                     uploadMode={crewUploadMode}

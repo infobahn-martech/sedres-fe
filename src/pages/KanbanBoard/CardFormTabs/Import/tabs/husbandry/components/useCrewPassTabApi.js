@@ -8,6 +8,7 @@ import {
 } from "@/services/cgAndZwailpassService";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
 import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
+import { manualCrewIdsField, resolveCrewPayloadIds } from "./crewPayloadIds";
 
 export const resolvePassCallId = (formValues, card, routeParams) => {
   const raw =
@@ -114,8 +115,8 @@ export function useCrewPassTabApi({
     formData.append("remarks", remarks || "");
 
     if (crewField) {
-      const crewIds = Array.isArray(formValues?.[crewField]) ? formValues[crewField] : [];
-      formData.append("crew_change_ids", JSON.stringify(crewIds.map(Number)));
+      const crewPayload = resolveCrewPayloadIds(formValues?.[crewField], formValues?.[manualCrewIdsField(crewField)]);
+      formData.append(crewPayload.listKey, JSON.stringify(crewPayload.ids));
     }
 
     let docIndex = 0;

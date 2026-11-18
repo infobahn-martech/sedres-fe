@@ -10,6 +10,7 @@
   import { buildPickupDateTime } from "@/store/TransportContent";
   import CrewPassRequestsTable from "./CrewPassRequestsTable";
   import CrewSelectionField from "./CrewSelectionField";
+  import { manualCrewIdsField, manualCrewIdsFromChange, buildCrewPayloadList } from "./crewPayloadIds";
   import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
   import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
   import LocationAutocomplete from "./LocationAutocomplete";
@@ -291,7 +292,7 @@
         to_location: formValues.transportToType || "",
         to_location_det: formValues.transportToLocation || "",
         remarks: formValues.transportDescription || "",
-        crew: (formValues.selectedCrew || []).map((id) => ({ crew_change_id: Number(id) })),
+        crew: buildCrewPayloadList(formValues.selectedCrew, formValues[manualCrewIdsField("selectedCrew")]),
         launch_hire: isLaunchHire ? 1 : 0,
         location: isLaunchHire ? formValues.transportLaunchHireLocation || "" : "",
         booking_datetime: isLaunchHire ? launchHireBookingDatetime : "",
@@ -327,6 +328,7 @@
         showSavedLineItems(response);
         handleChange("transportRequestEmail")({ target: { value: [] } });
         handleChange("selectedCrew")({ target: { value: [] } });
+        handleChange(manualCrewIdsField("selectedCrew"))({ target: { value: null } });
         handleChange("transportPickupDate")({ target: { value: "" } });
         handleChange("transportPickupTime")({ target: { value: "" } });
         handleChange("transportFromType")({ target: { value: "" } });
@@ -393,7 +395,10 @@
                   <CrewSelectionField
                     callId={callId}
                     selected={formValues.selectedCrew || []}
-                    onChange={(ids) => handleChange("selectedCrew")({ target: { value: ids } })}
+                    onChange={(ids, meta) => {
+                    handleChange("selectedCrew")({ target: { value: ids } });
+                    handleChange(manualCrewIdsField("selectedCrew"))({ target: { value: manualCrewIdsFromChange(meta) } });
+                  }}
                     accent={TRANSPORT_ACCENT}
                     onGoToCrew={onGoToCrew}
                     uploadMode={crewUploadMode}

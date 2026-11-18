@@ -32,6 +32,8 @@ const linkButtonStyle = {
 
 /**
  * Multi-select of crew for a call, auto-populated from the crew roster. Reports selected crew_change_ids via onChange.
+ * Crew saved from the manual entry grid are reported as onChange(ids, { source: "manual", crewIds }) so the service
+ * can send `crew_ids` instead (see crewPayloadIds.js); every other change calls onChange(ids) alone.
  * In uploadMode (service opened straight from the service overview) it shows a crew list upload instead: the file is
  * imported via crew/import_crew_ai and the newly imported crew are selected automatically.
  */
@@ -81,7 +83,7 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
   // Runs a save action (file import or manual save), then selects the crew it added;
   // if it only touched crew already on the call (no new ids), selects the whole roster.
   const runCrewSave = useCallback(
-    async (save, successLabel) => {
+    async (save, successLabel, source) => {
       if (!callId || uploadStatus === "uploading") return false;
       setUploadStatus("uploading");
       try {
@@ -96,7 +98,13 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
         const newIds = options.map((option) => String(option.value)).filter((id) => !previousIds.has(id));
         const idsToSelect = newIds.length > 0 ? newIds : options.map((option) => String(option.value));
         setCrewOptions(options);
-        onChange(idsToSelect);
+        if (source === "manual") {
+          const optionById = new Map(options.map((option) => [String(option.value), option]));
+          const crewIds = idsToSelect.map((id) => String(optionById.get(id)?.crew_id ?? id));
+          onChange(idsToSelect, { source, crewIds });
+        } else {
+          onChange(idsToSelect);
+        }
         setUploadStatus("completed");
         notify(`${successLabel} — ${idsToSelect.length} crew member(s) added to this request.`, "success");
         return true;
@@ -128,7 +136,7 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
         files.forEach((file) => formData.append("files[]", file));
         await importCrewFile({ formData });
         return true;
-      }, "Crew list uploaded"),
+      }, "Crew list uploaded", "upload"),
     [callId, importCrewFile, runCrewSave]
   );
 
@@ -153,7 +161,7 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
         },
       });
       return true;
-    }, "Crew saved");
+    }, "Crew saved", "manual");
 
   if (uploadMode) {
     const selectedNames = crewOptions

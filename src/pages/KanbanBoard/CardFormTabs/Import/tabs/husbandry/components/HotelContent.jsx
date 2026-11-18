@@ -13,6 +13,7 @@ import { buildPickupDateTime } from "@/store/TransportContent";
 import CrewPassRequestsTable from "./CrewPassRequestsTable";
 import { buildRequestCardGroups, formatCardDate, crewRankMeta } from "./requestCardGroups";
 import CrewSelectionField from "./CrewSelectionField";
+import { manualCrewIdsField, manualCrewIdsFromChange, buildCrewPayloadList } from "./crewPayloadIds";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
 import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT, LAUNCH_HIRE_LOCATION_OPTIONS } from "./Husbandry.constants";
@@ -306,7 +307,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
       checkin_datetime: checkinDatetime,
       checkout_datetime: checkoutDatetime,
       remarks: formValues.hotelDescription || "",
-      crew: (formValues.hotelSelectedCrew || []).map((id) => ({ crew_change_id: Number(id) })),
+      crew: buildCrewPayloadList(formValues.hotelSelectedCrew, formValues[manualCrewIdsField("hotelSelectedCrew")]),
       launch_hire: isLaunchHire ? 1 : 0,
       location: isLaunchHire ? formValues.hotelLaunchHireLocation || "" : "",
       booking_datetime: isLaunchHire ? launchHireBookingDatetime : "",
@@ -350,6 +351,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
       handleChange("hotelRequestEmail")({ target: { value: [] } });
       handleChange("hotelDocuments")({ target: { value: [] } });
       handleChange("hotelSelectedCrew")({ target: { value: [] } });
+      handleChange(manualCrewIdsField("hotelSelectedCrew"))({ target: { value: null } });
       handleChange("hotelLaunchHire")({ target: { value: true } });
       handleChange("hotelLaunchHireLocation")({ target: { value: "" } });
       handleChange("hotelLaunchHireBookingDate")({ target: { value: "" } });
@@ -408,7 +410,10 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
                 <CrewSelectionField
                   callId={callId}
                   selected={formValues.hotelSelectedCrew || []}
-                  onChange={(ids) => handleChange("hotelSelectedCrew")({ target: { value: ids } })}
+                  onChange={(ids, meta) => {
+                    handleChange("hotelSelectedCrew")({ target: { value: ids } });
+                    handleChange(manualCrewIdsField("hotelSelectedCrew"))({ target: { value: manualCrewIdsFromChange(meta) } });
+                  }}
                   accent={HOTEL_ACCENT}
                   onGoToCrew={onGoToCrew}
                   uploadMode={crewUploadMode}

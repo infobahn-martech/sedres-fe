@@ -12,6 +12,7 @@ import { buildPickupDateTime } from "@/store/TransportContent";
 import CrewPassRequestsTable from "./CrewPassRequestsTable";
 import { buildRequestCardGroups, formatCardDate, crewRankMeta } from "./requestCardGroups";
 import CrewSelectionField from "./CrewSelectionField";
+import { manualCrewIdsField, manualCrewIdsFromChange, buildCrewPayloadList } from "./crewPayloadIds";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
 import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
@@ -315,7 +316,10 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
       hospital_id: Number(formValues.medicalServiceSelectedHospital),
       medical_service_id: Number(formValues.medicalServiceSelectedService),
       remarks: formValues.medicalServiceDescription || "",
-      crew: (formValues.medicalServiceSelectedCrew || []).map((id) => ({ crew_change_id: Number(id) })),
+      crew: buildCrewPayloadList(
+          formValues.medicalServiceSelectedCrew,
+          formValues[manualCrewIdsField("medicalServiceSelectedCrew")]
+        ),
       launch_hire: isLaunchHire ? 1 : 0,
       location: isLaunchHire ? formValues.medicalServiceLaunchHireLocation || "" : "",
       booking_datetime: isLaunchHire ? launchHireBookingDatetime : "",
@@ -352,6 +356,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
       handleChange("medicalServiceSelectedHospital")({ target: { value: "" } });
       handleChange("medicalServiceSelectedService")({ target: { value: "" } });
       handleChange("medicalServiceSelectedCrew")({ target: { value: [] } });
+      handleChange(manualCrewIdsField("medicalServiceSelectedCrew"))({ target: { value: null } });
       handleChange("medicalServiceRequestEmail")({ target: { value: [] } });
       handleChange("medicalServiceDocuments")({ target: { value: [] } });
       handleChange("medicalServiceDescription")({ target: { value: "" } });
@@ -413,7 +418,10 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
                 <CrewSelectionField
                   callId={callId}
                   selected={formValues.medicalServiceSelectedCrew || []}
-                  onChange={(ids) => handleChange("medicalServiceSelectedCrew")({ target: { value: ids } })}
+                  onChange={(ids, meta) => {
+                    handleChange("medicalServiceSelectedCrew")({ target: { value: ids } });
+                    handleChange(manualCrewIdsField("medicalServiceSelectedCrew"))({ target: { value: manualCrewIdsFromChange(meta) } });
+                  }}
                   accent={MEDICAL_ACCENT}
                   onGoToCrew={onGoToCrew}
                   uploadMode={crewUploadMode}

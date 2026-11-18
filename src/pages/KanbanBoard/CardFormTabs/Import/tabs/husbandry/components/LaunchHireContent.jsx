@@ -6,6 +6,7 @@ import { FormSection, FormField, FormSelect, FormGroup, PremiumCardHeader, React
 import AttachmentsList from "../../appointment/AttachmentsList";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import CrewSelectionField from "./CrewSelectionField";
+import { manualCrewIdsField, manualCrewIdsFromChange, resolveCrewPayloadIds } from "./crewPayloadIds";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
 import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
@@ -152,12 +153,15 @@ const LaunchHireContent = ({
       return;
     }
 
-    const crewIds = Array.isArray(formValues.launchHireSelectedCrew) ? formValues.launchHireSelectedCrew : [];
+    const crewPayload = resolveCrewPayloadIds(
+      formValues.launchHireSelectedCrew,
+      formValues[manualCrewIdsField("launchHireSelectedCrew")]
+    );
     const formData = new FormData();
     formData.append("call_id", callId);
     formData.append("booking_datetime", bookingDatetime);
     formData.append("location", formValues.launchHireLocation);
-    formData.append("crew_change_ids", JSON.stringify(crewIds.map(Number)));
+    formData.append(crewPayload.listKey, JSON.stringify(crewPayload.ids));
     formData.append("request_email", requestEmailFile);
     formData.append("remarks", formValues.launchHireDescription || "");
     (formValues.launchHireDocuments || [])
@@ -173,6 +177,7 @@ const LaunchHireContent = ({
       showSavedLineItems(response);
       resetDraft();
       setField("launchHireSelectedCrew", []);
+      setField(manualCrewIdsField("launchHireSelectedCrew"), null);
       onLaunchHireSaved?.();
       await getLaunchHireRequests(callId);
     } catch (err) {
@@ -256,7 +261,10 @@ const LaunchHireContent = ({
                   <CrewSelectionField
                     callId={callId ? String(callId) : ""}
                     selected={formValues.launchHireSelectedCrew || []}
-                    onChange={(ids) => setField("launchHireSelectedCrew", ids)}
+                    onChange={(ids, meta) => {
+                      setField("launchHireSelectedCrew", ids);
+                      setField(manualCrewIdsField("launchHireSelectedCrew"), manualCrewIdsFromChange(meta));
+                    }}
                     accent={LAUNCH_HIRE_ACCENT}
                     onGoToCrew={onGoToCrew}
                     uploadMode={crewUploadMode}
