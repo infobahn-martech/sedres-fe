@@ -887,7 +887,7 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                 onClick={handleSave}
                 disabled={isSavingTransport}
               >
-                {!isSavingTransport && <FiCheck size={15} />}
+                {!isSavingTransport && <FiCheck size={13} />}
                 {isSavingTransport ? "Saving..." : "Save request"}
               </button>
             </div>
