@@ -3,8 +3,7 @@
  *
  * CrewSelectionField always reports the selection as crew_change_ids. When the crew came from the
  * manual "Add crew" grid it also reports their crew_ids (onChange's second argument), which the
- * services send instead under the `crew_ids` key. Uploaded or picked crew keep `crew_change_ids` /
- * `crew_change_id`.
+ * services send instead as `crew_ids` / `crew_id`. Uploaded or picked crew keep `crew_change_ids`.
  */
 
 /** Form key holding the manual-entry crew_ids for a selected-crew field. */
@@ -15,7 +14,7 @@ export const manualCrewIdsFromChange = (meta) =>
   meta?.source === "manual" && Array.isArray(meta.crewIds) ? meta.crewIds : null;
 
 /**
- * @returns {{ useCrewIds: boolean, ids: number[], listKey: "crew_ids" | "crew_change_ids", itemKey: "crew_ids" | "crew_change_id" }}
+ * @returns {{ useCrewIds: boolean, ids: number[], listKey: "crew_ids" | "crew_change_ids", itemKey: "crew_id" | "crew_change_id" }}
  */
 export const resolveCrewPayloadIds = (selected, manualCrewIds) => {
   const selectedIds = Array.isArray(selected) ? selected : [];
@@ -26,11 +25,11 @@ export const resolveCrewPayloadIds = (selected, manualCrewIds) => {
     useCrewIds,
     ids: (useCrewIds ? manualCrewIds : selectedIds).map(Number),
     listKey: useCrewIds ? "crew_ids" : "crew_change_ids",
-    itemKey: useCrewIds ? "crew_ids" : "crew_change_id",
+    itemKey: useCrewIds ? "crew_id" : "crew_change_id",
   };
 };
 
-/** `crew: [{ crew_change_id }]` or, for manual entry, `crew: [{ crew_ids }]`. */
+/** `crew: [{ crew_change_id }]` or, for manual entry, `crew: [{ crew_id }]`. */
 export const buildCrewPayloadList = (selected, manualCrewIds) => {
   const { ids, itemKey } = resolveCrewPayloadIds(selected, manualCrewIds);
   return ids.map((id) => ({ [itemKey]: id }));
