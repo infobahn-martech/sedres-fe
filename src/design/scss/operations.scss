@@ -5651,6 +5651,12 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
   white-space: nowrap;
 }
 
+/* Header + cell share the same centring so the eye icon sits under "Document". */
+.crew-pass-requests-table thead th.crew-pass-requests-table__doc-cell,
+.crew-pass-requests-table tbody td.crew-pass-requests-table__doc-cell {
+  text-align: center;
+}
+
 .crew-pass-requests-table__doc-btn {
   display: inline-flex;
   align-items: center;

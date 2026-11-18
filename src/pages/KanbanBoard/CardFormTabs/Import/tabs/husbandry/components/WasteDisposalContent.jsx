@@ -5,6 +5,7 @@ import { notify } from "@/components/Toaster";
 import { FormSection, FormField, FormSelect, FormGroup, PremiumCardHeader, ReactQuillEditor } from "./Husbandry.components";
 import AttachmentsList from "../../appointment/AttachmentsList";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
+import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import wasteTypeService from "@/services/wasteTypeService";
 import useWasteDisposalReducer from "@/store/WasteDisposalReducer";
@@ -47,6 +48,9 @@ const toApiDateTime = (dateStr, timeStr) => {
 
 const WasteDisposalContent = ({ formValues, handleChange, cardColor }) => {
   const callId = formValues.call_id || formValues.callId || formValues.card_call_id;
+  const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+    requestEmailField: "wasteDisposalRequestEmailDocuments",
+  });
   const {
     wasteDisposalRequests,
     isLoadingList,
@@ -248,6 +252,7 @@ const WasteDisposalContent = ({ formValues, handleChange, cardColor }) => {
       notify("Call is required to save a waste disposal request.", "error", "top-center");
       return;
     }
+    if (!validate()) return;
     if (!formValues.wasteTypeId) {
       notify("Waste type is required.", "error", "top-center");
       return;
@@ -289,6 +294,7 @@ const WasteDisposalContent = ({ formValues, handleChange, cardColor }) => {
         "success",
         "top-center"
       );
+      resetValidation();
       handleChange("wasteDisposalPONumber")({ target: { value: "" } });
       handleChange("wasteTypeId")({ target: { value: "" } });
       handleChange("wasteType")({ target: { value: "" } });
@@ -304,7 +310,7 @@ const WasteDisposalContent = ({ formValues, handleChange, cardColor }) => {
         "top-center"
       );
     }
-  }, [callId, formValues, disposalDateParts, createWasteDisposalRequest, getWasteDisposalRequests, handleChange]);
+  }, [callId, formValues, disposalDateParts, createWasteDisposalRequest, getWasteDisposalRequests, handleChange, validate, resetValidation]);
 
   const requestEmailAttachments = normalizeAttachmentList(
     formValues.wasteDisposalRequestEmailDocuments || []
@@ -326,7 +332,7 @@ const WasteDisposalContent = ({ formValues, handleChange, cardColor }) => {
                   titleClassName="crew-pass-request-details-card__title"
                 />
                 <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                  <FormGroup icon="mail" label="Request Email" accent={WASTE_DISPOSAL_ACCENT}>
+                  <FormGroup icon="mail" label="Request Email *" accent={WASTE_DISPOSAL_ACCENT} error={fieldErrors.requestEmail}>
                     <FormField>
                       <div className="transport-upload-box">
                         <AttachmentsList

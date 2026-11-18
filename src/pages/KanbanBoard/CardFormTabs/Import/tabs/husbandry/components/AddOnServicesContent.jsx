@@ -6,6 +6,7 @@ import { FormSection, FormField, FormSelect, FormGroup, FieldRow, PremiumCardHea
 import AttachmentsList from "../../appointment/AttachmentsList";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
+import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
 import addOnService from "@/services/addOnService";
 import useAddOnServiceRequestReducer from "@/store/AddOnServiceRequestReducer";
 import { buildPickupDateTime } from "@/store/TransportContent";
@@ -48,6 +49,9 @@ const AddOnServicesContent = ({ formValues, handleChange, cardColor, showLaunchH
   const [loadingAddOnServiceCatalog, setLoadingAddOnServiceCatalog] = useState(false);
 
   const callId = formValues.call_id || formValues.callId || formValues.card_call_id;
+  const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+    requestEmailField: "addOnServicesRequestEmailDocuments",
+  });
   const isOthersSelected = formValues.addOnServiceType === "Others";
   const selectedServiceId = isOthersSelected ? null : Number(formValues.addOnServiceType);
   const isProvisionDelivery = selectedServiceId === ADD_ON_SERVICE_TYPE_IDS.PROVISION_DELIVERY;
@@ -250,6 +254,7 @@ const AddOnServicesContent = ({ formValues, handleChange, cardColor, showLaunchH
       notify("Call is required to save an add-on service request.", "error", "top-center");
       return;
     }
+    if (!validate()) return;
     if (!formValues.addOnServiceType) {
       notify("Service type is required.", "error", "top-center");
       return;
@@ -329,6 +334,7 @@ const AddOnServicesContent = ({ formValues, handleChange, cardColor, showLaunchH
         "success",
         "top-center"
       );
+      resetValidation();
       handleChange("addOnServiceType")({ target: { value: "" } });
       handleChange("addOnServiceTypeOther")({ target: { value: "" } });
       handleChange("addOnServicesDescription")({ target: { value: "" } });
@@ -361,6 +367,8 @@ const AddOnServicesContent = ({ formValues, handleChange, cardColor, showLaunchH
     createAddOnServiceRequest,
     getAddOnServiceRequests,
     handleChange,
+    validate,
+    resetValidation,
   ]);
 
   const requestEmailAttachments = normalizeAttachmentList(
@@ -453,7 +461,7 @@ const AddOnServicesContent = ({ formValues, handleChange, cardColor, showLaunchH
                     </FormGroup>
                   )}
 
-                  <FormGroup icon="mail" label="Request Email" accent={ADD_ON_SERVICE_ACCENT}>
+                  <FormGroup icon="mail" label="Request Email *" accent={ADD_ON_SERVICE_ACCENT} error={fieldErrors.requestEmail}>
                     <FormField>
                       <div className="transport-upload-box">
                         <AttachmentsList

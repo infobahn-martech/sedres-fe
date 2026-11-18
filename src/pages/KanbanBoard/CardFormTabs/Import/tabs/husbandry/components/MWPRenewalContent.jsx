@@ -5,6 +5,7 @@ import { notify } from "@/components/Toaster";
 import { FormSection, FormField, FormGroup, PremiumCardHeader, ReactQuillEditor } from "./Husbandry.components";
 import AttachmentsList from "../../appointment/AttachmentsList";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
+import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import useMWPRenewalReducer from "@/store/MWPRenewalReducer";
 import { MAIN_TABS, SERVICE_ACCENT } from "./Husbandry.constants";
@@ -51,6 +52,9 @@ const MWPRenewalContent = ({ formValues, handleChange, cardColor }) => {
   const requestEmailInputRef = useRef(null);
 
   const callId = formValues.call_id || formValues.callId || formValues.card_call_id;
+  const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+    requestEmailField: "mwpRenewalRequestEmailDocuments",
+  });
   const {
     mwpRenewalRequests,
     isLoadingList,
@@ -210,6 +214,7 @@ const MWPRenewalContent = ({ formValues, handleChange, cardColor }) => {
       notify("Call is required to save an MWP renewal request.", "error", "top-center");
       return;
     }
+    if (!validate()) return;
     if (!formValues.mwpRenewalExpiryDate) {
       notify("Expiry date is required.", "error", "top-center");
       return;
@@ -245,6 +250,7 @@ const MWPRenewalContent = ({ formValues, handleChange, cardColor }) => {
         "success",
         "top-center"
       );
+      resetValidation();
       handleChange("mwpRenewalExpiryDate")({ target: { value: "" } });
       handleChange("mwpRenewalDescription")({ target: { value: "" } });
       handleChange("mwpRenewalRequestEmailDocuments")({ target: { value: [] } });
@@ -257,7 +263,7 @@ const MWPRenewalContent = ({ formValues, handleChange, cardColor }) => {
         "top-center"
       );
     }
-  }, [callId, formValues, expiryDateParts, createMwpRenewalRequest, getMwpRenewalRequests, handleChange]);
+  }, [callId, formValues, expiryDateParts, createMwpRenewalRequest, getMwpRenewalRequests, handleChange, validate, resetValidation]);
 
   const requestEmailAttachments = normalizeAttachmentList(
     formValues.mwpRenewalRequestEmailDocuments || []
@@ -279,7 +285,7 @@ const MWPRenewalContent = ({ formValues, handleChange, cardColor }) => {
                   titleClassName="crew-pass-request-details-card__title"
                 />
                 <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                  <FormGroup icon="mail" label="Request Email" accent={MWP_RENEWAL_ACCENT}>
+                  <FormGroup icon="mail" label="Request Email *" accent={MWP_RENEWAL_ACCENT} error={fieldErrors.requestEmail}>
                     <FormField>
                       <div className="transport-upload-box">
                         <AttachmentsList
