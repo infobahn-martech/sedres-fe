@@ -72,7 +72,11 @@ StatusBadge.propTypes = {
   status: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
-const CrewItem = ({ row, requestStatus, onOpenDocument }) => {
+const defaultCrewMeta = (row) => (
+  <>Passport: {isBlank(row?.passport_no) ? <span className="cpr-muted">Not provided</span> : row.passport_no}</>
+);
+
+const CrewItem = ({ row, requestStatus, onOpenDocument, getCrewMeta = defaultCrewMeta }) => {
   const docUrl = pickDocumentUrl(row);
   const ownStatus = row?.status;
   // A crew-level status is only worth showing when it differs from the request's status.
@@ -87,9 +91,7 @@ const CrewItem = ({ row, requestStatus, onOpenDocument }) => {
         <span className="cpr-crew__name" title={row?.crew_name || ""}>
           {isBlank(row?.crew_name) ? "Unnamed crew" : row.crew_name}
         </span>
-        <span className="cpr-crew__meta">
-          Passport: {isBlank(row?.passport_no) ? <span className="cpr-muted">Not provided</span> : row.passport_no}
-        </span>
+        <span className="cpr-crew__meta">{getCrewMeta(row)}</span>
       </div>
       <div className="cpr-crew__tags">
         {!isBlank(row?.movement_type) && (
@@ -118,6 +120,7 @@ CrewItem.propTypes = {
   row: PropTypes.object,
   requestStatus: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onOpenDocument: PropTypes.func.isRequired,
+  getCrewMeta: PropTypes.func,
 };
 
 const CrewPassRequestsTable = ({
@@ -130,11 +133,20 @@ const CrewPassRequestsTable = ({
   pageSize,
   emptyMessage = "No pass requests found",
   accent = "blue",
+  // Optional overrides so other services (e.g. Transport) can reuse this card list:
+  groups: groupsProp,
+  renderGroupTitle,
+  getGroupFacts,
+  getGroupDocumentUrl,
+  getGroupSearchText,
+  getCrewMeta,
+  searchPlaceholder = "Search crew name, passport or WO no.",
 }) => {
   const groups = useMemo(() => {
+    if (Array.isArray(groupsProp)) return groupsProp;
     const source = Array.isArray(requests) ? requests : EMPTY_LIST;
     return groupPassRequestRows(source);
-  }, [requests]);
+  }, [groupsProp, requests]);
   const totalCrewCount = useMemo(() => groups.reduce((sum, g) => sum + g.crew.length, 0), [groups]);
 
   const [query, setQuery] = useState("");
@@ -161,7 +173,8 @@ const CrewPassRequestsTable = ({
       .filter((group) => statusFilter === ALL_STATUSES || String(groupStatus(group) ?? "").trim() === statusFilter)
       .map((group) => {
         if (!term) return group;
-        if (String(group.woNumber ?? "").toLowerCase().includes(term)) return group;
+        const groupText = getGroupSearchText ? getGroupSearchText(group) : group.woNumber;
+        if (String(groupText ?? "").toLowerCase().includes(term)) return group;
         const crew = group.crew.filter(
           (c) =>
             String(c?.crew_name ?? "").toLowerCase().includes(term) ||
@@ -170,7 +183,7 @@ const CrewPassRequestsTable = ({
         return crew.length > 0 ? { ...group, crew, matchedCrewOnly: true, totalCrew: group.crew.length } : null;
       })
       .filter(Boolean);
-  }, [groups, query, statusFilter]);
+  }, [groups, query, statusFilter, getGroupSearchText]);
 
   const visibleCount = visibleGroups.length;
   const totalPages = Math.max(1, Math.ceil(visibleCount / pageSize) || 1);
@@ -225,7 +238,7 @@ const CrewPassRequestsTable = ({
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search crew name, passport or WO no."
+        placeholder={searchPlaceholder}
         aria-label="Search requests"
       />
       {query && (
@@ -308,9 +321,11 @@ const CrewPassRequestsTable = ({
                     const crewTotal = group.totalCrew ?? group.crew.length;
                     const isOpen = !collapsedIds.has(group.woId);
                     const crewListId = `cpr-crew-${String(group.woId)}`;
+                    const groupDocUrl = getGroupDocumentUrl ? getGroupDocumentUrl(group) : "";
 
                     return (
                       <li key={`wo-${group.woId}`} className={`cpr-request${isOpen ? " is-open" : ""}`}>
+                        <div className="cpr-request__head">
                         <button
                           type="button"
                           className="cpr-request__header"
@@ -319,7 +334,7 @@ const CrewPassRequestsTable = ({
                           aria-controls={crewListId}
                         >
                           <div className="cpr-request__top">
-                            <WorkOrderChip value={group.woNumber} />
+                            {renderGroupTitle ? renderGroupTitle(group) : <WorkOrderChip value={group.woNumber} />}
                             <StatusBadge status={status} />
                             <span className="cpr-request__chevron" aria-hidden="true">
                               <FiChevronDown size={16} />
@@ -332,15 +347,37 @@ const CrewPassRequestsTable = ({
                                 ? `${group.crew.length} of ${crewTotal} crew`
                                 : `${crewTotal} crew member${crewTotal === 1 ? "" : "s"}`}
                             </span>
-                            <span className="cpr-fact">
-                              <FiCalendar size={12} aria-hidden="true" />
-                              {requestedDate ? `Requested ${format(requestedDate, "dd MMM yyyy")}` : "Request date not set"}
-                            </span>
-                            <span className="cpr-fact">
-                              GRO: {groName || <span className="cpr-muted">Not assigned</span>}
-                            </span>
+                            {getGroupFacts ? (
+                              getGroupFacts(group).map((fact, factIdx) => (
+                                <span className="cpr-fact" key={factIdx}>
+                                  {fact}
+                                </span>
+                              ))
+                            ) : (
+                              <>
+                                <span className="cpr-fact">
+                                  <FiCalendar size={12} aria-hidden="true" />
+                                  {requestedDate ? `Requested ${format(requestedDate, "dd MMM yyyy")}` : "Request date not set"}
+                                </span>
+                                <span className="cpr-fact">
+                                  GRO: {groName || <span className="cpr-muted">Not assigned</span>}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </button>
+                        {groupDocUrl && (
+                          <button
+                            type="button"
+                            className="crew-pass-requests-table__doc-btn cpr-request__doc"
+                            onClick={() => openDocument(groupDocUrl)}
+                            title="View request email"
+                            aria-label="View request email"
+                          >
+                            <FiEye size={15} />
+                          </button>
+                        )}
+                        </div>
 
                         {isOpen && (
                           <ul className="cpr-crew-list" id={crewListId}>
@@ -350,6 +387,7 @@ const CrewPassRequestsTable = ({
                                 row={row}
                                 requestStatus={status}
                                 onOpenDocument={openDocument}
+                                getCrewMeta={getCrewMeta}
                               />
                             ))}
                           </ul>
@@ -403,6 +441,19 @@ CrewPassRequestsTable.propTypes = {
   pageSize: PropTypes.number,
   emptyMessage: PropTypes.string,
   accent: PropTypes.oneOf(["blue", "teal", "purple", "amber", "rose", "slate", "green", "pink"]),
+  /** Pre-grouped requests: [{ woId, woNumber, woStatus, crew: [] , ...anything the callbacks need }]. */
+  groups: PropTypes.array,
+  /** Replaces the WO chip at the top of each card. */
+  renderGroupTitle: PropTypes.func,
+  /** Returns the facts (nodes) shown after the crew count; replaces requested date / GRO. */
+  getGroupFacts: PropTypes.func,
+  /** Request-level document (opened from the eye button on the card header). */
+  getGroupDocumentUrl: PropTypes.func,
+  /** Text a search should match for the whole request (default: WO number). */
+  getGroupSearchText: PropTypes.func,
+  /** Second line under each crew name (default: passport). */
+  getCrewMeta: PropTypes.func,
+  searchPlaceholder: PropTypes.string,
 };
 
 CrewPassRequestsTable.defaultProps = {

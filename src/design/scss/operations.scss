@@ -11410,3 +11410,41 @@ a.operation-task-document-name--link {
     max-width: none;
   }
 }
+
+/* Card header row: toggle button + optional request-level document button. */
+.cpr-request__head {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+
+  .cpr-request__header {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.cpr-request__doc {
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+.cpr-route {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+
+  > span:not(.cpr-route__arrow) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.cpr-route__arrow {
+  color: var(--accent, #2563eb);
+  font-weight: 700;
+}
