@@ -902,7 +902,7 @@ function Husbandry({
     setAssignedCrewCoordinators(null);
 
     salesOrderService
-      .getSoItemsByCall(callId)
+      .getSoItemsByCall(callId, "Husbandry")
       .then((response) => {
         if (cancelled) return;
         const body = response?.data;
