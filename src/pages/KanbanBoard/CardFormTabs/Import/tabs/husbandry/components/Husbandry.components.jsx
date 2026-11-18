@@ -65,7 +65,7 @@ HusbIcon.propTypes = {
 };
 
 /** Premium card header — tinted icon box + title + optional subtitle + optional count badge. Pair with a `husb-accent-*` class on the card wrapper. */
-export const PremiumCardHeader = ({ icon, title, subtitle, count, headerClassName, titleClassName }) => (
+export const PremiumCardHeader = ({ icon, title, subtitle, count, headerClassName, titleClassName, actions = null }) => (
   <div className={headerClassName}>
     <div className="crew-pass-requests-table-card__header-main">
       <span className="husb-icon-box">
@@ -76,6 +76,7 @@ export const PremiumCardHeader = ({ icon, title, subtitle, count, headerClassNam
         {subtitle && <p className="husb-header-subtitle">{subtitle}</p>}
       </div>
     </div>
+    {actions && <div className="husb-header-actions">{actions}</div>}
     {count != null && (
       <span className="crew-pass-requests-table-card__count" aria-live="polite">
         {count}
@@ -91,6 +92,8 @@ PremiumCardHeader.propTypes = {
   count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   headerClassName: PropTypes.string.isRequired,
   titleClassName: PropTypes.string.isRequired,
+  /** Optional controls (e.g. a search box) shown between the title and the count. */
+  actions: PropTypes.node,
 };
 
 /** Splits a label on "*" and wraps the marker in a red span, so a single label can also carry the required indicator. */

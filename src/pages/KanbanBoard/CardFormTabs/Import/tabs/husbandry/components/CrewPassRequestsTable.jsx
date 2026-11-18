@@ -1,32 +1,32 @@
 import PropTypes from "prop-types";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, isValid, parseISO } from "date-fns";
-import { FiChevronLeft, FiChevronRight, FiChevronDown, FiEye } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiChevronDown, FiEye, FiSearch, FiCalendar, FiUser, FiX } from "react-icons/fi";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { groupPassRequestRows } from "@/services/cgAndZwailpassService";
-import { PremiumCardHeader, CrewCell, WorkOrderChip } from "./Husbandry.components";
+import { PremiumCardHeader, WorkOrderChip } from "./Husbandry.components";
 
 const DEFAULT_PAGE_SIZE = 10;
 const EMPTY_LIST = [];
+const ALL_STATUSES = "__all__";
+
+const isBlank = (value) => value === undefined || value === null || String(value).trim() === "";
 
 const parseRequestedDate = (value) => {
-  if (value === undefined || value === null || value === "") return null;
+  if (isBlank(value)) return null;
   if (typeof value === "string") {
-    const normalized = value.replace(" ", "T");
-    const parsed = parseISO(normalized);
+    const parsed = parseISO(value.replace(" ", "T"));
     if (isValid(parsed)) return parsed;
   }
   const d = new Date(value);
   return isValid(d) ? d : null;
 };
 
-const formatRequestedDate = (value) => {
-  const parsed = parseRequestedDate(value);
-  if (!parsed) {
-    return <span className="crew-pass-requests-table__empty-cell">—</span>;
-  }
-  return format(parsed, "dd/MM/yyyy");
+const earliestRequestedDate = (crewList) => {
+  const dates = (crewList || []).map((c) => parseRequestedDate(c?.requested_date)).filter(Boolean);
+  if (dates.length === 0) return null;
+  return dates.reduce((min, d) => (d < min ? d : min));
 };
 
 const statusToneClass = (status) => {
@@ -39,85 +39,85 @@ const statusToneClass = (status) => {
   return "crew-pass-requests-table__badge--default";
 };
 
-const pickDocumentUrl = (row) =>
-  row?.document_url ?? row?.documentUrl ?? row?.document_URL ?? "";
-
-const CellText = ({ value }) => {
-  if (value === undefined || value === null || String(value).trim() === "") {
-    return <span className="crew-pass-requests-table__empty-cell">—</span>;
-  }
-  return value;
+const movementToneClass = (movement) => {
+  const raw = String(movement ?? "").toLowerCase().replace(/[^a-z]/g, "");
+  if (raw === "signon") return "cpr-movement--on";
+  if (raw === "signoff") return "cpr-movement--off";
+  return "cpr-movement--default";
 };
 
-CellText.propTypes = {
-  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-};
+const pickDocumentUrl = (row) => row?.document_url ?? row?.documentUrl ?? row?.document_URL ?? "";
+
+const initialsOf = (name) =>
+  String(name ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() || "?";
+
+/** First GRO named on any crew row of the work order (they are assigned per request). */
+const groupGroName = (group) => group.crew.map((c) => c?.assigned_gro_name).find((name) => !isBlank(name)) || "";
+
+const groupStatus = (group) => (isBlank(group.woStatus) ? group.crew[0]?.status : group.woStatus);
 
 const StatusBadge = ({ status }) => {
-  const isEmpty = status === undefined || status === null || String(status).trim() === "";
-  if (isEmpty) {
-    return <span className="crew-pass-requests-table__empty-cell">—</span>;
-  }
-  return (
-    <span className={`crew-pass-requests-table__badge ${statusToneClass(status)}`}>{status}</span>
-  );
+  if (isBlank(status)) return null;
+  return <span className={`crew-pass-requests-table__badge ${statusToneClass(status)}`}>{status}</span>;
 };
 
 StatusBadge.propTypes = {
   status: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
-/** The 7 crew-detail cells shared by both a single-crew work order's own row and an expanded crew sub-row. */
-const CrewRowCells = ({ row, index, onOpenDocument }) => {
+const CrewItem = ({ row, requestStatus, onOpenDocument }) => {
   const docUrl = pickDocumentUrl(row);
+  const ownStatus = row?.status;
+  // A crew-level status is only worth showing when it differs from the request's status.
+  const showOwnStatus = !isBlank(ownStatus) && String(ownStatus).trim().toLowerCase() !== String(requestStatus ?? "").trim().toLowerCase();
+
   return (
-    <>
-      <td>
-        <CrewCell name={row?.crew_name} index={index} />
-      </td>
-      <td>
-        <CellText value={row?.passport_no} />
-      </td>
-      <td>
-        <CellText value={row?.movement_type} />
-      </td>
-      <td>
-        <StatusBadge status={row?.status} />
-      </td>
-      <td>
-        <CellText value={row?.assigned_gro_name} />
-      </td>
-      <td>{formatRequestedDate(row?.requested_date)}</td>
-      <td className="crew-pass-requests-table__doc-cell">
-        {docUrl ? (
-          <button
-            type="button"
-            className="crew-pass-requests-table__doc-btn"
-            onClick={() => onOpenDocument(docUrl)}
-            aria-label="View document"
-          >
-            <FiEye size={15} />
-          </button>
-        ) : (
-          <span className="crew-pass-requests-table__empty-cell">—</span>
+    <li className="cpr-crew">
+      <span className="cpr-crew__avatar" aria-hidden="true">
+        {initialsOf(row?.crew_name)}
+      </span>
+      <div className="cpr-crew__main">
+        <span className="cpr-crew__name" title={row?.crew_name || ""}>
+          {isBlank(row?.crew_name) ? "Unnamed crew" : row.crew_name}
+        </span>
+        <span className="cpr-crew__meta">
+          Passport: {isBlank(row?.passport_no) ? <span className="cpr-muted">Not provided</span> : row.passport_no}
+        </span>
+      </div>
+      <div className="cpr-crew__tags">
+        {!isBlank(row?.movement_type) && (
+          <span className={`cpr-movement ${movementToneClass(row.movement_type)}`}>{row.movement_type}</span>
         )}
-      </td>
-    </>
+        {showOwnStatus && <StatusBadge status={ownStatus} />}
+      </div>
+      {docUrl ? (
+        <button
+          type="button"
+          className="crew-pass-requests-table__doc-btn cpr-crew__doc"
+          onClick={() => onOpenDocument(docUrl)}
+          title="View document"
+          aria-label={`View document for ${row?.crew_name || "crew"}`}
+        >
+          <FiEye size={15} />
+        </button>
+      ) : (
+        <span className="cpr-crew__doc cpr-crew__doc--none" title="No document yet" aria-hidden="true" />
+      )}
+    </li>
   );
 };
 
-CrewRowCells.propTypes = {
+CrewItem.propTypes = {
   row: PropTypes.object,
-  index: PropTypes.number,
+  requestStatus: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onOpenDocument: PropTypes.func.isRequired,
-};
-
-const earliestRequestedDate = (crewList) => {
-  const dates = (crewList || [])
-    .map((c) => parseRequestedDate(c?.requested_date))
-    .filter(Boolean);
-  if (dates.length === 0) return null;
-  return dates.reduce((min, d) => (d < min ? d : min));
 };
 
 const CrewPassRequestsTable = ({
@@ -135,21 +135,47 @@ const CrewPassRequestsTable = ({
     const source = Array.isArray(requests) ? requests : EMPTY_LIST;
     return groupPassRequestRows(source);
   }, [requests]);
-  const groupCount = groups.length;
-  const totalCrewCount = useMemo(
-    () => groups.reduce((sum, g) => sum + g.crew.length, 0),
-    [groups]
-  );
+  const totalCrewCount = useMemo(() => groups.reduce((sum, g) => sum + g.crew.length, 0), [groups]);
 
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState(ALL_STATUSES);
   const [page, setPage] = useState(1);
-  const [expandedIds, setExpandedIds] = useState(() => new Set());
+  const [collapsedIds, setCollapsedIds] = useState(() => new Set());
 
-  const totalPages = Math.max(1, Math.ceil(groupCount / pageSize) || 1);
+  // Status filter chips, built from the statuses actually present.
+  const statusOptions = useMemo(() => {
+    const counts = new Map();
+    groups.forEach((group) => {
+      const status = groupStatus(group);
+      if (isBlank(status)) return;
+      const label = String(status).trim();
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+    return [...counts.entries()].map(([label, count]) => ({ label, count }));
+  }, [groups]);
 
-  const listSignature = useMemo(
-    () => `${groupCount}|${groups.map((g) => String(g.woId)).join(",")}`,
-    [groups, groupCount]
-  );
+  // Search matches the WO number (whole request) or crew name / passport (only those crew).
+  const visibleGroups = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    return groups
+      .filter((group) => statusFilter === ALL_STATUSES || String(groupStatus(group) ?? "").trim() === statusFilter)
+      .map((group) => {
+        if (!term) return group;
+        if (String(group.woNumber ?? "").toLowerCase().includes(term)) return group;
+        const crew = group.crew.filter(
+          (c) =>
+            String(c?.crew_name ?? "").toLowerCase().includes(term) ||
+            String(c?.passport_no ?? "").toLowerCase().includes(term)
+        );
+        return crew.length > 0 ? { ...group, crew, matchedCrewOnly: true, totalCrew: group.crew.length } : null;
+      })
+      .filter(Boolean);
+  }, [groups, query, statusFilter]);
+
+  const visibleCount = visibleGroups.length;
+  const totalPages = Math.max(1, Math.ceil(visibleCount / pageSize) || 1);
+
+  const listSignature = useMemo(() => groups.map((g) => String(g.woId)).join(","), [groups]);
 
   useEffect(() => {
     setPage((p) => Math.min(p, totalPages));
@@ -157,16 +183,21 @@ const CrewPassRequestsTable = ({
 
   useEffect(() => {
     setPage(1);
-    setExpandedIds(new Set());
+    setCollapsedIds(new Set());
   }, [listSignature]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, statusFilter]);
 
   const pageSlice = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return groups.slice(start, start + pageSize);
-  }, [groups, page, pageSize]);
+    return visibleGroups.slice(start, start + pageSize);
+  }, [visibleGroups, page, pageSize]);
 
-  const rangeStart = groupCount === 0 ? 0 : (page - 1) * pageSize + 1;
-  const rangeEnd = groupCount === 0 ? 0 : Math.min(page * pageSize, groupCount);
+  const rangeStart = visibleCount === 0 ? 0 : (page - 1) * pageSize + 1;
+  const rangeEnd = visibleCount === 0 ? 0 : Math.min(page * pageSize, visibleCount);
+  const isFiltering = query.trim() !== "" || statusFilter !== ALL_STATUSES;
 
   const openDocument = (url) => {
     if (!url) return;
@@ -174,13 +205,36 @@ const CrewPassRequestsTable = ({
   };
 
   const toggleGroup = (woId) => {
-    setExpandedIds((prev) => {
+    setCollapsedIds((prev) => {
       const next = new Set(prev);
       if (next.has(woId)) next.delete(woId);
       else next.add(woId);
       return next;
     });
   };
+
+  const clearFilters = () => {
+    setQuery("");
+    setStatusFilter(ALL_STATUSES);
+  };
+
+  const searchBox = (
+    <label className="cpr-search">
+      <FiSearch size={14} aria-hidden="true" />
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search crew name, passport or WO no."
+        aria-label="Search requests"
+      />
+      {query && (
+        <button type="button" className="cpr-search__clear" onClick={() => setQuery("")} aria-label="Clear search">
+          <FiX size={13} />
+        </button>
+      )}
+    </label>
+  );
 
   return (
     <div
@@ -196,115 +250,120 @@ const CrewPassRequestsTable = ({
         count={loading ? "…" : totalCrewCount}
         headerClassName="crew-pass-requests-table-card__header"
         titleClassName="crew-pass-requests-table-card__title"
+        actions={!loading && groups.length > 0 ? searchBox : null}
       />
 
       <div className="crew-pass-requests-table-card__body">
         {loading ? (
           <div className="crew-pass-requests-table-card__skeleton" aria-busy="true">
-            <Skeleton height={14} borderRadius={6} count={1} style={{ marginBottom: 12 }} />
-            <Skeleton height={36} borderRadius={6} count={6} />
+            <Skeleton height={34} borderRadius={8} style={{ marginBottom: 14 }} />
+            <Skeleton height={96} borderRadius={12} count={3} style={{ marginBottom: 10 }} />
           </div>
-        ) : groupCount === 0 ? (
+        ) : groups.length === 0 ? (
           <div className="crew-pass-requests-table-card__empty">{emptyMessage}</div>
         ) : (
           <>
-            <div className="crew-pass-requests-table-scroll crew-pass-thin-scrollbar">
-              <table className="crew-pass-requests-table">
-                <thead>
-                  <tr>
-                    <th>Wo No</th>
-                    <th>Crew Name</th>
-                    <th>Passport No</th>
-                    <th>SignOn/SignOff</th>
-                    <th>Status</th>
-                    <th>Gro</th>
-                    <th>Requested Date</th>
-                    <th>Document</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pageSlice.map((group, groupIdx) => {
-                    const crewCount = group.crew.length;
-                    const isSingle = crewCount <= 1;
-                    const isExpanded = expandedIds.has(group.woId);
-                    const rowIndexBase = (page - 1) * pageSize + groupIdx;
+            {statusOptions.length > 1 && (
+            <div className="cpr-toolbar">
+                <div className="cpr-filters" role="group" aria-label="Filter by status">
+                  <button
+                    type="button"
+                    className={`cpr-filter${statusFilter === ALL_STATUSES ? " is-active" : ""}`}
+                    onClick={() => setStatusFilter(ALL_STATUSES)}
+                    aria-pressed={statusFilter === ALL_STATUSES}
+                  >
+                    All <span className="cpr-filter__count">{groups.length}</span>
+                  </button>
+                  {statusOptions.map(({ label, count }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      className={`cpr-filter${statusFilter === label ? " is-active" : ""}`}
+                      onClick={() => setStatusFilter(label)}
+                      aria-pressed={statusFilter === label}
+                    >
+                      {label} <span className="cpr-filter__count">{count}</span>
+                    </button>
+                  ))}
+                </div>
+            </div>
+            )}
 
-                    if (isSingle) {
-                      const soleRow = group.crew[0];
-                      return (
-                        <tr key={`wo-${group.woId}`}>
-                          <td>
-                            <WorkOrderChip value={group.woNumber} />
-                          </td>
-                          <CrewRowCells row={soleRow} index={rowIndexBase} onOpenDocument={openDocument} />
-                        </tr>
-                      );
-                    }
+            <div className="crew-pass-requests-table-scroll crew-pass-thin-scrollbar">
+              {visibleCount === 0 ? (
+                <div className="cpr-no-match">
+                  No requests match your filters.
+                  {isFiltering && (
+                    <button type="button" className="cpr-no-match__reset" onClick={clearFilters}>
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <ul className="cpr-list">
+                  {pageSlice.map((group) => {
+                    const status = groupStatus(group);
+                    const requestedDate = earliestRequestedDate(group.crew);
+                    const groName = groupGroName(group);
+                    const crewTotal = group.totalCrew ?? group.crew.length;
+                    const isOpen = !collapsedIds.has(group.woId);
+                    const crewListId = `cpr-crew-${String(group.woId)}`;
 
                     return (
-                      <Fragment key={`wo-${group.woId}`}>
-                        <tr
-                          className={`crew-pass-requests-table__wo-row${
-                            isExpanded ? " crew-pass-requests-table__wo-row--expanded" : ""
-                          }`}
-                          role="button"
-                          tabIndex={0}
-                          aria-expanded={isExpanded}
+                      <li key={`wo-${group.woId}`} className={`cpr-request${isOpen ? " is-open" : ""}`}>
+                        <button
+                          type="button"
+                          className="cpr-request__header"
                           onClick={() => toggleGroup(group.woId)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              toggleGroup(group.woId);
-                            }
-                          }}
+                          aria-expanded={isOpen}
+                          aria-controls={crewListId}
                         >
-                          <td>
-                            <span className="crew-pass-requests-table__wo-cell">
-                              <span
-                                className={`crew-pass-requests-table__expand-icon${
-                                  isExpanded ? " crew-pass-requests-table__expand-icon--open" : ""
-                                }`}
-                                aria-hidden="true"
-                              >
-                                <FiChevronDown size={14} />
-                              </span>
-                              <WorkOrderChip value={group.woNumber} />
+                          <div className="cpr-request__top">
+                            <WorkOrderChip value={group.woNumber} />
+                            <StatusBadge status={status} />
+                            <span className="cpr-request__chevron" aria-hidden="true">
+                              <FiChevronDown size={16} />
                             </span>
-                          </td>
-                          <td colSpan={3} className="crew-pass-requests-table__wo-summary">
-                            {crewCount} crew members
-                          </td>
-                          <td>
-                            <StatusBadge status={group.woStatus} />
-                          </td>
-                          <td>
-                            <span className="crew-pass-requests-table__empty-cell">—</span>
-                          </td>
-                          <td>{formatRequestedDate(earliestRequestedDate(group.crew))}</td>
-                          <td className="crew-pass-requests-table__doc-cell">
-                            <span className="crew-pass-requests-table__empty-cell">—</span>
-                          </td>
-                        </tr>
-                        {isExpanded &&
-                          group.crew.map((row, idx) => (
-                            <tr
-                              key={row.id ?? `${group.woId}-crew-${idx}`}
-                              className="crew-pass-requests-table__crew-row"
-                            >
-                              <td />
-                              <CrewRowCells row={row} index={idx} onOpenDocument={openDocument} />
-                            </tr>
-                          ))}
-                      </Fragment>
+                          </div>
+                          <div className="cpr-request__facts">
+                            <span className="cpr-fact">
+                              <FiUser size={12} aria-hidden="true" />
+                              {group.matchedCrewOnly
+                                ? `${group.crew.length} of ${crewTotal} crew`
+                                : `${crewTotal} crew member${crewTotal === 1 ? "" : "s"}`}
+                            </span>
+                            <span className="cpr-fact">
+                              <FiCalendar size={12} aria-hidden="true" />
+                              {requestedDate ? `Requested ${format(requestedDate, "dd MMM yyyy")}` : "Request date not set"}
+                            </span>
+                            <span className="cpr-fact">
+                              GRO: {groName || <span className="cpr-muted">Not assigned</span>}
+                            </span>
+                          </div>
+                        </button>
+
+                        {isOpen && (
+                          <ul className="cpr-crew-list" id={crewListId}>
+                            {group.crew.map((row, idx) => (
+                              <CrewItem
+                                key={row.id ?? `${group.woId}-crew-${idx}`}
+                                row={row}
+                                requestStatus={status}
+                                onOpenDocument={openDocument}
+                              />
+                            ))}
+                          </ul>
+                        )}
+                      </li>
                     );
                   })}
-                </tbody>
-              </table>
+                </ul>
+              )}
             </div>
 
             <div className="crew-pass-requests-table-card__pagination crew-pass-requests-pagination">
               <span className="crew-pass-requests-pagination__info">
-                Showing {rangeStart}-{rangeEnd} of {groupCount}
+                Showing {rangeStart}-{rangeEnd} of {visibleCount} request{visibleCount === 1 ? "" : "s"}
               </span>
               <div className="crew-pass-requests-pagination__actions">
                 <button

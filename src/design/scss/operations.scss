@@ -11043,3 +11043,346 @@ a.operation-task-document-name--link {
     color: var(--text-primary);
   }
 }
+
+/* ── Crew pass requests: card list (CrewPassRequestsTable) ───────────────── */
+.cpr-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.husb-header-actions {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+  max-width: 340px;
+  margin-left: auto;
+}
+
+.cpr-search {
+  flex: 1 1 220px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0 10px;
+  height: 34px;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  background: var(--surface-primary);
+  color: var(--text-muted);
+
+  &:focus-within {
+    border-color: var(--accent, #2563eb);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #2563eb) 15%, transparent);
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 12.5px;
+    color: var(--text-primary);
+
+    &::placeholder {
+      color: var(--text-muted);
+    }
+
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+  }
+}
+
+.cpr-search__clear {
+  display: inline-flex;
+  padding: 3px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+}
+
+.cpr-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cpr-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: var(--hover-bg);
+  }
+
+  &.is-active {
+    border-color: var(--accent, #2563eb);
+    background: color-mix(in srgb, var(--accent, #2563eb) 12%, transparent);
+    color: var(--accent, #2563eb);
+  }
+}
+
+.cpr-filter__count {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--hover-bg);
+  font-size: 11px;
+  text-align: center;
+}
+
+.cpr-list {
+  list-style: none;
+  margin: 0;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cpr-request {
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  background: var(--surface-primary);
+  overflow: hidden;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
+  }
+
+  &.is-open {
+    border-color: color-mix(in srgb, var(--accent, #2563eb) 35%, var(--border-primary));
+  }
+}
+
+.cpr-request__header {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: none;
+  background: var(--bg-secondary);
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--accent, #2563eb);
+    outline-offset: -2px;
+  }
+}
+
+.cpr-request__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cpr-request__chevron {
+  margin-left: auto;
+  display: inline-flex;
+  color: var(--text-muted);
+  transform: rotate(-90deg);
+  transition: transform 0.15s ease;
+
+  .is-open & {
+    transform: rotate(0deg);
+  }
+}
+
+.cpr-request__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.cpr-fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.cpr-muted {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.cpr-crew-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  border-top: 1px solid var(--border-primary);
+}
+
+.cpr-crew {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+
+  & + & {
+    border-top: 1px dashed var(--border-primary);
+  }
+}
+
+.cpr-crew__avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent, #2563eb) 14%, transparent);
+  color: var(--accent, #2563eb);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.cpr-crew__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cpr-crew__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+.cpr-crew__meta {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cpr-crew__tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.cpr-movement {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cpr-movement--on {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.cpr-movement--off {
+  background: rgba(244, 114, 37, 0.13);
+  color: #c2410c;
+}
+
+.cpr-movement--default {
+  background: var(--hover-bg);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] {
+  .cpr-movement--on {
+    color: #5be0b0;
+  }
+
+  .cpr-movement--off {
+    color: #fdba74;
+  }
+}
+
+.cpr-crew__doc {
+  flex-shrink: 0;
+}
+
+.cpr-crew__doc--none {
+  width: 25px;
+}
+
+.cpr-no-match {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.cpr-no-match__reset {
+  border: none;
+  background: none;
+  color: var(--accent, #2563eb);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 575px) {
+  .cpr-crew {
+    flex-wrap: wrap;
+  }
+
+  .cpr-crew__tags {
+    width: 100%;
+    justify-content: flex-start;
+    padding-left: 44px;
+  }
+}
+
+@media (max-width: 767px) {
+  .crew-pass-requests-table-card__header {
+    flex-wrap: wrap;
+  }
+
+  .husb-header-actions {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+  }
+}
