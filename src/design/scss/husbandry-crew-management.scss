@@ -4019,7 +4019,8 @@
       border-right: 1px solid #f1f5f9;
     }
 
-    input {
+    input,
+    select {
       width: 100%;
       border: none;
       outline: none;
@@ -4071,7 +4072,8 @@
     font-weight: 700;
   }
 
-  &__row--saved input:disabled {
+  &__row--saved input:disabled,
+  &__row--saved select:disabled {
     color: inherit;
     -webkit-text-fill-color: currentColor;
     cursor: default;
@@ -4172,7 +4174,8 @@
         border-right-color: var(--divider-row);
       }
 
-      input {
+      input,
+      select {
         color: var(--text-control);
 
         &::placeholder {

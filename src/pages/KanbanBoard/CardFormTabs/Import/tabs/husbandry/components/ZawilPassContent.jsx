@@ -40,6 +40,13 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
     documentsField: "zawilPassDocuments",
     requestEmailFileField: "zawilPassRequestEmailFile",
     crewField: "zawilPassSelectedCrew",
+    // Start a fresh request once this one is saved.
+    onSaved: () => {
+      handleChange("zawilPassRequestEmailFile")({ target: { value: [] } });
+      handleChange("zawilPassSelectedCrew")({ target: { value: [] } });
+      handleChange("zawilPassDocuments")({ target: { value: [] } });
+      handleChange("zawilPassDescription")({ target: { value: "" } });
+    },
   });
 
   useEffect(() => {

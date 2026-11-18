@@ -1,8 +1,10 @@
 import PropTypes from "prop-types";
 import { notify } from "@/components/Toaster";
-import { CREW_ENTRY_COLUMNS, createEmptyCrewRow as createEmptyRow } from "./Husbandry.constants";
+import { CREW_ENTRY_COLUMNS, createEmptyCrewRow as createEmptyRow, normalizeCrewEntryCell } from "./Husbandry.constants";
 
-const isRowEmpty = (row) => CREW_ENTRY_COLUMNS.every((column) => !String(row[column.key] ?? "").trim());
+// Select columns always hold a default, so only typed (text) cells decide whether a row has data.
+const isRowEmpty = (row) =>
+  CREW_ENTRY_COLUMNS.filter((column) => column.type !== "select").every((column) => !String(row[column.key] ?? "").trim());
 
 // A pasted first row whose first cell reads like a "name" header is a copied header row, not crew data.
 const isHeaderRow = (cells) => /name/i.test(cells[0] ?? "") && cells.length > 1;
@@ -42,7 +44,7 @@ const CrewEntryGrid = ({ rows, onRowsChange: setRows, onSubmit, submitting = fal
         const row = { ...(next[targetIndex] ?? createEmptyRow()) };
         cells.forEach((cell, cellOffset) => {
           const column = CREW_ENTRY_COLUMNS[columnIndex + cellOffset];
-          if (column) row[column.key] = cell.trim();
+          if (column) row[column.key] = normalizeCrewEntryCell(column, cell);
         });
         next[targetIndex] = row;
       });
@@ -104,16 +106,32 @@ const CrewEntryGrid = ({ rows, onRowsChange: setRows, onSubmit, submitting = fal
                 <td className="husb-crew-grid__index">{rowIndex + 1}</td>
                 {CREW_ENTRY_COLUMNS.map((column, columnIndex) => (
                   <td key={column.key}>
-                    <input
-                      type="text"
-                      value={row[column.key]}
-                      placeholder={column.placeholder}
-                      onChange={(e) => updateCell(rowIndex, column.key, e.target.value)}
-                      onPaste={handlePaste(rowIndex, columnIndex)}
-                      disabled={submitting || row._saved}
-                      title={row._saved ? "Saved" : undefined}
-                      aria-label={`${column.header} row ${rowIndex + 1}`}
-                    />
+                    {column.type === "select" ? (
+                      <select
+                        value={row[column.key]}
+                        onChange={(e) => updateCell(rowIndex, column.key, e.target.value)}
+                        disabled={submitting || row._saved}
+                        title={row._saved ? "Saved" : undefined}
+                        aria-label={`${column.header} row ${rowIndex + 1}`}
+                      >
+                        {column.options.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={row[column.key]}
+                        placeholder={column.placeholder}
+                        onChange={(e) => updateCell(rowIndex, column.key, e.target.value)}
+                        onPaste={handlePaste(rowIndex, columnIndex)}
+                        disabled={submitting || row._saved}
+                        title={row._saved ? "Saved" : undefined}
+                        aria-label={`${column.header} row ${rowIndex + 1}`}
+                      />
+                    )}
                   </td>
                 ))}
                 <td className="husb-crew-grid__action">

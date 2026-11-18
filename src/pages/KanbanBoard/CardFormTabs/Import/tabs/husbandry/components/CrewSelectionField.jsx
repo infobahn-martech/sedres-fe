@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import {
   getCrewListForPass,
@@ -44,6 +44,17 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
   const [isManualEntry, setIsManualEntry] = useState(false);
   // Lives here (not in the grid) so entered/saved crew stay visible when toggling to file upload and back.
   const [gridRows, setGridRows] = useState(() => createEmptyCrewRows());
+
+  // When the form clears the crew (e.g. after the request is saved), start the crew entry over too.
+  const selectedCount = Array.isArray(selected) ? selected.length : 0;
+  const previousSelectedCount = useRef(selectedCount);
+  useEffect(() => {
+    if (previousSelectedCount.current > 0 && selectedCount === 0) {
+      setGridRows(createEmptyCrewRows());
+      setUploadStatus("pending");
+    }
+    previousSelectedCount.current = selectedCount;
+  }, [selectedCount]);
 
   useEffect(() => {
     if (!callId) {
@@ -131,10 +142,12 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
         payload: {
           call_id: Number(callId),
           crew: rows.map((row) => {
-            const entry = { movement_type: UPLOAD_MOVEMENT_TYPE };
+            const entry = {};
             CREW_ENTRY_COLUMNS.forEach(({ key }) => {
               entry[key] = String(row[key] ?? "").trim();
             });
+            // Movement type comes from the grid; fall back to the upload default if it is ever blank.
+            entry.movement_type = entry.movement_type || UPLOAD_MOVEMENT_TYPE;
             return entry;
           }),
         },

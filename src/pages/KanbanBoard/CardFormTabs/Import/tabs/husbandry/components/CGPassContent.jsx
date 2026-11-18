@@ -40,6 +40,13 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
     documentsField: "cgPassDocuments",
     requestEmailFileField: "cgPassRequestEmailFile",
     crewField: "cgPassSelectedCrew",
+    // Start a fresh request once this one is saved.
+    onSaved: () => {
+      handleChange("cgPassRequestEmailFile")({ target: { value: [] } });
+      handleChange("cgPassSelectedCrew")({ target: { value: [] } });
+      handleChange("cgPassDocuments")({ target: { value: [] } });
+      handleChange("cgPassDescription")({ target: { value: "" } });
+    },
   });
 
   useEffect(() => {

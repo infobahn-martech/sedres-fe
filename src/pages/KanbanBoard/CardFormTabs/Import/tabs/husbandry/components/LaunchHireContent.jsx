@@ -169,6 +169,7 @@ const LaunchHireContent = ({
       notify("Launch hire request saved successfully.", "success", "top-center");
       resetValidation();
       resetDraft();
+      setField("launchHireSelectedCrew", []);
       onLaunchHireSaved?.();
       await getLaunchHireRequests(callId);
     } catch (err) {

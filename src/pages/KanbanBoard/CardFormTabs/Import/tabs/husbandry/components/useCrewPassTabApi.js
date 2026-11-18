@@ -40,6 +40,7 @@ export function useCrewPassTabApi({
   documentsField,
   requestEmailFileField,
   crewField,
+  onSaved,
 }) {
   const routeParams = useParams();
   const [saving, setSaving] = useState(false);
@@ -129,6 +130,7 @@ export function useCrewPassTabApi({
       await createPassRequest(formData);
       notify("Pass request saved successfully.", "success", "top-center");
       resetValidation();
+      onSaved?.();
       await fetchPassRequests();
     } catch (err) {
       notify(pickBackendErrorMessage(err), "error", "top-center");
@@ -147,6 +149,7 @@ export function useCrewPassTabApi({
     fetchPassRequests,
     validate,
     resetValidation,
+    onSaved,
   ]);
 
   return {
