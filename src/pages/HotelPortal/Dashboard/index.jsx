@@ -14,6 +14,8 @@ import useVendorReducer from '../../../store/VendorReducer';
 import '../../../design/scss/prospect-modal.scss';
 import '../../../design/scss/modal-designs.scss';
 import '../../../design/scss/form-designs.scss';
+import '../../../design/scss/general.scss';
+import DateTimePickerField from '../../KanbanBoard/CardFormTabs/shared/components/DateTimePickerField';
 
 const formatDate = (value) => {
     if (!value) return '—';
@@ -21,10 +23,12 @@ const formatDate = (value) => {
     return parsed.isValid() ? parsed.format('DD MMM YYYY') : value;
 };
 
-const toDateTimeLocal = (value) => {
-    if (!value) return '';
-    const parsed = dayjs(value);
-    return parsed.isValid() ? parsed.format('YYYY-MM-DDTHH:mm') : '';
+// API datetimes ("YYYY-MM-DD HH:mm:ss") -> the { date, time } parts DateTimePickerField works with.
+const toDateTimeParts = (value) => {
+    const parsed = value ? dayjs(value) : null;
+    return parsed?.isValid()
+        ? { date: parsed.format('YYYY-MM-DD'), time: parsed.format('HH:mm') }
+        : { date: '', time: '' };
 };
 
 const isUploadDisabled = (status) => {
@@ -55,7 +59,7 @@ function HotelDashboard() {
     const getCrewStayValue = (row, crew, index, field) => {
         const edited = crewStayEdits[getCrewKey(row, crew, index)]?.[field];
         if (edited !== undefined) return edited;
-        return toDateTimeLocal(crew[field] ?? row[field]);
+        return toDateTimeParts(crew[field] ?? row[field]);
     };
 
     const setCrewStayValue = (row, crew, index, field, value) => {
@@ -202,27 +206,35 @@ function HotelDashboard() {
                                             <td>{crew.rank || '—'}</td>
                                             <td>{crew.nationality || '—'}</td>
                                             <td>{crew.passport_no || '—'}</td>
-                                            <td>
-                                                <input
-                                                    type="datetime-local"
-                                                    className="form-control form-control-sm vendor-crew-datetime-input"
-                                                    value={getCrewStayValue(row, crew, i, 'checkin_datetime')}
-                                                    onChange={(e) =>
-                                                        setCrewStayValue(row, crew, i, 'checkin_datetime', e.target.value)
-                                                    }
-                                                />
-                                            </td>
-                                            <td>
-                                                <input
-                                                    type="datetime-local"
-                                                    className="form-control form-control-sm vendor-crew-datetime-input"
-                                                    value={getCrewStayValue(row, crew, i, 'checkout_datetime')}
-                                                    min={getCrewStayValue(row, crew, i, 'checkin_datetime') || undefined}
-                                                    onChange={(e) =>
-                                                        setCrewStayValue(row, crew, i, 'checkout_datetime', e.target.value)
-                                                    }
-                                                />
-                                            </td>
+                                            {(() => {
+                                                const checkIn = getCrewStayValue(row, crew, i, 'checkin_datetime');
+                                                const checkOut = getCrewStayValue(row, crew, i, 'checkout_datetime');
+                                                return (
+                                                    <>
+                                                        <td className="vendor-crew-datetime-cell">
+                                                            <DateTimePickerField
+                                                                dateValue={checkIn.date}
+                                                                timeValue={checkIn.time}
+                                                                onDateTimeChange={(next) =>
+                                                                    setCrewStayValue(row, crew, i, 'checkin_datetime', next)
+                                                                }
+                                                                placeholder="Select check-in"
+                                                            />
+                                                        </td>
+                                                        <td className="vendor-crew-datetime-cell">
+                                                            <DateTimePickerField
+                                                                dateValue={checkOut.date}
+                                                                timeValue={checkOut.time}
+                                                                minDate={checkIn.date || undefined}
+                                                                onDateTimeChange={(next) =>
+                                                                    setCrewStayValue(row, crew, i, 'checkout_datetime', next)
+                                                                }
+                                                                placeholder="Select check-out"
+                                                            />
+                                                        </td>
+                                                    </>
+                                                );
+                                            })()}
                                         </tr>
                                     ))
                                 ) : (

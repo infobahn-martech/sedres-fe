@@ -173,6 +173,15 @@
     max-width: 100%;
 }
 
+/* Crew list — CheckIn / CheckOut cells using the shared DateTimePickerField */
+.vendor-table .vendor-crew-datetime-cell {
+    min-width: 210px;
+
+    .cf-datetime-picker {
+        margin: 0;
+    }
+}
+
 .vendor-table .vendor-crew-datetime-input--readonly {
     background: var(--bg-secondary);
     color: var(--text-primary);
