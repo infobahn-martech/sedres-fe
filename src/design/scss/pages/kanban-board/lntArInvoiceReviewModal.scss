@@ -1,0 +1,58 @@
+// L&T "Invoice Review" modal. The table shell comes from arInvoiceReviewModal.scss; only the
+// no-QR row and the SO dropdown live here.
+
+.blockers-modal.se-review-move-modal.ar-invoice-review-modal .blockers-table-wrapper {
+  // The table fills the modal: the tick column is narrow and the four data columns share the rest
+  // equally. Every cell is centred on the row's middle.
+  .lnt-invoice-review__grid {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 0;
+
+    thead th,
+    tbody td {
+      padding-top: 12px;
+      padding-bottom: 12px;
+      vertical-align: middle;
+      text-align: left;
+    }
+
+    th:nth-child(1),
+    td:nth-child(1) {
+      width: 56px;
+      text-align: center;
+    }
+
+    // Visible gap between the SO dropdown and the QR Code column.
+    th:nth-child(4),
+    td:nth-child(4) {
+      padding-left: 48px;
+    }
+  }
+
+  .lnt-invoice-review__so-select {
+    width: 100%;
+    max-width: 260px;
+    height: 32px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    font-size: 14px;
+  }
+
+  // A card with no QR code on its invoice stays in Received from Ops, so its row reads as blocked.
+  .ar-invoice-review__grid tbody tr.lnt-invoice-review__row--no-qr {
+    background: #fef2f2;
+
+    td {
+      color: #b91c1c;
+    }
+  }
+
+  .lnt-invoice-review__qr--yes {
+    color: #15803d;
+  }
+
+  .lnt-invoice-review__qr--no {
+    font-weight: 600;
+  }
+}
