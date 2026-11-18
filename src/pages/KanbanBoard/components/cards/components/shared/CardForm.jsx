@@ -2239,8 +2239,9 @@ function CardForm({
   // Same for the GRO / Custom Clearance task card views: GROCardView binds everything from
   // call_file/get_call_detail_by_id (light, per card), so the heavy get_call_detail snapshot
   // would only seed TopBar metadata, which already falls back to card.raw. Coordinator
-  // Transport (also a GRO-style view) keeps the snapshot.
-  const isGroTaskCardView = isGROStyleView && !isCoordinatorTransport;
+  // Transport (also a GRO-style view) binds from transport/get_transport_request_card_detail
+  // and never reads the snapshot either.
+  const isGroTaskCardView = isGROStyleView;
   const snapshotCallId =
     !show || isAddMode || isTaxiBoatVariant || isGroTaskCardView
       ? ""

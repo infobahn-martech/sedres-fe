@@ -296,7 +296,10 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
   } = useCoordinatorTransportReducer();
 
   const callId = cardDetail?.call_id ?? resolveCallId(cardData);
-  const transportRequestId = resolveTransportRequestId(cardData) ?? cardDetail?.transport_request_id ?? null;
+  // String key so a 11 → "11" type change on a re-synced card doesn't refetch the detail.
+  const rawTransportRequestId = resolveTransportRequestId(cardData) ?? cardDetail?.transport_request_id ?? null;
+  const transportRequestId =
+    rawTransportRequestId === null || rawTransportRequestId === "" ? null : String(rawTransportRequestId);
 
   // The store is shared across cards; ignore a detail left over from a previously opened card.
   const detail =
@@ -327,9 +330,18 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
     [transportRequestId, fetchTransportRequestDetail]
   );
 
+  // Which request id's detail fetch has finished (success or failure).
+  const [detailSettledFor, setDetailSettledFor] = useState(null);
+
   useEffect(() => {
-    void refreshTransportRequestDetail();
-  }, [refreshTransportRequestDetail]);
+    let cancelled = false;
+    Promise.resolve(refreshTransportRequestDetail()).finally(() => {
+      if (!cancelled) setDetailSettledFor(transportRequestId);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshTransportRequestDetail, transportRequestId]);
 
   useEffect(() => {
     if (!detail) return;
@@ -372,21 +384,31 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
     }));
   }, [detail]);
 
-  useEffect(() => {
-    fetchTransportCompanies();
-  }, [fetchTransportCompanies]);
+  // Dropdown lists load only for the provider in use, once per open card:
+  // in house needs vehicle types + invoice branches, third party needs companies.
+  // While an existing request's detail is still loading, wait so a Third Party
+  // request doesn't first pull the in-house lists.
+  const loadedListsRef = useRef({ inhouse: false, thirdparty: false });
+  const isWaitingForDetail =
+    Boolean(transportRequestId) && !detail && detailSettledFor !== transportRequestId;
 
   useEffect(() => {
-    fetchVehicleTypes();
-  }, [fetchVehicleTypes]);
+    if (isWaitingForDetail) return;
+    const provider = transportForm.providerType;
+    if (loadedListsRef.current[provider]) return;
+    loadedListsRef.current[provider] = true;
+    if (provider === "thirdparty") {
+      fetchTransportCompanies();
+    } else {
+      fetchVehicleTypes();
+      fetchInvoiceBranches();
+    }
+  }, [transportForm.providerType, isWaitingForDetail, fetchTransportCompanies, fetchVehicleTypes, fetchInvoiceBranches]);
 
   useEffect(() => {
-    fetchInvoiceBranches();
-  }, [fetchInvoiceBranches]);
-
-  useEffect(() => {
+    if (transportForm.providerType !== "inhouse") return;
     fetchInhouseDrivers(transportForm.vehicleTypeId);
-  }, [transportForm.vehicleTypeId, fetchInhouseDrivers]);
+  }, [transportForm.providerType, transportForm.vehicleTypeId, fetchInhouseDrivers]);
 
   const callTypeSummary = firstNonEmpty(cardData?.typeOfCall);
   const billingEntitySummary = firstNonEmpty(cardDetail?.billing_entity);
