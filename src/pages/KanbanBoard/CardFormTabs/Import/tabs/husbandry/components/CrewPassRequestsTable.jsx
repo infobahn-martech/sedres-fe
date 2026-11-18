@@ -152,7 +152,8 @@ const CrewPassRequestsTable = ({
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState(ALL_STATUSES);
   const [page, setPage] = useState(1);
-  const [collapsedIds, setCollapsedIds] = useState(() => new Set());
+  // Cards start closed; ids here are the ones the user opened.
+  const [expandedIds, setExpandedIds] = useState(() => new Set());
 
   // Status filter chips, built from the statuses actually present.
   const statusOptions = useMemo(() => {
@@ -196,7 +197,7 @@ const CrewPassRequestsTable = ({
 
   useEffect(() => {
     setPage(1);
-    setCollapsedIds(new Set());
+    setExpandedIds(new Set());
   }, [listSignature]);
 
   useEffect(() => {
@@ -218,7 +219,7 @@ const CrewPassRequestsTable = ({
   };
 
   const toggleGroup = (woId) => {
-    setCollapsedIds((prev) => {
+    setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(woId)) next.delete(woId);
       else next.add(woId);
@@ -319,7 +320,8 @@ const CrewPassRequestsTable = ({
                     const requestedDate = earliestRequestedDate(group.crew);
                     const groName = groupGroName(group);
                     const crewTotal = group.totalCrew ?? group.crew.length;
-                    const isOpen = !collapsedIds.has(group.woId);
+                    // A search that matched crew opens the card so the matches are visible.
+                    const isOpen = expandedIds.has(group.woId) || Boolean(group.matchedCrewOnly);
                     const crewListId = `cpr-crew-${String(group.woId)}`;
                     const groupDocUrl = getGroupDocumentUrl ? getGroupDocumentUrl(group) : "";
 
