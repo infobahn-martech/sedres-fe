@@ -1222,7 +1222,6 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
                     </div>
                     <div className="crew-mgmt-service-box-content">
                       <span className="crew-mgmt-service-box-label">{card.label}</span>
-                      <span className="crew-mgmt-service-box-count">{assignedCount} Crew Assigned</span>
                     </div>
                   </button>
                 );

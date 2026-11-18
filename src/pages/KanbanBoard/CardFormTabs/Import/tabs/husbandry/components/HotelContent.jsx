@@ -14,6 +14,7 @@ import CrewPassRequestsTable from "./CrewPassRequestsTable";
 import { buildRequestCardGroups, formatCardDate, crewRankMeta } from "./requestCardGroups";
 import CrewSelectionField from "./CrewSelectionField";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT, LAUNCH_HIRE_LOCATION_OPTIONS } from "./Husbandry.constants";
 
 // One card per hotel request (same card list as CG / Zawil pass / Transport), crew listed inside.
@@ -68,6 +69,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
     requestEmailField: "hotelRequestEmail",
     crewField: "hotelSelectedCrew",
   });
+  const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
 
   // Shared with the rest of the drawer (CardForm fetches it once per card).
   const { detail: callDetails } = useCallDetail(callId);
@@ -337,6 +339,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
         "top-center"
       );
       resetValidation();
+      showSavedLineItems(response);
       handleChange("hotelId")({ target: { value: "" } });
       handleChange("hotelName")({ target: { value: "" } });
       handleChange("hotelCheckInDate")({ target: { value: "" } });
@@ -361,10 +364,11 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
     } finally {
       setIsSavingHotel(false);
     }
-  }, [callId, formValues, fetchHotelRequests, isLaunchHire, handleChange, validate, resetValidation]);
+  }, [callId, formValues, fetchHotelRequests, isLaunchHire, handleChange, validate, resetValidation, showSavedLineItems]);
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form hotel-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">

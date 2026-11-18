@@ -7,6 +7,7 @@ import {
   getPassRequests,
 } from "@/services/cgAndZwailpassService";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 
 export const resolvePassCallId = (formValues, card, routeParams) => {
   const raw =
@@ -51,6 +52,7 @@ export function useCrewPassTabApi({
     requestEmailField: requestEmailFileField,
     crewField,
   });
+  const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
 
   const fetchPassRequests = useCallback(async () => {
     if (!callId) {
@@ -127,10 +129,11 @@ export function useCrewPassTabApi({
 
     setSaving(true);
     try {
-      await createPassRequest(formData);
+      const response = await createPassRequest(formData);
       notify("Pass request saved successfully.", "success", "top-center");
       resetValidation();
       onSaved?.();
+      showSavedLineItems(response);
       await fetchPassRequests();
     } catch (err) {
       notify(pickBackendErrorMessage(err), "error", "top-center");
@@ -150,6 +153,7 @@ export function useCrewPassTabApi({
     validate,
     resetValidation,
     onSaved,
+    showSavedLineItems,
   ]);
 
   return {
@@ -160,5 +164,6 @@ export function useCrewPassTabApi({
     refetchPassRequests: fetchPassRequests,
     callId,
     fieldErrors,
+    lineItemsModal,
   };
 }

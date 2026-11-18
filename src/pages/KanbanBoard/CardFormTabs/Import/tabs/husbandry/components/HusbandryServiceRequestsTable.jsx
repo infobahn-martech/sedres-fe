@@ -191,7 +191,6 @@ const HusbandryServiceRequestsTable = ({
         icon={icon}
         title={title}
         subtitle={subtitle}
-        count={loading ? "…" : safeList.length}
         headerClassName="crew-pass-requests-table-card__header"
         titleClassName="crew-pass-requests-table-card__title"
       />

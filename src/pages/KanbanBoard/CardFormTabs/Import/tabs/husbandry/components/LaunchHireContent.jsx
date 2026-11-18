@@ -7,6 +7,7 @@ import AttachmentsList from "../../appointment/AttachmentsList";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import CrewSelectionField from "./CrewSelectionField";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import useLaunchHireServiceReducer from "@/store/LaunchHireServiceReducer";
 import { buildPickupDateTime } from "@/store/TransportContent";
@@ -56,6 +57,7 @@ const LaunchHireContent = ({
     requestEmailField: "launchHireRequestEmailFile",
     crewField: "launchHireSelectedCrew",
   });
+  const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
   const { launchHireRequests, isLoadingRequests, getLaunchHireRequests, createCrewChangeBooking } = useLaunchHireServiceReducer();
   const [saving, setSaving] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -165,9 +167,10 @@ const LaunchHireContent = ({
 
     setSaving(true);
     try {
-      await createCrewChangeBooking(formData);
+      const response = await createCrewChangeBooking(formData);
       notify("Launch hire request saved successfully.", "success", "top-center");
       resetValidation();
+      showSavedLineItems(response);
       resetDraft();
       setField("launchHireSelectedCrew", []);
       onLaunchHireSaved?.();
@@ -181,6 +184,7 @@ const LaunchHireContent = ({
 
   return (
     <div className="cardform-left-full launchhire-booking" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form launchhire-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">

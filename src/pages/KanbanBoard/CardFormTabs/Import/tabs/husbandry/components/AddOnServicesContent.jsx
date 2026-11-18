@@ -7,6 +7,7 @@ import AttachmentsList from "../../appointment/AttachmentsList";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import addOnService from "@/services/addOnService";
 import useAddOnServiceRequestReducer from "@/store/AddOnServiceRequestReducer";
 import { buildPickupDateTime } from "@/store/TransportContent";
@@ -52,6 +53,7 @@ const AddOnServicesContent = ({ formValues, handleChange, cardColor, showLaunchH
   const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
     requestEmailField: "addOnServicesRequestEmailDocuments",
   });
+  const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
   const isOthersSelected = formValues.addOnServiceType === "Others";
   const selectedServiceId = isOthersSelected ? null : Number(formValues.addOnServiceType);
   const isProvisionDelivery = selectedServiceId === ADD_ON_SERVICE_TYPE_IDS.PROVISION_DELIVERY;
@@ -335,6 +337,7 @@ const AddOnServicesContent = ({ formValues, handleChange, cardColor, showLaunchH
         "top-center"
       );
       resetValidation();
+      showSavedLineItems(response);
       handleChange("addOnServiceType")({ target: { value: "" } });
       handleChange("addOnServiceTypeOther")({ target: { value: "" } });
       handleChange("addOnServicesDescription")({ target: { value: "" } });
@@ -369,6 +372,7 @@ const AddOnServicesContent = ({ formValues, handleChange, cardColor, showLaunchH
     handleChange,
     validate,
     resetValidation,
+    showSavedLineItems,
   ]);
 
   const requestEmailAttachments = normalizeAttachmentList(
@@ -378,6 +382,7 @@ const AddOnServicesContent = ({ formValues, handleChange, cardColor, showLaunchH
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form add-on-services-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">

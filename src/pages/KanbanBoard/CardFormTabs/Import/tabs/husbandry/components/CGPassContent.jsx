@@ -32,6 +32,7 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
     passRequestsLoading,
     callId,
     fieldErrors,
+    lineItemsModal,
   } = useCrewPassTabApi({
     passType: "CG",
     formValues,
@@ -183,6 +184,7 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form cgpass-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">

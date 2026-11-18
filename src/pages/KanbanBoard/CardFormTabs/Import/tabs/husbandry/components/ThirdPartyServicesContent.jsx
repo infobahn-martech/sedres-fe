@@ -7,6 +7,7 @@ import AttachmentsList from "../../appointment/AttachmentsList";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import thirdPartyService from "@/services/thirdPartyService";
 import useThirdPartyServiceRequestReducer from "@/store/ThirdPartyServiceRequestReducer";
 import { buildPickupDateTime } from "@/store/TransportContent";
@@ -46,6 +47,7 @@ const ThirdPartyServicesContent = ({ formValues, handleChange, cardColor, showLa
   const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
     requestEmailField: "thirdPartyServicesRequestEmailDocuments",
   });
+  const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
   const isLaunchHire = showLaunchHire && formValues.thirdPartyServicesLaunchHire !== false;
   const {
     thirdPartyServiceRequests,
@@ -290,6 +292,7 @@ const ThirdPartyServicesContent = ({ formValues, handleChange, cardColor, showLa
         "top-center"
       );
       resetValidation();
+      showSavedLineItems(response);
       handleChange("thirdPartyServiceType")({ target: { value: "" } });
       handleChange("thirdPartyServicesChargeCode")({ target: { value: "" } });
       handleChange("thirdPartyServicesDescription")({ target: { value: "" } });
@@ -307,7 +310,7 @@ const ThirdPartyServicesContent = ({ formValues, handleChange, cardColor, showLa
         "top-center"
       );
     }
-  }, [callId, formValues, isLaunchHire, createThirdPartyServiceRequest, getThirdPartyServiceRequests, handleChange, validate, resetValidation]);
+  }, [callId, formValues, isLaunchHire, createThirdPartyServiceRequest, getThirdPartyServiceRequests, handleChange, validate, resetValidation, showSavedLineItems]);
 
   const requestEmailAttachments = normalizeAttachmentList(
     formValues.thirdPartyServicesRequestEmailDocuments || []
@@ -316,6 +319,7 @@ const ThirdPartyServicesContent = ({ formValues, handleChange, cardColor, showLa
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form third-party-services-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">

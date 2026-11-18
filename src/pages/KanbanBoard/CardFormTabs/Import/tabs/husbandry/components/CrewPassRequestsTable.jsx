@@ -147,7 +147,6 @@ const CrewPassRequestsTable = ({
     const source = Array.isArray(requests) ? requests : EMPTY_LIST;
     return groupPassRequestRows(source);
   }, [groupsProp, requests]);
-  const totalCrewCount = useMemo(() => groups.reduce((sum, g) => sum + g.crew.length, 0), [groups]);
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState(ALL_STATUSES);
@@ -261,7 +260,6 @@ const CrewPassRequestsTable = ({
         icon={icon}
         title={title}
         subtitle={subtitle}
-        count={loading ? "…" : totalCrewCount}
         headerClassName="crew-pass-requests-table-card__header"
         titleClassName="crew-pass-requests-table-card__title"
         actions={!loading && groups.length > 0 ? searchBox : null}

@@ -11,6 +11,7 @@
   import CrewPassRequestsTable from "./CrewPassRequestsTable";
   import CrewSelectionField from "./CrewSelectionField";
   import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+  import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
   import LocationAutocomplete from "./LocationAutocomplete";
   import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 
@@ -82,6 +83,7 @@
       requestEmailField: "transportRequestEmail",
       crewField: "selectedCrew",
     });
+    const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
 
     // Shared with the rest of the drawer (CardForm fetches it once per card).
     const { detail: callDetails } = useCallDetail(callId);
@@ -313,6 +315,7 @@
           "top-center"
         );
         resetValidation();
+        showSavedLineItems(response);
         handleChange("transportRequestEmail")({ target: { value: [] } });
         handleChange("selectedCrew")({ target: { value: [] } });
         handleChange("transportPickupDate")({ target: { value: "" } });
@@ -337,10 +340,11 @@
       } finally {
         setIsSavingTransport(false);
       }
-    }, [callId, callDetails, formValues, fetchTransportRequests, isLaunchHire, handleChange, validate, resetValidation]);
+    }, [callId, callDetails, formValues, fetchTransportRequests, isLaunchHire, handleChange, validate, resetValidation, showSavedLineItems]);
 
     return (
       <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+        {lineItemsModal}
         <FormSection icon={GroupSettingsIcon} title="">
           <div className="pre-arrival-form transport-form">
             <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">

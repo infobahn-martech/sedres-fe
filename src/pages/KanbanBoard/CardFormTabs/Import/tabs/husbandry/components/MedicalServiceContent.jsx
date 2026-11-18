@@ -13,6 +13,7 @@ import CrewPassRequestsTable from "./CrewPassRequestsTable";
 import { buildRequestCardGroups, formatCardDate, crewRankMeta } from "./requestCardGroups";
 import CrewSelectionField from "./CrewSelectionField";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT, LAUNCH_HIRE_LOCATION_OPTIONS } from "./Husbandry.constants";
 
@@ -54,6 +55,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
     requestEmailField: "medicalServiceRequestEmail",
     crewField: "medicalServiceSelectedCrew",
   });
+  const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
 
   // Shared with the rest of the drawer (CardForm fetches it once per card).
   const { detail: callDetails } = useCallDetail(callId);
@@ -346,6 +348,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
         "top-center"
       );
       resetValidation();
+      showSavedLineItems(response);
       handleChange("medicalServiceSelectedHospital")({ target: { value: "" } });
       handleChange("medicalServiceSelectedService")({ target: { value: "" } });
       handleChange("medicalServiceSelectedCrew")({ target: { value: [] } });
@@ -366,10 +369,11 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
     } finally {
       setIsSaving(false);
     }
-  }, [callId, formValues, fetchMedicalRequests, isLaunchHire, handleChange, validate, resetValidation]);
+  }, [callId, formValues, fetchMedicalRequests, isLaunchHire, handleChange, validate, resetValidation, showSavedLineItems]);
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form medicalservice-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">

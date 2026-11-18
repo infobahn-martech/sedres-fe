@@ -6,6 +6,7 @@ import { FormSection, FormField, FormSelect, FormGroup, PremiumCardHeader, React
 import AttachmentsList from "../../appointment/AttachmentsList";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import wasteTypeService from "@/services/wasteTypeService";
 import useWasteDisposalReducer from "@/store/WasteDisposalReducer";
@@ -51,6 +52,7 @@ const WasteDisposalContent = ({ formValues, handleChange, cardColor }) => {
   const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
     requestEmailField: "wasteDisposalRequestEmailDocuments",
   });
+  const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
   const {
     wasteDisposalRequests,
     isLoadingList,
@@ -295,6 +297,7 @@ const WasteDisposalContent = ({ formValues, handleChange, cardColor }) => {
         "top-center"
       );
       resetValidation();
+      showSavedLineItems(response);
       handleChange("wasteDisposalPONumber")({ target: { value: "" } });
       handleChange("wasteTypeId")({ target: { value: "" } });
       handleChange("wasteType")({ target: { value: "" } });
@@ -310,7 +313,7 @@ const WasteDisposalContent = ({ formValues, handleChange, cardColor }) => {
         "top-center"
       );
     }
-  }, [callId, formValues, disposalDateParts, createWasteDisposalRequest, getWasteDisposalRequests, handleChange, validate, resetValidation]);
+  }, [callId, formValues, disposalDateParts, createWasteDisposalRequest, getWasteDisposalRequests, handleChange, validate, resetValidation, showSavedLineItems]);
 
   const requestEmailAttachments = normalizeAttachmentList(
     formValues.wasteDisposalRequestEmailDocuments || []
@@ -319,6 +322,7 @@ const WasteDisposalContent = ({ formValues, handleChange, cardColor }) => {
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form waste-disposal-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">

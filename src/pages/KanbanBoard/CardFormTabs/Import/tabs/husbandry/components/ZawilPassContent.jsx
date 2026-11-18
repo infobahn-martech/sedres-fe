@@ -32,6 +32,7 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
     passRequestsLoading,
     callId,
     fieldErrors,
+    lineItemsModal,
   } = useCrewPassTabApi({
     passType: "Zawil",
     formValues,
@@ -183,6 +184,7 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form zawilpass-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">

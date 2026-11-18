@@ -6,6 +6,7 @@ import { FormSection, FormField, FormGroup, PremiumCardHeader, ReactQuillEditor 
 import AttachmentsList from "../../appointment/AttachmentsList";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import useMWPRenewalReducer from "@/store/MWPRenewalReducer";
 import { MAIN_TABS, SERVICE_ACCENT } from "./Husbandry.constants";
@@ -55,6 +56,7 @@ const MWPRenewalContent = ({ formValues, handleChange, cardColor }) => {
   const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
     requestEmailField: "mwpRenewalRequestEmailDocuments",
   });
+  const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
   const {
     mwpRenewalRequests,
     isLoadingList,
@@ -251,6 +253,7 @@ const MWPRenewalContent = ({ formValues, handleChange, cardColor }) => {
         "top-center"
       );
       resetValidation();
+      showSavedLineItems(response);
       handleChange("mwpRenewalExpiryDate")({ target: { value: "" } });
       handleChange("mwpRenewalDescription")({ target: { value: "" } });
       handleChange("mwpRenewalRequestEmailDocuments")({ target: { value: [] } });
@@ -263,7 +266,7 @@ const MWPRenewalContent = ({ formValues, handleChange, cardColor }) => {
         "top-center"
       );
     }
-  }, [callId, formValues, expiryDateParts, createMwpRenewalRequest, getMwpRenewalRequests, handleChange, validate, resetValidation]);
+  }, [callId, formValues, expiryDateParts, createMwpRenewalRequest, getMwpRenewalRequests, handleChange, validate, resetValidation, showSavedLineItems]);
 
   const requestEmailAttachments = normalizeAttachmentList(
     formValues.mwpRenewalRequestEmailDocuments || []
@@ -272,6 +275,7 @@ const MWPRenewalContent = ({ formValues, handleChange, cardColor }) => {
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form mwp-renewal-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">

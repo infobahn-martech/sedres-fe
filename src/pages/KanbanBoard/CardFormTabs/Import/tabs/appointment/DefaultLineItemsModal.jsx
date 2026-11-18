@@ -33,7 +33,9 @@ const EMPTY_ADD_FORM = { itemCode: "", tariffId: "", itemName: "", unitPrice: ""
 // readOnly: review-only (no Add Item / delete / Skip) — Confirm still adds the pending default items.
 // soType: when set, items come from sales_order/get_so_items_by_call/{call_id}?so_type=<soType>
 // (the call's existing sales order) instead of get_default_line_items.
-function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
+// initialItems: when set (e.g. the line item a service save just created), these are listed instead;
+// get_default_line_items is still read for the port / entity / currency the Add Item form needs.
+function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initialItems, title, subtitle }) {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [details, setDetails] = useState(null);
@@ -56,9 +58,19 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
     const request = soType
       ? salesOrderService.getSoItemsByCall(callId, soType)
       : salesOrderService.getDefaultLineItems(callId);
+    const hasInitialItems = Array.isArray(initialItems);
+    if (hasInitialItems) {
+      setItems(initialItems);
+      setRemovedItems([]);
+    }
     request
       .then(({ data }) => {
         if (cancelled) return;
+        if (hasInitialItems) {
+          // Only the call's sales order context is needed; the listed items came from the caller.
+          setDetails(data?.status && data.status !== "success" ? {} : (data?.data ?? {}));
+          return;
+        }
         if (data?.status && data.status !== "success") {
           setLoadError(data?.message || "Could not load line items.");
           return;
@@ -75,7 +87,9 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
         setRemovedItems([]);
       })
       .catch((error) => {
-        if (!cancelled) setLoadError(getErrorMessage(error, "Could not load line items."));
+        if (cancelled) return;
+        if (hasInitialItems) setDetails({});
+        else setLoadError(getErrorMessage(error, "Could not load line items."));
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -83,7 +97,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
     return () => {
       cancelled = true;
     };
-  }, [callId, soType]);
+  }, [callId, soType, initialItems]);
 
   const portId = details?.port_id;
   const entityId = details?.entity_id;
@@ -115,11 +129,12 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
   // One option per item code; codes whose tariff is already listed are hidden.
   const itemCodeSelectOptions = useMemo(() => {
     const listedTariffIds = new Set(items.map((item) => String(item.tariff_id)));
+    const listedItemCodes = new Set(items.map((item) => item.item_code).filter(Boolean));
     const seen = new Set();
     return itemCodeOptions.reduce((acc, option) => {
       if (!option?.item_code || seen.has(option.item_code)) return acc;
       seen.add(option.item_code);
-      if (listedTariffIds.has(String(option.tariff_id))) return acc;
+      if (listedTariffIds.has(String(option.tariff_id)) || listedItemCodes.has(option.item_code)) return acc;
       acc.push({
         value: option.item_code,
         label: option.item_name ? `${option.item_code} — ${option.item_name}` : option.item_code,
@@ -132,10 +147,11 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
     () =>
       items.reduce(
         (acc, item) => {
-          const unit = toNumber(item.unit_price);
+          // quantity is absent on default line items (one unit each).
+          const net = toNumber(item.unit_price) * (item.quantity == null ? 1 : toNumber(item.quantity));
           const total = toNumber(item.total_price);
-          acc.subtotal += unit;
-          acc.totalTax += total - unit;
+          acc.subtotal += net;
+          acc.totalTax += total - net;
           acc.grandTotal += total;
           return acc;
         },
@@ -144,7 +160,11 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
     [items]
   );
 
-  const pendingAddCount = items.filter((item) => item.so_item_id == null).length;
+  const showQuantity = items.some((item) => item.quantity != null);
+  const columnCount = 6 + (showQuantity ? 1 : 0) + (readOnly ? 0 : 1);
+  // Items that came with the save response (fromSave) are already recorded by that save.
+  const isPendingAdd = (item) => item.so_item_id == null && !item.fromSave;
+  const pendingAddCount = items.filter(isPendingAdd).length;
   const pendingRemoveCount = removedItems.length;
 
   const openAddForm = () => {
@@ -203,7 +223,12 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
     const unit = toNumber(addForm.unitPrice);
     const tax = toNumber(addForm.taxPercentage);
     // A previously removed sales order item that is re-added is simply restored.
-    const restored = removedItems.find((item) => String(item.tariff_id) === String(addForm.tariffId));
+    // Save-response items carry no tariff_id, so match those by item code.
+    const restored = removedItems.find(
+      (item) =>
+        String(item.tariff_id) === String(addForm.tariffId) ||
+        (item.tariff_id == null && item.item_code && item.item_code === addForm.itemCode)
+    );
     if (restored) {
       setRemovedItems((prev) => prev.filter((item) => item !== restored));
       setItems((prev) => [...prev, restored]);
@@ -227,25 +252,62 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
 
   const handleRemoveItem = (item) => {
     setItems((prev) => prev.filter((row) => row !== item));
-    if (item.so_item_id != null) setRemovedItems((prev) => [...prev, item]);
+    // Already on the sales order (or created by the save that opened this modal) → cancel on Confirm.
+    if (item.so_item_id != null || item.fromSave) setRemovedItems((prev) => [...prev, item]);
+  };
+
+  // Removed save-response items may lack an so_item_id; find it on the call's sales order by item code
+  // (latest active line with that code, preferring the same quantity).
+  const resolveRemovedSoItemIds = async (removed) => {
+    if (!removed.some((item) => item.so_item_id == null)) return removed;
+    let soItems = [];
+    try {
+      const { data } = await salesOrderService.getSoItemsByCall(callId);
+      soItems = Array.isArray(data?.data?.items) ? data.data.items : [];
+    } catch {
+      soItems = [];
+    }
+    const used = new Set(removed.map((item) => item.so_item_id).filter((id) => id != null).map(String));
+    return removed.map((item) => {
+      if (item.so_item_id != null) return item;
+      const candidates = soItems
+        .filter(
+          (row) =>
+            row?.so_item_id != null &&
+            !used.has(String(row.so_item_id)) &&
+            row.item_code === item.item_code &&
+            String(row?.item_status ?? row?.status ?? "").trim().toLowerCase() !== "cancelled"
+        )
+        .sort((a, b) => Number(b.so_item_id) - Number(a.so_item_id));
+      const match =
+        candidates.find((row) => item.quantity != null && toNumber(row.quantity) === toNumber(item.quantity)) ??
+        candidates[0];
+      if (match) used.add(String(match.so_item_id));
+      return { ...item, so_item_id: match?.so_item_id ?? null };
+    });
   };
 
   const handleConfirm = async () => {
-    const toAdd = items.filter((item) => item.so_item_id == null);
+    const toAdd = items.filter(isPendingAdd);
     if (!toAdd.length && !removedItems.length) {
       onDone();
       return;
     }
 
     setIsApplying(true);
+    const resolvedRemoved = await resolveRemovedSoItemIds(removedItems);
+    const unresolved = resolvedRemoved.filter((item) => item.so_item_id == null);
     const results = await Promise.allSettled([
+      ...unresolved.map(() => Promise.reject(new Error("Line item not found on the sales order."))),
       ...toAdd.map((item) =>
         salesOrderService.addCallLineItem({
           call_id: Number(callId) || callId,
           tariff_id: Number(item.tariff_id) || item.tariff_id,
         })
       ),
-      ...removedItems.map((item) => daService.deleteSalesLineItem({ so_item_id: item.so_item_id })),
+      ...resolvedRemoved
+        .filter((item) => item.so_item_id != null)
+        .map((item) => daService.deleteSalesLineItem({ so_item_id: item.so_item_id })),
     ]);
     setIsApplying(false);
 
@@ -365,6 +427,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
                 <th className="dli-col-code">Item Code</th>
                 <th>Description</th>
                 <th className="dli-col-num">Unit Price</th>
+                {showQuantity && <th className="dli-col-num">Qty</th>}
                 <th className="dli-col-num">Tax %</th>
                 <th className="dli-col-num">Total</th>
                 {!readOnly && <th className="dli-col-action" aria-label="Actions" />}
@@ -373,7 +436,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={readOnly ? 6 : 7} className="dli-table-empty">
+                  <td colSpan={columnCount} className="dli-table-empty">
                     {readOnly ? (
                       "No line items."
                     ) : (
@@ -385,7 +448,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
                 </tr>
               ) : (
                 items.map((item, index) => (
-                  <tr key={`${item.tariff_id}-${item.so_item_id ?? "new"}`}>
+                  <tr key={`${item.tariff_id ?? item.item_code}-${item.so_item_id ?? "new"}`}>
                     <td className="dli-col-idx">{index + 1}</td>
                     <td className="dli-col-code">
                       <span className="dli-code-pill">{item.item_code || "—"}</span>
@@ -397,6 +460,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
                       </div>
                     </td>
                     <td className="dli-col-num">{formatAmount(item.unit_price)}</td>
+                    {showQuantity && <td className="dli-col-num">{item.quantity == null ? 1 : toNumber(item.quantity)}</td>}
                     <td className="dli-col-num">{toNumber(item.tax_percentage)}%</td>
                     <td className="dli-col-num dli-col-total">{formatAmount(item.total_price)}</td>
                     {!readOnly && (
@@ -460,12 +524,13 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
           </span>
           <div className="so-doc-modal-heading">
             <h3 id="dli-modal-title" className="so-doc-modal-title">
-              Sales Order Line Items
+              {title || "Sales Order Line Items"}
             </h3>
             <p className="so-doc-modal-subtitle">
-              {details?.sales_order_no
-                ? `${details.sales_order_no} · review the line items for this call.`
-                : "Review the line items for this call."}
+              {subtitle ||
+                (details?.sales_order_no
+                  ? `${details.sales_order_no} · review the line items for this call.`
+                  : "Review the line items for this call.")}
             </p>
           </div>
         </div>
@@ -502,6 +567,10 @@ DefaultLineItemsModal.propTypes = {
   onDone: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
   soType: PropTypes.string,
+  /** Items to list instead of loading them (e.g. from a service save response). Keep the array reference stable. */
+  initialItems: PropTypes.array,
+  title: PropTypes.string,
+  subtitle: PropTypes.string,
 };
 
 export default DefaultLineItemsModal;
