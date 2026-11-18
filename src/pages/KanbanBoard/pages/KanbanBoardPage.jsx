@@ -14,6 +14,7 @@ import SeCreationEmailModal from "../components/board/SeCreationEmailModal";
 import SeApprovalUploadModal from "../components/board/SeApprovalUploadModal";
 import SeReviewMoveModal from "../components/board/SeReviewMoveModal";
 import ArInvoiceReviewModal from "../components/board/ArInvoiceReviewModal";
+import LntArInvoiceReviewModal from "../components/board/LntArInvoiceReviewModal";
 import SignatureCheckModal from "../components/board/SignatureCheckModal";
 import PoReviewModal from "../components/board/PoReviewModal";
 import LamprellUaePoReviewModal from "../components/board/LamprellUaePoReviewModal";
@@ -1124,6 +1125,7 @@ export default function KanbanBoardPage() {
       }
 
       const reviewCardById = {};
+      const reviewInvoiceById = {};
       const notPlacedFiles = [];
       let receivedCount = 0;
       let failedMessage = null;
@@ -1149,7 +1151,15 @@ export default function KanbanBoardPage() {
             break;
           }
           receivedCount += data.data?.received_files?.length ?? chunk.length;
-          notPlacedFiles.push(...(data.data?.not_placed_files ?? []));
+          /* L&T lists each unplaced file with the reason; the other workflows list bare file names. */
+          notPlacedFiles.push(
+            ...(data.data?.not_placed_files ?? []).map((file) =>
+              typeof file === "string" ? file : [file.file_name, file.reason].filter(Boolean).join(": ")
+            )
+          );
+          (data.data?.invoices ?? []).forEach((invoice) => {
+            reviewInvoiceById[String(invoice.invoice_id)] = invoice;
+          });
           (data.data?.cards ?? []).forEach((card) => {
             reviewCardById[String(card.card_id)] = card;
           });
@@ -1184,10 +1194,14 @@ export default function KanbanBoardPage() {
         cards.forEach((card) => removeCardSelectionId(card.id));
         handleCloseInvoiceUpload();
         /* The response lists every SE Received card; the review covers only the ones uploaded for. */
-        openReviewModal(
-          cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
-          { workflowId: selectedInvoiceBatch?.workflowId ?? null, files: invoices }
-        );
+        if (isLnt) {
+          openLntArInvoiceReviewModal(Object.values(reviewInvoiceById));
+        } else {
+          openReviewModal(
+            cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
+            { workflowId: selectedInvoiceBatch?.workflowId ?? null, files: invoices }
+          );
+        }
         refetchBoard?.();
       } finally {
         setIsUploadingInvoices(false);
@@ -1435,7 +1449,12 @@ export default function KanbanBoardPage() {
         handleCloseSccUpload();
         openSccReviewModal(
           cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
-          { notPlacedFiles: data.data?.not_placed_files ?? [], workflowId, isApprovedScc }
+          {
+            notPlacedFiles: data.data?.not_placed_files ?? [],
+            unassignedSccs: data.data?.unassigned_sccs ?? [],
+            workflowId,
+            isApprovedScc,
+          }
         );
       } finally {
         setIsUploadingSccDocuments(false);
@@ -2870,7 +2889,7 @@ export default function KanbanBoardPage() {
       <ArInvoiceReviewModal onConfirmed={refetchBoard} />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilCrewArInvoiceStore} />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilMarineArInvoiceStore} />
-      <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useLntArInvoiceStore} />
+      <LntArInvoiceReviewModal onConfirmed={refetchBoard} />
       <SignatureCheckModal
         onConfirmed={(result) => {
           [...(result?.moved_to_da ?? []), ...(result?.returned_to_scc_received ?? [])].forEach((card) => removeCardSelectionId(String(card.card_id)));

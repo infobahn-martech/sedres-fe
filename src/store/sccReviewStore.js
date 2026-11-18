@@ -25,6 +25,9 @@ const useSccReviewStore = create((set, get) => ({
   selectedSccReviewCards: [],
   /** File names the backend could not place on any selected card. */
   selectedSccReviewNotPlacedFiles: [],
+  /** SCCs the backend read no sales order from: [{ document_id, name, url, signed, candidates: [{ call_id, card_id, sales_order_no }] }].
+   *  The user picks the sales order of each in the review. */
+  selectedSccReviewUnassignedSccs: [],
   /** The L&T workflow the review is for, sent to da/scc_document_review. */
   selectedSccReviewWorkflowId: null,
   /** True for the Operator board's L&T "Approval Received" upload: per sales order SCC and signature status,
@@ -33,11 +36,12 @@ const useSccReviewStore = create((set, get) => ({
   isSccReviewLoading: false,
   isConfirmingScc: false,
 
-  openSccReviewModal: (cards, { notPlacedFiles = [], workflowId = null, isApprovedScc = false } = {}) =>
+  openSccReviewModal: (cards, { notPlacedFiles = [], unassignedSccs = [], workflowId = null, isApprovedScc = false } = {}) =>
     set({
       showSccReviewModal: true,
       selectedSccReviewCards: Array.isArray(cards) ? cards : [],
       selectedSccReviewNotPlacedFiles: Array.isArray(notPlacedFiles) ? notPlacedFiles : [],
+      selectedSccReviewUnassignedSccs: Array.isArray(unassignedSccs) ? unassignedSccs : [],
       selectedSccReviewWorkflowId: workflowId,
       isApprovedSccReview: isApprovedScc,
     }),
@@ -47,6 +51,7 @@ const useSccReviewStore = create((set, get) => ({
       showSccReviewModal: false,
       selectedSccReviewCards: [],
       selectedSccReviewNotPlacedFiles: [],
+      selectedSccReviewUnassignedSccs: [],
       selectedSccReviewWorkflowId: null,
       isApprovedSccReview: false,
       isSccReviewLoading: false,
