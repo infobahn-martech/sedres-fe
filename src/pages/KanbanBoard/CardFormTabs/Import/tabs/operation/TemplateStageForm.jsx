@@ -261,12 +261,13 @@ function TemplateStageForm({
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(null); // "save" | "report" | null
   const submittingRef = useRef(false);
-  // Picking a SABER attachment opens the sales order line items modal (as after Add Card).
+  // Changing the SABER select opens the sales order line items modal
+  // (sales_order/get_so_items_by_call/{call_id}?so_type=Marine).
   const [lineItemsCallId, setLineItemsCallId] = useState(null);
   const handleLineItemsDone = () => setLineItemsCallId(null);
-  const openLineItemsForSaber = (field) => {
+  const openLineItemsForSaber = () => {
     const resolvedCallId = String(callId ?? "").trim();
-    if (resolvedCallId && isSaberField(field)) setLineItemsCallId(resolvedCallId);
+    if (resolvedCallId) setLineItemsCallId(resolvedCallId);
   };
   // The call detail's subtab `email_template` is the composer's source; the report template
   // endpoints are only a fallback for templates that don't carry one.
@@ -414,6 +415,7 @@ function TemplateStageForm({
     const nextParams = JSON.parse(triggerParamsKey);
     if (nextParams.saber !== prevParams.saber) {
       refreshSaberAttachment(nextParams.saber ?? "");
+      if (nextParams.saber) openLineItemsForSaber();
     }
     if (nextParams.weather_forecast !== prevParams.weather_forecast) {
       refreshWeatherMap(nextParams.weather_forecast ?? "");
@@ -1036,7 +1038,6 @@ function TemplateStageForm({
               onAddFiles={(attachments) => {
                 const file = attachments[0]?.file ?? null;
                 setFieldFile(id, file);
-                if (file) openLineItemsForSaber(field);
               }}
               isViewOnly={disabled}
               ariaLabel={`Upload ${field.field_label || "file"}`}
@@ -1171,7 +1172,7 @@ function TemplateStageForm({
           />
         </div>
       </FormSection>
-      {lineItemsCallId && <DefaultLineItemsModal callId={lineItemsCallId} onDone={handleLineItemsDone} readOnly />}
+      {lineItemsCallId && <DefaultLineItemsModal callId={lineItemsCallId} soType="Marine" onDone={handleLineItemsDone} readOnly />}
     </div>
   );
 }

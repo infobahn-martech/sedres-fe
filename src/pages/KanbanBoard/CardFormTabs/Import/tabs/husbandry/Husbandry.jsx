@@ -124,19 +124,35 @@ const parseRequestsByService = (data) => {
     percentage: item?.percentage,
     color: SERVICE_DISTRIBUTION_COLORS[item?.title] || FALLBACK_DISTRIBUTION_COLOR,
   }));
-  const breakdownList = Array.isArray(data?.crew_management?.breakdown) ? data.crew_management.breakdown : [];
+  const hasBreakdown = Array.isArray(data?.crew_management?.breakdown);
+  const breakdownList = hasBreakdown ? data.crew_management.breakdown : [];
   const crewBreakdown = breakdownList.reduce((acc, item) => {
     const id = CREW_BREAKDOWN_TITLE_TO_ID[item?.title];
     if (id) acc[id] = toCount(item?.count);
     return acc;
   }, {});
+  // Rows for the breakdown panel, in API order. null until the API returns a
+  // breakdown, so the panel can fall back to the static crew service list.
+  const crewBreakdownRows = hasBreakdown
+    ? breakdownList
+      .filter((item) => item?.title)
+      .map((item) => {
+        const id = CREW_BREAKDOWN_TITLE_TO_ID[item.title];
+        return {
+          id: id || item.title,
+          label: item.title,
+          value: toCount(item.count),
+          color: (id && TAB_ICON_COLORS[id]) || FALLBACK_DISTRIBUTION_COLOR,
+        };
+      })
+    : null;
   const crewBreakdownTotal = data?.crew_management?.total_requests != null
     ? toCount(data.crew_management.total_requests)
     : Object.values(crewBreakdown).reduce((sum, value) => sum + value, 0);
   const total = data?.total_requests != null
     ? toCount(data.total_requests)
     : distribution.reduce((sum, item) => sum + item.value, 0);
-  return { total, distribution, crewBreakdown, crewBreakdownTotal };
+  return { total, distribution, crewBreakdown, crewBreakdownRows, crewBreakdownTotal };
 };
 
 /** Turns call_file/get_service_counts `services` into a { [title]: counts } lookup. */
@@ -250,18 +266,25 @@ SalesOrderPricing.propTypes = {
 // Dashboard columns 2 & 3: request distribution donut + recent activity history.
 const ServiceInsights = ({ salesOrder, requestsByService, serviceHistory, showLaunchHire = true }) => {
   const parsed = parseRequestsByService(requestsByService);
-  const { total, crewBreakdown, crewBreakdownTotal } = parsed;
+  const { total, crewBreakdown, crewBreakdownRows, crewBreakdownTotal } = parsed;
   const distribution = showLaunchHire
     ? parsed.distribution
     : parsed.distribution.filter((item) => item.name !== "Launch Hire");
+  // API rows when available, otherwise the static crew service list.
+  const allCrewBreakdownRows = crewBreakdownRows ?? CREW_DIRECT_SERVICES.map((service) => ({
+    id: service.id,
+    label: service.label,
+    value: crewBreakdown[service.id] || 0,
+    color: TAB_ICON_COLORS[service.id],
+  }));
   const crewBreakdownServices = showLaunchHire
-    ? CREW_DIRECT_SERVICES
-    : CREW_DIRECT_SERVICES.filter((service) => !LAUNCH_HIRE_SERVICE_IDS.includes(service.id));
+    ? allCrewBreakdownRows
+    : allCrewBreakdownRows.filter((row) => !LAUNCH_HIRE_SERVICE_IDS.includes(row.id));
   const { entries: historyEntries, total: historyTotal } = parseServiceHistory(serviceHistory);
   // Zero-count slices are dropped from the donut (they'd render as gaps) but
   // stay in the legend.
   const chartData = distribution.filter((item) => item.value > 0);
-  const crewBreakdownMax = Math.max(0, ...Object.values(crewBreakdown));
+  const crewBreakdownMax = Math.max(0, ...crewBreakdownServices.map((row) => row.value));
 
   return (
     <>
@@ -329,12 +352,12 @@ const ServiceInsights = ({ salesOrder, requestsByService, serviceHistory, showLa
           </div>
           <ul className="husbandry-dashboard-breakdown-list">
             {crewBreakdownServices.map((service) => {
-              const value = crewBreakdown[service.id] || 0;
+              const { value } = service;
               return (
                 <li
                   key={service.id}
                   className="husbandry-dashboard-breakdown-item"
-                  style={{ "--breakdown-color": TAB_ICON_COLORS[service.id] }}
+                  style={{ "--breakdown-color": service.color }}
                 >
                   <span className="husbandry-dashboard-breakdown-name">{service.label}</span>
                   <span className="husbandry-dashboard-breakdown-track">
@@ -415,6 +438,12 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
 
   // Badges for a crew direct service card.
   const crewServiceBadges = (service) => {
+    // "Launch Hire" is also a top-level service title in get_service_counts,
+    // so the crew card takes its count from the crew breakdown instead.
+    if (service.id === CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE) {
+      const crewItem = requestsByService?.crew_management?.breakdown?.find?.((item) => item?.title === service.label);
+      if (crewItem) return [`Requests: ${num(crewItem.count)}`];
+    }
     const counts = countsFor(service.label);
     if (!counts) return [`Requests: ${num(crewServiceCounts[service.id])}`];
     if (counts.issued != null) {
@@ -527,11 +556,24 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
 
   // Launch Hire (both the top-level card and the Crew Management one) only
   // applies to calls flagged launch_hire = 1.
+  // Once get_requests_by_service has loaded, it decides which cards this call
+  // offers: top-level cards come from `services[]`, Crew Management
+  // sub-service cards from `crew_management.breakdown[]`. Until then (or if
+  // the API omits a list) get_service_counts is used as before.
+  const titleSet = (list) => (Array.isArray(list) ? new Set(list.map((item) => item?.title).filter(Boolean)) : null);
+  const apiTopLevelTitles = titleSet(requestsByService?.services);
+  const apiCrewTitles = titleSet(requestsByService?.crew_management?.breakdown);
+  const isOfferedByApi = (service) => {
+    const isCrewSub = service.parentId === MAIN_TABS.CREW_MANAGEMENT;
+    if (isCrewSub && apiTopLevelTitles && !apiTopLevelTitles.has("Crew Management")) return false;
+    const titles = isCrewSub ? apiCrewTitles : apiTopLevelTitles;
+    if (titles) return titles.has(service.label);
+    return !serviceCounts || Object.prototype.hasOwnProperty.call(serviceCounts, service.label);
+  };
+
   const services = (showLaunchHire ? allServices : allServices.filter((service) => !LAUNCH_HIRE_SERVICE_IDS.includes(service.id)))
     .filter((service) => !hiddenServiceIds.includes(service.id) && !hiddenServiceIds.includes(service.parentId))
-    // Once get_service_counts has loaded, it decides which services this call
-    // offers — a card whose title it doesn't return is hidden.
-    .filter((service) => !serviceCounts || Object.prototype.hasOwnProperty.call(serviceCounts, service.label));
+    .filter(isOfferedByApi);
 
   const bookedServicesMap = bookedServices.reduce((acc, booked) => {
     acc[booked.id] = booked;

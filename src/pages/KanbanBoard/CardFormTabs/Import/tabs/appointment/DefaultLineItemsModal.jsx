@@ -31,7 +31,9 @@ const EMPTY_ADD_FORM = { itemCode: "", tariffId: "", itemName: "", unitPrice: ""
 // are added (sales_order/add_call_line_item) and removed items that were already on it are
 // cancelled (da/da_delete_sales_line_item). Skip leaves the sales order as is.
 // readOnly: review-only (no Add Item / delete / Skip) — Confirm still adds the pending default items.
-function DefaultLineItemsModal({ callId, onDone, readOnly = false }) {
+// soType: when set, items come from sales_order/get_so_items_by_call/{call_id}?so_type=<soType>
+// (the call's existing sales order) instead of get_default_line_items.
+function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType }) {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [details, setDetails] = useState(null);
@@ -51,21 +53,29 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false }) {
     let cancelled = false;
     setIsLoading(true);
     setLoadError("");
-    salesOrderService
-      .getDefaultLineItems(callId)
+    const request = soType
+      ? salesOrderService.getSoItemsByCall(callId, soType)
+      : salesOrderService.getDefaultLineItems(callId);
+    request
       .then(({ data }) => {
         if (cancelled) return;
         if (data?.status && data.status !== "success") {
-          setLoadError(data?.message || "Could not load default line items.");
+          setLoadError(data?.message || "Could not load line items.");
           return;
         }
         const payload = data?.data ?? {};
         setDetails(payload);
-        setItems(Array.isArray(payload.items) ? payload.items : []);
+        // get_so_items_by_call soft-deletes (item_status "Cancelled") instead of dropping rows.
+        const rawItems = Array.isArray(payload.items) ? payload.items : [];
+        setItems(
+          rawItems.filter(
+            (item) => String(item?.item_status ?? item?.status ?? "").trim().toLowerCase() !== "cancelled"
+          )
+        );
         setRemovedItems([]);
       })
       .catch((error) => {
-        if (!cancelled) setLoadError(getErrorMessage(error, "Could not load default line items."));
+        if (!cancelled) setLoadError(getErrorMessage(error, "Could not load line items."));
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -73,7 +83,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false }) {
     return () => {
       cancelled = true;
     };
-  }, [callId]);
+  }, [callId, soType]);
 
   const portId = details?.port_id;
   const entityId = details?.entity_id;
@@ -491,6 +501,7 @@ DefaultLineItemsModal.propTypes = {
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   onDone: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
+  soType: PropTypes.string,
 };
 
 export default DefaultLineItemsModal;
