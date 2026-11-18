@@ -5,7 +5,6 @@ import {
     FiClock,
     FiFileText,
     FiDollarSign,
-    FiCalendar,
     FiUpload,
 } from 'react-icons/fi';
 import PortalDashboard from '../../../components/PortalDashboard';
@@ -164,11 +163,6 @@ function HotelDashboard() {
         [hotelDashboardData]
     );
 
-    const quickActions = [
-        { label: 'View Bookings', icon: <FiCalendar />, onClick: () => {} },
-        { label: 'View Invoices', icon: <FiFileText />, onClick: () => {} },
-    ];
-
     const tableColumns = [
         { label: 'Subject', key: 'subject' },
         { label: 'Company', key: 'company' },
@@ -227,7 +221,6 @@ function HotelDashboard() {
                 summaryCards={summaryCards}
                 statusTitle="Invoice Status Overview"
                 statusCards={statusCards}
-                quickActions={quickActions}
                 tableTitle="Recent Orders"
                 tableColumns={tableColumns}
                 tableRows={tableRows}
