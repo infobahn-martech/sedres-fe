@@ -460,6 +460,58 @@
         color: var(--text-primary);
     }
 
+    /* Stop row: place info on the left, editable time on the right (stacks on narrow widths) */
+    &__stop-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px 20px;
+    }
+
+    &__stop-info {
+        flex: 1 1 240px;
+        min-width: 0;
+    }
+
+    &__stop-time {
+        flex: 0 1 240px;
+        min-width: 200px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        .trip-details__eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+
+            svg {
+                font-size: 12px;
+            }
+        }
+
+        .cf-datetime-picker .cf-datetime-input-field {
+            .MuiPickersInputBase-root,
+            .MuiOutlinedInput-root,
+            .MuiInputBase-root {
+                min-height: 38px;
+                padding: 8px 12px;
+                font-size: 13px;
+                font-weight: 600;
+                box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+            }
+        }
+    }
+
+    &__error {
+        margin-top: 4px !important;
+        font: normal normal 500 12px/1.4 $font-primary;
+        color: #dc2626;
+    }
+
     &__note {
         margin-top: 2px !important;
         font: normal normal 400 13px/1.5 $font-primary;
