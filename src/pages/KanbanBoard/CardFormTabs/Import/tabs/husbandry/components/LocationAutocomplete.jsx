@@ -110,15 +110,15 @@ const LocationAutocomplete = ({ value, onChange, placeholder, className = "", on
         // Typing works as plain text while Maps loads or if it fails; suggestions attach once loaded.
         disabled={disabled}
       />
-      {error && (
-        <div className="location-autocomplete-error">
-          {error}
-        </div>
-      )}
-      {!isLoaded && !error && (
-        <div className="location-autocomplete-loading">
-          Loading location services...
-        </div>
+      {/* The input always works as plain text; suggestions are a bonus, so a Maps problem is only a hint, never an overlay. */}
+      {(error || authFailed) && !disabled && (
+        <span
+          className="location-autocomplete-hint"
+          title={`Address suggestions unavailable — type the location manually.${error ? ` (${error})` : ""}`}
+          aria-label="Address suggestions unavailable"
+        >
+          i
+        </span>
       )}
     </div>
   );

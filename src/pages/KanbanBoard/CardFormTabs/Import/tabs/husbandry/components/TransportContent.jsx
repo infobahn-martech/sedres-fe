@@ -291,11 +291,6 @@
         return;
       }
 
-      if (!callDetails?.call_type_id) {
-        notify("Call type id is missing. Please reload call details.", "warning", "top-center");
-        return;
-      }
-
       if (!validate()) return;
 
       if (!formValues.transportPickupDate || !formValues.transportPickupTime) {
@@ -320,7 +315,7 @@
       }
 
       const payload = {
-        call_id: Number(callDetails?.call_id || ""),
+        call_id: Number(callDetails?.call_id || callId),
         pickup_datetime: buildPickupDateTime(formValues.transportPickupDate, formValues.transportPickupTime),
         from_location: formValues.transportFromType || "",
         from_location_det: formValues.transportFromLocation || "",

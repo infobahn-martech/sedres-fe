@@ -32,7 +32,13 @@ export function useRequestEmailCrewValidation(formValues, { requestEmailField, c
     setShowErrors(true);
     const current = getErrors();
     const isValid = !current.requestEmail && !current.crew;
-    if (!isValid) notify("Please fill in the required fields.", "error", "top-center");
+    if (!isValid) {
+      notify("Please fill in the required fields.", "error", "top-center");
+      // The fields sit at the top of the form; bring the first flagged one into view once it renders.
+      setTimeout(() => {
+        document.querySelector(".husb-group.has-error")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+    }
     return isValid;
   }, [getErrors]);
 

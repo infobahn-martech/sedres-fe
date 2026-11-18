@@ -6859,6 +6859,30 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
     color: var(--text-secondary);
     background: inherit;
   }
+
+  /* Small "suggestions unavailable" marker; the reason is in its tooltip. */
+  .location-autocomplete-hint {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--text-muted);
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 700;
+    font-style: italic;
+    cursor: help;
+  }
+
+  &:has(.location-autocomplete-hint) input {
+    padding-right: 30px;
+  }
 }
 
 /* Google Places Autocomplete dropdown styling */

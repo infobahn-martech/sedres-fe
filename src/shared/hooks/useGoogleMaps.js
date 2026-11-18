@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
-const GOOGLE_MAPS_API_URL = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`;
+const GOOGLE_MAPS_CALLBACK = '__sedresGoogleMapsReady';
+const GOOGLE_MAPS_API_URL = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&loading=async&callback=${GOOGLE_MAPS_CALLBACK}`;
 
 // Google calls window.gm_authFailure when the key is rejected (invalid key, API
 // not enabled, referrer not allowed, billing). It fires once per page, so the
@@ -18,44 +19,53 @@ if (typeof window !== 'undefined') {
     };
 }
 
-// With `loading=async` the script's onload fires before the places library is
-// ready, so resolve only after importLibrary('places'). One shared promise per
-// page means late subscribers never miss an already-fired load event.
+// With `loading=async`, script.onload fires before the API is initialised, so we wait for
+// Google's `callback` (called once google.maps is ready), then load the Places library.
+// One shared promise per page means late subscribers never miss the load.
 let loaderPromise = null;
-const LOAD_TIMEOUT_MS = 15000;
+const LOAD_TIMEOUT_MS = 20000;
+
+const loadPlacesLibrary = async () => {
+    if (window.google?.maps?.places) return;
+    if (typeof window.google?.maps?.importLibrary === 'function') {
+        await window.google.maps.importLibrary('places');
+    }
+    if (!window.google?.maps?.places) {
+        throw new Error('Location suggestions unavailable (Places library not loaded).');
+    }
+};
 
 const loadGoogleMaps = () => {
     if (!loaderPromise) {
         loaderPromise = new Promise((resolve, reject) => {
             // Never hang on "Loading…": a stalled/blocked request (ad blocker, firewall,
-            // offline) may fire neither onload nor onerror.
+            // offline) may fire neither the callback nor onerror.
             const timeoutId = setTimeout(
                 () => reject(new Error('Location suggestions unavailable (Google Maps timed out).')),
                 LOAD_TIMEOUT_MS
             );
-            const settle = (fn) => (value) => {
-                clearTimeout(timeoutId);
-                fn(value);
+
+            window[GOOGLE_MAPS_CALLBACK] = () => {
+                loadPlacesLibrary().then(
+                    () => {
+                        clearTimeout(timeoutId);
+                        resolve();
+                    },
+                    (err) => {
+                        clearTimeout(timeoutId);
+                        reject(err);
+                    }
+                );
             };
 
             const script = document.createElement('script');
             script.src = GOOGLE_MAPS_API_URL;
             script.async = true;
-            script.onload = () => {
-                // A throw here (e.g. importLibrary missing) would otherwise leave the promise pending forever.
-                try {
-                    const importLibrary = window.google?.maps?.importLibrary;
-                    if (typeof importLibrary !== 'function') {
-                        if (window.google?.maps?.places) settle(resolve)();
-                        else settle(reject)(new Error('Google Maps loaded without the Places library.'));
-                        return;
-                    }
-                    importLibrary('places').then(settle(resolve), settle(reject));
-                } catch (err) {
-                    settle(reject)(err);
-                }
+            script.onerror = () => {
+                clearTimeout(timeoutId);
+                script.remove();
+                reject(new Error('Failed to load Google Maps script'));
             };
-            script.onerror = () => settle(reject)(new Error('Failed to load Google Maps script'));
             document.head.appendChild(script);
         }).catch((err) => {
             loaderPromise = null;
