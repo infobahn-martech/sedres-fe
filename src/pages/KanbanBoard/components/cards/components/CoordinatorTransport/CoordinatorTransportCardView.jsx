@@ -410,7 +410,7 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
     fetchInhouseDrivers(transportForm.vehicleTypeId);
   }, [transportForm.providerType, transportForm.vehicleTypeId, fetchInhouseDrivers]);
 
-  const callTypeSummary = firstNonEmpty(cardData?.typeOfCall);
+  const callTypeSummary = firstNonEmpty(detail?.call_type, cardDetail?.call_type, cardData?.typeOfCall);
   const billingEntitySummary = firstNonEmpty(cardDetail?.billing_entity);
   const portSummary = firstNonEmpty(cardDetail?.port, detail?.port);
   const vesselNameSummary = firstNonEmpty(cardDetail?.vessel_name, detail?.vessel_name, cardData?.vesselName);
