@@ -13,6 +13,7 @@ import { useCallDetail } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetai
 import { buildPickupDateTime } from "@/store/TransportContent";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import CrewSelectionField from "./CrewSelectionField";
+import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
 import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT, LAUNCH_HIRE_LOCATION_OPTIONS } from "./Husbandry.constants";
 
 const HOTEL_REQUEST_COLUMNS = [
@@ -69,6 +70,10 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
   const [loadingHotelRequests, setLoadingHotelRequests] = useState(false);
 
   const callId = formValues.call_id || formValues.callId || formValues.card_call_id;
+  const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+    requestEmailField: "hotelRequestEmail",
+    crewField: "hotelSelectedCrew",
+  });
 
   // Shared with the rest of the drawer (CardForm fetches it once per card).
   const { detail: callDetails } = useCallDetail(callId);
@@ -257,6 +262,8 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
       return;
     }
 
+    if (!validate()) return;
+
     if (!formValues.hotelId) {
       notify("Hotel is required.", "error", "top-center");
       return;
@@ -335,6 +342,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
         "success",
         "top-center"
       );
+      resetValidation();
       handleChange("hotelId")({ target: { value: "" } });
       handleChange("hotelName")({ target: { value: "" } });
       handleChange("hotelCheckInDate")({ target: { value: "" } });
@@ -359,7 +367,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
     } finally {
       setIsSavingHotel(false);
     }
-  }, [callId, formValues, fetchHotelRequests, isLaunchHire, handleChange]);
+  }, [callId, formValues, fetchHotelRequests, isLaunchHire, handleChange, validate, resetValidation]);
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
@@ -376,7 +384,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
                   titleClassName="crew-pass-request-details-card__title"
                 />
                 <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                <FormGroup icon="mail" label="Request Email *" accent={HOTEL_ACCENT}>
+                <FormGroup icon="mail" label="Request Email *" accent={HOTEL_ACCENT} error={fieldErrors.requestEmail}>
                   <FormField>
                     <div className="transport-upload-box">
                       <AttachmentsList
@@ -406,6 +414,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
                   accent={HOTEL_ACCENT}
                   onGoToCrew={onGoToCrew}
                   uploadMode={crewUploadMode}
+                  error={fieldErrors.crew}
                 />
 
                 <FormGroup icon="calendar" label="Stay Details" accent={HOTEL_ACCENT}>
@@ -491,7 +500,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
                   </FormGroup>
                 )}
 
-                <FormGroup icon="folder" label="Documents *" accent={HOTEL_ACCENT}>
+                <FormGroup icon="folder" label="Documents" accent={HOTEL_ACCENT}>
                   <FormField className="cf-field-full">
                     <div className="transport-upload-box">
                       <AttachmentsList

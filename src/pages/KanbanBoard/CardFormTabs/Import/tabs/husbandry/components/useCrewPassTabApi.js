@@ -6,6 +6,7 @@ import {
   extractPassRequestsFromEnvelope,
   getPassRequests,
 } from "@/services/cgAndZwailpassService";
+import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
 
 export const resolvePassCallId = (formValues, card, routeParams) => {
   const raw =
@@ -45,6 +46,10 @@ export function useCrewPassTabApi({
   const [passRequests, setPassRequests] = useState({ cg: [], zawil: [] });
   const [passRequestsLoading, setPassRequestsLoading] = useState(false);
   const callId = resolvePassCallId(formValues, card, routeParams);
+  const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+    requestEmailField: requestEmailFileField,
+    crewField,
+  });
 
   const fetchPassRequests = useCallback(async () => {
     if (!callId) {
@@ -75,6 +80,8 @@ export function useCrewPassTabApi({
       return;
     }
 
+    if (!validate()) return;
+
     let requestEmailFile = null;
     if (requestEmailFileField) {
       const attachments = Array.isArray(formValues?.[requestEmailFileField])
@@ -83,10 +90,6 @@ export function useCrewPassTabApi({
       requestEmailFile = attachments
         .map((a) => a?.file ?? a)
         .find((f) => f instanceof File);
-      if (!requestEmailFile) {
-        notify("Request email file is required.", "error", "top-center");
-        return;
-      }
     }
 
     const remarksRaw = formValues?.[remarksField];
@@ -125,6 +128,7 @@ export function useCrewPassTabApi({
     try {
       await createPassRequest(formData);
       notify("Pass request saved successfully.", "success", "top-center");
+      resetValidation();
       await fetchPassRequests();
     } catch (err) {
       notify(pickBackendErrorMessage(err), "error", "top-center");
@@ -141,6 +145,8 @@ export function useCrewPassTabApi({
     requestEmailFileField,
     routeParams,
     fetchPassRequests,
+    validate,
+    resetValidation,
   ]);
 
   return {
@@ -150,5 +156,6 @@ export function useCrewPassTabApi({
     passRequestsLoading,
     refetchPassRequests: fetchPassRequests,
     callId,
+    fieldErrors,
   };
 }

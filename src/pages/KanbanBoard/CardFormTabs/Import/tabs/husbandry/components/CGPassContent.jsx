@@ -31,6 +31,7 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
     passRequests,
     passRequestsLoading,
     callId,
+    fieldErrors,
   } = useCrewPassTabApi({
     passType: "CG",
     formValues,
@@ -188,7 +189,7 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
                   titleClassName="crew-pass-request-details-card__title"
                 />
                 <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                  <FormGroup icon="mail" label="Request Email *" accent={CG_PASS_ACCENT}>
+                  <FormGroup icon="mail" label="Request Email *" accent={CG_PASS_ACCENT} error={fieldErrors.requestEmail}>
                     <FormField>
                       <div className="transport-upload-box">
                         <AttachmentsList
@@ -218,9 +219,10 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
                     accent={CG_PASS_ACCENT}
                     onGoToCrew={onGoToCrew}
                     uploadMode={crewUploadMode}
+                    error={fieldErrors.crew}
                   />
 
-                  <FormGroup icon="folder" label="Documents *" accent={CG_PASS_ACCENT}>
+                  <FormGroup icon="folder" label="Documents" accent={CG_PASS_ACCENT}>
                     <FormField className="cf-field-full">
                       <div className="transport-upload-box">
                         <AttachmentsList

@@ -35,7 +35,7 @@ const linkButtonStyle = {
  * In uploadMode (service opened straight from the service overview) it shows a crew list upload instead: the file is
  * imported via crew/import_crew_ai and the newly imported crew are selected automatically.
  */
-const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onGoToCrew, uploadMode = false }) => {
+const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onGoToCrew, uploadMode = false, error = "" }) => {
   const importCrewFile = useCrewReducer((state) => state.importCrewFile);
   const saveCrewData = useCrewReducer((state) => state.saveCrewData);
   const [crewOptions, setCrewOptions] = useState([]);
@@ -148,7 +148,7 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
       .map((option) => option.label);
 
     return (
-      <FormGroup icon="crew" label="Crew List" accent={accent}>
+      <FormGroup icon="crew" label="Crew List *" accent={accent} error={error}>
         <FormField className="cf-field-full">
           {isManualEntry ? (
             <CrewEntryGrid
@@ -180,7 +180,7 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
   }
 
   return (
-    <FormGroup icon="crew" label="Crew Selection" accent={accent}>
+    <FormGroup icon="crew" label="Crew Selection *" accent={accent} error={error}>
       <FormField className="cf-field-full">
         <ChecklistMultiSelect
           className="husb-crew-multiselect"
@@ -216,6 +216,8 @@ CrewSelectionField.propTypes = {
   accent: PropTypes.oneOf(["blue", "teal", "purple", "amber", "rose", "slate", "green", "pink"]),
   onGoToCrew: PropTypes.func,
   uploadMode: PropTypes.bool,
+  /** Inline validation message (e.g. crew required). */
+  error: PropTypes.string,
 };
 
 export default CrewSelectionField;

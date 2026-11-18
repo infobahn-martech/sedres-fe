@@ -105,8 +105,8 @@ export const renderRequiredLabel = (text) => {
 };
 
 /** Groups a related run of fields under a small colored icon + label + divider. Pass an empty `label` to omit the header when no field description is needed. Pass `accent` matching a `husb-accent-*` class. */
-export const FormGroup = ({ icon, label, accent = "slate", children }) => (
-  <div className={`husb-group husb-accent-${accent}`}>
+export const FormGroup = ({ icon, label, accent = "slate", error = "", children }) => (
+  <div className={`husb-group husb-accent-${accent}${error ? " has-error" : ""}`}>
     {label && (
       <div className="husb-group__label">
         <span className="husb-group__icon">
@@ -115,7 +115,14 @@ export const FormGroup = ({ icon, label, accent = "slate", children }) => (
         <span className="husb-group__label-text">{renderRequiredLabel(label)}</span>
       </div>
     )}
-    <div className="husb-group__body">{children}</div>
+    <div className="husb-group__body">
+      {children}
+      {error && (
+        <div className="cf-field-error husb-group__error" role="alert">
+          {error}
+        </div>
+      )}
+    </div>
   </div>
 );
 
@@ -123,6 +130,8 @@ FormGroup.propTypes = {
   icon: PropTypes.string.isRequired,
   label: PropTypes.string,
   accent: PropTypes.oneOf(["blue", "teal", "purple", "amber", "rose", "slate", "green", "pink"]),
+  /** Inline validation message shown under the group's fields. */
+  error: PropTypes.string,
   children: PropTypes.node.isRequired,
 };
 

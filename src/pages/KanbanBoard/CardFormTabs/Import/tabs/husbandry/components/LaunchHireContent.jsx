@@ -6,6 +6,7 @@ import { FormSection, FormField, FormSelect, FormGroup, PremiumCardHeader, React
 import AttachmentsList from "../../appointment/AttachmentsList";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import CrewSelectionField from "./CrewSelectionField";
+import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import useLaunchHireServiceReducer from "@/store/LaunchHireServiceReducer";
 import { buildPickupDateTime } from "@/store/TransportContent";
@@ -51,6 +52,10 @@ const LaunchHireContent = ({
   crewUploadMode = false,
 }) => {
   const callId = formValues.call_id || formValues.callId || formValues.card_call_id || card?.call_id || card?.id;
+  const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+    requestEmailField: "launchHireRequestEmailFile",
+    crewField: "launchHireSelectedCrew",
+  });
   const { launchHireRequests, isLoadingRequests, getLaunchHireRequests, createCrewChangeBooking } = useLaunchHireServiceReducer();
   const [saving, setSaving] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -131,13 +136,10 @@ const LaunchHireContent = ({
       notify("Call ID is required before saving.", "error", "top-center");
       return;
     }
+    if (!validate()) return;
     const requestEmailFile = (formValues.launchHireRequestEmailFile || [])
       .map((a) => a?.file ?? a)
       .find((f) => f instanceof File);
-    if (!requestEmailFile) {
-      notify("Request email file is required.", "error", "top-center");
-      return;
-    }
     if (!formValues.launchHireLocation) {
       notify("Please select a location.", "error", "top-center");
       return;
@@ -165,6 +167,7 @@ const LaunchHireContent = ({
     try {
       await createCrewChangeBooking(formData);
       notify("Launch hire request saved successfully.", "success", "top-center");
+      resetValidation();
       resetDraft();
       onLaunchHireSaved?.();
       await getLaunchHireRequests(callId);
@@ -190,7 +193,7 @@ const LaunchHireContent = ({
                   titleClassName="crew-pass-request-details-card__title"
                 />
                 <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                  <FormGroup icon="mail" label="Request Email *" accent={LAUNCH_HIRE_ACCENT}>
+                  <FormGroup icon="mail" label="Request Email *" accent={LAUNCH_HIRE_ACCENT} error={fieldErrors.requestEmail}>
                     <FormField>
                       <div className="transport-upload-box">
                         <AttachmentsList
@@ -252,6 +255,7 @@ const LaunchHireContent = ({
                     accent={LAUNCH_HIRE_ACCENT}
                     onGoToCrew={onGoToCrew}
                     uploadMode={crewUploadMode}
+                    error={fieldErrors.crew}
                   />
 
                   <FormGroup icon="folder" label="Documents" accent={LAUNCH_HIRE_ACCENT}>

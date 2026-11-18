@@ -10,6 +10,7 @@
   import { buildPickupDateTime } from "@/store/TransportContent";
   import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
   import CrewSelectionField from "./CrewSelectionField";
+  import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
   import LocationAutocomplete from "./LocationAutocomplete";
   import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 
@@ -120,6 +121,10 @@
     const [isDraggingEmail, setIsDraggingEmail] = useState(false);
 
     const callId = formValues.call_id || formValues.callId || formValues.card_call_id;
+    const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+      requestEmailField: "transportRequestEmail",
+      crewField: "selectedCrew",
+    });
 
     // Shared with the rest of the drawer (CardForm fetches it once per card).
     const { detail: callDetails } = useCallDetail(callId);
@@ -291,10 +296,7 @@
         return;
       }
 
-      if (!formValues.transportRequestEmail?.[0]?.file) {
-        notify("Request email is required.", "error", "top-center");
-        return;
-      }
+      if (!validate()) return;
 
       if (!formValues.transportPickupDate || !formValues.transportPickupTime) {
         notify("Pickup date and time are required.", "error", "top-center");
@@ -357,6 +359,7 @@
           "success",
           "top-center"
         );
+        resetValidation();
         handleChange("transportRequestEmail")({ target: { value: [] } });
         handleChange("selectedCrew")({ target: { value: [] } });
         handleChange("transportPickupDate")({ target: { value: "" } });
@@ -381,7 +384,7 @@
       } finally {
         setIsSavingTransport(false);
       }
-    }, [callId, callDetails, formValues, fetchTransportRequests, isLaunchHire, handleChange]);
+    }, [callId, callDetails, formValues, fetchTransportRequests, isLaunchHire, handleChange, validate, resetValidation]);
 
     return (
       <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
@@ -398,7 +401,7 @@
                     titleClassName="crew-pass-request-details-card__title"
                   />
                   <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                  <FormGroup icon="mail" label="Request Email *" accent={TRANSPORT_ACCENT}>
+                  <FormGroup icon="mail" label="Request Email *" accent={TRANSPORT_ACCENT} error={fieldErrors.requestEmail}>
                     <FormField>
                       <div className="transport-upload-box">
                         <AttachmentsList
@@ -428,6 +431,7 @@
                     accent={TRANSPORT_ACCENT}
                     onGoToCrew={onGoToCrew}
                     uploadMode={crewUploadMode}
+                    error={fieldErrors.crew}
                   />
 
                   <FormGroup icon="calendar" label="Pickup Date Time" accent={TRANSPORT_ACCENT}>
@@ -509,7 +513,7 @@
                     </FormGroup>
                   )}
 
-                  <FormGroup icon="folder" label="Documents *" accent={TRANSPORT_ACCENT}>
+                  <FormGroup icon="folder" label="Documents" accent={TRANSPORT_ACCENT}>
                     <FormField className="cf-field-full">
                       <div className="transport-upload-box">
                         <AttachmentsList

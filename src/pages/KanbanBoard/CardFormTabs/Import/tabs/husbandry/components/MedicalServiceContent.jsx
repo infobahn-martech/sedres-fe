@@ -12,6 +12,7 @@ import { useCallDetail } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetai
 import { buildPickupDateTime } from "@/store/TransportContent";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import CrewSelectionField from "./CrewSelectionField";
+import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT, LAUNCH_HIRE_LOCATION_OPTIONS } from "./Husbandry.constants";
 
@@ -41,6 +42,10 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
   const fileInputRef = useRef(null);
   const requestEmailInputRef = useRef(null);
   const callId = formValues.call_id || formValues.callId || formValues.card_call_id;
+  const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+    requestEmailField: "medicalServiceRequestEmail",
+    crewField: "medicalServiceSelectedCrew",
+  });
 
   // Shared with the rest of the drawer (CardForm fetches it once per card).
   const { detail: callDetails } = useCallDetail(callId);
@@ -266,6 +271,8 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
       return;
     }
 
+    if (!validate()) return;
+
     if (!formValues.medicalServiceSelectedHospital) {
       notify("Hospital is required.", "error", "top-center");
       return;
@@ -329,6 +336,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
         "success",
         "top-center"
       );
+      resetValidation();
       handleChange("medicalServiceSelectedHospital")({ target: { value: "" } });
       handleChange("medicalServiceSelectedService")({ target: { value: "" } });
       handleChange("medicalServiceSelectedCrew")({ target: { value: [] } });
@@ -349,7 +357,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
     } finally {
       setIsSaving(false);
     }
-  }, [callId, formValues, fetchMedicalRequests, isLaunchHire, handleChange]);
+  }, [callId, formValues, fetchMedicalRequests, isLaunchHire, handleChange, validate, resetValidation]);
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
@@ -366,7 +374,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
                   titleClassName="crew-pass-request-details-card__title"
                 />
                 <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                <FormGroup icon="mail" label="Request Email *" accent={MEDICAL_ACCENT}>
+                <FormGroup icon="mail" label="Request Email *" accent={MEDICAL_ACCENT} error={fieldErrors.requestEmail}>
                   <FormField>
                     <div className="transport-upload-box">
                       <AttachmentsList
@@ -396,6 +404,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
                   accent={MEDICAL_ACCENT}
                   onGoToCrew={onGoToCrew}
                   uploadMode={crewUploadMode}
+                  error={fieldErrors.crew}
                 />
 
                 <FormGroup icon="medicalService" label="Care Details" accent={MEDICAL_ACCENT}>
@@ -467,7 +476,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
                   </FormGroup>
                 )}
 
-                <FormGroup icon="folder" label="Documents *" accent={MEDICAL_ACCENT}>
+                <FormGroup icon="folder" label="Documents" accent={MEDICAL_ACCENT}>
                   <FormField className="cf-field-full">
                     <div className="transport-upload-box">
                       <AttachmentsList

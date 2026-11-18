@@ -31,6 +31,7 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
     passRequests,
     passRequestsLoading,
     callId,
+    fieldErrors,
   } = useCrewPassTabApi({
     passType: "Zawil",
     formValues,
@@ -188,7 +189,7 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
                   titleClassName="crew-pass-request-details-card__title"
                 />
                 <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                  <FormGroup icon="mail" label="Request Email *" accent={ZAWIL_PASS_ACCENT}>
+                  <FormGroup icon="mail" label="Request Email *" accent={ZAWIL_PASS_ACCENT} error={fieldErrors.requestEmail}>
                     <FormField>
                       <div className="transport-upload-box">
                         <AttachmentsList
@@ -218,9 +219,10 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
                     accent={ZAWIL_PASS_ACCENT}
                     onGoToCrew={onGoToCrew}
                     uploadMode={crewUploadMode}
+                    error={fieldErrors.crew}
                   />
 
-                  <FormGroup icon="folder" label="Documents *" accent={ZAWIL_PASS_ACCENT}>
+                  <FormGroup icon="folder" label="Documents" accent={ZAWIL_PASS_ACCENT}>
                     <FormField className="cf-field-full">
                       <div className="transport-upload-box">
                         <AttachmentsList
