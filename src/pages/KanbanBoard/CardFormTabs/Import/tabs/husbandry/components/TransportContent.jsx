@@ -66,7 +66,16 @@
     return facts;
   };
 
-  const getTransportCrewMeta = (row) => (isBlankValue(row?.rank) ? <span className="cpr-muted">Rank not provided</span> : row.rank);
+  // Rank moves into the details columns, so no second line under the name.
+  const getTransportCrewMeta = () => null;
+
+  const getTransportCrewDetails = (row) => [
+    { label: "Rank", value: row?.rank },
+    { label: "Nationality", value: row?.nationality },
+    { label: "Passport", value: row?.passport_no ?? row?.passport },
+    { label: "Pickup", value: formatPickup(row?.pickup_datetime) },
+    { label: "Drop-off", value: formatPickup(row?.drop_offdatetime ?? row?.dropoff_datetime) },
+  ];
 
   const REQUEST_EMAIL_ACCEPT_ATTR = ".msg,.eml,.pdf,.doc,.docx";
   const REQUEST_EMAIL_EXT_RE = /\.(msg|eml|pdf|doc|docx)$/i;
@@ -534,6 +543,7 @@
                   getGroupDocumentUrl={(group) => group.requestEmailUrl}
                   getGroupSearchText={(group) => `${group.from} ${group.to} ${group.driver}`}
                   getCrewMeta={getTransportCrewMeta}
+                  getCrewDetails={getTransportCrewDetails}
                   searchPlaceholder="Search crew, location or driver"
                 />
               </div>

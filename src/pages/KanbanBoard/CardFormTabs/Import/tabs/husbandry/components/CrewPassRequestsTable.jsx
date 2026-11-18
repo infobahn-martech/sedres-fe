@@ -76,14 +76,16 @@ const defaultCrewMeta = (row) => (
   <>Passport: {isBlank(row?.passport_no) ? <span className="cpr-muted">Not provided</span> : row.passport_no}</>
 );
 
-const CrewItem = ({ row, requestStatus, onOpenDocument, getCrewMeta = defaultCrewMeta }) => {
+const CrewItem = ({ row, requestStatus, onOpenDocument, getCrewMeta = defaultCrewMeta, getCrewDetails }) => {
   const docUrl = pickDocumentUrl(row);
+  const meta = getCrewMeta ? getCrewMeta(row) : null;
+  const details = getCrewDetails ? getCrewDetails(row) || [] : [];
   const ownStatus = row?.status;
   // A crew-level status is only worth showing when it differs from the request's status.
   const showOwnStatus = !isBlank(ownStatus) && String(ownStatus).trim().toLowerCase() !== String(requestStatus ?? "").trim().toLowerCase();
 
   return (
-    <li className="cpr-crew">
+    <li className={`cpr-crew${details.length > 0 ? " cpr-crew--detailed" : ""}`}>
       <span className="cpr-crew__avatar" aria-hidden="true">
         {initialsOf(row?.crew_name)}
       </span>
@@ -91,8 +93,20 @@ const CrewItem = ({ row, requestStatus, onOpenDocument, getCrewMeta = defaultCre
         <span className="cpr-crew__name" title={row?.crew_name || ""}>
           {isBlank(row?.crew_name) ? "Unnamed crew" : row.crew_name}
         </span>
-        <span className="cpr-crew__meta">{getCrewMeta(row)}</span>
+        {meta != null && meta !== "" && <span className="cpr-crew__meta">{meta}</span>}
       </div>
+      {details.length > 0 && (
+        <dl className="cpr-crew__details">
+          {details.map(({ label, value }) => (
+            <div className="cpr-crew__detail" key={label}>
+              <dt>{label}</dt>
+              <dd title={isBlank(value) ? undefined : String(value)}>
+                {isBlank(value) ? <span className="cpr-muted">—</span> : value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
       <div className="cpr-crew__tags">
         {!isBlank(row?.movement_type) && (
           <span className={`cpr-movement ${movementToneClass(row.movement_type)}`}>{row.movement_type}</span>
@@ -121,6 +135,7 @@ CrewItem.propTypes = {
   requestStatus: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onOpenDocument: PropTypes.func.isRequired,
   getCrewMeta: PropTypes.func,
+  getCrewDetails: PropTypes.func,
 };
 
 const CrewPassRequestsTable = ({
@@ -140,6 +155,7 @@ const CrewPassRequestsTable = ({
   getGroupDocumentUrl,
   getGroupSearchText,
   getCrewMeta,
+  getCrewDetails,
   searchPlaceholder = "Search crew name, passport or WO no.",
 }) => {
   const groups = useMemo(() => {
@@ -388,6 +404,7 @@ const CrewPassRequestsTable = ({
                                 requestStatus={status}
                                 onOpenDocument={openDocument}
                                 getCrewMeta={getCrewMeta}
+                                getCrewDetails={getCrewDetails}
                               />
                             ))}
                           </ul>
@@ -451,8 +468,10 @@ CrewPassRequestsTable.propTypes = {
   getGroupDocumentUrl: PropTypes.func,
   /** Text a search should match for the whole request (default: WO number). */
   getGroupSearchText: PropTypes.func,
-  /** Second line under each crew name (default: passport). */
+  /** Second line under each crew name (default: passport). Return null to hide it. */
   getCrewMeta: PropTypes.func,
+  /** Extra labelled columns shown beside each crew name: [{ label, value }]. */
+  getCrewDetails: PropTypes.func,
   searchPlaceholder: PropTypes.string,
 };
 

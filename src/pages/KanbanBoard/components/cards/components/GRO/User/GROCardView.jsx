@@ -1189,7 +1189,7 @@ const GROCardView = forwardRef(function GROCardView(
     }
 
     if (groStageHasExtraFields(groStageId)) {
-      const extraErrors = validateGroExtraStageFields(groStageId, extraStageFields);
+      const extraErrors = validateGroExtraStageFields(groStageId, extraStageFields, existingStageFiles);
       if (Object.keys(extraErrors).length > 0) {
         setExtraStageFieldErrors(extraErrors);
         return;

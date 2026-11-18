@@ -11315,6 +11315,48 @@ a.operation-task-document-name--link {
   font-variant-numeric: tabular-nums;
 }
 
+/* Detailed crew rows (e.g. Transport): name column + labelled detail columns
+   that fill the row. Every row has the same fields, so auto-fill keeps the
+   columns aligned from one crew member to the next. */
+.cpr-crew--detailed .cpr-crew__main {
+  flex: 0 0 180px;
+}
+
+.cpr-crew__details {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 6px 16px;
+  margin: 0;
+}
+
+.cpr-crew__detail {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  dt {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 .cpr-crew__tags {
   display: flex;
   flex-wrap: wrap;
@@ -11389,10 +11431,16 @@ a.operation-task-document-name--link {
     flex-wrap: wrap;
   }
 
-  .cpr-crew__tags {
+  .cpr-crew__tags,
+  .cpr-crew__details {
     width: 100%;
+    flex-basis: 100%;
     justify-content: flex-start;
     padding-left: 44px;
+  }
+
+  .cpr-crew--detailed .cpr-crew__main {
+    flex: 1;
   }
 }
 
