@@ -4066,6 +4066,17 @@
     }
   }
 
+  &__saved {
+    color: #16a34a;
+    font-weight: 700;
+  }
+
+  &__row--saved input:disabled {
+    color: inherit;
+    -webkit-text-fill-color: currentColor;
+    cursor: default;
+  }
+
   &__footer {
     display: flex;
     align-items: center;

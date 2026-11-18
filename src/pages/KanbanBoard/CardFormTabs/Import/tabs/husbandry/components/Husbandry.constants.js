@@ -188,3 +188,7 @@ export const CREW_ENTRY_COLUMNS = [
   { key: "nationality", header: "Nationality", placeholder: "e.g. Indian" },
   { key: "passport_no", header: "Passport No", placeholder: "Passport number" },
 ];
+
+export const CREW_ENTRY_INITIAL_ROW_COUNT = 3;
+export const createEmptyCrewRow = () => Object.fromEntries(CREW_ENTRY_COLUMNS.map((column) => [column.key, ""]));
+export const createEmptyCrewRows = (count = CREW_ENTRY_INITIAL_ROW_COUNT) => Array.from({ length: count }, createEmptyCrewRow);
