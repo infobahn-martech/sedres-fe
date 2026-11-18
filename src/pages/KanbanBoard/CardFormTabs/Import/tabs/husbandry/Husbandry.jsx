@@ -554,12 +554,11 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
     },
   ];
 
-  // Launch Hire (both the top-level card and the Crew Management one) only
-  // applies to calls flagged launch_hire = 1.
   // Once get_requests_by_service has loaded, it decides which cards this call
   // offers: top-level cards come from `services[]`, Crew Management
   // sub-service cards from `crew_management.breakdown[]`. Until then (or if
-  // the API omits a list) get_service_counts is used as before.
+  // the API omits a list) get_service_counts is used as before — except for
+  // Launch Hire (both cards), which shows only when get_requests_by_service lists it.
   const titleSet = (list) => (Array.isArray(list) ? new Set(list.map((item) => item?.title).filter(Boolean)) : null);
   const apiTopLevelTitles = titleSet(requestsByService?.services);
   const apiCrewTitles = titleSet(requestsByService?.crew_management?.breakdown);
@@ -568,12 +567,21 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
     if (isCrewSub && apiTopLevelTitles && !apiTopLevelTitles.has("Crew Management")) return false;
     const titles = isCrewSub ? apiCrewTitles : apiTopLevelTitles;
     if (titles) return titles.has(service.label);
+    if (LAUNCH_HIRE_SERVICE_IDS.includes(service.id)) return false;
     return !serviceCounts || Object.prototype.hasOwnProperty.call(serviceCounts, service.label);
   };
 
-  const services = (showLaunchHire ? allServices : allServices.filter((service) => !LAUNCH_HIRE_SERVICE_IDS.includes(service.id)))
+  // The call's launch_hire flag is deliberately not used here: which cards show
+  // (Launch Hire included) is decided only by get_requests_by_service.
+  const offeredServices = allServices
     .filter((service) => !hiddenServiceIds.includes(service.id) && !hiddenServiceIds.includes(service.parentId))
     .filter(isOfferedByApi);
+  // Both Launch Hire cards are the same service: show it once. The Crew Management
+  // card wins when both are offered; the top-level card shows only on its own.
+  const hasCrewLaunchHire = offeredServices.some((service) => service.id === CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE);
+  const services = hasCrewLaunchHire
+    ? offeredServices.filter((service) => service.id !== "LAUNCH_HIRE")
+    : offeredServices;
 
   const bookedServicesMap = bookedServices.reduce((acc, booked) => {
     acc[booked.id] = booked;

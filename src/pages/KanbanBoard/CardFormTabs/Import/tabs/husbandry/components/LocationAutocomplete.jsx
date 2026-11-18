@@ -107,7 +107,8 @@ const LocationAutocomplete = ({ value, onChange, placeholder, className = "", on
         value={inputValue}
         onChange={handleInputChange}
         placeholder={placeholder || "Search for a location..."}
-        disabled={disabled || !isLoaded || !!error}
+        // Typing works as plain text while Maps loads or if it fails; suggestions attach once loaded.
+        disabled={disabled}
       />
       {error && (
         <div className="location-autocomplete-error">

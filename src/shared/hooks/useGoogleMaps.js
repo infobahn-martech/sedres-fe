@@ -22,15 +22,40 @@ if (typeof window !== 'undefined') {
 // ready, so resolve only after importLibrary('places'). One shared promise per
 // page means late subscribers never miss an already-fired load event.
 let loaderPromise = null;
+const LOAD_TIMEOUT_MS = 15000;
 
 const loadGoogleMaps = () => {
     if (!loaderPromise) {
         loaderPromise = new Promise((resolve, reject) => {
+            // Never hang on "Loading…": a stalled/blocked request (ad blocker, firewall,
+            // offline) may fire neither onload nor onerror.
+            const timeoutId = setTimeout(
+                () => reject(new Error('Location suggestions unavailable (Google Maps timed out).')),
+                LOAD_TIMEOUT_MS
+            );
+            const settle = (fn) => (value) => {
+                clearTimeout(timeoutId);
+                fn(value);
+            };
+
             const script = document.createElement('script');
             script.src = GOOGLE_MAPS_API_URL;
             script.async = true;
-            script.onload = () => window.google.maps.importLibrary('places').then(resolve, reject);
-            script.onerror = () => reject(new Error('Failed to load Google Maps script'));
+            script.onload = () => {
+                // A throw here (e.g. importLibrary missing) would otherwise leave the promise pending forever.
+                try {
+                    const importLibrary = window.google?.maps?.importLibrary;
+                    if (typeof importLibrary !== 'function') {
+                        if (window.google?.maps?.places) settle(resolve)();
+                        else settle(reject)(new Error('Google Maps loaded without the Places library.'));
+                        return;
+                    }
+                    importLibrary('places').then(settle(resolve), settle(reject));
+                } catch (err) {
+                    settle(reject)(err);
+                }
+            };
+            script.onerror = () => settle(reject)(new Error('Failed to load Google Maps script'));
             document.head.appendChild(script);
         }).catch((err) => {
             loaderPromise = null;
