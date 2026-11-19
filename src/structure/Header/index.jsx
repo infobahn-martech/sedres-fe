@@ -28,6 +28,7 @@ import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import { useThemeStore } from '../../store/themeStore';
 import useCardModalStore from '../../store/cardModalStore';
 import NavTabButton from '../../components/NavTabButton';
+import ModalErrorBoundary from '../../components/ModalErrorBoundary';
 import { isRestrictedBoardUser, isPortOperatorUser } from '../../shared/helpers/restrictedBoardUser';
 import { isVendorRole, getRoleId } from '../../shared/helpers/vendorDashboardRoles';
 import { hasMasterModuleAccess } from '../../shared/helpers/roleMasterMenuAccess';
@@ -772,30 +773,36 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
         <TypesModal show={showTypesModal} onClose={() => setShowTypesModal(false)} />
       )}
       {showCallTypeBuilderModal && (
-        <Suspense fallback={null}>
-          <CallTypeBuilderModal
-            show={showCallTypeBuilderModal}
-            onClose={() => setShowCallTypeBuilderModal(false)}
-          />
-        </Suspense>
+        <ModalErrorBoundary onClose={() => setShowCallTypeBuilderModal(false)}>
+          <Suspense fallback={null}>
+            <CallTypeBuilderModal
+              show={showCallTypeBuilderModal}
+              onClose={() => setShowCallTypeBuilderModal(false)}
+            />
+          </Suspense>
+        </ModalErrorBoundary>
       )}
 
       {showCustomTemplateModal && (
-        <Suspense fallback={null}>
-          <CustomTemplateBuilderModal
-            show={showCustomTemplateModal}
-            onClose={() => setShowCustomTemplateModal(false)}
-          />
-        </Suspense>
+        <ModalErrorBoundary onClose={() => setShowCustomTemplateModal(false)}>
+          <Suspense fallback={null}>
+            <CustomTemplateBuilderModal
+              show={showCustomTemplateModal}
+              onClose={() => setShowCustomTemplateModal(false)}
+            />
+          </Suspense>
+        </ModalErrorBoundary>
       )}
 
       {showTemplatesListModal && (
-        <Suspense fallback={null}>
-          <CustomTemplateListModal
-            show={showTemplatesListModal}
-            onClose={() => setShowTemplatesListModal(false)}
-          />
-        </Suspense>
+        <ModalErrorBoundary onClose={() => setShowTemplatesListModal(false)}>
+          <Suspense fallback={null}>
+            <CustomTemplateListModal
+              show={showTemplatesListModal}
+              onClose={() => setShowTemplatesListModal(false)}
+            />
+          </Suspense>
+        </ModalErrorBoundary>
       )}
 
       {/* Tools Modals */}
