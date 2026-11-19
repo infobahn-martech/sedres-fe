@@ -1,0 +1,79 @@
+// Compact operator dropdown for every AND / WHEN condition row ("Attachments are present v"):
+// sized to its options with tighter padding instead of the shared 260px panel.
+.business-rule-form-condition-operator-group {
+  // The field name keeps its blue label colour; the operator beside it ("are present v") is body text.
+  .br-condition-operator-trigger {
+    color: var(--text-primary);
+    padding: 0;
+    line-height: 1.4;
+  }
+
+  // Field name, operator word and arrow share one baseline instead of the operator sitting
+  // at the top of the row.
+  .br-condition-operator-wrap {
+    align-self: center;
+  }
+
+  .br-condition-operator-panel {
+    right: auto;
+    width: max-content;
+    min-width: 180px;
+    max-width: 260px;
+    padding: 8px;
+    gap: 4px;
+  }
+
+  .br-condition-operator-option {
+    padding: 7px 10px;
+    white-space: nowrap;
+  }
+
+  .board-minimap-picker-search {
+    padding: 6px 10px;
+  }
+}
+
+// Deadline WHEN row ("Deadline is in v"): the field name stays the blue label colour from
+// the shared operator-group rule, while "is" and the operator picker read as plain body text.
+// The words sit close together like a sentence, so the row's usual flex gap is tightened.
+.business-rule-form-when-deadline-label-row.br-when-deadline-text {
+  gap: 4px;
+
+  .br-condition-operator-trigger {
+    color: var(--text-primary);
+  }
+
+  .br-condition-operator-wrap {
+    align-self: center;
+  }
+
+  .br-condition-operator-trigger {
+    gap: 4px;
+    padding: 0;
+    line-height: 1.4;
+  }
+
+  // Compact list for the operator dropdown: sized to its options instead of the shared
+  // 260px panel with generous padding.
+  .br-condition-operator-panel {
+    right: auto;
+    width: max-content;
+    min-width: 120px;
+    padding: 6px;
+    gap: 2px;
+  }
+
+  .br-condition-operator-option {
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+}
+
+// Value text of a dropdown field in a condition row ("Blocked"): body size, not the browser's
+// default button font.
+.br-condition-value-text {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-primary);
+}

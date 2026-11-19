@@ -35,3 +35,29 @@ export const splitMultiValue = (value) =>
   String(value ?? '').split(',').map((v) => v.trim()).filter((v) => v !== '');
 
 export const joinMultiValue = (values) => values.join(',');
+
+// Text of an empty dropdown / board-structure value in a condition row.
+export const NOT_SET_LABEL = 'Not Set';
+
+// Date condition fields that read as "<field> is v / <empty state> v" instead of showing a date
+// box, keyed by lower-cased field label, with the text of their empty state.
+// operatorKey is the operator saved when the empty state is chosen: "Not Set" / "Not Moved" mean the
+// date is empty, so they are saved as is_empty (an "is" with an empty value carries no meaning).
+const DATE_FIELD_EMPTY_STATES = {
+  deadline: { label: 'Not Set', operatorKey: 'is_empty' },
+  'last moved': { label: 'Not Moved', operatorKey: 'is_empty' },
+  'last modified': { label: 'Today', operatorKey: null },
+};
+
+const getDateFieldEmptyState = (details) => {
+  if (details?.field_type !== 'date' && details?.field_type !== 'datetime') return null;
+  return DATE_FIELD_EMPTY_STATES[String(details.field_label ?? '').trim().toLowerCase()] ?? null;
+};
+
+export const getDateFieldEmptyLabel = (details) => getDateFieldEmptyState(details)?.label ?? null;
+
+export const getDateFieldEmptyOperatorKey = (details) => getDateFieldEmptyState(details)?.operatorKey ?? null;
+
+// A Yes/No field (e.g. Blocked) is a two-option dropdown labelled Yes and No.
+export const isYesNoOptions = (options) =>
+  options.length === 2 && options.every((opt) => ['yes', 'no'].includes(String(opt.option_label).trim().toLowerCase()));
