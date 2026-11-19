@@ -138,20 +138,27 @@ function BoardMinimapModal({ show, value, boardId, onBoardChange, onPick, onClos
               </th>
             ))}
           </tr>
-          <tr>
-            {workflow.leafColumns.map((column) => (
-              <th
-                key={column.id}
-                className="board-minimap-header-cell"
-                title={COLUMN_TOOLTIP}
-                onMouseEnter={() => setHoveredColumnId(column.id)}
-                onMouseLeave={() => setHoveredColumnId(null)}
-                onClick={() => pick(workflow, column, null)}
-              >
-                {column.name}
-              </th>
-            ))}
-          </tr>
+          {workflow.columnHeaderRows.map((headerRow, rowIndex) => (
+            <tr key={`columns-${rowIndex}`}>
+              {headerRow.map((column) => (column.isLeaf ? (
+                <th
+                  key={column.id}
+                  rowSpan={column.rowSpan}
+                  className="board-minimap-header-cell"
+                  title={COLUMN_TOOLTIP}
+                  onMouseEnter={() => setHoveredColumnId(column.id)}
+                  onMouseLeave={() => setHoveredColumnId(null)}
+                  onClick={() => pick(workflow, column, null)}
+                >
+                  {column.name}
+                </th>
+              ) : (
+                <th key={column.id} colSpan={column.colSpan} className="board-minimap-header-cell board-minimap-header-cell--parent">
+                  {column.name}
+                </th>
+              )))}
+            </tr>
+          ))}
         </thead>
         <tbody>
           {workflow.swimlanes.flatMap((lane) => [

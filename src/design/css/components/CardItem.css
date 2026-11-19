@@ -1608,3 +1608,221 @@
 .kanban-board--level-2 .column-count {
   font-size: 12.5px; /* Level 1: 13px */
 }
+
+/* ========== Task flow (get_full_board task_cards) ========== */
+.card-api-task-flow {
+  border-top: 1px solid var(--border-primary);
+  padding: 6px 0 2px;
+  min-width: 0;
+}
+
+.card-api-task-flow-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.card-api-task-flow-label {
+  color: var(--text-primary);
+}
+
+.card-api-task-flow-count {
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.card-api-task-flow-steps {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 3px;
+  margin-left: 4px;
+  min-width: 0;
+}
+
+.card-api-task-flow-step-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+
+.card-api-task-flow-arrow {
+  color: var(--text-muted);
+  margin: 0 1px;
+}
+
+.card-api-task-flow-toggle {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.card-api-task-flow-step {
+  --task-status: #94a3b8;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--task-status);
+  color: var(--task-status);
+  background: var(--surface-primary);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.card-api-task-flow-steps .card-api-task-flow-step {
+  cursor: pointer;
+}
+
+.card-api-task-flow-steps .card-api-task-flow-step:hover {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--task-status) 22%, transparent);
+}
+
+.card-api-task-flow-step--done {
+  --task-status: #16a34a;
+  background: var(--task-status);
+  color: #fff;
+}
+
+.card-api-task-flow-step--active {
+  --task-status: #d97706;
+}
+
+.card-api-task-flow-step--rejected {
+  --task-status: #dc2626;
+}
+
+.card-api-task-flow-step--pending svg {
+  width: 5px;
+  height: 5px;
+  fill: currentColor;
+}
+
+/* Expanded list: one row per task, connected by a vertical line to show the direction. */
+.card-api-task-flow-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-api-task-flow-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 4px 0;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--text-primary);
+  cursor: pointer;
+  min-width: 0;
+}
+
+.card-api-task-flow-item + .card-api-task-flow-item::before {
+  content: "";
+  position: absolute;
+  left: 7.5px;
+  top: -6px;
+  height: 10px;
+  border-left: 1.5px solid var(--border-primary);
+}
+
+.card-api-task-flow-item:hover {
+  background: var(--bg-secondary);
+}
+
+.card-api-task-flow-item-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-api-task-flow-pill {
+  flex-shrink: 0;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.card-api-task-flow-pill--done { color: #15803d; background: #dcfce7; }
+.card-api-task-flow-pill--active { color: #b45309; background: #fef3c7; }
+.card-api-task-flow-pill--rejected { color: #b91c1c; background: #fee2e2; }
+
+.card-api-task-flow-open {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.card-api-task-flow-item:hover .card-api-task-flow-open {
+  opacity: 1;
+}
+
+.kanban-card-dark .card-api-task-flow-pill { color: #cbd5e1; background: rgba(148, 163, 184, 0.18); }
+.kanban-card-dark .card-api-task-flow-pill--done { color: #86efac; background: rgba(22, 163, 74, 0.2); }
+.kanban-card-dark .card-api-task-flow-pill--active { color: #fcd34d; background: rgba(217, 119, 6, 0.2); }
+.kanban-card-dark .card-api-task-flow-pill--rejected { color: #fca5a5; background: rgba(220, 38, 38, 0.2); }
+
+/* Collapsed task flow: chevron segments sharing one line (direction = left → right). */
+.card-api-task-flow-track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 4px;
+  height: 10px;
+}
+
+.card-api-task-flow-seg {
+  --task-status: #cbd5e1;
+  flex: 1 1 0;
+  min-width: 4px;
+  max-width: 28px;
+  height: 100%;
+  background: var(--task-status);
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 50%, calc(100% - 4px) 100%, 0 100%, 4px 50%);
+  cursor: pointer;
+  transition: filter 0.12s ease, transform 0.12s ease;
+}
+
+.card-api-task-flow-seg:first-child {
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 50%, calc(100% - 4px) 100%, 0 100%);
+  border-radius: 3px 0 0 3px;
+}
+
+.card-api-task-flow-seg:hover {
+  filter: brightness(0.85);
+  transform: scaleY(1.3);
+}
+
+.card-api-task-flow-seg--done { --task-status: #16a34a; }
+.card-api-task-flow-seg--active { --task-status: #f59e0b; }
+.card-api-task-flow-seg--rejected { --task-status: #dc2626; }
+
+.kanban-card-dark .card-api-task-flow-seg--pending { --task-status: #475569; }

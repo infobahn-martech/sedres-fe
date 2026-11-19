@@ -84,8 +84,8 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 6px;
+  margin-top: 6px;
 
   > .business-rule-form-action-chip {
     align-self: stretch;
@@ -95,5 +95,58 @@
 // "Not Set" / "N selected" trigger of a board-structure value (Board, Position ...): same size as the
 // other value texts of the condition rows.
 .br-advanced-schedule-label.br-board-structure-trigger {
-  font-size: 13px;
+  font-size: 12px;
+}
+
+// Move-with-filter cards of the THEN column: titles, links and the filter header share one size so the
+// text lines up with the update card above them.
+.br-generic-then {
+  .br-create-action-card {
+    padding: 10px 28px 10px 12px;
+    border-radius: 8px;
+  }
+
+  .br-create-action-title,
+  .br-create-action-link,
+  .business-rule-form-when-fields-header,
+  .business-rule-form-add-link {
+    font-size: 13px;
+  }
+}
+
+// The THEN column links ("Add new action", "Add new property" ...) are plain text, no + icon.
+.business-rule-form-column--then .business-rule-form-add-link svg,
+.business-rule-form-column--then .business-rule-form-add-action svg {
+  display: none;
+}
+
+// THEN action cards (update / move / notify ...): compact padding and even spacing between their rows.
+.business-rule-form-column--then .business-rule-form-action-detail-card {
+  padding: 10px 12px;
+  gap: 8px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+// The "Add new ... action" link under the cards starts on the same line as the text inside the cards
+// (card border 1px + padding 12px).
+.business-rule-form-column--then .business-rule-form-add-action,
+.br-generic-then > .business-rule-form-add-link {
+  padding-left: 13px;
+}
+
+// Every "Add new ..." link and filter header in the THEN column has one size, whichever section draws it.
+.business-rule-form-column--then {
+  .business-rule-form-add-link,
+  .business-rule-form-add-action {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .business-rule-form-when-fields-header {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
 }

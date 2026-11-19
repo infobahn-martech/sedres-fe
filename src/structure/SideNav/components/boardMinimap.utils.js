@@ -39,6 +39,39 @@ function flattenColumnsToLeaves(columns = []) {
   return leaves;
 }
 
+// Column tree of a stage, parents kept: { id, name, children }. A parent column spans its children in
+// the header; only the leaf columns get cells.
+function buildColumnTree(columns = []) {
+  return sortByOrderKey(Array.isArray(columns) ? columns : [], 'column_order').map((col) => ({
+    id: String(col?.column_id ?? ''),
+    name: col?.column_name || 'Column',
+    children: buildColumnTree(col?.children),
+  }));
+}
+
+const leafCountOf = (node) => (node.children.length === 0 ? 1 : node.children.reduce((sum, child) => sum + leafCountOf(child), 0));
+const depthOf = (node) => (node.children.length === 0 ? 1 : 1 + Math.max(...node.children.map(depthOf)));
+
+// Header rows under the stage row: one row per nesting level, left to right across all stages. A
+// parent column spans its leaf columns, a leaf spans down to the last row.
+function buildColumnHeaderRows(stageSegments) {
+  const depth = Math.max(1, ...stageSegments.flatMap((segment) => segment.columnTree.map(depthOf)));
+  const rows = Array.from({ length: depth }, () => []);
+  const place = (node, level) => {
+    const isLeaf = node.children.length === 0;
+    rows[level].push({
+      id: node.id,
+      name: node.name,
+      isLeaf,
+      colSpan: leafCountOf(node),
+      rowSpan: isLeaf ? depth - level : 1,
+    });
+    node.children.forEach((child) => place(child, level + 1));
+  };
+  stageSegments.forEach((segment) => segment.columnTree.forEach((node) => place(node, 0)));
+  return rows;
+}
+
 /**
  * @param {object[]} rawWorkflows - `data.data` from get_workflow_by_board (array of
  *   { workflow_id, workflow_name, is_active, stages: [...], swimlanes: [...] })
@@ -56,6 +89,7 @@ export function buildBoardMinimapWorkflows(rawWorkflows) {
           name: stage?.stage_name || 'Stage',
           color: normalizeStageColor(stage?.color_code),
           columns: flattenColumnsToLeaves(stage?.columns),
+          columnTree: buildColumnTree(stage?.columns),
         }))
         .filter((segment) => segment.columns.length > 0);
 
@@ -73,6 +107,7 @@ export function buildBoardMinimapWorkflows(rawWorkflows) {
         name: wf.workflow_name || 'Workflow',
         stageSegments,
         leafColumns: stageSegments.flatMap((segment) => segment.columns),
+        columnHeaderRows: buildColumnHeaderRows(stageSegments),
         swimlanes,
       };
     })

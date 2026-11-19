@@ -14,7 +14,22 @@ import saudimarcapLogo from "@/assets/images/saudimarcap.png";
 import saipemLogo from "@/assets/images/saipem.png";
 import lamprellLogo from "@/assets/images/lamprell.png";
 import gulfmarineLogo from "@/assets/images/gulfmarine.png";
-import { FiFileText, FiDownload, FiLoader, FiTrendingUp, FiCopy, FiCheck } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import {
+  FiFileText,
+  FiDownload,
+  FiLoader,
+  FiTrendingUp,
+  FiCopy,
+  FiCheck,
+  FiChevronRight,
+  FiChevronDown,
+  FiClock,
+  FiCircle,
+  FiX,
+  FiGitCommit,
+  FiExternalLink,
+} from "react-icons/fi";
 import { resolveIconComponentStrict } from "@/structure/SideNav/components/DynamicIcon";
 import {
   hasText,
@@ -309,6 +324,123 @@ ApiCardSubtaskBadge.propTypes = {
     subtaskCompleted: PropTypes.number,
     subtaskStatus: PropTypes.string,
   }).isRequired,
+};
+
+/** Child task card status, derived from its column (get_full_board task_cards carry no status key). */
+function getTaskCardStatus(task) {
+  const col = String(task?.columnName || "").toLowerCase();
+  if (hasText(task?.completedDate) || /complet|done|closed|finish|approved/.test(col)) return "done";
+  if (/reject|cancel|fail|block/.test(col)) return "rejected";
+  if (/progress|review|processing|ongoing|started/.test(col)) return "active";
+  return "pending";
+}
+
+const TASK_STATUS_META = {
+  done: { Icon: FiCheck, label: "Completed" },
+  active: { Icon: FiClock, label: "In progress" },
+  rejected: { Icon: FiX, label: "Rejected" },
+  pending: { Icon: FiCircle, label: "Pending" },
+};
+
+/**
+ * Task flow for a parent card's `taskCards`: a left→right stepper of status dots joined by arrows
+ * (each dot opens its task card), plus a toggle that expands a named list with status + open link.
+ * Opens in place when the task card is on this board; otherwise deep-links to its board.
+ */
+function ApiCardTaskFlow({ card, cardsById, setSelectedCard }) {
+  const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(false);
+  const tasks = Array.isArray(card.taskCards) ? card.taskCards : [];
+  if (tasks.length === 0) return null;
+
+  const doneCount = tasks.filter((t) => getTaskCardStatus(t) === "done").length;
+  const tooltipId = `task-flow-${card.id}`;
+
+  const openTask = (e, task) => {
+    e.stopPropagation();
+    const target = cardsById?.[task.id];
+    if (target) {
+      setSelectedCard(target);
+      return;
+    }
+    if (hasText(task.boardId)) navigate(`/kanban-board/${task.boardId}?card=${task.id}`);
+  };
+
+  return (
+    <div className="card-api-task-flow" onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        className="card-api-task-flow-header"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+      >
+        <FiGitCommit size={12} aria-hidden />
+        <span className="card-api-task-flow-label">Tasks</span>
+        <span className="card-api-task-flow-count">
+          {doneCount}/{tasks.length}
+        </span>
+        {/* One chevron segment per task, always a single line: width is shared, so any task count fits. */}
+        <span className="card-api-task-flow-track">
+          {tasks.map((task, i) => {
+            const status = getTaskCardStatus(task);
+            const { label } = TASK_STATUS_META[status];
+            return (
+              <span
+                key={task.id}
+                className={`card-api-task-flow-seg card-api-task-flow-seg--${status}`}
+                data-tooltip-id={tooltipId}
+                data-tooltip-content={`${i + 1}. ${task.title} · ${task.columnName || label}`}
+                onClick={(e) => openTask(e, task)}
+                role="link"
+                aria-label={`Open ${task.title}`}
+              />
+            );
+          })}
+        </span>
+        {expanded ? (
+          <FiChevronDown size={12} className="card-api-task-flow-toggle" aria-hidden />
+        ) : (
+          <FiChevronRight size={12} className="card-api-task-flow-toggle" aria-hidden />
+        )}
+      </button>
+
+      {expanded && (
+        <ol className="card-api-task-flow-list">
+          {tasks.map((task) => {
+            const status = getTaskCardStatus(task);
+            const { Icon, label } = TASK_STATUS_META[status];
+            return (
+              <li
+                key={task.id}
+                className={`card-api-task-flow-item card-api-task-flow-item--${status}`}
+                onClick={(e) => openTask(e, task)}
+                title={`Open ${task.title}`}
+              >
+                <span className={`card-api-task-flow-step card-api-task-flow-step--${status}`} aria-hidden>
+                  <Icon size={9} strokeWidth={3} />
+                </span>
+                <span className="card-api-task-flow-item-title">{task.title}</span>
+                <span className={`card-api-task-flow-pill card-api-task-flow-pill--${status}`}>
+                  {task.columnName || label}
+                </span>
+                <FiExternalLink size={11} className="card-api-task-flow-open" aria-hidden />
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      <Tooltip id={tooltipId} place="top" className="card-name-tooltip" />
+    </div>
+  );
+}
+
+ApiCardTaskFlow.propTypes = {
+  card: PropTypes.shape({
+    id: PropTypes.string,
+    taskCards: PropTypes.arrayOf(PropTypes.object),
+  }).isRequired,
+  cardsById: PropTypes.object,
+  setSelectedCard: PropTypes.func.isRequired,
 };
 
 /** Reference number row (invoice no → PO no → sales order no) shown above the KPI summary row, with a click-to-copy icon
@@ -662,6 +794,8 @@ function ApiKanbanCardFull({
       </div>
 
       <ApiCardCountIconsRow card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} transportOnly={transportOnlyIcons} />
+
+      <ApiCardTaskFlow card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} />
 
       <ApiCardSalesOrderRow card={card} showInvoiceDownload={showInvoiceDownload} />
 
