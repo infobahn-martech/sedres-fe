@@ -152,7 +152,7 @@ BoardStructureControls.propTypes = valuePropTypes;
 function PositionValue({ value, defaultBoardId = '', onChange }) {
   const [showMinimap, setShowMinimap] = useState(false);
   const [minimapBoardId, setMinimapBoardId] = useState('');
-  const { boardWorkflowsByBoard, swimlanesByWorkflow, getBoardWorkflows } = useBusinessRuleReducer((s) => s);
+  const { boardPickerWorkspaces: workspaces, boardWorkflowsByBoard, swimlanesByWorkflow, getBoardWorkflows } = useBusinessRuleReducer((s) => s);
   const entries = splitMultiValue(value);
 
   // The minimap follows the board chosen in the AND "Board is" row (not the first board of the list);
@@ -161,17 +161,34 @@ function PositionValue({ value, defaultBoardId = '', onChange }) {
     if (defaultBoardId) setMinimapBoardId(String(defaultBoardId));
   }, [defaultBoardId]);
 
-  const workflows = Object.values(boardWorkflowsByBoard).flat();
-  const findColumn = (id) => workflows.flatMap((wf) => (wf.stages ?? []).flatMap((stage) => flattenLeafColumns(stage.columns ?? [])))
-    .find((col) => String(col.column_id) === id);
-  const findLane = (id) => workflows.flatMap((wf) => wf.swimlanes ?? swimlanesByWorkflow[String(wf.workflow_id)] ?? [])
-    .find((lane) => String(lane.swimlane_id) === id);
+  // An entry is read back as "[workspace][board] / [workflow] COLUMN | LANE", looked up from the boards
+  // already loaded (ids are all that is stored); an entry whose board is not loaded shows its ids.
+  const describeEntry = (entry) => {
+    const [columnId, laneId] = entry.split(POSITION_SEPARATOR);
+    const found = Object.entries(boardWorkflowsByBoard).flatMap(([boardId, wfs]) => wfs.map((wf) => ({ boardId, wf })))
+      .find(({ wf }) => (wf.stages ?? []).some((stage) => flattenLeafColumns(stage.columns ?? [])
+        .some((col) => String(col.column_id) === columnId)));
+    const workspace = found && (workspaces ?? []).find((w) => (w.boards ?? []).some((bd) => String(bd.board_id) === found.boardId));
+    const board = workspace?.boards.find((bd) => String(bd.board_id) === found.boardId);
+    const column = found && (found.wf.stages ?? []).flatMap((stage) => flattenLeafColumns(stage.columns ?? []))
+      .find((col) => String(col.column_id) === columnId);
+    const lane = laneId && found
+      ? (found.wf.swimlanes ?? swimlanesByWorkflow[String(found.wf.workflow_id)] ?? []).find((l) => String(l.swimlane_id) === laneId)
+      : null;
+    return {
+      boardId: found?.boardId ?? '',
+      place: found ? `[${workspace?.workspace_name ?? ''}][${board?.board_name ?? ''}]` : '',
+      workflow: found ? `[${found.wf.workflow_name}]` : '',
+      column: column?.column_name ?? `Column #${columnId}`,
+      lane: laneId ? (lane?.swimlane_name ?? `Lane #${laneId}`) : '',
+    };
+  };
 
-  const labelOf = (entry) => {
-    const [col, lane] = entry.split(POSITION_SEPARATOR);
-    const colLabel = findColumn(col)?.column_name ?? `Column #${col}`;
-    if (!lane) return colLabel;
-    return `${colLabel} / ${findLane(lane)?.swimlane_name ?? `Lane #${lane}`}`;
+  // Opens on the board of the entry that was clicked, else on the board chosen in the AND "Board is" row.
+  const openMinimap = (entry) => {
+    const target = (entry && describeEntry(entry).boardId) || defaultBoardId;
+    if (target) setMinimapBoardId(String(target));
+    setShowMinimap(true);
   };
 
   const handlePick = (next) => {
@@ -179,31 +196,39 @@ function PositionValue({ value, defaultBoardId = '', onChange }) {
     if (!next.columnId) return;
     if (next.boardId) getBoardWorkflows(next.boardId);
     const entry = next.swimlaneId ? `${next.columnId}${POSITION_SEPARATOR}${next.swimlaneId}` : String(next.columnId);
-    if (!entries.includes(entry)) onChange(joinMultiValue([...entries, entry]));
+    // One pick per row: picking replaces it, picking the same cell again clears it. Another position
+    // is added with the row's OR button, which opens a new empty row.
+    onChange(entries.includes(entry) ? '' : entry);
   };
 
   return (
     <div className="d-flex flex-column gap-2 flex-fill w-100">
-      {entries.map((entry) => (
-        <div key={entry} className="business-rule-form-when-fields-pill business-rule-form-when-field-chip">
-          <span className="business-rule-form-when-fields-chip-label">{labelOf(entry)}</span>
+      {entries.length === 0 && (
+        <button
+          type="button"
+          className="business-rule-form-condition-label-btn br-advanced-schedule-label br-board-structure-trigger text-start"
+          onClick={() => openMinimap()}
+        >
+          {NOT_SET_LABEL}
+        </button>
+      )}
+      {entries.map((entry) => {
+        const info = describeEntry(entry);
+        return (
           <button
+            key={entry}
             type="button"
-            className="business-rule-form-condition-remove"
-            onClick={() => onChange(joinMultiValue(entries.filter((e) => e !== entry)))}
-            aria-label="Remove position"
+            className="business-rule-form-condition-label-btn br-advanced-schedule-label br-board-structure-trigger text-start"
+            onClick={() => openMinimap(entry)}
           >
-            <FiTrash2 size={14} />
+            {info.place && <span>{info.place} </span>}
+            <span>
+              {info.workflow} <span className="text-uppercase">{info.column}</span>
+              {info.lane && <span className="text-uppercase">{` | ${info.lane}`}</span>}
+            </span>
           </button>
-        </div>
-      ))}
-      <button
-        type="button"
-        className="business-rule-form-condition-label-btn br-advanced-schedule-label br-board-structure-trigger text-start"
-        onClick={() => setShowMinimap(true)}
-      >
-        {entries.length > 0 ? 'Add position' : NOT_SET_LABEL}
-      </button>
+        );
+      })}
       <BoardMinimapModal
         show={showMinimap}
         value={null}

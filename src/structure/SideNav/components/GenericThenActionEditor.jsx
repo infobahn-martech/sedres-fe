@@ -322,7 +322,7 @@ function GenericThenActionEditor({ action, value, defaultBoardId, renderProperty
       else onChange({ ...EMPTY_GENERIC_ACTION_VALUE, thenActionId: value.thenActionId });
     };
     return (
-      <div className="d-flex flex-column gap-3">
+      <div className="br-generic-then d-flex flex-column gap-2">
         {cards.map((card, index) => (
           <div key={index} className="business-rule-form-action-detail-card">
             <button
@@ -333,7 +333,6 @@ function GenericThenActionEditor({ action, value, defaultBoardId, renderProperty
             >
               <FiX size={14} />
             </button>
-            <h5 className="business-rule-form-action-detail-title">{action.action_name}</h5>
             <GenericInstance
               inCard
               action={action}
