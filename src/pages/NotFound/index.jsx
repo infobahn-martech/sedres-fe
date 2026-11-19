@@ -1,8 +1,21 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { isRouteErrorResponse, useNavigate, useRouteError } from "react-router-dom";
 import "../../design/scss/pages/not-found/NotFound.scss";
+import { isChunkLoadError, reloadOnceForChunkError } from "../../shared/helpers/chunkReload";
 
 const NotFound = () => {
   const navigate = useNavigate();
+  // Also used as the router's errorElement: only a real "no route matched"
+  // (or an explicit 404 response) is a 404; anything else is a crash.
+  const routeError = useRouteError();
+  const isNotFound =
+    !routeError || (isRouteErrorResponse(routeError) && routeError.status === 404);
+  const isChunkError = !isNotFound && isChunkLoadError(routeError);
+
+  useEffect(() => {
+    if (!isNotFound) console.error("Route error:", routeError);
+    if (isChunkError) reloadOnceForChunkError();
+  }, [isNotFound, isChunkError, routeError]);
 
   const handleGoHome = () => {
     navigate("/");
@@ -16,7 +29,7 @@ const NotFound = () => {
     <div className="not-found-container">
       <div className="not-found-content">
         <div className="not-found-illustration">
-          <div className="error-code">404</div>
+          <div className="error-code">{isNotFound ? "404" : "Oops"}</div>
           <div className="error-icon">
             <svg
               width="200"
@@ -54,14 +67,32 @@ const NotFound = () => {
         </div>
 
         <div className="not-found-text">
-          <h1 className="not-found-title">Page Not Found</h1>
-          <p className="not-found-description">
-            Oops! The page you're looking for doesn't exist. It might have been
-            moved, deleted, or you entered the wrong URL.
-          </p>
+          {isNotFound ? (
+            <>
+              <h1 className="not-found-title">Page Not Found</h1>
+              <p className="not-found-description">
+                Oops! The page you're looking for doesn't exist. It might have been
+                moved, deleted, or you entered the wrong URL.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="not-found-title">Something went wrong</h1>
+              <p className="not-found-description">
+                {isChunkError
+                  ? "A new version of the app is available. Please reload the page."
+                  : "An unexpected error occurred. Reloading the page usually fixes it."}
+              </p>
+            </>
+          )}
         </div>
 
         <div className="not-found-actions">
+          {!isNotFound && (
+            <button className="btn btn-primary" onClick={() => window.location.reload()}>
+              Reload
+            </button>
+          )}
           <button className="btn btn-primary" onClick={handleGoHome}>
             Go to Home
           </button>

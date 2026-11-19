@@ -113,7 +113,7 @@ const Fleet = () => {
             sort: true,
             cell: ({ row }) =>
                 row?.insurance_expiry
-                    ? new Date(row.insurance_expiry).toLocaleDateString()
+                    ? new Date(row.insurance_expiry).toLocaleDateString("en-GB", { month: "2-digit", day: "2-digit", year: "numeric" })
                     : "-",
         },
         {
@@ -125,7 +125,7 @@ const Fleet = () => {
             sort: true,
             cell: ({ row }) =>
                 row?.certificate_expiry
-                    ? new Date(row.certificate_expiry).toLocaleDateString()
+                    ? new Date(row.certificate_expiry).toLocaleDateString("en-GB", { month: "2-digit", day: "2-digit", year: "numeric" })
                     : "-",
         },
         {

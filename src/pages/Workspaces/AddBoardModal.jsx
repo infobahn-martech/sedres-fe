@@ -1,21 +1,38 @@
 import { useState, useEffect } from 'react';
 import CustomModal from '../../components/CustomModal';
+import PremiumSelect from '../../components/form/PremiumSelect';
+import usePortReducer from '../../store/PortReducer';
 import '../../design/scss/Workspaces.scss';
 
 const AddBoardModal = ({ show, onClose, onSave, workspaceId, isSaving = false }) => {
   const [boardName, setBoardName] = useState('');
+  const [portId, setPortId] = useState('');
+  const { ports, getPorts } = usePortReducer((s) => s);
 
   useEffect(() => {
     if (show) {
       setBoardName('');
+      setPortId('');
+      getPorts({ params: { limit: 1000 } });
     }
   }, [show]);
 
+  const portOptions = (ports ?? []).map((p) => {
+    const id = p?.port_id ?? p?._id ?? p?.id;
+    return {
+      value: String(id ?? ''),
+      label: String(p?.port ?? p?.name ?? p?.port_name ?? id ?? ''),
+    };
+  });
+
+  const canSave = Boolean(boardName?.trim()) && Boolean(portId);
+
   const handleSave = () => {
-    if (onSave && boardName?.trim()) {
+    if (onSave && canSave) {
       onSave({
         workspaceId,
         boardName: boardName.trim(),
+        portId: Number(portId),
       });
     }
     // Modal closes via parent's callback on successful API response
@@ -23,6 +40,7 @@ const AddBoardModal = ({ show, onClose, onSave, workspaceId, isSaving = false })
 
   const handleClose = () => {
     setBoardName('');
+    setPortId('');
     onClose();
   };
 
@@ -127,7 +145,7 @@ const AddBoardModal = ({ show, onClose, onSave, workspaceId, isSaving = false })
             </div>
 
             {/* Form Fields */}
-            <div className="add-board-form-fields">
+            <div className="add-board-form-fields add-board-form-fields--row">
               <div className="add-board-form-field">
                 <label className="add-board-form-label">
                   Board name
@@ -138,6 +156,19 @@ const AddBoardModal = ({ show, onClose, onSave, workspaceId, isSaving = false })
                   placeholder="Enter board name"
                   value={boardName}
                   onChange={(e) => setBoardName(e.target.value)}
+                />
+              </div>
+              <div className="add-board-form-field">
+                <label className="add-board-form-label">
+                  Port
+                </label>
+                <PremiumSelect
+                  className="add-board-port-select"
+                  value={portId}
+                  onChange={(e) => setPortId(e.target.value)}
+                  options={portOptions}
+                  placeholder="Select Port"
+                  searchPlaceholder="Search port..."
                 />
               </div>
             </div>
@@ -155,7 +186,7 @@ const AddBoardModal = ({ show, onClose, onSave, workspaceId, isSaving = false })
                 type="button"
                 className="add-board-form-btn add-board-form-btn-save"
                 onClick={handleSave}
-                disabled={!boardName?.trim() || isSaving}
+                disabled={!canSave || isSaving}
               >
                 {isSaving ? 'Saving...' : 'Save'}
               </button>

@@ -48,5 +48,5 @@ export const DateFormat = ({ row, selector }) => {
     if (!value) return "—";
     const m = moment(value);
     if (!m.isValid()) return "—";
-    return m.format("DD MMMM YYYY hh:mm a");
+    return m.format("DD/MM/YYYY hh:mm a");
 };

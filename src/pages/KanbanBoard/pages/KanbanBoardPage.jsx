@@ -14,14 +14,14 @@ import SeCreationEmailModal from "../components/board/SeCreationEmailModal";
 import SeApprovalUploadModal from "../components/board/SeApprovalUploadModal";
 import SeReviewMoveModal from "../components/board/SeReviewMoveModal";
 import ArInvoiceReviewModal from "../components/board/ArInvoiceReviewModal";
+import LntArInvoiceReviewModal from "../components/board/LntArInvoiceReviewModal";
 import SignatureCheckModal from "../components/board/SignatureCheckModal";
 import PoReviewModal from "../components/board/PoReviewModal";
 import LamprellUaePoReviewModal from "../components/board/LamprellUaePoReviewModal";
 import ServiceSheetModal from "../components/board/ServiceSheetModal";
 import FinalInvoiceModal from "../components/board/FinalInvoiceModal";
 import SccReviewModal from "../components/board/SccReviewModal";
-import DispatchProofReviewModal from "../components/board/DispatchProofReviewModal";
-import { isLamprellAlgihazDispatchProofColumn, isLntWorkflow, isMultiCardDispatchProofColumn, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
+import { isLamprellAlgihazDispatchProofColumn, isLntReadyToSubmit, isLntWorkflow, isMultiCardDispatchProofColumn, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -60,7 +60,6 @@ import useZamilCrewFinalInvoiceStore from "../../../store/zamilCrewFinalInvoiceS
 import useZamilMarineFinalInvoiceStore from "../../../store/zamilMarineFinalInvoiceStore";
 import usePoReviewStore from "../../../store/poReviewStore";
 import useSccReviewStore from "../../../store/sccReviewStore";
-import useDispatchProofReviewStore from "../../../store/dispatchProofReviewStore";
 import useKanbanCardViewStore from "../../../store/kanbanCardViewStore";
 import { Tooltip } from "react-tooltip";
 import { MINIMAL_CARD_TOOLTIP_ID } from "../utils/cardDisplayHelpers";
@@ -261,6 +260,10 @@ export default function KanbanBoardPage() {
     setAddTargetWorkflowId,
     handleSelectCard,
     handleCloseCard,
+    /* "My Cards / All Cards" per workflow header — filtered server-side via get_full_board ?scope=. */
+    cardScopeByWorkflow,
+    cardScopeLoadingByWorkflow,
+    handleCardScopeChange,
   } = useKanbanBoardState(selectedBoardId);
 
   const {
@@ -468,22 +471,6 @@ export default function KanbanBoardPage() {
     window.addEventListener("kanban:jump-to-workflow", handleJumpToWorkflowEvent);
     return () => window.removeEventListener("kanban:jump-to-workflow", handleJumpToWorkflowEvent);
   }, [handleJumpToWorkflow]);
-
-  const handleWorkflowPinClick = useCallback(
-    (workflowId) => {
-      if (!workflowId) return;
-      workflowService
-        .togglePinWorkflow(workflowId)
-        .then(() => {
-          toggleWorkflowPin(workflowId);
-        })
-        .catch((err) => {
-          const msg = err?.response?.data?.message ?? err.message ?? "Could not update pin.";
-          notify(msg, "error");
-        });
-    },
-    [toggleWorkflowPin]
-  );
 
   const handleColumnContextMenu = useCallback((event, column, laneId) => {
     event.preventDefault();
@@ -1138,6 +1125,7 @@ export default function KanbanBoardPage() {
       }
 
       const reviewCardById = {};
+      const reviewInvoiceById = {};
       const notPlacedFiles = [];
       let receivedCount = 0;
       let failedMessage = null;
@@ -1163,7 +1151,15 @@ export default function KanbanBoardPage() {
             break;
           }
           receivedCount += data.data?.received_files?.length ?? chunk.length;
-          notPlacedFiles.push(...(data.data?.not_placed_files ?? []));
+          /* L&T lists each unplaced file with the reason; the other workflows list bare file names. */
+          notPlacedFiles.push(
+            ...(data.data?.not_placed_files ?? []).map((file) =>
+              typeof file === "string" ? file : [file.file_name, file.reason].filter(Boolean).join(": ")
+            )
+          );
+          (data.data?.invoices ?? []).forEach((invoice) => {
+            reviewInvoiceById[String(invoice.invoice_id)] = invoice;
+          });
           (data.data?.cards ?? []).forEach((card) => {
             reviewCardById[String(card.card_id)] = card;
           });
@@ -1198,10 +1194,14 @@ export default function KanbanBoardPage() {
         cards.forEach((card) => removeCardSelectionId(card.id));
         handleCloseInvoiceUpload();
         /* The response lists every SE Received card; the review covers only the ones uploaded for. */
-        openReviewModal(
-          cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
-          { workflowId: selectedInvoiceBatch?.workflowId ?? null, files: invoices }
-        );
+        if (isLnt) {
+          openLntArInvoiceReviewModal(Object.values(reviewInvoiceById));
+        } else {
+          openReviewModal(
+            cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
+            { workflowId: selectedInvoiceBatch?.workflowId ?? null, files: invoices }
+          );
+        }
         refetchBoard?.();
       } finally {
         setIsUploadingInvoices(false);
@@ -1449,7 +1449,12 @@ export default function KanbanBoardPage() {
         handleCloseSccUpload();
         openSccReviewModal(
           cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
-          { notPlacedFiles: data.data?.not_placed_files ?? [], workflowId, isApprovedScc }
+          {
+            notPlacedFiles: data.data?.not_placed_files ?? [],
+            unassignedSccs: data.data?.unassigned_sccs ?? [],
+            workflowId,
+            isApprovedScc,
+          }
         );
       } finally {
         setIsUploadingSccDocuments(false);
@@ -1952,14 +1957,13 @@ export default function KanbanBoardPage() {
   const [selectedDispatchProofUploadCards, setSelectedDispatchProofUploadCards] = useState([]);
   const [isUploadingDispatchProof, setIsUploadingDispatchProof] = useState(false);
   const [dispatchProofUploadProgress, setDispatchProofUploadProgress] = useState(null);
-  const openDispatchProofReviewModal = useDispatchProofReviewStore(
-    (state) => state.openDispatchProofReviewModal
-  );
   const isLntDispatchProofUpload = useCallback(
     (cards) =>
-      cards.some((card) =>
-        isLntWorkflow(workflows.find((wf) => String(wf.id) === String(cardsById[card.id]?.workflow_id)))
-      ),
+      cards.some((card) => {
+        const boardCard = cardsById[card.id];
+        const workflow = workflows.find((wf) => String(wf.id) === String(boardCard?.workflow_id));
+        return isLntWorkflow(workflow) || isLntReadyToSubmit(workflow?.title, workflow?.columns?.[boardCard?.columnId]?.title);
+      }),
     [workflows, cardsById]
   );
 
@@ -1994,8 +1998,8 @@ export default function KanbanBoardPage() {
     setSelectedDispatchProofUploadCards([]);
   }, []);
 
-  /* Files go in chunks of DISPATCH_PROOF_FILES_PER_REQUEST; each response carries the latest state of every
-     card, so the last one wins per card, and unplaced files are collected for the review. */
+  /* Files go in chunks of DISPATCH_PROOF_FILES_PER_REQUEST. Each response says where the cards it placed a proof
+     on now sit (card_positions): the backend moves them on by itself, there is no review or confirm. */
   const handleUploadDispatchProof = useCallback(
     async ({ [DISPATCH_PROOF_FIELD_NAME]: proofs = [] }) => {
       const cards = selectedDispatchProofUploadCards;
@@ -2005,15 +2009,11 @@ export default function KanbanBoardPage() {
         return;
       }
 
-      /* L&T confirms the uploaded proofs in a review (da/confirm_dispatch_proofs moves the cards on); other
-         workflows upload for one card, which moves on by itself. */
-      const isLntUpload = isLntDispatchProofUpload(cards);
-
       const chunks = [];
       for (let start = 0; start < proofs.length; start += DISPATCH_PROOF_FILES_PER_REQUEST) {
         chunks.push(proofs.slice(start, start + DISPATCH_PROOF_FILES_PER_REQUEST));
       }
-      const reviewCardById = {};
+      const cardPositions = [];
       const notPlacedFiles = [];
       let receivedCount = 0;
       let failedMessage = null;
@@ -2039,12 +2039,7 @@ export default function KanbanBoardPage() {
           }
           receivedCount += data.data?.received_files?.length ?? chunk.length;
           notPlacedFiles.push(...(data.data?.not_placed_files ?? []));
-          (data.data?.cards ?? []).forEach((card) => {
-            reviewCardById[String(card.card_id)] = {
-              ...card,
-              proof: card.proof ?? reviewCardById[String(card.card_id)]?.proof ?? null,
-            };
-          });
+          cardPositions.push(...(data.data?.card_positions ?? []));
           setDispatchProofUploadProgress((prev) => ({ ...prev, done: prev.done + chunk.length }));
         }
 
@@ -2071,15 +2066,18 @@ export default function KanbanBoardPage() {
         }
         cards.forEach((card) => removeCardSelectionId(card.id));
         handleCloseDispatchProofUpload();
-        if (isLntUpload) {
-          openDispatchProofReviewModal(
-            cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
-            { notPlacedFiles }
-          );
-          return;
-        }
         if (notPlacedFiles.length) {
-          notify(`Could not place: ${notPlacedFiles.join(", ")}`, "error");
+          notify(
+            `Could not place: ${notPlacedFiles.map((file) => (typeof file === "string" ? file : file?.file_name)).join(", ")}`,
+            "error"
+          );
+        }
+        if (cardPositions.length) {
+          const columnName = cardPositions[0].column_name;
+          notify(
+            `${cardPositions.length} ${cardPositions.length === 1 ? "card" : "cards"} moved${columnName ? ` to ${columnName}` : " on"}`,
+            "success"
+          );
         }
         refetchBoard?.();
       } finally {
@@ -2092,9 +2090,7 @@ export default function KanbanBoardPage() {
       getBatchCallIds,
       removeCardSelectionId,
       handleCloseDispatchProofUpload,
-      isLntDispatchProofUpload,
       isMultiCardDispatchProofUpload,
-      openDispatchProofReviewModal,
       refetchBoard,
     ]
   );
@@ -2686,7 +2682,6 @@ export default function KanbanBoardPage() {
           expandedWorkflows={expandedWorkflows}
           collapsedColumns={collapsedColumns}
           maxColumnHeights={maxColumnHeights}
-          pinnedWorkflows={pinnedWorkflows}
           createDragEndHandler={createDragEndHandler}
           onSelectCard={handleSelectCard}
           onColumnHeaderClick={handleColumnHeaderClick}
@@ -2713,13 +2708,15 @@ export default function KanbanBoardPage() {
           onHeightChange={handleWorkflowColumnHeightChange}
           onToggleWorkflow={handleToggleWorkflow}
           onAccordionMenuClick={handleAccordionMenuClick}
-          onPinClick={handleWorkflowPinClick}
           isDarkMode={isDarkMode}
           layoutView={layoutView}
           selectedActionCardIds={selectedCardIds}
           onToggleCardSelect={handleToggleCardSelection}
           onCardSelectDragStart={handleCardSelectDragStart}
           onCardSelectDragEnter={handleCardSelectDragEnter}
+          cardScopeByWorkflow={cardScopeByWorkflow}
+          cardScopeLoadingByWorkflow={cardScopeLoadingByWorkflow}
+          onCardScopeChange={handleCardScopeChange}
         />
       </div>
 
@@ -2892,7 +2889,7 @@ export default function KanbanBoardPage() {
       <ArInvoiceReviewModal onConfirmed={refetchBoard} />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilCrewArInvoiceStore} />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilMarineArInvoiceStore} />
-      <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useLntArInvoiceStore} />
+      <LntArInvoiceReviewModal onConfirmed={refetchBoard} />
       <SignatureCheckModal
         onConfirmed={(result) => {
           [...(result?.moved_to_da ?? []), ...(result?.returned_to_scc_received ?? [])].forEach((card) => removeCardSelectionId(String(card.card_id)));
@@ -2997,7 +2994,6 @@ export default function KanbanBoardPage() {
               : dispatchProofUploadFields
         }
       />
-      <DispatchProofReviewModal onConfirmed={refetchBoard} />
 
       <SeCreationEmailModal
         show={showInvoiceDispatchEmailModal}

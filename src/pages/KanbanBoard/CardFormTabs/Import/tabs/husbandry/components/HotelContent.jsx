@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import PropTypes from "prop-types";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
@@ -7,42 +7,38 @@ import AttachmentsList from "../../appointment/AttachmentsList";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import hotelService, {
   extractHotelRequestsFromEnvelope,
-  flattenHotelRequestRows,
 } from "@/services/hotelService";
 import { useCallDetail } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
 import { buildPickupDateTime } from "@/store/TransportContent";
-import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
+import CrewPassRequestsTable from "./CrewPassRequestsTable";
+import { buildRequestCardGroups, formatCardDate, crewRankMeta } from "./requestCardGroups";
 import CrewSelectionField from "./CrewSelectionField";
+import { manualCrewIdsField, manualCrewIdsFromChange, buildCrewPayloadList } from "./crewPayloadIds";
+import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT, LAUNCH_HIRE_LOCATION_OPTIONS } from "./Husbandry.constants";
 
-const HOTEL_REQUEST_COLUMNS = [
-  {
-    key: "wo_number",
-    header: "Work Order",
-    accessor: (r) => r?.wo_number || r?.work_order_no || r?.hotel_request_id,
-    type: "workorder",
-  },
-  { key: "crew_name", header: "Crew", accessor: (r) => r?.crew_name ?? r?.crewName, type: "crew", perCrew: true },
-  { key: "hotel_name", header: "Hotel", accessor: (r) => r?.hotel_name ?? r?.hotelName },
-  {
-    key: "check_in",
-    header: "Check-in",
-    accessor: (r) => r?.check_in ?? r?.check_in_date ?? r?.checkin_datetime,
-    type: "date",
-  },
-  {
-    key: "check_out",
-    header: "Check-out",
-    accessor: (r) => r?.check_out ?? r?.check_out_date ?? r?.checkout_datetime,
-    type: "date",
-  },
-  {
-    key: "status",
-    header: "Status",
-    accessor: (r) => r?.status ?? r?.stay_status,
-    type: "status",
-  },
-  { key: "document", header: "Document", type: "document" },
+// One card per hotel request (same card list as CG / Zawil pass / Transport), crew listed inside.
+const buildHotelRequestGroups = (requests) =>
+  buildRequestCardGroups(requests, {
+    getId: (r) => r?.hotel_request_id ?? r?.id,
+    getCrewStatus: (crew, r) => crew?.stay_status ?? crew?.status ?? r?.status,
+    getDetails: (r) => ({
+      hotelName: r?.hotel_name ?? r?.hotelName ?? "",
+      checkIn: r?.checkin_datetime ?? r?.check_in ?? r?.check_in_date ?? "",
+      checkOut: r?.checkout_datetime ?? r?.check_out ?? r?.check_out_date ?? "",
+    }),
+  });
+
+const renderHotelTitle = (group) => (
+  <span className="cpr-route" title={group.hotelName}>
+    <span>{group.hotelName || "Hotel not set"}</span>
+  </span>
+);
+
+const getHotelFacts = (group) => [
+  group.checkIn ? `Check-in ${formatCardDate(group.checkIn, { withTime: true })}` : "Check-in not set",
+  group.checkOut ? `Check-out ${formatCardDate(group.checkOut, { withTime: true })}` : "Check-out not set",
 ];
 
 const REQUEST_EMAIL_ACCEPT_ATTR = ".msg,.eml,.pdf,.doc,.docx";
@@ -66,9 +62,15 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
   const [loadingHotels, setLoadingHotels] = useState(false);
   const [isSavingHotel, setIsSavingHotel] = useState(false);
   const [hotelRequests, setHotelRequests] = useState([]);
+  const hotelRequestGroups = useMemo(() => buildHotelRequestGroups(hotelRequests), [hotelRequests]);
   const [loadingHotelRequests, setLoadingHotelRequests] = useState(false);
 
   const callId = formValues.call_id || formValues.callId || formValues.card_call_id;
+  const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+    requestEmailField: "hotelRequestEmail",
+    crewField: "hotelSelectedCrew",
+  });
+  const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
 
   // Shared with the rest of the drawer (CardForm fetches it once per card).
   const { detail: callDetails } = useCallDetail(callId);
@@ -86,7 +88,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
     try {
       const response = await hotelService.getHotelRequests(callId);
       const list = extractHotelRequestsFromEnvelope(response);
-      setHotelRequests(flattenHotelRequestRows(list));
+      setHotelRequests(list);
       onRequestCountChange?.(list.length);
     } catch {
       setHotelRequests([]);
@@ -257,6 +259,8 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
       return;
     }
 
+    if (!validate()) return;
+
     if (!formValues.hotelId) {
       notify("Hotel is required.", "error", "top-center");
       return;
@@ -303,7 +307,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
       checkin_datetime: checkinDatetime,
       checkout_datetime: checkoutDatetime,
       remarks: formValues.hotelDescription || "",
-      crew: (formValues.hotelSelectedCrew || []).map((id) => ({ crew_change_id: Number(id) })),
+      crew: buildCrewPayloadList(formValues.hotelSelectedCrew, formValues[manualCrewIdsField("hotelSelectedCrew")]),
       launch_hire: isLaunchHire ? 1 : 0,
       location: isLaunchHire ? formValues.hotelLaunchHireLocation || "" : "",
       booking_datetime: isLaunchHire ? launchHireBookingDatetime : "",
@@ -335,6 +339,8 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
         "success",
         "top-center"
       );
+      resetValidation();
+      showSavedLineItems(response);
       handleChange("hotelId")({ target: { value: "" } });
       handleChange("hotelName")({ target: { value: "" } });
       handleChange("hotelCheckInDate")({ target: { value: "" } });
@@ -345,6 +351,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
       handleChange("hotelRequestEmail")({ target: { value: [] } });
       handleChange("hotelDocuments")({ target: { value: [] } });
       handleChange("hotelSelectedCrew")({ target: { value: [] } });
+      handleChange(manualCrewIdsField("hotelSelectedCrew"))({ target: { value: null } });
       handleChange("hotelLaunchHire")({ target: { value: true } });
       handleChange("hotelLaunchHireLocation")({ target: { value: "" } });
       handleChange("hotelLaunchHireBookingDate")({ target: { value: "" } });
@@ -359,10 +366,11 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
     } finally {
       setIsSavingHotel(false);
     }
-  }, [callId, formValues, fetchHotelRequests, isLaunchHire, handleChange]);
+  }, [callId, formValues, fetchHotelRequests, isLaunchHire, handleChange, validate, resetValidation, showSavedLineItems]);
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form hotel-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">
@@ -376,7 +384,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
                   titleClassName="crew-pass-request-details-card__title"
                 />
                 <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                <FormGroup icon="mail" label="Request Email *" accent={HOTEL_ACCENT}>
+                <FormGroup icon="mail" label="Request Email *" accent={HOTEL_ACCENT} error={fieldErrors.requestEmail}>
                   <FormField>
                     <div className="transport-upload-box">
                       <AttachmentsList
@@ -402,10 +410,14 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
                 <CrewSelectionField
                   callId={callId}
                   selected={formValues.hotelSelectedCrew || []}
-                  onChange={(ids) => handleChange("hotelSelectedCrew")({ target: { value: ids } })}
+                  onChange={(ids, meta) => {
+                    handleChange("hotelSelectedCrew")({ target: { value: ids } });
+                    handleChange(manualCrewIdsField("hotelSelectedCrew"))({ target: { value: manualCrewIdsFromChange(meta) } });
+                  }}
                   accent={HOTEL_ACCENT}
                   onGoToCrew={onGoToCrew}
                   uploadMode={crewUploadMode}
+                  error={fieldErrors.crew}
                 />
 
                 <FormGroup icon="calendar" label="Stay Details" accent={HOTEL_ACCENT}>
@@ -491,7 +503,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
                   </FormGroup>
                 )}
 
-                <FormGroup icon="folder" label="Documents *" accent={HOTEL_ACCENT}>
+                <FormGroup icon="folder" label="Documents" accent={HOTEL_ACCENT}>
                   <FormField className="cf-field-full">
                     <div className="transport-upload-box">
                       <AttachmentsList
@@ -539,17 +551,21 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
             </div>
 
             <div className="general-info-right crew-pass-requests-sidebar">
-              <HusbandryServiceRequestsTable
+              <CrewPassRequestsTable
                 title="Hotel requests"
                 subtitle="All hotel bookings for this job"
                 icon="list"
-                requests={hotelRequests}
+                groups={hotelRequestGroups}
                 loading={loadingHotelRequests}
-                columns={HOTEL_REQUEST_COLUMNS}
                 emptyMessage="No hotel requests found"
-                serviceType="hotel"
+                passType="hotel"
                 accent={HOTEL_ACCENT}
-                groupKey="hotel_request_id"
+                renderGroupTitle={renderHotelTitle}
+                getGroupFacts={getHotelFacts}
+                getGroupDocumentUrl={(group) => group.requestDocumentUrl}
+                getGroupSearchText={(group) => group.hotelName}
+                getCrewMeta={crewRankMeta}
+                searchPlaceholder="Search crew or hotel"
               />
             </div>
           </div>

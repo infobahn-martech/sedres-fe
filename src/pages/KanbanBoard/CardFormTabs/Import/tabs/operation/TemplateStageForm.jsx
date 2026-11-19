@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiAlertTriangle, FiExternalLink, FiEye, FiLayers } from "react-icons/fi";
+import { FiAlertTriangle, FiExternalLink, FiEye, FiFileText, FiLayers, FiX } from "react-icons/fi";
 import CardFormEmptyState from "../../../shared/components/CardFormEmptyState";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
@@ -9,11 +9,11 @@ import arrivalService from "@/services/arrivalService";
 import appointmentAcceptanceService from "@/services/appointmentAcceptanceService";
 import useArrivalReducer from "@/store/ArrivalReducer";
 import DateTimePickerField from "../../../shared/components/DateTimePickerField";
+import DefaultLineItemsModal from "../appointment/DefaultLineItemsModal";
 import {
   buildTemplateFieldDisplay,
   findTimeObjectRowForField,
   flattenTimeObjects,
-  getTemplateOperationSubtabs,
   normalizeTemplateKey,
   getTemplateFieldType,
   hasExistingTemplateFile,
@@ -106,7 +106,7 @@ const WINDY_OPEN_URL = "https://www.windy.com/27.284/49.109?wind,27.284,49.109,8
 
 const isBadWeatherValue = (value) => normalizeTemplateKey(value) === "bad_weather";
 
-const WindyWeatherMap = () => (
+const WindyWeatherMap = ({ iframe }) => (
   <div className="stage-windy-card">
     <div className="stage-windy-card__header">
       <span className="stage-windy-card__icon" aria-hidden>
@@ -128,10 +128,19 @@ const WindyWeatherMap = () => (
       </a>
     </div>
     <div className="stage-windy-card__map">
-      <iframe title="Windy weather map" src={WINDY_EMBED_URL} loading="lazy" allowFullScreen />
+      <iframe
+        title={iframe?.title || "Windy weather map"}
+        src={iframe?.src || WINDY_EMBED_URL}
+        loading="lazy"
+        allowFullScreen
+      />
     </div>
   </div>
 );
+
+WindyWeatherMap.propTypes = {
+  iframe: PropTypes.shape({ title: PropTypes.string, src: PropTypes.string }),
+};
 
 const HIDDEN_FIELD_TYPES = new Set(["iframe"]);
 
@@ -152,6 +161,28 @@ const getApiErrorMessage = (error, fallback) =>
 
 const openFile = (url) => {
   if (url) window.open(url, "_blank", "noopener,noreferrer");
+};
+
+// The SABER certificate upload is a template "file" field labelled / keyed with "SABER".
+const isSaberField = (field) =>
+  getTemplateFieldType(field) === "file" &&
+  [field?.field_label, field?.field_key, field?.system_binding_key].some((value) =>
+    /saber/i.test(String(value ?? ""))
+  );
+
+// Moves the SABER attachment field directly under the SABER select it depends on
+// (`show_when_field_id`), regardless of its row_no / col_no.
+const placeSaberFieldUnderSelect = (fields) => {
+  const saberIndex = fields.findIndex(isSaberField);
+  if (saberIndex < 0) return fields;
+  const saberField = fields[saberIndex];
+  const controllerId = String(saberField.show_when_field_id ?? "").trim();
+  if (!controllerId) return fields;
+  const rest = fields.filter((_, index) => index !== saberIndex);
+  const controllerIndex = rest.findIndex((field) => String(field?.field_id) === controllerId);
+  if (controllerIndex < 0) return fields;
+  rest.splice(controllerIndex + 1, 0, saberField);
+  return rest;
 };
 
 // Pre Arrival / Arrival / Departure rendered from the call's template subtab (`stage`) and
@@ -178,13 +209,41 @@ function TemplateStageForm({
   // ({ detail, stage }) then drives this stage's fields, values and email template until the shared
   // call detail refreshes again (e.g. after a save).
   const [freshData, setFreshData] = useState(null);
+  // A SABER change requests call_file/get_saber_attachment instead; its `saber_attachment`
+  // field replaces the matching template field (saved file name / url) until the detail refreshes.
+  const [saberAttachmentField, setSaberAttachmentField] = useState(null);
+  // A Weather Forecast change requests call_file/get_weather_map; its `weather_map` field
+  // (iframe title / src) is shown under the Weather Forecast select.
+  const [weatherMapField, setWeatherMapField] = useState(null);
   useEffect(() => {
     setFreshData(null);
   }, [detail]);
   const activeDetail = freshData?.detail ?? detail;
   const activeStage = freshData?.stage ?? stage;
 
-  const fields = useMemo(() => sortTemplateFields(activeStage?.fields), [activeStage]);
+  const fields = useMemo(() => {
+    const base = Array.isArray(activeStage?.fields) ? activeStage.fields : [];
+    if (!saberAttachmentField) return placeSaberFieldUnderSelect(sortTemplateFields(base));
+    const overrideId = String(saberAttachmentField.field_id ?? "").trim();
+    const matchIndex = base.findIndex(
+      (field) => (overrideId && String(field?.field_id) === overrideId) || isSaberField(field)
+    );
+    const responseField = {
+      ...saberAttachmentField,
+      value: saberAttachmentField.value ?? null,
+      file_url: saberAttachmentField.file_url ?? null,
+    };
+    let next = base;
+    if (matchIndex >= 0) {
+      // Template already has the SABER file field — keep its id, take the response's data.
+      next = base.slice();
+      next[matchIndex] = { ...base[matchIndex], ...responseField, field_id: base[matchIndex].field_id };
+    } else if (overrideId) {
+      // Template has no SABER file field — render the one from get_saber_attachment.
+      next = [...base, responseField];
+    }
+    return placeSaberFieldUnderSelect(sortTemplateFields(next));
+  }, [activeStage, saberAttachmentField]);
   const timeObjects = useMemo(() => flattenTimeObjects(activeDetail), [activeDetail]);
 
   // Saved values from the (shared) call detail; recomputed after a save refreshes it.
@@ -202,6 +261,14 @@ function TemplateStageForm({
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(null); // "save" | "report" | null
   const submittingRef = useRef(false);
+  // Changing the SABER select opens the sales order line items modal
+  // (sales_order/get_so_items_by_call/{call_id}?so_type=Marine).
+  const [lineItemsCallId, setLineItemsCallId] = useState(null);
+  const handleLineItemsDone = () => setLineItemsCallId(null);
+  const openLineItemsForSaber = () => {
+    const resolvedCallId = String(callId ?? "").trim();
+    if (resolvedCallId) setLineItemsCallId(resolvedCallId);
+  };
   // The call detail's subtab `email_template` is the composer's source; the report template
   // endpoints are only a fallback for templates that don't carry one.
   const detailEmailTemplate = activeStage?.emailTemplate ?? null;
@@ -264,7 +331,6 @@ function TemplateStageForm({
     });
     return map;
   }, [fields]);
-  const templateRequestSeqRef = useRef(0);
 
   // Current saber / weather_forecast values as query params; the JSON key drives the effect below.
   const triggerParams = {};
@@ -280,52 +346,80 @@ function TemplateStageForm({
   );
   const lastTriggerParamsKeyRef = useRef(triggerParamsKey);
 
-  const refreshEmailTemplateForTriggers = async (params) => {
+  // SABER change → GET call_file/get_saber_attachment/{callId}?saber=<value> (not get_call_detail).
+  const saberRequestSeqRef = useRef(0);
+  const refreshSaberAttachment = async (saber) => {
     const resolvedCallId = String(callId ?? "").trim();
     if (!resolvedCallId) return;
-    const seq = ++templateRequestSeqRef.current;
+    const seq = ++saberRequestSeqRef.current;
     try {
-      const { data } = await callFileService.getCallDetail(resolvedCallId, params);
-      // Only the latest selection's response is bound.
-      if (!aliveRef.current || seq !== templateRequestSeqRef.current) return;
-      const freshDetail = data?.data ?? null;
-      const freshStage = (getTemplateOperationSubtabs(freshDetail) || []).find(
-        (tab) => String(tab.tabId) === String(stage?.tabId)
-      );
-      if (!freshDetail || !freshStage) return;
-
-      // Rebind this stage's fields and values from the fresh response. The SABER / Weather
-      // selections stay as picked; every other field takes the response's value.
-      const triggerIds = new Set(Object.values(triggerFields).map((field) => String(field.field_id)));
-      setFreshData({ detail: freshDetail, stage: freshStage });
-      setEdits((prev) => {
-        const kept = {};
-        Object.entries(prev).forEach(([fieldId, value]) => {
-          if (triggerIds.has(String(fieldId))) kept[fieldId] = value;
-        });
-        return kept;
-      });
-      setErrors({});
-
-      if (freshStage.emailTemplate && reportTypeRef.current === "arrival") {
-        const template = extractReportTemplateFields(freshStage.emailTemplate);
-        // An explicit saber / weather change re-applies the template even over composer edits.
-        reportTouchedRef.current = false;
-        setReportDraft((prev) => mergeReportTemplate(prev, template));
-      }
+      const { data } = await callFileService.getSaberAttachment(resolvedCallId, { saber });
+      if (!aliveRef.current || seq !== saberRequestSeqRef.current) return;
+      const attachment = data?.data?.saber_attachment;
+      setSaberAttachmentField(attachment && typeof attachment === "object" ? attachment : { value: null, file_url: null });
     } catch (error) {
-      if (aliveRef.current && seq === templateRequestSeqRef.current) {
-        notify(getApiErrorMessage(error, "Failed to refresh the email template."), "error");
+      if (aliveRef.current && seq === saberRequestSeqRef.current) {
+        notify(getApiErrorMessage(error, "Failed to load the SABER attachment."), "error");
       }
     }
   };
 
-  // Re-request get_call_detail whenever the user changes SABER / Weather Forecast.
+  // On open (and after the call detail refreshes, e.g. a save), bind the SABER attachment
+  // field for the saved SABER value.
+  const initialSaber = triggerFields.saber ? JSON.parse(triggerParamsKey).saber ?? "" : "";
+  useEffect(() => {
+    if (isViewOnly || !initialSaber) return;
+    refreshSaberAttachment(initialSaber);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [callId, detail, isViewOnly, Boolean(triggerFields.saber)]);
+
+  // Weather Forecast change → GET call_file/get_weather_map/{callId}?weather_forecast=<value>.
+  const weatherRequestSeqRef = useRef(0);
+  const refreshWeatherMap = async (weatherForecast) => {
+    const resolvedCallId = String(callId ?? "").trim();
+    if (!resolvedCallId) return;
+    const seq = ++weatherRequestSeqRef.current;
+    try {
+      const { data } = await callFileService.getWeatherMap(resolvedCallId, {
+        weather_forecast: weatherForecast,
+      });
+      if (!aliveRef.current || seq !== weatherRequestSeqRef.current) return;
+      const payload = data?.data ?? {};
+      const mapField = payload.weather_map;
+      setWeatherMapField(
+        Number(payload.is_bad_weather) === 1 && mapField && typeof mapField === "object" ? mapField : null
+      );
+    } catch (error) {
+      if (aliveRef.current && seq === weatherRequestSeqRef.current) {
+        notify(getApiErrorMessage(error, "Failed to load the weather map."), "error");
+      }
+    }
+  };
+
+  // On open (and after the call detail refreshes), bind the weather map for the saved value.
+  const initialWeatherForecast = triggerFields.weather_forecast
+    ? JSON.parse(triggerParamsKey).weather_forecast ?? ""
+    : "";
+  useEffect(() => {
+    if (isViewOnly || !initialWeatherForecast) return;
+    refreshWeatherMap(initialWeatherForecast);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [callId, detail, isViewOnly, Boolean(triggerFields.weather_forecast)]);
+
+  // SABER change → get_saber_attachment; Weather Forecast change → get_weather_map.
   useEffect(() => {
     if (triggerParamsKey === lastTriggerParamsKeyRef.current) return;
+    const prevParams = JSON.parse(lastTriggerParamsKeyRef.current || "{}");
     lastTriggerParamsKeyRef.current = triggerParamsKey;
     if (!hasTriggerEdit || isViewOnly) return;
-    refreshEmailTemplateForTriggers(JSON.parse(triggerParamsKey));
+    const nextParams = JSON.parse(triggerParamsKey);
+    if (nextParams.saber !== prevParams.saber) {
+      refreshSaberAttachment(nextParams.saber ?? "");
+      if (nextParams.saber) openLineItemsForSaber();
+    }
+    if (nextParams.weather_forecast !== prevParams.weather_forecast) {
+      refreshWeatherMap(nextParams.weather_forecast ?? "");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerParamsKey]);
 
@@ -345,9 +439,34 @@ function TemplateStageForm({
     (field) => !HIDDEN_FIELD_TYPES.has(getTemplateFieldType(field)) && isFieldVisible(field)
   );
 
+  // Bad Weather highlights the time objects (date / time fields) for a re-check, as in the legacy
+  // Pre Arrival form. A field drops the highlight once the user edits it; re-selecting Bad Weather
+  // highlights them all again.
+  const weatherForecastField = triggerFields.weather_forecast;
+  const isBadWeatherSelected = Boolean(
+    weatherForecastField && isBadWeatherValue(getValue(weatherForecastField.field_id))
+  );
+  const [recheckedTimeObjectIds, setRecheckedTimeObjectIds] = useState(() => new Set());
+  const isTimeObjectField = (field) => ["datetime", "timeobject"].includes(getTemplateFieldType(field));
+  const shouldHighlightTimeObject = (field) =>
+    isBadWeatherSelected && isTimeObjectField(field) && !recheckedTimeObjectIds.has(String(field.field_id));
+
   const setFieldValue = (fieldId, value) => {
     setEdits((prev) => ({ ...prev, [fieldId]: value }));
     clearError(fieldId);
+    if (weatherForecastField && String(fieldId) === String(weatherForecastField.field_id)) {
+      setRecheckedTimeObjectIds(new Set());
+      if (isBadWeatherValue(value)) {
+        notify("Bad weather selected. Please re-check ETA and clearance time objects.", "warning");
+      }
+      return;
+    }
+    if (isBadWeatherSelected) {
+      const field = fields.find((item) => String(item.field_id) === String(fieldId));
+      if (field && isTimeObjectField(field)) {
+        setRecheckedTimeObjectIds((prev) => new Set(prev).add(String(fieldId)));
+      }
+    }
   };
 
   const setFieldFile = (fieldId, file) => {
@@ -422,11 +541,49 @@ function TemplateStageForm({
   const additionalRowsRef = useRef(additionalRows);
   additionalRowsRef.current = additionalRows;
 
+  // Saved additional (user-added "+") time objects from the call detail, by id and by name.
+  const additionalTimeObjectIndex = useMemo(() => {
+    const byId = new Map();
+    const byLabel = new Map();
+    const source = Array.isArray(activeDetail?.time_objects) ? activeDetail.time_objects.flat(Infinity) : [];
+    source.forEach((to) => {
+      if (!to || typeof to !== "object" || !(to.is_additional ?? to.isAdditional)) return;
+      const id = String(to.time_object_id ?? to.timeObjectId ?? to.id ?? "").trim();
+      if (!id) return;
+      byId.set(id, id);
+      const label = normalizeTemplateKey(to.time_object_name ?? to.time_object ?? to.event_name ?? "");
+      if (label) byLabel.set(label, id);
+    });
+    return { byId, byLabel };
+  }, [activeDetail]);
+
+  // A template field that renders a saved additional time object → that time object's id
+  // (so it gets the same remove button as a freshly added row). Core fields return null.
+  const getAdditionalTimeObjectId = (field) => {
+    // The call detail injects saved additional time objects as fields "call_time_object_<id>";
+    // they are not part of the call's template, so save_stage rejects them.
+    const injected = /^call_time_object_(.+)$/.exec(String(field?.field_id ?? "").trim());
+    if (injected) return injected[1];
+    if (!["datetime", "timeobject"].includes(getTemplateFieldType(field))) return null;
+    const explicitId = String(field?.time_object_id ?? field?.timeobject_id ?? "").trim();
+    if (explicitId && additionalTimeObjectIndex.byId.has(explicitId)) return explicitId;
+    if (explicitId && (field?.is_additional ?? field?.isAdditional)) return explicitId;
+    if (explicitId) return null;
+    const candidates = [normalizeTemplateKey(field?.field_key), normalizeTemplateKey(field?.field_label)].filter(Boolean);
+    const match = candidates.find((key) => additionalTimeObjectIndex.byLabel.has(key));
+    return match ? additionalTimeObjectIndex.byLabel.get(match) : null;
+  };
+
   // Saved additional rows come from the call detail (call_file/get_call_detail) `time_objects`.
+  // Rows the template already renders as a field are skipped so they don't show twice.
   const savedAdditionalRows = useMemo(() => {
     const source = Array.isArray(activeDetail?.time_objects) ? activeDetail.time_objects.flat(Infinity) : [];
-    return mapCallTimeObjectsToAdditionalRows(source, { stageId });
-  }, [activeDetail, stageId]);
+    const renderedIds = new Set(fields.map(getAdditionalTimeObjectId).filter(Boolean));
+    return mapCallTimeObjectsToAdditionalRows(source, { stageId }).filter(
+      (row) => row?.id == null || !renderedIds.has(String(row.id).trim())
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDetail, stageId, fields, additionalTimeObjectIndex]);
 
   // Whenever the call detail refreshes, show its saved rows plus any unsaved local drafts.
   useEffect(() => {
@@ -473,6 +630,24 @@ function TemplateStageForm({
       return;
     }
     setAdditionalRows((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Remove a saved additional time object that the template renders as a regular field.
+  const [removingTimeObjectId, setRemovingTimeObjectId] = useState(null);
+  const handleRemoveTemplateTimeObject = async (timeObjectId) => {
+    const resolvedCallId = String(callId ?? "").trim();
+    if (!timeObjectId || !resolvedCallId || removingTimeObjectId) return;
+    setRemovingTimeObjectId(timeObjectId);
+    try {
+      await deleteCallTimeObjectAction({ timeObjectId, callId: resolvedCallId, stageId });
+      if (!aliveRef.current) return;
+      await refetchCallDetail?.();
+      if (aliveRef.current) setReportTemplateVersion((version) => version + 1);
+    } catch (error) {
+      notify(getApiErrorMessage(error, "Failed to delete time object."), "error");
+    } finally {
+      if (aliveRef.current) setRemovingTimeObjectId(null);
+    }
   };
 
   const handleReportDraftChange = (name, value) => {
@@ -591,8 +766,25 @@ function TemplateStageForm({
     }
 
     const fieldsPayload = {};
+    // Additional time objects aren't template fields: edited ones are saved through
+    // save_call_time_object instead of save_stage.
+    const editedTimeObjectRows = [];
     visibleFields.forEach((field) => {
       if (getTemplateFieldType(field) === "file") return;
+      const timeObjectId = getAdditionalTimeObjectId(field);
+      if (timeObjectId) {
+        if (Object.prototype.hasOwnProperty.call(edits, field.field_id)) {
+          const value = toStagePayloadValue(field, getValue(field.field_id));
+          if (value) {
+            editedTimeObjectRows.push({
+              id: timeObjectId,
+              label: String(field.field_label || field.field_key || "").trim(),
+              time_object_value: value,
+            });
+          }
+        }
+        return;
+      }
       fieldsPayload[field.field_id] = toStagePayloadValue(field, getValue(field.field_id));
     });
 
@@ -601,9 +793,13 @@ function TemplateStageForm({
     formData.append("tab_id", String(stage.tabId));
     formData.append("fields", JSON.stringify(fieldsPayload));
     // Only newly selected files are uploaded; existing attachments are left untouched.
-    const visibleFieldIds = new Set(visibleFields.map((field) => String(field.field_id)));
+    const visibleFieldsById = new Map(visibleFields.map((field) => [String(field.field_id), field]));
     Object.entries(newFiles).forEach(([fieldId, file]) => {
-      if (file instanceof File && visibleFieldIds.has(String(fieldId))) formData.append(`field_${fieldId}`, file);
+      const field = visibleFieldsById.get(String(fieldId));
+      if (!(file instanceof File) || !field) return;
+      // Fields from get_saber_attachment carry their own upload key (e.g. "saber_attachments[]").
+      const uploadKey = String(field.upload_key ?? "").trim() || `field_${fieldId}`;
+      formData.append(uploadKey, file);
     });
     // The composer's report goes with every save_stage call (Save and Send) once it has a recipient,
     // e.g. report = {"from_email":"info@x.com","to_email":"agent@x.com","cc_emails":"ops@x.com",
@@ -628,6 +824,14 @@ function TemplateStageForm({
       const body = response?.data;
       if (body?.status === "error" || body?.status === false) {
         throw new Error(body?.message || "Unable to save this stage.");
+      }
+      for (const row of editedTimeObjectRows) {
+        await commitAdditionalTimeObject({
+          row,
+          callId: resolvedCallId,
+          stageId,
+          saveCallTimeObject: saveCallTimeObjectAction,
+        });
       }
       if (!aliveRef.current) return;
       // Rebind saved values / attachment URLs from a fresh call detail before clearing edits.
@@ -706,7 +910,7 @@ function TemplateStageForm({
     const type = getTemplateFieldType(field);
     const value = getValue(id);
     const hasError = Boolean(errors[id]);
-    const disabled = isViewOnly || Boolean(submitting);
+    const disabled = isViewOnly;
 
     if (type === "datetime" || type === "timeobject") {
       const [datePart = "", timePart = ""] = String(value || "").split(" ");
@@ -800,34 +1004,72 @@ function TemplateStageForm({
       const existingName = !isEmptyTemplateValue(field.value) ? String(field.value) : "";
       const existingUrl = String(field.file_url ?? "").trim();
       const pending = newFiles[id];
+      const savedName = existingName || existingUrl.split("/").pop();
+      const hasSaved = Boolean(existingName || existingUrl);
       return (
-        <>
-          {(existingName || existingUrl) && (
-            <div className="detail-attachment-row">
-              <span className="detail-attachment-name">{existingName || existingUrl.split("/").pop()}</span>
+        <div className="operation-file-field">
+          {hasSaved && (
+            <div className={`operation-file-card${pending ? " operation-file-card--replaced" : ""}`}>
+              <span className="operation-file-card__icon" aria-hidden>
+                <FiFileText size={16} />
+              </span>
+              <span className="operation-file-card__body">
+                <span className="operation-file-card__name" title={savedName}>
+                  {savedName}
+                </span>
+                <span className="operation-file-card__meta">
+                  {pending ? "Will be replaced on save" : "Uploaded"}
+                </span>
+              </span>
               <button
                 type="button"
-                className="detail-attachment-view-btn"
+                className="operation-file-card__action"
                 onClick={() => openFile(existingUrl)}
                 disabled={!existingUrl}
                 title={existingUrl ? "View attachment" : "File URL not available"}
+                aria-label={`View ${savedName}`}
               >
-                <FiEye size={14} strokeWidth={2.2} aria-hidden />
+                <FiEye size={15} strokeWidth={2.2} aria-hidden />
               </button>
             </div>
           )}
-          <OperationFileUpload
-            files={pending ? [{ name: pending.name }] : []}
-            onAddFiles={(attachments) => setFieldFile(id, attachments[0]?.file ?? null)}
-            isViewOnly={disabled}
-            ariaLabel={`Upload ${field.field_label || "file"}`}
-          />
-          {pending && !disabled && (
-            <button type="button" className="btn btn-link btn-sm p-0" onClick={() => setFieldFile(id, null)}>
-              Remove selected file
-            </button>
+          {pending && (
+            <div className="operation-file-card operation-file-card--pending">
+              <span className="operation-file-card__icon" aria-hidden>
+                <FiFileText size={16} />
+              </span>
+              <span className="operation-file-card__body">
+                <span className="operation-file-card__name" title={pending.name}>
+                  {pending.name}
+                </span>
+                <span className="operation-file-card__meta">New file · uploads on save</span>
+              </span>
+              {!disabled && (
+                <button
+                  type="button"
+                  className="operation-file-card__action operation-file-card__action--danger"
+                  onClick={() => setFieldFile(id, null)}
+                  title="Remove selected file"
+                  aria-label={`Remove ${pending.name}`}
+                >
+                  <FiX size={15} strokeWidth={2.2} aria-hidden />
+                </button>
+              )}
+            </div>
           )}
-        </>
+          {!disabled && (
+            <OperationFileUpload
+              files={[]}
+              onAddFiles={(attachments) => {
+                const file = attachments[0]?.file ?? null;
+                setFieldFile(id, file);
+              }}
+              isViewOnly={disabled}
+              ariaLabel={`Upload ${field.field_label || "file"}`}
+              prompt={hasSaved || pending ? "Drop a file to replace, or" : undefined}
+            />
+          )}
+        </div>
       );
     }
     if (TEXT_INPUT_TYPES[type]) {
@@ -882,17 +1124,41 @@ function TemplateStageForm({
                     }
                   />
                 ) : (
-                  visibleFields.map((field) => (
+                  visibleFields.map((field) => {
+                    const fieldLabel = `${field.field_label || field.field_key || "Field"}${isTemplateFieldRequired(field) ? " *" : ""}`;
+                    const additionalTimeObjectId = getAdditionalTimeObjectId(field);
+                    const showRemove = Boolean(additionalTimeObjectId) && !isViewOnly && canDeleteTimeObject;
+                    return (
                     <FormField
                       key={field.field_id}
-                      label={`${field.field_label || field.field_key || "Field"}${isTemplateFieldRequired(field) ? " *" : ""}`}
+                      label={showRemove ? undefined : fieldLabel}
+                      className={
+                        shouldHighlightTimeObject(field) ? "prearrival-timeobject-highlight is-warning" : ""
+                      }
                     >
+                      {showRemove && (
+                        <div className="operation-additional-time-object-label-row">
+                          <label>{fieldLabel}</label>
+                          <button
+                            type="button"
+                            className="operation-additional-time-object-remove-btn"
+                            onClick={() => handleRemoveTemplateTimeObject(additionalTimeObjectId)}
+                            disabled={removingTimeObjectId === additionalTimeObjectId}
+                            aria-label={`Remove ${field.field_label || field.field_key || "time object"}`}
+                            title="Remove"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )}
                       {renderInput(field)}
                       {errors[field.field_id] && <span className="cf-field-error">{errors[field.field_id]}</span>}
                       {normalizeTemplateKey(field.field_key) === "weather_forecast" &&
-                        isBadWeatherValue(getValue(field.field_id)) && <WindyWeatherMap />}
+                        isBadWeatherValue(getValue(field.field_id)) &&
+                        weatherMapField?.iframe?.src && <WindyWeatherMap iframe={weatherMapField.iframe} />}
                     </FormField>
-                  ))
+                    );
+                  })
                 )}
                 <AdditionalTimeObjectsFields
                   value={additionalRows}
@@ -933,10 +1199,11 @@ function TemplateStageForm({
           <OperationSaveSection
             isViewOnly={isViewOnly}
             onSave={() => submit({ withReport: false })}
-            isSaving={Boolean(submitting)}
+            isSaving={submitting === "save"}
           />
         </div>
       </FormSection>
+      {lineItemsCallId && <DefaultLineItemsModal callId={lineItemsCallId} soType="Marine" onDone={handleLineItemsDone} readOnly />}
     </div>
   );
 }

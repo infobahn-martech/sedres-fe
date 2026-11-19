@@ -14,6 +14,7 @@ import '../../../design/scss/prospect-modal.scss';
 import '../../../design/scss/modal-designs.scss';
 import '../../../design/scss/form-designs.scss';
 import CustomModal from '../../../components/CustomModal';
+import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 
 // Mock data – replace with API later
 const MOCK_SUMMARY = {
@@ -626,23 +627,21 @@ const Dashboard = () => {
                                                                                     <td>{crew.visa}</td>
                                                                                     <td>{crew.iqama ?? '—'}</td>
                                                                                     <td>
-                                                                                        <input
-                                                                                            type="datetime-local"
-                                                                                            className="form-control form-control-sm vendor-crew-datetime-input"
-                                                                                            value={getCrewCheckIn(rowId, i, crew)}
-                                                                                            onChange={(e) =>
-                                                                                                setCrewCheckIn(rowId, i, e.target.value)
+                                                                                        <DateTimePickerField
+                                                                                            dateValue={getCrewCheckIn(rowId, i, crew)}
+                                                                                            onDateTimeChange={({ date, time }) =>
+                                                                                                setCrewCheckIn(rowId, i, date ? `${date}T${time || "00:00"}` : "")
                                                                                             }
+                                                                                            placeholder="DD/MM/YYYY HH:mm"
                                                                                         />
                                                                                     </td>
                                                                                     <td>
-                                                                                        <input
-                                                                                            type="datetime-local"
-                                                                                            className="form-control form-control-sm vendor-crew-datetime-input"
-                                                                                            value={getCrewCheckOut(rowId, i, crew)}
-                                                                                            onChange={(e) =>
-                                                                                                setCrewCheckOut(rowId, i, e.target.value)
+                                                                                        <DateTimePickerField
+                                                                                            dateValue={getCrewCheckOut(rowId, i, crew)}
+                                                                                            onDateTimeChange={({ date, time }) =>
+                                                                                                setCrewCheckOut(rowId, i, date ? `${date}T${time || "00:00"}` : "")
                                                                                             }
+                                                                                            placeholder="DD/MM/YYYY HH:mm"
                                                                                         />
                                                                                     </td>
                                                                                 </tr>

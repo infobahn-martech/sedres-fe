@@ -10,6 +10,7 @@ import SelectWorkflowModal from './components/SelectWorkflowModal';
 import WorkspacesSideNavPanel from './components/WorkspacesSideNavPanel';
 import OutlookModal from './components/OutlookModal';
 import MyAccountsModal from '../Header/MyAccountsModal';
+import LogoutConfirmationModal from '../../components/LogoutConfirmationModal';
 import OnStationModal from '../Header/OnStationModal';
 import ToolsMenu, { ToolModals } from '../Header/ToolsMenu';
 import '../../design/scss/common.scss';
@@ -45,7 +46,7 @@ import {
 // 🆕 Kanban sidebar icons + tooltip
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
-import { FiPlus, FiInbox, FiPlusCircle, FiMail, FiEdit3, FiMapPin, FiLayers, FiList, FiChevronUp, FiChevronDown } from 'react-icons/fi';
+import { FiPlus, FiInbox, FiPlusCircle, FiEdit3, FiMapPin, FiLayers, FiList, FiChevronUp, FiChevronDown } from 'react-icons/fi';
 import TaskCardModal from '../../pages/TaskCard';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
 import useWorkSpaceReducer from '../../store/WorkSpaceReducer';
@@ -115,7 +116,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     userProfile?.user?.role_id ||
     userProfile?.data?.role_id;
   const isPortSupervisorRole = String(userRoleId) === '23';
-  const { hasPermission, hasAnyPermission } = usePermissions();
+  const { hasPermission, hasAnyPermission, hasModule } = usePermissions();
   // User Management → Users is fully migrated to the new permission system:
   // the backend permission response is authoritative here, no legacy OR.
   const canViewUsersMenu = hasPermission({
@@ -149,31 +150,26 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     Boolean(kanbanBoardIdForEditWorkflow) &&
     String(kanbanBoardIdForEditWorkflow).toLowerCase() !== 'operator';
 
+  // On Station: legacy full-sidebar roles OR the ON_STATION module permission,
+  // so custom roles (new role_ids) get it when granted in Permissions.
+  const canViewOnStation = kanbanFullSidebar || isPortSupervisorRole || hasModule(PERMISSION_MODULES.ON_STATION);
+
   const kanbanBoardIcons = useMemo(() => {
-    if (kanbanFullSidebar || isPortSupervisorRole) {
-      const icons = canAddCard ? [{ id: 1, icon: FiPlus, label: 'Add' }] : [];
-      if (showEditWorkflowSidebarIcon) {
-        icons.push({ id: 9, icon: FiEdit3, label: 'Edit Workflow' });
-        icons.push({ id: 12, icon: FiList, label: 'Select Workflow' });
-      }
-      icons.push(
-        { id: 10, icon: FiMapPin, label: 'On Station' },
-        { id: 11, icon: FiLayers, label: 'Task' }
-        // { id: 7, icon: FiMail, label: 'Outlook' },
-      );
-      return icons;
-    }
-    const icons = [];
+    // Add is driven purely by KANBAN_CARD/ADD_CARD permissions (it already was
+    // for full-sidebar roles); previously other roles never saw it at all.
+    const icons = canAddCard ? [{ id: 1, icon: FiPlus, label: 'Add' }] : [];
     if (showEditWorkflowSidebarIcon) {
       icons.push({ id: 9, icon: FiEdit3, label: 'Edit Workflow' });
-      icons.push({ id: 12, icon: FiList, label: 'Select Workflow' });
     }
-    icons.push(
-      { id: 11, icon: FiLayers, label: 'Task' },
-      { id: 7, icon: FiMail, label: 'Outlook' }
-    );
+    // Select Workflow is navigation only, so every user gets it.
+    icons.push({ id: 12, icon: FiList, label: 'Select Workflow' });
+    if (canViewOnStation) {
+      icons.push({ id: 10, icon: FiMapPin, label: 'On Station' });
+    }
+    icons.push({ id: 11, icon: FiLayers, label: 'Task' });
+    // Outlook menu is hidden for all roles.
     return icons;
-  }, [showEditWorkflowSidebarIcon, kanbanFullSidebar, isPortSupervisorRole, canAddCard]);
+  }, [showEditWorkflowSidebarIcon, canAddCard, canViewOnStation]);
 
   const workspacesIcons = [
     { id: 4, icon: FiInbox, label: 'Workspaces' },
@@ -200,6 +196,8 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   const [showDashboardsModal, setShowDashboardsModal] = useState(false);
   const [showAddDashboardModal, setShowAddDashboardModal] = useState(false);
   const [showMyAccountsModal, setShowMyAccountsModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const doLogout = useAuthReducer((state) => state.doLogout);
   const [showOnStationModal, setShowOnStationModal] = useState(false);
   const [showOutlookModal, setShowOutlookModal] = useState(false);
   const [showSelectWorkflowModal, setShowSelectWorkflowModal] = useState(false);
@@ -405,7 +403,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
         { menu: 'Group Email', to: '/group-email', hasPermission: true },
         { menu: 'Billing Instruction', to: '/billing-instruction', hasPermission: true },
         { menu: 'Client Tariff', to: '/customer-pricing', hasPermission: true },
-        { menu: 'Customer Pricing Infobhan', to: '/customer-pricing-infobhan', hasPermission: true },
+        // { menu: 'Customer Pricing Infobhan', to: '/customer-pricing-infobhan', hasPermission: true },
         { menu: 'Crew Management', to: '/crew-management', hasPermission: true },
         { menu: 'MWP History', to: "/mwp-history", hasPermission: true },
         // { menu: 'Job Status', to: '/job-status', hasPermission: true },
@@ -433,10 +431,11 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       subMenus: [
         { menu: 'Report Templates', to: '/appointment-acceptance', hasPermission: true },
         // { menu: 'Pre-Arrival Information', to: '/pre-arrival-information', hasPermission: true },
-        { menu: 'Crew Template', to: '/crew-template', hasPermission: true },
+        // { menu: 'Crew Template', to: '/crew-template', hasPermission: true },
         { menu: 'Coordinates', to: '/coordinates', hasPermission: true },
         // { menu: 'CG Pass Template', to: '/cg-pass-template', hasPermission: true },
         // { menu: 'Vessel Reg. Template', to: '/vessel-registration-template', hasPermission: true },
+        { menu: 'Crew Immigration Template', to: '/crew-immigration-template', hasPermission: true },
         // { menu: 'Custom Fields', to: '/custom-fields', hasPermission: true },
       ],
       icon: operationsIcon,
@@ -576,6 +575,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       subMenus: [
         { menu: 'My Accounts', to: '/my-accounts', hasPermission: true },
         { menu: 'Activity Log', to: '/activity-log', hasPermission: true },
+        { menu: 'Logout', to: '/logout', hasPermission: true },
         // { menu: 'Notification', to: '/notification', hasPermission: true },
         // { menu: 'Report Management', to: '/report-management', hasPermission: true },
         // { menu: 'Status Management', to: '/status-management', hasPermission: true },
@@ -667,7 +667,21 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       }
       return true;
     }
+    if (subMenu === 'Logout') {
+      setShowLogoutModal(true);
+      if (isMobile && expand && onCloseMobileMenu) {
+        setExpand(false);
+        onCloseMobileMenu();
+      }
+      return true;
+    }
     return false;
+  };
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutModal(false);
+    doLogout();
+    navigate('/');
   };
 
   const handleToggle = () => {
@@ -1137,6 +1151,16 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       {/* My Accounts Modal */}
       {!!showMyAccountsModal && (
         <MyAccountsModal show={showMyAccountsModal} onClose={() => setShowMyAccountsModal(false)} />
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {!!showLogoutModal && (
+        <LogoutConfirmationModal
+          show={showLogoutModal}
+          onCancel={() => setShowLogoutModal(false)}
+          onConfirm={handleLogoutConfirm}
+          logoutText="Are you sure you want to logout?"
+        />
       )}
     </>
   );

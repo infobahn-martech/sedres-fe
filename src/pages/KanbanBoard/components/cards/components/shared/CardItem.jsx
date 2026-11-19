@@ -4,6 +4,7 @@ import { KANBAN_DND_DISABLED } from "@/shared/constants/kanbanConfig";
 import PropTypes from "prop-types";
 import useExportApprovalStatusStore from "@/store/exportApprovalStatusStore";
 import useSignatureCheckStore from "@/store/signatureCheckStore";
+import useSccReviewStore from "@/store/sccReviewStore";
 import useKanbanCardViewStore from "@/store/kanbanCardViewStore";
 import "@/design/scss/pages/kanban-board/signatureCheck.scss";
 import { Tooltip } from "react-tooltip";
@@ -34,6 +35,7 @@ import {
   isLntApprovalRequestedCell,
   isSubseaWorkflow,
   isUploadedToPortalColumnTitle,
+  isLntReadyToSubmit,
 } from "../../../../utils/columnTitles";
 
 const SRT_RECEIVED_COLUMN_PATTERN = /^srt rec(?:ie|ei)ved$/i;
@@ -606,7 +608,12 @@ function ApiKanbanCardFull({
   transportOnlyIcons = false,
   showInvoiceDownload = false,
 }) {
-  const displayTitle = getApiCardDisplayTitle(card);
+  // Full card: card name is the primary title (vessel name moves to the top row).
+  const displayTitle = hasText(card.title)
+    ? String(card.title).trim()
+    : hasText(card.cardName)
+      ? String(card.cardName).trim()
+      : getApiCardDisplayTitle(card);
   const secondary = hasText(card.billingEntity)
     ? card.billingEntity
     : hasText(card.name)
@@ -749,11 +756,13 @@ function CardItem({
   const isSrtRejectedForSignature = useSignatureCheckStore(
     (state) => state.unsignedSrtCallIds[String(card?.callId ?? card?.call_id)] === true
   );
+  const isSccLeftUnsigned = useSccReviewStore((state) => state.unsignedSccCardIds[String(card?.id)] === true);
   const isSignatureMissing =
     card?.signature_status === "missing" ||
-    (isSrtRejectedForSignature && isSubseaSrtReceivedCard);
+    (isSrtRejectedForSignature && isSubseaSrtReceivedCard) ||
+    isSccLeftUnsigned;
   /* The tooltip names the document the column takes: the dispatch proof, the SRT, or (L&T) the SCC. */
-  const signatureDocumentName = isUploadedToPortalColumnTitle(columnTitle)
+  const signatureDocumentName = isUploadedToPortalColumnTitle(columnTitle) || isLntReadyToSubmit(workflowTitle, columnTitle)
     ? "dispatch proof"
     : SRT_RECEIVED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim())
       ? "SRT"
@@ -909,11 +918,11 @@ function CardItem({
               {isApiCard && !isShrunk ? (
                 <div
                   className="kanban-card-top-row-title"
-                  title={hasText(card.title) ? `ID : ${card.id}  ${card.title}` : `ID : ${card.id}`}
+                  title={hasText(card.vesselName) ? `ID : ${card.id}  ${card.vesselName}` : `ID : ${card.id}`}
                 >
                   <span className="kanban-card-top-row-id">ID : {card.id}</span>
-                  {hasText(card.title) ? (
-                    <span className="kanban-card-top-row-name">{card.title}</span>
+                  {hasText(card.vesselName) ? (
+                    <span className="kanban-card-top-row-name">{card.vesselName}</span>
                   ) : null}
                 </div>
               ) : null}

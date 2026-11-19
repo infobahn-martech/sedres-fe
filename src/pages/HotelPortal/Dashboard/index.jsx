@@ -1,42 +1,40 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import {
     FiHome,
     FiClock,
     FiFileText,
     FiDollarSign,
-    FiCalendar,
     FiUpload,
 } from 'react-icons/fi';
 import PortalDashboard from '../../../components/PortalDashboard';
 import UploadInvoiceModal from '../../../components/UploadInvoiceModal';
 import useVendorReducer from '../../../store/VendorReducer';
+import vendorService from '../../../services/vendorService';
+import { notify } from '../../../components/Toaster';
 import '../../../design/scss/prospect-modal.scss';
 import '../../../design/scss/modal-designs.scss';
 import '../../../design/scss/form-designs.scss';
-
-const STAY_STATUS_CLASS_MAP = {
-    'pending': 'status-pending',
-    'checked in': 'status-approved',
-    'checked out': 'status-completed',
-    'completed': 'status-completed',
-    'cancelled': 'status-rejected',
-};
-
-const getStayStatusClass = (status) =>
-    STAY_STATUS_CLASS_MAP[(status || '').toLowerCase()] || '';
+import '../../../design/scss/general.scss';
+import DateTimePickerField from '../../KanbanBoard/CardFormTabs/shared/components/DateTimePickerField';
 
 const formatDate = (value) => {
     if (!value) return '—';
     const parsed = dayjs(value);
-    return parsed.isValid() ? parsed.format('DD MMM YYYY') : value;
+    return parsed.isValid() ? parsed.format('DD/MM/YYYY') : value;
 };
 
-const toDateTimeLocal = (value) => {
-    if (!value) return '';
-    const parsed = dayjs(value);
-    return parsed.isValid() ? parsed.format('YYYY-MM-DDTHH:mm') : '';
+// API datetimes ("YYYY-MM-DD HH:mm:ss") -> the { date, time } parts DateTimePickerField works with.
+const toDateTimeParts = (value) => {
+    const parsed = value ? dayjs(value) : null;
+    return parsed?.isValid()
+        ? { date: parsed.format('YYYY-MM-DD'), time: parsed.format('HH:mm') }
+        : { date: '', time: '' };
 };
+
+// { date, time } parts -> "YYYY-MM-DD HH:mm:ss" for update_hotel_request_dates; "" when incomplete.
+const toApiDateTime = (parts) =>
+    parts?.date && parts?.time ? `${parts.date} ${parts.time}:00` : '';
 
 const isUploadDisabled = (status) => {
     const s = (status || '').toLowerCase();
@@ -56,6 +54,69 @@ function HotelDashboard() {
 
     const [uploadOrder, setUploadOrder] = useState(null);
     const [showUploadModal, setShowUploadModal] = useState(false);
+    // Check-in / check-out belong to the hotel request (hotel/update_hotel_request_dates), so every
+    // crew row of an order shares them. Edits are keyed by hotel_request_id as { date, time } parts;
+    // untouched orders fall back to the API's checkin_datetime / checkout_datetime.
+    const [stayEdits, setStayEdits] = useState({});
+    const saveTimersRef = useRef({});
+    // Last values the server accepted per request, used to roll back a failed save.
+    const savedStayRef = useRef({});
+
+    useEffect(() => () => {
+        Object.values(saveTimersRef.current).forEach((timer) => window.clearTimeout(timer));
+    }, []);
+
+    const getStayValue = (row, field) =>
+        stayEdits[row.hotelRequestId]?.[field] ?? toDateTimeParts(row[field]);
+
+    const saveStayDates = async (row, stay) => {
+        const requestId = row.hotelRequestId;
+        try {
+            await vendorService.updateHotelRequestDates({
+                hotel_request_id: Number(requestId) || requestId,
+                checkin_datetime: toApiDateTime(stay.checkin_datetime),
+                checkout_datetime: toApiDateTime(stay.checkout_datetime),
+            });
+            savedStayRef.current[requestId] = stay;
+            notify('Stay dates updated.', 'success');
+        } catch (error) {
+            const message =
+                error?.response?.data?.message || error?.message || 'Could not update stay dates.';
+            notify(typeof message === 'string' ? message : 'Could not update stay dates.', 'error');
+            const lastSaved = savedStayRef.current[requestId];
+            setStayEdits((prev) => {
+                const next = { ...prev };
+                if (lastSaved) next[requestId] = lastSaved;
+                else delete next[requestId];
+                return next;
+            });
+        }
+    };
+
+    const handleStayChange = (row, field, parts) => {
+        const requestId = row.hotelRequestId;
+        if (requestId == null) return;
+        const stay = {
+            checkin_datetime: getStayValue(row, 'checkin_datetime'),
+            checkout_datetime: getStayValue(row, 'checkout_datetime'),
+            [field]: parts,
+        };
+        setStayEdits((prev) => ({ ...prev, [requestId]: stay }));
+
+        window.clearTimeout(saveTimersRef.current[requestId]);
+        const checkIn = toApiDateTime(stay.checkin_datetime);
+        const checkOut = toApiDateTime(stay.checkout_datetime);
+        if (!checkIn || !checkOut) return;
+        if (!dayjs(checkOut).isAfter(dayjs(checkIn))) {
+            notify('Check-out must be after check-in.', 'error');
+            return;
+        }
+        // Typing into the field emits on each segment; save once the user pauses.
+        saveTimersRef.current[requestId] = window.setTimeout(() => {
+            delete saveTimersRef.current[requestId];
+            void saveStayDates(row, stay);
+        }, 600);
+    };
 
     useEffect(() => {
         getHotelDashboard();
@@ -102,14 +163,7 @@ function HotelDashboard() {
         [hotelDashboardData]
     );
 
-    const quickActions = [
-        { label: 'View Bookings', icon: <FiCalendar />, onClick: () => {} },
-        { label: 'View Invoices', icon: <FiFileText />, onClick: () => {} },
-    ];
-
     const tableColumns = [
-        { label: 'PO No', key: 'poNo' },
-        { label: 'WO No', key: 'woNo' },
         { label: 'Subject', key: 'subject' },
         { label: 'Company', key: 'company' },
         { label: 'Order Date', key: 'orderDate' },
@@ -141,6 +195,9 @@ function HotelDashboard() {
     const tableRows = useMemo(
         () =>
             (hotelOrdersData || []).map((order) => ({
+                hotelRequestId: order.hotel_request_id,
+                checkin_datetime: order.checkin_datetime,
+                checkout_datetime: order.checkout_datetime,
                 poNo: order.po_number,
                 woNo: order.wo_number,
                 subject: `${order.hotel_name || 'Hotel'} - Accommodation`,
@@ -164,14 +221,13 @@ function HotelDashboard() {
                 summaryCards={summaryCards}
                 statusTitle="Invoice Status Overview"
                 statusCards={statusCards}
-                quickActions={quickActions}
                 tableTitle="Recent Orders"
                 tableColumns={tableColumns}
                 tableRows={tableRows}
                 isTableLoading={isHotelDashboardLoading || isHotelOrdersLoading}
                 emptyMessage="No orders found"
                 expandable
-                rowKey={(row) => row.poNo}
+                rowKey={(row) => row.hotelRequestId ?? row.poNo}
                 renderExpandedRow={(row) => (
                     <div className="vendor-table-scroll">
                         <table className="vendor-table" style={{ marginBottom: 0, minWidth: 960 }}>
@@ -181,7 +237,6 @@ function HotelDashboard() {
                                     <th>Rank</th>
                                     <th>Nationality</th>
                                     <th>Passport No</th>
-                                    <th>Stay Status</th>
                                     <th>CheckIn</th>
                                     <th>CheckOut</th>
                                 </tr>
@@ -189,39 +244,45 @@ function HotelDashboard() {
                             <tbody>
                                 {row.crew.length ? (
                                     row.crew.map((crew, i) => (
-                                        <tr key={`${row.poNo}-crew-${i}`}>
-                                            <td>{crew.crew_name}</td>
-                                            <td>{crew.rank ?? '—'}</td>
-                                            <td>{crew.nationality}</td>
-                                            <td>{crew.passport_no}</td>
-                                            <td>
-                                                <span className={`vendor-status-badge ${getStayStatusClass(crew.stay_status)}`}>
-                                                    {crew.stay_status ?? '—'}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <input
-                                                    type="datetime-local"
-                                                    readOnly
-                                                    tabIndex={-1}
-                                                    className="form-control form-control-sm vendor-crew-datetime-input vendor-crew-datetime-input--readonly"
-                                                    value={toDateTimeLocal(crew.checkin_datetime)}
-                                                />
-                                            </td>
-                                            <td>
-                                                <input
-                                                    type="datetime-local"
-                                                    readOnly
-                                                    tabIndex={-1}
-                                                    className="form-control form-control-sm vendor-crew-datetime-input vendor-crew-datetime-input--readonly"
-                                                    value={toDateTimeLocal(crew.checkout_datetime)}
-                                                />
-                                            </td>
+                                        <tr key={crew.hotel_request_crew_id ?? `${row.hotelRequestId}-${i}`}>
+                                            <td>{crew.crew_name || '—'}</td>
+                                            <td>{crew.rank || '—'}</td>
+                                            <td>{crew.nationality || '—'}</td>
+                                            <td>{crew.passport_no || '—'}</td>
+                                            {(() => {
+                                                const checkIn = getStayValue(row, 'checkin_datetime');
+                                                const checkOut = getStayValue(row, 'checkout_datetime');
+                                                return (
+                                                    <>
+                                                        <td className="vendor-crew-datetime-cell">
+                                                            <DateTimePickerField
+                                                                dateValue={checkIn.date}
+                                                                timeValue={checkIn.time}
+                                                                onDateTimeChange={(next) =>
+                                                                    handleStayChange(row, 'checkin_datetime', next)
+                                                                }
+                                                                placeholder="Select check-in"
+                                                            />
+                                                        </td>
+                                                        <td className="vendor-crew-datetime-cell">
+                                                            <DateTimePickerField
+                                                                dateValue={checkOut.date}
+                                                                timeValue={checkOut.time}
+                                                                minDate={checkIn.date || undefined}
+                                                                onDateTimeChange={(next) =>
+                                                                    handleStayChange(row, 'checkout_datetime', next)
+                                                                }
+                                                                placeholder="Select check-out"
+                                                            />
+                                                        </td>
+                                                    </>
+                                                );
+                                            })()}
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={7} style={{ color: '#6b7280' }}>
+                                        <td colSpan={6} style={{ color: '#6b7280' }}>
                                             No crew details available
                                         </td>
                                     </tr>

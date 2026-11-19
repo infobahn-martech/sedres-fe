@@ -1,3 +1,36 @@
+// DA supervisor / coordinator come back as an array of user ids, or a comma-separated string.
+const toIdArray = (raw) => {
+  if (raw == null || raw === "") return [];
+  const list = Array.isArray(raw) ? raw : String(raw).split(",");
+  return list.map((v) => String(v).trim()).filter(Boolean);
+};
+
+// da_team members may come back as a bare user id or as a user object.
+const toUserId = (v) => {
+  if (v == null || v === "") return "";
+  if (typeof v === "object") return String(v.user_id ?? v.id ?? "").trim();
+  return String(v).trim();
+};
+
+/**
+ * Billing-entity-specific SO header fields (e.g. PO No, Project Name, SRN No). Labels, order,
+ * type and required flag are all configured per billing entity on the backend.
+ * @returns {{ fieldId: string, name: string, key: string, type: string, required: boolean, value: string }[]}
+ */
+export const mapBillingEntityFields = (raw) =>
+  (Array.isArray(raw) ? raw : [])
+    .filter((f) => f && f.field_key)
+    .map((f) => ({
+      fieldId: String(f.field_id ?? f.field_key),
+      name: String(f.field_name ?? f.field_key),
+      key: String(f.field_key),
+      type: String(f.field_type || "text").toLowerCase(),
+      required: Number(f.is_required) === 1 || f.is_required === true,
+      value: f.field_value != null ? String(f.field_value) : "",
+      order: Number(f.sequence_order) || 0,
+    }))
+    .sort((a, b) => a.order - b.order);
+
 /**
  * Maps GET sales_order/get_so_items_by_call/{call_id} `data` payload into the FE shape used by SalesOrderList.
  * @param {object} apiData - `response.data.data` from the API envelope
@@ -19,19 +52,23 @@ export function mapSalesOrderResponse(apiData) {
       soDeliveryDate: "",
       soDocumentDate: "",
       soShipName: "",
-      soProjectName: "",
       soStatus: "",
-      soPoNo: "",
       salesOrderId: "",
-      srtNumber: "",
       billingEntity: "",
       lineItemTotal: 0,
       soOwner: "",
+      soDaSupervisorIds: [],
+      soDaCoordinatorIds: [],
+      soBillingEntityFields: [],
+      soDaCardId: "",
       soSubtotal: "",
       soTotalDiscount: "",
       soDiscountPercentage: "",
       soTotalTax: "",
       soGrandTotal: "",
+      soRoundingEnabled: false,
+      soRoundingRate: "",
+      soRemarks: "",
       salesOrderList: [],
     };
   }
@@ -151,20 +188,30 @@ export function mapSalesOrderResponse(apiData) {
     soDeliveryDate: normalizeDate(apiData.delivery_date),
     soDocumentDate: normalizeDate(apiData.document_date),
     soShipName,
-    soProjectName: apiData.project_name != null ? String(apiData.project_name) : "",
     soStatus: apiData.so_status != null ? String(apiData.so_status).trim() : "",
-    soPoNo: apiData.po_number != null ? String(apiData.po_number) : "",
     salesOrderId: apiData.sales_order_id != null ? String(apiData.sales_order_id) : "",
-    srtNumber: apiData.srt_number != null ? String(apiData.srt_number) : "",
     billingEntity: soCustomerName,
     lineItemTotal,
     // SO owner & totals (do not use `owner` — that key is the card owner user id in CardForm)
     soOwner: apiData.owner != null ? String(apiData.owner).trim() : "",
+    soDaSupervisorIds: apiData.da_team
+      ? [toUserId(apiData.da_team.supervisor)].filter(Boolean)
+      : toIdArray(apiData.da_supervisor_ids),
+    soDaCoordinatorIds: apiData.da_team
+      ? (Array.isArray(apiData.da_team.coordinators) ? apiData.da_team.coordinators : []).map(toUserId).filter(Boolean)
+      : toIdArray(apiData.da_coordinator_ids),
+    soBillingEntityFields: mapBillingEntityFields(apiData.billing_entity_fields),
+    // card_id that da/assign_da_team expects for this sales order's card.
+    soDaCardId: apiData.da_team?.card_id != null ? String(apiData.da_team.card_id) : "",
     soSubtotal: asNumString(apiData.subtotal),
     soTotalDiscount: asNumString(apiData.total_discount),
     soDiscountPercentage: apiData.discount_percentage != null ? String(apiData.discount_percentage).trim() : "",
     soTotalTax: asNumString(apiData.total_tax),
     soGrandTotal: asNumString(apiData.grand_total),
+    // rounding is the 1/0 toggle; rounding_rate the adjustment the backend applied (may be "").
+    soRoundingEnabled: (Number(apiData.rounding) || 0) !== 0,
+    soRoundingRate: asNumString(apiData.rounding_rate),
+    soRemarks: apiData.remarks != null ? String(apiData.remarks) : "",
     salesOrderList,
   };
 }

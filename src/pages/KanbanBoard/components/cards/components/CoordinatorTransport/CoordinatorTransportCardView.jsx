@@ -152,7 +152,7 @@ const renderPickupDateTime = (value) => {
   if (!parsed) return <span className="coordinator-transport-table__empty-cell">{EMPTY_DISPLAY}</span>;
   return (
     <span className="coordinator-transport-datetime">
-      <span className="coordinator-transport-datetime__date">{format(parsed, "dd MMM yyyy")}</span>
+      <span className="coordinator-transport-datetime__date">{format(parsed, "dd/MM/yyyy")}</span>
       <span className="coordinator-transport-datetime__time">{format(parsed, "HH:mm")}</span>
     </span>
   );
@@ -267,6 +267,24 @@ CoordinatorTransportSummaryCard.propTypes = {
   value: PropTypes.string.isRequired,
 };
 
+const normalizeLabel = (value) => String(value ?? "").trim().toLowerCase();
+
+// First option whose label equals one of the candidates; falls back to a label containing one
+// (e.g. a "SUV - 8219 SBS" option for plate_no "8219 SBS").
+const findOptionByLabel = (options, candidates) => {
+  const names = candidates.map(normalizeLabel).filter(Boolean);
+  if (!names.length) return null;
+  return (
+    options.find((o) => names.includes(normalizeLabel(o.label))) ||
+    options.find((o) => names.some((name) => normalizeLabel(o.label).includes(name))) ||
+    null
+  );
+};
+
+// Appends { value, label } when the selected value isn't in the list, so the select shows it.
+const withSavedOption = (options, value, label) =>
+  !value || !label || options.some((o) => o.value === value) ? options : [...options, { value, label }];
+
 const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
   const documentsInputRef = useRef(null);
 
@@ -296,7 +314,10 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
   } = useCoordinatorTransportReducer();
 
   const callId = cardDetail?.call_id ?? resolveCallId(cardData);
-  const transportRequestId = resolveTransportRequestId(cardData) ?? cardDetail?.transport_request_id ?? null;
+  // String key so a 11 → "11" type change on a re-synced card doesn't refetch the detail.
+  const rawTransportRequestId = resolveTransportRequestId(cardData) ?? cardDetail?.transport_request_id ?? null;
+  const transportRequestId =
+    rawTransportRequestId === null || rawTransportRequestId === "" ? null : String(rawTransportRequestId);
 
   // The store is shared across cards; ignore a detail left over from a previously opened card.
   const detail =
@@ -327,9 +348,18 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
     [transportRequestId, fetchTransportRequestDetail]
   );
 
+  // Which request id's detail fetch has finished (success or failure).
+  const [detailSettledFor, setDetailSettledFor] = useState(null);
+
   useEffect(() => {
-    void refreshTransportRequestDetail();
-  }, [refreshTransportRequestDetail]);
+    let cancelled = false;
+    Promise.resolve(refreshTransportRequestDetail()).finally(() => {
+      if (!cancelled) setDetailSettledFor(transportRequestId);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshTransportRequestDetail, transportRequestId]);
 
   useEffect(() => {
     if (!detail) return;
@@ -372,23 +402,33 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
     }));
   }, [detail]);
 
-  useEffect(() => {
-    fetchTransportCompanies();
-  }, [fetchTransportCompanies]);
+  // Dropdown lists load only for the provider in use, once per open card:
+  // in house needs vehicle types + invoice branches, third party needs companies.
+  // While an existing request's detail is still loading, wait so a Third Party
+  // request doesn't first pull the in-house lists.
+  const loadedListsRef = useRef({ inhouse: false, thirdparty: false });
+  const isWaitingForDetail =
+    Boolean(transportRequestId) && !detail && detailSettledFor !== transportRequestId;
 
   useEffect(() => {
-    fetchVehicleTypes();
-  }, [fetchVehicleTypes]);
+    if (isWaitingForDetail) return;
+    const provider = transportForm.providerType;
+    if (loadedListsRef.current[provider]) return;
+    loadedListsRef.current[provider] = true;
+    if (provider === "thirdparty") {
+      fetchTransportCompanies();
+    } else {
+      fetchVehicleTypes();
+      fetchInvoiceBranches();
+    }
+  }, [transportForm.providerType, isWaitingForDetail, fetchTransportCompanies, fetchVehicleTypes, fetchInvoiceBranches]);
 
   useEffect(() => {
-    fetchInvoiceBranches();
-  }, [fetchInvoiceBranches]);
-
-  useEffect(() => {
+    if (transportForm.providerType !== "inhouse") return;
     fetchInhouseDrivers(transportForm.vehicleTypeId);
-  }, [transportForm.vehicleTypeId, fetchInhouseDrivers]);
+  }, [transportForm.providerType, transportForm.vehicleTypeId, fetchInhouseDrivers]);
 
-  const callTypeSummary = firstNonEmpty(cardData?.typeOfCall);
+  const callTypeSummary = firstNonEmpty(detail?.call_type, cardDetail?.call_type, cardData?.typeOfCall);
   const billingEntitySummary = firstNonEmpty(cardDetail?.billing_entity);
   const portSummary = firstNonEmpty(cardDetail?.port, detail?.port);
   const vesselNameSummary = firstNonEmpty(cardDetail?.vessel_name, detail?.vessel_name, cardData?.vesselName);
@@ -622,6 +662,52 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
     [inhouseDrivers]
   );
 
+  // The saved request's vehicle_id / driver_id may not line up with the ids in the vehicle / driver
+  // lists. When the saved id isn't listed, re-select the option matching the request's names
+  // (inhouse_vehicle_name / inhouse_vehicle_type / plate_no, inhouse_driver_name).
+  useEffect(() => {
+    if (!detail || !vehicleTypeOptions.length) return;
+    setTransportForm((previous) => {
+      const current = previous.vehicleTypeId;
+      if (!current || vehicleTypeOptions.some((o) => o.value === current)) return previous;
+      const match = findOptionByLabel(vehicleTypeOptions, [
+        detail.inhouse_vehicle_name,
+        detail.inhouse_vehicle_type,
+        detail.plate_no,
+      ]);
+      return match ? { ...previous, vehicleTypeId: match.value } : previous;
+    });
+  }, [detail, vehicleTypeOptions]);
+
+  useEffect(() => {
+    if (!detail || !inhouseDriverOptions.length) return;
+    setTransportForm((previous) => {
+      const current = previous.inhouseDriverId;
+      if (!current || inhouseDriverOptions.some((o) => o.value === current)) return previous;
+      const match = findOptionByLabel(inhouseDriverOptions, [detail.inhouse_driver_name]);
+      return match ? { ...previous, inhouseDriverId: match.value } : previous;
+    });
+  }, [detail, inhouseDriverOptions]);
+
+  // Until (or unless) the lists contain the saved values, show the request's own labels.
+  const vehicleSelectOptions = withSavedOption(
+    vehicleTypeOptions,
+    transportForm.vehicleTypeId,
+    String(detail?.vehicle_id ?? "") === transportForm.vehicleTypeId
+      ? firstNonEmpty(detail?.inhouse_vehicle_name, detail?.inhouse_vehicle_type)
+      : ""
+  );
+  const driverSelectOptions = withSavedOption(
+    inhouseDriverOptions,
+    transportForm.inhouseDriverId,
+    String(detail?.driver_id ?? "") === transportForm.inhouseDriverId ? detail?.inhouse_driver_name : ""
+  );
+  const invoiceBranchSelectOptions = withSavedOption(
+    invoiceBranchOptions,
+    transportForm.invoiceBranch,
+    transportForm.invoiceBranch
+  );
+
   const transportRequestRows = useMemo(
     () => flattenTransportRequestRows(detail ? [detail] : []),
     [detail]
@@ -730,7 +816,7 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                       <FormSelect
                         value={transportForm.vehicleTypeId}
                         onChange={(e) => handleVehicleTypeChange(e.target.value)}
-                        options={vehicleTypeOptions}
+                        options={vehicleSelectOptions}
                         placeholder={loadingVehicleTypes ? "Loading..." : "Select vehicle type..."}
                         disabled={loadingVehicleTypes}
                       />
@@ -739,7 +825,7 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                       <FormSelect
                         value={transportForm.inhouseDriverId}
                         onChange={(e) => updateTransportField("inhouseDriverId", e.target.value)}
-                        options={inhouseDriverOptions}
+                        options={driverSelectOptions}
                         placeholder={
                           !transportForm.vehicleTypeId
                             ? "Select vehicle type first"
@@ -754,7 +840,7 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                       <FormSelect
                         value={transportForm.invoiceBranch}
                         onChange={(e) => updateTransportField("invoiceBranch", e.target.value)}
-                        options={invoiceBranchOptions}
+                        options={invoiceBranchSelectOptions}
                         placeholder={loadingInvoiceBranches ? "Loading..." : "Select branch..."}
                         disabled={loadingInvoiceBranches}
                       />
@@ -865,7 +951,7 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                 onClick={handleSave}
                 disabled={isSavingTransport}
               >
-                {!isSavingTransport && <FiCheck size={15} />}
+                {!isSavingTransport && <FiCheck size={13} />}
                 {isSavingTransport ? "Saving..." : "Save request"}
               </button>
             </div>

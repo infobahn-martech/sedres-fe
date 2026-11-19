@@ -21,7 +21,7 @@ const joinDateTimeValue = ({ date, time }) => (date && time ? `${date}T${time}` 
 
 // Multi-select checkbox group: each option toggles independently and the
 // selection is kept as an array of option values. Controlled when onChange is given.
-function CheckboxGroupPreview({ field, label, requiredMark, value, onChange, fieldClassName, errorNode }) {
+function CheckboxGroupPreview({ field, label, requiredMark, value, onChange, fieldClassName, errorNode, disabled = false }) {
     const [localSelected, setLocalSelected] = useState([]);
     const isControlled = typeof onChange === "function";
     const selected = isControlled ? (Array.isArray(value) ? value : []) : localSelected;
@@ -49,6 +49,7 @@ function CheckboxGroupPreview({ field, label, requiredMark, value, onChange, fie
                                 type="checkbox"
                                 checked={selected.includes(optValue)}
                                 onChange={() => toggle(optValue)}
+                                disabled={disabled}
                             />
                             <span>{opt}</span>
                         </label>
@@ -62,7 +63,7 @@ function CheckboxGroupPreview({ field, label, requiredMark, value, onChange, fie
 
 // Multi-select dropdown: the selection is kept as an array of option values.
 // Controlled when onChange is given, otherwise keeps its own selection (builder preview).
-function MultiSelectPreview({ value, onChange, options, placeholder, hasError, showAvatars = false }) {
+function MultiSelectPreview({ value, onChange, options, placeholder, hasError, showAvatars = false, disabled = false }) {
     const [localSelected, setLocalSelected] = useState([]);
     const isControlled = typeof onChange === "function";
     const selected = isControlled
@@ -80,6 +81,7 @@ function MultiSelectPreview({ value, onChange, options, placeholder, hasError, s
             placeholder={placeholder}
             hasError={hasError}
             showAvatars={showAvatars}
+            disabled={disabled}
             className="checklist-multi-select"
             menuMaxHeight={260}
         />
@@ -98,13 +100,16 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
     const label = field.label;
     const requiredMark = field.required && <span className="text-danger">*</span>;
     const isControlled = typeof onChange === "function";
-    const fieldClassName = `cf-field${error ? " has-error" : ""}`;
+    // `field.disabled` comes from the template's is_disabled flag: shown with its value but not editable.
+    const disabled = Boolean(field.disabled);
+    const fieldClassName = `cf-field${error ? " has-error" : ""}${disabled ? " is-disabled" : ""}`;
     const inputClassName = `cf-input${error ? " is-invalid" : ""}`;
     const errorNode = error ? <div className="cf-field-error">{error}</div> : null;
     // Spread onto text-like inputs: binds value/onChange only in controlled mode.
-    const textBinding = isControlled
-        ? { value: value ?? "", onChange: (e) => onChange(e.target.value) }
-        : {};
+    const textBinding = {
+        ...(isControlled ? { value: value ?? "", onChange: (e) => onChange(e.target.value) } : {}),
+        disabled,
+    };
 
     switch (field.type) {
         case "textarea":
@@ -127,6 +132,7 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                         onChange={onChange}
                         fieldClassName={fieldClassName}
                         errorNode={errorNode}
+                        disabled={disabled}
                     />
                 );
             }
@@ -135,6 +141,7 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                     <label className="ct-preview-check-mock">
                         <input
                             type="checkbox"
+                            disabled={disabled}
                             {...(isControlled
                                 ? { checked: value === "1", onChange: (e) => onChange(e.target.checked ? "1" : "0") }
                                 : {})}
@@ -157,6 +164,7 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                                     <input
                                         type="radio"
                                         name={radioName}
+                                        disabled={disabled}
                                         {...(isControlled
                                             ? { checked: value === optValue, onChange: () => onChange(optValue) }
                                             : {})}
@@ -186,6 +194,7 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                         }))}
                         placeholder={placeholder}
                         error={error || undefined}
+                        disabled={disabled}
                     />
                 );
             }
@@ -202,6 +211,7 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                             }))}
                             placeholder={placeholder}
                             hasError={Boolean(error)}
+                            disabled={disabled}
                         />
                         {errorNode}
                     </div>
@@ -238,6 +248,7 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                         placeholder={placeholder}
                         hasError={Boolean(error)}
                         showAvatars={Boolean(field.hasAvatars)}
+                        disabled={disabled}
                     />
                     {errorNode}
                 </div>
@@ -254,6 +265,7 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                             onRemove={() => onChange(null)}
                             allowMultiple={false}
                             hasError={Boolean(error)}
+                            disabled={disabled}
                         />
                         {errorNode}
                     </div>
@@ -273,6 +285,7 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                         dateValue={isControlled ? value ?? "" : ""}
                         onDateTimeChange={isControlled ? ({ date }) => onChange(date) : undefined}
                         hasError={Boolean(error)}
+                        disabled={disabled}
                     />
                     {errorNode}
                 </div>
@@ -287,6 +300,7 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                         timeValue={time}
                         onDateTimeChange={isControlled ? (next) => onChange(joinDateTimeValue(next)) : undefined}
                         hasError={Boolean(error)}
+                        disabled={disabled}
                     />
                     {errorNode}
                 </div>

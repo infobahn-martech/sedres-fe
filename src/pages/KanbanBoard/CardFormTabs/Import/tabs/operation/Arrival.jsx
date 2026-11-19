@@ -758,7 +758,7 @@ function Arrival({
                     onChange={handleReportDraftChange}
                     onReportTypeChange={handleReportTypeChange}
                     onSend={handleSaveAndSendReport}
-                    isSending={isSendingArrivalReport || isSavingArrival}
+                    isSending={isSendingArrivalReport}
                     isViewOnly={isViewOnly}
                     canSend={canSendReport}
                   />

@@ -155,7 +155,7 @@ const generateCard = (workflowId, colId, cardId) => {
     const bookingDateObj = new Date();
     bookingDateObj.setDate(bookingDateObj.getDate() - Math.floor(Math.random() * 30));
     const bookingDate = bookingDateObj.toLocaleDateString("en-GB", {
-        day: "2-digit", month: "short", year: "numeric",
+        day: "2-digit", month: "2-digit", year: "numeric",
     });
 
     const cardData = {

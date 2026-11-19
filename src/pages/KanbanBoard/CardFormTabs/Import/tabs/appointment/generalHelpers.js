@@ -224,7 +224,7 @@ export const hasRenderableEntityFieldValue = (field, callDetailData, entityField
 // Helper function to format date and time
 export const formatDateTime = (date, time) => {
   if (!date && !time) return "Not set";
-  const dateStr = date ? new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+  const dateStr = date ? new Date(date).toLocaleDateString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '';
   const timeStr = time || '';
   return dateStr && timeStr ? `${dateStr} at ${timeStr}` : dateStr || timeStr || "Not set";
 };

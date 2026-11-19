@@ -6,6 +6,9 @@ import {
   extractPassRequestsFromEnvelope,
   getPassRequests,
 } from "@/services/cgAndZwailpassService";
+import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
+import { manualCrewIdsField, resolveCrewPayloadIds } from "./crewPayloadIds";
 
 export const resolvePassCallId = (formValues, card, routeParams) => {
   const raw =
@@ -39,12 +42,18 @@ export function useCrewPassTabApi({
   documentsField,
   requestEmailFileField,
   crewField,
+  onSaved,
 }) {
   const routeParams = useParams();
   const [saving, setSaving] = useState(false);
   const [passRequests, setPassRequests] = useState({ cg: [], zawil: [] });
   const [passRequestsLoading, setPassRequestsLoading] = useState(false);
   const callId = resolvePassCallId(formValues, card, routeParams);
+  const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+    requestEmailField: requestEmailFileField,
+    crewField,
+  });
+  const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
 
   const fetchPassRequests = useCallback(async () => {
     if (!callId) {
@@ -75,6 +84,8 @@ export function useCrewPassTabApi({
       return;
     }
 
+    if (!validate()) return;
+
     let requestEmailFile = null;
     if (requestEmailFileField) {
       const attachments = Array.isArray(formValues?.[requestEmailFileField])
@@ -83,10 +94,6 @@ export function useCrewPassTabApi({
       requestEmailFile = attachments
         .map((a) => a?.file ?? a)
         .find((f) => f instanceof File);
-      if (!requestEmailFile) {
-        notify("Request email file is required.", "error", "top-center");
-        return;
-      }
     }
 
     const remarksRaw = formValues?.[remarksField];
@@ -108,8 +115,8 @@ export function useCrewPassTabApi({
     formData.append("remarks", remarks || "");
 
     if (crewField) {
-      const crewIds = Array.isArray(formValues?.[crewField]) ? formValues[crewField] : [];
-      formData.append("crew_change_ids", JSON.stringify(crewIds.map(Number)));
+      const crewPayload = resolveCrewPayloadIds(formValues?.[crewField], formValues?.[manualCrewIdsField(crewField)]);
+      formData.append(crewPayload.listKey, JSON.stringify(crewPayload.ids));
     }
 
     let docIndex = 0;
@@ -123,8 +130,11 @@ export function useCrewPassTabApi({
 
     setSaving(true);
     try {
-      await createPassRequest(formData);
+      const response = await createPassRequest(formData);
       notify("Pass request saved successfully.", "success", "top-center");
+      resetValidation();
+      onSaved?.();
+      showSavedLineItems(response);
       await fetchPassRequests();
     } catch (err) {
       notify(pickBackendErrorMessage(err), "error", "top-center");
@@ -141,6 +151,10 @@ export function useCrewPassTabApi({
     requestEmailFileField,
     routeParams,
     fetchPassRequests,
+    validate,
+    resetValidation,
+    onSaved,
+    showSavedLineItems,
   ]);
 
   return {
@@ -150,5 +164,7 @@ export function useCrewPassTabApi({
     passRequestsLoading,
     refetchPassRequests: fetchPassRequests,
     callId,
+    fieldErrors,
+    lineItemsModal,
   };
 }

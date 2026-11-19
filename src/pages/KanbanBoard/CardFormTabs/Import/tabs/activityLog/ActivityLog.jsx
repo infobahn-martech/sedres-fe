@@ -53,10 +53,9 @@ const formatDayLabel = (date) => {
   const diffDays = Math.round((startOfDay(new Date()) - startOfDay(date)) / 86400000);
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Yesterday";
-  return date.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
+  return date.toLocaleDateString("en-GB", {
+    month: "2-digit",
+    day: "2-digit",
     year: "numeric",
   });
 };
@@ -66,10 +65,9 @@ const formatTime = (date) =>
 
 const formatFull = (date) =>
   date
-    ? date.toLocaleString("en-US", {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
+    ? date.toLocaleString("en-GB", {
+        month: "2-digit",
+        day: "2-digit",
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",

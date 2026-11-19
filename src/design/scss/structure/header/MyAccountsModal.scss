@@ -121,6 +121,13 @@ $my-acc-input-radius: 12px;
       --bs-gutter-y: 1.25rem;
     }
 
+    // Row gutter is the only vertical spacing here — drop the global
+    // .form-field / .phone-wrapper bottom margins that stacked on top of it.
+    .form-field,
+    .phone-wrapper {
+      margin-bottom: 0;
+    }
+
     .form-floating > .form-control {
       border-radius: $my-acc-input-radius;
       border-color: rgba(0, 54, 140, 0.14);

@@ -83,10 +83,16 @@ function Workspaces() {
     errorMessage: workspacesErrorMessage,
     dashboards: apiDashboards,
     dashboardsLoading,
+    dashboardWorkspaces,
+    dashboardWorkspacesId,
+    dashboardWorkspacesLoading,
     listAllWorkspaces,
     listAllDashboards,
+    getWorkspacesByDashboard,
     addWorkspaceToDashboard,
     removeWorkspaceFromDashboard,
+    assignBoardsToDashboard,
+    unassignBoardsFromDashboard,
     addWidgetToDashboard,
     removeWidgetFromDashboard,
     createWorkspace,
@@ -122,24 +128,45 @@ function Workspaces() {
     return apiDashboards.find((d) => String(d.dashboard_id) === String(dashboardId)) ?? null;
   }, [isDashboardView, apiDashboards, dashboardId]);
 
+  // Workspaces assigned to this dashboard, from get_workspaces_by_dashboard
+  // (only valid once the store holds rows for the dashboard in the URL).
+  const assignedDashboardWorkspaces = useMemo(() => {
+    if (!isDashboardView || String(dashboardWorkspacesId) !== String(dashboardId)) return [];
+    return Array.isArray(dashboardWorkspaces) ? dashboardWorkspaces : [];
+  }, [isDashboardView, dashboardWorkspaces, dashboardWorkspacesId, dashboardId]);
+
   const workspacesData = useMemo(() => {
     if (isDashboardView) {
-      return transformWorkspaces(currentDashboard?.workspaces ?? []);
+      // The endpoint returns only id + name, so boards/background come from the
+      // dashboard's own workspace entry if present, else the full workspace list.
+      const dashboardEntries = new Map(
+        (currentDashboard?.workspaces ?? []).map((w) => [String(w.workspace_id ?? w.id), w])
+      );
+      const allEntries = new Map(
+        (Array.isArray(apiWorkspaces) ? apiWorkspaces : []).map((w) => [String(w.workspace_id), w])
+      );
+      return transformWorkspaces(
+        assignedDashboardWorkspaces.map((w) => {
+          const key = String(w.workspace_id);
+          const detail = dashboardEntries.get(key) ?? allEntries.get(key) ?? {};
+          return { ...detail, workspace_id: w.workspace_id, workspace_name: w.workspace_name ?? detail.workspace_name };
+        })
+      );
     }
     return transformWorkspaces(apiWorkspaces);
-  }, [isDashboardView, currentDashboard, apiWorkspaces]);
+  }, [isDashboardView, currentDashboard, apiWorkspaces, assignedDashboardWorkspaces]);
 
   const dashboardWorkspaceModalRows = useMemo(() => {
     if (!Array.isArray(apiWorkspaces)) return [];
     const onDashboard = new Set(
-      (currentDashboard?.workspaces ?? []).map((w) => String(w.workspace_id ?? w.id))
+      assignedDashboardWorkspaces.map((w) => String(w.workspace_id))
     );
     return apiWorkspaces.map((w) => ({
       id: w.workspace_id,
       name: w.workspace_name ?? 'Workspace',
       addedToDashboard: onDashboard.has(String(w.workspace_id)),
     }));
-  }, [apiWorkspaces, currentDashboard]);
+  }, [apiWorkspaces, assignedDashboardWorkspaces]);
 
   const dashboardWidgetIdSet = useMemo(() => {
     const raw = currentDashboard?.widgets ?? currentDashboard?.dashboard_widgets ?? [];
@@ -147,11 +174,10 @@ function Workspaces() {
     return new Set(raw.map((w) => String(w.widget_id ?? w.id ?? w.widgetId)));
   }, [currentDashboard]);
 
-  const workspaceIdsOnCurrentDashboard = useMemo(() => {
-    const raw = currentDashboard?.workspaces ?? [];
-    if (!Array.isArray(raw)) return new Set();
-    return new Set(raw.map((w) => String(w.workspace_id ?? w.id)));
-  }, [currentDashboard]);
+  const workspaceIdsOnCurrentDashboard = useMemo(
+    () => new Set(assignedDashboardWorkspaces.map((w) => String(w.workspace_id))),
+    [assignedDashboardWorkspaces]
+  );
 
   // Find the first workspace with boards to set as initially expanded
   const firstWorkspaceWithBoards = workspacesData.find((workspace) => workspace.boards?.length > 0);
@@ -174,7 +200,11 @@ function Workspaces() {
     return [...known, ...appended].map((id) => byId.get(id)).filter(Boolean);
   }, [workspacesData, workspaceOrderIds]);
 
-  const listLoading = isDashboardView ? dashboardsLoading : workspacesLoading;
+  const listLoading = isDashboardView
+    ? dashboardsLoading
+      || String(dashboardWorkspacesId) !== String(dashboardId)
+      || (dashboardWorkspacesLoading && assignedDashboardWorkspaces.length === 0)
+    : workspacesLoading;
 
   useEffect(() => {
     if (isDashboardView) {
@@ -183,6 +213,12 @@ function Workspaces() {
       listAllWorkspaces();
     }
   }, [isDashboardView]);
+
+  useEffect(() => {
+    if (isDashboardView && dashboardId) {
+      getWorkspacesByDashboard(dashboardId);
+    }
+  }, [isDashboardView, dashboardId]);
 
   useEffect(() => {
     if (selectedWorkspace == null && workspacesData.length > 0 && firstWorkspaceWithBoards) {
@@ -224,6 +260,11 @@ function Workspaces() {
   const [selectedWorkspaceForArchive, setSelectedWorkspaceForArchive] = useState(null);
   const [showArchiveBoardModal, setShowArchiveBoardModal] = useState(false);
   const [selectedBoardForArchive, setSelectedBoardForArchive] = useState(null);
+  // Dashboard view: per-workspace board picker (assign_boards / unassign_boards).
+  const [workspaceForBoardPicker, setWorkspaceForBoardPicker] = useState(null);
+  const [boardPickerSearch, setBoardPickerSearch] = useState('');
+  const [boardPickerFilterChip, setBoardPickerFilterChip] = useState(false);
+  const [pendingBoardPickerToggleId, setPendingBoardPickerToggleId] = useState(null);
   const menuRef = useRef(null);
   const workspaceMenuRef = useRef(null);
   const boardWallpaperInputRef = useRef(null);
@@ -331,6 +372,7 @@ function Workspaces() {
     createBoard({
       workspace_id: boardData.workspaceId,
       board_name: boardData.boardName,
+      port_id: boardData.portId,
       cb: () => {
         setShowAddBoardModal(false);
         setSelectedWorkspaceForBoard(null);
@@ -471,6 +513,57 @@ function Workspaces() {
     } finally {
       setPendingDashboardPickerToggleId(null);
     }
+  };
+
+  // All boards of the picked workspace, flagged by whether this dashboard shows them.
+  const boardPickerRows = useMemo(() => {
+    if (workspaceForBoardPicker == null) return [];
+    const full = (Array.isArray(apiWorkspaces) ? apiWorkspaces : []).find(
+      (w) => String(w.workspace_id) === String(workspaceForBoardPicker)
+    );
+    const shown = workspacesData.find((w) => String(w.id) === String(workspaceForBoardPicker));
+    const shownIds = new Set((shown?.boards ?? []).map((b) => String(b.id)));
+    return (full?.boards ?? []).map((b) => ({
+      id: b.board_id,
+      name: b.board_name ?? 'Board',
+      addedToDashboard: shownIds.has(String(b.board_id)),
+    }));
+  }, [workspaceForBoardPicker, apiWorkspaces, workspacesData]);
+
+  const handleOpenBoardPicker = (workspaceId) => {
+    setOpenWorkspaceMenuId(null);
+    setWorkspaceForBoardPicker(workspaceId);
+    setBoardPickerSearch('');
+    setBoardPickerFilterChip(false);
+  };
+
+  const handleBoardPickerToggle = async (boardId, nextOn) => {
+    if (!currentDashboard || workspaceForBoardPicker == null) return;
+    setPendingBoardPickerToggleId(String(boardId));
+    const payload = {
+      dashboard_id: currentDashboard.dashboard_id,
+      workspace_id: workspaceForBoardPicker,
+      board_ids: [boardId],
+    };
+    try {
+      if (nextOn) {
+        await assignBoardsToDashboard(payload);
+      } else {
+        await unassignBoardsFromDashboard(payload);
+      }
+    } finally {
+      setPendingBoardPickerToggleId(null);
+    }
+  };
+
+  const handleRemoveBoardFromDashboard = (workspaceId, boardId) => {
+    closeBoardMenus();
+    if (!currentDashboard) return;
+    unassignBoardsFromDashboard({
+      dashboard_id: currentDashboard.dashboard_id,
+      workspace_id: workspaceId,
+      board_ids: [boardId],
+    });
   };
 
   const handleDashboardPickerAddClick = () => {
@@ -734,7 +827,8 @@ function Workspaces() {
                   </span>
                 )}
               </div>
-              {workspace.boards?.length > 0 && (canAddBoard || canManageWorkspaceMenu) && (
+              {/* On a dashboard the menu stays available with zero boards shown, so boards can be re-added. */}
+              {(isDashboardView || workspace.boards?.length > 0) && (canAddBoard || canManageWorkspaceMenu || isDashboardView) && (
                 <div className="workspace-card-actions">
                   {canAddBoard && (
                   <button
@@ -757,7 +851,7 @@ function Workspaces() {
                     </svg>
                   </button>
                   )}
-                  {canManageWorkspaceMenu && (
+                  {(canManageWorkspaceMenu || isDashboardView) && (
                   <div className="workspace-menu-wrapper" ref={openWorkspaceMenuId === workspace.id ? workspaceMenuRef : null}>
                     <button
                       type="button"
@@ -797,6 +891,19 @@ function Workspaces() {
                         )}
                         {isDashboardView && currentDashboard && (
                           <>
+                            {workspaceIdsOnCurrentDashboard.has(String(workspace.id)) && (
+                              <button
+                                type="button"
+                                className="workspace-context-menu-item"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenBoardPicker(workspace.id);
+                                }}
+                              >
+                                <FiLayers size={16} aria-hidden />
+                                <span>Manage boards</span>
+                              </button>
+                            )}
                             {!workspaceIdsOnCurrentDashboard.has(String(workspace.id)) ? (
                               <button
                                 type="button"
@@ -953,7 +1060,7 @@ function Workspaces() {
                   return (
                   <div
                     key={board.id}
-                    className={`board-card ${canManageBoardMenu && openMenuId === board.id ? 'menu-open' : ''}`}
+                    className={`board-card ${(canManageBoardMenu || isDashboardView) && openMenuId === board.id ? 'menu-open' : ''}`}
                     onClick={() => {
                       setIsNavigating(true);
                       navigate(`/kanban-board/${board.id}`);
@@ -961,7 +1068,7 @@ function Workspaces() {
                     style={{ cursor: 'pointer' }}
                   >
                     <div className="board-card-header">
-                      {canManageBoardMenu ? (
+                      {canManageBoardMenu || isDashboardView ? (
                         <div className="board-menu-wrapper" ref={openMenuId === board.id ? menuRef : null}>
                           <button
                             type="button"
@@ -1169,6 +1276,27 @@ function Workspaces() {
                                   />
                                 </svg>
                                 <span>Edit Workflows</span>
+                              </button>
+                              )}
+                              {isDashboardView && currentDashboard && (
+                              <button
+                                type="button"
+                                className="board-context-menu-item"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveBoardFromDashboard(workspace.id, board.id);
+                                }}
+                              >
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path
+                                    d="M12 4L4 12M4 4L12 12"
+                                    stroke="currentColor"
+                                    strokeWidth="1.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                                <span>Remove from dashboard</span>
                               </button>
                               )}
                               {canArchiveBoard && (
@@ -1429,6 +1557,28 @@ function Workspaces() {
           onToggle={handleDashboardModalToggle}
           onAddClick={handleDashboardModalAddClick}
           addButtonLabel={dashboardItemsModalType === 'workspace' ? 'Create workspace' : 'Add widget'}
+        />
+      )}
+
+      {isDashboardView && (
+        <DashboardAddItemsModal
+          show={workspaceForBoardPicker != null}
+          onClose={() => setWorkspaceForBoardPicker(null)}
+          title={`Dashboard boards (${
+            workspacesData.find((w) => String(w.id) === String(workspaceForBoardPicker))?.name ?? 'Workspace'
+          })`}
+          columnLabel="Board"
+          rows={boardPickerRows}
+          loading={workspacesLoading}
+          searchText={boardPickerSearch}
+          onSearchChange={setBoardPickerSearch}
+          filterChipActive={boardPickerFilterChip}
+          onFilterChipRemove={() => setBoardPickerFilterChip(false)}
+          onFilterToolbarClick={() => {
+            if (!boardPickerFilterChip) setBoardPickerFilterChip(true);
+          }}
+          pendingToggleId={pendingBoardPickerToggleId}
+          onToggle={handleBoardPickerToggle}
         />
       )}
 

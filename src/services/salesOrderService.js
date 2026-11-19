@@ -2,9 +2,13 @@ import Gateway from "../gateway/gateway";
 
 /**
  * @param {string|number} callId
+ * @param {"Marine"|"Husbandry"} [soType] - sent as `so_type` when provided
  */
-const getSoItemsByCall = (callId) =>
-  Gateway.get(`sales_order/get_so_items_by_call/${encodeURIComponent(String(callId))}`);
+const getSoItemsByCall = (callId, soType) =>
+  Gateway.get(
+    `sales_order/get_so_items_by_call/${encodeURIComponent(String(callId))}`,
+    soType ? { params: { so_type: soType } } : undefined
+  );
 
 /**
  * @param {Array<number>} soItemIds

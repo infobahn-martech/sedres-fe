@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiPlus, FiChevronDown, FiChevronUp, FiTrash2, FiFilter, FiUsers, FiInfo, FiCalendar, FiDownload } from 'react-icons/fi';
+import { FiX, FiPlus, FiUploadCloud, FiChevronDown, FiChevronUp, FiTrash2, FiFilter, FiUsers, FiInfo, FiCalendar, FiDownload } from 'react-icons/fi';
 import { LuTriangle } from 'react-icons/lu';
 import { Modal } from 'react-bootstrap';
 import PropTypes from 'prop-types';
@@ -10,14 +10,21 @@ import 'react-quill-new/dist/quill.snow.css';
 import 'quill-table-better/dist/quill-table-better.css';
 import {
   ACTION_GROUP_TYPE_TO_SECTION_ID, LINK_ACTION_OPTIONS, LINK_REMOVE_OTHERS_OPTIONS, NOTIFY_ACTION_OPTIONS, UPDATE_ACTION_OPTIONS, STICKER_ACTION_FREQUENCY_OPTIONS,
-  LIST_UPDATE_MODE_OPTIONS, DEADLINE_MODE_OPTIONS, WHEN_DEADLINE_COMPARISON_OPTIONS, WEEKDAY_OPTIONS, PRIORITY_OPTIONS, classifyCustomFieldUiKind,
+  LIST_UPDATE_MODE_OPTIONS, DEADLINE_MODE_OPTIONS, WEEKDAY_OPTIONS, PRIORITY_OPTIONS, classifyCustomFieldUiKind,
   INVOKE_ACTION_OPTIONS, DUMMY_INVOKE_METHOD_OPTIONS, DUMMY_INVOKE_AUTH_OPTIONS, INVOKE_METHODS_WITH_BODY,
-  INTERNAL_USER_ROLE_OPTIONS,
   TRIGGER_CODE_TO_ICON, UNSUPPORTED_ACTION_GROUP_TYPES,
 } from './businessRulesData';
 import { buildCreateBusinessRulePayload, buildUpdateBusinessRulePayload, getUnconfiguredActionLabels, isCreateSubtaskAction, RECURRENCE_REGULAR_FIELD_IDS, buildAdvancedScheduleFields } from './buildBusinessRulePayload';
 import ThenGroupRawSummary from './ThenGroupRawSummary';
-import GenericThenActionFields from './GenericThenActionFields';
+import GenericThenActionEditor from './GenericThenActionEditor';
+import { CREATE_CARDS_GROUP_TYPE, EMPTY_GENERIC_ACTION_VALUE, makeCreateCardAction, parseCreateCardThenAction, parseGenericThenAction } from './genericThenAction';
+import CreateCardActionCard from './CreateCardActionCard';
+import BusinessRuleFieldValue from './BusinessRuleFieldValue';
+import InlineTextDropdown from './InlineTextDropdown';
+import SearchableSelect from '../../../components/form/SearchableSelect';
+import BoardFilterPicker from './BoardFilterPicker';
+import FormTemplateFilter from './FormTemplateFilter';
+import { fieldTakesValue, getOperatorId, operatorTakesValue, operatorNeedsTimeUnit, isYesNoOptions, getDateFieldEmptyLabel, getDateFieldEmptyOperatorKey, getOperatorKey } from './businessRuleFieldUtils';
 import DynamicIcon from './DynamicIcon';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import useAlertReducer from '../../../store/AlertReducer';
@@ -27,6 +34,11 @@ import useKanbanManagementReducer, { isKanbanManagementRowDisabled } from '../..
 import useAuthReducer from '../../../store/AuthReducer';
 import { getInitials, stripHtmlTags } from '../../../shared/utils/utils';
 import DatePickerField from '../../../pages/KanbanBoard/CardFormTabs/shared/components/DatePickerField';
+import DateTimePickerField from '../../../pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField';
+import { DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS, DOCUMENT_UPLOAD_MAX_SIZE, validateDocumentFiles } from '../../../pages/KanbanBoard/CardFormTabs/Import/tabs/husbandry/components/Husbandry.constants';
+import '../../../design/scss/subtasks.scss';
+import '../../../design/scss/business-rule-columns.scss';
+import '../../../design/scss/business-rule-when-deadline.scss';
 import SedresColorPicker from '../../../components/SedresColorPicker/SedresColorPicker';
 import { PRIMARY_PRESET_COLORS, SECONDARY_PRESET_COLORS, normalizeHexColor } from '../../../components/SedresColorPicker/sedresColorPickerConstants';
 import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal';
@@ -315,7 +327,9 @@ const parseSubjectString = (text) => {
   let match = tokenRegex.exec(text);
   while (match) {
     if (match.index > lastIndex) parts.push({ type: 'text', value: text.slice(lastIndex, match.index) });
-    parts.push({ type: 'text', value: '{' }, { type: 'pill', value: match[1] }, { type: 'text', value: '}' });
+    // The braces around a pill are kept (the subject box reads its text back from them) but flagged,
+    // so the THEN-column preview can show the pill alone.
+    parts.push({ type: 'text', value: '{', generated: true }, { type: 'pill', value: match[1] }, { type: 'text', value: '}', generated: true });
     lastIndex = match.index + match[0].length;
     match = tokenRegex.exec(text);
   }
@@ -330,7 +344,7 @@ const formatDeadlineDisplay = (deadline) => {
   if (!datePart) return '';
   const date = new Date(`${datePart}T${(timePart || '00:00:00').slice(0, 8)}`);
   if (Number.isNaN(date.getTime())) return datePart;
-  const dateLabel = date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+  const dateLabel = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const timeLabel = (timePart ?? '').slice(0, 5);
   return timeLabel && timeLabel !== '00:00' ? `${dateLabel}, ${timeLabel}` : dateLabel;
 };
@@ -383,7 +397,27 @@ const PROPERTY_DOT_COLORS = [...PRIMARY_PRESET_COLORS, ...SECONDARY_PRESET_COLOR
 const getFieldLabel = (field) =>
   field.field_label ?? field.unit_label ?? field.field_name ?? field.custom_field_name ?? field.unit_name ?? '';
 
+// An operator with no value box ("are present" / "are not present") reads as "Attachments are v"
+// with its last word ("present") fixed on the line below like a value, so the dropdown only
+// switches the leading part ("are" / "are not").
+const splitNoValueOperatorLabel = (operator) => {
+  const label = String(operator?.operator_label ?? '');
+  const words = label.split(' ');
+  if (operatorTakesValue(operator) || words.length < 2) return { head: label, tail: '' };
+  return { head: words.slice(0, -1).join(' '), tail: words[words.length - 1] };
+};
+
 const getPropertyDotColor = (idx) => PROPERTY_DOT_COLORS[idx % PROPERTY_DOT_COLORS.length];
+
+// Deadline-based triggers (get_trigger_config when_type "deadline"): the user picks one date
+// field from get_fields?list=when, then an operator/value from get_field_details — same data
+// flow as an AND condition row, plus the optional call time (time_object_id) on Deadline.
+// field_key of the Deadline field (Business_rule_frontend_guide.md 3.3) — preselected so a new
+// time-based rule opens on "Deadline is in ..." instead of whichever date field is listed first.
+const WHEN_DEADLINE_DEFAULT_FIELD_KEY = 'deadline';
+// Operator (Business_rule_frontend_guide.md 1.4) whose suffix reads "day(s) ago" instead of "day(s)".
+const WHEN_DEADLINE_AGO_OPERATOR_KEY = 'was_more_than';
+const EMPTY_WHEN_DEADLINE = { fieldKey: '', fieldLabel: '', operatorId: '', value: '', timeUnitId: '', timeObjectId: '' };
 
 // Any operator whose label reads as a negation ("is not", "does not contain", "not in", ...)
 // — matched generically on the word "not" so operators added later (backend-driven, not
@@ -464,7 +498,7 @@ function attachToolbarOverflow(toolbar) {
 // Shared by every picker that scopes custom fields to a trigger type (card property
 // match, refine update criteria, ...) so the trigger_type_id filtering logic lives in
 // one place instead of being duplicated per modal.
-function useCustomFieldsByTrigger({ show, triggerTypeId, boardId, showDisabled, search }) {
+function useCustomFieldsByTrigger({ show, triggerTypeId, boardId, templateId, showDisabled, narrowDisabled = true, search }) {
   const { customFields, isLoadingCustomFields, getCustomFields } = useBusinessRuleReducer((s) => s);
 
   // A single effect (instead of a separate "on open" + "on filter change" pair) so
@@ -472,8 +506,8 @@ function useCustomFieldsByTrigger({ show, triggerTypeId, boardId, showDisabled, 
   // in-flight initial fetch and have a stale, unfiltered response win.
   useEffect(() => {
     if (!show) return;
-    getCustomFields({ params: { board_ids: boardId || undefined, show_disabled: showDisabled ? 1 : undefined, search: search || undefined, trigger_type_id: triggerTypeId } });
-  }, [show, boardId, showDisabled, search, triggerTypeId]);
+    getCustomFields({ params: { board_ids: boardId || undefined, template_id: templateId || undefined, show_disabled: showDisabled ? 1 : undefined, search: search || undefined, trigger_type_id: triggerTypeId } });
+  }, [show, boardId, templateId, showDisabled, search, triggerTypeId]);
 
   // Some backend responses include a per-field `disabled` flag and return
   // enabled+disabled together for show_disabled=1 (needs narrowing here); others
@@ -481,112 +515,11 @@ function useCustomFieldsByTrigger({ show, triggerTypeId, boardId, showDisabled, 
   // Only narrow when the flag is actually present, so we don't zero out an already
   // correctly-scoped response.
   const hasDisabledFlag = customFields.some((field) => Object.prototype.hasOwnProperty.call(field, 'disabled'));
-  const scopedCustomFields = showDisabled && hasDisabledFlag
+  const scopedCustomFields = showDisabled && narrowDisabled && hasDisabledFlag
     ? customFields.filter((field) => Number(field.disabled) === 1)
     : customFields;
 
   return { customFields: scopedCustomFields, isLoadingCustomFields };
-}
-
-// Anchored, workspace-grouped board picker used everywhere a "board is ..." filter
-// appears (custom field board filter, "Board is" rule condition, ...) — matches the
-// Board Minimap picker's design instead of a plain <select>, which doesn't scale once
-// a workspace has more than a handful of boards.
-function BoardFilterPicker({ workspaces, value, onChange, wrapClassName, triggerClassName, triggerIconSize, panelClassName, placeholder }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [filterText, setFilterText] = useState('');
-  const triggerRef = useRef(null);
-  const panelRef = useRef(null);
-
-  const boards = workspaces.flatMap((w) => w.boards ?? []);
-  const selectedBoard = boards.find((b) => String(b.board_id) === String(value));
-
-  const filterQuery = filterText.trim().toLowerCase();
-  const filteredGroups = workspaces
-    .map((w) => {
-      const wsMatch = w.workspace_name.toLowerCase().includes(filterQuery);
-      const groupBoards = wsMatch
-        ? (w.boards ?? [])
-        : (w.boards ?? []).filter((b) => b.board_name.toLowerCase().includes(filterQuery));
-      return { workspace_id: w.workspace_id, workspace_name: w.workspace_name, boards: groupBoards };
-    })
-    .filter((g) => g.boards.length > 0);
-
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const onDocMouseDown = (event) => {
-      const t = event.target;
-      if (panelRef.current?.contains(t)) return;
-      if (triggerRef.current?.contains(t)) return;
-      setIsOpen(false);
-    };
-    document.addEventListener('mousedown', onDocMouseDown);
-    return () => document.removeEventListener('mousedown', onDocMouseDown);
-  }, [isOpen]);
-
-  const handlePick = (board) => {
-    onChange(board.board_id);
-    setIsOpen(false);
-    setFilterText('');
-  };
-
-  return (
-    <div className={`board-minimap-picker-wrap ${wrapClassName || 'br-property-board-picker-wrap'}`}>
-      <button
-        type="button"
-        ref={triggerRef}
-        className={triggerClassName || 'board-minimap-board-trigger br-property-board-trigger'}
-        onClick={() => setIsOpen((v) => !v)}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-      >
-        <span>{selectedBoard ? selectedBoard.board_name : (placeholder || 'All Boards')}</span>
-        <FiChevronDown size={triggerIconSize} aria-hidden />
-      </button>
-
-      {isOpen && (
-        <div className={`board-minimap-picker-panel ${panelClassName || 'br-property-board-picker-panel'}`} ref={panelRef}>
-          <div className="board-minimap-picker-search">
-            <FiFilter size={20} className="board-minimap-picker-search-icon" aria-hidden />
-            <input
-              type="text"
-              placeholder="Filter"
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              autoFocus
-            />
-          </div>
-
-          <div className="board-minimap-picker-scroll">
-            {filteredGroups.length === 0 ? (
-              <div className="br-property-picker-empty">No matches</div>
-            ) : (
-              filteredGroups.map((ws) => (
-                <div key={ws.workspace_id} className="board-minimap-picker-group">
-                  <div className="board-minimap-picker-group-head">
-                    <FiUsers size={20} aria-hidden />
-                    <span>{ws.workspace_name}</span>
-                  </div>
-                  <div className="board-minimap-picker-grid">
-                    {ws.boards.map((board) => (
-                      <button
-                        type="button"
-                        key={`${ws.workspace_id}-${board.board_id}`}
-                        className={`board-minimap-picker-tile${String(board.board_id) === String(value) ? ' board-minimap-picker-tile--selected' : ''}`}
-                        onClick={() => handlePick(board)}
-                      >
-                        {board.board_name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 // Rendered via portal to document.body so the tooltip can escape the scrollable
@@ -672,7 +605,7 @@ function PropertyPill({ pillKey, label, selected, dotColor, disabled, onClick })
   );
 }
 
-function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, triggerTypeId, showTimeUnit = true, showCustomFields = true }) {
+function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, triggerTypeId, showTimeUnit = true, showCustomFields = true, restrictFieldIds = null }) {
   const [selectedRegularFields, setSelectedRegularFields] = useState([]);
   const [selectedTimeUnits, setSelectedTimeUnits] = useState([]);
   const [selectedCustomFields, setSelectedCustomFields] = useState([]);
@@ -680,6 +613,7 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
   const [expandedTimeUnit, setExpandedTimeUnit] = useState(true);
   const [expandedCustomFields, setExpandedCustomFields] = useState(true);
   const [selectedBoardId, setSelectedBoardId] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [showDisabled, setShowDisabled] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -690,14 +624,20 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
   } = useBusinessRuleReducer((s) => s);
 
   const { customFields, isLoadingCustomFields } = useCustomFieldsByTrigger({
-    show: show && showCustomFields, triggerTypeId, boardId: selectedBoardId, showDisabled, search: debouncedSearch,
+    show: show && showCustomFields, triggerTypeId, boardId: selectedBoardId, templateId: selectedTemplateId, showDisabled, search: debouncedSearch,
   });
 
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
 
-  const displayRegularFields = regularFields;
+  // WHEN pickers list only the fields get_fields?list=when allows for the trigger (guide 3.2); an
+  // empty list means nothing was returned, so every field stays available.
+  const displayRegularFields = restrictFieldIds?.regular?.length
+    ? regularFields.filter((f) => restrictFieldIds.regular.includes(String(f.regular_field_id)))
+    : regularFields;
   const displayTimeUnits = timeUnits;
-  const displayCustomFields = customFields;
+  const displayCustomFields = restrictFieldIds?.custom?.length
+    ? customFields.filter((f) => restrictFieldIds.custom.includes(String(f.custom_field_id)))
+    : customFields;
 
   const isFieldUsed = (field) =>
     (existingFieldLabels ?? []).includes(getFieldLabel(field).trim().toLowerCase());
@@ -883,34 +823,36 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
               </button>
               {expandedCustomFields && (
                 <>
-                  <div className="br-property-board-filter">
-                    <span className="br-property-board-filter-label">Show fields from board:</span>
-                    <div className="br-property-board-filter-row">
-                      <BoardFilterPicker
-                        workspaces={workspaces ?? []}
-                        value={selectedBoardId}
-                        onChange={setSelectedBoardId}
-                      />
-                      <button
-                        type="button"
-                        className="br-property-board-clear-btn"
-                        onClick={() => setSelectedBoardId('')}
-                        aria-label="Reset board filter"
-                      >
-                        <FiTrash2 size={14} />
-                      </button>
+                  <div className="d-flex align-items-end gap-3">
+                    <div className="br-property-board-filter flex-fill">
+                      <span className="br-property-board-filter-label">Show fields from board:</span>
+                      <div className="br-property-board-filter-row">
+                        <BoardFilterPicker
+                          workspaces={workspaces ?? []}
+                          value={selectedBoardId}
+                          onChange={setSelectedBoardId}
+                        />
+                        <button
+                          type="button"
+                          className="br-property-board-clear-btn"
+                          onClick={() => setSelectedBoardId('')}
+                          aria-label="Reset board filter"
+                        >
+                          <FiTrash2 size={14} />
+                        </button>
+                      </div>
                     </div>
+                    <FormTemplateFilter show={show} value={selectedTemplateId} onChange={setSelectedTemplateId} />
+                    <label className="business-rule-form-toggle br-property-disabled-toggle mb-2 flex-shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={showDisabled}
+                        onChange={(e) => setShowDisabled(e.target.checked)}
+                      />
+                      <span className="business-rule-form-toggle-track" aria-hidden />
+                      <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
+                    </label>
                   </div>
-
-                  <label className="business-rule-form-toggle br-property-disabled-toggle">
-                    <input
-                      type="checkbox"
-                      checked={showDisabled}
-                      onChange={(e) => setShowDisabled(e.target.checked)}
-                    />
-                    <span className="business-rule-form-toggle-track" aria-hidden />
-                    <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
-                  </label>
 
                   <div className="br-property-pill-grid">
                     {isLoadingCustomFields ? (
@@ -970,8 +912,7 @@ function CreateActionModal({ show, onClose, onSelect, actionTypeId }) {
   }, [show, actionTypeId]);
 
   const mappedOptions = thenActionRegularFields.map((field) => ({ key: field.field_key, label: field.field_label }));
-  // Only "Create subtask" is still supported — destination-based create variants are hidden.
-  const createActionOptions = mappedOptions.filter(isCreateSubtaskAction);
+  const createActionOptions = mappedOptions;
 
   const filterQuery = filterText.trim().toLowerCase();
   const filteredOptions = filterQuery
@@ -1004,7 +945,7 @@ function CreateActionModal({ show, onClose, onSelect, actionTypeId }) {
     >
       <div className="card-property-match-modal-shell">
         <header className="card-property-match-modal-header">
-          <h2 className="card-property-match-modal-title">Create Subtask</h2>
+          <h2 className="card-property-match-modal-title">Add new action</h2>
           <button
             type="button"
             className="business-rule-form-modal-close"
@@ -1625,12 +1566,13 @@ function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabel
   const [expandedRegularFields, setExpandedRegularFields] = useState(true);
   const [expandedCustomFields, setExpandedCustomFields] = useState(true);
   const [selectedBoardId, setSelectedBoardId] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [showDisabled, setShowDisabled] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const { customFields, isLoadingCustomFields } = useCustomFieldsByTrigger({
-    show, triggerTypeId, boardId: selectedBoardId, showDisabled, search: debouncedSearch,
+    show, triggerTypeId, boardId: selectedBoardId, templateId: selectedTemplateId, showDisabled, search: debouncedSearch,
   });
   const { thenActionRegularFields, isLoadingThenActionFields, getThenActionFields } = useBusinessRuleReducer((s) => s);
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
@@ -1770,34 +1712,36 @@ function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabel
             </button>
             {expandedCustomFields && (
               <>
-                <div className="br-property-board-filter">
-                  <span className="br-property-board-filter-label">Show fields from board:</span>
-                  <div className="br-property-board-filter-row">
-                    <BoardFilterPicker
-                      workspaces={workspaces ?? []}
-                      value={selectedBoardId}
-                      onChange={setSelectedBoardId}
-                    />
-                    <button
-                      type="button"
-                      className="br-property-board-clear-btn"
-                      onClick={() => setSelectedBoardId('')}
-                      aria-label="Reset board filter"
-                    >
-                      <FiTrash2 size={14} />
-                    </button>
+                <div className="d-flex align-items-end gap-3">
+                  <div className="br-property-board-filter flex-fill">
+                    <span className="br-property-board-filter-label">Show fields from board:</span>
+                    <div className="br-property-board-filter-row">
+                      <BoardFilterPicker
+                        workspaces={workspaces ?? []}
+                        value={selectedBoardId}
+                        onChange={setSelectedBoardId}
+                      />
+                      <button
+                        type="button"
+                        className="br-property-board-clear-btn"
+                        onClick={() => setSelectedBoardId('')}
+                        aria-label="Reset board filter"
+                      >
+                        <FiTrash2 size={14} />
+                      </button>
+                    </div>
                   </div>
+                  <FormTemplateFilter show={show} value={selectedTemplateId} onChange={setSelectedTemplateId} />
+                  <label className="business-rule-form-toggle br-property-disabled-toggle mb-2 flex-shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={showDisabled}
+                      onChange={(e) => setShowDisabled(e.target.checked)}
+                    />
+                    <span className="business-rule-form-toggle-track" aria-hidden />
+                    <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
+                  </label>
                 </div>
-
-                <label className="business-rule-form-toggle br-property-disabled-toggle">
-                  <input
-                    type="checkbox"
-                    checked={showDisabled}
-                    onChange={(e) => setShowDisabled(e.target.checked)}
-                  />
-                  <span className="business-rule-form-toggle-track" aria-hidden />
-                  <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
-                </label>
 
                 <div className="br-property-pill-grid">
                   {isLoadingCustomFields ? (
@@ -1878,8 +1822,7 @@ function InternalUsersPickerModal({ show, onClose, onApply }) {
     .filter((u) => u.name)
     .map((u) => ({ key: `user-${u.user_id}`, label: u.name, id: u.user_id }));
   const displayUserOptions = realUserOptions;
-  const roleOptions = INTERNAL_USER_ROLE_OPTIONS.map((label) => ({ key: `role-${label}`, label, id: null }));
-  const allOptions = [...roleOptions, ...displayUserOptions];
+  const allOptions = displayUserOptions;
 
   const filterQuery = filterText.trim().toLowerCase();
   const filteredOptions = filterQuery
@@ -1994,13 +1937,14 @@ InternalUsersPickerModal.propTypes = {
 function CustomFieldPickerModal({ show, onClose, onApply, triggerTypeId }) {
   const [expanded, setExpanded] = useState(true);
   const [selectedBoardId, setSelectedBoardId] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [showDisabled, setShowDisabled] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedFieldKeys, setSelectedFieldKeys] = useState([]);
 
   const { customFields, isLoadingCustomFields } = useCustomFieldsByTrigger({
-    show, triggerTypeId, boardId: selectedBoardId, showDisabled, search: debouncedSearch,
+    show, triggerTypeId, boardId: selectedBoardId, templateId: selectedTemplateId, showDisabled, search: debouncedSearch,
   });
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
 
@@ -2087,34 +2031,36 @@ function CustomFieldPickerModal({ show, onClose, onApply, triggerTypeId }) {
             </button>
             {expanded && (
               <>
-                <div className="br-property-board-filter">
-                  <span className="br-property-board-filter-label">Show fields from board:</span>
-                  <div className="br-property-board-filter-row">
-                    <BoardFilterPicker
-                      workspaces={workspaces ?? []}
-                      value={selectedBoardId}
-                      onChange={setSelectedBoardId}
-                    />
-                    <button
-                      type="button"
-                      className="br-property-board-clear-btn"
-                      onClick={() => setSelectedBoardId('')}
-                      aria-label="Reset board filter"
-                    >
-                      <FiTrash2 size={14} />
-                    </button>
+                <div className="d-flex align-items-end gap-3">
+                  <div className="br-property-board-filter flex-fill">
+                    <span className="br-property-board-filter-label">Show fields from board:</span>
+                    <div className="br-property-board-filter-row">
+                      <BoardFilterPicker
+                        workspaces={workspaces ?? []}
+                        value={selectedBoardId}
+                        onChange={setSelectedBoardId}
+                      />
+                      <button
+                        type="button"
+                        className="br-property-board-clear-btn"
+                        onClick={() => setSelectedBoardId('')}
+                        aria-label="Reset board filter"
+                      >
+                        <FiTrash2 size={14} />
+                      </button>
+                    </div>
                   </div>
+                  <FormTemplateFilter show={show} value={selectedTemplateId} onChange={setSelectedTemplateId} />
+                  <label className="business-rule-form-toggle br-property-disabled-toggle mb-2 flex-shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={showDisabled}
+                      onChange={(e) => setShowDisabled(e.target.checked)}
+                    />
+                    <span className="business-rule-form-toggle-track" aria-hidden />
+                    <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
+                  </label>
                 </div>
-
-                <label className="business-rule-form-toggle br-property-disabled-toggle">
-                  <input
-                    type="checkbox"
-                    checked={showDisabled}
-                    onChange={(e) => setShowDisabled(e.target.checked)}
-                  />
-                  <span className="business-rule-form-toggle-track" aria-hidden />
-                  <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
-                </label>
 
                 <div className="br-property-pill-grid">
                   {isLoadingCustomFields ? (
@@ -2180,6 +2126,7 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
   const [expandedTimeUnit, setExpandedTimeUnit] = useState(true);
   const [expandedCustomFields, setExpandedCustomFields] = useState(true);
   const [selectedBoardId, setSelectedBoardId] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [showDisabled, setShowDisabled] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -2195,7 +2142,7 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
   } = useBusinessRuleReducer((s) => s);
 
   const { customFields, isLoadingCustomFields } = useCustomFieldsByTrigger({
-    show: show && !isActionMode, triggerTypeId, boardId: selectedBoardId, showDisabled, search: debouncedSearch,
+    show: show && !isActionMode, triggerTypeId, boardId: selectedBoardId, templateId: selectedTemplateId, showDisabled, search: debouncedSearch,
   });
 
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
@@ -2424,34 +2371,37 @@ function CardFieldPickerModal({ show, onClose, onApply, triggerTypeId, actionTyp
               <>
                 {!isActionMode && (
                   <>
-                    <div className="br-property-board-filter">
-                      <span className="br-property-board-filter-label">Show fields from board:</span>
-                      <div className="br-property-board-filter-row">
-                        <BoardFilterPicker
-                          workspaces={workspaces ?? []}
-                          value={selectedBoardId}
-                          onChange={setSelectedBoardId}
-                        />
-                        <button
-                          type="button"
-                          className="br-property-board-clear-btn"
-                          onClick={() => setSelectedBoardId('')}
-                          aria-label="Reset board filter"
-                        >
-                          <FiTrash2 size={14} />
-                        </button>
+                    <div className="d-flex align-items-end gap-3">
+                      <div className="br-property-board-filter flex-fill">
+                        <span className="br-property-board-filter-label">Show fields from board:</span>
+                        <div className="br-property-board-filter-row">
+                          <BoardFilterPicker
+                            workspaces={workspaces ?? []}
+                            value={selectedBoardId}
+                            onChange={setSelectedBoardId}
+                          />
+                          <button
+                            type="button"
+                            className="br-property-board-clear-btn"
+                            onClick={() => setSelectedBoardId('')}
+                            aria-label="Reset board filter"
+                          >
+                            <FiTrash2 size={14} />
+                          </button>
+                        </div>
                       </div>
+                      <FormTemplateFilter show={show} value={selectedTemplateId} onChange={setSelectedTemplateId} />
+                      <label className="business-rule-form-toggle br-property-disabled-toggle mb-2 flex-shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={showDisabled}
+                          onChange={(e) => setShowDisabled(e.target.checked)}
+                        />
+                        <span className="business-rule-form-toggle-track" aria-hidden />
+                        <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
+                      </label>
                     </div>
 
-                    <label className="business-rule-form-toggle br-property-disabled-toggle">
-                      <input
-                        type="checkbox"
-                        checked={showDisabled}
-                        onChange={(e) => setShowDisabled(e.target.checked)}
-                      />
-                      <span className="business-rule-form-toggle-track" aria-hidden />
-                      <span className="business-rule-form-toggle-label">Show disabled custom fields</span>
-                    </label>
                   </>
                 )}
 
@@ -4296,11 +4246,33 @@ WebInvokeSettingsModal.propTypes = {
   triggerTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
+const SUBTASK_DOCUMENT_ACCEPT = DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS.join(',');
+const SUBTASK_DOCUMENT_TYPE_LABELS = Array.from(
+  new Set(
+    DOCUMENT_UPLOAD_ALLOWED_EXTENSIONS.map((ext) => {
+      const label = ext.replace('.', '').toUpperCase();
+      return label === 'JPEG' ? 'JPG' : label;
+    })
+  )
+);
+const SUBTASK_DOCUMENT_HINT = `Supports ${SUBTASK_DOCUMENT_TYPE_LABELS.join(', ')} (max ${DOCUMENT_UPLOAD_MAX_SIZE / (1024 * 1024)}MB)`;
+
+// save_create_subtask_settings takes assigned_to / due_date, so the read response is mapped from
+// those keys as well as owner_user_id / deadline — whichever the backend returns is shown.
+const normalizeCreateSubtaskSettings = (settings) => ({
+  ownerUserId: settings?.owner_user_id ?? settings?.assigned_to ?? '',
+  deadline: settings?.deadline ?? settings?.due_date ?? '',
+  description: settings?.description ?? '',
+});
+
 function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fetchedSettings, isLoadingSettings, users }) {
   const [ownerUserId, setOwnerUserId] = useState('');
   const [deadlineDate, setDeadlineDate] = useState('');
   const [deadlineTime, setDeadlineTime] = useState('00:00');
   const [description, setDescription] = useState('');
+  const [documentFile, setDocumentFile] = useState(null);
+  const [isDraggingDocument, setIsDraggingDocument] = useState(false);
+  const documentInputRef = useRef(null);
   const [isOwnerPickerOpen, setIsOwnerPickerOpen] = useState(false);
   const [ownerFilterText, setOwnerFilterText] = useState('');
   const [ownerPanelCoords, setOwnerPanelCoords] = useState({ top: 0, left: 0, width: 0, placement: 'bottom' });
@@ -4311,14 +4283,14 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
 
   useEffect(() => {
     if (!show) return;
-    const source = fetchedSettings
-      ? { ownerUserId: fetchedSettings.owner_user_id, deadline: fetchedSettings.deadline, description: fetchedSettings.description }
-      : initialSettings;
+    const source = fetchedSettings ? normalizeCreateSubtaskSettings(fetchedSettings) : initialSettings;
     setOwnerUserId(source?.ownerUserId ?? '');
     const [datePart, timePart] = String(source?.deadline ?? '').split(' ');
     setDeadlineDate(datePart ?? '');
     setDeadlineTime((timePart ?? '00:00').slice(0, 5));
     setDescription(source?.description ?? '');
+    setDocumentFile(null);
+    setIsDraggingDocument(false);
     setIsOwnerPickerOpen(false);
     setOwnerFilterText('');
   }, [show, initialSettings, fetchedSettings]);
@@ -4371,7 +4343,7 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
   }, [isOwnerPickerOpen]);
 
   const selectedOwnerUser = (users ?? []).find((u) => String(u.user_id) === String(ownerUserId));
-  const ownerName = selectedOwnerUser?.name || 'None';
+  const ownerName = selectedOwnerUser?.name || 'Select user';
   const ownerFilterQuery = ownerFilterText.trim().toLowerCase();
   const filteredOwnerUsers = ownerFilterQuery
     ? (users ?? []).filter((u) => u.name?.toLowerCase().includes(ownerFilterQuery))
@@ -4382,15 +4354,61 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
     setIsOwnerPickerOpen(false);
   };
 
+  const existingCreateSubtaskId = initialSettings?.createSubtaskId;
+  const canSave = Boolean(ownerUserId && deadlineDate && description.trim());
+
+  const acceptDocumentFile = (file) => {
+    if (!file) return;
+    const { validFiles, rejectedFiles } = validateDocumentFiles([file]);
+    if (rejectedFiles.length > 0) {
+      const { error } = useAlertReducer.getState();
+      error(`"${rejectedFiles[0].name}" — ${rejectedFiles[0].reason}`);
+      return;
+    }
+    setDocumentFile(validFiles[0]);
+  };
+
+  const handleDocumentChange = (event) => {
+    const file = event.target.files?.[0] || null;
+    event.target.value = '';
+    acceptDocumentFile(file);
+  };
+
+  const handleDocumentDragOver = (event) => {
+    event.preventDefault();
+    if (!isSavingCreateSubtaskSettings) setIsDraggingDocument(true);
+  };
+
+  const handleDocumentDragLeave = (event) => {
+    event.preventDefault();
+    setIsDraggingDocument(false);
+  };
+
+  const handleDocumentDrop = (event) => {
+    event.preventDefault();
+    setIsDraggingDocument(false);
+    if (isSavingCreateSubtaskSettings) return;
+    acceptDocumentFile(event.dataTransfer?.files?.[0] || null);
+  };
+
   const handleSave = () => {
-    const deadline = deadlineDate ? `${deadlineDate} ${deadlineTime || '00:00'}:00` : '';
-    const payload = {
-      ...(ownerUserId ? { owner_user_id: ownerUserId } : {}),
-      ...(deadline ? { deadline } : {}),
-      description,
+    if (!canSave) return;
+    const deadline = `${deadlineDate} ${deadlineTime || '00:00'}:00`;
+    const trimmedDescription = description.trim();
+    // save_create_subtask_settings is multipart (assigned_to, due_date, description,
+    // optional document); update_create_subtask_settings takes owner_user_id/deadline/description.
+    const savePayload = new FormData();
+    savePayload.append('assigned_to', String(ownerUserId));
+    savePayload.append('due_date', deadline);
+    savePayload.append('description', trimmedDescription);
+    if (documentFile) savePayload.append('document', documentFile);
+    const updatePayload = {
+      owner_user_id: ownerUserId,
+      deadline,
+      description: trimmedDescription,
     };
     const createFresh = () => {
-      saveCreateSubtaskSettings(payload, {
+      saveCreateSubtaskSettings(savePayload, {
         cb: (data) => {
           // Same flat-vs-nested inconsistency as the notification create response (see
           // NotificationSettingsModal's own dual-check above) — checking only the flat
@@ -4400,7 +4418,7 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
           onSave({
             ownerUserId,
             deadline,
-            description,
+            description: trimmedDescription,
             createSubtaskId,
           });
           onClose();
@@ -4411,11 +4429,10 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
     // A create-subtask action that already has a createSubtaskId (fetchedSettings was
     // loaded for it in handleOpenCreateSubtaskSettings) was previously saved on the
     // backend, so resaving it must update that record instead of creating a duplicate one.
-    const existingCreateSubtaskId = initialSettings?.createSubtaskId;
     if (existingCreateSubtaskId) {
-      updateCreateSubtaskSettings(existingCreateSubtaskId, payload, {
+      updateCreateSubtaskSettings(existingCreateSubtaskId, updatePayload, {
         cb: () => {
-          onSave({ ownerUserId, deadline, description, createSubtaskId: existingCreateSubtaskId });
+          onSave({ ownerUserId, deadline, description: trimmedDescription, createSubtaskId: existingCreateSubtaskId });
           onClose();
         },
         // The backend can lose track of that id's "temporary" record once the
@@ -4440,18 +4457,6 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
       createFresh();
     }
   };
-
-  const renderDeadlineTrigger = ({ disabled, onOpen, displayValue }) => (
-    <button
-      type="button"
-      className="br-subtask-deadline-trigger"
-      onClick={onOpen}
-      disabled={disabled}
-    >
-      <FiCalendar size={14} aria-hidden />
-      {displayValue || 'Not Set'}
-    </button>
-  );
 
   return (
     <Modal
@@ -4481,7 +4486,7 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
         <div className="card-property-match-modal-body notification-settings-body">
           <div className="br-invoke-two-col">
             <div className="business-rule-form-field">
-              <label className="business-rule-form-label">Owner</label>
+              <label className="business-rule-form-label">Assign User <span className="task-tab-required">*</span></label>
               <button
                 type="button"
                 ref={ownerPickerTriggerRef}
@@ -4491,7 +4496,7 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
                 aria-expanded={isOwnerPickerOpen}
               >
                 <span className="business-rule-form-owner-avatar" aria-hidden>
-                  {getInitials(ownerName)}
+                  {selectedOwnerUser ? getInitials(ownerName) : <FiUsers size={12} />}
                 </span>
                 <span className="br-owner-picker-trigger-name">{ownerName}</span>
                 <FiChevronDown className="business-rule-form-select-icon" aria-hidden />
@@ -4514,16 +4519,6 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
                     />
                   </div>
                   <div className="br-owner-picker-list">
-                    <div className="br-owner-picker-row">
-                      <button
-                        type="button"
-                        className={`br-owner-picker-row-btn${!ownerUserId ? ' br-owner-picker-row-btn--selected' : ''}`}
-                        onClick={() => handlePickOwner(null)}
-                      >
-                        <span className="business-rule-form-owner-avatar" aria-hidden>{getInitials('None')}</span>
-                        <span className="br-owner-picker-row-name">None</span>
-                      </button>
-                    </div>
                     {filteredOwnerUsers.length === 0 ? (
                       <div className="br-property-picker-empty">No matches</div>
                     ) : (
@@ -4547,18 +4542,77 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
             </div>
 
             <div className="notification-field">
-              <label className="business-rule-form-label">Deadline</label>
-              <DatePickerField
+              <label className="business-rule-form-label">Due Date &amp; Time <span className="task-tab-required">*</span></label>
+              <DateTimePickerField
                 dateValue={deadlineDate}
-                onDateChange={(e) => setDeadlineDate(e.target.value)}
+                timeValue={deadlineTime}
+                onDateTimeChange={({ date, time }) => {
+                  setDeadlineDate(date);
+                  setDeadlineTime(time || '00:00');
+                }}
+                dateFieldName="br-subtask-due-date"
+                timeFieldName="br-subtask-due-time"
+                placeholder="YYYY-MM-DD HH:mm"
                 popperClassName="br-subtask-deadline-popper"
-                renderTrigger={renderDeadlineTrigger}
+                disabled={isSavingCreateSubtaskSettings}
               />
             </div>
+
+            {!existingCreateSubtaskId && (
+              <div className="notification-field br-subtask-document-field">
+                <label className="business-rule-form-label" htmlFor="br-subtask-document">Document</label>
+                {documentFile ? (
+                  <div className="task-tab-doc-chip">
+                    <span className="task-tab-doc-name" title={documentFile.name}>{documentFile.name}</span>
+                    <button
+                      type="button"
+                      className="task-tab-doc-remove"
+                      onClick={() => setDocumentFile(null)}
+                      aria-label="Remove document"
+                      disabled={isSavingCreateSubtaskSettings}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className={`br-subtask-dropzone${isDraggingDocument ? ' br-subtask-dropzone--active' : ''}`}
+                    onDragOver={handleDocumentDragOver}
+                    onDragLeave={handleDocumentDragLeave}
+                    onDrop={handleDocumentDrop}
+                    onClick={() => documentInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        documentInputRef.current?.click();
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <input
+                      id="br-subtask-document"
+                      ref={documentInputRef}
+                      type="file"
+                      accept={SUBTASK_DOCUMENT_ACCEPT}
+                      className="d-none"
+                      onChange={handleDocumentChange}
+                      disabled={isSavingCreateSubtaskSettings}
+                    />
+                    <FiUploadCloud className="br-subtask-dropzone__icon" aria-hidden />
+                    <span className="br-subtask-dropzone__text">
+                      {isDraggingDocument ? 'Drop your file here' : 'Drag and drop your file here'}
+                    </span>
+                    <span className="br-subtask-dropzone__hint">or click to browse</span>
+                  </div>
+                )}
+                <span className="task-tab-doc-hint">{SUBTASK_DOCUMENT_HINT}</span>
+              </div>
+            )}
           </div>
 
-          <div className="notification-field">
-            <label className="business-rule-form-label">Description</label>
+          <div className="notification-field br-subtask-description-field">
+            <label className="business-rule-form-label">Task title / description <span className="task-tab-required">*</span></label>
             <textarea
               className="business-rule-form-textarea br-subtask-description-textarea"
               value={description}
@@ -4572,9 +4626,9 @@ function CreateSubtaskSettingsModal({ show, onClose, onSave, initialSettings, fe
             type="button"
             className="br-property-add-btn"
             onClick={handleSave}
-            disabled={isLoadingSettings || isSavingCreateSubtaskSettings}
+            disabled={!canSave || isLoadingSettings || isSavingCreateSubtaskSettings}
           >
-            {isSavingCreateSubtaskSettings ? 'Saving...' : (isLoadingSettings ? 'Loading...' : (initialSettings?.createSubtaskId ? 'Update' : 'Save'))}
+            {isSavingCreateSubtaskSettings ? 'Saving...' : (isLoadingSettings ? 'Loading...' : (existingCreateSubtaskId ? 'Update' : 'Save'))}
           </button>
         </footer>
       </div>
@@ -4773,6 +4827,7 @@ ShareWithModal.propTypes = {
   onSave: PropTypes.func,
 };
 
+
 function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName, onClose, onSave, isSaving, isCopyMode }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -4791,8 +4846,10 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   const [showPropertyPicker, setShowPropertyPicker] = useState(false);
   const editingConditionIdRef = useRef(null);
   const [whenFields, setWhenFields] = useState([]);
+  const [whenDeadline, setWhenDeadline] = useState(EMPTY_WHEN_DEADLINE);
   const [showWhenFieldPicker, setShowWhenFieldPicker] = useState(false);
   const [createActions, setCreateActions] = useState([]);
+  const [createCardActions, setCreateCardActions] = useState([]);
   const [showCreateActionPicker, setShowCreateActionPicker] = useState(false);
   const [linkActions, setLinkActions] = useState([]);
   const [showLinkActionPicker, setShowLinkActionPicker] = useState(false);
@@ -4910,6 +4967,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   // execute_at, and create-subtask create actions) — rendered as a read-only key/value
   // dump instead, keyed by the THEN section id they'd otherwise belong to.
   const [rawSummaryBySectionId, setRawSummaryBySectionId] = useState({});
+  const [genericActionValues, setGenericActionValues] = useState({});
   const [boardConditionRows, setBoardConditionRows] = useState([{ id: 'board-0', boardId: '', joinWord: 'OR' }]);
   // The first-board auto-fill effect below must only ever apply once per modal-open
   // session — otherwise a late-resolving (or re-fetched) workspaces list can silently
@@ -4917,6 +4975,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   // own delete button, since that resets boardId back to '' and looks identical to the
   // untouched initial state the effect is meant to default.
   const boardConditionDefaultAppliedRef = useRef(false);
+  const positionDefaultAppliedRef = useRef(false);
   const [openColorConditionId, setOpenColorConditionId] = useState(null);
   const colorConditionTriggerRef = useRef(null);
   const colorConditionPanelRef = useRef(null);
@@ -4964,16 +5023,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   const executeTimeTriggerRef = useRef(null);
   const executeTimePanelRef = useRef(null);
 
-  // Deadline-based triggers (when_type 'deadline', e.g. "Time-based rule", trigger_type_id 9)
-  // — "Deadline is in/was more than [N] day(s)". No backend catalog for the comparison word
-  // or a when-side property shape yet, so the comparison list is a fixed local set and the
-  // day count is a plain number, both best-effort until confirmed against a real save payload.
-  const [whenDeadlineComparison, setWhenDeadlineComparison] = useState(WHEN_DEADLINE_COMPARISON_OPTIONS[0].key);
-  const [whenDeadlineDays, setWhenDeadlineDays] = useState(0);
-  const [showWhenDeadlineComparisonPicker, setShowWhenDeadlineComparisonPicker] = useState(false);
-  const [whenDeadlineComparisonFilterText, setWhenDeadlineComparisonFilterText] = useState('');
-  const whenDeadlineComparisonTriggerRef = useRef(null);
-  const whenDeadlineComparisonPanelRef = useRef(null);
 
   const {
     getTriggerConfig, triggerConfig, isLoadingTriggerConfig, getFieldDetails, fieldDetailsByKey, isLoadingFieldDetails,
@@ -4984,13 +5033,14 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     deleteNotificationSettings,
     getWebServiceSettings, webServiceSettings, isLoadingWebServiceSettings, resetWebServiceSettings,
     getWebServiceSettingsPreview,
-    timeUnits, getTimeUnits,
+    timeUnits, getTimeUnits, valueTimeUnits, getValueTimeUnits,
     deleteWebServiceSettings,
     deleteCreateSubtaskSettings,
     getCreateSubtaskSettings, createSubtaskSettings, isLoadingCreateSubtaskSettings, resetCreateSubtaskSettings,
     getCreateSubtaskSettingsPreview,
     getBusinessRuleById, businessRuleDetails, isLoadingBusinessRuleDetails, resetBusinessRuleDetails,
     regularFields, getRegularFields,
+    fields: whenFieldCategories, getFields,
     getExecutionLogs, executionLogs, isLoadingExecutionLogs, resetExecutionLogs,
     exportExecutionLogsFile, isLoadingExportExecutionLogs,
     getBusinessRuleHistory, businessRuleHistory, isLoadingBusinessRuleHistory, resetBusinessRuleHistory,
@@ -5057,7 +5107,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   // label — the create flow never needs this at the top level since CardPropertyMatchModal
   // (below) fetches its own copy lazily, scoped to whichever picker the user has open.
   const { customFields: editModeCustomFields } = useCustomFieldsByTrigger({
-    show: show && isEditMode, triggerTypeId: rule?.id, boardId: null, showDisabled: true, search: '',
+    show: show && isEditMode, triggerTypeId: rule?.id, boardId: null, showDisabled: true, narrowDisabled: false, search: '',
   });
 
   useEffect(() => {
@@ -5148,6 +5198,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   // from get_then_action_fields, keyed by this trigger's action_type_id for that
   // group_type (get_trigger_config's actions[] carries one per group_type).
   const createActionTypeId = sortedTriggerActions.find((a) => a.group_type === 'create_cards')?.action_type_id;
+  const createCardCatalog = useBusinessRuleReducer((state) => state.thenActionFieldsByType[String(createActionTypeId)]);
+  const getThenActionFieldsByTypeForCreate = useBusinessRuleReducer((state) => state.getThenActionFieldsByType);
+  useEffect(() => {
+    if (createActionTypeId != null && createCardActions.length > 0) getThenActionFieldsByTypeForCreate(createActionTypeId);
+  }, [createActionTypeId, createCardActions.length]);
   const updateActionTypeId = sortedTriggerActions.find((a) => a.group_type === 'update_card')?.action_type_id;
 
   // Resolved once per trigger: which cross-card direction (if any) this trigger's own
@@ -5180,6 +5235,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     if (workspaces.length === 0) listAllWorkspaces();
     setBoardConditionRows([{ id: 'board-0', boardId: '', joinWord: 'OR' }]);
     boardConditionDefaultAppliedRef.current = false;
+    positionDefaultAppliedRef.current = false;
     setName(rule.name ?? '');
     setDescription(rule.description ?? '');
     setTags([]);
@@ -5194,6 +5250,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setConditions([]);
     setShowPropertyPicker(false);
     setWhenFields([]);
+    setWhenDeadline(EMPTY_WHEN_DEADLINE);
     setShowWhenFieldPicker(false);
     setCreateActions([]);
     setShowCreateActionPicker(false);
@@ -5226,6 +5283,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setActiveCreateSubtaskActionId(null);
     setShowCancelConfirm(false);
     setRawSummaryBySectionId({});
+    setGenericActionValues({});
     setRecurrenceSchedule('every_day');
     setShowRecurrenceUnitPicker(false);
     setAdvancedSchedule('');
@@ -5243,6 +5301,103 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setExecuteThenActionId(null);
     if (timeUnits.length === 0) getTimeUnits();
   }, [show, rule, loggedInUserName, loggedInUserId]);
+
+  useEffect(() => {
+    if (show && rule?.id && valueTimeUnits.length === 0) getValueTimeUnits(rule.id);
+  }, [show, rule?.id]);
+
+  const isWhenDeadlineTrigger = triggerConfig?.when_type === 'deadline';
+  const isWhenAnyChangeTrigger = triggerConfig?.when_type === 'any_change';
+  const whenFieldRestriction = useMemo(() => {
+    if (!isWhenDeadlineTrigger && !isWhenAnyChangeTrigger) return null;
+    const idsOf = (categoryKey, idKey) => whenFieldCategories
+      .filter((category) => category.category_key === categoryKey)
+      .flatMap((category) => (category.fields ?? []).map((f) => String(f[idKey])));
+    return { regular: idsOf('regular_fields', 'regular_field_id'), custom: idsOf('custom_fields', 'custom_field_id') };
+  }, [isWhenDeadlineTrigger, isWhenAnyChangeTrigger, whenFieldCategories]);
+  const whenDeadlineFieldOptions = useMemo(() => (isWhenDeadlineTrigger ? whenFieldCategories : [])
+    .filter((category) => category.category_key !== 'time_unit')
+    .flatMap((category) => (category.fields ?? []).map((f) => {
+      const fieldType = f.custom_field_id != null ? 'custom' : 'regular';
+      const fieldId = f.custom_field_id ?? f.regular_field_id;
+      return { key: `${fieldType}-${fieldId}`, fieldType, fieldId, fieldKey: f.field_key, label: getFieldLabel(f) };
+    })), [isWhenDeadlineTrigger, whenFieldCategories]);
+  // A field swapped in through the Card property match modal may not be in get_fields' list, so it
+  // is rebuilt from the key ("<type>-<id>") and the label stored when it was picked.
+  const whenDeadlineField = whenDeadlineFieldOptions.find((o) => o.key === whenDeadline.fieldKey)
+    ?? (whenDeadline.fieldKey
+      ? {
+        key: whenDeadline.fieldKey,
+        fieldType: whenDeadline.fieldKey.split('-')[0],
+        fieldId: Number(whenDeadline.fieldKey.split('-')[1]),
+        label: whenDeadline.fieldLabel,
+      }
+      : null);
+  const whenDeadlineDetails = whenDeadlineField ? fieldDetailsByKey[whenDeadlineField.key] : null;
+  const whenDeadlineOperators = whenDeadlineDetails?.operators ?? [];
+  const whenDeadlineOperator = whenDeadlineOperators.find(
+    (op) => String(getOperatorId(op)) === String(whenDeadline.operatorId)
+  ) ?? null;
+  // Plain suffix text next to the number ("day(s)", or "day(s) ago" for "was more than"),
+  // built from the preselected time unit's own label.
+  const whenDeadlineUnit = valueTimeUnits.find((unit) => String(unit.time_unit_id) === whenDeadline.timeUnitId);
+  const whenDeadlineUnitText = whenDeadlineUnit
+    ? `${String(whenDeadlineUnit.unit_label).toLowerCase().replace(/s$/, '')}(s)${whenDeadlineOperator?.operator_key === WHEN_DEADLINE_AGO_OPERATOR_KEY ? ' ago' : ''}`
+    : '';
+  const savedWhenDeadline = isEditMode && businessRuleDetailsReady && isWhenDeadlineTrigger
+    ? (businessRuleDetails.when_fields ?? []).find((wf) => wf.regular_field_id != null || wf.custom_field_id != null)
+    : null;
+
+  useEffect(() => {
+    if (!show || !rule?.id || (!isWhenDeadlineTrigger && !isWhenAnyChangeTrigger)) return;
+    getFields({ params: { trigger_type_id: rule.id, list: 'when' } });
+  }, [show, rule?.id, isWhenDeadlineTrigger, isWhenAnyChangeTrigger]);
+
+  // Preselects the saved field when reopening a rule, otherwise the first one in the list.
+  useEffect(() => {
+    if (whenDeadlineFieldOptions.length === 0 || whenDeadline.fieldKey !== '') return;
+    if (isEditMode && !businessRuleDetailsReady) return;
+    const savedKey = savedWhenDeadline
+      ? (savedWhenDeadline.custom_field_id != null ? `custom-${savedWhenDeadline.custom_field_id}` : `regular-${savedWhenDeadline.regular_field_id}`)
+      : null;
+    // Deadline first (by key, then by label), then any regular date field, so a custom date field
+    // listed earlier (e.g. an owner field) is never the default.
+    const defaultField = whenDeadlineFieldOptions.find((o) => o.fieldKey === WHEN_DEADLINE_DEFAULT_FIELD_KEY)
+      ?? whenDeadlineFieldOptions.find((o) => o.label.trim().toLowerCase() === WHEN_DEADLINE_DEFAULT_FIELD_KEY)
+      ?? whenDeadlineFieldOptions.find((o) => o.fieldType === 'regular')
+      ?? whenDeadlineFieldOptions[0];
+    const fieldKey = whenDeadlineFieldOptions.some((o) => o.key === savedKey) ? savedKey : defaultField.key;
+    setWhenDeadline({ ...EMPTY_WHEN_DEADLINE, fieldKey });
+  }, [whenDeadlineFieldOptions, whenDeadline.fieldKey, isEditMode, businessRuleDetailsReady, savedWhenDeadline]);
+
+  useEffect(() => {
+    if (!whenDeadlineField || fieldDetailsByKey[whenDeadlineField.key] !== undefined) return;
+    getFieldDetails(whenDeadlineField.fieldType, whenDeadlineField.fieldId);
+  }, [whenDeadlineField, fieldDetailsByKey]);
+
+  // The unit dropdown always has a value to show (first unit, e.g. Days) once an operator is picked.
+  useEffect(() => {
+    if (!whenDeadlineOperator || whenDeadline.timeUnitId !== '' || valueTimeUnits.length === 0) return;
+    setWhenDeadline((prev) => ({ ...prev, timeUnitId: String(valueTimeUnits[0].time_unit_id) }));
+  }, [whenDeadlineOperator, whenDeadline.timeUnitId, valueTimeUnits]);
+
+  // Restores the saved operator/value/unit/call time (create mode just preselects the first operator).
+  useEffect(() => {
+    if (!whenDeadlineField || whenDeadlineOperators.length === 0 || whenDeadline.operatorId !== '') return;
+    const saved = savedWhenDeadline && `${savedWhenDeadline.custom_field_id != null ? 'custom' : 'regular'}-${savedWhenDeadline.custom_field_id ?? savedWhenDeadline.regular_field_id}` === whenDeadlineField.key
+      ? savedWhenDeadline
+      : null;
+    const operator = (saved && whenDeadlineOperators.find(
+      (op) => op.operator_key === saved.operator || op.operator_label === saved.operator
+    )) ?? whenDeadlineOperators.find(operatorNeedsTimeUnit) ?? whenDeadlineOperators[0];
+    setWhenDeadline((prev) => ({
+      ...prev,
+      operatorId: String(getOperatorId(operator)),
+      value: saved?.input_value ?? '',
+      timeUnitId: saved?.time_unit_id != null ? String(saved.time_unit_id) : '',
+      timeObjectId: saved?.time_object_id != null ? String(saved.time_object_id) : '',
+    }));
+  }, [whenDeadlineField, whenDeadlineOperators, whenDeadline.operatorId, savedWhenDeadline]);
 
   // Overwrites the blank defaults the reset effect above just seeded, once the fetched
   // rule's data is ready — runs after that effect within the same commit (both are keyed
@@ -5295,6 +5450,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       // they aren't real "watch this field" chips, so must not leak into whenFields here.
       // See RECURRENCE_REGULAR_FIELD_IDS in buildBusinessRulePayload.js for why.
       .filter((wf) => !RECURRENCE_REGULAR_FIELD_IDS.includes(Number(wf.regular_field_id)))
+      .filter(() => !isWhenDeadlineTrigger)
       .sort((a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0))
       .map((wf) => {
         const fieldType = wf.regular_field_id != null ? 'regular' : 'custom';
@@ -5308,20 +5464,20 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         };
       });
     setWhenFields(realWhenFields);
-  }, [isEditMode, businessRuleDetailsReady, businessRuleDetails, regularFields, editModeCustomFields]);
+  }, [isEditMode, businessRuleDetailsReady, businessRuleDetails, regularFields, editModeCustomFields, isWhenDeadlineTrigger]);
 
   // Board restriction rows carry no field id of their own in the saved rule's flat
   // conditions[] list — best-effort split against this trigger's own default_conditions
   // catalog by field_label, the exact inverse of buildConditions()'s equally best-effort
-  // forward mapping in buildBusinessRulePayload.js. Saved "Position" conditions are no
-  // longer supported and are dropped rather than shown as a plain condition box.
+  // forward mapping in buildBusinessRulePayload.js. A saved "Position" condition (required on
+  // the moved triggers, guide 4.3) is restored as a normal condition box, drawn by the
+  // board-structure value control.
   useEffect(() => {
     if (!isEditMode || !businessRuleDetailsReady) return;
     const rawConditions = businessRuleDetails.conditions ?? [];
     const defaultConditionFor = (label) =>
       (triggerConfig?.default_conditions ?? []).find((c) => String(c.field_label ?? '').trim().toLowerCase() === label);
     const boardDefault = defaultConditionFor('board');
-    const positionDefault = defaultConditionFor('position');
 
     const boardRows = [];
     const plainConditions = [];
@@ -5335,8 +5491,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           boardRows.push({ id: `board-${cond.condition_id}`, boardId: cond.input_value ?? '', joinWord: cond.connector || 'OR' });
           return;
         }
-        const positionFieldId = positionDefault?.regular_field_id ?? positionDefault?.field_id;
-        if (positionDefault && cond.regular_field_id != null && String(cond.regular_field_id) === String(positionFieldId)) return;
         plainConditions.push(cond);
       });
 
@@ -5370,6 +5524,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         id: `cond-val-${cond.condition_id}`,
         conditionId: cond.condition_id ?? null,
         value: cond.input_value ?? '',
+        timeUnitId: cond.time_unit_id != null ? String(cond.time_unit_id) : '',
         joinWord: cond.connector || 'OR',
       });
     });
@@ -5399,12 +5554,14 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       .sort((a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0));
 
     const nextCreateActions = [];
+    const nextCreateCardActions = [];
     const nextUpdateActions = [];
     const nextLinkActions = [];
     const nextRemoveOtherLinksByType = {};
     const nextNotifyActions = [];
     const nextInvokeActions = [];
     const nextRawSummaryBySectionId = {};
+    const nextGenericActionValues = {};
     let nextExecuteThenActionId = null;
     let nextExecuteAtTime = null;
     let nextRecurrenceSchedule = null;
@@ -5437,13 +5594,17 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           // destination-based creates (card/child/parent/...) are dropped.
           const relationType = propVal(action, 'relation_type');
           const restoredCreateSubtaskId = action.create_subtask_id ?? propVal(action, 'create_subtask_id');
-          if (relationType !== 'subtask' && restoredCreateSubtaskId == null) return;
+          if (relationType !== 'subtask' && restoredCreateSubtaskId == null) {
+            nextCreateCardActions.push(parseCreateCardThenAction(action, ''));
+            return;
+          }
           nextCreateActions.push({
             id: `create-${action.then_action_id}`,
             thenActionId: action.then_action_id ?? null,
             key: 'subtask',
             label: 'Create subtask',
             createSubtaskId: restoredCreateSubtaskId,
+            actionTypeId: action.action_type_id ?? group.action_type_id ?? null,
             configured: restoredCreateSubtaskId != null,
           });
         });
@@ -5454,6 +5615,8 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         actions.forEach((action) => {
           const fieldKey = propVal(action, 'field_key');
           const fieldValue = propVal(action, 'field_value');
+          const savedValueLabel = (action.properties ?? []).find((pr) => pr.property_key === 'field_value')?.property_value_label ?? null;
+          const stickerIds = String(fieldValue ?? '').split(',').map((v) => v.trim()).filter(Boolean);
           // Exact match first; falls back to a substring check either direction (e.g. a
           // live field_key of "Card Color" or "card_color" wouldn't equal 'Color' outright)
           // — same fragile-label problem as the create-action relation-type matching
@@ -5474,7 +5637,12 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           // is a substring of both field_key strings either way — always resolved to
           // whichever catalog entry sits first (`add_co_owners`), permanently relabeling
           // every saved "Remove co-owners"/"Remove stickers" action back to "Add" on reopen.
-          let matchedOption = UPDATE_ACTION_OPTIONS.find((opt) => opt.label.toLowerCase() === normalizedFieldKey);
+          // The saved field_key is the option's own key ("remove_stickers", "set_milestones"), which is
+          // exact and unique, so it is matched first; the label and field fallbacks below only serve
+          // older data. Without this the substring fallback resolved every saved "remove_stickers" /
+          // "set_milestones" to the first catalog entry that shared its field name.
+          let matchedOption = UPDATE_ACTION_OPTIONS.find((opt) => opt.key === normalizedFieldKey)
+            ?? UPDATE_ACTION_OPTIONS.find((opt) => opt.label.toLowerCase() === normalizedFieldKey);
           if (!matchedOption) {
             const exactMatches = UPDATE_ACTION_OPTIONS.filter((opt) => opt.field.toLowerCase() === normalizedFieldKey);
             matchedOption = exactMatches[0];
@@ -5503,6 +5671,8 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           nextUpdateActions.push({
             id: `update-${action.then_action_id}`,
             thenActionId: action.then_action_id ?? null,
+            actionTypeId: action.action_type_id ?? group.action_type_id ?? null,
+
             category: matchedOption ? 'action' : 'custom',
             key: matchedOption?.key ?? `custom-${fieldKey}`,
             label: matchedOption?.label ?? `Set ${fieldKey ?? ''}`,
@@ -5526,7 +5696,8 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                     return {
                       id: `${action.then_action_id}-${stickerId}`,
                       stickerId,
-                      stickerName: sticker?.label ?? `Sticker #${stickerId}`,
+                      // A sticker missing from the loaded list (e.g. disabled) still has its saved name.
+                      stickerName: sticker?.label ?? (stickerIds.length === 1 ? savedValueLabel : null) ?? `Sticker #${stickerId}`,
                       stickerColor: sticker?.color_code ?? '',
                       stickerIcon: sticker?.icon ?? '',
                     };
@@ -5565,6 +5736,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                 const optionMeta = LINK_ACTION_OPTIONS.find((o) => o.key === row.relation_type);
                 target = {
                   id: `link-${row.link_card_id}`,
+                  actionTypeId: action.action_type_id ?? group.action_type_id ?? null,
                   key: row.relation_type,
                   label: optionMeta?.label ?? `Link as ${row.relation_type}`,
                   operatorKey: row.operator_key,
@@ -5588,6 +5760,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           nextNotifyActions.push({
             id: `notify-${action.then_action_id}`, key: 'send_notification', label: 'Send notification',
             thenActionId: action.then_action_id ?? null,
+            actionTypeId: action.action_type_id ?? group.action_type_id ?? null,
             notification_id: action.notification_id ?? null,
             // Without this, a saved notify action always reads "Not Set" on reopen —
             // `configured` only ever got set by handleSaveNotificationSettings (live
@@ -5603,6 +5776,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           nextInvokeActions.push({
             id: `invoke-${action.then_action_id}`, key: 'invoke_web_service', label: 'Invoke web service',
             thenActionId: action.then_action_id ?? null,
+            actionTypeId: action.action_type_id ?? group.action_type_id ?? null,
             webServiceId: action.web_service_id ?? null,
             // Same restore gap as notify actions above — configured only got set on
             // live save, so a saved invoke action always read "Not Set" on reopen.
@@ -5649,6 +5823,22 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         return;
       }
 
+      // Groups with no dedicated section are edited by GenericThenActionEditor, so restore
+      // them into its own state instead of a read-only summary.
+      if (!sectionId) {
+        actions.forEach((action) => {
+          const actionTypeId = action.action_type_id ?? group.action_type_id;
+          if (actionTypeId == null) return;
+          const parsed = parseGenericThenAction(action, group.group_type);
+          const previous = nextGenericActionValues[String(actionTypeId)];
+          // Each saved create-cards action is one more card of the same section.
+          nextGenericActionValues[String(actionTypeId)] = group.group_type === CREATE_CARDS_GROUP_TYPE
+            ? { ...parsed, cards: [...(previous?.cards ?? []), ...parsed.cards] }
+            : (previous ? { ...previous, more: [...(previous.more ?? []), parsed] } : parsed);
+        });
+        return;
+      }
+
       // update_related / copy_values / anything else — no reliable forward mapping exists
       // to invert (per confirmed scope), so it's always shown as a raw read-only summary
       // rather than forced into editable-looking fields.
@@ -5656,6 +5846,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     });
 
     setCreateActions(nextCreateActions);
+    setCreateCardActions(nextCreateCardActions);
     setUpdateActions(nextUpdateActions);
     setLinkActions(nextLinkActions);
     setRemoveOtherLinksByType(nextRemoveOtherLinksByType);
@@ -5671,6 +5862,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     if (nextPredefinedIntervalDays) setPredefinedIntervalDays(nextPredefinedIntervalDays);
     if (nextPredefinedIntervalStartDate) setPredefinedIntervalStartDate(nextPredefinedIntervalStartDate);
     setRawSummaryBySectionId(nextRawSummaryBySectionId);
+    setGenericActionValues(nextGenericActionValues);
   }, [isEditMode, businessRuleDetailsReady, businessRuleDetails, triggerConfig, users, cardStickers]);
 
   // The THEN-column notify card shows the actual saved subject (as pills) instead of a
@@ -5705,9 +5897,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           setCreateActions((prev) => prev.map((a) => (a.id === action.id ? {
             ...a,
             previewLoaded: true,
-            ownerUserId: settings?.owner_user_id ?? '',
-            deadline: settings?.deadline ?? '',
-            description: settings?.description ?? '',
+            ...normalizeCreateSubtaskSettings(settings),
           } : a)));
         });
       });
@@ -5762,18 +5952,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     document.addEventListener('mousedown', onDocMouseDown);
     return () => document.removeEventListener('mousedown', onDocMouseDown);
   }, [openConditionOperatorId]);
-
-  useEffect(() => {
-    if (!showWhenDeadlineComparisonPicker) return undefined;
-    const onDocMouseDown = (event) => {
-      const t = event.target;
-      if (whenDeadlineComparisonPanelRef.current?.contains(t)) return;
-      if (whenDeadlineComparisonTriggerRef.current?.contains(t)) return;
-      setShowWhenDeadlineComparisonPicker(false);
-    };
-    document.addEventListener('mousedown', onDocMouseDown);
-    return () => document.removeEventListener('mousedown', onDocMouseDown);
-  }, [showWhenDeadlineComparisonPicker]);
 
   useEffect(() => {
     if (!showExecuteTimePicker) return undefined;
@@ -5958,6 +6136,38 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     return () => document.removeEventListener('mousedown', onDocMouseDown);
   }, [openUpdateNonWorkingActionId]);
 
+  // Every default_conditions entry of the trigger other than Board (which has its own row above) is
+  // added to AND up front, whatever the field (Position on the moved triggers, Task, ...): the
+  // backend rejects the rule without the required ones. Their value box comes from the field's details.
+  useEffect(() => {
+    if (!show || isEditMode || positionDefaultAppliedRef.current) return;
+    if (!triggerConfig || Number(triggerConfig.trigger_type_id) !== Number(rule?.id)) return;
+    const extraDefaults = (triggerConfig.default_conditions ?? [])
+      .filter((c) => String(c.field_label ?? '').trim().toLowerCase() !== 'board')
+      .map((c) => ({ ...c, fieldId: c.regular_field_id ?? c.field_id }))
+      .filter((c) => c.fieldId != null);
+    positionDefaultAppliedRef.current = true;
+    if (extraDefaults.length === 0) return;
+    setConditions((prev) => {
+      const missing = extraDefaults.filter((c) => !prev.some((p) => p.fieldKey === `regular-${c.fieldId}`));
+      return [...prev, ...missing.map((c) => ({
+        id: `cond-default-${c.fieldId}`,
+        fieldLabel: c.field_label,
+        fieldKey: `regular-${c.fieldId}`,
+        category: 'regular',
+        fieldType: 'regular',
+        fieldId: c.fieldId,
+        valueType: null,
+        operatorId: '',
+        desiredOperatorLabel: '',
+        values: [{ id: `cond-default-val-${c.fieldId}`, conditionId: null, value: '', timeUnitId: '', joinWord: 'OR' }],
+      }))];
+    });
+    extraDefaults.forEach((c) => {
+      if (fieldDetailsByKey[`regular-${c.fieldId}`] === undefined) getFieldDetails('regular', c.fieldId);
+    });
+  }, [show, isEditMode, triggerConfig, rule?.id]);
+
   useEffect(() => {
     if (!show || boardConditionDefaultAppliedRef.current) return;
     const firstBoard = (workspaces ?? []).flatMap((w) => w.boards ?? [])[0];
@@ -6010,10 +6220,17 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         const operators = detailsKey ? fieldDetailsByKey[detailsKey]?.operators : null;
         if (!operators || operators.length === 0) return cond;
         changed = true;
-        const desiredMatch = cond.desiredOperatorLabel
-          ? operators.find((op) => (op.operator_label || '').trim().toLowerCase() === cond.desiredOperatorLabel.trim().toLowerCase())
+        // A date field saved on its empty state comes back as is_empty but is drawn as "is" + the
+        // empty-state text ("Not Set" / "Not Moved").
+        const savedOperator = getDateFieldEmptyOperatorKey(fieldDetailsByKey[detailsKey]) === cond.desiredOperatorLabel
+          ? 'is'
+          : cond.desiredOperatorLabel;
+        // The saved operator is the operator_key ("in_next"); older data may carry the label.
+        const desiredMatch = savedOperator
+          ? operators.find((op) => getOperatorKey(op) === savedOperator
+            || (op.operator_label || '').trim().toLowerCase() === savedOperator.trim().toLowerCase())
           : null;
-        return { ...cond, operatorId: (desiredMatch ?? operators[0]).field_operator_id };
+        return { ...cond, operatorId: getOperatorId(desiredMatch ?? operators[0]) };
       });
       return changed ? next : prev;
     });
@@ -6059,9 +6276,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       sharePermissions,
       disallowTriggerChain,
       whenFields,
+      whenDeadline: { ...whenDeadline, fieldType: whenDeadlineField?.fieldType, fieldId: whenDeadlineField?.fieldId },
       boardConditionRows,
       conditions,
       createActions,
+      createCardActions,
       linkActions,
       removeOtherLinksByType,
       updateActions,
@@ -6080,8 +6299,14 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       // Then-groups the routing effect couldn't invert into editable state (create-subtask,
       // update_parent/child_card, copy_values_to_*) — passed through as-is by buildThenActions'
       // raw fallback so an edit save doesn't wipe them from the rule.
+      genericActionValues,
       rawThenActionGroups: Object.values(rawSummaryBySectionId).flat(),
     };
+
+    if (isWhenDeadlineTrigger && whenDeadlineOperator && operatorTakesValue(whenDeadlineOperator) && String(whenDeadline.value) === '') {
+      setSaveError('Enter a value for the WHEN condition before saving.');
+      return;
+    }
 
     const unconfigured = getUnconfiguredActionLabels(formState);
     if (unconfigured.length > 0) {
@@ -6101,6 +6326,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         isEnabled: Number(businessRuleDetails?.is_enabled ?? businessRuleDetails?.status ?? 0) === 1,
       })
       : buildCreateBusinessRulePayload(formState, { loggedInUserId, triggerConfig, fieldDetailsByKey });
+    const untypedActions = (payload.then_actions ?? []).filter((a) => a.action_type_id == null || a.action_type_id === '');
+    if (untypedActions.length > 0) {
+      setSaveError(`Could not determine the action type for ${untypedActions.length} action(s). Reopen the rule and try again.`);
+      return;
+    }
     onSave?.(payload);
   };
 
@@ -6172,7 +6402,8 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     }
 
     if (fieldType && fieldId != null) {
-      getFieldDetails(fieldType, fieldId);
+      const selectedBoardIds = boardConditionRows.map((row) => row.boardId).filter(Boolean).join(',');
+      getFieldDetails(fieldType, fieldId, { boardIds: selectedBoardIds });
     }
   };
 
@@ -6194,6 +6425,15 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   // has_when_fields === '1', e.g. "Card is updated") record which field(s) must
   // change for the rule to fire — no operator/value, just the field itself.
   const handleOpenWhenFieldPicker = () => setShowWhenFieldPicker(true);
+
+  // Deadline-based triggers swap their single date field instead of adding a watch chip.
+  const handleSelectWhenDeadlineField = (field, category) => {
+    const fieldType = category.category_key === 'custom' ? 'custom' : 'regular';
+    const fieldId = field.regular_field_id ?? field.custom_field_id;
+    if (fieldId == null) return;
+    setWhenDeadline({ ...EMPTY_WHEN_DEADLINE, fieldKey: `${fieldType}-${fieldId}`, fieldLabel: getFieldLabel(field) });
+    setShowWhenFieldPicker(false);
+  };
 
   const handleSelectWhenField = (field, category) => {
     const fieldType = category.category_key === 'custom' ? 'custom' : category.category_key === 'regular' ? 'regular' : null;
@@ -6223,7 +6463,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
   // Clicking a value row's join-word pill duplicates that value (same value) directly
   // below it, inside the same box — it does not flip the pill's own AND/OR value.
-  // Time unit fields never allow multiple values per box, so this is a no-op for them.
   const handleToggleConditionJoinWord = (boxId, valueId) => {
     setConditions((prev) =>
       prev.map((c) => {
@@ -6255,6 +6494,16 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setOpenConditionOperatorId((prev) => (prev === id ? null : id));
   };
 
+  const handleChangeConditionValue = (conditionId, valueId, patch) => {
+    setConditions((prev) =>
+      prev.map((c) =>
+        c.id === conditionId
+          ? { ...c, values: c.values.map((item) => (item.id === valueId ? { ...item, ...patch } : item)) }
+          : c
+      )
+    );
+  };
+
   const handleSelectConditionOperator = (id, operator) => {
     // Negative operators ("is not", "does not contain", ...) imply AND across values
     // ("is not X AND is not Y"); any other operator implies OR ("is X OR Y") —
@@ -6264,7 +6513,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setConditions((prev) =>
       prev.map((c) =>
         c.id === id
-          ? { ...c, operatorId: operator.field_operator_id, values: c.values.map((v) => ({ ...v, joinWord: isNegation ? 'AND' : 'OR' })) }
+          ? { ...c, operatorId: getOperatorId(operator), values: c.values.map((v) => ({ ...v, joinWord: isNegation ? 'AND' : 'OR' })) }
           : c
       )
     );
@@ -6272,6 +6521,12 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   };
 
   const handleSelectCreateAction = (option) => {
+    // Create card / child / parent have their own card (title, where, card fields); only the
+    // subtask keeps the settings-modal flow.
+    if (!isCreateSubtaskAction(option)) {
+      setCreateCardActions((prev) => [...prev, makeCreateCardAction(option.key, option.label)]);
+      return;
+    }
     setCreateActions((prev) => [
       ...prev,
       { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, key: option.key, label: option.label },
@@ -6293,6 +6548,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   };
 
   const handleClearCreateActions = () => {
+    setCreateCardActions([]);
     // Same rule as handleRemoveCreateAction: only "Create subtask" entries saved on
     // the backend (createSubtaskId) need a delete call before they can be cleared.
     const actionsToDelete = createActions.filter((a) => a.createSubtaskId);
@@ -7320,81 +7576,51 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
                       <div className="business-rule-form-when-deadline-input-row">
                         <span className="business-rule-form-condition-label">Starting from</span>
-                        <input
-                          type="date"
+                        <DatePickerField
                           className="business-rule-form-when-deadline-input"
-                          value={predefinedIntervalStartDate}
-                          onChange={(e) => setPredefinedIntervalStartDate(e.target.value)}
+                          dateValue={predefinedIntervalStartDate}
+                          onDateChange={(e) => setPredefinedIntervalStartDate(e.target.value)}
+                          placeholder="DD/MM/YYYY"
                         />
                       </div>
                     </div>
                   )}
                 </div>
-              ) : triggerConfig?.when_type === 'deadline' ? (
-                <div className="business-rule-form-column-card business-rule-form-when-fields business-rule-form-when-deadline">
-                  <div className="business-rule-form-when-deadline-label-row business-rule-form-condition-operator-group">
-                    <span className="business-rule-form-condition-label">Deadline</span>
-                    <div className="board-minimap-picker-wrap br-condition-operator-wrap">
+              ) : isWhenDeadlineTrigger ? (
+                whenDeadlineField && (
+                  <div className="business-rule-form-column-card business-rule-form-when-fields">
+                    <div className="business-rule-form-when-deadline-label-row business-rule-form-condition-operator-group br-when-deadline-text">
                       <button
                         type="button"
-                        ref={showWhenDeadlineComparisonPicker ? whenDeadlineComparisonTriggerRef : undefined}
-                        className="br-condition-operator-trigger"
-                        onClick={() => setShowWhenDeadlineComparisonPicker((prev) => !prev)}
-                        aria-haspopup="listbox"
-                        aria-expanded={showWhenDeadlineComparisonPicker}
+                        className="business-rule-form-condition-label business-rule-form-condition-label-btn"
+                        onClick={handleOpenWhenFieldPicker}
                       >
-                        {WHEN_DEADLINE_COMPARISON_OPTIONS.find((o) => o.key === whenDeadlineComparison)?.label
-                          ?? WHEN_DEADLINE_COMPARISON_OPTIONS[0].label}
-                        <FiChevronDown size={14} aria-hidden />
+                        {whenDeadlineField.label}
                       </button>
-
-                      {showWhenDeadlineComparisonPicker && (
-                        <div className="board-minimap-picker-panel br-condition-operator-panel" ref={whenDeadlineComparisonPanelRef}>
-                          <div className="board-minimap-picker-search">
-                            <FiFilter size={16} className="board-minimap-picker-search-icon" aria-hidden />
-                            <input
-                              type="text"
-                              placeholder="Filter"
-                              value={whenDeadlineComparisonFilterText}
-                              onChange={(e) => setWhenDeadlineComparisonFilterText(e.target.value)}
-                              autoFocus
-                            />
-                          </div>
-                          <div className="board-minimap-picker-scroll">
-                            {WHEN_DEADLINE_COMPARISON_OPTIONS
-                              .filter((opt) => opt.label.toLowerCase().includes(whenDeadlineComparisonFilterText.trim().toLowerCase()))
-                              .map((opt) => (
-                                <button
-                                  type="button"
-                                  key={opt.key}
-                                  className="br-condition-operator-option"
-                                  onClick={() => {
-                                    setWhenDeadlineComparison(opt.key);
-                                    setShowWhenDeadlineComparisonPicker(false);
-                                  }}
-                                >
-                                  {opt.label}
-                                </button>
-                              ))}
-                          </div>
-                        </div>
-                      )}
+                      <InlineTextDropdown
+                        value={whenDeadline.operatorId}
+                        options={whenDeadlineOperators.map((op) => ({
+                          value: String(getOperatorId(op)),
+                          label: op.operator_label,
+                        }))}
+                        placeholder="Select operator"
+                        triggerClassName="br-condition-operator-trigger"
+                        onChange={(operatorId) => setWhenDeadline((prev) => ({ ...prev, operatorId, value: '', timeUnitId: '' }))}
+                      />
+                    </div>
+                    <div className="business-rule-form-when-deadline-input-row">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        className="business-rule-form-when-deadline-input"
+                        aria-label={`${whenDeadlineField.label} amount`}
+                        value={whenDeadline.value}
+                        onChange={(e) => setWhenDeadline((prev) => ({ ...prev, value: e.target.value.replace(/\D/g, '') }))}
+                      />
+                      <span className="business-rule-form-when-deadline-suffix">{whenDeadlineUnitText}</span>
                     </div>
                   </div>
-
-                  <div className="business-rule-form-when-deadline-input-row">
-                    <input
-                      type="number"
-                      min="0"
-                      className="business-rule-form-when-deadline-input"
-                      value={whenDeadlineDays}
-                      onChange={(e) => setWhenDeadlineDays(e.target.value)}
-                    />
-                    <span className="business-rule-form-when-deadline-suffix">
-                      {whenDeadlineComparison === 'was_more_than' ? 'day(s) ago' : 'day(s)'}
-                    </span>
-                  </div>
-                </div>
+                )
               ) : triggerConfig?.has_when_fields === '1' && (
                 <div className="business-rule-form-column-card business-rule-form-when-fields">
                   <p className="business-rule-form-when-fields-header">The following card fields are changed</p>
@@ -7492,10 +7718,17 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                   const detailsLoading = detailsKey ? Boolean(isLoadingFieldDetails[detailsKey]) : false;
                   const rawOperators = details?.operators ?? [];
                   const operators = rawOperators;
-                  const showOperator = operators.length > 0 && details?.has_operator !== '0';
-                  const showValueInput = !details || details?.has_input_value !== '0';
+                  const showOperator = operators.length > 0 && Number(details?.has_operator) !== 0;
+                  const selectedOperator = operators.find((op) => getOperatorId(op) === cond.operatorId);
+                  const showValueInput = fieldTakesValue(details) && operatorTakesValue(selectedOperator);
+                  const { head: operatorHead, tail: operatorTail } = splitNoValueOperatorLabel(selectedOperator);
+                  // A row with a typed or chosen value (Title, Blocker, ...) can take more than one,
+                  // so it keeps the OR pill (adds another value) and the bin (removes this one). Yes/No
+                  // states and the Deadline / Last moved rows have nothing to repeat.
+                  const hasValueRowActions = showValueInput
+                    && !isYesNoOptions(details?.options ?? [])
+                    && !getDateFieldEmptyLabel(details);
                   const isOperatorOpen = openConditionOperatorId === cond.id;
-                  const selectedOperator = operators.find((op) => op.field_operator_id === cond.operatorId);
                   const operatorFilterQuery = conditionOperatorFilterText.trim().toLowerCase();
                   const filteredConditionOperators = operatorFilterQuery
                     ? operators.filter((op) => op.operator_label.toLowerCase().includes(operatorFilterQuery))
@@ -7530,7 +7763,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                               aria-haspopup="listbox"
                               aria-expanded={isOperatorOpen}
                             >
-                              {selectedOperator?.operator_label || 'Select operator'}
+                              {operatorHead || 'Select operator'}
                               <FiChevronDown size={14} aria-hidden />
                             </button>
 
@@ -7553,11 +7786,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                                     filteredConditionOperators.map((op) => (
                                       <button
                                         type="button"
-                                        key={op.field_operator_id}
+                                        key={getOperatorId(op)}
                                         className="br-condition-operator-option"
                                         onClick={() => handleSelectConditionOperator(cond.id, op)}
                                       >
-                                        {op.operator_label}
+                                        {splitNoValueOperatorLabel(op).head}
                                       </button>
                                     ))
                                   )}
@@ -7571,6 +7804,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
                       {cond.values.map((v) => (
                         <div key={v.id} className="br-board-condition-value-row">
+                          {operatorTail && <span className="br-condition-value-text">{operatorTail}</span>}
                           {showValueInput && (
                             cond.valueType === 'color' ? (
                               <div className="board-minimap-picker-wrap br-color-condition-wrap">
@@ -7606,27 +7840,22 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                                 )}
                               </div>
                             ) : (
-                              <input
-                                type="text"
-                                className="business-rule-form-condition-input"
-                                placeholder="Enter value"
+                              <BusinessRuleFieldValue
+                                details={details}
+                                operator={selectedOperator}
                                 value={v.value}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setConditions((prev) =>
-                                    prev.map((c) =>
-                                      c.id === cond.id
-                                        ? { ...c, values: c.values.map((item) => (item.id === v.id ? { ...item, value: val } : item)) }
-                                        : c
-                                    )
-                                  );
-                                }}
+                                timeUnitId={v.timeUnitId}
+                                timeUnits={valueTimeUnits}
+                                label={cond.fieldLabel}
+                                defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
+                                onChange={(val) => handleChangeConditionValue(cond.id, v.id, { value: val })}
+                                onTimeUnitChange={(unitId) => handleChangeConditionValue(cond.id, v.id, { timeUnitId: unitId })}
                               />
                             )
                           )}
 
-                          <div className="business-rule-form-filter-row-actions">
-                            {cond.category !== 'time_unit' && (
+                          {hasValueRowActions && (
+                            <div className="business-rule-form-filter-row-actions">
                               <button
                                 type="button"
                                 className="business-rule-form-or-btn"
@@ -7634,16 +7863,16 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                               >
                                 {v.joinWord || 'OR'}
                               </button>
-                            )}
-                            <button
-                              type="button"
-                              className="business-rule-form-filter-row-delete"
-                              onClick={() => handleRemoveConditionValue(cond.id, v.id)}
-                              aria-label="Remove value"
-                            >
-                              <FiTrash2 size={14} />
-                            </button>
-                          </div>
+                              <button
+                                type="button"
+                                className="business-rule-form-filter-row-delete"
+                                onClick={() => handleRemoveConditionValue(cond.id, v.id)}
+                                aria-label="Remove value"
+                              >
+                                <FiTrash2 size={14} />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -7685,10 +7914,18 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                     <h4 className="business-rule-form-action-title">{section.title}</h4>
 
                     {section.id === 'generic' && (
-                      <GenericThenActionFields actionTypeId={section.action.action_type_id} />
+                      <GenericThenActionEditor
+                        action={section.action}
+                        renderPropertyPicker={(pickerProps) => (
+                          <CardPropertyMatchModal {...pickerProps} triggerTypeId={rule.id} showTimeUnit={false} />
+                        )}
+                        defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
+                        value={genericActionValues[String(section.action.action_type_id)] ?? EMPTY_GENERIC_ACTION_VALUE}
+                        onChange={(next) => setGenericActionValues((prev) => ({ ...prev, [String(section.action.action_type_id)]: next }))}
+                      />
                     )}
 
-                    {section.id === 'create' && createActions.length > 0 && (
+                    {section.id === 'create' && (createActions.length > 0 || createCardActions.length > 0) && (
                       <div className="br-create-action-list">
                         {createActions.map((action) => (
                           <div key={action.id} className="br-create-action-card">
@@ -7739,6 +7976,21 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                           </div>
                         ))}
 
+                        {createCardActions.map((action) => (
+                          <CreateCardActionCard
+                            key={action.id}
+                            action={{
+                              ...action,
+                              label: createCardCatalog?.regularFields?.find((f) => f.field_key === action.relationType)?.field_label
+                                || action.label || action.relationType,
+                            }}
+                            catalog={createCardCatalog}
+                            defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
+                            onChange={(next) => setCreateCardActions((prev) => prev.map((a) => (a.id === action.id ? { ...next, label: a.label } : a)))}
+                            onRemove={() => setCreateCardActions((prev) => prev.filter((a) => a.id !== action.id))}
+                          />
+                        ))}
+
                         <div className="br-link-footer-actions">
                           <button
                             type="button"
@@ -7748,7 +8000,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                             <FiPlus size={14} aria-hidden />
                             Add new action
                           </button>
-                          {createActions.length > 1 && (
+                          {createActions.length + createCardActions.length > 1 && (
                             <button
                               type="button"
                               className="business-rule-form-add-link"
@@ -8655,6 +8907,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                                       if (!tag) return null;
                                       return (
                                         <span key={tagId} className="business-rule-form-tag-pill">
+                                          {tag.color_code && <ColorIconSwatch colorCode={tag.color_code} />}
                                           {tag.label}
                                           <button
                                             type="button"
@@ -9169,7 +9422,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                         </button>
 
                         {updateRelatedFilterLabel && (
-                          <div>
+                          <div className="br-related-filter">
                             <p className="business-rule-form-when-fields-header">if {updateRelatedFilterLabel} card matches this filter</p>
                             {(action.filterProperties ?? []).map((prop) => (
                               <div key={prop.id} className="business-rule-form-action-chip">
@@ -9230,7 +9483,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                           Add new field
                         </button>
 
-                        <div>
+                        <div className="br-related-filter">
                           <p className="business-rule-form-when-fields-header">if {copyValuesFilterLabel} card matches this filter</p>
                           {(action.filterProperties ?? []).map((prop) => (
                             <div key={prop.id} className="business-rule-form-action-chip">
@@ -9274,7 +9527,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                           onClick={() => handleOpenNotificationSettings(action.id)}
                         >
                           {action.configured && action.subjectParts?.length > 0 ? (
-                            action.subjectParts.map((part, idx) => (
+                            action.subjectParts.filter((part) => !part.generated).map((part, idx) => (
                               part.type === 'pill'
                                 ? <span key={idx} className="notification-pill">{part.value}</span>
                                 : <span key={idx}>{part.value}</span>
@@ -9371,7 +9624,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                       <ThenGroupRawSummary key={group.then_group_id ?? group.group_type} group={group} />
                     ))}
 
-                    {section.id !== 'execute' && section.id !== 'generic' && !(section.id === 'link' && linkActions.length > 0) && !(section.id === 'create' && createActions.length > 0) && (
+                    {section.id !== 'execute' && section.id !== 'generic' && !(section.id === 'link' && linkActions.length > 0) && !(section.id === 'create' && (createActions.length > 0 || createCardActions.length > 0)) && (
                       <div className="br-link-footer-actions">
                         <button
                           type="button"
@@ -9487,11 +9740,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                 <div className="business-rule-form-tab-date-group">
                   <label className="business-rule-form-label business-rule-form-label--hint">From</label>
                   <div className="business-rule-form-tab-date-inputs">
-                    <input
-                      type="date"
+                    <DatePickerField
                       className="business-rule-form-input"
-                      value={logsFromDate}
-                      onChange={(e) => setLogsFromDate(e.target.value)}
+                      dateValue={logsFromDate}
+                      onDateChange={(e) => setLogsFromDate(e.target.value)}
+                      placeholder="DD/MM/YYYY"
                     />
                     <input
                       type="time"
@@ -9504,11 +9757,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                 <div className="business-rule-form-tab-date-group">
                   <label className="business-rule-form-label business-rule-form-label--hint">To</label>
                   <div className="business-rule-form-tab-date-inputs">
-                    <input
-                      type="date"
+                    <DatePickerField
                       className="business-rule-form-input"
-                      value={logsToDate}
-                      onChange={(e) => setLogsToDate(e.target.value)}
+                      dateValue={logsToDate}
+                      onDateChange={(e) => setLogsToDate(e.target.value)}
+                      placeholder="DD/MM/YYYY"
                     />
                     <input
                       type="time"
@@ -9657,10 +9910,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     <CardPropertyMatchModal
       show={showWhenFieldPicker}
       onClose={() => setShowWhenFieldPicker(false)}
-      onSelect={handleSelectWhenField}
-      existingFieldLabels={whenFields.map((f) => f.fieldLabel.trim().toLowerCase())}
+      onSelect={isWhenDeadlineTrigger ? handleSelectWhenDeadlineField : handleSelectWhenField}
+      existingFieldLabels={isWhenDeadlineTrigger ? [] : whenFields.map((f) => f.fieldLabel.trim().toLowerCase())}
       triggerTypeId={rule.id}
       showTimeUnit={false}
+      restrictFieldIds={whenFieldRestriction}
     />
 
     <CreateActionModal

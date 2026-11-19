@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import PropTypes from "prop-types";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import dayjs from "dayjs";
 import "@/design/scss/operations.scss";
 import "@/design/scss/table-common.scss";
 import "@/design/scss/materialmanagement.scss";
@@ -17,6 +18,7 @@ import {
 
 // Import shared components
 import { HusbandryTabs } from "./components/Husbandry.components";
+import CrewCoordinatorsSelect from "./components/CrewCoordinatorsSelect";
 
 // Import content components
 import CrewManagementDashboard from "./components/CrewManagementDashboard";
@@ -42,11 +44,6 @@ import useDispatchNoteReducer from "@/store/DispatchNoteReducer";
 import callFileService from "@/services/callFileService";
 import salesOrderService from "@/services/salesOrderService";
 import { mapSalesOrderResponse } from "@/shared/helpers/mapSalesOrderResponse";
-import transportContentService, { extractTransportRequestsFromEnvelope } from "@/services/transportContentService";
-import hotelService, { extractHotelRequestsFromEnvelope } from "@/services/hotelService";
-import hospitalService, { extractMedicalRequestsFromEnvelope } from "@/services/hospitalService";
-import { getPassRequests, extractPassRequestsFromEnvelope } from "@/services/cgAndZwailpassService";
-import launchHireService from "@/services/launchHireService";
 import usePermissions from "@/shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "@/shared/constants/permissions";
 
@@ -94,36 +91,115 @@ const CREW_DIRECT_SERVICES = [
   { id: CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE, label: "Launch Hire", summary: "Launch bookings for crew transfer to the vessel." },
 ];
 
-// Static dashboard data — replace with API values once the endpoints exist.
-const SERVICE_DISTRIBUTION_STATIC = [
-  { name: "Crew Management", value: 8, color: "#2563eb" },
-  { name: "Material Management", value: 2, color: "#0d9488" },
-  { name: "Waste Disposal", value: 3, color: "#d97706" },
-  { name: "Launch Hire", value: 2, color: "#0891b2" },
-  { name: "MWP Renewal", value: 1, color: "#7c3aed" },
-  { name: "Third-Party Services", value: 2, color: "#e11d48" },
-  { name: "Add-on Services", value: 1, color: "#059669" },
-];
+// Donut colours per top-level service, keyed by the API's service title.
+const SERVICE_DISTRIBUTION_COLORS = {
+  "Crew Management": "#2563eb",
+  "Material Management": "#0d9488",
+  "Waste Disposal": "#d97706",
+  "Launch Hire": "#0891b2",
+  "MWP Renewal": "#7c3aed",
+  "Third-Party Services": "#e11d48",
+  "Add-on Services": "#059669",
+};
+const FALLBACK_DISTRIBUTION_COLOR = "#94a3b8";
 
-// Split of the Crew Management total above across its direct services.
-const CREW_SERVICE_BREAKDOWN_STATIC = {
-  [CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS]: 2,
-  [CREW_MANAGEMENT_SUBTABS.CG_PASS]: 1,
-  [CREW_MANAGEMENT_SUBTABS.TRANSPORT]: 3,
-  [CREW_MANAGEMENT_SUBTABS.HOTEL]: 1,
-  [CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE]: 1,
+// Service ids that only apply when the call's `launch_hire` flag is 1.
+const LAUNCH_HIRE_SERVICE_IDS = ["LAUNCH_HIRE", CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE];
+
+// Crew Management breakdown titles (from get_requests_by_service) → subtab id,
+// so the breakdown bars reuse the left-nav icon colours.
+const CREW_BREAKDOWN_TITLE_TO_ID = CREW_DIRECT_SERVICES.reduce((acc, service) => {
+  acc[service.label] = service.id;
+  return acc;
+}, {});
+
+const toCount = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+
+/** Normalizes call_file/get_requests_by_service `data` into what ServiceInsights renders. */
+const parseRequestsByService = (data) => {
+  const services = Array.isArray(data?.services) ? data.services : [];
+  const distribution = services.map((item) => ({
+    name: item?.title ?? "",
+    value: toCount(item?.count),
+    percentage: item?.percentage,
+    color: SERVICE_DISTRIBUTION_COLORS[item?.title] || FALLBACK_DISTRIBUTION_COLOR,
+  }));
+  const hasBreakdown = Array.isArray(data?.crew_management?.breakdown);
+  const breakdownList = hasBreakdown ? data.crew_management.breakdown : [];
+  const crewBreakdown = breakdownList.reduce((acc, item) => {
+    const id = CREW_BREAKDOWN_TITLE_TO_ID[item?.title];
+    if (id) acc[id] = toCount(item?.count);
+    return acc;
+  }, {});
+  // Rows for the breakdown panel, in API order. null until the API returns a
+  // breakdown, so the panel can fall back to the static crew service list.
+  const crewBreakdownRows = hasBreakdown
+    ? breakdownList
+      .filter((item) => item?.title)
+      .map((item) => {
+        const id = CREW_BREAKDOWN_TITLE_TO_ID[item.title];
+        return {
+          id: id || item.title,
+          label: item.title,
+          value: toCount(item.count),
+          color: (id && TAB_ICON_COLORS[id]) || FALLBACK_DISTRIBUTION_COLOR,
+        };
+      })
+    : null;
+  const crewBreakdownTotal = data?.crew_management?.total_requests != null
+    ? toCount(data.crew_management.total_requests)
+    : Object.values(crewBreakdown).reduce((sum, value) => sum + value, 0);
+  const total = data?.total_requests != null
+    ? toCount(data.total_requests)
+    : distribution.reduce((sum, item) => sum + item.value, 0);
+  return { total, distribution, crewBreakdown, crewBreakdownRows, crewBreakdownTotal };
 };
 
-const SERVICE_HISTORY_STATIC = [
-  { id: 1, service: "Zawil Pass", action: "Zawil pass issued for 2 crew", user: "Operations", time: "Today, 11:20 AM", status: "Completed", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS] },
-  { id: 2, service: "Transport", action: "Transport request created for 4 crew", user: "Shalman", time: "Today, 10:42 AM", status: "Pending", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.TRANSPORT] },
-  { id: 3, service: "Material Management", action: "Inbound order #IO-2031 received", user: "Operations", time: "Today, 09:15 AM", status: "Completed", color: "#0d9488" },
-  { id: 4, service: "CG Pass", action: "CG pass application submitted for 1 crew", user: "Port Agent", time: "Today, 08:50 AM", status: "Pending", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.CG_PASS] },
-  { id: 5, service: "Medical", action: "Medical appointment booked for 1 crew", user: "Operations", time: "Yesterday, 06:15 PM", status: "In Progress", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE] },
-  { id: 6, service: "Waste Disposal", action: "Disposal request submitted", user: "Port Agent", time: "Yesterday, 05:30 PM", status: "In Progress", color: "#d97706" },
-  { id: 7, service: "Hotel", action: "Hotel booking confirmed for 2 crew", user: "Shalman", time: "Yesterday, 02:10 PM", status: "Completed", color: TAB_ICON_COLORS[CREW_MANAGEMENT_SUBTABS.HOTEL] },
-  { id: 8, service: "MWP Renewal", action: "Renewal request raised", user: "Operations", time: "26 Sep, 11:05 AM", status: "Cancelled", color: "#7c3aed" },
-];
+/** Turns call_file/get_service_counts `services` into a { [title]: counts } lookup. */
+const parseServiceCounts = (services) =>
+  (Array.isArray(services) ? services : []).reduce((acc, item) => {
+    if (item?.title) acc[item.title] = item.counts || {};
+    return acc;
+  }, {});
+
+// History marker colour per service title: crew direct services reuse their
+// left-nav icon colour, top-level services their donut colour.
+const HISTORY_SERVICE_COLORS = {
+  ...SERVICE_DISTRIBUTION_COLORS,
+  ...CREW_DIRECT_SERVICES.reduce((acc, service) => {
+    acc[service.label] = TAB_ICON_COLORS[service.id];
+    return acc;
+  }, {}),
+};
+
+/** "Today, 11:20 AM" / "Yesterday, 06:15 PM" / "26 Sep, 11:05 AM" (year added when not the current one). */
+const formatHistoryTime = (value) => {
+  if (!value) return "";
+  const date = dayjs(value);
+  if (!date.isValid()) return String(value);
+  const now = dayjs();
+  const time = date.format("hh:mm A");
+  if (date.isSame(now, "day")) return `Today, ${time}`;
+  if (date.isSame(now.subtract(1, "day"), "day")) return `Yesterday, ${time}`;
+  return `${date.format(date.isSame(now, "year") ? "D MMM" : "D MMM YYYY")}, ${time}`;
+};
+
+/** Normalizes call_file/get_service_history `data` into Recent History rows. */
+const parseServiceHistory = (data) => {
+  const history = Array.isArray(data?.history) ? data.history : [];
+  const entries = history.map((item, index) => ({
+    id: `${item?.service ?? "service"}-${item?.request_id ?? "na"}-${item?.activity_date ?? ""}-${index}`,
+    service: item?.service ?? "—",
+    action: item?.description ?? "",
+    user: item?.user_name || item?.user_role || "",
+    time: formatHistoryTime(item?.activity_date || item?.created_date),
+    statusGroup: item?.status_group || "Pending",
+    status: item?.status || item?.status_group || "",
+    color: HISTORY_SERVICE_COLORS[item?.service] || FALLBACK_DISTRIBUTION_COLOR,
+  }));
+  const total = data?.total_updates != null ? toCount(data.total_updates) : entries.length;
+  return { entries, total };
+};
 
 const HISTORY_STATUS_CLASS = {
   "Pending": "is-pending",
@@ -188,11 +264,27 @@ SalesOrderPricing.propTypes = {
 };
 
 // Dashboard columns 2 & 3: request distribution donut + recent activity history.
-const ServiceInsights = ({ salesOrder }) => {
-  const total = SERVICE_DISTRIBUTION_STATIC.reduce((sum, item) => sum + item.value, 0);
-  const crewBreakdownValues = Object.values(CREW_SERVICE_BREAKDOWN_STATIC);
-  const crewBreakdownTotal = crewBreakdownValues.reduce((sum, value) => sum + value, 0);
-  const crewBreakdownMax = Math.max(...crewBreakdownValues);
+const ServiceInsights = ({ salesOrder, requestsByService, serviceHistory, showLaunchHire = true }) => {
+  const parsed = parseRequestsByService(requestsByService);
+  const { total, crewBreakdown, crewBreakdownRows, crewBreakdownTotal } = parsed;
+  const distribution = showLaunchHire
+    ? parsed.distribution
+    : parsed.distribution.filter((item) => item.name !== "Launch Hire");
+  // API rows when available, otherwise the static crew service list.
+  const allCrewBreakdownRows = crewBreakdownRows ?? CREW_DIRECT_SERVICES.map((service) => ({
+    id: service.id,
+    label: service.label,
+    value: crewBreakdown[service.id] || 0,
+    color: TAB_ICON_COLORS[service.id],
+  }));
+  const crewBreakdownServices = showLaunchHire
+    ? allCrewBreakdownRows
+    : allCrewBreakdownRows.filter((row) => !LAUNCH_HIRE_SERVICE_IDS.includes(row.id));
+  const { entries: historyEntries, total: historyTotal } = parseServiceHistory(serviceHistory);
+  // Zero-count slices are dropped from the donut (they'd render as gaps) but
+  // stay in the legend.
+  const chartData = distribution.filter((item) => item.value > 0);
+  const crewBreakdownMax = Math.max(0, ...crewBreakdownServices.map((row) => row.value));
 
   return (
     <>
@@ -203,20 +295,33 @@ const ServiceInsights = ({ salesOrder }) => {
         <div className="husbandry-dashboard-chart">
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
-              <Pie
-                data={SERVICE_DISTRIBUTION_STATIC}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={60}
-                outerRadius={88}
-                paddingAngle={2}
-                stroke="none"
-              >
-                {SERVICE_DISTRIBUTION_STATIC.map((item) => (
-                  <Cell key={item.name} fill={item.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value, name) => [value, name]} />
+              {chartData.length > 0 ? (
+                <Pie
+                  data={chartData}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={60}
+                  outerRadius={88}
+                  paddingAngle={chartData.length > 1 ? 2 : 0}
+                  stroke="none"
+                >
+                  {chartData.map((item) => (
+                    <Cell key={item.name} fill={item.color} />
+                  ))}
+                </Pie>
+              ) : (
+                <Pie
+                  data={[{ name: "No requests", value: 1 }]}
+                  dataKey="value"
+                  innerRadius={60}
+                  outerRadius={88}
+                  stroke="none"
+                  isAnimationActive={false}
+                >
+                  <Cell fill="#e2e8f0" />
+                </Pie>
+              )}
+              {chartData.length > 0 && <Tooltip formatter={(value, name) => [value, name]} />}
             </PieChart>
           </ResponsiveContainer>
           <div className="husbandry-dashboard-chart-center">
@@ -225,16 +330,19 @@ const ServiceInsights = ({ salesOrder }) => {
           </div>
         </div>
         <ul className="husbandry-dashboard-legend">
-          {SERVICE_DISTRIBUTION_STATIC.map((item) => (
-            <li key={item.name} className="husbandry-dashboard-legend-item">
-              <span className="husbandry-dashboard-legend-dot" style={{ background: item.color }} />
-              <span className="husbandry-dashboard-legend-name">{item.name}</span>
-              <span className="husbandry-dashboard-legend-value">{item.value}</span>
-              <span className="husbandry-dashboard-legend-pct">
-                {Math.round((item.value / total) * 100)}%
-              </span>
-            </li>
-          ))}
+          {distribution.map((item) => {
+            const pct = item.percentage != null
+              ? toCount(item.percentage)
+              : total ? Math.round((item.value / total) * 100) : 0;
+            return (
+              <li key={item.name} className="husbandry-dashboard-legend-item">
+                <span className="husbandry-dashboard-legend-dot" style={{ background: item.color }} />
+                <span className="husbandry-dashboard-legend-name">{item.name}</span>
+                <span className="husbandry-dashboard-legend-value">{item.value}</span>
+                <span className="husbandry-dashboard-legend-pct">{pct}%</span>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="husbandry-dashboard-breakdown">
@@ -243,13 +351,13 @@ const ServiceInsights = ({ salesOrder }) => {
             <span className="husbandry-dashboard-panel-meta">{crewBreakdownTotal} requests</span>
           </div>
           <ul className="husbandry-dashboard-breakdown-list">
-            {CREW_DIRECT_SERVICES.map((service) => {
-              const value = CREW_SERVICE_BREAKDOWN_STATIC[service.id] || 0;
+            {crewBreakdownServices.map((service) => {
+              const { value } = service;
               return (
                 <li
                   key={service.id}
                   className="husbandry-dashboard-breakdown-item"
-                  style={{ "--breakdown-color": TAB_ICON_COLORS[service.id] }}
+                  style={{ "--breakdown-color": service.color }}
                 >
                   <span className="husbandry-dashboard-breakdown-name">{service.label}</span>
                   <span className="husbandry-dashboard-breakdown-track">
@@ -271,25 +379,36 @@ const ServiceInsights = ({ salesOrder }) => {
       <section className="husbandry-dashboard-panel">
         <header className="husbandry-dashboard-panel-header">
           <h3 className="husbandry-dashboard-panel-title">Recent History</h3>
-          <span className="husbandry-dashboard-panel-meta">{SERVICE_HISTORY_STATIC.length} updates</span>
+          <span className="husbandry-dashboard-panel-meta">
+            {historyTotal} {historyTotal === 1 ? "update" : "updates"}
+          </span>
         </header>
-        <ol className="husbandry-dashboard-history">
-          {SERVICE_HISTORY_STATIC.map((entry) => (
-            <li key={entry.id} className="husbandry-dashboard-history-item" style={{ "--history-accent": entry.color }}>
-              <span className="husbandry-dashboard-history-marker" />
-              <div className="husbandry-dashboard-history-body">
-                <div className="husbandry-dashboard-history-top">
-                  <span className="husbandry-dashboard-history-service">{entry.service}</span>
-                  <span className={`husbandry-dashboard-history-status ${HISTORY_STATUS_CLASS[entry.status] || "is-pending"}`}>
-                    {entry.status}
+        {historyEntries.length === 0 ? (
+          <p className="husbandry-dashboard-pricing-empty">No service activity for this call yet.</p>
+        ) : (
+          <ol className="husbandry-dashboard-history">
+            {historyEntries.map((entry) => (
+              <li key={entry.id} className="husbandry-dashboard-history-item" style={{ "--history-accent": entry.color }}>
+                <span className="husbandry-dashboard-history-marker" />
+                <div className="husbandry-dashboard-history-body">
+                  <div className="husbandry-dashboard-history-top">
+                    <span className="husbandry-dashboard-history-service">{entry.service}</span>
+                    <span
+                      className={`husbandry-dashboard-history-status ${HISTORY_STATUS_CLASS[entry.statusGroup] || "is-pending"}`}
+                      title={entry.status}
+                    >
+                      {entry.statusGroup}
+                    </span>
+                  </div>
+                  {entry.action && <p className="husbandry-dashboard-history-action">{entry.action}</p>}
+                  <span className="husbandry-dashboard-history-meta">
+                    {[entry.user, entry.time].filter(Boolean).join(" · ")}
                   </span>
                 </div>
-                <p className="husbandry-dashboard-history-action">{entry.action}</p>
-                <span className="husbandry-dashboard-history-meta">{entry.user} · {entry.time}</span>
-              </div>
-            </li>
-          ))}
-        </ol>
+              </li>
+            ))}
+          </ol>
+        )}
       </section>
     </>
   );
@@ -297,12 +416,50 @@ const ServiceInsights = ({ salesOrder }) => {
 
 ServiceInsights.propTypes = {
   salesOrder: PropTypes.object,
+  requestsByService: PropTypes.object,
+  serviceHistory: PropTypes.object,
+  showLaunchHire: PropTypes.bool,
 };
 
 // Service Selection Component
-export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, showLaunchHire = true, hiddenServiceIds = [], salesOrder = null }) => {
+export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = [], servicesSummary, crewServiceCounts = {}, serviceCounts = null, requestsByService = null, serviceHistory = null, showLaunchHire = true, hiddenServiceIds = [], salesOrder = null, callId = null, crewCoordinators = [], onCrewCoordinatorsChange, assignedCrewCoordinators = null }) => {
   const categories = servicesSummary?.categories || {};
-  const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+  const num = toCount;
+  // call_file/get_service_counts, keyed by service title. A card whose title
+  // the API hasn't returned (or before it loads) falls back to the older
+  // summary / per-service counts.
+  const countsFor = (title) => serviceCounts?.[title];
+
+  // Badges for a "requests + today" service, from get_service_counts.
+  const requestBadges = (counts) => [
+    `Requests: ${num(counts.requests)}`,
+    ...(counts.today_requests != null ? [`Today: ${num(counts.today_requests)}`] : []),
+  ];
+
+  // Badges for a crew direct service card.
+  const crewServiceBadges = (service) => {
+    // "Launch Hire" is also a top-level service title in get_service_counts,
+    // so the crew card takes its count from the crew breakdown instead.
+    if (service.id === CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE) {
+      const crewItem = requestsByService?.crew_management?.breakdown?.find?.((item) => item?.title === service.label);
+      if (crewItem) return [`Requests: ${num(crewItem.count)}`];
+    }
+    const counts = countsFor(service.label);
+    if (!counts) return [`Requests: ${num(crewServiceCounts[service.id])}`];
+    if (counts.issued != null) {
+      return [`Requests: ${num(counts.requests)}`, `Issued: ${num(counts.issued)}`];
+    }
+    return requestBadges(counts);
+  };
+
+  // Badges for a top-level "requests" service, with its old summary fallback.
+  const simpleServiceBadges = (title, fallbackTotal) => {
+    const counts = countsFor(title);
+    return counts ? requestBadges(counts) : [`Requests: ${num(fallbackTotal)}`];
+  };
+
+  const crewCounts = countsFor("Crew Management");
+  const materialCounts = countsFor("Material Management");
 
   const allServices = [
     {
@@ -311,10 +468,17 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
       icon: "crew",
       accent: "#2563eb",
       summary: "Crew transport, hotel, medical and launch hire support.",
-      footerBadges: [
-        `Sign In: ${num(categories.crew_change?.sign_on)}`,
-        `Sign Off: ${num(categories.crew_change?.sign_off)}`,
-      ],
+      footerBadges: crewCounts
+        ? [
+          `Total Crew: ${num(crewCounts.total_crew)}`,
+          `Sign In: ${num(crewCounts.sign_in)}`,
+          `Sign Off: ${num(crewCounts.sign_off)}`,
+          `Today: ${num(crewCounts.today_crew)}`,
+        ]
+        : [
+          `Sign In: ${num(categories.crew_change?.sign_on)}`,
+          `Sign Off: ${num(categories.crew_change?.sign_off)}`,
+        ],
       bookedSummary: "Coordinate crew movement, accommodation and welfare services.",
     },
     ...CREW_DIRECT_SERVICES.map((service) => ({
@@ -322,7 +486,7 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
       parentId: MAIN_TABS.CREW_MANAGEMENT,
       iconPath: TAB_ICON_PATHS[service.id],
       accent: TAB_ICON_COLORS[service.id],
-      footerBadges: [`Requests: ${num(crewServiceCounts[service.id])}`],
+      footerBadges: crewServiceBadges(service),
     })),
     {
       id: MAIN_TABS.MATERIAL_MANAGEMENT,
@@ -330,10 +494,17 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
       icon: "box",
       accent: "#0d9488",
       summary: "Inbound orders, landing note and dispatch note handling.",
-      footerBadges: [
-        `Inbound: ${num(categories.material_management?.inbound)}`,
-        `Dispatch: ${num(categories.material_management?.dispatch)}`,
-      ],
+      footerBadges: materialCounts
+        ? [
+          `Inbound: ${num(materialCounts.inbound)}`,
+          `Dispatch: ${num(materialCounts.dispatch)}`,
+          `Today In: ${num(materialCounts.today_inbound)}`,
+          `Today Out: ${num(materialCounts.today_dispatch)}`,
+        ]
+        : [
+          `Inbound: ${num(categories.material_management?.inbound)}`,
+          `Dispatch: ${num(categories.material_management?.dispatch)}`,
+        ],
       bookedSummary: "Track vessel material flow from intake to final dispatch.",
     },
     {
@@ -342,7 +513,7 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
       icon: "trash",
       accent: "#d97706",
       summary: "Waste request initiation and disposal progress tracking.",
-      footerBadges: [`Requests: ${num(categories.waste_disposal?.total)}`],
+      footerBadges: simpleServiceBadges("Waste Disposal", categories.waste_disposal?.total),
       bookedSummary: "Ensure regulated pickup and transparent disposal follow-up.",
     },
     {
@@ -351,7 +522,7 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
       icon: "boat",
       accent: "#0891b2",
       summary: "Launch booking, transfer coordination and movement support.",
-      footerBadges: [`Requests: ${num(categories.launch_hire?.total)}`],
+      footerBadges: simpleServiceBadges("Launch Hire", categories.launch_hire?.total),
       bookedSummary: "Arrange transfer windows with optimized launch availability.",
     },
     {
@@ -360,7 +531,7 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
       icon: "renewal",
       accent: "#7c3aed",
       summary: "Monitor MWP renewal requests and expected completion updates.",
-      footerBadges: [`Requests: ${num(categories.mwp_renewal?.total)}`],
+      footerBadges: simpleServiceBadges("MWP Renewal", categories.mwp_renewal?.total),
       bookedSummary: "Keep permits current with proactive renewal processing.",
     },
     {
@@ -369,7 +540,7 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
       icon: "vendor",
       accent: "#e11d48",
       summary: "Raise and monitor external vendor service requests.",
-      footerBadges: [`Requests: ${num(categories.third_party_service?.total)}`],
+      footerBadges: simpleServiceBadges("Third-Party Services", categories.third_party_service?.total),
       bookedSummary: "Manage third-party support under a single service view.",
     },
     {
@@ -378,12 +549,39 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
       icon: "addon",
       accent: "#059669",
       summary: "Raise and monitor optional add-on service requests.",
+      footerBadges: countsFor("Add-on Services") ? requestBadges(countsFor("Add-on Services")) : undefined,
       bookedSummary: "Track add-on support requests under a single service view.",
     },
   ];
 
-  const services = (showLaunchHire ? allServices : allServices.filter((service) => service.id !== "LAUNCH_HIRE"))
-    .filter((service) => !hiddenServiceIds.includes(service.id) && !hiddenServiceIds.includes(service.parentId));
+  // Once get_requests_by_service has loaded, it decides which cards this call
+  // offers: top-level cards come from `services[]`, Crew Management
+  // sub-service cards from `crew_management.breakdown[]`. Until then (or if
+  // the API omits a list) get_service_counts is used as before — except for
+  // Launch Hire (both cards), which shows only when get_requests_by_service lists it.
+  const titleSet = (list) => (Array.isArray(list) ? new Set(list.map((item) => item?.title).filter(Boolean)) : null);
+  const apiTopLevelTitles = titleSet(requestsByService?.services);
+  const apiCrewTitles = titleSet(requestsByService?.crew_management?.breakdown);
+  const isOfferedByApi = (service) => {
+    const isCrewSub = service.parentId === MAIN_TABS.CREW_MANAGEMENT;
+    if (isCrewSub && apiTopLevelTitles && !apiTopLevelTitles.has("Crew Management")) return false;
+    const titles = isCrewSub ? apiCrewTitles : apiTopLevelTitles;
+    if (titles) return titles.has(service.label);
+    if (LAUNCH_HIRE_SERVICE_IDS.includes(service.id)) return false;
+    return !serviceCounts || Object.prototype.hasOwnProperty.call(serviceCounts, service.label);
+  };
+
+  // The call's launch_hire flag is deliberately not used here: which cards show
+  // (Launch Hire included) is decided only by get_requests_by_service.
+  const offeredServices = allServices
+    .filter((service) => !hiddenServiceIds.includes(service.id) && !hiddenServiceIds.includes(service.parentId))
+    .filter(isOfferedByApi);
+  // Both Launch Hire cards are the same service: show it once. The Crew Management
+  // card wins when both are offered; the top-level card shows only on its own.
+  const hasCrewLaunchHire = offeredServices.some((service) => service.id === CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE);
+  const services = hasCrewLaunchHire
+    ? offeredServices.filter((service) => service.id !== "LAUNCH_HIRE")
+    : offeredServices;
 
   const bookedServicesMap = bookedServices.reduce((acc, booked) => {
     acc[booked.id] = booked;
@@ -449,16 +647,6 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
     }
   };
 
-  const getStatusBadgeClass = (status) => {
-    const statusMap = {
-      "Pending": "booked-status-pending",
-      "In Progress": "booked-status-in-progress",
-      "Completed": "booked-status-completed",
-      "Cancelled": "booked-status-cancelled",
-    };
-    return statusMap[status] || "booked-status-pending";
-  };
-
   return (
     <div className="husbandry-service-selection" style={{ "--card-color": cardColor }}>
       <div className="husbandry-service-selection-content">
@@ -470,11 +658,18 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
             Select a service to initiate requests and monitor progress.
           </p>
         </header>
+        {onCrewCoordinatorsChange && (
+          <CrewCoordinatorsSelect
+            callId={callId}
+            value={crewCoordinators}
+            onChange={onCrewCoordinatorsChange}
+            assigned={assignedCrewCoordinators}
+          />
+        )}
         <div className="husbandry-service-options">
           {services.map((service, index) => {
             const bookedEntry = bookedServicesMap[service.id];
             const isBooked = Boolean(bookedEntry);
-            const status = bookedEntry?.status || "Pending";
 
             return (
               <button
@@ -488,14 +683,6 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
                   "--stagger-index": index,
                 }}
               >
-                {isBooked && (
-                  <span
-                    className={`husbandry-service-option-status ${getStatusBadgeClass(status)}`}
-                    aria-label={`${service.label} status: ${status}`}
-                  >
-                    {status}
-                  </span>
-                )}
                 <div className="husbandry-service-option-icon">
                   {service.iconPath ? (
                     <svg width="48" height="48" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -523,7 +710,7 @@ export const ServiceSelection = ({ onSelectService, cardColor, bookedServices = 
           })}
         </div>
         </section>
-        <ServiceInsights salesOrder={salesOrder} />
+        <ServiceInsights salesOrder={salesOrder} requestsByService={requestsByService} serviceHistory={serviceHistory} showLaunchHire={showLaunchHire} />
         </div>
       </div>
     </div>
@@ -536,9 +723,16 @@ ServiceSelection.propTypes = {
   bookedServices: PropTypes.array,
   servicesSummary: PropTypes.object,
   crewServiceCounts: PropTypes.object,
+  serviceCounts: PropTypes.object,
+  requestsByService: PropTypes.object,
+  serviceHistory: PropTypes.object,
   showLaunchHire: PropTypes.bool,
   hiddenServiceIds: PropTypes.arrayOf(PropTypes.string),
   salesOrder: PropTypes.object,
+  callId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  crewCoordinators: PropTypes.array,
+  onCrewCoordinatorsChange: PropTypes.func,
+  assignedCrewCoordinators: PropTypes.array,
 };
 
 // Dummy crew data for DA module Husbandry tab
@@ -556,8 +750,21 @@ const DAMODULE_CREW_DUMMY = [
 ];
 
 // Main Husbandry Component
-function Husbandry({ card, formValues, handleChange, isDAModule = false, showLaunchHire = true }) {
+function Husbandry({
+  card,
+  formValues,
+  handleChange,
+  isDAModule = false,
+  showLaunchHire = true,
+  crewCoordinators: crewCoordinatorsProp,
+  onCrewCoordinatorsChange: onCrewCoordinatorsChangeProp,
+}) {
   const { hasPermission, hasSubmodule } = usePermissions();
+  // Crew Coordinators (API-backed in CrewCoordinatorsSelect). CardForm owns this state so it survives tab switches;
+  // fall back to local state when Husbandry is rendered without it.
+  const [localCrewCoordinators, setLocalCrewCoordinators] = useState([]);
+  const crewCoordinators = onCrewCoordinatorsChangeProp ? (crewCoordinatorsProp ?? []) : localCrewCoordinators;
+  const onCrewCoordinatorsChange = onCrewCoordinatorsChangeProp ?? setLocalCrewCoordinators;
   // KANBAN_CARD > CREW_MANAGEMENT / MATERIAL_MANAGEMENT carry no VIEW action
   // of their own — submodule presence is the gate for their Husbandry main tab.
   const canViewCrewManagementTab = hasSubmodule(
@@ -623,8 +830,12 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
     { id: "LAUNCH_HIRE", status: "In Progress", subService: null },
   ] : []);
   const cardColor = "#00368c"; // Fixed color for all buttons, effects, and backgrounds
-  const [servicesSummary, setServicesSummary] = useState(null);
   const [salesOrder, setSalesOrder] = useState(null);
+  const [serviceCounts, setServiceCounts] = useState(null);
+  // Call's assigned crew coordinators from get_service_counts (null while loading).
+  const [assignedCrewCoordinators, setAssignedCrewCoordinators] = useState(null);
+  const [requestsByService, setRequestsByService] = useState(null);
+  const [serviceHistory, setServiceHistory] = useState(null);
 
   // Booking counts reported by each service tab from its own API fetch —
   // reflects actual saved requests, not just the crew picked in the pending form.
@@ -676,86 +887,22 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
     getDispatchNotesTotal,
   ]);
 
-  // Fetch each crew-management service's saved request count up front, so the
-  // sidebar badges (Transport/Hotel/Medical/CG Pass/Zawil Pass) are correct on
-  // first render instead of only after the user opens that subtab (which is
-  // when each Content component's own fetch used to run).
+  // Per-service request counts (Transport/Hotel/Medical/CG Pass/Zawil Pass/
+  // Launch Hire) come from get_service_counts below — no separate per-service
+  // fetches on mount. Each service's Content component still reports its live
+  // count via the handle*RequestCount callbacks once opened.
   useEffect(() => {
-    if (isDAModule) return undefined;
     const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
-    if (!callId) return undefined;
+    if (isDAModule || !callId) {
+      setAssignedCrewCoordinators([]);
+      return undefined;
+    }
 
     let cancelled = false;
-
-    transportContentService
-      .getTransportRequest(callId)
-      .then((response) => {
-        if (cancelled) return;
-        setRequestCount(CREW_MANAGEMENT_SUBTABS.TRANSPORT, extractTransportRequestsFromEnvelope(response).length);
-      })
-      .catch(() => {});
-
-    hotelService
-      .getHotelRequests(callId)
-      .then((response) => {
-        if (cancelled) return;
-        setRequestCount(CREW_MANAGEMENT_SUBTABS.HOTEL, extractHotelRequestsFromEnvelope(response).length);
-      })
-      .catch(() => {});
-
-    hospitalService
-      .getMedicalRequests(callId)
-      .then((response) => {
-        if (cancelled) return;
-        setRequestCount(CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE, extractMedicalRequestsFromEnvelope(response).length);
-      })
-      .catch(() => {});
-
-    getPassRequests(callId)
-      .then((response) => {
-        if (cancelled) return;
-        const { cg, zawil } = extractPassRequestsFromEnvelope(response);
-        setRequestCount(CREW_MANAGEMENT_SUBTABS.CG_PASS, cg?.length || 0);
-        setRequestCount(CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS, zawil?.length || 0);
-      })
-      .catch(() => {});
-
-    launchHireService
-      .getLaunchHireRequests(callId)
-      .then((response) => {
-        if (cancelled) return;
-        const payload = response?.data?.data ?? response?.data ?? [];
-        const list = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
-        setRequestCount(CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE, list.length);
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isDAModule, formValues?.call_id, formValues?.callId, formValues?.card_call_id, setRequestCount]);
-
-  useEffect(() => {
-    if (isDAModule) return undefined;
-    const callId = Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0);
-    if (!callId) return undefined;
-
-    let cancelled = false;
-    callFileService
-      .getRequestedServicesSummary(callId)
-      .then((response) => {
-        if (cancelled) return;
-        const body = response?.data;
-        if (body?.status === "success" && body?.data) {
-          setServicesSummary(body.data);
-        }
-      })
-      .catch(() => {
-        // Non-critical: dashboard badges just fall back to 0 counts.
-      });
+    setAssignedCrewCoordinators(null);
 
     salesOrderService
-      .getSoItemsByCall(callId)
+      .getSoItemsByCall(callId, "Husbandry")
       .then((response) => {
         if (cancelled) return;
         const body = response?.data;
@@ -765,6 +912,49 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
       })
       .catch(() => {
         // Non-critical: pricing panel shows its empty state.
+      });
+
+    callFileService
+      .getServiceCounts(callId)
+      .then((response) => {
+        if (cancelled) return;
+        const body = response?.data;
+        const services = body?.data?.services ?? body?.services;
+        if (Array.isArray(services)) {
+          setServiceCounts(parseServiceCounts(services));
+        }
+        const coordinators = body?.data?.crew_coordinators ?? body?.crew_coordinators;
+        setAssignedCrewCoordinators(Array.isArray(coordinators) ? coordinators : []);
+      })
+      .catch(() => {
+        // Non-critical: service cards fall back to the summary counts.
+        if (!cancelled) setAssignedCrewCoordinators([]);
+      });
+
+    callFileService
+      .getRequestsByService(callId)
+      .then((response) => {
+        if (cancelled) return;
+        const body = response?.data;
+        if (body?.status === "success" && body?.data) {
+          setRequestsByService(body.data);
+        }
+      })
+      .catch(() => {
+        // Non-critical: chart shows its empty state.
+      });
+
+    callFileService
+      .getServiceHistory(callId)
+      .then((response) => {
+        if (cancelled) return;
+        const body = response?.data;
+        if (body?.status === "success" && body?.data) {
+          setServiceHistory(body.data);
+        }
+      })
+      .catch(() => {
+        // Non-critical: Recent History shows its empty state.
       });
 
     return () => {
@@ -1220,17 +1410,24 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
   };
 
   // Each service badge shows the number of requests already saved for this
-  // call, as fetched from its own API. Until that fetch resolves
-  // (requestCounts entry still null), fall back to the crew currently picked
-  // in the pending form. Shared by the dashboard rows and the left-nav.
+  // call. Priority: the live count reported by the service's own Content
+  // component (once opened) → get_service_counts (keyed by service title) →
+  // the crew currently picked in the pending form. Shared by the dashboard
+  // rows and the left-nav.
   const selectedCrewCount = (field) => (Array.isArray(formValues?.[field]) ? formValues[field].length : 0);
+  const crewServiceCount = (subTab, title, crewField) => {
+    if (requestCounts[subTab] != null) return requestCounts[subTab];
+    const apiCount = serviceCounts?.[title]?.requests;
+    if (apiCount != null) return toCount(apiCount);
+    return selectedCrewCount(crewField);
+  };
   const crewServiceCounts = {
-    [CREW_MANAGEMENT_SUBTABS.TRANSPORT]: requestCounts[CREW_MANAGEMENT_SUBTABS.TRANSPORT] ?? selectedCrewCount("selectedCrew"),
-    [CREW_MANAGEMENT_SUBTABS.HOTEL]: requestCounts[CREW_MANAGEMENT_SUBTABS.HOTEL] ?? selectedCrewCount("hotelSelectedCrew"),
-    [CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE]: requestCounts[CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE] ?? selectedCrewCount("medicalServiceSelectedCrew"),
-    [CREW_MANAGEMENT_SUBTABS.CG_PASS]: requestCounts[CREW_MANAGEMENT_SUBTABS.CG_PASS] ?? selectedCrewCount("cgPassSelectedCrew"),
-    [CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS]: requestCounts[CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS] ?? selectedCrewCount("zawilPassSelectedCrew"),
-    [CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE]: requestCounts[CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE] ?? selectedCrewCount("launchHireSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.TRANSPORT]: crewServiceCount(CREW_MANAGEMENT_SUBTABS.TRANSPORT, "Transport", "selectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.HOTEL]: crewServiceCount(CREW_MANAGEMENT_SUBTABS.HOTEL, "Hotel", "hotelSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE]: crewServiceCount(CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE, "Medical", "medicalServiceSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.CG_PASS]: crewServiceCount(CREW_MANAGEMENT_SUBTABS.CG_PASS, "CG Pass", "cgPassSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS]: crewServiceCount(CREW_MANAGEMENT_SUBTABS.ZAWIL_PASS, "Zawil Pass", "zawilPassSelectedCrew"),
+    [CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE]: crewServiceCount(CREW_MANAGEMENT_SUBTABS.LAUNCH_HIRE, "Launch Hire", "launchHireSelectedCrew"),
   };
 
   // DA module Husbandry: crew table only (no Booked Services)
@@ -1283,11 +1480,17 @@ function Husbandry({ card, formValues, handleChange, isDAModule = false, showLau
           onSelectService={handleServiceSelect}
           cardColor={cardColor}
           bookedServices={bookedServices}
-          servicesSummary={servicesSummary}
           crewServiceCounts={crewServiceCounts}
+          serviceCounts={serviceCounts}
+          requestsByService={requestsByService}
+          serviceHistory={serviceHistory}
           showLaunchHire={showLaunchHire}
           hiddenServiceIds={hiddenHusbandryMainTabIds}
           salesOrder={salesOrder}
+          callId={Number(formValues?.call_id || formValues?.callId || formValues?.card_call_id || 0) || null}
+          crewCoordinators={crewCoordinators}
+          onCrewCoordinatorsChange={onCrewCoordinatorsChange}
+          assignedCrewCoordinators={assignedCrewCoordinators}
         />
       </div>
     );
@@ -1391,6 +1594,8 @@ Husbandry.propTypes = {
   handleChange: PropTypes.func.isRequired,
   isDAModule: PropTypes.bool,
   showLaunchHire: PropTypes.bool,
+  crewCoordinators: PropTypes.array,
+  onCrewCoordinatorsChange: PropTypes.func,
 };
 
 export default Husbandry;

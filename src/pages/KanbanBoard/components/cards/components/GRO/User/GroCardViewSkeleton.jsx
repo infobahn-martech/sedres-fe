@@ -30,8 +30,11 @@ function GroCardViewSkeleton({ summaryCards = 6 }) {
       <div className="gro-summary-grid gro-summary-grid--six-col" aria-hidden="true">
         {Array.from({ length: summaryCards }, (_, i) => (
           <div key={i} className="gro-summary-card">
-            <span className="gro-skeleton gro-skeleton-label" />
-            <span className="gro-skeleton gro-skeleton-value" />
+            <span className="gro-skeleton gro-skeleton-summary-icon" />
+            <div className="gro-summary-body">
+              <span className="gro-skeleton gro-skeleton-label" />
+              <span className="gro-skeleton gro-skeleton-value" />
+            </div>
           </div>
         ))}
       </div>

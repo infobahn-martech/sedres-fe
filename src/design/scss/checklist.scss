@@ -1543,6 +1543,9 @@
 
 .cf-multiselect-search {
   position: sticky;
+  /* Stay above options that are position: relative (e.g. checkbox options),
+     otherwise they scroll over the search box. */
+  z-index: 2;
   top: -8px;
   padding: 0 0 8px;
   margin: -8px -8px 4px;
@@ -4818,7 +4821,7 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   border: none;
   border-radius: 0;
   box-shadow: none;
-  min-width: 1080px;
+  min-width: 960px;
   font-family: inherit;
   font-size: 12.5px;
 }
@@ -4983,28 +4986,40 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   text-transform: uppercase;
 }
 
+/* Proportional widths: the Item column (no width) takes the remaining space,
+   so it can never collapse when the table is narrower than the fixed columns. */
 .cl-items-table--6col col.cl-col-check {
-  width: 70px;
+  width: 64px;
 }
 
 .cl-items-table--6col col.cl-col-requirement {
-  width: 190px;
+  width: 16%;
 }
 
 .cl-items-table--6col col.cl-col-item {
-  width: 30%;
+  width: auto;
 }
 
 .cl-items-table--6col col.cl-col-role {
-  width: 200px;
+  width: 15%;
 }
 
 .cl-items-table--6col col.cl-col-upload {
-  width: 180px;
+  width: 14%;
 }
 
 .cl-items-table--6col col.cl-col-remarks {
-  width: 460px;
+  width: 26%;
+}
+
+.cl-items-table--6col thead th {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.cl-items-table--6col .checklist-table-checkbox-header,
+.cl-items-table--6col .checklist-table-checkbox {
+  width: 64px;
 }
 
 /* Item column: keep narrow and wrap long names/descriptions */
@@ -5345,7 +5360,7 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   }
 
   .cl-excel-table {
-    min-width: 680px;
+    min-width: 860px;
   }
 
   .cl-excel-section-header-actions-cell {

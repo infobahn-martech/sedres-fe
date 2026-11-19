@@ -1,13 +1,10 @@
-import { useState } from "react";
 import PropTypes from "prop-types";
 import { notify } from "@/components/Toaster";
-import { CREW_ENTRY_COLUMNS } from "./Husbandry.constants";
+import { CREW_ENTRY_COLUMNS, createEmptyCrewRow as createEmptyRow, normalizeCrewEntryCell } from "./Husbandry.constants";
 
-const INITIAL_ROW_COUNT = 3;
-
-const createEmptyRow = () => Object.fromEntries(CREW_ENTRY_COLUMNS.map((column) => [column.key, ""]));
-const createEmptyRows = (count) => Array.from({ length: count }, createEmptyRow);
-const isRowEmpty = (row) => CREW_ENTRY_COLUMNS.every((column) => !String(row[column.key]).trim());
+// Select columns always hold a default, so only typed (text) cells decide whether a row has data.
+const isRowEmpty = (row) =>
+  CREW_ENTRY_COLUMNS.filter((column) => column.type !== "select").every((column) => !String(row[column.key] ?? "").trim());
 
 // A pasted first row whose first cell reads like a "name" header is a copied header row, not crew data.
 const isHeaderRow = (cells) => /name/i.test(cells[0] ?? "") && cells.length > 1;
@@ -15,12 +12,15 @@ const isHeaderRow = (cells) => /name/i.test(cells[0] ?? "") && cells.length > 1;
 /**
  * Spreadsheet-style crew entry. Rows can be typed or pasted straight from Excel / Google Sheets
  * (tab-separated cells, one crew per line) — the paste fills the grid from the focused cell onward.
+ * Rows are controlled by the parent so they survive toggling views. Rows already saved (`_saved`)
+ * stay visible but locked; only new rows are submitted, so the same crew is never saved twice.
  */
-const CrewEntryGrid = ({ onSubmit, submitting = false }) => {
-  const [rows, setRows] = useState(() => createEmptyRows(INITIAL_ROW_COUNT));
+const CrewEntryGrid = ({ rows, onRowsChange: setRows, onSubmit, submitting = false }) => {
 
   const updateCell = (rowIndex, key, value) => {
-    setRows((prev) => prev.map((row, index) => (index === rowIndex ? { ...row, [key]: value } : row)));
+    setRows((prev) =>
+      prev.map((row, index) => (index === rowIndex && !row._saved ? { ...row, [key]: value } : row))
+    );
   };
 
   const handlePaste = (rowIndex, columnIndex) => (e) => {
@@ -39,11 +39,12 @@ const CrewEntryGrid = ({ onSubmit, submitting = false }) => {
     setRows((prev) => {
       const next = [...prev];
       pastedRows.forEach((cells, offset) => {
-        const targetIndex = rowIndex + offset;
+        let targetIndex = rowIndex + offset;
+        if (next[targetIndex]?._saved) targetIndex = next.length; // never overwrite saved crew
         const row = { ...(next[targetIndex] ?? createEmptyRow()) };
         cells.forEach((cell, cellOffset) => {
           const column = CREW_ENTRY_COLUMNS[columnIndex + cellOffset];
-          if (column) row[column.key] = cell.trim();
+          if (column) row[column.key] = normalizeCrewEntryCell(column, cell);
         });
         next[targetIndex] = row;
       });
@@ -54,10 +55,13 @@ const CrewEntryGrid = ({ onSubmit, submitting = false }) => {
   const handleAddRow = () => setRows((prev) => [...prev, createEmptyRow()]);
 
   const handleRemoveRow = (rowIndex) => {
-    setRows((prev) => (prev.length > 1 ? prev.filter((_, index) => index !== rowIndex) : [createEmptyRow()]));
+    setRows((prev) => {
+      const next = prev.filter((_, index) => index !== rowIndex);
+      return next.some((row) => !row._saved) ? next : [...next, createEmptyRow()];
+    });
   };
 
-  const filledRows = rows.filter((row) => !isRowEmpty(row));
+  const filledRows = rows.filter((row) => !row._saved && !isRowEmpty(row));
 
   const handleSubmit = async () => {
     if (filledRows.length === 0) {
@@ -68,8 +72,16 @@ const CrewEntryGrid = ({ onSubmit, submitting = false }) => {
       notify("Crew name is required for every row.", "error");
       return;
     }
-    const saved = await onSubmit(filledRows);
-    if (saved) setRows(createEmptyRows(INITIAL_ROW_COUNT));
+    const submittedRows = filledRows;
+    const saved = await onSubmit(submittedRows.map((row) => Object.fromEntries(CREW_ENTRY_COLUMNS.map(({ key }) => [key, row[key]]))));
+    if (!saved) return;
+    // Keep the saved crew in the grid (locked), drop leftover blank rows, and leave one empty row for more.
+    setRows((prev) => [
+      ...prev
+        .filter((row) => !isRowEmpty(row))
+        .map((row) => (submittedRows.includes(row) ? { ...row, _saved: true } : row)),
+      createEmptyRow(),
+    ]);
   };
 
   return (
@@ -90,22 +102,42 @@ const CrewEntryGrid = ({ onSubmit, submitting = false }) => {
           </thead>
           <tbody>
             {rows.map((row, rowIndex) => (
-              <tr key={rowIndex}>
+              <tr key={rowIndex} className={row._saved ? "husb-crew-grid__row--saved" : undefined}>
                 <td className="husb-crew-grid__index">{rowIndex + 1}</td>
                 {CREW_ENTRY_COLUMNS.map((column, columnIndex) => (
                   <td key={column.key}>
-                    <input
-                      type="text"
-                      value={row[column.key]}
-                      placeholder={column.placeholder}
-                      onChange={(e) => updateCell(rowIndex, column.key, e.target.value)}
-                      onPaste={handlePaste(rowIndex, columnIndex)}
-                      disabled={submitting}
-                      aria-label={`${column.header} row ${rowIndex + 1}`}
-                    />
+                    {column.type === "select" ? (
+                      <select
+                        value={row[column.key]}
+                        onChange={(e) => updateCell(rowIndex, column.key, e.target.value)}
+                        disabled={submitting || row._saved}
+                        title={row._saved ? "Saved" : undefined}
+                        aria-label={`${column.header} row ${rowIndex + 1}`}
+                      >
+                        {column.options.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={row[column.key]}
+                        placeholder={column.placeholder}
+                        onChange={(e) => updateCell(rowIndex, column.key, e.target.value)}
+                        onPaste={handlePaste(rowIndex, columnIndex)}
+                        disabled={submitting || row._saved}
+                        title={row._saved ? "Saved" : undefined}
+                        aria-label={`${column.header} row ${rowIndex + 1}`}
+                      />
+                    )}
                   </td>
                 ))}
                 <td className="husb-crew-grid__action">
+                  {row._saved ? (
+                    <span className="husb-crew-grid__saved" title="Saved" aria-label="Saved">✓</span>
+                  ) : (
                   <button
                     type="button"
                     className="husb-crew-grid__remove"
@@ -115,6 +147,7 @@ const CrewEntryGrid = ({ onSubmit, submitting = false }) => {
                   >
                     ×
                   </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -143,6 +176,8 @@ const CrewEntryGrid = ({ onSubmit, submitting = false }) => {
 };
 
 CrewEntryGrid.propTypes = {
+  rows: PropTypes.arrayOf(PropTypes.object).isRequired,
+  onRowsChange: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
   submitting: PropTypes.bool,
 };

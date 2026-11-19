@@ -1,0 +1,311 @@
+import { useEffect, useState } from 'react';
+import DatePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DatePickerField";
+import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+import PropTypes from 'prop-types';
+import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
+import SearchableSelect from '../../../components/form/SearchableSelect';
+import BoardStructureValue from './BoardStructureValue';
+import InlineTextDropdown from './InlineTextDropdown';
+import '../../../design/scss/business-rule-generic-action.scss';
+import {
+  BETWEEN_SEPARATOR,
+  NOT_SET_LABEL,
+  fieldTakesValue,
+  fieldNeedsTimeUnit,
+  getDateFieldEmptyLabel,
+  getDatePeriods,
+  isYesNoOptions,
+  joinMultiValue,
+  operatorIsBetween,
+  operatorTakesValue,
+  splitMultiValue,
+} from './businessRuleFieldUtils';
+
+const EMPTY_OPTIONS = [];
+const SELECT_DATE_LABEL = 'Select date';
+const SELECT_DATE_VALUE = 'select_date';
+const noop = () => {};
+
+const toSelectOptions = (options) =>
+  options.map((opt) => ({ value: String(opt.option_value), label: opt.option_label }));
+
+// Same list for the text-style dropdown: keeps each option's colour and icon, and adds the
+// leading "Not Set" entry that clears the value.
+const toChoiceOptions = (options) => [
+  { value: '', label: NOT_SET_LABEL },
+  ...options.map((opt) => ({
+    value: String(opt.option_value),
+    label: opt.option_label,
+    colorCode: opt.color_code ?? undefined,
+    iconName: opt.icon_name ?? undefined,
+  })),
+];
+
+// A Yes/No field (e.g. Blocked) reads as its own state instead of "Yes": "Blocked" / "Not blocked".
+const toYesNoStateOptions = (options, fieldLabel) =>
+  options.map((opt) => ({
+    value: String(opt.option_value),
+    label: String(opt.option_label).trim().toLowerCase() === 'yes' ? fieldLabel : `Not ${fieldLabel.toLowerCase()}`,
+  }));
+
+const toDateTimeLocal = (value) => (value ? String(value).replace(' ', 'T').slice(0, 16) : '');
+const fromDateTimeLocal = (value) => (value ? `${value.replace('T', ' ')}:00` : '');
+
+const getOptions = (details, masterOptionsByKey) => {
+  if (details?.option_source === 'depends_on') return masterOptionsByKey[details.master_key] ?? EMPTY_OPTIONS;
+  return details?.options ?? EMPTY_OPTIONS;
+};
+
+// One control for one value, picked by field_type only (guide 1.2).
+function ValueControl({ details, operator, options, value, onChange, ariaLabel, defaultBoardId }) {
+  const fieldType = details?.field_type;
+  const [isPickingDate, setIsPickingDate] = useState(false);
+
+  // A Yes/No dropdown (e.g. Blocked) opens on its first option, so the row shows that state's
+  // text right away. Any other dropdown (e.g. Blocker) starts as "not set" until one is picked.
+  const isChoiceDropdown = fieldType === 'dropdown' || fieldType === 'radio';
+  const isYesNoDropdown = isChoiceDropdown && isYesNoOptions(options);
+  const defaultOptionValue = isYesNoDropdown && String(value ?? '') === ''
+    ? String(options[0].option_value)
+    : null;
+  useEffect(() => {
+    if (defaultOptionValue !== null) onChange(defaultOptionValue);
+  }, [defaultOptionValue]);
+
+  if (fieldType === 'board_structure' && details?.structure_level) {
+    return <BoardStructureValue level={details.structure_level} value={value} defaultBoardId={defaultBoardId} onChange={onChange} />;
+  }
+
+  if (fieldType === 'multiselect' || fieldType === 'checkbox') {
+    return (
+      <SearchableSelect
+        isMulti
+        showSelectAll
+        value={splitMultiValue(value)}
+        onChange={(e) => onChange(joinMultiValue(e.target.value))}
+        options={toSelectOptions(options)}
+        placeholder="Select"
+        className="br-value-select"
+        menuPortalTarget={document.body}
+        menuPlacement="auto"
+      />
+    );
+  }
+
+  if (fieldType === 'dropdown' || fieldType === 'radio') {
+    return (
+      <InlineTextDropdown
+        value={value ?? ''}
+        options={isYesNoDropdown && ariaLabel ? toYesNoStateOptions(options, ariaLabel) : toChoiceOptions(options)}
+        placeholder={NOT_SET_LABEL}
+        triggerClassName="business-rule-form-condition-label-btn br-condition-value-text"
+        showChevron={!isYesNoDropdown}
+        searchable={!isYesNoDropdown}
+        onChange={onChange}
+      />
+    );
+  }
+
+  // Deadline / Last moved conditions: read "Not Set v" / "Not Moved v" until a date is chosen
+  // from the same list.
+  // Under is / is not a date field also offers its periods (Today, This week ...): the period key is
+  // the value, or a specific date picked with "Select date".
+  const dateEmptyLabel = getDateFieldEmptyLabel(details);
+  const periods = fieldType === 'date' || fieldType === 'datetime' ? getDatePeriods(details, operator) : [];
+  if (dateEmptyLabel || periods.length > 0) {
+    const periodKeys = periods.map((p) => String(p.option_value));
+    const currentValue = String(value ?? '');
+    const isPeriodValue = periodKeys.includes(currentValue);
+    const hasDate = (currentValue !== '' && !isPeriodValue) || isPickingDate;
+    const emptyLabel = dateEmptyLabel ?? SELECT_DATE_LABEL;
+    const dropdownOptions = [
+      ...(dateEmptyLabel ? [{ value: '', label: dateEmptyLabel }] : []),
+      ...periods.map((p) => ({ value: String(p.option_value), label: p.option_label })),
+      { value: SELECT_DATE_VALUE, label: SELECT_DATE_LABEL },
+    ];
+    let dropdownValue = '';
+    if (isPeriodValue) dropdownValue = currentValue;
+    else if (hasDate) dropdownValue = SELECT_DATE_VALUE;
+    return (
+      <div className="d-flex flex-column gap-2">
+        <InlineTextDropdown
+          value={dropdownValue}
+          options={dropdownOptions}
+          placeholder={emptyLabel}
+          triggerClassName="business-rule-form-condition-label-btn br-condition-value-text"
+          onChange={(next) => {
+            setIsPickingDate(next === SELECT_DATE_VALUE);
+            if (next === SELECT_DATE_VALUE) {
+              if (isPeriodValue) onChange('');
+              return;
+            }
+            onChange(next);
+          }}
+        />
+        {hasDate && (
+          fieldType === 'datetime' ? (
+            <DateTimePickerField
+              dateValue={toDateTimeLocal(value)}
+              onDateTimeChange={({ date, time }) => onChange(date ? fromDateTimeLocal(`${date}T${time || '00:00'}`) : '')}
+              placeholder="DD/MM/YYYY HH:mm"
+            />
+          ) : (
+            <DatePickerField
+              dateValue={value ?? ''}
+              onDateChange={(e) => onChange(e.target.value)}
+              placeholder="DD/MM/YYYY"
+            />
+          )
+        )}
+      </div>
+    );
+  }
+
+  if (fieldType === 'date') {
+    return (
+      <DatePickerField
+        dateValue={value ?? ''}
+        onDateChange={(e) => onChange(e.target.value)}
+        placeholder="DD/MM/YYYY"
+      />
+    );
+  }
+
+  if (fieldType === 'datetime') {
+    return (
+      <DateTimePickerField
+        dateValue={toDateTimeLocal(value)}
+        onDateTimeChange={({ date, time }) => onChange(date ? fromDateTimeLocal(`${date}T${time || '00:00'}`) : '')}
+        placeholder="DD/MM/YYYY HH:mm"
+      />
+    );
+  }
+
+  if (fieldType === 'textarea') {
+    return (
+      <textarea
+        className="business-rule-form-condition-input"
+        aria-label={ariaLabel}
+        rows={2}
+        placeholder="Enter value"
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    );
+  }
+
+  return (
+    <input
+      type={fieldType === 'number' ? 'number' : fieldType === 'email' ? 'email' : 'text'}
+      className="business-rule-form-condition-input"
+      aria-label={ariaLabel}
+      placeholder="Enter value"
+      value={value ?? ''}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+}
+
+ValueControl.propTypes = {
+  details: PropTypes.object,
+  operator: PropTypes.object,
+  options: PropTypes.array.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onChange: PropTypes.func.isRequired,
+  ariaLabel: PropTypes.string,
+  defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+};
+
+/**
+ * Value box for one Business Rule field row (guide section 1). The control comes from the
+ * field's own field_type, the choices from option_source, and the box adapts to the picked
+ * operator: hidden for is empty / are present, two values for is between, number + time
+ * unit for in next / in last / was more than.
+ */
+function BusinessRuleFieldValue({
+  details, operator, value, timeUnitId, timeUnits = EMPTY_OPTIONS, onChange, onTimeUnitChange = noop, label = 'Value', defaultBoardId,
+}) {
+  const { masterOptionsByKey, getMasterOptions } = useBusinessRuleReducer();
+
+  const masterKey = details?.option_source === 'depends_on' ? details.master_key : null;
+  useEffect(() => {
+    if (masterKey) getMasterOptions(masterKey);
+  }, [masterKey, getMasterOptions]);
+
+  // A number + unit row opens on the first unit (days), so a typed number is never saved without one.
+  const needsUnit = fieldNeedsTimeUnit(details, operator) && fieldTakesValue(details) && operatorTakesValue(operator);
+  const firstUnitId = timeUnits[0]?.time_unit_id;
+  useEffect(() => {
+    if (needsUnit && String(timeUnitId ?? '') === '' && firstUnitId != null) onTimeUnitChange(String(firstUnitId));
+  }, [needsUnit, timeUnitId, firstUnitId]);
+
+  if (!fieldTakesValue(details) || !operatorTakesValue(operator)) return null;
+
+  const options = getOptions(details, masterOptionsByKey);
+
+  if (fieldNeedsTimeUnit(details, operator)) {
+    return (
+      <div className="d-flex align-items-center gap-2">
+        <input
+          type="number"
+          min="0"
+          className="business-rule-form-condition-input"
+          aria-label={`${label} amount`}
+          placeholder="Enter value"
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <SearchableSelect
+          value={timeUnitId ?? ''}
+          onChange={(e) => onTimeUnitChange(e.target.value)}
+          options={timeUnits.map((unit) => ({ value: String(unit.time_unit_id), label: unit.unit_label }))}
+          placeholder="Unit"
+          className="br-value-select"
+          menuPortalTarget={document.body}
+          menuPlacement="auto"
+        />
+      </div>
+    );
+  }
+
+  if (operatorIsBetween(operator)) {
+    const [from = '', to = ''] = String(value ?? '').split(BETWEEN_SEPARATOR);
+    return (
+      <div className="d-flex align-items-center gap-2">
+        <ValueControl
+          details={details}
+          options={options}
+          value={from}
+          ariaLabel={`${label} from`}
+          onChange={(next) => onChange(`${next}${BETWEEN_SEPARATOR}${to}`)}
+        />
+        <span>and</span>
+        <ValueControl
+          details={details}
+          options={options}
+          value={to}
+          ariaLabel={`${label} to`}
+          onChange={(next) => onChange(`${from}${BETWEEN_SEPARATOR}${next}`)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <ValueControl details={details} operator={operator} options={options} value={value} ariaLabel={label} defaultBoardId={defaultBoardId} onChange={onChange} />
+  );
+}
+
+BusinessRuleFieldValue.propTypes = {
+  details: PropTypes.object,
+  operator: PropTypes.object,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  timeUnitId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  timeUnits: PropTypes.array,
+  onChange: PropTypes.func.isRequired,
+  onTimeUnitChange: PropTypes.func,
+  label: PropTypes.string,
+  defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+};
+
+export default BusinessRuleFieldValue;

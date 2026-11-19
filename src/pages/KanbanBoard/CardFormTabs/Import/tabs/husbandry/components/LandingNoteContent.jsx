@@ -692,10 +692,10 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("en-GB", {
       year: "numeric",
-      month: "short",
-      day: "numeric",
+      month: "2-digit",
+      day: "2-digit",
     });
   };
 
@@ -1231,7 +1231,7 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
                     }}
                     dateFieldName="landing_date"
                     timeFieldName="landing_time"
-                    placeholder="YYYY-MM-DD hh:mm"
+                    placeholder="DD/MM/YYYY HH:mm"
                     minDate={editMinDate}
                   />
                 </FormField>
@@ -1422,7 +1422,7 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
                                 }}
                                 dateFieldName="dispatch_date"
                                 timeFieldName="dispatch_time"
-                                placeholder="YYYY-MM-DD hh:mm"
+                                placeholder="DD/MM/YYYY HH:mm"
                               />
                             </FormField>
                           </div>
@@ -1553,7 +1553,7 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
                     onDateTimeChange={(v) => { setConvertFormData((p) => ({ ...p, dispatch_date: v.date, dispatch_time: v.time })); setConvertFormErrors((p) => { const n = { ...p }; delete n.dispatch_date; return n; }); }}
                     dateFieldName="dispatch_date"
                     timeFieldName="dispatch_time"
-                    placeholder="YYYY-MM-DD hh:mm"
+                    placeholder="DD/MM/YYYY HH:mm"
                     minDate={convertMinDate}
                   />
                   {convertFormErrors.dispatch_date && <span className="landing-convert-error">{convertFormErrors.dispatch_date}</span>}
@@ -1633,7 +1633,7 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
                         }}
                         dateFieldName="launch_hire_booking_date"
                         timeFieldName="launch_hire_booking_time"
-                        placeholder="YYYY-MM-DD hh:mm"
+                        placeholder="DD/MM/YYYY HH:mm"
                         hasError={Boolean(convertFormErrors.launch_hire_booking_date)}
                       />
                       {convertFormErrors.launch_hire_booking_date && <span className="landing-convert-error">{convertFormErrors.launch_hire_booking_date}</span>}

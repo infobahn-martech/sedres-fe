@@ -15,6 +15,17 @@ import useWorkFlowReducer from "../../../store/WorkFlowReducer";
 import usePortReducer from "../../../store/PortReducer";
 import Gateway from "../../../gateway/gateway";
 import workSpaceService from "../../../services/workSpaceService";
+import SignatureUpload from "../../../components/form/SignatureUpload";
+
+// Turns a relative file path from the API into an absolute URL
+const resolveFileUrl = (path) => {
+  if (!path || typeof path !== "string") return null;
+  const trimmed = path.trim();
+  if (!trimmed) return null;
+  if (/^(https?:|data:|blob:)/i.test(trimmed)) return trimmed;
+  const root = (import.meta.env.VITE_API_ENDPOINT || "").replace(/\/?$/, "/");
+  return `${root}${trimmed.replace(/^\//, "")}`;
+};
 
 // Accepts an array, a comma-separated string, or a single id and returns string ids
 const toIdArray = (value) => {
@@ -28,6 +39,9 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
   const [profileImagePreview, setProfileImagePreview] = useState(
     showModal?.image || userIcon
   );
+  const [signatureFile, setSignatureFile] = useState(null);
+  const [signaturePreview, setSignaturePreview] = useState(null);
+  const [removeSignature, setRemoveSignature] = useState(false);
 
   const {
     register,
@@ -147,6 +161,13 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
 
       setProfileImagePreview(showModal?.avatar_path || userIcon);
       setProfileImage(null);
+      setSignaturePreview(
+        resolveFileUrl(
+          showModal?.signature_url || showModal?.signature_path || showModal?.signature
+        )
+      );
+      setSignatureFile(null);
+      setRemoveSignature(false);
     } else {
       reset({
         phone: "",
@@ -162,6 +183,9 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
 
       setProfileImagePreview(userIcon);
       setProfileImage(null);
+      setSignaturePreview(null);
+      setSignatureFile(null);
+      setRemoveSignature(false);
     }
   }, [showModal, reset]);
 
@@ -260,6 +284,26 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
     }
   };
 
+  const handleSignatureSelect = (file) => {
+    setSignatureFile(file);
+    setRemoveSignature(false);
+    const reader = new FileReader();
+    reader.onloadend = () => setSignaturePreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSignatureRemove = () => {
+    setSignatureFile(null);
+    setSignaturePreview(null);
+    // Only an existing signature needs a server-side removal
+    setRemoveSignature(
+      Boolean(
+        showModal?.user_id &&
+          (showModal?.signature_url || showModal?.signature_path || showModal?.signature)
+      )
+    );
+  };
+
   const onSubmit = async (data) => {
     try {
       const formData = new FormData();
@@ -279,6 +323,12 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
       } else if (showModal?.user_id && showModal?.avatar_path) {
         // NOTE: if backend expects FILE only, remove this else-if
         formData.append("profileimg", showModal.avatar_path);
+      }
+
+      if (signatureFile) {
+        formData.append("signature", signatureFile);
+      } else if (removeSignature) {
+        formData.append("remove_signature", 1);
       }
 
       if (showModal?.user_id) {
@@ -354,13 +404,6 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
                       autoComplete="off"
                       {...register("name", {
                         required: "Name is required",
-                        pattern: {
-                          value: /^[A-Za-z\s]+$/,
-                          message: "Name cannot contain numbers or special characters",
-                        },
-                        onChange: (e) => {
-                          e.target.value = e.target.value.replace(/[^A-Za-z\s]/g, "");
-                        },
                       })}
                     />
                     <label>
@@ -639,7 +682,7 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
           {/* ===== Address ===== */}
           <div className="mb-lg-3 mb-sm-0">
             <div className="row g-3">
-              <div className="col-12">
+              <div className="col-lg-6 col-sm-12">
                 <div className="form-field">
                   <div className="form-floating desig-inp">
                     <textarea
@@ -651,10 +694,18 @@ export function UserModal({ showModal, closeModal, onSuccess }) {
                   </div>
                 </div>
               </div>
+
+              {/* ===== Signature ===== */}
+              <div className="col-lg-6 col-sm-12">
+                <SignatureUpload
+                  compact
+                  previewUrl={signaturePreview}
+                  onSelect={handleSignatureSelect}
+                  onRemove={handleSignatureRemove}
+                />
+              </div>
             </div>
           </div>
-
-      
         </form>
       </div>
     </div>

@@ -6,7 +6,7 @@ import { FiCalendar, FiChevronLeft, FiChevronRight, FiX } from "react-icons/fi";
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const VIEWPORT_GUTTER = 16;
 const VALUE_FORMAT = "YYYY-MM-DD";
-const DISPLAY_FORMAT = "DD MMM YYYY";
+const DISPLAY_FORMAT = "DD/MM/YYYY";
 
 const toDay = (value) => (value ? dayjs(value) : null);
 

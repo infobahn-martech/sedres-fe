@@ -157,6 +157,7 @@ export const parseGroCallDetailByIdPayload = (res) => {
   const taskDetails = {
     ...mergeGroDetailFileUrls(task.details ?? {}),
     documents,
+    is_vessel_registration_uploaded: task.is_vessel_registration_uploaded ?? false,
     // Stage time objects carry their saved `time_object_value` inline.
     time_objects: [...asArray(call.time_objects), ...stageTimeObjects, ...stage11TimeObjects],
   };

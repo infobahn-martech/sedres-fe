@@ -18,9 +18,19 @@ const getHotelDashboard = () =>
 const getHotelOrders = () =>
   Gateway.get(`hotel/hotel_orders/${getCompanyId()}`);
 
+/**
+ * @param {object} payload
+ * @param {number|string} payload.hotel_request_id
+ * @param {string} payload.checkin_datetime - "YYYY-MM-DD HH:mm:ss"
+ * @param {string} payload.checkout_datetime - "YYYY-MM-DD HH:mm:ss"
+ */
+const updateHotelRequestDates = (payload) =>
+  Gateway.post('hotel/update_hotel_request_dates', payload);
+
 export default {
   getVendorDashboard,
   getVendorOrders,
   getHotelDashboard,
   getHotelOrders,
+  updateHotelRequestDates,
 };

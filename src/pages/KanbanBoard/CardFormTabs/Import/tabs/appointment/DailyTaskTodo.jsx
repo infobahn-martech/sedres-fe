@@ -12,10 +12,10 @@ const DailyTaskTodo = ({ tasks = [], accentColor, isLoading = false, error = "" 
     const normalized = String(value).trim().replace(" ", "T");
     const d = new Date(normalized);
     if (Number.isNaN(d.getTime())) return String(value);
-    return d.toLocaleString("en-US", {
+    return d.toLocaleString("en-GB", {
       year: "numeric",
-      month: "short",
-      day: "numeric",
+      month: "2-digit",
+      day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,

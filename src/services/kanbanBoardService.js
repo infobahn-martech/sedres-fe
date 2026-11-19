@@ -3,9 +3,10 @@ import Gateway from '../gateway/gateway';
 /**
  * Full board payload for the Kanban UI: one entry per workflow.
  * Response shape: { data: WorkflowFromApi[] } (axios wraps in .data)
+ * Optional params: { workflow_id?, scope?: "all" | "my" } — scope filters cards server-side.
  */
-const getFullBoard = (boardId) =>
-  Gateway.get(`/kanban_board/get_full_board/${boardId}`);
+const getFullBoard = (boardId, params) =>
+  Gateway.get(`/kanban_board/get_full_board/${boardId}`, params ? { params } : undefined);
 
 /**
  * Fetch a single card's header data (card_name, card_color, board_id, call_id).

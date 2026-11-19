@@ -1169,13 +1169,14 @@ export const OperationEmailPreviewPanel = ({
           {showSend && (
             <button
               type="button"
-              className="operation-email-send-btn"
+              className={`operation-email-send-btn${isSending ? " is-sending" : ""}`}
               onClick={onSend}
               disabled={isSending}
+              aria-busy={isSending}
               title={isSending ? "Sending…" : "Save and send report"}
               aria-label={isSending ? "Sending report" : "Save and send report"}
             >
-              <IconSendReport />
+              {isSending ? <span className="operation-email-send-spinner" aria-hidden /> : <IconSendReport />}
             </button>
           )}
         </div>
@@ -1301,6 +1302,7 @@ export const OperationFileUpload = ({
   isViewOnly = false,
   ariaLabel = "Upload files",
   accept,
+  prompt = "Drag and drop your files here, or",
 }) => {
   const inputRef = useRef(null);
 
@@ -1327,7 +1329,7 @@ export const OperationFileUpload = ({
       aria-label={ariaLabel}
     >
       <p className="operation-compact-upload-text">
-        Drag and drop your files here, or <span>click to browse</span>
+        {prompt} <span>click to browse</span>
       </p>
       {(files || []).length > 0 && <p className="operation-compact-upload-file">{files[0]?.name || `${files.length} file(s) selected`}</p>}
       <input
@@ -1350,6 +1352,7 @@ OperationFileUpload.propTypes = {
   isViewOnly: PropTypes.bool,
   ariaLabel: PropTypes.string,
   accept: PropTypes.string,
+  prompt: PropTypes.string,
 };
 
 export const OperationSaveSection = ({ isViewOnly = false, onSave, isSaving = false, className = "" }) => {

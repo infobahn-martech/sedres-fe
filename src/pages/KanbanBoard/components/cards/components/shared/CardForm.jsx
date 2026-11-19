@@ -1334,8 +1334,9 @@ TopTabs.propTypes = {
 
 const StepsProgress = ({ totalSteps = TOTAL_STEPS, activeStep = 2, completedSteps = 1, stepLabels = STEP_LABELS, onStepClick, currentStep }) => {
   // Use green colors for all progress bars (ignoring accentColor)
-  const GREEN_COMPLETED = "#2e7d32"; // Dark green for completed/active steps
-  const GREEN_INACTIVE = "#8bc48a"; // Light green for inactive steps
+  const GREEN_COMPLETED = "#16a34a"; // Green for completed/active steps
+  const GREEN_INACTIVE = "#cbd5e1"; // Neutral slate for upcoming steps
+  const LABEL_INACTIVE = "#94a3b8";
 
   // Use currentStep as the actual current step (from card's column), fallback to activeStep
   const actualCurrentStep = currentStep !== null && currentStep !== undefined ? currentStep : activeStep;
@@ -1377,9 +1378,12 @@ const StepsProgress = ({ totalSteps = TOTAL_STEPS, activeStep = 2, completedStep
           ? { background: GREEN_COMPLETED }
           : { background: GREEN_INACTIVE };
 
-        const labelStyle = isStepCompletedOrCurrent
+        const labelStyle = isCurrentStep
           ? { color: GREEN_COMPLETED }
-          : { color: GREEN_INACTIVE };
+          : isStepCompletedOrCurrent
+            ? { color: "#15803d" }
+            : { color: LABEL_INACTIVE };
+        const showCheck = isStepCompletedOrCurrent && !isCurrentStep;
 
         const stepLabel = stepLabels[index] || `Step ${stepNumber}`;
         const handleStepClick = () => {
@@ -1397,7 +1401,7 @@ const StepsProgress = ({ totalSteps = TOTAL_STEPS, activeStep = 2, completedStep
           >
             <div className="step-content">
               <div className="step-circle" style={circleStyle}>
-                {stepNumber}
+                {showCheck ? <Check size={15} strokeWidth={3} aria-hidden /> : stepNumber}
               </div>
               {index < totalSteps - 1 && (
                 <span className={`step-line ${lineClass}`} style={lineStyle}></span>
@@ -1405,6 +1409,7 @@ const StepsProgress = ({ totalSteps = TOTAL_STEPS, activeStep = 2, completedStep
             </div>
             <div className="step-label" style={labelStyle}>
               {stepLabel}
+              {isCurrentStep ? <span className="step-current-tag">Current</span> : null}
             </div>
           </div>
         );
@@ -1704,7 +1709,8 @@ const renderTabContent = (
   soActionStateResetToken,
   onCloseCard,
   templateTabById,
-  callDetail
+  callDetail,
+  husbandryUiProps = {}
 ) => {
   const commonProps = {
     card,
@@ -1742,7 +1748,7 @@ const renderTabContent = (
       case "Operation":
         return <Operation {...commonProps} ownerInitial={ownerInitial} />;
       case "Husbandry":
-        return <Husbandry {...commonProps} />;
+        return <Husbandry {...commonProps} {...husbandryUiProps} />;
       case "Sales Order":
         return <SalesOrder {...commonProps} />;
       case "Invoice":
@@ -1797,7 +1803,7 @@ const renderTabContent = (
       case "Operation":
         return <Operation {...commonProps} ownerInitial={ownerInitial} />;
       case "Husbandry":
-        return <Husbandry {...commonProps} />;
+        return <Husbandry {...commonProps} {...husbandryUiProps} />;
       case "Document Library":
         return <DocumentLibrary {...commonProps} />;
       case "Sales Order":
@@ -2034,6 +2040,10 @@ function CardForm({
   const defaultTab = isDAModule ? "General" : (isSimplifiedMode ? "General" : "Appointment Details");
 
   const [activeTopTab, setActiveTopTab] = useState(defaultTab);
+  // Husbandry → Crew Coordinators selection (loaded/saved by CrewCoordinatorsSelect via the
+  // crew_coordinator APIs). Held here so
+  // it survives switching tabs while the card form stays mounted.
+  const [crewCoordinators, setCrewCoordinators] = useState([]);
 
   // Header color: add mode defaults to ADD_CARD_TOPBAR_DEFAULT_HEX; else mirrors card.color (or GRO default).
   // In add mode, the color picker also updates formValues.cardColor so create_call_file sends card_color.
@@ -2175,7 +2185,6 @@ function CardForm({
       billingEntity: card?.billingEntity || "",
       email: card?.email || "",
       branch: card?.branch || "",
-      srtNumber: card?.srtNumber || "",
       lineItemTotal: card?.lineItemTotal ?? 0,
       soStatus: card?.soStatus || "",
       salesOrderId: card?.salesOrderId || "",
@@ -2184,14 +2193,13 @@ function CardForm({
       soContactPerson: card?.soContactPerson || card?.user || "",
       soBpCurrency: card?.soBpCurrency || "",
       soEuroRate: card?.soEuroRate || "",
-      soPoNo: card?.soPoNo || "",
       soPort: card?.soPort || card?.port || "",
+      soBillingEntityFields: Array.isArray(card?.soBillingEntityFields) ? card.soBillingEntityFields : [],
       soSoNo: card?.soSoNo || "",
       soPostingDate: card?.soPostingDate || "",
       soDeliveryDate: card?.soDeliveryDate || "",
       soDocumentDate: card?.soDocumentDate || "",
       soShipName: card?.soShipName || card?.vesselName || "",
-      soProjectName: card?.soProjectName || "",
       soOwner: card?.soOwner || "",
       soSubtotal: card?.soSubtotal ?? "",
       soTotalDiscount: card?.soTotalDiscount ?? "",
@@ -2231,8 +2239,9 @@ function CardForm({
   // Same for the GRO / Custom Clearance task card views: GROCardView binds everything from
   // call_file/get_call_detail_by_id (light, per card), so the heavy get_call_detail snapshot
   // would only seed TopBar metadata, which already falls back to card.raw. Coordinator
-  // Transport (also a GRO-style view) keeps the snapshot.
-  const isGroTaskCardView = isGROStyleView && !isCoordinatorTransport;
+  // Transport (also a GRO-style view) binds from transport/get_transport_request_card_detail
+  // and never reads the snapshot either.
+  const isGroTaskCardView = isGROStyleView;
   const snapshotCallId =
     !show || isAddMode || isTaxiBoatVariant || isGroTaskCardView
       ? ""
@@ -2577,21 +2586,32 @@ function CardForm({
 
   // Shared by the auto-fetch effect below and by refreshSalesOrder (called after actions
   // that change the SO items server-side, e.g. generating a Work Order or PO).
-  const loadSalesOrder = useCallback((callId, { markKey } = {}) => {
+  // `silent`: background refresh after a field edit — no "Loading sales order…" overlay, and a
+  // failed refresh keeps the table as it is instead of clearing it.
+  // Port Manager (role_id 1) / Port Operator (role_id 2) pick Marine or Husbandry in the Sales
+  // Order header; the choice lives in formValues.soType and is sent as so_type.
+  const canSelectSoType = ["1", "2"].includes(String(userRoleId ?? ""));
+  const salesOrderSoType = canSelectSoType ? formValues?.soType || "Marine" : undefined;
+
+  const loadSalesOrder = useCallback((callId, { markKey, silent = false, soType } = {}) => {
     if (!callId) {
+      if (silent) return Promise.resolve();
       setSalesOrderApiError("No call identifier available for this card.");
       setSalesOrderApiLoading(false);
       return Promise.resolve();
     }
 
-    setSalesOrderApiLoading(true);
-    setSalesOrderApiError(null);
+    if (!silent) {
+      setSalesOrderApiLoading(true);
+      setSalesOrderApiError(null);
+    }
 
     return salesOrderService
-      .getSoItemsByCall(callId)
+      .getSoItemsByCall(callId, soType)
       .then((response) => {
         const body = response?.data;
         if (body?.status !== "success" || !body?.data) {
+          if (silent) return;
           setSalesOrderApiError(
             typeof body?.message === "string" && body.message.trim()
               ? body.message
@@ -2613,6 +2633,7 @@ function CardForm({
           err?.response?.data?.error ||
           err?.message ||
           "Failed to load sales order.";
+        if (silent) return;
         setSalesOrderApiError(typeof msg === "string" ? msg : "Failed to load sales order.");
         setFormValues((prev) => ({
           ...prev,
@@ -2620,7 +2641,7 @@ function CardForm({
         }));
       })
       .finally(() => {
-        setSalesOrderApiLoading(false);
+        if (!silent) setSalesOrderApiLoading(false);
       });
   }, []);
 
@@ -2642,21 +2663,22 @@ function CardForm({
       return;
     }
 
-    const key = `${card?.id ?? ""}:${callId}`;
+    const key = `${card?.id ?? ""}:${callId}:${salesOrderSoType ?? ""}`;
     if (lastSalesOrderFetchKeyRef.current === key) return;
 
-    loadSalesOrder(callId, { markKey: key });
-  }, [show, activeTopTab, card?.call_id, card?.callId, card?.id, loadSalesOrder]);
+    loadSalesOrder(callId, { markKey: key, soType: salesOrderSoType });
+  }, [show, activeTopTab, card?.call_id, card?.callId, card?.id, loadSalesOrder, salesOrderSoType]);
 
   // Re-fetches the current call's sales order items — used after actions that mutate SO
   // items server-side (e.g. sales_order/generate_work_order) so the table reflects the
   // updated Work Order No. / wo_status without requiring the tab to be closed and reopened.
-  const refreshSalesOrder = useCallback(() => {
+  // Pass { silent: true } after plain field edits so the table doesn't flash the loading overlay.
+  const refreshSalesOrder = useCallback(({ silent = false } = {}) => {
     const callIdRaw = card?.call_id ?? card?.callId;
     const callId = callIdRaw === undefined || callIdRaw === null ? "" : String(callIdRaw).trim();
-    const key = `${card?.id ?? ""}:${callId}`;
-    return loadSalesOrder(callId, { markKey: key });
-  }, [card?.call_id, card?.callId, card?.id, loadSalesOrder]);
+    const key = `${card?.id ?? ""}:${callId}:${salesOrderSoType ?? ""}`;
+    return loadSalesOrder(callId, { markKey: key, silent, soType: salesOrderSoType });
+  }, [card?.call_id, card?.callId, card?.id, loadSalesOrder, salesOrderSoType]);
 
   const [isSavingGeneral, setIsSavingGeneral] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -3389,7 +3411,8 @@ function CardForm({
                 soActionStateResetToken,
                 handleClose,
                 templateTabById,
-                callDetailSnapshot
+                callDetailSnapshot,
+                { crewCoordinators, onCrewCoordinatorsChange: setCrewCoordinators }
               )}
           </>
         )}

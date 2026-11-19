@@ -33,7 +33,7 @@ const RenderStatusBadge = ({ row }) => {
 const formatDate = (value) => {
     if (!value) return "—";
     const parsed = dayjs(value);
-    return parsed.isValid() ? parsed.format("DD MMM YYYY") : value;
+    return parsed.isValid() ? parsed.format("DD/MM/YYYY") : value;
 };
 
 const Invoices = () => {

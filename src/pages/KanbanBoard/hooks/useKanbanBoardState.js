@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import usePermissions from "../../../shared/hooks/usePermissions";
 import { PERMISSION_MODULES } from "../../../shared/constants/permissions";
 import { initialData } from "../../../shared/helpers/data";
@@ -13,6 +13,7 @@ import { DA_DESK_BOARD_ID } from "../../../shared/constants/kanbanConfig";
 import useBatchMoveStore from "../../../store/batchMoveStore";
 import { findWorkflowByCardId } from "../utils/boardHelpers";
 import { reorderWorkflowsByPinState } from "../utils/workflowHelpers";
+import { DEFAULT_CARD_SCOPE } from "../utils/cardScopeFilter";
 
 const isOperatorBoardId = (id) => String(id ?? "").toLowerCase() === "operator";
 
@@ -38,6 +39,37 @@ const sortByPinState = (mapped) => {
   return reorderWorkflowsByPinState(pinState, mapped);
 };
 
+/** One workflow of the board fetched with a card scope (`?workflow_id=&scope=`); null if it isn't in the response. */
+const fetchWorkflowWithScope = async (boardId, workflowId, scope) => {
+  const res = await kanbanBoardService.getFullBoard(boardId, { workflow_id: workflowId, scope });
+  return (
+    mapFullBoardApiResponse(res?.data).find((wf) => String(wf.id) === String(workflowId)) ?? null
+  );
+};
+
+/**
+ * Whole board in the default scope ("my"), then any workflow switched to another scope is
+ * refetched with that scope and swapped in, so a refetch keeps each header's selection.
+ */
+const fetchBoardWithScopes = async (boardId, scopeByWorkflow = {}) => {
+  const res = await kanbanBoardService.getFullBoard(boardId, { scope: DEFAULT_CARD_SCOPE });
+  const payload = res?.data;
+  let mapped = mapFullBoardApiResponse(payload);
+  const overrides = Object.entries(scopeByWorkflow).filter(
+    ([, scope]) => scope && scope !== DEFAULT_CARD_SCOPE
+  );
+  if (overrides.length) {
+    const fresh = await Promise.all(
+      overrides.map(([wfId, scope]) =>
+        fetchWorkflowWithScope(boardId, wfId, scope).catch(() => null)
+      )
+    );
+    const byId = Object.fromEntries(fresh.filter(Boolean).map((wf) => [String(wf.id), wf]));
+    mapped = mapped.map((wf) => byId[String(wf.id)] ?? wf);
+  }
+  return { payload, mapped: sortByPinState(mapped) };
+};
+
 export default function useKanbanBoardState(selectedBoardId) {
   const { hasModule } = usePermissions();
   const [workflows, setWorkflows] = useState(() =>
@@ -51,20 +83,63 @@ export default function useKanbanBoardState(selectedBoardId) {
   const [showWorkspaces, setShowWorkspaces] = useState(false);
   const [addTargetWorkflowId, setAddTargetWorkflowId] = useState(null);
 
+  /* "My Cards / All Cards" per workflow header; missing entry = DEFAULT_CARD_SCOPE ("my").
+     The ref mirrors the state so refetches and in-flight scope fetches read the latest value. */
+  const [cardScopeByWorkflow, setCardScopeByWorkflow] = useState({});
+  const [cardScopeLoadingByWorkflow, setCardScopeLoadingByWorkflow] = useState({});
+  const cardScopeRef = useRef({});
+  const boardIdRef = useRef(selectedBoardId);
+  boardIdRef.current = selectedBoardId;
+
   useEffect(() => {
     setSelectedCard(null);
     setIsAddMode(false);
     setAddTargetWorkflowId(null);
+    cardScopeRef.current = {};
+    setCardScopeByWorkflow({});
+    setCardScopeLoadingByWorkflow({});
   }, [selectedBoardId]);
+
+  const handleCardScopeChange = useCallback(
+    async (workflowId, scope) => {
+      const boardId = selectedBoardId;
+      if (!boardId || isOperatorBoardId(boardId) || workflowId == null) return;
+      const key = String(workflowId);
+      const previous = cardScopeRef.current[key] ?? DEFAULT_CARD_SCOPE;
+      if (previous === scope) return;
+
+      cardScopeRef.current = { ...cardScopeRef.current, [key]: scope };
+      setCardScopeByWorkflow(cardScopeRef.current);
+      setCardScopeLoadingByWorkflow((prev) => ({ ...prev, [key]: true }));
+      try {
+        const fresh = await fetchWorkflowWithScope(boardId, key, scope);
+        // Ignore if the board changed or the user flipped the toggle again meanwhile.
+        if (boardIdRef.current !== boardId || cardScopeRef.current[key] !== scope) return;
+        if (fresh) {
+          setWorkflows((prev) => prev.map((wf) => (String(wf.id) === key ? fresh : wf)));
+        }
+      } catch {
+        if (boardIdRef.current !== boardId || cardScopeRef.current[key] !== scope) return;
+        cardScopeRef.current = { ...cardScopeRef.current, [key]: previous };
+        setCardScopeByWorkflow(cardScopeRef.current);
+      } finally {
+        if (boardIdRef.current === boardId) {
+          setCardScopeLoadingByWorkflow((prev) => ({ ...prev, [key]: false }));
+        }
+      }
+    },
+    [selectedBoardId]
+  );
 
   const refetchBoard = useCallback(async () => {
     if (!selectedBoardId || isOperatorBoardId(selectedBoardId)) return;
     setBoardLoading(true);
     setBoardLoadError(null);
     try {
-      const res = await kanbanBoardService.getFullBoard(selectedBoardId);
-      const payload = res?.data;
-      const mapped = sortByPinState(mapFullBoardApiResponse(payload));
+      const { payload, mapped } = await fetchBoardWithScopes(
+        selectedBoardId,
+        cardScopeRef.current
+      );
       loadBatches(selectedBoardId);
       setWorkflows(mapped);
       setBoardBackground(extractFullBoardBackground(payload));
@@ -110,9 +185,7 @@ export default function useKanbanBoardState(selectedBoardId) {
 
     (async () => {
       try {
-        const res = await kanbanBoardService.getFullBoard(selectedBoardId);
-        const payload = res?.data;
-        const mapped = sortByPinState(mapFullBoardApiResponse(payload));
+        const { payload, mapped } = await fetchBoardWithScopes(selectedBoardId);
         if (cancelled) return;
         loadBatches(selectedBoardId);
         setWorkflows(mapped);
@@ -326,5 +399,8 @@ export default function useKanbanBoardState(selectedBoardId) {
     setAddTargetWorkflowId,
     handleSelectCard,
     handleCloseCard,
+    cardScopeByWorkflow,
+    cardScopeLoadingByWorkflow,
+    handleCardScopeChange,
   };
 }

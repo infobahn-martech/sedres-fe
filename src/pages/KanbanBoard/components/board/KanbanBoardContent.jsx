@@ -1,7 +1,10 @@
 import WorkflowAccordion from "./WorkflowAccordion";
 import WorkflowColumns from "./WorkflowColumns";
+import CardScopeToggle from "./CardScopeToggle";
+import { DEFAULT_CARD_SCOPE } from "../../utils/cardScopeFilter";
 
 const EMPTY_SELECTED_IDS = [];
+const EMPTY_SCOPES = {};
 
 export default function KanbanBoardContent({
   boardId,
@@ -12,7 +15,6 @@ export default function KanbanBoardContent({
   expandedWorkflows,
   collapsedColumns,
   maxColumnHeights,
-  pinnedWorkflows,
   createDragEndHandler,
   onSelectCard,
   onColumnHeaderClick,
@@ -39,13 +41,17 @@ export default function KanbanBoardContent({
   onHeightChange,
   onToggleWorkflow,
   onAccordionMenuClick,
-  onPinClick,
   isDarkMode,
   layoutView,
   selectedActionCardIds = EMPTY_SELECTED_IDS,
   onToggleCardSelect,
   onCardSelectDragStart,
   onCardSelectDragEnter,
+  /** { [workflowId]: "all" | "my" } — workflows are already fetched with that scope; this only drives the toggle/empty state. */
+  cardScopeByWorkflow = EMPTY_SCOPES,
+  /** { [workflowId]: true } while that workflow is refetching for a scope change. */
+  cardScopeLoadingByWorkflow = EMPTY_SCOPES,
+  onCardScopeChange,
 }) {
   if (!boardLoading && workflows.length === 0 && !suppressEmptyMessage) {
     return (
@@ -63,16 +69,25 @@ export default function KanbanBoardContent({
   }
 
   return workflows.map((workflow) => {
+    const cardScope = cardScopeByWorkflow[workflow.id] ?? DEFAULT_CARD_SCOPE;
+    const scopeLoading = Boolean(cardScopeLoadingByWorkflow[workflow.id]);
     return (
     <WorkflowAccordion
       key={workflow.id}
       workflow={workflow}
       isDarkMode={isDarkMode}
       isExpanded={expandedWorkflows[workflow.id]}
-      isPinned={Boolean(pinnedWorkflows?.[workflow.id])}
       onToggle={() => onToggleWorkflow(workflow.id)}
       onMenuClick={(event) => onAccordionMenuClick(event, workflow.id)}
-      onPinClick={() => onPinClick(workflow.id)}
+      headerExtra={
+        onCardScopeChange ? (
+          <CardScopeToggle
+            value={cardScope}
+            disabled={scopeLoading}
+            onChange={(scope) => onCardScopeChange(workflow.id, scope)}
+          />
+        ) : null
+      }
     >
       <WorkflowColumns
         boardId={boardId}

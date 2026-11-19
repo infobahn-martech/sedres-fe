@@ -34,9 +34,18 @@ const trimText = (value) => String(value ?? "").trim();
 
 const hasFile = (file) => file != null && file !== "";
 
-export const validateGroExtraStageFields = (stageId, fields = {}) => {
+/** A newly picked file OR a previously-saved one (from extractGroSavedExtraStageFields().fileInfo). */
+const hasSavedFile = (info) => Boolean(info && (info.file_url || info.file_name));
+
+/**
+ * `existingFiles` is the saved-file info for this stage; a required document that was already
+ * uploaded earlier satisfies the requirement without re-picking it.
+ */
+export const validateGroExtraStageFields = (stageId, fields = {}, existingFiles = {}) => {
   const errors = {};
   const data = fields ?? {};
+  const saved = existingFiles ?? {};
+  const hasFileOrSaved = (key) => hasFile(data[key]) || hasSavedFile(saved[key]);
 
   if (stageId === 7) {
     if (!trimText(data.crew_immigration_status)) {
@@ -48,7 +57,7 @@ export const validateGroExtraStageFields = (stageId, fields = {}) => {
   }
 
   if (stageId === 8) {
-    if (!hasFile(data.inward_clearance_copy)) {
+    if (!hasFileOrSaved("inward_clearance_copy")) {
       errors.inward_clearance_copy = "Inward Clearance Copy is required.";
     }
     if (!trimText(data.custom_inspection_status)) {
@@ -60,19 +69,19 @@ export const validateGroExtraStageFields = (stageId, fields = {}) => {
   }
 
   if (stageId === 9) {
-    if (!hasFile(data.initial_bayan_doc)) {
+    if (!hasFileOrSaved("initial_bayan_doc")) {
       errors.initial_bayan_doc = "Initial Bayan Doc is required.";
     }
   }
 
   if (stageId === 13) {
-    if (!hasFile(data.outward_clearance_copy)) {
+    if (!hasFileOrSaved("outward_clearance_copy")) {
       errors.outward_clearance_copy = "Outward Clearance Copy is required.";
     }
   }
 
   if (stageId === 15) {
-    if (!hasFile(data.mwp_cancellation_doc)) {
+    if (!hasFileOrSaved("mwp_cancellation_doc")) {
       errors.mwp_cancellation_doc = "MWP Cancellation Doc is required.";
     }
   }

@@ -9,6 +9,7 @@ import "@/design/scss/blockers-modal.scss";
 import "@/design/scss/pages/kanban-board/seReviewMoveModal.scss";
 import "@/design/scss/pages/kanban-board/arInvoiceReviewModal.scss";
 import "@/design/scss/pages/kanban-board/poReviewModal.scss";
+import "@/design/scss/pages/kanban-board/sccReviewModal.scss";
 
 /* Review table columns, in display order. */
 const COLUMNS = [
@@ -24,7 +25,6 @@ const APPROVED_COLUMNS = [
   { name: "sales_orders", label: "Sales Order" },
   { name: "scc", label: "SCC" },
   { name: "signature", label: "Signature" },
-  { name: "approval_email", label: "Approval Email" },
 ];
 
 const REVIEW_PAGE_SIZE = 20;
@@ -36,6 +36,9 @@ const getSalesOrderObjects = (card) =>
 
 const hasSccDocument = (card) => getSalesOrderObjects(card).some((salesOrder) => salesOrder.scc?.document_id != null);
 
+/* One option per card + sales order a candidate list offers. */
+const getCandidateKey = (candidate) => `${candidate.card_id}:${candidate.sales_order_no}`;
+
 // Opened after an L&T "SCC Received" bulk upload. One row per card with the signed SO, SCC and
 // approval email placed on it; cards with everything placed start ticked. Confirm sends the ticked
 // cards to da/confirm_scc_documents, which moves them on (moved_to_da).
@@ -43,6 +46,7 @@ const SccReviewModal = ({ onConfirmed }) => {
   const show = useSccReviewStore((state) => state.showSccReviewModal);
   const cards = useSccReviewStore((state) => state.selectedSccReviewCards);
   const notPlacedFiles = useSccReviewStore((state) => state.selectedSccReviewNotPlacedFiles);
+  const unassignedSccs = useSccReviewStore((state) => state.selectedSccReviewUnassignedSccs);
   const onClose = useSccReviewStore((state) => state.closeSccReviewModal);
   const isApproved = useSccReviewStore((state) => state.isApprovedSccReview);
   const isConfirming = useSccReviewStore((state) => state.isConfirmingScc);
@@ -51,11 +55,15 @@ const SccReviewModal = ({ onConfirmed }) => {
   const fetchSccReview = useSccReviewStore((state) => state.fetchSccReview);
 
   const [uncheckedCardIds, setUncheckedCardIds] = useState({});
+  const markCardsUnsigned = useSccReviewStore((state) => state.markCardsUnsigned);
   const [currentPage, setCurrentPage] = useState(1);
+  /* { [document_id]: candidateKey } - the sales order the user picked for each unassigned SCC. */
+  const [pickedCandidateKeys, setPickedCandidateKeys] = useState({});
 
   useEffect(() => {
     if (!show) return;
     setUncheckedCardIds({});
+    setPickedCandidateKeys({});
     setCurrentPage(1);
     fetchSccReview().then((errorMessage) => {
       if (errorMessage) notify(errorMessage, "error");
@@ -64,7 +72,17 @@ const SccReviewModal = ({ onConfirmed }) => {
 
   /* The approved-SCC review lets every card with an SCC be confirmed: the backend moves only the signed ones
      and answers not_moved for the rest. The DA-board review needs every document placed first (ready). */
-  const isCardSelectable = (card) => (isApproved ? hasSccDocument(card) : Boolean(card.ready));
+  const getPickedCandidate = (scc) =>
+    (scc.candidates ?? []).find((candidate) => getCandidateKey(candidate) === pickedCandidateKeys[scc.document_id]);
+
+  /* The unassigned SCCs the user has placed on one of this card's sales orders. */
+  const getPickedSccs = (card) =>
+    unassignedSccs
+      .map((scc) => ({ scc, candidate: getPickedCandidate(scc) }))
+      .filter(({ candidate }) => candidate && String(candidate.card_id) === String(card.card_id));
+
+  const isCardSelectable = (card) =>
+    isApproved ? hasSccDocument(card) || getPickedSccs(card).length > 0 : Boolean(card.ready);
 
   const isCardChecked = (card) => isCardSelectable(card) && !uncheckedCardIds[card.card_id];
 
@@ -86,19 +104,29 @@ const SccReviewModal = ({ onConfirmed }) => {
       isAllChecked ? Object.fromEntries(readyCards.map((card) => [card.card_id, true])) : {}
     );
 
+  /* The card's SCCs by sales order; an SCC the user picked for a sales order replaces the one read for it. */
+  const getApprovedSalesOrders = (card) => {
+    const sccIdBySalesOrderNo = new Map();
+    getSalesOrderObjects(card).forEach((salesOrder) => {
+      if (salesOrder.scc?.document_id != null) {
+        sccIdBySalesOrderNo.set(salesOrder.sales_order_no, salesOrder.scc.document_id);
+      }
+    });
+    getPickedSccs(card).forEach(({ scc, candidate }) => {
+      sccIdBySalesOrderNo.set(candidate.sales_order_no, scc.document_id);
+    });
+    return [...sccIdBySalesOrderNo].map(([salesOrderNo, sccId]) => ({
+      sales_order_no: salesOrderNo,
+      scc_id: sccId,
+    }));
+  };
+
   const handleConfirm = async () => {
     if (isConfirming || !checkedCards.length) return;
     const payload = checkedCards.map((card) => ({
       call_id: card.call_id,
       card_id: card.card_id,
-      ...(isApproved && {
-        sales_orders: getSalesOrderObjects(card)
-          .filter((salesOrder) => salesOrder.scc?.document_id != null)
-          .map((salesOrder) => ({
-            sales_order_no: salesOrder.sales_order_no,
-            scc_id: salesOrder.scc.document_id,
-          })),
-      }),
+      ...(isApproved && { sales_orders: getApprovedSalesOrders(card) }),
     }));
     const { errorMessage, result } = await confirmSccDocuments(payload);
     if (errorMessage) {
@@ -114,6 +142,7 @@ const SccReviewModal = ({ onConfirmed }) => {
       notify(`${notMoved.length} ${notMoved.length === 1 ? "card was" : "cards were"} not moved`, "error");
       notMoved.forEach((card) => card.reason && notify(card.reason, "error"));
     }
+    if (isApproved) markCardsUnsigned(notMoved.map((card) => card.card_id), payload.map((card) => card.card_id));
     onClose();
     onConfirmed?.();
   };
@@ -166,15 +195,41 @@ const SccReviewModal = ({ onConfirmed }) => {
         </td>
         <td>
           {salesOrders.map((salesOrder) => (
-            <div key={salesOrder.sales_order_no}>
+            <div key={salesOrder.sales_order_no} className={salesOrder.scc ? (salesOrder.scc.signed ? "text-success" : "text-danger") : undefined}>
               {salesOrder.scc ? (salesOrder.scc.signed ? "Signed" : "Not signed") : "-"}
             </div>
           ))}
         </td>
-        <td>{renderDocument(card.approval_email ?? card.documents?.approval_email)}</td>
       </tr>
     );
   };
+
+  /* An SCC the backend could not place: its sales order is chosen here from the candidates. */
+  const renderUnassignedSccRow = (scc) => (
+    <tr key={`unassigned-${scc.document_id}`}>
+      <td className="ar-invoice-review__card-cell" />
+      <td>
+        <select
+          className="form-select form-select-sm scc-review__so-select"
+          value={pickedCandidateKeys[scc.document_id] ?? ""}
+          onChange={(e) =>
+            setPickedCandidateKeys((prev) => ({ ...prev, [scc.document_id]: e.target.value }))
+          }
+          disabled={isConfirming}
+          aria-label={`Sales order for ${scc.name}`}
+        >
+          <option value="">Select SO</option>
+          {(scc.candidates ?? []).map((candidate) => (
+            <option key={getCandidateKey(candidate)} value={getCandidateKey(candidate)}>
+              {candidate.sales_order_no}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td>{renderDocument(scc)}</td>
+      <td className={scc.signed ? "text-success" : "text-danger"}>{scc.signed ? "Signed" : "Not signed"}</td>
+    </tr>
+  );
 
   const renderCardRow = (card) => (
     <tr key={card.card_id ?? card.call_id}>
@@ -257,7 +312,10 @@ const SccReviewModal = ({ onConfirmed }) => {
             </thead>
             <tbody>
               {cards.length ? (
-                pageCards.map(isApproved ? renderApprovedCardRow : renderCardRow)
+                <>
+                  {pageCards.map(isApproved ? renderApprovedCardRow : renderCardRow)}
+                  {isApproved && unassignedSccs.map(renderUnassignedSccRow)}
+                </>
               ) : (
                 <tr>
                   <td colSpan={(isApproved ? APPROVED_COLUMNS : COLUMNS).length + 1} className="ar-invoice-review__empty">

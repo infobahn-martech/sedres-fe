@@ -65,7 +65,7 @@ HusbIcon.propTypes = {
 };
 
 /** Premium card header — tinted icon box + title + optional subtitle + optional count badge. Pair with a `husb-accent-*` class on the card wrapper. */
-export const PremiumCardHeader = ({ icon, title, subtitle, count, headerClassName, titleClassName }) => (
+export const PremiumCardHeader = ({ icon, title, subtitle, count, headerClassName, titleClassName, actions = null }) => (
   <div className={headerClassName}>
     <div className="crew-pass-requests-table-card__header-main">
       <span className="husb-icon-box">
@@ -76,6 +76,7 @@ export const PremiumCardHeader = ({ icon, title, subtitle, count, headerClassNam
         {subtitle && <p className="husb-header-subtitle">{subtitle}</p>}
       </div>
     </div>
+    {actions && <div className="husb-header-actions">{actions}</div>}
     {count != null && (
       <span className="crew-pass-requests-table-card__count" aria-live="polite">
         {count}
@@ -91,6 +92,8 @@ PremiumCardHeader.propTypes = {
   count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   headerClassName: PropTypes.string.isRequired,
   titleClassName: PropTypes.string.isRequired,
+  /** Optional controls (e.g. a search box) shown between the title and the count. */
+  actions: PropTypes.node,
 };
 
 /** Splits a label on "*" and wraps the marker in a red span, so a single label can also carry the required indicator. */
@@ -105,8 +108,8 @@ export const renderRequiredLabel = (text) => {
 };
 
 /** Groups a related run of fields under a small colored icon + label + divider. Pass an empty `label` to omit the header when no field description is needed. Pass `accent` matching a `husb-accent-*` class. */
-export const FormGroup = ({ icon, label, accent = "slate", children }) => (
-  <div className={`husb-group husb-accent-${accent}`}>
+export const FormGroup = ({ icon, label, accent = "slate", error = "", children }) => (
+  <div className={`husb-group husb-accent-${accent}${error ? " has-error" : ""}`}>
     {label && (
       <div className="husb-group__label">
         <span className="husb-group__icon">
@@ -115,7 +118,14 @@ export const FormGroup = ({ icon, label, accent = "slate", children }) => (
         <span className="husb-group__label-text">{renderRequiredLabel(label)}</span>
       </div>
     )}
-    <div className="husb-group__body">{children}</div>
+    <div className="husb-group__body">
+      {children}
+      {error && (
+        <div className="cf-field-error husb-group__error" role="alert">
+          {error}
+        </div>
+      )}
+    </div>
   </div>
 );
 
@@ -123,6 +133,8 @@ FormGroup.propTypes = {
   icon: PropTypes.string.isRequired,
   label: PropTypes.string,
   accent: PropTypes.oneOf(["blue", "teal", "purple", "amber", "rose", "slate", "green", "pink"]),
+  /** Inline validation message shown under the group's fields. */
+  error: PropTypes.string,
   children: PropTypes.node.isRequired,
 };
 

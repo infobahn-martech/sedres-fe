@@ -49,10 +49,10 @@ const useFormTemplateReducer = create((set) => ({
   // System bindings depend on the call type, so they're returned to the caller
   // (the template builder keeps them per call type) rather than cached globally.
   // Resolves to null on failure.
-  getSystemBindings: async ({ callTypeId }) => {
+  getSystemBindings: async ({ callTypeId, entityId }) => {
     try {
       set({ isLoadingSystemBindings: true });
-      const { data } = await formTemplateService.getSystemBindings(callTypeId);
+      const { data } = await formTemplateService.getSystemBindings(callTypeId, entityId);
       set({ isLoadingSystemBindings: false });
       return data?.data ?? [];
     } catch (error) {
@@ -114,10 +114,10 @@ const useFormTemplateReducer = create((set) => ({
     }
   },
 
-  getTemplateFirstTab: async ({ templateId, payload, cb }) => {
+  getTemplateFirstTab: async ({ templateId, boardId, payload, cb }) => {
     try {
       set({ isLoadingTemplateFirstTab: true });
-      const { data } = await formTemplateService.getTemplateFirstTab(templateId, payload);
+      const { data } = await formTemplateService.getTemplateFirstTab(templateId, boardId, payload);
       set({ isLoadingTemplateFirstTab: false });
       cb?.(data?.data ?? null);
     } catch (error) {

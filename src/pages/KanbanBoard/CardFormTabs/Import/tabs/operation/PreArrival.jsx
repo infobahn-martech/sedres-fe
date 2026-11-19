@@ -8,6 +8,7 @@ import { DEFAULT_PRE_ARRIVAL_DOCUMENT_HANDLING } from "./preArrivalDocumentHandl
 import preArrivalService from "@/services/preArrivalService";
 import appointmentAcceptanceService from "@/services/appointmentAcceptanceService";
 import coordinatesService from "@/services/coordinatesService";
+import callFileService from "@/services/callFileService";
 import useArrivalReducer from "@/store/ArrivalReducer";
 import {
   BAD_WEATHER,
@@ -351,6 +352,25 @@ PreArrivalDocumentHandlingSection.propTypes = {
   }),
 };
 
+/** Map `saber` from call_file/get_saber_attachment ("by_sedres" / "by_client") to the form select value. */
+const mapSaberApiValueToFormValue = (data) => {
+  const raw = String(data?.saber ?? "").trim().toLowerCase();
+  if (raw === "by_sedres" || Number(data?.is_by_sedres) === 1) return SABER_APPLIED_BY_SEDRES;
+  if (raw === "by_client") return "Applied by Client";
+  return "";
+};
+
+/** Build attachment list from the `saber_attachment` field of get_saber_attachment. */
+const extractSaberAttachments = (data) => {
+  const field = data?.saber_attachment;
+  if (!field || typeof field !== "object") return [];
+  const url = String(field.file_url || "").trim();
+  if (!url) return [];
+  const name = String(field.value || "").trim() || url.split("/").pop() || "SABER document";
+  // file_url may contain raw spaces (e.g. ".../uploads/Pre Arrival/x.pdf")
+  return [{ name, url: url.replace(/ /g, "%20") }];
+};
+
 const isValidEmailList = (value = "") => {
   const emails = String(value)
     .split(",")
@@ -516,7 +536,6 @@ function PreArrival({
           responseBody: body,
           eventFields,
           handleChange,
-          currentForm: snapshot,
         });
         if (coordinatesId && !String(snapshot.coordinateTypeId || "").trim()) {
           pendingCoordinateIdRef.current = coordinatesId;
@@ -585,6 +604,31 @@ function PreArrival({
     [callId, isViewOnly, eventFields, handleChange, applyDetailDocuments]
   );
 
+  // SABER status + attachment come only from call_file/get_saber_attachment.
+  const fetchSaberAttachment = useCallback(
+    async (abortSignal) => {
+      if (isViewOnly || !callId) return;
+      try {
+        const res = await callFileService.getSaberAttachment(callId);
+        if (abortSignal?.aborted) return;
+        const body = res?.data ?? res;
+        if (String(body?.status || "").toLowerCase() === "error") return;
+        const data = body?.data ?? {};
+
+        const saberValue = mapSaberApiValueToFormValue(data);
+        handleChange("saberUtStatus")({ target: { value: saberValue } });
+        handleChange("saberUtDocumentsAttachments")({
+          target: {
+            value: saberValue === SABER_APPLIED_BY_SEDRES ? extractSaberAttachments(data) : [],
+          },
+        });
+      } catch {
+        /* SABER is optional — leave form values as they are */
+      }
+    },
+    [callId, isViewOnly, handleChange]
+  );
+
   // Keep a ref to the latest fetchPreArrivalDetail instead of listing it as an
   // effect dependency below. It's recreated on every handleChange identity
   // change (the parent form re-renders on every field edit), which was
@@ -594,6 +638,10 @@ function PreArrival({
   useEffect(() => {
     fetchPreArrivalDetailRef.current = fetchPreArrivalDetail;
   }, [fetchPreArrivalDetail]);
+  const fetchSaberAttachmentRef = useRef(fetchSaberAttachment);
+  useEffect(() => {
+    fetchSaberAttachmentRef.current = fetchSaberAttachment;
+  }, [fetchSaberAttachment]);
 
   // callId whose get_prearrival_detail has finished — until it matches, the
   // stage skeleton is shown instead of the half-populated form.
@@ -603,7 +651,10 @@ function PreArrival({
     if (!eventFieldsReady) return undefined;
     const ac = new AbortController();
     const requestedFor = callId;
-    Promise.resolve(fetchPreArrivalDetailRef.current(ac.signal)).finally(() => {
+    Promise.allSettled([
+      fetchPreArrivalDetailRef.current(ac.signal),
+      fetchSaberAttachmentRef.current(ac.signal),
+    ]).finally(() => {
       if (!ac.signal.aborted) setDetailLoadedFor(requestedFor);
     });
     return () => ac.abort();
@@ -927,7 +978,7 @@ function PreArrival({
         );
       }
       try {
-        await fetchPreArrivalDetail();
+        await Promise.all([fetchPreArrivalDetail(), fetchSaberAttachment()]);
       } catch (refreshError) {
         notify(
           refreshError?.response?.data?.message ||
@@ -1262,7 +1313,7 @@ function PreArrival({
                     billingEntityId={billingEntityId ?? formValues.mainBillingEntity}
                     onChange={handleReportDraftChange}
                     onSend={handleSendPreArrivalReport}
-                    isSending={isSendingReport || isSavingPreArrival}
+                    isSending={isSendingReport}
                     isViewOnly={isViewOnly}
                     canSend={canSendReport}
                   />

@@ -531,9 +531,10 @@
 }
 
 .br-table-scroll {
-  // Columns are sized (table-layout: fixed, explicit widths below) to fit within
-  // the modal, so no horizontal scrollbar is shown.
-  overflow-x: hidden;
+  // Columns use explicit widths (table-layout: fixed) and can be wider than the modal on
+  // narrower screens, so the horizontal scrollbar must be available instead of clipping
+  // the right-hand columns (Shared with / Status).
+  overflow-x: auto;
   // .br-table-pagination now sits inside .br-table-section alongside this, so
   // this fills only the remaining space above the footer (flex, not height:100%)
   // and scrolls vertically only if a page's rows ever exceed it (they shouldn't,
@@ -597,6 +598,9 @@
 
     &:last-child { border-bottom: none; }
     &:hover { background: var(--hover-bg); }
+
+    // Loading / empty message row isn't a record, so it must not turn gray on hover.
+    &.br-table-state-row:hover { background: transparent; }
 
     td {
       padding: 12px 16px;
@@ -4740,8 +4744,10 @@ body .modal.br-invoke-test-result-modal.show {
   }
 }
 
-.br-subtask-settings-modal-dialog {
-  max-width: 560px;
+// Wider than the generic 720px card-property-match dialog so the three-column row fits;
+// the selector repeats that rule's body/.modal/.show chain so it wins on specificity.
+body .modal.br-subtask-settings-modal.show .modal-dialog.br-subtask-settings-modal-dialog {
+  max-width: 900px;
 }
 
 // Portaled to document.body (see CreateSubtaskSettingsModal) so it renders above the
@@ -4794,6 +4800,79 @@ body .modal.br-invoke-test-result-modal.show {
 
 .br-subtask-description-textarea {
   min-height: 64px;
+}
+
+// Create Subtask is full-size, so lay it out like the card Subtasks tab: Assign User,
+// Due Date & Time and Document in one row, with the description filling the rest.
+.br-subtask-settings-modal {
+  .br-invoke-two-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+
+    @media ($sm-991) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .br-owner-picker-trigger {
+    border: 1px solid var(--border-primary);
+  }
+
+  .br-subtask-document-field {
+    grid-column: 1 / -1;
+  }
+
+  // Single-row dropzone (icon, text, hint) matching the Upload SCC Documents modal's look.
+  .br-subtask-dropzone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 56px;
+    padding: 8px 16px;
+    background: #f8fbff;
+    border: 1.5px dashed #9fb8e0;
+    border-radius: 10px;
+    cursor: pointer;
+    outline: none;
+    transition: background 0.2s ease, border-color 0.2s ease;
+
+    &:hover,
+    &:focus-visible,
+    &--active {
+      background: #eaf2fd;
+      border-color: #00368c;
+    }
+
+    &__icon {
+      margin-right: 4px;
+      font-size: 20px;
+      color: #00368c;
+    }
+
+    &__text {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    &__hint {
+      font-size: 13px;
+      color: #0b4fc4;
+    }
+  }
+
+  .br-subtask-description-field {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .br-subtask-description-textarea {
+    flex: 1 1 auto;
+    min-height: 160px;
+    resize: none;
+  }
 }
 
 /* ================================

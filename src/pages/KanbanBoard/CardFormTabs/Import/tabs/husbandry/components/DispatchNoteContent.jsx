@@ -612,14 +612,14 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    return date.toLocaleDateString("en-GB", { year: "numeric", month: "2-digit", day: "2-digit" });
   };
 
   const formatDateTime = (dateString) => {
     if (!dateString) return "";
     const date = new Date(String(dateString).replace(" ", "T"));
     if (Number.isNaN(date.getTime())) return dateString;
-    return date.toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleString("en-GB", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
   };
 
   const renderLaunchHireStepIcon = (icon) => {
@@ -771,7 +771,7 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
                     }}
                     dateFieldName="dispatch_date"
                     timeFieldName="dispatch_time"
-                    placeholder="YYYY-MM-DD hh:mm"
+                    placeholder="DD/MM/YYYY HH:mm"
                     minDate={editMinDate}
                   />
                   {editFormErrors.dispatch_date && <span className="dispatch-edit-error">{editFormErrors.dispatch_date}</span>}

@@ -1272,13 +1272,13 @@ $send-report-optional: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 72px;
-  max-height: 92px;
-  border-radius: 14px;
+  min-height: 52px;
+  max-height: 64px;
+  border-radius: 12px;
   border: 1px solid var(--border-primary);
   background: var(--surface-primary);
   box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
-  padding: 12px;
+  padding: 8px 12px;
   text-align: left;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -1303,8 +1303,8 @@ $send-report-optional: var(--text-muted);
 
 .crew-mgmt-service-box-icon {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 10px;
   display: inline-flex;
   align-items: center;
@@ -1324,15 +1324,6 @@ $send-report-optional: var(--text-muted);
   font-size: 13px;
   font-weight: 700;
   color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.crew-mgmt-service-box-count {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3030,6 +3021,133 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
   display: none;
 }
 
+// Template stage "file" field: saved / pending file shown as a card above the drop zone.
+.operation-file-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.operation-file-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 8px 8px 10px;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  background: var(--surface-primary);
+  transition: border-color 0.2s ease, opacity 0.2s ease;
+
+  &:hover {
+    border-color: #c7cbf5;
+  }
+
+  &--pending {
+    border-color: #a5b4fc;
+    background: #f5f6ff;
+
+    [data-theme="dark"] & {
+      background: var(--surface-secondary);
+    }
+  }
+
+  &--replaced {
+    opacity: 0.6;
+
+    .operation-file-card__name {
+      text-decoration: line-through;
+    }
+  }
+}
+
+.operation-file-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: #eef0ff;
+  color: #4f46e5;
+
+  [data-theme="dark"] & {
+    background: var(--surface-hover);
+    color: var(--cf-accent-icon, #a5b4fc);
+  }
+}
+
+.operation-file-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.operation-file-card__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.operation-file-card__meta {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.operation-file-card__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #4f46e5;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #eef0ff;
+    border-color: #c7cbf5;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #4f46e5;
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &--danger {
+    color: var(--text-secondary);
+
+    &:hover:not(:disabled) {
+      color: #dc2626;
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+  }
+
+  [data-theme="dark"] &:hover:not(:disabled) {
+    background: var(--surface-hover);
+    border-color: var(--border-strong, var(--border-primary));
+  }
+}
+
 // Compact footer: the button sits right under the columns with only a hairline
 // divider — no tall gradient band above/below it.
 .operation-sticky-actions {
@@ -3105,6 +3223,21 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
   flex-shrink: 0;
 }
 
+.operation-email-send-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: operation-email-send-spin 0.7s linear infinite;
+}
+
+@keyframes operation-email-send-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .operation-email-send-btn {
   display: inline-flex;
   align-items: center;
@@ -3130,6 +3263,11 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
 
   &:active:not(:disabled) {
     transform: translateY(0);
+  }
+
+  &.is-sending:disabled {
+    opacity: 0.85;
+    cursor: progress;
   }
 
   &:disabled {
@@ -5504,6 +5642,12 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
   white-space: nowrap;
 }
 
+/* Header + cell share the same centring so the eye icon sits under "Document". */
+.crew-pass-requests-table thead th.crew-pass-requests-table__doc-cell,
+.crew-pass-requests-table tbody td.crew-pass-requests-table__doc-cell {
+  text-align: center;
+}
+
 .crew-pass-requests-table__doc-btn {
   display: inline-flex;
   align-items: center;
@@ -6711,6 +6855,30 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
   .location-autocomplete-loading {
     color: var(--text-secondary);
     background: inherit;
+  }
+
+  /* Small "suggestions unavailable" marker; the reason is in its tooltip. */
+  .location-autocomplete-hint {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--text-muted);
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 700;
+    font-style: italic;
+    cursor: help;
+  }
+
+  &:has(.location-autocomplete-hint) input {
+    padding-right: 30px;
   }
 }
 
@@ -10895,4 +11063,433 @@ a.operation-task-document-name--link {
   .reports-preview-type {
     color: var(--text-primary);
   }
+}
+
+/* ── Crew pass requests: card list (CrewPassRequestsTable) ───────────────── */
+.cpr-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.husb-header-actions {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+  max-width: 340px;
+  margin-left: auto;
+}
+
+.cpr-search {
+  flex: 1 1 220px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0 10px;
+  height: 34px;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  background: var(--surface-primary);
+  color: var(--text-muted);
+
+  &:focus-within {
+    border-color: var(--accent, #2563eb);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #2563eb) 15%, transparent);
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 12.5px;
+    color: var(--text-primary);
+
+    &::placeholder {
+      color: var(--text-muted);
+    }
+
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+  }
+}
+
+.cpr-search__clear {
+  display: inline-flex;
+  padding: 3px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+}
+
+.cpr-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cpr-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: var(--hover-bg);
+  }
+
+  &.is-active {
+    border-color: var(--accent, #2563eb);
+    background: color-mix(in srgb, var(--accent, #2563eb) 12%, transparent);
+    color: var(--accent, #2563eb);
+  }
+}
+
+.cpr-filter__count {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--hover-bg);
+  font-size: 11px;
+  text-align: center;
+}
+
+.cpr-list {
+  list-style: none;
+  margin: 0;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cpr-request {
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  background: var(--surface-primary);
+  overflow: hidden;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
+  }
+
+  &.is-open {
+    border-color: color-mix(in srgb, var(--accent, #2563eb) 35%, var(--border-primary));
+  }
+}
+
+.cpr-request__header {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: none;
+  background: var(--bg-secondary);
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--accent, #2563eb);
+    outline-offset: -2px;
+  }
+}
+
+.cpr-request__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cpr-request__chevron {
+  margin-left: auto;
+  display: inline-flex;
+  color: var(--text-muted);
+  transform: rotate(-90deg);
+  transition: transform 0.15s ease;
+
+  .is-open & {
+    transform: rotate(0deg);
+  }
+}
+
+.cpr-request__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.cpr-fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.cpr-muted {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.cpr-crew-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  border-top: 1px solid var(--border-primary);
+}
+
+.cpr-crew {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+
+  & + & {
+    border-top: 1px dashed var(--border-primary);
+  }
+}
+
+.cpr-crew__avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent, #2563eb) 14%, transparent);
+  color: var(--accent, #2563eb);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.cpr-crew__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cpr-crew__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+.cpr-crew__meta {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Detailed crew rows (e.g. Transport): name column + labelled detail columns
+   that fill the row. Every row has the same fields, so auto-fill keeps the
+   columns aligned from one crew member to the next. */
+.cpr-crew--detailed .cpr-crew__main {
+  flex: 0 0 180px;
+}
+
+.cpr-crew__details {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 6px 16px;
+  margin: 0;
+}
+
+.cpr-crew__detail {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  dt {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.cpr-crew__tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.cpr-movement {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cpr-movement--on {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.cpr-movement--off {
+  background: rgba(244, 114, 37, 0.13);
+  color: #c2410c;
+}
+
+.cpr-movement--default {
+  background: var(--hover-bg);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] {
+  .cpr-movement--on {
+    color: #5be0b0;
+  }
+
+  .cpr-movement--off {
+    color: #fdba74;
+  }
+}
+
+.cpr-crew__doc {
+  flex-shrink: 0;
+}
+
+.cpr-crew__doc--none {
+  width: 25px;
+}
+
+.cpr-no-match {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.cpr-no-match__reset {
+  border: none;
+  background: none;
+  color: var(--accent, #2563eb);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 575px) {
+  .cpr-crew {
+    flex-wrap: wrap;
+  }
+
+  .cpr-crew__tags,
+  .cpr-crew__details {
+    width: 100%;
+    flex-basis: 100%;
+    justify-content: flex-start;
+    padding-left: 44px;
+  }
+
+  .cpr-crew--detailed .cpr-crew__main {
+    flex: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .crew-pass-requests-table-card__header {
+    flex-wrap: wrap;
+  }
+
+  .husb-header-actions {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+  }
+}
+
+/* Card header row: toggle button + optional request-level document button. */
+.cpr-request__head {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+
+  .cpr-request__header {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.cpr-request__doc {
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+.cpr-route {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+
+  > span:not(.cpr-route__arrow) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.cpr-route__arrow {
+  color: var(--accent, #2563eb);
+  font-weight: 700;
 }

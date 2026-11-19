@@ -18,7 +18,7 @@ const formatDateTime = (value) => {
     if (!value) return '—';
     const parsed = dayjs(value);
     // Backend sends 1899-12-30 (SQL zero date) when no date is set
-    return parsed.isValid() && parsed.year() >= 1900 ? parsed.format('DD MMM YYYY, HH:mm') : '—';
+    return parsed.isValid() && parsed.year() >= 1900 ? parsed.format('DD/MM/YYYY, HH:mm') : '—';
 };
 
 const getInitials = (name = '') =>

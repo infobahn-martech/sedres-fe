@@ -4,6 +4,8 @@ import 'react-phone-input-2/lib/bootstrap.css';
 import { FiCamera } from 'react-icons/fi';
 import CustomModal from '../../components/CustomModal';
 import authService from '../../services/authService';
+import SignatureUpload from '../../components/form/SignatureUpload';
+import useAlertReducer from '../../store/AlertReducer';
 import { getItem } from '../../shared/helpers/localStorage';
 import '../../design/scss/profile.scss';
 import '../../design/scss/prospect-modal.scss';
@@ -14,7 +16,7 @@ function resolveUserImageUrl(image) {
   if (!image || typeof image !== 'string') return null;
   const trimmed = image.trim();
   if (!trimmed) return null;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^(https?:|data:|blob:)/i.test(trimmed)) return trimmed;
   const root = (import.meta.env.VITE_API_ENDPOINT || '').replace(/\/?$/, '/');
   return `${root}${trimmed.replace(/^\//, '')}`;
 }
@@ -25,10 +27,16 @@ function mapApiUserToForm(data) {
 
   return {
     firstName: fullName,
+    username: data?.username || data?.user_name || '',
     phone: (data?.phone && String(data.phone).replace(/\D/g, '')) || '',
     email: data?.email || '',
     image: resolvedImage,
     avatarFile: null,
+    signature: resolveUserImageUrl(
+      data?.signature_url || data?.signature_path || data?.signature,
+    ),
+    signatureFile: null,
+    removeSignature: false,
   };
 }
 
@@ -43,10 +51,14 @@ function MyAccountsModal({ show, onClose }) {
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     firstName: '',
+    username: '',
     phone: '',
     email: '',
     image: null,
     avatarFile: null,
+    signature: null,
+    signatureFile: null,
+    removeSignature: false,
   });
 
   const applyFormFromUser = useCallback((userPayload) => {
@@ -142,6 +154,29 @@ function MyAccountsModal({ show, onClose }) {
     }
   };
 
+  const handleSignatureSelect = (file) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData((prev) => ({
+        ...prev,
+        signature: reader.result,
+        signatureFile: file,
+        removeSignature: false,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSignatureRemove = () => {
+    setFormData((prev) => ({
+      ...prev,
+      signature: null,
+      signatureFile: null,
+      // Only ask the server to remove a signature that was saved before
+      removeSignature: Boolean(baselineRef.current?.signature),
+    }));
+  };
+
   const validate = () => {
     const next = {};
     if (formData.firstName?.trim() && !/^[A-Za-z\s]+$/.test(formData.firstName.trim())) {
@@ -177,16 +212,25 @@ function MyAccountsModal({ show, onClose }) {
 
     const formDataToSend = new FormData();
     formDataToSend.append('name', formData.firstName.trim());
+    formDataToSend.append('username', (formData.username || '').trim());
     formDataToSend.append('email', formData.email.trim());
     formDataToSend.append('phone', (formData.phone || '').replace(/\D/g, ''));
     if (formData.avatarFile) {
       formDataToSend.append('avatar', formData.avatarFile);
     }
+    if (formData.signatureFile) {
+      formDataToSend.append('signature', formData.signatureFile);
+    } else if (formData.removeSignature) {
+      formDataToSend.append('remove_signature', 1);
+    }
 
     try {
       setProfileEditLoader(true);
       setFetchError('');
-      await authService.updateUserDetails(formDataToSend);
+      const res = await authService.updateUserDetails(formDataToSend);
+      useAlertReducer
+        .getState()
+        .success(res?.data?.message || 'User details updated successfully');
 
       // Re-fetch latest user details to bind fresh values
       try {
@@ -205,12 +249,13 @@ function MyAccountsModal({ show, onClose }) {
 
       setIsEditing(false);
     } catch (err) {
-      setFetchError(
+      const message =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
         err?.message ||
-        'Failed to update account details.',
-      );
+        'Failed to update account details.';
+      setFetchError(message);
+      useAlertReducer.getState().error(message);
     } finally {
       setProfileEditLoader(false);
     }
@@ -304,7 +349,7 @@ function MyAccountsModal({ show, onClose }) {
 
               <div className="profile-details my-accounts-fields">
                 <div className="row permInputs g-4">
-                  <div className="col-12">
+                  <div className="col-md-6">
                     <div className="form-field">
                       <div className="form-floating">
                         <input
@@ -331,23 +376,23 @@ function MyAccountsModal({ show, onClose }) {
 
                   <div className="col-md-6">
                     <div className="form-field">
-                      <div className="phone-wrapper">
-                        <label className="phone-label">
-                          Phone
-                        </label>
-                        <PhoneInput
-                          country="sa"
-                          enableSearch
-                          value={formData.phone}
-                          onChange={handlePhoneChange}
+                      <div className="form-floating">
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="accountUsername"
+                          name="username"
+                          value={formData.username}
+                          onChange={handleInputChange}
                           disabled={!isEditing}
-                          inputClass={`phone-input ${errors.phone ? 'is-invalid' : ''}`}
-                          buttonClass="phone-flag"
+                          placeholder="Username"
+                          autoComplete="username"
+                          style={{ cursor: !isEditing ? 'not-allowed' : 'text' }}
                         />
+                        <label htmlFor="accountUsername">
+                          Username
+                        </label>
                       </div>
-                      {errors.phone && (
-                        <span className="field-error">{errors.phone}</span>
-                      )}
                     </div>
                   </div>
 
@@ -377,6 +422,38 @@ function MyAccountsModal({ show, onClose }) {
                         <span className="field-error">{errors.email}</span>
                       )}
                     </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <div className="form-field">
+                      <div className="phone-wrapper">
+                        <label className="phone-label">
+                          Phone
+                        </label>
+                        <PhoneInput
+                          country="sa"
+                          enableSearch
+                          value={formData.phone}
+                          onChange={handlePhoneChange}
+                          disabled={!isEditing}
+                          inputClass={`phone-input ${errors.phone ? 'is-invalid' : ''}`}
+                          buttonClass="phone-flag"
+                        />
+                      </div>
+                      {errors.phone && (
+                        <span className="field-error">{errors.phone}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <SignatureUpload
+                      compact
+                      previewUrl={formData.signature}
+                      onSelect={handleSignatureSelect}
+                      onRemove={handleSignatureRemove}
+                      disabled={!isEditing}
+                    />
                   </div>
                 </div>
               </div>

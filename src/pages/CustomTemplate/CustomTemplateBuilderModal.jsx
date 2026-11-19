@@ -8,7 +8,7 @@ import { getEmailPreviewSubject } from "./emailPreviewSubjects";
 import TemplateFeaturePreview from "./TemplateFeaturePreview";
 import TemplateSectionsPreview, { TemplateSectionsSummary } from "./TemplateSectionsPreview";
 import { getFeaturePreviewKind } from "./templateFeaturePreviews";
-import { alignLayoutToOrder, buildFieldGrid, getReadingOrder, resolveFieldLayout, sortFieldsByLayout } from "./templateFieldGrid";
+import { alignLayoutToOrder, buildFieldGrid, getReadingOrder, placeFieldsAfterLayout, resolveFieldLayout, sortFieldsByLayout } from "./templateFieldGrid";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
 import { mapBillingEntitiesToOptions } from "../../shared/helpers/callFileFormOptions";
@@ -84,7 +84,9 @@ const mapTemplateField = (f) => {
         masterModule: f.masterModule ?? f.master_key ?? "",
         dependsOnFieldLabel: f.dependsOnFieldLabel ?? f.depends_on_field_label ?? "",
         timeObjectId: toIdString(f.timeObjectId ?? f.time_object_id),
-        systemBindingKey: f.systemBindingKey ?? f.system_binding_key ?? null,
+        // field_key only identifies a system binding on system fields.
+        systemBindingKey: f.systemBindingKey ?? f.system_binding_key
+            ?? (isFlagTrue(f.is_system) ? f.field_key : null) ?? null,
         gridRow: f.gridRow ?? f.row_no ?? f.grid_row ?? null,
         gridCol: f.gridCol ?? f.col_no ?? f.grid_col ?? null,
     };
@@ -148,6 +150,9 @@ const collectStructureTabKeys = (structure) => {
 
 // A system_bindings field as a builder field. System fields are locked (never
 // deletable); whether they're required comes from the API's is_required flag.
+// system_bindings now identifies each field by field_key (older responses used system_binding_key).
+const getBindingKey = (binding) => binding?.field_key ?? binding?.system_binding_key ?? null;
+
 const mapSystemBindingField = (binding) => ({
     ...createBlankField(),
     label: binding.label ?? "",
@@ -157,7 +162,8 @@ const mapSystemBindingField = (binding) => ({
     optionIds: (binding.options ?? []).map(() => null),
     optionsSource: binding.option_source === "master" ? "master" : "manual",
     masterModule: binding.master_key ?? "",
-    systemBindingKey: binding.system_binding_key ?? null,
+    dependsOnFieldLabel: binding.depends_on_field_label ?? "",
+    systemBindingKey: getBindingKey(binding),
 });
 
 // Keeps one tab/subtab's fields in step with its system bindings: fields
@@ -166,8 +172,8 @@ const mapSystemBindingField = (binding) => ({
 // layout and static options; fields bound to keys this scope no longer has are
 // dropped; bindings not yet present are appended (auto-placed into the grid).
 const syncSystemBindingFields = (fields, bindings) => {
-    const byKey = new Map(bindings.map((b) => [b.system_binding_key, b]));
-    const keyByLabel = new Map(bindings.map((b) => [String(b.label ?? "").trim().toLowerCase(), b.system_binding_key]));
+    const byKey = new Map(bindings.map((b) => [getBindingKey(b), b]));
+    const keyByLabel = new Map(bindings.map((b) => [String(b.label ?? "").trim().toLowerCase(), getBindingKey(b)]));
     const seen = new Set();
     const synced = fields.flatMap((field) => {
         const key = field.systemBindingKey && byKey.has(field.systemBindingKey)
@@ -192,9 +198,9 @@ const syncSystemBindingFields = (fields, bindings) => {
         }];
     });
     const missing = bindings
-        .filter((b) => b.system_binding_key && !seen.has(b.system_binding_key))
+        .filter((b) => getBindingKey(b) && !seen.has(getBindingKey(b)))
         .map(mapSystemBindingField);
-    return [...synced, ...missing];
+    return placeFieldsAfterLayout(synced, missing);
 };
 
 const buildTabFromStructure = (st, prefix = "tab") => ({
@@ -946,11 +952,13 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         }
     };
 
-    const loadSystemBindings = async (nextCallTypeId, { addMissing = true } = {}) => {
+    // entityId defaults to the current billing entity; callers that change it
+    // pass the new value explicitly since state updates aren't visible yet.
+    const loadSystemBindings = async (nextCallTypeId, { addMissing = true, entityId = billingEntityId } = {}) => {
         const requestId = ++bindingsRequestRef.current;
         setIsLoadingBindings(true);
         setBindingsError(false);
-        const data = await getSystemBindings({ callTypeId: nextCallTypeId });
+        const data = await getSystemBindings({ callTypeId: nextCallTypeId, entityId });
         if (requestId !== bindingsRequestRef.current) return;
         setIsLoadingBindings(false);
         if (data) {
@@ -963,9 +971,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     // Editing an existing template: load its call type's bindings so the
     // locked fields are recognised and kept in step with the API.
     useEffect(() => {
-        const seedCallTypeId = getTemplateSeed(initialTemplate).callTypeId;
+        const seed = getTemplateSeed(initialTemplate);
         // Existing templates keep the tabs they were saved with (no re-adding deleted ones).
-        if (seedCallTypeId) loadSystemBindings(seedCallTypeId, { addMissing: false });
+        if (seed.callTypeId) loadSystemBindings(seed.callTypeId, { addMissing: false, entityId: seed.billingEntityId });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -975,6 +983,14 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         recordHistory();
         setCallTypeId(value);
         if (value) loadSystemBindings(value);
+    };
+
+    // Bindings can differ per billing entity, so re-fetch them for the selected call type.
+    const handleBillingEntityChange = (value) => {
+        if (value === billingEntityId) return;
+        recordHistory();
+        setBillingEntityId(value);
+        if (callTypeId) loadSystemBindings(callTypeId, { entityId: value });
     };
 
     // Writes to the currently active fields scope — the active sub-tab's fields
@@ -1316,7 +1332,9 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         };
         if (systemBindingKey) {
             payload.is_system = 1;
+            // The API renamed system_binding_key to field_key; send both until every endpoint has switched.
             payload.system_binding_key = systemBindingKey;
+            payload.field_key = systemBindingKey;
         }
         if (field.fieldId) payload.field_id = Number(field.fieldId);
         // A checkbox with no options is a legacy single checkbox — saved without options.
@@ -1547,7 +1565,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                 <label>Billing Entity</label>
                                 <SearchableSelect
                                     value={billingEntityId}
-                                    onChange={(e) => { recordHistory(); setBillingEntityId(e.target.value); }}
+                                    onChange={(e) => handleBillingEntityChange(e.target.value)}
                                     options={billingEntityOptions}
                                     placeholder={billingEntitiesLoading ? "Loading..." : "Select billing entity"}
                                     disabled={billingEntitiesLoading}

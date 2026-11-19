@@ -276,7 +276,7 @@ const MAIN_TABS = [
             {
                 label: "Header Fields",
                 fields: [
-                    "PO No", "Project Name", "Port",
+                    "Port",
                     "Delivery Date", "Document Date", "Ship Name", "BP Currency",
                 ],
             },
@@ -1564,9 +1564,9 @@ function CallTypeBuilderModal({ show, onClose }) {
                                                         };
                                                         const SO_READONLY_FIELDS = new Set([
                                                             "Customer Code", "Customer Name", "Contact Person", "Contact Email",
-                                                            "SRT Number", "Branch", "SO No", "Posting Date",
+                                                            "Branch", "SO No", "Posting Date",
                                                         ]);
-                                                        const SO_REQUIRED_FIELDS = new Set(["PO No", "Project Name"]);
+                                                        const SO_REQUIRED_FIELDS = new Set([]);
                                                         const SO_DATE_FIELDS = new Set(["Posting Date", "Delivery Date", "Document Date"]);
                                                         const SO_SELECT_FIELDS = { Port: "Select Port...", "BP Currency": "SAR / USD / EURO" };
                                                         const soGroups = effectivePreviewMain.groups ?? [];
@@ -1613,10 +1613,10 @@ function CallTypeBuilderModal({ show, onClose }) {
                                                                 return (
                                                                     <div key={f} className="so-header-field">
                                                                         <label className="so-header-label">{label}</label>
-                                                                        <input
-                                                                            type="date"
+                                                                        <DatePickerField
                                                                             className={`so-header-input${SO_READONLY_FIELDS.has(f) ? " so-header-input-readonly" : ""}`}
-                                                                            readOnly={SO_READONLY_FIELDS.has(f)}
+                                                                            disabled={SO_READONLY_FIELDS.has(f)}
+                                                                            placeholder="DD/MM/YYYY"
                                                                         />
                                                                     </div>
                                                                 );
@@ -2063,7 +2063,7 @@ function CallTypeBuilderModal({ show, onClose }) {
                                                                                         <div key={f} className="cf-field">
                                                                                             <label>{f}</label>
                                                                                             <div className="cf-input ct-preview-dt-input">
-                                                                                                <input type="text" placeholder="YYYY-MM-DD hh:mm" />
+                                                                                                <input type="text" placeholder="DD/MM/YYYY HH:mm" />
                                                                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                                                                                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
                                                                                                 </svg>

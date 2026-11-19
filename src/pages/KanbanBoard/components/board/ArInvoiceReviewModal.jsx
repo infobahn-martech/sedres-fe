@@ -296,6 +296,7 @@ const ArInvoiceReviewModal = ({ onConfirmed, useReviewStore = useArInvoiceReview
         }
         disabled={isConfirming}
         title="Click to edit"
+        placeholder={column.placeholder}
         aria-label={`${column.label} for ${salesOrder.sales_order_no}`}
       />
     );

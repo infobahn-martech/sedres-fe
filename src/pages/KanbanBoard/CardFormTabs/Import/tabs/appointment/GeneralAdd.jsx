@@ -119,6 +119,8 @@ const mapTemplateTabFields = (fields) =>
         label: field?.field_label ?? "",
         type: normalizeTemplateFieldType(field?.type_key),
         required: String(field?.is_required ?? "0") === "1",
+        // Backend-locked fields (e.g. Port / Call Type / Billing Entity fixed by the template) are read-only.
+        disabled: String(field?.is_disabled ?? "0") === "1",
         options: options.map((opt) => (typeof opt === "string" ? opt : opt?.option_label ?? "")),
         // option_value is what create_call_file_new expects for radio/dropdown/checkbox selections.
         optionValues: options.map((opt) =>
@@ -149,7 +151,7 @@ const shouldRefetchForTimeObjectValue = (value) =>
 
 // Changing a field bound to one of these params re-fetches first_tab so the backend can resolve
 // the remaining field values (email / vessel / billing entity / port / last port / requestor email /
-// operator). Keyed by the normalized system_binding_key / master_key / label
+// operator / captain email). Keyed by the normalized system_binding_key / master_key / label
 // (e.g. "billing_entity_id", "Billing Entity", "Vessel Name", "Port", "Assigned Operator").
 const TEMPLATE_REFETCH_PARAMS = {
   appointment_email: "appointment_email_file",
@@ -160,6 +162,7 @@ const TEMPLATE_REFETCH_PARAMS = {
   service_requestor_email: "service_requestor_email",
   assigned_operator: "assigned_operator_id",
   operator: "assigned_operator_id",
+  captain_email: "captain_email",
 };
 
 // Typed inputs re-fetch after the user pauses instead of on every keystroke.
@@ -262,6 +265,16 @@ function GeneralAdd({
   // master catalogues / checklist / stage-time lookups are not requested.
   const selectedTemplateId = firstNonEmptyString(formValues?.template_id);
   const isTemplateMode = Boolean(selectedTemplateId);
+  // first_tab is board-scoped: form_template/first_tab/{template_id}/{board_id}.
+  const templateBoardId = firstNonEmptyString(
+    boardId,
+    formValues?.board_id,
+    formValues?.boardId,
+    card?.board_id,
+    card?.boardId,
+    card?.raw?.board_id,
+    card?.raw?.boardId
+  );
 
   const {
     masterDataLoading,
@@ -417,6 +430,7 @@ function GeneralAdd({
     let cancelled = false;
     getTemplateFirstTab({
       templateId: selectedTemplateId,
+      boardId: templateBoardId,
       cb: (data) => {
         if (cancelled) return;
         setTemplateFields(mapTemplateTabFields(data?.tab?.fields));
@@ -437,7 +451,14 @@ function GeneralAdd({
     return () => {
       cancelled = true;
     };
-  }, [selectedTemplateId, getTemplateFirstTab, handleChange, applyTemplateEmailPreview, clearTemplateRefetchTimer]);
+  }, [
+    selectedTemplateId,
+    templateBoardId,
+    getTemplateFirstTab,
+    handleChange,
+    applyTemplateEmailPreview,
+    clearTemplateRefetchTimer,
+  ]);
 
   const getFieldValue = (fieldName) =>
     hasMeaningfulValue(formValues?.[fieldName]) ? formValues[fieldName] : "";
@@ -652,14 +673,19 @@ function GeneralAdd({
       setIsTemplateRefetching(true);
       getTemplateFirstTab({
         templateId: selectedTemplateId,
+        boardId: templateBoardId,
         payload,
         cb: (data) => {
           if (requestId !== templateRefetchRequestIdRef.current) return;
           const fields = data?.tab?.fields;
           if (Array.isArray(fields) && fields.length) setTemplateFields(mapTemplateTabFields(fields));
           const boundValues = extractTemplateFieldValues(fields, data);
-          // Trigger fields keep their latest value (the user may have kept typing during the request).
-          triggerIds.forEach((id) => delete boundValues[id]);
+          // Trigger fields the user has filled keep their latest value (they may have kept typing during
+          // the request). Empty trigger fields accept the backend value, e.g. Service Requestor Email
+          // resolved from an uploaded appointment email.
+          triggerIds.forEach((id) => {
+            if (hasMeaningfulValue(templateFieldValuesRef.current[id])) delete boundValues[id];
+          });
           setTemplateFieldValues((prev) => {
             const next = { ...prev, ...boundValues };
             templateFieldValuesRef.current = next;
@@ -676,7 +702,7 @@ function GeneralAdd({
         if (requestId === templateRefetchRequestIdRef.current) setIsTemplateRefetching(false);
       });
     },
-    [selectedTemplateId, templateFields, getTemplateFirstTab, applyTemplateEmailPreview]
+    [selectedTemplateId, templateBoardId, templateFields, getTemplateFirstTab, applyTemplateEmailPreview]
   );
 
   const handleTemplateFieldChange = useCallback(
@@ -1441,17 +1467,21 @@ function GeneralAdd({
       );
       if (!validFiles.length) return;
 
-      const billingEntityId = getPrimaryBillingEntityId();
-      if (isEmptyValue(billingEntityId)) {
-        notify("Please select a Billing entity before uploading attachments.", "error");
-        return;
-      }
+      // Attachments can be added at any time; the billing entity is sent when one is selected.
+      const templateBillingField = (templateFields || []).find(
+        (field) => field.refetchParam === "billing_entity_id"
+      );
+      const billingEntityId = templateBillingField
+        ? templateFieldValuesRef.current[templateBillingField.id]
+        : getPrimaryBillingEntityId();
 
       const formData = new FormData();
       validFiles.forEach((file) => {
         formData.append("files[]", file);
       });
-      formData.append("billing_entity_id", billingEntityId ?? "");
+      if (!isEmptyValue(billingEntityId)) {
+        formData.append("billing_entity_id", billingEntityId);
+      }
 
       setIsUploadingEmailAttachments(true);
       try {
@@ -1488,7 +1518,7 @@ function GeneralAdd({
         setIsUploadingEmailAttachments(false);
       }
     },
-    [getFieldValue]
+    [getFieldValue, templateFields]
   );
 
   const handleRemoveEmailAttachment = useCallback((item) => {
@@ -2750,7 +2780,6 @@ function GeneralAdd({
                       onUploadEmailAttachments={handleEmailAttachmentUpload}
                       onRemoveEmailAttachment={handleRemoveEmailAttachment}
                       isUploadingEmailAttachments={isUploadingEmailAttachments}
-                      isBillingEntitySelected={!isEmptyValue(getPrimaryBillingEntityId())}
                     />
                   </div>
                 )}

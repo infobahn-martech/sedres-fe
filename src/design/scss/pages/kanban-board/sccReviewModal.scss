@@ -1,0 +1,11 @@
+// SCC Review: the sales order dropdown of an SCC the backend could not place on a card.
+
+.blockers-modal.se-review-move-modal.ar-invoice-review-modal .blockers-table-wrapper {
+  .scc-review__so-select {
+    width: 260px;
+    height: 30px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    font-size: 14px;
+  }
+}
