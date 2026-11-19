@@ -5,9 +5,10 @@ import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import BusinessRuleFieldValue from './BusinessRuleFieldValue';
 import MoveTargetAction from './MoveTargetAction';
 import ThenFieldPickerModal from './ThenFieldPickerModal';
+import RelativeFilterBox from './RelativeFilterBox';
 import CreateCardActionCard from './CreateCardActionCard';
 import '../../../design/scss/business-rule-generic-action.scss';
-import { EMPTY_CREATE_CARD, NONE_FIELD_CHECKED, getGenericFieldKey, isCreateCardsAction, isCustomGenericField } from './genericThenAction';
+import { EMPTY_CREATE_CARD, EMPTY_GENERIC_ACTION_VALUE, NONE_FIELD_CHECKED, getActionFilterKind, getGenericFieldKey, isCreateCardsAction, isCustomGenericField } from './genericThenAction';
 
 const OPTION_FIELD_TYPES = ['dropdown', 'radio', 'multiselect', 'checkbox'];
 
@@ -16,7 +17,7 @@ const OPTION_FIELD_TYPES = ['dropdown', 'radio', 'multiselect', 'checkbox'];
 // position (Move the card) draws its own "Move card to" card; any other action starts as an
 // "Add new action" link that opens the common field picker, and every picked field becomes
 // its own card, like the Link the card section.
-function GenericThenActionEditor({ action, value, defaultBoardId, onChange }) {
+function GenericActionFields({ action, value, defaultBoardId, startOpen = false, inCard = false, onChange }) {
   const { thenActionFieldsByType, getThenActionFieldsByType, fieldDetailsByKey, getFieldDetails } = useBusinessRuleReducer((s) => s);
   const entry = thenActionFieldsByType[String(action.action_type_id)];
   const [showFieldPicker, setShowFieldPicker] = useState(false);
@@ -40,8 +41,31 @@ function GenericThenActionEditor({ action, value, defaultBoardId, onChange }) {
 
   const hasBoardPosition = Number(action.has_board_position) === 1;
 
+  // An action with no fields at all (e.g. Archive cards) has nothing to fill in: adding it is the choice.
   if (fields.length === 0 && !hasBoardPosition) {
-    return <div className="br-property-picker-empty">No properties available.</div>;
+    if (!value.noFields) {
+      return (
+        <button type="button" className="business-rule-form-add-link" onClick={() => onChange({ ...value, noFields: true })}>
+          <FiPlus size={14} aria-hidden />
+          Add new action
+        </button>
+      );
+    }
+    return (
+      <div className="br-link-card">
+        <button
+          type="button"
+          className="business-rule-form-action-detail-close"
+          onClick={() => onChange({ ...value, noFields: false })}
+          aria-label={`Remove ${action.action_name}`}
+        >
+          <FiX size={14} />
+        </button>
+        <div className="br-link-card-header">
+          <span className="br-sticker-action-label">{action.action_name}</span>
+        </div>
+      </div>
+    );
   }
 
   const setField = (key, next) => onChange({ ...value, fields: { ...value.fields, [key]: next } });
@@ -86,11 +110,20 @@ function GenericThenActionEditor({ action, value, defaultBoardId, onChange }) {
   if (hasBoardPosition) {
     return (
       <div className="br-generic-action d-flex flex-column gap-3">
-        <MoveTargetAction
-          position={value.position}
-          defaultBoardId={defaultBoardId}
-          onChange={(position) => onChange({ ...value, position })}
-        />
+        {inCard ? (
+          <div className="br-create-action-card">
+            <h5 className="br-create-action-title">{`Move ${getActionFilterKind(action)?.kind ?? 'card'} to`}</h5>
+            <MoveTargetAction embedded position={value.position} defaultBoardId={defaultBoardId} onChange={(position) => onChange({ ...value, position })} />
+          </div>
+        ) : (
+          <MoveTargetAction
+            position={value.position}
+            startOpen={startOpen}
+            title={getActionFilterKind(action) ? `Move ${getActionFilterKind(action).kind} to` : undefined}
+            defaultBoardId={defaultBoardId}
+            onChange={(position) => onChange({ ...value, position })}
+          />
+        )}
         {fields.map((field) => {
           const key = getGenericFieldKey(field);
           return (
@@ -217,18 +250,158 @@ function GenericThenActionEditor({ action, value, defaultBoardId, onChange }) {
   );
 }
 
-GenericThenActionEditor.propTypes = {
+const editorPropTypes = {
   action: PropTypes.shape({
     action_type_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    action_name: PropTypes.string,
+    action_code: PropTypes.string,
     has_board_position: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    has_relative_filter: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    has_parent_filter: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    has_child_filter: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   }).isRequired,
   value: PropTypes.shape({
     thenActionId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     fields: PropTypes.object,
+    noFields: PropTypes.bool,
     position: PropTypes.object,
+    filterConditions: PropTypes.array,
+    more: PropTypes.array,
   }).isRequired,
   defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onChange: PropTypes.func.isRequired,
+};
+
+GenericActionFields.propTypes = { ...editorPropTypes, startOpen: PropTypes.bool, inCard: PropTypes.bool };
+
+// The action's own fields, then (parent / child / relative actions) the filter box that limits
+// which related cards the action applies to.
+function GenericInstance({ action, value, defaultBoardId, renderPropertyPicker, startOpen = false, inCard = false, onChange }) {
+  const filterKind = getActionFilterKind(action);
+  return (
+    <div className="d-flex flex-column gap-3">
+      <GenericActionFields action={action} value={value} defaultBoardId={defaultBoardId} startOpen={startOpen} inCard={inCard} onChange={onChange} />
+      {filterKind && renderPropertyPicker && (
+        <RelativeFilterBox
+          renderPropertyPicker={renderPropertyPicker}
+          label={`if ${filterKind.kind} card matches this filter`}
+          rows={value.filterConditions ?? []}
+          onChange={(filterConditions) => onChange({ ...value, filterConditions })}
+        />
+      )}
+    </div>
+  );
+}
+
+GenericInstance.propTypes = {
+  ...editorPropTypes,
+  startOpen: PropTypes.bool,
+  inCard: PropTypes.bool,
+  renderPropertyPicker: PropTypes.func,
+};
+
+// An action that moves a card to a board position can be added again, each time with its own target
+// and filter (value.more holds the extra ones): "Add new move action". The link's verb is the first
+// word of the action's own action_code (move_parent_card -> move).
+function GenericThenActionEditor({ action, value, defaultBoardId, renderPropertyPicker, onChange }) {
+  const more = value.more ?? [];
+  const canRepeat = Number(action.has_board_position) === 1 && !isCreateCardsAction(action);
+  const verb = String(action.action_code ?? '').split('_')[0];
+
+  // A move with a parent / child filter reads like the update card: each target is a card holding
+  // "Move parent to", its link and the filter box, and "Add new move action" sits under the cards.
+  if (canRepeat && getActionFilterKind(action)) {
+    const cards = [value, ...more];
+    const setCard = (index, next) => (index === 0
+      ? onChange({ ...next, more })
+      : onChange({ ...value, more: more.map((m, i) => (i === index - 1 ? next : m)) }));
+    // Removing the first card promotes the next one; the last card is only emptied.
+    const removeCard = (index) => {
+      if (index > 0) onChange({ ...value, more: more.filter((m, i) => i !== index - 1) });
+      else if (more.length > 0) onChange({ ...more[0], more: more.slice(1) });
+      else onChange({ ...EMPTY_GENERIC_ACTION_VALUE, thenActionId: value.thenActionId });
+    };
+    return (
+      <div className="d-flex flex-column gap-3">
+        {cards.map((card, index) => (
+          <div key={index} className="business-rule-form-action-detail-card">
+            <button
+              type="button"
+              className="business-rule-form-action-detail-close"
+              onClick={() => removeCard(index)}
+              aria-label={`Remove ${action.action_name}`}
+            >
+              <FiX size={14} />
+            </button>
+            <h5 className="business-rule-form-action-detail-title">{action.action_name}</h5>
+            <GenericInstance
+              inCard
+              action={action}
+              value={card}
+              defaultBoardId={defaultBoardId}
+              renderPropertyPicker={renderPropertyPicker}
+              onChange={(next) => setCard(index, next)}
+            />
+          </div>
+        ))}
+        <button
+          type="button"
+          className="business-rule-form-add-link"
+          onClick={() => onChange({ ...value, more: [...more, { ...EMPTY_GENERIC_ACTION_VALUE }] })}
+        >
+          <FiPlus size={14} aria-hidden />
+          Add new {verb} action
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="d-flex flex-column gap-3">
+      <GenericInstance
+        action={action}
+        value={value}
+        defaultBoardId={defaultBoardId}
+        renderPropertyPicker={renderPropertyPicker}
+        onChange={onChange}
+      />
+      {more.map((extra, index) => (
+        <div key={index} className="position-relative">
+          <button
+            type="button"
+            className="business-rule-form-action-detail-close"
+            onClick={() => onChange({ ...value, more: more.filter((m, i) => i !== index) })}
+            aria-label={`Remove ${action.action_name}`}
+          >
+            <FiX size={14} />
+          </button>
+          <GenericInstance
+            action={action}
+            value={extra}
+            startOpen
+            defaultBoardId={defaultBoardId}
+            renderPropertyPicker={renderPropertyPicker}
+            onChange={(next) => onChange({ ...value, more: more.map((m, i) => (i === index ? next : m)) })}
+          />
+        </div>
+      ))}
+      {canRepeat && (
+        <button
+          type="button"
+          className="business-rule-form-add-link"
+          onClick={() => onChange({ ...value, more: [...more, { ...EMPTY_GENERIC_ACTION_VALUE }] })}
+        >
+          <FiPlus size={14} aria-hidden />
+          Add new {verb} action
+        </button>
+      )}
+    </div>
+  );
+}
+
+GenericThenActionEditor.propTypes = {
+  ...editorPropTypes,
+  renderPropertyPicker: PropTypes.func,
 };
 
 export default GenericThenActionEditor;

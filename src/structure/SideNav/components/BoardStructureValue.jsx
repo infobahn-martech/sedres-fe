@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { FiPlus, FiTrash2 } from 'react-icons/fi';
+import { FiTrash2 } from 'react-icons/fi';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import SearchableSelect from '../../../components/form/SearchableSelect';
 import BoardFilterPicker from './BoardFilterPicker';
+import BoardMinimapModal from './BoardMinimapModal';
 import { NOT_SET_LABEL, joinMultiValue, splitMultiValue } from './businessRuleFieldUtils';
 import '../../../design/scss/business-rule-board-position.scss';
 
@@ -33,8 +34,6 @@ function BoardStructureControls({ level, value, onChange }) {
 
   const [boardId, setBoardId] = useState('');
   const [workflowId, setWorkflowId] = useState('');
-  const [columnId, setColumnId] = useState('');
-  const [laneId, setLaneId] = useState('');
 
   useEffect(() => {
     getBoardPickerWorkspaces();
@@ -44,10 +43,9 @@ function BoardStructureControls({ level, value, onChange }) {
     if (boardId) getBoardWorkflows(boardId);
   }, [boardId]);
 
-  const needsLanes = level === 'lane' || level === 'position';
   useEffect(() => {
-    if (workflowId && needsLanes) getWorkflowSwimlanes(workflowId);
-  }, [workflowId, needsLanes]);
+    if (workflowId && level === 'lane') getWorkflowSwimlanes(workflowId);
+  }, [workflowId, level]);
 
   const ids = splitMultiValue(value);
   const workflows = boardWorkflowsByBoard[String(boardId)] ?? [];
@@ -86,8 +84,6 @@ function BoardStructureControls({ level, value, onChange }) {
       onChange={(next) => {
         setBoardId(String(next));
         setWorkflowId('');
-        setColumnId('');
-        setLaneId('');
       }}
       wrapClassName="br-board-position-wrap"
       triggerClassName="business-rule-form-condition-value"
@@ -102,8 +98,6 @@ function BoardStructureControls({ level, value, onChange }) {
       value={workflowId}
       onChange={(e) => {
         setWorkflowId(e.target.value);
-        setColumnId('');
-        setLaneId('');
       }}
       options={workflowOptions}
       placeholder="Select workflow"
@@ -142,68 +136,6 @@ function BoardStructureControls({ level, value, onChange }) {
     );
   }
 
-  if (level === 'position') {
-    const handleAddPosition = () => {
-      if (!columnId) return;
-      const entry = laneId ? `${columnId}${POSITION_SEPARATOR}${laneId}` : columnId;
-      if (!ids.includes(entry)) onChange(joinMultiValue([...ids, entry]));
-      setColumnId('');
-      setLaneId('');
-    };
-
-    const labelOf = (entry) => {
-      const [col, lane] = entry.split(POSITION_SEPARATOR);
-      const colLabel = columnOptions.find((o) => o.value === col)?.label ?? `Column #${col}`;
-      const laneLabel = lane ? (laneOptions.find((o) => o.value === lane)?.label ?? `Lane #${lane}`) : '';
-      return laneLabel ? `${colLabel} / ${laneLabel}` : colLabel;
-    };
-
-    return (
-      <div className="d-flex flex-column gap-2 flex-fill w-100">
-        {ids.map((entry) => (
-          <div key={entry} className="business-rule-form-when-fields-pill business-rule-form-when-field-chip">
-            <span className="business-rule-form-when-fields-chip-label">{labelOf(entry)}</span>
-            <button
-              type="button"
-              className="business-rule-form-condition-remove"
-              onClick={() => onChange(joinMultiValue(ids.filter((id) => id !== entry)))}
-              aria-label="Remove position"
-            >
-              <FiTrash2 size={14} />
-            </button>
-          </div>
-        ))}
-        {boardPicker}
-        {workflowPicker}
-        {workflowId && (
-          <>
-            <SearchableSelect
-              value={columnId}
-              onChange={(e) => setColumnId(e.target.value)}
-              options={columnOptions}
-              placeholder="Select column"
-              className="br-value-select"
-              menuPortalTarget={document.body}
-              menuPlacement="auto"
-            />
-            <SearchableSelect
-              value={laneId}
-              onChange={(e) => setLaneId(e.target.value)}
-              options={[{ value: '', label: 'Any lane' }, ...laneOptions]}
-              placeholder="Select lane (optional)"
-              className="br-value-select"
-              menuPortalTarget={document.body}
-              menuPlacement="auto"
-            />
-            <button type="button" className="business-rule-form-when-fields-pill" onClick={handleAddPosition} disabled={!columnId}>
-              <FiPlus size={14} aria-hidden /> Add position
-            </button>
-          </>
-        )}
-      </div>
-    );
-  }
-
   return null;
 }
 
@@ -215,8 +147,83 @@ const valuePropTypes = {
 
 BoardStructureControls.propTypes = valuePropTypes;
 
+// Position: chosen on the Board Minimap (column, or column + swimlane). Each pick is one entry
+// "column_id" or "column_id:swimlane_id"; a pick of only a swimlane carries no column and is not added.
+function PositionValue({ value, defaultBoardId = '', onChange }) {
+  const [showMinimap, setShowMinimap] = useState(false);
+  const [minimapBoardId, setMinimapBoardId] = useState('');
+  const { boardWorkflowsByBoard, swimlanesByWorkflow, getBoardWorkflows } = useBusinessRuleReducer((s) => s);
+  const entries = splitMultiValue(value);
+
+  // The minimap follows the board chosen in the AND "Board is" row (not the first board of the list);
+  // a board picked inside the minimap stays until that row changes.
+  useEffect(() => {
+    if (defaultBoardId) setMinimapBoardId(String(defaultBoardId));
+  }, [defaultBoardId]);
+
+  const workflows = Object.values(boardWorkflowsByBoard).flat();
+  const findColumn = (id) => workflows.flatMap((wf) => (wf.stages ?? []).flatMap((stage) => flattenLeafColumns(stage.columns ?? [])))
+    .find((col) => String(col.column_id) === id);
+  const findLane = (id) => workflows.flatMap((wf) => wf.swimlanes ?? swimlanesByWorkflow[String(wf.workflow_id)] ?? [])
+    .find((lane) => String(lane.swimlane_id) === id);
+
+  const labelOf = (entry) => {
+    const [col, lane] = entry.split(POSITION_SEPARATOR);
+    const colLabel = findColumn(col)?.column_name ?? `Column #${col}`;
+    if (!lane) return colLabel;
+    return `${colLabel} / ${findLane(lane)?.swimlane_name ?? `Lane #${lane}`}`;
+  };
+
+  const handlePick = (next) => {
+    setShowMinimap(false);
+    if (!next.columnId) return;
+    if (next.boardId) getBoardWorkflows(next.boardId);
+    const entry = next.swimlaneId ? `${next.columnId}${POSITION_SEPARATOR}${next.swimlaneId}` : String(next.columnId);
+    if (!entries.includes(entry)) onChange(joinMultiValue([...entries, entry]));
+  };
+
+  return (
+    <div className="d-flex flex-column gap-2 flex-fill w-100">
+      {entries.map((entry) => (
+        <div key={entry} className="business-rule-form-when-fields-pill business-rule-form-when-field-chip">
+          <span className="business-rule-form-when-fields-chip-label">{labelOf(entry)}</span>
+          <button
+            type="button"
+            className="business-rule-form-condition-remove"
+            onClick={() => onChange(joinMultiValue(entries.filter((e) => e !== entry)))}
+            aria-label="Remove position"
+          >
+            <FiTrash2 size={14} />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="business-rule-form-condition-label-btn br-advanced-schedule-label br-board-structure-trigger text-start"
+        onClick={() => setShowMinimap(true)}
+      >
+        {entries.length > 0 ? 'Add position' : NOT_SET_LABEL}
+      </button>
+      <BoardMinimapModal
+        show={showMinimap}
+        value={null}
+        boardId={minimapBoardId}
+        onBoardChange={setMinimapBoardId}
+        onPick={handlePick}
+        onClose={() => setShowMinimap(false)}
+      />
+    </div>
+  );
+}
+
+PositionValue.propTypes = {
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onChange: PropTypes.func.isRequired,
+};
+
 // Reads as blue "Not Set" text (or "N selected"); clicking it opens the pickers below it.
-function BoardStructureValue({ level, value, onChange }) {
+function BoardStructureToggle({ level, value, onChange }) {
   const [open, setOpen] = useState(false);
   const count = splitMultiValue(value).length;
 
@@ -224,7 +231,7 @@ function BoardStructureValue({ level, value, onChange }) {
     <div className="d-flex flex-column gap-2 flex-fill w-100">
       <button
         type="button"
-        className="business-rule-form-condition-label-btn br-advanced-schedule-label"
+        className="business-rule-form-condition-label-btn br-advanced-schedule-label br-board-structure-trigger text-start"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
       >
@@ -235,6 +242,16 @@ function BoardStructureValue({ level, value, onChange }) {
   );
 }
 
-BoardStructureValue.propTypes = valuePropTypes;
+BoardStructureToggle.propTypes = valuePropTypes;
+
+function BoardStructureValue({ level, value, defaultBoardId, onChange }) {
+  if (level === 'position') return <PositionValue value={value} defaultBoardId={defaultBoardId} onChange={onChange} />;
+  return <BoardStructureToggle level={level} value={value} onChange={onChange} />;
+}
+
+BoardStructureValue.propTypes = {
+  ...valuePropTypes,
+  defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+};
 
 export default BoardStructureValue;
