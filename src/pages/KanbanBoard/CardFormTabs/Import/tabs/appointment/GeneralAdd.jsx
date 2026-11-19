@@ -119,6 +119,8 @@ const mapTemplateTabFields = (fields) =>
         label: field?.field_label ?? "",
         type: normalizeTemplateFieldType(field?.type_key),
         required: String(field?.is_required ?? "0") === "1",
+        // Backend-locked fields (e.g. Port / Call Type / Billing Entity fixed by the template) are read-only.
+        disabled: String(field?.is_disabled ?? "0") === "1",
         options: options.map((opt) => (typeof opt === "string" ? opt : opt?.option_label ?? "")),
         // option_value is what create_call_file_new expects for radio/dropdown/checkbox selections.
         optionValues: options.map((opt) =>
