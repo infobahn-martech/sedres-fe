@@ -6,7 +6,7 @@ export const EMPTY_BOARD_POSITION = { boardId: '', workflowId: '', columnId: '',
 export const NONE_FIELD_CHECKED = '1';
 
 // extraValues: more lines added under one field with AND, sent as repeated field_key + field_value pairs.
-export const EMPTY_GENERIC_ACTION_VALUE = { thenActionId: null, title: '', fields: {}, extraValues: {}, position: EMPTY_BOARD_POSITION, cards: [] };
+export const EMPTY_GENERIC_ACTION_VALUE = { thenActionId: null, title: '', fields: {}, extraValues: {}, position: EMPTY_BOARD_POSITION, cards: [], noFields: false, relativeConditions: [] };
 
 // One card of the recurring "Create cards" action.
 export const EMPTY_CREATE_CARD = { thenActionId: null, title: '', fields: {}, position: EMPTY_BOARD_POSITION };
@@ -45,6 +45,27 @@ const positionFromProperties = (properties) => {
 };
 
 const asProperty = (property_key, property_value) => ({ property_key, property_value, property_value_type: 'string' });
+
+// relative_conditions of a relative-card action (updates guide 2.3): one entry per filled-in filter row.
+const buildRelativeConditions = (rows = []) => rows
+  .filter((row) => row.operatorKey)
+  .map((row) => {
+    const entry = { operator: row.operatorKey, input_value: row.value };
+    if (row.fieldType === 'custom') entry.custom_field_id = row.fieldId;
+    else entry.regular_field_id = row.fieldId;
+    if (row.timeUnitId) entry.time_unit_id = Number(row.timeUnitId);
+    return entry;
+  });
+
+const parseRelativeConditions = (conditions = []) => conditions.map((c, index) => ({
+  id: `relative-filter-saved-${index}`,
+  fieldType: c.custom_field_id != null ? 'custom' : 'regular',
+  fieldId: c.custom_field_id ?? c.regular_field_id,
+  fieldLabel: c.field_label ?? '',
+  operatorKey: c.operator_key ?? c.operator ?? '',
+  value: String(c.input_value ?? ''),
+  timeUnitId: c.time_unit_id != null ? String(c.time_unit_id) : '',
+}));
 
 // One then_action per generic trigger action the user filled in. Regular fields go out as
 // field_key + field_value pairs, custom fields as custom_field_id + property_value, and a
@@ -91,8 +112,12 @@ export const buildGenericThenActions = (triggerActions, genericActionValues) => 
       if (value.position[stateKey]) properties.push(asProperty(propertyKey, value.position[stateKey]));
     });
 
-    if (properties.length === 0) return;
-    const entry = { action_type_id: action.action_type_id, properties };
+    // An action with no fields at all (Archive cards) is sent as just its action_type_id.
+    const relativeConditions = buildRelativeConditions(value.relativeConditions);
+    if (properties.length === 0 && !value.noFields && relativeConditions.length === 0) return;
+    const entry = { action_type_id: action.action_type_id };
+    if (properties.length > 0) entry.properties = properties;
+    if (relativeConditions.length > 0) entry.relative_conditions = relativeConditions;
     if (value.thenActionId != null) entry.then_action_id = value.thenActionId;
     entries.push(entry);
   });
@@ -152,7 +177,15 @@ export const parseGenericThenAction = (savedAction, groupType) => {
   });
   flushPending();
 
-  return { ...EMPTY_GENERIC_ACTION_VALUE, thenActionId: savedAction.then_action_id ?? null, fields, extraValues, position };
+  return {
+    ...EMPTY_GENERIC_ACTION_VALUE,
+    thenActionId: savedAction.then_action_id ?? null,
+    fields,
+    extraValues,
+    position,
+    noFields: (savedAction.properties ?? []).length === 0 && (savedAction.relative_conditions ?? []).length === 0,
+    relativeConditions: parseRelativeConditions(savedAction.relative_conditions),
+  };
 };
 
 // ---- Create card / child / parent (guide 5.7) --------------------------------------------

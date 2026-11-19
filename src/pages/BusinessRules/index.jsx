@@ -198,6 +198,7 @@ const BusinessRules = () => {
                 <th style={{ width: 40 }} />
                 <th>ID</th>
                 <th>NAME</th>
+                <th>TYPE</th>
                 <th>OWNER</th>
                 <th>BOARD NAME</th>
                 <th>EXECUTION ORDER</th>
@@ -210,11 +211,11 @@ const BusinessRules = () => {
             <tbody>
               {isLoadingBusinessRules ? (
                 <tr>
-                  <td colSpan={10} className="br-loading">Loading...</td>
+                  <td colSpan={11} className="br-loading">Loading...</td>
                 </tr>
               ) : businessRules.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="br-empty">No business rules found</td>
+                  <td colSpan={11} className="br-empty">No business rules found</td>
                 </tr>
               ) : (
                 businessRules.map((rule) => {
@@ -252,6 +253,7 @@ const BusinessRules = () => {
                       </td>
                       <td>{ruleId}</td>
                       <td><span className={`br-rule-name${isMissingReference ? ' text-danger' : ''}`}>{name}</span></td>
+                      <td>{rule?.trigger_type ?? '-'}</td>
                       <td><OwnerCell owner={rule?.owner} /></td>
                       <td><BoardNameCell boards={rule?.board_name} /></td>
                       <td>{execOrder}</td>

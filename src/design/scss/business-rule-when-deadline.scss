@@ -77,3 +77,19 @@
   font-weight: 400;
   color: var(--text-primary);
 }
+
+// "if <parent/child/relative> card matches this filter" block of a THEN action card: header and its
+// Add link stacked tight, left-aligned with the field chips above, set off by a hairline.
+.br-related-filter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-primary);
+
+  > .business-rule-form-action-chip {
+    align-self: stretch;
+  }
+}
