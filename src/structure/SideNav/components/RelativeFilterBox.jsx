@@ -1,23 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { FiPlus, FiTrash2 } from 'react-icons/fi';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import SearchableSelect from '../../../components/form/SearchableSelect';
 import BusinessRuleFieldValue from './BusinessRuleFieldValue';
-import ThenFieldPickerModal from './ThenFieldPickerModal';
-import { getGenericFieldKey, isCustomGenericField } from './genericThenAction';
+import { isCustomGenericField } from './genericThenAction';
 import { getOperatorKey } from './businessRuleFieldUtils';
 
 // "if <relative> card matches this filter" box of a relative-card action (updates guide 2.3):
-// a list of field conditions (field, operator, value) sent as relative_conditions.
+// a list of field conditions (field, operator, value) sent under the action's own filter key (parent_conditions, child_conditions or relative_conditions).
 // A row is { id, fieldType: 'regular' | 'custom', fieldId, fieldLabel, operatorKey, value, timeUnitId }.
 const detailsKeyOf = (row) => `${row.fieldType}-${row.fieldId}`;
 
-function RelativeFilterBox({ label, rows, onChange }) {
+// renderPropertyPicker draws the Card Property Match modal (the same field picker as the AND column);
+// it is handed in because that modal lives in BusinessRuleFormModal.jsx.
+function RelativeFilterBox({ label, rows, renderPropertyPicker, onChange }) {
   const {
     regularFields, customFields, fieldDetailsByKey, getFieldDetails, valueTimeUnits,
   } = useBusinessRuleReducer((s) => s);
   const [showPicker, setShowPicker] = useState(false);
+  // The modal reports every ticked field one by one in the same tick, so they are collected here.
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
 
   // The first operator of a field is its default; its details (operators, options) load on demand.
   useEffect(() => {
@@ -37,31 +41,26 @@ function RelativeFilterBox({ label, rows, onChange }) {
   const findCatalogField = (row) => catalog.find((f) => (row.fieldType === 'custom'
     ? isCustomGenericField(f) && String(f.custom_field_id) === String(row.fieldId)
     : !isCustomGenericField(f) && String(f.regular_field_id) === String(row.fieldId)));
-  const rowKeyOf = (row) => {
-    const field = findCatalogField(row);
-    return field ? getGenericFieldKey(field) : '';
-  };
-
-  const handleAdd = (picked) => {
-    const added = picked.map((field) => {
-      const isCustom = isCustomGenericField(field);
-      return {
-        id: `relative-filter-${Date.now()}-${getGenericFieldKey(field)}`,
-        fieldType: isCustom ? 'custom' : 'regular',
-        fieldId: isCustom ? field.custom_field_id : field.regular_field_id,
-        fieldLabel: field.field_label,
-        operatorKey: '',
-        value: '',
-        timeUnitId: '',
-      };
-    });
-    onChange([...rows, ...added]);
+  const handleSelect = (field, category) => {
+    const isCustom = category?.category_key === 'custom';
+    const fieldId = isCustom ? field.custom_field_id : field.regular_field_id;
+    if (fieldId == null || category?.category_key === 'time_unit') return;
+    rowsRef.current = [...rowsRef.current, {
+      id: `relative-filter-${Date.now()}-${rowsRef.current.length}`,
+      fieldType: isCustom ? 'custom' : 'regular',
+      fieldId,
+      fieldLabel: field.field_label ?? field.custom_field_name ?? '',
+      operatorKey: '',
+      value: '',
+      timeUnitId: '',
+    }];
+    onChange(rowsRef.current);
   };
 
   const setRow = (id, patch) => onChange(rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
   return (
-    <div>
+    <div className="br-related-filter">
       <p className="business-rule-form-when-fields-header">{label}</p>
       {rows.map((row) => {
         const details = fieldDetailsByKey[detailsKeyOf(row)];
@@ -69,7 +68,7 @@ function RelativeFilterBox({ label, rows, onChange }) {
         const operator = operators.find((op) => getOperatorKey(op) === row.operatorKey);
         const rowLabel = row.fieldLabel || findCatalogField(row)?.field_label || `Field #${row.fieldId}`;
         return (
-          <div key={row.id} className="d-flex flex-column gap-2 mb-2">
+          <div key={row.id} className="d-flex flex-column gap-2 mb-2 w-100">
             <div className="d-flex align-items-center justify-content-between gap-2">
               <span className="business-rule-form-action-chip-label">{rowLabel}</span>
               <button
@@ -110,19 +109,19 @@ function RelativeFilterBox({ label, rows, onChange }) {
         Add new property
       </button>
 
-      <ThenFieldPickerModal
-        show={showPicker}
-        fields={catalog}
-        addedKeys={rows.map(rowKeyOf)}
-        onClose={() => setShowPicker(false)}
-        onAdd={handleAdd}
-      />
+      {renderPropertyPicker({
+        show: showPicker,
+        onClose: () => setShowPicker(false),
+        onSelect: handleSelect,
+        existingFieldLabels: rows.map((row) => (row.fieldLabel || findCatalogField(row)?.field_label || '').trim().toLowerCase()),
+      })}
     </div>
   );
 }
 
 RelativeFilterBox.propTypes = {
   label: PropTypes.string.isRequired,
+  renderPropertyPicker: PropTypes.func.isRequired,
   rows: PropTypes.arrayOf(PropTypes.object).isRequired,
   onChange: PropTypes.func.isRequired,
 };

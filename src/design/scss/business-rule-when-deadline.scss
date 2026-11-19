@@ -79,17 +79,21 @@
 }
 
 // "if <parent/child/relative> card matches this filter" block of a THEN action card: header and its
-// Add link stacked tight, left-aligned with the field chips above, set off by a hairline.
+// Add link stacked tight, left-aligned with the field chips above.
 .br-related-filter {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
   margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-primary);
 
   > .business-rule-form-action-chip {
     align-self: stretch;
   }
+}
+
+// "Not Set" / "N selected" trigger of a board-structure value (Board, Position ...): same size as the
+// other value texts of the condition rows.
+.br-advanced-schedule-label.br-board-structure-trigger {
+  font-size: 13px;
 }

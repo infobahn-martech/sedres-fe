@@ -55,7 +55,7 @@ const getOptions = (details, masterOptionsByKey) => {
 };
 
 // One control for one value, picked by field_type only (guide 1.2).
-function ValueControl({ details, operator, options, value, onChange, ariaLabel }) {
+function ValueControl({ details, operator, options, value, onChange, ariaLabel, defaultBoardId }) {
   const fieldType = details?.field_type;
   const [isPickingDate, setIsPickingDate] = useState(false);
 
@@ -71,7 +71,7 @@ function ValueControl({ details, operator, options, value, onChange, ariaLabel }
   }, [defaultOptionValue]);
 
   if (fieldType === 'board_structure' && details?.structure_level) {
-    return <BoardStructureValue level={details.structure_level} value={value} onChange={onChange} />;
+    return <BoardStructureValue level={details.structure_level} value={value} defaultBoardId={defaultBoardId} onChange={onChange} />;
   }
 
   if (fieldType === 'multiselect' || fieldType === 'checkbox') {
@@ -209,6 +209,7 @@ ValueControl.propTypes = {
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onChange: PropTypes.func.isRequired,
   ariaLabel: PropTypes.string,
+  defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
 /**
@@ -218,7 +219,7 @@ ValueControl.propTypes = {
  * unit for in next / in last / was more than.
  */
 function BusinessRuleFieldValue({
-  details, operator, value, timeUnitId, timeUnits = EMPTY_OPTIONS, onChange, onTimeUnitChange = noop, label = 'Value',
+  details, operator, value, timeUnitId, timeUnits = EMPTY_OPTIONS, onChange, onTimeUnitChange = noop, label = 'Value', defaultBoardId,
 }) {
   const { masterOptionsByKey, getMasterOptions } = useBusinessRuleReducer();
 
@@ -287,7 +288,7 @@ function BusinessRuleFieldValue({
   }
 
   return (
-    <ValueControl details={details} operator={operator} options={options} value={value} ariaLabel={label} onChange={onChange} />
+    <ValueControl details={details} operator={operator} options={options} value={value} ariaLabel={label} defaultBoardId={defaultBoardId} onChange={onChange} />
   );
 }
 
@@ -300,6 +301,7 @@ BusinessRuleFieldValue.propTypes = {
   onChange: PropTypes.func.isRequired,
   onTimeUnitChange: PropTypes.func,
   label: PropTypes.string,
+  defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
 export default BusinessRuleFieldValue;
