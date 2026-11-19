@@ -4019,7 +4019,8 @@
       border-right: 1px solid #f1f5f9;
     }
 
-    input {
+    input,
+    select {
       width: 100%;
       border: none;
       outline: none;
@@ -4064,6 +4065,18 @@
     &:hover:not(:disabled) {
       color: #dc2626;
     }
+  }
+
+  &__saved {
+    color: #16a34a;
+    font-weight: 700;
+  }
+
+  &__row--saved input:disabled,
+  &__row--saved select:disabled {
+    color: inherit;
+    -webkit-text-fill-color: currentColor;
+    cursor: default;
   }
 
   &__footer {
@@ -4161,7 +4174,8 @@
         border-right-color: var(--divider-row);
       }
 
-      input {
+      input,
+      select {
         color: var(--text-control);
 
         &::placeholder {
@@ -4347,6 +4361,42 @@
   .crew-mgmt-summary-section .crew-table-wrapper {
     height: auto;
     max-height: max(240px, calc(100vh - 450px));
+  }
+}
+
+/* Crew Immigration + Crew Management — when the crew list is empty, stretch
+   the empty state to fill the remaining panel height instead of leaving
+   blank space below it. The populated table keeps its size-to-rows
+   behaviour above. */
+.husbandry-service-selection.crew-immigration-dashboard,
+.husbandry-service-selection.crew-management-dashboard {
+  align-items: stretch;
+
+  > .husbandry-service-selection-content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .husbandry-service-hero {
+    flex-shrink: 0;
+  }
+
+  .crew-mgmt-summary-section {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .crew-mgmt-summary-section > .cf-empty-state {
+    flex: 1 0 auto;
+    height: auto;
+  }
+
+  .crew-immigration-empty-wrap {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    margin-top: 4px;
   }
 }
 

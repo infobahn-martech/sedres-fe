@@ -57,7 +57,7 @@ if (!Quill.__tableBetterRegistered) {
   Quill.__tableBetterRegistered = true;
 }
 
-const isHtmlEmpty = (value) => {
+export const isHtmlEmpty = (value) => {
   if (!value) return true;
   return value.replace(/<(.|\n)*?>/g, '').replace(/&nbsp;/g, ' ').trim().length === 0;
 };
@@ -401,7 +401,7 @@ function attachImageControls(quill, notifyChange) {
 // the `value` prop against live editor content and can stomp the imperative
 // direction/align format + insertTable calls quill-table-better relies on). Mirrors
 // the pattern already used in CGPassTemplate for the same Quill v2 + quill-table-better combo.
-function QuillEditor({ value, onChange, placeholder }) {
+export function QuillEditor({ value, onChange, placeholder }) {
   const containerRef = useRef(null);
   const quillRef = useRef(null);
   const lastHtmlRef = useRef('');

@@ -15,6 +15,9 @@ const extractObjectEnvelope = (response) => {
   return payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : null;
 };
 
+// One in-flight request per transport request id, so overlapping callers share it.
+const pendingTransportRequestDetail = new Map();
+
 const useCoordinatorTransportReducer = create((set) => ({
   cardDetail: null,
   loadingCardDetail: false,
@@ -49,16 +52,25 @@ const useCoordinatorTransportReducer = create((set) => ({
       set({ transportRequestDetail: null, loadingTransportRequestDetail: false });
       return;
     }
+    const key = String(transportRequestId);
+    if (pendingTransportRequestDetail.has(key)) return pendingTransportRequestDetail.get(key);
+
     set({ loadingTransportRequestDetail: true });
-    try {
-      const response = await transportContentService.getTransportRequestDetail(transportRequestId);
-      set({
-        transportRequestDetail: extractObjectEnvelope(response),
-        loadingTransportRequestDetail: false,
-      });
-    } catch {
-      set({ transportRequestDetail: null, loadingTransportRequestDetail: false });
-    }
+    const request = (async () => {
+      try {
+        const response = await transportContentService.getTransportRequestDetail(transportRequestId);
+        set({
+          transportRequestDetail: extractObjectEnvelope(response),
+          loadingTransportRequestDetail: false,
+        });
+      } catch {
+        set({ transportRequestDetail: null, loadingTransportRequestDetail: false });
+      } finally {
+        pendingTransportRequestDetail.delete(key);
+      }
+    })();
+    pendingTransportRequestDetail.set(key, request);
+    return request;
   },
 
   fetchTransportCompanies: async () => {

@@ -12,6 +12,7 @@ import {
 import AttachmentsList from "../../appointment/AttachmentsList";
 import CrewPassRequestsTable from "./CrewPassRequestsTable";
 import CrewSelectionField from "./CrewSelectionField";
+import { manualCrewIdsField, manualCrewIdsFromChange } from "./crewPayloadIds";
 import { useCrewPassTabApi } from "./useCrewPassTabApi";
 import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT } from "./Husbandry.constants";
 
@@ -31,6 +32,8 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
     passRequests,
     passRequestsLoading,
     callId,
+    fieldErrors,
+    lineItemsModal,
   } = useCrewPassTabApi({
     passType: "Zawil",
     formValues,
@@ -39,6 +42,14 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
     documentsField: "zawilPassDocuments",
     requestEmailFileField: "zawilPassRequestEmailFile",
     crewField: "zawilPassSelectedCrew",
+    // Start a fresh request once this one is saved.
+    onSaved: () => {
+      handleChange("zawilPassRequestEmailFile")({ target: { value: [] } });
+      handleChange("zawilPassSelectedCrew")({ target: { value: [] } });
+      handleChange(manualCrewIdsField("zawilPassSelectedCrew"))({ target: { value: null } });
+      handleChange("zawilPassDocuments")({ target: { value: [] } });
+      handleChange("zawilPassDescription")({ target: { value: "" } });
+    },
   });
 
   useEffect(() => {
@@ -46,9 +57,9 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
   }, [passRequests, onRequestCountChange]);
 
   // Discard any draft entered on a previous visit — this tab always opens blank.
+  // Crew is kept so a selection assigned from the Crew Management dashboard carries over.
   useEffect(() => {
     handleChange("zawilPassRequestEmailFile")({ target: { value: [] } });
-    handleChange("zawilPassSelectedCrew")({ target: { value: [] } });
     handleChange("zawilPassDocuments")({ target: { value: [] } });
     handleChange("zawilPassDescription")({ target: { value: "" } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -175,6 +186,7 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form zawilpass-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">
@@ -188,7 +200,7 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
                   titleClassName="crew-pass-request-details-card__title"
                 />
                 <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                  <FormGroup icon="mail" label="Request Email *" accent={ZAWIL_PASS_ACCENT}>
+                  <FormGroup icon="mail" label="Request Email *" accent={ZAWIL_PASS_ACCENT} error={fieldErrors.requestEmail}>
                     <FormField>
                       <div className="transport-upload-box">
                         <AttachmentsList
@@ -214,13 +226,17 @@ const ZawilPassContent = ({ formValues, handleChange, cardColor, card, onRequest
                   <CrewSelectionField
                     callId={callId}
                     selected={formValues.zawilPassSelectedCrew || []}
-                    onChange={(ids) => handleChange("zawilPassSelectedCrew")({ target: { value: ids } })}
+                    onChange={(ids, meta) => {
+                    handleChange("zawilPassSelectedCrew")({ target: { value: ids } });
+                    handleChange(manualCrewIdsField("zawilPassSelectedCrew"))({ target: { value: manualCrewIdsFromChange(meta) } });
+                  }}
                     accent={ZAWIL_PASS_ACCENT}
                     onGoToCrew={onGoToCrew}
                     uploadMode={crewUploadMode}
+                    error={fieldErrors.crew}
                   />
 
-                  <FormGroup icon="folder" label="Documents *" accent={ZAWIL_PASS_ACCENT}>
+                  <FormGroup icon="folder" label="Documents" accent={ZAWIL_PASS_ACCENT}>
                     <FormField className="cf-field-full">
                       <div className="transport-upload-box">
                         <AttachmentsList

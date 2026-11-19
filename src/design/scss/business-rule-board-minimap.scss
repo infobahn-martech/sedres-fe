@@ -1,0 +1,193 @@
+// Board Minimap used by the THEN "Move the card" action (the earlier minimap design): board
+// picker, one block per workflow with a coloured stage row, a column row and coloured lane
+// labels, and clickable cells. The board picker panel and card-property-match-modal styles are
+// shared and reused as they are; only what the minimap adds is here.
+
+.board-minimap-modal-dialog {
+  max-width: 90vw !important;
+  width: 90vw !important;
+  height: 96vh !important;
+  margin: 2vh auto !important;
+}
+
+.board-minimap-modal .modal-content {
+  height: 100% !important;
+  max-height: 96vh !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.board-minimap-modal .card-property-match-modal-shell {
+  height: 100% !important;
+  max-height: 96vh !important;
+  min-height: 0;
+}
+
+.board-minimap-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.board-minimap-picker-workspace-select {
+  flex-shrink: 0;
+}
+
+.board-minimap-picker-tile-name {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.board-minimap-picker-tile-count {
+  flex-shrink: 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--surface-primary);
+  font-size: 13px;
+  font-weight: 600;
+  color: #00368c;
+}
+
+// Scroll owner: stacks one block per active workflow on the board.
+.board-minimap-workflows {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.board-minimap-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.board-minimap-title-bar {
+  padding: 10px 16px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.board-minimap-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px;
+  table-layout: fixed;
+}
+
+// Stage segments: a light cell with a thin line in the stage's own colour on top.
+.board-minimap-area-cell {
+  position: relative;
+  padding: 7px 8px 5px;
+  overflow: hidden;
+  background: var(--surface-primary);
+  border-radius: 4px 4px 0 0;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.15);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.board-minimap-band-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+// The stage colour is only the top line of its cell.
+.board-minimap-area-cell .board-minimap-band-fill {
+  height: 3px;
+}
+
+.board-minimap-band-label {
+  position: relative;
+}
+
+// One box per column; a parent column spans its sub-columns on its own row above them.
+.board-minimap-header-cell {
+  min-width: 70px;
+  height: 40px;
+  padding: 6px 8px;
+  background: var(--surface-primary);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.15);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+// A parent column is only a label over its sub-columns: not clickable.
+.board-minimap-header-cell--parent {
+  height: 28px;
+  padding: 4px 8px;
+  cursor: default;
+}
+
+.board-minimap-lane-label {
+  position: relative;
+  padding: 5px 12px;
+  overflow: hidden;
+  // The gap above a lane band, kept off the band itself.
+  border-top: 8px solid transparent;
+  background: #6b7280;
+  background-clip: padding-box;
+  border-radius: 6px;
+  color: var(--text-inverse);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 1.3;
+  text-align: center;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.board-minimap-lane-label--dark-text {
+  color: #1f2937;
+}
+
+.board-minimap-cell-wrap {
+  padding: 0;
+}
+
+.board-minimap-cell {
+  display: block;
+  width: 100%;
+  min-width: 70px;
+  min-height: 48px;
+  padding: 0;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover,
+  &.board-minimap-cell--col-active,
+  &.board-minimap-cell--row-active {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+  }
+}
+
+.board-minimap-cell--selected {
+  background: #e0e7ff;
+  border-color: #00368c;
+}

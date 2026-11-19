@@ -10,10 +10,10 @@ const formatDateTime = (value) => {
   if (!s || s.startsWith("0000-00-00")) return "—";
   const d = new Date(s.replace(" ", "T"));
   if (Number.isNaN(d.getTime())) return s;
-  return d.toLocaleString("en-US", {
+  return d.toLocaleString("en-GB", {
     year: "numeric",
-    month: "short",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   });

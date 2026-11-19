@@ -10,7 +10,7 @@ import useCrewReducer from "../../store/CrewReducer";
 const formatShortDate = (value) => {
     if (value == null || value === "") return "—";
     const m = moment(value);
-    return m.isValid() ? m.format("DD MMM YYYY") : String(value);
+    return m.isValid() ? m.format("DD/MM/YYYY") : String(value);
 };
 
 function DocLink({ href, children }) {

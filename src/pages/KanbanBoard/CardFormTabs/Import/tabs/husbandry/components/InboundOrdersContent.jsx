@@ -1388,7 +1388,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                     }}
                     dateFieldName="date"
                     timeFieldName="time"
-                    placeholder="YYYY-MM-DD hh:mm"
+                    placeholder="DD/MM/YYYY HH:mm"
                     minDate={editingOrder ? editOrderMinDate : undefined}
                   />
                 </FormField>
@@ -1661,7 +1661,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                         }}
                         dateFieldName="launchHireDate"
                         timeFieldName="launchHireTime"
-                        placeholder="YYYY-MM-DD hh:mm"
+                        placeholder="DD/MM/YYYY HH:mm"
                       />
                       {formErrors.launchHireDate && <span className="dispatch-edit-error">{formErrors.launchHireDate}</span>}
                     </div>
@@ -1771,7 +1771,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                     }}
                     dateFieldName="date"
                     timeFieldName="time"
-                    placeholder="YYYY-MM-DD hh:mm"
+                    placeholder="DD/MM/YYYY HH:mm"
                     hasError={!!convertFormErrors.date}
                     minDate={convertMinDate}
                   />
@@ -2055,7 +2055,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                               }}
                               dateFieldName="dispatchDate"
                               timeFieldName="dispatchTime"
-                              placeholder="YYYY-MM-DD hh:mm"
+                              placeholder="DD/MM/YYYY HH:mm"
                             />
                           </FormField>
                         </div>

@@ -8,6 +8,12 @@ const advanceStage = (payload) => Gateway.post('/da/advance_stage', payload);
 const advanceStageCards = (payload) => Gateway.post('/da/advance_stage', payload);
 /** @param {{ call_id: string|number, status_id: string|number }} payload */
 const updateStatus = (payload) => Gateway.post('/da/update_status', payload);
+
+/**
+ * Saves a card's DA team (replaces the whole team each call).
+ * @param {{ card_id: number, supervisor_id: number|null, coordinator_ids: number[] }} payload
+ */
+const assignDaTeam = (payload) => Gateway.post('/da/assign_da_team', payload);
 /** @param {{ so_item_id: string|number }} payload */
 const deleteSalesLineItem = (payload) => Gateway.post('/da/da_delete_sales_line_item', payload);
 /** @param {{ so_item_id: string|number }} payload */
@@ -127,9 +133,10 @@ const uploadDispatchProof = (formData) =>
   });
 /** @param {{ cards: Array<{ call_id: number, card_id: number }> }} payload - the reviewed, ticked cards.
  * @returns {Promise<{ data: { status: 'success', data: { moved_to_dispatched: Array<{ call_id: number,
- *   card_id: number }> } } | { status: 'error', message: string } }>}
- * Confirms the reviewed dispatch proofs; the cards move to "Dispatch Proof Uploaded". */
-const confirmDispatchProofs = (payload) => Gateway.post('/da/confirm_dispatch_proofs', payload);
+ *   card_id: number }>, card_positions: Array<{ call_id: number, card_id: number, column_name: string }> } }
+ *   | { status: 'error', message: string } }>}
+ * Confirms the reviewed dispatch proofs; the cards move on ("Dispatch Proof Uploaded", or "Submitted with Proof"
+ * for L&T "Ready to Submit"). */
 /** @param {{ cards: Array<{ call_id: number, card_id: number }> }} payload - the ticked "Consolidated" cards.
  * @returns {Promise<{ data: { status: 'success', data: { submission_id: number, inv_no: string, zip_url: string } }
  *   | { status: 'error', message: string } }>}
@@ -423,7 +430,6 @@ export default {
   mergeArInvoices,
   getPortalFiles,
   uploadDispatchProof,
-  confirmDispatchProofs,
   createSubmissionDocuments,
   getSubmissionEmailDraft,
   sendSubmissionEmail,
@@ -448,4 +454,5 @@ export default {
   sendSccApprovalEmail,
   getInvoiceSubmissionDraft,
   sendInvoiceSubmission,
+  assignDaTeam,
 };

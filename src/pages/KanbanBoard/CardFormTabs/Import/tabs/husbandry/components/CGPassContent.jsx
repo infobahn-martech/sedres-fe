@@ -12,6 +12,7 @@ import {
 import AttachmentsList from "../../appointment/AttachmentsList";
 import CrewPassRequestsTable from "./CrewPassRequestsTable";
 import CrewSelectionField from "./CrewSelectionField";
+import { manualCrewIdsField, manualCrewIdsFromChange } from "./crewPayloadIds";
 import { useCrewPassTabApi } from "./useCrewPassTabApi";
 import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT } from "./Husbandry.constants";
 
@@ -31,6 +32,8 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
     passRequests,
     passRequestsLoading,
     callId,
+    fieldErrors,
+    lineItemsModal,
   } = useCrewPassTabApi({
     passType: "CG",
     formValues,
@@ -39,6 +42,14 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
     documentsField: "cgPassDocuments",
     requestEmailFileField: "cgPassRequestEmailFile",
     crewField: "cgPassSelectedCrew",
+    // Start a fresh request once this one is saved.
+    onSaved: () => {
+      handleChange("cgPassRequestEmailFile")({ target: { value: [] } });
+      handleChange("cgPassSelectedCrew")({ target: { value: [] } });
+      handleChange(manualCrewIdsField("cgPassSelectedCrew"))({ target: { value: null } });
+      handleChange("cgPassDocuments")({ target: { value: [] } });
+      handleChange("cgPassDescription")({ target: { value: "" } });
+    },
   });
 
   useEffect(() => {
@@ -46,9 +57,9 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
   }, [passRequests, onRequestCountChange]);
 
   // Discard any draft entered on a previous visit — this tab always opens blank.
+  // Crew is kept so a selection assigned from the Crew Management dashboard carries over.
   useEffect(() => {
     handleChange("cgPassRequestEmailFile")({ target: { value: [] } });
-    handleChange("cgPassSelectedCrew")({ target: { value: [] } });
     handleChange("cgPassDocuments")({ target: { value: [] } });
     handleChange("cgPassDescription")({ target: { value: "" } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -175,6 +186,7 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form cgpass-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">
@@ -188,7 +200,7 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
                   titleClassName="crew-pass-request-details-card__title"
                 />
                 <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                  <FormGroup icon="mail" label="Request Email *" accent={CG_PASS_ACCENT}>
+                  <FormGroup icon="mail" label="Request Email *" accent={CG_PASS_ACCENT} error={fieldErrors.requestEmail}>
                     <FormField>
                       <div className="transport-upload-box">
                         <AttachmentsList
@@ -214,13 +226,17 @@ const CGPassContent = ({ formValues, handleChange, cardColor, card, onRequestCou
                   <CrewSelectionField
                     callId={callId}
                     selected={formValues.cgPassSelectedCrew || []}
-                    onChange={(ids) => handleChange("cgPassSelectedCrew")({ target: { value: ids } })}
+                    onChange={(ids, meta) => {
+                    handleChange("cgPassSelectedCrew")({ target: { value: ids } });
+                    handleChange(manualCrewIdsField("cgPassSelectedCrew"))({ target: { value: manualCrewIdsFromChange(meta) } });
+                  }}
                     accent={CG_PASS_ACCENT}
                     onGoToCrew={onGoToCrew}
                     uploadMode={crewUploadMode}
+                    error={fieldErrors.crew}
                   />
 
-                  <FormGroup icon="folder" label="Documents *" accent={CG_PASS_ACCENT}>
+                  <FormGroup icon="folder" label="Documents" accent={CG_PASS_ACCENT}>
                     <FormField className="cf-field-full">
                       <div className="transport-upload-box">
                         <AttachmentsList

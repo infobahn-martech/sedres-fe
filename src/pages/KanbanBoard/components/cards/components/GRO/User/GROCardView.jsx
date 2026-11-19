@@ -552,7 +552,7 @@ const GROCardView = forwardRef(function GROCardView(
             dateValue={field.pickerParts?.date ?? ""}
             timeValue={field.pickerParts?.time ?? ""}
             onDateTimeChange={field.onDateTimeChange}
-            placeholder="YYYY-MM-DD hh:mm"
+            placeholder="DD/MM/YYYY HH:mm"
             popperClassName="gro-inward-datetime-popper"
             disabled={isDisabled}
             hasError={Boolean(field.error)}
@@ -1189,7 +1189,7 @@ const GROCardView = forwardRef(function GROCardView(
     }
 
     if (groStageHasExtraFields(groStageId)) {
-      const extraErrors = validateGroExtraStageFields(groStageId, extraStageFields);
+      const extraErrors = validateGroExtraStageFields(groStageId, extraStageFields, existingStageFiles);
       if (Object.keys(extraErrors).length > 0) {
         setExtraStageFieldErrors(extraErrors);
         return;
@@ -1383,8 +1383,14 @@ const GROCardView = forwardRef(function GROCardView(
     }
   }, [isGeneratingVesselPdf, callId, cardId, taskId, userRoleId, applyCallDetailResponse]);
 
-  // Upload Signed Document button is always visible (conditions removed).
-  const showDynamicUploadIcon = true;
+  // Upload Signed Document is only offered on the Vessel Inward Registration card, and only
+  // once the vessel registration has been uploaded (task.is_vessel_registration_uploaded).
+  const hasVesselRegistrationDoc = useMemo(() => {
+    const flag = taskDetails?.is_vessel_registration_uploaded;
+    return flag === true || flag === 1 || flag === "1" || flag === "true";
+  }, [taskDetails]);
+
+  const showDynamicUploadIcon = isVesselInwardRegistrationStage && hasVesselRegistrationDoc;
 
   const dynamicUploadTitle = "Upload Signed Document";
 
@@ -1564,6 +1570,17 @@ const GROCardView = forwardRef(function GROCardView(
       )
       : null;
 
+  const isDocumentsListVisible =
+    (hidePassTabs || groMainView === GRO_MAIN_VIEWS.inward) &&
+    !(
+      hidePassTabs &&
+      [
+        GRO_ACTIVE_TABS.crewImmigration,
+        GRO_ACTIVE_TABS.vesselInwardRegistration,
+        GRO_ACTIVE_TABS.crewChange,
+      ].includes(activeTab)
+    );
+
   return (
     <div className="gro-card-view">
       <div className={`gro-summary-grid${showAssignedUserSelect || mode === "gro" ? " gro-summary-grid--six-col" : ""}`}>
@@ -1594,7 +1611,14 @@ const GROCardView = forwardRef(function GROCardView(
 
       <div className="gro-document-section">
         <div className="gro-document-header">
-          <h3 className="gro-documents-heading">{documentsSectionTitle}</h3>
+          <h3 className="gro-documents-heading">
+            {documentsSectionTitle}
+            {isDocumentsListVisible && !isGroLoading ? (
+              <span className="gro-documents-count" aria-label={`${documents.length} documents`}>
+                {documents.length}
+              </span>
+            ) : null}
+          </h3>
           <div className="gro-document-header-actions gro-document-header-actions--with-segments">
             <div className="gro-pass-segments-row">
               <div
@@ -1761,7 +1785,7 @@ const GROCardView = forwardRef(function GROCardView(
                                     dateValue={field.pickerParts?.date ?? ""}
                                     timeValue={field.pickerParts?.time ?? ""}
                                     onDateTimeChange={field.onDateTimeChange}
-                                    placeholder="YYYY-MM-DD hh:mm"
+                                    placeholder="DD/MM/YYYY HH:mm"
                                     popperClassName="gro-inward-datetime-popper"
                                     disabled={isDynamicUploadSubmitting}
                                     hasError={Boolean(field.error)}

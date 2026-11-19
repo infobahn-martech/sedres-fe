@@ -113,7 +113,7 @@
 }
 
 .sales-order-add-button {
-  background: linear-gradient(135deg, #2a00ff, #4c68d7) !important;
+  background: #00368c !important;
   border: none;
   padding: 10px 20px;
   border-radius: 9px;
@@ -122,7 +122,7 @@
   color: var(--text-inverse);
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
-  box-shadow: 0 3px 10px rgba(42, 0, 255, 0.28);
+  box-shadow: 0 3px 10px rgba(0, 54, 140, 0.28);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -132,23 +132,23 @@
 
 .sales-order-add-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(42, 0, 255, 0.36);
+  box-shadow: 0 6px 16px rgba(0, 54, 140, 0.36);
   filter: brightness(1.05);
 }
 
 .sales-order-add-button:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(42, 0, 255, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 54, 140, 0.3);
 }
 
 .sales-order-sync-sap-button {
   background: var(--surface-primary);
-  border: 1.5px solid #2a00ff;
+  border: 1.5px solid #00368c;
   padding: 9px 20px;
   border-radius: 9px;
   font-size: 13px;
   font-weight: 600;
-  color: #2a00ff;
+  color: #00368c;
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
   display: inline-flex;
@@ -158,24 +158,74 @@
   white-space: nowrap;
 }
 
+.sales-order-list-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.sales-order-so-type-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(0, 54, 140, 0.07);
+  border: 1px solid rgba(0, 54, 140, 0.14);
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.sales-order-so-type-btn {
+  background: transparent;
+  border: 0;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  line-height: 1.4;
+  color: var(--text-secondary, #5b6b8c);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover:not(:disabled):not(.is-active) {
+    color: #00368c;
+    background: rgba(0, 54, 140, 0.08);
+  }
+
+  &.is-active {
+    background: #00368c;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 54, 140, 0.25);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+}
+
 .sales-order-sync-sap-button:hover {
-  background: rgba(42, 0, 255, 0.06);
+  background: rgba(0, 54, 140, 0.06);
   transform: translateY(-2px);
 }
 
 .sales-order-sync-sap-button:active {
   transform: translateY(0);
-  background: rgba(42, 0, 255, 0.1);
+  background: rgba(0, 54, 140, 0.1);
 }
 
 .sales-order-da-status-button {
   background: var(--surface-primary);
-  border: 1.5px solid #2a00ff;
+  border: 1.5px solid #00368c;
   padding: 9px 20px;
   border-radius: 9px;
   font-size: 13px;
   font-weight: 600;
-  color: #2a00ff;
+  color: #00368c;
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
   display: inline-flex;
@@ -186,13 +236,13 @@
 }
 
 .sales-order-da-status-button:hover {
-  background: rgba(42, 0, 255, 0.06);
+  background: rgba(0, 54, 140, 0.06);
   transform: translateY(-2px);
 }
 
 .sales-order-da-status-button:active {
   transform: translateY(0);
-  background: rgba(42, 0, 255, 0.1);
+  background: rgba(0, 54, 140, 0.1);
 }
 
 .sales-order-da-status-button:disabled {
@@ -720,7 +770,23 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--surface-primary);
+  background: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.sales-order-add-popover .sales-order-add-accordion-title {
+  color: #ffffff;
+}
+
+.sales-order-add-popover .sales-order-add-accordion-close,
+.sales-order-add-popover .sales-order-add-accordion-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+}
+
+.sales-order-add-popover .sales-order-add-accordion-close:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .sales-order-add-popover .sales-order-add-form-grid {
@@ -736,9 +802,28 @@
 
 .sales-order-add-popover .sales-order-add-form-actions {
   position: sticky;
-  bottom: -20px;
-  padding-bottom: 12px;
+  bottom: 0;
+  z-index: 2;
+  align-items: center;
+  /* Bleed to the popover edges so the footer reads as one bar flush with the bottom */
+  margin: 0 -18px -20px;
+  padding: 12px 18px;
   background: var(--surface-primary);
+  border-radius: 0 0 12px 12px;
+}
+
+.sales-order-add-popover .sales-order-add-form-cancel,
+.sales-order-add-popover .sales-order-add-form-save {
+  height: 34px;
+  min-height: 0;
+  padding: 0 16px;
+  min-width: 76px;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sales-order-add-accordion-header {
@@ -913,15 +998,15 @@
 }
 
 .sales-order-add-form-save {
-  background: linear-gradient(135deg, #2a00ff, #4c68d7);
+  background: #00368c;
   color: var(--text-inverse);
-  box-shadow: 0 3px 10px rgba(42, 0, 255, 0.28);
+  box-shadow: 0 3px 10px rgba(0, 54, 140, 0.28);
 }
 
 .sales-order-add-form-save:hover {
   transform: translateY(-1px);
   filter: brightness(1.05);
-  box-shadow: 0 6px 16px rgba(42, 0, 255, 0.36);
+  box-shadow: 0 6px 16px rgba(0, 54, 140, 0.36);
 }
 
 .sales-order-add-form-save:active {
@@ -1075,7 +1160,7 @@
 }
 
 .so-pagination-page.is-active {
-  background: linear-gradient(135deg, #00368c, #1a56db);
+  background: #00368c;
   border-color: #00368c;
   color: var(--text-inverse);
   box-shadow: 0 3px 10px rgba(0, 54, 140, 0.32);
@@ -1721,6 +1806,20 @@
   margin-bottom: 16px;
 }
 
+.so-summary-da-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* DA Assignment: same card look as the Accounting Summary grid, as a separate section. */
+.so-da-assignment-card {
+  background: var(--surface-primary);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 16px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.04);
+}
+
 .so-summary-remarks-field {
   align-self: stretch;
 }
@@ -1733,7 +1832,8 @@
 }
 
 @media (max-width: 700px) {
-  .so-summary-extra-fields {
+  .so-summary-extra-fields,
+  .so-summary-da-fields {
     grid-template-columns: 1fr;
   }
 }

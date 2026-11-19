@@ -1028,7 +1028,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
               </div>
             </div>
           ) : !isListingLoading && totalListingItems === 0 ? (
-            <div style={{ marginTop: 12 }}>
+            <div className="crew-immigration-empty-wrap">
               {debouncedListingSearch || listingBatchFilter ? (
                 <CardFormEmptyState
                   className="cf-empty-state--framed"

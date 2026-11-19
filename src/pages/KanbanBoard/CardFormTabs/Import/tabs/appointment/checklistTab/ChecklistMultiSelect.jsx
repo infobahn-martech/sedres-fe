@@ -13,6 +13,7 @@ const ChecklistMultiSelect = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -26,6 +27,12 @@ const ChecklistMultiSelect = ({
 
   useEffect(() => {
     if (!isOpen) setSearchTerm("");
+  }, [isOpen]);
+
+  // Inside a scrolling panel the menu can open below the visible area (clipped by the
+  // panel / its footer); scroll the panel just enough to show the whole menu.
+  useEffect(() => {
+    if (isOpen) menuRef.current?.scrollIntoView?.({ block: "nearest" });
   }, [isOpen]);
 
   const filteredOptions = searchTerm.trim()
@@ -98,7 +105,7 @@ const ChecklistMultiSelect = ({
         <span className="cf-multiselect-arrow">{isOpen ? "▲" : "▼"}</span>
       </div>
       {isOpen && (
-        <div className="cf-multiselect-dropdown">
+        <div className="cf-multiselect-dropdown" ref={menuRef}>
           {options.length > 5 && (
             <div className="cf-multiselect-search" onClick={(e) => e.stopPropagation()}>
               <input

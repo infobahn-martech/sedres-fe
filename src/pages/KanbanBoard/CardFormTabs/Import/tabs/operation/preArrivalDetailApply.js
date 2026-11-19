@@ -1,10 +1,8 @@
 import { DEFAULT_PRE_ARRIVAL_DOCUMENT_HANDLING } from "./preArrivalDocumentHandling";
 import {
-  mapApiSaberStatusToFormValue,
   mapApiWeatherForecastToFormValue,
   PRE_ARRIVAL_CUSTOM_CLEARANCE_ROLE_ID,
   PRE_ARRIVAL_GRO_ROLE_ID,
-  SABER_APPLIED_BY_SEDRES,
 } from "./operationConstants";
 
 export function parseApiDateTimeParts(raw) {
@@ -412,7 +410,6 @@ export function applyPreArrivalGetDetailToForm({
   responseBody,
   eventFields,
   handleChange,
-  currentForm,
 }) {
   const root = responseBody?.data ?? responseBody ?? {};
   const pre = root.prearrival ?? root.preArrival;
@@ -430,12 +427,8 @@ export function applyPreArrivalGetDetailToForm({
 
   let appliedAnyTime = false;
   let coordinatesId = null;
-  let saberFormFromApi = "";
 
   if (pre && typeof pre === "object") {
-    saberFormFromApi = mapApiSaberStatusToFormValue(pre.saber_status);
-    if (saberFormFromApi) handleChange("saberUtStatus")({ target: { value: saberFormFromApi } });
-
     const weatherForm = mapApiWeatherForecastToFormValue(pre.weather_forecast);
     if (weatherForm) {
       handleChange("weatherForecast")({ target: { value: weatherForm } });
@@ -454,40 +447,7 @@ export function applyPreArrivalGetDetailToForm({
     }
   }
 
-  const saberDocAttachments = [];
-  if (pre && typeof pre === "object") {
-    const saberRaw = pre.saber_doc;
-    if (saberRaw != null && saberRaw !== "") {
-      const list = Array.isArray(saberRaw)
-        ? saberRaw
-        : String(saberRaw)
-            .split(/[\s,;]+/)
-            .map((s) => s.trim())
-            .filter(Boolean);
-      const parsed = list
-        .map((item, i) => {
-          if (typeof item === "string") {
-            return item ? { name: `SABER document ${i + 1}`, url: item } : null;
-          }
-          const url = item?.url || item?.attachment || item?.path;
-          const name = item?.file_name || item?.name || `SABER document ${i + 1}`;
-          return url ? { name: String(name), url: String(url) } : null;
-        })
-        .filter(Boolean);
-      if (parsed.length && saberFormFromApi === SABER_APPLIED_BY_SEDRES) {
-        saberDocAttachments.push(...parsed);
-      }
-    }
-  }
-
-  if (saberDocAttachments.length) {
-    const existing = currentForm?.saberUtDocumentsAttachments || [];
-    const merged = [...existing];
-    for (const a of saberDocAttachments) {
-      if (!merged.some((m) => m.name === a.name && m.url === a.url)) merged.push(a);
-    }
-    handleChange("saberUtDocumentsAttachments")({ target: { value: merged } });
-  }
+  // SABER status + attachment are loaded from call_file/get_saber_attachment (see PreArrival.jsx).
 
   const fields = Array.isArray(eventFields) ? eventFields : [];
   const additionalTimeObjects = [];

@@ -66,8 +66,8 @@ const useInhouseDriverReducer = create((set, get) => ({
             ? {
                 ...req,
                 status: data?.trip_status ?? status,
-                pickup_datetime: data?.pickup_datetime ?? req.pickup_datetime,
-                drop_offdatetime: data?.drop_offdatetime ?? req.drop_offdatetime,
+                pickup_datetime: data?.pickup_datetime ?? (pickupDatetime || req.pickup_datetime),
+                drop_offdatetime: data?.drop_offdatetime ?? (dropOffDatetime || req.drop_offdatetime),
               }
             : req
         ),

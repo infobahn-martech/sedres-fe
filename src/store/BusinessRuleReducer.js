@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import businessRuleService from '../services/businessRuleService';
+import workflowService from '../services/workflowService';
+import workSpaceService from '../services/workSpaceService';
 import useAlertReducer from './AlertReducer';
 
 // Guards getCustomFields against out-of-order responses: if the board/disabled/search
@@ -12,7 +14,7 @@ let customFieldsRequestId = 0;
 // fields" picker modal loads into the shared `customFields` slice above.
 let recipientCustomFieldsRequestId = 0;
 
-const useBusinessRuleReducer = create((set) => ({
+const useBusinessRuleReducer = create((set, get) => ({
     isLoadingGet: false,
     triggerTypes: [],
 
@@ -163,6 +165,8 @@ const useBusinessRuleReducer = create((set) => ({
                         regularFields: data?.data?.regular_fields ?? [],
                         customFields: data?.data?.custom_fields ?? [],
                         timeUnits: data?.data?.time_units ?? [],
+                        cardFields: data?.data?.card_fields ?? [],
+                        copyFields: data?.data?.copy_fields ?? [],
                     },
                 },
             }));
@@ -170,7 +174,7 @@ const useBusinessRuleReducer = create((set) => ({
             set((state) => ({
                 thenActionFieldsByType: {
                     ...state.thenActionFieldsByType,
-                    [key]: { isLoading: false, regularFields: [], customFields: [], timeUnits: [] },
+                    [key]: { isLoading: false, regularFields: [], customFields: [], timeUnits: [], cardFields: [], copyFields: [] },
                 },
             }));
         }
@@ -430,11 +434,12 @@ const useBusinessRuleReducer = create((set) => ({
     isLoadingFieldDetails: {},
     fieldDetailsByKey: {},
 
-    getFieldDetails: async (fieldType, fieldId) => {
+    getFieldDetails: async (fieldType, fieldId, { boardIds } = {}) => {
         const key = `${fieldType}-${fieldId}`;
         try {
             set((state) => ({ isLoadingFieldDetails: { ...state.isLoadingFieldDetails, [key]: true } }));
-            const { data } = await businessRuleService.getFieldDetails(fieldType, fieldId);
+            const params = fieldType === 'regular' && boardIds ? { board_ids: boardIds } : undefined;
+            const { data } = await businessRuleService.getFieldDetails(fieldType, fieldId, { params });
             set((state) => ({
                 fieldDetailsByKey: { ...state.fieldDetailsByKey, [key]: data?.data ?? null },
                 isLoadingFieldDetails: { ...state.isLoadingFieldDetails, [key]: false },
@@ -444,6 +449,83 @@ const useBusinessRuleReducer = create((set) => ({
                 fieldDetailsByKey: { ...state.fieldDetailsByKey, [key]: null },
                 isLoadingFieldDetails: { ...state.isLoadingFieldDetails, [key]: false },
             }));
+        }
+    },
+
+    masterOptionsByKey: {},
+
+    getMasterOptions: async (masterKey) => {
+        if (!masterKey || get().masterOptionsByKey[masterKey] !== undefined) return;
+        try {
+            const { data } = await businessRuleService.getMasterOptions(masterKey);
+            set((state) => ({ masterOptionsByKey: { ...state.masterOptionsByKey, [masterKey]: data?.data ?? [] } }));
+        } catch {
+            set((state) => ({ masterOptionsByKey: { ...state.masterOptionsByKey, [masterKey]: [] } }));
+        }
+    },
+
+    boardPickerWorkspaces: [],
+    isLoadingBoardPickerWorkspaces: false,
+
+    getBoardPickerWorkspaces: async () => {
+        if (get().boardPickerWorkspaces.length > 0 || get().isLoadingBoardPickerWorkspaces) return;
+        try {
+            set({ isLoadingBoardPickerWorkspaces: true });
+            const { data } = await workSpaceService.getWorkspaceBoards();
+            set({ boardPickerWorkspaces: Array.isArray(data?.data) ? data.data : [], isLoadingBoardPickerWorkspaces: false });
+        } catch {
+            set({ boardPickerWorkspaces: [], isLoadingBoardPickerWorkspaces: false });
+        }
+    },
+
+    boardWorkflowsByBoard: {},
+
+    // Per board: 'loading', 'done', or the error message of a failed load. A failed load is not
+    // cached as an empty list, so opening the picker again retries it.
+    boardWorkflowsStatus: {},
+
+    // force: always call the API again (the Board Minimap uses it so it never shows stale structure).
+    getBoardWorkflows: async (boardId, { force = false } = {}) => {
+        const key = String(boardId);
+        if (!boardId || get().boardWorkflowsStatus[key] === 'loading') return;
+        if (!force && get().boardWorkflowsByBoard[key] !== undefined) return;
+        set((state) => ({ boardWorkflowsStatus: { ...state.boardWorkflowsStatus, [key]: 'loading' } }));
+        try {
+            const { data } = await workflowService.getWorkflowByBoard(boardId);
+            const raw = data?.data;
+            const workflows = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+            set((state) => ({
+                boardWorkflowsByBoard: { ...state.boardWorkflowsByBoard, [key]: workflows },
+                boardWorkflowsStatus: { ...state.boardWorkflowsStatus, [key]: 'done' },
+            }));
+        } catch (err) {
+            set((state) => ({
+                boardWorkflowsStatus: { ...state.boardWorkflowsStatus, [key]: err?.response?.data?.message ?? err.message ?? 'Could not load workflows' },
+            }));
+        }
+    },
+
+    swimlanesByWorkflow: {},
+
+    getWorkflowSwimlanes: async (workflowId) => {
+        const key = String(workflowId);
+        if (!workflowId || get().swimlanesByWorkflow[key] !== undefined) return;
+        try {
+            const { data } = await workflowService.getSwimlaneByWorkflow(workflowId);
+            set((state) => ({ swimlanesByWorkflow: { ...state.swimlanesByWorkflow, [key]: data?.data ?? [] } }));
+        } catch {
+            set((state) => ({ swimlanesByWorkflow: { ...state.swimlanesByWorkflow, [key]: [] } }));
+        }
+    },
+
+    valueTimeUnits: [],
+
+    getValueTimeUnits: async (triggerTypeId) => {
+        try {
+            const { data } = await businessRuleService.getTimeUnits({ params: { trigger_type_id: triggerTypeId } });
+            set({ valueTimeUnits: data?.data ?? [] });
+        } catch {
+            set({ valueTimeUnits: [] });
         }
     },
 

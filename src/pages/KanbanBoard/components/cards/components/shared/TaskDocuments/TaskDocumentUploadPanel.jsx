@@ -89,7 +89,7 @@ function TaskDocumentUploadPanel({
                         dateValue={field.pickerParts?.date ?? ""}
                         timeValue={field.pickerParts?.time ?? ""}
                         onDateTimeChange={field.onDateTimeChange}
-                        placeholder="YYYY-MM-DD hh:mm"
+                        placeholder="DD/MM/YYYY HH:mm"
                         popperClassName="gro-inward-datetime-popper"
                         disabled={isSaving}
                         hasError={Boolean(field.error)}
@@ -117,7 +117,7 @@ function TaskDocumentUploadPanel({
                       dateValue={pickerParts.date}
                       timeValue={pickerParts.time}
                       onDateTimeChange={onDateTimeChange}
-                      placeholder="YYYY-MM-DD hh:mm"
+                      placeholder="DD/MM/YYYY HH:mm"
                       popperClassName="gro-inward-datetime-popper"
                     />
                   </div>

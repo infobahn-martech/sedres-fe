@@ -3,8 +3,6 @@
 // field ordering, saved-value resolution (including nested `data.time_objects`) and
 // read-only display formatting.
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
 export const normalizeTemplateKey = (value) =>
   String(value ?? "")
     .trim()
@@ -221,7 +219,7 @@ export const resolveTemplateOptionLabel = (field, value) => {
   return byLabelCi ? optionLabel(byLabelCi) : null;
 };
 
-// Formats "YYYY-MM-DD[ HH:MM[:SS]]" as "Sep 11, 2026 at 08:30" from its parts — no Date
+// Formats "YYYY-MM-DD[ HH:MM[:SS]]" as "11/09/2026 08:30" from its parts — no Date
 // parsing, so no timezone shift. Unparseable values are returned as-is.
 export const formatTemplateDateTime = (value, { withTime = true } = {}) => {
   if (isEmptyTemplateValue(value)) return "";
@@ -229,10 +227,9 @@ export const formatTemplateDateTime = (value, { withTime = true } = {}) => {
   const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);
   if (!match) return raw;
   const [, year, month, day, hours, minutes] = match;
-  const monthLabel = MONTHS[Number(month) - 1];
-  if (!monthLabel) return raw;
-  const datePart = `${monthLabel} ${Number(day)}, ${year}`;
-  return withTime && hours !== undefined ? `${datePart} at ${hours}:${minutes}` : datePart;
+  if (Number(month) < 1 || Number(month) > 12) return raw;
+  const datePart = `${day}/${month}/${year}`;
+  return withTime && hours !== undefined ? `${datePart} ${hours}:${minutes}` : datePart;
 };
 
 const formatTime = (value) => {

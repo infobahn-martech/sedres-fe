@@ -32,7 +32,7 @@ const SendReminderModal = ({ show, onClose, onSend, isSubmitting = false, row, d
     if (!show) return;
     const vesselName = row?.vessel_name || "";
     const expiry = row?.expiry_date && moment(row.expiry_date).isValid()
-      ? moment(row.expiry_date).format("DD MMM YYYY")
+      ? moment(row.expiry_date).format("DD/MM/YYYY")
       : "";
     setToValue(defaultTo);
     setCcValue("");

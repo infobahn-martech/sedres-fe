@@ -6,6 +6,8 @@ import { FormSection, FormField, FormInput, FormSelect, FormGroup, FieldRow, Pre
 import AttachmentsList from "../../appointment/AttachmentsList";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
+import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import thirdPartyService from "@/services/thirdPartyService";
 import useThirdPartyServiceRequestReducer from "@/store/ThirdPartyServiceRequestReducer";
 import { buildPickupDateTime } from "@/store/TransportContent";
@@ -42,6 +44,10 @@ const ThirdPartyServicesContent = ({ formValues, handleChange, cardColor, showLa
   const [loadingThirdPartyServiceCatalog, setLoadingThirdPartyServiceCatalog] = useState(false);
 
   const callId = formValues.call_id || formValues.callId || formValues.card_call_id;
+  const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+    requestEmailField: "thirdPartyServicesRequestEmailDocuments",
+  });
+  const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
   const isLaunchHire = showLaunchHire && formValues.thirdPartyServicesLaunchHire !== false;
   const {
     thirdPartyServiceRequests,
@@ -229,6 +235,7 @@ const ThirdPartyServicesContent = ({ formValues, handleChange, cardColor, showLa
       notify("Call is required to save a third-party service request.", "error", "top-center");
       return;
     }
+    if (!validate()) return;
     if (!formValues.thirdPartyServiceType) {
       notify("Service type is required.", "error", "top-center");
       return;
@@ -284,6 +291,8 @@ const ThirdPartyServicesContent = ({ formValues, handleChange, cardColor, showLa
         "success",
         "top-center"
       );
+      resetValidation();
+      showSavedLineItems(response);
       handleChange("thirdPartyServiceType")({ target: { value: "" } });
       handleChange("thirdPartyServicesChargeCode")({ target: { value: "" } });
       handleChange("thirdPartyServicesDescription")({ target: { value: "" } });
@@ -301,7 +310,7 @@ const ThirdPartyServicesContent = ({ formValues, handleChange, cardColor, showLa
         "top-center"
       );
     }
-  }, [callId, formValues, isLaunchHire, createThirdPartyServiceRequest, getThirdPartyServiceRequests, handleChange]);
+  }, [callId, formValues, isLaunchHire, createThirdPartyServiceRequest, getThirdPartyServiceRequests, handleChange, validate, resetValidation, showSavedLineItems]);
 
   const requestEmailAttachments = normalizeAttachmentList(
     formValues.thirdPartyServicesRequestEmailDocuments || []
@@ -310,6 +319,7 @@ const ThirdPartyServicesContent = ({ formValues, handleChange, cardColor, showLa
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form third-party-services-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">
@@ -323,7 +333,7 @@ const ThirdPartyServicesContent = ({ formValues, handleChange, cardColor, showLa
                   titleClassName="crew-pass-request-details-card__title"
                 />
                 <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                  <FormGroup icon="mail" label="Request Email" accent={THIRD_PARTY_ACCENT}>
+                  <FormGroup icon="mail" label="Request Email *" accent={THIRD_PARTY_ACCENT} error={fieldErrors.requestEmail}>
                     <FormField>
                       <div className="transport-upload-box">
                         <AttachmentsList

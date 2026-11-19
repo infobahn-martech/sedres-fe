@@ -15,13 +15,8 @@ const RenderStatusBadge = ({ row }) => (
     </span>
 );
 
-const mockInvoices = [
-    { _id: "1", refNo: "INV-2025-401", dateSubmitted: "05 Jun 2025", bookingNo: "HB-2025-001", amount: "SAR520", status: "Completed" },
-    { _id: "2", refNo: "INV-2025-402", dateSubmitted: "06 Jun 2025", bookingNo: "HB-2025-002", amount: "SAR380", status: "Submitted" },
-    { _id: "3", refNo: "INV-2025-403", dateSubmitted: "07 Jun 2025", bookingNo: "HB-2025-003", amount: "SAR910", status: "Pending" },
-    { _id: "4", refNo: "INV-2025-404", dateSubmitted: "08 Jun 2025", bookingNo: "HB-2025-004", amount: "SAR260", status: "Submitted" },
-    { _id: "5", refNo: "INV-2025-405", dateSubmitted: "09 Jun 2025", bookingNo: "HB-2025-005", amount: "SAR700", status: "Pending" },
-];
+// No hotel invoice API is wired yet; the table shows its "no data" state until one is.
+const invoices = [];
 
 const Invoices = () => {
     const [params, setParams] = useState({
@@ -33,7 +28,7 @@ const Invoices = () => {
     });
 
     const filteredInvoices = useMemo(() => {
-        let data = [...mockInvoices];
+        let data = [...invoices];
 
         if (params.searchTerm) {
             const search = params.searchTerm.toLowerCase();

@@ -48,7 +48,7 @@ export function ViewCustomInspectionModal({ showModal, closeModal }) {
             <div className="view-label">ATA</div>
             <div className="view-value">
               {showModal.ata
-                ? moment(showModal.ata).format('DD MMMM YYYY hh:mm a')
+                ? moment(showModal.ata).format('DD/MM/YYYY hh:mm a')
                 : "-"}
             </div>
           </div>
@@ -85,7 +85,7 @@ export function ViewCustomInspectionModal({ showModal, closeModal }) {
               <p style={{ margin: '5px 0' }}>
                 <strong>Arrival Time:</strong>{" "}
                 {showModal.ata
-                  ? moment(showModal.ata).format('DD MMMM YYYY hh:mm a')
+                  ? moment(showModal.ata).format('DD/MM/YYYY hh:mm a')
                   : "N/A"}
               </p>
               <p style={{ margin: '5px 0' }}>

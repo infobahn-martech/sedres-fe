@@ -1,0 +1,201 @@
+.signature-upload {
+  position: relative;
+  border: 1px solid #cfe3ee;
+  border-radius: 10px;
+  padding: 18px 14px 12px;
+  background: #fff;
+
+  // Matches the height of a single-line floating input so it can sit beside one
+  &.is-compact {
+    padding: 10px 10px 8px;
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+
+    .signature-upload__body {
+      flex: 1;
+      flex-wrap: nowrap;
+      gap: 8px;
+    }
+
+    .signature-upload__empty {
+      min-height: 34px;
+      font-size: 13px;
+    }
+
+    .signature-upload__preview {
+      max-height: 34px;
+      max-width: 120px;
+    }
+
+    .signature-upload__btn {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+  }
+
+  &.has-error {
+    border-color: #dc3545;
+  }
+
+  &.is-disabled {
+    background: #f8fafc;
+  }
+
+  &__label {
+    position: absolute;
+    top: -9px;
+    left: 12px;
+    padding: 0 6px;
+    background: #fff;
+    font-size: 13px;
+    color: #344054;
+    line-height: 1.2;
+  }
+
+  &.is-disabled &__label {
+    background: linear-gradient(to bottom, #fff 50%, #f8fafc 50%);
+  }
+
+  &__body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 64px;
+    border: 1px dashed #b8c7d9;
+    border-radius: 8px;
+    color: #667085;
+    font-size: 14px;
+    cursor: pointer;
+    margin: 0;
+    transition: border-color 0.2s ease, color 0.2s ease;
+
+    &:hover {
+      border-color: #00368c;
+      color: #00368c;
+    }
+  }
+
+  &.is-disabled &__empty {
+    cursor: default;
+
+    &:hover {
+      border-color: #b8c7d9;
+      color: #667085;
+    }
+  }
+
+  &__preview {
+    max-height: 72px;
+    max-width: 220px;
+    object-fit: contain;
+    border-radius: 6px;
+    background: #fff;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    border: 1px solid #00368c;
+    border-radius: 6px;
+    background: #fff;
+    color: #00368c;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+
+    &:hover {
+      background: #00368c;
+      color: #fff;
+    }
+
+    &--danger {
+      border-color: #dc3545;
+      color: #dc3545;
+
+      &:hover {
+        background: #dc3545;
+        color: #fff;
+      }
+    }
+  }
+}
+
+// Dark theme — the field follows the floating-input look (form-designs.scss),
+// while the preview keeps a light pad so dark ink stays readable.
+[data-theme="dark"] .signature-upload {
+  background: var(--bg-inset);
+  border-color: var(--border-strong);
+
+  &.has-error {
+    border-color: var(--danger);
+  }
+
+  &.is-disabled {
+    background: var(--field-disabled-bg);
+  }
+
+  .signature-upload__label,
+  &.is-disabled .signature-upload__label {
+    background: var(--bg-card);
+    color: var(--text-subtle);
+  }
+
+  .signature-upload__empty {
+    border-color: var(--border-strong);
+    color: var(--text-subtle);
+
+    &:hover {
+      border-color: var(--brand-bright);
+      color: var(--brand-bright);
+    }
+  }
+
+  &.is-disabled .signature-upload__empty:hover {
+    border-color: var(--border-strong);
+    color: var(--text-subtle);
+  }
+
+  .signature-upload__preview {
+    background: #fff;
+    padding: 2px 6px;
+  }
+
+  .signature-upload__btn {
+    background: transparent;
+    border-color: var(--brand-bright);
+    color: var(--brand-bright);
+
+    &:hover {
+      background: var(--brand-bright);
+      color: #fff;
+    }
+
+    &--danger {
+      border-color: var(--danger);
+      color: var(--danger);
+
+      &:hover {
+        background: var(--danger);
+        color: #fff;
+      }
+    }
+  }
+}

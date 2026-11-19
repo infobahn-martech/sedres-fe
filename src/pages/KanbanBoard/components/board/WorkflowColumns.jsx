@@ -26,7 +26,7 @@ import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isApprovalReceivedColumnTitle, isApprovalRequestedColumnTitle, isLntSwimlane, isSubseaSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isLntInvoiceIssued, isDaSupervisorWorkflow, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
+import { isApprovalReceivedColumnTitle, isApprovalRequestedColumnTitle, isLntSwimlane, isSubseaSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isLntInvoiceIssued, isLntReadyToSubmit, isDaSupervisorWorkflow, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -187,7 +187,7 @@ const getInvoiceAction = (workflow, column) => {
   if (CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test(title)) return isZamilWorkflow(workflow) ? null : "issueArInvoice";
   if (READY_FOR_DISPATCH_COLUMN_PATTERN.test(title)) return "downloadInvoices";
   if (TO_BE_UPLOADED_TO_PORTAL_COLUMN_PATTERN.test(title)) return "moveCards";
-  if (isUploadedToPortalColumnTitle(title)) return "uploadDispatchProof";
+  if (isUploadedToPortalColumnTitle(title) || isLntReadyToSubmit(workflow?.title, title)) return "uploadDispatchProof";
   if (SO_SENT_FOR_SCC_COLUMN_PATTERN.test(title)) return "sendSccApproval";
   /* POSH DA has no batches: "Request PO" on "AR Invoices Issued" sends the PO request for the one ticked
      card (the backend takes one card at a time). */
@@ -671,6 +671,9 @@ export default function WorkflowColumns({
                 isLntUploadColumn || isLntDownloadColumn
                   ? swimlaneOrder.filter((laneId) => isSubseaSwimlane(workflow.swimlanes?.[laneId]))
                   : [];
+              /* DA Supervisor "Ready to Submit": the portal submission proof upload counts only the L&T swimlane's ticks. */
+              const isLntSubmitColumn =
+                !isGrouped && isDaSupervisorWorkflow(workflow?.title) && isLntReadyToSubmit(workflow?.title, firstColumn?.title);
               let lntLaneAction = null;
               if (!isGrouped && lntLaneIds.length > 0) {
                 if (isApprovalRequestedColumnTitle(firstColumn.title)) lntLaneAction = "sendSccForApproval";
@@ -679,7 +682,7 @@ export default function WorkflowColumns({
               let invoiceAction = null;
               if (lntLaneAction) invoiceAction = lntLaneAction;
               else if (!isGrouped) invoiceAction = getInvoiceAction(workflow, firstColumn);
-              const actionSourceCards = lntLaneAction || isLntUploadColumn || isLntDownloadColumn
+              const actionSourceCards = lntLaneAction || isLntUploadColumn || isLntDownloadColumn || isLntSubmitColumn
                 ? lntLaneIds.flatMap((laneId) => getSwimlaneColumnCards(workflow, laneId, group.colKeys[0]))
                 : invoiceAction
                   ? getColumnCards(group.colKeys[0])
@@ -731,7 +734,7 @@ export default function WorkflowColumns({
                 invoiceAction === "requestPo" ||
                 invoiceAction === "checkInvoice" ||
                 invoiceAction === "submitViaPortal" ||
-                (invoiceAction === "uploadDispatchProof" && !isLntWorkflow(workflow) && !isMultiCardDispatchProofColumn(workflow, firstColumn?.title))
+                (invoiceAction === "uploadDispatchProof" && !isLntWorkflow(workflow) && !isLntSubmitColumn && !isMultiCardDispatchProofColumn(workflow, firstColumn?.title))
                   ? invoiceCards.length === 1 : invoiceButtonCards.length > 0;
               const invoiceActionHandlers = {
                 upload: onColumnUploadInvoice,

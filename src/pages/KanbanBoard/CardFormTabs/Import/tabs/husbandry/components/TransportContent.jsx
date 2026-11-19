@@ -1,4 +1,4 @@
-  import { useState, useEffect, useCallback, useRef } from "react";
+  import { useState, useEffect, useCallback, useMemo, useRef } from "react";
   import PropTypes from "prop-types";
   import GroupSettingsIcon from "@/assets/images/cv.png";
   import { notify } from "@/components/Toaster";
@@ -8,8 +8,11 @@
   import { useCallDetail } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
   import transportContentService from "@/services/transportContentService";
   import { buildPickupDateTime } from "@/store/TransportContent";
-  import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
+  import CrewPassRequestsTable from "./CrewPassRequestsTable";
   import CrewSelectionField from "./CrewSelectionField";
+  import { manualCrewIdsField, manualCrewIdsFromChange, buildCrewPayloadList } from "./crewPayloadIds";
+  import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+  import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
   import LocationAutocomplete from "./LocationAutocomplete";
   import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 
@@ -21,92 +24,58 @@
     return [];
   };
 
-  const flattenTransportRequestRows = (requests) => {
-    if (!Array.isArray(requests)) return [];
-    
-    return requests.flatMap((request) => {
-      const crew = Array.isArray(request.crew) ? request.crew : [];
-      
-      // If no crew, create one row for the request itself
-      if (crew.length === 0) {
-        return [
-          {
-            transport_request_id: request.transport_request_id,
-            wo_id: request.wo_id,
-            crew_name: request.inhouse_driver_name || request.third_party_driver_name || "N/A",
-            crew_change_id: null,
-            pickup_status: request.status,
-            from_location: request.from_location,
-            to_location: request.to_location,
-            pickup_datetime: request.pickup_datetime,
-            request_type: request.request_type,
-            transport_company: request.transport_company,
-            third_party_driver_name: request.third_party_driver_name,
-            third_party_driver_contact: request.third_party_driver_contact,
-            inhouse_driver_name: request.inhouse_driver_name,
-            request_email: request.request_email,
-            remarks: request.remarks,
-            status: request.status,
-          },
-        ];
-      }
-      
-      // Create a row for each crew member
-      return crew.map((crewMember) => ({
-        transport_request_id: request.transport_request_id,
-        wo_id: request.wo_id,
-        crew_name: crewMember.crew_name,
-        crew_change_id: crewMember.crew_change_id,
-        pickup_status: crewMember.pickup_status,
-        rank: crewMember.rank,
-        from_location: request.from_location,
-        to_location: request.to_location,
-        pickup_datetime: request.pickup_datetime,
-        request_type: request.request_type,
-        transport_company: request.transport_company,
-        third_party_driver_name: request.third_party_driver_name,
-        third_party_driver_contact: request.third_party_driver_contact,
-        inhouse_driver_name: request.inhouse_driver_name,
-        request_email: request.request_email,
-        remarks: request.remarks,
-        status: request.status,
-      }));
-    });
+  const isBlankValue = (value) => value === undefined || value === null || String(value).trim() === "";
+
+  const formatPickup = (value) => {
+    if (isBlankValue(value)) return "";
+    const parsed = new Date(String(value).replace(" ", "T"));
+    if (Number.isNaN(parsed.getTime())) return String(value);
+    return parsed.toLocaleString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
   };
 
-  const TRANSPORT_REQUEST_COLUMNS = [
-    {
-      key: "transport_request_id",
-      header: "Request No",
-      accessor: (r) => r?.wo_id ?? r?.transport_request_id,
-      type: "workorder",
-    },
-    { key: "crew_name", header: "Crew", accessor: (r) => r?.crew_name ?? r?.crewName, type: "crew", perCrew: true },
-    {
-      key: "route",
-      header: "Route",
-      type: "route",
-      fromAccessor: (r) => r?.from ?? r?.from_location ?? r?.pickup_location,
-      toAccessor: (r) => r?.to ?? r?.to_location ?? r?.drop_location,
-    },
-    {
-      key: "status",
-      header: "Status",
-      accessor: (r) => r?.status ?? r?.pickup_status,
-      type: "status",
-    },
-    {
-      key: "requested_date",
-      header: "Requested",
-      accessor: (r) => r?.requested_date ?? r?.pickup_datetime,
-      type: "date",
-    },
-    { 
-      key: "document", 
-      header: "Document", 
-      accessor: (r) => r?.request_email,
-      type: "document" 
-    },
+  // One card per transport request (same card list as CG / Zawil pass), crew listed inside.
+  const buildTransportRequestGroups = (requests) =>
+    (Array.isArray(requests) ? requests : []).map((request, index) => ({
+      woId: request.transport_request_id ?? request.wo_id ?? `transport-${index}`,
+      woNumber: "",
+      woStatus: request.status,
+      from: request.from_location || request.from_location_det || "",
+      to: request.to_location || request.to_location_det || "",
+      pickupDatetime: request.pickup_datetime,
+      driver: request.inhouse_driver_name || request.third_party_driver_name || "",
+      transportCompany: request.transport_company || "",
+      requestEmailUrl: request.request_email || "",
+      crew: (Array.isArray(request.crew) ? request.crew : []).map((member, crewIndex) => ({
+        ...member,
+        id: member.crew_change_id ?? `${request.transport_request_id ?? index}-${crewIndex}`,
+        status: member.pickup_status,
+      })),
+    }));
+
+  const renderTransportRoute = (group) => (
+    <span className="cpr-route" title={`${group.from || "—"} → ${group.to || "—"}`}>
+      <span>{group.from || "Not set"}</span>
+      <span className="cpr-route__arrow" aria-hidden="true">→</span>
+      <span>{group.to || "Not set"}</span>
+    </span>
+  );
+
+  const getTransportFacts = (group) => {
+    const facts = [group.pickupDatetime ? `Pickup ${formatPickup(group.pickupDatetime)}` : "Pickup time not set"];
+    if (group.driver) facts.push(`Driver: ${group.driver}`);
+    if (group.transportCompany) facts.push(`Company: ${group.transportCompany}`);
+    return facts;
+  };
+
+  // Rank moves into the details columns, so no second line under the name.
+  const getTransportCrewMeta = () => null;
+
+  const getTransportCrewDetails = (row) => [
+    { label: "Rank", value: row?.rank },
+    { label: "Nationality", value: row?.nationality },
+    { label: "Passport", value: row?.passport_no ?? row?.passport },
+    { label: "Pickup", value: formatPickup(row?.pickup_datetime) },
+    { label: "Drop-off", value: formatPickup(row?.drop_offdatetime ?? row?.dropoff_datetime) },
   ];
 
   const REQUEST_EMAIL_ACCEPT_ATTR = ".msg,.eml,.pdf,.doc,.docx";
@@ -120,6 +89,11 @@
     const [isDraggingEmail, setIsDraggingEmail] = useState(false);
 
     const callId = formValues.call_id || formValues.callId || formValues.card_call_id;
+    const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+      requestEmailField: "transportRequestEmail",
+      crewField: "selectedCrew",
+    });
+    const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
 
     // Shared with the rest of the drawer (CardForm fetches it once per card).
     const { detail: callDetails } = useCallDetail(callId);
@@ -129,6 +103,7 @@
 
     const [isSavingTransport, setIsSavingTransport] = useState(false);
     const [transportRequests, setTransportRequests] = useState([]);
+    const transportRequestGroups = useMemo(() => buildTransportRequestGroups(transportRequests), [transportRequests]);
     const [loadingTransportRequests, setLoadingTransportRequests] = useState(false);
     const [isDraggingDocuments, setIsDraggingDocuments] = useState(false);
 
@@ -143,7 +118,7 @@
       try {
         const response = await transportContentService.getTransportRequest(callId);
         const list = extractTransportRequestsFromEnvelope(response);
-        setTransportRequests(flattenTransportRequestRows(list));
+        setTransportRequests(list);
         onRequestCountChange?.(list.length);
       } catch {
         setTransportRequests([]);
@@ -286,15 +261,7 @@
         return;
       }
 
-      if (!callDetails?.call_type_id) {
-        notify("Call type id is missing. Please reload call details.", "warning", "top-center");
-        return;
-      }
-
-      if (!formValues.transportRequestEmail?.[0]?.file) {
-        notify("Request email is required.", "error", "top-center");
-        return;
-      }
+      if (!validate()) return;
 
       if (!formValues.transportPickupDate || !formValues.transportPickupTime) {
         notify("Pickup date and time are required.", "error", "top-center");
@@ -318,14 +285,14 @@
       }
 
       const payload = {
-        call_id: Number(callDetails?.call_id || ""),
+        call_id: Number(callDetails?.call_id || callId),
         pickup_datetime: buildPickupDateTime(formValues.transportPickupDate, formValues.transportPickupTime),
         from_location: formValues.transportFromType || "",
         from_location_det: formValues.transportFromLocation || "",
         to_location: formValues.transportToType || "",
         to_location_det: formValues.transportToLocation || "",
         remarks: formValues.transportDescription || "",
-        crew: (formValues.selectedCrew || []).map((id) => ({ crew_change_id: Number(id) })),
+        crew: buildCrewPayloadList(formValues.selectedCrew, formValues[manualCrewIdsField("selectedCrew")]),
         launch_hire: isLaunchHire ? 1 : 0,
         location: isLaunchHire ? formValues.transportLaunchHireLocation || "" : "",
         booking_datetime: isLaunchHire ? launchHireBookingDatetime : "",
@@ -357,8 +324,11 @@
           "success",
           "top-center"
         );
+        resetValidation();
+        showSavedLineItems(response);
         handleChange("transportRequestEmail")({ target: { value: [] } });
         handleChange("selectedCrew")({ target: { value: [] } });
+        handleChange(manualCrewIdsField("selectedCrew"))({ target: { value: null } });
         handleChange("transportPickupDate")({ target: { value: "" } });
         handleChange("transportPickupTime")({ target: { value: "" } });
         handleChange("transportFromType")({ target: { value: "" } });
@@ -381,10 +351,11 @@
       } finally {
         setIsSavingTransport(false);
       }
-    }, [callId, callDetails, formValues, fetchTransportRequests, isLaunchHire, handleChange]);
+    }, [callId, callDetails, formValues, fetchTransportRequests, isLaunchHire, handleChange, validate, resetValidation, showSavedLineItems]);
 
     return (
       <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+        {lineItemsModal}
         <FormSection icon={GroupSettingsIcon} title="">
           <div className="pre-arrival-form transport-form">
             <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">
@@ -398,7 +369,7 @@
                     titleClassName="crew-pass-request-details-card__title"
                   />
                   <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                  <FormGroup icon="mail" label="Request Email *" accent={TRANSPORT_ACCENT}>
+                  <FormGroup icon="mail" label="Request Email *" accent={TRANSPORT_ACCENT} error={fieldErrors.requestEmail}>
                     <FormField>
                       <div className="transport-upload-box">
                         <AttachmentsList
@@ -424,10 +395,14 @@
                   <CrewSelectionField
                     callId={callId}
                     selected={formValues.selectedCrew || []}
-                    onChange={(ids) => handleChange("selectedCrew")({ target: { value: ids } })}
+                    onChange={(ids, meta) => {
+                    handleChange("selectedCrew")({ target: { value: ids } });
+                    handleChange(manualCrewIdsField("selectedCrew"))({ target: { value: manualCrewIdsFromChange(meta) } });
+                  }}
                     accent={TRANSPORT_ACCENT}
                     onGoToCrew={onGoToCrew}
                     uploadMode={crewUploadMode}
+                    error={fieldErrors.crew}
                   />
 
                   <FormGroup icon="calendar" label="Pickup Date Time" accent={TRANSPORT_ACCENT}>
@@ -509,7 +484,7 @@
                     </FormGroup>
                   )}
 
-                  <FormGroup icon="folder" label="Documents *" accent={TRANSPORT_ACCENT}>
+                  <FormGroup icon="folder" label="Documents" accent={TRANSPORT_ACCENT}>
                     <FormField className="cf-field-full">
                       <div className="transport-upload-box">
                         <AttachmentsList
@@ -559,17 +534,22 @@
               </div>
 
               <div className="general-info-right crew-pass-requests-sidebar">
-                <HusbandryServiceRequestsTable
+                <CrewPassRequestsTable
                   title="Transport requests"
                   subtitle="All bookings for this job"
                   icon="list"
-                  requests={transportRequests}
+                  groups={transportRequestGroups}
                   loading={loadingTransportRequests}
-                  columns={TRANSPORT_REQUEST_COLUMNS}
                   emptyMessage="No transport requests found"
-                  serviceType="transport"
+                  passType="transport"
                   accent={TRANSPORT_ACCENT}
-                  groupKey="transport_request_id"
+                  renderGroupTitle={renderTransportRoute}
+                  getGroupFacts={getTransportFacts}
+                  getGroupDocumentUrl={(group) => group.requestEmailUrl}
+                  getGroupSearchText={(group) => `${group.from} ${group.to} ${group.driver}`}
+                  getCrewMeta={getTransportCrewMeta}
+                  getCrewDetails={getTransportCrewDetails}
+                  searchPlaceholder="Search crew, location or driver"
                 />
               </div>
             </div>

@@ -16,20 +16,20 @@ export const ROLE_MASTER_MENUS = {
   '19': {
     Dashboard: true,
     'Transport Management': true,
-    Settings: ['My Accounts'],
+    Settings: ['My Accounts', 'Logout'],
   },
   // Inhouse Driver
   '15': {
     Dashboard: true,
     'Trip Management': true,
-    Settings: ['My Accounts'],
+    Settings: ['My Accounts', 'Logout'],
   },
   // Transport Company
   '16': {
     Dashboard: true,
     'Order Management': true,
     'Invoice Management': true,
-    Settings: ['My Accounts'],
+    Settings: ['My Accounts', 'Logout'],
   },
 };
 

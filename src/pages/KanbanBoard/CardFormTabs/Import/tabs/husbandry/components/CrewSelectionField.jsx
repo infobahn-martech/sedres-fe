@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import {
   getCrewListForPass,
@@ -10,7 +10,7 @@ import { notify } from "@/components/Toaster";
 import { FormGroup, FormField } from "./Husbandry.components";
 import CrewListUploadBox from "./CrewListUploadBox";
 import CrewEntryGrid from "./CrewEntryGrid";
-import { CREW_ENTRY_COLUMNS } from "./Husbandry.constants";
+import { CREW_ENTRY_COLUMNS, createEmptyCrewRows } from "./Husbandry.constants";
 import ChecklistMultiSelect from "../../appointment/checklistTab/ChecklistMultiSelect";
 import "@/design/scss/checklist.scss";
 
@@ -32,15 +32,31 @@ const linkButtonStyle = {
 
 /**
  * Multi-select of crew for a call, auto-populated from the crew roster. Reports selected crew_change_ids via onChange.
+ * Crew saved from the manual entry grid are reported as onChange(ids, { source: "manual", crewIds }) so the service
+ * can send `crew_ids` instead (see crewPayloadIds.js); every other change calls onChange(ids) alone.
  * In uploadMode (service opened straight from the service overview) it shows a crew list upload instead: the file is
  * imported via crew/import_crew_ai and the newly imported crew are selected automatically.
  */
-const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onGoToCrew, uploadMode = false }) => {
+const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onGoToCrew, uploadMode = false, error = "" }) => {
   const importCrewFile = useCrewReducer((state) => state.importCrewFile);
+  const saveCrewData = useCrewReducer((state) => state.saveCrewData);
   const [crewOptions, setCrewOptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("pending");
   const [isManualEntry, setIsManualEntry] = useState(false);
+  // Lives here (not in the grid) so entered/saved crew stay visible when toggling to file upload and back.
+  const [gridRows, setGridRows] = useState(() => createEmptyCrewRows());
+
+  // When the form clears the crew (e.g. after the request is saved), start the crew entry over too.
+  const selectedCount = Array.isArray(selected) ? selected.length : 0;
+  const previousSelectedCount = useRef(selectedCount);
+  useEffect(() => {
+    if (previousSelectedCount.current > 0 && selectedCount === 0) {
+      setGridRows(createEmptyCrewRows());
+      setUploadStatus("pending");
+    }
+    previousSelectedCount.current = selectedCount;
+  }, [selectedCount]);
 
   useEffect(() => {
     if (!callId) {
@@ -64,18 +80,52 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
     };
   }, [callId]);
 
-  const handleCrewListUpload = useCallback(
-    async (files) => {
+  // Runs a save action (file import or manual save), then selects the crew it added;
+  // if it only touched crew already on the call (no new ids), selects the whole roster.
+  const runCrewSave = useCallback(
+    async (save, successLabel, source) => {
       if (!callId || uploadStatus === "uploading") return false;
       setUploadStatus("uploading");
       try {
+        const saved = await save();
+        if (saved === false) {
+          setUploadStatus("failed");
+          return false;
+        }
+
+        const previousIds = new Set(crewOptions.map((option) => String(option.value)));
+        const options = await fetchCrewOptions(callId);
+        const newIds = options.map((option) => String(option.value)).filter((id) => !previousIds.has(id));
+        const idsToSelect = newIds.length > 0 ? newIds : options.map((option) => String(option.value));
+        setCrewOptions(options);
+        if (source === "manual") {
+          const optionById = new Map(options.map((option) => [String(option.value), option]));
+          const crewIds = idsToSelect.map((id) => String(optionById.get(id)?.crew_id ?? id));
+          onChange(idsToSelect, { source, crewIds });
+        } else {
+          onChange(idsToSelect);
+        }
+        setUploadStatus("completed");
+        notify(`${successLabel} — ${idsToSelect.length} crew member(s) added to this request.`, "success");
+        return true;
+      } catch {
+        // save errors are already surfaced by the store
+        setUploadStatus("failed");
+        return false;
+      }
+    },
+    [callId, uploadStatus, crewOptions, onChange]
+  );
+
+  const handleCrewListUpload = useCallback(
+    (files) =>
+      runCrewSave(async () => {
         const { data: callDetailResponse } = await callFileService.getCallDetail(callId);
         const callDetailData =
           callDetailResponse?.data?.[0] || callDetailResponse?.data || callDetailResponse?.detail || callDetailResponse;
         const vesselId = Number(callDetailData?.vessel_id);
         if (!vesselId) {
           notify("Unable to upload: missing vessel information.", "error");
-          setUploadStatus("failed");
           return false;
         }
 
@@ -85,39 +135,33 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
         formData.append("movement_type", UPLOAD_MOVEMENT_TYPE);
         files.forEach((file) => formData.append("files[]", file));
         await importCrewFile({ formData });
-
-        // Select the crew this upload added; if it only re-imported crew
-        // already on the call (no new ids), select the whole roster.
-        const previousIds = new Set(crewOptions.map((option) => String(option.value)));
-        const options = await fetchCrewOptions(callId);
-        const newIds = options.map((option) => String(option.value)).filter((id) => !previousIds.has(id));
-        const idsToSelect = newIds.length > 0 ? newIds : options.map((option) => String(option.value));
-        setCrewOptions(options);
-        onChange(idsToSelect);
-        setUploadStatus("completed");
-        notify(`Crew list uploaded — ${idsToSelect.length} crew member(s) added to this request.`, "success");
         return true;
-      } catch {
-        // import errors are already surfaced by the store
-        setUploadStatus("failed");
-        return false;
-      }
-    },
-    [callId, uploadStatus, crewOptions, importCrewFile, onChange]
+      }, "Crew list uploaded", "upload"),
+    [callId, importCrewFile, runCrewSave]
   );
 
   const selectedIds = Array.isArray(selected) ? selected.map(String) : [];
 
-  // Grid rows go through the same crew/import_crew_ai flow as a file upload, sent as a generated CSV.
-  const handleGridSubmit = (rows) => {
-    const escapeCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
-    const csv = [
-      CREW_ENTRY_COLUMNS.map((column) => escapeCell(column.header)).join(","),
-      ...rows.map((row) => CREW_ENTRY_COLUMNS.map((column) => escapeCell(row[column.key])).join(",")),
-    ].join("\r\n");
-    const file = new File([csv], "crew-list-manual-entry.csv", { type: "text/csv" });
-    return handleCrewListUpload([file]);
-  };
+  // Manually entered grid rows are saved directly via crew/save_crew
+  // (the store resolves call_id / vessel_id from the call detail).
+  const handleGridSubmit = (rows) =>
+    runCrewSave(async () => {
+      await saveCrewData({
+        payload: {
+          call_id: Number(callId),
+          crew: rows.map((row) => {
+            const entry = {};
+            CREW_ENTRY_COLUMNS.forEach(({ key }) => {
+              entry[key] = String(row[key] ?? "").trim();
+            });
+            // Movement type comes from the grid; fall back to the upload default if it is ever blank.
+            entry.movement_type = entry.movement_type || UPLOAD_MOVEMENT_TYPE;
+            return entry;
+          }),
+        },
+      });
+      return true;
+    }, "Crew saved", "manual");
 
   if (uploadMode) {
     const selectedNames = crewOptions
@@ -125,10 +169,13 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
       .map((option) => option.label);
 
     return (
-      <FormGroup icon="crew" label="Crew List" accent={accent}>
+      <FormGroup icon="crew" label="Crew List *" accent={accent} error={error}>
         <FormField className="cf-field-full">
           {isManualEntry ? (
-            <CrewEntryGrid onSubmit={handleGridSubmit} submitting={uploadStatus === "uploading"} />
+            <CrewEntryGrid
+              rows={gridRows}
+              onRowsChange={setGridRows}
+              onSubmit={handleGridSubmit} submitting={uploadStatus === "uploading"} />
           ) : (
             <CrewListUploadBox
               movementType={UPLOAD_MOVEMENT_TYPE}
@@ -154,7 +201,7 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
   }
 
   return (
-    <FormGroup icon="crew" label="Crew Selection" accent={accent}>
+    <FormGroup icon="crew" label="Crew Selection *" accent={accent} error={error}>
       <FormField className="cf-field-full">
         <ChecklistMultiSelect
           className="husb-crew-multiselect"
@@ -190,6 +237,8 @@ CrewSelectionField.propTypes = {
   accent: PropTypes.oneOf(["blue", "teal", "purple", "amber", "rose", "slate", "green", "pink"]),
   onGoToCrew: PropTypes.func,
   uploadMode: PropTypes.bool,
+  /** Inline validation message (e.g. crew required). */
+  error: PropTypes.string,
 };
 
 export default CrewSelectionField;

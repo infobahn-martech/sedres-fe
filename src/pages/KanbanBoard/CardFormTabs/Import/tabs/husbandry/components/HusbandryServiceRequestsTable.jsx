@@ -191,7 +191,6 @@ const HusbandryServiceRequestsTable = ({
         icon={icon}
         title={title}
         subtitle={subtitle}
-        count={loading ? "…" : safeList.length}
         headerClassName="crew-pass-requests-table-card__header"
         titleClassName="crew-pass-requests-table-card__title"
       />
@@ -211,7 +210,12 @@ const HusbandryServiceRequestsTable = ({
                 <thead>
                   <tr>
                     {columns.map((col) => (
-                      <th key={col.key}>{col.header}</th>
+                      <th
+                        key={col.key}
+                        className={col.type === "document" ? "crew-pass-requests-table__doc-cell" : undefined}
+                      >
+                        {col.header}
+                      </th>
                     ))}
                   </tr>
                 </thead>

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import PropTypes from "prop-types";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
@@ -6,12 +6,15 @@ import { FormSection, FormField, FormSelect, ReactQuillEditor, FormGroup, FieldR
 import AttachmentsList from "../../appointment/AttachmentsList";
 import hospitalService, {
   extractMedicalRequestsFromEnvelope,
-  flattenMedicalRequestRows,
 } from "@/services/hospitalService";
 import { useCallDetail } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
 import { buildPickupDateTime } from "@/store/TransportContent";
-import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
+import CrewPassRequestsTable from "./CrewPassRequestsTable";
+import { buildRequestCardGroups, formatCardDate, crewRankMeta } from "./requestCardGroups";
 import CrewSelectionField from "./CrewSelectionField";
+import { manualCrewIdsField, manualCrewIdsFromChange, buildCrewPayloadList } from "./crewPayloadIds";
+import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT, LAUNCH_HIRE_LOCATION_OPTIONS } from "./Husbandry.constants";
 
@@ -20,19 +23,27 @@ const MEDICAL_ACCENT = SERVICE_ACCENT[CREW_MANAGEMENT_SUBTABS.MEDICAL_SERVICE];
 const REQUEST_EMAIL_ACCEPT_ATTR = ".msg,.eml,.pdf,.doc,.docx";
 const REQUEST_EMAIL_EXT_RE = /\.(msg|eml|pdf|doc|docx)$/i;
 
-const MEDICAL_REQUEST_COLUMNS = [
-  {
-    key: "wo_number",
-    header: "Work Order",
-    accessor: (r) => r?.wo_number || r?.wo_id || r?.medical_request_id,
-    type: "workorder",
-  },
-  { key: "crew_name", header: "Crew", accessor: (r) => r?.crew_name ?? r?.crewName, type: "crew", perCrew: true },
-  { key: "hospital_name", header: "Hospital", accessor: (r) => r?.hospital_name ?? r?.hospitalName },
-  { key: "service_name", header: "Service", accessor: (r) => r?.service_name ?? r?.medical_service_name },
-  { key: "status", header: "Status", accessor: (r) => r?.status, type: "status" },
-  { key: "requested_date", header: "Requested Date", accessor: (r) => r?.requested_date ?? r?.created_date, type: "date" },
-  { key: "document", header: "Document", type: "document" },
+// One card per medical request (same card list as CG / Zawil pass / Transport), crew listed inside.
+const buildMedicalRequestGroups = (requests) =>
+  buildRequestCardGroups(requests, {
+    getId: (r) => r?.medical_request_id ?? r?.id,
+    getCrewStatus: (crew, r) => crew?.visit_status ?? crew?.status ?? r?.status,
+    getDetails: (r) => ({
+      hospitalName: r?.hospital_name ?? r?.hospitalName ?? "",
+      serviceName: r?.service_name ?? r?.medical_service_name ?? "",
+      requestedDate: r?.requested_date ?? r?.created_date ?? "",
+    }),
+  });
+
+const renderMedicalTitle = (group) => (
+  <span className="cpr-route" title={group.hospitalName}>
+    <span>{group.hospitalName || "Hospital not set"}</span>
+  </span>
+);
+
+const getMedicalFacts = (group) => [
+  group.serviceName ? `Service: ${group.serviceName}` : "Service not set",
+  group.requestedDate ? `Requested ${formatCardDate(group.requestedDate)}` : "Request date not set",
 ];
 
 const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestCountChange, onGoToCrew, crewUploadMode = false }) => {
@@ -41,6 +52,11 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
   const fileInputRef = useRef(null);
   const requestEmailInputRef = useRef(null);
   const callId = formValues.call_id || formValues.callId || formValues.card_call_id;
+  const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+    requestEmailField: "medicalServiceRequestEmail",
+    crewField: "medicalServiceSelectedCrew",
+  });
+  const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
 
   // Shared with the rest of the drawer (CardForm fetches it once per card).
   const { detail: callDetails } = useCallDetail(callId);
@@ -53,6 +69,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
   const [loadingServices, setLoadingServices] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [medicalRequests, setMedicalRequests] = useState([]);
+  const medicalRequestGroups = useMemo(() => buildMedicalRequestGroups(medicalRequests), [medicalRequests]);
   const [loadingMedicalRequests, setLoadingMedicalRequests] = useState(false);
 
   const fetchMedicalRequests = useCallback(async () => {
@@ -65,7 +82,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
     try {
       const response = await hospitalService.getMedicalRequests(callId);
       const list = extractMedicalRequestsFromEnvelope(response);
-      setMedicalRequests(flattenMedicalRequestRows(list));
+      setMedicalRequests(list);
       onRequestCountChange?.(list.length);
     } catch {
       setMedicalRequests([]);
@@ -266,6 +283,8 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
       return;
     }
 
+    if (!validate()) return;
+
     if (!formValues.medicalServiceSelectedHospital) {
       notify("Hospital is required.", "error", "top-center");
       return;
@@ -297,7 +316,10 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
       hospital_id: Number(formValues.medicalServiceSelectedHospital),
       medical_service_id: Number(formValues.medicalServiceSelectedService),
       remarks: formValues.medicalServiceDescription || "",
-      crew: (formValues.medicalServiceSelectedCrew || []).map((id) => ({ crew_change_id: Number(id) })),
+      crew: buildCrewPayloadList(
+          formValues.medicalServiceSelectedCrew,
+          formValues[manualCrewIdsField("medicalServiceSelectedCrew")]
+        ),
       launch_hire: isLaunchHire ? 1 : 0,
       location: isLaunchHire ? formValues.medicalServiceLaunchHireLocation || "" : "",
       booking_datetime: isLaunchHire ? launchHireBookingDatetime : "",
@@ -329,9 +351,12 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
         "success",
         "top-center"
       );
+      resetValidation();
+      showSavedLineItems(response);
       handleChange("medicalServiceSelectedHospital")({ target: { value: "" } });
       handleChange("medicalServiceSelectedService")({ target: { value: "" } });
       handleChange("medicalServiceSelectedCrew")({ target: { value: [] } });
+      handleChange(manualCrewIdsField("medicalServiceSelectedCrew"))({ target: { value: null } });
       handleChange("medicalServiceRequestEmail")({ target: { value: [] } });
       handleChange("medicalServiceDocuments")({ target: { value: [] } });
       handleChange("medicalServiceDescription")({ target: { value: "" } });
@@ -349,10 +374,11 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
     } finally {
       setIsSaving(false);
     }
-  }, [callId, formValues, fetchMedicalRequests, isLaunchHire, handleChange]);
+  }, [callId, formValues, fetchMedicalRequests, isLaunchHire, handleChange, validate, resetValidation, showSavedLineItems]);
 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form medicalservice-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">
@@ -366,7 +392,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
                   titleClassName="crew-pass-request-details-card__title"
                 />
                 <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                <FormGroup icon="mail" label="Request Email *" accent={MEDICAL_ACCENT}>
+                <FormGroup icon="mail" label="Request Email *" accent={MEDICAL_ACCENT} error={fieldErrors.requestEmail}>
                   <FormField>
                     <div className="transport-upload-box">
                       <AttachmentsList
@@ -392,10 +418,14 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
                 <CrewSelectionField
                   callId={callId}
                   selected={formValues.medicalServiceSelectedCrew || []}
-                  onChange={(ids) => handleChange("medicalServiceSelectedCrew")({ target: { value: ids } })}
+                  onChange={(ids, meta) => {
+                    handleChange("medicalServiceSelectedCrew")({ target: { value: ids } });
+                    handleChange(manualCrewIdsField("medicalServiceSelectedCrew"))({ target: { value: manualCrewIdsFromChange(meta) } });
+                  }}
                   accent={MEDICAL_ACCENT}
                   onGoToCrew={onGoToCrew}
                   uploadMode={crewUploadMode}
+                  error={fieldErrors.crew}
                 />
 
                 <FormGroup icon="medicalService" label="Care Details" accent={MEDICAL_ACCENT}>
@@ -467,7 +497,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
                   </FormGroup>
                 )}
 
-                <FormGroup icon="folder" label="Documents *" accent={MEDICAL_ACCENT}>
+                <FormGroup icon="folder" label="Documents" accent={MEDICAL_ACCENT}>
                   <FormField className="cf-field-full">
                     <div className="transport-upload-box">
                       <AttachmentsList
@@ -510,17 +540,21 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
             </div>
 
             <div className="general-info-right crew-pass-requests-sidebar">
-              <HusbandryServiceRequestsTable
+              <CrewPassRequestsTable
                 title="Medical requests"
                 subtitle="All medical bookings for this job"
                 icon="list"
-                requests={medicalRequests}
+                groups={medicalRequestGroups}
                 loading={loadingMedicalRequests}
-                columns={MEDICAL_REQUEST_COLUMNS}
                 emptyMessage="No medical requests found"
-                serviceType="medical"
+                passType="medical"
                 accent={MEDICAL_ACCENT}
-                groupKey="medical_request_id"
+                renderGroupTitle={renderMedicalTitle}
+                getGroupFacts={getMedicalFacts}
+                getGroupDocumentUrl={(group) => group.requestDocumentUrl}
+                getGroupSearchText={(group) => `${group.hospitalName} ${group.serviceName}`}
+                getCrewMeta={crewRankMeta}
+                searchPlaceholder="Search crew, hospital or service"
               />
             </div>
           </div>

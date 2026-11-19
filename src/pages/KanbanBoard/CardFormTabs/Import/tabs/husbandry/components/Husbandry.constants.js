@@ -185,6 +185,29 @@ export const TAB_ICON_PATHS = {
 export const CREW_ENTRY_COLUMNS = [
   { key: "crew_name", header: "Crew Name", placeholder: "Full name", required: true },
   { key: "rank", header: "Rank", placeholder: "e.g. Master" },
-  { key: "nationality", header: "Nationality", placeholder: "e.g. Indian" },
+  {
+    key: "movement_type",
+    header: "Movement Type",
+    type: "select",
+    options: ["Sign On", "Sign Off"],
+    defaultValue: "Sign On",
+  },
   { key: "passport_no", header: "Passport No", placeholder: "Passport number" },
 ];
+
+/** Maps typed/pasted text ("sign off", "OFF", "Sign-On"…) to a select column's option; unknown → default. */
+export const normalizeCrewEntryCell = (column, raw) => {
+  const value = String(raw ?? "").trim();
+  if (column.type !== "select") return value;
+  const compact = value.toLowerCase().replace(/[^a-z]/g, "");
+  const match = column.options.find((option) => {
+    const optionCompact = option.toLowerCase().replace(/[^a-z]/g, "");
+    return compact === optionCompact || (compact && optionCompact.endsWith(compact));
+  });
+  return match ?? column.defaultValue ?? "";
+};
+
+export const CREW_ENTRY_INITIAL_ROW_COUNT = 3;
+export const createEmptyCrewRow = () =>
+  Object.fromEntries(CREW_ENTRY_COLUMNS.map((column) => [column.key, column.defaultValue ?? ""]));
+export const createEmptyCrewRows = (count = CREW_ENTRY_INITIAL_ROW_COUNT) => Array.from({ length: count }, createEmptyCrewRow);

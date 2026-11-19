@@ -32,6 +32,7 @@ const createBoard = (data) =>
   Gateway.post('/kanban_board/create_board', {
     workspace_id: data.workspace_id,
     board_name: data.board_name,
+    port_id: data.port_id,
   });
 
 const renameBoard = (boardId, data) =>

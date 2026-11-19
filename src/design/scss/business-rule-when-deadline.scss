@@ -1,0 +1,152 @@
+// Compact operator dropdown for every AND / WHEN condition row ("Attachments are present v"):
+// sized to its options with tighter padding instead of the shared 260px panel.
+.business-rule-form-condition-operator-group {
+  // The field name keeps its blue label colour; the operator beside it ("are present v") is body text.
+  .br-condition-operator-trigger {
+    color: var(--text-primary);
+    padding: 0;
+    line-height: 1.4;
+  }
+
+  // Field name, operator word and arrow share one baseline instead of the operator sitting
+  // at the top of the row.
+  .br-condition-operator-wrap {
+    align-self: center;
+  }
+
+  .br-condition-operator-panel {
+    right: auto;
+    width: max-content;
+    min-width: 180px;
+    max-width: 260px;
+    padding: 8px;
+    gap: 4px;
+  }
+
+  .br-condition-operator-option {
+    padding: 7px 10px;
+    white-space: nowrap;
+  }
+
+  .board-minimap-picker-search {
+    padding: 6px 10px;
+  }
+}
+
+// Deadline WHEN row ("Deadline is in v"): the field name stays the blue label colour from
+// the shared operator-group rule, while "is" and the operator picker read as plain body text.
+// The words sit close together like a sentence, so the row's usual flex gap is tightened.
+.business-rule-form-when-deadline-label-row.br-when-deadline-text {
+  gap: 4px;
+
+  .br-condition-operator-trigger {
+    color: var(--text-primary);
+  }
+
+  .br-condition-operator-wrap {
+    align-self: center;
+  }
+
+  .br-condition-operator-trigger {
+    gap: 4px;
+    padding: 0;
+    line-height: 1.4;
+  }
+
+  // Compact list for the operator dropdown: sized to its options instead of the shared
+  // 260px panel with generous padding.
+  .br-condition-operator-panel {
+    right: auto;
+    width: max-content;
+    min-width: 120px;
+    padding: 6px;
+    gap: 2px;
+  }
+
+  .br-condition-operator-option {
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+}
+
+// Value text of a dropdown field in a condition row ("Blocked"): body size, not the browser's
+// default button font.
+.br-condition-value-text {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+// "if <parent/child/relative> card matches this filter" block of a THEN action card: header and its
+// Add link stacked tight, left-aligned with the field chips above.
+.br-related-filter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+
+  > .business-rule-form-action-chip {
+    align-self: stretch;
+  }
+}
+
+// "Not Set" / "N selected" trigger of a board-structure value (Board, Position ...): same size as the
+// other value texts of the condition rows.
+.br-advanced-schedule-label.br-board-structure-trigger {
+  font-size: 12px;
+}
+
+// Move-with-filter cards of the THEN column: titles, links and the filter header share one size so the
+// text lines up with the update card above them.
+.br-generic-then {
+  .br-create-action-card {
+    padding: 10px 28px 10px 12px;
+    border-radius: 8px;
+  }
+
+  .br-create-action-title,
+  .br-create-action-link,
+  .business-rule-form-when-fields-header,
+  .business-rule-form-add-link {
+    font-size: 13px;
+  }
+}
+
+// The THEN column links ("Add new action", "Add new property" ...) are plain text, no + icon.
+.business-rule-form-column--then .business-rule-form-add-link svg,
+.business-rule-form-column--then .business-rule-form-add-action svg {
+  display: none;
+}
+
+// THEN action cards (update / move / notify ...): compact padding and even spacing between their rows.
+.business-rule-form-column--then .business-rule-form-action-detail-card {
+  padding: 10px 12px;
+  gap: 8px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+// The "Add new ... action" link under the cards starts on the same line as the text inside the cards
+// (card border 1px + padding 12px).
+.business-rule-form-column--then .business-rule-form-add-action,
+.br-generic-then > .business-rule-form-add-link {
+  padding-left: 13px;
+}
+
+// Every "Add new ..." link and filter header in the THEN column has one size, whichever section draws it.
+.business-rule-form-column--then {
+  .business-rule-form-add-link,
+  .business-rule-form-add-action {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .business-rule-form-when-fields-header {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+}

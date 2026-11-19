@@ -19,6 +19,7 @@ import PremiumSelect from "@/components/form/PremiumSelect";
 import useAlertReducer from "@/store/AlertReducer";
 import useSignatureCheckStore from "@/store/signatureCheckStore";
 import useAuthReducer from "@/store/AuthReducer";
+import userService from "@/services/userService";
 import { useDaLocalSoApproval, useDaLocalVerifiedItems } from "@/store/daStore";
 import { getFirstUserRoleId } from "@/shared/helpers/groUserRoles";
 import WorkOrderCreationModal from "./WorkOrderCreationModal";
@@ -29,7 +30,7 @@ import SoApprovalEmailModal from "./SoApprovalEmailModal";
 import DocumentListModal from "./DocumentListModal";
 import UploadInvoiceModal from "@/components/UploadInvoiceModal";
 import { compressPdfFiles } from "@/shared/utils/compressPdf";
-import { isApprovalRequestedColumnTitle, isApprovalReceivedColumnTitle, isSubseaSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
+import { isApprovalRequestedColumnTitle, isApprovalReceivedColumnTitle, isLntSwimlane, isSubseaSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
 import SeApprovalUploadModal from "@/pages/KanbanBoard/components/board/SeApprovalUploadModal";
 import CustomModal from "@/components/CustomModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
@@ -37,6 +38,60 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 const BP_CURRENCY_OPTIONS = ["SAR", "USD", "EURO"];
 const USD_TO_SAR_RATE = 3.75;
 const SALES_ORDER_PAGE_SIZE = 10;
+/* users/get_users_by_role roles listed in the DA Supervisor / DA Coordinator multi-selects. */
+const DA_SUPERVISOR_ROLE_ID = 22;
+const DA_COORDINATOR_ROLE_ID = 26;
+
+/* Session-level request cache for lookup lists (users by role, vendors) that don't change while
+   the board is open — without it every Sales Order tab mount (tab switch, card reopen) refired
+   them. A failed request is evicted so the next mount retries. */
+const lookupCache = new Map();
+function cachedLookup(key, fetcher) {
+  if (!lookupCache.has(key)) {
+    const promise = fetcher().catch((err) => {
+      lookupCache.delete(key);
+      throw err;
+    });
+    lookupCache.set(key, promise);
+  }
+  return lookupCache.get(key);
+}
+
+/** Users of one role as { value: user_id, label: name } select options. */
+function useUserOptionsByRole(roleId) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    cachedLookup(`usersByRole:${roleId}`, () =>
+      userService.getUsersByRole({ role_id: roleId }).then(({ data }) => {
+        const list = data?.data ?? [];
+        return Array.isArray(list) ? list : [];
+      })
+    )
+      .then((list) => {
+        if (!cancelled) setUsers(list);
+      })
+      .catch(() => {
+        if (!cancelled) setUsers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [roleId]);
+  const options = useMemo(
+    () =>
+      users
+        .filter((u) => u?.user_id != null)
+        .map((u) => ({ value: String(u.user_id), label: u.name ?? "" })),
+    [users]
+  );
+  return { options, loading };
+}
 const POSH_WORKFLOW_PATTERN = /posh/i;
 const CREW_HUB_WORKFLOW_PATTERN = /crew\s*hub/i;
 const LAMPRELL_WORKFLOW_PATTERN = /lamprell\s*saudi\s*flow/i;
@@ -314,6 +369,9 @@ SalesOrderPagination.propTypes = {
   compact: PropTypes.bool,
 };
 
+// so_type values for sales_order/get_so_items_by_call (role_id 1 / 2 only).
+const SO_TYPE_OPTIONS = ["Marine", "Husbandry"];
+
 const SalesOrderList = ({
   card,
   formValues,
@@ -372,20 +430,24 @@ const SalesOrderList = ({
   const soContactPerson = formValues.soContactPerson || "";
   const soBpCurrency = formValues.soBpCurrency || "";
   const soEuroRate = formValues.soEuroRate || "";
-  const soPoNo = formValues.soPoNo || "";
   const soPort = formValues.soPort || "";
   const soSoNo = formValues.soSoNo || "";
   const soPostingDate = formValues.soPostingDate || "";
   const soDeliveryDate = formValues.soDeliveryDate || "";
   const soDocumentDate = formValues.soDocumentDate || "";
   const soShipName = formValues.soShipName || "";
-  const soProjectName = formValues.soProjectName || "";
   const branch = formValues.branch || "";
   const soContactEmail = formValues.email || "";
-  const srtNumber = formValues.srtNumber || "";
+  const soBillingEntityFields = Array.isArray(formValues.soBillingEntityFields) ? formValues.soBillingEntityFields : [];
   const loggedInUserName = useAuthReducer((state) => state.profileData?.name || state.authData?.name || "");
   const soOwner = formValues.soOwner || loggedInUserName;
   const soRemarks = formValues.soRemarks || "";
+  const soDaSupervisorIds = Array.isArray(formValues.soDaSupervisorIds) ? formValues.soDaSupervisorIds : [];
+  const soDaCoordinatorIds = Array.isArray(formValues.soDaCoordinatorIds) ? formValues.soDaCoordinatorIds : [];
+
+  // Options for the DA Supervisor / DA Coordinator multi-selects (users/get_users_by_role).
+  const { options: daSupervisorOptions, loading: daSupervisorsLoading } = useUserOptionsByRole(DA_SUPERVISOR_ROLE_ID);
+  const { options: daCoordinatorOptions, loading: daCoordinatorsLoading } = useUserOptionsByRole(DA_COORDINATOR_ROLE_ID);
 
   const bpCurrencySelectOptions = useMemo(
     () => BP_CURRENCY_OPTIONS.map((c) => ({ value: c, label: c === "EURO" ? "EURO (€)" : c })),
@@ -415,10 +477,6 @@ const SalesOrderList = ({
   const getAllSupportingDocs = useAttachmentsReducer((state) => state.getAllSupportingDocs);
   const updateSalesOrderItemAmount = useVendorReducer((state) => state.updateSalesOrderItemAmount);
   const updateSalesOrderReducer = useVendorReducer((state) => state.updateSalesOrder);
-
-  useEffect(() => {
-    getAllSupportingDocs(callId);
-  }, [callId, getAllSupportingDocs]);
 
   const entityId =
     callDetailData?.entity_id ??
@@ -550,20 +608,24 @@ const SalesOrderList = ({
     }, []);
   }, [itemCodeOptions]);
 
-  // Vendor list — billingentity/getvendors, [{ customer_code, customer_name }]
+  // Vendor list — billingentity/getvendors, [{ customer_code, customer_name }]. Only the Add Item
+  // form and the row-level supplier picker use it, so it's loaded the first time either opens
+  // (see needsVendors) and cached for the session instead of on every tab mount.
+  const needsVendors = isAccordionOpen || vendorModalTarget != null;
   useEffect(() => {
+    if (!needsVendors) return undefined;
     let cancelled = false;
-    billingEntityService
-      .getVendors()
-      .then((response) => {
-        if (cancelled) return;
+    cachedLookup("vendors", () =>
+      billingEntityService.getVendors().then((response) => {
         const rows = Array.isArray(response?.data?.data) ? response.data.data : [];
-        setVendors(
-          rows.map((v) => ({
-            code: v.customer_code != null ? String(v.customer_code) : "",
-            name: v.customer_name != null ? String(v.customer_name) : "",
-          }))
-        );
+        return rows.map((v) => ({
+          code: v.customer_code != null ? String(v.customer_code) : "",
+          name: v.customer_name != null ? String(v.customer_name) : "",
+        }));
+      })
+    )
+      .then((list) => {
+        if (!cancelled) setVendors(list);
       })
       .catch(() => {
         if (!cancelled) setVendors([]);
@@ -571,11 +633,18 @@ const SalesOrderList = ({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [needsVendors]);
 
   // State for document modal (row-level document picker) — documents themselves come from
   // each item's own `documents` array (mapped from the API), not a shared pool.
   const [documentModalTarget, setDocumentModalTarget] = useState(null); // orderId or "new"
+
+  // The supporting-doc library is only shown inside the document picker, so it's fetched when
+  // the picker opens (fresh each time, so newly uploaded docs show up) rather than on tab mount.
+  const isDocumentModalOpen = documentModalTarget != null;
+  useEffect(() => {
+    if (isDocumentModalOpen) getAllSupportingDocs(callId);
+  }, [isDocumentModalOpen, callId, getAllSupportingDocs]);
 
   // State for the line item delete confirmation modal
   const [showDeleteItemModal, setShowDeleteItemModal] = useState(false);
@@ -1578,14 +1647,26 @@ const SalesOrderList = ({
       });
   }, [portId]);
 
-  // Load item codes for the SO's port as soon as the Sales Order tab is opened
+  // Item codes only feed the Add Item form, so load them the first time it's opened for this port
+  // (fetchItemCodes changes identity with portId, so a port change reloads on next open).
+  const loadedItemCodesForRef = useRef(null);
   useEffect(() => {
+    if (!isAccordionOpen || loadedItemCodesForRef.current === fetchItemCodes) return undefined;
+    loadedItemCodesForRef.current = fetchItemCodes;
     const cancelledRef = { current: false };
-    fetchItemCodes(cancelledRef);
+    let settled = false;
+    fetchItemCodes(cancelledRef).finally(() => {
+      settled = true;
+    });
     return () => {
       cancelledRef.current = true;
+      // Closed (or port changed) mid-request: forget it so the next open fetches again.
+      if (!settled) {
+        loadedItemCodesForRef.current = null;
+        setIsLoadingItemCodes(false);
+      }
     };
-  }, [fetchItemCodes]);
+  }, [isAccordionOpen, fetchItemCodes]);
 
   // Toggle accordion for callFile
   const toggleCallFileAccordion = (callFile) => {
@@ -1642,7 +1723,7 @@ const SalesOrderList = ({
     };
     try {
       await updateSalesOrderItemAmount(payload);
-      if (refreshSalesOrder) await refreshSalesOrder();
+      if (refreshSalesOrder) await refreshSalesOrder({ silent: true });
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -1679,13 +1760,46 @@ const SalesOrderList = ({
     if (!formValues.salesOrderId) return;
     try {
       await updateSalesOrderReducer({ sales_order_id: formValues.salesOrderId, ...payloadFields });
-      if (refreshSalesOrder) await refreshSalesOrder();
+      if (refreshSalesOrder) await refreshSalesOrder({ silent: true });
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
         err?.message ||
         "Failed to update the sales order.";
+      useAlertReducer.getState().error(msg);
+    }
+  };
+
+  // DA Supervisor / DA Coordinator selects: no blur event, so persist on every change via
+  // da/assign_da_team, which replaces the whole team — so each save sends both the supervisor and
+  // the coordinators. On success the sales order is reloaded. A failed save puts the previous
+  // ids back.
+  const daCardId = formValues.soDaCardId || card?.card_id || card?.cardId || "";
+  const toApiUserId = (id) => (/^d+$/.test(String(id)) ? Number(id) : id);
+  const handleDaUsersChange = (formKey) => async (e) => {
+    const ids = Array.isArray(e?.target?.value) ? e.target.value : [];
+    const previous = Array.isArray(formValues[formKey]) ? formValues[formKey] : [];
+    handleChange(formKey)({ target: { value: ids } });
+    if (!daCardId) {
+      handleChange(formKey)({ target: { value: previous } });
+      useAlertReducer.getState().error("Unable to save the DA team: card id is missing.");
+      return;
+    }
+    const supervisorIds = formKey === "soDaSupervisorIds" ? ids : soDaSupervisorIds;
+    const coordinatorIds = formKey === "soDaCoordinatorIds" ? ids : soDaCoordinatorIds;
+    try {
+      await daService.assignDaTeam({
+        card_id: toApiUserId(daCardId),
+        supervisor_id: supervisorIds[0] != null && supervisorIds[0] !== "" ? toApiUserId(supervisorIds[0]) : null,
+        coordinator_ids: coordinatorIds.map(toApiUserId),
+      });
+      // Reload get_so_items_by_call so the page reflects the saved da_team.
+      if (refreshSalesOrder) await refreshSalesOrder({ silent: true });
+    } catch (err) {
+      handleChange(formKey)({ target: { value: previous } });
+      const msg =
+        err?.response?.data?.message || err?.response?.data?.error || err?.message || "Failed to update the sales order.";
       useAlertReducer.getState().error(msg);
     }
   };
@@ -1698,6 +1812,16 @@ const SalesOrderList = ({
       e.target.blur();
     }
   };
+
+  // Billing-entity fields (billing_entity_fields in the SO response): edit locally, save on blur
+  // (or on pick, for dates) under `fields` keyed by the field's field_key.
+  const setBillingEntityFieldValue = (key, value) => {
+    const next = soBillingEntityFields.map((f) => (f.key === key ? { ...f, value } : f));
+    handleChange("soBillingEntityFields")({ target: { value: next } });
+  };
+
+  const saveBillingEntityField = (key, value) =>
+    handleUpdateSalesOrder({ fields: { [key]: value } });
 
   const handleSoDeliveryDateChange = (e) => {
     handleChange("soDeliveryDate")(e);
@@ -1805,6 +1929,8 @@ const SalesOrderList = ({
         (isAtSubmittedToDaColumn || isAtSoSentForSccColumn) &&
         (wasMovedToDa || isZakherWorkflowCard)
       ) {
+        onCloseCard?.();
+      } else if (allVerified && isAtApprovalRequestedColumn && (isLntSwimlane({ title: card?.workflow_name }) || isLntSwimlane({ title: soCustomerName }))) {
         onCloseCard?.();
       }
     } catch (err) {
@@ -2709,10 +2835,35 @@ const SalesOrderList = ({
   return (
     <div className="cardform-left-full sales-order-content-wrapper" style={{ "--card-color": cardColor }}>
       <div className="sales-order-list-header">
-        <h3 className="sales-order-list-title">
-          <span className="sales-order-list-title-bar"></span>
-          SALES ORDER LIST
-        </h3>
+        <div className="sales-order-list-header-left">
+          <h3 className="sales-order-list-title" style={{ textTransform: "none", letterSpacing: "0.01em" }}>
+            <span className="sales-order-list-title-bar"></span>
+            Sales Order List
+          </h3>
+          {isPortManagerOrOperator && (
+            <div className="sales-order-so-type-toggle" role="group" aria-label="Sales order type">
+              {SO_TYPE_OPTIONS.map((type) => {
+                const isActive = (formValues?.soType || "Marine") === type;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    className={`sales-order-so-type-btn${isActive ? " is-active" : ""}`}
+                    aria-pressed={isActive}
+                    disabled={isLoadingSalesOrder}
+                    onClick={() => {
+                      if (isActive) return;
+                      setCurrentPage(1);
+                      handleChange?.("soType")(type);
+                    }}
+                  >
+                    {type}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
         <div className="sales-order-list-header-actions">
           <SalesOrderPagination
             page={currentPage}
@@ -2955,7 +3106,6 @@ const SalesOrderList = ({
                       type="button"
                       onClick={handleCancel}
                       className="sales-order-add-accordion-close"
-                      style={{ color: cardColor }}
                     >
                       ×
                     </button>
@@ -3166,47 +3316,38 @@ const SalesOrderList = ({
                 readOnly
               />
             </div>
-            <div className="so-header-field">
-              <label className="so-header-label">PO No <span className="so-required">*</span></label>
-              <input
-                type="text"
-                className="so-header-input"
-                placeholder="Enter PO No..."
-                value={soPoNo}
-                onChange={handleChange("soPoNo")}
-                onBlur={() => handleUpdateSalesOrder({ fields: { po_number: soPoNo } })}
-                onKeyDown={handleEnterBlur}
-                readOnly={readOnly}
-                required
-              />
-            </div>
-            <div className="so-header-field">
-              <label className="so-header-label">SRT Number</label>
-              <input
-                type="text"
-                className="so-header-input"
-                placeholder="Enter SRT Number..."
-                value={srtNumber}
-                onChange={handleChange("srtNumber")}
-                onBlur={() => handleUpdateSalesOrder({ fields: { srt_number: srtNumber } })}
-                onKeyDown={handleEnterBlur}
-                readOnly={readOnly}
-              />
-            </div>
-            <div className="so-header-field">
-              <label className="so-header-label">Project Name <span className="so-required">*</span></label>
-              <input
-                type="text"
-                className="so-header-input"
-                placeholder="Enter project name..."
-                value={soProjectName}
-                onChange={handleChange("soProjectName")}
-                onBlur={() => handleUpdateSalesOrder({ fields: { project_name: soProjectName } })}
-                onKeyDown={handleEnterBlur}
-                readOnly={readOnly}
-                required
-              />
-            </div>
+            {soBillingEntityFields.map((field) => (
+              <div className="so-header-field" key={field.fieldId}>
+                <label className="so-header-label">
+                  {field.name}
+                  {field.required && <> <span className="so-required">*</span></>}
+                </label>
+                {field.type === "date" ? (
+                  <DatePickerField
+                    dateValue={field.value}
+                    onDateChange={(e) => {
+                      setBillingEntityFieldValue(field.key, e.target.value);
+                      saveBillingEntityField(field.key, e.target.value);
+                    }}
+                    dateFieldName={`be_${field.key}`}
+                    disabled={readOnly}
+                    className="so-header-input"
+                  />
+                ) : (
+                  <input
+                    type={field.type === "number" ? "number" : "text"}
+                    className="so-header-input"
+                    placeholder={`Enter ${field.name}...`}
+                    value={field.value}
+                    onChange={(e) => setBillingEntityFieldValue(field.key, e.target.value)}
+                    onBlur={(e) => saveBillingEntityField(field.key, e.target.value)}
+                    onKeyDown={handleEnterBlur}
+                    readOnly={readOnly}
+                    required={field.required}
+                  />
+                )}
+              </div>
+            ))}
             <div className="so-header-field">
               <label className="so-header-label">Port</label>
               <input
@@ -3520,6 +3661,44 @@ const SalesOrderList = ({
         </div>
       </div>
 
+      {/* DA Assignment — its own section, above the Accounting Summary */}
+      <div className="so-summary-section so-da-assignment-section">
+        <h3 className="so-summary-section-title">DA Assignment</h3>
+        <div className="so-da-assignment-card">
+          <div className="so-summary-da-fields">
+            <div className="so-header-field">
+              <label className="so-header-label">DA Supervisor</label>
+              {/* Single select in the UI; kept as a one-item array in form state, sent as supervisor_id. */}
+              <PremiumSelect
+                value={soDaSupervisorIds[0] ?? ""}
+                options={daSupervisorOptions}
+                placeholder={daSupervisorsLoading ? "Loading users..." : "Select DA supervisor"}
+                noResultsText={daSupervisorsLoading ? "Loading users..." : "No DA supervisors found"}
+                disabled={readOnly}
+                onChange={(e) => {
+                  const id = e?.target?.value;
+                  handleDaUsersChange("soDaSupervisorIds")({
+                    target: { value: id === undefined || id === null || id === "" ? [] : [id] },
+                  });
+                }}
+              />
+            </div>
+            <div className="so-header-field">
+              <label className="so-header-label">DA Coordinator</label>
+              <PremiumSelect
+                isMulti
+                value={soDaCoordinatorIds}
+                options={daCoordinatorOptions}
+                placeholder={daCoordinatorsLoading ? "Loading users..." : "Select DA coordinators"}
+                noResultsText={daCoordinatorsLoading ? "Loading users..." : "No DA coordinators found"}
+                disabled={readOnly}
+                onChange={handleDaUsersChange("soDaCoordinatorIds")}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Accounting Summary — always visible at the bottom of the page */}
       {(() => {
         const amountFromForm = (v) => {
@@ -3550,16 +3729,39 @@ const SalesOrderList = ({
         const grandTotalCalc = subtotalCalc - totalDiscountCalc + totalTaxCalc;
 
         const subtotal = amountFromForm(formValues.soSubtotal) ?? subtotalCalc;
-        const totalTax = amountFromForm(formValues.soTotalTax) ?? totalTaxCalc;
-        const grandTotal = amountFromForm(formValues.soGrandTotal) ?? grandTotalCalc;
         const currencyLabel = soBpCurrency === "EURO" ? "EURO (€)" : soBpCurrency;
-
-        const roundingEnabled = !!formValues.soRoundingEnabled;
-        const roundingAdjustment = Math.round(grandTotal) - grandTotal;
-        const finalGrandTotal = roundingEnabled ? grandTotal + roundingAdjustment : grandTotal;
 
         const headerDiscountPercentage = parseFloat(formValues.soDiscountPercentage) || 0;
         const headerDiscountAmount = subtotal * (headerDiscountPercentage / 100);
+        const totalDiscount = amountFromForm(formValues.soTotalDiscount) ?? headerDiscountAmount;
+
+        // With rounding on, get_so_items_by_call returns grand_total ALREADY rounded (e.g. 2128.00
+        // for 2127.50), folds the difference into total_tax (278.00 for 277.50) and sends
+        // rounding_rate "0". So the API grand total is used as-is (never rounded again), the tax
+        // row shows the unrounded per-item tax, and the rounding row is whatever is left over —
+        // keeping the summary rows adding up to the grand total. A non-zero rounding_rate from
+        // the backend is used directly when present.
+        const roundingEnabled = !!formValues.soRoundingEnabled;
+        const apiGrandTotal = amountFromForm(formValues.soGrandTotal);
+        const apiRoundingRate = amountFromForm(formValues.soRoundingRate);
+        const hasApiRoundingRate = apiRoundingRate != null && apiRoundingRate !== 0;
+        const totalTax =
+          roundingEnabled && !hasApiRoundingRate
+            ? totalTaxCalc
+            : amountFromForm(formValues.soTotalTax) ?? totalTaxCalc;
+        const unroundedGrandTotal = subtotal - totalDiscount + totalTax;
+        const finalGrandTotal =
+          apiGrandTotal ??
+          (roundingEnabled
+            ? hasApiRoundingRate
+              ? unroundedGrandTotal + apiRoundingRate
+              : Math.round(unroundedGrandTotal)
+            : grandTotalCalc);
+        const roundingAdjustment = roundingEnabled
+          ? hasApiRoundingRate
+            ? apiRoundingRate
+            : Math.round((finalGrandTotal - unroundedGrandTotal) * 100) / 100
+          : 0;
 
         return (
           <div className="so-summary-section">

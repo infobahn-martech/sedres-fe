@@ -37,7 +37,7 @@ export function ViewVesselModal({ showModal, closeModal }) {
   const formatDate = (v) => {
     if (v == null || v === "") return "—";
     const m = moment(v);
-    return m.isValid() ? m.format("DD MMMM YYYY") : String(v);
+    return m.isValid() ? m.format("DD/MM/YYYY") : String(v);
   };
 
   const renderHeader = () => (
@@ -152,7 +152,7 @@ export function ViewVesselModal({ showModal, closeModal }) {
             <div className="view-item">
               <div className="view-label">Created At</div>
               <div className="view-value">
-                {moment(showModal.createdAt).format("DD MMMM YYYY hh:mm a")}
+                {moment(showModal.createdAt).format("DD/MM/YYYY hh:mm a")}
               </div>
             </div>
           </div>

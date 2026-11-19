@@ -203,8 +203,8 @@ export const ALL_DETAIL_SCALAR_FIELD_MAP = [
 ];
 
 export const formatPreviewDate = (date = new Date()) =>
-  new Intl.DateTimeFormat("en-US", {
-    month: "short",
+  new Intl.DateTimeFormat("en-GB", {
+    month: "2-digit",
     day: "2-digit",
     year: "numeric",
     hour: "numeric",

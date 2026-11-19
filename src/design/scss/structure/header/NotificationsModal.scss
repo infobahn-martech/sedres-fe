@@ -267,6 +267,28 @@
           white-space: nowrap;
           font-family: 'Manrope', sans-serif;
         }
+
+        .notification-read-toggle {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 26px;
+          height: 26px;
+          margin-left: auto;
+          padding: 0;
+          border: none;
+          border-radius: 50%;
+          background: transparent;
+          color: var(--text-muted);
+          font-size: 14px;
+          cursor: pointer;
+          transition: background-color 0.2s ease, color 0.2s ease;
+
+          &:hover {
+            background-color: rgba(101, 189, 80, 0.12);
+            color: #65BD50;
+          }
+        }
       }
 
       .notification-message {

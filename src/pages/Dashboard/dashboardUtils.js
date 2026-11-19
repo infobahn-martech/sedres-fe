@@ -27,7 +27,7 @@ export const PERIOD_OPTIONS = [
 export const DEFAULT_PERIOD = { period: "ytd", from: "", to: "" };
 
 export const formatDate = (iso) =>
-  new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 export const uniqueOptions = (values, labelFor = (v) => v) =>
   [...new Set(values)].sort().map((value) => ({ value, label: labelFor(value) }));

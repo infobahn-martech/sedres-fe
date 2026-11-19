@@ -302,9 +302,9 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                   </thead>
                   <tbody>
                     {isLoadingBusinessRules ? (
-                      <tr><td colSpan={10} className="br-table-state">Loading...</td></tr>
+                      <tr className="br-table-state-row"><td colSpan={10} className="br-table-state">Loading...</td></tr>
                     ) : businessRules.length === 0 ? (
-                      <tr><td colSpan={10} className="br-table-state">No business rules found</td></tr>
+                      <tr className="br-table-state-row"><td colSpan={10} className="br-table-state">No business rules found</td></tr>
                     ) : (
                       businessRules.map((rule) => {
                         const ruleId = rule?.business_rule_id ?? rule?.id;

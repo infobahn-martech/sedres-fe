@@ -79,10 +79,10 @@ const formatDueDateTime = (dateStr, timeStr) => {
     const timepart = timeStr || "00:00";
     const parsed = new Date(`${dateStr}T${timepart}:00`);
     if (Number.isNaN(parsed.getTime())) return dateStr;
-    const datePart = parsed.toLocaleDateString(undefined, {
+    const datePart = parsed.toLocaleDateString("en-GB", {
         year: "numeric",
-        month: "short",
-        day: "numeric",
+        month: "2-digit",
+        day: "2-digit",
     });
     return timeStr ? `${datePart} ${timepart}` : datePart;
 };

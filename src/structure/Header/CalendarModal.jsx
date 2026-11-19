@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fi';
 import ToolModal from './ToolModal';
 import { useCalendarStore } from '../../store/calendarStore';
+import DatePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DatePickerField";
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
@@ -146,12 +147,11 @@ function EventForm({ initial, onSave, onDelete, onCancel }) {
         <div className="calendar-form-row">
           <FiCalendar className="calendar-form-icon" />
           <div className="calendar-form-controls">
-            <input
-              type="date"
+            <DatePickerField
               className="calendar-input"
-              value={draft.date}
-              onChange={update('date')}
-              aria-label="Date"
+              dateValue={draft.date}
+              onDateChange={update('date')}
+              placeholder="DD/MM/YYYY"
             />
             <label className="calendar-toggle">
               <input type="checkbox" checked={draft.allDay} onChange={update('allDay')} />

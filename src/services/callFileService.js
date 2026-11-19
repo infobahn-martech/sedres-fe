@@ -36,6 +36,22 @@ const getAllDetailByVesselId = allDetailByVesselId;
 const getAllTransportCoordinators = () => Gateway.get('/call_file/get_all_transport_coordinators');
 const getRequestedServicesSummary = (callId) =>
   Gateway.get(`/call_file/get_requested_services_summary/${encodeURIComponent(String(callId))}`);
+const getServiceCounts = (callId) =>
+  Gateway.get(`/call_file/get_service_counts/${encodeURIComponent(String(callId))}`);
+const getRequestsByService = (callId) =>
+  Gateway.get(`/call_file/get_requests_by_service/${encodeURIComponent(String(callId))}`);
+const getServiceHistory = (callId) =>
+  Gateway.get(`/call_file/get_service_history/${encodeURIComponent(String(callId))}`);
+// `params` (optional), e.g. { saber: "by_sedres" }, are sent as query params.
+const getSaberAttachment = (callId, params) =>
+  Gateway.get(`/call_file/get_saber_attachment/${encodeURIComponent(String(callId))}`, {
+    ...(params && Object.keys(params).length ? { params } : {}),
+  });
+// `params` (optional), e.g. { weather_forecast: "bad_weather" }, are sent as query params.
+const getWeatherMap = (callId, params) =>
+  Gateway.get(`/call_file/get_weather_map/${encodeURIComponent(String(callId))}`, {
+    ...(params && Object.keys(params).length ? { params } : {}),
+  });
 const uploadEmailAttachments = (formData) =>
   Gateway.post('/call_file/upload_email_attachments', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -54,4 +70,9 @@ export default {
   getAllTransportCoordinators,
   uploadEmailAttachments,
   getRequestedServicesSummary,
+  getServiceCounts,
+  getRequestsByService,
+  getServiceHistory,
+  getSaberAttachment,
+  getWeatherMap,
 };

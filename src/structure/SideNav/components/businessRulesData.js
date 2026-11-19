@@ -59,14 +59,10 @@ export const ACTION_GROUP_TYPE_TO_SECTION_ID = {
   copy_values_to_child: 'copy_values',
 };
 
-// Destination-based action groups (move/convert card, recurring create card) — no longer
-// supported by the form, so they are filtered out of the THEN column and dropped when
-// restoring a saved rule.
+// Action groups the form cannot edit, so they are filtered out of the THEN column and dropped when
+// restoring a saved rule. Move the card / Move parent / Move child / Convert subtasks are NOT listed:
+// they are edited by GenericThenActionEditor (target_* ids, guide 5.6) and must be restored.
 export const UNSUPPORTED_ACTION_GROUP_TYPES = [
-  'move_card',
-  'move_parent_card',
-  'move_child_card',
-  'convert_subtasks_to',
   'create_card_recurring',
 ];
 
@@ -111,14 +107,6 @@ export const LIST_UPDATE_MODE_OPTIONS = [
 export const DEADLINE_MODE_OPTIONS = [
   { key: 'relative', label: 'to a relative date' },
   { key: 'absolute', label: 'to an absolute date' },
-];
-
-// WHEN-side comparison for the "Deadline is in/was more than N day(s)" trigger
-// (when_type 'deadline', e.g. "Time-based rule", trigger_type_id 9). No backend
-// catalog for this yet, best-effort fixed set until confirmed against a real save payload.
-export const WHEN_DEADLINE_COMPARISON_OPTIONS = [
-  { key: 'is_in', label: 'is in' },
-  { key: 'was_more_than', label: 'was more than' },
 ];
 
 // Static weekday catalog for the deadline action's "Non-working days" multi-select — no
@@ -182,10 +170,6 @@ export const DUMMY_INVOKE_AUTH_OPTIONS = ['NONE', 'BASIC', 'API_KEY'];
 // only ever send parameters as a URL query string.
 export const INVOKE_METHODS_WITH_BODY = ['POST', 'PUT', 'PATCH', 'DELETE'];
 
-
-// Static role/group pills shown alongside individual users in the "Select
-// Internal Users" modal.
-export const INTERNAL_USER_ROLE_OPTIONS = ['Self', 'Owner', 'Owners', 'Watchers', 'Contributors', 'Reporter', 'Co-owners'];
 
 export const UPDATE_ACTION_OPTIONS = [
   { key: 'add_co_owners', label: 'Add co-owners', field: 'Co-owners' },

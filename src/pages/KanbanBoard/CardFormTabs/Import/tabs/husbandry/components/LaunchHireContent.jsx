@@ -6,6 +6,9 @@ import { FormSection, FormField, FormSelect, FormGroup, PremiumCardHeader, React
 import AttachmentsList from "../../appointment/AttachmentsList";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import CrewSelectionField from "./CrewSelectionField";
+import { manualCrewIdsField, manualCrewIdsFromChange, resolveCrewPayloadIds } from "./crewPayloadIds";
+import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
+import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import useLaunchHireServiceReducer from "@/store/LaunchHireServiceReducer";
 import { buildPickupDateTime } from "@/store/TransportContent";
@@ -51,6 +54,11 @@ const LaunchHireContent = ({
   crewUploadMode = false,
 }) => {
   const callId = formValues.call_id || formValues.callId || formValues.card_call_id || card?.call_id || card?.id;
+  const { errors: fieldErrors, validate, resetValidation } = useRequestEmailCrewValidation(formValues, {
+    requestEmailField: "launchHireRequestEmailFile",
+    crewField: "launchHireSelectedCrew",
+  });
+  const { showSavedLineItems, lineItemsModal } = useServiceLineItemsModal(callId);
   const { launchHireRequests, isLoadingRequests, getLaunchHireRequests, createCrewChangeBooking } = useLaunchHireServiceReducer();
   const [saving, setSaving] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -131,13 +139,10 @@ const LaunchHireContent = ({
       notify("Call ID is required before saving.", "error", "top-center");
       return;
     }
+    if (!validate()) return;
     const requestEmailFile = (formValues.launchHireRequestEmailFile || [])
       .map((a) => a?.file ?? a)
       .find((f) => f instanceof File);
-    if (!requestEmailFile) {
-      notify("Request email file is required.", "error", "top-center");
-      return;
-    }
     if (!formValues.launchHireLocation) {
       notify("Please select a location.", "error", "top-center");
       return;
@@ -148,12 +153,15 @@ const LaunchHireContent = ({
       return;
     }
 
-    const crewIds = Array.isArray(formValues.launchHireSelectedCrew) ? formValues.launchHireSelectedCrew : [];
+    const crewPayload = resolveCrewPayloadIds(
+      formValues.launchHireSelectedCrew,
+      formValues[manualCrewIdsField("launchHireSelectedCrew")]
+    );
     const formData = new FormData();
     formData.append("call_id", callId);
     formData.append("booking_datetime", bookingDatetime);
     formData.append("location", formValues.launchHireLocation);
-    formData.append("crew_change_ids", JSON.stringify(crewIds.map(Number)));
+    formData.append(crewPayload.listKey, JSON.stringify(crewPayload.ids));
     formData.append("request_email", requestEmailFile);
     formData.append("remarks", formValues.launchHireDescription || "");
     (formValues.launchHireDocuments || [])
@@ -163,9 +171,13 @@ const LaunchHireContent = ({
 
     setSaving(true);
     try {
-      await createCrewChangeBooking(formData);
+      const response = await createCrewChangeBooking(formData);
       notify("Launch hire request saved successfully.", "success", "top-center");
+      resetValidation();
+      showSavedLineItems(response);
       resetDraft();
+      setField("launchHireSelectedCrew", []);
+      setField(manualCrewIdsField("launchHireSelectedCrew"), null);
       onLaunchHireSaved?.();
       await getLaunchHireRequests(callId);
     } catch (err) {
@@ -177,6 +189,7 @@ const LaunchHireContent = ({
 
   return (
     <div className="cardform-left-full launchhire-booking" style={{ "--card-color": cardColor }}>
+      {lineItemsModal}
       <FormSection icon={GroupSettingsIcon} title="">
         <div className="pre-arrival-form launchhire-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid">
@@ -190,7 +203,7 @@ const LaunchHireContent = ({
                   titleClassName="crew-pass-request-details-card__title"
                 />
                 <div className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar">
-                  <FormGroup icon="mail" label="Request Email *" accent={LAUNCH_HIRE_ACCENT}>
+                  <FormGroup icon="mail" label="Request Email *" accent={LAUNCH_HIRE_ACCENT} error={fieldErrors.requestEmail}>
                     <FormField>
                       <div className="transport-upload-box">
                         <AttachmentsList
@@ -248,10 +261,14 @@ const LaunchHireContent = ({
                   <CrewSelectionField
                     callId={callId ? String(callId) : ""}
                     selected={formValues.launchHireSelectedCrew || []}
-                    onChange={(ids) => setField("launchHireSelectedCrew", ids)}
+                    onChange={(ids, meta) => {
+                      setField("launchHireSelectedCrew", ids);
+                      setField(manualCrewIdsField("launchHireSelectedCrew"), manualCrewIdsFromChange(meta));
+                    }}
                     accent={LAUNCH_HIRE_ACCENT}
                     onGoToCrew={onGoToCrew}
                     uploadMode={crewUploadMode}
+                    error={fieldErrors.crew}
                   />
 
                   <FormGroup icon="folder" label="Documents" accent={LAUNCH_HIRE_ACCENT}>

@@ -75,7 +75,8 @@ function Departure({
     subject: "Report - Departure",
     message: "",
   });
-  const [isSavingDeparture, setIsSavingDeparture] = useState(false);
+  // Which button started the save + send: "save" (Save button) or "send" (send report icon).
+  const [departureAction, setDepartureAction] = useState(null);
   const reportDraftFromDetailRef = useRef(false);
 
   const resolvedCallId = String(
@@ -442,8 +443,9 @@ function Departure({
     handleChange("departureAdditionalTimeObjects")({ target: { value: next } });
   };
 
-  const handleSaveAndSendReport = async () => {
-    setIsSavingDeparture(true);
+  const handleSaveAndSendReport = async (source = "send") => {
+    if (departureAction) return;
+    setDepartureAction(source);
     try {
       const saveResult = await saveDepartureData();
       if (!saveResult) return;
@@ -459,7 +461,7 @@ function Departure({
         attachments: formValues.departureReportAttachments || [],
       });
     } finally {
-      setIsSavingDeparture(false);
+      setDepartureAction(null);
     }
   };
 
@@ -569,8 +571,8 @@ function Departure({
                     onAttachmentsChange={handleDepartureReportAttachmentsChange}
                     billingEntityId={billingEntityId ?? formValues.mainBillingEntity}
                     onChange={handleReportDraftChange}
-                    onSend={handleSaveAndSendReport}
-                    isSending={isSavingDeparture}
+                    onSend={() => handleSaveAndSendReport("send")}
+                    isSending={departureAction === "send"}
                     isViewOnly={isViewOnly}
                     canSend={canSendReport}
                   />
@@ -578,7 +580,7 @@ function Departure({
               )}
             </div>
           </div>
-          <OperationSaveSection isViewOnly={isViewOnly} onSave={handleSaveAndSendReport} isSaving={isSavingDeparture} />
+          <OperationSaveSection isViewOnly={isViewOnly} onSave={() => handleSaveAndSendReport("save")} isSaving={departureAction === "save"} />
         </div>
       </FormSection>
     </div>

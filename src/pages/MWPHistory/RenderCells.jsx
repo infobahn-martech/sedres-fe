@@ -45,14 +45,14 @@ export const DateFormat = ({ row, selector }) => {
   const value = row?.[selector];
   if (!value) return '—';
   const m = moment(value);
-  return m.isValid() ? m.format('DD MMM YYYY') : '—';
+  return m.isValid() ? m.format('DD/MM/YYYY') : '—';
 };
 
 export const DateTimeFormat = ({ row, selector }) => {
   const value = row?.[selector];
   if (!value) return '—';
   const m = moment(value);
-  return m.isValid() ? m.format('DD MMM YYYY, hh:mm A') : '—';
+  return m.isValid() ? m.format('DD/MM/YYYY, hh:mm A') : '—';
 };
 
 export const RenderText = ({ row, selector }) => {
