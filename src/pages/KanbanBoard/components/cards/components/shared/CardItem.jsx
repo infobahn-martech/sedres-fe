@@ -27,11 +27,13 @@ import {
 } from "@/pages/KanbanBoard/utils/cardDisplayHelpers";
 import { downloadRemoteFile } from "@/shared/utils/utils";
 import {
+  isApprovalReceivedColumnTitle,
   isLamprellUaePoReceivedColumn,
   isLamprellAlgihazPoReceivedColumn,
   isLamprellAlgihazArInvoiceIssuedColumn,
   isLntApprovalReceivedCell,
   isLntApprovalRequestedCell,
+  isSubseaSwimlane,
   isSubseaWorkflow,
   isUploadedToPortalColumnTitle,
 } from "../../../../utils/columnTitles";
@@ -755,7 +757,8 @@ function CardItem({
   /* The tooltip names the document the column takes: the dispatch proof, the SRT, or (L&T) the SCC. */
   const signatureDocumentName = isUploadedToPortalColumnTitle(columnTitle)
     ? "dispatch proof"
-    : SRT_RECEIVED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim())
+    : SRT_RECEIVED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim()) ||
+        (isSubseaSwimlane({ title: laneTitle }) && isApprovalReceivedColumnTitle(columnTitle))
       ? "SRT"
       : "SCC";
   const signatureTooltip = isSignatureMissing
