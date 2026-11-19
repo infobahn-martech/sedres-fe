@@ -5834,7 +5834,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           // Each saved create-cards action is one more card of the same section.
           nextGenericActionValues[String(actionTypeId)] = group.group_type === CREATE_CARDS_GROUP_TYPE
             ? { ...parsed, cards: [...(previous?.cards ?? []), ...parsed.cards] }
-            : parsed;
+            : (previous ? { ...previous, more: [...(previous.more ?? []), parsed] } : parsed);
         });
         return;
       }
@@ -7847,6 +7847,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                                 timeUnitId={v.timeUnitId}
                                 timeUnits={valueTimeUnits}
                                 label={cond.fieldLabel}
+                                defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
                                 onChange={(val) => handleChangeConditionValue(cond.id, v.id, { value: val })}
                                 onTimeUnitChange={(unitId) => handleChangeConditionValue(cond.id, v.id, { timeUnitId: unitId })}
                               />
@@ -7915,6 +7916,9 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                     {section.id === 'generic' && (
                       <GenericThenActionEditor
                         action={section.action}
+                        renderPropertyPicker={(pickerProps) => (
+                          <CardPropertyMatchModal {...pickerProps} triggerTypeId={rule.id} showTimeUnit={false} />
+                        )}
                         defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
                         value={genericActionValues[String(section.action.action_type_id)] ?? EMPTY_GENERIC_ACTION_VALUE}
                         onChange={(next) => setGenericActionValues((prev) => ({ ...prev, [String(section.action.action_type_id)]: next }))}

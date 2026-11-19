@@ -11,8 +11,8 @@ const hasPosition = (position) => Boolean(position.boardId || position.workflowI
 
 // "Move card to / Choose where to move" card of the Move the card THEN action. The target is
 // picked on the Board Minimap; only ids are kept, the names shown here are looked up.
-function MoveTargetAction({ position, defaultBoardId = '', embedded = false, emptyLabel = 'Choose where to move', onChange }) {
-  const [isOpen, setIsOpen] = useState(false);
+function MoveTargetAction({ position, title = 'Move card to', defaultBoardId = '', embedded = false, startOpen = false, emptyLabel = 'Choose where to move', onChange }) {
+  const [isOpen, setIsOpen] = useState(startOpen);
   const [showMinimap, setShowMinimap] = useState(false);
   const [minimapBoardId, setMinimapBoardId] = useState(position.boardId);
 
@@ -85,7 +85,7 @@ function MoveTargetAction({ position, defaultBoardId = '', embedded = false, emp
         <button type="button" className="business-rule-form-action-detail-close" onClick={handleRemove} aria-label="Remove action">
           <FiX size={14} />
         </button>
-        <h5 className="br-create-action-title">Move card to</h5>
+        <h5 className="br-create-action-title">{title}</h5>
         <button
           type="button"
           className="br-create-action-link br-create-action-link--btn"
@@ -108,7 +108,9 @@ MoveTargetAction.propTypes = {
     swimlaneId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   }).isRequired,
   defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  title: PropTypes.string,
   embedded: PropTypes.bool,
+  startOpen: PropTypes.bool,
   emptyLabel: PropTypes.string,
   onChange: PropTypes.func.isRequired,
 };

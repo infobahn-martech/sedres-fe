@@ -6,7 +6,7 @@ export const EMPTY_BOARD_POSITION = { boardId: '', workflowId: '', columnId: '',
 export const NONE_FIELD_CHECKED = '1';
 
 // extraValues: more lines added under one field with AND, sent as repeated field_key + field_value pairs.
-export const EMPTY_GENERIC_ACTION_VALUE = { thenActionId: null, title: '', fields: {}, extraValues: {}, position: EMPTY_BOARD_POSITION, cards: [], noFields: false, relativeConditions: [] };
+export const EMPTY_GENERIC_ACTION_VALUE = { thenActionId: null, title: '', fields: {}, extraValues: {}, position: EMPTY_BOARD_POSITION, cards: [], noFields: false, filterConditions: [], more: [] };
 
 // One card of the recurring "Create cards" action.
 export const EMPTY_CREATE_CARD = { thenActionId: null, title: '', fields: {}, position: EMPTY_BOARD_POSITION };
@@ -46,8 +46,18 @@ const positionFromProperties = (properties) => {
 
 const asProperty = (property_key, property_value) => ({ property_key, property_value, property_value_type: 'string' });
 
-// relative_conditions of a relative-card action (updates guide 2.3): one entry per filled-in filter row.
-const buildRelativeConditions = (rows = []) => rows
+// Which "if <kind> card matches this filter" box an action carries (has_parent_filter /
+// has_child_filter / has_relative_filter in get_trigger_config) and the request key it is sent under.
+const FILTER_KINDS = [
+  { kind: 'parent', flag: 'has_parent_filter', requestKey: 'parent_conditions' },
+  { kind: 'child', flag: 'has_child_filter', requestKey: 'child_conditions' },
+  { kind: 'relative', flag: 'has_relative_filter', requestKey: 'relative_conditions' },
+];
+
+export const getActionFilterKind = (action) => FILTER_KINDS.find((k) => Number(action?.[k.flag]) === 1) ?? null;
+
+// Filter rows of an action: one entry per filled-in row.
+const buildFilterConditions = (rows = []) => rows
   .filter((row) => row.operatorKey)
   .map((row) => {
     const entry = { operator: row.operatorKey, input_value: row.value };
@@ -57,7 +67,7 @@ const buildRelativeConditions = (rows = []) => rows
     return entry;
   });
 
-const parseRelativeConditions = (conditions = []) => conditions.map((c, index) => ({
+const parseFilterConditions = (conditions = []) => conditions.map((c, index) => ({
   id: `relative-filter-saved-${index}`,
   fieldType: c.custom_field_id != null ? 'custom' : 'regular',
   fieldId: c.custom_field_id ?? c.regular_field_id,
@@ -76,7 +86,6 @@ export const buildGenericThenActions = (triggerActions, genericActionValues) => 
     const value = genericActionValues[String(action.action_type_id)];
     if (!value) return;
 
-    const properties = [];
     if (isCreateCardsAction(action)) {
       // One then_action per "Create card" card the user added.
       (value.cards ?? []).forEach((card) => {
@@ -95,31 +104,37 @@ export const buildGenericThenActions = (triggerActions, genericActionValues) => 
       });
       return;
     }
-    Object.entries(value.fields).forEach(([key, fieldValue]) => {
-      if (fieldValue === '' || fieldValue == null) return;
-      if (key.startsWith('custom-')) {
-        properties.push({ custom_field_id: Number(key.slice('custom-'.length)), property_value: fieldValue });
-        return;
-      }
-      properties.push(asProperty('field_key', key));
-      if (fieldValue !== NONE_FIELD_CHECKED) properties.push(asProperty('field_value', fieldValue));
-      (value.extraValues?.[key] ?? []).filter((extra) => extra !== '' && extra != null).forEach((extra) => {
+    // An action can be added again (e.g. Move its parent card to, each with its own filter): the first
+    // instance is the value itself, the others are in value.more.
+    [value, ...(value.more ?? [])].forEach((instance) => {
+      const properties = [];
+      Object.entries(instance.fields).forEach(([key, fieldValue]) => {
+        if (fieldValue === '' || fieldValue == null) return;
+        if (key.startsWith('custom-')) {
+          properties.push({ custom_field_id: Number(key.slice('custom-'.length)), property_value: fieldValue });
+          return;
+        }
         properties.push(asProperty('field_key', key));
-        properties.push(asProperty('field_value', extra));
+        if (fieldValue !== NONE_FIELD_CHECKED) properties.push(asProperty('field_value', fieldValue));
+        (instance.extraValues?.[key] ?? []).filter((extra) => extra !== '' && extra != null).forEach((extra) => {
+          properties.push(asProperty('field_key', key));
+          properties.push(asProperty('field_value', extra));
+        });
       });
-    });
-    Object.entries(POSITION_PROPERTY_KEY).forEach(([stateKey, propertyKey]) => {
-      if (value.position[stateKey]) properties.push(asProperty(propertyKey, value.position[stateKey]));
-    });
+      Object.entries(POSITION_PROPERTY_KEY).forEach(([stateKey, propertyKey]) => {
+        if (instance.position[stateKey]) properties.push(asProperty(propertyKey, instance.position[stateKey]));
+      });
 
-    // An action with no fields at all (Archive cards) is sent as just its action_type_id.
-    const relativeConditions = buildRelativeConditions(value.relativeConditions);
-    if (properties.length === 0 && !value.noFields && relativeConditions.length === 0) return;
-    const entry = { action_type_id: action.action_type_id };
-    if (properties.length > 0) entry.properties = properties;
-    if (relativeConditions.length > 0) entry.relative_conditions = relativeConditions;
-    if (value.thenActionId != null) entry.then_action_id = value.thenActionId;
-    entries.push(entry);
+      // An action with no fields at all (Archive cards) is sent as just its action_type_id.
+      const filterConditions = buildFilterConditions(instance.filterConditions);
+      if (properties.length === 0 && !instance.noFields && filterConditions.length === 0) return;
+      const entry = { action_type_id: action.action_type_id };
+      if (properties.length > 0) entry.properties = properties;
+      const filterKind = getActionFilterKind(action);
+      if (filterKind && filterConditions.length > 0) entry[filterKind.requestKey] = filterConditions;
+      if (instance.thenActionId != null) entry.then_action_id = instance.thenActionId;
+      entries.push(entry);
+    });
   });
   return entries;
 };
@@ -143,6 +158,7 @@ export const parseGenericThenAction = (savedAction, groupType) => {
       }],
     };
   }
+  const savedFilterConditions = FILTER_KINDS.map((k) => savedAction[k.requestKey]).find((list) => Array.isArray(list) && list.length > 0) ?? [];
   const fields = {};
   const extraValues = {};
   const position = { ...EMPTY_BOARD_POSITION };
@@ -183,8 +199,8 @@ export const parseGenericThenAction = (savedAction, groupType) => {
     fields,
     extraValues,
     position,
-    noFields: (savedAction.properties ?? []).length === 0 && (savedAction.relative_conditions ?? []).length === 0,
-    relativeConditions: parseRelativeConditions(savedAction.relative_conditions),
+    noFields: (savedAction.properties ?? []).length === 0 && savedFilterConditions.length === 0,
+    filterConditions: parseFilterConditions(savedFilterConditions),
   };
 };
 
