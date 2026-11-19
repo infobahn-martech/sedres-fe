@@ -418,6 +418,7 @@ export function mapBoardWorkflowFromApi(workflow) {
               card.subtask_status != null && String(card.subtask_status).trim() !== ""
                 ? String(card.subtask_status).trim()
                 : null,
+            swimlaneTitle: swimlanes[laneKey]?.title,
             taskCards: mapTaskCardsFromApi(card.task_cards),
             raw: card,
             cardSource: "api",
