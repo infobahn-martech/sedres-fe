@@ -6407,11 +6407,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     }
   };
 
-  // Removes an entire property box (all of its value rows).
-  const handleRemoveCondition = (id) => {
-    setConditions((prev) => prev.filter((c) => c.id !== id));
-  };
-
   // Clears every AND-column addition (custom property boxes and any extra "Board is"
   // rows) back to their untouched default state, same as the Create/Link "Clear all"
   // footers. The remaining single "Board is" row keeps its selected board — clearing it
@@ -6469,7 +6464,14 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         if (c.id !== boxId || c.category === 'time_unit') return c;
         const rowIndex = c.values.findIndex((v) => v.id === valueId);
         if (rowIndex === -1) return c;
-        const newValue = { ...c.values[rowIndex], id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` };
+        // A board-structure value (Position, Board ...) is a pick of its own: OR opens a new empty row
+        // instead of copying the pick.
+        const isBoardStructure = fieldDetailsByKey[`${c.fieldType}-${c.fieldId}`]?.field_type === 'board_structure';
+        const newValue = {
+          ...c.values[rowIndex],
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          ...(isBoardStructure ? { value: '' } : {}),
+        };
         const nextValues = [...c.values];
         nextValues.splice(rowIndex + 1, 0, newValue);
         return { ...c, values: nextValues };
@@ -7736,15 +7738,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
                   return (
                     <div key={cond.id} className="business-rule-form-filter-row business-rule-form-filter-row--multi">
-                      <button
-                        type="button"
-                        className="business-rule-form-filter-row-close"
-                        onClick={() => handleRemoveCondition(cond.id)}
-                        aria-label="Remove condition"
-                      >
-                        <FiX size={14} />
-                      </button>
-
                       <div className="business-rule-form-condition-operator-group">
                         <button
                           type="button"
