@@ -88,6 +88,44 @@ function flattenStageColumns(cols, parentColumnId = null, parentTitle = null) {
 }
 
 /**
+ * Flattens get_full_board's per-card `task_cards` (grouped by card type) into one list of
+ * child task cards, oldest first, so the card can render them as a left→right task flow.
+ * @param {unknown} groups
+ * @returns {Array<{ id: string, title: string, boardId: string, workflowId: string, columnId: string, columnName: string, completedDate: string, dueDate: string, assignedToName: string, typeName: string, typeColor: string, typeIcon: string }>}
+ */
+function mapTaskCardsFromApi(groups) {
+  if (!Array.isArray(groups)) return [];
+  const str = (v) => (v != null && String(v).trim() !== "" ? String(v).trim() : "");
+  const out = [];
+  const seen = new Set();
+  for (const group of groups) {
+    for (const t of safeArray(group?.cards)) {
+      const id = str(t?.card_id);
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      out.push({
+        id,
+        title: str(t.title) || str(t.task_name) || `Task #${id}`,
+        boardId: str(t.board_id),
+        workflowId: str(t.workflow_id),
+        columnId: str(t.column_id),
+        columnName: str(t.column_name),
+        completedDate: str(t.completed_date),
+        dueDate: str(t.due_date),
+        createdDate: str(t.created_date),
+        assignedToName: str(t.assigned_to_name),
+        typeName: str(group?.type_name),
+        typeColor: str(group?.color_code),
+        typeIcon: str(group?.icon_name),
+      });
+    }
+  }
+  return out.sort(
+    (a, b) => a.createdDate.localeCompare(b.createdDate) || Number(a.id) - Number(b.id)
+  );
+}
+
+/**
  * Maps one workflow object from GET kanban_board/get_full_board/{board_id} into the FE board shape.
  * @param {object} workflow - single element of response.data
  * @returns {object|null}
@@ -380,6 +418,7 @@ export function mapBoardWorkflowFromApi(workflow) {
               card.subtask_status != null && String(card.subtask_status).trim() !== ""
                 ? String(card.subtask_status).trim()
                 : null,
+            taskCards: mapTaskCardsFromApi(card.task_cards),
             raw: card,
             cardSource: "api",
             // Task Card modal (kanban_card/create_task_card) cards always live under the
