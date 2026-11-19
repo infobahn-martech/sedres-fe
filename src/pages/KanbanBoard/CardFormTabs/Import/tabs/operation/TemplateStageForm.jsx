@@ -439,9 +439,34 @@ function TemplateStageForm({
     (field) => !HIDDEN_FIELD_TYPES.has(getTemplateFieldType(field)) && isFieldVisible(field)
   );
 
+  // Bad Weather highlights the time objects (date / time fields) for a re-check, as in the legacy
+  // Pre Arrival form. A field drops the highlight once the user edits it; re-selecting Bad Weather
+  // highlights them all again.
+  const weatherForecastField = triggerFields.weather_forecast;
+  const isBadWeatherSelected = Boolean(
+    weatherForecastField && isBadWeatherValue(getValue(weatherForecastField.field_id))
+  );
+  const [recheckedTimeObjectIds, setRecheckedTimeObjectIds] = useState(() => new Set());
+  const isTimeObjectField = (field) => ["datetime", "timeobject"].includes(getTemplateFieldType(field));
+  const shouldHighlightTimeObject = (field) =>
+    isBadWeatherSelected && isTimeObjectField(field) && !recheckedTimeObjectIds.has(String(field.field_id));
+
   const setFieldValue = (fieldId, value) => {
     setEdits((prev) => ({ ...prev, [fieldId]: value }));
     clearError(fieldId);
+    if (weatherForecastField && String(fieldId) === String(weatherForecastField.field_id)) {
+      setRecheckedTimeObjectIds(new Set());
+      if (isBadWeatherValue(value)) {
+        notify("Bad weather selected. Please re-check ETA and clearance time objects.", "warning");
+      }
+      return;
+    }
+    if (isBadWeatherSelected) {
+      const field = fields.find((item) => String(item.field_id) === String(fieldId));
+      if (field && isTimeObjectField(field)) {
+        setRecheckedTimeObjectIds((prev) => new Set(prev).add(String(fieldId)));
+      }
+    }
   };
 
   const setFieldFile = (fieldId, file) => {
@@ -1104,7 +1129,13 @@ function TemplateStageForm({
                     const additionalTimeObjectId = getAdditionalTimeObjectId(field);
                     const showRemove = Boolean(additionalTimeObjectId) && !isViewOnly && canDeleteTimeObject;
                     return (
-                    <FormField key={field.field_id} label={showRemove ? undefined : fieldLabel}>
+                    <FormField
+                      key={field.field_id}
+                      label={showRemove ? undefined : fieldLabel}
+                      className={
+                        shouldHighlightTimeObject(field) ? "prearrival-timeobject-highlight is-warning" : ""
+                      }
+                    >
                       {showRemove && (
                         <div className="operation-additional-time-object-label-row">
                           <label>{fieldLabel}</label>
