@@ -4,6 +4,7 @@ import { FiFilePlus, FiFileText, FiClipboard, FiTool, FiCheck, FiX, FiChevronLef
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import "@/design/scss/salesOrder.scss";
+import "./salesOrderListScroll.scss";
 import { PORT_OPTIONS_WITH_ID } from "@/shared/constants/ports";
 import salesOrderService from "@/services/salesOrderService";
 import billingEntityService from "@/services/billingEntityService";
@@ -622,12 +623,6 @@ const SalesOrderList = ({
     setSoActionState(SO_ACTION_STATE_DEFAULT);
   }, [callId, soActionStateResetToken]);
 
-  // daStatusRefreshToken is bumped by onDaStatusRefresh after every action below, so the
-  // authoritative button_state is refetched once per action instead of being called by hand.
-  useEffect(() => {
-    if (!canViewActionColumn) return;
-    fetchSoActionState();
-  }, [canViewActionColumn, callId, daStatusRefreshToken, soActionStateResetToken, fetchSoActionState]);
 
   // The header action button reflects and acts on the DA record's REAL current stage.
   //
@@ -729,6 +724,16 @@ const SalesOrderList = ({
     isOperatorSrtApprovalFlow ||
     isOperatorSrtReceivedFlow;
   const srtActiveUploadFields = isSrtResubmit ? srtUploadFields.slice(0, 1) : srtUploadFields;
+  // The Operator board is not a DA board (isDaContext is false there), so the Subsea 7 Approval Requested and
+  // Approval Received flows open the header button and its modals on their own, for any user, like their Action column.
+  const isOperatorSrtFlow = isOperatorSrtApprovalFlow || isOperatorSrtReceivedFlow;
+  const isSrtApprovalContext = isDaVerifyContext || isOperatorSrtFlow;
+  // daStatusRefreshToken is bumped by onDaStatusRefresh after every action below, so the
+  // authoritative button_state is refetched once per action instead of being called by hand.
+  useEffect(() => {
+    if (!canViewActionColumn && !isOperatorSrtFlow) return;
+    fetchSoActionState();
+  }, [canViewActionColumn, isOperatorSrtFlow, callId, daStatusRefreshToken, soActionStateResetToken, fetchSoActionState]);
   // Once the PR email is sent the Zamil Marine card sits on "PR Received", where the documents are uploaded.
   const isAtPrReceivedColumn =
     isZamilMarineWorkflowCard &&
@@ -2716,7 +2721,7 @@ const SalesOrderList = ({
             onPageChange={setCurrentPage}
             compact
           />
-          {isDaVerifyContext &&
+          {isSrtApprovalContext &&
             // Hard floor: the DA header action button must never appear before the card has
             // physically reached column 4 ("SO Sent for approval") — steps 1-3 show nothing at
             // all, regardless of what the granular DA status-timeline fetch reports (that data
@@ -3351,7 +3356,7 @@ const SalesOrderList = ({
             </div>
           )}
 
-          <div className="table-wrapper sales-order-table-container" style={{ position: "relative" }}>
+          <div className="table-wrapper sales-order-table-container sales-order-list-scroll" style={{ position: "relative" }}>
             {isLoadingSalesOrder && (
               <div
                 className="so-loading-overlay"
@@ -3790,7 +3795,7 @@ const SalesOrderList = ({
 
       {/* SO Approval email — opened from the header action button when the DA's real current
           stage is the "To be sent for X approval" stage (see isSoApprovalDaStatus). */}
-      {isDaVerifyContext && (
+      {isSrtApprovalContext && (
         <SoApprovalEmailModal
           show={showSoApprovalEmailModal}
           onClose={() => setShowSoApprovalEmailModal(false)}
@@ -3856,7 +3861,7 @@ const SalesOrderList = ({
 
       {/* Upload Approved SO — shown once the SO is approved (POSH, SAIPEM, "Send for SO Approval" workflows): the approved SO and the
           SO email, via da/da_upload_so_approval_proof. */}
-      {isDaVerifyContext && (
+      {isSrtApprovalContext && (
         <SeApprovalUploadModal
           show={showApprovedSoUploadModal}
           onClose={handleCloseApprovedSoUploadModal}
