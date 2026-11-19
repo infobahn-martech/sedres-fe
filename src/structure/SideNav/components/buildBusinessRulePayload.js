@@ -1,6 +1,6 @@
 import { ACTION_GROUP_TYPE_TO_SECTION_ID } from './businessRulesData';
 import { buildCreateCardThenActions, buildGenericThenActions } from './genericThenAction';
-import { getOperatorId, getOperatorKey, operatorTakesValue, operatorNeedsTimeUnit } from './businessRuleFieldUtils';
+import { getOperatorId, getOperatorKey, operatorTakesValue, operatorNeedsTimeUnit, getDateFieldEmptyOperatorKey } from './businessRuleFieldUtils';
 
 const findActionTypeId = (triggerActions, sectionId) =>
   triggerActions.find((a) => ACTION_GROUP_TYPE_TO_SECTION_ID[a.group_type] === sectionId)?.action_type_id ?? null;
@@ -33,7 +33,15 @@ const buildConditions = (formState, ctx) => {
 
   conditions.forEach((cond) => {
     cond.values.forEach((row, index) => {
-      const operator = findOperator(fieldDetailsByKey, cond.fieldType, cond.fieldId, cond.operatorId);
+      const selectedOperator = findOperator(fieldDetailsByKey, cond.fieldType, cond.fieldId, cond.operatorId);
+      // Deadline / Last moved left on their empty state ("Not Set" / "Not Moved") are saved as the
+      // field's is_empty operator, so the empty choice is not lost as "is" with no value.
+      const fieldDetails = fieldDetailsByKey[`${cond.fieldType}-${cond.fieldId}`];
+      const emptyOperatorKey = getDateFieldEmptyOperatorKey(fieldDetails);
+      const emptyOperator = emptyOperatorKey && getOperatorKey(selectedOperator) === 'is' && String(row.value ?? '') === ''
+        ? (fieldDetails.operators ?? []).find((op) => getOperatorKey(op) === emptyOperatorKey)
+        : null;
+      const operator = emptyOperator ?? selectedOperator;
       const entry = {
         operator: getOperatorKey(operator) ?? operator?.operator_label ?? null,
         connector: index === 0 ? 'AND' : row.joinWord,
@@ -197,6 +205,23 @@ const buildWhenFields = (formState, ctx) => {
     const recurrenceField = buildRecurrenceWhenField(formState);
     if (recurrenceField) entries.push(recurrenceField);
   }
+  if (ctx?.triggerConfig?.when_type === 'deadline') {
+    const deadline = formState.whenDeadline;
+    const operator = findOperator(ctx.fieldDetailsByKey, deadline?.fieldType, deadline?.fieldId, deadline?.operatorId);
+    if (operator) {
+      // Shape per Business_rule_frontend_guide.md 3.4: a custom field sends custom_field_id
+      // with regular_field_id null; time_object_id is only valid on the Deadline row.
+      const entry = deadline.fieldType === 'custom'
+        ? { regular_field_id: null, custom_field_id: deadline.fieldId }
+        : { regular_field_id: deadline.fieldId, custom_field_id: null };
+      entry.operator = getOperatorKey(operator);
+      if (operatorTakesValue(operator)) entry.input_value = deadline.value;
+      if (operatorTakesValue(operator) && deadline.timeUnitId) entry.time_unit_id = Number(deadline.timeUnitId);
+      if (deadline.timeObjectId) entry.time_object_id = Number(deadline.timeObjectId);
+      entry.connector = 'OR';
+      entries.push(entry);
+    }
+  }
   return entries;
 };
 
@@ -280,7 +305,7 @@ const buildThenActions = (formState, ctx) => {
   // marks it as a subtask.
   createActions.filter(isCreateSubtaskAction).forEach((action) => {
     const properties = [{ property_key: 'relation_type', property_value: 'subtask', property_value_type: 'string' }];
-    const entry = withThenActionId({ action_type_id: createActionTypeId, properties }, action);
+    const entry = withThenActionId({ action_type_id: createActionTypeId ?? action.actionTypeId ?? null, properties }, action);
     // create_subtask_id (referencing the owner/deadline/description record already saved
     // server-side via saveCreateSubtaskSettings) is a top-level sibling field on the
     // then_action, confirmed from a real get_business_rule_by_id response — that action's
@@ -342,7 +367,7 @@ const buildThenActions = (formState, ctx) => {
         property_value_type: 'string',
       });
     }
-    thenActions.push(withThenActionId({ action_type_id: updateActionTypeId, properties }, action));
+    thenActions.push(withThenActionId({ action_type_id: updateActionTypeId ?? action.actionTypeId ?? null, properties }, action));
   });
 
   // Link card — a single then_actions entry for the whole section; link_card is fanned
@@ -368,7 +393,10 @@ const buildThenActions = (formState, ctx) => {
         linkCard.push(entry);
       });
     });
-    thenActions.push({ action_type_id: findActionTypeId(triggerActions, 'link'), link_card: linkCard });
+    thenActions.push({
+      action_type_id: findActionTypeId(triggerActions, 'link') ?? linkActions.find((a) => a.actionTypeId != null)?.actionTypeId ?? null,
+      link_card: linkCard,
+    });
   }
 
   // Update related (parent/child) card fields: skipped. Those field chips have no value
@@ -391,12 +419,12 @@ const buildThenActions = (formState, ctx) => {
   // (action_type_id 2 and 9, branch b35, 2026-07-25).
   const notifyActionTypeId = findActionTypeId(triggerActions, 'notify');
   notifyActions.forEach((action) => {
-    thenActions.push(withThenActionId({ action_type_id: notifyActionTypeId, notification_id: action.notification_id }, action));
+    thenActions.push(withThenActionId({ action_type_id: notifyActionTypeId ?? action.actionTypeId ?? null, notification_id: action.notification_id }, action));
   });
 
   const invokeActionTypeId = findActionTypeId(triggerActions, 'invoke');
   invokeActions.forEach((action) => {
-    thenActions.push(withThenActionId({ action_type_id: invokeActionTypeId, web_service_id: action.webServiceId }, action));
+    thenActions.push(withThenActionId({ action_type_id: invokeActionTypeId ?? action.actionTypeId ?? null, web_service_id: action.webServiceId }, action));
   });
 
   // Execute at — Recurring create cards' schedule, confirmed against a real documented

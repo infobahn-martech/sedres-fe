@@ -59,14 +59,10 @@ export const ACTION_GROUP_TYPE_TO_SECTION_ID = {
   copy_values_to_child: 'copy_values',
 };
 
-// Destination-based action groups (move/convert card, recurring create card) — no longer
-// supported by the form, so they are filtered out of the THEN column and dropped when
-// restoring a saved rule.
+// Action groups the form cannot edit, so they are filtered out of the THEN column and dropped when
+// restoring a saved rule. Move the card / Move parent / Move child / Convert subtasks are NOT listed:
+// they are edited by GenericThenActionEditor (target_* ids, guide 5.6) and must be restored.
 export const UNSUPPORTED_ACTION_GROUP_TYPES = [
-  'move_card',
-  'move_parent_card',
-  'move_child_card',
-  'convert_subtasks_to',
   'create_card_recurring',
 ];
 
