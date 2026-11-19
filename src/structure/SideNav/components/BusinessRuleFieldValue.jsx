@@ -9,11 +9,12 @@ import {
   BETWEEN_SEPARATOR,
   NOT_SET_LABEL,
   fieldTakesValue,
+  fieldNeedsTimeUnit,
   getDateFieldEmptyLabel,
+  getDatePeriods,
   isYesNoOptions,
   joinMultiValue,
   operatorIsBetween,
-  operatorNeedsTimeUnit,
   operatorTakesValue,
   splitMultiValue,
 } from './businessRuleFieldUtils';
@@ -54,7 +55,7 @@ const getOptions = (details, masterOptionsByKey) => {
 };
 
 // One control for one value, picked by field_type only (guide 1.2).
-function ValueControl({ details, options, value, onChange, ariaLabel }) {
+function ValueControl({ details, operator, options, value, onChange, ariaLabel }) {
   const fieldType = details?.field_type;
   const [isPickingDate, setIsPickingDate] = useState(false);
 
@@ -105,19 +106,38 @@ function ValueControl({ details, options, value, onChange, ariaLabel }) {
 
   // Deadline / Last moved conditions: read "Not Set v" / "Not Moved v" until a date is chosen
   // from the same list.
+  // Under is / is not a date field also offers its periods (Today, This week ...): the period key is
+  // the value, or a specific date picked with "Select date".
   const dateEmptyLabel = getDateFieldEmptyLabel(details);
-  if (dateEmptyLabel) {
-    const hasDate = String(value ?? '') !== '' || isPickingDate;
+  const periods = fieldType === 'date' || fieldType === 'datetime' ? getDatePeriods(details, operator) : [];
+  if (dateEmptyLabel || periods.length > 0) {
+    const periodKeys = periods.map((p) => String(p.option_value));
+    const currentValue = String(value ?? '');
+    const isPeriodValue = periodKeys.includes(currentValue);
+    const hasDate = (currentValue !== '' && !isPeriodValue) || isPickingDate;
+    const emptyLabel = dateEmptyLabel ?? SELECT_DATE_LABEL;
+    const dropdownOptions = [
+      ...(dateEmptyLabel ? [{ value: '', label: dateEmptyLabel }] : []),
+      ...periods.map((p) => ({ value: String(p.option_value), label: p.option_label })),
+      { value: SELECT_DATE_VALUE, label: SELECT_DATE_LABEL },
+    ];
+    let dropdownValue = '';
+    if (isPeriodValue) dropdownValue = currentValue;
+    else if (hasDate) dropdownValue = SELECT_DATE_VALUE;
     return (
       <div className="d-flex flex-column gap-2">
         <InlineTextDropdown
-          value={hasDate ? SELECT_DATE_VALUE : ''}
-          options={[{ value: '', label: dateEmptyLabel }, { value: SELECT_DATE_VALUE, label: SELECT_DATE_LABEL }]}
-          placeholder={dateEmptyLabel}
+          value={dropdownValue}
+          options={dropdownOptions}
+          placeholder={emptyLabel}
           triggerClassName="business-rule-form-condition-label-btn br-condition-value-text"
           onChange={(next) => {
             setIsPickingDate(next === SELECT_DATE_VALUE);
-            if (next === '') onChange('');
+            if (next === SELECT_DATE_VALUE) {
+              if (isPeriodValue) onChange('');
+              return;
+            }
+            onChange(next);
           }}
         />
         {hasDate && (
@@ -184,6 +204,7 @@ function ValueControl({ details, options, value, onChange, ariaLabel }) {
 
 ValueControl.propTypes = {
   details: PropTypes.object,
+  operator: PropTypes.object,
   options: PropTypes.array.isRequired,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onChange: PropTypes.func.isRequired,
@@ -206,11 +227,18 @@ function BusinessRuleFieldValue({
     if (masterKey) getMasterOptions(masterKey);
   }, [masterKey, getMasterOptions]);
 
+  // A number + unit row opens on the first unit (days), so a typed number is never saved without one.
+  const needsUnit = fieldNeedsTimeUnit(details, operator) && fieldTakesValue(details) && operatorTakesValue(operator);
+  const firstUnitId = timeUnits[0]?.time_unit_id;
+  useEffect(() => {
+    if (needsUnit && String(timeUnitId ?? '') === '' && firstUnitId != null) onTimeUnitChange(String(firstUnitId));
+  }, [needsUnit, timeUnitId, firstUnitId]);
+
   if (!fieldTakesValue(details) || !operatorTakesValue(operator)) return null;
 
   const options = getOptions(details, masterOptionsByKey);
 
-  if (operatorNeedsTimeUnit(operator)) {
+  if (fieldNeedsTimeUnit(details, operator)) {
     return (
       <div className="d-flex align-items-center gap-2">
         <input
@@ -259,7 +287,7 @@ function BusinessRuleFieldValue({
   }
 
   return (
-    <ValueControl details={details} options={options} value={value} ariaLabel={label} onChange={onChange} />
+    <ValueControl details={details} operator={operator} options={options} value={value} ariaLabel={label} onChange={onChange} />
   );
 }
 

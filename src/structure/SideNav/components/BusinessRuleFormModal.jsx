@@ -6136,30 +6136,36 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     return () => document.removeEventListener('mousedown', onDocMouseDown);
   }, [openUpdateNonWorkingActionId]);
 
-  // A trigger whose default_conditions carry Position (the moved triggers) needs it in AND: the
-  // backend rejects the rule without it, so the row is added up front like the Board row.
+  // Every default_conditions entry of the trigger other than Board (which has its own row above) is
+  // added to AND up front, whatever the field (Position on the moved triggers, Task, ...): the
+  // backend rejects the rule without the required ones. Their value box comes from the field's details.
   useEffect(() => {
     if (!show || isEditMode || positionDefaultAppliedRef.current) return;
     if (!triggerConfig || Number(triggerConfig.trigger_type_id) !== Number(rule?.id)) return;
-    const positionDefault = (triggerConfig.default_conditions ?? [])
-      .find((c) => String(c.field_label ?? '').trim().toLowerCase() === 'position');
-    const fieldId = positionDefault?.regular_field_id ?? positionDefault?.field_id;
-    if (fieldId == null) return;
+    const extraDefaults = (triggerConfig.default_conditions ?? [])
+      .filter((c) => String(c.field_label ?? '').trim().toLowerCase() !== 'board')
+      .map((c) => ({ ...c, fieldId: c.regular_field_id ?? c.field_id }))
+      .filter((c) => c.fieldId != null);
     positionDefaultAppliedRef.current = true;
-    const key = `regular-${fieldId}`;
-    setConditions((prev) => (prev.some((c) => c.fieldKey === key) ? prev : [...prev, {
-      id: `cond-default-${fieldId}`,
-      fieldLabel: positionDefault.field_label,
-      fieldKey: key,
-      category: 'regular',
-      fieldType: 'regular',
-      fieldId,
-      valueType: null,
-      operatorId: '',
-      desiredOperatorLabel: '',
-      values: [{ id: `cond-default-val-${fieldId}`, conditionId: null, value: '', timeUnitId: '', joinWord: 'OR' }],
-    }]));
-    if (fieldDetailsByKey[key] === undefined) getFieldDetails('regular', fieldId);
+    if (extraDefaults.length === 0) return;
+    setConditions((prev) => {
+      const missing = extraDefaults.filter((c) => !prev.some((p) => p.fieldKey === `regular-${c.fieldId}`));
+      return [...prev, ...missing.map((c) => ({
+        id: `cond-default-${c.fieldId}`,
+        fieldLabel: c.field_label,
+        fieldKey: `regular-${c.fieldId}`,
+        category: 'regular',
+        fieldType: 'regular',
+        fieldId: c.fieldId,
+        valueType: null,
+        operatorId: '',
+        desiredOperatorLabel: '',
+        values: [{ id: `cond-default-val-${c.fieldId}`, conditionId: null, value: '', timeUnitId: '', joinWord: 'OR' }],
+      }))];
+    });
+    extraDefaults.forEach((c) => {
+      if (fieldDetailsByKey[`regular-${c.fieldId}`] === undefined) getFieldDetails('regular', c.fieldId);
+    });
   }, [show, isEditMode, triggerConfig, rule?.id]);
 
   useEffect(() => {
@@ -9412,7 +9418,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                         </button>
 
                         {updateRelatedFilterLabel && (
-                          <div>
+                          <div className="br-related-filter">
                             <p className="business-rule-form-when-fields-header">if {updateRelatedFilterLabel} card matches this filter</p>
                             {(action.filterProperties ?? []).map((prop) => (
                               <div key={prop.id} className="business-rule-form-action-chip">
@@ -9473,7 +9479,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                           Add new field
                         </button>
 
-                        <div>
+                        <div className="br-related-filter">
                           <p className="business-rule-form-when-fields-header">if {copyValuesFilterLabel} card matches this filter</p>
                           {(action.filterProperties ?? []).map((prop) => (
                             <div key={prop.id} className="business-rule-form-action-chip">

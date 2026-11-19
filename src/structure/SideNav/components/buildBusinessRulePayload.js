@@ -1,6 +1,6 @@
 import { ACTION_GROUP_TYPE_TO_SECTION_ID } from './businessRulesData';
 import { buildCreateCardThenActions, buildGenericThenActions } from './genericThenAction';
-import { getOperatorId, getOperatorKey, operatorTakesValue, operatorNeedsTimeUnit, getDateFieldEmptyOperatorKey } from './businessRuleFieldUtils';
+import { getOperatorId, getOperatorKey, operatorTakesValue, fieldNeedsTimeUnit, fieldTakesValue, getDateFieldEmptyOperatorKey } from './businessRuleFieldUtils';
 
 const findActionTypeId = (triggerActions, sectionId) =>
   triggerActions.find((a) => ACTION_GROUP_TYPE_TO_SECTION_ID[a.group_type] === sectionId)?.action_type_id ?? null;
@@ -46,8 +46,8 @@ const buildConditions = (formState, ctx) => {
         operator: getOperatorKey(operator) ?? operator?.operator_label ?? null,
         connector: index === 0 ? 'AND' : row.joinWord,
       };
-      if (operatorTakesValue(operator)) entry.input_value = row.value;
-      if (operatorNeedsTimeUnit(operator) && row.timeUnitId) entry.time_unit_id = Number(row.timeUnitId);
+      if (fieldTakesValue(fieldDetails) && operatorTakesValue(operator)) entry.input_value = row.value;
+      if (fieldNeedsTimeUnit(fieldDetails, operator) && row.timeUnitId) entry.time_unit_id = Number(row.timeUnitId);
       // A value row restored from an existing rule carries the backend's own condition_id
       // (see the edit-mode routing effect in BusinessRuleFormModal.jsx) — sending it back
       // lets an update target that exact row instead of the whole condition list being

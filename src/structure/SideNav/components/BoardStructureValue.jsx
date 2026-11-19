@@ -224,7 +224,7 @@ function BoardStructureValue({ level, value, onChange }) {
     <div className="d-flex flex-column gap-2 flex-fill w-100">
       <button
         type="button"
-        className="business-rule-form-condition-label-btn br-advanced-schedule-label"
+        className="business-rule-form-condition-label-btn br-advanced-schedule-label text-start"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
       >

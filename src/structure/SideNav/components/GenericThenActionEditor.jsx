@@ -5,6 +5,7 @@ import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import BusinessRuleFieldValue from './BusinessRuleFieldValue';
 import MoveTargetAction from './MoveTargetAction';
 import ThenFieldPickerModal from './ThenFieldPickerModal';
+import RelativeFilterBox from './RelativeFilterBox';
 import CreateCardActionCard from './CreateCardActionCard';
 import '../../../design/scss/business-rule-generic-action.scss';
 import { EMPTY_CREATE_CARD, NONE_FIELD_CHECKED, getGenericFieldKey, isCreateCardsAction, isCustomGenericField } from './genericThenAction';
@@ -16,7 +17,7 @@ const OPTION_FIELD_TYPES = ['dropdown', 'radio', 'multiselect', 'checkbox'];
 // position (Move the card) draws its own "Move card to" card; any other action starts as an
 // "Add new action" link that opens the common field picker, and every picked field becomes
 // its own card, like the Link the card section.
-function GenericThenActionEditor({ action, value, defaultBoardId, onChange }) {
+function GenericActionFields({ action, value, defaultBoardId, onChange }) {
   const { thenActionFieldsByType, getThenActionFieldsByType, fieldDetailsByKey, getFieldDetails } = useBusinessRuleReducer((s) => s);
   const entry = thenActionFieldsByType[String(action.action_type_id)];
   const [showFieldPicker, setShowFieldPicker] = useState(false);
@@ -40,8 +41,31 @@ function GenericThenActionEditor({ action, value, defaultBoardId, onChange }) {
 
   const hasBoardPosition = Number(action.has_board_position) === 1;
 
+  // An action with no fields at all (e.g. Archive cards) has nothing to fill in: adding it is the choice.
   if (fields.length === 0 && !hasBoardPosition) {
-    return <div className="br-property-picker-empty">No properties available.</div>;
+    if (!value.noFields) {
+      return (
+        <button type="button" className="business-rule-form-add-link" onClick={() => onChange({ ...value, noFields: true })}>
+          <FiPlus size={14} aria-hidden />
+          Add new action
+        </button>
+      );
+    }
+    return (
+      <div className="br-link-card">
+        <button
+          type="button"
+          className="business-rule-form-action-detail-close"
+          onClick={() => onChange({ ...value, noFields: false })}
+          aria-label={`Remove ${action.action_name}`}
+        >
+          <FiX size={14} />
+        </button>
+        <div className="br-link-card-header">
+          <span className="br-sticker-action-label">{action.action_name}</span>
+        </div>
+      </div>
+    );
   }
 
   const setField = (key, next) => onChange({ ...value, fields: { ...value.fields, [key]: next } });
@@ -217,18 +241,43 @@ function GenericThenActionEditor({ action, value, defaultBoardId, onChange }) {
   );
 }
 
-GenericThenActionEditor.propTypes = {
+const editorPropTypes = {
   action: PropTypes.shape({
     action_type_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    action_name: PropTypes.string,
     has_board_position: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    has_relative_filter: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   }).isRequired,
   value: PropTypes.shape({
     thenActionId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     fields: PropTypes.object,
+    noFields: PropTypes.bool,
     position: PropTypes.object,
+    relativeConditions: PropTypes.array,
   }).isRequired,
   defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onChange: PropTypes.func.isRequired,
 };
+
+GenericActionFields.propTypes = editorPropTypes;
+
+// The action's own fields, then (relative actions, has_relative_filter = 1) the filter box that
+// limits which relative cards the action applies to.
+function GenericThenActionEditor({ action, value, defaultBoardId, onChange }) {
+  return (
+    <div className="d-flex flex-column gap-3">
+      <GenericActionFields action={action} value={value} defaultBoardId={defaultBoardId} onChange={onChange} />
+      {Number(action.has_relative_filter) === 1 && (
+        <RelativeFilterBox
+          label="if relative card matches this filter"
+          rows={value.relativeConditions ?? []}
+          onChange={(relativeConditions) => onChange({ ...value, relativeConditions })}
+        />
+      )}
+    </div>
+  );
+}
+
+GenericThenActionEditor.propTypes = editorPropTypes;
 
 export default GenericThenActionEditor;
