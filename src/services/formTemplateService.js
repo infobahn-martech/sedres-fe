@@ -4,8 +4,14 @@ const getFieldTypes = () => Gateway.get('/form_template/field_types');
 
 const getMasterLookups = () => Gateway.get('/form_template/master_lookups');
 
-const getSystemBindings = (callTypeId) =>
-  Gateway.get('/form_template/system_bindings', { params: { call_type_id: callTypeId } });
+// entity_id (billing entity) is optional — omitted when none is selected.
+const getSystemBindings = (callTypeId, entityId) => {
+  const params = { call_type_id: callTypeId };
+  if (entityId !== undefined && entityId !== null && String(entityId).trim() !== '') {
+    params.entity_id = entityId;
+  }
+  return Gateway.get('/form_template/system_bindings', { params });
+};
 
 const getCallTypes = () => Gateway.get('/calltype');
 

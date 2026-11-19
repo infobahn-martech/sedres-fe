@@ -49,10 +49,10 @@ const useFormTemplateReducer = create((set) => ({
   // System bindings depend on the call type, so they're returned to the caller
   // (the template builder keeps them per call type) rather than cached globally.
   // Resolves to null on failure.
-  getSystemBindings: async ({ callTypeId }) => {
+  getSystemBindings: async ({ callTypeId, entityId }) => {
     try {
       set({ isLoadingSystemBindings: true });
-      const { data } = await formTemplateService.getSystemBindings(callTypeId);
+      const { data } = await formTemplateService.getSystemBindings(callTypeId, entityId);
       set({ isLoadingSystemBindings: false });
       return data?.data ?? [];
     } catch (error) {

@@ -35,6 +35,23 @@ export const resolveFieldLayout = (fields) => {
     });
 };
 
+// Gives `newFields` positions below everything in `fields`, so fields added
+// later (e.g. new system bindings) land at the end instead of filling gaps
+// near the top. Rows use only as many columns as the existing layout does,
+// so a single-column template stays single-column.
+export const placeFieldsAfterLayout = (fields, newFields) => {
+    if (!newFields.length) return fields;
+    const layout = resolveFieldLayout(fields);
+    const lastRow = Math.max(0, ...layout.map((c) => c.row));
+    const columns = Math.max(1, ...layout.map((c) => c.col));
+    const placed = newFields.map((f, i) => ({
+        ...f,
+        gridRow: lastRow + Math.floor(i / columns) + 1,
+        gridCol: (i % columns) + 1,
+    }));
+    return [...fields, ...placed];
+};
+
 // Row-major list of every cell in the grid; `index` points into `fields`, or is
 // null for an empty cell. `extraRows` appends blank rows (used while dragging so
 // a field can be dropped below the last row).
