@@ -2469,6 +2469,94 @@
   gap: 10px;
 }
 
+// Board name + Port side by side; stacks on small screens.
+.add-board-form-fields--row {
+  flex-direction: row;
+  align-items: flex-start;
+
+  > .add-board-form-field {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  @media ($sm-767) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+// Port dropdown trigger matched to .add-board-form-input (size, border, font).
+.add-board-port-select.premium-select.cf-searchable-select {
+  width: 100%;
+
+  .cf-multi-select-email-input {
+    box-sizing: border-box;
+    min-height: calc(15px * 1.5 + 24px + 3px);
+    padding: 0 16px;
+    border: 1.5px solid var(--border-primary);
+    border-radius: 10px;
+    background: var(--surface-primary);
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: var(--border-primary);
+    }
+
+    &:focus-within {
+      border-color: #00368c;
+      box-shadow: 0 0 0 4px rgba(0, 54, 140, 0.08);
+    }
+  }
+
+  .cf-multi-select-placeholder,
+  .cf-multi-select-selected-value,
+  .cf-searchable-select-input {
+    font: normal normal 400 15px/1.5 $font-primary;
+  }
+
+  .cf-multi-select-placeholder {
+    color: var(--text-muted);
+  }
+
+  .cf-multi-select-selected-value,
+  .cf-searchable-select-input {
+    color: var(--text-primary);
+  }
+
+  @media ($sm-767) {
+    .cf-multi-select-email-input {
+      min-height: calc(14px * 1.5 + 20px + 3px);
+      padding: 0 14px;
+    }
+
+    .cf-multi-select-placeholder,
+    .cf-multi-select-selected-value,
+    .cf-searchable-select-input {
+      font-size: 14px;
+    }
+  }
+
+  [data-theme="dark"] & .cf-multi-select-email-input {
+    background: var(--bg-inset);
+    border-color: var(--border-strong);
+
+    &:hover {
+      border-color: var(--border-hover);
+    }
+
+    &:focus-within {
+      border-color: var(--brand-bright);
+    }
+  }
+
+  [data-theme="dark"] & .cf-multi-select-selected-value,
+  [data-theme="dark"] & .cf-searchable-select-input {
+    color: var(--text-control);
+  }
+}
+
 .add-board-form-label {
   font: normal normal 600 15px/1.4 $font-primary;
   color: var(--text-primary);

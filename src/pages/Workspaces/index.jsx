@@ -331,6 +331,7 @@ function Workspaces() {
     createBoard({
       workspace_id: boardData.workspaceId,
       board_name: boardData.boardName,
+      port_id: boardData.portId,
       cb: () => {
         setShowAddBoardModal(false);
         setSelectedWorkspaceForBoard(null);

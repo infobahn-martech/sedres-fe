@@ -214,12 +214,13 @@ const useWorkSpaceReducer = create((set, get) => ({
       error(err?.response?.data?.message ?? err.message ?? 'Failed to restore workspace');
     }
   },
-  createBoard: async ({ workspace_id, board_name, cb }) => {
+  createBoard: async ({ workspace_id, board_name, port_id, cb }) => {
     try {
       set({ addEditLoader: true });
       const { data } = await workSpaceService.createBoard({
         workspace_id,
         board_name,
+        port_id,
       });
       set({ addEditLoader: false });
       const { success } = useAlertReducer.getState();
