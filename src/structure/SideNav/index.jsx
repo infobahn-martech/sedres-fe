@@ -431,7 +431,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
       subMenus: [
         { menu: 'Report Templates', to: '/appointment-acceptance', hasPermission: true },
         // { menu: 'Pre-Arrival Information', to: '/pre-arrival-information', hasPermission: true },
-        { menu: 'Crew Template', to: '/crew-template', hasPermission: true },
+        // { menu: 'Crew Template', to: '/crew-template', hasPermission: true },
         { menu: 'Coordinates', to: '/coordinates', hasPermission: true },
         // { menu: 'CG Pass Template', to: '/cg-pass-template', hasPermission: true },
         // { menu: 'Vessel Reg. Template', to: '/vessel-registration-template', hasPermission: true },
