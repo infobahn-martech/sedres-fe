@@ -7,6 +7,7 @@ import { FormField, FormInput, FormSelect } from "./Husbandry.components";
 import LocationAutocomplete from "./LocationAutocomplete";
 import editIcon from "@/assets/images/edit.svg";
 import deleteIcon from "@/assets/images/delete.svg";
+import DatePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DatePickerField";
 
 // Generate dummy material data
 const generateDummyMaterials = () => {
@@ -287,10 +288,10 @@ const MaterialManagementContent = ({ formValues, handleChange, cardColor }) => {
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return "";
     const date = new Date(dateTimeString);
-    return date.toLocaleString("en-US", {
+    return date.toLocaleString("en-GB", {
       year: "numeric",
-      month: "short",
-      day: "numeric",
+      month: "2-digit",
+      day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -381,11 +382,10 @@ const MaterialManagementContent = ({ formValues, handleChange, cardColor }) => {
             <div className="col-12 mb-3">
               <FormField label="Pick Up">
                 <div className="cf-input date-time-row">
-                  <input
-                    type="date"
-                    value={formData.pickUpDate}
-                    onChange={(e) => handleFormChange("pickUpDate", e.target.value)}
-                    placeholder="Select date"
+                  <DatePickerField
+                    dateValue={formData.pickUpDate}
+                    onDateChange={(e) => handleFormChange("pickUpDate", e.target.value)}
+                    placeholder="DD/MM/YYYY"
                   />
                   <input
                     type="time"
@@ -400,11 +400,10 @@ const MaterialManagementContent = ({ formValues, handleChange, cardColor }) => {
             <div className="col-12 mb-3">
               <FormField label="Drop Off">
                 <div className="cf-input date-time-row">
-                  <input
-                    type="date"
-                    value={formData.dropOffDate}
-                    onChange={(e) => handleFormChange("dropOffDate", e.target.value)}
-                    placeholder="Select date"
+                  <DatePickerField
+                    dateValue={formData.dropOffDate}
+                    onDateChange={(e) => handleFormChange("dropOffDate", e.target.value)}
+                    placeholder="DD/MM/YYYY"
                   />
                   <input
                     type="time"

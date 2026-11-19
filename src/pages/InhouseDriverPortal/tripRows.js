@@ -7,7 +7,7 @@ const formatDateTime = (value) => {
     const parsed = dayjs(value);
     if (!parsed.isValid()) return value;
     // Backend sends 1899-12-30 (SQL zero date) when no date is set
-    return parsed.year() < 1900 ? '—' : parsed.format('DD MMM YYYY, HH:mm');
+    return parsed.year() < 1900 ? '—' : parsed.format('DD/MM/YYYY, HH:mm');
 };
 
 export const TRIP_TABLE_COLUMNS = [

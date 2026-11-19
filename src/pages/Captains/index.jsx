@@ -113,7 +113,7 @@ const Captains = () => {
             sort: true,
             cell: ({ row }) =>
                 row?.license_expiry
-                    ? new Date(row.license_expiry).toLocaleDateString()
+                    ? new Date(row.license_expiry).toLocaleDateString("en-GB", { month: "2-digit", day: "2-digit", year: "numeric" })
                     : "-",
         },
         {

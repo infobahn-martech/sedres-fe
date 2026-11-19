@@ -14,6 +14,7 @@ import "../../design/scss/pages/coordinator-transport/ct-task-card.scss";
 import useSyncKanbanSidebarWorkflows from "../../shared/hooks/useSyncKanbanSidebarWorkflows";
 import useKanbanAddCardFromSidebar from "../../shared/hooks/useKanbanAddCardFromSidebar";
 import { getAddModeCardFormWorkflow } from "../../shared/helpers/kanbanSidebarWorkflow";
+import DatePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DatePickerField";
 
 const CT_FLEETS = ["BARBOSSA", "WAKANDA", "MARMOLADA"];
 
@@ -754,11 +755,11 @@ export default function CoordinatorTransport() {
                                             </button>
                                         ))}
                                     </div>
-                                    <input
-                                        type="date"
+                                    <DatePickerField
                                         className="ct-trip-panel-date-input"
-                                        value={tripBookingDate}
-                                        onChange={(e) => setTripBookingDate(e.target.value)}
+                                        dateValue={tripBookingDate}
+                                        onDateChange={(e) => setTripBookingDate(e.target.value)}
+                                        placeholder="DD/MM/YYYY"
                                     />
                                     <input
                                         type="time"

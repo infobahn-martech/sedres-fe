@@ -21,7 +21,7 @@ import DateTimePickerField from '../../KanbanBoard/CardFormTabs/shared/component
 const formatDate = (value) => {
     if (!value) return '—';
     const parsed = dayjs(value);
-    return parsed.isValid() ? parsed.format('DD MMM YYYY') : value;
+    return parsed.isValid() ? parsed.format('DD/MM/YYYY') : value;
 };
 
 // API datetimes ("YYYY-MM-DD HH:mm:ss") -> the { date, time } parts DateTimePickerField works with.

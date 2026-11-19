@@ -344,7 +344,7 @@ const formatDeadlineDisplay = (deadline) => {
   if (!datePart) return '';
   const date = new Date(`${datePart}T${(timePart || '00:00:00').slice(0, 8)}`);
   if (Number.isNaN(date.getTime())) return datePart;
-  const dateLabel = date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+  const dateLabel = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const timeLabel = (timePart ?? '').slice(0, 5);
   return timeLabel && timeLabel !== '00:00' ? `${dateLabel}, ${timeLabel}` : dateLabel;
 };
@@ -7570,11 +7570,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
                       <div className="business-rule-form-when-deadline-input-row">
                         <span className="business-rule-form-condition-label">Starting from</span>
-                        <input
-                          type="date"
+                        <DatePickerField
                           className="business-rule-form-when-deadline-input"
-                          value={predefinedIntervalStartDate}
-                          onChange={(e) => setPredefinedIntervalStartDate(e.target.value)}
+                          dateValue={predefinedIntervalStartDate}
+                          onDateChange={(e) => setPredefinedIntervalStartDate(e.target.value)}
+                          placeholder="DD/MM/YYYY"
                         />
                       </div>
                     </div>
@@ -9730,11 +9730,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                 <div className="business-rule-form-tab-date-group">
                   <label className="business-rule-form-label business-rule-form-label--hint">From</label>
                   <div className="business-rule-form-tab-date-inputs">
-                    <input
-                      type="date"
+                    <DatePickerField
                       className="business-rule-form-input"
-                      value={logsFromDate}
-                      onChange={(e) => setLogsFromDate(e.target.value)}
+                      dateValue={logsFromDate}
+                      onDateChange={(e) => setLogsFromDate(e.target.value)}
+                      placeholder="DD/MM/YYYY"
                     />
                     <input
                       type="time"
@@ -9747,11 +9747,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                 <div className="business-rule-form-tab-date-group">
                   <label className="business-rule-form-label business-rule-form-label--hint">To</label>
                   <div className="business-rule-form-tab-date-inputs">
-                    <input
-                      type="date"
+                    <DatePickerField
                       className="business-rule-form-input"
-                      value={logsToDate}
-                      onChange={(e) => setLogsToDate(e.target.value)}
+                      dateValue={logsToDate}
+                      onDateChange={(e) => setLogsToDate(e.target.value)}
+                      placeholder="DD/MM/YYYY"
                     />
                     <input
                       type="time"

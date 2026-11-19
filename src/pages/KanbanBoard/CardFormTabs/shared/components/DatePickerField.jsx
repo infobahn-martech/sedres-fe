@@ -5,6 +5,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { DISPLAY_DATE_FORMAT } from "@/shared/helpers/dateFormat";
 import "@/design/scss/general.scss";
 
 dayjs.extend(customParseFormat);
@@ -23,11 +24,7 @@ const toPickerDate = (newValue) => {
 const formatDisplayDate = (dateValue) => {
   const parsed = toDayjsValue(dateValue);
   if (!parsed) return "";
-  return parsed.toDate().toLocaleDateString("en-GB", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-  });
+  return parsed.format(DISPLAY_DATE_FORMAT);
 };
 
 const DatePickerField = ({
@@ -162,7 +159,7 @@ const DatePickerField = ({
           disabled={disabled}
           minDate={minDateValue}
           maxDate={maxDateValue}
-          format="YYYY-MM-DD"
+          format={DISPLAY_DATE_FORMAT}
           slots={slots}
           slotProps={{
             ...slotProps,

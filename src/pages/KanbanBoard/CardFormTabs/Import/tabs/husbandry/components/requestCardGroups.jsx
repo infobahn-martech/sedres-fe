@@ -14,7 +14,7 @@ export const formatCardDate = (value, { withTime = false } = {}) => {
   const hasTime = withTime && /\d{2}:\d{2}/.test(raw);
   return parsed.toLocaleString("en-GB", {
     day: "2-digit",
-    month: "short",
+    month: "2-digit",
     year: "numeric",
     ...(hasTime ? { hour: "2-digit", minute: "2-digit", hour12: false } : {}),
   });

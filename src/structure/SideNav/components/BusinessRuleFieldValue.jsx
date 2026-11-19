@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import DatePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DatePickerField";
+import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import PropTypes from 'prop-types';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import SearchableSelect from '../../../components/form/SearchableSelect';
@@ -121,13 +123,19 @@ function ValueControl({ details, options, value, onChange, ariaLabel }) {
           }}
         />
         {hasDate && (
-          <input
-            type={fieldType === 'datetime' ? 'datetime-local' : 'date'}
-            className="business-rule-form-condition-input"
-            aria-label={ariaLabel}
-            value={fieldType === 'datetime' ? toDateTimeLocal(value) : (value ?? '')}
-            onChange={(e) => onChange(fieldType === 'datetime' ? fromDateTimeLocal(e.target.value) : e.target.value)}
-          />
+          fieldType === 'datetime' ? (
+            <DateTimePickerField
+              dateValue={toDateTimeLocal(value)}
+              onDateTimeChange={({ date, time }) => onChange(date ? fromDateTimeLocal(`${date}T${time || '00:00'}`) : '')}
+              placeholder="DD/MM/YYYY HH:mm"
+            />
+          ) : (
+            <DatePickerField
+              dateValue={value ?? ''}
+              onDateChange={(e) => onChange(e.target.value)}
+              placeholder="DD/MM/YYYY"
+            />
+          )
         )}
       </div>
     );
@@ -135,24 +143,20 @@ function ValueControl({ details, options, value, onChange, ariaLabel }) {
 
   if (fieldType === 'date') {
     return (
-      <input
-        type="date"
-        className="business-rule-form-condition-input"
-        aria-label={ariaLabel}
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value)}
+      <DatePickerField
+        dateValue={value ?? ''}
+        onDateChange={(e) => onChange(e.target.value)}
+        placeholder="DD/MM/YYYY"
       />
     );
   }
 
   if (fieldType === 'datetime') {
     return (
-      <input
-        type="datetime-local"
-        className="business-rule-form-condition-input"
-        aria-label={ariaLabel}
-        value={toDateTimeLocal(value)}
-        onChange={(e) => onChange(fromDateTimeLocal(e.target.value))}
+      <DateTimePickerField
+        dateValue={toDateTimeLocal(value)}
+        onDateTimeChange={({ date, time }) => onChange(date ? fromDateTimeLocal(`${date}T${time || '00:00'}`) : '')}
+        placeholder="DD/MM/YYYY HH:mm"
       />
     );
   }

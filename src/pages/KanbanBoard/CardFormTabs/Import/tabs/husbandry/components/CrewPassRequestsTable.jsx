@@ -373,7 +373,7 @@ const CrewPassRequestsTable = ({
                               <>
                                 <span className="cpr-fact">
                                   <FiCalendar size={12} aria-hidden="true" />
-                                  {requestedDate ? `Requested ${format(requestedDate, "dd MMM yyyy")}` : "Request date not set"}
+                                  {requestedDate ? `Requested ${format(requestedDate, "dd/MM/yyyy")}` : "Request date not set"}
                                 </span>
                                 <span className="cpr-fact">
                                   GRO: {groName || <span className="cpr-muted">Not assigned</span>}

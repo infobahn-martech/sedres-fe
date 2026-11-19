@@ -152,7 +152,7 @@ const renderPickupDateTime = (value) => {
   if (!parsed) return <span className="coordinator-transport-table__empty-cell">{EMPTY_DISPLAY}</span>;
   return (
     <span className="coordinator-transport-datetime">
-      <span className="coordinator-transport-datetime__date">{format(parsed, "dd MMM yyyy")}</span>
+      <span className="coordinator-transport-datetime__date">{format(parsed, "dd/MM/yyyy")}</span>
       <span className="coordinator-transport-datetime__time">{format(parsed, "HH:mm")}</span>
     </span>
   );

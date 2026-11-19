@@ -6,6 +6,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { splitApiDateTimeParts } from "@/shared/helpers/dateTimeFieldUtils";
+import { DISPLAY_DATETIME_FORMAT } from "@/shared/helpers/dateFormat";
 import "@/design/scss/general.scss";
 
 dayjs.extend(customParseFormat);
@@ -36,14 +37,7 @@ const toPickerParts = (newValue) => {
 const formatDisplayDateTime = (dateValue, timeValue) => {
   const parsed = toDayjsValue(dateValue, timeValue);
   if (!parsed) return "";
-  return parsed.toDate().toLocaleString("en-GB", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  return parsed.format(DISPLAY_DATETIME_FORMAT);
 };
 
 const DateTimePickerField = ({
@@ -174,7 +168,7 @@ const DateTimePickerField = ({
           maxDate={maxDateValue}
           shouldDisableDate={minDateValue ? handleShouldDisableDate : undefined}
           minutesStep={5}
-          format="YYYY-MM-DD HH:mm"
+          format={DISPLAY_DATETIME_FORMAT}
           slotProps={{
             textField: {
               placeholder,

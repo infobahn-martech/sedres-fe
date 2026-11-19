@@ -28,7 +28,7 @@ export function ViewNotificationModal({ showModal, closeModal }) {
             <div className="view-label">Date/Time</div>
             <div className="view-value">
               {showModal.dateTime
-                ? moment(showModal.dateTime).format('DD MMMM YYYY hh:mm a')
+                ? moment(showModal.dateTime).format('DD/MM/YYYY hh:mm a')
                 : "-"}
             </div>
           </div>

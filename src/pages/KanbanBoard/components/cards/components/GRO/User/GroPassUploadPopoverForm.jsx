@@ -43,7 +43,7 @@ export default function GroPassUploadPopoverForm({
               dateValue={issuePickerParts.date}
               timeValue={issuePickerParts.time}
               onDateTimeChange={onIssueDateTimeChange}
-              placeholder="YYYY-MM-DD hh:mm"
+              placeholder="DD/MM/YYYY HH:mm"
               disabled={submitting}
               hasError={hasIssueDateError}
               popperClassName={datetimePopperClassName || "gro-pass-upload-datetime-popper"}

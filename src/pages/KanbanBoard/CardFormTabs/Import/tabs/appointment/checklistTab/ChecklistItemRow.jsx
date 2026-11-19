@@ -578,7 +578,7 @@ const ChecklistItemRow = ({
                     dateValue={itemData?.expiryDate || ""}
                     onDateChange={(e) => pushChange({ expiryDate: e.target.value })}
                     disabled={isViewOnly}
-                    placeholder="YYYY-MM-DD"
+                    placeholder="DD/MM/YYYY"
                     popperClassName="cl-mui-datepicker-popper"
                     renderTrigger={({ disabled, onOpen }) =>
                       renderExpiryChipTrigger({
