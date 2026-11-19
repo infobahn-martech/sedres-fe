@@ -328,9 +328,20 @@ const useWorkSpaceReducer = create((set, get) => ({
           : w
       ),
     })),
-  addWorkspaceToDashboard: async ({ dashboard_id, workspace_id, cb }) => {
+  addWorkspaceToDashboard: async ({ dashboard_id, workspace_id, board_ids, cb }) => {
     try {
-      const { data } = await kanbanDashboardService.addWorkspaceToDashboard({ dashboard_id, workspace_id });
+      // Default to every board in the workspace when the caller doesn't pick specific ones.
+      const resolvedBoardIds = Array.isArray(board_ids)
+        ? board_ids
+        : (get().workspaces ?? [])
+          .find((w) => String(w.workspace_id) === String(workspace_id))
+          ?.boards?.map((b) => b.board_id)
+          .filter((id) => id != null) ?? [];
+      const { data } = await kanbanDashboardService.addWorkspaceToDashboard({
+        dashboard_id,
+        workspace_id,
+        board_ids: resolvedBoardIds,
+      });
       const { success } = useAlertReducer.getState();
       success(data?.message ?? 'Workspace added to dashboard');
       cb && cb();

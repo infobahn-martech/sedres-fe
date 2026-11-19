@@ -20,8 +20,8 @@ const deleteDashboard = (dashboardId) =>
 /** Catalog of widgets available to add to dashboards (backend path assumed; adjust if API differs). */
 const listAllWidgets = () => Gateway.get('/kanban_dashboard/list_all_widgets');
 
-const addWorkspaceToDashboard = ({ dashboard_id, workspace_id }) =>
-  Gateway.post('/kanban_dashboard/assign_workspace', { dashboard_id, workspace_id });
+const addWorkspaceToDashboard = ({ dashboard_id, workspace_id, board_ids = [] }) =>
+  Gateway.post('/kanban_dashboard/assign_workspace', { dashboard_id, workspace_id, board_ids });
 
 const removeWorkspaceFromDashboard = ({ dashboard_id, workspace_id }) =>
   Gateway.post('/kanban_dashboard/unassign_workspace', { dashboard_id, workspace_id });
