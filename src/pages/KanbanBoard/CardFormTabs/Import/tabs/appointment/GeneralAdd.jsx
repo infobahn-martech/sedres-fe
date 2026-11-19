@@ -149,7 +149,7 @@ const shouldRefetchForTimeObjectValue = (value) =>
 
 // Changing a field bound to one of these params re-fetches first_tab so the backend can resolve
 // the remaining field values (email / vessel / billing entity / port / last port / requestor email /
-// operator). Keyed by the normalized system_binding_key / master_key / label
+// operator / captain email). Keyed by the normalized system_binding_key / master_key / label
 // (e.g. "billing_entity_id", "Billing Entity", "Vessel Name", "Port", "Assigned Operator").
 const TEMPLATE_REFETCH_PARAMS = {
   appointment_email: "appointment_email_file",
@@ -160,6 +160,7 @@ const TEMPLATE_REFETCH_PARAMS = {
   service_requestor_email: "service_requestor_email",
   assigned_operator: "assigned_operator_id",
   operator: "assigned_operator_id",
+  captain_email: "captain_email",
 };
 
 // Typed inputs re-fetch after the user pauses instead of on every keystroke.
@@ -262,6 +263,16 @@ function GeneralAdd({
   // master catalogues / checklist / stage-time lookups are not requested.
   const selectedTemplateId = firstNonEmptyString(formValues?.template_id);
   const isTemplateMode = Boolean(selectedTemplateId);
+  // first_tab is board-scoped: form_template/first_tab/{template_id}/{board_id}.
+  const templateBoardId = firstNonEmptyString(
+    boardId,
+    formValues?.board_id,
+    formValues?.boardId,
+    card?.board_id,
+    card?.boardId,
+    card?.raw?.board_id,
+    card?.raw?.boardId
+  );
 
   const {
     masterDataLoading,
@@ -417,6 +428,7 @@ function GeneralAdd({
     let cancelled = false;
     getTemplateFirstTab({
       templateId: selectedTemplateId,
+      boardId: templateBoardId,
       cb: (data) => {
         if (cancelled) return;
         setTemplateFields(mapTemplateTabFields(data?.tab?.fields));
@@ -437,7 +449,14 @@ function GeneralAdd({
     return () => {
       cancelled = true;
     };
-  }, [selectedTemplateId, getTemplateFirstTab, handleChange, applyTemplateEmailPreview, clearTemplateRefetchTimer]);
+  }, [
+    selectedTemplateId,
+    templateBoardId,
+    getTemplateFirstTab,
+    handleChange,
+    applyTemplateEmailPreview,
+    clearTemplateRefetchTimer,
+  ]);
 
   const getFieldValue = (fieldName) =>
     hasMeaningfulValue(formValues?.[fieldName]) ? formValues[fieldName] : "";
@@ -652,6 +671,7 @@ function GeneralAdd({
       setIsTemplateRefetching(true);
       getTemplateFirstTab({
         templateId: selectedTemplateId,
+        boardId: templateBoardId,
         payload,
         cb: (data) => {
           if (requestId !== templateRefetchRequestIdRef.current) return;
@@ -680,7 +700,7 @@ function GeneralAdd({
         if (requestId === templateRefetchRequestIdRef.current) setIsTemplateRefetching(false);
       });
     },
-    [selectedTemplateId, templateFields, getTemplateFirstTab, applyTemplateEmailPreview]
+    [selectedTemplateId, templateBoardId, templateFields, getTemplateFirstTab, applyTemplateEmailPreview]
   );
 
   const handleTemplateFieldChange = useCallback(
