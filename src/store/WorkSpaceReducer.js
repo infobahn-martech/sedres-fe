@@ -24,6 +24,10 @@ const useWorkSpaceReducer = create((set, get) => ({
   workspaces: [],
   dashboards: [],
   dashboardsLoading: false,
+  // Workspaces assigned to the dashboard currently open (get_workspaces_by_dashboard).
+  dashboardWorkspaces: [],
+  dashboardWorkspacesId: null,
+  dashboardWorkspacesLoading: false,
   addEditLoader: false,
   archiveLog: [],
   archiveLogLoading: false,
@@ -64,6 +68,31 @@ const useWorkSpaceReducer = create((set, get) => ({
       set({ dashboards, dashboardsLoading: false });
     } catch (error) {
       set({ errorMessage: error.message, dashboardsLoading: false, dashboards: [] });
+    }
+  },
+  getWorkspacesByDashboard: async (dashboard_id) => {
+    if (dashboard_id == null) return;
+    // Clear stale rows only when switching to a different dashboard; a refresh
+    // of the same one keeps showing the current list until new data arrives.
+    const switching = String(get().dashboardWorkspacesId) !== String(dashboard_id);
+    set({
+      dashboardWorkspacesLoading: true,
+      dashboardWorkspacesId: dashboard_id,
+      ...(switching ? { dashboardWorkspaces: [] } : {}),
+    });
+    try {
+      const { data } = await kanbanDashboardService.getWorkspacesByDashboard(dashboard_id);
+      // Ignore a late response for a dashboard the user has already left.
+      if (String(get().dashboardWorkspacesId) !== String(dashboard_id)) return;
+      set({
+        dashboardWorkspaces: Array.isArray(data?.data) ? data.data : [],
+        dashboardWorkspacesLoading: false,
+      });
+    } catch (err) {
+      if (String(get().dashboardWorkspacesId) !== String(dashboard_id)) return;
+      set({ dashboardWorkspaces: [], dashboardWorkspacesLoading: false });
+      const { error } = useAlertReducer.getState();
+      error(err?.response?.data?.message ?? err.message ?? 'Failed to load dashboard workspaces');
     }
   },
   renameDashboard: async ({ dashboard_id, dashboard_name, cb }) => {
@@ -346,6 +375,9 @@ const useWorkSpaceReducer = create((set, get) => ({
       success(data?.message ?? 'Workspace added to dashboard');
       cb && cb();
       get().listAllDashboards();
+      if (String(get().dashboardWorkspacesId) === String(dashboard_id)) {
+        get().getWorkspacesByDashboard(dashboard_id);
+      }
     } catch (err) {
       const { error } = useAlertReducer.getState();
       error(err?.response?.data?.message ?? err.message ?? 'Failed to add workspace to dashboard');
@@ -358,9 +390,42 @@ const useWorkSpaceReducer = create((set, get) => ({
       success(data?.message ?? 'Workspace removed from dashboard');
       cb && cb();
       get().listAllDashboards();
+      if (String(get().dashboardWorkspacesId) === String(dashboard_id)) {
+        get().getWorkspacesByDashboard(dashboard_id);
+      }
     } catch (err) {
       const { error } = useAlertReducer.getState();
       error(err?.response?.data?.message ?? err.message ?? 'Failed to remove workspace from dashboard');
+    }
+  },
+  assignBoardsToDashboard: async ({ dashboard_id, workspace_id, board_ids, cb }) => {
+    try {
+      const { data } = await kanbanDashboardService.assignBoardsToDashboard({ dashboard_id, workspace_id, board_ids });
+      const { success } = useAlertReducer.getState();
+      success(data?.message ?? 'Board added to dashboard');
+      cb && cb();
+      get().listAllDashboards();
+      if (String(get().dashboardWorkspacesId) === String(dashboard_id)) {
+        get().getWorkspacesByDashboard(dashboard_id);
+      }
+    } catch (err) {
+      const { error } = useAlertReducer.getState();
+      error(err?.response?.data?.message ?? err.message ?? 'Failed to add board to dashboard');
+    }
+  },
+  unassignBoardsFromDashboard: async ({ dashboard_id, workspace_id, board_ids, cb }) => {
+    try {
+      const { data } = await kanbanDashboardService.unassignBoardsFromDashboard({ dashboard_id, workspace_id, board_ids });
+      const { success } = useAlertReducer.getState();
+      success(data?.message ?? 'Board removed from dashboard');
+      cb && cb();
+      get().listAllDashboards();
+      if (String(get().dashboardWorkspacesId) === String(dashboard_id)) {
+        get().getWorkspacesByDashboard(dashboard_id);
+      }
+    } catch (err) {
+      const { error } = useAlertReducer.getState();
+      error(err?.response?.data?.message ?? err.message ?? 'Failed to remove board from dashboard');
     }
   },
   // No success toast/refetch: reorder is a passive drag outcome, applied optimistically.

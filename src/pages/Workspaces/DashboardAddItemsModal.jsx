@@ -115,15 +115,17 @@ function DashboardAddItemsModal({
             />
           </div>
 
-          <button
-            type="button"
-            className="dashboard-add-items-icon-btn"
-            onClick={onAddClick}
-            aria-label={addButtonLabel}
-            title={addButtonLabel}
-          >
-            <FiPlus size={20} strokeWidth={2} />
-          </button>
+          {onAddClick && (
+            <button
+              type="button"
+              className="dashboard-add-items-icon-btn"
+              onClick={onAddClick}
+              aria-label={addButtonLabel}
+              title={addButtonLabel}
+            >
+              <FiPlus size={20} strokeWidth={2} />
+            </button>
+          )}
         </div>
 
         <div className="dashboard-add-items-table-wrap">
@@ -224,8 +226,8 @@ DashboardAddItemsModal.propTypes = {
   onFilterToolbarClick: PropTypes.func.isRequired,
   pendingToggleId: PropTypes.string,
   onToggle: PropTypes.func.isRequired,
-  onAddClick: PropTypes.func.isRequired,
-  addButtonLabel: PropTypes.string.isRequired,
+  onAddClick: PropTypes.func,
+  addButtonLabel: PropTypes.string,
 };
 
 export default DashboardAddItemsModal;
