@@ -1,10 +1,11 @@
 import { useForm, Controller } from 'react-hook-form';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import CustomModal from '../../../components/CustomModal';
 import PremiumSelect from '../../../components/form/PremiumSelect';
 import useCommonAttachmentReducer from '../../../store/CommonAttachmentReducer';
 import usePortReducer from '../../../store/PortReducer';
-import useCallTypeReducer from '../../../store/CallTypeReducer';
+import CommonService from '../../../services/commonService';
+import { unwrapListResponse, mapCallTypesToOptions } from '../../../shared/helpers/callFileFormOptions';
 import '../../../design/scss/prospect-modal.scss';
 import '../../../design/scss/modal-designs.scss';
 import '../../../design/scss/form-designs.scss';
@@ -30,7 +31,8 @@ export function AddEditAttachmentModal({ showModal, closeModal, onSuccess }) {
 
   const { createAttachment, updateAttachment, isBeingUpdated } = useCommonAttachmentReducer((s) => s);
   const { ports, getPorts } = usePortReducer((s) => s);
-  const { callTypes, getCallTypes } = useCallTypeReducer((s) => s);
+  // Same /calltype master list the Add Card form uses for its Call Type dropdown.
+  const [callTypeOptions, setCallTypeOptions] = useState([]);
 
   const portOptions = useMemo(
     () =>
@@ -39,15 +41,6 @@ export function AddEditAttachmentModal({ showModal, closeModal, onSuccess }) {
         return { value: String(id ?? ''), label: String(p?.port ?? p?.name ?? p?.port_name ?? id ?? '') };
       }),
     [ports]
-  );
-
-  const callTypeOptions = useMemo(
-    () =>
-      (Array.isArray(callTypes) ? callTypes : []).map((ct) => ({
-        value: String(ct?.call_type_id ?? ''),
-        label: String(ct?.call_type_name ?? ct?.call_type ?? ct?.call_type_id ?? ''),
-      })),
-    [callTypes]
   );
 
   const defaultValues = useMemo(
@@ -73,7 +66,17 @@ export function AddEditAttachmentModal({ showModal, closeModal, onSuccess }) {
 
   useEffect(() => {
     getPorts({ params: { limit: 1000 } });
-    getCallTypes({ limit: 1000 });
+    let cancelled = false;
+    CommonService.getCallTypes()
+      .then(({ data }) => {
+        if (!cancelled) setCallTypeOptions(mapCallTypesToOptions(unwrapListResponse(data)));
+      })
+      .catch(() => {
+        if (!cancelled) setCallTypeOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Re-apply once ports / call types load so edit mode can resolve names to ids.
