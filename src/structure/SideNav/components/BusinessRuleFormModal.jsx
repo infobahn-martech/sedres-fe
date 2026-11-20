@@ -417,6 +417,8 @@ const getPropertyDotColor = (idx) => PROPERTY_DOT_COLORS[idx % PROPERTY_DOT_COLO
 const WHEN_DEADLINE_DEFAULT_FIELD_KEY = 'deadline';
 // Operator (Business_rule_frontend_guide.md 1.4) whose suffix reads "day(s) ago" instead of "day(s)".
 const WHEN_DEADLINE_AGO_OPERATOR_KEY = 'was_more_than';
+// Default choice of the Deadline row's "Date from" dropdown: the card's own deadline (no time_object_id).
+const WHEN_DEADLINE_CARD_DEADLINE_LABEL = 'Card deadline';
 const EMPTY_WHEN_DEADLINE = { fieldKey: '', fieldLabel: '', operatorId: '', value: '', timeUnitId: '', timeObjectId: '' };
 
 // Any operator whose label reads as a negation ("is not", "does not contain", "not in", ...)
@@ -5335,6 +5337,23 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       : null);
   const whenDeadlineDetails = whenDeadlineField ? fieldDetailsByKey[whenDeadlineField.key] : null;
   const whenDeadlineOperators = whenDeadlineDetails?.operators ?? [];
+  // "Date from": the Deadline row can read a call time (ETA, ATA ...) instead of the card deadline.
+  // The backend sends them as call_times in get_field_details and accepts time_object_id only on the
+  // Deadline row of a time-based rule's WHEN, so it is drawn only there.
+  const whenDeadlineCallTimes = whenDeadlineField?.fieldKey === WHEN_DEADLINE_DEFAULT_FIELD_KEY
+    ? (whenDeadlineDetails?.call_times ?? [])
+    : [];
+  const whenDeadlineDateFromOptions = [
+    { value: '', label: WHEN_DEADLINE_CARD_DEADLINE_LABEL },
+    ...whenDeadlineCallTimes.map((callTime) => ({
+      value: String(callTime.option_value),
+      label: callTime.option_label,
+      group: 'Call times',
+    })),
+  ];
+  const whenDeadlineSelectedCallTime = whenDeadlineCallTimes.find(
+    (callTime) => String(callTime.option_value) === String(whenDeadline.timeObjectId)
+  );
   const whenDeadlineOperator = whenDeadlineOperators.find(
     (op) => String(getOperatorId(op)) === String(whenDeadline.operatorId)
   ) ?? null;
@@ -7394,7 +7413,9 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           >
             <div className="business-rule-form-column">
               <h3 className="business-rule-form-column-title">WHEN</h3>
-              <p className="business-rule-form-trigger-name business-rule-form-trigger-name--plain">{whenTriggerName}</p>
+              {triggerConfig?.when_type !== 'regular_fields' && (
+                <p className="business-rule-form-trigger-name business-rule-form-trigger-name--plain">{whenTriggerName}</p>
+              )}
 
               {triggerConfig?.when_type === 'regular_fields' ? (
                 <div className="business-rule-form-column-card business-rule-form-when-fields">
@@ -7597,7 +7618,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                         className="business-rule-form-condition-label business-rule-form-condition-label-btn"
                         onClick={handleOpenWhenFieldPicker}
                       >
-                        {whenDeadlineField.label}
+                        {whenDeadlineSelectedCallTime?.option_label ?? whenDeadlineField.label}
                       </button>
                       <InlineTextDropdown
                         value={whenDeadline.operatorId}
@@ -7610,6 +7631,24 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                         onChange={(operatorId) => setWhenDeadline((prev) => ({ ...prev, operatorId, value: '', timeUnitId: '' }))}
                       />
                     </div>
+                    {whenDeadlineCallTimes.length > 0 && (
+                      <div className="business-rule-form-when-deadline-date-from">
+                        <div className="business-rule-form-when-deadline-input-row">
+                          <span className="business-rule-form-condition-label">Date from:</span>
+                          <InlineTextDropdown
+                            value={whenDeadline.timeObjectId}
+                            options={whenDeadlineDateFromOptions}
+                            placeholder={WHEN_DEADLINE_CARD_DEADLINE_LABEL}
+                            triggerClassName="br-condition-operator-trigger"
+                            searchable
+                            onChange={(timeObjectId) => setWhenDeadline((prev) => ({ ...prev, timeObjectId }))}
+                          />
+                        </div>
+                        <p className="business-rule-form-when-deadline-date-from-help">
+                          Use a call time (for example ETA) instead of the card's deadline. Cards without that time are skipped.
+                        </p>
+                      </div>
+                    )}
                     <div className="business-rule-form-when-deadline-input-row">
                       <input
                         type="text"

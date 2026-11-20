@@ -7,7 +7,7 @@ import OptionColorBadge from './OptionColorBadge';
 // and clicking it opens a compact list. Uses the same trigger / panel classes as the AND
 // condition operator picker, so it needs no styles of its own. Options may carry a colour and
 // icon (types, stickers, blockers) which are drawn as the same chip as on the card.
-function InlineTextDropdown({ value, options, placeholder, triggerClassName, triggerPrefix = '', showChevron = true, searchable = false, onChange }) {
+function InlineTextDropdown({ value, options, placeholder, triggerClassName, triggerPrefix = '', triggerIcon = null, showChevron = true, searchable = false, onChange }) {
   const [open, setOpen] = useState(false);
   const [filterText, setFilterText] = useState('');
   const wrapRef = useRef(null);
@@ -39,7 +39,7 @@ function InlineTextDropdown({ value, options, placeholder, triggerClassName, tri
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        {triggerPrefix}{selected?.label ?? placeholder}
+        {triggerIcon}{triggerPrefix}{selected?.label ?? placeholder}
         {showChevron && <FiChevronDown size={14} aria-hidden />}
       </button>
 
@@ -101,6 +101,7 @@ InlineTextDropdown.propTypes = {
   placeholder: PropTypes.string,
   triggerClassName: PropTypes.string,
   triggerPrefix: PropTypes.string,
+  triggerIcon: PropTypes.node,
   showChevron: PropTypes.bool,
   searchable: PropTypes.bool,
   onChange: PropTypes.func.isRequired,

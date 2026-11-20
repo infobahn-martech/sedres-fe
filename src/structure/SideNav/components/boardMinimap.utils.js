@@ -49,6 +49,7 @@ function buildColumnTree(columns = []) {
   }));
 }
 
+const leafIdsOf = (node) => (node.children.length === 0 ? [node.id] : node.children.flatMap(leafIdsOf));
 const leafCountOf = (node) => (node.children.length === 0 ? 1 : node.children.reduce((sum, child) => sum + leafCountOf(child), 0));
 const depthOf = (node) => (node.children.length === 0 ? 1 : 1 + Math.max(...node.children.map(depthOf)));
 
@@ -64,6 +65,7 @@ function buildColumnHeaderRows(stageSegments) {
       name: node.name,
       isLeaf,
       colSpan: leafCountOf(node),
+      leafIds: leafIdsOf(node),
       rowSpan: isLeaf ? depth - level : 1,
     });
     node.children.forEach((child) => place(child, level + 1));

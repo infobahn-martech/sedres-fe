@@ -218,3 +218,32 @@
     padding: 6px 10px 2px;
   }
 }
+
+// Recurring WHEN schedule pill ("Every day"): text starts at the left edge instead of centered.
+.business-rule-form-when-fields .business-rule-form-when-fields-pill {
+  justify-content: flex-start;
+  text-align: left;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  padding-left: 24px;
+}
+
+// THEN section headings ("create cards", "link the card" ...) are small lowercase labels.
+.business-rule-form-column--then .business-rule-form-action-title {
+  text-transform: lowercase;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+// Deadline "Date from" row of a time-based rule: the call time dropdown and its help text.
+.business-rule-form-when-deadline-date-from {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.business-rule-form-when-deadline-date-from-help {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
