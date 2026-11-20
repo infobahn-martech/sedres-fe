@@ -845,9 +845,13 @@ const MultiSelectField = ({
   emptyMessage = "No options found",
   showAvatars = false,
   singleLine = showAvatars,
+  // Shows a "+ Add New Email" footer; a typed email not in `options` is selected as the raw string.
+  allowAddNewEmail = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState("");
+  const [showAddInput, setShowAddInput] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
   const dropdownRef = useRef(null);
   const tagsRef = useRef(null);
   const tagRefs = useRef([]);
@@ -864,7 +868,10 @@ const MultiSelectField = ({
   }, []);
 
   useEffect(() => {
-    if (!isOpen) setFilterQuery("");
+    if (isOpen) return;
+    setFilterQuery("");
+    setShowAddInput(false);
+    setNewEmail("");
   }, [isOpen]);
 
   const filterPlaceholder = useMemo(() => deriveSearchPlaceholder(placeholder), [placeholder]);
@@ -878,6 +885,23 @@ const MultiSelectField = ({
   const valuesEqual = (a, b) => String(a) === String(b);
   const selectedValues = Array.isArray(value) ? value : (value ? [value] : []);
   const valueToOption = (val) => options.find((o) => valuesEqual(o.value, val));
+
+  const isValidNewEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim());
+  const handleAddNewEmail = () => {
+    const email = newEmail.trim();
+    if (!isValidNewEmail) return;
+    const lower = email.toLowerCase();
+    const existing = options.find(
+      (o) => String(o?.label ?? "").trim().toLowerCase() === lower || String(o?.value ?? "").trim().toLowerCase() === lower
+    );
+    const nextValue = existing ? existing.value : email;
+    const alreadySelected = selectedValues.some(
+      (v) => valuesEqual(v, nextValue) || String(v).trim().toLowerCase() === lower
+    );
+    if (!alreadySelected) onChange({ target: { value: [...selectedValues, nextValue], name } });
+    setNewEmail("");
+    setShowAddInput(false);
+  };
   const valueToLabel = (val) => valueToOption(val)?.label ?? String(val);
 
   const selectedLabelsKey = selectedValues.map(valueToLabel).join(" ");
@@ -1034,6 +1058,59 @@ const MultiSelectField = ({
               )}
             </div>
           </div>
+          {allowAddNewEmail && (
+            <div className="cf-multi-select-footer" onMouseDown={(e) => e.stopPropagation()}>
+              {!showAddInput ? (
+                <div
+                  className="cf-multi-select-option add-new"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setShowAddInput(true);
+                    setNewEmail("");
+                  }}
+                >
+                  <span>+ Add New Email</span>
+                </div>
+              ) : (
+                <div className="cf-multi-select-add-input">
+                  <input
+                    type="email"
+                    placeholder="Enter email address..."
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddNewEmail();
+                      } else if (e.key === "Escape") {
+                        setNewEmail("");
+                        setShowAddInput(false);
+                      }
+                    }}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    className="cf-add-email-btn"
+                    onClick={handleAddNewEmail}
+                    disabled={!isValidNewEmail}
+                  >
+                    ✓
+                  </button>
+                  <button
+                    type="button"
+                    className="cf-cancel-email-btn"
+                    onClick={() => {
+                      setNewEmail("");
+                      setShowAddInput(false);
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1086,6 +1163,7 @@ MultiSelectField.propTypes = {
   className: PropTypes.string,
   showAvatars: PropTypes.bool,
   singleLine: PropTypes.bool,
+  allowAddNewEmail: PropTypes.bool,
   menuMaxHeight: PropTypes.number,
   isLoading: PropTypes.bool,
   emptyMessage: PropTypes.string,

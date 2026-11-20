@@ -367,7 +367,8 @@ export function buildCreateTemplateCallFileFormData(payload = {}) {
       return;
     }
     if (Array.isArray(value)) {
-      if (value.length) fields[fieldId] = value.map((item) => str(item));
+      // Numbers stay numbers (e.g. email option ids: [12, 15, "agent@shipco.com"]).
+      if (value.length) fields[fieldId] = value.map((item) => (typeof item === "number" ? item : str(item)));
       return;
     }
     const s = str(value);

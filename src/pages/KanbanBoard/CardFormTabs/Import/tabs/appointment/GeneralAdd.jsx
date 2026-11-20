@@ -129,6 +129,8 @@ const mapTemplateTabFields = (fields) =>
         // User-list masters (e.g. Owner) send an `avatar` key per option, even when it is null.
         hasAvatars: options.some((opt) => opt && typeof opt === "object" && "avatar" in opt),
         optionAvatars: options.map((opt) => opt?.avatar ?? null),
+        // Email multiselects (e.g. Daily Report Emails) let the user type a new address.
+        allowAddNewEmail: isEmailMultiSelectField(field),
         optionsSource: field?.option_source === "master" ? "master" : "manual",
         masterModule: field?.master_key ?? "",
         refetchParam: resolveTemplateRefetchParam(field),
@@ -169,6 +171,19 @@ const TEMPLATE_REFETCH_PARAMS = {
 // Typed inputs re-fetch after the user pauses instead of on every keystroke.
 const TEMPLATE_DEBOUNCED_REFETCH_TYPES = new Set(["text", "textarea", "email", "number"]);
 const TEMPLATE_REFETCH_DEBOUNCE_MS = 600;
+
+const isEmailMultiSelectField = (field) =>
+  normalizeTemplateFieldType(field?.type_key) === "multiselect" &&
+  [field?.system_binding_key, field?.master_key, field?.field_label].some((candidate) =>
+    /email/i.test(String(candidate ?? ""))
+  );
+
+// Email multiselect values go out as option ids (numbers) plus newly typed emails (strings),
+// e.g. [12, 15, "agent@shipco.com"].
+const toEmailMultiSelectSubmitValue = (value) =>
+  (Array.isArray(value) ? value : []).map((item) =>
+    /^\d+$/.test(String(item).trim()) ? Number(item) : String(item).trim()
+  );
 
 const normalizeBindingKey = (value) =>
   String(value ?? "")
@@ -740,7 +755,9 @@ function GeneralAdd({
   const getTemplateSubmitValues = () =>
     (templateFields || []).reduce((acc, field) => {
       const value = templateFieldValues[field.id];
-      acc[field.id] = isSingleCheckboxField(field) ? (value === "1" ? "1" : "0") : value;
+      if (isSingleCheckboxField(field)) acc[field.id] = value === "1" ? "1" : "0";
+      else if (field.allowAddNewEmail) acc[field.id] = toEmailMultiSelectSubmitValue(value);
+      else acc[field.id] = value;
       return acc;
     }, {});
 
