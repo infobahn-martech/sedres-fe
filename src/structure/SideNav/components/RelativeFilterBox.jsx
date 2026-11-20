@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-import { FiPlus, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import SearchableSelect from '../../../components/form/SearchableSelect';
 import BusinessRuleFieldValue from './BusinessRuleFieldValue';
 import { isCustomGenericField } from './genericThenAction';
 import { getOperatorKey, normalizeConnector } from './businessRuleFieldUtils';
+import BoardMinimapModal from './BoardMinimapModal';
+import { findLoadedColumnName, isPositionColumnField } from './positionColumnFields';
 
 // "if <relative> card matches this filter" box of a relative-card action (updates guide 2.3):
 // a list of field conditions (field, operator, value) sent under the action's own filter key (parent_conditions, child_conditions or relative_conditions).
@@ -14,11 +16,14 @@ const detailsKeyOf = (row) => `${row.fieldType}-${row.fieldId}`;
 
 // renderPropertyPicker draws the Card Property Match modal (the same field picker as the AND column);
 // it is handed in because that modal lives in BusinessRuleFormModal.jsx.
-function RelativeFilterBox({ label, rows, renderPropertyPicker, onChange }) {
+function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId = '', onChange }) {
   const {
-    regularFields, customFields, fieldDetailsByKey, getFieldDetails, valueTimeUnits,
+    regularFields, customFields, fieldDetailsByKey, getFieldDetails, valueTimeUnits, boardWorkflowsByBoard,
   } = useBusinessRuleReducer((s) => s);
   const [showPicker, setShowPicker] = useState(false);
+  // Board Minimap of a "Last date moved to"-type row: the row it picks columns for and its board.
+  const [columnPickRowId, setColumnPickRowId] = useState(null);
+  const [columnPickBoardId, setColumnPickBoardId] = useState('');
   // The modal reports every ticked field one by one in the same tick, so they are collected here.
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
@@ -54,11 +59,30 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, onChange }) {
       connector: 'OR',
       value: '',
       timeUnitId: '',
+      positionColumns: category?.positionColumns ?? [],
     }];
     onChange(rowsRef.current);
   };
 
   const setRow = (id, patch) => onChange(rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+
+  const handleOpenColumnPick = (rowId) => {
+    setColumnPickBoardId((prev) => prev || String(defaultBoardId ?? ''));
+    setColumnPickRowId(rowId);
+  };
+
+  // A column picked on the minimap is added to the row (several are allowed).
+  const handlePickColumn = (position) => {
+    const rowId = columnPickRowId;
+    setColumnPickRowId(null);
+    const row = rows.find((r) => r.id === rowId);
+    if (!row || !position.columnId) return;
+    const picked = row.positionColumns ?? [];
+    if (picked.some((column) => String(column.id) === String(position.columnId))) return;
+    setRow(rowId, {
+      positionColumns: [...picked, { id: String(position.columnId), name: findLoadedColumnName(boardWorkflowsByBoard, position.columnId) }],
+    });
+  };
 
   return (
     <div className="br-related-filter">
@@ -102,6 +126,27 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, onChange }) {
                 menuPlacement="auto"
               />
             )}
+            {row.fieldType === 'regular' && isPositionColumnField(row.fieldId, rowLabel) && (
+              <div className="br-position-column-row">
+                {(row.positionColumns ?? []).map((column) => (
+                  <span key={column.id} className="br-position-column-chip">
+                    {column.name || findLoadedColumnName(boardWorkflowsByBoard, column.id) || `Column ${column.id}`}
+                    <button
+                      type="button"
+                      className="br-position-column-chip-remove"
+                      onClick={() => setRow(row.id, { positionColumns: row.positionColumns.filter((c) => c.id !== column.id) })}
+                      aria-label="Remove column"
+                    >
+                      <FiX size={12} />
+                    </button>
+                  </span>
+                ))}
+                <button type="button" className="business-rule-form-add-link" onClick={() => handleOpenColumnPick(row.id)}>
+                  <FiPlus size={14} aria-hidden />
+                  {(row.positionColumns ?? []).length > 0 ? 'Add column' : 'Choose column'}
+                </button>
+              </div>
+            )}
             <BusinessRuleFieldValue
               details={details}
               operator={operator}
@@ -120,6 +165,16 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, onChange }) {
         Add new property
       </button>
 
+      <BoardMinimapModal
+        show={Boolean(columnPickRowId)}
+        value={{ boardId: columnPickBoardId, workflowId: '', columnId: '', swimlaneId: '' }}
+        boardId={columnPickBoardId}
+        onBoardChange={setColumnPickBoardId}
+        onPick={handlePickColumn}
+        onClose={() => setColumnPickRowId(null)}
+        columnOnly
+      />
+
       {renderPropertyPicker({
         show: showPicker,
         onClose: () => setShowPicker(false),
@@ -133,6 +188,7 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, onChange }) {
 RelativeFilterBox.propTypes = {
   label: PropTypes.string.isRequired,
   renderPropertyPicker: PropTypes.func.isRequired,
+  defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   rows: PropTypes.arrayOf(PropTypes.object).isRequired,
   onChange: PropTypes.func.isRequired,
 };

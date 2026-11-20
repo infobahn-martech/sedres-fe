@@ -21,6 +21,8 @@ import { CREATE_CARDS_GROUP_TYPE, EMPTY_GENERIC_ACTION_VALUE, makeCreateCardActi
 import CreateCardActionCard from './CreateCardActionCard';
 import BusinessRuleFieldValue from './BusinessRuleFieldValue';
 import InlineTextDropdown from './InlineTextDropdown';
+import BoardMinimapModal from './BoardMinimapModal';
+import { findLoadedColumnName, isPositionColumnField } from './positionColumnFields';
 import SearchableSelect from '../../../components/form/SearchableSelect';
 import BoardFilterPicker from './BoardFilterPicker';
 import FormTemplateFilter from './FormTemplateFilter';
@@ -419,6 +421,28 @@ const WHEN_DEADLINE_DEFAULT_FIELD_KEY = 'deadline';
 const WHEN_DEADLINE_AGO_OPERATOR_KEY = 'was_more_than';
 // Default choice of the Deadline row's "Date from" dropdown: the card's own deadline (no time_object_id).
 const WHEN_DEADLINE_CARD_DEADLINE_LABEL = 'Card deadline';
+// default_conditions of a trigger other than Board (which has its own row), e.g. Position on the moved
+// triggers: they are part of the AND column from the start and are never cleared by "Clear all".
+const getExtraDefaultConditions = (triggerConfig) => (triggerConfig?.default_conditions ?? [])
+  .filter((c) => String(c.field_label ?? '').trim().toLowerCase() !== 'board')
+  .map((c) => ({ ...c, fieldId: c.regular_field_id ?? c.field_id }))
+  .filter((c) => c.fieldId != null);
+
+const makeDefaultCondition = (c) => ({
+  id: `cond-default-${c.fieldId}`,
+  fieldLabel: c.field_label,
+  fieldKey: `regular-${c.fieldId}`,
+  category: 'regular',
+  fieldType: 'regular',
+  fieldId: c.fieldId,
+  valueType: null,
+  operatorId: '',
+  desiredOperatorLabel: '',
+  values: [{ id: `cond-default-val-${c.fieldId}`, conditionId: null, value: '', timeUnitId: '', joinWord: 'OR' }],
+});
+
+const isPositionColumnCondition = (cond) => cond.fieldType === 'regular' && isPositionColumnField(cond.fieldId, cond.fieldLabel);
+
 const EMPTY_WHEN_DEADLINE = { fieldKey: '', fieldLabel: '', operatorId: '', value: '', timeUnitId: '', timeObjectId: '', connector: 'OR' };
 
 // Any operator whose label reads as a negation ("is not", "does not contain", "not in", ...)
@@ -607,7 +631,7 @@ function PropertyPill({ pillKey, label, selected, dotColor, disabled, onClick })
   );
 }
 
-function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, triggerTypeId, showTimeUnit = true, showCustomFields = true, restrictFieldIds = null }) {
+function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, triggerTypeId, showTimeUnit = true, showCustomFields = true, restrictFieldIds = null, pickColumnForField = null, defaultBoardId = '' }) {
   const [selectedRegularFields, setSelectedRegularFields] = useState([]);
   const [selectedTimeUnits, setSelectedTimeUnits] = useState([]);
   const [selectedCustomFields, setSelectedCustomFields] = useState([]);
@@ -619,9 +643,14 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
   const [showDisabled, setShowDisabled] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  // "Last date moved to"-type fields: a click opens the Board Minimap, and each column picked there becomes
+  // its own selected pill ("Last date moved to <column>") that is added with the other selections.
+  const [positionPicks, setPositionPicks] = useState([]);
+  const [minimapField, setMinimapField] = useState(null);
+  const [minimapBoardId, setMinimapBoardId] = useState('');
 
   const {
-    regularFields, isLoadingRegularFields, getRegularFields,
+    regularFields, isLoadingRegularFields, getRegularFields, boardWorkflowsByBoard,
     timeUnits, isLoadingTimeUnits, getTimeUnits,
   } = useBusinessRuleReducer((s) => s);
 
@@ -651,6 +680,8 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
     setSelectedRegularFields([]);
     setSelectedTimeUnits([]);
     setSelectedCustomFields([]);
+    setPositionPicks([]);
+    setMinimapField(null);
     setFilterText('');
     setDebouncedSearch('');
     if (workspaces.length === 0) listAllWorkspaces();
@@ -674,6 +705,11 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
   }, [show, showTimeUnit, debouncedSearch, triggerTypeId]);
 
   const handleToggleRegularField = (field, key) => {
+    if (pickColumnForField?.(field)) {
+      setMinimapBoardId((prev) => prev || String(defaultBoardId ?? ''));
+      setMinimapField(field);
+      return;
+    }
     setSelectedRegularFields((prev) =>
       prev.some((item) => item.key === key)
         ? prev.filter((item) => item.key !== key)
@@ -697,8 +733,28 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
     );
   };
 
+  const handlePickMinimapColumn = (position) => {
+    const field = minimapField;
+    setMinimapField(null);
+    if (!field || !position.columnId) return;
+    const name = findLoadedColumnName(boardWorkflowsByBoard, position.columnId);
+    setPositionPicks((prev) => (prev.some((pick) => pick.field.regular_field_id === field.regular_field_id && pick.column.id === String(position.columnId))
+      ? prev
+      : [...prev, { field, column: { id: String(position.columnId), name } }]));
+  };
+
+  const handleRemovePositionPick = (pick) => setPositionPicks((prev) => prev.filter((item) => item !== pick));
+
   const handleAdd = () => {
-    if (selectedRegularFields.length === 0 && selectedTimeUnits.length === 0 && selectedCustomFields.length === 0) return;
+    if (selectedRegularFields.length === 0 && selectedTimeUnits.length === 0 && selectedCustomFields.length === 0 && positionPicks.length === 0) return;
+    // One box per field, carrying every column picked for it.
+    const picksByField = new Map();
+    positionPicks.forEach((pick) => {
+      const fieldKey = String(pick.field.regular_field_id);
+      if (!picksByField.has(fieldKey)) picksByField.set(fieldKey, { field: pick.field, columns: [] });
+      picksByField.get(fieldKey).columns.push(pick.column);
+    });
+    picksByField.forEach(({ field, columns }) => onSelect(field, { category_key: 'regular', positionColumns: columns }));
     selectedRegularFields.forEach(({ field }) => onSelect(field, { category_key: 'regular' }));
     selectedTimeUnits.forEach(({ field }) => onSelect(field, { category_key: 'time_unit' }));
     selectedCustomFields.forEach(({ field }) => onSelect(field, { category_key: 'custom' }));
@@ -706,6 +762,7 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
   };
 
   return (
+    <>
     <Modal
       show={show}
       onHide={onClose}
@@ -759,14 +816,28 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
                   displayRegularFields.map((field, idx) => {
                     const key = `regular-${field.regular_field_id ?? idx}`;
                     return (
-                      <PropertyPill
-                        key={key}
-                        pillKey={key}
-                        label={getFieldLabel(field)}
-                        selected={selectedRegularFields.some((item) => item.key === key)}
-                        disabled={isFieldUsed(field)}
-                        onClick={() => handleToggleRegularField(field, key)}
-                      />
+                      <Fragment key={key}>
+                        {positionPicks.filter((pick) => pick.field.regular_field_id === field.regular_field_id).map((pick) => (
+                          <span key={pick.column.id} className="br-property-pill br-property-pill--selected br-property-pill--column">
+                            {getFieldLabel(field)} {pick.column.name || `Column ${pick.column.id}`}
+                            <button
+                              type="button"
+                              className="br-position-column-chip-remove"
+                              onClick={() => handleRemovePositionPick(pick)}
+                              aria-label="Remove column"
+                            >
+                              <FiX size={14} />
+                            </button>
+                          </span>
+                        ))}
+                        <PropertyPill
+                          pillKey={key}
+                          label={getFieldLabel(field)}
+                          selected={selectedRegularFields.some((item) => item.key === key)}
+                          disabled={isFieldUsed(field)}
+                          onClick={() => handleToggleRegularField(field, key)}
+                        />
+                      </Fragment>
                     );
                   })
                 )}
@@ -896,6 +967,17 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
         </footer>
       </div>
     </Modal>
+
+    <BoardMinimapModal
+      show={Boolean(minimapField)}
+      value={{ boardId: minimapBoardId, workflowId: '', columnId: '', swimlaneId: '' }}
+      boardId={minimapBoardId}
+      onBoardChange={setMinimapBoardId}
+      onPick={handlePickMinimapColumn}
+      onClose={() => setMinimapField(null)}
+      columnOnly
+    />
+    </>
   );
 }
 
@@ -4846,6 +4928,11 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   const [disallowTriggerChain, setDisallowTriggerChain] = useState(false);
   const [conditions, setConditions] = useState([]);
   const [showPropertyPicker, setShowPropertyPicker] = useState(false);
+  // Board Minimap that picks the column of a "Last date moved to"-type condition: shown flag + the
+  // condition box it is picking for.
+  const [showPositionColumnMinimap, setShowPositionColumnMinimap] = useState(false);
+  const [positionColumnConditionId, setPositionColumnConditionId] = useState(null);
+  const [positionColumnBoardId, setPositionColumnBoardId] = useState('');
   const editingConditionIdRef = useRef(null);
   const [whenFields, setWhenFields] = useState([]);
   const [whenDeadline, setWhenDeadline] = useState(EMPTY_WHEN_DEADLINE);
@@ -5046,6 +5133,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     getExecutionLogs, executionLogs, isLoadingExecutionLogs, resetExecutionLogs,
     exportExecutionLogsFile, isLoadingExportExecutionLogs,
     getBusinessRuleHistory, businessRuleHistory, isLoadingBusinessRuleHistory, resetBusinessRuleHistory,
+    boardWorkflowsByBoard,
   } = useBusinessRuleReducer((s) => s);
   const { users, usersLoading, getUsers } = useCommonReducer((s) => s);
   const { workspaces, listAllWorkspaces } = useWorkSpaceReducer((s) => s);
@@ -5539,6 +5627,8 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           operatorId: '',
           desiredOperatorLabel: cond.operator || '',
           values: [],
+          // Saved column ids of a "Last date moved to"-type condition (names are looked up when drawn).
+          positionColumns: String(cond.position_value ?? '').split(',').map((id) => id.trim()).filter(Boolean).map((id) => ({ id, name: '' })),
         });
       }
       boxesByField.get(key).values.push({
@@ -6163,26 +6253,12 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   useEffect(() => {
     if (!show || isEditMode || positionDefaultAppliedRef.current) return;
     if (!triggerConfig || Number(triggerConfig.trigger_type_id) !== Number(rule?.id)) return;
-    const extraDefaults = (triggerConfig.default_conditions ?? [])
-      .filter((c) => String(c.field_label ?? '').trim().toLowerCase() !== 'board')
-      .map((c) => ({ ...c, fieldId: c.regular_field_id ?? c.field_id }))
-      .filter((c) => c.fieldId != null);
+    const extraDefaults = getExtraDefaultConditions(triggerConfig);
     positionDefaultAppliedRef.current = true;
     if (extraDefaults.length === 0) return;
     setConditions((prev) => {
       const missing = extraDefaults.filter((c) => !prev.some((p) => p.fieldKey === `regular-${c.fieldId}`));
-      return [...prev, ...missing.map((c) => ({
-        id: `cond-default-${c.fieldId}`,
-        fieldLabel: c.field_label,
-        fieldKey: `regular-${c.fieldId}`,
-        category: 'regular',
-        fieldType: 'regular',
-        fieldId: c.fieldId,
-        valueType: null,
-        operatorId: '',
-        desiredOperatorLabel: '',
-        values: [{ id: `cond-default-val-${c.fieldId}`, conditionId: null, value: '', timeUnitId: '', joinWord: 'OR' }],
-      }))];
+      return [...prev, ...missing.map(makeDefaultCondition)];
     });
     extraDefaults.forEach((c) => {
       if (fieldDetailsByKey[`regular-${c.fieldId}`] === undefined) getFieldDetails('regular', c.fieldId);
@@ -6396,7 +6472,34 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setShowPropertyPicker(true);
   };
 
+  const handleOpenPositionColumnMinimap = (conditionId) => {
+    setPositionColumnConditionId(conditionId);
+    setPositionColumnBoardId((prev) => prev || String(boardConditionRows.find((row) => row.boardId)?.boardId ?? ''));
+    setShowPositionColumnMinimap(true);
+  };
+
+  // A column picked on the minimap is added to the condition (several columns are allowed); picking a
+  // parent column header adds that parent. Its name is kept so the row can show it without reloading.
+  const handlePickPositionColumn = (position) => {
+    setShowPositionColumnMinimap(false);
+    if (!position.columnId || !positionColumnConditionId) return;
+    const name = findLoadedColumnName(boardWorkflowsByBoard, position.columnId);
+    setConditions((prev) => prev.map((c) => {
+      if (c.id !== positionColumnConditionId) return c;
+      const picked = c.positionColumns ?? [];
+      if (picked.some((column) => String(column.id) === String(position.columnId))) return c;
+      return { ...c, positionColumns: [...picked, { id: String(position.columnId), name }] };
+    }));
+  };
+
+  const handleRemovePositionColumn = (conditionId, columnId) => {
+    setConditions((prev) => prev.map((c) => (c.id === conditionId
+      ? { ...c, positionColumns: (c.positionColumns ?? []).filter((column) => String(column.id) !== String(columnId)) }
+      : c)));
+  };
+
   const handleSelectProperty = (field, category) => {
+    const pickedColumns = category.positionColumns ?? [];
     const fieldType = category.category_key === 'custom' ? 'custom' : category.category_key === 'regular' ? 'regular' : null;
     const fieldId = field.regular_field_id ?? field.custom_field_id ?? null;
     const isRegularColorField = category.category_key === 'regular' && getFieldLabel(field).trim().toLowerCase() === 'color';
@@ -6415,11 +6518,12 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     const blankValues = [{ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, value: '', joinWord: 'OR' }];
 
     const editingId = editingConditionIdRef.current;
+    const targetConditionId = editingId || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     if (editingId) {
       editingConditionIdRef.current = null;
-      setConditions((prev) => prev.map((c) => (c.id === editingId ? { ...c, ...fieldProps, values: blankValues } : c)));
+      setConditions((prev) => prev.map((c) => (c.id === editingId ? { ...c, ...fieldProps, values: blankValues, positionColumns: pickedColumns } : c)));
     } else {
-      setConditions((prev) => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, ...fieldProps, values: blankValues }]);
+      setConditions((prev) => [...prev, { id: targetConditionId, ...fieldProps, values: blankValues, positionColumns: pickedColumns }]);
     }
 
     if (fieldType && fieldId != null) {
@@ -6430,11 +6534,12 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
   // Clears every AND-column addition (custom property boxes and any extra "Board is"
   // rows) back to their untouched default state, same as the Create/Link "Clear all"
-  // footers. The remaining single "Board is" row keeps its selected board — clearing it
-  // here would drop the board, which users don't expect from this button.
+  // footers. The remaining single "Board is" row keeps its selected board, and the trigger's
+  // default conditions (Position ...) stay as untouched defaults — clearing them would drop
+  // fields the backend requires.
   const handleClearAndConditions = () => {
     setBoardConditionRows((prev) => (prev.length > 1 ? [prev[0]] : prev));
-    setConditions([]);
+    setConditions(getExtraDefaultConditions(triggerConfig).map(makeDefaultCondition));
   };
 
   // "When fields" (shown only for trigger types where get_trigger_config reports
@@ -7216,13 +7321,6 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     });
   };
 
-  // "Clear all" only makes sense to show once the user has actually added something
-  // beyond the trigger's untouched defaults — an extra "Board is" row or a custom
-  // property box.
-  const hasAndAdditions =
-    conditions.length > 0 ||
-    boardConditionRows.length > 1;
-
   const handleCloseAttempt = () => {
     if (isEditMode) {
       onClose();
@@ -7849,6 +7947,32 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                       </div>
                       {detailsLoading && <span className="business-rule-form-condition-loading">Loading...</span>}
 
+                      {isPositionColumnCondition(cond) && (
+                        <div className="br-position-column-row">
+                          {(cond.positionColumns ?? []).map((column) => (
+                            <span key={column.id} className="br-position-column-chip">
+                              {column.name || findLoadedColumnName(boardWorkflowsByBoard, column.id) || `Column ${column.id}`}
+                              <button
+                                type="button"
+                                className="br-position-column-chip-remove"
+                                onClick={() => handleRemovePositionColumn(cond.id, column.id)}
+                                aria-label="Remove column"
+                              >
+                                <FiX size={12} />
+                              </button>
+                            </span>
+                          ))}
+                          <button
+                            type="button"
+                            className="business-rule-form-add-link"
+                            onClick={() => handleOpenPositionColumnMinimap(cond.id)}
+                          >
+                            <FiPlus size={14} aria-hidden />
+                            {(cond.positionColumns ?? []).length > 0 ? 'Add column' : 'Choose column'}
+                          </button>
+                        </div>
+                      )}
+
                       {cond.values.map((v) => (
                         <div key={v.id} className="br-board-condition-value-row">
                           {operatorTail && <span className="br-condition-value-text">{operatorTail}</span>}
@@ -7936,15 +8060,13 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                       <FiPlus size={14} aria-hidden />
                       Add new property
                     </button>
-                    {hasAndAdditions && (
-                      <button
-                        type="button"
-                        className="business-rule-form-add-link"
-                        onClick={handleClearAndConditions}
-                      >
-                        Clear all
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="business-rule-form-add-link"
+                      onClick={handleClearAndConditions}
+                    >
+                      Clear all
+                    </button>
                   </div>
                 )}
               </div>
@@ -7965,7 +8087,13 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                         action={section.action}
                         allowRepeat={rule?.icon !== TRIGGER_CODE_TO_ICON.card_created}
                         renderPropertyPicker={(pickerProps) => (
-                          <CardPropertyMatchModal {...pickerProps} triggerTypeId={rule.id} showTimeUnit={false} />
+                          <CardPropertyMatchModal
+                            {...pickerProps}
+                            triggerTypeId={rule.id}
+                            showTimeUnit={false}
+                            pickColumnForField={(field) => isPositionColumnField(field.regular_field_id, getFieldLabel(field))}
+                            defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
+                          />
                         )}
                         defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
                         value={genericActionValues[String(section.action.action_type_id)] ?? EMPTY_GENERIC_ACTION_VALUE}
@@ -9947,6 +10075,8 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       show={showPropertyPicker}
       onClose={() => { setShowPropertyPicker(false); editingConditionIdRef.current = null; }}
       onSelect={handleSelectProperty}
+      pickColumnForField={(field) => isPositionColumnField(field.regular_field_id, getFieldLabel(field))}
+      defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
       existingFieldLabels={[
         'board',
         ...conditions
@@ -9955,6 +10085,16 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       ]}
       triggerTypeId={rule.id}
       showTimeUnit={false}
+    />
+
+    <BoardMinimapModal
+      show={showPositionColumnMinimap}
+      value={{ boardId: positionColumnBoardId, workflowId: '', columnId: '', swimlaneId: '' }}
+      boardId={positionColumnBoardId}
+      onBoardChange={setPositionColumnBoardId}
+      onPick={handlePickPositionColumn}
+      columnOnly
+      onClose={() => setShowPositionColumnMinimap(false)}
     />
 
     <CardPropertyMatchModal
@@ -10122,6 +10262,8 @@ CardPropertyMatchModal.propTypes = {
   triggerTypeId: PropTypes.number,
   showTimeUnit: PropTypes.bool,
   showCustomFields: PropTypes.bool,
+  pickColumnForField: PropTypes.func,
+  defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
 CreateActionModal.propTypes = {

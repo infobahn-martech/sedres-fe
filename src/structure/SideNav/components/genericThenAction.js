@@ -65,6 +65,7 @@ const buildFilterConditions = (rows = []) => rows
     if (row.fieldType === 'custom') entry.custom_field_id = row.fieldId;
     else entry.regular_field_id = row.fieldId;
     if (row.timeUnitId) entry.time_unit_id = Number(row.timeUnitId);
+    if (row.positionColumns?.length) entry.position_value = row.positionColumns.map((column) => column.id).join(',');
     return entry;
   });
 
@@ -77,6 +78,7 @@ const parseFilterConditions = (conditions = []) => conditions.map((c, index) => 
   connector: normalizeConnector(c.connector),
   value: String(c.input_value ?? ''),
   timeUnitId: c.time_unit_id != null ? String(c.time_unit_id) : '',
+  positionColumns: String(c.position_value ?? '').split(',').map((id) => id.trim()).filter(Boolean).map((id) => ({ id, name: '' })),
 }));
 
 // One then_action per generic trigger action the user filled in. Regular fields go out as

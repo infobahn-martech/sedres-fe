@@ -247,3 +247,40 @@
   font-size: 12px;
   color: var(--text-muted);
 }
+
+// Column(s) of a "Last date moved to"-type condition: chips of the picked columns and the link that
+// opens the Board Minimap.
+.br-position-column-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.br-position-column-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.br-position-column-chip-remove {
+  display: inline-flex;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+// Picked column of a "Last date moved to"-type field in the Card property match picker:
+// a selected pill with the column name and a remove button.
+.br-property-pill--column {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

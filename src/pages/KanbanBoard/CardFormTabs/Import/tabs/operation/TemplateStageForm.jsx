@@ -185,6 +185,53 @@ const placeSaberFieldUnderSelect = (fields) => {
   return rest;
 };
 
+const isWeatherForecastField = (field) => normalizeTemplateKey(field?.field_key) === "weather_forecast";
+const isWeatherDetailField = (field) => normalizeTemplateKey(field?.field_key) === "weather_detail";
+
+// Moves the Weather Detail field directly under the Weather Forecast select (and its map).
+const placeWeatherDetailUnderForecast = (fields) => {
+  const detailIndex = fields.findIndex(isWeatherDetailField);
+  if (detailIndex < 0) return fields;
+  const detailField = fields[detailIndex];
+  const rest = fields.filter((_, index) => index !== detailIndex);
+  const forecastIndex = rest.findIndex(isWeatherForecastField);
+  if (forecastIndex < 0) return fields;
+  rest.splice(forecastIndex + 1, 0, detailField);
+  return rest;
+};
+
+// Merges the get_weather_map `weather_detail` field into the template fields: a template field with
+// the same key keeps its id and takes the response's data; otherwise the response field is added.
+const mergeWeatherDetailField = (fields, responseField) => {
+  if (!responseField) return fields;
+  const matchIndex = fields.findIndex(isWeatherDetailField);
+  if (matchIndex >= 0) {
+    const next = fields.slice();
+    next[matchIndex] = {
+      ...fields[matchIndex],
+      ...responseField,
+      field_id: fields[matchIndex].field_id,
+      value: responseField.value ?? fields[matchIndex].value ?? null,
+      show_when_field_id: fields[matchIndex].show_when_field_id,
+      show_when_value: fields[matchIndex].show_when_value,
+      row_no: fields[matchIndex].row_no,
+      col_no: fields[matchIndex].col_no,
+    };
+    return next;
+  }
+  // Show it under the Weather Forecast select even if its `show_when_field_id` isn't on this stage.
+  const forecastField = fields.find(isWeatherForecastField);
+  const controllerId = String(responseField.show_when_field_id ?? "").trim();
+  const hasController = controllerId && fields.some((field) => String(field?.field_id) === controllerId);
+  return [
+    ...fields,
+    {
+      ...responseField,
+      show_when_field_id: hasController ? responseField.show_when_field_id : forecastField?.field_id ?? null,
+    },
+  ];
+};
+
 // Pre Arrival / Arrival / Departure rendered from the call's template subtab (`stage`) and
 // saved through POST call_file/save_stage. Mounted with key `${callId}:${stage.tabId}`, so a
 // different call or stage always starts from fresh state.
@@ -215,6 +262,8 @@ function TemplateStageForm({
   // A Weather Forecast change requests call_file/get_weather_map; its `weather_map` field
   // (iframe title / src) is shown under the Weather Forecast select.
   const [weatherMapField, setWeatherMapField] = useState(null);
+  // Its `weather_detail` field (textarea) is shown right under the Weather Forecast select / map.
+  const [weatherDetailField, setWeatherDetailField] = useState(null);
   useEffect(() => {
     setFreshData(null);
   }, [detail]);
@@ -222,8 +271,12 @@ function TemplateStageForm({
   const activeStage = freshData?.stage ?? stage;
 
   const fields = useMemo(() => {
-    const base = Array.isArray(activeStage?.fields) ? activeStage.fields : [];
-    if (!saberAttachmentField) return placeSaberFieldUnderSelect(sortTemplateFields(base));
+    const base = mergeWeatherDetailField(
+      Array.isArray(activeStage?.fields) ? activeStage.fields : [],
+      weatherDetailField
+    );
+    const place = (list) => placeWeatherDetailUnderForecast(placeSaberFieldUnderSelect(sortTemplateFields(list)));
+    if (!saberAttachmentField) return place(base);
     const overrideId = String(saberAttachmentField.field_id ?? "").trim();
     const matchIndex = base.findIndex(
       (field) => (overrideId && String(field?.field_id) === overrideId) || isSaberField(field)
@@ -242,8 +295,8 @@ function TemplateStageForm({
       // Template has no SABER file field — render the one from get_saber_attachment.
       next = [...base, responseField];
     }
-    return placeSaberFieldUnderSelect(sortTemplateFields(next));
-  }, [activeStage, saberAttachmentField]);
+    return place(next);
+  }, [activeStage, saberAttachmentField, weatherDetailField]);
   const timeObjects = useMemo(() => flattenTimeObjects(activeDetail), [activeDetail]);
 
   // Saved values from the (shared) call detail; recomputed after a save refreshes it.
@@ -385,10 +438,11 @@ function TemplateStageForm({
       });
       if (!aliveRef.current || seq !== weatherRequestSeqRef.current) return;
       const payload = data?.data ?? {};
+      const isBadWeather = Number(payload.is_bad_weather) === 1;
       const mapField = payload.weather_map;
-      setWeatherMapField(
-        Number(payload.is_bad_weather) === 1 && mapField && typeof mapField === "object" ? mapField : null
-      );
+      setWeatherMapField(isBadWeather && mapField && typeof mapField === "object" ? mapField : null);
+      const detailField = payload.weather_detail;
+      setWeatherDetailField(isBadWeather && detailField && typeof detailField === "object" ? detailField : null);
     } catch (error) {
       if (aliveRef.current && seq === weatherRequestSeqRef.current) {
         notify(getApiErrorMessage(error, "Failed to load the weather map."), "error");
@@ -415,7 +469,8 @@ function TemplateStageForm({
     const nextParams = JSON.parse(triggerParamsKey);
     if (nextParams.saber !== prevParams.saber) {
       refreshSaberAttachment(nextParams.saber ?? "");
-      if (nextParams.saber) openLineItemsForSaber();
+      // The sales order line items modal is only for SABER "By Sedres".
+      if (normalizeTemplateKey(nextParams.saber) === "by_sedres") openLineItemsForSaber();
     }
     if (nextParams.weather_forecast !== prevParams.weather_forecast) {
       refreshWeatherMap(nextParams.weather_forecast ?? "");
