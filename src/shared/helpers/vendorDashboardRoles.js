@@ -1,4 +1,4 @@
-import { getItem } from './localStorage';
+import { getStoredRoleId } from './localStorage';
 
 /**
  * Third-party portal roles that get a dashboard-only experience: their own
@@ -37,9 +37,9 @@ const VENDOR_DASHBOARD_CONFIG = {
   },
 };
 
-/** Safely reads the logged-in user's role_id from localStorage as a Number, or null if absent/invalid. */
+/** Safely reads the logged-in user's role_id from the cached profile as a Number, or null if absent/invalid. */
 export function getRoleId() {
-  const raw = getItem('role_id');
+  const raw = getStoredRoleId();
   const parsed = Number(raw);
   return raw != null && raw !== '' && Number.isFinite(parsed) ? parsed : null;
 }

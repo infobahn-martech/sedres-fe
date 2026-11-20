@@ -1,4 +1,4 @@
-import { getItem } from './localStorage';
+import { getStoredRoleId } from './localStorage';
 import { collectUserRoleIdCandidates, normalizeRoleId } from './groUserRoles';
 import { ROUTE_PATHS } from '../../router/paths';
 
@@ -52,7 +52,7 @@ const MASTER_MENU_PATHS = {
 
 function getAllowedMenus(user) {
   const candidates = collectUserRoleIdCandidates(user);
-  const storedRole = normalizeRoleId(getItem('role_id'));
+  const storedRole = normalizeRoleId(getStoredRoleId());
   if (storedRole) candidates.push(storedRole);
 
   const roleId = candidates.find((id) => ROLE_MASTER_MENUS[id]);

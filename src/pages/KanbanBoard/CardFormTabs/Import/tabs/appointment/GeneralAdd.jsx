@@ -20,7 +20,7 @@ import {
   buildCreateCallFileFormData,
   buildCreateTemplateCallFileFormData,
 } from "@/shared/helpers/createCallFilePayload";
-import { getItem } from "@/shared/helpers/localStorage";
+import { getStoredProfile } from "@/shared/helpers/localStorage";
 import { extractTextFromFile, normalizeAppointmentDateTime } from "@/shared/helpers/appointmentAiExtractor";
 import { notify } from "@/components/Toaster";
 import CardTabListLoading from "@/components/CardTabListLoading";
@@ -2191,7 +2191,7 @@ function GeneralAdd({
                         <OwnerField
                           value={getFieldValue("owner")}
                           onChange={handleChange("owner")}
-                          options={mergeOptionIfMissing(ownerOptions, getFieldValue("owner"), getItem("userName"))}
+                          options={mergeOptionIfMissing(ownerOptions, getFieldValue("owner"), getStoredProfile()?.name)}
                           placeholder="Select owner"
                           disabled={masterInputsDisabled}
                         />

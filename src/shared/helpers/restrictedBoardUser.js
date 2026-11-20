@@ -31,10 +31,6 @@ export const DA_ROLE_ID = '22';
 /** Fallback landing path for restricted users when a route isn't allowed — not a specific board. */
 export const RESTRICTED_USER_FALLBACK_PATH = '/workspaces';
 
-function toRoleIdString(value) {
-  return normalizeRoleId(value);
-}
-
 function collectRoleIdCandidatesFromUser(user) {
   return collectUserRoleIdCandidates(user);
 }
@@ -60,8 +56,6 @@ export function isRestrictedBoardUser(user) {
     // ignore invalid cached profile JSON
   }
 
-  const storedRole = toRoleIdString(getItem('role_id'));
-  if (storedRole && isSedresRestrictedBoardRoleId(storedRole)) return true;
 
   return false;
 }
@@ -87,8 +81,6 @@ export function isPortOperatorUser(user) {
     // ignore invalid cached profile JSON
   }
 
-  const storedRole = toRoleIdString(getItem('role_id'));
-  if (storedRole === PORT_OPERATOR_ROLE_ID) return true;
 
   return false;
 }
@@ -114,8 +106,6 @@ export function hasKanbanFullSidebar(user) {
     // ignore invalid cached profile JSON
   }
 
-  const storedRole = toRoleIdString(getItem('role_id'));
-  if (storedRole === KANBAN_FULL_SIDEBAR_ROLE_ID || storedRole === DA_ROLE_ID) return true;
 
   return false;
 }

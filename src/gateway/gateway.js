@@ -109,17 +109,11 @@ Gateway.interceptors.response.use(
       try {
         // Call refresh token endpoint using RefreshGateway (no interceptors)
         const response = await RefreshGateway.post("users/refresh_token", { refresh_token: refreshToken });
-        const { access_token, access_expires_in } = response.data;
+        const { access_token } = response.data;
 
         if (access_token) {
           // Update access token in localStorage
           localStorage.setItem("accessToken", access_token);
-
-          // Update expiration time if provided
-          if (access_expires_in) {
-            const expirationTime = Date.now() + (access_expires_in * 1000);
-            localStorage.setItem("accessTokenExpiry", expirationTime.toString());
-          }
 
           // Update the original request with new token
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
@@ -141,8 +135,6 @@ Gateway.interceptors.response.use(
         // Clear tokens
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-        localStorage.removeItem("accessTokenExpiry");
-        localStorage.removeItem("refreshTokenExpiry");
 
         // You might want to redirect to login here
         return Promise.reject(refreshError);

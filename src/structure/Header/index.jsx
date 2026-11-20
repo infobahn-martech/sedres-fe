@@ -196,8 +196,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     }
 
     const localStorageFallback = {
-      name: localStorage.getItem('userName') || '',
-      email: localStorage.getItem('userEmail') || '',
       userid: localStorage.getItem('userid') || '',
     };
 

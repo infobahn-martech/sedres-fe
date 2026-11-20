@@ -1,11 +1,20 @@
 import { create } from 'zustand';
 import authService from '../services/authService';
-import { getAuthData, removeItem, setItem, getItem } from '../shared/helpers/localStorage';
+import {
+  getAuthData,
+  removeItem,
+  setItem,
+  getItem,
+  purgeLegacyStorageKeys,
+} from '../shared/helpers/localStorage';
 import useAlertReducer from './AlertReducer';
 import { normalizePermissionSections } from '../shared/utils/permissions';
 import { useDaLocalReachedDates, useDaLocalLaunchHire, useDaLocalVerifiedItems } from './daStore';
 
 const { isLoggedIn } = getAuthData();
+
+// Clear keys left behind by older builds for sessions that never log out.
+purgeLegacyStorageKeys();
 
 // New module/submodule/action permission system, additive to the existing
 // role_id-based checks used throughout the app — see rolePermissions.js,
@@ -55,8 +64,6 @@ const useAuthReducer = create((set) => ({
       // ✅ token location based on your response
       const accessToken = data?.access_token;
       const refreshToken = data?.refresh_token;
-      const accessExpiresIn = data?.access_expires_in;
-      const refreshExpiresIn = data?.refresh_expires_in;
 
       // ✅ user data from response
       const authData = {
@@ -67,29 +74,11 @@ const useAuthReducer = create((set) => ({
         message: data?.message,
       };
 
-      if (accessToken) {
-        setItem("accessToken", accessToken);
-        // Store expiration time if provided (in seconds, convert to timestamp)
-        if (accessExpiresIn) {
-          const expirationTime = Date.now() + (accessExpiresIn * 1000);
-          setItem("accessTokenExpiry", expirationTime.toString());
-        }
-      }
+      if (accessToken) setItem("accessToken", accessToken);
+      if (refreshToken) setItem("refreshToken", refreshToken);
 
-      if (refreshToken) {
-        setItem("refreshToken", refreshToken);
-        // Store refresh token expiration time if provided
-        if (refreshExpiresIn) {
-          const expirationTime = Date.now() + (refreshExpiresIn * 1000);
-          setItem("refreshTokenExpiry", expirationTime.toString());
-        }
-      }
-
-      // Store userid in localStorage for refresh persistence
+      // userid survives refresh and keys the cached userProfile (which holds name / email / role).
       if (data?.userid) setItem("userid", data.userid);
-      // Store user name and email for fallback profile on refresh
-      if (data?.name) setItem("userName", data.name);
-      if (data?.email) setItem("userEmail", data.email);
       // Store vendor_id for vendor/company portal dashboards (e.g. Transport Company)
       if (data?.vendor_id != null) setItem("vendor_id", data.vendor_id);
 
@@ -97,7 +86,6 @@ const useAuthReducer = create((set) => ({
       // fetches authoritative permissions from getuserdetail instead of
       // reusing a stale or previously logged-in user's cached permissions.
       removeItem('userProfile');
-      removeItem('role_id');
 
       set({
         authData,
@@ -162,14 +150,10 @@ const useAuthReducer = create((set) => ({
     });
     removeItem('accessToken');
     removeItem('refreshToken');
-    removeItem('accessTokenExpiry');
-    removeItem('refreshTokenExpiry');
     removeItem('userid');
     removeItem('userProfile');
-    removeItem('userName');
-    removeItem('userEmail');
-    removeItem('role_id');
     removeItem('vendor_id');
+    purgeLegacyStorageKeys();
 
     // These DA local-only fallback stores (see daStore.js) are in-memory,
     // keyed by call id (not by user), and only meant to be cleared by a full
@@ -239,8 +223,8 @@ const useAuthReducer = create((set) => ({
 
         const fallbackProfileData = {
           userid: finalUserId,
-          name: authData.name || getItem('userName') || 'User',
-          email: authData.email || getItem('userEmail') || '',
+          name: authData.name || 'User',
+          email: authData.email || '',
           status: authData.status || 'active',
           role: role,
           permissions,
@@ -262,9 +246,6 @@ const useAuthReducer = create((set) => ({
       // Save to localStorage for future refresh scenarios
       if (profileData) {
         setItem('userProfile', JSON.stringify(profileData));
-        if (profileData.role?.role_id != null && profileData.role?.role_id !== '') {
-          setItem('role_id', String(profileData.role.role_id));
-        }
       }
 
       set({
