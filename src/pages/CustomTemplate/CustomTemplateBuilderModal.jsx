@@ -48,6 +48,22 @@ const makeId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36)
 // the string/number forms rather than coerced with Boolean().
 const isFlagTrue = (v) => v === true || v === 1 || v === "1";
 
+// What the user may change on a field is decided by the API, per field, via
+// these flags. The FE never locks anything on its own: a flag the API doesn't
+// send means "allowed".
+const FIELD_PERMISSION_FLAGS = {
+    delete: "is_deletable",
+    label: "is_label_editable",
+    type: "is_type_editable",
+    required: "is_required_editable",
+    source: "is_source_editable",
+};
+const isFlagAllowed = (v) => v === undefined || v === null || v === "" || isFlagTrue(v);
+const readFieldPermissions = (raw) => Object.fromEntries(
+    Object.entries(FIELD_PERMISSION_FLAGS).map(([perm, flag]) => [perm, isFlagAllowed(raw?.[flag])]),
+);
+const canEditField = (field, perm) => field?.permissions?.[perm] !== false;
+
 const createBlankField = () => ({
     id: makeId("field"),
     label: "",
@@ -59,6 +75,7 @@ const createBlankField = () => ({
     dependsOnFieldLabel: "",
     timeObjectId: "",
     systemBindingKey: null,
+    permissions: readFieldPermissions(null),
     gridRow: null,
     gridCol: null,
 });
@@ -87,6 +104,7 @@ const mapTemplateField = (f) => {
         // field_key only identifies a system binding on system fields.
         systemBindingKey: f.systemBindingKey ?? f.system_binding_key
             ?? (isFlagTrue(f.is_system) ? f.field_key : null) ?? null,
+        permissions: f.permissions ?? readFieldPermissions(f),
         gridRow: f.gridRow ?? f.row_no ?? f.grid_row ?? null,
         gridCol: f.gridCol ?? f.col_no ?? f.grid_col ?? null,
     };
@@ -157,8 +175,8 @@ const collectStructureTabKeys = (structure) => {
     return keys;
 };
 
-// A system_bindings field as a builder field. System fields are locked (never
-// deletable); whether they're required comes from the API's is_required flag.
+// A system_bindings field as a builder field. Its values and what may be
+// edited/deleted (FIELD_PERMISSION_FLAGS) all come from the binding.
 // system_bindings now identifies each field by field_key (older responses used system_binding_key).
 const getBindingKey = (binding) => binding?.field_key ?? binding?.system_binding_key ?? null;
 
@@ -173,16 +191,19 @@ const mapSystemBindingField = (binding) => ({
     masterModule: binding.master_key ?? "",
     dependsOnFieldLabel: binding.depends_on_field_label ?? "",
     systemBindingKey: getBindingKey(binding),
+    permissions: readFieldPermissions(binding),
     gridRow: binding.row_no ?? null,
     gridCol: binding.col_no ?? null,
 });
 
 // Keeps one tab/subtab's fields in step with its system bindings: fields
 // matching a binding (by key, else by label for templates saved before fields
-// carried a key) take the API's label/type/source while keeping their saved id,
-// layout and static options; fields bound to keys this scope no longer has are
-// dropped; bindings not yet present are appended (auto-placed into the grid).
-const syncSystemBindingFields = (fields, bindings) => {
+// carried a key) take the API's value for every property the API marks as not
+// editable, and keep their own value for the rest (plus their saved id and
+// layout); fields bound to keys this scope no longer has are dropped; bindings
+// not yet present are appended (auto-placed into the grid), except ones the
+// user deleted (removedKeys).
+const syncSystemBindingFields = (fields, bindings, removedKeys = []) => {
     const byKey = new Map(bindings.map((b) => [getBindingKey(b), b]));
     const keyByLabel = new Map(bindings.map((b) => [String(b.label ?? "").trim().toLowerCase(), getBindingKey(b)]));
     const seen = new Set();
@@ -195,20 +216,25 @@ const syncSystemBindingFields = (fields, bindings) => {
         }
         seen.add(key);
         const fromApi = mapSystemBindingField(byKey.get(key));
-        const keepSavedOptions = fromApi.optionsSource === "manual" && field.options?.length;
+        const can = (perm) => canEditField(fromApi, perm);
+        const keepOwnSource = can("source");
+        const keepSavedOptions = keepOwnSource || (fromApi.optionsSource === "manual" && field.options?.length);
         return [{
             ...field,
-            label: fromApi.label,
-            type: fromApi.type,
-            required: fromApi.required,
-            optionsSource: fromApi.optionsSource,
-            masterModule: fromApi.masterModule,
+            label: can("label") ? field.label : fromApi.label,
+            type: can("type") ? field.type : fromApi.type,
+            required: can("required") ? field.required : fromApi.required,
+            optionsSource: keepOwnSource ? field.optionsSource : fromApi.optionsSource,
+            masterModule: keepOwnSource ? field.masterModule : fromApi.masterModule,
             systemBindingKey: key,
+            permissions: fromApi.permissions,
             options: keepSavedOptions ? field.options : fromApi.options,
             optionIds: keepSavedOptions ? field.optionIds : fromApi.optionIds,
         }];
     });
-    const missingBindings = bindings.filter((b) => getBindingKey(b) && !seen.has(getBindingKey(b)));
+    const removed = new Set(removedKeys);
+    const missingBindings = bindings.filter((b) => getBindingKey(b) && !seen.has(getBindingKey(b))
+        && !(removed.has(getBindingKey(b)) && isFlagAllowed(b[FIELD_PERMISSION_FLAGS.delete])));
     if (!missingBindings.length) return synced;
 
     // Give the new fields cells below the current layout, then move each one in
@@ -264,7 +290,7 @@ const syncTabList = (tabs, structureTabs, previousTabKeys, addMissing, prefix = 
                 ...tab,
                 tabKey: st.key,
                 sections: st.sections,
-                fields: sortFieldsByLayout(syncSystemBindingFields(tab.fields ?? [], st.fields)),
+                fields: sortFieldsByLayout(syncSystemBindingFields(tab.fields ?? [], st.fields, tab.removedBindingKeys)),
                 subTabs: syncTabList(tab.subTabs ?? [], st.subTabs, previousTabKeys, addMissing, "subtab"),
             });
             return;
@@ -433,7 +459,7 @@ function OptionsSourceEditor({ field, masterModuleOptions, masterModulesLoading,
                         type="button"
                         role="radio"
                         aria-checked={source === card.value}
-                        title={isLocked ? "Set by the default field" : card.desc}
+                        title={isLocked ? "This field's options source can't be changed" : card.desc}
                         className={`ctm-segmented-btn ${source === card.value ? "is-active" : ""}`}
                         disabled={isLocked && source !== card.value}
                         onClick={() => !isLocked && onSetSource(card.value)}
@@ -549,10 +575,16 @@ const getFieldSummary = (field, typeLabel, isDropdown, hasOptions, masterModuleO
     return parts.join(" · ");
 };
 
-function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterModuleOptions, masterModulesLoading, dropdownFieldLabels, timeObjectOptions, timeObjectsLoading, optionsFieldTypes, optionsSourceTypes, timeObjectTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, isLocked = false, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
+function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterModuleOptions, masterModulesLoading, dropdownFieldLabels, timeObjectOptions, timeObjectsLoading, optionsFieldTypes, optionsSourceTypes, timeObjectTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
     // New (unlabelled) fields open ready to edit; existing ones start collapsed
     // so long templates stay scannable.
     const [expanded, setExpanded] = useState(() => !field.label.trim());
+    // Per-field permissions come from the API (see FIELD_PERMISSION_FLAGS).
+    const canDelete = canEditField(field, "delete");
+    const canEditLabel = canEditField(field, "label");
+    const canEditType = canEditField(field, "type");
+    const canEditRequired = canEditField(field, "required");
+    const canEditSource = canEditField(field, "source");
     const isRequired = Boolean(field.required);
     const isTimeObject = field.type === timeObjectTypeKey;
     const showOptionsSource = optionsSourceTypes.has(field.type);
@@ -583,6 +615,7 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
                     placeholder="Field label"
                     aria-label="Field label"
                     value={field.label}
+                    disabled={!canEditLabel}
                     onChange={(e) => onUpdate(field.id, "label", e.target.value)}
                 />
                 <button
@@ -599,8 +632,8 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
                     type="button"
                     className="ctm-field-del-btn"
                     aria-label="Delete field"
-                    title={isLocked ? "Default field — can't be deleted" : "Delete field"}
-                    disabled={isLocked}
+                    title={canDelete ? "Delete field" : "This field can't be deleted"}
+                    disabled={!canDelete}
                     onClick={() => onRequestDelete(field.id)}
                 >
                     <FiTrash2 size={15} />
@@ -622,26 +655,26 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
                             onChange={(e) => onUpdate(field.id, "type", e.target.value)}
                             options={fieldTypeOptions}
                             placeholder={fieldTypesLoading ? "Loading..." : "Select type..."}
-                            disabled={fieldTypesLoading || isLocked}
+                            disabled={fieldTypesLoading || !canEditType}
                             menuPortalTarget={document.body}
                             menuPlacement="auto"
                         />
                     </div>
 
-                    <label className={`ctm-field-required-row ${isLocked ? "is-locked" : ""}`}>
+                    <label className={`ctm-field-required-row ${canEditRequired ? "" : "is-locked"}`}>
                         <span className="ctm-field-required-text">
                             <span className="ctm-field-control-label">Required</span>
                             <span className="ctm-field-control-hint">
-                                {isLocked
-                                    ? (isRequired ? "Always mandatory for this default field" : "Optional for this default field")
-                                    : "Mandatory field"}
+                                {canEditRequired
+                                    ? "Mandatory field"
+                                    : (isRequired ? "Always mandatory for this field" : "Optional for this field")}
                             </span>
                         </span>
                         <span className="ctm-toggle">
                             <input
                                 type="checkbox"
                                 checked={isRequired}
-                                disabled={isLocked}
+                                disabled={!canEditRequired}
                                 onChange={(e) => onUpdate(field.id, "required", e.target.checked)}
                             />
                             <span className="ctm-toggle-slider" />
@@ -663,7 +696,7 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
                             masterModuleOptions={masterModuleOptions}
                             masterModulesLoading={masterModulesLoading}
                             dependencyFieldOptions={dependencyFieldOptions}
-                            isLocked={isLocked}
+                            isLocked={!canEditSource}
                             onSetSource={(source) => onSetOptionsSource(field.id, source)}
                             onSetMasterModule={(mod) => onSetMasterModule(field.id, mod)}
                             onSetDependsOn={(label) => onUpdate(field.id, "dependsOnFieldLabel", label)}
@@ -785,15 +818,12 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const timeObjectTypeKey = useMemo(() => buildTimeObjectTypeKey(fieldTypes), [fieldTypes]);
     // The time_object master list is no longer fetched by the builder.
     const timeObjectOptions = useMemo(() => buildTimeObjectOptions([]), []);
-    // System-bound fields (from system_bindings, on any tab or subtab) can't be
-    // deleted and are always required. Fields bound to keys the current call
-    // type doesn't have are dropped during sync, so the key alone decides.
-    const isLockedField = (field) => Boolean(field.systemBindingKey);
 
     const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
     // The first tab is the template's default — it and its email preview can't be removed.
     const isFirstTabActive = activeTab?.id === tabs[0]?.id;
-    const isFieldRemovable = (field) => !isLockedField(field);
+    // Whether a field may be deleted is the API's call (is_deletable).
+    const isFieldRemovable = (field) => canEditField(field, "delete");
     const hasSubTabs = Boolean(activeTab?.subTabs?.length);
     const activeSubTab = hasSubTabs
         ? (activeTab.subTabs.find((s) => s.id === activeSubTabId) ?? activeTab.subTabs[0])
@@ -1225,19 +1255,27 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const handleConfirmDeleteField = () => {
         if (!deleteFieldRequest) return;
         recordHistory();
+        // Drops the field; a deleted system-bound field's key is remembered on
+        // its tab so the next system_bindings sync doesn't add it back.
+        const removeFrom = (scope) => {
+            const target = (scope.fields ?? []).find((f) => f.id === deleteFieldRequest.fieldId);
+            return {
+                ...scope,
+                fields: (scope.fields ?? []).filter((f) => f.id !== deleteFieldRequest.fieldId),
+                removedBindingKeys: target?.systemBindingKey
+                    ? [...new Set([...(scope.removedBindingKeys ?? []), target.systemBindingKey])]
+                    : scope.removedBindingKeys,
+            };
+        };
         setTabs((prev) => prev.map((t) => {
             if (t.id !== deleteFieldRequest.tabId) return t;
             if (deleteFieldRequest.subTabId) {
                 return {
                     ...t,
-                    subTabs: t.subTabs.map((s) => (
-                        s.id === deleteFieldRequest.subTabId
-                            ? { ...s, fields: s.fields.filter((f) => f.id !== deleteFieldRequest.fieldId) }
-                            : s
-                    )),
+                    subTabs: t.subTabs.map((s) => (s.id === deleteFieldRequest.subTabId ? removeFrom(s) : s)),
                 };
             }
-            return { ...t, fields: t.fields.filter((f) => f.id !== deleteFieldRequest.fieldId) };
+            return removeFrom(t);
         }));
         setDeleteFieldRequest(null);
     };
@@ -1874,7 +1912,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         onDragEnd={handleDragEnd}
                                         onUpdate={handleUpdateField}
                                         onRequestDelete={handleRequestDeleteField}
-                                        isLocked={isLockedField(field)}
                                         onAddOption={handleAddOption}
                                         onUpdateOption={handleUpdateOption}
                                         onRemoveOption={handleRemoveOption}
