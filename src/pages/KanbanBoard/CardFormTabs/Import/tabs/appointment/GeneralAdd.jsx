@@ -151,10 +151,11 @@ const shouldRefetchForTimeObjectValue = (value) =>
 
 // Changing a field bound to one of these params re-fetches first_tab so the backend can resolve
 // the remaining field values (email / vessel / billing entity / port / last port / requestor email /
-// operator / captain email). Keyed by the normalized system_binding_key / master_key / label
-// (e.g. "billing_entity_id", "Billing Entity", "Vessel Name", "Port", "Assigned Operator").
+// operator / captain email / appointment type). Keyed by the normalized system_binding_key / master_key /
+// label (e.g. "billing_entity_id", "Billing Entity", "Vessel Name", "Port", "Assigned Operator", "Appointment Type").
 const TEMPLATE_REFETCH_PARAMS = {
   appointment_email: "appointment_email_file",
+  appointment_type: "appointment_type",
   vessel: "vessel_id",
   billing_entity: "billing_entity_id",
   port: "port_id",
