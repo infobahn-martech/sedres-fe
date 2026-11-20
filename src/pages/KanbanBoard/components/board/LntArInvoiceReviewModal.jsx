@@ -17,16 +17,16 @@ const REVIEW_PAGE_SIZE = 20;
 /* One option per card + sales order; the same sales order number can be offered on several cards. */
 const getOptionKey = (option) => `${option.card_id}:${option.sales_order_no}`;
 
-// Opened after an L&T "Received from Ops" bulk invoice upload. One row per identified invoice: its
+// Opened after an L&T or Subsea 7 "Received from Ops" bulk invoice upload (each has its own review store). One row per identified invoice: its
 // QR code state, the invoice file and a dropdown of the sales orders it can go on, picked by the
 // user. An invoice without a QR code cannot be confirmed, so its card stays in Received from Ops.
 // Confirm sends the picked sales orders, grouped by card, to da/confirm_ar_invoices.
-const LntArInvoiceReviewModal = ({ onConfirmed }) => {
-  const show = useLntArInvoiceStore((state) => state.showArInvoiceReviewModal);
-  const invoices = useLntArInvoiceStore((state) => state.selectedArInvoiceReviewInvoices);
-  const onClose = useLntArInvoiceStore((state) => state.closeArInvoiceReviewModal);
-  const isConfirming = useLntArInvoiceStore((state) => state.isConfirmingArInvoices);
-  const confirmArInvoices = useLntArInvoiceStore((state) => state.confirmArInvoices);
+const LntArInvoiceReviewModal = ({ onConfirmed, useReviewStore = useLntArInvoiceStore, autoSelectOnSingleInvoice = false }) => {
+  const show = useReviewStore((state) => state.showArInvoiceReviewModal);
+  const invoices = useReviewStore((state) => state.selectedArInvoiceReviewInvoices);
+  const onClose = useReviewStore((state) => state.closeArInvoiceReviewModal);
+  const isConfirming = useReviewStore((state) => state.isConfirmingArInvoices);
+  const confirmArInvoices = useReviewStore((state) => state.confirmArInvoices);
   const clearCardColumns = useBatchMoveStore((state) => state.clearCardColumns);
 
   /* { [invoice_id]: optionKey } — the sales order the user picked for each invoice. */
@@ -46,7 +46,8 @@ const LntArInvoiceReviewModal = ({ onConfirmed }) => {
      dropdown their choice (even "Select SO") is kept. */
   const getSelectedOptionKey = (invoice) => {
     const options = invoice.sales_order_options ?? [];
-    return pickedOptionKeys[invoice.invoice_id] ?? (options.length === 1 ? getOptionKey(options[0]) : "");
+    const isAutoSelected = options.length === 1 || (autoSelectOnSingleInvoice && invoices.length === 1);
+    return pickedOptionKeys[invoice.invoice_id] ?? (isAutoSelected && options.length ? getOptionKey(options[0]) : "");
   };
 
   const getPickedOption = (invoice) =>
@@ -293,6 +294,8 @@ const LntArInvoiceReviewModal = ({ onConfirmed }) => {
 
 LntArInvoiceReviewModal.propTypes = {
   onConfirmed: PropTypes.func,
+  useReviewStore: PropTypes.func,
+  autoSelectOnSingleInvoice: PropTypes.bool,
 };
 
 export default LntArInvoiceReviewModal;

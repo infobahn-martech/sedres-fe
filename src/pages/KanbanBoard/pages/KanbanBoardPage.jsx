@@ -1203,8 +1203,8 @@ export default function KanbanBoardPage() {
         cards.forEach((card) => removeCardSelectionId(card.id));
         handleCloseInvoiceUpload();
         /* The response lists every SE Received card; the review covers only the ones uploaded for. */
-        if (isLnt) {
-          openLntArInvoiceReviewModal(Object.values(reviewInvoiceById));
+        if (isLnt || isSubsea7) {
+          openReviewModal(Object.values(reviewInvoiceById));
         } else {
           openReviewModal(
             cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
@@ -2908,7 +2908,7 @@ export default function KanbanBoardPage() {
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilCrewArInvoiceStore} />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useZamilMarineArInvoiceStore} />
       <LntArInvoiceReviewModal onConfirmed={refetchBoard} />
-      <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useSubsea7ArInvoiceStore} />
+      <LntArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useSubsea7ArInvoiceStore} autoSelectOnSingleInvoice />
       <SignatureCheckModal
         onConfirmed={(result) => {
           [...(result?.moved_to_da ?? []), ...(result?.returned_to_scc_received ?? [])].forEach((card) => removeCardSelectionId(String(card.card_id)));
