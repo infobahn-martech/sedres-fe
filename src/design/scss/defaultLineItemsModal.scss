@@ -158,7 +158,7 @@ $dli-primary-hover: #002a6d;
 
 .dli-add-panel-body {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr) minmax(0, 0.8fr) auto;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
   align-items: start;
   gap: 14px;
   padding: 16px;
@@ -264,7 +264,7 @@ $dli-primary-hover: #002a6d;
 }
 
 .dli-col-action {
-  width: 56px;
+  width: 80px;
   text-align: center !important;
 }
 
@@ -323,6 +323,82 @@ $dli-primary-hover: #002a6d;
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+}
+
+.dli-badge--edited {
+  background: rgba(0, 54, 140, 0.08);
+  color: $dli-primary;
+}
+
+.dli-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    color: $dli-primary;
+    border-color: rgba(0, 54, 140, 0.35);
+    background: rgba(0, 54, 140, 0.06);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.dli-icon-btn--save {
+  color: #15803d;
+  border-color: #b7e4c7;
+  background: #e7f7ee;
+
+  &:hover:not(:disabled) {
+    color: #fff;
+    border-color: #15803d;
+    background: #15803d;
+  }
+}
+
+.dli-row-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.dli-row--editing td {
+  background: rgba(0, 54, 140, 0.03);
+}
+
+.dli-col-qty {
+  width: 72px;
+}
+
+.dli-row-input {
+  width: 72px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: right;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: $dli-primary;
+    box-shadow: 0 0 0 2px rgba(0, 54, 140, 0.12);
   }
 }
 

@@ -68,6 +68,11 @@ const getItemCodes = (portId) =>
   Gateway.get(`sales_order/get_item_codes/${encodeURIComponent(String(portId))}`);
 
 /**
+ * Item codes with their description, e.g. { tariff_id: 14, item_code: "OFM0014 - Obtaining permission ..." }.
+ */
+const getItemWithItemCode = () => Gateway.get("sales_order/get_item_with_item_code");
+
+/**
  * @param {string|number} tariffId
  * @param {string|number} entityId
  */
@@ -161,6 +166,7 @@ export default {
   generateGRN,
   uploadInvoice,
   getItemCodes,
+  getItemWithItemCode,
   getItemDetails,
   saveSalesOrderItem,
   addSoItemDocument,

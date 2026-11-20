@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
-import { FiCheck, FiList, FiPlus, FiTrash2, FiX } from "react-icons/fi";
+import { FiCheck, FiEdit2, FiList, FiPlus, FiTrash2, FiX } from "react-icons/fi";
 import salesOrderService from "@/services/salesOrderService";
-import daService from "@/services/daService";
 import PremiumSelect from "@/components/form/PremiumSelect";
 import { notify } from "@/components/Toaster";
 import "@/design/scss/salesOrder.scss";
@@ -25,12 +24,20 @@ const isFailedResult = (result) =>
 
 const EMPTY_ADD_FORM = { itemCode: "", tariffId: "", itemName: "", unitPrice: "", taxPercentage: "" };
 
+// quantity is absent on default line items (one unit each).
+const getQuantity = (item) => (item?.quantity == null ? 1 : toNumber(item.quantity));
+
+const computeTotal = (unitPrice, quantity, taxPercentage) => {
+  const net = toNumber(unitPrice) * toNumber(quantity);
+  return net + (net * toNumber(taxPercentage)) / 100;
+};
+
 // Shown right after a call file is created: lists the call's default sales order line items
-// (sales_order/get_default_line_items/{call_id}). The user can remove items or add more from the
-// port's tariff list; nothing is saved until Confirm. On Confirm, items not yet on the sales order
-// are added (sales_order/add_call_line_item) and removed items that were already on it are
-// cancelled (da/da_delete_sales_line_item). Skip leaves the sales order as is.
-// readOnly: review-only (no Add Item / delete / Skip) — Confirm still adds the pending default items.
+// (sales_order/get_default_line_items/{call_id}). The user can edit the quantity / tax of listed items
+// and add more from the port's tariff list (newly added items can be deleted again); nothing is saved
+// until Confirm. On Confirm, items not yet on the sales order are added (sales_order/add_call_line_item)
+// and edited items are updated (sales_order/update_sales_order_item_amount). Skip leaves the sales order as is.
+// readOnly: review-only (no Add Item / edit / Skip) — Confirm still adds the pending default items.
 // soType: when set, items come from sales_order/get_so_items_by_call/{call_id}?so_type=<soType>
 // (the call's existing sales order) instead of get_default_line_items.
 // initialItems: when set (e.g. the line item a service save just created), these are listed instead;
@@ -40,8 +47,10 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
   const [loadError, setLoadError] = useState("");
   const [details, setDetails] = useState(null);
   const [items, setItems] = useState([]);
-  // Items already on the sales order that the user removed — cancelled on Confirm.
-  const [removedItems, setRemovedItems] = useState([]);
+  // Row being edited inline (quantity / tax %); the change is applied to the sales order on Confirm.
+  const [editingItem, setEditingItem] = useState(null);
+  const [editForm, setEditForm] = useState({ quantity: "", taxPercentage: "" });
+  const [editError, setEditError] = useState("");
   const [isApplying, setIsApplying] = useState(false);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -61,7 +70,6 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
     const hasInitialItems = Array.isArray(initialItems);
     if (hasInitialItems) {
       setItems(initialItems);
-      setRemovedItems([]);
     }
     request
       .then(({ data }) => {
@@ -84,7 +92,6 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
             (item) => String(item?.item_status ?? item?.status ?? "").trim().toLowerCase() !== "cancelled"
           )
         );
-        setRemovedItems([]);
       })
       .catch((error) => {
         if (cancelled) return;
@@ -99,21 +106,34 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
     };
   }, [callId, soType, initialItems]);
 
-  const portId = details?.port_id;
   const entityId = details?.entity_id;
   const currency = details?.currency ?? "";
 
-  // Item codes for the call's port (sales_order/get_item_codes/{port_id}) — loaded on first open of the add form.
+  // Item codes (sales_order/get_item_with_item_code) — loaded on first open
+  // of the add form. item_code arrives as "OFM0014 - Description"; split into code + name.
   useEffect(() => {
-    if (!isAddOpen || !portId || itemCodeOptions.length) return;
+    if (!isAddOpen || itemCodeOptions.length) return;
     let cancelled = false;
     setIsLoadingItemCodes(true);
     salesOrderService
-      .getItemCodes(portId)
+      .getItemWithItemCode()
       .then((response) => {
         if (cancelled) return;
         const body = response?.data;
-        setItemCodeOptions(body?.status === "success" && Array.isArray(body?.data) ? body.data : []);
+        const raw = body?.status === "success" ? body?.data : null;
+        const list = Array.isArray(raw) ? raw : raw && typeof raw === "object" ? [raw] : [];
+        setItemCodeOptions(
+          list
+            .map((option) => {
+              const fullLabel = String(option?.item_code ?? "").trim();
+              const separatorIndex = fullLabel.indexOf(" - ");
+              const code = separatorIndex >= 0 ? fullLabel.slice(0, separatorIndex).trim() : fullLabel;
+              const name =
+                option?.item_name ?? (separatorIndex >= 0 ? fullLabel.slice(separatorIndex + 3).trim() : "");
+              return { tariff_id: option?.tariff_id, item_code: code, item_name: name, label: fullLabel };
+            })
+            .filter((option) => option.item_code)
+        );
       })
       .catch(() => {
         if (!cancelled) setItemCodeOptions([]);
@@ -124,7 +144,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
     return () => {
       cancelled = true;
     };
-  }, [isAddOpen, portId, itemCodeOptions.length]);
+  }, [isAddOpen, itemCodeOptions.length]);
 
   // One option per item code; codes whose tariff is already listed are hidden.
   const itemCodeSelectOptions = useMemo(() => {
@@ -137,7 +157,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
       if (listedTariffIds.has(String(option.tariff_id)) || listedItemCodes.has(option.item_code)) return acc;
       acc.push({
         value: option.item_code,
-        label: option.item_name ? `${option.item_code} — ${option.item_name}` : option.item_code,
+        label: option.label || option.item_code,
       });
       return acc;
     }, []);
@@ -147,8 +167,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
     () =>
       items.reduce(
         (acc, item) => {
-          // quantity is absent on default line items (one unit each).
-          const net = toNumber(item.unit_price) * (item.quantity == null ? 1 : toNumber(item.quantity));
+          const net = toNumber(item.unit_price) * getQuantity(item);
           const total = toNumber(item.total_price);
           acc.subtotal += net;
           acc.totalTax += total - net;
@@ -160,12 +179,11 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
     [items]
   );
 
-  const showQuantity = items.some((item) => item.quantity != null);
-  const columnCount = 6 + (showQuantity ? 1 : 0) + (readOnly ? 0 : 1);
+  const columnCount = 7 + (readOnly ? 0 : 1);
   // Items that came with the save response (fromSave) are already recorded by that save.
   const isPendingAdd = (item) => item.so_item_id == null && !item.fromSave;
   const pendingAddCount = items.filter(isPendingAdd).length;
-  const pendingRemoveCount = removedItems.length;
+  const pendingUpdateCount = items.filter((item) => item.isEdited).length;
 
   const openAddForm = () => {
     setAddForm(EMPTY_ADD_FORM);
@@ -222,44 +240,70 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
     }
     const unit = toNumber(addForm.unitPrice);
     const tax = toNumber(addForm.taxPercentage);
-    // A previously removed sales order item that is re-added is simply restored.
-    // Save-response items carry no tariff_id, so match those by item code.
-    const restored = removedItems.find(
-      (item) =>
-        String(item.tariff_id) === String(addForm.tariffId) ||
-        (item.tariff_id == null && item.item_code && item.item_code === addForm.itemCode)
-    );
-    if (restored) {
-      setRemovedItems((prev) => prev.filter((item) => item !== restored));
-      setItems((prev) => [...prev, restored]);
-    } else {
-      setItems((prev) => [
-        ...prev,
-        {
-          tariff_id: addForm.tariffId,
-          so_item_id: null,
-          item_code: addForm.itemCode,
-          item_name: addForm.itemName || addForm.itemCode,
-          unit_price: unit,
-          tax_percentage: tax,
-          total_price: unit + (unit * tax) / 100,
-          isNew: true,
-        },
-      ]);
-    }
+    setItems((prev) => [
+      ...prev,
+      {
+        tariff_id: addForm.tariffId,
+        so_item_id: null,
+        item_code: addForm.itemCode,
+        item_name: addForm.itemName || addForm.itemCode,
+        unit_price: unit,
+        quantity: 1,
+        tax_percentage: tax,
+        total_price: computeTotal(unit, 1, tax),
+        isNew: true,
+      },
+    ]);
     closeAddForm();
   };
 
+  // Only newly added (not yet saved) items can be deleted.
   const handleRemoveItem = (item) => {
     setItems((prev) => prev.filter((row) => row !== item));
-    // Already on the sales order (or created by the save that opened this modal) → cancel on Confirm.
-    if (item.so_item_id != null || item.fromSave) setRemovedItems((prev) => [...prev, item]);
   };
 
-  // Removed save-response items may lack an so_item_id; find it on the call's sales order by item code
-  // (latest active line with that code, preferring the same quantity).
-  const resolveRemovedSoItemIds = async (removed) => {
-    if (!removed.some((item) => item.so_item_id == null)) return removed;
+  const startEdit = (item) => {
+    setEditingItem(item);
+    setEditForm({ quantity: String(getQuantity(item)), taxPercentage: String(toNumber(item.tax_percentage)) });
+    setEditError("");
+  };
+
+  const cancelEdit = () => {
+    setEditingItem(null);
+    setEditError("");
+  };
+
+  const saveEdit = () => {
+    const quantity = Number(editForm.quantity);
+    const taxPercentage = Number(editForm.taxPercentage);
+    if (editForm.quantity === "" || !Number.isFinite(quantity) || quantity <= 0) {
+      setEditError("Quantity must be greater than 0.");
+      return;
+    }
+    if (editForm.taxPercentage === "" || !Number.isFinite(taxPercentage) || taxPercentage < 0) {
+      setEditError("Tax % must be 0 or more.");
+      return;
+    }
+    const item = editingItem;
+    const originalQuantity = item.originalQuantity ?? getQuantity(item);
+    const originalTax = item.originalTax ?? toNumber(item.tax_percentage);
+    const updated = {
+      ...item,
+      quantity,
+      tax_percentage: taxPercentage,
+      total_price: computeTotal(item.unit_price, quantity, taxPercentage),
+      originalQuantity,
+      originalTax,
+      isEdited: quantity !== originalQuantity || taxPercentage !== originalTax,
+    };
+    setItems((prev) => prev.map((row) => (row === item ? updated : row)));
+    cancelEdit();
+  };
+
+  // Items without an so_item_id (default items added on this Confirm, or save-response items) are found
+  // on the call's sales order by item code / tariff (latest active line, preferring the original quantity).
+  const resolveSoItemIds = async (list) => {
+    if (!list.some((item) => item.so_item_id == null)) return list;
     let soItems = [];
     try {
       const { data } = await salesOrderService.getSoItemsByCall(callId);
@@ -267,20 +311,22 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
     } catch {
       soItems = [];
     }
-    const used = new Set(removed.map((item) => item.so_item_id).filter((id) => id != null).map(String));
-    return removed.map((item) => {
+    const used = new Set(list.map((item) => item.so_item_id).filter((id) => id != null).map(String));
+    return list.map((item) => {
       if (item.so_item_id != null) return item;
       const candidates = soItems
         .filter(
           (row) =>
             row?.so_item_id != null &&
             !used.has(String(row.so_item_id)) &&
-            row.item_code === item.item_code &&
+            ((item.item_code && row.item_code === item.item_code) ||
+              (item.tariff_id != null && String(row.tariff_id) === String(item.tariff_id))) &&
             String(row?.item_status ?? row?.status ?? "").trim().toLowerCase() !== "cancelled"
         )
         .sort((a, b) => Number(b.so_item_id) - Number(a.so_item_id));
+      const originalQuantity = item.originalQuantity ?? item.quantity;
       const match =
-        candidates.find((row) => item.quantity != null && toNumber(row.quantity) === toNumber(item.quantity)) ??
+        candidates.find((row) => originalQuantity != null && toNumber(row.quantity) === toNumber(originalQuantity)) ??
         candidates[0];
       if (match) used.add(String(match.so_item_id));
       return { ...item, so_item_id: match?.so_item_id ?? null };
@@ -289,29 +335,44 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
 
   const handleConfirm = async () => {
     const toAdd = items.filter(isPendingAdd);
-    if (!toAdd.length && !removedItems.length) {
+    const toUpdate = items.filter((item) => item.isEdited);
+    if (!toAdd.length && !toUpdate.length) {
       onDone();
       return;
     }
 
     setIsApplying(true);
-    const resolvedRemoved = await resolveRemovedSoItemIds(removedItems);
-    const unresolved = resolvedRemoved.filter((item) => item.so_item_id == null);
-    const results = await Promise.allSettled([
-      ...unresolved.map(() => Promise.reject(new Error("Line item not found on the sales order."))),
-      ...toAdd.map((item) =>
+    // Adds first: an edited default item has to exist on the sales order before it can be updated.
+    const addResults = await Promise.allSettled(
+      toAdd.map((item) =>
         salesOrderService.addCallLineItem({
           call_id: Number(callId) || callId,
           tariff_id: Number(item.tariff_id) || item.tariff_id,
         })
-      ),
-      ...resolvedRemoved
-        .filter((item) => item.so_item_id != null)
-        .map((item) => daService.deleteSalesLineItem({ so_item_id: item.so_item_id })),
-    ]);
+      )
+    );
+    const withAddedIds = toUpdate.map((item) => {
+      if (item.so_item_id != null) return item;
+      const result = addResults[toAdd.indexOf(item)];
+      const body = result?.status === "fulfilled" ? result.value?.data : null;
+      const soItemId = body?.data?.so_item_id ?? body?.so_item_id;
+      return soItemId != null ? { ...item, so_item_id: soItemId } : item;
+    });
+    const resolvedUpdates = await resolveSoItemIds(withAddedIds);
+    const updateResults = await Promise.allSettled(
+      resolvedUpdates.map((item) =>
+        item.so_item_id == null
+          ? Promise.reject(new Error("Line item not found on the sales order."))
+          : salesOrderService.updateSalesOrderItemAmount({
+              so_item_id: Number(item.so_item_id) || item.so_item_id,
+              quantity: toNumber(item.quantity),
+              tax_percentage: toNumber(item.tax_percentage),
+            })
+      )
+    );
     setIsApplying(false);
 
-    const failed = results.filter(isFailedResult);
+    const failed = [...addResults, ...updateResults].filter(isFailedResult);
     if (failed.length) {
       const first = failed[0];
       const message =
@@ -349,25 +410,15 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
             onChange={(e) => handleItemCodeSelect(e.target.value)}
             options={itemCodeSelectOptions}
             placeholder={
-              !portId ? "No port on this call" : isLoadingItemCodes ? "Loading item codes..." : "Select Item Code..."
+              isLoadingItemCodes ? "Loading item codes..." : "Select Item Code..."
             }
             searchPlaceholder="Search item code..."
-            disabled={!portId || isLoadingItemCodes || isLoadingItemDetails}
+            disabled={isLoadingItemCodes || isLoadingItemDetails}
             hasError={Boolean(addError)}
             className="so-add-form-select"
             menuClassName="so-add-form-select-menu"
           />
           {addError && <span className="sales-order-add-form-error">{addError}</span>}
-        </div>
-        <div className="sales-order-add-form-field dli-add-field--desc">
-          <label>Item Description</label>
-          <input
-            type="text"
-            className="sales-order-add-form-input"
-            value={isLoadingItemDetails ? "Loading..." : addForm.itemName}
-            placeholder="Auto-filled from item code"
-            readOnly
-          />
         </div>
         <div className="sales-order-add-form-field">
           <label>Unit Price</label>
@@ -427,7 +478,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
                 <th className="dli-col-code">Item Code</th>
                 <th>Description</th>
                 <th className="dli-col-num">Unit Price</th>
-                {showQuantity && <th className="dli-col-num">Qty</th>}
+                <th className="dli-col-num dli-col-qty">Qty</th>
                 <th className="dli-col-num">Tax %</th>
                 <th className="dli-col-num">Total</th>
                 {!readOnly && <th className="dli-col-action" aria-label="Actions" />}
@@ -447,38 +498,118 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
                   </td>
                 </tr>
               ) : (
-                items.map((item, index) => (
-                  <tr key={`${item.tariff_id ?? item.item_code}-${item.so_item_id ?? "new"}`}>
-                    <td className="dli-col-idx">{index + 1}</td>
-                    <td className="dli-col-code">
-                      <span className="dli-code-pill">{item.item_code || "—"}</span>
-                    </td>
-                    <td>
-                      <div className="dli-item-name">
-                        {item.item_name}
-                        {item.isNew && <span className="dli-badge">New</span>}
-                      </div>
-                    </td>
-                    <td className="dli-col-num">{formatAmount(item.unit_price)}</td>
-                    {showQuantity && <td className="dli-col-num">{item.quantity == null ? 1 : toNumber(item.quantity)}</td>}
-                    <td className="dli-col-num">{toNumber(item.tax_percentage)}%</td>
-                    <td className="dli-col-num dli-col-total">{formatAmount(item.total_price)}</td>
-                    {!readOnly && (
-                      <td className="dli-col-action">
-                        <button
-                          type="button"
-                          className="dli-delete-btn"
-                          onClick={() => handleRemoveItem(item)}
-                          disabled={isApplying}
-                          title="Remove item"
-                          aria-label={`Remove ${item.item_name}`}
-                        >
-                          <FiTrash2 />
-                        </button>
+                items.map((item, index) => {
+                  const isEditing = editingItem === item;
+                  const rowTotal = isEditing
+                    ? computeTotal(item.unit_price, editForm.quantity, editForm.taxPercentage)
+                    : item.total_price;
+                  const handleEditKeyDown = (e) => {
+                    if (e.key === "Enter") saveEdit();
+                    if (e.key === "Escape") cancelEdit();
+                  };
+                  return (
+                    <tr
+                      key={`${item.tariff_id ?? item.item_code}-${item.so_item_id ?? "new"}`}
+                      className={isEditing ? "dli-row--editing" : undefined}
+                    >
+                      <td className="dli-col-idx">{index + 1}</td>
+                      <td className="dli-col-code">
+                        <span className="dli-code-pill">{item.item_code || "—"}</span>
                       </td>
-                    )}
-                  </tr>
-                ))
+                      <td>
+                        <div className="dli-item-name">
+                          {item.item_name}
+                          {item.isNew && <span className="dli-badge">New</span>}
+                          {item.isEdited && !isEditing && <span className="dli-badge dli-badge--edited">Edited</span>}
+                        </div>
+                        {isEditing && editError && <span className="sales-order-add-form-error">{editError}</span>}
+                      </td>
+                      <td className="dli-col-num">{formatAmount(item.unit_price)}</td>
+                      <td className="dli-col-num dli-col-qty">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            className="dli-row-input"
+                            value={editForm.quantity}
+                            onChange={(e) => setEditForm((prev) => ({ ...prev, quantity: e.target.value }))}
+                            onKeyDown={handleEditKeyDown}
+                            aria-label="Quantity"
+                            autoFocus
+                          />
+                        ) : (
+                          getQuantity(item)
+                        )}
+                      </td>
+                      <td className="dli-col-num">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            className="dli-row-input"
+                            value={editForm.taxPercentage}
+                            onChange={(e) => setEditForm((prev) => ({ ...prev, taxPercentage: e.target.value }))}
+                            onKeyDown={handleEditKeyDown}
+                            aria-label="Tax percentage"
+                          />
+                        ) : (
+                          `${toNumber(item.tax_percentage)}%`
+                        )}
+                      </td>
+                      <td className="dli-col-num dli-col-total">{formatAmount(rowTotal)}</td>
+                      {!readOnly && (
+                        <td className="dli-col-action">
+                          {isEditing ? (
+                            <div className="dli-row-actions">
+                              <button
+                                type="button"
+                                className="dli-icon-btn dli-icon-btn--save"
+                                onClick={saveEdit}
+                                title="Apply"
+                                aria-label={`Apply changes to ${item.item_name}`}
+                              >
+                                <FiCheck />
+                              </button>
+                              <button
+                                type="button"
+                                className="dli-icon-btn"
+                                onClick={cancelEdit}
+                                title="Cancel"
+                                aria-label="Cancel edit"
+                              >
+                                <FiX />
+                              </button>
+                            </div>
+                          ) : item.isNew ? (
+                            <button
+                              type="button"
+                              className="dli-delete-btn"
+                              onClick={() => handleRemoveItem(item)}
+                              disabled={isApplying || Boolean(editingItem)}
+                              title="Remove item"
+                              aria-label={`Remove ${item.item_name}`}
+                            >
+                              <FiTrash2 />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="dli-icon-btn dli-edit-btn"
+                              onClick={() => startEdit(item)}
+                              disabled={isApplying || Boolean(editingItem)}
+                              title="Edit quantity / tax"
+                              aria-label={`Edit ${item.item_name}`}
+                            >
+                              <FiEdit2 />
+                            </button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -510,7 +641,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
 
   const pendingSummary = [
     pendingAddCount ? `${pendingAddCount} to add` : "",
-    pendingRemoveCount ? `${pendingRemoveCount} to remove` : "",
+    pendingUpdateCount ? `${pendingUpdateCount} to update` : "",
   ]
     .filter(Boolean)
     .join(" · ");
@@ -549,7 +680,8 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
               type="button"
               className="sales-order-add-form-save dli-confirm-btn"
               onClick={handleConfirm}
-              disabled={isLoading || isApplying || Boolean(loadError)}
+              disabled={isLoading || isApplying || Boolean(loadError) || Boolean(editingItem)}
+              title={editingItem ? "Apply or cancel the row edit first" : undefined}
             >
               <FiCheck />
               {isApplying ? "Saving..." : "Confirm"}
