@@ -84,11 +84,12 @@ function GenericActionFields({ action, value, defaultBoardId, startOpen = false,
         {cards.map((card, index) => (
           <CreateCardActionCard
             key={index}
-            action={{ label: action.action_name, title: card.title, position: card.position, fields: card.fields, copyKeys: [] }}
+            action={{ label: 'Create card', title: card.title, position: card.position, fields: card.fields, copyKeys: [], templateId: card.templateId }}
             catalog={entry}
             defaultBoardId={defaultBoardId}
             collapsible
-            onChange={(next) => setCards(cards.map((c, i) => (i === index ? { ...c, title: next.title, position: next.position, fields: next.fields } : c)))}
+            templateSelectable
+            onChange={(next) => setCards(cards.map((c, i) => (i === index ? { ...c, title: next.title, position: next.position, fields: next.fields, templateId: next.templateId } : c)))}
             onRemove={() => setCards(cards.filter((c, i) => i !== index))}
           />
         ))}

@@ -133,11 +133,11 @@
   cursor: pointer;
 }
 
-// A parent column is only a label over its sub-columns: not clickable.
+// A parent column heads its sub-columns: clicking it picks the whole group.
 .board-minimap-header-cell--parent {
   height: 28px;
   padding: 4px 8px;
-  cursor: default;
+  cursor: pointer;
 }
 
 .board-minimap-lane-label {

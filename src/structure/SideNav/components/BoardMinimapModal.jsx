@@ -12,6 +12,7 @@ const EMPTY_LIST = [];
 
 // Hover hints for what a click selects (column header, swimlane label, single cell).
 const COLUMN_TOOLTIP = 'Select the entire column across all swimlanes';
+const PARENT_COLUMN_TOOLTIP = 'Select the entire column group (all its columns) across all swimlanes';
 const LANE_TOOLTIP = 'Select the entire swimlane across all columns';
 const cellTooltip = (column, lane) => `Select this cell in column ${column.name} and swimlane ${lane.name}`;
 
@@ -38,7 +39,7 @@ function BoardMinimapModal({ show, value, boardId, onBoardChange, onPick, onClos
   const [isBoardPickerOpen, setIsBoardPickerOpen] = useState(false);
   const [boardFilterText, setBoardFilterText] = useState('');
   const [workspaceFilterId, setWorkspaceFilterId] = useState('');
-  const [hoveredColumnId, setHoveredColumnId] = useState(null);
+  const [hoveredColumnIds, setHoveredColumnIds] = useState(EMPTY_LIST);
   const [hoveredLaneId, setHoveredLaneId] = useState(null);
 
   const boardPickerTriggerRef = useRef(null);
@@ -109,12 +110,19 @@ function BoardMinimapModal({ show, value, boardId, onBoardChange, onPick, onClos
   // The picked scope is marked as a whole: a single cell when both a column and a lane were
   // picked, every cell of the column when only a column header was clicked, and every cell of
   // the lane when only a lane label was clicked.
+  // A picked parent column (e.g. Delivery Status) marks every leaf column under it.
+  const isColumnPicked = (workflow, column) => {
+    if (String(position.columnId) === String(column.id)) return true;
+    const pickedHeader = workflow.columnHeaderRows.flat().find((header) => String(header.id) === String(position.columnId));
+    return Boolean(pickedHeader?.leafIds.includes(String(column.id)));
+  };
+
   const isSelected = (workflow, column, lane) => {
     if (String(position.workflowId) !== String(workflow.id)) return false;
     const hasColumn = Boolean(position.columnId);
     const hasLane = Boolean(position.swimlaneId);
     if (!hasColumn && !hasLane) return false;
-    return (!hasColumn || String(position.columnId) === String(column.id))
+    return (!hasColumn || isColumnPicked(workflow, column))
       && (!hasLane || String(position.swimlaneId) === String(lane.id));
   };
 
@@ -132,7 +140,14 @@ function BoardMinimapModal({ show, value, boardId, onBoardChange, onPick, onClos
         <thead>
           <tr>
             {workflow.stageSegments.map((segment) => (
-              <th key={segment.id} colSpan={segment.columns.length} className="board-minimap-area-cell" title={segment.name}>
+              <th
+                key={segment.id}
+                colSpan={segment.columns.length}
+                className="board-minimap-area-cell"
+                title={segment.name}
+                onMouseEnter={() => setHoveredColumnIds(segment.columns.map((column) => column.id))}
+                onMouseLeave={() => setHoveredColumnIds(EMPTY_LIST)}
+              >
                 <ColorFill color={segment.color} />
                 <span className="board-minimap-band-label">{segment.name}</span>
               </th>
@@ -146,14 +161,22 @@ function BoardMinimapModal({ show, value, boardId, onBoardChange, onPick, onClos
                   rowSpan={column.rowSpan}
                   className="board-minimap-header-cell"
                   title={COLUMN_TOOLTIP}
-                  onMouseEnter={() => setHoveredColumnId(column.id)}
-                  onMouseLeave={() => setHoveredColumnId(null)}
+                  onMouseEnter={() => setHoveredColumnIds(column.leafIds)}
+                  onMouseLeave={() => setHoveredColumnIds(EMPTY_LIST)}
                   onClick={() => pick(workflow, column, null)}
                 >
                   {column.name}
                 </th>
               ) : (
-                <th key={column.id} colSpan={column.colSpan} className="board-minimap-header-cell board-minimap-header-cell--parent">
+                <th
+                  key={column.id}
+                  colSpan={column.colSpan}
+                  className="board-minimap-header-cell board-minimap-header-cell--parent"
+                  title={PARENT_COLUMN_TOOLTIP}
+                  onMouseEnter={() => setHoveredColumnIds(column.leafIds)}
+                  onMouseLeave={() => setHoveredColumnIds(EMPTY_LIST)}
+                  onClick={() => pick(workflow, column, null)}
+                >
                   {column.name}
                 </th>
               )))}
@@ -180,7 +203,7 @@ function BoardMinimapModal({ show, value, boardId, onBoardChange, onPick, onClos
                 <td key={column.id} className="board-minimap-cell-wrap">
                   <button
                     type="button"
-                    className={`board-minimap-cell${hoveredColumnId === column.id ? ' board-minimap-cell--col-active' : ''}${hoveredLaneId === lane.id ? ' board-minimap-cell--row-active' : ''}${isSelected(workflow, column, lane) ? ' board-minimap-cell--selected' : ''}`}
+                    className={`board-minimap-cell${hoveredColumnIds.includes(column.id) ? ' board-minimap-cell--col-active' : ''}${hoveredLaneId === lane.id ? ' board-minimap-cell--row-active' : ''}${isSelected(workflow, column, lane) ? ' board-minimap-cell--selected' : ''}`}
                     onClick={() => pick(workflow, column, lane)}
                     title={cellTooltip(column, lane)}
                     aria-label={`Move to ${workflow.name}, ${lane.name}, ${column.name}`}
