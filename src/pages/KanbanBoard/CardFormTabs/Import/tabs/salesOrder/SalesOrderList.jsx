@@ -30,7 +30,7 @@ import SoApprovalEmailModal from "./SoApprovalEmailModal";
 import DocumentListModal from "./DocumentListModal";
 import UploadInvoiceModal from "@/components/UploadInvoiceModal";
 import { compressPdfFiles } from "@/shared/utils/compressPdf";
-import { isApprovalRequestedColumnTitle, isLntSwimlane, isSubseaSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
+import { isApprovalRequestedColumnTitle, isApprovalReceivedColumnTitle, isLntSwimlane, isSubseaSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
 import SeApprovalUploadModal from "@/pages/KanbanBoard/components/board/SeApprovalUploadModal";
 import CustomModal from "@/components/CustomModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
@@ -777,17 +777,32 @@ const SalesOrderList = ({
     Array.isArray(stepLabels) &&
     currentStep != null &&
     isApprovalRequestedColumnTitle(stepLabels[currentStep - 1]);
+  // Operator board: a Subsea 7 swimlane card on "Approval Received" takes the signed SO, the signed SRT and the
+  // optional approval email. A card whose SRT had no signature stays here (get_full_board signature_status
+  // "missing") and takes only the SRT again.
+  const isOperatorSrtReceivedFlow =
+    isSubseaSwimlane({ title: card?.swimlaneTitle }) &&
+    Array.isArray(stepLabels) &&
+    currentStep != null &&
+    isApprovalReceivedColumnTitle(stepLabels[currentStep - 1]);
+  const isSrtResubmit = isOperatorSrtReceivedFlow && card?.signature_status === "missing";
   const isSrtFlow =
-    soActionState?.srt_flow === true || isAtAwaitingSrtColumn || isAtSrtReceivedColumn || isOperatorSrtApprovalFlow;
-  // The Operator board is not a DA board (isDaContext is false there), so the Subsea 7 Approval Requested flow opens
-  // the header button and its modals on its own, for any user, like its Action column.
-  const isSrtApprovalContext = isDaVerifyContext || isOperatorSrtApprovalFlow;
+    soActionState?.srt_flow === true ||
+    isAtAwaitingSrtColumn ||
+    isAtSrtReceivedColumn ||
+    isOperatorSrtApprovalFlow ||
+    isOperatorSrtReceivedFlow;
+  const srtActiveUploadFields = isSrtResubmit ? srtUploadFields.slice(0, 1) : srtUploadFields;
+  // The Operator board is not a DA board (isDaContext is false there), so the Subsea 7 Approval Requested and
+  // Approval Received flows open the header button and its modals on their own, for any user, like their Action column.
+  const isOperatorSrtFlow = isOperatorSrtApprovalFlow || isOperatorSrtReceivedFlow;
+  const isSrtApprovalContext = isDaVerifyContext || isOperatorSrtFlow;
   // daStatusRefreshToken is bumped by onDaStatusRefresh after every action below, so the
   // authoritative button_state is refetched once per action instead of being called by hand.
   useEffect(() => {
-    if (!canViewActionColumn && !isOperatorSrtApprovalFlow) return;
+    if (!canViewActionColumn && !isOperatorSrtFlow) return;
     fetchSoActionState();
-  }, [canViewActionColumn, isOperatorSrtApprovalFlow, callId, daStatusRefreshToken, soActionStateResetToken, fetchSoActionState]);
+  }, [canViewActionColumn, isOperatorSrtFlow, callId, daStatusRefreshToken, soActionStateResetToken, fetchSoActionState]);
   // Once the PR email is sent the Zamil Marine card sits on "PR Received", where the documents are uploaded.
   const isAtPrReceivedColumn =
     isZamilMarineWorkflowCard &&
@@ -798,6 +813,7 @@ const SalesOrderList = ({
     isAtPrReceivedColumn ||
     isAtAwaitingSoPrColumn ||
     isOperatorSrtApprovalFlow ||
+    isOperatorSrtReceivedFlow ||
     (isSrtFlow && (isAtColumnAfterOpsCompleted || isAtAwaitingSrtColumn || isAtSrtReceivedColumn)) ||
     (Array.isArray(stepLabels) && currentStep != null && SO_SENT_FOR_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
     (Array.isArray(stepLabels) && currentStep != null && SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
@@ -1520,7 +1536,7 @@ const SalesOrderList = ({
     setIsUploadingApprovedSo(true);
     setApprovedSoUploadError("");
     try {
-      for (const { name } of isSrtFlow ? srtUploadFields : approvedSoUploadFields) {
+      for (const { name } of isSrtFlow ? srtActiveUploadFields : approvedSoUploadFields) {
         const [file] = await compressPdfFiles(filesByField?.[name] ?? []);
         if (file) formData.append(name, file);
       }
@@ -1529,8 +1545,13 @@ const SalesOrderList = ({
         throw new Error(data?.message || (isSrtFlow ? "Failed to upload the SRT." : "Failed to upload the approved SO."));
       }
       handleCloseApprovedSoUploadModal();
+      // card_positions names the column the card sits in after the upload: a different one means it moved on.
+      const currentColumnLabel = Array.isArray(stepLabels) && currentStep != null ? stepLabels[currentStep - 1] : null;
+      const positionColumnName = data?.card_positions?.[0]?.column_name;
       const wasMovedToDa =
-        (Array.isArray(data?.moved_to_da) && data.moved_to_da.length > 0) || Boolean(data?.moved_to_column);
+        (Array.isArray(data?.moved_to_da) && data.moved_to_da.length > 0) ||
+        Boolean(data?.moved_to_column) ||
+        Boolean(positionColumnName && positionColumnName !== currentColumnLabel);
       if (isSrtFlow && !wasMovedToDa) {
         useAlertReducer.getState().error(SRT_SIGNATURE_MISSING_MESSAGE);
       } else {
@@ -2937,7 +2958,7 @@ const SalesOrderList = ({
                       <FiX /> Rejected
                     </button>
                   </div>
-                ) : isAtSrtReceivedColumn && hasVerifiedAllItems ? (
+                ) : (isAtSrtReceivedColumn || isOperatorSrtReceivedFlow) && hasVerifiedAllItems ? (
                   <button
                     type="button"
                     className="sales-order-da-status-button"
@@ -4053,11 +4074,13 @@ const SalesOrderList = ({
           title={isSrtFlow ? "Upload SRT" : "Upload Approved SO"}
           subtitle={
             isSrtFlow
-              ? "Attach the signed SRT, the SRT approval eml and the signed SO"
+              ? isSrtResubmit
+                ? "Attach the signed SRT"
+                : "Attach the signed SRT, the SRT approval eml and the signed SO"
               : "Attach the approved sales order and the SO email"
           }
           submitLabel={isSrtFlow ? "Upload SRT" : "Upload Approved SO"}
-          fields={isSrtFlow ? srtUploadFields : approvedSoUploadFields}
+          fields={isSrtFlow ? srtActiveUploadFields : approvedSoUploadFields}
           submitError={approvedSoUploadError}
         />
       )}
