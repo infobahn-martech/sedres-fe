@@ -417,7 +417,8 @@ const toOptionalNumber = (value) => {
   return Number.isFinite(n) ? n : undefined;
 };
 
-// Line items confirmed in the Add Card modal -> [{ tariff_id, quantity, unit_price?, tax_percentage? }].
+// Line items confirmed in the Add Card modal ->
+// [{ tariff_id, quantity, unit_price?, tax_percentage?, default_line_item }].
 function toSalesOrderItemsPayload(items) {
   return (Array.isArray(items) ? items : [])
     .filter((item) => item?.tariff_id != null && item.tariff_id !== "")
@@ -430,6 +431,8 @@ function toSalesOrderItemsPayload(items) {
       const taxPercentage = toOptionalNumber(item.tax_percentage);
       if (unitPrice !== undefined) entry.unit_price = unitPrice;
       if (taxPercentage !== undefined) entry.tax_percentage = taxPercentage;
+      // 1 = listed by get_default_line_items, 0 = added by the user via Add Item (isNew).
+      entry.default_line_item = item.isNew ? 0 : 1;
       return entry;
     });
 }
