@@ -7909,6 +7909,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                     {section.id === 'generic' && (
                       <GenericThenActionEditor
                         action={section.action}
+                        allowRepeat={rule?.icon !== TRIGGER_CODE_TO_ICON.card_created}
                         renderPropertyPicker={(pickerProps) => (
                           <CardPropertyMatchModal {...pickerProps} triggerTypeId={rule.id} showTimeUnit={false} />
                         )}
@@ -7978,6 +7979,8 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                                 || action.label || action.relationType,
                             }}
                             catalog={createCardCatalog}
+                            collapsible
+                            templateSelectable
                             defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
                             onChange={(next) => setCreateCardActions((prev) => prev.map((a) => (a.id === action.id ? { ...next, label: a.label } : a)))}
                             onRemove={() => setCreateCardActions((prev) => prev.filter((a) => a.id !== action.id))}

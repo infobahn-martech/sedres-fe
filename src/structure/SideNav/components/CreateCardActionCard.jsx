@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
+import useFormTemplateReducer from '../../../store/FormTemplateReducer';
+import InlineTextDropdown from './InlineTextDropdown';
 import BusinessRuleFieldValue from './BusinessRuleFieldValue';
 import MoveTargetAction from './MoveTargetAction';
 import ThenFieldPickerModal from './ThenFieldPickerModal';
@@ -14,9 +16,28 @@ const EMPTY_LIST = [];
 // One Create card / child / parent action (guide 5.7): title, where it is created (board
 // minimap), the card fields to set and the fields copied from this card. The lists of card
 // fields and copy fields come from get_then_action_fields; nothing is typed in the code.
-function CreateCardActionCard({ action, catalog, defaultBoardId, collapsible = false, onChange, onRemove }) {
+function CreateCardActionCard({ action, catalog, defaultBoardId, collapsible = false, templateSelectable = false, onChange, onRemove }) {
   const { fieldDetailsByKey, getFieldDetails } = useBusinessRuleReducer((s) => s);
+  const allTemplates = useFormTemplateReducer((s) => s.allTemplates);
+  const getAllTemplates = useFormTemplateReducer((s) => s.getAllTemplates);
   const [showFieldPicker, setShowFieldPicker] = useState(false);
+
+  useEffect(() => {
+    if (templateSelectable && allTemplates === null) getAllTemplates();
+  }, [templateSelectable, allTemplates]);
+
+  /* "with custom properties" plus one option per form template (form_template/all_templates). */
+  const templateOptions = useMemo(
+    () => [
+      { value: '', label: 'with custom properties' },
+      ...(allTemplates ?? []).map((tpl) => ({
+        value: String(tpl.template_id),
+        label: tpl.template_desc || tpl.template_name,
+        group: 'Templates',
+      })),
+    ],
+    [allTemplates]
+  );
 
   const cardFields = catalog?.cardFields ?? EMPTY_LIST;
   const copyFields = catalog?.copyFields ?? EMPTY_LIST;
@@ -54,7 +75,18 @@ function CreateCardActionCard({ action, catalog, defaultBoardId, collapsible = f
         <FiX size={14} />
       </button>
 
-      {collapsible ? (
+      {templateSelectable ? (
+        <h5 className="business-rule-form-action-detail-title">
+          <InlineTextDropdown
+            value={action.templateId ?? ''}
+            options={templateOptions}
+            triggerPrefix={`${action.label} `}
+            triggerClassName="br-create-action-link br-create-action-link--btn"
+            searchable
+            onChange={(templateId) => set({ templateId })}
+          />
+        </h5>
+      ) : collapsible ? (
         <h5 className="business-rule-form-action-detail-title">{action.label}</h5>
       ) : (
         <div className="br-link-card-header">
@@ -145,10 +177,13 @@ CreateCardActionCard.propTypes = {
     position: PropTypes.object,
     fields: PropTypes.object,
     copyKeys: PropTypes.array,
+    templateId: PropTypes.string,
   }).isRequired,
   catalog: PropTypes.object,
   defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  collapsible: PropTypes.bool,  onChange: PropTypes.func.isRequired,
+  collapsible: PropTypes.bool,
+  templateSelectable: PropTypes.bool,
+  onChange: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
 };
 

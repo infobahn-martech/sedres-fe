@@ -303,9 +303,9 @@ GenericInstance.propTypes = {
 // An action that moves a card to a board position can be added again, each time with its own target
 // and filter (value.more holds the extra ones): "Add new move action". The link's verb is the first
 // word of the action's own action_code (move_parent_card -> move).
-function GenericThenActionEditor({ action, value, defaultBoardId, renderPropertyPicker, onChange }) {
+function GenericThenActionEditor({ action, value, defaultBoardId, renderPropertyPicker, onChange, allowRepeat = true }) {
   const more = value.more ?? [];
-  const canRepeat = Number(action.has_board_position) === 1 && !isCreateCardsAction(action);
+  const canRepeat = allowRepeat && Number(action.has_board_position) === 1 && !isCreateCardsAction(action);
   const verb = String(action.action_code ?? '').split('_')[0];
 
   // A move with a parent / child filter reads like the update card: each target is a card holding
@@ -401,6 +401,7 @@ function GenericThenActionEditor({ action, value, defaultBoardId, renderProperty
 GenericThenActionEditor.propTypes = {
   ...editorPropTypes,
   renderPropertyPicker: PropTypes.func,
+  allowRepeat: PropTypes.bool,
 };
 
 export default GenericThenActionEditor;
