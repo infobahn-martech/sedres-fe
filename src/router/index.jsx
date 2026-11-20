@@ -99,6 +99,7 @@ import Coordinates from "../pages/Coordinates";
 import CGPassTemplate from "../pages/CGPassTemplate";
 import VesselRegistrationTemplate from "../pages/VesselRegistrationTemplate";
 import CrewImmigrationTemplate from "../pages/CrewImmigrationTemplate";
+import AttachmentManagement from "../pages/AttachmentManagement";
 import { ROUTE_PATHS } from "./paths";
 import TimeObjects from "../pages/TimeObject";
 import StageTimeMappings from "../pages/StageTimeMapping";
@@ -359,6 +360,7 @@ const router = createBrowserRouter(
                 { path: "/cg-pass-template", element: <RouteGuard><CGPassTemplate /></RouteGuard> },
                 { path: "/vessel-registration-template", element: <RouteGuard><VesselRegistrationTemplate /></RouteGuard> },
                 { path: "/crew-immigration-template", element: <RouteGuard><CrewImmigrationTemplate /></RouteGuard> },
+                { path: "/attachment-management", element: <RouteGuard><AttachmentManagement /></RouteGuard> },
                 // Job Status BE
                 { path: "/job-status", element: <RouteGuard><JobStatusBE /></RouteGuard> },
                 // Group Email BE
