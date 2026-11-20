@@ -54,6 +54,8 @@ const buildConditions = (formState, ctx) => {
       // torn down and recreated with fresh ids. A row added this session has none, so the
       // key is omitted and the backend treats it as a new condition.
       if (row.conditionId != null) entry.condition_id = row.conditionId;
+      // "Last date moved to"-type fields: the picked column ids, comma-separated (guide 3.2).
+      if (cond.positionColumns?.length) entry.position_value = cond.positionColumns.map((column) => column.id).join(',');
       if (cond.fieldType === 'custom') entry.custom_field_id = cond.fieldId;
       else if (cond.fieldType === 'regular') entry.regular_field_id = cond.fieldId;
       else entry.time_unit_key = cond.fieldKey; // best-effort: time-unit conditions have no confirmed id field

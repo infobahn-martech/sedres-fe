@@ -285,6 +285,7 @@ function GenericInstance({ action, value, defaultBoardId, renderPropertyPicker, 
       {filterKind && renderPropertyPicker && (
         <RelativeFilterBox
           renderPropertyPicker={renderPropertyPicker}
+          defaultBoardId={defaultBoardId}
           label={`if ${filterKind.kind} card matches this filter`}
           rows={value.filterConditions ?? []}
           onChange={(filterConditions) => onChange({ ...value, filterConditions })}
