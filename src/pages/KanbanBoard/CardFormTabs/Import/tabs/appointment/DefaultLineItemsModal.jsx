@@ -42,6 +42,9 @@ const computeTotal = (unitPrice, quantity, taxPercentage) => {
 // (the call's existing sales order) instead of get_default_line_items.
 // initialItems: when set (e.g. the line item a service save just created), these are listed instead;
 // the call's sales order (get_so_items_by_call) is still read for the entity / currency the Add Item form needs.
+// onConfirmItems: draft mode, used before the call exists (no callId). Default line items are listed and
+// edited locally only; Confirm hands the final list to onConfirmItems(items) (which creates the call) instead
+// of writing to a sales order. onSkip (optional) replaces onDone for the Skip button.
 function DefaultLineItemsModal({
   callId,
   entityId: entityIdProp,
@@ -53,7 +56,10 @@ function DefaultLineItemsModal({
   initialItems,
   title,
   subtitle,
+  onConfirmItems,
+  onSkip,
 }) {
+  const isDraft = typeof onConfirmItems === "function";
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [details, setDetails] = useState(null);
@@ -78,7 +84,7 @@ function DefaultLineItemsModal({
     setLoadError("");
     const hasInitialItems = Array.isArray(initialItems);
     const request =
-      soType || hasInitialItems
+      !isDraft && (soType || hasInitialItems)
         ? salesOrderService.getSoItemsByCall(callId, soType)
         : salesOrderService.getDefaultLineItems({
             entity_id: entityIdProp,
@@ -121,7 +127,7 @@ function DefaultLineItemsModal({
     return () => {
       cancelled = true;
     };
-  }, [callId, soType, initialItems, entityIdProp, portId, callTypeId]);
+  }, [callId, soType, initialItems, entityIdProp, portId, callTypeId, isDraft]);
 
   const entityId = details?.entity_id ?? entityIdProp;
   const currency = details?.currency ?? "";
@@ -387,6 +393,15 @@ function DefaultLineItemsModal({
   };
 
   const handleConfirm = async () => {
+    if (isDraft) {
+      setIsApplying(true);
+      try {
+        await onConfirmItems(items);
+      } finally {
+        setIsApplying(false);
+      }
+      return;
+    }
     const toAdd = items.filter(isPendingAdd);
     const toUpdate = items.filter((item) => item.isEdited);
     if (!toAdd.length && !toUpdate.length) {
@@ -728,7 +743,7 @@ function DefaultLineItemsModal({
           <span className="so-doc-modal-count">{!isLoading && !loadError ? pendingSummary : ""}</span>
           <div className="so-doc-modal-actions">
             {!readOnly && (
-              <button type="button" className="sales-order-add-form-cancel" onClick={onDone} disabled={isApplying}>
+              <button type="button" className="sales-order-add-form-cancel" onClick={onSkip || onDone} disabled={isApplying}>
                 Skip
               </button>
             )}
@@ -751,7 +766,8 @@ function DefaultLineItemsModal({
 }
 
 DefaultLineItemsModal.propTypes = {
-  callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  /** Required unless onConfirmItems (draft mode) is set. */
+  callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   /** get_default_line_items params; required unless soType / initialItems is set. */
   entityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   portId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -763,6 +779,9 @@ DefaultLineItemsModal.propTypes = {
   initialItems: PropTypes.array,
   title: PropTypes.string,
   subtitle: PropTypes.string,
+  /** Draft mode: receives the final item list on Confirm (may return a promise). */
+  onConfirmItems: PropTypes.func,
+  onSkip: PropTypes.func,
 };
 
 export default DefaultLineItemsModal;

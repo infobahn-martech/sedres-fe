@@ -363,6 +363,9 @@ function GeneralAdd({
   // After a successful create, the default line items modal is shown first; the parent's onSave
   // (which closes the card form) runs once the user confirms or skips it.
   const [createdCall, setCreatedCall] = useState(null);
+  // Template Add Card waiting on the line items modal: { step: "main" | "barge", payload, lineItemParams,
+  // bargeEntityId, salesOrderItems } - create_call_file_new is sent from the modal's Confirm.
+  const [pendingTemplateCall, setPendingTemplateCall] = useState(null);
   // lineItemParams: { entityId, portId, callTypeId } for sales_order/get_default_line_items.
   const handleCallFileCreated = (response, lineItemParams = {}) => {
     const createdCallId = resolveCreatedCallId(response);
@@ -781,6 +784,14 @@ function GeneralAdd({
       ? editablePreviewFields[fieldName] ?? ""
       : firstNonEmptyString(editablePreviewFields[fieldName], apiValue);
 
+  // Template Add Card: validate, then open the line items modal. The call is only created
+  // (call_file/create_call_file_new) when the user confirms (or skips) the line items.
+  const getTemplateValueByBinding = (bindingKey) => {
+    const field = (templateFields || []).find((f) => f.bindingKeys?.includes(bindingKey));
+    const value = field ? templateFieldValues[field.id] : "";
+    return firstNonEmptyString(Array.isArray(value) ? value[0] : value);
+  };
+
   const handleTemplateSubmit = async () => {
     const fieldValues = getTemplateSubmitValues();
     const errors = validateTemplateFields(fieldValues);
@@ -794,9 +805,16 @@ function GeneralAdd({
     }
 
     const meta = resolveCardMetaIds();
-    setIsSavingGeneral(true);
-    try {
-      const formData = buildCreateTemplateCallFileFormData({
+    setPendingTemplateCall({
+      step: "main",
+      lineItemParams: {
+        entityId: getTemplateValueByBinding("billing_entity"),
+        portId: getTemplateValueByBinding("port"),
+        callTypeId: getTemplateValueByBinding("call_type"),
+      },
+      bargeEntityId: getTemplateValueByBinding("barge_billing_entity"),
+      salesOrderItems: [],
+      payload: {
         boardId: meta.boardId,
         templateId: selectedTemplateId,
         cardTitle: formValues?.cardTitle,
@@ -812,18 +830,21 @@ function GeneralAdd({
           body: firstNonEmptyString(previewMessageText, emailPreviewData?.messageHtml),
         },
         emailAttachments: [...defaultEmailAttachments, ...uploadedEmailAttachments],
+      },
+    });
+  };
+
+  const createTemplateCallFile = async (pending, salesOrderItems, bargeSalesOrderItems) => {
+    setIsSavingGeneral(true);
+    try {
+      const formData = buildCreateTemplateCallFileFormData({
+        ...pending.payload,
+        salesOrderItems,
+        bargeSalesOrderItems,
       });
       const response = await callFileService.createCallFileNew(formData);
-      const getTemplateValueByBinding = (bindingKey) => {
-        const field = (templateFields || []).find((f) => f.bindingKeys?.includes(bindingKey));
-        const value = field ? templateFieldValues[field.id] : "";
-        return firstNonEmptyString(Array.isArray(value) ? value[0] : value);
-      };
-      handleCallFileCreated(response, {
-        entityId: getTemplateValueByBinding("billing_entity"),
-        portId: getTemplateValueByBinding("port"),
-        callTypeId: getTemplateValueByBinding("call_type"),
-      });
+      setPendingTemplateCall(null);
+      if (onSave) onSave(response);
     } catch (error) {
       const msg =
         error?.response?.data?.message ||
@@ -834,6 +855,29 @@ function GeneralAdd({
     } finally {
       setIsSavingGeneral(false);
     }
+  };
+
+  // Confirm on the line items modal. With a barge billing entity, the barge's line items are reviewed
+  // next; the call is created once both lists are confirmed.
+  const handleTemplateLineItemsConfirm = async (items) => {
+    const pending = pendingTemplateCall;
+    if (!pending) return;
+    if (pending.step === "main" && pending.bargeEntityId) {
+      setPendingTemplateCall({ ...pending, step: "barge", salesOrderItems: items });
+      return;
+    }
+    if (pending.step === "barge") {
+      await createTemplateCallFile(pending, pending.salesOrderItems, items);
+      return;
+    }
+    await createTemplateCallFile(pending, items, []);
+  };
+
+  // Skip: create the call without (further) line items.
+  const handleTemplateLineItemsSkip = async () => {
+    const pending = pendingTemplateCall;
+    if (!pending || isSavingGeneral) return;
+    await createTemplateCallFile(pending, pending.step === "barge" ? pending.salesOrderItems : [], []);
   };
 
   const handleSubmit = async () => {
@@ -2839,6 +2883,22 @@ function GeneralAdd({
                   portId={createdCall.portId}
                   callTypeId={createdCall.callTypeId}
                   onDone={handleDefaultLineItemsDone}
+                />
+              )}
+              {pendingTemplateCall && (
+                <DefaultLineItemsModal
+                  key={pendingTemplateCall.step}
+                  entityId={
+                    pendingTemplateCall.step === "barge"
+                      ? pendingTemplateCall.bargeEntityId
+                      : pendingTemplateCall.lineItemParams.entityId
+                  }
+                  portId={pendingTemplateCall.lineItemParams.portId}
+                  callTypeId={pendingTemplateCall.lineItemParams.callTypeId}
+                  title={pendingTemplateCall.step === "barge" ? "Barge Sales Order Line Items" : undefined}
+                  onConfirmItems={handleTemplateLineItemsConfirm}
+                  onSkip={handleTemplateLineItemsSkip}
+                  onDone={() => setPendingTemplateCall(null)}
                 />
               )}
             </div>

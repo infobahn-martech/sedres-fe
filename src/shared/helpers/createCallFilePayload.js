@@ -355,6 +355,8 @@ const isFileLike = (value) =>
  *   fieldValues?: Record<string, unknown>,
  *   appointmentAcceptance?: { to_email?: string, cc_emails?: string, subject?: string, body?: string },
  *   emailAttachments?: Array<{ file_name?: string }>,
+ *   salesOrderItems?: Array<{ tariff_id?: unknown, quantity?: unknown, unit_price?: unknown, tax_percentage?: unknown }>,
+ *   bargeSalesOrderItems?: Array<{ tariff_id?: unknown, quantity?: unknown, unit_price?: unknown, tax_percentage?: unknown }>,
  * }} payload
  */
 export function buildCreateTemplateCallFileFormData(payload = {}) {
@@ -403,6 +405,31 @@ export function buildCreateTemplateCallFileFormData(payload = {}) {
       attachments,
     })
   );
+  fd.append("sales_order_items", JSON.stringify(toSalesOrderItemsPayload(payload.salesOrderItems)));
+  fd.append("barge_sales_order_items", JSON.stringify(toSalesOrderItemsPayload(payload.bargeSalesOrderItems)));
 
   return fd;
+}
+
+const toOptionalNumber = (value) => {
+  if (value === null || value === undefined || value === "") return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+};
+
+// Line items confirmed in the Add Card modal -> [{ tariff_id, quantity, unit_price?, tax_percentage? }].
+function toSalesOrderItemsPayload(items) {
+  return (Array.isArray(items) ? items : [])
+    .filter((item) => item?.tariff_id != null && item.tariff_id !== "")
+    .map((item) => {
+      const entry = {
+        tariff_id: toOptionalNumber(item.tariff_id) ?? item.tariff_id,
+        quantity: toOptionalNumber(item.quantity) ?? 1,
+      };
+      const unitPrice = toOptionalNumber(item.unit_price);
+      const taxPercentage = toOptionalNumber(item.tax_percentage);
+      if (unitPrice !== undefined) entry.unit_price = unitPrice;
+      if (taxPercentage !== undefined) entry.tax_percentage = taxPercentage;
+      return entry;
+    });
 }
