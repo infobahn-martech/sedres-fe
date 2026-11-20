@@ -32,8 +32,8 @@ const computeTotal = (unitPrice, quantity, taxPercentage) => {
   return net + (net * toNumber(taxPercentage)) / 100;
 };
 
-// Shown right after a call file is created: lists the call's default sales order line items
-// (sales_order/get_default_line_items/{call_id}). The user can edit the quantity / tax of listed items
+// Shown right after a call file is created: lists the default sales order line items for the call's
+// billing entity / port / call type (sales_order/get_default_line_items?entity_id&port_id&call_type_id). The user can edit the quantity / tax of listed items
 // and add more from the port's tariff list (newly added items can be deleted again); nothing is saved
 // until Confirm. On Confirm, items not yet on the sales order are added (sales_order/add_call_line_item)
 // and edited items are updated (sales_order/update_sales_order_item_amount). Skip leaves the sales order as is.
@@ -41,8 +41,19 @@ const computeTotal = (unitPrice, quantity, taxPercentage) => {
 // soType: when set, items come from sales_order/get_so_items_by_call/{call_id}?so_type=<soType>
 // (the call's existing sales order) instead of get_default_line_items.
 // initialItems: when set (e.g. the line item a service save just created), these are listed instead;
-// get_default_line_items is still read for the port / entity / currency the Add Item form needs.
-function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initialItems, title, subtitle }) {
+// the call's sales order (get_so_items_by_call) is still read for the entity / currency the Add Item form needs.
+function DefaultLineItemsModal({
+  callId,
+  entityId: entityIdProp,
+  portId,
+  callTypeId,
+  onDone,
+  readOnly = false,
+  soType,
+  initialItems,
+  title,
+  subtitle,
+}) {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [details, setDetails] = useState(null);
@@ -65,10 +76,15 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
     let cancelled = false;
     setIsLoading(true);
     setLoadError("");
-    const request = soType
-      ? salesOrderService.getSoItemsByCall(callId, soType)
-      : salesOrderService.getDefaultLineItems(callId);
     const hasInitialItems = Array.isArray(initialItems);
+    const request =
+      soType || hasInitialItems
+        ? salesOrderService.getSoItemsByCall(callId, soType)
+        : salesOrderService.getDefaultLineItems({
+            entity_id: entityIdProp,
+            port_id: portId,
+            call_type_id: callTypeId,
+          });
     if (hasInitialItems) {
       setItems(initialItems);
     }
@@ -105,9 +121,9 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
     return () => {
       cancelled = true;
     };
-  }, [callId, soType, initialItems]);
+  }, [callId, soType, initialItems, entityIdProp, portId, callTypeId]);
 
-  const entityId = details?.entity_id;
+  const entityId = details?.entity_id ?? entityIdProp;
   const currency = details?.currency ?? "";
 
   // Item codes (sales_order/get_item_with_item_code) — loaded on first open
@@ -736,6 +752,10 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
 
 DefaultLineItemsModal.propTypes = {
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  /** get_default_line_items params; required unless soType / initialItems is set. */
+  entityId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  portId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  callTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onDone: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
   soType: PropTypes.string,

@@ -134,6 +134,10 @@ const mapTemplateTabFields = (fields) =>
         optionsSource: field?.option_source === "master" ? "master" : "manual",
         masterModule: field?.master_key ?? "",
         refetchParam: resolveTemplateRefetchParam(field),
+        // e.g. "call_type" / "port" / "billing_entity" — lets the create flow find a field's value by meaning.
+        bindingKeys: [field?.system_binding_key, field?.master_key, field?.field_label]
+          .map(normalizeBindingKey)
+          .filter(Boolean),
         // Fields sourced from a time object (e.g. ETA / ETD) are sent back in first_tab's `time_objects`.
         timeObjectId:
           field?.field_source === "time_object" ? String(field?.source_time_object_id ?? "").trim() : "",
@@ -359,10 +363,11 @@ function GeneralAdd({
   // After a successful create, the default line items modal is shown first; the parent's onSave
   // (which closes the card form) runs once the user confirms or skips it.
   const [createdCall, setCreatedCall] = useState(null);
-  const handleCallFileCreated = (response) => {
+  // lineItemParams: { entityId, portId, callTypeId } for sales_order/get_default_line_items.
+  const handleCallFileCreated = (response, lineItemParams = {}) => {
     const createdCallId = resolveCreatedCallId(response);
     if (createdCallId) {
-      setCreatedCall({ callId: createdCallId, response });
+      setCreatedCall({ callId: createdCallId, response, ...lineItemParams });
       return;
     }
     if (onSave) onSave(response);
@@ -809,7 +814,16 @@ function GeneralAdd({
         emailAttachments: [...defaultEmailAttachments, ...uploadedEmailAttachments],
       });
       const response = await callFileService.createCallFileNew(formData);
-      handleCallFileCreated(response);
+      const getTemplateValueByBinding = (bindingKey) => {
+        const field = (templateFields || []).find((f) => f.bindingKeys?.includes(bindingKey));
+        const value = field ? templateFieldValues[field.id] : "";
+        return firstNonEmptyString(Array.isArray(value) ? value[0] : value);
+      };
+      handleCallFileCreated(response, {
+        entityId: getTemplateValueByBinding("billing_entity"),
+        portId: getTemplateValueByBinding("port"),
+        callTypeId: getTemplateValueByBinding("call_type"),
+      });
     } catch (error) {
       const msg =
         error?.response?.data?.message ||
@@ -963,7 +977,11 @@ function GeneralAdd({
         console.groupEnd();
       }
       const response = await callFileService.createCallFile(formData);
-      handleCallFileCreated(response);
+      handleCallFileCreated(response, {
+        entityId: firstNonEmptyString(getPrimaryBillingEntityId()),
+        portId: firstNonEmptyString(getFieldValue("port")),
+        callTypeId: firstNonEmptyString(getFieldValue("call_type_id"), getFieldValue("typeOfCall")),
+      });
     } catch (error) {
       const msg =
         error?.response?.data?.message ||
@@ -2815,7 +2833,13 @@ function GeneralAdd({
                 </div>
               )}
               {createdCall && (
-                <DefaultLineItemsModal callId={createdCall.callId} onDone={handleDefaultLineItemsDone} />
+                <DefaultLineItemsModal
+                  callId={createdCall.callId}
+                  entityId={createdCall.entityId}
+                  portId={createdCall.portId}
+                  callTypeId={createdCall.callTypeId}
+                  onDone={handleDefaultLineItemsDone}
+                />
               )}
             </div>
           </div>
