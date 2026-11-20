@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { FiChevronDown, FiFilter } from 'react-icons/fi';
 import OptionColorBadge from './OptionColorBadge';
@@ -7,7 +7,7 @@ import OptionColorBadge from './OptionColorBadge';
 // and clicking it opens a compact list. Uses the same trigger / panel classes as the AND
 // condition operator picker, so it needs no styles of its own. Options may carry a colour and
 // icon (types, stickers, blockers) which are drawn as the same chip as on the card.
-function InlineTextDropdown({ value, options, placeholder, triggerClassName, showChevron = true, searchable = false, onChange }) {
+function InlineTextDropdown({ value, options, placeholder, triggerClassName, triggerPrefix = '', showChevron = true, searchable = false, onChange }) {
   const [open, setOpen] = useState(false);
   const [filterText, setFilterText] = useState('');
   const wrapRef = useRef(null);
@@ -39,7 +39,7 @@ function InlineTextDropdown({ value, options, placeholder, triggerClassName, sho
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        {selected?.label ?? placeholder}
+        {triggerPrefix}{selected?.label ?? placeholder}
         {showChevron && <FiChevronDown size={14} aria-hidden />}
       </button>
 
@@ -61,21 +61,25 @@ function InlineTextDropdown({ value, options, placeholder, triggerClassName, sho
             {visibleOptions.length === 0 ? (
               <div className="br-property-picker-empty">No matches</div>
             ) : (
-              visibleOptions.map((option) => (
-                <button
-                  type="button"
-                  key={option.value}
-                  className="br-condition-operator-option d-flex align-items-center gap-2"
-                  onClick={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
-                >
-                  {(option.colorCode || option.iconName) && (
-                    <OptionColorBadge colorCode={option.colorCode} iconName={option.iconName} />
+              visibleOptions.map((option, index) => (
+                <Fragment key={option.value}>
+                  {option.group && option.group !== visibleOptions[index - 1]?.group && (
+                    <div className="br-inline-dropdown-group">{option.group}</div>
                   )}
-                  {option.label}
-                </button>
+                  <button
+                    type="button"
+                    className="br-condition-operator-option d-flex align-items-center gap-2"
+                    onClick={() => {
+                      onChange(option.value);
+                      setOpen(false);
+                    }}
+                  >
+                    {(option.colorCode || option.iconName) && (
+                      <OptionColorBadge colorCode={option.colorCode} iconName={option.iconName} />
+                    )}
+                    {option.label}
+                  </button>
+                </Fragment>
               ))
             )}
           </div>
@@ -92,9 +96,11 @@ InlineTextDropdown.propTypes = {
     label: PropTypes.string,
     colorCode: PropTypes.string,
     iconName: PropTypes.string,
+    group: PropTypes.string,
   })).isRequired,
   placeholder: PropTypes.string,
   triggerClassName: PropTypes.string,
+  triggerPrefix: PropTypes.string,
   showChevron: PropTypes.bool,
   searchable: PropTypes.bool,
   onChange: PropTypes.func.isRequired,

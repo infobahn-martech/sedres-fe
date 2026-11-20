@@ -114,10 +114,16 @@
   }
 }
 
-// The THEN column links ("Add new action", "Add new property" ...) are plain text, no + icon.
-.business-rule-form-column--then .business-rule-form-add-link svg,
-.business-rule-form-column--then .business-rule-form-add-action svg {
-  display: none;
+// The THEN column links ("Add new action", "Add new property" ...) show their + icon, aligned
+// with the link text.
+.business-rule-form-column--then .business-rule-form-add-link,
+.business-rule-form-column--then .business-rule-form-add-action {
+  gap: 6px;
+
+  svg {
+    display: inline-block;
+    flex-shrink: 0;
+  }
 }
 
 // THEN action cards (update / move / notify ...): compact padding and even spacing between their rows.
@@ -128,11 +134,10 @@
   box-shadow: none;
 }
 
-// The "Add new ... action" link under the cards starts on the same line as the text inside the cards
-// (card border 1px + padding 12px).
+// The "Add new ... action" links in the THEN column sit flush left with the section title.
 .business-rule-form-column--then .business-rule-form-add-action,
 .br-generic-then > .business-rule-form-add-link {
-  padding-left: 13px;
+  padding-left: 0;
 }
 
 // Every "Add new ..." link and filter header in the THEN column has one size, whichever section draws it.
@@ -148,5 +153,68 @@
     font-size: 13px;
     font-weight: 600;
     line-height: 1.4;
+  }
+}
+
+// Group heading inside an inline text dropdown ("Templates"): plain blue label, no box or border.
+.br-inline-dropdown-group {
+  padding: 6px 12px 2px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #00368c;
+}
+
+// The create-card header dropdown ("Create card with custom properties") is not underlined.
+.business-rule-form-action-detail-title .br-create-action-link--btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: none;
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+// Smaller text in the create-card header dropdown list.
+.business-rule-form-action-detail-title .br-condition-operator-panel {
+  .br-condition-operator-option {
+    font-size: 12px;
+    padding: 7px 12px;
+  }
+
+  .br-inline-dropdown-group {
+    font-size: 12px;
+  }
+
+  .board-minimap-picker-search {
+    padding: 6px 12px;
+
+    input {
+      font-size: 12px;
+    }
+  }
+}
+
+// Tighter spacing between the rows of the create-card header dropdown list.
+.business-rule-form-action-detail-title .br-condition-operator-panel {
+  gap: 4px;
+  padding: 8px;
+
+  .board-minimap-picker-scroll {
+    gap: 0;
+  }
+
+  .br-condition-operator-option {
+    padding: 4px 10px;
+  }
+
+  .br-inline-dropdown-group {
+    padding: 6px 10px 2px;
   }
 }
