@@ -119,11 +119,20 @@ const byDisplayOrder = (a, b) => (Number(a.display_order ?? a.displayOrder) || 0
 // Loose name comparison so "Check List" / "Checklist" / "check_list" all match.
 const compactName = (v) => String(v ?? "").toLowerCase().replace(/[\s_-]+/g, "");
 
+// API field position (row_no, then col_no); fields without one keep their array order at the end.
+const toPositionOr = (v, fallback) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : fallback;
+};
+const byBindingPosition = (a, b) =>
+    toPositionOr(a.row_no, Number.MAX_SAFE_INTEGER) - toPositionOr(b.row_no, Number.MAX_SAFE_INTEGER) ||
+    toPositionOr(a.col_no, Number.MAX_SAFE_INTEGER) - toPositionOr(b.col_no, Number.MAX_SAFE_INTEGER);
+
 const normalizeStructureTab = (tab) => ({
     key: tab.tab_key ?? compactName(tab.tab_name),
     name: tab.tab_name ?? tab.tab_key ?? "",
     displayOrder: tab.display_order ?? 0,
-    fields: tab.fields ?? [],
+    fields: [...(tab.fields ?? [])].sort(byBindingPosition),
     sections: [...(tab.sections ?? [])].sort(byDisplayOrder),
     subTabs: [...(tab.sub_tabs ?? [])].sort(byDisplayOrder).map(normalizeStructureTab),
 });
@@ -164,6 +173,8 @@ const mapSystemBindingField = (binding) => ({
     masterModule: binding.master_key ?? "",
     dependsOnFieldLabel: binding.depends_on_field_label ?? "",
     systemBindingKey: getBindingKey(binding),
+    gridRow: binding.row_no ?? null,
+    gridCol: binding.col_no ?? null,
 });
 
 // Keeps one tab/subtab's fields in step with its system bindings: fields
@@ -197,10 +208,23 @@ const syncSystemBindingFields = (fields, bindings) => {
             optionIds: keepSavedOptions ? field.optionIds : fromApi.optionIds,
         }];
     });
-    const missing = bindings
-        .filter((b) => getBindingKey(b) && !seen.has(getBindingKey(b)))
-        .map(mapSystemBindingField);
-    return placeFieldsAfterLayout(synced, missing);
+    const missingBindings = bindings.filter((b) => getBindingKey(b) && !seen.has(getBindingKey(b)));
+    if (!missingBindings.length) return synced;
+
+    // Give the new fields cells below the current layout, then move each one in
+    // the list to just after its API predecessor (by row_no) and hand the cells
+    // back out in that order. Otherwise a binding that only appears later (e.g.
+    // Project Code after picking a billing entity) would land at the bottom.
+    const placed = placeFieldsAfterLayout(synced, missingBindings.map(mapSystemBindingField));
+    const ordered = placed.slice(0, synced.length);
+    placed.slice(synced.length).forEach((field) => {
+        const apiIndex = bindings.findIndex((b) => getBindingKey(b) === field.systemBindingKey);
+        const prevKey = bindings.slice(0, apiIndex).reverse().map(getBindingKey)
+            .find((k) => ordered.some((f) => f.systemBindingKey === k));
+        const at = prevKey ? ordered.findIndex((f) => f.systemBindingKey === prevKey) + 1 : 0;
+        ordered.splice(at, 0, field);
+    });
+    return alignLayoutToOrder(ordered);
 };
 
 const buildTabFromStructure = (st, prefix = "tab") => ({
