@@ -148,9 +148,11 @@ function ApiCardCountBadge({ IconComp, count, label }) {
   const value = Number(count);
   if (!Number.isFinite(value) || value <= 0) return null;
   return (
-    <span className="card-api-count-badge" title={label}>
-      <IconComp size={13} color="#2563eb" />
-      <span>{value}</span>
+    <span className="card-api-count-badge card-api-count-badge--service" title={label} aria-label={`${label}: ${value}`}>
+      <span className="card-api-count-badge-icon" aria-hidden>
+        <IconComp size={12} color="currentColor" />
+      </span>
+      <span className="card-api-count-badge-value">{value}</span>
     </span>
   );
 }
@@ -176,16 +178,26 @@ function ApiCardCountIconsRow({ card, cardsById, setSelectedCard, transportOnly 
       hasLink;
   if (!hasAny) return null;
 
+  const services = [
+    { IconComp: CarIcon, count: card.transportCount, label: "Transport" },
+    ...(transportOnly
+      ? []
+      : [
+          { IconComp: HotelIcon, count: card.hotelCount, label: "Hotel" },
+          { IconComp: MedicalIcon, count: card.medicalCount, label: "Medical" },
+          { IconComp: MaterialManagementIcon, count: card.materialManagementCount, label: "Material Management" },
+          { IconComp: WasteDisposalIcon, count: card.wasteDisposalCount, label: "Waste Disposal" },
+        ]),
+  ].filter((s) => Number(s.count) > 0);
+
   return (
     <div className="card-api-count-icons-row">
-      <ApiCardCountBadge IconComp={CarIcon} count={card.transportCount} label="Transport" />
-      {!transportOnly && (
-        <>
-          <ApiCardCountBadge IconComp={HotelIcon} count={card.hotelCount} label="Hotel" />
-          <ApiCardCountBadge IconComp={MedicalIcon} count={card.medicalCount} label="Medical" />
-          <ApiCardCountBadge IconComp={MaterialManagementIcon} count={card.materialManagementCount} label="Material Management" />
-          <ApiCardCountBadge IconComp={WasteDisposalIcon} count={card.wasteDisposalCount} label="Waste Disposal" />
-        </>
+      {services.length > 0 && (
+        <div className="card-api-service-strip">
+          {services.map((s) => (
+            <ApiCardCountBadge key={s.label} IconComp={s.IconComp} count={Number(s.count)} label={s.label} />
+          ))}
+        </div>
       )}
       <ApiCardLinkBadge card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} />
       <ApiCardSubtaskBadge card={card} />
