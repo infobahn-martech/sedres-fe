@@ -469,7 +469,8 @@ function TemplateStageForm({
     const nextParams = JSON.parse(triggerParamsKey);
     if (nextParams.saber !== prevParams.saber) {
       refreshSaberAttachment(nextParams.saber ?? "");
-      if (nextParams.saber) openLineItemsForSaber();
+      // The sales order line items modal is only for SABER "By Sedres".
+      if (normalizeTemplateKey(nextParams.saber) === "by_sedres") openLineItemsForSaber();
     }
     if (nextParams.weather_forecast !== prevParams.weather_forecast) {
       refreshWeatherMap(nextParams.weather_forecast ?? "");
