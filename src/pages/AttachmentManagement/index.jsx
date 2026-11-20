@@ -43,7 +43,7 @@ const AttachmentManagement = () => {
 
   const cols = [
     { name: 'Attachment Type', selector: 'attachment_type', sort: true, width: '220', thclass: 'tb-head', contentClass: 'table-content' },
-    { name: 'Category', selector: 'category', sort: true, width: '150', thclass: 'tb-head', contentClass: 'table-content' },
+    { name: 'Category', selector: 'category_label', sort: true, width: '150', thclass: 'tb-head', contentClass: 'table-content' },
     { name: 'Port', selector: 'port', sort: true, width: '160', thclass: 'tb-head', contentClass: 'table-content' },
     { name: 'Call Type', selector: 'call_type', sort: true, width: '180', thclass: 'tb-head', contentClass: 'table-content' },
     {

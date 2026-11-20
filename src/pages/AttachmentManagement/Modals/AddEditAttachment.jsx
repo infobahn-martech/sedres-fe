@@ -10,10 +10,20 @@ import '../../../design/scss/prospect-modal.scss';
 import '../../../design/scss/modal-designs.scss';
 import '../../../design/scss/form-designs.scss';
 
-const ATTACHMENT_CATEGORY_OPTIONS = ['Pre Arrival', 'Arrival', 'Departure'].map((value) => ({
-  value,
-  label: value,
-}));
+// Values are the backend keys returned as `category` (labels come back as `category_label`).
+const ATTACHMENT_CATEGORY_OPTIONS = [
+  { value: 'pre_arrival', label: 'Pre Arrival' },
+  { value: 'arrival', label: 'Arrival' },
+  { value: 'departure', label: 'Departure' },
+];
+
+const resolveCategoryValue = (row) => {
+  const candidates = [row?.category, row?.category_label].map((v) =>
+    String(v ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_')
+  );
+  const match = ATTACHMENT_CATEGORY_OPTIONS.find((opt) => candidates.includes(opt.value));
+  return match ? match.value : '';
+};
 
 const normalize = (value) => String(value ?? '').trim().toLowerCase();
 
@@ -43,26 +53,36 @@ export function AddEditAttachmentModal({ showModal, closeModal, onSuccess }) {
     [ports]
   );
 
-  const defaultValues = useMemo(
-    () => ({
-      port_id: row ? resolveOptionValue(portOptions, row.port_id, row.port ?? row.port_name) : '',
-      call_type_id: row
-        ? resolveOptionValue(callTypeOptions, row.call_type_id, row.call_type ?? row.call_type_name)
-        : '',
-      category: row?.category ?? '',
-      attachment_type: row?.attachment_type ?? '',
-      attachment: null,
-    }),
-    [row, portOptions, callTypeOptions]
-  );
-
   const {
     register,
     control,
     handleSubmit,
-    reset,
+    getValues,
+    setValue,
     formState: { errors },
-  } = useForm({ defaultValues });
+  } = useForm({
+    defaultValues: {
+      port_id: row?.port_id != null ? String(row.port_id) : '',
+      call_type_id: row?.call_type_id != null ? String(row.call_type_id) : '',
+      category: resolveCategoryValue(row),
+      attachment_type: row?.attachment_type ?? '',
+      attachment: null,
+    },
+  });
+
+  // Edit mode: the list returns port / call type names, so bind each id once its options load
+  // (only while the field is still empty, so a user's pick is never overwritten).
+  useEffect(() => {
+    if (!isEdit || getValues('port_id')) return;
+    const value = resolveOptionValue(portOptions, row?.port_id, row?.port ?? row?.port_name);
+    if (value) setValue('port_id', value, { shouldValidate: true });
+  }, [isEdit, portOptions, row, getValues, setValue]);
+
+  useEffect(() => {
+    if (!isEdit || getValues('call_type_id')) return;
+    const value = resolveOptionValue(callTypeOptions, row?.call_type_id, row?.call_type ?? row?.call_type_name);
+    if (value) setValue('call_type_id', value, { shouldValidate: true });
+  }, [isEdit, callTypeOptions, row, getValues, setValue]);
 
   useEffect(() => {
     getPorts({ params: { limit: 1000 } });
@@ -78,11 +98,6 @@ export function AddEditAttachmentModal({ showModal, closeModal, onSuccess }) {
       cancelled = true;
     };
   }, []);
-
-  // Re-apply once ports / call types load so edit mode can resolve names to ids.
-  useEffect(() => {
-    if (isEdit) reset(defaultValues);
-  }, [isEdit, defaultValues, reset]);
 
   const onSubmit = (data) => {
     const formData = new FormData();
