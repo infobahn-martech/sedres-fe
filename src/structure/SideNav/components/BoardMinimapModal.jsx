@@ -12,6 +12,7 @@ const EMPTY_LIST = [];
 
 // Hover hints for what a click selects (column header, swimlane label, single cell).
 const COLUMN_TOOLTIP = 'Select the entire column across all swimlanes';
+const STAGE_TOOLTIP = 'Select all columns of this stage across all swimlanes';
 const PARENT_COLUMN_TOOLTIP = 'Select the entire column group (all its columns) across all swimlanes';
 const LANE_TOOLTIP = 'Select the entire swimlane across all columns';
 const cellTooltip = (column, lane) => `Select this cell in column ${column.name} and swimlane ${lane.name}`;
@@ -31,7 +32,7 @@ ColorFill.propTypes = { color: PropTypes.string };
 // Board Minimap: pick a board, then click a cell (column + lane), a column header (that column in
 // any lane) or a lane label (that lane in any column) to choose where a card goes. The layout
 // comes from get_workflow_by_board; only ids are stored (guide 1.5).
-function BoardMinimapModal({ show, value, boardId, onBoardChange, onPick, onClose }) {
+function BoardMinimapModal({ show, value, boardId, onBoardChange, onPick, onClose, allowStagePick = false }) {
   const {
     boardPickerWorkspaces: workspaces, getBoardPickerWorkspaces, boardWorkflowsByBoard, boardWorkflowsStatus, getBoardWorkflows,
   } = useBusinessRuleReducer((s) => s);
@@ -126,6 +127,15 @@ function BoardMinimapModal({ show, value, boardId, onBoardChange, onPick, onClos
       && (!hasLane || String(position.swimlaneId) === String(lane.id));
   };
 
+  // A stage band picks every column of that stage (several columns at once, any lane).
+  const pickStage = (workflow, segment) => onPick({
+    boardId: String(boardId),
+    workflowId: String(workflow.id),
+    columnId: '',
+    columnIds: segment.columns.map((column) => String(column.id)),
+    swimlaneId: '',
+  });
+
   const handlePickBoard = (board) => {
     onBoardChange(String(board.board_id));
     setIsBoardPickerOpen(false);
@@ -143,8 +153,9 @@ function BoardMinimapModal({ show, value, boardId, onBoardChange, onPick, onClos
               <th
                 key={segment.id}
                 colSpan={segment.columns.length}
-                className="board-minimap-area-cell"
-                title={segment.name}
+                className={`board-minimap-area-cell${allowStagePick ? ' board-minimap-area-cell--pickable' : ''}`}
+                title={allowStagePick ? STAGE_TOOLTIP : segment.name}
+                onClick={allowStagePick ? () => pickStage(workflow, segment) : undefined}
                 onMouseEnter={() => setHoveredColumnIds(segment.columns.map((column) => column.id))}
                 onMouseLeave={() => setHoveredColumnIds(EMPTY_LIST)}
               >
@@ -330,6 +341,7 @@ BoardMinimapModal.propTypes = {
   onBoardChange: PropTypes.func.isRequired,
   onPick: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
+  allowStagePick: PropTypes.bool,
 };
 
 export default BoardMinimapModal;
