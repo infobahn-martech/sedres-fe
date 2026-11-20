@@ -51,6 +51,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
   const [editingItem, setEditingItem] = useState(null);
   const [editForm, setEditForm] = useState({ quantity: "", taxPercentage: "" });
   const [editError, setEditError] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -273,7 +274,8 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
     setEditError("");
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
+    if (isSavingEdit) return;
     const quantity = Number(editForm.quantity);
     const taxPercentage = Number(editForm.taxPercentage);
     if (editForm.quantity === "" || !Number.isFinite(quantity) || quantity <= 0) {
@@ -287,6 +289,10 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
     const item = editingItem;
     const originalQuantity = item.originalQuantity ?? getQuantity(item);
     const originalTax = item.originalTax ?? toNumber(item.tax_percentage);
+    if (quantity === getQuantity(item) && taxPercentage === toNumber(item.tax_percentage)) {
+      cancelEdit();
+      return;
+    }
     const updated = {
       ...item,
       quantity,
@@ -296,8 +302,39 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
       originalTax,
       isEdited: quantity !== originalQuantity || taxPercentage !== originalTax,
     };
-    setItems((prev) => prev.map((row) => (row === item ? updated : row)));
-    cancelEdit();
+
+    // A default item not yet on the sales order has nothing to update yet — it is added on Confirm,
+    // then updated with these values.
+    if (isPendingAdd(item)) {
+      setItems((prev) => prev.map((row) => (row === item ? updated : row)));
+      cancelEdit();
+      return;
+    }
+
+    // Already on the sales order: update it right away (sales_order/update_sales_order_item_amount).
+    setIsSavingEdit(true);
+    setEditError("");
+    try {
+      const [resolved] = await resolveSoItemIds([item]);
+      if (resolved?.so_item_id == null) throw new Error("Line item not found on the sales order.");
+      const response = await salesOrderService.updateSalesOrderItemAmount({
+        so_item_id: Number(resolved.so_item_id) || resolved.so_item_id,
+        quantity,
+        tax_percentage: taxPercentage,
+      });
+      const body = response?.data;
+      if (body?.status && body.status !== "success") {
+        throw new Error(body?.message || "Could not update the line item.");
+      }
+      const saved = { ...updated, so_item_id: resolved.so_item_id, isEdited: false, isUpdated: true };
+      setItems((prev) => prev.map((row) => (row === item ? saved : row)));
+      cancelEdit();
+      notify("Line item updated.", "success");
+    } catch (error) {
+      setEditError(getErrorMessage(error, "Could not update the line item."));
+    } finally {
+      setIsSavingEdit(false);
+    }
   };
 
   // Items without an so_item_id (default items added on this Confirm, or save-response items) are found
@@ -521,6 +558,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
                           {item.item_name}
                           {item.isNew && <span className="dli-badge">New</span>}
                           {item.isEdited && !isEditing && <span className="dli-badge dli-badge--edited">Edited</span>}
+                          {item.isUpdated && !item.isEdited && !isEditing && <span className="dli-badge">Updated</span>}
                         </div>
                         {isEditing && editError && <span className="sales-order-add-form-error">{editError}</span>}
                       </td>
@@ -567,7 +605,8 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
                                 type="button"
                                 className="dli-icon-btn dli-icon-btn--save"
                                 onClick={saveEdit}
-                                title="Apply"
+                                disabled={isSavingEdit}
+                                title={isSavingEdit ? "Saving..." : "Save"}
                                 aria-label={`Apply changes to ${item.item_name}`}
                               >
                                 <FiCheck />
@@ -576,6 +615,7 @@ function DefaultLineItemsModal({ callId, onDone, readOnly = false, soType, initi
                                 type="button"
                                 className="dli-icon-btn"
                                 onClick={cancelEdit}
+                                disabled={isSavingEdit}
                                 title="Cancel"
                                 aria-label="Cancel edit"
                               >
