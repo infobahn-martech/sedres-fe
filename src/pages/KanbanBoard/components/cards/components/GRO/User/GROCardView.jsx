@@ -440,33 +440,29 @@ const GROCardView = forwardRef(function GROCardView(
     [callId, taskId, saveArrivalDocument, refreshTaskDetails]
   );
 
-  const inwardTimeObjectFields = useMemo(
-    () =>
-      (Array.isArray(timeObjects) ? timeObjects : [])
-        .map((item) => {
-          const valueKey = resolveGroTimeObjectValueKey(item);
-          if (!valueKey) return null;
-          const label = String(item?.time_object ?? "").trim() || "Date & Time";
-          const isRequired = String(item?.is_required ?? "0") === "1";
-          const fieldValue = timeObjectValues?.[valueKey] ?? { date: "", time: "" };
-          return {
-            fieldKey: valueKey,
-            label,
-            isRequired,
-            pickerParts: fieldValue,
-            onDateTimeChange: handleTimeObjectChange(valueKey),
-            error: timeObjectErrors?.[valueKey] ?? "",
-            // Capture-now icon is an Inward Clearance-only affordance (stage_id 8).
-            onCaptureNow:
-              groStageId === 8
-                ? () => captureTimeObjectNow(item, valueKey, handleTimeObjectChange(valueKey))
-                : undefined,
-            capturing: groStageId === 8 && capturingTimeObjectKey === valueKey,
-          };
-        })
-        .filter(Boolean),
+  const buildInwardTimeObjectField = useCallback(
+    (item) => {
+      const valueKey = resolveGroTimeObjectValueKey(item);
+      if (!valueKey) return null;
+      const label = String(item?.time_object ?? "").trim() || "Date & Time";
+      const isRequired = String(item?.is_required ?? "0") === "1";
+      const fieldValue = timeObjectValues?.[valueKey] ?? { date: "", time: "" };
+      return {
+        fieldKey: valueKey,
+        label,
+        isRequired,
+        pickerParts: fieldValue,
+        onDateTimeChange: handleTimeObjectChange(valueKey),
+        error: timeObjectErrors?.[valueKey] ?? "",
+        // Capture-now icon is an Inward Clearance-only affordance (stage_id 8).
+        onCaptureNow:
+          groStageId === 8
+            ? () => captureTimeObjectNow(item, valueKey, handleTimeObjectChange(valueKey))
+            : undefined,
+        capturing: groStageId === 8 && capturingTimeObjectKey === valueKey,
+      };
+    },
     [
-      timeObjects,
       timeObjectValues,
       timeObjectErrors,
       handleTimeObjectChange,
@@ -476,24 +472,39 @@ const GROCardView = forwardRef(function GROCardView(
     ]
   );
 
+  const inwardTimeObjectFields = useMemo(
+    () =>
+      (Array.isArray(timeObjects) ? timeObjects : [])
+        .map(buildInwardTimeObjectField)
+        .filter(Boolean),
+    [timeObjects, buildInwardTimeObjectField]
+  );
+
   // Crew Immigration time objects are configured per batch ("… Commenced - BATCH 1"), so the
-  // Update Status popover only shows the selected batch's fields plus any batch-less ones.
+  // Update Status popover only shows the time objects whose label names the selected batch.
   const crewImmigrationScopedTimeObjects = useMemo(
     () =>
       filterGroTimeObjectsForBatch(timeObjects, crewImmigrationBatchFilter, crewImmigrationBatchOptions),
     [timeObjects, crewImmigrationBatchFilter, crewImmigrationBatchOptions]
   );
 
+  // Built straight from the batch's own time objects — not by matching ids against the full
+  // list, since batches can share a time_object_id (same "Commenced" object per batch).
   const crewImmigrationTimeFields = useMemo(() => {
-    const scopedKeys = new Set(crewImmigrationScopedTimeObjects.map(resolveGroTimeObjectValueKey));
-    return inwardTimeObjectFields
-      .filter((field) => scopedKeys.has(field.fieldKey))
+    const seen = new Set();
+    return crewImmigrationScopedTimeObjects
+      .map(buildInwardTimeObjectField)
+      .filter((field) => {
+        if (!field || seen.has(field.fieldKey)) return false;
+        seen.add(field.fieldKey);
+        return true;
+      })
       .map((field) => ({
         ...field,
         // The batch is already in the popover title — keep labels short.
         label: stripGroBatchSuffix(field.label),
       }));
-  }, [inwardTimeObjectFields, crewImmigrationScopedTimeObjects]);
+  }, [crewImmigrationScopedTimeObjects, buildInwardTimeObjectField]);
 
   // Saved Commenced / Completed values for the selected batch, shown as a timeline strip.
   const crewImmigrationBatchTimeline = useMemo(
