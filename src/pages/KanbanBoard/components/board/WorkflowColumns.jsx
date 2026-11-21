@@ -26,7 +26,7 @@ import useZamilMarinePoRequestStore from "@/store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "@/store/zamilMarinePoUploadStore";
 import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
-import { isApprovalReceivedColumnTitle, isApprovalRequestedColumnTitle, isLntSwimlane, isSubseaSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isLntInvoiceIssued, isLntReadyToSubmit, isDaSupervisorWorkflow, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
+import { isApprovalReceivedColumnTitle, isApprovalRequestedColumnTitle, isLntSwimlane, isSubseaSwimlane, isBgpSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isLntInvoiceIssued, isLntReadyToSubmit, isDaSupervisorWorkflow, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
@@ -691,10 +691,24 @@ export default function WorkflowColumns({
               const subseaTickedCards = subseaLaneIds
                 .flatMap((laneId) => getSwimlaneColumnCards(workflow, laneId, group.colKeys[0]))
                 .filter((card) => selectedActionCardIds?.includes(card.id));
-              /* Ticked L&T cards keep the L&T upload; otherwise the ticked Subsea 7 cards take it. */
+              /* The BGP swimlane of "Received from Ops" uploads the SAP invoices through its own review. */
+              const bgpLaneIds = isLntUploadColumn
+                ? swimlaneOrder.filter((laneId) => isBgpSwimlane(workflow.swimlanes?.[laneId]))
+                : [];
+              const bgpTickedLanes = bgpLaneIds
+                .map((laneId) => ({
+                  laneId,
+                  cards: getSwimlaneColumnCards(workflow, laneId, group.colKeys[0]).filter((card) =>
+                    selectedActionCardIds?.includes(card.id)
+                  ),
+                }))
+                .filter((lane) => lane.cards.length > 0);
+              const bgpTickedCards = bgpTickedLanes.flatMap((lane) => lane.cards);
+              /* Ticked L&T cards keep the L&T upload; otherwise the ticked Subsea 7 cards take it, then the BGP ones. */
               const isSubseaLaneAction = lntTickedCards.length === 0 && subseaTickedCards.length > 0;
               const isSubseaUpload = isSubseaLaneAction && isLntUploadColumn;
-              const invoiceCards = isSubseaLaneAction ? subseaTickedCards : lntTickedCards;
+              const isBgpUpload = lntTickedCards.length === 0 && subseaTickedCards.length === 0 && bgpTickedCards.length > 0;
+              const invoiceCards = isBgpUpload ? bgpTickedCards : isSubseaLaneAction ? subseaTickedCards : lntTickedCards;
               if (isSubseaLaneAction && isLntDownloadColumn) invoiceAction = "sendInvoice";
               /* "Consolidated": ticked cards whose submission documents are not created yet get "Create
                  Submission Documents"; creating them opens the Final Submission Email. Ticked cards that
@@ -743,8 +757,10 @@ export default function WorkflowColumns({
                     workflowId: workflow.workflow_id ?? workflow.id,
                     isZamilCrew: isZamilWorkflow(workflow) && !isZamilMarineWorkflow(workflow),
                     isZamilMarine: isZamilMarineWorkflow(workflow),
-                    isLnt: isLntUploadColumn && !isSubseaUpload,
+                    isLnt: isLntUploadColumn && !isSubseaUpload && !isBgpUpload,
                     isSubsea7: isSubseaUpload,
+                    isBgp: isBgpUpload,
+                    swimlaneId: isBgpUpload ? bgpTickedLanes[0].laneId : null,
                   }),
                 uploadPos: (cards) =>
                   onColumnUploadPos?.(cards, { workflowId: workflow.workflow_id ?? workflow.id }),
@@ -816,7 +832,7 @@ export default function WorkflowColumns({
                     isDarkMode={isDarkMode}
                     actionLabel={
                       hasInvoiceButton
-                        ? invoiceButton === "issueArInvoice" && SAP_INVOICES_LABEL_WORKFLOW_PATTERN.test(workflow?.title ?? "")
+                        ? invoiceButton === "issueArInvoice" && (isBgpUpload || SAP_INVOICES_LABEL_WORKFLOW_PATTERN.test(workflow?.title ?? ""))
                           ? ISSUE_AR_INVOICE_SAP_LABEL
                           : INVOICE_ACTION_BUTTONS[invoiceButton].label
                         : "Batch"
