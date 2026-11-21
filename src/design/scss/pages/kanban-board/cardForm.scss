@@ -1169,12 +1169,61 @@
 }
 
 /* Crew Immigration tab toolbar — batch tabs (left) · view switch + Update Status (right). */
+/* Rendered as the panel's header band in the Sedres brand colour (same as popover headers). */
 .gro-card-view .gro-crew-imm-toolbar {
   justify-content: space-between;
   flex-wrap: wrap;
   row-gap: 10px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border-primary);
+  margin: -18px -18px 16px;
+  padding: 12px 18px;
+  border-radius: 18px 18px 0 0;
+  background:
+    linear-gradient(110deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--color-primary);
+
+  .gro-pass-segment {
+    color: rgba(255, 255, 255, 0.86);
+
+    &:hover:not(:disabled):not(.gro-pass-segment--active) {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+    }
+  }
+
+  .gro-pass-segment--active {
+    background: #ffffff !important;
+    border-color: #ffffff !important;
+    color: var(--color-primary) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  }
+
+  .gro-pass-segment--popover-open {
+    border-color: #ffffff !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+  }
+
+  .gro-pass-segment-count {
+    background: #ffffff;
+    color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary);
+  }
+
+  /* Update Status reads as the band's call-to-action. */
+  .gro-crew-imm-actions .gro-pass-segment {
+    border-color: rgba(255, 255, 255, 0.55);
+    color: #ffffff;
+  }
+}
+
+[data-theme="dark"] .gro-card-view .gro-crew-imm-toolbar {
+  background:
+    linear-gradient(110deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--color-primary) 70%, var(--modal-bg, #0f172a));
 }
 
 .gro-card-view .gro-crew-imm-toolbar-group {
@@ -1189,17 +1238,9 @@
   margin-left: auto;
 }
 
-.gro-card-view .gro-crew-imm-toolbar-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
 .gro-card-view .gro-crew-imm-toolbar-empty {
   font-size: 12px;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.75);
   font-style: italic;
 }
 
@@ -1226,13 +1267,6 @@
   border-radius: 10px;
   background: var(--surface-secondary);
   font-size: 12px;
-}
-
-.gro-card-view .gro-crew-imm-status-batch {
-  font-weight: 700;
-  color: var(--text-primary);
-  padding-right: 12px;
-  border-right: 1px solid var(--border-primary);
 }
 
 .gro-card-view .gro-crew-imm-status-item {

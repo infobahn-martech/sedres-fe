@@ -57,7 +57,6 @@ export default function CrewImmigrationPanel({
     <div className="gro-crew-immigration-panel">
       <div className="gro-crew-immigration-toolbar gro-crew-imm-toolbar">
         <div className="gro-crew-imm-toolbar-group">
-          <span className="gro-crew-imm-toolbar-label">Batch</span>
           {safeBatchOptions.length > 0 ? (
             <div className="gro-pass-segments" role="tablist" aria-label="Batch">
               {safeBatchOptions.map((b) => (
@@ -108,7 +107,6 @@ export default function CrewImmigrationPanel({
 
       {activeBatch && safeTimeline.length > 0 ? (
         <div className="gro-crew-imm-status-strip" aria-label={`${activeBatch} status`}>
-          <span className="gro-crew-imm-status-batch">{activeBatch}</span>
           {safeTimeline.map((item) => (
             <span
               key={item.key}

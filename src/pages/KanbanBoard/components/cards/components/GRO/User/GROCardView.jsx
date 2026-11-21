@@ -491,9 +491,9 @@ const GROCardView = forwardRef(function GROCardView(
       .map((field) => ({
         ...field,
         // The batch is already in the popover title — keep labels short.
-        label: stripGroBatchSuffix(field.label, crewImmigrationBatchFilter),
+        label: stripGroBatchSuffix(field.label),
       }));
-  }, [inwardTimeObjectFields, crewImmigrationScopedTimeObjects, crewImmigrationBatchFilter]);
+  }, [inwardTimeObjectFields, crewImmigrationScopedTimeObjects]);
 
   // Saved Commenced / Completed values for the selected batch, shown as a timeline strip.
   const crewImmigrationBatchTimeline = useMemo(
@@ -1233,7 +1233,8 @@ const GROCardView = forwardRef(function GROCardView(
       setStage11TimeObjectErrors({});
     }
 
-    if (groStageHasExtraFields(groStageId)) {
+    // Batch Update Status carries only time fields — no status / document to validate.
+    if (groStageHasExtraFields(groStageId) && !isCrewImmigrationBatchSave) {
       const extraErrors = validateGroExtraStageFields(groStageId, extraStageFields, existingStageFiles);
       if (Object.keys(extraErrors).length > 0) {
         setExtraStageFieldErrors(extraErrors);
@@ -1255,7 +1256,7 @@ const GROCardView = forwardRef(function GROCardView(
       timeObjects: allTimeObjects,
       timeObjectValues: allTimeObjectValues,
       stageId: groStageId,
-      extraStageFields,
+      extraStageFields: isCrewImmigrationBatchSave ? {} : extraStageFields,
     });
 
     if (groStageId === 10) {
@@ -1958,7 +1959,13 @@ const GROCardView = forwardRef(function GROCardView(
                 }
                 timeObjectFields={crewImmigrationTimeFields}
                 timeObjectsLoading={timeObjectsLoading}
-                extraStageFieldsContent={extraStageFieldsContent}
+                extraStageFieldsContent={
+                  !timeObjectsLoading && crewImmigrationTimeFields.length === 0 ? (
+                    <p className="gro-inward-popover-label gro-inward-popover-loading">
+                      No time fields configured for this batch.
+                    </p>
+                  ) : null
+                }
                 onInwardCancel={handleInwardCancel}
                 onInwardSubmit={handleInwardSubmit}
                 isSavingInward={isSavingArrivalDocument}

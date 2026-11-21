@@ -631,34 +631,52 @@ export const resolveGroTimeObjectValueKey = (item) => {
   return id != null && String(id).trim() !== "" ? String(id).trim() : resolveGroTimeObjectFieldKey(item);
 };
 
-const escapeRegExp = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// Batch names and labels are compared alphanumerics-only and case-insensitively, so
+// "BATCH 1", "Batch-1", "batch1" and non-breaking spaces all match.
+const compactAlnum = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-/** Matches a batch name as a whole token, so "BATCH 1" never matches "BATCH 10". */
-const batchTokenRegExp = (batch) => new RegExp(`(^|[^A-Za-z0-9])${escapeRegExp(String(batch).trim())}(?![0-9])`, "i");
+/** Batch number of a batch name ("BATCH 2" -> 2), or null. */
+const batchNumberOf = (batch) => {
+  const match = String(batch ?? "").match(/(\d+)/);
+  return match ? Number(match[1]) : null;
+};
+
+/** Batch number a time-object label names ("… Commenced - BATCH 2" -> 2), or null if none. */
+const labelBatchNumber = (label) => {
+  const match = compactAlnum(label).match(/batch(\d+)/);
+  return match ? Number(match[1]) : null;
+};
+
+const labelNamesBatch = (label, batch) => {
+  const num = batchNumberOf(batch);
+  if (num != null) return labelBatchNumber(label) === num;
+  const token = compactAlnum(batch);
+  return Boolean(token) && compactAlnum(label).includes(token);
+};
 
 /**
- * Time objects for one immigration batch: those whose label names that batch, plus any that
- * name no known batch at all (shared fields). With no batch selected, returns them all.
+ * Time objects for one immigration batch. Labels that name a batch ("… - BATCH 2") belong to
+ * that batch only. Labels naming no batch belong to the first batch — the stage's base
+ * fields are batch 1, and later batches add suffixed copies. With no batch, returns all.
  */
 export const filterGroTimeObjectsForBatch = (timeObjects, batch, allBatches = []) => {
   const list = Array.isArray(timeObjects) ? timeObjects : [];
   if (!batch) return list;
-  const target = batchTokenRegExp(batch);
-  const others = (Array.isArray(allBatches) ? allBatches : [])
-    .filter((b) => b && b !== batch)
-    .map(batchTokenRegExp);
+  const batches = Array.isArray(allBatches) ? allBatches.filter(Boolean) : [];
+  const isFirstBatch = batches.length === 0 || batches[0] === batch;
   return list.filter((item) => {
-    const label = String(item?.time_object ?? "");
-    if (target.test(label)) return true;
-    return !others.some((re) => re.test(label));
+    const label = item?.time_object ?? "";
+    if (labelNamesBatch(label, batch)) return true;
+    const namesAnyBatch =
+      labelBatchNumber(label) != null || batches.some((b) => labelNamesBatch(label, b));
+    return !namesAnyBatch && isFirstBatch;
   });
 };
 
-/** "Crew Immigration Commenced - BATCH 1" -> "Crew Immigration Commenced" for that batch. */
-export const stripGroBatchSuffix = (label, batch) => {
-  if (!batch) return label;
+/** "Crew Immigration Commenced - BATCH 1" -> "Crew Immigration Commenced". */
+export const stripGroBatchSuffix = (label) => {
   const stripped = String(label ?? "")
-    .replace(new RegExp(`\\s*[-–—:]?\\s*${escapeRegExp(String(batch).trim())}(?![0-9])\\s*`, "i"), " ")
+    .replace(/\s*[-–—:]?\s*batch[\s_-]*\d+\s*$/i, "")
     .trim();
   return stripped || label;
 };
