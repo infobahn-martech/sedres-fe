@@ -9,6 +9,7 @@ export const GRO_MAIN_VIEWS = {
 export const GRO_ACTIVE_TABS = {
   documents: "documents",
   crewImmigration: "crewImmigration",
+  crewImmigrationForm: "crewImmigrationForm",
   vesselInwardRegistration: "vesselInwardRegistration",
   crewChange: "crewChange",
 };

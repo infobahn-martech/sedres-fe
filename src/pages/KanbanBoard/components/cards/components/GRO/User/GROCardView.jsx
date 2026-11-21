@@ -815,6 +815,11 @@ const GROCardView = forwardRef(function GROCardView(
     setActiveTab(GRO_ACTIVE_TABS.crewImmigration);
   }, []);
 
+  const selectCrewImmigrationFormTab = useCallback(() => {
+    setShowInwardClearance(false);
+    setActiveTab(GRO_ACTIVE_TABS.crewImmigrationForm);
+  }, []);
+
   const selectVesselInwardRegistrationTab = useCallback(() => {
     setShowInwardClearance(false);
     setActiveTab(GRO_ACTIVE_TABS.vesselInwardRegistration);
@@ -906,6 +911,7 @@ const GROCardView = forwardRef(function GROCardView(
   useEffect(() => {
     if (
       (activeTab === GRO_ACTIVE_TABS.crewImmigration && !isCrewImmigrationStage) ||
+      (activeTab === GRO_ACTIVE_TABS.crewImmigrationForm && !isCrewImmigrationStage) ||
       (activeTab === GRO_ACTIVE_TABS.vesselInwardRegistration && !isVesselInwardRegistrationStage) ||
       (activeTab === GRO_ACTIVE_TABS.crewChange && !isCrewChangeStage)
     ) {
@@ -1576,6 +1582,7 @@ const GROCardView = forwardRef(function GROCardView(
       hidePassTabs &&
       [
         GRO_ACTIVE_TABS.crewImmigration,
+        GRO_ACTIVE_TABS.crewImmigrationForm,
         GRO_ACTIVE_TABS.vesselInwardRegistration,
         GRO_ACTIVE_TABS.crewChange,
       ].includes(activeTab)
@@ -1651,6 +1658,18 @@ const GROCardView = forwardRef(function GROCardView(
                         disabled={!isAllGroDocumentsVerified}
                       >
                         {taskPanelTitle}
+                      </button>
+                    ) : null}
+                    {isCrewImmigrationStage ? (
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={activeTab === GRO_ACTIVE_TABS.crewImmigrationForm}
+                        className={`gro-pass-segment${activeTab === GRO_ACTIVE_TABS.crewImmigrationForm ? " gro-pass-segment--active" : ""}`}
+                        onClick={selectCrewImmigrationFormTab}
+                        disabled={!isAllGroDocumentsVerified}
+                      >
+                        Form
                       </button>
                     ) : null}
                     {isVesselInwardRegistrationStage ? (
@@ -1891,6 +1910,13 @@ const GROCardView = forwardRef(function GROCardView(
             loading={crewImmigrationLoading}
             pagination={crewImmigrationPagination}
             onPageChange={setCrewImmigrationPage}
+          />
+        ) : hidePassTabs && activeTab === GRO_ACTIVE_TABS.crewImmigrationForm ? (
+          <VesselInwardRegistrationView
+            portId={groPortId}
+            callId={callId}
+            templateType="Crew Immigration"
+            sectionTitle="Crew Immigration Form"
           />
         ) : hidePassTabs && activeTab === GRO_ACTIVE_TABS.vesselInwardRegistration ? (
           <VesselInwardRegistrationView

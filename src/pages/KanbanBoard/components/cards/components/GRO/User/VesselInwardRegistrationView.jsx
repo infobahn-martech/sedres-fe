@@ -9,9 +9,19 @@ import translateService from "@/services/translateService";
 
 const TRANSLATE_DEBOUNCE_MS = 500;
 
-/** Vessel Inward Registration boarding view — vessel particulars (from the port's pass template) + Arabic document preview. */
+/**
+ * Template-driven form view — editable fields (from the port's pass template of `templateType`)
+ * + Arabic document preview. Used for Vessel Inward Registration and the Crew Immigration form.
+ */
 const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistrationView(
-  { onSave, isSaving = false, portId, callId },
+  {
+    onSave,
+    isSaving = false,
+    portId,
+    callId,
+    templateType = "Vessel Registration",
+    sectionTitle = "Vessel Particulars",
+  },
   ref
 ) {
   const [templateData, setTemplateData] = useState(null);
@@ -27,7 +37,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     if (!portId) return;
     let cancelled = false;
     groService
-      .getTemplatesByPort(portId, "Vessel Registration")
+      .getTemplatesByPort(portId, templateType)
       .then((res) => {
         if (cancelled) return;
         const list = res?.data?.data ?? res?.data ?? [];
@@ -40,7 +50,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     return () => {
       cancelled = true;
     };
-  }, [portId]);
+  }, [portId, templateType]);
 
   const vesselFields = useMemo(
     () => extractVesselRegTemplateFields(templateData?.more_description),
@@ -145,7 +155,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     <div className="gro-crew-immigration-panel">
       <div className="gro-crew-immigration-bulk-body">
         <div className="gro-crew-immigration-bulk-left">
-          <p className="gro-crew-immigration-bulk-section-title">Vessel Particulars</p>
+          <p className="gro-crew-immigration-bulk-section-title">{sectionTitle}</p>
           <div className="gro-crew-immigration-bulk-table-wrap">
             <table className="gro-crew-immigration-bulk-table">
               <thead>
@@ -197,6 +207,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
         <div className="gro-crew-immigration-bulk-right">
           <div className="gro-vessel-reg-preview-header">
             <p className="gro-crew-immigration-bulk-section-title">Document Preview</p>
+            {onSave ? (
             <div className="gro-vessel-reg-preview-actions">
               <button
                 type="button"
@@ -215,6 +226,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
                 )}
               </button>
             </div>
+            ) : null}
           </div>
           <div ref={previewRef}>
             <VesselBoardingArabicPreview
@@ -234,6 +246,8 @@ VesselInwardRegistrationView.propTypes = {
   isSaving: PropTypes.bool,
   portId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  templateType: PropTypes.string,
+  sectionTitle: PropTypes.string,
 };
 
 VesselInwardRegistrationView.displayName = "VesselInwardRegistrationView";
