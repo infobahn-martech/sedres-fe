@@ -17,6 +17,8 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
   const [templateData, setTemplateData] = useState(null);
   const [fieldValues, setFieldValues] = useState({});
   const [translations, setTranslations] = useState({});
+  // Arabic values typed manually by the user — take precedence over auto-translations.
+  const [arabicOverrides, setArabicOverrides] = useState({});
   const [vesselData, setVesselData] = useState(null);
   const previewRef = useRef(null);
   const translatedSourceRef = useRef({});
@@ -48,8 +50,15 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
   useEffect(() => {
     setFieldValues({});
     setTranslations({});
+    setArabicOverrides({});
     translatedSourceRef.current = {};
   }, [templateData]);
+
+  // Effective Arabic value per field: the user's manual entry if present, else the auto-translation.
+  const arabicValues = useMemo(
+    () => ({ ...translations, ...arabicOverrides }),
+    [translations, arabicOverrides]
+  );
 
   // Translate each field's typed/prefilled English value to Arabic for the preview's 3rd
   // column, debounced so it doesn't fire on every keystroke, and skips values already sent.
@@ -128,6 +137,10 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     setFieldValues((prev) => ({ ...prev, [fieldKey]: value }));
   };
 
+  const handleArabicChange = (fieldKey, value) => {
+    setArabicOverrides((prev) => ({ ...prev, [fieldKey]: value }));
+  };
+
   return (
     <div className="gro-crew-immigration-panel">
       <div className="gro-crew-immigration-bulk-body">
@@ -138,13 +151,14 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
               <thead>
                 <tr>
                   <th>Field</th>
-                  <th>Value</th>
+                  <th>Value (Arabic)</th>
+                  <th>Value (English)</th>
                 </tr>
               </thead>
               <tbody>
                 {vesselFields.length === 0 ? (
                   <tr>
-                    <td colSpan={2} className="gro-crew-immigration-bulk-empty">
+                    <td colSpan={3} className="gro-crew-immigration-bulk-empty">
                       No fields available.
                     </td>
                   </tr>
@@ -152,6 +166,17 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
                   vesselFields.map((field) => (
                     <tr key={field.fieldKey}>
                       <td>{field.displayLabel}</td>
+                      <td>
+                        <input
+                          type="text"
+                          dir="rtl"
+                          lang="ar"
+                          className="gro-crew-immigration-bulk-input"
+                          value={arabicValues[field.fieldKey] ?? ""}
+                          onChange={(e) => handleArabicChange(field.fieldKey, e.target.value)}
+                          placeholder={field.displayLabel}
+                        />
+                      </td>
                       <td>
                         <input
                           type="text"
@@ -194,7 +219,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
           <div ref={previewRef}>
             <VesselBoardingArabicPreview
               fieldValues={fieldValues}
-              translations={translations}
+              translations={arabicValues}
               templateData={templateData}
             />
           </div>
