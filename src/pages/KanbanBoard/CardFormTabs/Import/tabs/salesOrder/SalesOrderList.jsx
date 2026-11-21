@@ -30,7 +30,7 @@ import SoApprovalEmailModal from "./SoApprovalEmailModal";
 import DocumentListModal from "./DocumentListModal";
 import UploadInvoiceModal from "@/components/UploadInvoiceModal";
 import { compressPdfFiles } from "@/shared/utils/compressPdf";
-import { isApprovalRequestedColumnTitle, isApprovalReceivedColumnTitle, isLntSwimlane, isSubseaSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
+import { isApprovalRequestedColumnTitle, isApprovalReceivedColumnTitle, isLntSwimlane, isSubseaSwimlane, isBgpSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
 import SeApprovalUploadModal from "@/pages/KanbanBoard/components/board/SeApprovalUploadModal";
 import CustomModal from "@/components/CustomModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
@@ -797,6 +797,14 @@ const SalesOrderList = ({
   // Approval Received flows open the header button and its modals on their own, for any user, like their Action column.
   const isOperatorSrtFlow = isOperatorSrtApprovalFlow || isOperatorSrtReceivedFlow;
   const isSrtApprovalContext = isDaVerifyContext || isOperatorSrtFlow;
+  // Operator board: a BGP swimlane card on "Approval Received" takes the signed SO the client sent and,
+  // optionally, the client's approval email (da/da_upload_so_approval_proof); the backend then moves the
+  // card on to "Sent to DA".
+  const isOperatorBgpReceivedFlow =
+    isBgpSwimlane({ title: card?.swimlaneTitle }) &&
+    Array.isArray(stepLabels) &&
+    currentStep != null &&
+    isApprovalReceivedColumnTitle(stepLabels[currentStep - 1]);
   // daStatusRefreshToken is bumped by onDaStatusRefresh after every action below, so the
   // authoritative button_state is refetched once per action instead of being called by hand.
   useEffect(() => {
@@ -3074,6 +3082,18 @@ const SalesOrderList = ({
             </button>
           )}
 
+          {isOperatorBgpReceivedFlow && (
+            <button
+              type="button"
+              className="sales-order-da-status-button"
+              title="Upload the approved SO and the client's approval email"
+              onClick={() => setShowApprovedSoUploadModal(true)}
+            >
+              <FiUpload />
+              Upload Approved SO
+            </button>
+          )}
+
           {!readOnly && (
             <button
               type="button"
@@ -4063,7 +4083,7 @@ const SalesOrderList = ({
 
       {/* Upload Approved SO — shown once the SO is approved (POSH, SAIPEM, "Send for SO Approval" workflows): the approved SO and the
           SO email, via da/da_upload_so_approval_proof. */}
-      {isSrtApprovalContext && (
+      {(isSrtApprovalContext || isOperatorBgpReceivedFlow) && (
         <SeApprovalUploadModal
           show={showApprovedSoUploadModal}
           onClose={handleCloseApprovedSoUploadModal}
