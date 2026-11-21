@@ -1280,6 +1280,66 @@
   overflow: auto;
 }
 
+/* Vessel Inward Registration: fills the card; each column scrolls under its own fixed title. */
+.gro-card-view .gro-vir-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+}
+
+.gro-card-view .gro-vir-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.gro-card-view .gro-vir-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.gro-card-view .gro-vir-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.gro-card-view .gro-vir-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-secondary, var(--surface-secondary));
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.gro-card-view .gro-vir-preview {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  > .bulk-pass-arabic-preview {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+  }
+}
+
+/* Stacked (narrow) layout: let the page scroll instead of two cramped panes. */
+@media (max-width: 980px) {
+  .gro-card-view .gro-vir-body {
+    height: auto;
+  }
+
+  .gro-card-view .gro-vir-scroll {
+    overflow: visible;
+  }
+}
+
 /* Form view scrolls inside the panel, so the brand header band stays fixed above it. */
 .gro-card-view .gro-crew-imm-body {
   flex: 1 1 auto;

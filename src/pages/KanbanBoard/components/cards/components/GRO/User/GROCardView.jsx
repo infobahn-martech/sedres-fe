@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from "react";
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
-import { FiClock, FiFolder, FiUsers, FiLock } from "react-icons/fi";
+import { FiClock, FiFolder, FiUsers, FiLock, FiAnchor, FiRepeat } from "react-icons/fi";
 import { notify } from "@/components/Toaster";
 import SearchableSelect, { deriveSearchPlaceholder } from "@/components/form/SearchableSelect";
 import userService from "@/services/userService";
@@ -1557,7 +1557,14 @@ const GROCardView = forwardRef(function GROCardView(
     [crewImmigrationBatchCounts]
   );
   const isCrewImmigrationTabActive = hidePassTabs && activeTab === GRO_ACTIVE_TABS.crewImmigration;
-  const documentsSectionTitle = isCrewImmigrationTabActive ? taskPanelTitle : "Documents";
+  const isTaskTabActive =
+    hidePassTabs &&
+    [
+      GRO_ACTIVE_TABS.crewImmigration,
+      GRO_ACTIVE_TABS.vesselInwardRegistration,
+      GRO_ACTIVE_TABS.crewChange,
+    ].includes(activeTab);
+  const documentsSectionTitle = isTaskTabActive ? taskPanelTitle : "Documents";
   const documentsSectionSubtitle = isCrewImmigrationTabActive
     ? crewImmigrationBatchOptions.length > 0
       ? `${crewImmigrationTotalCrew} crew across ${crewImmigrationBatchOptions.length} batch${crewImmigrationBatchOptions.length === 1 ? "" : "es"}`
@@ -1747,8 +1754,12 @@ const GROCardView = forwardRef(function GROCardView(
                         className={`gro-pass-segment${activeTab === GRO_ACTIVE_TABS.vesselInwardRegistration ? " gro-pass-segment--active" : ""}`}
                         onClick={selectVesselInwardRegistrationTab}
                         disabled={!isAllGroDocumentsVerified}
+                        title={isAllGroDocumentsVerified ? undefined : "Verify all documents to continue"}
                       >
-                        {taskPanelTitle}
+                        <span className="gro-tab-inner">
+                          {isAllGroDocumentsVerified ? <FiAnchor aria-hidden /> : <FiLock aria-hidden />}
+                          {taskPanelTitle}
+                        </span>
                       </button>
                     ) : null}
                     {isCrewChangeStage ? (
@@ -1759,8 +1770,12 @@ const GROCardView = forwardRef(function GROCardView(
                         className={`gro-pass-segment${activeTab === GRO_ACTIVE_TABS.crewChange ? " gro-pass-segment--active" : ""}`}
                         onClick={selectCrewChangeTab}
                         disabled={!isAllGroDocumentsVerified}
+                        title={isAllGroDocumentsVerified ? undefined : "Verify all documents to continue"}
                       >
-                        {taskPanelTitle}
+                        <span className="gro-tab-inner">
+                          {isAllGroDocumentsVerified ? <FiRepeat aria-hidden /> : <FiLock aria-hidden />}
+                          {taskPanelTitle}
+                        </span>
                       </button>
                     ) : null}
                   </>

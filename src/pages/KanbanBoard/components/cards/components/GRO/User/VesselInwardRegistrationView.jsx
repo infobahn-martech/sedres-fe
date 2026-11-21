@@ -152,12 +152,12 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
   };
 
   return (
-    <div className="gro-crew-immigration-panel">
-      <div className="gro-crew-immigration-bulk-body">
-        <div className="gro-crew-immigration-bulk-left">
+    <div className="gro-crew-immigration-panel gro-vir-panel">
+      <div className="gro-crew-immigration-bulk-body gro-vir-body">
+        <div className="gro-crew-immigration-bulk-left gro-vir-col">
           <p className="gro-crew-immigration-bulk-section-title">{sectionTitle}</p>
-          <div className="gro-crew-immigration-bulk-table-wrap">
-            <table className="gro-crew-immigration-bulk-table">
+          <div className="gro-crew-immigration-bulk-table-wrap gro-vir-scroll">
+            <table className="gro-crew-immigration-bulk-table gro-vir-table">
               <thead>
                 <tr>
                   <th>Field</th>
@@ -204,7 +204,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
           </div>
         </div>
 
-        <div className="gro-crew-immigration-bulk-right">
+        <div className="gro-crew-immigration-bulk-right gro-vir-col">
           <div className="gro-vessel-reg-preview-header">
             <p className="gro-crew-immigration-bulk-section-title">Document Preview</p>
             {onSave ? (
@@ -228,7 +228,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
             </div>
             ) : null}
           </div>
-          <div ref={previewRef}>
+          <div ref={previewRef} className="gro-vir-scroll gro-vir-preview">
             <VesselBoardingArabicPreview
               fieldValues={fieldValues}
               translations={arabicValues}
