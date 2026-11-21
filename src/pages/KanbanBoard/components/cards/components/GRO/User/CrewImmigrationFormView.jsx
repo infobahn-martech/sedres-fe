@@ -309,11 +309,14 @@ CrewImmigrationTemplateSection.propTypes = {
  * Crew Immigration form tab — one section per Crew Immigration template for the port
  * (Entry / Return), each filled from the selected batch's crew and the call's vessel.
  */
-export default function CrewImmigrationFormView({ portId, callId }) {
+export default function CrewImmigrationFormView({ portId, callId, activeBatch: controlledBatch }) {
   const [templates, setTemplates] = useState([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [batches, setBatches] = useState([]);
-  const [activeBatch, setActiveBatch] = useState("");
+  const [ownBatch, setActiveBatch] = useState("");
+  // Embedded in the Crew Immigration tab, the batch is chosen by the parent's batch tabs.
+  const isControlled = controlledBatch !== undefined;
+  const activeBatch = isControlled ? controlledBatch : ownBatch;
   const [vesselData, setVesselData] = useState(null);
 
   useEffect(() => {
@@ -386,8 +389,8 @@ export default function CrewImmigrationFormView({ portId, callId }) {
   }, [vesselData, activeBatch, crew.length]);
 
   return (
-    <div className="gro-crew-immigration-panel gro-crew-imm-form">
-      {batches.length > 0 ? (
+    <div className={`gro-crew-imm-form${isControlled ? "" : " gro-crew-immigration-panel"}`}>
+      {!isControlled && batches.length > 0 ? (
         <div className="gro-crew-immigration-toolbar">
           <div className="gro-pass-segments" role="tablist" aria-label="Batch">
             {batches.map((b) => (
@@ -429,4 +432,5 @@ export default function CrewImmigrationFormView({ portId, callId }) {
 CrewImmigrationFormView.propTypes = {
   portId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  activeBatch: PropTypes.string,
 };

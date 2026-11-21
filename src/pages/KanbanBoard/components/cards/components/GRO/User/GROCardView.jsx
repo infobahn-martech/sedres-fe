@@ -62,6 +62,8 @@ import {
   resolveGroPortId,
   resolveGroStageIdFromTaskName,
   resolveGroTimeObjectValueKey,
+  filterGroTimeObjectsForBatch,
+  stripGroBatchSuffix,
   resolveGroNowDateTimeParts,
   validateGroRequiredTimeObjects,
   buildGroArrivalTimeObjectsPayload,
@@ -178,6 +180,8 @@ const GROCardView = forwardRef(function GROCardView(
   const [crewImmigrationBatchOptions, setCrewImmigrationBatchOptions] = useState([]);
   const [crewImmigrationBatchCounts, setCrewImmigrationBatchCounts] = useState({});
   const [crewImmigrationBatchFilter, setCrewImmigrationBatchFilter] = useState("");
+  // Within a batch: "list" (crew table) or "form" (Entry / Return letters).
+  const [crewImmigrationView, setCrewImmigrationView] = useState("list");
   const [showDynamicUploadModal, setShowDynamicUploadModal] = useState(false);
   const [dynamicUploadFile, setDynamicUploadFile] = useState(null);
   const [, setDynamicUploadType] = useState(null);
@@ -470,6 +474,36 @@ const GROCardView = forwardRef(function GROCardView(
       capturingTimeObjectKey,
       groStageId,
     ]
+  );
+
+  // Crew Immigration time objects are configured per batch ("… Commenced - BATCH 1"), so the
+  // Update Status popover only shows the selected batch's fields plus any batch-less ones.
+  const crewImmigrationScopedTimeObjects = useMemo(
+    () =>
+      filterGroTimeObjectsForBatch(timeObjects, crewImmigrationBatchFilter, crewImmigrationBatchOptions),
+    [timeObjects, crewImmigrationBatchFilter, crewImmigrationBatchOptions]
+  );
+
+  const crewImmigrationTimeFields = useMemo(() => {
+    const scopedKeys = new Set(crewImmigrationScopedTimeObjects.map(resolveGroTimeObjectValueKey));
+    return inwardTimeObjectFields
+      .filter((field) => scopedKeys.has(field.fieldKey))
+      .map((field) => ({
+        ...field,
+        // The batch is already in the popover title — keep labels short.
+        label: stripGroBatchSuffix(field.label, crewImmigrationBatchFilter),
+      }));
+  }, [inwardTimeObjectFields, crewImmigrationScopedTimeObjects, crewImmigrationBatchFilter]);
+
+  // Saved Commenced / Completed values for the selected batch, shown as a timeline strip.
+  const crewImmigrationBatchTimeline = useMemo(
+    () =>
+      crewImmigrationTimeFields.map((field) => ({
+        key: field.fieldKey,
+        label: field.label,
+        value: [field.pickerParts?.date, field.pickerParts?.time].filter(Boolean).join(" "),
+      })),
+    [crewImmigrationTimeFields]
   );
 
   const stage11InwardTimeObjectFields = useMemo(
@@ -816,11 +850,6 @@ const GROCardView = forwardRef(function GROCardView(
     setActiveTab(GRO_ACTIVE_TABS.crewImmigration);
   }, []);
 
-  const selectCrewImmigrationFormTab = useCallback(() => {
-    setShowInwardClearance(false);
-    setActiveTab(GRO_ACTIVE_TABS.crewImmigrationForm);
-  }, []);
-
   const selectVesselInwardRegistrationTab = useCallback(() => {
     setShowInwardClearance(false);
     setActiveTab(GRO_ACTIVE_TABS.vesselInwardRegistration);
@@ -912,7 +941,6 @@ const GROCardView = forwardRef(function GROCardView(
   useEffect(() => {
     if (
       (activeTab === GRO_ACTIVE_TABS.crewImmigration && !isCrewImmigrationStage) ||
-      (activeTab === GRO_ACTIVE_TABS.crewImmigrationForm && !isCrewImmigrationStage) ||
       (activeTab === GRO_ACTIVE_TABS.vesselInwardRegistration && !isVesselInwardRegistrationStage) ||
       (activeTab === GRO_ACTIVE_TABS.crewChange && !isCrewChangeStage)
     ) {
@@ -924,7 +952,13 @@ const GROCardView = forwardRef(function GROCardView(
     setCrewImmigrationBatchFilter("");
     setCrewImmigrationBatchOptions([]);
     setCrewImmigrationBatchCounts({});
+    setCrewImmigrationView("list");
   }, [activeTab, callId]);
+
+  // The Update Status popover is batch-specific — close it when the batch changes.
+  useEffect(() => {
+    setShowInwardClearance(false);
+  }, [crewImmigrationBatchFilter]);
 
   useEffect(() => {
     setCrewImmigrationPage(1);
@@ -1177,7 +1211,11 @@ const GROCardView = forwardRef(function GROCardView(
       return;
     }
 
-    const timeValidationErrors = validateGroRequiredTimeObjects(timeObjects, timeObjectValues);
+    // On the Crew Immigration tab, Update Status saves only the selected batch's time fields.
+    const isCrewImmigrationBatchSave = activeTab === GRO_ACTIVE_TABS.crewImmigration;
+    const stageTimeObjects = isCrewImmigrationBatchSave ? crewImmigrationScopedTimeObjects : timeObjects;
+
+    const timeValidationErrors = validateGroRequiredTimeObjects(stageTimeObjects, timeObjectValues);
     if (Object.keys(timeValidationErrors).length > 0) {
       setTimeObjectErrors(timeValidationErrors);
       notify("Please fill in all required time fields.", "warn");
@@ -1206,7 +1244,7 @@ const GROCardView = forwardRef(function GROCardView(
 
     const allTimeObjects = groStageId === 10
       ? [...timeObjects, ...stage11TimeObjects]
-      : timeObjects;
+      : stageTimeObjects;
     const allTimeObjectValues = groStageId === 10
       ? { ...timeObjectValues, ...stage11TimeObjectValues }
       : timeObjectValues;
@@ -1222,6 +1260,9 @@ const GROCardView = forwardRef(function GROCardView(
 
     if (groStageId === 10) {
       appendGroArrivalStageFieldsToFormData(formData, 11, extraStageFields);
+    }
+    if (isCrewImmigrationBatchSave && crewImmigrationBatchFilter) {
+      formData.append("immigration_batch", crewImmigrationBatchFilter);
     }
 
     try {
@@ -1583,7 +1624,6 @@ const GROCardView = forwardRef(function GROCardView(
       hidePassTabs &&
       [
         GRO_ACTIVE_TABS.crewImmigration,
-        GRO_ACTIVE_TABS.crewImmigrationForm,
         GRO_ACTIVE_TABS.vesselInwardRegistration,
         GRO_ACTIVE_TABS.crewChange,
       ].includes(activeTab)
@@ -1659,18 +1699,6 @@ const GROCardView = forwardRef(function GROCardView(
                         disabled={!isAllGroDocumentsVerified}
                       >
                         {taskPanelTitle}
-                      </button>
-                    ) : null}
-                    {isCrewImmigrationStage ? (
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={activeTab === GRO_ACTIVE_TABS.crewImmigrationForm}
-                        className={`gro-pass-segment${activeTab === GRO_ACTIVE_TABS.crewImmigrationForm ? " gro-pass-segment--active" : ""}`}
-                        onClick={selectCrewImmigrationFormTab}
-                        disabled={!isAllGroDocumentsVerified}
-                      >
-                        Form
                       </button>
                     ) : null}
                     {isVesselInwardRegistrationStage ? (
@@ -1845,19 +1873,14 @@ const GROCardView = forwardRef(function GROCardView(
                 !isVesselInwardRegistrationStage &&
                 !isCrewChangeStage &&
                 activeTab === GRO_ACTIVE_TABS.documents) ||
-                (hidePassTabs && activeTab === GRO_ACTIVE_TABS.crewImmigration) ||
                 (!hidePassTabs && groMainView === GRO_MAIN_VIEWS.inward) ? (
                 <InwardClearanceToolbar
                   inwardAnchorRef={inwardAnchorRef}
                   showMainFileUpload={false}
                   showInwardClearance={showInwardClearance}
                   onToggleInwardPopover={() => setShowInwardClearance(!showInwardClearance)}
-                  inwardActionLabel={
-                    activeTab === GRO_ACTIVE_TABS.crewImmigration ? "Update Status" : inwardPanelLabel
-                  }
-                  inwardPopoverTitle={
-                    activeTab === GRO_ACTIVE_TABS.crewImmigration ? "Crew Immigration" : taskPanelTitle
-                  }
+                  inwardActionLabel={inwardPanelLabel}
+                  inwardPopoverTitle={taskPanelTitle}
                   timeObjectFields={groStageId === 10 ? [] : inwardTimeObjectFields}
                   timeObjectsLoading={groStageId === 10 ? false : timeObjectsLoading}
                   extraStageFieldsContent={extraStageFieldsContent}
@@ -1911,9 +1934,45 @@ const GROCardView = forwardRef(function GROCardView(
             loading={crewImmigrationLoading}
             pagination={crewImmigrationPagination}
             onPageChange={setCrewImmigrationPage}
+            view={crewImmigrationView}
+            onViewChange={setCrewImmigrationView}
+            batchTimeline={crewImmigrationBatchTimeline}
+            formContent={
+              <CrewImmigrationFormView
+                portId={groPortId}
+                callId={callId}
+                activeBatch={crewImmigrationBatchFilter}
+              />
+            }
+            actions={
+              <InwardClearanceToolbar
+                inwardAnchorRef={inwardAnchorRef}
+                showMainFileUpload={false}
+                showInwardClearance={showInwardClearance}
+                onToggleInwardPopover={() => setShowInwardClearance(!showInwardClearance)}
+                inwardActionLabel="Update Status"
+                inwardPopoverTitle={
+                  crewImmigrationBatchFilter
+                    ? `Crew Immigration · ${crewImmigrationBatchFilter}`
+                    : "Crew Immigration"
+                }
+                timeObjectFields={crewImmigrationTimeFields}
+                timeObjectsLoading={timeObjectsLoading}
+                extraStageFieldsContent={extraStageFieldsContent}
+                onInwardCancel={handleInwardCancel}
+                onInwardSubmit={handleInwardSubmit}
+                isSavingInward={isSavingArrivalDocument}
+                isGroLoadingDisabled={
+                  isGroLoading ||
+                  isSavingArrivalDocument ||
+                  callId == null ||
+                  callId === "" ||
+                  !taskId ||
+                  !isAllGroDocumentsVerified
+                }
+              />
+            }
           />
-        ) : hidePassTabs && activeTab === GRO_ACTIVE_TABS.crewImmigrationForm ? (
-          <CrewImmigrationFormView portId={groPortId} callId={callId} />
         ) : hidePassTabs && activeTab === GRO_ACTIVE_TABS.vesselInwardRegistration ? (
           <VesselInwardRegistrationView
             ref={vesselRegistrationRef}
