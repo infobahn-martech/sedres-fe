@@ -21,7 +21,7 @@ import LamprellUaePoReviewModal from "../components/board/LamprellUaePoReviewMod
 import ServiceSheetModal from "../components/board/ServiceSheetModal";
 import FinalInvoiceModal from "../components/board/FinalInvoiceModal";
 import SccReviewModal from "../components/board/SccReviewModal";
-import { isDaSupervisorWorkflow, isLamprellAlgihazDispatchProofColumn, isLntInvoiceIssued, isLntReadyToSubmit, isLntWorkflow, isSubseaSwimlane, isMultiCardDispatchProofColumn, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
+import { isDaSupervisorWorkflow, isLamprellAlgihazDispatchProofColumn, isLntInvoiceIssued, isLntReadyToSubmit, isBgpReadyToSubmit, isLntWorkflow, isSubseaSwimlane, isMultiCardDispatchProofColumn, isPoshOneCardColumn, isUploadedToPortalColumnTitle } from "../utils/columnTitles";
 import ContextMenu from "../components/menus/ContextMenu";
 import AccordionMenu from "../components/menus/AccordionMenu";
 import useKanbanBoardState from "../hooks/useKanbanBoardState";
@@ -1843,7 +1843,9 @@ export default function KanbanBoardPage() {
         /* The backend has moved the cards, so their local batch column overrides go and the board draws
            them where get_full_board now says they are. */
         clearCardColumns(
-          (data.data?.moved_to_dispatch_hard_copies ?? []).map((movedCard) => movedCard.card_id)
+          [...(data.data?.moved_to_dispatch_hard_copies ?? []), ...(data.data?.card_positions ?? [])].map(
+            (movedCard) => movedCard.card_id
+          )
         );
         selectedInvoiceSubmissionCards.forEach((card) => removeCardSelectionId(card.id));
         handleCloseInvoiceSubmissionEmail();
@@ -1972,7 +1974,20 @@ export default function KanbanBoardPage() {
       cards.some((card) => {
         const boardCard = cardsById[card.id];
         const workflow = workflows.find((wf) => String(wf.id) === String(boardCard?.workflow_id));
-        return isLntWorkflow(workflow) || isLntReadyToSubmit(workflow?.title, workflow?.columns?.[boardCard?.columnId]?.title);
+        const columnTitle = workflow?.columns?.[boardCard?.columnId]?.title;
+        return isLntWorkflow(workflow) || isLntReadyToSubmit(workflow?.title, columnTitle) || isBgpReadyToSubmit(workflow?.title, columnTitle);
+      }),
+    [workflows, cardsById]
+  );
+
+  /* A "Ready to Submit" proof the backend rejects (no signature) leaves the card in its column, so the board is
+     reloaded to turn it red. */
+  const isBgpReadyToSubmitUpload = useCallback(
+    (cards) =>
+      cards.some((card) => {
+        const boardCard = cardsById[card.id];
+        const workflow = workflows.find((wf) => String(wf.id) === String(boardCard?.workflow_id));
+        return isBgpReadyToSubmit(workflow?.title, workflow?.columns?.[boardCard?.columnId]?.title);
       }),
     [workflows, cardsById]
   );
@@ -2057,7 +2072,7 @@ export default function KanbanBoardPage() {
           notify(failedMessage || "Failed to upload dispatch proofs", "error");
           /* A "Dispatch the Hard Copies" proof without the signature is rejected and the card stays in its column;
              the board reload marks it red (signature_status "missing") so the proof can be uploaded again. */
-          if (isMultiCardDispatchProofUpload(cards)) {
+          if (isMultiCardDispatchProofUpload(cards) || isBgpReadyToSubmitUpload(cards)) {
             handleCloseDispatchProofUpload();
             refetchBoard?.();
           }
@@ -2101,6 +2116,7 @@ export default function KanbanBoardPage() {
       removeCardSelectionId,
       handleCloseDispatchProofUpload,
       isMultiCardDispatchProofUpload,
+      isBgpReadyToSubmitUpload,
       refetchBoard,
     ]
   );

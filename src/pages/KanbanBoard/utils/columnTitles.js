@@ -133,6 +133,19 @@ export const isLntReadyToSubmit = (workflowTitle, columnTitle) =>
   (LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) || isDaSupervisorWorkflow(workflowTitle)) &&
   READY_TO_SUBMIT_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
+const BGP_WORKFLOW_PATTERN = /bgp/i;
+const AWAITING_PROOF_STICKER_PATTERN = /^awaiting\s+proof$/i;
+
+/* The BGP DA "Ready to Submit" column: a batch's "Submit" sends the invoice submission email, the sent cards stay
+   here with the "Awaiting proof" sticker, and "Upload Dispatch Proof" then takes the proofs for those cards. */
+export const isBgpReadyToSubmit = (workflowTitle, columnTitle) =>
+  BGP_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) &&
+  READY_TO_SUBMIT_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
+/* A card whose invoice submission email is sent and whose dispatch proof is still to come. */
+export const isAwaitingProofCard = (card) =>
+  AWAITING_PROOF_STICKER_PATTERN.test(String(card?.stickerName ?? "").trim());
+
 const MCDERMOTT_WORKFLOW = "MCDERMOTT";
 
 export const isMcDermottWorkflow = (workflow) =>
