@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from "react";
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
-import { FiClock } from "react-icons/fi";
+import { FiClock, FiFolder, FiUsers, FiLock } from "react-icons/fi";
 import { notify } from "@/components/Toaster";
 import SearchableSelect, { deriveSearchPlaceholder } from "@/components/form/SearchableSelect";
 import userService from "@/services/userService";
@@ -84,7 +84,8 @@ import {
 } from "./groCardUtils";
 
 const EMPTY_WORK_ORDERS = [];
-const CREW_IMMIGRATION_PAGE_SIZE = 10;
+// Batches are small, so show a whole batch on one scrollable page; paginate only beyond that.
+const CREW_IMMIGRATION_PAGE_SIZE = 50;
 
 const GROCardView = forwardRef(function GROCardView(
   {
@@ -506,16 +507,20 @@ const GROCardView = forwardRef(function GROCardView(
       }));
   }, [crewImmigrationScopedTimeObjects, buildInwardTimeObjectField]);
 
-  // Saved Commenced / Completed values for the selected batch, shown as a timeline strip.
-  const crewImmigrationBatchTimeline = useMemo(
-    () =>
-      crewImmigrationTimeFields.map((field) => ({
-        key: field.fieldKey,
-        label: field.label,
-        value: [field.pickerParts?.date, field.pickerParts?.time].filter(Boolean).join(" "),
-      })),
-    [crewImmigrationTimeFields]
-  );
+  // Per-batch progress for the batch tabs: done (every time field set), progress (some), pending.
+  const crewImmigrationBatchStatus = useMemo(() => {
+    const status = {};
+    crewImmigrationBatchOptions.forEach((batch) => {
+      const keys = filterGroTimeObjectsForBatch(timeObjects, batch, crewImmigrationBatchOptions)
+        .map(resolveGroTimeObjectValueKey)
+        .filter(Boolean);
+      const filled = keys.filter((key) => String(timeObjectValues?.[key]?.date ?? "").trim()).length;
+      status[batch] =
+        keys.length === 0 || filled === 0 ? "pending" : filled === keys.length ? "done" : "progress";
+    });
+    return status;
+  }, [timeObjects, timeObjectValues, crewImmigrationBatchOptions]);
+
 
   const stage11InwardTimeObjectFields = useMemo(
     () =>
@@ -1546,7 +1551,18 @@ const GROCardView = forwardRef(function GROCardView(
     ]
   );
 
-  const documentsSectionTitle = "Documents";
+  // Heading follows the active tab, so the Crew Immigration view isn't titled "Documents".
+  const crewImmigrationTotalCrew = useMemo(
+    () => Object.values(crewImmigrationBatchCounts ?? {}).reduce((sum, n) => sum + (Number(n) || 0), 0),
+    [crewImmigrationBatchCounts]
+  );
+  const isCrewImmigrationTabActive = hidePassTabs && activeTab === GRO_ACTIVE_TABS.crewImmigration;
+  const documentsSectionTitle = isCrewImmigrationTabActive ? taskPanelTitle : "Documents";
+  const documentsSectionSubtitle = isCrewImmigrationTabActive
+    ? crewImmigrationBatchOptions.length > 0
+      ? `${crewImmigrationTotalCrew} crew across ${crewImmigrationBatchOptions.length} batch${crewImmigrationBatchOptions.length === 1 ? "" : "es"}`
+      : ""
+    : "";
 
   const handleAssignedUserChange = useCallback(
     async (e) => {
@@ -1678,6 +1694,9 @@ const GROCardView = forwardRef(function GROCardView(
                 {documents.length}
               </span>
             ) : null}
+            {documentsSectionSubtitle ? (
+              <span className="gro-documents-subtitle">{documentsSectionSubtitle}</span>
+            ) : null}
           </h3>
           <div className="gro-document-header-actions gro-document-header-actions--with-segments">
             <div className="gro-pass-segments-row">
@@ -1699,7 +1718,10 @@ const GROCardView = forwardRef(function GROCardView(
                       className={`gro-pass-segment${activeTab === GRO_ACTIVE_TABS.documents ? " gro-pass-segment--active" : ""}`}
                       onClick={selectDocumentsTab}
                     >
-                      Documents
+                      <span className="gro-tab-inner">
+                        <FiFolder aria-hidden />
+                        Documents
+                      </span>
                     </button>
                     {isCrewImmigrationStage ? (
                       <button
@@ -1709,8 +1731,12 @@ const GROCardView = forwardRef(function GROCardView(
                         className={`gro-pass-segment${activeTab === GRO_ACTIVE_TABS.crewImmigration ? " gro-pass-segment--active" : ""}`}
                         onClick={selectCrewImmigrationTab}
                         disabled={!isAllGroDocumentsVerified}
+                        title={isAllGroDocumentsVerified ? undefined : "Verify all documents to continue"}
                       >
-                        {taskPanelTitle}
+                        <span className="gro-tab-inner">
+                          {isAllGroDocumentsVerified ? <FiUsers aria-hidden /> : <FiLock aria-hidden />}
+                          {taskPanelTitle}
+                        </span>
                       </button>
                     ) : null}
                     {isVesselInwardRegistrationStage ? (
@@ -1948,7 +1974,7 @@ const GROCardView = forwardRef(function GROCardView(
             onPageChange={setCrewImmigrationPage}
             view={crewImmigrationView}
             onViewChange={setCrewImmigrationView}
-            batchTimeline={crewImmigrationBatchTimeline}
+            batchStatus={crewImmigrationBatchStatus}
             formContent={
               <CrewImmigrationFormView
                 portId={groPortId}

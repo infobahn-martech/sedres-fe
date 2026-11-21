@@ -1255,52 +1255,359 @@
   }
 }
 
-/* Batch status strip — saved Commenced / Completed for the selected batch. */
-.gro-card-view .gro-crew-imm-status-strip {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  margin: 0 0 14px;
-  padding: 10px 14px;
-  border: 1px solid var(--border-primary);
-  border-radius: 10px;
-  background: var(--surface-secondary);
-  font-size: 12px;
+/* ---------- Fill the card body: no dead space under the active tab's content ---------- */
+.gro-card-view .gro-document-section {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
-.gro-card-view .gro-crew-imm-status-item {
+.gro-card-view .gro-document-section > .gro-document-list,
+.gro-card-view .gro-document-section > .gro-crew-immigration-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Crew Immigration panel is a column: header band · sub-bar · scrolling body · footer. */
+.gro-card-view .gro-crew-imm-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+}
+
+.gro-card-view .gro-crew-imm-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Form view scrolls inside the panel, so the brand header band stays fixed above it. */
+.gro-card-view .gro-crew-imm-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  margin: 0 -18px -18px;
+  padding: 0 18px 18px;
+}
+
+/* Fallback when the card body itself scrolls (short viewports): pin the band to its top. */
+.gro-card-view .gro-crew-imm-panel .gro-crew-imm-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+/* ---------- Section heading + top tabs ---------- */
+.gro-card-view .gro-documents-subtitle {
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-muted, var(--text-secondary));
+}
+
+.gro-card-view .gro-tab-inner {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+}
+
+/* ---------- Batch tabs: progress mark per batch ---------- */
+.gro-card-view .gro-crew-imm-batch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.gro-card-view .gro-crew-imm-batch-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px dashed currentColor;
+  opacity: 0.7;
+
+  svg {
+    width: 10px;
+    height: 10px;
+    stroke-width: 3;
+  }
+}
+
+.gro-card-view .gro-crew-imm-batch-mark--done {
+  border: none;
+  opacity: 1;
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.gro-card-view .gro-crew-imm-batch-mark--progress {
+  border: none;
+  opacity: 1;
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+/* ---------- Crew search — lives in the brand header band ---------- */
+.gro-card-view .gro-crew-imm-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 280px;
+  height: 34px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.75);
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  /* Focused: turns solid white so typed text reads clearly. */
+  &:focus-within {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
+
+    input {
+      color: var(--text-primary);
+    }
+
+    input::placeholder {
+      color: var(--text-muted);
+    }
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #ffffff;
+    font-size: 12.5px;
+    font-family: inherit;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+  }
+}
+
+.gro-card-view .gro-crew-imm-search-clear {
+  display: inline-flex;
+  padding: 2px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, currentColor 14%, transparent);
+  }
+}
+
+@media (max-width: 1100px) {
+  .gro-card-view .gro-crew-imm-search {
+    width: 200px;
+  }
+}
+
+@media (max-width: 760px) {
+  .gro-card-view .gro-crew-imm-toolbar-group--end {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .gro-card-view .gro-crew-imm-search {
+    flex: 1 1 100%;
+    width: auto;
+  }
+}
+
+/* ---------- Compact header: summary cards + heading give the table the room ---------- */
+.gro-card-view {
+  gap: 14px;
+}
+
+.gro-card-view .gro-summary-grid {
+  gap: 10px;
+}
+
+.gro-card-view .gro-summary-card {
+  min-height: 58px;
+  padding: 9px 12px;
+  gap: 10px;
+  border-radius: 12px;
+}
+
+.gro-card-view .gro-summary-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.gro-card-view .gro-summary-body {
+  gap: 2px;
+}
+
+.gro-card-view .gro-summary-label {
+  font-size: 9.5px;
+}
+
+.gro-card-view .gro-summary-value {
+  font-size: 13.5px;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+.gro-card-view .gro-document-header {
+  margin-bottom: 10px;
+}
+
+.gro-card-view .gro-documents-heading {
+  font-size: 15.5px;
+}
+
+/* ---------- Crew table ---------- */
+.gro-card-view .gro-crew-imm-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-secondary, var(--surface-secondary));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--text-secondary);
 }
 
-.gro-card-view .gro-crew-imm-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #f59e0b;
-  flex-shrink: 0;
+.gro-card-view .gro-crew-imm-table tbody tr {
+  transition: background 0.12s ease;
 }
 
-.gro-card-view .gro-crew-imm-status-item--done .gro-crew-imm-status-dot {
-  background: #16a34a;
+.gro-card-view .gro-crew-imm-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--color-primary) 4%, var(--surface-primary));
 }
 
-.gro-card-view .gro-crew-imm-status-label {
-  font-weight: 600;
+.gro-card-view .gro-crew-imm-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
-.gro-card-view .gro-crew-imm-status-value {
-  color: var(--text-primary);
+.gro-card-view .gro-crew-imm-col-index {
+  width: 48px;
+  text-align: center !important;
+  color: var(--text-muted) !important;
   font-variant-numeric: tabular-nums;
 }
 
-.gro-card-view .gro-crew-imm-status-item:not(.gro-crew-imm-status-item--done) .gro-crew-imm-status-value {
-  color: var(--text-muted);
+.gro-card-view .gro-crew-imm-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.gro-card-view .gro-crew-imm-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.gro-card-view .gro-crew-imm-person-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.gro-card-view .gro-crew-imm-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+}
+
+.gro-card-view .gro-crew-imm-mono {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.gro-card-view .gro-crew-imm-empty {
+  padding: 40px 12px !important;
+  text-align: center !important;
+  color: var(--text-muted) !important;
   font-style: italic;
 }
+
+.gro-card-view .gro-crew-imm-skeleton {
+  display: block;
+  height: 10px;
+  width: 70%;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 0%,
+    color-mix(in srgb, var(--border-primary) 60%, var(--bg-secondary)) 50%,
+    var(--bg-secondary) 100%
+  );
+  background-size: 200% 100%;
+  animation: gro-crew-imm-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes gro-crew-imm-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gro-card-view .gro-crew-imm-skeleton {
+    animation: none;
+  }
+}
+
 
 /* Crew Immigration form — one section per template (Entry / Return). */
 .gro-card-view .gro-crew-imm-form {
