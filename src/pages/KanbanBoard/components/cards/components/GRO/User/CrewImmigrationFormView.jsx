@@ -6,6 +6,7 @@ import vesselService from "@/services/vesselService";
 import translateService from "@/services/translateService";
 import { getImmigrationCrewList } from "@/services/cgAndZwailpassService";
 import { formatGregorianDate, formatHijriDate } from "./groArabicDate";
+import { GroFieldTableSkeletonRows, GroLetterPreviewSkeleton } from "./GroCardViewSkeleton";
 import {
   parseCrewImmigrationTemplates,
   extractCrewImmigrationPlaceholders,
@@ -412,7 +413,31 @@ export default function CrewImmigrationFormView({ portId, callId, activeBatch: c
       ) : null}
 
       {templatesLoading ? (
-        <p className="gro-crew-immigration-bulk-empty">Loading templates…</p>
+        <div role="status" aria-live="polite">
+          <span className="visually-hidden">Loading Crew Immigration templates…</span>
+          {[0, 1].map((i) => (
+            <section key={i} className="gro-crew-imm-form-section" aria-hidden="true">
+              <div className="gro-crew-imm-form-section-head">
+                <span className="gro-skeleton gro-skel-title" />
+                <span className="gro-skeleton gro-skel-text" style={{ width: "34%", marginTop: 6 }} />
+              </div>
+              <div className="gro-crew-immigration-bulk-body">
+                <div className="gro-crew-immigration-bulk-left">
+                  <div className="gro-crew-immigration-bulk-table-wrap">
+                    <table className="gro-crew-immigration-bulk-table">
+                      <tbody>
+                        <GroFieldTableSkeletonRows rows={6} />
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div className="gro-crew-immigration-bulk-right">
+                  <GroLetterPreviewSkeleton />
+                </div>
+              </div>
+            </section>
+          ))}
+        </div>
       ) : templates.length === 0 ? (
         <p className="gro-crew-immigration-bulk-empty">No Crew Immigration templates configured for this port.</p>
       ) : (

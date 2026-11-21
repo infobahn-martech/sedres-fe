@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo, forwardRef, useImperativeHandle }
 import PropTypes from "prop-types";
 import { FiSave } from "react-icons/fi";
 import VesselBoardingArabicPreview from "./VesselBoardingArabicPreview";
+import { GroFieldTableSkeletonRows, GroLetterPreviewSkeleton } from "./GroCardViewSkeleton";
 import { extractVesselRegTemplateFields, matchVesselApiFieldKey } from "./vesselRegTemplateFields";
 import groService from "@/services/groService";
 import vesselService from "@/services/vesselService";
@@ -25,6 +26,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
   ref
 ) {
   const [templateData, setTemplateData] = useState(null);
+  const [templateLoading, setTemplateLoading] = useState(Boolean(portId));
   const [fieldValues, setFieldValues] = useState({});
   const [translations, setTranslations] = useState({});
   // Arabic values typed manually by the user — take precedence over auto-translations.
@@ -34,8 +36,12 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
   const translatedSourceRef = useRef({});
 
   useEffect(() => {
-    if (!portId) return;
+    if (!portId) {
+      setTemplateLoading(false);
+      return undefined;
+    }
     let cancelled = false;
+    setTemplateLoading(true);
     groService
       .getTemplatesByPort(portId, templateType)
       .then((res) => {
@@ -46,6 +52,9 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
       })
       .catch(() => {
         if (!cancelled) setTemplateData(null);
+      })
+      .finally(() => {
+        if (!cancelled) setTemplateLoading(false);
       });
     return () => {
       cancelled = true;
@@ -166,7 +175,9 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
                 </tr>
               </thead>
               <tbody>
-                {vesselFields.length === 0 ? (
+                {templateLoading ? (
+                  <GroFieldTableSkeletonRows rows={10} />
+                ) : vesselFields.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="gro-crew-immigration-bulk-empty">
                       No fields available.
@@ -215,7 +226,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
                 title="Generate & Download Vessel Registration PDF"
                 aria-label="Generate & Download Vessel Registration PDF"
                 onClick={onSave}
-                disabled={isSaving || !onSave}
+                disabled={isSaving || !onSave || templateLoading}
               >
                 {isSaving ? (
                   <span className="spinner-border spinner-border-sm" role="status">
@@ -228,13 +239,20 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
             </div>
             ) : null}
           </div>
-          <div ref={previewRef} className="gro-vir-scroll gro-vir-preview">
-            <VesselBoardingArabicPreview
-              fieldValues={fieldValues}
-              translations={arabicValues}
-              templateData={templateData}
-            />
-          </div>
+          {templateLoading ? (
+            <div className="gro-vir-scroll gro-vir-preview" role="status" aria-live="polite">
+              <span className="visually-hidden">Loading document preview…</span>
+              <GroLetterPreviewSkeleton />
+            </div>
+          ) : (
+            <div ref={previewRef} className="gro-vir-scroll gro-vir-preview">
+              <VesselBoardingArabicPreview
+                fieldValues={fieldValues}
+                translations={arabicValues}
+                templateData={templateData}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

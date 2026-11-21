@@ -181,6 +181,7 @@ const GROCardView = forwardRef(function GROCardView(
   const [crewImmigrationBatchOptions, setCrewImmigrationBatchOptions] = useState([]);
   const [crewImmigrationBatchCounts, setCrewImmigrationBatchCounts] = useState({});
   const [crewImmigrationBatchFilter, setCrewImmigrationBatchFilter] = useState("");
+  const [crewImmigrationBatchesLoaded, setCrewImmigrationBatchesLoaded] = useState(false);
   // Within a batch: "list" (crew table) or "form" (Entry / Return letters).
   const [crewImmigrationView, setCrewImmigrationView] = useState("list");
   const [showDynamicUploadModal, setShowDynamicUploadModal] = useState(false);
@@ -968,6 +969,9 @@ const GROCardView = forwardRef(function GROCardView(
     setCrewImmigrationBatchFilter("");
     setCrewImmigrationBatchOptions([]);
     setCrewImmigrationBatchCounts({});
+    setCrewImmigrationBatchesLoaded(false);
+    setCrewImmigrationRows([]);
+    setCrewImmigrationPagination(null);
     setCrewImmigrationView("list");
   }, [activeTab, callId]);
 
@@ -1000,6 +1004,9 @@ const GROCardView = forwardRef(function GROCardView(
           setCrewImmigrationBatchOptions([]);
           setCrewImmigrationBatchCounts({});
         }
+      })
+      .finally(() => {
+        if (!cancelled) setCrewImmigrationBatchesLoaded(true);
       });
     return () => {
       cancelled = true;
@@ -1016,6 +1023,10 @@ const GROCardView = forwardRef(function GROCardView(
   useEffect(() => {
     if (activeTab !== GRO_ACTIVE_TABS.crewImmigration) return undefined;
     if (callId == null || callId === "") return undefined;
+    // Wait for the batch list and its pre-selected batch, so the table loads once —
+    // not first unfiltered (all crew) and then again for the batch.
+    if (!crewImmigrationBatchesLoaded) return undefined;
+    if (crewImmigrationBatchOptions.length > 0 && !crewImmigrationBatchFilter) return undefined;
     let cancelled = false;
     setCrewImmigrationLoading(true);
     getImmigrationCrewList(callId, {
@@ -1041,7 +1052,14 @@ const GROCardView = forwardRef(function GROCardView(
     return () => {
       cancelled = true;
     };
-  }, [activeTab, callId, crewImmigrationPage, crewImmigrationBatchFilter]);
+  }, [
+    activeTab,
+    callId,
+    crewImmigrationPage,
+    crewImmigrationBatchFilter,
+    crewImmigrationBatchesLoaded,
+    crewImmigrationBatchOptions.length,
+  ]);
 
   const handleBulkPassSubmit = useCallback(
     async (e) => {
@@ -1984,7 +2002,8 @@ const GROCardView = forwardRef(function GROCardView(
             batchCounts={crewImmigrationBatchCounts}
             activeBatch={crewImmigrationBatchFilter}
             onSelectBatch={setCrewImmigrationBatchFilter}
-            loading={crewImmigrationLoading}
+            loading={crewImmigrationLoading || !crewImmigrationBatchesLoaded}
+            batchesLoading={!crewImmigrationBatchesLoaded}
             pagination={crewImmigrationPagination}
             onPageChange={setCrewImmigrationPage}
             view={crewImmigrationView}

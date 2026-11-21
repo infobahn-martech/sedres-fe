@@ -1642,29 +1642,197 @@
   font-style: italic;
 }
 
-.gro-card-view .gro-crew-imm-skeleton {
-  display: block;
-  height: 10px;
-  width: 70%;
-  border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    var(--bg-secondary) 0%,
-    color-mix(in srgb, var(--border-primary) 60%, var(--bg-secondary)) 50%,
-    var(--bg-secondary) 100%
-  );
-  background-size: 200% 100%;
-  animation: gro-crew-imm-shimmer 1.2s ease-in-out infinite;
+/* ---------- Skeleton building blocks (all use the shared .gro-skeleton shimmer) ---------- */
+.gro-skel-row td {
+  height: 49px; /* same as a loaded row, so nothing jumps when data lands */
 }
 
-@keyframes gro-crew-imm-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+.gro-skel-row:hover td {
+  background: var(--surface-primary) !important;
+}
+
+/* Rows fade in one after another — reads as "loading", not "broken". */
+.gro-skel-row {
+  animation: gro-skel-rise 0.35s ease both;
+}
+
+@for $i from 1 through 12 {
+  .gro-skel-row:nth-child(#{$i}) {
+    animation-delay: #{($i - 1) * 35}ms;
+  }
+}
+
+@keyframes gro-skel-rise {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+
+.gro-skel-text {
+  height: 10px;
+  border-radius: 6px;
+}
+
+.gro-skel-text--fixed {
+  width: 84px;
+}
+
+.gro-skel-num {
+  width: 14px;
+  height: 10px;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+
+.gro-skel-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .gro-skel-text {
+    flex: 0 1 auto;
+    max-width: 220px;
+  }
+}
+
+.gro-skel-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.gro-skel-chip {
+  width: 62px;
+  height: 20px;
+  border-radius: 999px;
+}
+
+.gro-skel-input {
+  width: 100%;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.gro-skel-input--tall {
+  height: 40px;
+}
+
+.gro-skel-title {
+  width: 220px;
+  height: 16px;
+  border-radius: 6px;
+}
+
+/* Letter preview placeholder (A4-ish paper) */
+.gro-skel-paper {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  height: 100%;
+  min-height: 420px;
+  padding: 28px 32px;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  background: var(--surface-primary);
+}
+
+.gro-skel-paper-title {
+  width: 32%;
+  height: 16px;
+  margin: 0 auto;
+}
+
+.gro-skel-paper-divider {
+  height: 0;
+  border-top: 1.5px solid var(--border-primary);
+}
+
+.gro-skel-paper-block {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.gro-skel-paper-block--end {
+  align-items: flex-end;
+}
+
+.gro-skel-paper-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.gro-skel-paper-row {
+  height: 30px;
+  border-radius: 4px;
+}
+
+/* Update Status popover fields */
+.gro-skel-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gro-skel-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Batch tab placeholders on the brand band */
+.gro-skel-batches {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gro-skel-pill {
+  width: 92px;
+  height: 34px;
+  border-radius: 9px;
+}
+
+.gro-skel-on-brand {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.12) 25%,
+    rgba(255, 255, 255, 0.28) 37%,
+    rgba(255, 255, 255, 0.12) 63%
+  );
+  background-size: 400% 100%;
+}
+
+/* Inline "Loading … crew" status with a small spinner */
+.gro-skel-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.gro-skel-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
+  border-top-color: var(--color-primary);
+  animation: gro-skel-spin 0.7s linear infinite;
+}
+
+@keyframes gro-skel-spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gro-card-view .gro-crew-imm-skeleton {
+  .gro-skel-row {
     animation: none;
+  }
+
+  .gro-skel-spinner {
+    animation-duration: 1.6s;
   }
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import { FiUsers, FiFileText, FiSearch, FiX, FiCheck, FiClock } from "react-icons/fi";
+import { GroCrewTableSkeletonRows } from "./GroCardViewSkeleton";
 
 const VIEWS = [
   { key: "list", label: "Crew List", icon: <FiUsers aria-hidden /> },
@@ -13,7 +14,7 @@ const BATCH_STATUS_META = {
   pending: { icon: null, label: "Pending" },
 };
 
-const SKELETON_ROWS = 6;
+const SKELETON_ROWS = 12;
 const COLUMN_COUNT = 7;
 
 const initialsOf = (name) =>
@@ -48,6 +49,7 @@ export default function CrewImmigrationPanel({
   formContent = null,
   actions = null,
   batchStatus = {},
+  batchesLoading = false,
 }) {
   const [search, setSearch] = useState("");
   const safeRows = useMemo(() => (Array.isArray(rows) ? rows : []), [rows]);
@@ -96,7 +98,6 @@ export default function CrewImmigrationPanel({
                       title={`${b} · ${meta.label}`}
                       className={`gro-pass-segment gro-crew-imm-batch-btn${activeBatch === b ? " gro-pass-segment--active" : ""}`}
                       onClick={() => onSelectBatch?.(b)}
-                      disabled={loading}
                     >
                       <span className={`gro-crew-imm-batch-mark gro-crew-imm-batch-mark--${status}`} aria-hidden>
                         {meta.icon}
@@ -111,8 +112,14 @@ export default function CrewImmigrationPanel({
                 );
               })}
             </div>
+          ) : batchesLoading ? (
+            <div className="gro-skel-batches" role="status" aria-live="polite">
+              <span className="visually-hidden">Loading batches…</span>
+              <span className="gro-skeleton gro-skel-on-brand gro-skel-pill" aria-hidden="true" />
+              <span className="gro-skeleton gro-skel-on-brand gro-skel-pill" aria-hidden="true" />
+            </div>
           ) : (
-            <span className="gro-crew-imm-toolbar-empty">{loading ? "Loading batches…" : "No batches"}</span>
+            <span className="gro-crew-imm-toolbar-empty">No batches</span>
           )}
         </div>
 
@@ -180,15 +187,7 @@ export default function CrewImmigrationPanel({
               </thead>
               <tbody>
                 {loading ? (
-                  Array.from({ length: SKELETON_ROWS }, (_, i) => (
-                    <tr key={`sk-${i}`} className="gro-crew-imm-skeleton-row" aria-hidden>
-                      {Array.from({ length: COLUMN_COUNT }, (__, c) => (
-                        <td key={c}>
-                          <span className="gro-crew-imm-skeleton" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
+                  <GroCrewTableSkeletonRows rows={SKELETON_ROWS} />
                 ) : visibleRows.length === 0 ? (
                   <tr>
                     <td colSpan={COLUMN_COUNT} className="gro-crew-imm-empty">
@@ -221,8 +220,13 @@ export default function CrewImmigrationPanel({
             </table>
           </div>
           <div className="gro-crew-immigration-pagination">
-            <p className="gro-crew-immigration-pagination-text">
-              {term
+            <p className="gro-crew-immigration-pagination-text" aria-live="polite">
+              {loading ? (
+                <span className="gro-skel-inline">
+                  <span className="gro-skel-spinner" aria-hidden="true" />
+                  {activeBatch ? `Loading ${activeBatch} crew…` : "Loading crew…"}
+                </span>
+              ) : term
                 ? `${visibleRows.length} of ${safeRows.length} crew shown`
                 : `Showing ${pageStartDisplay}-${pageEndDisplay} of ${total}`}
             </p>
@@ -283,4 +287,5 @@ CrewImmigrationPanel.propTypes = {
   formContent: PropTypes.node,
   actions: PropTypes.node,
   batchStatus: PropTypes.objectOf(PropTypes.oneOf(["done", "progress", "pending"])),
+  batchesLoading: PropTypes.bool,
 };
