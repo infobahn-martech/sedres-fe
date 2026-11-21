@@ -1,6 +1,10 @@
 // Shared helpers for drawing a Business Rule field value (guide section 1): which control a
 // field_type needs, and what an operator implies for the value box.
 
+// The connector of a WHEN / AND / filter row is sent and read back as "AND" or "OR" in capitals;
+// anything else (missing, lower case) reads as the "OR" the screen shows by default.
+export const normalizeConnector = (value) => (String(value ?? '').trim().toUpperCase() === 'AND' ? 'AND' : 'OR');
+
 // field_types that never take a typed value (guide 1.2).
 const NO_VALUE_FIELD_TYPES = ['file', 'none'];
 

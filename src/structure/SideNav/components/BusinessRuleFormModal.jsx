@@ -26,7 +26,7 @@ import { findLoadedColumnName, isPositionColumnField } from './positionColumnFie
 import SearchableSelect from '../../../components/form/SearchableSelect';
 import BoardFilterPicker from './BoardFilterPicker';
 import FormTemplateFilter from './FormTemplateFilter';
-import { fieldTakesValue, getOperatorId, operatorTakesValue, operatorNeedsTimeUnit, isYesNoOptions, getDateFieldEmptyLabel, getDateFieldEmptyOperatorKey, getOperatorKey } from './businessRuleFieldUtils';
+import { fieldTakesValue, getOperatorId, operatorTakesValue, operatorNeedsTimeUnit, isYesNoOptions, getDateFieldEmptyLabel, getDateFieldEmptyOperatorKey, getOperatorKey, normalizeConnector } from './businessRuleFieldUtils';
 import DynamicIcon from './DynamicIcon';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import useAlertReducer from '../../../store/AlertReducer';
@@ -443,7 +443,7 @@ const makeDefaultCondition = (c) => ({
 
 const isPositionColumnCondition = (cond) => cond.fieldType === 'regular' && isPositionColumnField(cond.fieldId, cond.fieldLabel);
 
-const EMPTY_WHEN_DEADLINE = { fieldKey: '', fieldLabel: '', operatorId: '', value: '', timeUnitId: '', timeObjectId: '' };
+const EMPTY_WHEN_DEADLINE = { fieldKey: '', fieldLabel: '', operatorId: '', value: '', timeUnitId: '', timeObjectId: '', connector: 'OR' };
 
 // Any operator whose label reads as a negation ("is not", "does not contain", "not in", ...)
 // — matched generically on the word "not" so operators added later (backend-driven, not
@@ -5503,6 +5503,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       value: saved?.input_value ?? '',
       timeUnitId: saved?.time_unit_id != null ? String(saved.time_unit_id) : '',
       timeObjectId: saved?.time_object_id != null ? String(saved.time_object_id) : '',
+      connector: normalizeConnector(saved?.connector),
     }));
   }, [whenDeadlineField, whenDeadlineOperators, whenDeadline.operatorId, savedWhenDeadline]);
 
@@ -5568,6 +5569,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
           category: fieldType,
           fieldType,
           fieldId,
+          joinWord: normalizeConnector(wf.connector),
         };
       });
     setWhenFields(realWhenFields);
@@ -5595,7 +5597,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       .forEach((cond) => {
         const conditionFieldId = boardDefault?.regular_field_id ?? boardDefault?.field_id;
         if (boardDefault && cond.regular_field_id != null && String(cond.regular_field_id) === String(conditionFieldId)) {
-          boardRows.push({ id: `board-${cond.condition_id}`, boardId: cond.input_value ?? '', joinWord: cond.connector || 'OR' });
+          boardRows.push({ id: `board-${cond.condition_id}`, boardId: cond.input_value ?? '', joinWord: normalizeConnector(cond.connector) });
           return;
         }
         plainConditions.push(cond);
@@ -5634,7 +5636,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         conditionId: cond.condition_id ?? null,
         value: cond.input_value ?? '',
         timeUnitId: cond.time_unit_id != null ? String(cond.time_unit_id) : '',
-        joinWord: cond.connector || 'OR',
+        joinWord: normalizeConnector(cond.connector),
       });
     });
     const nextConditions = Array.from(boxesByField.values());
@@ -6563,7 +6565,12 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       category: category.category_key,
       fieldType,
       fieldId,
+      joinWord: 'OR',
     }]);
+  };
+
+  const handleToggleWhenFieldJoinWord = (id) => {
+    setWhenFields((prev) => prev.map((f) => (f.id === id ? { ...f, joinWord: normalizeConnector(f.joinWord) === 'AND' ? 'OR' : 'AND' } : f)));
   };
 
   const handleRemoveWhenField = (id) => {
@@ -7781,6 +7788,14 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                           onClick={handleOpenWhenFieldPicker}
                         >
                           {field.fieldLabel}
+                        </button>
+                        <button
+                          type="button"
+                          className="business-rule-form-or-btn"
+                          onClick={() => handleToggleWhenFieldJoinWord(field.id)}
+                          aria-label={`Connector of ${field.fieldLabel}`}
+                        >
+                          {normalizeConnector(field.joinWord)}
                         </button>
                         <button
                           type="button"
