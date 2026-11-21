@@ -81,11 +81,16 @@ export function injectVesselRegFieldValues(html, fieldValues, translations = {})
       const cells = getRowCells(tr);
       if (cells.length < 2) return;
       const fieldKey = `row-${index}`;
-      const value = fieldValues?.[fieldKey];
-      if (!value) return;
+      const englishValue = fieldValues?.[fieldKey] ?? "";
+      const arabicValue = translations?.[fieldKey] ?? "";
       const valueCells = cells.length > 2 ? cells.slice(1, cells.length - 1) : [cells[cells.length - 1]];
+      // Arabic and English columns are filled independently, so typing in the Arabic
+      // column reflects in the preview even when the English value is empty.
       valueCells.forEach((cell, cellIndex) => {
-        cell.textContent = cellIndex === 0 ? translations?.[fieldKey] || value : value;
+        let cellValue = englishValue;
+        if (valueCells.length === 1) cellValue = arabicValue || englishValue;
+        else if (cellIndex === 0) cellValue = arabicValue;
+        if (cellValue) cell.textContent = cellValue;
       });
     });
   }

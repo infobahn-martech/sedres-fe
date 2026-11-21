@@ -1168,6 +1168,155 @@
   font-size: 12px;
 }
 
+/* Crew Immigration tab toolbar — batch tabs (left) · view switch + Update Status (right). */
+.gro-card-view .gro-crew-imm-toolbar {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  row-gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.gro-card-view .gro-crew-imm-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.gro-card-view .gro-crew-imm-toolbar-group--end {
+  margin-left: auto;
+}
+
+.gro-card-view .gro-crew-imm-toolbar-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.gro-card-view .gro-crew-imm-toolbar-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.gro-card-view .gro-crew-imm-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Batch status strip — saved Commenced / Completed for the selected batch. */
+.gro-card-view .gro-crew-imm-status-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  background: var(--surface-secondary);
+  font-size: 12px;
+}
+
+.gro-card-view .gro-crew-imm-status-batch {
+  font-weight: 700;
+  color: var(--text-primary);
+  padding-right: 12px;
+  border-right: 1px solid var(--border-primary);
+}
+
+.gro-card-view .gro-crew-imm-status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.gro-card-view .gro-crew-imm-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  flex-shrink: 0;
+}
+
+.gro-card-view .gro-crew-imm-status-item--done .gro-crew-imm-status-dot {
+  background: #16a34a;
+}
+
+.gro-card-view .gro-crew-imm-status-label {
+  font-weight: 600;
+}
+
+.gro-card-view .gro-crew-imm-status-value {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.gro-card-view .gro-crew-imm-status-item:not(.gro-crew-imm-status-item--done) .gro-crew-imm-status-value {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Crew Immigration form — one section per template (Entry / Return). */
+.gro-card-view .gro-crew-imm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.gro-card-view .gro-crew-imm-form-section {
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--surface-primary);
+}
+
+.gro-card-view .gro-crew-imm-form-section-head {
+  margin-bottom: 12px;
+}
+
+.gro-card-view .gro-crew-imm-form-section-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.gro-card-view .gro-crew-imm-form-section-desc {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.gro-card-view .gro-crew-imm-form-subtitle {
+  margin-top: 16px;
+}
+
+.gro-card-view .gro-crew-imm-form-paper {
+  min-height: 0;
+}
+
+/* Quill alignment classes used by the template editor's HTML. */
+.gro-card-view .gro-crew-imm-form-paper {
+  .ql-align-center { text-align: center; }
+  .ql-align-left { text-align: left; }
+  .ql-align-right { text-align: right; }
+  .ql-align-justify { text-align: justify; }
+  .ql-direction-rtl { direction: rtl; }
+  table { width: 100%; }
+}
+
 .gro-card-view .bulk-pass-arabic-sign {
   display: flex;
   align-items: center;

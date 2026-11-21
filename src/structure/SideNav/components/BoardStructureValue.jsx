@@ -14,6 +14,14 @@ const POSITION_SEPARATOR = ':';
 const flattenLeafColumns = (columns = []) =>
   columns.flatMap((col) => (Array.isArray(col.children) && col.children.length > 0 ? flattenLeafColumns(col.children) : [col]));
 
+// Every column of a stage, parents included: a parent column header on the Board Minimap can be
+// picked as a whole, so its id has to be found too.
+const flattenAllColumns = (columns = []) =>
+  columns.flatMap((col) => [col, ...flattenAllColumns(Array.isArray(col.children) ? col.children : [])]);
+
+// Shown for a position picked without a swimlane (any lane).
+const ANY_LANE_LABEL = 'Any lane';
+
 // Keeps the ids picked from other boards/workflows when the visible option list is re-picked.
 const mergeSelection = (currentIds, optionValues, nextSelected) => [
   ...currentIds.filter((id) => !optionValues.includes(id)),
@@ -166,11 +174,11 @@ function PositionValue({ value, defaultBoardId = '', onChange }) {
   const describeEntry = (entry) => {
     const [columnId, laneId] = entry.split(POSITION_SEPARATOR);
     const found = Object.entries(boardWorkflowsByBoard).flatMap(([boardId, wfs]) => wfs.map((wf) => ({ boardId, wf })))
-      .find(({ wf }) => (wf.stages ?? []).some((stage) => flattenLeafColumns(stage.columns ?? [])
+      .find(({ wf }) => (wf.stages ?? []).some((stage) => flattenAllColumns(stage.columns ?? [])
         .some((col) => String(col.column_id) === columnId)));
     const workspace = found && (workspaces ?? []).find((w) => (w.boards ?? []).some((bd) => String(bd.board_id) === found.boardId));
     const board = workspace?.boards.find((bd) => String(bd.board_id) === found.boardId);
-    const column = found && (found.wf.stages ?? []).flatMap((stage) => flattenLeafColumns(stage.columns ?? []))
+    const column = found && (found.wf.stages ?? []).flatMap((stage) => flattenAllColumns(stage.columns ?? []))
       .find((col) => String(col.column_id) === columnId);
     const lane = laneId && found
       ? (found.wf.swimlanes ?? swimlanesByWorkflow[String(found.wf.workflow_id)] ?? []).find((l) => String(l.swimlane_id) === laneId)
@@ -180,9 +188,29 @@ function PositionValue({ value, defaultBoardId = '', onChange }) {
       place: found ? `[${workspace?.workspace_name ?? ''}][${board?.board_name ?? ''}]` : '',
       workflow: found ? `[${found.wf.workflow_name}]` : '',
       column: column?.column_name ?? `Column #${columnId}`,
-      lane: laneId ? (lane?.swimlane_name ?? `Lane #${laneId}`) : '',
+      lane: laneId ? (lane?.swimlane_name ?? `Lane #${laneId}`) : ANY_LANE_LABEL,
     };
   };
+
+  const findStageOf = (columnId) => Object.values(boardWorkflowsByBoard).flat()
+    .flatMap((wf) => wf.stages ?? [])
+    .find((stage) => flattenLeafColumns(stage.columns ?? []).some((col) => String(col.column_id) === columnId));
+
+  // Entries that together are every column of one stage (picked with the stage band) read as one
+  // result, the stage name; any other entry reads on its own line.
+  const pickedWholeColumns = new Set(entries.filter((entry) => !entry.includes(POSITION_SEPARATOR)));
+  const groupedColumnIds = new Set();
+  const resultLines = entries.flatMap((entry) => {
+    if (groupedColumnIds.has(entry)) return [];
+    const info = describeEntry(entry);
+    const stage = entry.includes(POSITION_SEPARATOR) ? null : findStageOf(entry);
+    const stageColumnIds = stage ? flattenLeafColumns(stage.columns ?? []).map((col) => String(col.column_id)) : [];
+    if (stageColumnIds.length > 1 && stageColumnIds.every((id) => pickedWholeColumns.has(id))) {
+      stageColumnIds.forEach((id) => groupedColumnIds.add(id));
+      return [{ entry, info: { ...info, column: stage.stage_name } }];
+    }
+    return [{ entry, info }];
+  });
 
   // Opens on the board of the entry that was clicked, else on the board chosen in the AND "Board is" row.
   const openMinimap = (entry) => {
@@ -193,6 +221,12 @@ function PositionValue({ value, defaultBoardId = '', onChange }) {
 
   const handlePick = (next) => {
     setShowMinimap(false);
+    // A stage band picks all of its columns: one entry per column, any lane.
+    if (next.columnIds?.length) {
+      if (next.boardId) getBoardWorkflows(next.boardId);
+      onChange(joinMultiValue(next.columnIds));
+      return;
+    }
     if (!next.columnId) return;
     if (next.boardId) getBoardWorkflows(next.boardId);
     const entry = next.swimlaneId ? `${next.columnId}${POSITION_SEPARATOR}${next.swimlaneId}` : String(next.columnId);
@@ -212,8 +246,7 @@ function PositionValue({ value, defaultBoardId = '', onChange }) {
           {NOT_SET_LABEL}
         </button>
       )}
-      {entries.map((entry) => {
-        const info = describeEntry(entry);
+      {resultLines.map(({ entry, info }) => {
         return (
           <button
             key={entry}
@@ -236,6 +269,7 @@ function PositionValue({ value, defaultBoardId = '', onChange }) {
         onBoardChange={setMinimapBoardId}
         onPick={handlePick}
         onClose={() => setShowMinimap(false)}
+        allowStagePick
       />
     </div>
   );

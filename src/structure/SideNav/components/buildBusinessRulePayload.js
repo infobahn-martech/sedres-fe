@@ -1,6 +1,6 @@
 import { ACTION_GROUP_TYPE_TO_SECTION_ID } from './businessRulesData';
 import { buildCreateCardThenActions, buildGenericThenActions } from './genericThenAction';
-import { getOperatorId, getOperatorKey, operatorTakesValue, fieldNeedsTimeUnit, fieldTakesValue, getDateFieldEmptyOperatorKey } from './businessRuleFieldUtils';
+import { getOperatorId, getOperatorKey, operatorTakesValue, fieldNeedsTimeUnit, fieldTakesValue, getDateFieldEmptyOperatorKey, normalizeConnector } from './businessRuleFieldUtils';
 
 const findActionTypeId = (triggerActions, sectionId) =>
   triggerActions.find((a) => ACTION_GROUP_TYPE_TO_SECTION_ID[a.group_type] === sectionId)?.action_type_id ?? null;
@@ -32,7 +32,7 @@ const buildConditions = (formState, ctx) => {
   const entries = [];
 
   conditions.forEach((cond) => {
-    cond.values.forEach((row, index) => {
+    cond.values.forEach((row) => {
       const selectedOperator = findOperator(fieldDetailsByKey, cond.fieldType, cond.fieldId, cond.operatorId);
       // Deadline / Last moved left on their empty state ("Not Set" / "Not Moved") are saved as the
       // field's is_empty operator, so the empty choice is not lost as "is" with no value.
@@ -44,7 +44,7 @@ const buildConditions = (formState, ctx) => {
       const operator = emptyOperator ?? selectedOperator;
       const entry = {
         operator: getOperatorKey(operator) ?? operator?.operator_label ?? null,
-        connector: index === 0 ? 'AND' : row.joinWord,
+        connector: normalizeConnector(row.joinWord),
       };
       if (fieldTakesValue(fieldDetails) && operatorTakesValue(operator)) entry.input_value = row.value;
       if (fieldNeedsTimeUnit(fieldDetails, operator) && row.timeUnitId) entry.time_unit_id = Number(row.timeUnitId);
@@ -70,12 +70,12 @@ const buildConditions = (formState, ctx) => {
 
   const boardDefault = defaultConditionFor('board');
   if (boardDefault) {
-    boardConditionRows.filter((row) => row.boardId).forEach((row, index) => {
+    boardConditionRows.filter((row) => row.boardId).forEach((row) => {
       entries.push({
         regular_field_id: boardDefault.regular_field_id ?? boardDefault.field_id ?? null,
         operator: 'is',
         input_value: row.boardId,
-        connector: index === 0 ? 'AND' : row.joinWord,
+        connector: normalizeConnector(row.joinWord),
       });
     });
   }
@@ -91,6 +91,7 @@ const buildWhenFieldsWatchList = (formState) => formState.whenFields.map((f) => 
   const entry = {};
   if (f.fieldType === 'custom') entry.custom_field_id = f.fieldId;
   else if (f.fieldType === 'regular') entry.regular_field_id = f.fieldId;
+  entry.connector = normalizeConnector(f.joinWord);
   return entry;
 });
 
@@ -220,7 +221,7 @@ const buildWhenFields = (formState, ctx) => {
       if (operatorTakesValue(operator)) entry.input_value = deadline.value;
       if (operatorTakesValue(operator) && deadline.timeUnitId) entry.time_unit_id = Number(deadline.timeUnitId);
       if (deadline.timeObjectId) entry.time_object_id = Number(deadline.timeObjectId);
-      entry.connector = 'OR';
+      entry.connector = normalizeConnector(deadline.connector);
       entries.push(entry);
     }
   }

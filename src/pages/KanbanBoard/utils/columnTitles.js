@@ -185,7 +185,8 @@ export const isSubseaSwimlane = (lane) => SUBSEA_WORKFLOW_PATTERN.test(String(la
 
 const BGP_SWIMLANE_PATTERN = /bgp/i;
 
-/* Operator board: BGP is a swimlane of the shared Operator workflow, not a workflow of its own. */
+/* Operator board: BGP is a swimlane of the shared Operator workflow. Its cards on "Approval Requested" send the
+   SO approval email and record the client's Approved / Rejected from the card (the backend moves approved cards on). */
 export const isBgpSwimlane = (lane) => BGP_SWIMLANE_PATTERN.test(String(lane?.title ?? ""));
 
 const DEFAULT_DA_ONE_CARD_COLUMN_PATTERN = /^(ar\s+invoices?\s+issued|ready\s+for\s+submission|submit\s+invoice)$/i;

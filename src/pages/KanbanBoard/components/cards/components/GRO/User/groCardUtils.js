@@ -631,6 +631,38 @@ export const resolveGroTimeObjectValueKey = (item) => {
   return id != null && String(id).trim() !== "" ? String(id).trim() : resolveGroTimeObjectFieldKey(item);
 };
 
+const escapeRegExp = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Matches a batch name as a whole token, so "BATCH 1" never matches "BATCH 10". */
+const batchTokenRegExp = (batch) => new RegExp(`(^|[^A-Za-z0-9])${escapeRegExp(String(batch).trim())}(?![0-9])`, "i");
+
+/**
+ * Time objects for one immigration batch: those whose label names that batch, plus any that
+ * name no known batch at all (shared fields). With no batch selected, returns them all.
+ */
+export const filterGroTimeObjectsForBatch = (timeObjects, batch, allBatches = []) => {
+  const list = Array.isArray(timeObjects) ? timeObjects : [];
+  if (!batch) return list;
+  const target = batchTokenRegExp(batch);
+  const others = (Array.isArray(allBatches) ? allBatches : [])
+    .filter((b) => b && b !== batch)
+    .map(batchTokenRegExp);
+  return list.filter((item) => {
+    const label = String(item?.time_object ?? "");
+    if (target.test(label)) return true;
+    return !others.some((re) => re.test(label));
+  });
+};
+
+/** "Crew Immigration Commenced - BATCH 1" -> "Crew Immigration Commenced" for that batch. */
+export const stripGroBatchSuffix = (label, batch) => {
+  if (!batch) return label;
+  const stripped = String(label ?? "")
+    .replace(new RegExp(`\\s*[-–—:]?\\s*${escapeRegExp(String(batch).trim())}(?![0-9])\\s*`, "i"), " ")
+    .trim();
+  return stripped || label;
+};
+
 /** Current date/time as { date: "YYYY-MM-DD", time: "HH:mm" }, for stamping a time-object field with "now". */
 export const resolveGroNowDateTimeParts = () => {
   const now = new Date();

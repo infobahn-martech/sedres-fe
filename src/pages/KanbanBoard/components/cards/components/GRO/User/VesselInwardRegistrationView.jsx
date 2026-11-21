@@ -9,14 +9,26 @@ import translateService from "@/services/translateService";
 
 const TRANSLATE_DEBOUNCE_MS = 500;
 
-/** Vessel Inward Registration boarding view — vessel particulars (from the port's pass template) + Arabic document preview. */
+/**
+ * Template-driven form view — editable fields (from the port's pass template of `templateType`)
+ * + Arabic document preview. Used for Vessel Inward Registration and the Crew Immigration form.
+ */
 const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistrationView(
-  { onSave, isSaving = false, portId, callId },
+  {
+    onSave,
+    isSaving = false,
+    portId,
+    callId,
+    templateType = "Vessel Registration",
+    sectionTitle = "Vessel Particulars",
+  },
   ref
 ) {
   const [templateData, setTemplateData] = useState(null);
   const [fieldValues, setFieldValues] = useState({});
   const [translations, setTranslations] = useState({});
+  // Arabic values typed manually by the user — take precedence over auto-translations.
+  const [arabicOverrides, setArabicOverrides] = useState({});
   const [vesselData, setVesselData] = useState(null);
   const previewRef = useRef(null);
   const translatedSourceRef = useRef({});
@@ -25,7 +37,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     if (!portId) return;
     let cancelled = false;
     groService
-      .getTemplatesByPort(portId, "Vessel Registration")
+      .getTemplatesByPort(portId, templateType)
       .then((res) => {
         if (cancelled) return;
         const list = res?.data?.data ?? res?.data ?? [];
@@ -38,7 +50,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     return () => {
       cancelled = true;
     };
-  }, [portId]);
+  }, [portId, templateType]);
 
   const vesselFields = useMemo(
     () => extractVesselRegTemplateFields(templateData?.more_description),
@@ -48,8 +60,15 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
   useEffect(() => {
     setFieldValues({});
     setTranslations({});
+    setArabicOverrides({});
     translatedSourceRef.current = {};
   }, [templateData]);
+
+  // Effective Arabic value per field: the user's manual entry if present, else the auto-translation.
+  const arabicValues = useMemo(
+    () => ({ ...translations, ...arabicOverrides }),
+    [translations, arabicOverrides]
+  );
 
   // Translate each field's typed/prefilled English value to Arabic for the preview's 3rd
   // column, debounced so it doesn't fire on every keystroke, and skips values already sent.
@@ -128,23 +147,28 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     setFieldValues((prev) => ({ ...prev, [fieldKey]: value }));
   };
 
+  const handleArabicChange = (fieldKey, value) => {
+    setArabicOverrides((prev) => ({ ...prev, [fieldKey]: value }));
+  };
+
   return (
     <div className="gro-crew-immigration-panel">
       <div className="gro-crew-immigration-bulk-body">
         <div className="gro-crew-immigration-bulk-left">
-          <p className="gro-crew-immigration-bulk-section-title">Vessel Particulars</p>
+          <p className="gro-crew-immigration-bulk-section-title">{sectionTitle}</p>
           <div className="gro-crew-immigration-bulk-table-wrap">
             <table className="gro-crew-immigration-bulk-table">
               <thead>
                 <tr>
                   <th>Field</th>
-                  <th>Value</th>
+                  <th>Value (Arabic)</th>
+                  <th>Value (English)</th>
                 </tr>
               </thead>
               <tbody>
                 {vesselFields.length === 0 ? (
                   <tr>
-                    <td colSpan={2} className="gro-crew-immigration-bulk-empty">
+                    <td colSpan={3} className="gro-crew-immigration-bulk-empty">
                       No fields available.
                     </td>
                   </tr>
@@ -152,6 +176,17 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
                   vesselFields.map((field) => (
                     <tr key={field.fieldKey}>
                       <td>{field.displayLabel}</td>
+                      <td>
+                        <input
+                          type="text"
+                          dir="rtl"
+                          lang="ar"
+                          className="gro-crew-immigration-bulk-input"
+                          value={arabicValues[field.fieldKey] ?? ""}
+                          onChange={(e) => handleArabicChange(field.fieldKey, e.target.value)}
+                          placeholder={field.displayLabel}
+                        />
+                      </td>
                       <td>
                         <input
                           type="text"
@@ -172,6 +207,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
         <div className="gro-crew-immigration-bulk-right">
           <div className="gro-vessel-reg-preview-header">
             <p className="gro-crew-immigration-bulk-section-title">Document Preview</p>
+            {onSave ? (
             <div className="gro-vessel-reg-preview-actions">
               <button
                 type="button"
@@ -190,11 +226,12 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
                 )}
               </button>
             </div>
+            ) : null}
           </div>
           <div ref={previewRef}>
             <VesselBoardingArabicPreview
               fieldValues={fieldValues}
-              translations={translations}
+              translations={arabicValues}
               templateData={templateData}
             />
           </div>
@@ -209,6 +246,8 @@ VesselInwardRegistrationView.propTypes = {
   isSaving: PropTypes.bool,
   portId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  templateType: PropTypes.string,
+  sectionTitle: PropTypes.string,
 };
 
 VesselInwardRegistrationView.displayName = "VesselInwardRegistrationView";

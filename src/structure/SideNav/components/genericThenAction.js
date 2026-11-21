@@ -1,4 +1,5 @@
 import { ACTION_GROUP_TYPE_TO_SECTION_ID } from './businessRulesData';
+import { normalizeConnector } from './businessRuleFieldUtils';
 
 export const EMPTY_BOARD_POSITION = { boardId: '', workflowId: '', columnId: '', swimlaneId: '' };
 
@@ -60,7 +61,7 @@ export const getActionFilterKind = (action) => FILTER_KINDS.find((k) => Number(a
 const buildFilterConditions = (rows = []) => rows
   .filter((row) => row.operatorKey)
   .map((row) => {
-    const entry = { operator: row.operatorKey, input_value: row.value };
+    const entry = { operator: row.operatorKey, input_value: row.value, connector: normalizeConnector(row.connector) };
     if (row.fieldType === 'custom') entry.custom_field_id = row.fieldId;
     else entry.regular_field_id = row.fieldId;
     if (row.timeUnitId) entry.time_unit_id = Number(row.timeUnitId);
@@ -74,6 +75,7 @@ const parseFilterConditions = (conditions = []) => conditions.map((c, index) => 
   fieldId: c.custom_field_id ?? c.regular_field_id,
   fieldLabel: c.field_label ?? '',
   operatorKey: c.operator_key ?? c.operator ?? '',
+  connector: normalizeConnector(c.connector),
   value: String(c.input_value ?? ''),
   timeUnitId: c.time_unit_id != null ? String(c.time_unit_id) : '',
   positionColumns: String(c.position_value ?? '').split(',').map((id) => id.trim()).filter(Boolean).map((id) => ({ id, name: '' })),
