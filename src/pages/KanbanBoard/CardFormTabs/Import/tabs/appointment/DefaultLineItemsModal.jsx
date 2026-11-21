@@ -205,8 +205,6 @@ function DefaultLineItemsModal({
   const columnCount = 7 + (readOnly ? 0 : 1);
   // Items that came with the save response (fromSave) are already recorded by that save.
   const isPendingAdd = (item) => item.so_item_id == null && !item.fromSave;
-  const pendingAddCount = items.filter(isPendingAdd).length;
-  const pendingUpdateCount = items.filter((item) => item.isEdited).length;
 
   const openAddForm = () => {
     setAddForm(EMPTY_ADD_FORM);
@@ -710,13 +708,6 @@ function DefaultLineItemsModal({
     );
   };
 
-  const pendingSummary = [
-    pendingAddCount ? `${pendingAddCount} to add` : "",
-    pendingUpdateCount ? `${pendingUpdateCount} to update` : "",
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
   return createPortal(
     <div className="so-doc-modal-overlay dli-modal-overlay">
       <div className="so-doc-modal dli-modal" role="dialog" aria-modal="true" aria-labelledby="dli-modal-title">
@@ -740,7 +731,6 @@ function DefaultLineItemsModal({
         <div className="so-doc-modal-body dli-modal-body">{renderBody()}</div>
 
         <div className="so-doc-modal-footer">
-          <span className="so-doc-modal-count">{!isLoading && !loadError ? pendingSummary : ""}</span>
           <div className="so-doc-modal-actions">
             {!readOnly && (
               <button type="button" className="sales-order-add-form-cancel" onClick={onSkip || onDone} disabled={isApplying}>
