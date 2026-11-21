@@ -1,31 +1,767 @@
 {
     "status": "success",
-    "data": {
-        "entry": {
-            "pass_vesselreg_template_id": "28",
-            "template_type": "Crew Immigration",
-            "port_id": "1",
-            "template_name": "Crew Immigration - Entry (\u062f\u062e\u0648\u0644)",
-            "description": "Crew Immigration entry letter (\u062f\u062e\u0648\u0644) to the Passports Director \u2013 one per batch",
-            "more_description": "<p class=\"ql-align-left\">STM {batch_no}<\/p><p class=\"ql-align-center\"><strong>\u062f\u062e\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0648\u0644<\/strong><\/p><table class=\"ql-table-better\" style=\"width: 100%\"><tbody><tr><td><p class=\"ql-align-center\">\u0627\u0644\u0641\u0631\u0636\u0629 : \u0627\u0644\u062d\u0643\u0648\u0645\u064a\u0629 (\u062e\u062a\u0645 \u062f\u062e\u0648\u0644)<\/p><\/td><\/tr><\/tbody><\/table><p class=\"ql-align-right ql-direction-rtl\">\u0627\u0644\u062a\u0627\u0631\u064a\u0640\u062e: {hijri_date}\u0647\u0640<\/p><p class=\"ql-align-right ql-direction-rtl\">\u0627\u0644\u0645\u0648\u0627\u0641\u0642: {gregorian_date}\u0645\u0640<\/p><p><br><\/p><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0633\u0639\u0627\u062f\u0629 \/ \u0645\u062f\u064a\u0631 \u062c\u0648\u0627\u0632\u0627\u062a \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0627\u0644\u0645\u0648\u0642\u0631<\/strong><\/p><p class=\"ql-align-right ql-direction-rtl\">\u062a\u062d\u064a\u0629 \u0637\u064a\u0628\u0629 \u0648\u0628\u0639\u0640\u0640\u062f<\/p><p class=\"ql-align-justify ql-direction-rtl\">\u0646\u062a\u0642\u062f\u0645 \u0625\u0644\u0649 \u0633\u0639\u0627\u062f\u062a\u0643\u0645 \u0628\u0637\u0644\u0628\u0646\u0627 \u0647\u0630\u0627 \u0648\u0641\u064a\u0647 \u0628\u0623\u0646 \u0627\u0644\u0628\u062d\u0627\u0631\u0629 \u0627\u0644\u0645\u0640\u0640\u0630\u0643\u0648\u0631\u064a\u0646 \u0623\u062f\u0646\u0627\u0647 \u0648\u0627\u0644\u0640\u0640\u0630\u064a\u0646 \u0648\u0635\u0640\u0640\u0644\u0648\u0627 \u0639\u0644\u0649 \u0627\u0644\u0648\u062d\u062f\u0629 \u0627\u0644\u0628\u062d\u0631\u064a\u0629 ( {vessel_name} ) \u0648\u0627\u0644\u062a\u064a \u0648\u0635\u0644\u062a \u0625\u0644\u0649 \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0628\u062a\u0627\u0631\u064a\u062e : {arrival_date_hijri}\u0647\u0640 \u0642\u0627\u062f\u0645\u0629 \u0645\u0646 ( {last_port_country} ) \u064a\u0631\u063a\u0628\u0648\u0646 \u0641\u064a \u0645\u0640\u0646\u062d\u0647\u0645 \u062e\u0640\u062a\u0640\u0645 (\u062f\u062e\u0640\u0648\u0644) \u0639\u0646 \u0637\u0631\u064a\u0642 \u062c\u0648\u0627\u0632\u0627\u062a \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0639\u0644\u0645\u0627 \u0627\u0646\u0647\u0645 \u064a\u062d\u0645\u0644\u0648\u0646 \u062a\u0623\u0634\u064a\u0631\u0627\u062a \u0639\u0645\u0644 . \u0648\u0627\u0646\u0646\u0627 \u0645\u0633\u0624\u0648\u0644\u064a\u0646 \u0645\u0633\u0624\u0648\u0644\u064a\u0629 \u062a\u0627\u0645\u0629 \u0639\u0640\u0640\u0646 \u0627\u0644\u0628\u062d\u0627\u0631\u0629 \u062d\u062a\u0649 \u0631\u062c\u0648\u0639\u0647\u0645 \u0639\u0644\u0649 \u0648\u062d\u062f\u062a\u0647\u0645 \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u0629 \u0627\u0639\u0644\u0627\u0647.<\/p><p class=\"ql-align-center ql-direction-rtl\">\u060c\u060c \u0648\u0644\u0643\u0645 \u0645\u0646\u0627 \u062e\u0627\u0644\u0635 \u0627\u0644\u062a\u0642\u062f\u064a\u0631 \u060c\u060c<\/p><p class=\"ql-align-left ql-direction-rtl\">\u0639\u0646 \/ \u0634\u0631\u0643\u0629 \u0633\u064a\u062f\u0631\u0633 \u0644\u0644\u062a\u062c\u0627\u0631\u0629 \u0648\u0627\u0644\u062e\u062f\u0645\u0627\u062a \u0627\u0644\u0628\u062d\u0631\u064a\u0629<\/p><p class=\"ql-align-left ql-direction-rtl\">\u064a\u0648\u0633\u0641 \u0639\u0644\u064a \u0627\u0644\u0642\u0644\u0627\u0641<\/p><p class=\"ql-align-center\">..................................................................................................................................................<\/p><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0633\u0639\u0627\u062f\u0629 \/ \u0642\u0627\u0626\u062f \u0648\u062d\u062f\u0629 \u0627\u0645\u0646 \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0627\u0644\u0645\u0648\u0642\u0631<\/strong><\/p><p class=\"ql-align-left ql-direction-rtl\">\u0645\u062f\u064a\u0631 \u062c\u0648\u0627\u0632\u0627\u062a \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629<\/p><p class=\"ql-align-left ql-direction-rtl\">\u0627\u0644\u0639\u0642\u064a\u062f \/ \u0633\u0644\u0645\u0627\u0646 \u0633\u0639\u064a\u062f \u0627\u0644\u063a\u0627\u0645\u062f\u064a<\/p><p class=\"ql-align-right ql-direction-rtl\">\u062a\u062d\u064a\u0629 \u0637\u064a\u0628\u0629 \u0648\u0628\u0639\u062f<\/p><p class=\"ql-align-right ql-direction-rtl\">\u0644\u0627 \u0645\u0627\u0646\u0639 \u0644\u062f\u064a\u0646\u0627 \u0645\u0646 \u062f\u062e\u0648\u0644 \u0627\u0644\u0628\u062d\u0627\u0631\u0629 \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u064a\u0646 \u0627\u0644\u064a \u0627\u0644\u0628\u0644\u0627\u062f \u062d\u0633\u0628 \u0627\u0644\u0645\u062a\u0628\u0639 \u0648\u062f\u0645\u062a\u0645 .<\/p><table class=\"ql-table-better\" style=\"width: 100%\"><tbody><tr><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0627\u0644\u0627\u0633\u0640\u0640\u0640\u0640\u0640\u0645<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0627\u0644\u062c\u0646\u0633\u064a\u0629<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645 \u0627\u0644\u062c\u0648\u0627\u0632<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645 \u0627\u0644\u062a\u0623\u0634\u064a\u0631\u0629<\/strong><\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">{sl_no}<\/p><\/td><td><p class=\"ql-align-center\">{crew_name_ar}<\/p><\/td><td><p class=\"ql-align-center\">{nationality_ar}<\/p><\/td><td><p class=\"ql-align-center\">{passport_no}<\/p><\/td><td><p class=\"ql-align-center\">{visa_no}<\/p><\/td><\/tr><\/tbody><\/table><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0627\u0644\u062c\u0645\u064a\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0639 ({crew_count}) \u0641\u0642\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0637 \u0644\u0627 \u063a\u064a\u0631<\/strong><\/p>",
-            "status": "1",
-            "created_at": "2026-11-21 00:31:29",
-            "created_by": "1",
-            "updated_by": null,
-            "updated_at": null
+    "checklist_details": {
+        "checklist_type_id": "6",
+        "port_id": "1",
+        "call_type_id": "1",
+        "vessel_type_id": "4",
+        "barge_type_id": null,
+        "tug_type_id": null,
+        "checklist_name": "AL JUBAIL PORT ",
+        "created_by": "1",
+        "created_date": "2026-07-25 11:39:50",
+        "updated_by": "1",
+        "updated_date": "2026-08-03 10:51:36",
+        "call_type": "Domestic Call",
+        "barge_type": null,
+        "vessel_type": "Offshore Support Vessel",
+        "tug_type": null
+    },
+    "data": [
+        {
+            "checklist_section_id": "27",
+            "parent_id": null,
+            "title": "DOCUMENTS REQUIRED FOR IMPORT AND INWARD CLEARENCE FOR VESSELS",
+            "sort_order": "1",
+            "items": [
+                {
+                    "checklist_item_id": "159",
+                    "item_name": "Commercial invoice with shipper stamp and sign , for Taxi boat not applicable.",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "Original Required",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "160",
+                    "item_name": "Bill of lading \u2013 Surrender \/ Seaway bill , for Taxi boat not applicable.",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "161",
+                    "item_name": "Aramco contract with Arabic translation \u2013 Contract # , Start and Expiry date should be reflecting , for Taxi boat not applicable",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "162",
+                    "item_name": "Sub contract if there is no direct contract with Aramco",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "163",
+                    "item_name": "Last port Clearance for Tug , Barge , Crew boat",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "ORIGINAL REQUIRED ONBOARD",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 6,
+                            "role_name": "GRO Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 3,
+                                    "task_name": "Inward Clearance"
+                                }
+                            ],
+                            "task_ids": [
+                                3
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        6
+                    ]
+                },
+                {
+                    "checklist_item_id": "164",
+                    "item_name": "Stamped crew List from last port",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "COPY SIGNED AND STAMPED BY MASTER",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 6,
+                            "role_name": "GRO Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 3,
+                                    "task_name": "Inward Clearance"
+                                }
+                            ],
+                            "task_ids": [
+                                3
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        6
+                    ]
+                },
+                {
+                    "checklist_item_id": "165",
+                    "item_name": "Cargo Manifest IF ANY from last port with customs stamp ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "ORIGINAL REQUIRED ONBOARD",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "166",
+                    "item_name": "Pre-arrival Notice 40 points \u2013 As per attached with email",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "PRE-ARRIVAL  FOR TUB AND BARGE ",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "167",
+                    "item_name": "List of Last 10 port of calls",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "168",
+                    "item_name": "Arabic letters for temporary import on Consignee letter head \u2013 Sedres will provide Draft \u2013 for Taxi boat not Applicable",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "ORIGINAL REQUIRED ATTESTED BY CHAMBER",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "169",
+                    "item_name": "Vessel Health declaration form as per Attached with email",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                }
+            ],
+            "sub_sections": []
         },
-        "return": {
-            "pass_vesselreg_template_id": "29",
-            "template_type": "Crew Immigration",
-            "port_id": "1",
-            "template_name": "Crew Immigration - Return (\u0631\u062c\u0648\u0639)",
-            "description": "Crew Immigration return letter (\u0631\u062c\u0648\u0639) to the Port Security Unit Commander \u2013 one per batch",
-            "more_description": "<p class=\"ql-align-left\">STM {batch_no}<\/p><p class=\"ql-align-center\"><strong>\u0631\u062c\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0648\u0639<\/strong><\/p><table class=\"ql-table-better\" style=\"width: 100%\"><tbody><tr><td><p class=\"ql-align-center\">\u0627\u0644\u0641\u0631\u0636\u0629 : \u0627\u0644\u062d\u0643\u0648\u0645\u064a\u0629 (\u062e\u062a\u0645 \u062f\u062e\u0648\u0644)<\/p><\/td><\/tr><\/tbody><\/table><p class=\"ql-align-right ql-direction-rtl\">\u0627\u0644\u062a\u0627\u0631\u064a\u0640\u062e: {hijri_date}\u0647\u0640<\/p><p class=\"ql-align-right ql-direction-rtl\">\u0627\u0644\u0645\u0648\u0627\u0641\u0642: {gregorian_date}\u0645\u0640<\/p><p><br><\/p><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0633\u0639\u0627\u062f\u0629 \/ \u0642\u0627\u0626\u062f \u0648\u062d\u062f\u0629 \u0627\u0645\u0646 \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0627\u0644\u0645\u0648\u0642\u0631<\/strong><\/p><p class=\"ql-align-right ql-direction-rtl\">\u062a\u062d\u064a\u0629 \u0637\u064a\u0628\u0629 \u0648\u0628\u0639\u0640\u0640\u062f<\/p><p class=\"ql-align-justify ql-direction-rtl\">\u0646\u062a\u0642\u062f\u0645 \u0625\u0644\u0649 \u0633\u0639\u0627\u062f\u062a\u0643\u0645 \u0628\u0637\u0644\u0628\u0646\u0627 \u0647\u0630\u0627 \u0648\u0641\u064a\u0647 \u0628\u0623\u0646 \u0627\u0644\u0628\u062d\u0627\u0631\u0629 \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u064a\u0646 \u0623\u062f\u0646\u0627\u0647 \u0648\u0627\u0644\u0630\u064a\u0646 \u0648\u0635\u0644\u0648\u0627 \u0639\u0644\u0649 \u0622\u0644\u062a\u0643 ( {vessel_name} ) \u0648\u0627\u0644\u062a\u064a \u0648\u0635\u0644\u062a \u0625\u0644\u0649 \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0628\u062a\u0627\u0631\u064a\u062e: {arrival_date_hijri}\u0647\u0640 \u0642\u0627\u062f\u0645\u0629 \u0645\u0646 ( {last_port_country} ) \u0642\u0640\u0640\u062f \u0627\u0646\u0647\u0648\u0627 \u0627\u062c\u0640\u0640\u0631\u0627\u0621\u0627\u062a \u062f\u062e\u0640\u0640\u0648\u0644\u0640\u0647\u0645 \u0645\u0646 \u0627\u0644\u062c\u0648\u0627\u0632\u0627\u062a \u0646\u0627\u0645\u0644 \u0627\u0646\u0647\u0627\u0621 \u0627\u062c\u0631\u0627\u0621\u0627\u062a \u0631\u062c\u0648\u0639\u0647\u0645 \u0627\u0644\u064a \u0627\u0644\u0648\u062d\u062f\u0629 \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u0629 \u0623\u0639\u0644\u0627\u0647 \u0639\u0640\u0644\u0640\u0645\u0627 \u0623\u0646\u0646\u0627 \u0645\u0633\u0624\u0648\u0644\u0640\u064a\u0640\u0646 \u0645\u0633\u0640\u0624\u0648\u0644\u0640\u064a\u0640\u0629 \u062a\u0640\u0627\u0645\u0640\u0629 \u0639\u0640\u0646 \u0627\u0644\u0628\u0640\u062d\u0627\u0631\u0629 \u062d\u062a\u0649 \u0631\u062c\u0648\u0639\u0647\u0645.<\/p><p class=\"ql-align-center ql-direction-rtl\">\u0647\u0630\u0627 \u0648\u0644\u0643\u0645 \u062c\u0632\u064a\u0644 \u0627\u0644\u0634\u0643\u0631 \u0648\u0627\u0644\u0627\u0645\u062a\u0646\u0627\u0646 \u060c\u060c\u060c<\/p><p><br><\/p><p class=\"ql-align-left ql-direction-rtl\">\u0639\u0646 \/ \u0634\u0631\u0643\u0629 \u0633\u064a\u062f\u0631\u0633 \u0644\u0644\u062a\u062c\u0627\u0631\u0629 \u0648\u0627\u0644\u062e\u062f\u0645\u0627\u062a \u0627\u0644\u0628\u062d\u0631\u064a\u0629<\/p><p class=\"ql-align-left ql-direction-rtl\">\u064a\u0648\u0633\u0641 \u0639\u0644\u064a \u0627\u0644\u0642\u0644\u0627\u0641<\/p><p class=\"ql-align-center\">.............................................................................................................................<\/p><table class=\"ql-table-better\" style=\"width: 100%\"><tbody><tr><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0627\u0644\u0627\u0633\u0640\u0640\u0640\u0640\u0640\u0645<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0627\u0644\u062c\u0646\u0633\u064a\u0629<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645 \u0627\u0644\u062c\u0648\u0627\u0632<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645 \u0627\u0644\u062a\u0623\u0634\u064a\u0631\u0629<\/strong><\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">{sl_no}<\/p><\/td><td><p class=\"ql-align-center\">{crew_name_ar}<\/p><\/td><td><p class=\"ql-align-center\">{nationality_ar}<\/p><\/td><td><p class=\"ql-align-center\">{passport_no}<\/p><\/td><td><p class=\"ql-align-center\">{visa_no}<\/p><\/td><\/tr><\/tbody><\/table><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0627\u0644\u062c\u0645\u064a\u0640\u0640\u0640\u0640\u0639 ({crew_count}) \u0641\u0642\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0637 \u0644\u0627 \u063a\u064a\u0631<\/strong><\/p>",
-            "status": "1",
-            "created_at": "2026-11-21 00:31:29",
-            "created_by": "1",
-            "updated_by": null,
-            "updated_at": null
+        {
+            "checklist_section_id": "28",
+            "parent_id": null,
+            "title": "CREW IMMIGRATION (For Import vessel) ",
+            "sort_order": "2",
+            "items": [
+                {
+                    "checklist_item_id": "170",
+                    "item_name": "Crew list ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 6,
+                            "role_name": "GRO Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 2,
+                                    "task_name": "Crew Immigration"
+                                }
+                            ],
+                            "task_ids": [
+                                2
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        6
+                    ]
+                },
+                {
+                    "checklist_item_id": "171",
+                    "item_name": "Crew passports and Saudi Visa copies",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 6,
+                            "role_name": "GRO Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 2,
+                                    "task_name": "Crew Immigration"
+                                }
+                            ],
+                            "task_ids": [
+                                2
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        6
+                    ]
+                },
+                {
+                    "checklist_item_id": "172",
+                    "item_name": "Crew List split into two - for Immigration visit",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 6,
+                            "role_name": "GRO Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 2,
+                                    "task_name": "Crew Immigration"
+                                }
+                            ],
+                            "task_ids": [
+                                2
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        6
+                    ]
+                }
+            ],
+            "sub_sections": []
+        },
+        {
+            "checklist_section_id": "29",
+            "parent_id": null,
+            "title": "AUTHORISATION LETTER FOR CUSTOMS BROKER     ",
+            "sort_order": "3",
+            "items": [
+                {
+                    "checklist_item_id": "173",
+                    "item_name": "Broker Authorization online system",
+                    "description": "Broker details  License no. 2753 Name : Khalid Sheshan Al Harbi  Port : Jubail ",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "CONFIRMATION ONLY",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                }
+            ],
+            "sub_sections": []
+        },
+        {
+            "checklist_section_id": "30",
+            "parent_id": null,
+            "title": "IF CARGO ONBOARD",
+            "sort_order": "4",
+            "items": [
+                {
+                    "checklist_item_id": "174",
+                    "item_name": "Cargo Commercial invoice with the company stamp.",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "ORIGINAL REQUIRED",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "175",
+                    "item_name": "Cargo packing list ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "ORIGINAL REQUIRED",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "176",
+                    "item_name": "Cargo Bill of Lading - Surrender \/ Seaway bill",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 5,
+                            "role_name": "Custom Clearance Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 4,
+                                    "task_name": "Custom Bayan"
+                                }
+                            ],
+                            "task_ids": [
+                                4
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        5
+                    ]
+                },
+                {
+                    "checklist_item_id": "177",
+                    "item_name": "Arabic letter for cargo importation",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "ORIGINAL REQUIRED ATTESTED BY CHAMBER",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "178",
+                    "item_name": "SABER certificate if any as per HS code   ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 5,
+                            "role_name": "Custom Clearance Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 4,
+                                    "task_name": "Custom Bayan"
+                                }
+                            ],
+                            "task_ids": [
+                                4
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        5
+                    ]
+                }
+            ],
+            "sub_sections": []
+        },
+        {
+            "checklist_section_id": "31",
+            "parent_id": null,
+            "title": "MARINE WORK PERMIT",
+            "sort_order": "5",
+            "items": [
+                {
+                    "checklist_item_id": "179",
+                    "item_name": "Vessel Registry certificate",
+                    "description": "(Check Vessel Age)",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 6,
+                            "role_name": "GRO Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 7,
+                                    "task_name": "Vessel Inward Registration"
+                                }
+                            ],
+                            "task_ids": [
+                                7
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        6
+                    ]
+                },
+                {
+                    "checklist_item_id": "180",
+                    "item_name": "International Tonnage certificate ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "181",
+                    "item_name": "Ship Radio Station license",
+                    "description": "(EPIRB, AIS & VHF equipment details should be mentioned along with Frequency)",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "182",
+                    "item_name": "Certificate of Class certificate with a yearly endorsement",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "183",
+                    "item_name": "International Load line certificate with yearly endorsement ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "184",
+                    "item_name": "Cargo Ship Safety construction certificate with yearly endorsement (If GRT above 500 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "185",
+                    "item_name": "Cargo ship safety Equipment certificate with yearly endorsement (If GRT above 500 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "186",
+                    "item_name": "Cargo ship Safety Radio certificate with yearly endorsement (If GRT above 300 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "187",
+                    "item_name": "Passenger ship safety certificate for crew boat (for below 500GRT required exemption certificate from class) ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "188",
+                    "item_name": "General Condition Survey",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "189",
+                    "item_name": "International Ship Security Certificate with Biennial endorsement (If GRT above 500 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "190",
+                    "item_name": "International Oil Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "191",
+                    "item_name": "International Air Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "192",
+                    "item_name": "International Sewage pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "193",
+                    "item_name": "Picture of vessel (Need to capture vessel name and IMO in one pic)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "194",
+                    "item_name": "Safety Management Certificate with Biennial endorsement (If GRT above 500 MT) ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "195",
+                    "item_name": "International Anti-fouling system certificate (if GRT above 400GRT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "196",
+                    "item_name": "International Energy Efficient certificate (If GRT above 400T)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "197",
+                    "item_name": "International Ballast Water management (If GRT above 400GRT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "198",
+                    "item_name": "Minimum Safe Manning certificate",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "199",
+                    "item_name": "Insurance ( P&I, H&M) oil pollution covered amount should be mentioned",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "200",
+                    "item_name": "Insurance for wrecks removal certificate from Flag for above 300GRT ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "201",
+                    "item_name": "Insurance for bunker oil pollution damage 2021 certificate from Flag for above 1000GRT",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "202",
+                    "item_name": "Qualification Certificates (COC) for Master\/Officers ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                }
+            ],
+            "sub_sections": []
         }
-    }
+    ]
 }

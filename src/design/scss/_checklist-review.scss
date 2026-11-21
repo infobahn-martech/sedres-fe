@@ -1,0 +1,336 @@
+/* ==========================================================================
+   Checklist — documents rejected from a task card (status 4 / re-upload 3)
+   Imported at the end of checklist.scss so it wins over the "checked" row colours.
+   ========================================================================== */
+$cl-reject: #dc2626;
+$cl-reject-bg: #fef2f2;
+$cl-reject-border: #fecaca;
+$cl-resubmit: #d97706;
+$cl-resubmit-bg: #fffbeb;
+$cl-resubmit-border: #fde68a;
+
+/* Row highlight: tinted cells + a strong left accent on the first cell. */
+.cl-excel-table .checklist-table-row.cl-item-row--rejected td,
+.cl-excel-table .checklist-table-row.cl-item-row--rejected:hover td {
+  background: $cl-reject-bg;
+  border-color: $cl-reject-border;
+
+  [data-theme="dark"] & {
+    background: color-mix(in srgb, #{$cl-reject} 12%, var(--surface-primary));
+    border-color: color-mix(in srgb, #{$cl-reject} 35%, var(--surface-primary));
+  }
+}
+
+.cl-excel-table .checklist-table-row.cl-item-row--resubmit td,
+.cl-excel-table .checklist-table-row.cl-item-row--resubmit:hover td {
+  background: $cl-resubmit-bg;
+  border-color: $cl-resubmit-border;
+
+  [data-theme="dark"] & {
+    background: color-mix(in srgb, #{$cl-resubmit} 12%, var(--surface-primary));
+    border-color: color-mix(in srgb, #{$cl-resubmit} 35%, var(--surface-primary));
+  }
+}
+
+.cl-excel-table .checklist-table-row.cl-item-row--rejected td:first-child {
+  box-shadow: inset 4px 0 0 $cl-reject;
+}
+
+.cl-excel-table .checklist-table-row.cl-item-row--resubmit td:first-child {
+  box-shadow: inset 4px 0 0 $cl-resubmit;
+}
+
+/* Jump-to highlight from the summary banner. */
+.cl-excel-table .checklist-table-row.cl-item-row--flash td {
+  animation: cl-row-flash 1.4s ease;
+}
+
+@keyframes cl-row-flash {
+  0%,
+  40% {
+    box-shadow: inset 0 0 0 2px $cl-reject;
+  }
+  100% {
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+}
+
+/* Reason callout inside the Item cell. */
+.cl-review-note {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid $cl-reject-border;
+  border-left: 3px solid $cl-reject;
+  border-radius: 8px;
+  background: #ffffff;
+  max-width: 520px;
+
+  [data-theme="dark"] & {
+    background: var(--surface-primary);
+    border-color: color-mix(in srgb, #{$cl-reject} 40%, var(--surface-primary));
+    border-left-color: $cl-reject;
+  }
+}
+
+.cl-review-note--resubmit {
+  border-color: $cl-resubmit-border;
+  border-left-color: $cl-resubmit;
+
+  [data-theme="dark"] & {
+    border-color: color-mix(in srgb, #{$cl-resubmit} 40%, var(--surface-primary));
+    border-left-color: $cl-resubmit;
+  }
+
+  .cl-review-note__icon,
+  .cl-review-note__status {
+    color: $cl-resubmit;
+  }
+}
+
+.cl-review-note__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cl-review-note__icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: $cl-reject;
+}
+
+.cl-review-note__status {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: $cl-reject;
+}
+
+.cl-review-note__task {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg-secondary, #f1f5f9);
+  border: 1px solid var(--border-primary, #e2e8f0);
+}
+
+.cl-review-note__reason {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cl-review-note__label {
+  font-weight: 700;
+}
+
+.cl-review-note__meta {
+  margin: 4px 0 0;
+  font-size: 10.5px;
+  color: var(--text-muted, #64748b);
+}
+
+/* Labeled Re-upload action replaces the bare upload icon on rejected rows. */
+.cl-reupload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid $cl-reject;
+  border-radius: 8px;
+  background: $cl-reject;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+  transition: background 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    background: #b91c1c;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $cl-reject;
+    outline-offset: 2px;
+  }
+}
+
+/* File chips: the rejected file, the superseded rejected file, and the new replacement. */
+.checklist-file-chip.checklist-file-chip--rejected {
+  border-color: $cl-reject-border;
+  background: #ffffff;
+
+  .checklist-file-chip__ico,
+  .checklist-file-chip__name {
+    color: $cl-reject;
+  }
+}
+
+.checklist-file-chip.checklist-file-chip--superseded {
+  opacity: 0.6;
+
+  .checklist-file-chip__name {
+    text-decoration: line-through;
+  }
+}
+
+.checklist-file-chip.checklist-file-chip--replacement {
+  border-color: $cl-resubmit-border;
+  background: #ffffff;
+}
+
+.checklist-file-chip--rejected,
+.checklist-file-chip--replacement {
+  max-width: 190px;
+}
+
+.checklist-file-chip__tag {
+  flex-shrink: 0;
+  padding: 0 5px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: $cl-reject;
+
+  .checklist-file-chip--replacement & {
+    background: $cl-resubmit;
+  }
+}
+
+/* Summary banner above the checklist. */
+.cl-review-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid $cl-reject-border;
+  border-radius: 12px;
+  background: $cl-reject-bg;
+
+  [data-theme="dark"] & {
+    background: color-mix(in srgb, #{$cl-reject} 12%, var(--surface-primary));
+    border-color: color-mix(in srgb, #{$cl-reject} 35%, var(--surface-primary));
+  }
+}
+
+.cl-review-banner--ready {
+  border-color: $cl-resubmit-border;
+  background: $cl-resubmit-bg;
+
+  [data-theme="dark"] & {
+    background: color-mix(in srgb, #{$cl-resubmit} 12%, var(--surface-primary));
+    border-color: color-mix(in srgb, #{$cl-resubmit} 35%, var(--surface-primary));
+  }
+
+  .cl-review-banner__icon {
+    color: $cl-resubmit;
+  }
+}
+
+.cl-review-banner__icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: $cl-reject;
+}
+
+.cl-review-banner__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cl-review-banner__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cl-review-banner__sub {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.cl-review-banner__text {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.cl-review-banner__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.cl-review-banner__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 320px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid $cl-reject-border;
+  border-radius: 999px;
+  background: #ffffff;
+  color: $cl-reject;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  [data-theme="dark"] & {
+    background: var(--surface-primary);
+  }
+
+  &:hover {
+    border-color: $cl-reject;
+    background: #fff5f5;
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+}
+
+.cl-review-banner__link-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cl-review-banner__more {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cl-excel-table .checklist-table-row.cl-item-row--flash td {
+    animation: none;
+  }
+}
