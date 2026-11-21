@@ -33,6 +33,7 @@ import GroPopoverStageExtraFields from "./GroPopoverStageExtraFields";
 import CrewImmigrationPanel from "./CrewImmigrationPanel";
 import CrewChangePassPanel from "./CrewChangePassPanel";
 import VesselInwardRegistrationView from "./VesselInwardRegistrationView";
+import CrewImmigrationFormView from "./CrewImmigrationFormView";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import { isExportCallType, resolveCallTypeId } from "@/pages/KanbanBoard/CardFormTabs/shared/utils/callTypes";
 import {
@@ -1912,12 +1913,7 @@ const GROCardView = forwardRef(function GROCardView(
             onPageChange={setCrewImmigrationPage}
           />
         ) : hidePassTabs && activeTab === GRO_ACTIVE_TABS.crewImmigrationForm ? (
-          <VesselInwardRegistrationView
-            portId={groPortId}
-            callId={callId}
-            templateType="Crew Immigration"
-            sectionTitle="Crew Immigration Form"
-          />
+          <CrewImmigrationFormView portId={groPortId} callId={callId} />
         ) : hidePassTabs && activeTab === GRO_ACTIVE_TABS.vesselInwardRegistration ? (
           <VesselInwardRegistrationView
             ref={vesselRegistrationRef}

@@ -1,49 +1,31 @@
 {
     "status": "success",
     "data": {
-        "call_id": 582,
-        "weather_forecast": "bad_weather",
-        "is_bad_weather": 1,
-        "tab_id": 68,
-        "tab_key": "pre_arrival",
-        "weather_map": {
-            "field_id": "weather_map",
-            "field_key": "weather_map",
-            "field_label": "Weather Map",
-            "field_type": "iframe",
-            "is_required": 0,
-            "row_no": 8,
-            "col_no": 1,
-            "option_source": null,
-            "master_key": null,
-            "depends_on_field_id": null,
-            "show_when_field_id": 223,
-            "show_when_value": "bad_weather",
-            "options": [],
-            "value": null,
-            "iframe": {
-                "title": "Windy Weather Map",
-                "src": "https:\/\/embed.windy.com\/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=8&overlay=wind&product=ecmwf&level=surface&lat=27.284&lon=49.109&detailLat=29.0525682775337&detailLon=48.087158203125&marker=true",
-                "width": 650,
-                "height": 450
-            }
+        "entry": {
+            "pass_vesselreg_template_id": "28",
+            "template_type": "Crew Immigration",
+            "port_id": "1",
+            "template_name": "Crew Immigration - Entry (\u062f\u062e\u0648\u0644)",
+            "description": "Crew Immigration entry letter (\u062f\u062e\u0648\u0644) to the Passports Director \u2013 one per batch",
+            "more_description": "<p class=\"ql-align-left\">STM {batch_no}<\/p><p class=\"ql-align-center\"><strong>\u062f\u062e\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0648\u0644<\/strong><\/p><table class=\"ql-table-better\" style=\"width: 100%\"><tbody><tr><td><p class=\"ql-align-center\">\u0627\u0644\u0641\u0631\u0636\u0629 : \u0627\u0644\u062d\u0643\u0648\u0645\u064a\u0629 (\u062e\u062a\u0645 \u062f\u062e\u0648\u0644)<\/p><\/td><\/tr><\/tbody><\/table><p class=\"ql-align-right ql-direction-rtl\">\u0627\u0644\u062a\u0627\u0631\u064a\u0640\u062e: {hijri_date}\u0647\u0640<\/p><p class=\"ql-align-right ql-direction-rtl\">\u0627\u0644\u0645\u0648\u0627\u0641\u0642: {gregorian_date}\u0645\u0640<\/p><p><br><\/p><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0633\u0639\u0627\u062f\u0629 \/ \u0645\u062f\u064a\u0631 \u062c\u0648\u0627\u0632\u0627\u062a \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0627\u0644\u0645\u0648\u0642\u0631<\/strong><\/p><p class=\"ql-align-right ql-direction-rtl\">\u062a\u062d\u064a\u0629 \u0637\u064a\u0628\u0629 \u0648\u0628\u0639\u0640\u0640\u062f<\/p><p class=\"ql-align-justify ql-direction-rtl\">\u0646\u062a\u0642\u062f\u0645 \u0625\u0644\u0649 \u0633\u0639\u0627\u062f\u062a\u0643\u0645 \u0628\u0637\u0644\u0628\u0646\u0627 \u0647\u0630\u0627 \u0648\u0641\u064a\u0647 \u0628\u0623\u0646 \u0627\u0644\u0628\u062d\u0627\u0631\u0629 \u0627\u0644\u0645\u0640\u0640\u0630\u0643\u0648\u0631\u064a\u0646 \u0623\u062f\u0646\u0627\u0647 \u0648\u0627\u0644\u0640\u0640\u0630\u064a\u0646 \u0648\u0635\u0640\u0640\u0644\u0648\u0627 \u0639\u0644\u0649 \u0627\u0644\u0648\u062d\u062f\u0629 \u0627\u0644\u0628\u062d\u0631\u064a\u0629 ( {vessel_name} ) \u0648\u0627\u0644\u062a\u064a \u0648\u0635\u0644\u062a \u0625\u0644\u0649 \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0628\u062a\u0627\u0631\u064a\u062e : {arrival_date_hijri}\u0647\u0640 \u0642\u0627\u062f\u0645\u0629 \u0645\u0646 ( {last_port_country} ) \u064a\u0631\u063a\u0628\u0648\u0646 \u0641\u064a \u0645\u0640\u0646\u062d\u0647\u0645 \u062e\u0640\u062a\u0640\u0645 (\u062f\u062e\u0640\u0648\u0644) \u0639\u0646 \u0637\u0631\u064a\u0642 \u062c\u0648\u0627\u0632\u0627\u062a \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0639\u0644\u0645\u0627 \u0627\u0646\u0647\u0645 \u064a\u062d\u0645\u0644\u0648\u0646 \u062a\u0623\u0634\u064a\u0631\u0627\u062a \u0639\u0645\u0644 . \u0648\u0627\u0646\u0646\u0627 \u0645\u0633\u0624\u0648\u0644\u064a\u0646 \u0645\u0633\u0624\u0648\u0644\u064a\u0629 \u062a\u0627\u0645\u0629 \u0639\u0640\u0640\u0646 \u0627\u0644\u0628\u062d\u0627\u0631\u0629 \u062d\u062a\u0649 \u0631\u062c\u0648\u0639\u0647\u0645 \u0639\u0644\u0649 \u0648\u062d\u062f\u062a\u0647\u0645 \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u0629 \u0627\u0639\u0644\u0627\u0647.<\/p><p class=\"ql-align-center ql-direction-rtl\">\u060c\u060c \u0648\u0644\u0643\u0645 \u0645\u0646\u0627 \u062e\u0627\u0644\u0635 \u0627\u0644\u062a\u0642\u062f\u064a\u0631 \u060c\u060c<\/p><p class=\"ql-align-left ql-direction-rtl\">\u0639\u0646 \/ \u0634\u0631\u0643\u0629 \u0633\u064a\u062f\u0631\u0633 \u0644\u0644\u062a\u062c\u0627\u0631\u0629 \u0648\u0627\u0644\u062e\u062f\u0645\u0627\u062a \u0627\u0644\u0628\u062d\u0631\u064a\u0629<\/p><p class=\"ql-align-left ql-direction-rtl\">\u064a\u0648\u0633\u0641 \u0639\u0644\u064a \u0627\u0644\u0642\u0644\u0627\u0641<\/p><p class=\"ql-align-center\">..................................................................................................................................................<\/p><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0633\u0639\u0627\u062f\u0629 \/ \u0642\u0627\u0626\u062f \u0648\u062d\u062f\u0629 \u0627\u0645\u0646 \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0627\u0644\u0645\u0648\u0642\u0631<\/strong><\/p><p class=\"ql-align-left ql-direction-rtl\">\u0645\u062f\u064a\u0631 \u062c\u0648\u0627\u0632\u0627\u062a \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629<\/p><p class=\"ql-align-left ql-direction-rtl\">\u0627\u0644\u0639\u0642\u064a\u062f \/ \u0633\u0644\u0645\u0627\u0646 \u0633\u0639\u064a\u062f \u0627\u0644\u063a\u0627\u0645\u062f\u064a<\/p><p class=\"ql-align-right ql-direction-rtl\">\u062a\u062d\u064a\u0629 \u0637\u064a\u0628\u0629 \u0648\u0628\u0639\u062f<\/p><p class=\"ql-align-right ql-direction-rtl\">\u0644\u0627 \u0645\u0627\u0646\u0639 \u0644\u062f\u064a\u0646\u0627 \u0645\u0646 \u062f\u062e\u0648\u0644 \u0627\u0644\u0628\u062d\u0627\u0631\u0629 \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u064a\u0646 \u0627\u0644\u064a \u0627\u0644\u0628\u0644\u0627\u062f \u062d\u0633\u0628 \u0627\u0644\u0645\u062a\u0628\u0639 \u0648\u062f\u0645\u062a\u0645 .<\/p><table class=\"ql-table-better\" style=\"width: 100%\"><tbody><tr><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0627\u0644\u0627\u0633\u0640\u0640\u0640\u0640\u0640\u0645<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0627\u0644\u062c\u0646\u0633\u064a\u0629<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645 \u0627\u0644\u062c\u0648\u0627\u0632<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645 \u0627\u0644\u062a\u0623\u0634\u064a\u0631\u0629<\/strong><\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">{sl_no}<\/p><\/td><td><p class=\"ql-align-center\">{crew_name_ar}<\/p><\/td><td><p class=\"ql-align-center\">{nationality_ar}<\/p><\/td><td><p class=\"ql-align-center\">{passport_no}<\/p><\/td><td><p class=\"ql-align-center\">{visa_no}<\/p><\/td><\/tr><\/tbody><\/table><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0627\u0644\u062c\u0645\u064a\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0639 ({crew_count}) \u0641\u0642\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0637 \u0644\u0627 \u063a\u064a\u0631<\/strong><\/p>",
+            "status": "1",
+            "created_at": "2026-11-21 00:31:29",
+            "created_by": "1",
+            "updated_by": null,
+            "updated_at": null
         },
-        "weather_detail": {
-            "field_id": "weather_detail",
-            "field_key": "weather_detail",
-            "field_label": "Weather Detail",
-            "field_type": "textarea",
-            "is_required": 0,
-            "row_no": 9,
-            "col_no": 1,
-            "option_source": null,
-            "master_key": null,
-            "depends_on_field_id": null,
-            "show_when_field_id": 223,
-            "show_when_value": "bad_weather",
-            "options": [],
-            "value": null,
-            "post_key": "weather_detail"
+        "return": {
+            "pass_vesselreg_template_id": "29",
+            "template_type": "Crew Immigration",
+            "port_id": "1",
+            "template_name": "Crew Immigration - Return (\u0631\u062c\u0648\u0639)",
+            "description": "Crew Immigration return letter (\u0631\u062c\u0648\u0639) to the Port Security Unit Commander \u2013 one per batch",
+            "more_description": "<p class=\"ql-align-left\">STM {batch_no}<\/p><p class=\"ql-align-center\"><strong>\u0631\u062c\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0648\u0639<\/strong><\/p><table class=\"ql-table-better\" style=\"width: 100%\"><tbody><tr><td><p class=\"ql-align-center\">\u0627\u0644\u0641\u0631\u0636\u0629 : \u0627\u0644\u062d\u0643\u0648\u0645\u064a\u0629 (\u062e\u062a\u0645 \u062f\u062e\u0648\u0644)<\/p><\/td><\/tr><\/tbody><\/table><p class=\"ql-align-right ql-direction-rtl\">\u0627\u0644\u062a\u0627\u0631\u064a\u0640\u062e: {hijri_date}\u0647\u0640<\/p><p class=\"ql-align-right ql-direction-rtl\">\u0627\u0644\u0645\u0648\u0627\u0641\u0642: {gregorian_date}\u0645\u0640<\/p><p><br><\/p><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0633\u0639\u0627\u062f\u0629 \/ \u0642\u0627\u0626\u062f \u0648\u062d\u062f\u0629 \u0627\u0645\u0646 \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0627\u0644\u0645\u0648\u0642\u0631<\/strong><\/p><p class=\"ql-align-right ql-direction-rtl\">\u062a\u062d\u064a\u0629 \u0637\u064a\u0628\u0629 \u0648\u0628\u0639\u0640\u0640\u062f<\/p><p class=\"ql-align-justify ql-direction-rtl\">\u0646\u062a\u0642\u062f\u0645 \u0625\u0644\u0649 \u0633\u0639\u0627\u062f\u062a\u0643\u0645 \u0628\u0637\u0644\u0628\u0646\u0627 \u0647\u0630\u0627 \u0648\u0641\u064a\u0647 \u0628\u0623\u0646 \u0627\u0644\u0628\u062d\u0627\u0631\u0629 \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u064a\u0646 \u0623\u062f\u0646\u0627\u0647 \u0648\u0627\u0644\u0630\u064a\u0646 \u0648\u0635\u0644\u0648\u0627 \u0639\u0644\u0649 \u0622\u0644\u062a\u0643 ( {vessel_name} ) \u0648\u0627\u0644\u062a\u064a \u0648\u0635\u0644\u062a \u0625\u0644\u0649 \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0628\u062a\u0627\u0631\u064a\u062e: {arrival_date_hijri}\u0647\u0640 \u0642\u0627\u062f\u0645\u0629 \u0645\u0646 ( {last_port_country} ) \u0642\u0640\u0640\u062f \u0627\u0646\u0647\u0648\u0627 \u0627\u062c\u0640\u0640\u0631\u0627\u0621\u0627\u062a \u062f\u062e\u0640\u0640\u0648\u0644\u0640\u0647\u0645 \u0645\u0646 \u0627\u0644\u062c\u0648\u0627\u0632\u0627\u062a \u0646\u0627\u0645\u0644 \u0627\u0646\u0647\u0627\u0621 \u0627\u062c\u0631\u0627\u0621\u0627\u062a \u0631\u062c\u0648\u0639\u0647\u0645 \u0627\u0644\u064a \u0627\u0644\u0648\u062d\u062f\u0629 \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u0629 \u0623\u0639\u0644\u0627\u0647 \u0639\u0640\u0644\u0640\u0645\u0627 \u0623\u0646\u0646\u0627 \u0645\u0633\u0624\u0648\u0644\u0640\u064a\u0640\u0646 \u0645\u0633\u0640\u0624\u0648\u0644\u0640\u064a\u0640\u0629 \u062a\u0640\u0627\u0645\u0640\u0629 \u0639\u0640\u0646 \u0627\u0644\u0628\u0640\u062d\u0627\u0631\u0629 \u062d\u062a\u0649 \u0631\u062c\u0648\u0639\u0647\u0645.<\/p><p class=\"ql-align-center ql-direction-rtl\">\u0647\u0630\u0627 \u0648\u0644\u0643\u0645 \u062c\u0632\u064a\u0644 \u0627\u0644\u0634\u0643\u0631 \u0648\u0627\u0644\u0627\u0645\u062a\u0646\u0627\u0646 \u060c\u060c\u060c<\/p><p><br><\/p><p class=\"ql-align-left ql-direction-rtl\">\u0639\u0646 \/ \u0634\u0631\u0643\u0629 \u0633\u064a\u062f\u0631\u0633 \u0644\u0644\u062a\u062c\u0627\u0631\u0629 \u0648\u0627\u0644\u062e\u062f\u0645\u0627\u062a \u0627\u0644\u0628\u062d\u0631\u064a\u0629<\/p><p class=\"ql-align-left ql-direction-rtl\">\u064a\u0648\u0633\u0641 \u0639\u0644\u064a \u0627\u0644\u0642\u0644\u0627\u0641<\/p><p class=\"ql-align-center\">.............................................................................................................................<\/p><table class=\"ql-table-better\" style=\"width: 100%\"><tbody><tr><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0627\u0644\u0627\u0633\u0640\u0640\u0640\u0640\u0640\u0645<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0627\u0644\u062c\u0646\u0633\u064a\u0629<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645 \u0627\u0644\u062c\u0648\u0627\u0632<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645 \u0627\u0644\u062a\u0623\u0634\u064a\u0631\u0629<\/strong><\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">{sl_no}<\/p><\/td><td><p class=\"ql-align-center\">{crew_name_ar}<\/p><\/td><td><p class=\"ql-align-center\">{nationality_ar}<\/p><\/td><td><p class=\"ql-align-center\">{passport_no}<\/p><\/td><td><p class=\"ql-align-center\">{visa_no}<\/p><\/td><\/tr><\/tbody><\/table><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0627\u0644\u062c\u0645\u064a\u0640\u0640\u0640\u0640\u0639 ({crew_count}) \u0641\u0642\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0637 \u0644\u0627 \u063a\u064a\u0631<\/strong><\/p>",
+            "status": "1",
+            "created_at": "2026-11-21 00:31:29",
+            "created_by": "1",
+            "updated_by": null,
+            "updated_at": null
         }
     }
 }
