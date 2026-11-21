@@ -343,16 +343,6 @@ function Checklist({
 
   const prerequisiteState = useMemo(() => getPrerequisiteStateFromContext(dataContext), [dataContext]);
 
-  // Per-requirement status for the empty state, so the user sees exactly what is still missing.
-  const prerequisiteRequirements = useMemo(() => {
-    const filled = (v) => v !== undefined && v !== null && String(v).trim() !== "";
-    return [
-      { label: "Call type", done: filled(dataContext?.calltypePayload) },
-      { label: "Port", done: filled(dataContext?.portIdForApi) },
-      { label: "Vessel or barge", done: Boolean(dataContext?.hasVessel || dataContext?.hasBarge) },
-    ];
-  }, [dataContext]);
-
   // Reset all checklist state before loading a new call so one call's options/selection
   // can never leak into another while the new call's data is still in flight.
   useEffect(() => {
@@ -776,9 +766,8 @@ function Checklist({
             savedChecklistRows.length === 0 ? (
             <ChecklistEmptyState
               title="Checklist not available yet"
-              message="Add the details below in Appointment Details to load checklist types for this call."
+              message="Add the call type, port and vessel or barge in Appointment Details to load checklist types for this call."
               variant="prerequisite"
-              requirements={prerequisiteRequirements}
             />
           ) : null}
           {!isLoading && prerequisiteState.canLoadChecklists && checklistError ? (

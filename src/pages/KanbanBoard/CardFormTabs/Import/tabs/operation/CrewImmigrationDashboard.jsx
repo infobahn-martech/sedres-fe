@@ -784,7 +784,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
                   {canUploadCrewList && (
                     <CrewListUploadBox
                       movementType="crew-list"
-                      movementTypeLabel="Crew List"
+                      movementTypeLabel="Crew Batch"
                       status={uploadSteps.crewList.status}
                       onSelectFile={handleCrewListFile}
                     />
