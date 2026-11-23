@@ -1,0 +1,412 @@
+/* ==========================================================================
+   Checklist tab — Sedres brand skin
+   Navy ($colorPrimary #00368C) + accent blue ($light-blue #2D6EEE).
+   Imported at the end of checklist.scss, before _checklist-review.scss so the
+   rejected / re-upload row colours still win.
+   ========================================================================== */
+$sd-navy: #00368c;
+$sd-navy-deep: #002463;
+$sd-blue: #2d6eee;
+$sd-tint: #eef3fc;
+$sd-tint-strong: #e1eafa;
+$sd-line: #d6e1f5;
+$sd-text: #0f2a5c;
+
+/* ---------- Page title ---------- */
+.checklist-page-header .operation-content-title {
+  color: $sd-navy;
+  background-image: none;
+  -webkit-text-fill-color: currentColor;
+
+  [data-theme="dark"] & {
+    color: var(--text-heading, #fff);
+  }
+}
+
+/* ---------- Checklist card ---------- */
+.cl-excel-type-group .cl-excel-block {
+  border: 1px solid $sd-line;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 54, 140, 0.06);
+
+  [data-theme="dark"] & {
+    border-color: var(--border-strong, var(--border-primary));
+    box-shadow: none;
+  }
+}
+
+/* Navy header bar: title · progress · actions */
+.cl-excel-block .cl-excel-type-title.cl-excel-type-header {
+  gap: 14px;
+  padding: 11px 12px 11px 16px;
+  color: #fff;
+  background: linear-gradient(100deg, $sd-navy-deep 0%, $sd-navy 55%, #0b4bb3 100%);
+  border-bottom: 0;
+  letter-spacing: 0.05em;
+
+  &:hover {
+    background: linear-gradient(100deg, $sd-navy-deep 0%, #003f9f 55%, #1456c4 100%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #9cc0ff;
+    outline-offset: -3px;
+  }
+
+  [data-theme="dark"] & {
+    color: #fff;
+    background: linear-gradient(100deg, #0a1a3d 0%, #10306e 100%);
+  }
+}
+
+.cl-excel-block .cl-excel-type-header-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Done progress pill */
+.cl-type-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.cl-type-progress__bar {
+  position: relative;
+  width: 64px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+
+.cl-type-progress__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: #9cc0ff;
+  transition: width 0.3s ease;
+}
+
+.cl-type-progress__text {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.cl-type-progress.is-complete {
+  background: rgba(52, 211, 153, 0.2);
+  border-color: rgba(110, 231, 183, 0.45);
+
+  .cl-type-progress__fill {
+    background: #6ee7b7;
+  }
+}
+
+/* Print / collapse: glass buttons on the navy bar */
+.cl-excel-block .cl-type-action-btn {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+
+  &:hover:not(:disabled) {
+    color: $sd-navy;
+    background: #fff;
+    border-color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 20, 60, 0.25);
+  }
+
+  [data-theme="dark"] & {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* ---------- Column headings ---------- */
+.cl-excel-table thead th {
+  padding: 9px 12px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #4a6189;
+  background: #f6f8fd;
+  border-right-color: $sd-line;
+  border-bottom: 1px solid $sd-line;
+
+  [data-theme="dark"] & {
+    color: var(--text-subtle, var(--text-secondary));
+    background: var(--bg-inset, var(--surface-secondary));
+    border-color: var(--border-strong, var(--border-primary));
+  }
+}
+
+/* ---------- Body cells ---------- */
+.cl-excel-table tbody td {
+  border-right-color: #e8eef8;
+  border-bottom-color: #e8eef8;
+
+  [data-theme="dark"] & {
+    border-color: var(--border-primary);
+  }
+}
+
+.cl-excel-table .checklist-table-row:hover:not(.checked) td {
+  background: #f8fafe;
+
+  [data-theme="dark"] & {
+    background: var(--surface-hover);
+  }
+}
+
+.cl-excel-table .cl-item-title.cl-item-title--primary {
+  font-size: 13px;
+  color: $sd-text;
+
+  [data-theme="dark"] & {
+    color: var(--text-primary);
+  }
+}
+
+.cl-excel-table .cl-req-empty,
+.cl-excel-table .cl-role-empty {
+  color: #b4c0d6;
+}
+
+/* Task column chip */
+.cl-excel-table .cl-role-badge {
+  color: $sd-navy;
+  background: $sd-tint;
+  border-color: $sd-line;
+  letter-spacing: 0.02em;
+
+  [data-theme="dark"] & {
+    color: var(--tint-brand-text, #8fb9ff);
+    background: var(--tint-brand-bg, rgba(76, 141, 255, 0.14));
+    border-color: transparent;
+  }
+}
+
+/* ---------- Section rows ---------- */
+.cl-excel-table .cl-excel-section-header-row td {
+  background: $sd-tint !important;
+  border-bottom-color: $sd-line;
+  padding: 9px 12px;
+
+  [data-theme="dark"] & {
+    background: var(--bg-highlight, var(--surface-hover)) !important;
+  }
+}
+
+.cl-excel-table .cl-excel-section-header-row td.cl-excel-section-header-title-cell {
+  box-shadow: inset 4px 0 0 $sd-navy;
+
+  [data-theme="dark"] & {
+    box-shadow: inset 4px 0 0 var(--brand-bright, #4c8dff);
+  }
+}
+
+.cl-excel-table .cl-excel-section-header-row--sub td {
+  background: #f5f8fe !important;
+
+  [data-theme="dark"] & {
+    background: var(--surface-secondary) !important;
+  }
+}
+
+.cl-excel-table .cl-excel-section-header-row--sub td.cl-excel-section-header-title-cell {
+  box-shadow: inset 4px 0 0 $sd-blue;
+}
+
+.cl-excel-section-title {
+  color: $sd-navy;
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+
+  [data-theme="dark"] & {
+    color: var(--text-heading, var(--text-primary));
+  }
+}
+
+/* Select all pill */
+.cl-excel-select-all-btn {
+  border-color: $sd-line;
+  color: $sd-navy;
+
+  .checklist-select-all-label {
+    color: $sd-navy;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .checklist-select-all-checkbox {
+    accent-color: $sd-navy;
+  }
+
+  &:hover {
+    background: #fff;
+    border-color: $sd-navy;
+    box-shadow: 0 1px 4px rgba(0, 54, 140, 0.12);
+  }
+
+  [data-theme="dark"] & {
+    color: var(--text-primary);
+    border-color: var(--border-strong, var(--border-primary));
+
+    .checklist-select-all-label {
+      color: var(--text-primary);
+    }
+  }
+}
+
+/* ---------- Controls ---------- */
+.cl-excel-table .checklist-checkbox-custom--table {
+  border-color: #b9c8e3;
+}
+
+.cl-excel-table .checklist-checkbox:focus-visible + .checklist-checkbox-custom--table {
+  box-shadow: 0 0 0 3px rgba(45, 110, 238, 0.25);
+}
+
+.cl-excel-table .checklist-upload-icon-btn {
+  color: $sd-navy;
+  background: $sd-tint;
+  border: 1px solid $sd-line;
+
+  &:hover {
+    color: #fff;
+    background: $sd-navy;
+    border-color: $sd-navy;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 54, 140, 0.25);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(45, 110, 238, 0.45);
+  }
+
+  [data-theme="dark"] & {
+    color: var(--brand-bright, #4c8dff);
+    background: var(--tint-brand-bg, rgba(76, 141, 255, 0.14));
+    border-color: transparent;
+
+    &:hover {
+      color: #fff;
+      background: var(--brand, #1e4fd8);
+    }
+  }
+}
+
+.cl-excel-table .cf-textarea.checklist-table-textarea textarea,
+.cl-excel-table .cf-textarea.cl-remarks-ta textarea {
+  border-color: #dbe3f1;
+  border-radius: 8px;
+  background: #fbfcfe;
+
+  [data-theme="dark"] & {
+    border-color: var(--border-strong, var(--border-primary));
+    background: var(--bg-inset, var(--surface-primary));
+  }
+}
+
+.cl-excel-table .cf-textarea.checklist-table-textarea textarea:hover {
+  border-color: #b9c8e3;
+}
+
+.cl-excel-table .cf-textarea.checklist-table-textarea textarea:focus,
+.cl-excel-table .cf-textarea.cl-remarks-ta textarea:focus {
+  border-color: $sd-blue;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(45, 110, 238, 0.14);
+
+  [data-theme="dark"] & {
+    background: var(--bg-inset, var(--surface-primary));
+  }
+}
+
+/* ---------- Save and Confirm ---------- */
+.checklist-actions .cl-footer .checklist-btn-primary.cl-footer__primary {
+  padding: 11px 26px;
+  border-radius: 10px;
+  color: #fff;
+  background: linear-gradient(100deg, $sd-navy 0%, $sd-blue 100%);
+  box-shadow: 0 6px 18px rgba(0, 54, 140, 0.3);
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(100deg, $sd-navy-deep 0%, $sd-navy 100%);
+    box-shadow: 0 8px 22px rgba(0, 54, 140, 0.38);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $sd-blue;
+    outline-offset: 2px;
+  }
+}
+
+/* ---------- Rejected banner: white card, red accent ---------- */
+.cl-review-banner.cl-review-banner--rejected {
+  align-items: center;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid #fbd5d5;
+  border-left: 4px solid #dc2626;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.08);
+
+  .cl-review-banner__icon {
+    width: 36px;
+    height: 36px;
+    padding: 8px;
+    margin-top: 0;
+    border-radius: 10px;
+    background: #fef2f2;
+  }
+
+  .cl-review-banner__title {
+    color: #991b1b;
+  }
+
+  .cl-review-banner__link {
+    background: #fef2f2;
+
+    &:hover {
+      background: #dc2626;
+      border-color: #dc2626;
+      color: #fff;
+    }
+  }
+
+  [data-theme="dark"] & {
+    background: color-mix(in srgb, #dc2626 10%, var(--surface-primary));
+    border-color: color-mix(in srgb, #dc2626 35%, var(--surface-primary));
+    border-left-color: #dc2626;
+    box-shadow: none;
+
+    .cl-review-banner__icon {
+      background: color-mix(in srgb, #dc2626 18%, var(--surface-primary));
+    }
+
+    .cl-review-banner__title {
+      color: #fca5a5;
+    }
+
+    .cl-review-banner__link {
+      background: var(--surface-primary);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cl-type-progress__fill,
+  .cl-excel-table .checklist-upload-icon-btn {
+    transition: none;
+  }
+}

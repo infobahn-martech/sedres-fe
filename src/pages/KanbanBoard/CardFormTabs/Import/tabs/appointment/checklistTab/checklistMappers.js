@@ -133,7 +133,11 @@ const extractTaskDocumentReview = (taskDocuments) => {
  * newest file, accepting the field names the API may use. Returns null when not reviewed.
  */
 export const extractChecklistItemReview = (item) => {
-  const taskDocReview = extractTaskDocumentReview(item?.task_documents);
+  // Task-document status arrives either as item.task_documents[] or merged into item.files[].
+  const taskDocReview = extractTaskDocumentReview([
+    ...(Array.isArray(item?.task_documents) ? item.task_documents : []),
+    ...(Array.isArray(item?.files) ? item.files : []),
+  ]);
   if (taskDocReview) return taskDocReview;
 
   const files = Array.isArray(item?.files) ? item.files : [];
@@ -192,6 +196,38 @@ export const extractChecklistItemReview = (item) => {
       latestFile?.verified_at
     ),
   };
+};
+
+/**
+ * get_call_detail lists a task's required document in item.files[] even before anything is
+ * uploaded (file_id / file_name / file_url all null, status 0 "Not Uploaded"). Those rows carry
+ * the task link only, so they must not render as file chips.
+ */
+const hasRealFile = (file) =>
+  Boolean(
+    file &&
+      (String(file.file_url ?? file.url ?? "").trim() ||
+        String(file.file_name ?? file.name ?? "").trim() ||
+        String(file.file_id ?? "").trim())
+  );
+
+/**
+ * get_call_detail checklist rows: `data.checklist[]`, or (current shape) the Checklist subtab's
+ * `checklist[]` inside `data.template.tabs[].subtabs[]` (tab_key "checklist").
+ */
+export const extractCallDetailChecklistRows = (detail) => {
+  if (!detail || typeof detail !== "object") return [];
+  if (Array.isArray(detail.checklist)) return detail.checklist;
+  const walk = (tabs) => {
+    if (!Array.isArray(tabs)) return null;
+    for (const tab of tabs) {
+      if (Array.isArray(tab?.checklist)) return tab.checklist;
+      const inner = walk(tab?.subtabs);
+      if (inner) return inner;
+    }
+    return null;
+  };
+  return walk(detail.template?.tabs) ?? [];
 };
 
 const normalizeCallChecklistFile = (file, fallbackKey) => {
@@ -288,7 +324,7 @@ export const normalizeSavedChecklistLookup = (rows) => {
       (section?.items || []).forEach((item, itemIndex) => {
         const itemId = item?.checklist_item_id != null ? String(item.checklist_item_id).trim() : "";
         if (!itemId) return;
-        const files = (item?.files || []).map((f, fileIndex) =>
+        const files = (item?.files || []).filter(hasRealFile).map((f, fileIndex) =>
           normalizeCallChecklistFile(
             f,
             `${typeId}_${section?.checklist_section_id ?? sectionIndex}_${itemId}_${itemIndex}_${fileIndex}`
@@ -392,7 +428,10 @@ export const getUniqueTaskNamesFromRoles = (roles) => {
 export const mapItemTaskNamesFromApi = (item) => {
   const fromRoles = getUniqueTaskNamesFromRoles(item?.roles);
   if (fromRoles.length) return fromRoles;
-  const docs = Array.isArray(item?.task_documents) ? item.task_documents : [];
+  const docs = [
+    ...(Array.isArray(item?.task_documents) ? item.task_documents : []),
+    ...(Array.isArray(item?.files) ? item.files : []),
+  ];
   return [...new Set(docs.map((d) => String(d?.task_name ?? "").trim()).filter(Boolean))];
 };
 
@@ -445,7 +484,7 @@ const mapItemToRow = (it, i, sectionId) => {
   const uploadedFromApi = [];
   const rawFiles = dd.uploaded_files ?? it.uploaded_files ?? it.files;
   if (Array.isArray(rawFiles)) {
-    rawFiles.forEach((f, fi) => {
+    rawFiles.filter(hasRealFile).forEach((f, fi) => {
       const fileName = f.file_name ?? f.name ?? f.filename ?? "File";
       const fileUrl =
         f.file_url ?? f.sample_file_url ?? f.requirement_file_url ?? f.url ?? f.link ?? null;

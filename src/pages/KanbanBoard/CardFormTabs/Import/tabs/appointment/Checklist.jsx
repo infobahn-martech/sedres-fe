@@ -17,6 +17,7 @@ import {
   collectItemIdsUnderSectionInBlocks,
   collectTreeSectionIds,
   flattenTreeItems,
+  extractCallDetailChecklistRows,
   isChecklistReviewRejected,
   mapCallDetailChecklist,
 } from "./checklistTab/checklistMappers";
@@ -177,7 +178,7 @@ function Checklist({
 
   const callDetail = hasCardDetailProp ? cardDetail : localCallDetail;
   const checklistRows = useMemo(
-    () => refreshedRows ?? (Array.isArray(callDetail?.checklist) ? callDetail.checklist : []),
+    () => refreshedRows ?? extractCallDetailChecklistRows(callDetail),
     [refreshedRows, callDetail]
   );
   // A newer call detail from the parent supersedes rows we re-read ourselves.
@@ -299,8 +300,7 @@ function Checklist({
       return;
     }
     const { data } = await callFileService.getCallDetail(currentCallId);
-    const rows = data?.data?.checklist;
-    setRefreshedRows(Array.isArray(rows) ? rows : []);
+    setRefreshedRows(extractCallDetailChecklistRows(data?.data));
   }, [currentCallId, refetchSharedCallDetail]);
 
   const handleSaveConfirm = useCallback(async () => {

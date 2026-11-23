@@ -6962,7 +6962,1019 @@
                             "display_order": 5,
                             "email_preview": 0,
                             "fields": [],
-                            "subtabs": []
+                            "subtabs": [],
+                            "checklist": [
+                                {
+                                    "call_checklist_id": "92",
+                                    "call_id": "586",
+                                    "checklist_type_id": "3",
+                                    "checklist_name": "ACCOMODATION\/CONSTRUCITON BARGE IMPORT CHECKLIST ",
+                                    "sections": [
+                                        {
+                                            "checklist_section_id": "14",
+                                            "title": "DOCUMENTS REQUIRED FROM VESSEL OWNERS \/ PRINCIPAL VESSEL ",
+                                            "items": [
+                                                {
+                                                    "checklist_item_id": "67",
+                                                    "item_name": "Commercial invoice for vessel ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "68",
+                                                    "item_name": "Bill of lading",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "69",
+                                                    "item_name": "Charter Party Agreement",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "checklist_section_id": "16",
+                                            "title": "MARINE WORK PERMIT",
+                                            "items": [
+                                                {
+                                                    "checklist_item_id": "75",
+                                                    "item_name": "Vessel Registry certificate",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "76",
+                                                    "item_name": "International Tonnage certificate ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "77",
+                                                    "item_name": "Ship Radio Station license ",
+                                                    "description": "EPIRB, AIS & VHF equipment details should be mentioned along with Frequency)",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "78",
+                                                    "item_name": "Certificate of Class certificate with a yearly endorsement",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "79",
+                                                    "item_name": "International Load line certificate with yearly endorsement ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "80",
+                                                    "item_name": "Cargo Ship Safety construction certificate with yearly endorsement (If GRT above 500 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "81",
+                                                    "item_name": "Cargo ship safety Equipment certificate with yearly endorsement (If GRT above 500 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "82",
+                                                    "item_name": "Cargo ship Safety Radio certificate with yearly endorsement (If GRT above 300 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "83",
+                                                    "item_name": "General Condition Survey ",
+                                                    "description": "(For Import vessel GCS must be not more then 15days of issuance)",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "84",
+                                                    "item_name": "International Ship Security Certificate (If GRT above 500 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "85",
+                                                    "item_name": "International Oil Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "86",
+                                                    "item_name": "International Air Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "87",
+                                                    "item_name": "International Sewage pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "88",
+                                                    "item_name": "Picture of vessel (Need to capture vessel name and IMO in one pic)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "89",
+                                                    "item_name": "Safety Management Certificate (If GRT above 500 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "90",
+                                                    "item_name": "International Anti-fouling system certificate (if GRT above 400GRT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "91",
+                                                    "item_name": "International Energy Efficient certificate (If GRT above 400T)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "92",
+                                                    "item_name": "International Ballast Water management (If GRT above 400GRT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "93",
+                                                    "item_name": "Ships Particulars",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "94",
+                                                    "item_name": "Minimum Safe Manning certificate",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "95",
+                                                    "item_name": "Insurance ( P&I, H&M) oil pollution covered amount should be mentioned ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "96",
+                                                    "item_name": "Insurance for wrecks removal certificate from Flag for above 300GRT ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "97",
+                                                    "item_name": "Insurance for bunker oil pollution damage 2021 certificate from Flag for above 1000GRT",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "98",
+                                                    "item_name": "Qualification Certificates (COC) for Master\/Officers ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "checklist_section_id": "15",
+                                            "title": "DOCUMENTS REQUIRED FROM VESSEL TOWING TUG MASTER",
+                                            "items": [
+                                                {
+                                                    "checklist_item_id": "70",
+                                                    "item_name": "Equipment\/Material Deck declaration letter",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "71",
+                                                    "item_name": "Deck equipment list with Arabic translation and Deck \/ store Photo \u2013 Detailed list of all fixed and removable equipment on deck, including H2S cylinders with gas, BA sets, rescue boat, cascade system, etc. ",
+                                                    "description": "Note: Serial number to be mention in inventory for heavy equipment (pump, motor, compressor etc.) or is absence of serial number pic of material to be enclose with respective items. ",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "72",
+                                                    "item_name": "Last port Clearance",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "73",
+                                                    "item_name": "Photo of Main deck",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "74",
+                                                    "item_name": "Ship Sanitation certificate ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "checklist_section_id": "17",
+                                            "title": "AUTHORISATION LETTER FOR AGENCY & UNDERTAKING LETTER (DOCUMENT REQUIRED FROM CONSIGNEE) ",
+                                            "items": [
+                                                {
+                                                    "checklist_item_id": "99",
+                                                    "item_name": "Authorization letter to port \/ Customs\/ Coast Guard\/ Immigration office, SA for TGA",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "100",
+                                                    "item_name": "Broker Authorization online system",
+                                                    "description": "Broker details  License no. 2753 Name : Khalid Sheshan Al Harbi  Port : Ras Tanura",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "101",
+                                                    "item_name": "Commercial Registration ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "102",
+                                                    "item_name": "Aramco Contract ",
+                                                    "description": "Duration or expiry needs to be mentioned - endorsement from contractor - *Particular vessel name to be mention in contract. ",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "103",
+                                                    "item_name": "If Vessel name not mention in contract, required Mobilization letter",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "checklist_section_id": "18",
+                                            "title": "IF CARGO ONBOARD (DOCUMENT REQUIRED FROM CONSIGNOR) Apart from vessel consumable items. ",
+                                            "items": [
+                                                {
+                                                    "checklist_item_id": "104",
+                                                    "item_name": "Cargo invoice with Arabic translation ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "105",
+                                                    "item_name": "Cargo packing list with Arabic translation ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "106",
+                                                    "item_name": "Cargo Bill of Lading",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "107",
+                                                    "item_name": "SABER certificate (Have to arrange by consignee) ",
+                                                    "description": "REQUIRED PRIOR TO SHIPMENT ARRIVE ",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "call_checklist_id": "93",
+                                    "call_id": "586",
+                                    "checklist_type_id": "6",
+                                    "checklist_name": "AL JUBAIL PORT ",
+                                    "sections": [
+                                        {
+                                            "checklist_section_id": "27",
+                                            "title": "DOCUMENTS REQUIRED FOR IMPORT AND INWARD CLEARENCE FOR VESSELS",
+                                            "items": [
+                                                {
+                                                    "checklist_item_id": "159",
+                                                    "item_name": "Commercial invoice with shipper stamp and sign , for Taxi boat not applicable.",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "160",
+                                                    "item_name": "Bill of lading \u2013 Surrender \/ Seaway bill , for Taxi boat not applicable.",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "161",
+                                                    "item_name": "Aramco contract with Arabic translation \u2013 Contract # , Start and Expiry date should be reflecting , for Taxi boat not applicable",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "162",
+                                                    "item_name": "Sub contract if there is no direct contract with Aramco",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "163",
+                                                    "item_name": "Last port Clearance for Tug , Barge , Crew boat",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "164",
+                                                    "item_name": "Stamped crew List from last port",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "165",
+                                                    "item_name": "Cargo Manifest IF ANY from last port with customs stamp ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "166",
+                                                    "item_name": "Pre-arrival Notice 40 points \u2013 As per attached with email",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "167",
+                                                    "item_name": "List of Last 10 port of calls",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "168",
+                                                    "item_name": "Arabic letters for temporary import on Consignee letter head \u2013 Sedres will provide Draft \u2013 for Taxi boat not Applicable",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "169",
+                                                    "item_name": "Vessel Health declaration form as per Attached with email",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "checklist_section_id": "28",
+                                            "title": "CREW IMMIGRATION (For Import vessel) ",
+                                            "items": [
+                                                {
+                                                    "checklist_item_id": "170",
+                                                    "item_name": "Crew list ",
+                                                    "description": "",
+                                                    "is_checked": 1,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": "2026-11-23 08:44:09",
+                                                    "files": [
+                                                        {
+                                                            "file_id": "69",
+                                                            "file_name": "pdf-sample_0.pdf",
+                                                            "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0.pdf",
+                                                            "task_id": 2,
+                                                            "task_name": "Crew Immigration",
+                                                            "call_task_document_id": 366,
+                                                            "status": 4,
+                                                            "status_label": "Rejected",
+                                                            "remarks": "Test testTest testTest testTest testTest testTest test",
+                                                            "uploaded_by_user": "Infobahn Test",
+                                                            "uploaded_at": "2026-11-23 08:44:09"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "checklist_item_id": "171",
+                                                    "item_name": "Crew passports and Saudi Visa copies",
+                                                    "description": "",
+                                                    "is_checked": 1,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": "2026-11-23 08:44:09",
+                                                    "files": [
+                                                        {
+                                                            "file_id": "70",
+                                                            "file_name": "pdf-sample_0_(1).pdf",
+                                                            "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0_(1).pdf",
+                                                            "task_id": 2,
+                                                            "task_name": "Crew Immigration",
+                                                            "call_task_document_id": 367,
+                                                            "status": 1,
+                                                            "status_label": "Uploaded",
+                                                            "remarks": null,
+                                                            "uploaded_by_user": "Infobahn Test",
+                                                            "uploaded_at": "2026-11-23 08:44:09"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "checklist_item_id": "172",
+                                                    "item_name": "Crew List split into two - for Immigration visit",
+                                                    "description": "",
+                                                    "is_checked": 1,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": "2026-11-23 08:44:09",
+                                                    "files": [
+                                                        {
+                                                            "file_id": "71",
+                                                            "file_name": "pdf-sample_0.pdf",
+                                                            "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0.pdf",
+                                                            "task_id": 2,
+                                                            "task_name": "Crew Immigration",
+                                                            "call_task_document_id": 368,
+                                                            "status": 1,
+                                                            "status_label": "Uploaded",
+                                                            "remarks": null,
+                                                            "uploaded_by_user": "Infobahn Test",
+                                                            "uploaded_at": "2026-11-23 08:44:09"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "checklist_section_id": "29",
+                                            "title": "AUTHORISATION LETTER FOR CUSTOMS BROKER     ",
+                                            "items": [
+                                                {
+                                                    "checklist_item_id": "173",
+                                                    "item_name": "Broker Authorization online system",
+                                                    "description": "Broker details  License no. 2753 Name : Khalid Sheshan Al Harbi  Port : Jubail ",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "checklist_section_id": "30",
+                                            "title": "IF CARGO ONBOARD",
+                                            "items": [
+                                                {
+                                                    "checklist_item_id": "174",
+                                                    "item_name": "Cargo Commercial invoice with the company stamp.",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "175",
+                                                    "item_name": "Cargo packing list ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "176",
+                                                    "item_name": "Cargo Bill of Lading - Surrender \/ Seaway bill",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": [
+                                                        {
+                                                            "file_id": null,
+                                                            "file_name": null,
+                                                            "file_url": null,
+                                                            "task_id": 4,
+                                                            "task_name": "Custom Bayan",
+                                                            "call_task_document_id": 369,
+                                                            "status": 0,
+                                                            "status_label": "Not Uploaded",
+                                                            "remarks": null,
+                                                            "uploaded_by_user": "Infobahn Test",
+                                                            "uploaded_at": null
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "checklist_item_id": "177",
+                                                    "item_name": "Arabic letter for cargo importation",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "178",
+                                                    "item_name": "SABER certificate if any as per HS code   ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": [
+                                                        {
+                                                            "file_id": null,
+                                                            "file_name": null,
+                                                            "file_url": null,
+                                                            "task_id": 4,
+                                                            "task_name": "Custom Bayan",
+                                                            "call_task_document_id": 370,
+                                                            "status": 0,
+                                                            "status_label": "Not Uploaded",
+                                                            "remarks": null,
+                                                            "uploaded_by_user": "Infobahn Test",
+                                                            "uploaded_at": null
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "checklist_section_id": "31",
+                                            "title": "MARINE WORK PERMIT",
+                                            "items": [
+                                                {
+                                                    "checklist_item_id": "179",
+                                                    "item_name": "Vessel Registry certificate",
+                                                    "description": "(Check Vessel Age)",
+                                                    "is_checked": 1,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": "2026-11-23 08:44:09",
+                                                    "files": [
+                                                        {
+                                                            "file_id": "72",
+                                                            "file_name": "pdf-sample_0.pdf",
+                                                            "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0.pdf",
+                                                            "task_id": 7,
+                                                            "task_name": "Vessel Inward Registration",
+                                                            "call_task_document_id": 365,
+                                                            "status": 1,
+                                                            "status_label": "Uploaded",
+                                                            "remarks": null,
+                                                            "uploaded_by_user": "Infobahn Test",
+                                                            "uploaded_at": "2026-11-23 08:44:09"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "checklist_item_id": "180",
+                                                    "item_name": "International Tonnage certificate ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "181",
+                                                    "item_name": "Ship Radio Station license",
+                                                    "description": "(EPIRB, AIS & VHF equipment details should be mentioned along with Frequency)",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "182",
+                                                    "item_name": "Certificate of Class certificate with a yearly endorsement",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "183",
+                                                    "item_name": "International Load line certificate with yearly endorsement ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "184",
+                                                    "item_name": "Cargo Ship Safety construction certificate with yearly endorsement (If GRT above 500 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "185",
+                                                    "item_name": "Cargo ship safety Equipment certificate with yearly endorsement (If GRT above 500 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "186",
+                                                    "item_name": "Cargo ship Safety Radio certificate with yearly endorsement (If GRT above 300 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "187",
+                                                    "item_name": "Passenger ship safety certificate for crew boat (for below 500GRT required exemption certificate from class) ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "188",
+                                                    "item_name": "General Condition Survey",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "189",
+                                                    "item_name": "International Ship Security Certificate with Biennial endorsement (If GRT above 500 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "190",
+                                                    "item_name": "International Oil Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "191",
+                                                    "item_name": "International Air Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "192",
+                                                    "item_name": "International Sewage pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "193",
+                                                    "item_name": "Picture of vessel (Need to capture vessel name and IMO in one pic)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "194",
+                                                    "item_name": "Safety Management Certificate with Biennial endorsement (If GRT above 500 MT) ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "195",
+                                                    "item_name": "International Anti-fouling system certificate (if GRT above 400GRT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "196",
+                                                    "item_name": "International Energy Efficient certificate (If GRT above 400T)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "197",
+                                                    "item_name": "International Ballast Water management (If GRT above 400GRT)",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "198",
+                                                    "item_name": "Minimum Safe Manning certificate",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "199",
+                                                    "item_name": "Insurance ( P&I, H&M) oil pollution covered amount should be mentioned",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "200",
+                                                    "item_name": "Insurance for wrecks removal certificate from Flag for above 300GRT ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "201",
+                                                    "item_name": "Insurance for bunker oil pollution damage 2021 certificate from Flag for above 1000GRT",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                },
+                                                {
+                                                    "checklist_item_id": "202",
+                                                    "item_name": "Qualification Certificates (COC) for Master\/Officers ",
+                                                    "description": "",
+                                                    "is_checked": 0,
+                                                    "remarks": "",
+                                                    "expiry_date": "0000-00-00",
+                                                    "checked_at": null,
+                                                    "files": []
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
                         }
                     ]
                 },
@@ -7039,1121 +8051,6 @@
                     "subtabs": []
                 }
             ]
-        },
-        "checklist": [
-            {
-                "call_checklist_id": "92",
-                "call_id": "586",
-                "checklist_type_id": "3",
-                "checklist_name": "ACCOMODATION\/CONSTRUCITON BARGE IMPORT CHECKLIST ",
-                "sections": [
-                    {
-                        "checklist_section_id": "14",
-                        "title": "DOCUMENTS REQUIRED FROM VESSEL OWNERS \/ PRINCIPAL VESSEL ",
-                        "items": [
-                            {
-                                "checklist_item_id": "67",
-                                "item_name": "Commercial invoice for vessel ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "68",
-                                "item_name": "Bill of lading",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "69",
-                                "item_name": "Charter Party Agreement",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            }
-                        ]
-                    },
-                    {
-                        "checklist_section_id": "16",
-                        "title": "MARINE WORK PERMIT",
-                        "items": [
-                            {
-                                "checklist_item_id": "75",
-                                "item_name": "Vessel Registry certificate",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "76",
-                                "item_name": "International Tonnage certificate ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "77",
-                                "item_name": "Ship Radio Station license ",
-                                "description": "EPIRB, AIS & VHF equipment details should be mentioned along with Frequency)",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "78",
-                                "item_name": "Certificate of Class certificate with a yearly endorsement",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "79",
-                                "item_name": "International Load line certificate with yearly endorsement ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "80",
-                                "item_name": "Cargo Ship Safety construction certificate with yearly endorsement (If GRT above 500 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "81",
-                                "item_name": "Cargo ship safety Equipment certificate with yearly endorsement (If GRT above 500 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "82",
-                                "item_name": "Cargo ship Safety Radio certificate with yearly endorsement (If GRT above 300 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "83",
-                                "item_name": "General Condition Survey ",
-                                "description": "(For Import vessel GCS must be not more then 15days of issuance)",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "84",
-                                "item_name": "International Ship Security Certificate (If GRT above 500 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "85",
-                                "item_name": "International Oil Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "86",
-                                "item_name": "International Air Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "87",
-                                "item_name": "International Sewage pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "88",
-                                "item_name": "Picture of vessel (Need to capture vessel name and IMO in one pic)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "89",
-                                "item_name": "Safety Management Certificate (If GRT above 500 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "90",
-                                "item_name": "International Anti-fouling system certificate (if GRT above 400GRT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "91",
-                                "item_name": "International Energy Efficient certificate (If GRT above 400T)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "92",
-                                "item_name": "International Ballast Water management (If GRT above 400GRT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "93",
-                                "item_name": "Ships Particulars",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "94",
-                                "item_name": "Minimum Safe Manning certificate",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "95",
-                                "item_name": "Insurance ( P&I, H&M) oil pollution covered amount should be mentioned ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "96",
-                                "item_name": "Insurance for wrecks removal certificate from Flag for above 300GRT ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "97",
-                                "item_name": "Insurance for bunker oil pollution damage 2021 certificate from Flag for above 1000GRT",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "98",
-                                "item_name": "Qualification Certificates (COC) for Master\/Officers ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            }
-                        ]
-                    },
-                    {
-                        "checklist_section_id": "15",
-                        "title": "DOCUMENTS REQUIRED FROM VESSEL TOWING TUG MASTER",
-                        "items": [
-                            {
-                                "checklist_item_id": "70",
-                                "item_name": "Equipment\/Material Deck declaration letter",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "71",
-                                "item_name": "Deck equipment list with Arabic translation and Deck \/ store Photo \u2013 Detailed list of all fixed and removable equipment on deck, including H2S cylinders with gas, BA sets, rescue boat, cascade system, etc. ",
-                                "description": "Note: Serial number to be mention in inventory for heavy equipment (pump, motor, compressor etc.) or is absence of serial number pic of material to be enclose with respective items. ",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "72",
-                                "item_name": "Last port Clearance",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "73",
-                                "item_name": "Photo of Main deck",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "74",
-                                "item_name": "Ship Sanitation certificate ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            }
-                        ]
-                    },
-                    {
-                        "checklist_section_id": "17",
-                        "title": "AUTHORISATION LETTER FOR AGENCY & UNDERTAKING LETTER (DOCUMENT REQUIRED FROM CONSIGNEE) ",
-                        "items": [
-                            {
-                                "checklist_item_id": "99",
-                                "item_name": "Authorization letter to port \/ Customs\/ Coast Guard\/ Immigration office, SA for TGA",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "100",
-                                "item_name": "Broker Authorization online system",
-                                "description": "Broker details  License no. 2753 Name : Khalid Sheshan Al Harbi  Port : Ras Tanura",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "101",
-                                "item_name": "Commercial Registration ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "102",
-                                "item_name": "Aramco Contract ",
-                                "description": "Duration or expiry needs to be mentioned - endorsement from contractor - *Particular vessel name to be mention in contract. ",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "103",
-                                "item_name": "If Vessel name not mention in contract, required Mobilization letter",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            }
-                        ]
-                    },
-                    {
-                        "checklist_section_id": "18",
-                        "title": "IF CARGO ONBOARD (DOCUMENT REQUIRED FROM CONSIGNOR) Apart from vessel consumable items. ",
-                        "items": [
-                            {
-                                "checklist_item_id": "104",
-                                "item_name": "Cargo invoice with Arabic translation ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "105",
-                                "item_name": "Cargo packing list with Arabic translation ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "106",
-                                "item_name": "Cargo Bill of Lading",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "107",
-                                "item_name": "SABER certificate (Have to arrange by consignee) ",
-                                "description": "REQUIRED PRIOR TO SHIPMENT ARRIVE ",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                "call_checklist_id": "93",
-                "call_id": "586",
-                "checklist_type_id": "6",
-                "checklist_name": "AL JUBAIL PORT ",
-                "sections": [
-                    {
-                        "checklist_section_id": "27",
-                        "title": "DOCUMENTS REQUIRED FOR IMPORT AND INWARD CLEARENCE FOR VESSELS",
-                        "items": [
-                            {
-                                "checklist_item_id": "159",
-                                "item_name": "Commercial invoice with shipper stamp and sign , for Taxi boat not applicable.",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "160",
-                                "item_name": "Bill of lading \u2013 Surrender \/ Seaway bill , for Taxi boat not applicable.",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "161",
-                                "item_name": "Aramco contract with Arabic translation \u2013 Contract # , Start and Expiry date should be reflecting , for Taxi boat not applicable",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "162",
-                                "item_name": "Sub contract if there is no direct contract with Aramco",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "163",
-                                "item_name": "Last port Clearance for Tug , Barge , Crew boat",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "164",
-                                "item_name": "Stamped crew List from last port",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "165",
-                                "item_name": "Cargo Manifest IF ANY from last port with customs stamp ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "166",
-                                "item_name": "Pre-arrival Notice 40 points \u2013 As per attached with email",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "167",
-                                "item_name": "List of Last 10 port of calls",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "168",
-                                "item_name": "Arabic letters for temporary import on Consignee letter head \u2013 Sedres will provide Draft \u2013 for Taxi boat not Applicable",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "169",
-                                "item_name": "Vessel Health declaration form as per Attached with email",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            }
-                        ]
-                    },
-                    {
-                        "checklist_section_id": "28",
-                        "title": "CREW IMMIGRATION (For Import vessel) ",
-                        "items": [
-                            {
-                                "checklist_item_id": "170",
-                                "item_name": "Crew list ",
-                                "description": "",
-                                "is_checked": 1,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": "2026-11-23 08:44:09",
-                                "files": [
-                                    {
-                                        "file_id": "69",
-                                        "file_name": "pdf-sample_0.pdf",
-                                        "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0.pdf"
-                                    }
-                                ],
-                                "task_documents": [
-                                    {
-                                        "task_id": 2,
-                                        "task_name": "Crew Immigration",
-                                        "call_task_document_id": 366,
-                                        "status": 4,
-                                        "status_label": "Rejected",
-                                        "remarks": "Test testTest testTest testTest testTest testTest test",
-                                        "file_name": "pdf-sample_0.pdf",
-                                        "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0.pdf",
-                                        "uploaded_by_user": "Infobahn Test",
-                                        "uploaded_at": "2026-11-23 08:44:09"
-                                    }
-                                ]
-                            },
-                            {
-                                "checklist_item_id": "171",
-                                "item_name": "Crew passports and Saudi Visa copies",
-                                "description": "",
-                                "is_checked": 1,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": "2026-11-23 08:44:09",
-                                "files": [
-                                    {
-                                        "file_id": "70",
-                                        "file_name": "pdf-sample_0_(1).pdf",
-                                        "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0_(1).pdf"
-                                    }
-                                ],
-                                "task_documents": [
-                                    {
-                                        "task_id": 2,
-                                        "task_name": "Crew Immigration",
-                                        "call_task_document_id": 367,
-                                        "status": 1,
-                                        "status_label": "Uploaded",
-                                        "remarks": null,
-                                        "file_name": "pdf-sample_0_(1).pdf",
-                                        "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0_(1).pdf",
-                                        "uploaded_by_user": "Infobahn Test",
-                                        "uploaded_at": "2026-11-23 08:44:09"
-                                    }
-                                ]
-                            },
-                            {
-                                "checklist_item_id": "172",
-                                "item_name": "Crew List split into two - for Immigration visit",
-                                "description": "",
-                                "is_checked": 1,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": "2026-11-23 08:44:09",
-                                "files": [
-                                    {
-                                        "file_id": "71",
-                                        "file_name": "pdf-sample_0.pdf",
-                                        "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0.pdf"
-                                    }
-                                ],
-                                "task_documents": [
-                                    {
-                                        "task_id": 2,
-                                        "task_name": "Crew Immigration",
-                                        "call_task_document_id": 368,
-                                        "status": 1,
-                                        "status_label": "Uploaded",
-                                        "remarks": null,
-                                        "file_name": "pdf-sample_0.pdf",
-                                        "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0.pdf",
-                                        "uploaded_by_user": "Infobahn Test",
-                                        "uploaded_at": "2026-11-23 08:44:09"
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "checklist_section_id": "29",
-                        "title": "AUTHORISATION LETTER FOR CUSTOMS BROKER     ",
-                        "items": [
-                            {
-                                "checklist_item_id": "173",
-                                "item_name": "Broker Authorization online system",
-                                "description": "Broker details  License no. 2753 Name : Khalid Sheshan Al Harbi  Port : Jubail ",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            }
-                        ]
-                    },
-                    {
-                        "checklist_section_id": "30",
-                        "title": "IF CARGO ONBOARD",
-                        "items": [
-                            {
-                                "checklist_item_id": "174",
-                                "item_name": "Cargo Commercial invoice with the company stamp.",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "175",
-                                "item_name": "Cargo packing list ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "176",
-                                "item_name": "Cargo Bill of Lading - Surrender \/ Seaway bill",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": [
-                                    {
-                                        "task_id": 4,
-                                        "task_name": "Custom Bayan",
-                                        "call_task_document_id": 369,
-                                        "status": 0,
-                                        "status_label": "Not Uploaded",
-                                        "remarks": null,
-                                        "file_name": null,
-                                        "file_url": null,
-                                        "uploaded_by_user": "Infobahn Test",
-                                        "uploaded_at": null
-                                    }
-                                ]
-                            },
-                            {
-                                "checklist_item_id": "177",
-                                "item_name": "Arabic letter for cargo importation",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "178",
-                                "item_name": "SABER certificate if any as per HS code   ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": [
-                                    {
-                                        "task_id": 4,
-                                        "task_name": "Custom Bayan",
-                                        "call_task_document_id": 370,
-                                        "status": 0,
-                                        "status_label": "Not Uploaded",
-                                        "remarks": null,
-                                        "file_name": null,
-                                        "file_url": null,
-                                        "uploaded_by_user": "Infobahn Test",
-                                        "uploaded_at": null
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "checklist_section_id": "31",
-                        "title": "MARINE WORK PERMIT",
-                        "items": [
-                            {
-                                "checklist_item_id": "179",
-                                "item_name": "Vessel Registry certificate",
-                                "description": "(Check Vessel Age)",
-                                "is_checked": 1,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": "2026-11-23 08:44:09",
-                                "files": [
-                                    {
-                                        "file_id": "72",
-                                        "file_name": "pdf-sample_0.pdf",
-                                        "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0.pdf"
-                                    }
-                                ],
-                                "task_documents": [
-                                    {
-                                        "task_id": 7,
-                                        "task_name": "Vessel Inward Registration",
-                                        "call_task_document_id": 365,
-                                        "status": 1,
-                                        "status_label": "Uploaded",
-                                        "remarks": null,
-                                        "file_name": "pdf-sample_0.pdf",
-                                        "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0.pdf",
-                                        "uploaded_by_user": "Infobahn Test",
-                                        "uploaded_at": "2026-11-23 08:44:09"
-                                    }
-                                ]
-                            },
-                            {
-                                "checklist_item_id": "180",
-                                "item_name": "International Tonnage certificate ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "181",
-                                "item_name": "Ship Radio Station license",
-                                "description": "(EPIRB, AIS & VHF equipment details should be mentioned along with Frequency)",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "182",
-                                "item_name": "Certificate of Class certificate with a yearly endorsement",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "183",
-                                "item_name": "International Load line certificate with yearly endorsement ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "184",
-                                "item_name": "Cargo Ship Safety construction certificate with yearly endorsement (If GRT above 500 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "185",
-                                "item_name": "Cargo ship safety Equipment certificate with yearly endorsement (If GRT above 500 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "186",
-                                "item_name": "Cargo ship Safety Radio certificate with yearly endorsement (If GRT above 300 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "187",
-                                "item_name": "Passenger ship safety certificate for crew boat (for below 500GRT required exemption certificate from class) ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "188",
-                                "item_name": "General Condition Survey",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "189",
-                                "item_name": "International Ship Security Certificate with Biennial endorsement (If GRT above 500 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "190",
-                                "item_name": "International Oil Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "191",
-                                "item_name": "International Air Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "192",
-                                "item_name": "International Sewage pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "193",
-                                "item_name": "Picture of vessel (Need to capture vessel name and IMO in one pic)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "194",
-                                "item_name": "Safety Management Certificate with Biennial endorsement (If GRT above 500 MT) ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "195",
-                                "item_name": "International Anti-fouling system certificate (if GRT above 400GRT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "196",
-                                "item_name": "International Energy Efficient certificate (If GRT above 400T)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "197",
-                                "item_name": "International Ballast Water management (If GRT above 400GRT)",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "198",
-                                "item_name": "Minimum Safe Manning certificate",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "199",
-                                "item_name": "Insurance ( P&I, H&M) oil pollution covered amount should be mentioned",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "200",
-                                "item_name": "Insurance for wrecks removal certificate from Flag for above 300GRT ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "201",
-                                "item_name": "Insurance for bunker oil pollution damage 2021 certificate from Flag for above 1000GRT",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            },
-                            {
-                                "checklist_item_id": "202",
-                                "item_name": "Qualification Certificates (COC) for Master\/Officers ",
-                                "description": "",
-                                "is_checked": 0,
-                                "remarks": "",
-                                "expiry_date": "0000-00-00",
-                                "checked_at": null,
-                                "files": [],
-                                "task_documents": []
-                            }
-                        ]
-                    }
-                ]
-            }
-        ]
+        }
     }
 }

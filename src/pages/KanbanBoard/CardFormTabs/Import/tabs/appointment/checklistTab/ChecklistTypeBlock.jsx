@@ -1,9 +1,10 @@
 import PropTypes from "prop-types";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, Loader2, Printer } from "lucide-react";
 import checklistService from "@/services/checklistService";
 import { notify } from "@/components/Toaster";
 import ChecklistSectionNode from "./ChecklistSectionNode";
+import { countNodeCompleted, countNodeItems } from "./checklistMappers";
 
 /** Opens the generated checklist PDF. Supports a raw PDF blob or a JSON body carrying a file URL. */
 const openChecklistPdf = async (response) => {
@@ -76,6 +77,18 @@ const ChecklistTypeBlock = ({
 
   const toggleCollapsed = () => setCollapsed((v) => !v);
 
+  const progress = useMemo(
+    () =>
+      (sectionTree || []).reduce(
+        (acc, node) => ({
+          done: acc.done + countNodeCompleted(node, itemsData || {}),
+          total: acc.total + countNodeItems(node),
+        }),
+        { done: 0, total: 0 }
+      ),
+    [sectionTree, itemsData]
+  );
+
   return (
     <div className={`cl-type-block cl-excel-block ${collapsed ? "is-collapsed" : ""}`}>
       <div
@@ -92,6 +105,22 @@ const ChecklistTypeBlock = ({
         }}
       >
         <span className="cl-excel-type-header-name" title={typeTitle}>{typeTitle}</span>
+        {progress.total > 0 ? (
+          <span
+            className={`cl-type-progress${progress.done === progress.total ? " is-complete" : ""}`}
+            title={`${progress.done} of ${progress.total} items done`}
+          >
+            <span className="cl-type-progress__bar" aria-hidden>
+              <span
+                className="cl-type-progress__fill"
+                style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }}
+              />
+            </span>
+            <span className="cl-type-progress__text">
+              {progress.done}/{progress.total} done
+            </span>
+          </span>
+        ) : null}
         <div className="cl-excel-type-actions">
           <button
             type="button"
