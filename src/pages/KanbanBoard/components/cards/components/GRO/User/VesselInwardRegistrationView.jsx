@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo, forwardRef, useImperativeHandle }
 import PropTypes from "prop-types";
 import { FiPrinter } from "react-icons/fi";
 import VesselBoardingArabicPreview from "./VesselBoardingArabicPreview";
+import GroAiTranslationNotice from "./GroAiTranslationNotice";
 import { GroFieldTableSkeletonRows, GroLetterPreviewSkeleton } from "./GroCardViewSkeleton";
 import { extractVesselRegTemplateFields, matchVesselApiFieldKey } from "./vesselRegTemplateFields";
 import groService from "@/services/groService";
@@ -176,6 +177,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
       <div className="gro-crew-immigration-bulk-body gro-vir-body">
         <div className="gro-crew-immigration-bulk-left gro-vir-col">
           <p className="gro-crew-immigration-bulk-section-title">{sectionTitle}</p>
+          <GroAiTranslationNotice />
           <div className="gro-crew-immigration-bulk-table-wrap gro-vir-scroll">
             <table className="gro-crew-immigration-bulk-table gro-vir-table">
               <thead>

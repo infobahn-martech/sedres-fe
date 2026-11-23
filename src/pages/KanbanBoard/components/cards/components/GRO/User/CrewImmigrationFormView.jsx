@@ -8,6 +8,7 @@ import translateService from "@/services/translateService";
 import { getImmigrationCrewList } from "@/services/cgAndZwailpassService";
 import { formatGregorianDate, formatHijriDate } from "./groArabicDate";
 import { GroFieldTableSkeletonRows, GroLetterPreviewSkeleton } from "./GroCardViewSkeleton";
+import GroAiTranslationNotice from "./GroAiTranslationNotice";
 import {
   parseCrewImmigrationTemplates,
   extractCrewImmigrationPlaceholders,
@@ -206,6 +207,7 @@ function CrewImmigrationTemplateSection({
       <div className="gro-crew-immigration-bulk-body">
         <div className="gro-crew-immigration-bulk-left">
           <p className="gro-crew-immigration-bulk-section-title">Fields</p>
+          <GroAiTranslationNotice />
           <div className="gro-crew-immigration-bulk-table-wrap">
             <table className="gro-crew-immigration-bulk-table">
               <thead>

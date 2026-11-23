@@ -945,6 +945,45 @@
   color: var(--text-secondary);
 }
 
+.gro-card-view .gro-ai-translation-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 1px solid #f5d48a;
+  border-left: 3px solid #e6a700;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #fff8e6 0%, #fffcf3 100%);
+  color: #7a5200;
+  font-size: 12.5px;
+  line-height: 1.45;
+
+  .gro-ai-translation-notice-icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #ffe9b0;
+    color: #b37f00;
+  }
+
+  .gro-ai-translation-notice-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+
+    strong {
+      font-size: 13px;
+      font-weight: 600;
+      color: #5c3d00;
+    }
+  }
+}
+
 .gro-card-view .gro-vessel-reg-preview-header {
   display: flex;
   align-items: center;
