@@ -839,6 +839,11 @@ export default function WorkflowColumns({
                     }
                     actionIcon={hasInvoiceButton ? INVOICE_ACTION_BUTTONS[invoiceButton].icon : undefined}
                     secondaryAction={hasInvoiceButton ? sendSubmissionAction : undefined}
+                    verifiedGateCallIds={
+                      hasInvoiceButton && invoiceButton === "sendSccForApproval"
+                        ? invoiceButtonCards.map((card) => card.callId).filter(Boolean)
+                        : undefined
+                    }
                     onActionClick={
                       hasInvoiceButton
                         ? () => invoiceActionHandlers[invoiceButton]?.(invoiceButtonCards)

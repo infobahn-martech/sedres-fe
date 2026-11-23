@@ -2,6 +2,7 @@ import PropTypes from "prop-types";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import "@/design/scss/pages/kanban-board/columnAction.scss";
+import useSoItemsAllVerified from "../../hooks/useSoItemsAllVerified";
 
 /* Batch action icon: a hierarchy (one box branching into two), the batch grouping its cards. */
 function BatchCardsIcon() {
@@ -39,7 +40,10 @@ export default function ColumnHeader({
   actionIcon,
   onActionClick,
   secondaryAction,
+  verifiedGateCallIds,
 }) {
+  const allItemsVerified = useSoItemsAllVerified(verifiedGateCallIds);
+  const isActionDisabled = verifiedGateCallIds != null && !allItemsVerified;
   const columnColor = column.color || "#2A00FF";
   const tooltipId = `column-title-${column.id}`;
   const secondaryTooltipId = `column-secondary-action-${column.id}`;
@@ -99,13 +103,16 @@ export default function ColumnHeader({
           <button
             type="button"
             className="column-action"
+            aria-disabled={isActionDisabled}
             onClick={(e) => {
               /* The header itself collapses the column — keep that off this button. */
               e.stopPropagation();
+              /* aria-disabled (not disabled) so the tooltip still shows the reason on hover. */
+              if (isActionDisabled) return;
               onActionClick(column);
             }}
             data-tooltip-id={tooltipId}
-            data-tooltip-content={actionLabel}
+            data-tooltip-content={isActionDisabled ? `${actionLabel} (verify all line items in Marine and Husbandry first)` : actionLabel}
             aria-label={actionLabel}
           >
             {actionIcon ?? <BatchCardsIcon />}
@@ -125,7 +132,7 @@ export default function ColumnHeader({
           <p className="column-description-tooltip__text">{column.description}</p>
         </Tooltip>
       )}
-      {typeof onActionClick === "function" && <Tooltip id={tooltipId} place="top" />}
+      {typeof onActionClick === "function" && <Tooltip id={tooltipId} place="bottom" positionStrategy="fixed" />}
       {typeof onActionClick === "function" && secondaryAction && <Tooltip id={secondaryTooltipId} place="top" />}
     </div>
   );
@@ -146,6 +153,7 @@ ColumnHeader.propTypes = {
   actionLabel: PropTypes.string,
   actionIcon: PropTypes.node,
   onActionClick: PropTypes.func,
+  verifiedGateCallIds: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string, PropTypes.number])),
   secondaryAction: PropTypes.shape({
     label: PropTypes.string.isRequired,
     icon: PropTypes.node.isRequired,

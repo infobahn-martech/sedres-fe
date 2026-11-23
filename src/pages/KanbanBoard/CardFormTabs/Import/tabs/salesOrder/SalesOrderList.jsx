@@ -21,6 +21,7 @@ import useSignatureCheckStore from "@/store/signatureCheckStore";
 import useAuthReducer from "@/store/AuthReducer";
 import userService from "@/services/userService";
 import { useDaLocalSoApproval, useDaLocalVerifiedItems } from "@/store/daStore";
+import useSoVerifyRefreshStore from "@/store/soVerifyRefreshStore";
 import { getFirstUserRoleId } from "@/shared/helpers/groUserRoles";
 import WorkOrderCreationModal from "./WorkOrderCreationModal";
 import WorkOrderDetailsModal from "./WorkOrderDetailsModal";
@@ -1921,6 +1922,7 @@ const SalesOrderList = ({
         orderId,
         nextStatus ? nextStatus === VERIFIED_ITEM_STATUS : isNowVerified
       );
+      useSoVerifyRefreshStore.getState().bumpVerifyRefreshToken();
       if (nextStatus && nextStatus !== targetStatus) {
         // The row and the backend were out of step, so this single flip landed on the opposite
         // status. The checkbox follows the backend rather than the click; say why instead of
