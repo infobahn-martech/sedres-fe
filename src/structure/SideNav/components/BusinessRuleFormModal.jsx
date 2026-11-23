@@ -12,7 +12,7 @@ import {
   ACTION_GROUP_TYPE_TO_SECTION_ID, LINK_ACTION_OPTIONS, LINK_REMOVE_OTHERS_OPTIONS, NOTIFY_ACTION_OPTIONS, UPDATE_ACTION_OPTIONS, STICKER_ACTION_FREQUENCY_OPTIONS,
   LIST_UPDATE_MODE_OPTIONS, DEADLINE_MODE_OPTIONS, WEEKDAY_OPTIONS, PRIORITY_OPTIONS, classifyCustomFieldUiKind,
   INVOKE_ACTION_OPTIONS, DUMMY_INVOKE_METHOD_OPTIONS, DUMMY_INVOKE_AUTH_OPTIONS, INVOKE_METHODS_WITH_BODY,
-  TRIGGER_CODE_TO_ICON, UNSUPPORTED_ACTION_GROUP_TYPES,
+  TRIGGER_CODE_TO_ICON, UNSUPPORTED_ACTION_GROUP_TYPES, CHILD_CARD_MOVED_TRIGGER_PATTERN,
 } from './businessRulesData';
 import { buildCreateBusinessRulePayload, buildUpdateBusinessRulePayload, getUnconfiguredActionLabels, isCreateSubtaskAction, RECURRENCE_REGULAR_FIELD_IDS, buildAdvancedScheduleFields } from './buildBusinessRulePayload';
 import ThenGroupRawSummary from './ThenGroupRawSummary';
@@ -8050,6 +8050,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                                 timeUnits={valueTimeUnits}
                                 label={cond.fieldLabel}
                                 defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
+                                allowLaneOnlyPosition={CHILD_CARD_MOVED_TRIGGER_PATTERN.test(String(whenTriggerName ?? ''))}
                                 onChange={(val) => handleChangeConditionValue(cond.id, v.id, { value: val })}
                                 onTimeUnitChange={(unitId) => handleChangeConditionValue(cond.id, v.id, { timeUnitId: unitId })}
                               />

@@ -26,6 +26,10 @@ export const TRIGGER_CODE_TO_ICON = {
   task_card_updated: 'task-updated',
 };
 
+// The "Child card is moved" trigger, matched by its get_trigger_config trigger_name (its trigger_code is not
+// known to map to the child-moved icon on every response).
+export const CHILD_CARD_MOVED_TRIGGER_PATTERN = /^\s*child\s+card\s+is\s+moved\s*$/i;
+
 // Maps a get_trigger_config `actions[].group_type` to the THEN section id the form
 // already knows how to render, so the THEN column can be built from the trigger
 // type's own action catalog instead of always showing every section.
