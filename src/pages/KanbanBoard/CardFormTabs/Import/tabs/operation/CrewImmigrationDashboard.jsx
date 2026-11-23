@@ -52,6 +52,12 @@ const extractImportedCrewCount = (result) => {
   return 0;
 };
 
+// Prefer the message the API sent back; fall back to a local default.
+const getApiMessage = (result, fallback) => {
+  const message = result?.message ?? result?.data?.message;
+  return typeof message === "string" && message.trim() !== "" ? message : fallback;
+};
+
 const FileIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
@@ -427,10 +433,10 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
           ...prev,
           crewList: { status: "completed", files: files.map((f) => ({ name: f.name })), progress: 100 },
         }));
-        notify(`Crew list uploaded — ${totalCrewCount} crew member(s) loaded.`, "success");
+        notify(getApiMessage(importResult, `Crew list uploaded — ${totalCrewCount} crew member(s) loaded.`), "success");
       } catch {
+        // API error message already surfaced via the store's alert
         setUploadSteps((prev) => ({ ...prev, crewList: { ...prev.crewList, status: "failed" } }));
-        notify("Failed to upload crew list. Please try again.", "error");
       }
     },
     [uploadSteps, resolveCallAndVesselIds, importCrewImmigrationFile]
@@ -462,13 +468,13 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
     }
 
     try {
-      await uploadAction({ formData });
+      const uploadResult = await uploadAction({ formData });
       setUploadSteps((prev) => ({ ...prev, [kind]: { status: "completed", files, progress: 100 } }));
       setListingRefreshTick((tick) => tick + 1);
-      notify(`${label} uploaded — ${files.length} file(s).`, "success");
+      notify(getApiMessage(uploadResult, `${label} uploaded — ${files.length} file(s).`), "success");
     } catch {
+      // API error message already surfaced via the store's alert
       setUploadSteps((prev) => ({ ...prev, [kind]: { ...prev[kind], status: "failed" } }));
-      notify(`Failed to upload ${label.toLowerCase()} copies. Please try again.`, "error");
     }
   };
 
@@ -566,11 +572,11 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
 
     setUploading(true);
     try {
-      await uploadAction({ formData });
+      const uploadResult = await uploadAction({ formData });
       setListingRefreshTick((tick) => tick + 1);
-      notify(`${label} uploaded — ${files.length} file(s).`, "success");
+      notify(getApiMessage(uploadResult, `${label} uploaded — ${files.length} file(s).`), "success");
     } catch {
-      notify(`Failed to upload ${label.toLowerCase()} copies. Please try again.`, "error");
+      // API error message already surfaced via the store's alert
     } finally {
       setUploading(false);
     }
