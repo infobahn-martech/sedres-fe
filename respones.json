@@ -1,767 +1,1883 @@
 {
     "status": "success",
-    "checklist_details": {
-        "checklist_type_id": "6",
-        "port_id": "1",
-        "call_type_id": "1",
-        "vessel_type_id": "4",
-        "barge_type_id": null,
-        "tug_type_id": null,
-        "checklist_name": "AL JUBAIL PORT ",
-        "created_by": "1",
-        "created_date": "2026-07-25 11:39:50",
-        "updated_by": "1",
-        "updated_date": "2026-08-03 10:51:36",
-        "call_type": "Domestic Call",
-        "barge_type": null,
-        "vessel_type": "Offshore Support Vessel",
-        "tug_type": null
-    },
+    "da_board": 0,
+    "port_id": 1,
     "data": [
         {
-            "checklist_section_id": "27",
-            "parent_id": null,
-            "title": "DOCUMENTS REQUIRED FOR IMPORT AND INWARD CLEARENCE FOR VESSELS",
-            "sort_order": "1",
-            "items": [
+            "workflow_id": "109",
+            "board_id": "27",
+            "entity_id": null,
+            "sub_entity_id": null,
+            "port_id": null,
+            "call_type_id": null,
+            "workflow_name": "Supervisor",
+            "is_default": "1",
+            "is_active": "1",
+            "is_pinned": "1",
+            "workflow_order": "1",
+            "pinned_at": "2026-11-18 13:19:17",
+            "pinned_by": "83",
+            "is_collapsed": "0",
+            "created_by": "1",
+            "created_date": "2026-11-03 13:29:15",
+            "updated_date": "2026-11-23 08:42:19",
+            "updated_by": "83",
+            "role_id": null,
+            "card_scope": "my",
+            "allow_all_cards": 1,
+            "swimlanes": [
                 {
-                    "checklist_item_id": "159",
-                    "item_name": "Commercial invoice with shipper stamp and sign , for Taxi boat not applicable.",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": false,
-                        "description": "Original Required",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
+                    "swimlane_id": "140",
+                    "swimlane_name": "All Clients",
+                    "swimlane_order": "3",
+                    "color_code": null
                 },
                 {
-                    "checklist_item_id": "160",
-                    "item_name": "Bill of lading \u2013 Surrender \/ Seaway bill , for Taxi boat not applicable.",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
+                    "swimlane_id": "142",
+                    "swimlane_name": "L&T",
+                    "swimlane_order": "4",
+                    "color_code": null
                 },
                 {
-                    "checklist_item_id": "161",
-                    "item_name": "Aramco contract with Arabic translation \u2013 Contract # , Start and Expiry date should be reflecting , for Taxi boat not applicable",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
+                    "swimlane_id": "157",
+                    "swimlane_name": "Subsea 7",
+                    "swimlane_order": "5",
+                    "color_code": null
                 },
                 {
-                    "checklist_item_id": "162",
-                    "item_name": "Sub contract if there is no direct contract with Aramco",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
+                    "swimlane_id": "158",
+                    "swimlane_name": "Snamprogetti",
+                    "swimlane_order": "6",
+                    "color_code": null
                 },
                 {
-                    "checklist_item_id": "163",
-                    "item_name": "Last port Clearance for Tug , Barge , Crew boat",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": false,
-                        "description": "ORIGINAL REQUIRED ONBOARD",
-                        "uploaded_files": []
-                    },
-                    "roles": [
-                        {
-                            "role_id": 6,
-                            "role_name": "GRO Supervisor",
-                            "tasks": [
-                                {
-                                    "task_id": 3,
-                                    "task_name": "Inward Clearance"
-                                }
-                            ],
-                            "task_ids": [
-                                3
-                            ]
-                        }
-                    ],
-                    "role_ids": [
-                        6
-                    ]
+                    "swimlane_id": "159",
+                    "swimlane_name": "Mcdermott",
+                    "swimlane_order": "7",
+                    "color_code": null
                 },
                 {
-                    "checklist_item_id": "164",
-                    "item_name": "Stamped crew List from last port",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": false,
-                        "description": "COPY SIGNED AND STAMPED BY MASTER",
-                        "uploaded_files": []
-                    },
-                    "roles": [
-                        {
-                            "role_id": 6,
-                            "role_name": "GRO Supervisor",
-                            "tasks": [
-                                {
-                                    "task_id": 3,
-                                    "task_name": "Inward Clearance"
-                                }
-                            ],
-                            "task_ids": [
-                                3
-                            ]
-                        }
-                    ],
-                    "role_ids": [
-                        6
-                    ]
+                    "swimlane_id": "160",
+                    "swimlane_name": "Algihaz",
+                    "swimlane_order": "8",
+                    "color_code": null
                 },
                 {
-                    "checklist_item_id": "165",
-                    "item_name": "Cargo Manifest IF ANY from last port with customs stamp ",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": false,
-                        "description": "ORIGINAL REQUIRED ONBOARD",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
+                    "swimlane_id": "161",
+                    "swimlane_name": "Zamil",
+                    "swimlane_order": "9",
+                    "color_code": null
                 },
                 {
-                    "checklist_item_id": "166",
-                    "item_name": "Pre-arrival Notice 40 points \u2013 As per attached with email",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": false,
-                        "description": "PRE-ARRIVAL  FOR TUB AND BARGE ",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
+                    "swimlane_id": "162",
+                    "swimlane_name": "Lamprell UAE",
+                    "swimlane_order": "10",
+                    "color_code": null
                 },
                 {
-                    "checklist_item_id": "167",
-                    "item_name": "List of Last 10 port of calls",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
+                    "swimlane_id": "163",
+                    "swimlane_name": "Lamprell Al Gihaz",
+                    "swimlane_order": "11",
+                    "color_code": null
                 },
                 {
-                    "checklist_item_id": "168",
-                    "item_name": "Arabic letters for temporary import on Consignee letter head \u2013 Sedres will provide Draft \u2013 for Taxi boat not Applicable",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": false,
-                        "description": "ORIGINAL REQUIRED ATTESTED BY CHAMBER",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
+                    "swimlane_id": "164",
+                    "swimlane_name": "Lamprell Saudi",
+                    "swimlane_order": "12",
+                    "color_code": null
                 },
                 {
-                    "checklist_item_id": "169",
-                    "item_name": "Vessel Health declaration form as per Attached with email",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
+                    "swimlane_id": "165",
+                    "swimlane_name": "POSH Saudi",
+                    "swimlane_order": "13",
+                    "color_code": null
+                },
+                {
+                    "swimlane_id": "166",
+                    "swimlane_name": "BGP",
+                    "swimlane_order": "14",
+                    "color_code": null
+                },
+                {
+                    "swimlane_id": "167",
+                    "swimlane_name": "Zakher Marine",
+                    "swimlane_order": "15",
+                    "color_code": null
                 }
             ],
-            "sub_sections": []
+            "stages": [
+                {
+                    "stage_id": "463",
+                    "stage_name": "Requested",
+                    "color_code": "#1976d2",
+                    "columns": [
+                        {
+                            "column_id": "775",
+                            "column_name": "Open Call File",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "140": [],
+                                "142": [
+                                    {
+                                        "card_id": "954",
+                                        "card_name": "LARSEN TOUBRO ARABIA LLC-GLOBAL ARROW-23 Nov 2026",
+                                        "call_id": "587",
+                                        "call_type_id": "1",
+                                        "vessel_id": "128",
+                                        "card_color": "#2e7d32",
+                                        "vessel_name": "GLOBAL ARROW",
+                                        "port_id": "1",
+                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
+                                        "credit_limit": "0",
+                                        "customer_type": "Credit",
+                                        "billing_entity_color": "#008000",
+                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
+                                        "username": "Infobahn Test",
+                                        "user_id": "85",
+                                        "created_date": "2026-11-23 08:29:45",
+                                        "task_id": null,
+                                        "task_name": null,
+                                        "kpi_percentage": "0",
+                                        "sales_order_no": "TMP-SO-202611-00063",
+                                        "transport_count": "0",
+                                        "hotel_count": "0",
+                                        "material_management_count": "0",
+                                        "medical_count": "0",
+                                        "waste_disposal": "0",
+                                        "third_party_service": "0",
+                                        "add_on_service": "0",
+                                        "zawil_pass_requests": "0",
+                                        "cg_pass_requests": "0",
+                                        "card_type_id": null,
+                                        "card_type_name": null,
+                                        "card_type_color": null,
+                                        "card_type_icon": null,
+                                        "card_blocker_id": null,
+                                        "blocker_name": null,
+                                        "blocker_description": null,
+                                        "blocker_color": null,
+                                        "blocker_icon": null,
+                                        "card_sticker_id": null,
+                                        "sticker_name": null,
+                                        "sticker_color": null,
+                                        "sticker_icon": null,
+                                        "tag_id": null,
+                                        "tag_name": null,
+                                        "tag_color": null,
+                                        "request_type": null,
+                                        "request_id": null,
+                                        "task_cards": [],
+                                        "timeline": "1h 11m 55s",
+                                        "vendor_id": null,
+                                        "assignees": [
+                                            {
+                                                "user_id": "85",
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "has_linked_call": false,
+                                        "da_board": 0,
+                                        "checklist_doc": 0,
+                                        "checklist_doc_rejected": []
+                                    }
+                                ],
+                                "157": [],
+                                "158": [],
+                                "159": [],
+                                "160": [],
+                                "161": [],
+                                "162": [],
+                                "163": [],
+                                "164": [],
+                                "165": [],
+                                "166": [
+                                    {
+                                        "card_id": "959",
+                                        "card_name": "BGP test - nethma",
+                                        "call_id": "588",
+                                        "call_type_id": "1",
+                                        "vessel_id": "101",
+                                        "card_color": "#2e7d32",
+                                        "vessel_name": "AESEN GALAXY",
+                                        "port_id": "1",
+                                        "billing_entity": "BGP Arabia Co.LTD",
+                                        "credit_limit": "0",
+                                        "customer_type": "Credit",
+                                        "billing_entity_color": "#008000",
+                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/34_bgp.jpg",
+                                        "username": "Infobahn Test",
+                                        "user_id": "85",
+                                        "created_date": "2026-11-23 09:41:35",
+                                        "task_id": null,
+                                        "task_name": null,
+                                        "kpi_percentage": "0",
+                                        "sales_order_no": "TMP-SO-202611-00064",
+                                        "transport_count": "0",
+                                        "hotel_count": "0",
+                                        "material_management_count": "0",
+                                        "medical_count": "0",
+                                        "waste_disposal": "0",
+                                        "third_party_service": "0",
+                                        "add_on_service": "0",
+                                        "zawil_pass_requests": "0",
+                                        "cg_pass_requests": "0",
+                                        "card_type_id": null,
+                                        "card_type_name": null,
+                                        "card_type_color": null,
+                                        "card_type_icon": null,
+                                        "card_blocker_id": null,
+                                        "blocker_name": null,
+                                        "blocker_description": null,
+                                        "blocker_color": null,
+                                        "blocker_icon": null,
+                                        "card_sticker_id": null,
+                                        "sticker_name": null,
+                                        "sticker_color": null,
+                                        "sticker_icon": null,
+                                        "tag_id": null,
+                                        "tag_name": null,
+                                        "tag_color": null,
+                                        "request_type": null,
+                                        "request_id": null,
+                                        "task_cards": [],
+                                        "timeline": "5s",
+                                        "vendor_id": null,
+                                        "assignees": [
+                                            {
+                                                "user_id": "85",
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "has_linked_call": false,
+                                        "da_board": 0,
+                                        "checklist_doc": 0,
+                                        "checklist_doc_rejected": []
+                                    }
+                                ],
+                                "167": []
+                            },
+                            "children": []
+                        },
+                        {
+                            "column_id": "827",
+                            "column_name": "Expected",
+                            "parent_column_id": null,
+                            "column_order": "2",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "140": [],
+                                "142": [],
+                                "157": [],
+                                "158": [],
+                                "159": [],
+                                "160": [],
+                                "161": [],
+                                "162": [],
+                                "163": [],
+                                "164": [],
+                                "165": [],
+                                "166": [],
+                                "167": []
+                            },
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "stage_id": "464",
+                    "stage_name": "In Progress",
+                    "color_code": "#fb8c00",
+                    "columns": [
+                        {
+                            "column_id": "776",
+                            "column_name": "In Operation",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "140": [],
+                                "142": [
+                                    {
+                                        "card_id": "952",
+                                        "card_name": "23\/11\/2026",
+                                        "call_id": "586",
+                                        "call_type_id": "1",
+                                        "vessel_id": "101",
+                                        "card_color": "#2e7d32",
+                                        "vessel_name": "AESEN GALAXY",
+                                        "port_id": "1",
+                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
+                                        "credit_limit": "0",
+                                        "customer_type": "Credit",
+                                        "billing_entity_color": "#008000",
+                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
+                                        "username": "Infobahn Test",
+                                        "user_id": "85",
+                                        "created_date": "2026-11-23 07:58:50",
+                                        "task_id": null,
+                                        "task_name": null,
+                                        "kpi_percentage": "0",
+                                        "sales_order_no": "TMP-SO-202611-00062",
+                                        "transport_count": "0",
+                                        "hotel_count": "0",
+                                        "material_management_count": "0",
+                                        "medical_count": "0",
+                                        "waste_disposal": "0",
+                                        "third_party_service": "0",
+                                        "add_on_service": "0",
+                                        "zawil_pass_requests": "0",
+                                        "cg_pass_requests": "0",
+                                        "card_type_id": null,
+                                        "card_type_name": null,
+                                        "card_type_color": null,
+                                        "card_type_icon": null,
+                                        "card_blocker_id": null,
+                                        "blocker_name": null,
+                                        "blocker_description": null,
+                                        "blocker_color": null,
+                                        "blocker_icon": null,
+                                        "card_sticker_id": null,
+                                        "sticker_name": null,
+                                        "sticker_color": null,
+                                        "sticker_icon": null,
+                                        "tag_id": null,
+                                        "tag_name": null,
+                                        "tag_color": null,
+                                        "request_type": null,
+                                        "request_id": null,
+                                        "task_cards": [
+                                            {
+                                                "card_type_id": null,
+                                                "type_name": "Other",
+                                                "color_code": null,
+                                                "icon_name": null,
+                                                "count": 3,
+                                                "cards": [
+                                                    {
+                                                        "card_id": 956,
+                                                        "title": "Vessel Inward Registration",
+                                                        "parent_card_id": 952,
+                                                        "task_id": 7,
+                                                        "task_name": "Vessel Inward Registration",
+                                                        "board_id": 27,
+                                                        "workflow_id": 114,
+                                                        "column_id": 794,
+                                                        "column_name": "In Progress",
+                                                        "task_card_docs": 1,
+                                                        "assigned_to": null,
+                                                        "assigned_to_name": null,
+                                                        "assignees": [],
+                                                        "priority": "Medium",
+                                                        "due_date": "2026-11-23 00:00:00",
+                                                        "completed_date": null,
+                                                        "created_date": "2026-11-23 08:41:20",
+                                                        "request_type": null,
+                                                        "request_id": null,
+                                                        "task_documents_status": 1
+                                                    },
+                                                    {
+                                                        "card_id": 957,
+                                                        "title": "Crew Immigration",
+                                                        "parent_card_id": 952,
+                                                        "task_id": 2,
+                                                        "task_name": "Crew Immigration",
+                                                        "board_id": 27,
+                                                        "workflow_id": 114,
+                                                        "column_id": 794,
+                                                        "column_name": "In Progress",
+                                                        "task_card_docs": 0,
+                                                        "assigned_to": null,
+                                                        "assigned_to_name": null,
+                                                        "assignees": [],
+                                                        "priority": "Medium",
+                                                        "due_date": "2026-11-23 00:00:00",
+                                                        "completed_date": null,
+                                                        "created_date": "2026-11-23 08:41:20",
+                                                        "request_type": null,
+                                                        "request_id": null,
+                                                        "task_documents_status": 0
+                                                    },
+                                                    {
+                                                        "card_id": 958,
+                                                        "title": "Custom Bayan",
+                                                        "parent_card_id": 952,
+                                                        "task_id": 4,
+                                                        "task_name": "Custom Bayan",
+                                                        "board_id": 27,
+                                                        "workflow_id": 117,
+                                                        "column_id": 920,
+                                                        "column_name": "Backlog",
+                                                        "task_card_docs": 0,
+                                                        "assigned_to": null,
+                                                        "assigned_to_name": null,
+                                                        "assignees": [],
+                                                        "priority": "Medium",
+                                                        "due_date": "2026-11-23 00:00:00",
+                                                        "completed_date": null,
+                                                        "created_date": "2026-11-23 08:41:20",
+                                                        "request_type": null,
+                                                        "request_id": null,
+                                                        "task_documents_status": 0
+                                                    }
+                                                ]
+                                            }
+                                        ],
+                                        "timeline": "1h 42m 50s",
+                                        "vendor_id": null,
+                                        "assignees": [
+                                            {
+                                                "user_id": "85",
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "has_linked_call": false,
+                                        "da_board": 0,
+                                        "checklist_doc": 1,
+                                        "checklist_doc_rejected": [
+                                            {
+                                                "call_task_document_id": 366,
+                                                "document_id": 3749,
+                                                "document_name": "Crew list ",
+                                                "task_id": 2,
+                                                "task_name": "Crew Immigration",
+                                                "remarks": "Test testTest testTest testTest testTest testTest test",
+                                                "file_name": "pdf-sample_0.pdf"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "157": [],
+                                "158": [],
+                                "159": [],
+                                "160": [],
+                                "161": [],
+                                "162": [],
+                                "163": [],
+                                "164": [],
+                                "165": [],
+                                "166": [],
+                                "167": []
+                            },
+                            "children": []
+                        },
+                        {
+                            "column_id": "828",
+                            "column_name": "Approval Stage",
+                            "parent_column_id": null,
+                            "column_order": "2",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "140": [],
+                                "142": [],
+                                "157": [],
+                                "158": [],
+                                "159": [],
+                                "160": [],
+                                "161": [],
+                                "162": [],
+                                "163": [],
+                                "164": [],
+                                "165": [],
+                                "166": [],
+                                "167": []
+                            },
+                            "children": []
+                        },
+                        {
+                            "column_id": "829",
+                            "column_name": "With DA",
+                            "parent_column_id": null,
+                            "column_order": "3",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "140": [],
+                                "142": [],
+                                "157": [],
+                                "158": [],
+                                "159": [],
+                                "160": [],
+                                "161": [],
+                                "162": [],
+                                "163": [],
+                                "164": [],
+                                "165": [],
+                                "166": [],
+                                "167": []
+                            },
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "stage_id": "465",
+                    "stage_name": "Done",
+                    "color_code": "#43a047",
+                    "columns": [
+                        {
+                            "column_id": "777",
+                            "column_name": "Completed",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "140": [],
+                                "142": [],
+                                "157": [],
+                                "158": [],
+                                "159": [],
+                                "160": [],
+                                "161": [],
+                                "162": [],
+                                "163": [],
+                                "164": [],
+                                "165": [],
+                                "166": [],
+                                "167": []
+                            },
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "stage_id": "466",
+                    "stage_name": "Ready to Archive",
+                    "color_code": "#7b1fa2",
+                    "columns": [
+                        {
+                            "column_id": "778",
+                            "column_name": "Ready to Archive",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "140": [],
+                                "142": [],
+                                "157": [],
+                                "158": [],
+                                "159": [],
+                                "160": [],
+                                "161": [],
+                                "162": [],
+                                "163": [],
+                                "164": [],
+                                "165": [],
+                                "166": [],
+                                "167": []
+                            },
+                            "children": []
+                        }
+                    ]
+                }
+            ]
         },
         {
-            "checklist_section_id": "28",
-            "parent_id": null,
-            "title": "CREW IMMIGRATION (For Import vessel) ",
-            "sort_order": "2",
-            "items": [
+            "workflow_id": "118",
+            "board_id": "27",
+            "entity_id": null,
+            "sub_entity_id": null,
+            "port_id": null,
+            "call_type_id": null,
+            "workflow_name": "Operator",
+            "is_default": "0",
+            "is_active": "1",
+            "is_pinned": "0",
+            "workflow_order": "2",
+            "pinned_at": null,
+            "pinned_by": null,
+            "is_collapsed": "0",
+            "created_by": "83",
+            "created_date": "2026-11-04 12:47:14",
+            "updated_date": "2026-11-23 08:30:23",
+            "updated_by": "83",
+            "role_id": "2",
+            "card_scope": "my",
+            "allow_all_cards": 1,
+            "swimlanes": [
                 {
-                    "checklist_item_id": "170",
-                    "item_name": "Crew list ",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [
-                        {
-                            "role_id": 6,
-                            "role_name": "GRO Supervisor",
-                            "tasks": [
-                                {
-                                    "task_id": 2,
-                                    "task_name": "Crew Immigration"
-                                }
-                            ],
-                            "task_ids": [
-                                2
-                            ]
-                        }
-                    ],
-                    "role_ids": [
-                        6
-                    ]
+                    "swimlane_id": "173",
+                    "swimlane_name": "All Clients",
+                    "swimlane_order": "1",
+                    "color_code": null
                 },
                 {
-                    "checklist_item_id": "171",
-                    "item_name": "Crew passports and Saudi Visa copies",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [
-                        {
-                            "role_id": 6,
-                            "role_name": "GRO Supervisor",
-                            "tasks": [
-                                {
-                                    "task_id": 2,
-                                    "task_name": "Crew Immigration"
-                                }
-                            ],
-                            "task_ids": [
-                                2
-                            ]
-                        }
-                    ],
-                    "role_ids": [
-                        6
-                    ]
+                    "swimlane_id": "185",
+                    "swimlane_name": "L&T",
+                    "swimlane_order": "2",
+                    "color_code": null
                 },
                 {
-                    "checklist_item_id": "172",
-                    "item_name": "Crew List split into two - for Immigration visit",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [
-                        {
-                            "role_id": 6,
-                            "role_name": "GRO Supervisor",
-                            "tasks": [
-                                {
-                                    "task_id": 2,
-                                    "task_name": "Crew Immigration"
-                                }
-                            ],
-                            "task_ids": [
-                                2
-                            ]
-                        }
-                    ],
-                    "role_ids": [
-                        6
-                    ]
+                    "swimlane_id": "186",
+                    "swimlane_name": "Subsea 7",
+                    "swimlane_order": "3",
+                    "color_code": null
+                },
+                {
+                    "swimlane_id": "187",
+                    "swimlane_name": "Snamprogetti",
+                    "swimlane_order": "4",
+                    "color_code": null
+                },
+                {
+                    "swimlane_id": "188",
+                    "swimlane_name": "Mcdermott",
+                    "swimlane_order": "5",
+                    "color_code": null
+                },
+                {
+                    "swimlane_id": "189",
+                    "swimlane_name": "Algihaz",
+                    "swimlane_order": "6",
+                    "color_code": null
+                },
+                {
+                    "swimlane_id": "190",
+                    "swimlane_name": "Zamil",
+                    "swimlane_order": "7",
+                    "color_code": null
+                },
+                {
+                    "swimlane_id": "191",
+                    "swimlane_name": "Lamprell UAE",
+                    "swimlane_order": "8",
+                    "color_code": null
+                },
+                {
+                    "swimlane_id": "192",
+                    "swimlane_name": "Lamprell Al Gihaz",
+                    "swimlane_order": "9",
+                    "color_code": null
+                },
+                {
+                    "swimlane_id": "193",
+                    "swimlane_name": "Lamprell Saudi",
+                    "swimlane_order": "10",
+                    "color_code": null
+                },
+                {
+                    "swimlane_id": "194",
+                    "swimlane_name": "POSH Saudi",
+                    "swimlane_order": "11",
+                    "color_code": null
+                },
+                {
+                    "swimlane_id": "195",
+                    "swimlane_name": "BGP",
+                    "swimlane_order": "12",
+                    "color_code": null
+                },
+                {
+                    "swimlane_id": "196",
+                    "swimlane_name": "Zakher Marine",
+                    "swimlane_order": "13",
+                    "color_code": null
                 }
             ],
-            "sub_sections": []
+            "stages": [
+                {
+                    "stage_id": "496",
+                    "stage_name": "Requested",
+                    "color_code": "#1976d2",
+                    "columns": [
+                        {
+                            "column_id": "808",
+                            "column_name": "Requested",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "173": [],
+                                "185": [
+                                    {
+                                        "card_id": "955",
+                                        "card_name": "Operator Task - LARSEN TOUBRO ARABIA LLC-GLOBAL ARROW-23 Nov 2026",
+                                        "call_id": "587",
+                                        "call_type_id": "1",
+                                        "vessel_id": null,
+                                        "card_color": "#2e7d32",
+                                        "vessel_name": "GLOBAL ARROW",
+                                        "port_id": null,
+                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
+                                        "credit_limit": "0",
+                                        "customer_type": "Credit",
+                                        "billing_entity_color": "#008000",
+                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
+                                        "username": "Infobahn Operator",
+                                        "user_id": "85",
+                                        "created_date": "2026-11-23 08:29:45",
+                                        "task_id": null,
+                                        "task_name": null,
+                                        "kpi_percentage": "0",
+                                        "sales_order_no": "TMP-SO-202611-00063",
+                                        "transport_count": "0",
+                                        "hotel_count": "0",
+                                        "material_management_count": "0",
+                                        "medical_count": "0",
+                                        "waste_disposal": "0",
+                                        "third_party_service": "0",
+                                        "add_on_service": "0",
+                                        "zawil_pass_requests": "0",
+                                        "cg_pass_requests": "0",
+                                        "card_type_id": null,
+                                        "card_type_name": null,
+                                        "card_type_color": null,
+                                        "card_type_icon": null,
+                                        "card_blocker_id": null,
+                                        "blocker_name": null,
+                                        "blocker_description": null,
+                                        "blocker_color": null,
+                                        "blocker_icon": null,
+                                        "card_sticker_id": null,
+                                        "sticker_name": null,
+                                        "sticker_color": null,
+                                        "sticker_icon": null,
+                                        "tag_id": null,
+                                        "tag_name": null,
+                                        "tag_color": null,
+                                        "request_type": null,
+                                        "request_id": null,
+                                        "task_cards": [],
+                                        "timeline": "1h 11m 55s",
+                                        "vendor_id": null,
+                                        "assignees": [
+                                            {
+                                                "user_id": "85",
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "assigned_operators": [
+                                            {
+                                                "user_id": 85,
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "has_linked_call": false,
+                                        "da_board": 0,
+                                        "checklist_doc": 0,
+                                        "checklist_doc_rejected": []
+                                    }
+                                ],
+                                "186": [],
+                                "187": [],
+                                "188": [],
+                                "189": [],
+                                "190": [],
+                                "191": [],
+                                "192": [],
+                                "193": [],
+                                "194": [],
+                                "195": [
+                                    {
+                                        "card_id": "960",
+                                        "card_name": "Operator Task - BGP test - nethma",
+                                        "call_id": "588",
+                                        "call_type_id": "1",
+                                        "vessel_id": null,
+                                        "card_color": "#2e7d32",
+                                        "vessel_name": "AESEN GALAXY",
+                                        "port_id": null,
+                                        "billing_entity": "BGP Arabia Co.LTD",
+                                        "credit_limit": "0",
+                                        "customer_type": "Credit",
+                                        "billing_entity_color": "#008000",
+                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/34_bgp.jpg",
+                                        "username": "Infobahn Operator",
+                                        "user_id": "85",
+                                        "created_date": "2026-11-23 09:41:35",
+                                        "task_id": null,
+                                        "task_name": null,
+                                        "kpi_percentage": "0",
+                                        "sales_order_no": "TMP-SO-202611-00064",
+                                        "transport_count": "0",
+                                        "hotel_count": "0",
+                                        "material_management_count": "0",
+                                        "medical_count": "0",
+                                        "waste_disposal": "0",
+                                        "third_party_service": "0",
+                                        "add_on_service": "0",
+                                        "zawil_pass_requests": "0",
+                                        "cg_pass_requests": "0",
+                                        "card_type_id": null,
+                                        "card_type_name": null,
+                                        "card_type_color": null,
+                                        "card_type_icon": null,
+                                        "card_blocker_id": null,
+                                        "blocker_name": null,
+                                        "blocker_description": null,
+                                        "blocker_color": null,
+                                        "blocker_icon": null,
+                                        "card_sticker_id": null,
+                                        "sticker_name": null,
+                                        "sticker_color": null,
+                                        "sticker_icon": null,
+                                        "tag_id": null,
+                                        "tag_name": null,
+                                        "tag_color": null,
+                                        "request_type": null,
+                                        "request_id": null,
+                                        "task_cards": [],
+                                        "timeline": "5s",
+                                        "vendor_id": null,
+                                        "assignees": [
+                                            {
+                                                "user_id": "85",
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "assigned_operators": [
+                                            {
+                                                "user_id": 85,
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "has_linked_call": false,
+                                        "da_board": 0,
+                                        "checklist_doc": 0,
+                                        "checklist_doc_rejected": []
+                                    }
+                                ],
+                                "196": []
+                            },
+                            "children": []
+                        },
+                        {
+                            "column_id": "830",
+                            "column_name": "Awaiting Documents",
+                            "parent_column_id": null,
+                            "column_order": "2",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "173": [],
+                                "185": [],
+                                "186": [],
+                                "187": [],
+                                "188": [],
+                                "189": [],
+                                "190": [],
+                                "191": [],
+                                "192": [],
+                                "193": [],
+                                "194": [],
+                                "195": [],
+                                "196": []
+                            },
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "stage_id": "497",
+                    "stage_name": "In Progress",
+                    "color_code": "#fb8c00",
+                    "columns": [
+                        {
+                            "column_id": "809",
+                            "column_name": "Arrived",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "173": [],
+                                "185": [
+                                    {
+                                        "card_id": "953",
+                                        "card_name": "Operator Task - 23\/11\/2026",
+                                        "call_id": "586",
+                                        "call_type_id": "1",
+                                        "vessel_id": null,
+                                        "card_color": "#2e7d32",
+                                        "vessel_name": "AESEN GALAXY",
+                                        "port_id": null,
+                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
+                                        "credit_limit": "0",
+                                        "customer_type": "Credit",
+                                        "billing_entity_color": "#008000",
+                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
+                                        "username": "Infobahn Operator",
+                                        "user_id": "85",
+                                        "created_date": "2026-11-23 07:58:50",
+                                        "task_id": null,
+                                        "task_name": null,
+                                        "kpi_percentage": "0",
+                                        "sales_order_no": "TMP-SO-202611-00062",
+                                        "transport_count": "0",
+                                        "hotel_count": "0",
+                                        "material_management_count": "0",
+                                        "medical_count": "0",
+                                        "waste_disposal": "0",
+                                        "third_party_service": "0",
+                                        "add_on_service": "0",
+                                        "zawil_pass_requests": "0",
+                                        "cg_pass_requests": "0",
+                                        "card_type_id": null,
+                                        "card_type_name": null,
+                                        "card_type_color": null,
+                                        "card_type_icon": null,
+                                        "card_blocker_id": null,
+                                        "blocker_name": null,
+                                        "blocker_description": null,
+                                        "blocker_color": null,
+                                        "blocker_icon": null,
+                                        "card_sticker_id": null,
+                                        "sticker_name": null,
+                                        "sticker_color": null,
+                                        "sticker_icon": null,
+                                        "tag_id": null,
+                                        "tag_name": null,
+                                        "tag_color": null,
+                                        "request_type": null,
+                                        "request_id": null,
+                                        "task_cards": [],
+                                        "timeline": "1h 42m 50s",
+                                        "vendor_id": null,
+                                        "assignees": [
+                                            {
+                                                "user_id": "85",
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "assigned_operators": [
+                                            {
+                                                "user_id": 85,
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "has_linked_call": false,
+                                        "da_board": 0,
+                                        "checklist_doc": 1,
+                                        "checklist_doc_rejected": [
+                                            {
+                                                "call_task_document_id": 366,
+                                                "document_id": 3749,
+                                                "document_name": "Crew list ",
+                                                "task_id": 2,
+                                                "task_name": "Crew Immigration",
+                                                "remarks": "Test testTest testTest testTest testTest testTest test",
+                                                "file_name": "pdf-sample_0.pdf"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "186": [],
+                                "187": [],
+                                "188": [],
+                                "189": [],
+                                "190": [],
+                                "191": [],
+                                "192": [],
+                                "193": [],
+                                "194": [],
+                                "195": [],
+                                "196": []
+                            },
+                            "children": []
+                        },
+                        {
+                            "column_id": "831",
+                            "column_name": "Cleared",
+                            "parent_column_id": null,
+                            "column_order": "2",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "173": [],
+                                "185": [],
+                                "186": [],
+                                "187": [],
+                                "188": [],
+                                "189": [],
+                                "190": [],
+                                "191": [],
+                                "192": [],
+                                "193": [],
+                                "194": [],
+                                "195": [],
+                                "196": []
+                            },
+                            "children": []
+                        },
+                        {
+                            "column_id": "832",
+                            "column_name": "Sailed",
+                            "parent_column_id": null,
+                            "column_order": "3",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "173": [],
+                                "185": [],
+                                "186": [],
+                                "187": [],
+                                "188": [],
+                                "189": [],
+                                "190": [],
+                                "191": [],
+                                "192": [],
+                                "193": [],
+                                "194": [],
+                                "195": [],
+                                "196": []
+                            },
+                            "children": []
+                        },
+                        {
+                            "column_id": "833",
+                            "column_name": "Approval Requested",
+                            "parent_column_id": null,
+                            "column_order": "4",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "173": [],
+                                "185": [],
+                                "186": [],
+                                "187": [],
+                                "188": [],
+                                "189": [],
+                                "190": [],
+                                "191": [],
+                                "192": [],
+                                "193": [],
+                                "194": [],
+                                "195": [],
+                                "196": []
+                            },
+                            "children": []
+                        },
+                        {
+                            "column_id": "834",
+                            "column_name": "Approval Received",
+                            "parent_column_id": null,
+                            "column_order": "5",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "173": [],
+                                "185": [],
+                                "186": [],
+                                "187": [],
+                                "188": [],
+                                "189": [],
+                                "190": [],
+                                "191": [],
+                                "192": [],
+                                "193": [],
+                                "194": [],
+                                "195": [],
+                                "196": []
+                            },
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "stage_id": "498",
+                    "stage_name": "Done",
+                    "color_code": "#43a047",
+                    "columns": [
+                        {
+                            "column_id": "810",
+                            "column_name": "Sent to DA",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "173": [],
+                                "185": [],
+                                "186": [],
+                                "187": [],
+                                "188": [],
+                                "189": [],
+                                "190": [],
+                                "191": [],
+                                "192": [],
+                                "193": [],
+                                "194": [],
+                                "195": [],
+                                "196": []
+                            },
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "stage_id": "499",
+                    "stage_name": "Ready to Archive",
+                    "color_code": "#7b1fa2",
+                    "columns": [
+                        {
+                            "column_id": "811",
+                            "column_name": "Ready to Archive",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "173": [],
+                                "185": [],
+                                "186": [],
+                                "187": [],
+                                "188": [],
+                                "189": [],
+                                "190": [],
+                                "191": [],
+                                "192": [],
+                                "193": [],
+                                "194": [],
+                                "195": [],
+                                "196": []
+                            },
+                            "children": []
+                        }
+                    ]
+                }
+            ]
         },
         {
-            "checklist_section_id": "29",
-            "parent_id": null,
-            "title": "AUTHORISATION LETTER FOR CUSTOMS BROKER     ",
-            "sort_order": "3",
-            "items": [
+            "workflow_id": "114",
+            "board_id": "27",
+            "entity_id": null,
+            "sub_entity_id": null,
+            "port_id": null,
+            "call_type_id": null,
+            "workflow_name": "GRO",
+            "is_default": "0",
+            "is_active": "1",
+            "is_pinned": "0",
+            "workflow_order": "3",
+            "pinned_at": null,
+            "pinned_by": null,
+            "is_collapsed": "0",
+            "created_by": "83",
+            "created_date": "2026-11-04 10:37:32",
+            "updated_date": "2026-11-23 08:30:18",
+            "updated_by": "83",
+            "role_id": "6",
+            "card_scope": "my",
+            "allow_all_cards": 1,
+            "swimlanes": [
                 {
-                    "checklist_item_id": "173",
-                    "item_name": "Broker Authorization online system",
-                    "description": "Broker details  License no. 2753 Name : Khalid Sheshan Al Harbi  Port : Jubail ",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": false,
-                        "description": "CONFIRMATION ONLY",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
+                    "swimlane_id": "169",
+                    "swimlane_name": "Default Lane",
+                    "swimlane_order": "1",
+                    "color_code": null
                 }
             ],
-            "sub_sections": []
+            "stages": [
+                {
+                    "stage_id": "581",
+                    "stage_name": "Backlog",
+                    "color_code": "#9e9e9e",
+                    "columns": [
+                        {
+                            "column_id": "919",
+                            "column_name": "Backlog",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "#ffffff",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "169": []
+                            },
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "stage_id": "481",
+                    "stage_name": "Requested",
+                    "color_code": "#1976d2",
+                    "columns": [
+                        {
+                            "column_id": "793",
+                            "column_name": "Requested",
+                            "parent_column_id": null,
+                            "column_order": "2",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "169": []
+                            },
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "stage_id": "482",
+                    "stage_name": "Inprogress",
+                    "color_code": "#fb8c00",
+                    "columns": [
+                        {
+                            "column_id": "794",
+                            "column_name": "In Progress",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "169": [
+                                    {
+                                        "card_id": "956",
+                                        "card_name": "Vessel Inward Registration",
+                                        "call_id": "586",
+                                        "call_type_id": "1",
+                                        "vessel_id": null,
+                                        "card_color": "#2e7d32",
+                                        "vessel_name": "AESEN GALAXY",
+                                        "port_id": "1",
+                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
+                                        "credit_limit": "0",
+                                        "customer_type": "Credit",
+                                        "billing_entity_color": "#008000",
+                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
+                                        "username": "GRO Supervisor",
+                                        "user_id": null,
+                                        "created_date": "2026-11-23 08:41:20",
+                                        "task_id": "7",
+                                        "task_name": "Vessel Inward Registration",
+                                        "kpi_percentage": "0",
+                                        "sales_order_no": "TMP-SO-202611-00062",
+                                        "card_type_id": null,
+                                        "card_type_name": null,
+                                        "card_type_color": null,
+                                        "card_type_icon": null,
+                                        "card_blocker_id": null,
+                                        "blocker_name": null,
+                                        "blocker_description": null,
+                                        "blocker_color": null,
+                                        "blocker_icon": null,
+                                        "card_sticker_id": null,
+                                        "sticker_name": null,
+                                        "sticker_color": null,
+                                        "sticker_icon": null,
+                                        "tag_id": null,
+                                        "tag_name": null,
+                                        "tag_color": null,
+                                        "request_type": null,
+                                        "request_id": null,
+                                        "task_documents_status": 1,
+                                        "task_card_docs": 1,
+                                        "timeline": "1h 20s",
+                                        "vendor_id": null,
+                                        "assignees": [],
+                                        "assigned_operators": [
+                                            {
+                                                "user_id": 85,
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "has_linked_call": false,
+                                        "da_board": 0,
+                                        "checklist_doc": 1,
+                                        "checklist_doc_rejected": [
+                                            {
+                                                "call_task_document_id": 366,
+                                                "document_id": 3749,
+                                                "document_name": "Crew list ",
+                                                "task_id": 2,
+                                                "task_name": "Crew Immigration",
+                                                "remarks": "Test testTest testTest testTest testTest testTest test",
+                                                "file_name": "pdf-sample_0.pdf"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "card_id": "956",
+                                        "card_name": "Vessel Inward Registration",
+                                        "call_id": "586",
+                                        "call_type_id": "1",
+                                        "vessel_id": null,
+                                        "card_color": "#2e7d32",
+                                        "vessel_name": "AESEN GALAXY",
+                                        "port_id": "1",
+                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
+                                        "credit_limit": "0",
+                                        "customer_type": "Credit",
+                                        "billing_entity_color": "#008000",
+                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
+                                        "username": "GRO user",
+                                        "user_id": null,
+                                        "created_date": "2026-11-23 08:41:20",
+                                        "task_id": "7",
+                                        "task_name": "Vessel Inward Registration",
+                                        "kpi_percentage": "0",
+                                        "sales_order_no": "TMP-SO-202611-00062",
+                                        "card_type_id": null,
+                                        "card_type_name": null,
+                                        "card_type_color": null,
+                                        "card_type_icon": null,
+                                        "card_blocker_id": null,
+                                        "blocker_name": null,
+                                        "blocker_description": null,
+                                        "blocker_color": null,
+                                        "blocker_icon": null,
+                                        "card_sticker_id": null,
+                                        "sticker_name": null,
+                                        "sticker_color": null,
+                                        "sticker_icon": null,
+                                        "tag_id": null,
+                                        "tag_name": null,
+                                        "tag_color": null,
+                                        "request_type": null,
+                                        "request_id": null,
+                                        "task_documents_status": 1,
+                                        "task_card_docs": 1,
+                                        "timeline": "1h 20s",
+                                        "vendor_id": null,
+                                        "assignees": [],
+                                        "assigned_operators": [
+                                            {
+                                                "user_id": 85,
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "has_linked_call": false,
+                                        "da_board": 0,
+                                        "checklist_doc": 1,
+                                        "checklist_doc_rejected": [
+                                            {
+                                                "call_task_document_id": 366,
+                                                "document_id": 3749,
+                                                "document_name": "Crew list ",
+                                                "task_id": 2,
+                                                "task_name": "Crew Immigration",
+                                                "remarks": "Test testTest testTest testTest testTest testTest test",
+                                                "file_name": "pdf-sample_0.pdf"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "card_id": "957",
+                                        "card_name": "Crew Immigration",
+                                        "call_id": "586",
+                                        "call_type_id": "1",
+                                        "vessel_id": null,
+                                        "card_color": "#2e7d32",
+                                        "vessel_name": "AESEN GALAXY",
+                                        "port_id": "1",
+                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
+                                        "credit_limit": "0",
+                                        "customer_type": "Credit",
+                                        "billing_entity_color": "#008000",
+                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
+                                        "username": "GRO Supervisor",
+                                        "user_id": null,
+                                        "created_date": "2026-11-23 08:41:20",
+                                        "task_id": "2",
+                                        "task_name": "Crew Immigration",
+                                        "kpi_percentage": "0",
+                                        "sales_order_no": "TMP-SO-202611-00062",
+                                        "card_type_id": null,
+                                        "card_type_name": null,
+                                        "card_type_color": null,
+                                        "card_type_icon": null,
+                                        "card_blocker_id": null,
+                                        "blocker_name": null,
+                                        "blocker_description": null,
+                                        "blocker_color": null,
+                                        "blocker_icon": null,
+                                        "card_sticker_id": null,
+                                        "sticker_name": null,
+                                        "sticker_color": null,
+                                        "sticker_icon": null,
+                                        "tag_id": null,
+                                        "tag_name": null,
+                                        "tag_color": null,
+                                        "request_type": null,
+                                        "request_id": null,
+                                        "task_documents_status": 0,
+                                        "task_card_docs": 0,
+                                        "timeline": "1h 20s",
+                                        "vendor_id": null,
+                                        "assignees": [],
+                                        "assigned_operators": [
+                                            {
+                                                "user_id": 85,
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "has_linked_call": false,
+                                        "da_board": 0,
+                                        "checklist_doc": 1,
+                                        "checklist_doc_rejected": [
+                                            {
+                                                "call_task_document_id": 366,
+                                                "document_id": 3749,
+                                                "document_name": "Crew list ",
+                                                "task_id": 2,
+                                                "task_name": "Crew Immigration",
+                                                "remarks": "Test testTest testTest testTest testTest testTest test",
+                                                "file_name": "pdf-sample_0.pdf"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "card_id": "957",
+                                        "card_name": "Crew Immigration",
+                                        "call_id": "586",
+                                        "call_type_id": "1",
+                                        "vessel_id": null,
+                                        "card_color": "#2e7d32",
+                                        "vessel_name": "AESEN GALAXY",
+                                        "port_id": "1",
+                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
+                                        "credit_limit": "0",
+                                        "customer_type": "Credit",
+                                        "billing_entity_color": "#008000",
+                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
+                                        "username": "GRO user",
+                                        "user_id": null,
+                                        "created_date": "2026-11-23 08:41:20",
+                                        "task_id": "2",
+                                        "task_name": "Crew Immigration",
+                                        "kpi_percentage": "0",
+                                        "sales_order_no": "TMP-SO-202611-00062",
+                                        "card_type_id": null,
+                                        "card_type_name": null,
+                                        "card_type_color": null,
+                                        "card_type_icon": null,
+                                        "card_blocker_id": null,
+                                        "blocker_name": null,
+                                        "blocker_description": null,
+                                        "blocker_color": null,
+                                        "blocker_icon": null,
+                                        "card_sticker_id": null,
+                                        "sticker_name": null,
+                                        "sticker_color": null,
+                                        "sticker_icon": null,
+                                        "tag_id": null,
+                                        "tag_name": null,
+                                        "tag_color": null,
+                                        "request_type": null,
+                                        "request_id": null,
+                                        "task_documents_status": 0,
+                                        "task_card_docs": 0,
+                                        "timeline": "1h 20s",
+                                        "vendor_id": null,
+                                        "assignees": [],
+                                        "assigned_operators": [
+                                            {
+                                                "user_id": 85,
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "has_linked_call": false,
+                                        "da_board": 0,
+                                        "checklist_doc": 1,
+                                        "checklist_doc_rejected": [
+                                            {
+                                                "call_task_document_id": 366,
+                                                "document_id": 3749,
+                                                "document_name": "Crew list ",
+                                                "task_id": 2,
+                                                "task_name": "Crew Immigration",
+                                                "remarks": "Test testTest testTest testTest testTest testTest test",
+                                                "file_name": "pdf-sample_0.pdf"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "stage_id": "483",
+                    "stage_name": "Done",
+                    "color_code": "#43a047",
+                    "columns": [
+                        {
+                            "column_id": "795",
+                            "column_name": "Completed",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "169": []
+                            },
+                            "children": []
+                        }
+                    ]
+                }
+            ]
         },
         {
-            "checklist_section_id": "30",
-            "parent_id": null,
-            "title": "IF CARGO ONBOARD",
-            "sort_order": "4",
-            "items": [
+            "workflow_id": "117",
+            "board_id": "27",
+            "entity_id": null,
+            "sub_entity_id": null,
+            "port_id": null,
+            "call_type_id": null,
+            "workflow_name": "Custom Clearance",
+            "is_default": "0",
+            "is_active": "1",
+            "is_pinned": "0",
+            "workflow_order": "4",
+            "pinned_at": null,
+            "pinned_by": null,
+            "is_collapsed": "1",
+            "created_by": "83",
+            "created_date": "2026-11-04 12:46:22",
+            "updated_date": "2026-11-21 12:22:18",
+            "updated_by": "83",
+            "role_id": "5",
+            "card_scope": "my",
+            "allow_all_cards": 1,
+            "swimlanes": [
                 {
-                    "checklist_item_id": "174",
-                    "item_name": "Cargo Commercial invoice with the company stamp.",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": false,
-                        "description": "ORIGINAL REQUIRED",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "175",
-                    "item_name": "Cargo packing list ",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": false,
-                        "description": "ORIGINAL REQUIRED",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "176",
-                    "item_name": "Cargo Bill of Lading - Surrender \/ Seaway bill",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [
-                        {
-                            "role_id": 5,
-                            "role_name": "Custom Clearance Supervisor",
-                            "tasks": [
-                                {
-                                    "task_id": 4,
-                                    "task_name": "Custom Bayan"
-                                }
-                            ],
-                            "task_ids": [
-                                4
-                            ]
-                        }
-                    ],
-                    "role_ids": [
-                        5
-                    ]
-                },
-                {
-                    "checklist_item_id": "177",
-                    "item_name": "Arabic letter for cargo importation",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": false,
-                        "description": "ORIGINAL REQUIRED ATTESTED BY CHAMBER",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "178",
-                    "item_name": "SABER certificate if any as per HS code   ",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [
-                        {
-                            "role_id": 5,
-                            "role_name": "Custom Clearance Supervisor",
-                            "tasks": [
-                                {
-                                    "task_id": 4,
-                                    "task_name": "Custom Bayan"
-                                }
-                            ],
-                            "task_ids": [
-                                4
-                            ]
-                        }
-                    ],
-                    "role_ids": [
-                        5
-                    ]
+                    "swimlane_id": "172",
+                    "swimlane_name": "Default Lane",
+                    "swimlane_order": "1",
+                    "color_code": null
                 }
             ],
-            "sub_sections": []
+            "stages": [
+                {
+                    "stage_id": "582",
+                    "stage_name": "Backlog",
+                    "color_code": "#9e9e9e",
+                    "columns": [
+                        {
+                            "column_id": "920",
+                            "column_name": "Backlog",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "#ffffff",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "172": [
+                                    {
+                                        "card_id": "958",
+                                        "card_name": "Custom Bayan",
+                                        "call_id": "586",
+                                        "call_type_id": "1",
+                                        "vessel_id": null,
+                                        "card_color": "#2e7d32",
+                                        "vessel_name": "AESEN GALAXY",
+                                        "port_id": "1",
+                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
+                                        "credit_limit": "0",
+                                        "customer_type": "Credit",
+                                        "billing_entity_color": "#008000",
+                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
+                                        "username": "Custom Clearance",
+                                        "user_id": null,
+                                        "created_date": "2026-11-23 08:41:20",
+                                        "task_id": "4",
+                                        "task_name": "Custom Bayan",
+                                        "kpi_percentage": "0",
+                                        "sales_order_no": "TMP-SO-202611-00062",
+                                        "card_type_id": null,
+                                        "card_type_name": null,
+                                        "card_type_color": null,
+                                        "card_type_icon": null,
+                                        "card_blocker_id": null,
+                                        "blocker_name": null,
+                                        "blocker_description": null,
+                                        "blocker_color": null,
+                                        "blocker_icon": null,
+                                        "card_sticker_id": null,
+                                        "sticker_name": null,
+                                        "sticker_color": null,
+                                        "sticker_icon": null,
+                                        "tag_id": null,
+                                        "tag_name": null,
+                                        "tag_color": null,
+                                        "request_type": null,
+                                        "request_id": null,
+                                        "task_documents_status": 0,
+                                        "task_card_docs": 0,
+                                        "timeline": "1h 20s",
+                                        "vendor_id": null,
+                                        "assignees": [],
+                                        "assigned_operators": [
+                                            {
+                                                "user_id": 85,
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "has_linked_call": false,
+                                        "da_board": 0,
+                                        "checklist_doc": 1,
+                                        "checklist_doc_rejected": [
+                                            {
+                                                "call_task_document_id": 366,
+                                                "document_id": 3749,
+                                                "document_name": "Crew list ",
+                                                "task_id": 2,
+                                                "task_name": "Crew Immigration",
+                                                "remarks": "Test testTest testTest testTest testTest testTest test",
+                                                "file_name": "pdf-sample_0.pdf"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "card_id": "958",
+                                        "card_name": "Custom Bayan",
+                                        "call_id": "586",
+                                        "call_type_id": "1",
+                                        "vessel_id": null,
+                                        "card_color": "#2e7d32",
+                                        "vessel_name": "AESEN GALAXY",
+                                        "port_id": "1",
+                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
+                                        "credit_limit": "0",
+                                        "customer_type": "Credit",
+                                        "billing_entity_color": "#008000",
+                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
+                                        "username": "Custom Clearance User",
+                                        "user_id": null,
+                                        "created_date": "2026-11-23 08:41:20",
+                                        "task_id": "4",
+                                        "task_name": "Custom Bayan",
+                                        "kpi_percentage": "0",
+                                        "sales_order_no": "TMP-SO-202611-00062",
+                                        "card_type_id": null,
+                                        "card_type_name": null,
+                                        "card_type_color": null,
+                                        "card_type_icon": null,
+                                        "card_blocker_id": null,
+                                        "blocker_name": null,
+                                        "blocker_description": null,
+                                        "blocker_color": null,
+                                        "blocker_icon": null,
+                                        "card_sticker_id": null,
+                                        "sticker_name": null,
+                                        "sticker_color": null,
+                                        "sticker_icon": null,
+                                        "tag_id": null,
+                                        "tag_name": null,
+                                        "tag_color": null,
+                                        "request_type": null,
+                                        "request_id": null,
+                                        "task_documents_status": 0,
+                                        "task_card_docs": 0,
+                                        "timeline": "1h 20s",
+                                        "vendor_id": null,
+                                        "assignees": [],
+                                        "assigned_operators": [
+                                            {
+                                                "user_id": 85,
+                                                "name": "Infobahn Operator"
+                                            }
+                                        ],
+                                        "has_linked_call": false,
+                                        "da_board": 0,
+                                        "checklist_doc": 1,
+                                        "checklist_doc_rejected": [
+                                            {
+                                                "call_task_document_id": 366,
+                                                "document_id": 3749,
+                                                "document_name": "Crew list ",
+                                                "task_id": 2,
+                                                "task_name": "Crew Immigration",
+                                                "remarks": "Test testTest testTest testTest testTest testTest test",
+                                                "file_name": "pdf-sample_0.pdf"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "stage_id": "492",
+                    "stage_name": "Requested",
+                    "color_code": "#1976d2",
+                    "columns": [
+                        {
+                            "column_id": "804",
+                            "column_name": "Requested",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "172": []
+                            },
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "stage_id": "493",
+                    "stage_name": "Inprogress",
+                    "color_code": "#fb8c00",
+                    "columns": [
+                        {
+                            "column_id": "805",
+                            "column_name": "In Progress",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "172": []
+                            },
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "stage_id": "494",
+                    "stage_name": "Done",
+                    "color_code": "#43a047",
+                    "columns": [
+                        {
+                            "column_id": "806",
+                            "column_name": "Completed",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "172": []
+                            },
+                            "children": []
+                        }
+                    ]
+                }
+            ]
         },
         {
-            "checklist_section_id": "31",
-            "parent_id": null,
-            "title": "MARINE WORK PERMIT",
-            "sort_order": "5",
-            "items": [
+            "workflow_id": "115",
+            "board_id": "27",
+            "entity_id": null,
+            "sub_entity_id": null,
+            "port_id": null,
+            "call_type_id": null,
+            "workflow_name": "Marine Work Permit",
+            "is_default": "0",
+            "is_active": "1",
+            "is_pinned": "0",
+            "workflow_order": "5",
+            "pinned_at": null,
+            "pinned_by": null,
+            "is_collapsed": "0",
+            "created_by": "83",
+            "created_date": "2026-11-04 10:44:46",
+            "updated_date": "2026-11-22 11:40:50",
+            "updated_by": "14",
+            "role_id": "8",
+            "card_scope": "my",
+            "allow_all_cards": 1,
+            "swimlanes": [
                 {
-                    "checklist_item_id": "179",
-                    "item_name": "Vessel Registry certificate",
-                    "description": "(Check Vessel Age)",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [
+                    "swimlane_id": "170",
+                    "swimlane_name": "Default Lane",
+                    "swimlane_order": "1",
+                    "color_code": null
+                }
+            ],
+            "stages": [
+                {
+                    "stage_id": "484",
+                    "stage_name": "Requested",
+                    "color_code": "#1976d2",
+                    "columns": [
                         {
-                            "role_id": 6,
-                            "role_name": "GRO Supervisor",
-                            "tasks": [
-                                {
-                                    "task_id": 7,
-                                    "task_name": "Vessel Inward Registration"
-                                }
-                            ],
-                            "task_ids": [
-                                7
-                            ]
+                            "column_id": "796",
+                            "column_name": "Requested",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "170": []
+                            },
+                            "children": []
                         }
-                    ],
-                    "role_ids": [
-                        6
                     ]
                 },
                 {
-                    "checklist_item_id": "180",
-                    "item_name": "International Tonnage certificate ",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
+                    "stage_id": "485",
+                    "stage_name": "Inprogress",
+                    "color_code": "#fb8c00",
+                    "columns": [
+                        {
+                            "column_id": "797",
+                            "column_name": "In Progress",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "170": []
+                            },
+                            "children": []
+                        }
+                    ]
                 },
                 {
-                    "checklist_item_id": "181",
-                    "item_name": "Ship Radio Station license",
-                    "description": "(EPIRB, AIS & VHF equipment details should be mentioned along with Frequency)",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "182",
-                    "item_name": "Certificate of Class certificate with a yearly endorsement",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "183",
-                    "item_name": "International Load line certificate with yearly endorsement ",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "184",
-                    "item_name": "Cargo Ship Safety construction certificate with yearly endorsement (If GRT above 500 MT)",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "185",
-                    "item_name": "Cargo ship safety Equipment certificate with yearly endorsement (If GRT above 500 MT)",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "186",
-                    "item_name": "Cargo ship Safety Radio certificate with yearly endorsement (If GRT above 300 MT)",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "187",
-                    "item_name": "Passenger ship safety certificate for crew boat (for below 500GRT required exemption certificate from class) ",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "188",
-                    "item_name": "General Condition Survey",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "189",
-                    "item_name": "International Ship Security Certificate with Biennial endorsement (If GRT above 500 MT)",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "190",
-                    "item_name": "International Oil Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "191",
-                    "item_name": "International Air Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "192",
-                    "item_name": "International Sewage pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "193",
-                    "item_name": "Picture of vessel (Need to capture vessel name and IMO in one pic)",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "194",
-                    "item_name": "Safety Management Certificate with Biennial endorsement (If GRT above 500 MT) ",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "195",
-                    "item_name": "International Anti-fouling system certificate (if GRT above 400GRT)",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "196",
-                    "item_name": "International Energy Efficient certificate (If GRT above 400T)",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "197",
-                    "item_name": "International Ballast Water management (If GRT above 400GRT)",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "198",
-                    "item_name": "Minimum Safe Manning certificate",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "199",
-                    "item_name": "Insurance ( P&I, H&M) oil pollution covered amount should be mentioned",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "200",
-                    "item_name": "Insurance for wrecks removal certificate from Flag for above 300GRT ",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "201",
-                    "item_name": "Insurance for bunker oil pollution damage 2021 certificate from Flag for above 1000GRT",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
-                },
-                {
-                    "checklist_item_id": "202",
-                    "item_name": "Qualification Certificates (COC) for Master\/Officers ",
-                    "description": "",
-                    "expiry_date_reqd": "0",
-                    "document_details": {
-                        "require_copy_only": true,
-                        "description": "",
-                        "uploaded_files": []
-                    },
-                    "roles": [],
-                    "role_ids": []
+                    "stage_id": "486",
+                    "stage_name": "Done",
+                    "color_code": "#43a047",
+                    "columns": [
+                        {
+                            "column_id": "798",
+                            "column_name": "Completed",
+                            "parent_column_id": null,
+                            "column_order": "1",
+                            "cards_per_row": "2",
+                            "background_color": "",
+                            "column_description": null,
+                            "cards_by_swimlane": {
+                                "170": []
+                            },
+                            "children": []
+                        }
+                    ]
                 }
-            ],
-            "sub_sections": []
+            ]
         }
-    ]
+    ],
+    "background": {
+        "board_id": "27",
+        "board_name": "Jubail Marine",
+        "background_type": "color",
+        "color": null,
+        "background_file": null
+    }
 }

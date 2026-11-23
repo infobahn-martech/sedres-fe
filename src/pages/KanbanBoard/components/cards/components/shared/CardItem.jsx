@@ -29,6 +29,7 @@ import {
   FiX,
   FiGitCommit,
   FiExternalLink,
+  FiAlertTriangle,
 } from "react-icons/fi";
 import { resolveIconComponentStrict } from "@/structure/SideNav/components/DynamicIcon";
 import {
@@ -457,6 +458,60 @@ ApiCardTaskFlow.propTypes = {
   setSelectedCard: PropTypes.func.isRequired,
 };
 
+/** Cards with rejected checklist documents: true when the API sent checklist_doc 1 with a non-empty rejected list. */
+function hasRejectedChecklistDocs(card) {
+  return Array.isArray(card?.checklistDocRejected) && card.checklistDocRejected.length > 0;
+}
+
+/** Tooltip text: one line per rejected document, with the reviewer's remarks. */
+function getRejectedChecklistTooltip(card) {
+  return card.checklistDocRejected
+    .map((doc) => {
+      const name = doc.documentName || doc.fileName || "Document";
+      const task = doc.taskName ? ` (${doc.taskName})` : "";
+      const remarks = doc.remarks ? `\nRemarks: ${doc.remarks}` : "";
+      return `${name}${task}${remarks}`;
+    })
+    .join("\n\n");
+}
+
+/** Warning strip: rejected checklist documents need to be re-uploaded. Clicking it opens the card. */
+function ApiCardChecklistRejectedBadge({ card, setSelectedCard }) {
+  if (!hasRejectedChecklistDocs(card)) return null;
+  const count = card.checklistDocRejected.length;
+  const tooltipId = `checklist-rejected-${card.id}`;
+
+  return (
+    <>
+      <button
+        type="button"
+        className="card-api-checklist-rejected"
+        data-tooltip-id={tooltipId}
+        data-tooltip-content={getRejectedChecklistTooltip(card)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setSelectedCard(card);
+        }}
+        aria-label={`${count} rejected checklist document${count === 1 ? "" : "s"}: re-upload required`}
+      >
+        <FiAlertTriangle size={12} aria-hidden />
+        <span className="card-api-checklist-rejected-text">
+          {count === 1 ? "Document rejected" : `${count} documents rejected`} · Re-upload
+        </span>
+      </button>
+      <Tooltip id={tooltipId} place="top" className="card-name-tooltip card-checklist-rejected-tooltip" />
+    </>
+  );
+}
+
+ApiCardChecklistRejectedBadge.propTypes = {
+  card: PropTypes.shape({
+    id: PropTypes.string,
+    checklistDocRejected: PropTypes.arrayOf(PropTypes.object),
+  }).isRequired,
+  setSelectedCard: PropTypes.func.isRequired,
+};
+
 /** Reference number row (invoice no → PO no → sales order no) shown above the KPI summary row, with a click-to-copy icon
     and, on DA board cards whose final invoice is ready, a download icon. */
 function ApiCardSalesOrderRow({ card, showInvoiceDownload = false }) {
@@ -807,6 +862,8 @@ function ApiKanbanCardFull({
         ) : null}
       </div>
 
+      <ApiCardChecklistRejectedBadge card={card} setSelectedCard={setSelectedCard} />
+
       <ApiCardCountIconsRow card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} transportOnly={transportOnlyIcons} />
 
       <ApiCardTaskFlow card={card} cardsById={cardsById} setSelectedCard={setSelectedCard} />
@@ -919,6 +976,9 @@ function CardItem({
   const signatureTooltip = isSignatureMissing
     ? `This ${signatureDocumentName} does not have a signature`
     : undefined;
+  /* Rejected checklist documents: the card pulses until they are re-uploaded. */
+  const hasChecklistRejected = isApiCard && hasRejectedChecklistDocs(card);
+  const checklistRejectedClass = hasChecklistRejected ? "kanban-card--checklist-rejected" : "";
   const canSelectForAction =
     (isDaBoardCard ||
       isLamprellUaePoReceivedColumn(workflowTitle, columnTitle) ||
@@ -1006,7 +1066,7 @@ function CardItem({
            unchanged; click / Enter opens the same card form. Hover text comes from the board-level
            shared tooltip (MINIMAL_CARD_TOOLTIP_ID) instead of one Tooltip per card. */
         <div
-          className={`kanban-card kanban-card--minimal ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""} ${isSignatureMissing ? "kanban-card--signature-missing" : ""}`}
+          className={`kanban-card kanban-card--minimal ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""} ${isSignatureMissing ? "kanban-card--signature-missing" : ""} ${checklistRejectedClass}`}
           ref={provided.innerRef}
           {...(KANBAN_DND_DISABLED ? {} : provided.draggableProps)}
           {...(KANBAN_DND_DISABLED ? {} : provided.dragHandleProps)}
@@ -1040,7 +1100,7 @@ function CardItem({
         </div>
       ) : (
         <div
-          className={`kanban-card kanban-card--level-${viewLevel} ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""} ${isSignatureMissing ? "kanban-card--signature-missing" : ""}`}
+          className={`kanban-card kanban-card--level-${viewLevel} ${isApiCard ? "kanban-card--api" : ""} ${snapshot.isDragging ? "dragging" : ""} ${card.priority ? "priority-blink" : ""} ${isShrunk ? "card-shrunk" : ""} ${isDarkMode ? "kanban-card-dark" : ""} ${fixedBoardSizeStyle ? "kanban-card--fixed-board" : ""} ${isSelectedForAction ? "kanban-card--selected-for-action" : ""} ${isSignatureMissing ? "kanban-card--signature-missing" : ""} ${checklistRejectedClass}`}
           title={signatureTooltip}
           ref={provided.innerRef}
           {...(KANBAN_DND_DISABLED ? {} : provided.draggableProps)}

@@ -418,6 +418,17 @@ export function mapBoardWorkflowFromApi(workflow) {
               card.subtask_status != null && String(card.subtask_status).trim() !== ""
                 ? String(card.subtask_status).trim()
                 : null,
+            // get_full_board: checklist_doc 1 + checklist_doc_rejected[] → documents that must be re-uploaded.
+            checklistDocRejected:
+              String(card.checklist_doc ?? "").trim() === "1" && Array.isArray(card.checklist_doc_rejected)
+                ? card.checklist_doc_rejected.map((doc) => ({
+                    id: String(doc?.call_task_document_id ?? doc?.document_id ?? ""),
+                    documentName: String(doc?.document_name ?? "").trim(),
+                    taskName: String(doc?.task_name ?? "").trim(),
+                    remarks: String(doc?.remarks ?? "").trim(),
+                    fileName: String(doc?.file_name ?? "").trim(),
+                  }))
+                : [],
             swimlaneTitle: swimlanes[laneKey]?.title,
             taskCards: mapTaskCardsFromApi(card.task_cards),
             raw: card,
