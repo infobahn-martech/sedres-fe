@@ -404,6 +404,13 @@ $dli-primary-hover: #002a6d;
   }
 }
 
+.dli-row-select {
+  width: 80px;
+  padding: 0 4px 0 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
 .dli-table-empty {
   padding: 32px 12px !important;
   text-align: center;

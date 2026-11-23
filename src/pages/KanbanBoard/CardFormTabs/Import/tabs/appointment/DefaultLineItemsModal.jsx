@@ -24,6 +24,13 @@ const isFailedResult = (result) =>
 
 const EMPTY_ADD_FORM = { itemCode: "", tariffId: "", itemName: "", unitPrice: "", taxPercentage: "" };
 
+// Tax % choices for an edited row. An item whose current tax isn't one of them keeps it as an extra option.
+const TAX_PERCENTAGE_OPTIONS = ["15", "10", "5"];
+const getTaxOptions = (current) => {
+  const value = String(current ?? "").trim();
+  return value && !TAX_PERCENTAGE_OPTIONS.includes(value) ? [...TAX_PERCENTAGE_OPTIONS, value] : TAX_PERCENTAGE_OPTIONS;
+};
+
 // quantity is absent on default line items (one unit each).
 const getQuantity = (item) => (item?.quantity == null ? 1 : toNumber(item.quantity));
 
@@ -611,16 +618,19 @@ function DefaultLineItemsModal({
                       </td>
                       <td className="dli-col-num">
                         {isEditing ? (
-                          <input
-                            type="number"
-                            min="0"
-                            step="any"
-                            className="dli-row-input"
+                          <select
+                            className="dli-row-input dli-row-select"
                             value={editForm.taxPercentage}
                             onChange={(e) => setEditForm((prev) => ({ ...prev, taxPercentage: e.target.value }))}
                             onKeyDown={handleEditKeyDown}
                             aria-label="Tax percentage"
-                          />
+                          >
+                            {getTaxOptions(editForm.taxPercentage).map((tax) => (
+                              <option key={tax} value={tax}>
+                                {tax}%
+                              </option>
+                            ))}
+                          </select>
                         ) : (
                           `${toNumber(item.tax_percentage)}%`
                         )}
