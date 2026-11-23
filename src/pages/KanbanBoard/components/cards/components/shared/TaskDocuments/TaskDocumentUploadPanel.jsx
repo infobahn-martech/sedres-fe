@@ -81,7 +81,7 @@ function TaskDocumentUploadPanel({
                   >
                     <span className="gro-inward-popover-label">
                       {field.label}
-                      {field.isRequired ? " *" : ""}
+                      {field.isRequired ? <span className="text-danger"> *</span> : null}
                     </span>
                     <div className="gro-inward-popover-datetime-row">
                       <DateTimePickerField

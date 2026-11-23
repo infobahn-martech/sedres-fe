@@ -598,7 +598,7 @@ const GROCardView = forwardRef(function GROCardView(
         className={`gro-inward-popover-field gro-inward-popover-datetime-full${field.error ? " gro-inward-popover-field--error" : ""}`}
       >
         <span className="gro-inward-popover-label">
-          {field.label}{field.isRequired ? " *" : ""}
+          {field.label}{field.isRequired ? <span className="text-danger"> *</span> : null}
         </span>
         <div className="gro-inward-popover-datetime-row">
           <DateTimePickerField
@@ -1895,7 +1895,7 @@ const GROCardView = forwardRef(function GROCardView(
                       <form onSubmit={handleDynamicUploadSubmit}>
                         <div className="gro-inward-popover-body">
                           <div className="gro-inward-popover-field">
-                            <span className="gro-inward-popover-label">Signed Document *</span>
+                            <span className="gro-inward-popover-label">Signed Document <span className="text-danger">*</span></span>
                             <div className="gro-premium-upload">
                               <input
                                 ref={dynamicUploadFileInputRef}
@@ -1945,7 +1945,7 @@ const GROCardView = forwardRef(function GROCardView(
                               >
                                 <span className="gro-inward-popover-label">
                                   {field.label}
-                                  {field.isRequired ? " *" : ""}
+                                  {field.isRequired ? <span className="text-danger"> *</span> : null}
                                 </span>
                                 <div className="gro-inward-popover-datetime-row">
                                   <DateTimePickerField

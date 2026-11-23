@@ -20,7 +20,7 @@ function PopoverFileUploadField({
     <div className={`gro-inward-popover-field${error ? " gro-inward-popover-field--error" : ""}`}>
       <span className="gro-inward-popover-label">
         {label}
-        {required ? " *" : ""}
+        {required ? <span className="text-danger"> *</span> : null}
       </span>
       <div className="gro-premium-upload">
         <input
@@ -99,7 +99,7 @@ function GroPopoverStageExtraFields({
     return (
       <>
         <div className={`gro-inward-popover-field${errors?.crew_immigration_status ? " gro-inward-popover-field--error" : ""}`}>
-          <span className="gro-inward-popover-label">Crew Immigration Status *</span>
+          <span className="gro-inward-popover-label">Crew Immigration Status <span className="text-danger">*</span></span>
           <select
             className="gro-inward-popover-select"
             value={values?.crew_immigration_status ?? ""}
@@ -116,7 +116,7 @@ function GroPopoverStageExtraFields({
         </div>
         {showOnHoldReason ? (
           <div className={`gro-inward-popover-field${errors?.on_hold_reason ? " gro-inward-popover-field--error" : ""}`}>
-            <span className="gro-inward-popover-label">Remarks *</span>
+            <span className="gro-inward-popover-label">Remarks <span className="text-danger">*</span></span>
             <textarea
               className="gro-inward-popover-textarea"
               rows={3}
@@ -160,7 +160,7 @@ function GroPopoverStageExtraFields({
           required
         />
         <div className={`gro-inward-popover-field${errors?.custom_inspection_status ? " gro-inward-popover-field--error" : ""}`}>
-          <span className="gro-inward-popover-label">Customs Status *</span>
+          <span className="gro-inward-popover-label">Customs Status <span className="text-danger">*</span></span>
           <select
             className="gro-inward-popover-select"
             value={values?.custom_inspection_status ?? ""}
@@ -177,7 +177,7 @@ function GroPopoverStageExtraFields({
         </div>
         {showFailedReason ? (
           <div className={`gro-inward-popover-field${errors?.failed_reason ? " gro-inward-popover-field--error" : ""}`}>
-            <span className="gro-inward-popover-label">Failed Reason *</span>
+            <span className="gro-inward-popover-label">Failed Reason <span className="text-danger">*</span></span>
             <textarea
               className="gro-inward-popover-textarea"
               rows={3}
