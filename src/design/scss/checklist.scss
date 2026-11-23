@@ -154,6 +154,34 @@
   z-index: 20;
 }
 
+// Keep "Save and Confirm" pinned to the bottom-right of the panel, whether the
+// checklists are collapsed (short content) or expanded (scrolling content).
+.checklist-tab-layout--pinned-actions {
+  display: flex;
+  flex-direction: column;
+
+  > .checklist-form {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    padding-bottom: 0;
+  }
+
+  // Flex items don't collapse margins: keep the original 12px spacing between blocks.
+  .cl-excel-type-group {
+    margin-bottom: 0;
+  }
+
+  .checklist-actions {
+    position: sticky;
+    right: auto;
+    bottom: 0;
+    align-self: flex-end;
+    margin-top: auto;
+    padding-top: 16px;
+  }
+}
+
 .checklist-actions .cl-footer {
   position: static;
   margin-top: 0;

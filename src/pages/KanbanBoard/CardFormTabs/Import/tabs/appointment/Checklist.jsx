@@ -753,7 +753,7 @@ function Checklist({
       </div>
 
       <div
-        className={`checklist-tab-layout checklist-tab-layout--full${isEmptyView ? " checklist-tab-layout--empty" : ""}`}
+        className={`checklist-tab-layout checklist-tab-layout--full checklist-tab-layout--pinned-actions${isEmptyView ? " checklist-tab-layout--empty" : ""}`}
       >
         <div className={`checklist-form checklist-form--compact${isEmptyView ? " checklist-form--empty" : ""}`}>
           {isLoading ? <ChecklistLoadingState /> : null}
