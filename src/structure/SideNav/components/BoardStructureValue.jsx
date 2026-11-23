@@ -166,7 +166,11 @@ function PositionValue({ value, defaultBoardId = '', onChange }) {
   // The minimap follows the board chosen in the AND "Board is" row (not the first board of the list);
   // a board picked inside the minimap stays until that row changes.
   useEffect(() => {
-    if (defaultBoardId) setMinimapBoardId(String(defaultBoardId));
+    if (!defaultBoardId) return;
+    setMinimapBoardId(String(defaultBoardId));
+    // Column and lane names of the saved picks are read from the board's workflows, so they are
+    // loaded as soon as the board is known (a reopened rule otherwise shows "Column #id").
+    getBoardWorkflows(defaultBoardId);
   }, [defaultBoardId]);
 
   // An entry is read back as "[workspace][board] / [workflow] COLUMN | LANE", looked up from the boards

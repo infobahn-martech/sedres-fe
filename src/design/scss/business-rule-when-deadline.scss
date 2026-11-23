@@ -235,17 +235,135 @@
   font-weight: 600;
 }
 
-// Deadline "Date from" row of a time-based rule: the call time dropdown and its help text.
-.business-rule-form-when-deadline-date-from {
+// Deadline WHEN card of a time-based rule: title with close button, date source dropdown (card
+// deadline or a call time), one condition row and the skipped-cards note.
+.br-when-deadline-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 12px;
+
+  .br-condition-operator-wrap {
+    width: 100%;
+  }
+
+  .br-condition-operator-panel {
+    right: auto;
+    width: 100%;
+    min-width: 180px;
+  }
 }
 
-.business-rule-form-when-deadline-date-from-help {
+// Selected option and group heading of the date source list, plus the "Call time" badge shown
+// beside a selected call time.
+.br-when-deadline-card {
+  .br-condition-operator-option.is-selected {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+
+  .br-inline-dropdown-group {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #2563eb;
+  }
+}
+
+.br-when-deadline-badge {
+  margin-right: auto;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #eef2ff;
+  font-size: 11px;
+  color: #3b5bdb;
+}
+
+.br-when-deadline-header,
+.br-when-deadline-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.br-when-deadline-title {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #00368c;
+}
+
+.br-when-deadline-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border-primary);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.br-when-deadline-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  background: var(--surface-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.br-when-deadline-condition-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  align-items: center;
+  gap: 8px;
+
+  .br-when-deadline-amount {
+    min-width: 0;
+  }
+}
+
+.br-when-deadline-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.br-when-deadline-summary-text {
+  font-size: 14px;
+  color: var(--text-primary);
+
+  strong {
+    color: #00368c;
+  }
+}
+
+.br-when-deadline-edit-btn {
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  color: #2563eb;
+  cursor: pointer;
 }
 
 // Column(s) of a "Last date moved to"-type condition: chips of the picked columns and the link that
@@ -283,4 +401,66 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+// Filter row of a "Last date moved ..." field with picked columns: a bordered card, blue title with
+// the operator on the same line and a round close button in its top-right corner.
+.br-filter-card {
+  position: relative;
+  padding: 14px 16px;
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  background: var(--surface-primary);
+
+  .br-condition-operator-trigger {
+    color: var(--text-primary);
+    padding: 0;
+    line-height: 1.4;
+  }
+
+  .br-condition-operator-wrap {
+    align-self: center;
+  }
+
+  // The value dropdown ("Today") sits left under the title, not centered in the card.
+  .br-condition-value-text {
+    justify-content: flex-start;
+    width: auto;
+    padding-left: 0;
+    text-align: left;
+  }
+
+  .business-rule-form-condition-label-btn {
+    justify-content: flex-start;
+    padding-left: 0;
+    text-align: left;
+  }
+
+  .d-flex.flex-column > .br-condition-operator-wrap {
+    align-self: flex-start;
+    width: auto;
+  }
+}
+
+.br-filter-card-title {
+  font-size: 13px;
+  font-weight: 400;
+  color: #00368c;
+}
+
+.br-filter-card-close {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--border-primary);
+  border-radius: 50%;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  cursor: pointer;
 }
