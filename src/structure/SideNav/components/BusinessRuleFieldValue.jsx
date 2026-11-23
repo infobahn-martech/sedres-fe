@@ -57,7 +57,7 @@ const getOptions = (details, masterOptionsByKey) => {
 };
 
 // One control for one value, picked by field_type only (guide 1.2).
-function ValueControl({ details, operator, options, value, onChange, ariaLabel, defaultBoardId }) {
+function ValueControl({ details, operator, options, value, onChange, ariaLabel, defaultBoardId, allowLaneOnlyPosition }) {
   const fieldType = details?.field_type;
   const [isPickingDate, setIsPickingDate] = useState(false);
 
@@ -73,7 +73,7 @@ function ValueControl({ details, operator, options, value, onChange, ariaLabel, 
   }, [defaultOptionValue]);
 
   if (fieldType === 'board_structure' && details?.structure_level) {
-    return <BoardStructureValue level={details.structure_level} value={value} defaultBoardId={defaultBoardId} onChange={onChange} />;
+    return <BoardStructureValue level={details.structure_level} value={value} defaultBoardId={defaultBoardId} allowLaneOnlyPosition={allowLaneOnlyPosition} onChange={onChange} />;
   }
 
   if (fieldType === 'multiselect' || fieldType === 'checkbox') {
@@ -223,7 +223,7 @@ ValueControl.propTypes = {
  * unit for in next / in last / was more than.
  */
 function BusinessRuleFieldValue({
-  details, operator, value, timeUnitId, timeUnits = EMPTY_OPTIONS, onChange, onTimeUnitChange = noop, label = 'Value', defaultBoardId,
+  details, operator, value, timeUnitId, timeUnits = EMPTY_OPTIONS, onChange, onTimeUnitChange = noop, label = 'Value', defaultBoardId, allowLaneOnlyPosition = false,
 }) {
   const { masterOptionsByKey, getMasterOptions } = useBusinessRuleReducer();
 
@@ -292,7 +292,7 @@ function BusinessRuleFieldValue({
   }
 
   return (
-    <ValueControl details={details} operator={operator} options={options} value={value} ariaLabel={label} defaultBoardId={defaultBoardId} onChange={onChange} />
+    <ValueControl details={details} operator={operator} options={options} value={value} ariaLabel={label} defaultBoardId={defaultBoardId} allowLaneOnlyPosition={allowLaneOnlyPosition} onChange={onChange} />
   );
 }
 
@@ -306,6 +306,7 @@ BusinessRuleFieldValue.propTypes = {
   onTimeUnitChange: PropTypes.func,
   label: PropTypes.string,
   defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  allowLaneOnlyPosition: PropTypes.bool,
 };
 
 export default BusinessRuleFieldValue;
