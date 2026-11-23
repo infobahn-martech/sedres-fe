@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, forwardRef, useImperativeHandle } from "react";
 import PropTypes from "prop-types";
-import { FiSave } from "react-icons/fi";
+import { FiPrinter } from "react-icons/fi";
 import VesselBoardingArabicPreview from "./VesselBoardingArabicPreview";
 import { GroFieldTableSkeletonRows, GroLetterPreviewSkeleton } from "./GroCardViewSkeleton";
 import { extractVesselRegTemplateFields, matchVesselApiFieldKey } from "./vesselRegTemplateFields";
@@ -219,22 +219,23 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
           <div className="gro-vessel-reg-preview-header">
             <p className="gro-crew-immigration-bulk-section-title">Document Preview</p>
             {onSave ? (
-            <div className="gro-vessel-reg-preview-actions">
+            <div className="gro-vessel-reg-preview-actions gro-crew-imm-print-actions">
               <button
                 type="button"
-                className="gro-vessel-reg-icon-btn"
-                title="Generate & Download Vessel Registration PDF"
-                aria-label="Generate & Download Vessel Registration PDF"
+                className="gro-crew-imm-print-btn"
+                title="Generate & download the Vessel Registration PDF"
                 onClick={onSave}
                 disabled={isSaving || !onSave || templateLoading}
+                aria-busy={isSaving}
               >
                 {isSaving ? (
                   <span className="spinner-border spinner-border-sm" role="status">
-                    <span className="visually-hidden">Loading...</span>
+                    <span className="visually-hidden">Generating…</span>
                   </span>
                 ) : (
-                  <FiSave />
+                  <FiPrinter aria-hidden />
                 )}
+                {isSaving ? "Generating PDF…" : "Print"}
               </button>
             </div>
             ) : null}

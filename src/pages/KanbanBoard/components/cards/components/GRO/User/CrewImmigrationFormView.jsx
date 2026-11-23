@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import PropTypes from "prop-types";
-import { FiPrinter, FiAlertTriangle } from "react-icons/fi";
+import { FiPrinter } from "react-icons/fi";
 import DOMPurify from "dompurify";
 import groService from "@/services/groService";
 import vesselService from "@/services/vesselService";
@@ -80,8 +80,6 @@ const formatHijriFromValue = (value) => {
 
 /** "BATCH 2" -> "2"; falls back to the batch name as-is. */
 const batchNumber = (batch) => String(batch ?? "").match(/\d+/)?.[0] ?? String(batch ?? "");
-
-const PLACEHOLDER_TOKEN_RE = /\{[a-zA-Z0-9_]+\}/g;
 
 /** Template key / name -> which letter it is ("entry" | "return"); falls back to order. */
 const letterKindOf = (key, template, index) => {
@@ -435,15 +433,6 @@ export default function CrewImmigrationFormView({
     [templates, sectionHtml]
   );
 
-  const unfilledCount = useMemo(
-    () =>
-      letters.reduce(
-        (sum, { html }) => sum + new Set(String(html).match(PLACEHOLDER_TOKEN_RE) ?? []).size,
-        0
-      ),
-    [letters]
-  );
-
   const letterLabel = letters.some((l) => l.kind === "entry") && letters.some((l) => l.kind === "return")
     ? "Entry & Return letters"
     : letters.length === 1
@@ -468,15 +457,6 @@ export default function CrewImmigrationFormView({
   const printControls =
     onPrint && activeBatch ? (
       <div className="gro-crew-imm-print-actions">
-        {unfilledCount > 0 ? (
-          <span
-            className="gro-crew-imm-print-warn"
-            title="Placeholders still shown as {field} will print as-is. Fill them below if needed."
-          >
-            <FiAlertTriangle aria-hidden />
-            {unfilledCount} {unfilledCount === 1 ? "field" : "fields"} empty
-          </span>
-        ) : null}
         <button
           type="button"
           className="gro-crew-imm-print-btn"
