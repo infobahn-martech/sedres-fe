@@ -34,14 +34,19 @@ export const operatorTakesValue = (operator) => !NO_VALUE_OPERATOR_KEYS.includes
 export const operatorNeedsTimeUnit = (operator) => TIME_UNIT_OPERATOR_KEYS.includes(getOperatorKey(operator));
 
 // A field with has_time_unit = 1 (e.g. Cycle time) takes a number plus a unit whatever the operator.
+// Under is / is not a date field offers its periods (below) instead, so no unit is asked for.
 export const fieldNeedsTimeUnit = (details, operator) =>
-  Number(details?.has_time_unit) === 1 || operatorNeedsTimeUnit(operator);
+  !hasDatePeriods(details, operator) && (Number(details?.has_time_unit) === 1 || operatorNeedsTimeUnit(operator));
 
 // Date fields offer their `periods` (Today, This week ...) under these operators (updates guide 4).
 const PERIOD_OPERATOR_KEYS = ['is', 'is_not'];
 
 export const getDatePeriods = (details, operator) =>
   PERIOD_OPERATOR_KEYS.includes(getOperatorKey(operator)) ? (details?.periods ?? []) : [];
+
+function hasDatePeriods(details, operator) {
+  return (details?.field_type === 'date' || details?.field_type === 'datetime') && getDatePeriods(details, operator).length > 0;
+}
 
 export const operatorIsBetween = (operator) => getOperatorKey(operator) === BETWEEN_OPERATOR_KEY;
 

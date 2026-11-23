@@ -3,9 +3,10 @@ import PropTypes from 'prop-types';
 import { FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import SearchableSelect from '../../../components/form/SearchableSelect';
+import InlineTextDropdown from './InlineTextDropdown';
 import BusinessRuleFieldValue from './BusinessRuleFieldValue';
 import { isCustomGenericField } from './genericThenAction';
-import { getOperatorKey, normalizeConnector } from './businessRuleFieldUtils';
+import { getDatePeriods, getOperatorKey, normalizeConnector } from './businessRuleFieldUtils';
 import BoardMinimapModal from './BoardMinimapModal';
 import { findLoadedColumnName, isPositionColumnField } from './positionColumnFields';
 
@@ -28,7 +29,12 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
 
+  // Rows whose date field already opened on its "Today" period, so choosing "Select date" afterwards
+  // is not overwritten by the default.
+  const todayDefaultedRowIds = useRef(new Set());
+
   // The first operator of a field is its default; its details (operators, options) load on demand.
+  // A date field under is / is not opens on its Today period.
   useEffect(() => {
     rows.forEach((row) => {
       const details = fieldDetailsByKey[detailsKeyOf(row)];
@@ -38,7 +44,14 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
       }
       if (!row.operatorKey && details?.operators?.length > 0) {
         onChange(rows.map((r) => (r.id === row.id ? { ...r, operatorKey: getOperatorKey(details.operators[0]) } : r)));
+        return;
       }
+      if (row.value !== '' || todayDefaultedRowIds.current.has(row.id)) return;
+      const operator = (details.operators ?? []).find((op) => getOperatorKey(op) === row.operatorKey);
+      const today = (getDatePeriods(details, operator)).find((period) => String(period.option_label).trim().toLowerCase() === 'today');
+      if (!today) return;
+      todayDefaultedRowIds.current.add(row.id);
+      onChange(rows.map((r) => (r.id === row.id ? { ...r, value: String(today.option_value) } : r)));
     });
   }, [rows, fieldDetailsByKey]);
 
@@ -92,30 +105,61 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
         const operators = details?.operators ?? [];
         const operator = operators.find((op) => getOperatorKey(op) === row.operatorKey);
         const rowLabel = row.fieldLabel || findCatalogField(row)?.field_label || `Field #${row.fieldId}`;
+        const isColumnRow = row.fieldType === 'regular' && isPositionColumnField(row.fieldId, rowLabel);
+        const pickedColumns = row.positionColumns ?? [];
+        const columnNames = pickedColumns
+          .map((column) => column.name || findLoadedColumnName(boardWorkflowsByBoard, column.id) || `Column ${column.id}`)
+          .join(', ');
+        const isColumnCard = isColumnRow && pickedColumns.length > 0;
+        const removeRow = () => onChange(rows.filter((r) => r.id !== row.id));
         return (
-          <div key={row.id} className="d-flex flex-column gap-2 mb-2 w-100">
+          <div key={row.id} className={`d-flex flex-column gap-2 mb-2 w-100${isColumnCard ? ' br-filter-card' : ''}`}>
             <div className="d-flex align-items-center justify-content-between gap-2">
-              <span className="business-rule-form-action-chip-label">{rowLabel}</span>
-              <div className="d-flex align-items-center gap-2">
-                <button
-                  type="button"
-                  className="business-rule-form-or-btn"
-                  onClick={() => setRow(row.id, { connector: normalizeConnector(row.connector) === 'AND' ? 'OR' : 'AND' })}
-                  aria-label={`Connector of ${rowLabel}`}
-                >
-                  {normalizeConnector(row.connector)}
-                </button>
-                <button
-                  type="button"
-                  className="business-rule-form-condition-remove"
-                  onClick={() => onChange(rows.filter((r) => r.id !== row.id))}
-                  aria-label={`Remove ${rowLabel}`}
-                >
-                  <FiTrash2 size={14} />
-                </button>
+              <div className="d-flex align-items-center flex-wrap gap-1">
+                <span className={isColumnCard ? 'br-filter-card-title' : 'business-rule-form-action-chip-label'}>{columnNames ? `${rowLabel} ${columnNames}` : rowLabel}</span>
+                {operators.length > 0 && isColumnCard && (
+                  <InlineTextDropdown
+                    value={row.operatorKey}
+                    options={operators.map((op) => ({ value: getOperatorKey(op), label: op.operator_label }))}
+                    placeholder="Operator"
+                    triggerClassName="br-condition-operator-trigger"
+                    onChange={(operatorKey) => setRow(row.id, { operatorKey, value: '', timeUnitId: '' })}
+                  />
+                )}
               </div>
+              {isColumnCard ? (
+                <>
+                  {rows.length > 1 && (
+                    <button
+                      type="button"
+                      className="business-rule-form-or-btn"
+                      onClick={() => setRow(row.id, { connector: normalizeConnector(row.connector) === 'AND' ? 'OR' : 'AND' })}
+                      aria-label={`Connector of ${rowLabel}`}
+                    >
+                      {normalizeConnector(row.connector)}
+                    </button>
+                  )}
+                  <button type="button" className="br-filter-card-close" onClick={removeRow} aria-label={`Remove ${rowLabel}`}>
+                    <FiX size={10} />
+                  </button>
+                </>
+              ) : (
+                <div className="d-flex align-items-center gap-2">
+                  <button
+                    type="button"
+                    className="business-rule-form-or-btn"
+                    onClick={() => setRow(row.id, { connector: normalizeConnector(row.connector) === 'AND' ? 'OR' : 'AND' })}
+                    aria-label={`Connector of ${rowLabel}`}
+                  >
+                    {normalizeConnector(row.connector)}
+                  </button>
+                  <button type="button" className="business-rule-form-condition-remove" onClick={removeRow} aria-label={`Remove ${rowLabel}`}>
+                    <FiTrash2 size={14} />
+                  </button>
+                </div>
+              )}
             </div>
-            {operators.length > 0 && (
+            {operators.length > 0 && !isColumnCard && (
               <SearchableSelect
                 value={row.operatorKey}
                 onChange={(e) => setRow(row.id, { operatorKey: e.target.value, value: '', timeUnitId: '' })}
@@ -126,24 +170,11 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
                 menuPlacement="auto"
               />
             )}
-            {row.fieldType === 'regular' && isPositionColumnField(row.fieldId, rowLabel) && (
+            {isColumnRow && pickedColumns.length === 0 && (
               <div className="br-position-column-row">
-                {(row.positionColumns ?? []).map((column) => (
-                  <span key={column.id} className="br-position-column-chip">
-                    {column.name || findLoadedColumnName(boardWorkflowsByBoard, column.id) || `Column ${column.id}`}
-                    <button
-                      type="button"
-                      className="br-position-column-chip-remove"
-                      onClick={() => setRow(row.id, { positionColumns: row.positionColumns.filter((c) => c.id !== column.id) })}
-                      aria-label="Remove column"
-                    >
-                      <FiX size={12} />
-                    </button>
-                  </span>
-                ))}
                 <button type="button" className="business-rule-form-add-link" onClick={() => handleOpenColumnPick(row.id)}>
                   <FiPlus size={14} aria-hidden />
-                  {(row.positionColumns ?? []).length > 0 ? 'Add column' : 'Choose column'}
+                  Choose column
                 </button>
               </div>
             )}

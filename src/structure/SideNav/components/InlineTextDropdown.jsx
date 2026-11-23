@@ -7,7 +7,7 @@ import OptionColorBadge from './OptionColorBadge';
 // and clicking it opens a compact list. Uses the same trigger / panel classes as the AND
 // condition operator picker, so it needs no styles of its own. Options may carry a colour and
 // icon (types, stickers, blockers) which are drawn as the same chip as on the card.
-function InlineTextDropdown({ value, options, placeholder, triggerClassName, triggerPrefix = '', triggerIcon = null, showChevron = true, searchable = false, onChange }) {
+function InlineTextDropdown({ value, options, placeholder, triggerClassName, triggerPrefix = '', triggerIcon = null, triggerSuffix = null, showChevron = true, searchable = false, searchPlaceholder = 'Filter', onChange }) {
   const [open, setOpen] = useState(false);
   const [filterText, setFilterText] = useState('');
   const wrapRef = useRef(null);
@@ -39,7 +39,7 @@ function InlineTextDropdown({ value, options, placeholder, triggerClassName, tri
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        {triggerIcon}{triggerPrefix}{selected?.label ?? placeholder}
+        {triggerIcon}{triggerPrefix}{selected?.label ?? placeholder}{triggerSuffix}
         {showChevron && <FiChevronDown size={14} aria-hidden />}
       </button>
 
@@ -50,7 +50,7 @@ function InlineTextDropdown({ value, options, placeholder, triggerClassName, tri
               <FiFilter size={16} className="board-minimap-picker-search-icon" aria-hidden />
               <input
                 type="text"
-                placeholder="Filter"
+                placeholder={searchPlaceholder}
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
                 autoFocus
@@ -68,7 +68,7 @@ function InlineTextDropdown({ value, options, placeholder, triggerClassName, tri
                   )}
                   <button
                     type="button"
-                    className="br-condition-operator-option d-flex align-items-center gap-2"
+                    className={`br-condition-operator-option d-flex align-items-center gap-2${option.value === String(value ?? '') ? ' is-selected' : ''}`}
                     onClick={() => {
                       onChange(option.value);
                       setOpen(false);
@@ -102,8 +102,10 @@ InlineTextDropdown.propTypes = {
   triggerClassName: PropTypes.string,
   triggerPrefix: PropTypes.string,
   triggerIcon: PropTypes.node,
+  triggerSuffix: PropTypes.node,
   showChevron: PropTypes.bool,
   searchable: PropTypes.bool,
+  searchPlaceholder: PropTypes.string,
   onChange: PropTypes.func.isRequired,
 };
 
