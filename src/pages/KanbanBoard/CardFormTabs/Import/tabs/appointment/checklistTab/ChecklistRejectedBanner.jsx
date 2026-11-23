@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import { FiAlertTriangle, FiCheckCircle, FiArrowRight } from "react-icons/fi";
 
-const MAX_LINKS = 4;
+const MAX_LINKS = 2;
 
 /**
  * Summary above the checklist when a task card rejected documents: what still needs a
@@ -15,12 +15,7 @@ const ChecklistRejectedBanner = ({ pending, replaced, onJump }) => {
       <div className="cl-review-banner cl-review-banner--ready" role="status">
         <FiCheckCircle className="cl-review-banner__icon" aria-hidden />
         <div className="cl-review-banner__body">
-          <p className="cl-review-banner__title">
-            {replaced.length === 1
-              ? "Replacement file added for the rejected document"
-              : `Replacement files added for ${replaced.length} rejected documents`}
-          </p>
-          <p className="cl-review-banner__text">Save the checklist to send them back for verification.</p>
+          <p className="cl-review-banner__title">Replacement added. Save to resubmit</p>
         </div>
       </div>
     );
@@ -34,11 +29,9 @@ const ChecklistRejectedBanner = ({ pending, replaced, onJump }) => {
       <FiAlertTriangle className="cl-review-banner__icon" aria-hidden />
       <div className="cl-review-banner__body">
         <p className="cl-review-banner__title">
-          {pending.length === 1
-            ? "1 document was rejected and needs to be re-uploaded"
-            : `${pending.length} documents were rejected and need to be re-uploaded`}
+          {pending.length === 1 ? "Rejected:" : `${pending.length} rejected:`}
           {replaced.length > 0 ? (
-            <span className="cl-review-banner__sub"> · {replaced.length} replaced, pending save</span>
+            <span className="cl-review-banner__sub"> ({replaced.length} unsaved)</span>
           ) : null}
         </p>
         <div className="cl-review-banner__links">

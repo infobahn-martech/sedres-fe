@@ -375,6 +375,13 @@ function Checklist({
     <>
       <div className="operation-content-header checklist-page-header">
         <h3 className="operation-content-title">Checklist Information</h3>
+        {!isLoading && hasChecklistData ? (
+          <ChecklistRejectedBanner
+            pending={rejectedSummary.pending}
+            replaced={rejectedSummary.replaced}
+            onJump={scrollToChecklistItem}
+          />
+        ) : null}
       </div>
 
       <div
@@ -397,14 +404,6 @@ function Checklist({
               title="No checklist items"
               message="The selected checklist types don't have any items configured yet."
               variant="noData"
-            />
-          ) : null}
-
-          {!isLoading && hasChecklistData ? (
-            <ChecklistRejectedBanner
-              pending={rejectedSummary.pending}
-              replaced={rejectedSummary.replaced}
-              onJump={scrollToChecklistItem}
             />
           ) : null}
 
