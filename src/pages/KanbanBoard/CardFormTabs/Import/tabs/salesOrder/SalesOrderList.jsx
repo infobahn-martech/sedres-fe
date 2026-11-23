@@ -30,7 +30,7 @@ import SoApprovalEmailModal from "./SoApprovalEmailModal";
 import DocumentListModal from "./DocumentListModal";
 import UploadInvoiceModal from "@/components/UploadInvoiceModal";
 import { compressPdfFiles } from "@/shared/utils/compressPdf";
-import { isApprovalRequestedColumnTitle, isApprovalReceivedColumnTitle, isLntSwimlane, isSubseaSwimlane, isBgpSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
+import { isApprovalRequestedColumnTitle, isApprovalReceivedColumnTitle, isSentToDaColumnTitle, isLntSwimlane, isSubseaSwimlane, isBgpSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
 import SeApprovalUploadModal from "@/pages/KanbanBoard/components/board/SeApprovalUploadModal";
 import CustomModal from "@/components/CustomModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
@@ -805,6 +805,8 @@ const SalesOrderList = ({
     currentStep != null &&
     isApprovalRequestedColumnTitle(stepLabels[currentStep - 1]);
   const isOperatorApprovalFlow = isOperatorSrtFlow || isOperatorBgpApprovalFlow;
+  const isAtSentToDaColumn =
+    Array.isArray(stepLabels) && currentStep != null && isSentToDaColumnTitle(stepLabels[currentStep - 1]);
   const isSrtApprovalContext = isDaVerifyContext || isOperatorApprovalFlow;
   // Operator board: a BGP swimlane card on "Approval Received" takes the signed SO the client sent and,
   // optionally, the client's approval email (da/da_upload_so_approval_proof); the backend then moves the
@@ -3691,7 +3693,8 @@ const SalesOrderList = ({
         </div>
       </div>
 
-      {/* DA Assignment — its own section, above the Accounting Summary */}
+      {/* DA Assignment — its own section, above the Accounting Summary; shown only on the "Sent to DA" column */}
+      {isAtSentToDaColumn && (
       <div className="so-summary-section so-da-assignment-section">
         <h3 className="so-summary-section-title">DA Assignment</h3>
         <div className="so-da-assignment-card">
@@ -3728,6 +3731,7 @@ const SalesOrderList = ({
           </div>
         </div>
       </div>
+      )}
 
       {/* Accounting Summary — always visible at the bottom of the page */}
       {(() => {
