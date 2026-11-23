@@ -28,12 +28,15 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
   const [templateData, setTemplateData] = useState(null);
   const [templateLoading, setTemplateLoading] = useState(Boolean(portId));
   const [fieldValues, setFieldValues] = useState({});
-  const [translations, setTranslations] = useState({});
-  // Arabic values typed manually by the user — take precedence over auto-translations.
-  const [arabicOverrides, setArabicOverrides] = useState({});
+  const [arabicValues, setArabicValues] = useState({});
   const [vesselData, setVesselData] = useState(null);
   const previewRef = useRef(null);
-  const translatedSourceRef = useRef({});
+  // Edits waiting to be translated: fieldKey -> { toArabic, text }. Editing either column
+  // queues a translation into the other one; a later edit of the same field replaces it.
+  const pendingTranslationsRef = useRef({});
+  const [translationTick, setTranslationTick] = useState(0);
+  // Bumped on every edit of a field, so a response that arrives after a newer edit is dropped.
+  const editSeqRef = useRef({});
 
   useEffect(() => {
     if (!portId) {
@@ -68,41 +71,45 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
 
   useEffect(() => {
     setFieldValues({});
-    setTranslations({});
-    setArabicOverrides({});
-    translatedSourceRef.current = {};
+    setArabicValues({});
+    pendingTranslationsRef.current = {};
+    editSeqRef.current = {};
   }, [templateData]);
 
-  // Effective Arabic value per field: the user's manual entry if present, else the auto-translation.
-  const arabicValues = useMemo(
-    () => ({ ...translations, ...arabicOverrides }),
-    [translations, arabicOverrides]
-  );
+  const queueTranslation = (fieldKey, text, toArabic) => {
+    editSeqRef.current[fieldKey] = (editSeqRef.current[fieldKey] ?? 0) + 1;
+    pendingTranslationsRef.current[fieldKey] = { text, toArabic };
+    setTranslationTick((t) => t + 1);
+  };
 
-  // Translate each field's typed/prefilled English value to Arabic for the preview's 3rd
-  // column, debounced so it doesn't fire on every keystroke, and skips values already sent.
+  // English edits fill the Arabic column and Arabic edits fill the English column. Debounced
+  // so it doesn't fire on every keystroke. Results are written straight to state (not through
+  // queueTranslation), so a translation never triggers a translation back.
   useEffect(() => {
+    if (Object.keys(pendingTranslationsRef.current).length === 0) return undefined;
     const timer = setTimeout(() => {
-      Object.entries(fieldValues).forEach(([fieldKey, value]) => {
-        const trimmed = String(value ?? "").trim();
-        if (!trimmed || translatedSourceRef.current[fieldKey] === trimmed) return;
-        translatedSourceRef.current[fieldKey] = trimmed;
-        translateService
-          .translateToArabic(trimmed)
+      const batch = pendingTranslationsRef.current;
+      pendingTranslationsRef.current = {};
+      Object.entries(batch).forEach(([fieldKey, { text, toArabic }]) => {
+        const trimmed = String(text ?? "").trim();
+        if (!trimmed) return;
+        const seq = editSeqRef.current[fieldKey];
+        const request = toArabic
+          ? translateService.translateToArabic(trimmed)
+          : translateService.translateToEnglish(trimmed);
+        request
           .then((res) => {
             const translated = res?.data?.data?.translated_value;
-            if (translated) {
-              setTranslations((prev) => ({ ...prev, [fieldKey]: translated }));
-            }
+            if (!translated || editSeqRef.current[fieldKey] !== seq) return;
+            const setTarget = toArabic ? setArabicValues : setFieldValues;
+            setTarget((prev) => ({ ...prev, [fieldKey]: translated }));
           })
-          .catch(() => {
-            translatedSourceRef.current[fieldKey] = null;
-          });
+          .catch(() => {});
       });
     }, TRANSLATE_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [fieldValues]);
+  }, [translationTick]);
 
   useEffect(() => {
     if (!callId) {
@@ -126,22 +133,24 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
 
   // Prefill each template row from vessel/get_vessel_by_call by matching its English label
   // to the response's field keys — only fills blanks, never overwrites a typed value.
+  // Prefilled English values are queued for Arabic translation like typed ones.
+  const fieldValuesRef = useRef(fieldValues);
+  fieldValuesRef.current = fieldValues;
   useEffect(() => {
     if (!vesselData || vesselFields.length === 0) return;
-    setFieldValues((prev) => {
-      let changed = false;
-      const next = { ...prev };
-      vesselFields.forEach((field) => {
-        if (next[field.fieldKey]) return;
-        const apiKey = matchVesselApiFieldKey(field.labelEn);
-        if (!apiKey) return;
-        const value = vesselData[apiKey];
-        if (value == null || value === "") return;
-        next[field.fieldKey] = String(value);
-        changed = true;
-      });
-      return changed ? next : prev;
+    const current = fieldValuesRef.current;
+    const prefill = {};
+    vesselFields.forEach((field) => {
+      if (current[field.fieldKey]) return;
+      const apiKey = matchVesselApiFieldKey(field.labelEn);
+      if (!apiKey) return;
+      const value = vesselData[apiKey];
+      if (value == null || value === "") return;
+      prefill[field.fieldKey] = String(value);
     });
+    if (Object.keys(prefill).length === 0) return;
+    setFieldValues((prev) => ({ ...prefill, ...prev }));
+    Object.entries(prefill).forEach(([fieldKey, value]) => queueTranslation(fieldKey, value, true));
   }, [vesselData, vesselFields]);
 
   useImperativeHandle(
@@ -154,10 +163,12 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
 
   const handleFieldChange = (fieldKey, value) => {
     setFieldValues((prev) => ({ ...prev, [fieldKey]: value }));
+    queueTranslation(fieldKey, value, true);
   };
 
   const handleArabicChange = (fieldKey, value) => {
-    setArabicOverrides((prev) => ({ ...prev, [fieldKey]: value }));
+    setArabicValues((prev) => ({ ...prev, [fieldKey]: value }));
+    queueTranslation(fieldKey, value, false);
   };
 
   return (
