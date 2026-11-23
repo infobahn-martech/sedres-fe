@@ -55,6 +55,16 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
   // newly duplicated rule's id) — this only flags the header/title to read "Copy
   // Business Rule" instead of "Edit Business Rule".
   const [isCopyMode, setIsCopyMode] = useState(false);
+  const [formInitialTab, setFormInitialTab] = useState('details');
+
+  const openRuleForm = (ruleId, tab = 'details') => {
+    setSelectedRule(null);
+    setSelectedRuleId(ruleId);
+    setHighlightedRuleId(ruleId);
+    setIsCopyMode(false);
+    setFormInitialTab(tab);
+    setShowFormModal(true);
+  };
 
   const {
     getBusinessRules, businessRules, businessRulesCount, isLoadingBusinessRules,
@@ -297,14 +307,15 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                       <th style={{ width: 100 }}>Tags</th>
                       <th style={{ width: 179 }}>Shared with</th>
                       <th style={{ width: 100 }}>Status</th>
+                      <th style={{ width: 140 }}>Type</th>
                       <th style={{ width: 56 }} />
                     </tr>
                   </thead>
                   <tbody>
                     {isLoadingBusinessRules ? (
-                      <tr className="br-table-state-row"><td colSpan={10} className="br-table-state">Loading...</td></tr>
+                      <tr className="br-table-state-row"><td colSpan={11} className="br-table-state">Loading...</td></tr>
                     ) : businessRules.length === 0 ? (
-                      <tr className="br-table-state-row"><td colSpan={10} className="br-table-state">No business rules found</td></tr>
+                      <tr className="br-table-state-row"><td colSpan={11} className="br-table-state">No business rules found</td></tr>
                     ) : (
                       businessRules.map((rule) => {
                         const ruleId = rule?.business_rule_id ?? rule?.id;
@@ -349,7 +360,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                                 type="button"
                                 className={`br-table-rule-name-btn${isMissingReference ? ' text-danger' : ''}`}
                                 title={name}
-                                onClick={() => { setSelectedRule(null); setSelectedRuleId(ruleId); setHighlightedRuleId(ruleId); setIsCopyMode(false); setShowFormModal(true); }}
+                                onClick={() => openRuleForm(ruleId)}
                               >
                                 {name}
                               </button>
@@ -390,6 +401,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                                 {statusText}
                               </span>
                             </td>
+                            <td>{rule?.trigger_type ?? '-'}</td>
                             <td>
                               <div className="dropdown">
                                 <button
@@ -406,9 +418,27 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
                                     <button
                                       className="dropdown-item"
                                       type="button"
-                                      onClick={() => { setSelectedRule(null); setSelectedRuleId(ruleId); setHighlightedRuleId(ruleId); setIsCopyMode(false); setShowFormModal(true); }}
+                                      onClick={() => openRuleForm(ruleId)}
                                     >
                                       Edit
+                                    </button>
+                                  </li>
+                                  <li>
+                                    <button
+                                      className="dropdown-item"
+                                      type="button"
+                                      onClick={() => openRuleForm(ruleId, 'logs')}
+                                    >
+                                      Execution logs
+                                    </button>
+                                  </li>
+                                  <li>
+                                    <button
+                                      className="dropdown-item"
+                                      type="button"
+                                      onClick={() => openRuleForm(ruleId, 'history')}
+                                    >
+                                      History
                                     </button>
                                   </li>
                                   <li>
@@ -515,6 +545,7 @@ const BusinessRulesModal = ({ show, onClose, boardName }) => {
         businessRuleId={selectedRuleId}
         boardName={boardName}
         isCopyMode={isCopyMode}
+        initialTab={formInitialTab}
         onClose={handleCancelFormModal}
         onSave={handleSaveFormModal}
         isSaving={isCreatingBusinessRule || isUpdatingBusinessRule}

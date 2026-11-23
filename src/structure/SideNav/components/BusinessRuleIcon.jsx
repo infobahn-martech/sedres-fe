@@ -128,6 +128,36 @@ function BusinessRuleIcon({ iconType, className = '' }) {
             <path d="M23 25l4 4 7-8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         );
+      case 'recurring-archive':
+        return (
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden>
+            <rect x="4" y="4" width="32" height="32" rx="6" fill="#F97316" />
+            <rect x="10" y="11" width="20" height="5" rx="2" fill="white" fillOpacity="0.9" />
+            <path d="M12 16v10a2 2 0 002 2h12a2 2 0 002-2V16" stroke="white" strokeWidth="2" />
+            <circle cx="20" cy="22" r="3" stroke="white" strokeWidth="1.8" />
+            <path d="M20 20.5v1.5l1.2.8" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        );
+      case 'relative-moved':
+        return (
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden>
+            <rect x="4" y="4" width="32" height="32" rx="6" fill="#EC4899" />
+            <rect x="8" y="10" width="9" height="8" rx="2" fill="white" fillOpacity="0.9" />
+            <rect x="8" y="22" width="9" height="8" rx="2" fill="white" fillOpacity="0.9" />
+            <path d="M17 14h3v12h-3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M22 20h8M27 17l3 3-3 3" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        );
+      case 'relative-updated':
+        return (
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden>
+            <rect x="4" y="4" width="32" height="32" rx="6" fill="#EC4899" />
+            <rect x="8" y="10" width="9" height="8" rx="2" fill="white" fillOpacity="0.9" />
+            <rect x="8" y="22" width="9" height="8" rx="2" fill="white" fillOpacity="0.9" />
+            <path d="M17 14h3v12h-3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M22 21l4 4 7-8" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        );
       default:
         return (
           <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden>

@@ -4912,7 +4912,7 @@ ShareWithModal.propTypes = {
 };
 
 
-function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName, onClose, onSave, isSaving, isCopyMode }) {
+function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName, onClose, onSave, isSaving, isCopyMode, initialTab = 'details' }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState([]);
@@ -5216,8 +5216,8 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   }, [show]);
 
   useEffect(() => {
-    if (show) setActiveTab('details');
-  }, [show, businessRuleId]);
+    if (show) setActiveTab(initialTab);
+  }, [show, businessRuleId, initialTab]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => setDebouncedLogsSearch(logsSearch.trim()), 400);
@@ -10275,6 +10275,7 @@ BusinessRuleFormModal.propTypes = {
   onSave: PropTypes.func,
   isSaving: PropTypes.bool,
   isCopyMode: PropTypes.bool,
+  initialTab: PropTypes.oneOf(['details', 'logs', 'history']),
 };
 
 PropertyPill.propTypes = {

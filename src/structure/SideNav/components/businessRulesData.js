@@ -21,6 +21,12 @@ export const TRIGGER_CODE_TO_ICON = {
   parent_card_created: 'parent-created',
   archive_cards: 'archive',
   card_archived: 'archive',
+  // Codes below follow the snake_case-of-trigger-name convention of the confirmed entries
+  // above; not yet confirmed against a real get_trigger_types response.
+  recurring_archive_cards: 'recurring-archive',
+  relative_card_moved: 'relative-moved',
+  relative_card_updated: 'relative-updated',
+  task_card_created: 'task-created',
   task_created: 'task-created',
   task_card_moved: 'task-moved',
   task_card_updated: 'task-updated',

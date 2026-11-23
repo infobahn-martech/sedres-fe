@@ -70,6 +70,7 @@ const BusinessRules = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedRuleId, setSelectedRuleId] = useState(null);
+  const [detailsInitialTab, setDetailsInitialTab] = useState('details');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteRuleId, setDeleteRuleId] = useState(null);
   const [showCopyModal, setShowCopyModal] = useState(false);
@@ -198,13 +199,13 @@ const BusinessRules = () => {
                 <th style={{ width: 40 }} />
                 <th>ID</th>
                 <th>NAME</th>
-                <th>TYPE</th>
                 <th>OWNER</th>
                 <th>BOARD NAME</th>
                 <th>EXECUTION ORDER</th>
                 <th>TAGS</th>
                 <th>SHARED WITH</th>
                 <th>STATUS</th>
+                <th>TYPE</th>
                 <th style={{ width: 40 }} />
               </tr>
             </thead>
@@ -253,7 +254,6 @@ const BusinessRules = () => {
                       </td>
                       <td>{ruleId}</td>
                       <td><span className={`br-rule-name${isMissingReference ? ' text-danger' : ''}`}>{name}</span></td>
-                      <td>{rule?.trigger_type ?? '-'}</td>
                       <td><OwnerCell owner={rule?.owner} /></td>
                       <td><BoardNameCell boards={rule?.board_name} /></td>
                       <td>{execOrder}</td>
@@ -264,6 +264,7 @@ const BusinessRules = () => {
                           {statusText}
                         </span>
                       </td>
+                      <td>{rule?.trigger_type ?? '-'}</td>
                       <td>
                         <div className="dropdown">
                           <button
@@ -279,9 +280,27 @@ const BusinessRules = () => {
                               <button
                                 className="dropdown-item"
                                 type="button"
-                                onClick={() => { setSelectedRuleId(ruleId); setShowDetailsModal(true); }}
+                                onClick={() => { setSelectedRuleId(ruleId); setDetailsInitialTab('details'); setShowDetailsModal(true); }}
                               >
                                 Edit
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                className="dropdown-item"
+                                type="button"
+                                onClick={() => { setSelectedRuleId(ruleId); setDetailsInitialTab('logs'); setShowDetailsModal(true); }}
+                              >
+                                Execution logs
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                className="dropdown-item"
+                                type="button"
+                                onClick={() => { setSelectedRuleId(ruleId); setDetailsInitialTab('history'); setShowDetailsModal(true); }}
+                              >
+                                History
                               </button>
                             </li>
                             <li>
@@ -348,6 +367,7 @@ const BusinessRules = () => {
       <BusinessRuleFormModal
         show={showDetailsModal}
         businessRuleId={selectedRuleId}
+        initialTab={detailsInitialTab}
         onClose={() => { setShowDetailsModal(false); setSelectedRuleId(null); }}
         onSave={handleSaveEditModal}
         isSaving={isUpdatingBusinessRule}
