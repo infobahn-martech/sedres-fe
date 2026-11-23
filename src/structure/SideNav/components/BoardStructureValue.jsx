@@ -285,6 +285,103 @@ PositionValue.propTypes = {
   onChange: PropTypes.func.isRequired,
 };
 
+// Column / Lane / Workflow: picked on the Board Minimap, which only lets the field's own level be
+// clicked (column header or cell, swimlane, workflow title). The value is the picked ids joined by commas.
+const MINIMAP_LEVEL_PROPS = {
+  column: { columnOnly: true },
+  lane: { laneOnly: true },
+  workflow: { workflowOnly: true },
+};
+
+function MinimapStructureValue({ level, value, defaultBoardId = '', onChange }) {
+  const [showMinimap, setShowMinimap] = useState(false);
+  const [minimapBoardId, setMinimapBoardId] = useState('');
+  const { boardPickerWorkspaces: workspaces, boardWorkflowsByBoard, getBoardWorkflows } = useBusinessRuleReducer((s) => s);
+  const entries = splitMultiValue(value);
+
+  useEffect(() => {
+    if (!defaultBoardId) return;
+    setMinimapBoardId(String(defaultBoardId));
+    getBoardWorkflows(defaultBoardId);
+  }, [defaultBoardId]);
+
+  const describeEntry = (id) => {
+    const located = Object.entries(boardWorkflowsByBoard).flatMap(([boardId, wfs]) => wfs.map((wf) => ({ boardId, wf })))
+      .find(({ wf }) => {
+        if (level === 'workflow') return String(wf.workflow_id) === id;
+        if (level === 'lane') return (wf.swimlanes ?? []).some((lane) => String(lane.swimlane_id) === id);
+        return (wf.stages ?? []).some((stage) => flattenAllColumns(stage.columns ?? []).some((col) => String(col.column_id) === id));
+      });
+    if (!located) return { workflowId: '', boardId: '', text: `#${id}` };
+    const { boardId, wf } = located;
+    const workspace = (workspaces ?? []).find((w) => (w.boards ?? []).some((bd) => String(bd.board_id) === boardId));
+    const board = workspace?.boards.find((bd) => String(bd.board_id) === boardId);
+    const place = `[${workspace?.workspace_name ?? ''}][${board?.board_name ?? ''}]`;
+    let name = wf.workflow_name;
+    if (level === 'lane') name = (wf.swimlanes ?? []).find((lane) => String(lane.swimlane_id) === id)?.swimlane_name;
+    if (level === 'column') {
+      name = (wf.stages ?? []).flatMap((stage) => flattenAllColumns(stage.columns ?? []))
+        .find((col) => String(col.column_id) === id)?.column_name;
+    }
+    return {
+      workflowId: String(wf.workflow_id),
+      boardId,
+      text: level === 'workflow' ? `${place} ${name}` : `${place} [${wf.workflow_name}] ${name}`,
+    };
+  };
+
+  const openMinimap = (entry) => {
+    const target = (entry && describeEntry(entry).boardId) || defaultBoardId;
+    if (target) setMinimapBoardId(String(target));
+    setShowMinimap(true);
+  };
+
+  const handlePick = (next) => {
+    setShowMinimap(false);
+    const id = { column: next.columnId, lane: next.swimlaneId, workflow: next.workflowId }[level];
+    if (!id) return;
+    if (next.boardId) getBoardWorkflows(next.boardId);
+    // One pick per row: picking replaces it, picking the same one again clears it.
+    onChange(entries.includes(id) ? '' : id);
+  };
+
+  const first = entries[0] ? describeEntry(entries[0]) : null;
+  const minimapValue = first && {
+    workflowId: first.workflowId,
+    columnId: level === 'column' ? entries[0] : '',
+    swimlaneId: level === 'lane' ? entries[0] : '',
+  };
+
+  return (
+    <div className="d-flex flex-column gap-2 flex-fill w-100">
+      {(entries.length === 0 ? [''] : entries).map((entry) => (
+        <button
+          key={entry || 'not-set'}
+          type="button"
+          className="business-rule-form-condition-label-btn br-advanced-schedule-label br-board-structure-trigger text-start"
+          onClick={() => openMinimap(entry)}
+        >
+          {entry ? <span className="text-uppercase">{describeEntry(entry).text}</span> : NOT_SET_LABEL}
+        </button>
+      ))}
+      <BoardMinimapModal
+        show={showMinimap}
+        value={minimapValue}
+        boardId={minimapBoardId}
+        onBoardChange={setMinimapBoardId}
+        onPick={handlePick}
+        onClose={() => setShowMinimap(false)}
+        {...MINIMAP_LEVEL_PROPS[level]}
+      />
+    </div>
+  );
+}
+
+MinimapStructureValue.propTypes = {
+  ...valuePropTypes,
+  defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+};
+
 // Reads as blue "Not Set" text (or "N selected"); clicking it opens the pickers below it.
 function BoardStructureToggle({ level, value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -309,6 +406,7 @@ BoardStructureToggle.propTypes = valuePropTypes;
 
 function BoardStructureValue({ level, value, defaultBoardId, onChange }) {
   if (level === 'position') return <PositionValue value={value} defaultBoardId={defaultBoardId} onChange={onChange} />;
+  if (MINIMAP_LEVEL_PROPS[level]) return <MinimapStructureValue level={level} value={value} defaultBoardId={defaultBoardId} onChange={onChange} />;
   return <BoardStructureToggle level={level} value={value} onChange={onChange} />;
 }
 
