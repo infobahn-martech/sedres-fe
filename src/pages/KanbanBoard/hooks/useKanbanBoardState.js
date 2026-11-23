@@ -6,7 +6,9 @@ import { operatorKanbanStaticWorkflows } from "../../../shared/helpers/kanbanOpe
 import {
   mapFullBoardApiResponse,
   extractFullBoardBackground,
+  extractFullBoardPortId,
 } from "../../../shared/helpers/kanbanBoardApiMapper";
+import useWorkSpaceReducer from "../../../store/WorkSpaceReducer";
 import kanbanBoardService from "../../../services/kanbanBoardService";
 import daService from "../../../services/daService";
 import { DA_DESK_BOARD_ID } from "../../../shared/constants/kanbanConfig";
@@ -54,6 +56,7 @@ const fetchWorkflowWithScope = async (boardId, workflowId, scope) => {
 const fetchBoardWithScopes = async (boardId, scopeByWorkflow = {}) => {
   const res = await kanbanBoardService.getFullBoard(boardId, { scope: DEFAULT_CARD_SCOPE });
   const payload = res?.data;
+  useWorkSpaceReducer.getState().setBoardPort(boardId, extractFullBoardPortId(payload));
   let mapped = mapFullBoardApiResponse(payload);
   const overrides = Object.entries(scopeByWorkflow).filter(
     ([, scope]) => scope && scope !== DEFAULT_CARD_SCOPE

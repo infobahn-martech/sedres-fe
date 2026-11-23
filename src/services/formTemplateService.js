@@ -17,7 +17,11 @@ const getCallTypes = () => Gateway.get('/calltype');
 
 const getTemplateList = (params) => Gateway.get('/form_template/list', { params });
 
-const getAllTemplates = () => Gateway.get('/form_template/all_templates');
+// port_id is optional — when given, only templates configured for that port are returned.
+const getAllTemplates = (portId) => {
+  const hasPort = portId !== undefined && portId !== null && String(portId).trim() !== '';
+  return Gateway.get('/form_template/all_templates', hasPort ? { params: { port_id: portId } } : undefined);
+};
 
 const getTemplateById = (templateId) => Gateway.get(`/form_template/${templateId}`);
 

@@ -101,6 +101,22 @@ const useFormTemplateReducer = create((set) => ({
     }
   },
 
+  // Port-scoped list for the card template picker. Returned to the caller (not cached in
+  // allTemplates) so the sidebar's unfiltered list isn't replaced. Resolves to null on failure.
+  getTemplatesByPort: async (portId) => {
+    try {
+      set({ isLoadingAllTemplates: true });
+      const { data } = await formTemplateService.getAllTemplates(portId);
+      set({ isLoadingAllTemplates: false });
+      return data?.data ?? [];
+    } catch (error) {
+      const { error: showError } = useAlertReducer.getState();
+      set({ isLoadingAllTemplates: false });
+      showError(error?.response?.data?.message ?? error?.message ?? 'Failed to fetch templates');
+      return null;
+    }
+  },
+
   getTemplateById: async ({ templateId, cb }) => {
     try {
       set({ isLoadingTemplateDetail: true });

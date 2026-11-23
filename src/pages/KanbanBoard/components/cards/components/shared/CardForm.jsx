@@ -24,6 +24,7 @@ import {
 } from "@/shared/helpers/groUserRoles";
 import useAuthReducer from "@/store/AuthReducer";
 import useFormTemplateReducer from "@/store/FormTemplateReducer";
+import useWorkSpaceReducer from "@/store/WorkSpaceReducer";
 import { useDaLocalReachedDates } from "@/store/daStore";
 import useCardModalStore from "@/store/cardModalStore";
 import usePermissions from "@/shared/hooks/usePermissions";
@@ -583,9 +584,10 @@ const TopBar = ({
   onHideForm,
   showTemplateHint = false,
 }) => {
-  const allTemplates = useFormTemplateReducer((s) => s.allTemplates);
+  const [allTemplates, setAllTemplates] = useState(null);
   const isLoadingAllTemplates = useFormTemplateReducer((s) => s.isLoadingAllTemplates);
-  const getAllTemplates = useFormTemplateReducer((s) => s.getAllTemplates);
+  const getTemplatesByPort = useFormTemplateReducer((s) => s.getTemplatesByPort);
+  const boardPorts = useWorkSpaceReducer((s) => s.boardPorts);
 
   const effectiveCard = useMemo(
     () => (isAddMode ? { ...card, ...formValues } : card),
@@ -833,6 +835,28 @@ const TopBar = ({
     });
   };
 
+  // Port used to scope form_template/all_templates: the card/form's own port first, then the
+  // board's port (captured from get_full_board into WorkSpaceReducer.boardPorts).
+  const templatePortId = useMemo(() => {
+    const fromCard = [
+      formValues?.port_id,
+      formValues?.port,
+      card?.port_id,
+      card?.portId,
+      card?.raw?.port_id,
+    ].find((v) => v != null && String(v).trim() !== "");
+    if (fromCard != null) return String(fromCard).trim();
+    return resolvedBoardId ? boardPorts?.[resolvedBoardId] ?? null : null;
+  }, [formValues?.port_id, formValues?.port, card, resolvedBoardId, boardPorts]);
+
+  const templateFetchRef = useRef(0);
+  const fetchTemplatesForPort = useCallback(async () => {
+    const fetchId = ++templateFetchRef.current;
+    const list = await getTemplatesByPort(templatePortId);
+    if (fetchId !== templateFetchRef.current || list === null) return;
+    setAllTemplates(list);
+  }, [getTemplatesByPort, templatePortId]);
+
   const templateItems = useMemo(
     () =>
       (allTemplates ?? []).map((tpl) => ({
@@ -852,9 +876,9 @@ const TopBar = ({
     setIsColorPickerOpen(false);
     const isOpening = openPicker !== "template";
     setOpenPicker(isOpening ? "template" : null);
-    // Refetch on every open so newly created/edited templates show up immediately.
-    if (isOpening && !isLoadingAllTemplates) {
-      getAllTemplates();
+    // Refetch on every open so newly created/edited templates (and port changes) show up immediately.
+    if (isOpening) {
+      fetchTemplatesForPort();
     }
   };
 

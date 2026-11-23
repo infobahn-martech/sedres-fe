@@ -31,6 +31,14 @@ const useWorkSpaceReducer = create((set, get) => ({
   addEditLoader: false,
   archiveLog: [],
   archiveLogLoading: false,
+  // board_id → port_id, captured from get_full_board (scopes the card template picker).
+  boardPorts: {},
+  setBoardPort: (boardId, portId) => {
+    if (boardId == null || portId == null) return;
+    const key = String(boardId);
+    if (get().boardPorts[key] === String(portId)) return;
+    set({ boardPorts: { ...get().boardPorts, [key]: String(portId) } });
+  },
   createWorkspace: async ({ workspace_name, board_name, cb }) => {
     try {
       set({ addEditLoader: true });
